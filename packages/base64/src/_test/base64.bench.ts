@@ -20,9 +20,12 @@ async function drain(transform: Transform, input: readonly Uint8Array[]): Promis
   for await (const _ of Readable.from(input).pipe(transform));
 }
 
-// libbase64 and Buffer encode and decode in C++ with SIMD, which JavaScript can't match on Node.
-// They are measured for reference; the 25% limit applies to the JavaScript libraries.
-test('encodes 1 MB within 25% of base64-js and js-base64', async ({ bench }) => {
+// libbase64 and Buffer encode and decode in C++, which JavaScript can't match on Node. They are
+// measured for reference, and the 25% limit applies to the JavaScript libraries and to libbase64's
+// line wrapping, which is JavaScript.
+test('encodes 1 MB within 25% of base64-js, js-base64 and libbase64 wrapping', async ({
+  bench,
+}) => {
   const result = await bench.compare(
     bench('@portable/base64', () => {
       encode(data)
@@ -49,6 +52,10 @@ test('encodes 1 MB within 25% of base64-js and js-base64', async ({ bench }) => 
   const ours = result.get('@portable/base64')
   expect(result.get('base64-js')).not.toBeFasterThan(ours, { delta: 0.25 })
   expect(result.get('js-base64')).not.toBeFasterThan(ours, { delta: 0.25 })
+  expect(result.get('libbase64, 76 columns')).not.toBeFasterThan(
+    result.get('@portable/base64, 76 columns'),
+    { delta: 0.25 },
+  )
 })
 
 test('encodes 32 bytes within 25% of base64-js and js-base64', async ({ bench }) => {

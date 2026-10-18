@@ -28,7 +28,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
     checkAlphabet(alphabet)
     checkLineLength(lineLength)
     const utf8 = new TextEncoder()
-    let carry = new Uint8Array(0)
+    let carry: Uint8Array = new Uint8Array(0)
     let highSurrogate = ''
     let column = 0
 
@@ -49,31 +49,40 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
       return concat(pending, toBytes(chunk))
     }
 
-    const emit = (
-      bytes: Uint8Array,
-      final: boolean,
-      controller: TransformStreamDefaultController<string>,
-    ) => {
-      if (bytes.length === 0) return
+    const encodeLines = (bytes: Uint8Array, final: boolean): string => {
+      if (bytes.length === 0) return ''
       const pad = final && omitPadding
-      controller.enqueue(
-        toBase64(bytes, { alphabet, omitPadding: pad, lineLength, lineEnding }, column),
-      )
-      if (lineLength === false) return
-      const rest = bytes.length % 3
-      const length = ((bytes.length - rest) / 3) * 4 + (rest === 0 ? 0 : pad ? rest + 1 : 4)
-      column = ((column + length - 1) % lineLength) + 1
+      const text = toBase64(bytes, { alphabet, omitPadding: pad, lineLength, lineEnding }, column)
+      if (lineLength !== false) {
+        const rest = bytes.length % 3
+        const length = ((bytes.length - rest) / 3) * 4 + (rest === 0 ? 0 : pad ? rest + 1 : 4)
+        column = ((column + length - 1) % lineLength) + 1
+      }
+      return text
     }
 
     super({
       transform(chunk, controller) {
-        const bytes = concat(carry, readChunk(chunk))
+        let bytes = readChunk(chunk)
+        let text = ''
+        if (carry.length > 0) {
+          const fill = Math.min(3 - carry.length, bytes.length)
+          const group = concat(carry, bytes.subarray(0, fill))
+          bytes = bytes.subarray(fill)
+          if (group.length < 3) {
+            carry = group
+            return
+          }
+          text = encodeLines(group, false)
+        }
         const whole = bytes.length - (bytes.length % 3)
         carry = bytes.slice(whole)
-        emit(bytes.subarray(0, whole), false, controller)
+        text += encodeLines(bytes.subarray(0, whole), false)
+        if (text !== '') controller.enqueue(text)
       },
       flush(controller) {
-        emit(concat(carry, utf8.encode(highSurrogate)), true, controller)
+        const text = encodeLines(concat(carry, utf8.encode(highSurrogate)), true)
+        if (text !== '') controller.enqueue(text)
       },
     })
   }

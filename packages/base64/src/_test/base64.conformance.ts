@@ -144,8 +144,8 @@ describe('EncoderStream', () => {
 
   test('wraps large chunks at any line length and line ending', async () => {
     const data = randomBytes(5000, 6)
-    for (const lineLength of [1, 7, 76, 1000])
-      for (const lineEnding of ['\r\n', '\n', ' é '])
+    for (const lineLength of [1, 4, 7, 76, 1000])
+      for (const lineEnding of ['\r\n', '\n', '<>', ' é '])
         for (const omitPadding of [false, true]) {
           const options = { lineLength, lineEnding, omitPadding }
           const expected = referenceWrap(

@@ -40,7 +40,6 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 
 const utf8 = new TextEncoder()
 
-/** Strings as UTF-8. Other typed arrays are rejected, because an `Int8Array` has negative values. */
 export function toBytes(input: Uint8Array | string): Uint8Array {
   if (typeof input === 'string') return utf8.encode(input)
   if (input instanceof Uint8Array) return input
@@ -63,16 +62,20 @@ type Settings = {
 /** Encodes and wraps `bytes`, continuing a line that already has `column` characters. */
 export function toBase64(bytes: Uint8Array, settings: Settings, column: number): string {
   const { alphabet, omitPadding, lineLength, lineEnding } = settings
-  if (nativeToBase64 || bytes.length < smallInput || !isAscii(lineEnding)) {
-    const text = nativeToBase64
-      ? nativeToBase64.call(bytes, { alphabet, omitPadding })
-      : encodeFallback(bytes, alphabet, omitPadding)
-    return lineLength === false ? text : wrap(text, lineLength, lineEnding, column)
-  }
-  const codes = encodeCodes(bytes, alphabet, omitPadding)
-  return ascii.decode(
-    lineLength === false ? codes : wrapCodes(codes, lineLength, lineEnding, column),
+  if (
+    !nativeToBase64 &&
+    bytes.length >= smallInput &&
+    lineLength !== false &&
+    lineLength % 4 === 0 &&
+    column % 4 === 0 &&
+    lineEnding.length % 2 === 0 &&
+    isAscii(lineEnding)
   )
+    return ascii.decode(encodeCodes(bytes, alphabet, omitPadding, lineLength, lineEnding, column))
+  const text = nativeToBase64
+    ? nativeToBase64.call(bytes, { alphabet, omitPadding })
+    : encodeFallback(bytes, alphabet, omitPadding)
+  return lineLength === false ? text : wrap(text, lineLength, lineEnding, column)
 }
 
 function isAscii(text: string): boolean {
@@ -133,21 +136,54 @@ export function encodeFallback(
   return text
 }
 
-/** The base64 text of `bytes` as ASCII codes. */
-function encodeCodes(bytes: Uint8Array, alphabet: Alphabet, omitPadding: boolean): Uint8Array {
+const pair = (first: number, second: number) =>
+  littleEndian ? first | (second << 8) : (first << 8) | second
+
+/**
+ * The base64 text of `bytes` as ASCII codes. With a `lineLength`, which must be a multiple of 4,
+ * `lineEnding` (of even length) is written before each group of four characters that starts a new
+ * line, continuing a line that already has `column` characters.
+ */
+function encodeCodes(
+  bytes: Uint8Array,
+  alphabet: Alphabet,
+  omitPadding: boolean,
+  lineLength = 0,
+  lineEnding = '',
+  column = 0,
+): Uint8Array {
   const { chars, pairCodes } = tablesFor(alphabet)
   const length = bytes.length
   const whole = length - (length % 3)
   const rest = length - whole
-  const size = (whole / 3) * 4 + (rest === 0 ? 0 : omitPadding ? rest + 1 : 4)
+  const groups = Math.ceil(length / 3)
+  const perLine = lineLength / 4
+  let left = lineLength === 0 ? Infinity : (lineLength - column) / 4
+  const breaks = groups > left ? Math.ceil((groups - left) / perLine) : 0
+  const textLength = (whole / 3) * 4 + (rest === 0 ? 0 : omitPadding ? rest + 1 : 4)
+  const size = textLength + breaks * lineEnding.length
   const out = new Uint8Array(size + (size & 1))
   const pairs = new Uint16Array(out.buffer, 0, out.length >> 1)
-  for (let i = 0, j = 0; i < whole; i += 3, j += 2) {
+  const endingPairs: number[] = []
+  for (let i = 0; i < lineEnding.length; i += 2)
+    endingPairs.push(pair(lineEnding.charCodeAt(i), lineEnding.charCodeAt(i + 1)))
+
+  let p = 0
+  for (let i = 0; i < whole; i += 3) {
+    if (left === 0) {
+      for (const ending of endingPairs) pairs[p++] = ending
+      left = perLine
+    }
     const v = (bytes[i]! << 16) | (bytes[i + 1]! << 8) | bytes[i + 2]!
-    pairs[j] = pairCodes[v >> 12]!
-    pairs[j + 1] = pairCodes[v & 4095]!
+    pairs[p] = pairCodes[v >> 12]!
+    pairs[p + 1] = pairCodes[v & 4095]!
+    p += 2
+    left--
   }
-  let j = (whole / 3) * 4
+  let j = p * 2
+  if (rest !== 0 && left === 0) {
+    for (let i = 0; i < lineEnding.length; i++) out[j++] = lineEnding.charCodeAt(i)
+  }
   if (rest === 1) {
     const v = bytes[whole]!
     out[j++] = chars.charCodeAt(v >> 2)
@@ -162,26 +198,8 @@ function encodeCodes(bytes: Uint8Array, alphabet: Alphabet, omitPadding: boolean
   return out.subarray(0, size)
 }
 
-function wrapCodes(codes: Uint8Array, lineLength: number, lineEnding: string, column: number) {
-  const first = Math.min(lineLength - column, codes.length)
-  const breaks = Math.ceil((codes.length - first) / lineLength)
-  if (breaks === 0) return codes
-  const ending = Uint8Array.from(lineEnding, (char) => char.charCodeAt(0))
-  const out = new Uint8Array(codes.length + breaks * ending.length)
-  out.set(codes.subarray(0, first))
-  let j = first
-  for (let i = first; i < codes.length; i += lineLength) {
-    out.set(ending, j)
-    j += ending.length
-    const line = codes.subarray(i, i + lineLength)
-    out.set(line, j)
-    j += line.length
-  }
-  return out
-}
-
 /** Breaks `text` into lines, continuing a line that already has `column` characters. */
-export function wrap(text: string, lineLength: number, lineEnding: string, column: number): string {
+function wrap(text: string, lineLength: number, lineEnding: string, column: number): string {
   const first = lineLength - column
   if (text.length <= first) return text
   const lines = [text.slice(0, first)]
