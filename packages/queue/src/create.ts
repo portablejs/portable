@@ -63,10 +63,9 @@ type Entry = {
   task: Task<unknown>
   priority: number
   context: Context
-  ownSignal: AbortSignal | undefined
+  watched: AbortSignal | undefined
   resolve: (value: unknown) => void
   reject: (reason: unknown) => void
-  onAbort: (() => void) | undefined
   state: State
   begin: () => void
   promise: Promise<unknown>
@@ -108,8 +107,49 @@ export function create(options: create.Options = {}): Queue {
   let idleWaiters: (() => void)[] = []
   const starts: number[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
+  const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>()
 
   queueSignal?.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true })
+
+  function watch(entry: Entry, signal: AbortSignal | undefined) {
+    if (entry.watched === signal) return
+    if (entry.watched) unwatch(entry)
+    entry.watched = signal
+    if (!signal) return
+    let watcher = watchers.get(signal)
+    if (!watcher) {
+      const entries = new Set<Entry>()
+      const listener = () => {
+        watchers.delete(signal)
+        for (const entry of entries) {
+          entry.watched = undefined
+          if (entry.state === 'waiting') {
+            size--
+            discard(entry, signal.reason)
+          } else if (entry.state === 'running') {
+            entry.state = 'settled'
+            entry.reject(signal.reason)
+          }
+        }
+        drain()
+      }
+      watcher = { entries, listener }
+      watchers.set(signal, watcher)
+      signal.addEventListener('abort', listener, { once: true })
+    }
+    watcher.entries.add(entry)
+  }
+
+  function unwatch(entry: Entry) {
+    const signal = entry.watched!
+    entry.watched = undefined
+    const watcher = watchers.get(signal)
+    if (!watcher) return
+    watcher.entries.delete(entry)
+    if (watcher.entries.size > 0) return
+    watchers.delete(signal)
+    signal.removeEventListener('abort', watcher.listener)
+  }
 
   function enqueue(entry: Entry) {
     const last = waiting[waiting.length - 1]
@@ -179,16 +219,8 @@ export function create(options: create.Options = {}): Queue {
   function start(entry: Entry) {
     pending++
     entry.state = 'running'
-    if (entry.onAbort) entry.ownSignal!.removeEventListener('abort', entry.onAbort)
     const { signal } = entry.context
-    if (signal !== neverAborted) {
-      entry.onAbort = () => {
-        if (entry.state !== 'running') return
-        entry.state = 'settled'
-        entry.reject(signal.reason)
-      }
-      signal.addEventListener('abort', entry.onAbort, { once: true })
-    }
+    watch(entry, signal === neverAborted ? undefined : signal)
     entry.begin()
   }
 
@@ -210,7 +242,7 @@ export function create(options: create.Options = {}): Queue {
 
   function finish(entry: Entry, value?: unknown, failed?: boolean) {
     pending--
-    if (entry.onAbort) entry.context.signal.removeEventListener('abort', entry.onAbort)
+    if (entry.watched) unwatch(entry)
     if (entry.state === 'running') {
       entry.state = 'settled'
       if (failed) entry.reject(value)
@@ -232,7 +264,7 @@ export function create(options: create.Options = {}): Queue {
     for (let i = from; i < entries.length; i++) {
       const entry = entries[i]!
       if (entry.state !== 'waiting') continue
-      if (entry.onAbort) entry.ownSignal!.removeEventListener('abort', entry.onAbort)
+      if (entry.watched) unwatch(entry)
       discard(entry, reason)
     }
     drain()
@@ -255,10 +287,9 @@ export function create(options: create.Options = {}): Queue {
         task,
         priority,
         context: { signal: combine(queueSignal, signal) },
-        ownSignal: signal,
+        watched: undefined,
         resolve: noop,
         reject: noop,
-        onAbort: undefined,
         state: 'waiting',
         begin: noop,
         promise: undefined!,
@@ -270,15 +301,7 @@ export function create(options: create.Options = {}): Queue {
       entry.promise = promise
       // Chaining here, not in `start`, runs the task in the async context of its `add` call.
       void new Promise<void>((begin) => (entry.begin = begin)).then(() => run(entry))
-      if (signal) {
-        entry.onAbort = () => {
-          if (entry.state !== 'waiting') return
-          size--
-          discard(entry, signal.reason)
-          drain()
-        }
-        signal.addEventListener('abort', entry.onAbort, { once: true })
-      }
+      watch(entry, signal)
       enqueue(entry)
       size++
       drain()

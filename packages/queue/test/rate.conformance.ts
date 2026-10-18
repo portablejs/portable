@@ -193,6 +193,24 @@ describe('rate limit', () => {
     expect(starts).toEqual([0, 3e9])
   })
 
+  test('a task added from inside a running task still counts against the limit', async () => {
+    const queue = Queue.create({ interval: 50, intervalCap: 2 })
+    const { starts, task } = recorder()
+    const inner: Promise<void>[] = []
+    await settle(
+      Promise.all(
+        Array.from({ length: 3 }, () =>
+          queue.add(() => {
+            task()()
+            inner.push(queue.add(task()))
+          }),
+        ),
+      ),
+    )
+    await settle(Promise.all(inner))
+    expect(starts).toEqual([0, 0, 50, 50, 100, 100])
+  })
+
   test('interval 0 turns rate limiting off', async () => {
     const queue = Queue.create({ interval: 0, intervalCap: 1 })
     const { starts, task } = recorder()

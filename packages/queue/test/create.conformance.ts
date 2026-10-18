@@ -304,6 +304,17 @@ describe('signal', () => {
     expect(counted.listeners).toBe(0)
   })
 
+  test('tasks that share a signal add one listener to it', async () => {
+    const queue = Queue.create({ concurrency: 2 })
+    const counted = countingSignal()
+    const tasks = Array.from({ length: 100 }, () =>
+      queue.add(() => delay(1), { signal: counted.signal }),
+    )
+    expect(counted.listeners).toBe(1)
+    await Promise.all(tasks)
+    expect(counted.listeners).toBe(0)
+  })
+
   test('clear removes the abort listeners of the waiting tasks', async () => {
     const queue = Queue.create({ concurrency: 1 })
     const counted = countingSignal()

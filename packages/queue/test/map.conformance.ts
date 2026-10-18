@@ -108,6 +108,70 @@ describe('map', () => {
     expect(await Queue.map(Object.freeze([1]), double)).toEqual([2])
   })
 
+  test('maps a sparse array into a dense array, and ignores a generator return value', async () => {
+    const sparse: number[] = []
+    sparse[0] = 1
+    sparse[2] = 3
+    expect(await Queue.map(sparse, (n) => n)).toEqual([1, undefined, 3])
+    function* withReturn() {
+      yield 1
+      return 2
+    }
+    expect(await Queue.map(withReturn(), (n) => n)).toEqual([1])
+  })
+
+  test('continues a generator that was already partly read', async () => {
+    function* numbers() {
+      yield 1
+      yield 2
+      yield 3
+    }
+    const iterator = numbers()
+    iterator.next()
+    expect(await Queue.map(iterator, (n) => n)).toEqual([2, 3])
+  })
+
+  test('maps 100,000 items with a sync fn without overflowing the stack', async () => {
+    const items = Array.from({ length: 100_000 }, (_, i) => i)
+    const results = await Queue.map(items, (n) => n + 1, { concurrency: 3 })
+    expect(results).toHaveLength(100_000)
+    expect(results[99_999]).toBe(100_000)
+  })
+
+  test('does not call next() again after the input is done', async () => {
+    let calls = 0
+    const input = {
+      [Symbol.iterator]: () => ({
+        next: () =>
+          ++calls > 2 ? { done: true as const, value: undefined } : { done: false, value: calls },
+      }),
+    }
+    await Queue.map(input, (n) => n, { concurrency: 2, stopOnError: false })
+    expect(calls).toBe(3)
+    let asyncCalls = 0
+    const asyncInput: AsyncIterable<number> = {
+      [Symbol.asyncIterator]: () => ({
+        next: async () => {
+          await delay(1)
+          return ++asyncCalls > 2
+            ? { done: true, value: undefined }
+            : { done: false, value: asyncCalls }
+        },
+      }),
+    }
+    await Queue.map(asyncInput, (n) => n, { concurrency: Infinity })
+    expect(asyncCalls).toBe(3)
+  })
+
+  test('rejects when next() returns something that is not an object', async () => {
+    const input = { [Symbol.iterator]: () => ({ next: () => 5 }) } as unknown as Iterable<number>
+    await expect(Queue.map(input, (n) => n)).rejects.toThrow(TypeError)
+    const asyncInput = {
+      [Symbol.asyncIterator]: () => ({ next: async () => null }),
+    } as unknown as AsyncIterable<number>
+    await expect(Queue.map(asyncInput, (n) => n)).rejects.toThrow(TypeError)
+  })
+
   test('keeps undefined results', async () => {
     expect(await Queue.map([1, 2], () => undefined)).toEqual([undefined, undefined])
   })
@@ -376,6 +440,20 @@ describe('map errors', () => {
     }
     await Queue.map(input, (n) => n)
     expect(returned).toBe(false)
+  })
+
+  test('a source return() that rejects does not change the rejection', async () => {
+    const error = new Error('mapper')
+    const input: AsyncIterable<number> = {
+      [Symbol.asyncIterator]: () => ({
+        next: async () => ({ done: false, value: 1 }),
+        return: () => Promise.reject(new Error('return failed')),
+      }),
+    }
+    await expect(Queue.map(input, () => Promise.reject(error), { concurrency: 1 })).rejects.toBe(
+      error,
+    )
+    await delay(5)
   })
 
   test('ends an endless source when the first call throws', async () => {

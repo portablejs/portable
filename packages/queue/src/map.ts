@@ -106,6 +106,10 @@ export function map<T, R>(
             (item) => {
               pulling = false
               if (settled) return
+              if (!isResult(item)) {
+                done = true
+                return fail(new TypeError('Expected `next()` to return an object.'), false)
+              }
               if (item.done) done = true
               else start(item.value)
               next()
@@ -124,6 +128,10 @@ export function map<T, R>(
         } catch (error) {
           done = true
           return fail(error, false)
+        }
+        if (!isResult(item)) {
+          done = true
+          return fail(new TypeError('Expected `next()` to return an object.'), false)
         }
         if (item.done) done = true
         else start(item.value)
@@ -171,6 +179,10 @@ export function map<T, R>(
 
     next()
   })
+}
+
+function isResult(value: unknown): value is IteratorResult<unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 function sortedErrors(errors: { index: number; error: unknown }[]): unknown[] {
