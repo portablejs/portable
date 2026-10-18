@@ -272,6 +272,9 @@ importers:
       '@portable/exif':
         specifier: workspace:*
         version: link:..
+      '@portable/png':
+        specifier: workspace:*
+        version: link:../../png
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5

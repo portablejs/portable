@@ -1,6 +1,6 @@
 # @portable/exif
 
-Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG and WebP files. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [exif-parser](https://www.npmjs.com/package/exif-parser).
 
@@ -86,6 +86,38 @@ How far it reads depends on where the format stores the metadata:
 | `signal` | none | An `AbortSignal`. Aborting rejects with `signal.reason` and cancels the stream. |
 
 Besides the errors `parse` throws, `parseStream` throws `Exif.MaxBytesError` when it would need to hold more than `maxBytes`. Its `maxBytes` property holds the limit. An error from the stream itself is passed on.
+
+## `Exif.strip(bytes, options?)` and `Exif.StripStream`
+
+Remove the EXIF and XMP metadata from a JPEG, PNG or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
+
+```ts
+const [stored, inspected] = request.body!.tee()
+const [, exif] = await Promise.all([
+  bucket.put(key, stored.pipeThrough(new Exif.StripStream())),
+  Exif.parseStream(inspected),
+])
+```
+
+What is removed:
+
+| Format | Removed | Kept by default |
+| --- | --- | --- |
+| JPEG | APP1 `Exif` and XMP segments (including extended XMP), and the APP13 Photoshop segment that holds IPTC. | APP2 `ICC_PROFILE` segments, and every other segment. |
+| PNG | `eXIf`, and `tEXt`, `zTXt` and `iTXt` chunks with the keyword `XML:com.adobe.xmp` or ImageMagick's `Raw profile type exif`, `APP1`, `xmp` and `iptc`. | `iCCP`, and every other text chunk. |
+| WebP | `EXIF` and `XMP ` chunks. The RIFF size and the `VP8X` flags are updated to match. | `ICCP`. |
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `keepOrientation` | `true` | Write back an EXIF block that holds only the `Orientation` tag, when the original has one from 2 to 8, so that viewers and resizers still rotate the image. It takes the place of the original EXIF block. |
+| `keepColorProfile` | `true` | Keep the ICC profile. |
+| `signal` | none | `StripStream` only. Aborting errors the stream with `signal.reason`. |
+
+`StripStream` writes a JPEG or PNG as it arrives and holds at most one metadata segment or chunk. It holds a whole WebP file before writing it, because the RIFF size and the `VP8X` flags at the start of the file depend on the `EXIF` chunk, which usually comes last.
+
+In a JPEG, everything from the first start-of-scan marker on is copied unchanged, including any segments after the scan. A truncated file is stripped as far as it goes.
+
+`strip` throws `Exif.UnsupportedError` for TIFF, HEIC and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2.
 
 ## `Exif.parseDate(value, options?)`
 

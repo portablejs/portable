@@ -47,7 +47,8 @@ type Reader = {
 export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
   if (end - start < 8) throw new TruncatedError()
   const order = (bytes[start]! << 8) | bytes[start + 1]!
-  if (order !== 0x4949 && order !== 0x4d4d) throw new InvalidInputError('no byte order mark')
+  if (order !== 0x4949 && order !== 0x4d4d)
+    throw new InvalidInputError('Invalid TIFF header: no byte order mark.')
   const length = end - start
   const r: Reader = {
     bytes,
@@ -59,9 +60,11 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     pointers: new Map(),
     end: 8,
   }
-  if (r.view.getUint16(2, r.le) !== 42) throw new InvalidInputError('magic number is not 42')
+  if (r.view.getUint16(2, r.le) !== 42)
+    throw new InvalidInputError('Invalid TIFF header: magic number is not 42.')
   const ifd0Offset = r.view.getUint32(4, r.le)
-  if (ifd0Offset < 8) throw new InvalidInputError('IFD0 offset is inside the header')
+  if (ifd0Offset < 8)
+    throw new InvalidInputError('Invalid TIFF header: IFD0 offset is inside the header.')
 
   const ifd0 = readIfd(r, ifd0Offset, tagNames)
   const ifd1 = r.next ? readIfd(r, r.next, tagNames) : {}

@@ -332,3 +332,21 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 ## Don't rerun every test when a package.json changes
 
 Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test run --changed` ran the whole repo whenever a commit added a package or a test dependency, which was almost every push. `vite.config.ts` now keeps only the config files as triggers. A dependency version bump no longer reruns the tests of the packages that use it before a push; `pnpm test` still covers them.
+
+## `Exif.StripStream` is a class
+
+- **Options:** a `StripStream` class; a `stripStream(options)` factory.
+- **Trade-offs:** AGENTS.md keeps lowercase factories for generic operators that take a function or a number, such as `Streams.map(fn)`. Stripping is a fixed transform named for what it does, like `TextDecoderStream` and `LineStream`.
+- **Chosen:** `Exif.StripStream`, a `TransformStream` subclass.
+
+## `Exif.strip` doesn't handle HEIC, AVIF or TIFF
+
+- **Options:** rewrite HEIF `iinf`, `iloc` and `iref` to remove the `Exif` and XMP items; overwrite those items in place; throw `UnsupportedError`.
+- **Trade-offs:** Removing an item shifts the byte offsets that `iloc` stores for every later item, and `mdat` may come before or after `meta`, so a stream would have to hold the file. Overwriting in place keeps the offsets but leaves an `Exif` item that readers try to parse. A TIFF file's EXIF IFD sits beside the image IFDs, so it needs a TIFF writer.
+- **Chosen:** `UnsupportedError`, documented in the README. JPEG, PNG and WebP cover most uploads.
+
+## `Exif.StripStream` holds a whole WebP file
+
+- **Options:** hold the file; write the RIFF header before knowing the output size.
+- **Trade-offs:** The RIFF header stores the file size and the `VP8X` chunk stores the EXIF flag, both before the `EXIF` chunk, which usually follows the image data. Writing them early would mean guessing.
+- **Chosen:** hold the WebP file and strip it at the end. JPEG and PNG are written as they arrive.

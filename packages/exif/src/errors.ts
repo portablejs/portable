@@ -6,15 +6,12 @@ export class TruncatedError extends Error {
   }
 }
 
-/** Thrown when EXIF data has a malformed TIFF header. */
+/** Thrown when EXIF data has a malformed TIFF header, or `strip` finds a malformed JPEG. */
 export class InvalidInputError extends Error {
   override name = 'Exif.InvalidInputError'
-  constructor(reason: string) {
-    super(`Invalid TIFF header: ${reason}.`)
-  }
 }
 
-/** Thrown when the input is not JPEG, TIFF, PNG, WebP, HEIF or raw EXIF data. */
+/** Thrown when the input is not JPEG, TIFF, PNG, WebP, HEIF or raw EXIF data, or when `strip` gets a format other than JPEG, PNG or WebP. */
 export class UnsupportedError extends Error {
   override name = 'Exif.UnsupportedError'
   constructor() {

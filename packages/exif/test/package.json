@@ -4,6 +4,7 @@
   "type": "module",
   "devDependencies": {
     "@portable/exif": "workspace:*",
+    "@portable/png": "workspace:*",
     "@types/node": "^26.6.5",
     "exif-parser": "^0.1.12",
     "exif-reader": "^2.0.3",

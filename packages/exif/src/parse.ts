@@ -113,7 +113,7 @@ export const fourcc = Object.fromEntries(
   codes.map((code) => [code, u32be(new TextEncoder().encode(code), 0)]),
 ) as Record<(typeof codes)[number], number>
 
-export function startsWith(bytes: Uint8Array, at: number, prefix: readonly number[]): boolean {
+export function startsWith(bytes: Uint8Array, at: number, prefix: ArrayLike<number>): boolean {
   if (at + prefix.length > bytes.length) return false
   for (let i = 0; i < prefix.length; i++) if (bytes[at + i] !== prefix[i]) return false
   return true
