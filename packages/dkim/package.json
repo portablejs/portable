@@ -5,11 +5,11 @@
     "build": "zile",
     "dev": "zile dev"
   },
+  "[!start-pkg]": "",
   "dependencies": {
     "@portable/base64": "workspace:*",
     "@portable/dns": "workspace:*"
   },
-  "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,
