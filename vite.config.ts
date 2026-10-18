@@ -83,6 +83,9 @@ export default defineConfig({
       },
     ],
   },
+  // `src` resolves workspace packages to their TypeScript source, so tests need no build.
+  resolve: { conditions: ['src', 'module', 'browser', 'development|production'] },
+  ssr: { resolve: { conditions: ['src', 'module', 'node', 'development|production'] } },
   staged: {
     '*.{ts,js,json}': 'vp check --fix',
   },

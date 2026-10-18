@@ -28,6 +28,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 ## Fixed
 
+- Tests couldn't import another workspace package ("Failed to resolve entry for package"), because Vite didn't use the `src` export condition and fell back to an unbuilt `dist/`. `vite.config.ts` now adds `src` to `resolve.conditions` for browsers and Node.
 - `pnpm bench` printed no numbers. It now runs with `--reporter=verbose`.
 - Binary fixtures with extensions Vite doesn't know (`.tif`, `.heic`, `.pfm`) failed to import with `?inline`, and Node's `fetch` rejects `file:` URLs. Both packages now use `import.meta.glob` with `?url&inline`, and AGENTS.md documents it.
 - The pre-push hook ran Node 22 in cloud sessions, because `git push` doesn't put `~/bin` on `PATH`. The hook now puts `~/bin` first when Node is installed there.
