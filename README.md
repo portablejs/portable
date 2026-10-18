@@ -20,6 +20,7 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 | L0 | `@portable/random` | random-int, crypto-random-string, seedrandom | In progress |
 | L0 | `@portable/timers` | p-retry, async-retry, delay, p-wait-for | In progress |
 | L1 | [`@portable/json-stream`](packages/json-stream) | JSONStream, stream-json, json-stream-stringify | Built |
+| L1 | `@portable/sse` | eventsource, eventsource-parser, @microsoft/fetch-event-source | In progress |
 | L1 | `@portable/csv` | csv-parse, papaparse, fast-csv | In progress |
 | L1 | `@portable/compress` | pako, fflate (one-shot use) | In progress |
 | L1 | `@portable/idna` | punycode, tr46 | In progress |
