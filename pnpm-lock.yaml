@@ -66,6 +66,33 @@ importers:
         specifier: 'catalog:'
         version: 0.0.30(typescript@6.0.3)
 
+  packages/arc:
+    dependencies:
+      '@portable/base64':
+        specifier: workspace:*
+        version: link:../base64
+      '@portable/dkim':
+        specifier: workspace:*
+        version: link:../dkim
+
+  packages/arc/test:
+    devDependencies:
+      '@portable/arc':
+        specifier: workspace:*
+        version: link:..
+      '@portable/dkim':
+        specifier: workspace:*
+        version: link:../../dkim
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../../streams
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      mailauth:
+        specifier: ^7.3.0
+        version: 7.3.0
+
   packages/base64:
     dependencies:
       '@portable/bytes':

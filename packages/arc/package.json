@@ -1,0 +1,48 @@
+{
+  "name": "@portable/arc",
+  "description": "Seal and verify ARC sets (RFC 8617) with WebCrypto and an injected DNS resolver, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/arc"
+  },
+  "keywords": [
+    "arc",
+    "rfc8617",
+    "dkim",
+    "email",
+    "mailauth",
+    "authenticated-received-chain",
+    "webcrypto"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "dependencies": {
+    "@portable/base64": "workspace:*",
+    "@portable/dkim": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
