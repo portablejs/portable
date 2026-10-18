@@ -1,12 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { hmac } from '@noble/hashes/hmac.js'
-import { sha256 } from '@noble/hashes/sha2.js'
 import { verify as octokitVerify } from '@octokit/webhooks-methods'
 import { verifySlackRequest } from '@slack/bolt/dist/receivers/verify-request.js'
 import { Webhook as StandardWebhook } from 'standardwebhooks'
 import Stripe from 'stripe'
 import { expect, test } from 'vite-plus/test'
-import * as Core from '@portable/webhooks/core'
 import * as Webhooks from '@portable/webhooks'
 import { octokitWeb } from './octokit-web.js'
 
@@ -22,7 +19,6 @@ const body = JSON.stringify({
   data: { object: { items: Array.from({ length: 20 }, (_, i) => ({ id: i, name: `item ${i}` })) } },
 })
 const bytes = new TextEncoder().encode(body)
-const nobleHmac: Core.Hmac = (key, data) => hmac(sha256, key, data)
 
 async function headers(scheme: Webhooks.Scheme): Promise<Record<string, string>> {
   return Webhooks.sign(body, { scheme, secret })
@@ -37,16 +33,9 @@ test(`verifies a ${body.length}-byte Standard Webhook within 25% of standardwebh
     bench('@portable/webhooks', async () => {
       await Webhooks.verify({ headers: signed, body }, { scheme: 'standard', secret })
     }),
-    bench('@portable/webhooks/core with @noble/hashes', async () => {
-      await Core.verify({ headers: signed, body }, { scheme: 'standard', secret, hmac: nobleHmac })
-    }),
     bench('standardwebhooks', () => {
       upstream.verify(body, signed)
     }),
-  )
-  expect(result.get('standardwebhooks')).not.toBeFasterThan(
-    result.get('@portable/webhooks/core with @noble/hashes'),
-    { delta: 0.25 },
   )
   expect(result.get('standardwebhooks')).not.toBeFasterThan(result.get('@portable/webhooks'), {
     delta: 0.25,

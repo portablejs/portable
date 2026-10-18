@@ -1,3 +1,5 @@
+import { hmac } from '@noble/hashes/hmac.js'
+import { sha256 } from '@noble/hashes/sha2.js'
 import * as Core from './core.js'
 
 export { VerificationError, type Hmac, type Reason, type Scheme, type Secret } from './core.js'
@@ -5,7 +7,7 @@ export { VerificationError, type Hmac, type Reason, type Scheme, type Secret } f
 export declare namespace verify {
   type Input = Core.verify.Input
   type Options = Omit<Core.verify.Options, 'hmac'> & {
-    /** HMAC-SHA256. @default WebCrypto's `crypto.subtle` */
+    /** HMAC-SHA256. @default `@noble/hashes` HMAC-SHA256 */
     hmac?: Core.Hmac | undefined
   }
   type Result = Core.verify.Result
@@ -42,7 +44,7 @@ export function verify(input: verify.Input, options: verify.Options): Promise<ve
 
 export declare namespace sign {
   type Options = Omit<Core.sign.Options, 'hmac'> & {
-    /** HMAC-SHA256. @default WebCrypto's `crypto.subtle` */
+    /** HMAC-SHA256. @default `@noble/hashes` HMAC-SHA256 */
     hmac?: Core.Hmac | undefined
   }
 }
@@ -69,27 +71,4 @@ export function sign(
   return Core.sign(body, { ...options, hmac: options.hmac ?? hmacSha256 })
 }
 
-async function hmacSha256(
-  key: Uint8Array<ArrayBuffer>,
-  data: Uint8Array<ArrayBuffer>,
-): Promise<Uint8Array> {
-  return new Uint8Array(await crypto.subtle.sign('HMAC', await importKey(key), data))
-}
-
-// importKey takes two thirds of the time of an HMAC on Node, and a server verifies every webhook
-// with the same one or two secrets.
-const cryptoKeys = new Map<string, Promise<CryptoKey>>()
-
-function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
-  const id = key.length <= 256 ? String.fromCharCode(...key) : undefined
-  const cached = id === undefined ? undefined : cryptoKeys.get(id)
-  if (cached) return cached
-  const cryptoKey = crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
-    'sign',
-  ])
-  if (id !== undefined) {
-    if (cryptoKeys.size >= 16) cryptoKeys.clear()
-    cryptoKeys.set(id, cryptoKey)
-  }
-  return cryptoKey
-}
+const hmacSha256: Core.Hmac = (key, data) => hmac(sha256, key, data)

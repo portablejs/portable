@@ -5,14 +5,25 @@
     "build": "zile",
     "dev": "zile dev"
   },
-  "dependencies": {
-    "@portable/base64": "workspace:^"
+  "devDependencies": {
+    "@noble/hashes": "^2.4.0"
   },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
+  "dependencies": {
+    "@portable/base64": "workspace:^"
+  },
+  "peerDependencies": {
+    "@noble/hashes": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@noble/hashes": {
+      "optional": true
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/portablejs/portable.git",

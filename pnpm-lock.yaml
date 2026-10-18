@@ -319,6 +319,10 @@ importers:
       '@portable/base64':
         specifier: workspace:^
         version: link:../base64
+    devDependencies:
+      '@noble/hashes':
+        specifier: ^2.4.0
+        version: 2.4.0
 
   packages/webhooks/test:
     devDependencies:
