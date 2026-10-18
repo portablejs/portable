@@ -119,7 +119,7 @@ const SPACE = 32
 const COLON = 58
 
 export function createParser(emit: (event: Event) => void, maxLength: number = Infinity): Parser {
-  const decoder = new TextDecoder('utf-8', { ignoreBOM: true })
+  let decoder: TextDecoder | undefined
   let started = false
   let skipLf = false
   let pending: string[] = []
@@ -166,6 +166,19 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
     ) {
       const from = text.charCodeAt(start + 5) === SPACE ? start + 6 : start + 5
       return appendData(text.slice(from, end))
+    }
+    if (first === 101 && text.startsWith('event:', start)) {
+      type = text.slice(text.charCodeAt(start + 6) === SPACE ? start + 7 : start + 6, end)
+      return
+    }
+    if (
+      first === 105 &&
+      text.charCodeAt(start + 1) === 100 &&
+      text.charCodeAt(start + 2) === COLON
+    ) {
+      const value = text.slice(text.charCodeAt(start + 3) === SPACE ? start + 4 : start + 3, end)
+      if (!value.includes('\0')) idBuffer = value
+      return
     }
     const raw = text.slice(start, end)
     const colon = raw.indexOf(':')
@@ -223,7 +236,12 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
 
   return {
     push(chunk) {
-      let text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+      let text =
+        typeof chunk === 'string'
+          ? chunk
+          : (decoder ??= new TextDecoder('utf-8', { ignoreBOM: true })).decode(chunk, {
+              stream: true,
+            })
       if (text === '') return
       if (!started) {
         started = true
@@ -253,7 +271,7 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
       keep(text, lines(text, start))
     },
     end() {
-      decoder.decode()
+      decoder?.decode()
       pending = []
       pendingLength = 0
       skipLf = false
