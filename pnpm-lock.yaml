@@ -193,6 +193,25 @@ importers:
         specifier: 'catalog:'
         version: 4.2.0
 
+  packages/oauth1:
+    dependencies:
+      '@portable/base64':
+        specifier: workspace:*
+        version: link:../base64
+    devDependencies:
+      '@noble/hashes':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      oauth:
+        specifier: ^0.10.2
+        version: 0.10.2
+      oauth-1.0a:
+        specifier: ^2.2.6
+        version: 2.2.6
+
   packages/png: {}
 
   packages/png/test:
@@ -1619,6 +1638,12 @@ packages:
   negotiator@1.1.0:
     resolution: {integrity: sha512-NMPBRMJgiQHjbd8phG3Vebdx4kZ1H121rbl5IkMqeOsahptB9BKo/d7oJ3zTXqTgagn2bWlNSXkh0QUGM31RYg==}
     engines: {node: '>=18'}
+
+  oauth-1.0a@2.2.6:
+    resolution: {integrity: sha512-6bkxv3N4Gu5lty4viIcIAnq5GbxECviMBeKR3WX/q87SPQ8E8aursPZUtsXDnxCs787af09WPRBLqYrf/lwoYQ==}
+
+  oauth@0.10.2:
+    resolution: {integrity: sha512-JtFnB+8nxDEXgNyniwz573xxbKSOu3R8D40xQKqcjwJ2CDkYqUDI53o6IuzDJBx60Z8VKCm271+t8iFjakrl8Q==}
 
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
@@ -3100,6 +3125,10 @@ snapshots:
   negotiator@1.1.0:
     dependencies:
       content-type: 2.1.0
+
+  oauth-1.0a@2.2.6: {}
+
+  oauth@0.10.2: {}
 
   object-inspect@1.13.4: {}
 

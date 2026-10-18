@@ -1,0 +1,69 @@
+{
+  "name": "@portable/oauth1",
+  "description": "Sign OAuth 1.0a requests (RFC 5849) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1 or PLAINTEXT, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@noble/hashes": "^2.4.0",
+    "@types/node": "^26.6.5",
+    "oauth": "^0.10.2",
+    "oauth-1.0a": "^2.2.6"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "dependencies": {
+    "@portable/base64": "workspace:*"
+  },
+  "peerDependencies": {
+    "@noble/hashes": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@noble/hashes": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/oauth1"
+  },
+  "keywords": [
+    "oauth",
+    "oauth1",
+    "oauth-1.0a",
+    "rfc5849",
+    "hmac-sha1",
+    "rsa-sha1",
+    "authorization",
+    "signature",
+    "fetch"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./core": {
+      "src": "./src/core.ts",
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
