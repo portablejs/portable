@@ -7,6 +7,59 @@ export async function fixture(name: string): Promise<Uint8Array> {
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
+/** Fixture file names, such as `starfish.jpg`. */
+export const fixtures: readonly string[] = Object.keys(files)
+  .map((path) => path.slice('./fixtures/'.length))
+  .sort()
+
+export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
+  const chunks: Uint8Array[] = []
+  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  return chunks
+}
+
+/** Splits `bytes` into chunks of 1 to `max` bytes, sized by a generator seeded with `seed`. */
+export function randomChunks(bytes: Uint8Array, seed: number, max = 4096): Uint8Array[] {
+  let state = seed
+  const random = () => {
+    state = (state * 1103515245 + 12345) % 2 ** 31
+    return state / 2 ** 31
+  }
+  const chunks: Uint8Array[] = []
+  for (let i = 0; i < bytes.length;) {
+    const size = 1 + Math.floor(random() * max)
+    chunks.push(bytes.subarray(i, i + size))
+    i += size
+  }
+  return chunks
+}
+
+/** A stream of `chunks` that records how many bytes were pulled and whether it was cancelled. */
+export function tracked(chunks: readonly Uint8Array[]): {
+  stream: ReadableStream<Uint8Array>
+  read: () => number
+  cancelled: () => boolean
+} {
+  let i = 0
+  let read = 0
+  let cancelled = false
+  const stream = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        const chunk = chunks[i++]
+        if (!chunk) return controller.close()
+        read += chunk.length
+        controller.enqueue(chunk)
+      },
+      cancel() {
+        cancelled = true
+      },
+    },
+    { highWaterMark: 0 },
+  )
+  return { stream, read: () => read, cancelled: () => cancelled }
+}
+
 export const ascii = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 export function concat(...parts: readonly (Uint8Array | readonly number[])[]): Uint8Array {

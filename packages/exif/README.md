@@ -61,6 +61,32 @@ Dates stay strings, as stored (`'2019:10:20 18:34:30'`), because EXIF dates have
 
 A broken IFD doesn't throw. Tags with an unknown type, or whose values point outside the data, are skipped, and the other tags are returned. A file whose EXIF data starts past the end of the input returns empty IFDs.
 
+## `Exif.parseStream(stream, options?)`
+
+Reads a `ReadableStream<Uint8Array>`, such as a `fetch` body or `File.stream()`, until it has the metadata, then cancels the stream. Returns a promise of the same object `parse` returns for the whole file, so you get the EXIF of a large photo without downloading all of it.
+
+```ts
+const response = await fetch('https://example.com/photo.jpg')
+const exif = await Exif.parseStream(response.body!)
+```
+
+How far it reads depends on where the format stores the metadata:
+
+| Format | Stops after | Bytes held in memory |
+| --- | --- | --- |
+| JPEG | The Exif APP1 segment and the frame header, or the first start-of-scan marker if there is no EXIF. That is the first 30 KB of the 329 KB `starfish.jpg` fixture. | The APP1 segment, at most 64 KB. |
+| PNG | The `eXIf` chunk. It may come after the image data, so a PNG without EXIF is read to `IEND`. | The `eXIf` chunk. Other chunks are skipped. |
+| WebP | The `EXIF` chunk and the size. The `EXIF` chunk usually follows the image data, so most WebP files are read to the end. | The `EXIF` chunk. Other chunks are skipped. |
+| HEIC, AVIF | The `Exif` item that the `meta` box locates. | Everything before the end of `meta`, then the `Exif` item. A file with `mdat` before `meta` holds its whole `mdat`. |
+| TIFF, raw EXIF | The last IFD or thumbnail byte that the IFDs reference. Many TIFF writers put IFD0 after the image strips, so expect to read the whole file. | Everything read. |
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `maxBytes` | `16777216` (16 MiB) | Most bytes of the stream to hold in memory at once. Skipped bytes don't count. |
+| `signal` | none | An `AbortSignal`. Aborting rejects with `signal.reason` and cancels the stream. |
+
+Besides the errors `parse` throws, `parseStream` throws `Exif.MaxBytesError` when it would need to hold more than `maxBytes`. Its `maxBytes` property holds the limit. An error from the stream itself is passed on.
+
 ## `Exif.parseDate(value, options?)`
 
 Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 8601 form `'2004-09-04T23:39:06-08:00'` into a `Date`. Returns `undefined` for anything else, including the `'0000:00:00 00:00:00'` cameras write when their clock is unset.

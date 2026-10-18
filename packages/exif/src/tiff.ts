@@ -23,6 +23,8 @@ export type Tiff = {
   ifds: Ifds
   thumbnailOffset: number | undefined
   thumbnailLength: number | undefined
+  /** End of the bytes, relative to the input, that the IFDs and thumbnail reference. */
+  end: number
 }
 
 const typeSizes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4]
@@ -39,6 +41,7 @@ type Reader = {
   le: boolean
   next: number
   pointers: Map<number, number>
+  end: number
 }
 
 export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
@@ -54,6 +57,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     le: order === 0x4949,
     next: 0,
     pointers: new Map(),
+    end: 8,
   }
   if (r.view.getUint16(2, r.le) !== 42) throw new InvalidInputError('magic number is not 42')
   const ifd0Offset = r.view.getUint32(4, r.le)
@@ -71,10 +75,12 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     typeof thumbnailLength === 'number' &&
     thumbnailOffset > 0 &&
     thumbnailLength > 0
+  if (hasThumbnail) fits(r, thumbnailOffset + thumbnailLength)
   return {
     ifds: { ifd0, ifd1, exif, gps, interop },
     thumbnailOffset: hasThumbnail ? start + thumbnailOffset : undefined,
     thumbnailLength: hasThumbnail ? thumbnailLength : undefined,
+    end: start + r.end,
   }
 }
 
@@ -86,12 +92,12 @@ function readPointed(r: Reader, pointer: number, names: Names): Tags {
 }
 
 function readIfd(r: Reader, offset: number, names: Names): Tags {
-  const { view, le, length } = r
+  const { view, le } = r
   const tags: Record<string, TagValue> = {}
   r.next = 0
-  if (offset + 2 > length) return tags
+  if (!fits(r, offset + 2)) return tags
   const entriesEnd = offset + 2 + view.getUint16(offset, le) * 12
-  for (let entry = offset + 2; entry < entriesEnd && entry + 12 <= length; entry += 12) {
+  for (let entry = offset + 2; entry < entriesEnd && fits(r, entry + 12); entry += 12) {
     const tag = view.getUint16(entry, le)
     const type = view.getUint16(entry + 2, le)
     const size = typeSizes[type]
@@ -99,7 +105,7 @@ function readIfd(r: Reader, offset: number, names: Names): Tags {
     const count = view.getUint32(entry + 4, le)
     const byteLength = size * count
     const at = byteLength <= 4 ? entry + 8 : view.getUint32(entry + 8, le)
-    if (at + byteLength > length) continue
+    if (!fits(r, at + byteLength)) continue
     if (tag === exifPointer || tag === gpsPointer || tag === interopPointer) {
       if (count === 1 && size === 4 && !r.pointers.has(tag))
         r.pointers.set(tag, view.getUint32(at, le))
@@ -109,8 +115,13 @@ function readIfd(r: Reader, offset: number, names: Names): Tags {
       names[tag] ?? tagNames[tag] ?? `0x${tag.toString(16).toUpperCase().padStart(4, '0')}`
     tags[name] ??= readValue(r, type, count, at)
   }
-  if (entriesEnd + 4 <= length) r.next = view.getUint32(entriesEnd, le)
+  if (fits(r, entriesEnd + 4)) r.next = view.getUint32(entriesEnd, le)
   return tags
+}
+
+function fits(r: Reader, end: number): boolean {
+  if (end > r.end) r.end = end
+  return end <= r.length
 }
 
 function readValue(r: Reader, type: number, count: number, at: number): TagValue {

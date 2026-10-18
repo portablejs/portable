@@ -21,3 +21,14 @@ export class UnsupportedError extends Error {
     super('Unsupported format: expected JPEG, TIFF, PNG, WebP, HEIF or EXIF data.')
   }
 }
+
+/** Thrown when `parseStream` would need to hold more than `maxBytes` of the stream at once. */
+export class MaxBytesError extends Error {
+  override name = 'Exif.MaxBytesError'
+  /** The limit that was exceeded. */
+  readonly maxBytes: number
+  constructor(maxBytes: number) {
+    super(`Reading the EXIF data needs more than maxBytes (${maxBytes}) in memory.`)
+    this.maxBytes = maxBytes
+  }
+}

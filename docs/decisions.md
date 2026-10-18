@@ -206,3 +206,15 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 - **Options:** `.claude/pstack/` (the first instruction); `.agents/pstack/` (the follow-up).
 - **Chosen:** `.agents/pstack/` holds the copies. `.claude/skills/<name>` and `.agents/skills/<name>` are symlinks, so Claude Code and agents that read `.agents/skills` both find them. AGENTS.md is the guide, and CLAUDE.md imports it with `@AGENTS.md`.
+
+## `Exif.parseStream` limits memory, not bytes read
+
+- **Options:** `maxBytes` as the most bytes read from the stream, as in `ImageSize.parseStream`; `maxBytes` as the most bytes held in memory at once.
+- **Trade-offs:** WebP files usually store the `EXIF` chunk after the image data, and PNG files may store `eXIf` after `IDAT`. A limit on bytes read would fail on those files at any default small enough to matter, even though `parseStream` skips the image data without keeping it. Callers who need to limit the download can pipe the body through `Streams.limitBytes`.
+- **Chosen:** bytes held in memory, with a 16 MiB default. TIFF files and HEIF files with `mdat` before `meta` are held whole, so the limit applies to them.
+
+## `Exif.parseStream` reads the thumbnail only from the EXIF data
+
+- **Options:** keep every byte up to the thumbnail; take `thumbnail.bytes` from the EXIF segment or chunk only.
+- **Trade-offs:** `parse` slices the thumbnail from the whole input, so in a malformed JPEG whose IFD1 points past the APP1 segment it still returns bytes. Keeping everything up to that point would undo the skipping.
+- **Chosen:** the EXIF segment or chunk only. In valid files the thumbnail is inside it, and `parseStream` returns the same result as `parse` on every fixture.

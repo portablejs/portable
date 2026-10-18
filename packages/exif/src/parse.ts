@@ -47,6 +47,11 @@ export function parse(bytes: Uint8Array): Metadata {
   else if (startsWith(bytes, 4, ftyp)) found = fromHeif(bytes)
   else throw new UnsupportedError()
 
+  return toMetadata(found, bytes, 0)
+}
+
+/** Builds the result from `found`. `data` holds the input from `offset` on, for the thumbnail. */
+export function toMetadata(found: Found, data: Uint8Array, offset: number): Metadata {
   const { tiff, size } = found
   const result: Metadata = {
     ...(tiff?.ifds ?? { ifd0: {}, ifd1: {}, exif: {}, gps: {}, interop: {} }),
@@ -60,26 +65,29 @@ export function parse(bytes: Uint8Array): Metadata {
     result.latitude = latitude
     result.longitude = longitude
   }
-  const { thumbnailOffset: offset, thumbnailLength: length } = tiff
-  if (offset !== undefined && length !== undefined) {
-    const end = offset + length
+  const { thumbnailOffset: start, thumbnailLength: length } = tiff
+  if (start !== undefined && length !== undefined) {
+    const end = start + length
     result.thumbnail = {
-      offset,
+      offset: start,
       length,
-      bytes: end <= bytes.length ? bytes.subarray(offset, end) : undefined,
+      bytes:
+        start >= offset && end <= offset + data.length
+          ? data.subarray(start - offset, end - offset)
+          : undefined,
     }
   }
   return result
 }
 
-type Size = { width: number; height: number }
-type Found = { tiff: Tiff | undefined; size: Size | undefined }
+export type Size = { width: number; height: number }
+export type Found = { tiff: Tiff | undefined; size: Size | undefined }
 
-const exifHeader = [0x45, 0x78, 0x69, 0x66, 0, 0]
-const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
-const riff = [0x52, 0x49, 0x46, 0x46]
-const webp = [0x57, 0x45, 0x42, 0x50]
-const ftyp = [0x66, 0x74, 0x79, 0x70]
+export const exifHeader: readonly number[] = [0x45, 0x78, 0x69, 0x66, 0, 0]
+export const pngSignature: readonly number[] = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+export const riff: readonly number[] = [0x52, 0x49, 0x46, 0x46]
+export const webp: readonly number[] = [0x57, 0x45, 0x42, 0x50]
+export const ftyp: readonly number[] = [0x66, 0x74, 0x79, 0x70]
 
 const codes = [
   'IHDR',
@@ -101,17 +109,17 @@ const codes = [
   'ipma',
   'ispe',
 ] as const
-const fourcc = Object.fromEntries(
+export const fourcc = Object.fromEntries(
   codes.map((code) => [code, u32be(new TextEncoder().encode(code), 0)]),
 ) as Record<(typeof codes)[number], number>
 
-function startsWith(bytes: Uint8Array, at: number, prefix: readonly number[]): boolean {
+export function startsWith(bytes: Uint8Array, at: number, prefix: readonly number[]): boolean {
   if (at + prefix.length > bytes.length) return false
   for (let i = 0; i < prefix.length; i++) if (bytes[at + i] !== prefix[i]) return false
   return true
 }
 
-function fromTiff(bytes: Uint8Array, start: number): Found {
+export function fromTiff(bytes: Uint8Array, start: number): Found {
   const tiff = readTiff(bytes, start, bytes.length)
   const { ImageWidth: width, ImageHeight: height } = tiff.ifds.ifd0
   const size =
@@ -125,15 +133,15 @@ function embedded(bytes: Uint8Array, start: number, end: number): Tiff | undefin
   return readTiff(bytes, start, end)
 }
 
-function u16be(bytes: Uint8Array, at: number): number {
+export function u16be(bytes: Uint8Array, at: number): number {
   return (bytes[at]! << 8) | bytes[at + 1]!
 }
 
-function u32be(bytes: Uint8Array, at: number): number {
+export function u32be(bytes: Uint8Array, at: number): number {
   return u16be(bytes, at) * 0x10000 + u16be(bytes, at + 2)
 }
 
-function u24le(bytes: Uint8Array, at: number): number {
+export function u24le(bytes: Uint8Array, at: number): number {
   return bytes[at]! | (bytes[at + 1]! << 8) | (bytes[at + 2]! << 16)
 }
 
@@ -177,7 +185,7 @@ function fromPng(bytes: Uint8Array): Found {
     const length = u32be(bytes, i)
     const type = u32be(bytes, i + 4)
     const start = i + 8
-    if (type === fourcc.IHDR && start + 8 <= bytes.length)
+    if (type === fourcc.IHDR && !size && start + 8 <= bytes.length)
       size = { width: u32be(bytes, start), height: u32be(bytes, start + 4) }
     else if (type === fourcc.eXIf && !tiff) {
       const tiffStart = startsWith(bytes, start, exifHeader) ? start + 6 : start
@@ -254,7 +262,11 @@ function* boxes(bytes: Uint8Array, start: number, end: number): Generator<Box> {
   }
 }
 
-function readMeta(bytes: Uint8Array, start: number, end: number) {
+export function readMeta(
+  bytes: Uint8Array,
+  start: number,
+  end: number,
+): { size: Size | undefined; exif: { start: number; end: number } | undefined } {
   let primary = 0
   let exifItem = -1
   let idat = 0
