@@ -1,6 +1,6 @@
 import { InvalidInputError } from './errors.js'
-import { decodeCharset, encodeUtf8Scratch, hexDigit, toText } from './internal/text.js'
-import { decodeWords } from './words.js'
+import { decodeCharset, hexDigit, toText } from './internal/text.js'
+import { decodeWords, encodeUtf8Scratch } from './words.js'
 
 /** A header value with parameters, such as `Content-Type` or `Content-Disposition`. */
 export type Value = {

@@ -1,5 +1,5 @@
 import * as Base64 from '@portable/base64'
-import { checkLength, decodeCharset, encodeUtf8Scratch, hexDigit, toText } from './internal/text.js'
+import { checkLength, decodeCharset, hexDigit, toText } from './internal/text.js'
 
 /**
  * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
@@ -14,6 +14,16 @@ import { checkLength, decodeCharset, encodeUtf8Scratch, hexDigit, toText } from 
  * const charset = { name: 'ISO-2022-JP', encode: (text: string) => Charset.encode(text, iso2022Jp) }
  * ```
  */
+const utf8Encoder = new TextEncoder()
+let scratch = new Uint8Array(1024)
+
+/** Returns a view of a buffer that the next call overwrites. */
+export function encodeUtf8Scratch(text: string): Uint8Array {
+  if (text.length > 16384) return utf8Encoder.encode(text)
+  if (text.length * 3 > scratch.length) scratch = new Uint8Array(text.length * 3)
+  return scratch.subarray(0, utf8Encoder.encodeInto(text, scratch).written)
+}
+
 export type CharsetEncoder = {
   /** The name written into each encoded word. */
   readonly name: string
@@ -55,30 +65,31 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
   if (encoding !== 'Q' && encoding !== 'B')
     throw new RangeError(`Unknown encoding ${String(encoding)}.`)
   if (maxLength !== false) checkLength('maxLength', maxLength)
-  const name = charset?.name ?? 'UTF-8'
-  const prefix = `=?${name}?${encoding}?`
+  const prefix = charset
+    ? `=?${charset.name}?${encoding}?`
+    : encoding === 'Q'
+      ? '=?UTF-8?Q?'
+      : '=?UTF-8?B?'
   const budget =
     maxLength === false
       ? Infinity
       : Math.max(maxLength - prefix.length - 2, encoding === 'Q' ? 12 : 4)
+  const text = typeof input === 'string' ? input : toText(input)
+  const bytes = charset ? undefined : encodeUtf8Scratch(text)
+  if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget)
+    return prefix + encodeB(bytes) + '?='
   const fits =
     encoding === 'Q'
       ? (length: number) => length <= budget
       : (length: number) => Math.ceil(length / 3) * 4 <= budget
-  const text = toText(input)
-  if (charset)
-    return splitCharset(text, charset, encoding, fits)
-      .map((bytes) => prefix + (encoding === 'Q' ? encodeQ(bytes) : Base64.encode(bytes)) + '?=')
+  if (!bytes)
+    return splitCharset(text, charset!, encoding, fits)
+      .map((chunk) => prefix + (encoding === 'Q' ? encodeQ(chunk) : encodeB(chunk)) + '?=')
       .join(' ')
-  const bytes = encodeUtf8Scratch(text)
-  if (encoding === 'B' && fits(bytes.length)) return prefix + Base64.encode(bytes) + '?='
   let result = ''
   for (const chunk of splitUtf8(bytes, encoding, fits))
     result +=
-      (result ? ' ' : '') +
-      prefix +
-      (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) +
-      '?='
+      (result ? ' ' : '') + prefix + (encoding === 'Q' ? encodeQ(chunk) : encodeB(chunk)) + '?='
   return result
 }
 
@@ -222,6 +233,12 @@ function splitCharset(
   chunks.push(current)
   return chunks
 }
+
+/** Spreading bytes into arguments hits the engine's argument limit, so long input skips `btoa`. */
+const encodeB = (bytes: Uint8Array): string =>
+  bytes.length > 4096
+    ? Base64.encode(bytes)
+    : btoa(String.fromCharCode.apply(null, bytes as unknown as number[]))
 
 /** RFC 2047 section 5 (3): the characters a Q word may keep as is anywhere, even in a phrase. */
 const qSafe = new Uint8Array(128)

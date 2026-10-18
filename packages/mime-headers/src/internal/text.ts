@@ -1,18 +1,9 @@
 const utf8Decoder = new TextDecoder()
-const utf8Encoder = new TextEncoder()
 
 export function toText(input: string | Uint8Array): string {
   if (typeof input === 'string') return input
   if (input instanceof Uint8Array) return utf8Decoder.decode(input)
   throw new TypeError('Expected a string or a Uint8Array.')
-}
-
-let scratch = new Uint8Array(1024)
-
-export function encodeUtf8Scratch(text: string): Uint8Array {
-  if (text.length > 16384) return utf8Encoder.encode(text)
-  if (text.length * 3 > scratch.length) scratch = new Uint8Array(text.length * 3)
-  return scratch.subarray(0, utf8Encoder.encodeInto(text, scratch).written)
 }
 
 const decoders = new Map<string, TextDecoder>()

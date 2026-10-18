@@ -3,7 +3,13 @@ import emailAddresses from 'email-addresses'
 import libmime from 'libmime'
 import addressparser from 'nodemailer/lib/addressparser'
 import { describe, expect, test } from 'vite-plus/test'
-import {
+import * as Exports from '../index.js'
+import type { Mailbox, Value } from '../index.js'
+import { pick, random } from './utils.js'
+
+// Vitest's module runner reads each imported binding through a getter on every call, which the
+// upstream libraries, loaded by Node, don't pay. Copying the exports once measures the functions.
+const {
   decodeWords,
   encodeWord,
   encodeWords,
@@ -13,9 +19,7 @@ import {
   parseAddresses,
   parseHeaders,
   parseValue,
-  type Mailbox,
-} from '../index.js'
-import { pick, random } from './utils.js'
+} = { ...Exports }
 
 const next = random(42)
 const vocabulary = [
@@ -42,7 +46,7 @@ const bWords = subjects.map((subject) => encodeWord(subject, { encoding: 'B', ma
 const bPayloads = bWords.map((word) => word.slice('=?UTF-8?B?'.length, -2))
 const longHeader = 'Subject: ' + sentence(2000).replace(/[^\x20-\x7e]/g, 'x')
 
-const values = Array.from({ length: 200 }, (_, i) => ({
+const values = Array.from({ length: 200 }, (_, i): Value => ({
   value: i % 2 ? 'attachment' : 'text/plain',
   params:
     i % 2
