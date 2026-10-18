@@ -2,6 +2,15 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/charset` API
+
+- **Charset objects imported from subpaths, plus `load(label)` for labels known only at runtime.** A registry keyed by string would pull every table into every bundle. `encode` from the root is 1.0 kB gzipped, one single-byte charset adds 0.6 kB, and the largest family (gbk or big5) is 18 kB.
+- **WHATWG labels win over iconv-lite's.** `latin1`, `ascii` and `iso-8859-1` encode as windows-1252, and `gb2312` as GBK, because that is how browsers and `TextDecoder` read them back.
+- **An unmappable character becomes `'?'` by default,** as in iconv-lite, which can't inject markup into CSV or email. `'html'`, `'error'` and a function are the other options.
+- **No `decode`;** `TextDecoder` covers it. No base64, hex or binary codecs either; those are other packages.
+- **Tables are packed varints,** so gb18030 is 17 kB gzipped against iconv-lite's 32 kB. Each charset costs 128 kB of memory after first use.
+- **Phase 2, not built yet:** DOS code pages (cp437, cp850), UTF-7, UTF-32 and CESU-8.
+
 ## `@portable/base64` API
 
 - **Three decode modes.** `'loose'` (the default) and `'strict'` match the platform's `fromBase64` `lastChunkHandling`. `'mime'` follows RFC 2045 and libbase64: it skips unknown characters, reads both alphabets and never throws. Making libbase64's lenient behavior the default was rejected because silently dropped characters hide corrupt data (base64-js #81).

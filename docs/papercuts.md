@@ -4,6 +4,9 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| Node's ICU `TextDecoder` decodes Big5, EUC-KR, ISO-2022-JP and Shift_JIS differently from the WHATWG standard. | `charset`'s round-trip tests for those run only in Chromium. Workers and Bun are unverified. | Run them in Workers once that project exists. |
+| The Write tool turns `\uXXXX` escapes into literal characters. | Fix the file with a script afterwards. | None. |
+| Agents running at the same time share one scratchpad directory. | Use a subdirectory per package. | Put that in the brief. |
 | `vp check --fix` (oxfmt) rewrites escapes such as `'\uFEFF'` and `'\u2028'` into the literal characters, and `no-irregular-whitespace` then rejects them. | `String.fromCharCode(0xfeff)`. | Report to oxfmt. |
 | Vitest wraps each export in a getter when running source, so calls between modules cost more in benchmarks. dns-packet decode measures 1.8× slower than on the build, and exif and image-size print warnings. | dns-packet's decode benchmark allows 50%. | Benchmark the built `dist`, or find the Vitest setting that skips the getters. To be done with the move to `test/` packages. |
 | The Write tool's copy of a file goes stale after the formatter rewrites it. | Read the file again before writing. | None. |
@@ -29,6 +32,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 ## Fixed
 
+- Build scripts under `packages/*/scripts/` needed an `oxlint-disable` comment to import `node:*`. `vite.config.ts` now has an override for them.
 - Tests couldn't import another workspace package ("Failed to resolve entry for package"), because Vite didn't use the `src` export condition and fell back to an unbuilt `dist/`. `vite.config.ts` now adds `src` to `resolve.conditions` for browsers and Node.
 - `pnpm bench` printed no numbers. It now runs with `--reporter=verbose`.
 - Binary fixtures with extensions Vite doesn't know (`.tif`, `.heic`, `.pfm`) failed to import with `?inline`, and Node's `fetch` rejects `file:` URLs. Both packages now use `import.meta.glob` with `?url&inline`, and AGENTS.md documents it.

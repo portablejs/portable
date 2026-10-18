@@ -81,6 +81,14 @@ export default defineConfig({
         files: ['**/*.oracle.test.ts', '**/*.bench.ts', 'vite.config.ts'],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
+      {
+        files: ['packages/*/scripts/**'],
+        rules: {
+          'no-restricted-imports': 'off',
+          'no-restricted-globals': 'off',
+          'no-console': 'off',
+        },
+      },
     ],
   },
   // `src` resolves workspace packages to their TypeScript source, so tests need no build.

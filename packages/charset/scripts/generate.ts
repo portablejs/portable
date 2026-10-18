@@ -1,4 +1,3 @@
-/* oxlint-disable no-restricted-imports, no-restricted-globals, no-console */
 /// <reference types="node" />
 // Builds src/tables/*.ts from the WHATWG Encoding Standard's indexes and labels, plus the
 // charset aliases iconv-lite accepts. Run with `pnpm generate` in packages/charset.
