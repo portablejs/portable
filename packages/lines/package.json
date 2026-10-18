@@ -1,0 +1,50 @@
+{
+  "name": "@portable/lines",
+  "description": "Split byte or text streams into lines, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/split2": "^4.2.3",
+    "split2": "catalog:"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/lines"
+  },
+  "keywords": [
+    "lines",
+    "split",
+    "split2",
+    "byline",
+    "readline",
+    "streams",
+    "web-streams"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
