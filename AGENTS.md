@@ -26,6 +26,19 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 - A package exports a small API. Keep helpers private unless a caller needs them.
 - Match the replaced library's behavior, not its API. Where a better web-native API helps the caller (`Uint8Array | string` input, return values instead of callbacks, no legacy flags), use it, and record the difference in `PARITY.md` and the README's migration notes.
 
+## API conventions
+
+Every package follows the same shape, so a caller who knows one knows the rest.
+
+- Callers import a package as a namespace: `import * as Base64 from '@portable/base64'`. Exports therefore use short names without the package name: `Base64.encode`, not `encodeBase64`. Named exports only.
+- Use the same verbs everywhere. `encode` and `decode` convert between a value and its bytes or text. `parse` reads a value out of bytes in one direction only, as image-size and exif do. A stream input variant adds `Stream` (`parseStream(stream)`), and a sync variant of an async function adds `Sync`.
+- Streaming transforms are `TransformStream` subclasses named for what they do, after `TextDecoderStream`: `Base64.EncoderStream`, `Base64.DecoderStream`, `LineStream`.
+- Bytes are `Uint8Array` in and out, never `ArrayBuffer` or `Buffer`. Functions that take text also take its bytes (`string | Uint8Array`). Text comes out as `string`.
+- Sync unless the platform API it needs is async, such as `crypto.subtle` or `CompressionStream`.
+- One optional `options` object last. No positional booleans or overloads keyed on argument count.
+- Errors are thrown, never returned. Reuse these names where they fit: `TruncatedError` (input ended early), `InvalidInputError` (malformed input), `UnsupportedError` (valid input the package doesn't handle). Add another error class only when a caller needs to tell it apart.
+- Results are plain objects and arrays with documented types, not class instances.
+
 ## Code style
 
 These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
