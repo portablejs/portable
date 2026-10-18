@@ -24,7 +24,6 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 - Streaming transforms are `TransformStream` subclasses, used as `stream.pipeThrough(new LineStream())`.
 - `package.json` `exports` point at `./src/*.ts`. zile rewrites them to `dist/` when building and publishing. Fields after `"[!start-pkg]"` are the published package.
 - A package exports a small API. Keep helpers private unless a caller needs them.
-- Match the replaced library's behavior, not its API. Where a better web-native API helps the caller (`Uint8Array | string` input, return values instead of callbacks, no legacy flags), use it, and record the difference in `PARITY.md` and the README's migration notes.
 
 ## API conventions
 
@@ -53,7 +52,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 ## Tests
 
 - Tests live in `src/_test/`. `*.conformance.ts` runs in Node and in browsers, so put tests there unless they need one runtime. `*.oracle.test.ts` runs only in Node and compares output with the library being replaced. `*.bench.ts` holds benchmarks.
-- When a package replaces a library, port that library's whole test suite and record each upstream test in `src/_test/PARITY.md`, either with the test that covers it or the reason it was skipped.
+- When a package replaces a library, design the package fresh and use that library's test suite as the list of cases to cover. `src/_test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply.
 - Assert what a caller can observe. Read the `principle-test-behavior-not-implementation` skill before writing tests.
 
 ## Writing
