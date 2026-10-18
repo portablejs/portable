@@ -42,8 +42,8 @@ let textNext = 0
  * Returns a random integer from `min` to `max`, both included. `min` and `max` must be safe integers,
  * and the range can hold up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`.
  *
- * Every integer in the range is equally likely: values that would favor part of the range are
- * rejected and drawn again, instead of being reduced with a modulo.
+ * Every integer in the range is equally likely. A random value at or above the largest multiple of
+ * the range size is drawn again instead of being reduced with a modulo.
  *
  * @example
  * ```ts

@@ -392,7 +392,7 @@ describe('seeded', () => {
     expect(random.int(3, 3)).toBe(3)
   })
 
-  test('produces seedrandom-style ids without collisions', () => {
+  test('returns 100,000 ids without a collision', () => {
     const random = Random.seeded(99)
     const ids = new Set(Array.from({ length: 100000 }, () => random.string(21)))
     expect(ids.size).toBe(100000)

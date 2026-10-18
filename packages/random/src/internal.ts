@@ -1,7 +1,5 @@
-/** Returns a uniformly distributed unsigned 32-bit integer. */
 export type Next = () => number
 
-/** Fills `bytes` with uniformly distributed bytes. */
 export type Fill = (bytes: Uint8Array<ArrayBuffer>) => void
 
 export const urlAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
@@ -43,7 +41,6 @@ export function float(next: Next): number {
 
 export type Alphabet = {
   readonly characters: readonly string[]
-  /** For an ASCII alphabet of up to 256 characters, maps a random byte to a character code, or to 255 to draw again. */
   readonly table: Uint8Array | undefined
 }
 
