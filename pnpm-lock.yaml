@@ -308,7 +308,11 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
 
-  packages/image-size: {}
+  packages/image-size:
+    dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
 
   packages/image-size/test:
     devDependencies:

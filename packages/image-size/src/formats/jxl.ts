@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import { ascii, findBox, NeedMore, startsWith, u32, u64 } from '../bytes.js'
 import { InvalidInputError } from '../errors.js'
 import type { Size } from '../parse.js'
@@ -62,17 +63,6 @@ function codestream(input: Uint8Array): Uint8Array[] {
   return parts
 }
 
-function concat(parts: readonly Uint8Array[]): Uint8Array {
-  if (parts.length === 1) return parts[0]!
-  const bytes = new Uint8Array(parts.reduce((total, part) => total + part.length, 0))
-  let position = 0
-  for (const part of parts) {
-    bytes.set(part, position)
-    position += part.length
-  }
-  return bytes
-}
-
 export const jxl: Format = {
   validate(input) {
     if (!startsWith(input, 4, 'JXL ')) return false
@@ -82,6 +72,9 @@ export const jxl: Format = {
   calculate(input, final) {
     const parts = codestream(input)
     if (parts.length === 0 && final) throw new InvalidInputError('Invalid JXL')
-    return { ...sizeHeader(concat(parts), input.length + 1), type: 'jxl' }
+    return {
+      ...sizeHeader(parts.length === 1 ? parts[0]! : Bytes.concat(parts), input.length + 1),
+      type: 'jxl',
+    }
   },
 }
