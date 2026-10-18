@@ -2,7 +2,7 @@ import { Readable } from 'node:stream'
 import { toArray, toText } from '@portable/streams'
 import ndjson from 'ndjson'
 import { expect, test } from 'vite-plus/test'
-import { DecoderStream, EncoderStream } from '../index.js'
+import { DecoderStream, EncoderStream } from '@portable/ndjson'
 import { chunked, encodeUtf8, rows, streamOf } from './utils.js'
 
 const values = rows(20_000)

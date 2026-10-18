@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import * as Webhooks from '../index.js'
+import * as Webhooks from '@portable/webhooks'
 import { encode, reasonOf, request } from './utils.js'
 
 const payload = JSON.stringify({ id: 'evt_test_webhook', object: 'event' }, null, 2)

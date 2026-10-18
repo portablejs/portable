@@ -1,0 +1,12 @@
+{
+  "name": "@portable/ndjson-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/ndjson": "workspace:*",
+    "@portable/streams": "workspace:*",
+    "@types/ndjson": "^2.0.4",
+    "@types/node": "^26.6.5",
+    "ndjson": "^2.0.0"
+  }
+}

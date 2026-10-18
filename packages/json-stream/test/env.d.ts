@@ -1,8 +1,3 @@
-declare module '*?raw' {
-  const text: string
-  export default text
-}
-
 // @types/jsonstream declares the lowercase module name, which doesn't resolve to the JSONStream package.
 declare module 'JSONStream' {
   const JSONStream: {

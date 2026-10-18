@@ -6,8 +6,8 @@ import { verifySlackRequest } from '@slack/bolt/dist/receivers/verify-request.js
 import { Webhook as StandardWebhook } from 'standardwebhooks'
 import Stripe from 'stripe'
 import { expect, test } from 'vite-plus/test'
-import * as Core from '../core.js'
-import * as Webhooks from '../index.js'
+import * as Core from '@portable/webhooks/core'
+import * as Webhooks from '@portable/webhooks'
 import { octokitWeb } from './octokit-web.js'
 
 // The libraries that hash with node:crypto's synchronous C++ HMAC are 3 to 8 times faster on Node

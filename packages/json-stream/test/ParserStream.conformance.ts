@@ -1,6 +1,6 @@
 import { fromIterable, toArray } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { encode, InvalidInputError, ParserStream, TruncatedError } from '../index.js'
+import { encode, InvalidInputError, ParserStream, TruncatedError } from '@portable/json-stream'
 import allNpm from './fixtures/all_npm.json?raw'
 import couchSample from './fixtures/couch_sample.json?raw'
 import depth from './fixtures/depth.json?raw'

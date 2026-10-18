@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import * as Webhooks from '../index.js'
+import * as Webhooks from '@portable/webhooks'
 import { reasonOf, request } from './utils.js'
 
 const scheme = 'slack'

@@ -1,5 +1,5 @@
 import { fromIterable, toArray, toText } from '@portable/streams'
-import { encode, ParserStream } from '../index.js'
+import { encode, ParserStream } from '@portable/json-stream'
 
 /** U+2028, which the formatter would turn into a literal line break inside a string. */
 export const lineSeparator: string = String.fromCharCode(0x2028)

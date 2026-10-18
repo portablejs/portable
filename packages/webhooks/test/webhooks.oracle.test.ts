@@ -6,7 +6,7 @@ import { Webhook as StandardWebhook } from 'standardwebhooks'
 import Stripe from 'stripe'
 import { Webhook as SvixWebhook } from 'svix'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Webhooks from '../index.js'
+import * as Webhooks from '@portable/webhooks'
 import { octokitWeb } from './octokit-web.js'
 import { reasonOf } from './utils.js'
 

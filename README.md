@@ -26,7 +26,7 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 | L2 | `@portable/mail` | nodemailer's MailComposer | Planned |
 | L2 | `@portable/dns` | `node:dns` over DNS-over-HTTPS | In progress |
 | L2 | `@portable/dkim` | DKIM in mailauth and nodemailer | Planned |
-| L2 | `@portable/webhooks` | per-provider webhook SDKs | In progress |
+| L2 | [`@portable/webhooks`](packages/webhooks) | standardwebhooks, svix, Stripe and octokit verifiers | Built |
 | L2 | `@portable/oauth1` | oauth-1.0a | In progress |
 | L3 | `@portable/spf` | mailauth's SPF | Planned |
 | L3 | `@portable/dmarc` | mailauth's DMARC | Planned |

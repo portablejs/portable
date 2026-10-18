@@ -1,4 +1,4 @@
-import * as Webhooks from '../index.js'
+import * as Webhooks from '@portable/webhooks'
 
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 

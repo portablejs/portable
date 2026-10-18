@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import * as Webhooks from '../index.js'
+import * as Webhooks from '@portable/webhooks'
 import { encode, reasonOf, request } from './utils.js'
 
 const id = 'msg_p5jXN8AQM9LWM0D4loKWxJek'

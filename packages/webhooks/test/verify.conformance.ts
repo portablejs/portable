@@ -1,8 +1,8 @@
 import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Core from '../core.js'
-import * as Webhooks from '../index.js'
+import * as Core from '@portable/webhooks/core'
+import * as Webhooks from '@portable/webhooks'
 import { encode, reasonOf, request } from './utils.js'
 
 const schemes = ['standard', 'svix', 'stripe', 'github', 'slack'] as const

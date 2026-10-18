@@ -2,6 +2,15 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/webhooks` API
+
+- **One `verify(input, { scheme, secret })` with `scheme: 'standard' | 'svix' | 'stripe' | 'github' | 'slack'`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers.
+- **The root default is WebCrypto, not `@noble/hashes`.** noble is sync and 1.7× faster on Node, but WebCrypto needs no dependency and is native on Workers, Deno and Bun, and reading a body is async anyway. `/core` takes any sync or async `hmac`.
+- **`verify` returns `{ body, id, timestamp }` as text, not parsed JSON,** because Slack commands and GitHub form deliveries aren't JSON, and the `id` lets callers drop replays.
+- **One `VerificationError` with a `reason`** (`missing-header`, `malformed-header`, `signature`, `timestamp`) instead of the shared error names, because every failure maps to the same 4xx. Mistakes in the call throw `TypeError` or `RangeError`. The signature is checked first, so `timestamp` always means a genuine but stale message.
+- **The tolerance applies in both directions;** Stripe and Slack accept any future timestamp. No SHA-1 for GitHub, which always sends SHA-256.
+- **Benchmarks assert only against WebCrypto or pure-JS implementations.** Libraries on `node:crypto` are 3 to 8× faster on Node than any web-standard HMAC, so they are listed for reference.
+
 ## Tests are a separate workspace package in `packages/<name>/test/`
 
 - **Options:** `src/_test/` inside each package (the first layout); a sibling `test/` directory with its own `package.json` (the owner's suggestion).
@@ -10,7 +19,7 @@ Calls made without the owner's input, with the options considered and the reason
 
 ## `@portable/json-stream` API
 
-- **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions; `NdjsonDecoderStream` and `NdjsonEncoderStream` handle NDJSON; `encode(value)` returns a `ReadableStream<string>`.** The API review may rename these; `encode` returning a stream differs from other packages' `encode`.
+- **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encode(value)` returns a `ReadableStream<string>`.** NDJSON moved to its own package, `@portable/ndjson`, with `Ndjson.DecoderStream` and `Ndjson.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs.
 - **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **Matched values are built with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. A syntax error inside a match is reported when that value ends, not at the bad character.

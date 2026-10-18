@@ -1,6 +1,6 @@
 import { fromIterable } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { encode } from '../index.js'
+import { encode } from '@portable/json-stream'
 import { deferred, encodeText, lineSeparator, streamOf } from './utils.js'
 
 async function readRest(reader: ReadableStreamDefaultReader<string>): Promise<string> {

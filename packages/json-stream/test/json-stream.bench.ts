@@ -3,7 +3,7 @@ import { toArray, toText } from '@portable/streams'
 import { JsonStreamStringify } from 'json-stream-stringify'
 import JSONStream from 'JSONStream'
 import { expect, test } from 'vite-plus/test'
-import { encode, ParserStream } from '../index.js'
+import { encode, ParserStream } from '@portable/json-stream'
 import allNpm from './fixtures/all_npm.json?raw'
 import { chunked, encodeUtf8, streamOf } from './utils.js'
 

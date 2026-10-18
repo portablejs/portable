@@ -1,6 +1,6 @@
 import { fromIterable, toArray, toText } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { InvalidInputError, DecoderStream, EncoderStream } from '../index.js'
+import { InvalidInputError, DecoderStream, EncoderStream } from '@portable/ndjson'
 import data from './fixtures/data.ndjson?raw'
 import { chunked, decode, encode, encodeUtf8, lineSeparator } from './utils.js'
 
