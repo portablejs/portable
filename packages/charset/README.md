@@ -4,16 +4,6 @@ Encodes text into legacy charsets such as Shift_JIS, GBK, Big5 and windows-1251,
 
 Replaces the encoding half of [iconv-lite](https://www.npmjs.com/package/iconv-lite). For decoding, use `TextDecoder`, which already supports every charset here.
 
-## Why use this over iconv-lite
-
-iconv-lite looks charsets up by name in one registry, so a bundle includes every table. Here each charset family is its own entry point, decoding is left to `TextDecoder`, and the package has no dependencies.
-
-- `encode` from the root is 1.0 kB gzipped, and one single-byte charset adds 0.6 kB. The gb18030 table is 17 kB gzipped, against 32 kB in iconv-lite.
-- Encoding 230 kB of Japanese text to Shift_JIS was about 2× faster than iconv-lite, and 380 kB of Cyrillic text to windows-1251 ran at the same speed. UTF-8 is slightly slower than `TextEncoder`, so call `TextEncoder` when you only need UTF-8.
-- The output follows the WHATWG tables, so browsers decode it back to the same text. iconv-lite writes U+FFFD as a byte that several single-byte charsets leave undefined, writes four-byte sequences in GBK that GBK decoders reject, and writes lone surrogates raw in UTF-16.
-- `EncoderStream` encodes a surrogate pair split across chunks as one character (iconv-lite #282), and a prototype key such as `constructor` is not a charset label (iconv-lite #328).
-- ISO-2022-JP can be encoded. iconv-lite doesn't support it.
-
 ```sh
 npm install @portable/charset
 ```
@@ -74,6 +64,16 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 `'?'` is the default because it is what iconv-lite writes, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 
 Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
+
+## Why use this over iconv-lite
+
+iconv-lite looks charsets up by name in one registry, so a bundle includes every table. Here each charset family is its own entry point, decoding is left to `TextDecoder`, and the package has no dependencies.
+
+- `encode` from the root is 1.0 kB gzipped, and one single-byte charset adds 0.6 kB. The gb18030 table is 17 kB gzipped, against 32 kB in iconv-lite.
+- Encoding 230 kB of Japanese text to Shift_JIS was about 2× faster than iconv-lite, and 380 kB of Cyrillic text to windows-1251 ran at the same speed. UTF-8 is slightly slower than `TextEncoder`, so call `TextEncoder` when you only need UTF-8.
+- The output follows the WHATWG tables, so browsers decode it back to the same text. iconv-lite writes U+FFFD as a byte that several single-byte charsets leave undefined, writes four-byte sequences in GBK that GBK decoders reject, and writes lone surrogates raw in UTF-16.
+- `EncoderStream` encodes a surrogate pair split across chunks as one character (iconv-lite #282), and a prototype key such as `constructor` is not a charset label (iconv-lite #328).
+- ISO-2022-JP can be encoded. iconv-lite doesn't support it.
 
 ## Migrating from iconv-lite
 

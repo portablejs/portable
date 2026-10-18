@@ -4,16 +4,6 @@ Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files. Runs in bro
 
 Replaces [exif-parser](https://www.npmjs.com/package/exif-parser).
 
-## Why use this over exif-parser
-
-exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any runtime above, and has no dependencies.
-
-- Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 10× faster than exifr.
-- Damaged data skips the bad tags and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
-- Tags are grouped by IFD, so the thumbnail's `Orientation` is never reported as the image's (exif-parser #30).
-- A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
-- Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
-
 ```sh
 npm install @portable/exif
 ```
@@ -85,6 +75,16 @@ Without an offset the date is read as UTC, so `getUTCHours()` and the other `get
 const { exif } = Exif.parse(bytes)
 const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) })
 ```
+
+## Why use this over exif-parser
+
+exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies.
+
+- Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 10× faster than exifr.
+- Damaged data skips the bad tags and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
+- Tags are grouped by IFD, so the thumbnail's `Orientation` is never reported as the image's (exif-parser #30).
+- A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
+- Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
 
 ## Migrating
 

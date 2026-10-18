@@ -24,6 +24,7 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 - Streaming transforms are `TransformStream` subclasses, used as `stream.pipeThrough(new LineStream())`.
 - `package.json` `exports` point at `./src/*.ts`. zile rewrites them to `dist/` when building and publishing. Fields after `"[!start-pkg]"` are the published package.
 - A package exports a small API. Keep helpers private unless a caller needs them.
+- A package README has these parts in order: the package name, a description, install and usage snippets, the API and options, why to use it over the library it replaces (fixes, benchmarks), and migration notes.
 
 ## API conventions
 

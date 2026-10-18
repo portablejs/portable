@@ -4,16 +4,6 @@ Quoted-printable encoding and decoding (RFC 2045 section 6.7), as functions and 
 
 Replaces [libqp](https://www.npmjs.com/package/libqp) and [quoted-printable](https://www.npmjs.com/package/quoted-printable).
 
-## Why use this over libqp and quoted-printable
-
-Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams and no dependencies. The bugs below are fixed in libqp 3, but libqp 2.x and quoted-printable still have them.
-
-- Encoding 512 KB of text was about 1.3× faster than libqp 3.0.1 and 3× faster than quoted-printable. Decoding 256 KB of random bytes was about 3× faster than libqp.
-- `encode` escapes a hyphen that would start a line, so no line of the body can read as a MIME boundary. libqp before 2.1.3 could start a line with `--`.
-- `EncoderStream` output doesn't depend on how the input is chunked, and a soft line break never splits a UTF-8 sequence. libqp before 3.0.0 got both wrong, and quoted-printable still splits UTF-8 sequences.
-- `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
-- `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
-
 ```sh
 npm install @portable/quoted-printable
 ```
@@ -49,6 +39,16 @@ Both streams produce the same bytes as the functions, wherever the input is spli
 | --- | --- | --- |
 | `lineLength` | `76` | Longest line, not counting the line break. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
 | `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
+
+## Why use this over libqp and quoted-printable
+
+Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams and no dependencies. The bugs below are fixed in libqp 3, but libqp 2.x and quoted-printable still have them.
+
+- Encoding 512 KB of text was about 1.3× faster than libqp 3.0.1 and 3× faster than quoted-printable. Decoding 256 KB of random bytes was about 3× faster than libqp.
+- `encode` escapes a hyphen that would start a line, so no line of the body can read as a MIME boundary. libqp before 2.1.3 could start a line with `--`.
+- `EncoderStream` output doesn't depend on how the input is chunked, and a soft line break never splits a UTF-8 sequence. libqp before 3.0.0 got both wrong, and quoted-printable still splits UTF-8 sequences.
+- `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
+- `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
 
 ## Migrating
 

@@ -4,16 +4,6 @@ Streams JSON in and out: values selected by JSONPath from one large document, an
 
 Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify) and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use [`@portable/jsonl`](../ndjson).
 
-## Why use this over JSONStream, stream-json and json-stream-stringify
-
-Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies.
-
-- `ParserStream` selected the rows of a 3 MB document about 2.3× faster than JSONStream. It builds only the matched values, so memory use depends on the size of a match. JSONStream keeps the parents of every match and runs out of memory on large files (JSONStream #32, #101).
-- `encode` ran at the same speed as json-stream-stringify on a 3 MB object, and about 1.2× faster on rows from an async iterable.
-- Invalid JSON fails the stream. JSONStream ends quietly on `{"]` (JSONStream #145) and accepts a trailing comma, and stream-json can miss invalid JSON or hang (stream-json #104).
-- `null` matches are emitted. JSONStream drops them.
-- `encode` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
-
 ```sh
 npm install @portable/json-stream
 ```
@@ -55,6 +45,16 @@ return new Response(body.pipeThrough(new TextEncoderStream()), {
 | `space` | none | As in `JSON.stringify`. |
 
 The text matches what `JSON.stringify` gives for the resolved tree. A circular structure or a `BigInt` fails the stream with a `TypeError`.
+
+## Why use this over JSONStream, stream-json and json-stream-stringify
+
+Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies.
+
+- `ParserStream` selected the rows of a 3 MB document about 2.3× faster than JSONStream. It builds only the matched values, so memory use depends on the size of a match. JSONStream keeps the parents of every match and runs out of memory on large files (JSONStream #32, #101).
+- `encode` ran at the same speed as json-stream-stringify on a 3 MB object, and about 1.2× faster on rows from an async iterable.
+- Invalid JSON fails the stream. JSONStream ends quietly on `{"]` (JSONStream #145) and accepts a trailing comma, and stream-json can miss invalid JSON or hang (stream-json #104).
+- `null` matches are emitted. JSONStream drops them.
+- `encode` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
 
 ## Migrating
 

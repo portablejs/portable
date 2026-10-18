@@ -4,18 +4,6 @@ Email header values: encoded-words (RFC 2047), folding (RFC 5322), parameters wi
 
 Replaces the header functions of [libmime](https://www.npmjs.com/package/libmime), [addressparser](https://www.npmjs.com/package/addressparser) (now `nodemailer/lib/addressparser`) and [email-addresses](https://www.npmjs.com/package/email-addresses).
 
-## Why use this over libmime, addressparser and email-addresses
-
-It has no dependencies, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. One address parser covers what addressparser and email-addresses each do: a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
-
-- In the benchmarks on Node 24, `parseAddresses` was 2× faster than addressparser and about 50× faster than email-addresses (25× in strict mode). `fold` was 7× faster than libmime's `foldLines`, `parseHeaders` 3.5× faster than `decodeHeaders`, `encodeWords` 3× faster and `formatValue` 2× faster. `decodeWords`, `parseValue` and `encodeWord` were 1.1 to 1.3× faster. `Buffer` and `TextDecoder` decode a single B word 3.7× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
-- An address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, stays the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.1.2 still moves a quoted display name holding "@" into the address.
-- A comment never holds the address: `(evil@evil.com) Name <good@good.com>` is good.com. nodemailer fixed this in 10.1.4.
-- `encodeWords` encodes text that looks like an encoded word, so a reader can't decode a subject the sender didn't encode. libmime 5.5.1 leaves it as is.
-- `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
-- `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
-- Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
-
 ```sh
 npm install @portable/mime-headers
 ```
@@ -76,6 +64,18 @@ Functions come in pairs. `encode*`/`decode*` convert encoded-words and back; `pa
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
 | `strict` | `parseAddresses` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
 | `flatten` | `parseAddresses` | `false` | Return the members of groups in place of the groups. |
+
+## Why use this over libmime, addressparser and email-addresses
+
+It has no dependencies, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. One address parser covers what addressparser and email-addresses each do: a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
+
+- In the benchmarks on Node 24, `parseAddresses` was 2× faster than addressparser and about 50× faster than email-addresses (25× in strict mode). `fold` was 7× faster than libmime's `foldLines`, `parseHeaders` 3.5× faster than `decodeHeaders`, `encodeWords` 3× faster and `formatValue` 2× faster. `decodeWords`, `parseValue` and `encodeWord` were 1.1 to 1.3× faster. `Buffer` and `TextDecoder` decode a single B word 3.7× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
+- An address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, stays the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.1.2 still moves a quoted display name holding "@" into the address.
+- A comment never holds the address: `(evil@evil.com) Name <good@good.com>` is good.com. nodemailer fixed this in 10.1.4.
+- `encodeWords` encodes text that looks like an encoded word, so a reader can't decode a subject the sender didn't encode. libmime 5.5.1 leaves it as is.
+- `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
+- `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
+- Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
 
 ## Migrating
 

@@ -4,16 +4,6 @@ Encodes and decodes base64 and base64url, with optional line wrapping for MIME a
 
 Replaces [libbase64](https://www.npmjs.com/package/libbase64), [base64-js](https://www.npmjs.com/package/base64-js) and [js-base64](https://www.npmjs.com/package/js-base64).
 
-## Why use this over base64-js, js-base64 and libbase64
-
-One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and has no dependencies.
-
-- In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 9× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 10× faster than js-base64.
-- `EncoderStream` and `DecoderStream` at 76 columns were about 1.4× and 1.2× faster than libbase64's streams.
-- `Buffer` is 10 to 20× faster on 1 MB in Node, and so are libbase64's plain `encode` and `decode`, which call `Buffer`. In Node-only code where that matters, keep `Buffer`.
-- The default mode throws `InvalidInputError` on characters outside the alphabet. base64-js drops them and returns wrong bytes (base64-js #81), and throws a `RangeError` on `'===='` (base64-js #73).
-- `encode` throws a `TypeError` for an `Int8Array`, which base64-js encoded to wrong output (base64-js #38), and the stream output doesn't depend on chunk boundaries, which libbase64 fixed only in 1.3.2.
-
 ```sh
 npm install @portable/base64
 ```
@@ -75,6 +65,30 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 `'mime'` follows RFC 2045 §6.8, which tells decoders to ignore characters outside the alphabet, and libbase64, which decodes each `=`-terminated segment on its own. It reads both alphabets and never throws, so use it for mail bodies and other input you don't control.
 
+## Why use this over base64-js, js-base64 and libbase64
+
+One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and has no dependencies.
+
+- In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 9× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 10× faster than js-base64.
+- `EncoderStream` and `DecoderStream` at 76 columns were about 1.4× and 1.2× faster than libbase64's streams.
+- `Buffer` is 10 to 20× faster on 1 MB in Node, and so are libbase64's plain `encode` and `decode`, which call `Buffer`. In Node-only code where that matters, keep `Buffer`.
+- The default mode throws `InvalidInputError` on characters outside the alphabet. base64-js drops them and returns wrong bytes (base64-js #81), and throws a `RangeError` on `'===='` (base64-js #73).
+- `encode` throws a `TypeError` for an `Int8Array`, which base64-js encoded to wrong output (base64-js #38), and the stream output doesn't depend on chunk boundaries, which libbase64 fixed only in 1.3.2.
+
+### Performance
+
+Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. Mean times for 1 MB on a shared cloud container, from `pnpm bench`:
+
+| | @portable/base64 | base64-js | js-base64 | libbase64 | `Buffer` |
+| --- | --- | --- | --- | --- | --- |
+| encode | 2.6 ms | 18 ms | 7.2 ms | 0.4 ms | 0.4 ms |
+| encode, 76 columns | 2.8 ms | | | 2.4 ms | |
+| decode | 4.0 ms | 4.2 ms | 47 ms | 0.3 ms | 0.3 ms |
+| `EncoderStream`, 76 columns, 16 KB chunks | 2.8 ms | | | 4.2 ms | |
+| `DecoderStream`, 76 columns, 16 KB chunks | 5.3 ms | | | 8.1 ms | |
+
+libbase64's `encode` and `decode` call `Buffer`, which is C++. For 32 bytes, all four libraries take about 0.5 µs.
+
 ## Migrating
 
 | Before | @portable/base64 |
@@ -103,17 +117,3 @@ These behaviors differ on purpose:
 - Strings are encoded with `TextEncoder`, which replaces a lone surrogate with U+FFFD. js-base64 encodes lone surrogates as is.
 - `EncoderStream` has no `skipStartBytes`, `limitOutputBytes`, `startPadding` or byte counters, and string chunks are always UTF-8.
 - `encode` throws `TypeError` for typed arrays other than `Uint8Array`. base64-js encoded an `Int8Array` with negative values to wrong output.
-
-## Performance
-
-Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. Mean times for 1 MB on a shared cloud container, from `pnpm bench`:
-
-| | @portable/base64 | base64-js | js-base64 | libbase64 | `Buffer` |
-| --- | --- | --- | --- | --- | --- |
-| encode | 2.6 ms | 18 ms | 7.2 ms | 0.4 ms | 0.4 ms |
-| encode, 76 columns | 2.8 ms | | | 2.4 ms | |
-| decode | 4.0 ms | 4.2 ms | 47 ms | 0.3 ms | 0.3 ms |
-| `EncoderStream`, 76 columns, 16 KB chunks | 2.8 ms | | | 4.2 ms | |
-| `DecoderStream`, 76 columns, 16 KB chunks | 5.3 ms | | | 8.1 ms | |
-
-libbase64's `encode` and `decode` call `Buffer`, which is C++. For 32 bytes, all four libraries take about 0.5 µs.

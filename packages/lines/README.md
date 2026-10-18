@@ -4,15 +4,6 @@ Splits a stream of bytes or text into lines. Runs in browsers, Cloudflare Worker
 
 Replaces [split2](https://www.npmjs.com/package/split2) and [byline](https://www.npmjs.com/package/byline).
 
-## Why use this over split2 and byline
-
-split2 and byline are Node `Transform` streams. `LineStream` is a `TransformStream`, so it splits a `fetch` response body in any runtime above, and it has no dependencies.
-
-- It split 1.7 MB of text at the same speed as split2 in Node. `node:readline` was about 2× faster than both, but it exists only in Node.
-- `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.
-- A multi-byte character or a CRLF split across two chunks is read as one character or one line break.
-- Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`, and here `skipEmpty: true` does the same.
-
 ```sh
 npm install @portable/lines
 ```
@@ -36,6 +27,15 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 | `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units. |
 | `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line. |
 | `skipEmpty` | `false` | Drop empty lines. |
+
+## Why use this over split2 and byline
+
+split2 and byline are Node `Transform` streams. `LineStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies.
+
+- It split 1.7 MB of text at the same speed as split2 in Node. `node:readline` was about 2× faster than both, but it exists only in Node.
+- `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.
+- A multi-byte character or a CRLF split across two chunks is read as one character or one line break.
+- Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`, and here `skipEmpty: true` does the same.
 
 ## Migrating
 

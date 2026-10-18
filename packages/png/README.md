@@ -4,16 +4,6 @@ Decodes PNG files to 8-bit RGBA pixels and encodes RGBA pixels as PNG. Runs in b
 
 Replaces [pngjs](https://www.npmjs.com/package/pngjs).
 
-## Why use this over pngjs
-
-pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
-
-- A header that claims more pixels than the data can hold throws before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB.
-- Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.4× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool.
-- Encoding with `CompressionStream` was about as fast as pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
-- A file with no `IDAT` throws `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
-- Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
-
 ```sh
 npm install @portable/png
 ```
@@ -94,6 +84,20 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 
 Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.UnsupportedError`.
 
+## Why use this over pngjs
+
+pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
+
+- A header that claims more pixels than the data can hold throws before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB.
+- Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.4× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool.
+- Encoding with `CompressionStream` was about as fast as pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
+- A file with no `IDAT` throws `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
+- Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
+
+### Performance
+
+On a 1024x1024 RGB image in Node 24, `decodeSync` with `node:zlib` takes 28 ms and pngjs 40 ms. `decode` takes 60 ms, because Node's `DecompressionStream` runs zlib on the thread pool one 16 KiB output chunk at a time. Encoding with `CompressionStream` takes 174 ms, and pngjs takes 178 ms at the same zlib settings. With `Z_RLE` passed through `deflate`, `encodeSync` takes 85 ms and pngjs's default 116 ms. Numbers come from `pnpm bench` on a shared, loaded machine.
+
 ## Migrating from pngjs
 
 | pngjs | @portable/png |
@@ -119,7 +123,3 @@ Behavior that differs from pngjs, each listed with its test in [`PARITY.md`](tes
 - A file with no `IDAT` throws `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
 - The decoder never allocates more than the compressed data can expand to, so a header that claims a huge image throws `TruncatedError` instead of a `RangeError` from a failed allocation.
 - The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs.
-
-## Performance
-
-On a 1024x1024 RGB image in Node 24, `decodeSync` with `node:zlib` takes 28 ms and pngjs 40 ms. `decode` takes 60 ms, because Node's `DecompressionStream` runs zlib on the thread pool one 16 KiB output chunk at a time. Encoding with `CompressionStream` takes 174 ms, and pngjs takes 178 ms at the same zlib settings. With `Z_RLE` passed through `deflate`, `encodeSync` takes 85 ms and pngjs's default 116 ms. Numbers come from `pnpm bench` on a shared, loaded machine.

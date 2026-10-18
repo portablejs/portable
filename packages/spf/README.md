@@ -4,13 +4,6 @@ Checks whether an SMTP client may send mail for a domain, using SPF (RFC 7208). 
 
 Replaces the SPF module of [mailauth](https://www.npmjs.com/package/mailauth), and covers the cases of the OpenSPF RFC 7208 test suite that [pyspf](https://github.com/sdgathman/pyspf) and other implementations run.
 
-## Why use this over mailauth
-
-- It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
-- It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and RFC behavior needs `strict: true`. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
-- It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
-- It is faster. On a record with nested includes and a fake resolver, it runs 11,000 to 13,000 checks a second in Node, against 9,000 for mailauth's default mode and 7,000 for its strict mode.
-
 ```sh
 npm install @portable/spf @portable/dns
 ```
@@ -91,6 +84,13 @@ All of RFC 7208 section 7 is supported: `%{s}`, `%{l}`, `%{o}`, `%{d}`, `%{i}`, 
 RFC 7208 says `%{p}` SHOULD NOT be used: it is slow and the client controls its PTR records. It works as the RFC describes, preferring a validated name equal to or under the current domain, then any validated name, then `unknown`.
 
 When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}` doesn't match (RFC 8616 section 4).
+
+## Why use this over mailauth
+
+- It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
+- It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and RFC behavior needs `strict: true`. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
+- It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
+- It is faster. On a record with nested includes and a fake resolver, it runs 11,000 to 13,000 checks a second in Node, against 9,000 for mailauth's default mode and 7,000 for its strict mode.
 
 ## Migrating from mailauth
 
