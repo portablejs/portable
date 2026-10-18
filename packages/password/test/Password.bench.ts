@@ -48,6 +48,22 @@ test('hashes a password at 600,000 iterations within 25% of node:crypto pbkdf2',
   })
 })
 
+test('checks whether a stored hash needs a rehash', async ({ bench }) => {
+  const current = await Password.hash(password, { iterations: 1 })
+  const passlib =
+    '$pbkdf2-sha256$29000$4vjV83LKPjQzk31VI4E0Vw$hsYF68OiOUPdDZ1Fg.fJPeq1h/gXXY7acBp9/6c.tmQ'
+  expect(Password.needsRehash(current, { iterations: 1 })).toBe(false)
+  expect(Password.needsRehash(passlib)).toBe(true)
+  await bench.compare(
+    bench('@portable/password, PHC', () => {
+      Password.needsRehash(current, { iterations: 1 })
+    }),
+    bench('@portable/password, passlib', () => {
+      Password.needsRehash(passlib)
+    }),
+  )
+})
+
 test('verifies a password at 600,000 iterations within 25% of node:crypto pbkdf2', async ({
   bench,
 }) => {
