@@ -26,7 +26,13 @@
     "abortsignal",
     "p-retry",
     "async-retry",
-    "p-wait-for"
+    "p-wait-for",
+    "debounce",
+    "throttle",
+    "lodash.debounce",
+    "lodash.throttle",
+    "throttle-debounce",
+    "p-debounce"
   ],
   "engines": {
     "node": ">=24"

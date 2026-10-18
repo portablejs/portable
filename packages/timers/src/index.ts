@@ -1,4 +1,6 @@
 export type { Backoff, Context, Delay } from './Delay.js'
+export { debounce, type Debounced } from './debounce.js'
 export { poll } from './poll.js'
 export { retry } from './retry.js'
 export { sleep } from './sleep.js'
+export { throttle } from './throttle.js'

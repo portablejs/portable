@@ -1,8 +1,8 @@
 # @portable/timers
 
-Sleep, retry with backoff, and poll until a value is ready. Every function takes an `AbortSignal` and leaves no timers behind. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Sleep, retry with backoff, poll until a value is ready, and debounce or throttle a function. Every function takes an `AbortSignal` and leaves no timers behind. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [delay](https://www.npmjs.com/package/delay), [p-retry](https://www.npmjs.com/package/p-retry), [async-retry](https://www.npmjs.com/package/async-retry) and [p-wait-for](https://www.npmjs.com/package/p-wait-for).
+Replaces [delay](https://www.npmjs.com/package/delay), [p-retry](https://www.npmjs.com/package/p-retry), [async-retry](https://www.npmjs.com/package/async-retry), [p-wait-for](https://www.npmjs.com/package/p-wait-for), [lodash.debounce](https://www.npmjs.com/package/lodash.debounce), [lodash.throttle](https://www.npmjs.com/package/lodash.throttle), [throttle-debounce](https://www.npmjs.com/package/throttle-debounce) and [p-debounce](https://www.npmjs.com/package/p-debounce).
 
 ```sh
 npm install @portable/timers
@@ -25,6 +25,9 @@ const order = await Timers.poll(
   },
   { delay: 2000, timeout: 120_000 },
 )
+
+const save = Timers.debounce((text: string) => fetch('/draft', { method: 'PUT', body: text }), 500)
+const saved = await save(editor.value)
 ```
 
 ## `sleep(ms, options)`
@@ -120,6 +123,41 @@ Calls `fn` until it returns a value other than `undefined`, and resolves with th
 
 `timeout` limits each attempt in `retry`, and the whole call in `poll`. A poll that checks a slow endpoint wants a deadline for the whole wait, and a retry wants to give up on one hung request and try again. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)`.
 
+## `debounce(fn, ms, options)` and `throttle(fn, ms, options)`
+
+`debounce` wraps `fn` so that a burst of calls invokes it once, `ms` after the last call, with the last call's arguments and `this`. `throttle` invokes `fn` at most once every `ms`: on the first call, then once at the end of each window that had more calls. The timing is lodash's, and the oracle tests compare every invocation's time and arguments with lodash 4.18.
+
+Each call returns a promise of the result of the invocation it was folded into, so every call in a burst resolves with the same value, and an error thrown by `fn` rejects all of them. A call that `trailing: false` drops resolves at once with the result of its window's leading invocation.
+
+```ts
+const save = Timers.debounce(async (text: string) => {
+  const response = await fetch('/draft', { method: 'PUT', body: text })
+  return response.ok
+}, 500)
+
+editor.addEventListener('input', () => save(editor.value))
+window.addEventListener('beforeunload', () => save.flush())
+
+const ok = await save(editor.value) // true once the save that includes this text finishes
+```
+
+| Option | `debounce` default | `throttle` default | Description |
+| --- | --- | --- | --- |
+| `leading` | `false` | `true` | Invoke on the first call of a burst. |
+| `trailing` | `true` | `true` | Invoke `ms` after the last call (`debounce`) or at the end of the window (`throttle`), with the last call's arguments. |
+| `maxWait` | | | `debounce` only. Longest time a call waits, however often calls arrive. `throttle` is `debounce` with `maxWait: ms`. |
+| `signal` | | | When it aborts, waiting calls reject with `signal.reason`, and later calls reject at once without invoking `fn`. |
+
+`leading: false` with `trailing: false` never invokes `fn`, so it throws a `RangeError`. `ms` and `maxWait` above 2³¹ − 1 also throw a `RangeError`, because `setTimeout` would fire at once.
+
+The returned function also has:
+
+| Member | Description |
+| --- | --- |
+| `cancel()` | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call nobody awaits doesn't raise an unhandled rejection. Later calls work as usual. |
+| `flush()` | Runs the waiting invocation now and returns a promise of its result. Resolves with `undefined` when nothing waits. |
+| `pending` | `true` while the function waits out `ms` after a call. |
+
 ## Delays
 
 `retry` and `poll` take the same `delay` option, of type `Timers.Delay`:
@@ -144,6 +182,16 @@ These libraries cover one job each, with four sets of option names. `retry` and 
 - When `retryIf` returns `false`, `fn` is never called again. async-retry's `bail()` rejects the promise, but if `fn` then throws, attempts continue in the background (async-retry #69).
 - Waits longer than about 24.8 days work. p-retry and p-wait-for pass them to `setTimeout`, which fires after 1 ms instead.
 
+## Why use this over lodash.debounce, lodash.throttle, throttle-debounce and p-debounce
+
+`debounce` and `throttle` follow lodash's timing: the oracle tests compare the time and arguments of every invocation with lodash 4.18 on random call, `flush` and `cancel` schedules. They differ in what a call returns and in how they end.
+
+- Each call returns a promise of the invocation it was folded into. lodash returns the result of the previous invocation, and throttle-debounce returns nothing.
+- `signal` cancels the waiting invocation and disables the function, so it can be tied to a component's or request's lifetime.
+- Time is read from `performance.now()`. lodash reads `Date.now()`, so `throttle` invokes again at once when the system clock jumps forward.
+- lodash.debounce 4.0.8, the standalone package, leaves a timer behind in a tight loop when `maxWait` is below `ms`, and invokes at other times than lodash 4.18. The oracle tests show the difference.
+- A burst of 1000 calls runs at 13.1k bursts per second on Node, against 15.4k for lodash.debounce, 4.2k for throttle-debounce and 2.5k for p-debounce. `throttle` runs at 11.9k, against 14.8k for lodash.throttle and 3.5k for throttle-debounce.
+
 ## Migrating
 
 | Upstream | @portable/timers |
@@ -167,5 +215,16 @@ These libraries cover one job each, with four sets of option names. `retry` and 
 | `pWaitFor(() => pWaitFor.resolveWith(value))` | `Timers.poll(() => value)` |
 | `pWaitFor(condition, { before: false })` | `await Timers.sleep(interval)` first. |
 | `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { timeout: milliseconds }).catch((error) => ...)` |
+| `_.debounce(fn, wait, options)`, `lodashDebounce(fn, wait, options)` | `Timers.debounce(fn, wait, options)`. Calls return a promise of the invocation's result. |
+| `_.throttle(fn, wait, options)`, `lodashThrottle(fn, wait, options)` | `Timers.throttle(fn, wait, options)` |
+| `debounced.cancel()`, `debounced.flush()` | The same. Calls dropped by `cancel` reject with an `AbortError`, and `flush` returns a promise. |
+| `throttle(delay, fn, { noTrailing: true })` from throttle-debounce | `Timers.throttle(fn, delay, { trailing: false })` |
+| `throttle(delay, fn, { noLeading: true })` from throttle-debounce | `Timers.throttle(fn, delay, { leading: false })`. Setting both `leading` and `trailing` to `false` is a `RangeError`, because the function would never run. |
+| `debounce(delay, fn, { atBegin: true })` from throttle-debounce | `Timers.debounce(fn, delay, { leading: true, trailing: false })` |
+| `throttled.cancel()` from throttle-debounce | Abort the `signal`. throttle-debounce's `cancel` disables the function for good. |
+| `throttled.cancel({ upcomingOnly: true })` from throttle-debounce | `throttled.cancel()` |
+| `pDebounce(fn, wait, { before: true })` | `Timers.debounce(fn, wait, { leading: true, trailing: false })` |
+| `pDebounce(fn, wait, { signal })` | `Timers.debounce(fn, wait, { signal })` |
+| `pDebounce.promise(fn)` | No equivalent. It limits concurrency rather than time. |
 
 p-wait-for checks every 20 ms by default. `poll` waits 1000 ms, because it is mostly used against servers.
