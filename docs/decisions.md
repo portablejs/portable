@@ -76,7 +76,6 @@ Calls made without the owner's input, with the options considered and the reason
 - **TXT decodes to `Uint8Array[]`,** which keeps binary and DNS-SD data intact. `@portable/dns` can turn it into text.
 - **CAA `flags` keeps the whole byte** and SVCB/HTTPS stay raw bytes, so DNSSEC-signed data re-encodes exactly.
 - **No subpath for decode-only use:** encode and decode together are 6.6 kB minified and gzipped, and decode alone 5.7 kB.
-- **The decode benchmark allows 50%, not 25%.** Plain Node on the build is 1.8× faster than dns-packet, but Vitest's export getters make our source 20% slower inside the benchmark (see papercuts.md).
 
 ## `@portable/quoted-printable` API
 

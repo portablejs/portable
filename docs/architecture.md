@@ -93,7 +93,7 @@ const result = await bench.compare(bench('@portable/lines', ...), bench('split2'
 expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), { delta: 0.25 })
 ```
 
-Run them with `pnpm bench`. They are not part of the git hooks, because timing on a laptop varies too much to block a push.
+Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIST=1`. With it set, `vite.config.ts` drops the `src` condition and lets Node load each package's `dist/` directly, because source run through Vitest pays for a getter on every call between modules and measured up to 2× slower. They are not part of the git hooks, because timing on a laptop varies too much to block a push.
 
 ## Git hooks
 

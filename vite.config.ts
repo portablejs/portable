@@ -5,6 +5,11 @@ import { playwright } from 'vite-plus/test/browser-playwright'
 // in the cloud dev container, where Playwright's own browsers aren't installed.
 const chromiumPath = process.env.PW_CHROMIUM_PATH
 
+// `pnpm bench` sets BENCH_DIST=1 after building, so benchmarks import each package's built `dist/` and
+// Node loads it directly. Source run through Vitest pays for a getter on every call between modules.
+const benchDist = process.env.BENCH_DIST === '1'
+const src = benchDist ? [] : ['src']
+
 const nodeBuiltins = [
   'assert',
   'buffer',
@@ -92,8 +97,8 @@ export default defineConfig({
     ],
   },
   // `src` resolves workspace packages to their TypeScript source, so tests need no build.
-  resolve: { conditions: ['src', 'module', 'browser', 'development|production'] },
-  ssr: { resolve: { conditions: ['src', 'module', 'node', 'development|production'] } },
+  resolve: { conditions: [...src, 'module', 'browser', 'development|production'] },
+  ssr: { resolve: { conditions: [...src, 'module', 'node', 'development|production'] } },
   staged: {
     '*.{ts,js,json}': 'vp check --fix',
   },
@@ -106,6 +111,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'node',
+          server: { deps: { external: benchDist ? [/\/packages\/[^/]+\/dist\//] : [] } },
           benchmark: {
             include: ['packages/*/test/**/*.bench.ts', 'packages/*/src/**/*.bench.ts'],
             outputJson: '.bench/report.json',

@@ -10,7 +10,7 @@
     "test": "vp test run",
     "test:changed": "vp test run --changed origin/main --project node",
     "test:browser": "vp test run --project browser",
-    "bench": "vp test bench --run --reporter=verbose",
+    "bench": "pnpm build && BENCH_DIST=1 vp test bench --run --reporter=verbose",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && pnpm test && pnpm test:browser && pnpm --filter './packages/*' exec zile publish:prepare && changeset publish && pnpm --filter './packages/*' exec zile publish:post",

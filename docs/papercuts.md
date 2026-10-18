@@ -14,7 +14,6 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 | The Write tool turns `\uXXXX` escapes into literal characters. | Fix the file with a script afterwards. | None. |
 | Agents running at the same time share one scratchpad directory. | Use a subdirectory per package. | Put that in the brief. |
 | `vp check --fix` (oxfmt) rewrites escapes such as `'\uFEFF'` and `'\u2028'` into the literal characters, and `no-irregular-whitespace` then rejects them. | `String.fromCharCode(0xfeff)`. | Report to oxfmt. |
-| Vitest rewrites calls between modules into getter lookups, so a hot function imported from another file isn't inlined. dns-packet decode measures 1.8× slower than on the build, png's filters ran 2× slower, and exif and image-size print warnings. | dns-packet's decode benchmark allows 50%; png keeps hot loops and their helpers in one module. | Benchmark the built `dist`: with tests in `test/` packages, the bench project can drop the `src` condition. Planned with that move. |
 | The Write tool's copy of a file goes stale after the formatter rewrites it. | Read the file again before writing. | None. |
 | `minimumReleaseAge` refuses a package published less than a day ago, tarball URLs included, so `quoted-printable` couldn't install libqp 3.0.1 for its oracle. | The 3.0.1 source is copied into `packages/quoted-printable/test/fixtures/`. | Swap the copy for `libqp@^3.0.1` once it is a day old (after 2026-10-19). |
 | `@types/libqp` describes 1.x, so libqp 2.x's `Uint8Array` inputs fail type checks. | A cast in the oracle test. | None. |
@@ -38,6 +37,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 ## Fixed
 
+- Vitest wraps calls between source modules in getters, which made dns-packet's decoder measure 1.8× slower than its build and png's filters 2× slower. `pnpm bench` now builds every package and sets `BENCH_DIST=1`, so benchmarks import `dist/` and Node loads it directly. dns-packet's decode benchmark is back to a 25% bar and measures 2.2× faster than dns-packet.
 - A change to `pnpm-lock.yaml` makes the pre-push hook run every package's tests, and under load from about ten agents some timed out, blocking pushes. The test timeout is now 30 s.
 - Heavy tests (png's PngSuite, base64's big data) passed the 5 s default timeout when several agents loaded the machine, which failed pre-push hooks. The timeout is now 30 s.
 - Build scripts under `packages/*/scripts/` needed an `oxlint-disable` comment to import `node:*`. `vite.config.ts` now has an override for them.

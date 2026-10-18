@@ -9,10 +9,7 @@ const buffers = messages.map((message) => Buffer.from(message))
 const packets = messages.map((message) => decode(message))
 const upstreamPackets = buffers.map((buffer) => upstream.decode(buffer))
 
-// Vitest's module runner adds an export getter to every call between source modules, and the
-// decoder makes several per field. Built with zile and run in plain Node, decoding is about 1.8x
-// faster than dns-packet, but under Vitest it measures up to a third slower, so this bar is 50%.
-test(`decodes ${messages.length} real responses within 50% of dns-packet`, async ({ bench }) => {
+test(`decodes ${messages.length} real responses within 25% of dns-packet`, async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/dns-packet', () => {
       for (const message of messages) decode(message)
@@ -22,7 +19,7 @@ test(`decodes ${messages.length} real responses within 50% of dns-packet`, async
     }),
   )
   expect(result.get('dns-packet')).not.toBeFasterThan(result.get('@portable/dns-packet'), {
-    delta: 0.5,
+    delta: 0.25,
   })
 })
 
