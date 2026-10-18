@@ -86,6 +86,9 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | Package | Purpose | Depends on | Replaces |
 | --- | --- | --- | --- |
 | `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and an async `stringify` that walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | (none) | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
+| `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | (none) | csv-parse, csv-stringify, papaparse, fast-csv |
+| `@portable/compress` | One-shot gzip, deflate and deflate-raw on `CompressionStream`, a `maxLength` cap on decompression against zip bombs, larger output chunks than `DecompressionStream`'s 4 KB, and `crc32`. | `streams` | pako and fflate (simple one-shot use), node:zlib's sync helpers |
+| `@portable/idna` | UTS #46 `toUnicode` and `toAscii` for domain names. The platform's `URL` only converts to ASCII. | (none) | punycode, tr46 |
 | `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | (none) | ndjson 10.5M, the `jsonl` modules of stream-json |
 | `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. | `base64`, `quoted-printable`; `charset` as optional peer | libmime 37M, addressparser, email-addresses |
 | `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `lines`, `mime-headers` | mailsplit 2.7M |
@@ -134,6 +137,7 @@ Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars,
 | tar parsing | `@remix-run/tar-parser` or modern-tar | out of scope |
 | Serialize objects with promises, Dates, Maps etc. and stream them, resolving out of order as promises settle | turbo-stream (Jacob Ebey, Remix; used by React Router's data loading) | not rebuilt; `json-stream`'s async `stringify` covers only the narrower case of plain, in-order JSON any parser can read |
 | OAuth 2 clients (authorization code with PKCE, token refresh, discovery) | oauth4webapi, or arctic for provider presets | out of scope; both already use only web APIs and have no dependencies. `oauth1` stays, because OAuth 1.0a signs requests and shares no code with OAuth 2 |
+| WebAuthn server verification (CBOR, COSE keys, authenticatorData) | `ox/webauthn` (`Registration.verify`, `Authentication.verify`), plus ox's `Cbor` and `CoseKey` | not built. ox verifies ES256 only, which every passkey provider supports. |
 | etag (507M) | For files, `@remix-run/response` already sets ETags; for arbitrary bodies, an ETag is one `crypto.subtle.digest` call | not a package by rule 1; a README recipe instead |
 
 ## Build order
