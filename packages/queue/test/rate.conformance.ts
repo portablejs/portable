@@ -10,7 +10,6 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-/** Fails if more than `cap` of the start times fall in any window shorter than `interval`. */
 function expectSlidingWindow(starts: readonly number[], cap: number, interval: number) {
   for (let i = 0; i + cap < starts.length; i++)
     expect(starts[i + cap]! - starts[i]!).toBeGreaterThanOrEqual(interval)

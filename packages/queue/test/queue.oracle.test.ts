@@ -19,7 +19,6 @@ function makePlan(seed: number, length: number, { priorities = false, failures =
   }))
 }
 
-/** Runs a plan through `schedule` under fake timers and records what a caller can observe. */
 async function observe(
   schedule: (task: (item: Plan[number]) => Promise<number>) => Promise<unknown>,
 ) {

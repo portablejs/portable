@@ -17,10 +17,8 @@ export function deferred<T = void>(): Deferred<T> {
   return { promise, resolve, reject }
 }
 
-/** Waits until every queued promise callback has run. */
 export const flush = (): Promise<void> => delay(0)
 
-/** Counts how many calls run at once and remembers the highest count. */
 export function concurrencyProbe() {
   let running = 0
   const probe = {
@@ -39,7 +37,6 @@ export function concurrencyProbe() {
   return probe
 }
 
-/** A signal that counts the abort listeners attached to it. */
 export function countingSignal(controller = new AbortController()) {
   const { signal } = controller
   let listeners = 0
