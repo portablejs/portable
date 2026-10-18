@@ -1,0 +1,13 @@
+{
+  "name": "@portable/websocket-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/streams": "workspace:*",
+    "@portable/websocket": "workspace:*",
+    "@types/node": "^26.6.5",
+    "@types/ws": "^8.18.1",
+    "reconnecting-websocket": "^4.4.0",
+    "ws": "^8.18.3"
+  }
+}
