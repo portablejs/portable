@@ -1320,3 +1320,23 @@ describe('organizationalDomain option', () => {
     expect(dmarcQueries(log)).toEqual(['_dmarc.com'])
   })
 })
+
+describe('known upstream issues', () => {
+  test('no tree walk above the From domain when every identifier is identical to it', async () => {
+    const log: Query[] = []
+    const result = await check(
+      reject,
+      { from: 'example.com', spf: pass('example.com'), dkim: [pass('example.com')] },
+      { log },
+    )
+    expect(result.result).toBe('pass')
+    expect(log).toEqual(['TXT _dmarc.example.com'])
+  })
+
+  test('no existence query when np is the policy that applies anyway', async () => {
+    const log: Query[] = []
+    const zone = withRecord('v=DMARC1; p=none; sp=reject; np=reject')
+    expect((await check(zone, { from: 'sub.example.com' }, { log })).policy).toBe('reject')
+    expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([])
+  })
+})

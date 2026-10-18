@@ -20,14 +20,14 @@ export function dnsError(code: string, name: string): Error {
  * Answers from `zone` like a recursive resolver: a name with a CNAME is followed for TXT and A,
  * so a missing target gives `ENOTFOUND`, and `resolveCname` returns the CNAME itself.
  */
-export function zoneResolver(zone: Zone, log: Query[] = []): Dmarc.Resolver {
+export function zoneResolver(zone: Zone, log?: Query[]): Dmarc.Resolver {
   const names = new Map(Object.entries(zone).map(([name, records]) => [normalize(name), records]))
   async function answer<T>(
     type: 'TXT' | 'A' | 'CNAME',
     name: string,
     pick: (records: Records) => readonly T[] | string | undefined,
   ): Promise<T[]> {
-    log.push(`${type} ${name}`)
+    log?.push(`${type} ${name}`)
     let key = normalize(name)
     for (let hops = 0; ; hops++) {
       const records = names.get(key)
