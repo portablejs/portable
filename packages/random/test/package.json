@@ -1,0 +1,16 @@
+{
+  "name": "@portable/random-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/random": "workspace:*",
+    "@types/lodash": "^4.17.20",
+    "@types/node": "^26.6.5",
+    "@types/seedrandom": "^3.0.8",
+    "crypto-random-string": "^6.0.0",
+    "lodash": "^4.18.1",
+    "nanoid": "^6.0.2",
+    "random-int": "^3.1.0",
+    "seedrandom": "^3.0.5"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "@portable/random",
+  "description": "Unbiased random integers, strings and shuffles from crypto.getRandomValues, plus a seeded generator for tests, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/random"
+  },
+  "keywords": [
+    "random",
+    "random-int",
+    "crypto-random-string",
+    "nanoid",
+    "seedrandom",
+    "shuffle",
+    "prng",
+    "xoshiro",
+    "getRandomValues"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
