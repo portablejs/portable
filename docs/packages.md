@@ -43,6 +43,7 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |
 | `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
+| `@portable/retry` | `retry` with backoff and jitter, `poll` until a value appears, and `sleep`, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
 
 #### `streams` bridge API
 
