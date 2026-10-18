@@ -119,7 +119,7 @@ export declare namespace encode {
 type Leaf = {
   readonly contentType: string
   readonly headers: readonly string[]
-  /** Headers chosen from the content, written after the message fields when the leaf is the root. */
+  /** Headers chosen from the content. nodemailer adds these last, so at the root they follow the message fields. */
   readonly computed: readonly string[]
   readonly content: Content | undefined
   readonly body: Body
