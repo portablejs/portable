@@ -1,0 +1,13 @@
+{
+  "name": "@portable/dmarc-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/dmarc": "workspace:*",
+    "@portable/dns": "workspace:*",
+    "@portable/spf": "workspace:*",
+    "@types/node": "^26.6.5",
+    "mailauth": "^7.3.0",
+    "tldts": "^7.4.18"
+  }
+}

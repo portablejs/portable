@@ -1,0 +1,49 @@
+{
+  "name": "@portable/dmarc",
+  "description": "Evaluate DMARC policy and identifier alignment (RFC 9989) from SPF and DKIM results, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "dependencies": {
+    "@portable/dns": "workspace:*",
+    "@portable/spf": "workspace:*"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/dmarc"
+  },
+  "keywords": [
+    "dmarc",
+    "dmarcbis",
+    "rfc9989",
+    "rfc7489",
+    "email",
+    "spf",
+    "dkim",
+    "mailauth"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
