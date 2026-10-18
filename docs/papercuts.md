@@ -4,6 +4,8 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| `minimumReleaseAge` refuses a package published less than a day ago, tarball URLs included, so `quoted-printable` couldn't install libqp 3.0.1 for its oracle. | The 3.0.1 source is copied into `packages/quoted-printable/src/_test/fixtures/`. | Swap the copy for `libqp@^3.0.1` once it is a day old (after 2026-10-19). |
+| `@types/libqp` describes 1.x, so libqp 2.x's `Uint8Array` inputs fail type checks. | A cast in the oracle test. | None. |
 | Two agents pushing to `main` at once: the pre-push hook takes about 30 s, and main often moves during it, so the push is rejected. One agent pushed with `--no-verify`. | Pull with rebase and push again. The brief now forbids `--no-verify`. | Make the pre-push hook faster, or have agents work on branches. |
 | The GitHub issue pages of upstream repos render empty through WebFetch, so agents can't always read issue trackers. | Find upstream traps by reading the source and running the library on crafted input. | Allow read access to public repos' issues. |
 | Vitest warns about getter overhead when a benchmark reads a module-level table. | None; it only slows our side of the benchmark. | None needed. |
