@@ -1,0 +1,263 @@
+# @portable/smtp
+
+Sends email over SMTP (RFC 5321) or LMTP (RFC 2033) from any runtime with a TCP socket API: Cloudflare Workers, Deno, Bun and Node 24+. You pass the function that opens the socket, so the package itself only needs Web Streams. The message can be a `ReadableStream`, such as the output of `@portable/mail` signed with `@portable/dkim`, and is streamed to the server without buffering.
+
+Replaces the SMTP transport and `smtp-connection` of [nodemailer](https://www.npmjs.com/package/nodemailer).
+
+```sh
+npm install @portable/smtp
+```
+
+```ts
+import * as Smtp from '@portable/smtp'
+import { connect } from 'cloudflare:sockets'
+
+const result = await Smtp.send(
+  { from: 'me@example.com', to: ['you@example.com'], message: 'Subject: Hi\r\n\r\nHello' },
+  {
+    connect,
+    host: 'smtp.example.com',
+    auth: { user: 'me@example.com', pass: env.SMTP_PASSWORD },
+    signal: AbortSignal.timeout(30_000),
+  },
+)
+result.accepted // ['you@example.com']
+```
+
+Cloudflare Workers can't connect to port 25, so use a submission port (587 or 465) on a relay.
+
+To send several messages over one connection, open a client:
+
+```ts
+const client = await Smtp.connect({ connect, host: 'smtp.example.com', auth })
+try {
+  for (const mail of outbox) await client.send(mail)
+} finally {
+  await client.close()
+}
+```
+
+## Sockets
+
+`connect` is called as `connect({ hostname, port }, { secureTransport, allowHalfOpen })` and returns a socket with the shape of the [Sockets API](https://sockets-api.proposal.wintertc.org/): `readable`, `writable`, `opened`, `closed`, `close()` and `startTls()`. `connect` from `cloudflare:sockets` fits as it is. For Deno and Node, wrap the native socket.
+
+Deno:
+
+```ts
+import type * as Smtp from '@portable/smtp'
+
+function wrap(opening: Promise<Deno.Conn>, hostname: string): Smtp.Socket {
+  let conn: Deno.Conn | undefined
+  const opened = opening.then((value) => {
+    conn = value
+  })
+  const closed = Promise.withResolvers<void>()
+  return {
+    opened,
+    closed: closed.promise,
+    readable: new ReadableStream<Uint8Array>(
+      {
+        async pull(controller) {
+          await opened
+          const buffer = new Uint8Array(16 * 1024)
+          const length = await conn!.read(buffer).catch(() => null)
+          if (length === null) {
+            controller.close()
+            closed.resolve()
+          } else controller.enqueue(buffer.subarray(0, length))
+        },
+      },
+      { highWaterMark: 0 },
+    ),
+    writable: new WritableStream<Uint8Array>({
+      async write(chunk) {
+        await opened
+        for (let offset = 0; offset < chunk.length; )
+          offset += await conn!.write(chunk.subarray(offset))
+      },
+    }),
+    close() {
+      conn?.close()
+      closed.resolve()
+    },
+    startTls() {
+      return wrap(opened.then(() => Deno.startTls(conn as Deno.TcpConn, { hostname })), hostname)
+    },
+  }
+}
+
+export const connect: Smtp.Connect = ({ hostname, port }, { secureTransport }) =>
+  wrap(
+    secureTransport === 'on' ? Deno.connectTls({ hostname, port }) : Deno.connect({ hostname, port }),
+    hostname,
+  )
+```
+
+Node:
+
+```ts
+import net from 'node:net'
+import tls from 'node:tls'
+import type * as Smtp from '@portable/smtp'
+
+function wrap(socket: net.Socket, ready: string, hostname: string): Smtp.Socket {
+  socket.setNoDelay(true)
+  const opened = new Promise<void>((resolve, reject) => {
+    socket.once(ready, resolve)
+    socket.once('error', reject)
+  })
+  const closed = new Promise<void>((resolve) => socket.once('close', () => resolve()))
+  let attached = true
+  return {
+    opened,
+    closed,
+    readable: new ReadableStream<Uint8Array>({
+      start(controller) {
+        socket.on('data', (chunk: Buffer) => {
+          controller.enqueue(new Uint8Array(chunk))
+          if ((controller.desiredSize ?? 0) <= 0) socket.pause()
+        })
+        socket.once('close', () => attached && controller.close())
+      },
+      pull: () => void socket.resume(),
+      cancel: () => void socket.destroy(),
+    }),
+    writable: new WritableStream<Uint8Array>({
+      write: (chunk) =>
+        new Promise((resolve, reject) => {
+          if (socket.write(chunk)) return resolve()
+          socket.once('drain', resolve)
+          socket.once('close', () => reject(new Error('Socket closed')))
+        }),
+    }),
+    close() {
+      socket.destroy()
+      return closed
+    },
+    startTls() {
+      attached = false
+      socket.removeAllListeners('data')
+      return wrap(tls.connect({ socket, servername: hostname }), 'secureConnect', hostname)
+    },
+  }
+}
+
+export const connect: Smtp.Connect = ({ hostname, port }, { secureTransport }) =>
+  secureTransport === 'on'
+    ? wrap(tls.connect({ host: hostname, port, servername: hostname }), 'secureConnect', hostname)
+    : wrap(net.connect({ host: hostname, port }), 'connect', hostname)
+```
+
+## API
+
+### `Smtp.connect(options)`
+
+Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TLS, logs in, and resolves with a `Client`.
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `connect` | Required | Opens the socket. See [Sockets](#sockets). |
+| `host` | Required | The server's host name. |
+| `port` | 465 when `secure` is `'on'`, otherwise 587 | |
+| `secure` | `'on'` for port 465, otherwise `'starttls'` | `'on'` starts TLS right away. `'starttls'` requires the server to offer STARTTLS and fails if it doesn't. `'off'` never encrypts. |
+| `auth` | None | `{ user, pass }` for AUTH PLAIN, or LOGIN when the server offers only LOGIN. Set `method: 'LOGIN'` to force it. `{ user, accessToken }` for XOAUTH2. |
+| `allowInsecureAuth` | `false` | Send credentials over an unencrypted connection. Without it, AUTH requires TLS. |
+| `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF throws a `TypeError`. |
+| `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
+| `signal` | None | Limits connecting, TLS and login. Aborting rejects with `signal.reason` and closes the socket. |
+
+With `auth` set, the client always authenticates. If the server offers AUTH but neither PLAIN nor LOGIN, it fails without sending the password.
+
+### `client.send(mail, { signal })`
+
+Sends one message and resolves with `{ accepted, rejected, response }`. It resolves when at least one recipient accepted the message, and `rejected` lists the others with their replies. Calls made at the same time run one after another.
+
+| Field | Description |
+| --- | --- |
+| `from` | The envelope sender. `''` sends `MAIL FROM:<>`, as bounces do. |
+| `to` | One recipient or an array. |
+| `message` | The raw message as a `string`, `Uint8Array` or `ReadableStream<Uint8Array>`. Bare CR and bare LF become CRLF, and lines starting with a dot get a second dot. |
+| `size` | The message size for the SIZE extension. Computed for strings and bytes. A message over the server's limit fails before MAIL FROM. |
+| `dsn` | `{ ret, envid, notify }`: RFC 3461 delivery status notification parameters, sent when the server offers DSN. |
+| `requireTls` | Ask the server to relay only over TLS (RFC 8689). Fails before MAIL FROM if the connection isn't encrypted or the server doesn't offer REQUIRETLS. |
+
+The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO and DATA in one write. It declares BODY=8BITMIME whenever the server offers it, and SMTPUTF8 when an address is not ASCII. An address with a control character or an angle bracket is rejected before anything is sent.
+
+When a stream message isn't sent, because the envelope was refused or the connection failed, the stream is cancelled.
+
+### `client.close({ signal })`
+
+Waits for queued sends, sends QUIT and closes the socket. It never rejects.
+
+### `Smtp.send(mail, options)`
+
+Connects with `options`, sends one message and closes the connection.
+
+### `Smtp.CommandError`
+
+Every failure rejects with a `Smtp.CommandError`, except a `TypeError` for invalid options and `signal.reason` when the signal aborts. Credentials never appear in its fields.
+
+| Field | Description |
+| --- | --- |
+| `code` | `'ECONNECTION'`, `'EPROTOCOL'`, `'ETLS'`, `'EAUTH'`, `'EENVELOPE'` or `'EMESSAGE'`. |
+| `command` | The command the server refused, such as `'RCPT TO'`, or `'CONNECT'`. |
+| `responseCode` | The reply code, such as `550`. |
+| `enhancedCode` | The RFC 3463 code, such as `'5.1.1'`. |
+| `response` | The server's whole reply. |
+| `rejected` | When every recipient was refused, each one with its reply. |
+
+| `code` | Meaning |
+| --- | --- |
+| `ECONNECTION` | The socket failed to open or closed early, or the server replied 421 to any command. Retry on a new connection. |
+| `EPROTOCOL` | The greeting wasn't 220, EHLO and HELO were refused, or a reply was malformed or over 1 MiB. |
+| `ETLS` | STARTTLS was not offered or was refused, or the TLS handshake failed. |
+| `EAUTH` | Login failed, no supported method was offered, or AUTH over plaintext without `allowInsecureAuth`. |
+| `EENVELOPE` | The sender or every recipient was refused, or the server can't honor SMTPUTF8 or REQUIRETLS. |
+| `EMESSAGE` | DATA was refused, the message is over the SIZE limit, the server refused the message, or the message stream errored. |
+
+## Why use this over nodemailer
+
+- It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies.
+- STARTTLS is required unless you pass `secure: 'off'`. nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set.
+- Credentials are never sent over plaintext unless `allowInsecureAuth` is set, and never skipped: nodemailer sends the message unauthenticated when the server doesn't advertise AUTH, unless `forceAuth` is set.
+- Bare CR and bare LF are converted to CRLF before dot-stuffing, so a message can't smuggle an end of DATA. The output is byte-identical to nodemailer's, checked by an oracle test.
+- Every 421 reply is `ECONNECTION`, so one check covers "retry later on a new connection".
+- 8-bit messages are declared with BODY=8BITMIME without an extra option.
+
+On localhost, against a server that answers at once (see `test/send.bench.ts`):
+
+| Case | `@portable/smtp` | nodemailer `SMTPConnection` |
+| --- | --- | --- |
+| 10 small messages over one connection | 930–1,120 ops/s | 790–810 ops/s |
+| One 1 MB message in 64 KB chunks | 10.9–11.8 ops/s | 7.9–9.6 ops/s |
+
+## Migrating
+
+| nodemailer | @portable/smtp |
+| --- | --- |
+| `nodemailer.createTransport({ host, port, auth })` | `Smtp.connect({ connect, host, port, auth })` |
+| `transport.sendMail({ envelope, raw })` | `client.send({ from, to, message })` or `Smtp.send(mail, options)` |
+| `sendMail({ from, to, subject, html })` | Build the message with `@portable/mail`, then `client.send` |
+| `transport.verify()` | `await (await Smtp.connect(options)).close()` |
+| `secure: true` | `secure: 'on'` (the default for port 465) |
+| `requireTLS: true` | The default. `ignoreTLS: true` is `secure: 'off'`. |
+| `opportunisticTLS: true` | Not available. |
+| `auth: { type: 'OAuth2', user, accessToken }` | `auth: { user, accessToken }`. Token refresh is up to the caller. |
+| `authMethod: 'LOGIN'` | `auth: { user, pass, method: 'LOGIN' }` |
+| `connectionTimeout`, `greetingTimeout`, `socketTimeout` | `signal: AbortSignal.timeout(ms)` on `connect` and `send` |
+| `lmtp: true` | `lmtp: true` |
+| `envelope.dsn`, `dsn: { ret, envid, notify }` | `mail.dsn`. No `orcpt`. |
+| `envelope.requireTLSExtensionEnabled` | `mail.requireTls` |
+| `envelope.use8BitMime` | Declared whenever the server offers 8BITMIME. |
+| `proxy`, `getSocket` | Open the tunnel in your `connect` function. |
+| `pool: true` | Keep a `Client` open and send several messages over it. |
+| `logger`, `debug` | Not available. |
+| CRAM-MD5, custom `auth.type` handlers | Not available. WebCrypto has no MD5. |
+| `info.accepted`, `info.rejected` (strings), `info.response` | `result.accepted`, `result.rejected` (objects with `recipient`, `responseCode`, `enhancedCode`, `response`), `result.response` |
+| `info.messageId`, `info.envelope` | Not returned. The caller already has both. |
+| `err.code`, `err.responseCode`, `err.response`, `err.command` | The same fields on `Smtp.CommandError`, plus `enhancedCode`. A 421 is always `ECONNECTION`. |
+
+Also different on purpose:
+
+- An empty message is sent as an empty message. nodemailer refuses it.
+- An invalid `name` throws instead of having its CR and LF removed.
