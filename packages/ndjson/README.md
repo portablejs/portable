@@ -4,6 +4,16 @@ Decodes and encodes NDJSON (newline-delimited JSON, also called JSON Lines) stre
 
 Replaces [ndjson](https://www.npmjs.com/package/ndjson) and the `jsonl` modules of [stream-json](https://www.npmjs.com/package/stream-json).
 
+## Why use this over ndjson
+
+ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they read a `fetch` body and write a `Response` body in any runtime above, and the package has no dependencies.
+
+- Decoding 20,000 rows ran at the same speed as ndjson, and encoding them was about 1.5× faster.
+- A `null` line is emitted as `null`. In ndjson it ends the stream, because Node object streams treat `null` as the end (ndjson #6).
+- `EncoderStream` ends every line with `\n`. ndjson uses `os.EOL`, so on Windows it writes `\r\n`.
+- A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
+- A whitespace-only line is skipped, where ndjson reports it as invalid.
+
 ```sh
 npm install @portable/ndjson
 ```
