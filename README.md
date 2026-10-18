@@ -17,16 +17,16 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 | L0 | [`@portable/charset`](packages/charset) | iconv-lite (encoding) | Built |
 | L0 | [`@portable/dns-packet`](packages/dns-packet) | dns-packet | Built |
 | L1 | `@portable/json-stream` | JSONStream, stream-json, ndjson | In progress |
-| L1 | `@portable/mime-headers` | libmime, addressparser, email-addresses | Planned |
+| L1 | `@portable/mime-headers` | libmime, addressparser, email-addresses | In progress |
 | L1 | `@portable/mime-stream` | mailsplit | Planned |
 | L1 | [`@portable/image-size`](packages/image-size) | image-size | Built |
 | L1 | [`@portable/exif`](packages/exif) | exif-parser, exif-reader | Built |
 | L1 | `@portable/png` | pngjs | In progress |
 | L2 | `@portable/mail` | nodemailer's MailComposer | Planned |
-| L2 | `@portable/dns` | `node:dns` over DNS-over-HTTPS | Planned |
+| L2 | `@portable/dns` | `node:dns` over DNS-over-HTTPS | In progress |
 | L2 | `@portable/dkim` | DKIM in mailauth and nodemailer | Planned |
-| L2 | `@portable/webhooks` | per-provider webhook SDKs | Planned |
-| L2 | `@portable/oauth1` | oauth-1.0a | Planned |
+| L2 | `@portable/webhooks` | per-provider webhook SDKs | In progress |
+| L2 | `@portable/oauth1` | oauth-1.0a | In progress |
 | L3 | `@portable/spf` | mailauth's SPF | Planned |
 | L3 | `@portable/dmarc` | mailauth's DMARC | Planned |
 | L3 | `@portable/arc` | mailauth's ARC | Planned |
