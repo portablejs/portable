@@ -12,7 +12,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm test:changed` | Node tests affected by changes since `origin/main`. The pre-push hook runs this. |
 | `pnpm bench` | Builds every package, then runs the benchmarks (`*.bench.ts`) against the built `dist/`, comparing each package with the library it replaces. |
 | `pnpm coverage` | Node tests with V8 coverage of `packages/*/src`, written to `coverage/coverage-summary.json`. |
-| `pnpm readme` | Runs `pnpm coverage` and `pnpm bench`, then `scripts/readme-stats.ts` rewrites the package table in `README.md`. |
+| `pnpm readme` | Runs `pnpm coverage`, `pnpm bench` and `scripts/bundle-size.ts`, then `scripts/readme-stats.ts` rewrites the package table in `README.md` and the size line in each package README. |
 | `pnpm build` | Builds every package with zile into `dist/`. |
 | `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. |
 

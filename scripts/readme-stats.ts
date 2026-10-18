@@ -1,6 +1,7 @@
 // Rewrites the package table in README.md from coverage/coverage-summary.json, each package's
 // test/PARITY.md and .bench/report.json. `pnpm readme` produces all three first.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import type { Size } from './bundle-size.ts'
 
 type Speed = { test: string; theirs: string; label: string; ours?: string }
 
@@ -16,7 +17,12 @@ const speeds: Record<string, Speed> = {
   charset: { test: 'windows-1251', theirs: 'iconv-lite', label: 'encode windows-1251' },
   'dns-packet': { test: 'decodes', theirs: 'dns-packet', label: 'decode' },
   'json-stream': { test: 'parses the rows', theirs: 'JSONStream', label: 'parse' },
-  ndjson: { test: 'decodes 20,000 rows', theirs: 'ndjson', label: 'decode' },
+  jsonl: { test: 'decodes 20,000 rows', theirs: 'ndjson', label: 'decode' },
+  'mime-headers': {
+    test: 'decodeWords of 200 Q-encoded subjects',
+    theirs: 'libmime 5.4.9',
+    label: 'decode encoded words',
+  },
   'image-size': { test: 'parses png/sample.png', theirs: 'image-size', label: 'PNG' },
   exif: { test: 'parses a phone JPEG', theirs: 'exif-parser', label: 'parse' },
   png: {
@@ -46,6 +52,32 @@ const readJson = <T>(path: string): T | undefined =>
 
 const coverage = readJson<Coverage>('coverage/coverage-summary.json')
 const report = readJson<BenchReport>('.bench/report.json')
+const sizes =
+  readJson<Record<string, { ours: Size; upstream: Record<string, Size> }>>('.bench/sizes.json')
+
+const kB = ({ gzip, nodeOnly }: Size) =>
+  `${(gzip / 1000).toFixed(gzip < 10_000 ? 1 : 0)} kB${nodeOnly ? ' (Node only)' : ''}`
+
+function sizeOf(name: string) {
+  const size = sizes?.[name]
+  if (!size) return 'not measured'
+  const upstream = Object.entries(size.upstream).map(([label, s]) => `${kB(s)} ${label}`)
+  return `${kB(size.ours)} vs ${upstream.join(', ')}`
+}
+
+function sizeLine(name: string) {
+  const size = sizes?.[name]
+  if (!size) return undefined
+  const upstream = Object.entries(size.upstream).map(([label, s]) => `${kB(s)} for ${label}`)
+  const list =
+    upstream.length === 1
+      ? upstream[0]
+      : `${upstream.slice(0, -1).join(', ')} and ${upstream.at(-1)}`
+  const note = Object.values(size.upstream).some((s) => s.nodeOnly)
+    ? ' "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.'
+    : ''
+  return `Bundled for the browser, minified and gzipped, \`@portable/${name}\` is ${kB(size.ours)}, against ${list}.${note}`
+}
 
 const percent = ({ covered, total }: CoverageCount) =>
   total === 0 ? '100%' : `${((100 * covered) / total).toFixed(1)}%`
@@ -123,8 +155,8 @@ function speedOf(name: string) {
 }
 
 const header = [
-  '| Layer | Package | Replaces | Status | Speed vs replaced library | Line coverage | Branch coverage | Upstream cases covered | Upstream bugs fixed |',
-  '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+  '| Layer | Package | Replaces | Status | Speed vs replaced library | Size, gzipped | Line coverage | Branch coverage | Upstream cases covered | Upstream bugs fixed |',
+  '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
 ]
 
 const readme = readFileSync('README.md', 'utf8')
@@ -143,11 +175,34 @@ const rows = table!
       .slice(1, -1)
       .map((cell) => cell.trim())
     const name = pkg!.match(/@portable\/([\w-]+)/)![1]!
-    if (status !== 'Built') return [layer, pkg, replaces, status, '–', '–', '–', '–', '–']
+    if (status !== 'Built') return [layer, pkg, replaces, status, '–', '–', '–', '–', '–', '–']
     const { lines, branches } = coverageOf(name)
     const { cases, issues } = parityOf(name)
-    return [layer, pkg, replaces, status, speedOf(name), lines, branches, cases, issues]
+    return [
+      layer,
+      pkg,
+      replaces,
+      status,
+      speedOf(name),
+      sizeOf(name),
+      lines,
+      branches,
+      cases,
+      issues,
+    ]
   })
   .map((cells) => `| ${cells.join(' | ')} |`)
 
 writeFileSync('README.md', `${before}${start}\n${[...header, ...rows].join('\n')}\n${end}${after}`)
+
+const sizeStart = '<!-- size:start -->'
+const sizeEnd = '<!-- size:end -->'
+for (const name of Object.keys(sizes ?? {})) {
+  const path = `packages/${name}/README.md`
+  const line = sizeLine(name)
+  if (!existsSync(path) || !line) continue
+  const text = readFileSync(path, 'utf8')
+  const pattern = new RegExp(`${sizeStart}[\\s\\S]*?${sizeEnd}`)
+  if (pattern.test(text))
+    writeFileSync(path, text.replace(pattern, `${sizeStart}\n${line}\n${sizeEnd}`))
+}

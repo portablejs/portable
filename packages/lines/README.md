@@ -37,6 +37,10 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 - A multi-byte character or a CRLF split across two chunks is read as one character or one line break.
 - Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`, and here `skipEmpty: true` does the same.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/lines` is 0.6 kB, against 1.1 kB (Node only) for split2. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | split2 / byline | @portable/lines |

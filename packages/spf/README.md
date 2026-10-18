@@ -92,6 +92,10 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 - It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
 - It is faster. On a record with nested includes and a fake resolver, it runs 11,000 to 13,000 checks a second in Node, against 9,000 for mailauth's default mode and 7,000 for its strict mode.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/spf` is 4.6 kB, against 442 kB (Node only) for mailauth. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating from mailauth
 
 | mailauth | @portable/spf |

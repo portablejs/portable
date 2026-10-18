@@ -11,6 +11,7 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 The numbers in the table come from `scripts/readme-stats.ts`. Run `pnpm readme` to measure them again and rewrite the table.
 
 - **Speed** is the package's throughput divided by the replaced library's in one benchmark from `pnpm bench`, run in Node 24 against the built `dist/`. It changes from machine to machine.
+- **Size** is the whole public API bundled for the browser with its dependencies, minified and gzipped, measured by `scripts/bundle-size.ts` with the same upstream versions the tests install. "Node only" marks a library that imports Node builtins or uses `Buffer`. Its size leaves those out, and a browser bundle would need polyfills for them.
 - **Line and branch coverage** come from V8 coverage of each package's `src/` while the Node tests run (`pnpm coverage`). Coverage is measured in Node only, so code that runs only in browsers, such as base64's native `toBase64` path, counts as uncovered.
 - **Upstream cases covered** counts the upstream tests in `test/PARITY.md` that map to one of our tests, out of every upstream test listed there. The n/a ones don't apply to this package, such as tests of Node stream internals.
 - **Upstream bugs fixed** counts the rows under "Known upstream issues" in the same file.

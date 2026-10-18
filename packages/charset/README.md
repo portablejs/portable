@@ -75,6 +75,10 @@ iconv-lite looks charsets up by name in one registry, so a bundle includes every
 - `EncoderStream` encodes a surrogate pair split across chunks as one character (iconv-lite #282), and a prototype key such as `constructor` is not a charset label (iconv-lite #328).
 - ISO-2022-JP can be encoded. iconv-lite doesn't support it.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/charset` is 69 kB, against 153 kB (Node only) for iconv-lite. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating from iconv-lite
 
 | iconv-lite | @portable/charset |

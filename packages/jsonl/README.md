@@ -45,6 +45,10 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
 - A whitespace-only line is skipped, where ndjson reports it as invalid.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/jsonl` is 0.6 kB, against 13 kB (Node only) for ndjson. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | ndjson / stream-json | @portable/jsonl |

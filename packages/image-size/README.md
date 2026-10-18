@@ -63,6 +63,10 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError` and `
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - Lossless and arithmetic-coded JPEGs are read, which image-size rejects, and there is no global `disableTypes` state shared by every caller in the process.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/image-size` is 4.7 kB, against 4.7 kB for image-size.
+<!-- size:end -->
+
 ## Migrating
 
 | image-size | @portable/image-size |

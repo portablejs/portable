@@ -50,6 +50,10 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
 - `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/quoted-printable` is 2.1 kB, against 1.9 kB (Node only) for libqp and 1.1 kB for quoted-printable. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | libqp / quoted-printable | @portable/quoted-printable |

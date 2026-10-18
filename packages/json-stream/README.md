@@ -56,6 +56,10 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 - `null` matches are emitted. JSONStream drops them.
 - `encodeStream` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/json-stream` is 3.9 kB, against 3.9 kB (Node only) for JSONStream and 2.9 kB (Node only) for json-stream-stringify. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | Upstream | @portable/json-stream |

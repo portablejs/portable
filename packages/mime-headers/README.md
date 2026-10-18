@@ -77,6 +77,10 @@ It has no dependencies, takes and returns plain strings and `Uint8Array`s, and d
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
 - Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/mime-headers` is 8.0 kB, against 258 kB (Node only) for libmime, 2.6 kB for addressparser and 3.1 kB for email-addresses. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | libmime / addressparser / email-addresses | @portable/mime-headers |

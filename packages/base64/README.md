@@ -89,6 +89,10 @@ Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. Mean time
 
 libbase64's `encode` and `decode` call `Buffer`, which is C++. For 32 bytes, all four libraries take about 0.5 µs.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/base64` is 2.9 kB, against 1.8 kB (Node only) for libbase64, 1.1 kB for base64-js and 1.8 kB for js-base64. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | Before | @portable/base64 |

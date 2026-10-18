@@ -112,6 +112,10 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
 - Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/exif` is 7.9 kB, against 7.8 kB for exif-parser and 4.7 kB for exif-reader.
+<!-- size:end -->
+
 ## Migrating
 
 | exif-parser | @portable/exif |

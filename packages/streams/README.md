@@ -103,6 +103,10 @@ The libraries above were written for Node streams. This package reads web stream
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
 - A number chunk is a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/streams` is 1.9 kB, against 2.1 kB (Node only) for get-stream and 1.2 kB (Node only) for merge2. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | Before | @portable/streams |

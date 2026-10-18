@@ -31,6 +31,10 @@ The signature covers what the server will see, because it is computed from the `
 - Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Bytes that aren't UTF-8 keep their value.
 - JSON, multipart and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/oauth1` is 7.4 kB, against 1.7 kB for oauth-1.0a and 5.2 kB (Node only) for oauth. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Options
 
 | Option | Default | Description |

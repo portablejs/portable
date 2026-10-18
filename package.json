@@ -11,7 +11,7 @@
     "test:changed": "vp test run --changed origin/main --project node",
     "test:browser": "vp test run --project browser",
     "coverage": "vp test run --project node --coverage",
-    "readme": "pnpm coverage && pnpm bench && node scripts/readme-stats.ts",
+    "readme": "pnpm coverage && pnpm bench && node scripts/bundle-size.ts && node scripts/readme-stats.ts",
     "bench": "pnpm build && BENCH_DIST=1 vp test bench --run --reporter=verbose --reporter=json --outputFile.json=.bench/report.json",
     "changeset": "changeset",
     "changeset:version": "changeset version",

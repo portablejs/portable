@@ -59,6 +59,10 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 - `encode` doesn't modify the packet you pass. dns-packet adds empty sections to it and overwrites CAA `flags`.
 - Encoding a DNS-over-HTTPS query was about 1.2× faster than dns-packet, and encoding 48 captured responses ran at the same speed. Decoding them was about 1.25× slower inside the Vitest benchmark. The built package in plain Node decodes about 1.8× faster than dns-packet, and Vitest's export getters account for the difference.
 
+<!-- size:start -->
+Bundled for the browser, minified and gzipped, `@portable/dns-packet` is 6.7 kB, against 8.7 kB (Node only) for dns-packet. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+<!-- size:end -->
+
 ## Migrating
 
 | dns-packet | @portable/dns-packet |
