@@ -29,8 +29,8 @@ libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(en
 | decode() > removes whitespace from the end of lines | same name | |
 | decode() > treats a soft line break with trailing whitespace as a soft line break | same name | |
 | decode() > keeps whitespace in front of a soft line break | same name | |
-| decode() > handles a long run of whitespace in linear time | `linear-time.test.ts > decode() of a run of spaces`, `... of a run of tabs` | |
-| decode() > handles a long run of "=" signs in linear time | `linear-time.test.ts > decode() of a run of "="` | |
+| decode() > handles a long run of whitespace in linear time | `linear-time.bench.ts > decode() of a run of spaces`, `... of a run of tabs` | |
+| decode() > handles a long run of "=" signs in linear time | `linear-time.bench.ts > decode() of a run of "="` | |
 | decode() > sizes the output for a body made of escapes | same name | |
 | Raw 8-bit bytes > decode() keeps raw UTF-8 bytes from a Buffer | `raw 8-bit bytes > decode() keeps raw UTF-8 bytes` | |
 | Raw 8-bit bytes > decode() keeps raw latin1 bytes from a Buffer | `raw 8-bit bytes > decode() keeps raw latin1 bytes` | |
@@ -140,7 +140,7 @@ Differential tests against libqp 2.1.3. `quoted-printable.oracle.test.ts` covers
 
 ## libqp `complexity-test.ts`
 
-`linear-time.test.ts` (Node only, since it times runs).
+`linear-time.bench.ts` (Node only, since it times runs).
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -193,7 +193,7 @@ upstream's `decode()` also removes `=` before a lone CR. We follow RFC 2045 and 
 | quoted-printable splits a UTF-8 sequence across a soft line break | `a soft line break never splits a UTF-8 sequence` |
 | libqp 2.1.2: `decode()` turned raw 8-bit bytes into U+FFFD | `2.1.2: keeps raw 8-bit bytes when decoding` |
 | libqp 2.1.3: a line could start with `--`, which reads as a MIME boundary | `2.1.3: never starts a line with a hyphen ...` |
-| libqp 2.1.3: trailing whitespace removal in `decode()` was quadratic | `linear-time.test.ts > decode() of a run of spaces` and the other runs |
+| libqp 2.1.3: trailing whitespace removal in `decode()` was quadratic | `linear-time.bench.ts > decode() of a run of spaces` and the other runs |
 | libqp 3.0.0: `wrap()` looped forever below a line length of 4 | `3.0.0: rejects a line length below 4 ...` |
 | libqp 3.0.0: `wrap()` split UTF-8 sequences after four escapes | `libqp.conformance.ts > soft line breaks > never splits a UTF-8 sequence` |
 | libqp 3.0.0: the Encoder escaped whitespace at the end of every chunk, so output depended on chunking | `libqp.conformance.ts > EncoderStream > produces the same output however the input is split` |
