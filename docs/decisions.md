@@ -2,6 +2,18 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `Spf.check` rejects with `signal.reason`
+
+- **Options:** keep returning a `temperror` result when `signal` aborts; reject with `signal.reason`, as the `signal` rule in AGENTS.md says; return `temperror` only when the reason is a `TimeoutError` and reject otherwise.
+- **Trade-offs:** `temperror` on abort reads well for RFC 7208's time limit (section 4.6.4), but a caller that aborts because its client went away gets a result it has to throw away, and it is the only package that doesn't reject. Branching on the reason's type makes `AbortSignal.timeout` and `AbortSignal.any([timeout, request.signal])` behave differently in ways a caller can't see from the types.
+- **Chosen:** reject with `signal.reason`. A caller that wants the RFC behavior catches the `TimeoutError` and reports `temperror`; the README says so. The signal is also passed to each resolver call as `{ signal }`, and `Dns.Resolver`'s methods now declare that optional argument, so `Dns.createResolver()` cancels its in-flight `fetch` calls. `node:dns/promises` ignores the argument.
+
+## `Streams.concat`, `merge`, `fromIterable` and `toAsyncIterable` take no signal
+
+- **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors and to the transforms used with `pipeThrough`.
+- **Trade-offs:** `concat` and `merge` take their sources as rest parameters, so an options object can't go last without changing them to take an array. All four return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels every source. A caller with a signal passes it to the `pipeTo` or collector that reads the result, and that cancels the chain.
+- **Chosen:** `toBytes`, `toText`, `toJson`, `toArray`, `map`, `filter`, `tap`, `batch`, `limitBytes` and `transform` take `signal`, and `tee` already did. The other four don't, and the README says how to cancel them.
+
 ## `@portable/charset`'s root exports
 
 - **Options:** keep `encode`, `EncoderStream`, `utf8`, `load`, `normalizeLabel`, `isSupported`, `UnsupportedError` and the types `Charset` and `CharsetName`; drop `isSupported`; also rename the `Charset` type.

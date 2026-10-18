@@ -92,20 +92,32 @@ describe('Spf.check', () => {
     expect((await check(zone, {}, { receiver: undefined })).explanation).toBe('checked by unknown')
   })
 
-  test('gives temperror when the signal aborts before the DNS answers', async () => {
+  test('rejects with the reason and aborts the lookup when the signal aborts before the DNS answers', async () => {
     const controller = new AbortController()
-    const resolver = { ...zoneResolver({}), resolveTxt: () => new Promise<string[][]>(() => {}) }
+    let lookupSignal: AbortSignal | undefined
+    const resolver = {
+      ...zoneResolver({}),
+      resolveTxt: (_name: string, options?: { signal?: AbortSignal | undefined }) => {
+        lookupSignal = options?.signal
+        return new Promise<string[][]>(() => {})
+      },
+    }
     const pending = Spf.check(
       { ip: '192.0.2.1', sender: 'user@example.test' },
       { resolver, signal: controller.signal },
     )
-    controller.abort()
-    expect(await pending).toMatchObject({ result: 'temperror' })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const reason = new Error('stop')
+    controller.abort(reason)
+    await expect(pending).rejects.toBe(reason)
+    expect(lookupSignal?.aborted).toBe(true)
   })
 
-  test('gives temperror for a signal that has already aborted', async () => {
-    const result = await check(withRecord('v=spf1 +all'), {}, { signal: AbortSignal.abort() })
-    expect(result.result).toBe('temperror')
+  test('rejects with the reason for a signal that has already aborted', async () => {
+    const reason = new Error('stop')
+    await expect(
+      check(withRecord('v=spf1 +all'), {}, { signal: AbortSignal.abort(reason) }),
+    ).rejects.toBe(reason)
   })
 
   test('gives temperror for a resolver that throws synchronously or rejects with a non-error', async () => {

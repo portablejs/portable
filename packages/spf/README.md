@@ -44,7 +44,7 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 | --- | --- | --- |
 | `resolver` | required | Answers the lookups. `Dns.createResolver()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
 | `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
-| `signal` | none | Stops the check with `temperror`. RFC 7208 section 4.6.4 suggests a limit of at least 20 seconds. |
+| `signal` | none | Rejects with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
 There is no default resolver. The one you pass decides which servers see the client's IP address (`exists:%{i}...` sends it in queries), and a mail server usually has its own. Pass `Dns.createResolver()` for DNS-over-HTTPS.
 
@@ -104,7 +104,7 @@ Bundled for the browser, minified and gzipped, `@portable/spf` is 4.6 kB, agains
 | `resolver: dns.promises.resolve` (the default) | `resolver: dns` from `node:dns/promises`. A resolver is an object with `resolve4` and the rest, not one `(name, type)` function. |
 | `mta` | `receiver` |
 | `strict: true` | The only behavior. |
-| `maxElapsedTime: ms` | `signal: AbortSignal.timeout(ms)` |
+| `maxElapsedTime: ms` | `signal: AbortSignal.timeout(ms)`, and report its `TimeoutError` as `temperror` |
 | `maxResolveCount`, `maxVoidCount` | Not supported. The RFC's limits are fixed. |
 | `result.status.result` | `result.result` |
 | `result.status.comment` | `result.reason` for errors. Build your own comment for the others. |

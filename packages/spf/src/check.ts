@@ -74,7 +74,7 @@ export declare namespace check {
     resolver: Resolver
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined
-    /** Stops the check with `temperror`, such as `AbortSignal.timeout(20_000)` (RFC 7208 section 4.6.4). */
+    /** Rejects with `signal.reason` and cancels the pending lookups when aborted. */
     signal?: AbortSignal | undefined
   }
 }
@@ -103,14 +103,19 @@ const results: Record<Qualifier, Result.Code> = {
   '?': 'neutral',
 }
 
-const methods: { [K in keyof Answers]: (resolver: Resolver, name: string) => Promise<Answers[K]> } =
-  {
-    A: (resolver, name) => resolver.resolve4(name),
-    AAAA: (resolver, name) => resolver.resolve6(name),
-    MX: (resolver, name) => resolver.resolveMx(name),
-    TXT: (resolver, name) => resolver.resolveTxt(name),
-    PTR: (resolver, name) => resolver.resolvePtr(name),
-  }
+type Lookup<T> = (
+  resolver: Resolver,
+  name: string,
+  options: Dns.createResolver.CallOptions,
+) => Promise<T>
+
+const methods: { [K in keyof Answers]: Lookup<Answers[K]> } = {
+  A: (resolver, name, options) => resolver.resolve4(name, options),
+  AAAA: (resolver, name, options) => resolver.resolve6(name, options),
+  MX: (resolver, name, options) => resolver.resolveMx(name, options),
+  TXT: (resolver, name, options) => resolver.resolveTxt(name, options),
+  PTR: (resolver, name, options) => resolver.resolvePtr(name, options),
+}
 
 const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
 
@@ -119,7 +124,7 @@ const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  * reads the SPF record of the MAIL FROM domain, or of the HELO name when the sender is empty, and
  * evaluates it against the client's IP address, with the RFC's limits of 10 DNS-querying terms
  * and 2 void lookups. DNS failures give `temperror` and broken records `permerror`. The promise
- * rejects only for an `ip` that isn't an IP address.
+ * rejects only for an `ip` that isn't an IP address, or with `signal.reason` when `signal` aborts.
  *
  * @example
  * ```ts
@@ -348,7 +353,7 @@ async function reverseNames(ctx: Context): Promise<string[] | undefined> {
   try {
     return await query(ctx, 'PTR', Ip.reverseName(ctx.client))
   } catch (error) {
-    if (error instanceof Failure && !ctx.signal?.aborted) return undefined
+    if (error instanceof Failure) return undefined
     throw error
   }
 }
@@ -362,7 +367,7 @@ async function validate(ctx: Context, names: readonly string[]): Promise<string[
           ? stripDot(name).toLowerCase()
           : ''
       } catch (error) {
-        if (error instanceof Failure && !ctx.signal?.aborted) return ''
+        if (error instanceof Failure) return ''
         throw error
       }
     }),
@@ -393,13 +398,14 @@ async function query<K extends keyof Answers>(
   const key = name.toLowerCase()
   let answer = cache.get(key)
   if (!answer) {
-    answer = Promise.resolve().then(() => methods[type](ctx.resolver, name))
+    answer = Promise.resolve().then(() => methods[type](ctx.resolver, name, { signal: ctx.signal }))
     answer.catch(() => {})
     cache.set(key, answer)
   }
   try {
     return await abortable(answer, ctx.signal)
   } catch (error) {
+    ctx.signal?.throwIfAborted()
     if (error instanceof Failure) throw error
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
@@ -412,10 +418,9 @@ async function query<K extends keyof Answers>(
 
 function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
   if (!signal) return promise
-  const stopped = () => temperror('The time limit was reached')
-  if (signal.aborted) return Promise.reject(stopped())
+  if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {
-    const onAbort = () => reject(stopped())
+    const onAbort = () => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })
     promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort))
   })

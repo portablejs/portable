@@ -61,18 +61,18 @@ export type NaptrRecord = {
  * ```
  */
 export type Resolver = {
-  resolve4(name: string): Promise<string[]>
-  resolve6(name: string): Promise<string[]>
-  resolveCname(name: string): Promise<string[]>
-  resolveMx(name: string): Promise<MxRecord[]>
-  resolveNs(name: string): Promise<string[]>
-  resolvePtr(name: string): Promise<string[]>
-  resolveTxt(name: string): Promise<string[][]>
-  resolveSrv(name: string): Promise<SrvRecord[]>
-  resolveSoa(name: string): Promise<SoaRecord>
-  resolveCaa(name: string): Promise<CaaRecord[]>
-  resolveNaptr(name: string): Promise<NaptrRecord[]>
-  reverse(ip: string): Promise<string[]>
+  resolve4(name: string, options?: createResolver.CallOptions): Promise<string[]>
+  resolve6(name: string, options?: createResolver.CallOptions): Promise<string[]>
+  resolveCname(name: string, options?: createResolver.CallOptions): Promise<string[]>
+  resolveMx(name: string, options?: createResolver.CallOptions): Promise<MxRecord[]>
+  resolveNs(name: string, options?: createResolver.CallOptions): Promise<string[]>
+  resolvePtr(name: string, options?: createResolver.CallOptions): Promise<string[]>
+  resolveTxt(name: string, options?: createResolver.CallOptions): Promise<string[][]>
+  resolveSrv(name: string, options?: createResolver.CallOptions): Promise<SrvRecord[]>
+  resolveSoa(name: string, options?: createResolver.CallOptions): Promise<SoaRecord>
+  resolveCaa(name: string, options?: createResolver.CallOptions): Promise<CaaRecord[]>
+  resolveNaptr(name: string, options?: createResolver.CallOptions): Promise<NaptrRecord[]>
+  reverse(ip: string, options?: createResolver.CallOptions): Promise<string[]>
 }
 
 export declare namespace createResolver {
