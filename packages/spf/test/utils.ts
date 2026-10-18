@@ -60,6 +60,31 @@ export function zoneResolver(zone: Zone, log: Query[] = []): Spf.Resolver {
   }
 }
 
+/**
+ * mailauth's resolver shape, `(name, type) => records`, answered by `resolver`. mailauth's
+ * `DNSResolver` type leaves out the MX objects it reads, hence the cast.
+ */
+export function mailauthResolver(
+  resolver: Spf.Resolver,
+): (name: string, type: string) => Promise<string[][] | string[]> {
+  return (name, type) => {
+    switch (type) {
+      case 'A':
+        return resolver.resolve4(name)
+      case 'AAAA':
+        return resolver.resolve6(name)
+      case 'MX':
+        return resolver.resolveMx(name) as unknown as Promise<string[]>
+      case 'PTR':
+        return resolver.resolvePtr(name)
+      case 'TXT':
+        return resolver.resolveTxt(name)
+      default:
+        return Promise.reject(dnsError('ENODATA', name))
+    }
+  }
+}
+
 function normalize(name: string): string {
   return name.toLowerCase().replace(/\.$/, '')
 }
