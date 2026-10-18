@@ -1,0 +1,47 @@
+{
+  "name": "@portable/spf",
+  "description": "Evaluate SPF (RFC 7208) for a sender IP, HELO name and MAIL FROM domain, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "dependencies": {
+    "@portable/dns": "workspace:*"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/spf"
+  },
+  "keywords": [
+    "spf",
+    "rfc7208",
+    "email",
+    "smtp",
+    "mailauth",
+    "sender-policy-framework",
+    "dmarc"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
