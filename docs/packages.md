@@ -131,6 +131,7 @@ Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars,
 | multipart/form-data (busboy) | `@remix-run/multipart-parser`, `@remix-run/form-data-parser` | out of scope |
 | tar parsing | `@remix-run/tar-parser` or modern-tar | out of scope |
 | Serialize objects with promises, Dates, Maps etc. and stream them, resolving out of order as promises settle | turbo-stream (Jacob Ebey, Remix; used by React Router's data loading) | not rebuilt; `json-stream`'s async `stringify` covers only the narrower case of plain, in-order JSON any parser can read |
+| OAuth 2 clients (authorization code with PKCE, token refresh, discovery) | oauth4webapi, or arctic for provider presets | out of scope; both already use only web APIs and have no dependencies. `oauth1` stays, because OAuth 1.0a signs requests and shares no code with OAuth 2 |
 | etag (507M) | For files, `@remix-run/response` already sets ETags; for arbitrary bodies, an ETag is one `crypto.subtle.digest` call | not a package by rule 1; a README recipe instead |
 
 ## Build order
