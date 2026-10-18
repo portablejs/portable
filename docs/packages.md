@@ -42,7 +42,7 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |
-| `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage and object shape. | dns-packet 79M |
+| `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
 
 #### `streams` bridge API
 
