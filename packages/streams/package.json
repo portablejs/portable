@@ -1,0 +1,52 @@
+{
+  "name": "@portable/streams",
+  "description": "Collect, combine and bridge web streams and iterables, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@types/merge2": "^1.4.4",
+    "@types/node": "^26.6.5",
+    "get-stream": "^9.0.1",
+    "merge2": "^1.4.1"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/streams"
+  },
+  "keywords": [
+    "streams",
+    "web-streams",
+    "get-stream",
+    "concat-stream",
+    "merge2",
+    "through2",
+    "async-iterable",
+    "readablestream"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
