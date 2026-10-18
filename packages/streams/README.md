@@ -65,7 +65,7 @@ const [forExif, forStorage, forResize] = Streams.tee(upload.stream(), 3, {
   unit: 'bytes',
 })
 await Promise.all([
-  readExif(forExif), // cancels forExif once it has read the metadata
+  Exif.parseStream(forExif), // cancels forExif once it has the metadata
   bucket.put(key, forStorage),
   bucket.put(`${key}.thumb`, resize(forResize)),
 ])
