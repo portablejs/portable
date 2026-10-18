@@ -45,7 +45,7 @@ export class LineStream extends TransformStream<Uint8Array | string, string> {
     const emit = (line: string, controller: TransformStreamDefaultController<string>) => {
       if (skipEmpty && line === '') return
       if (line.length > maxLength) {
-        if (overflow === 'error') throw new OverflowError(maxLength)
+        if (overflow === 'error') throw new MaxLengthError(maxLength)
         return
       }
       controller.enqueue(line)
@@ -70,7 +70,7 @@ export class LineStream extends TransformStream<Uint8Array | string, string> {
         for (const line of lines) emit(line, controller)
 
         if (partial.length > maxLength) {
-          if (overflow === 'error') throw new OverflowError(maxLength)
+          if (overflow === 'error') throw new MaxLengthError(maxLength)
           overflowed = true
           partial = ''
         }
@@ -88,9 +88,12 @@ export class LineStream extends TransformStream<Uint8Array | string, string> {
 }
 
 /** Thrown when a line grows past `maxLength` and `overflow` is `'error'`. */
-export class OverflowError extends Error {
-  override name = 'LineStream.OverflowError'
+export class MaxLengthError extends Error {
+  override name = 'Lines.MaxLengthError'
+  /** The limit that was exceeded. */
+  readonly maxLength: number
   constructor(maxLength: number) {
     super(`Line exceeded maxLength of ${maxLength}.`)
+    this.maxLength = maxLength
   }
 }

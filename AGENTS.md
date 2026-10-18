@@ -35,7 +35,7 @@ Every package follows the same shape, so a caller who knows one knows the rest.
 - Bytes are `Uint8Array` in and out, never `ArrayBuffer` or `Buffer`. Functions that take text also take its bytes (`string | Uint8Array`). Text comes out as `string`.
 - Sync unless the platform API it needs is async, such as `crypto.subtle` or `CompressionStream`.
 - One optional `options` object last. No positional booleans or overloads keyed on argument count.
-- Errors are thrown, never returned. Reuse these names where they fit: `TruncatedError` (input ended early), `InvalidInputError` (malformed input), `UnsupportedError` (valid input the package doesn't handle). Add another error class only when a caller needs to tell it apart.
+- Errors are thrown, never returned. Reuse these names where they fit: `TruncatedError` (input ended early), `InvalidInputError` (malformed input), `UnsupportedError` (valid input the package doesn't handle). Add another error class only when a caller needs to tell it apart. An error for an exceeded size limit is named after the option, like `Streams.MaxBytesError` for `maxBytes`, and stores the limit.
 - Results are plain objects and arrays with documented types, not class instances.
 
 ## Code style
@@ -46,7 +46,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 - Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`LineStream.Options`).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`.
 - Relative imports end in `.js`.
-- Classes only for errors and for subclasses of platform types. Error `name`s are namespaced, like `'LineStream.OverflowError'`.
+- Classes only for errors and for subclasses of platform types. Error `name`s are namespaced by package, like `'Lines.MaxLengthError'`.
 - Public exports have JSDoc with an `@example`. Other comments are rare: write one only when the code can't say why, and run the `no-comments` skill before you finish a change.
 
 ## Tests

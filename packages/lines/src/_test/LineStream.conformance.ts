@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { LineStream, OverflowError } from '../index.js'
+import { LineStream, MaxLengthError } from '../index.js'
 import empty from './fixtures/empty.txt?raw'
 import rfc from './fixtures/rfc.txt?raw'
 import { chunked, collect, encode, fromChunks, split, unicodeLineBreak } from './utils.js'
@@ -65,7 +65,7 @@ describe('split2', () => {
   })
 
   test('errors when a line exceeds maxLength', async () => {
-    await expect(split(['hey'], { maxLength: 2 })).rejects.toThrow(OverflowError)
+    await expect(split(['hey'], { maxLength: 2 })).rejects.toThrow(MaxLengthError)
   })
 
   test('allows chunks longer than maxLength when every line fits', async () => {
@@ -79,7 +79,7 @@ describe('split2', () => {
   })
 
   test('applies maxLength to whole lines regardless of chunking', async () => {
-    await expect(split(['ok\ntoolong\n'], { maxLength: 4 })).rejects.toThrow(OverflowError)
+    await expect(split(['ok\ntoolong\n'], { maxLength: 4 })).rejects.toThrow(MaxLengthError)
     expect(await split(['ok\ntoolong\nok2'], { maxLength: 4, overflow: 'skip' })).toEqual([
       'ok',
       'ok2',

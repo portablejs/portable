@@ -25,7 +25,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 | `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. |
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. |
 | `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units. |
-| `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `OverflowError`, `'skip'` drops the line. |
+| `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line. |
 | `skipEmpty` | `false` | Drop empty lines. |
 
 ## Migrating

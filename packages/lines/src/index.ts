@@ -1,1 +1,1 @@
-export { LineStream, OverflowError, type Separator } from './LineStream.js'
+export { LineStream, MaxLengthError, type Separator } from './LineStream.js'
