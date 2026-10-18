@@ -101,6 +101,12 @@ describe('display names', () => {
     expect(one('bar.net <foo@bar.net>').name).toBe('bar.net')
   })
 
+  test('a quoted name that starts with a dot, as formatAddresses writes it', () => {
+    expect(one('"." <foo@bar.net>').name).toBe('.')
+    expect(one('".x" <foo@bar.net>').name).toBe('.x')
+    expect(() => strict('.x <foo@bar.net>')).toThrow(InvalidInputError)
+  })
+
   test('UTF-8 names', () => {
     expect(one('杨孝宇 <xiaoyu@example.com>').name).toBe('杨孝宇')
     expect(one('"杨孝宇" <xiaoyu@example.com>').name).toBe('杨孝宇')

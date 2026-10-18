@@ -527,7 +527,7 @@ class Parser {
       if (token.kind === 'comment' || token.role === 'skip') continue
       if (
         (token.kind !== 'text' && token.kind !== 'quoted') ||
-        (first && token.value.startsWith('.'))
+        (first && token.kind === 'text' && token.value.startsWith('.'))
       )
         this.invalid(`${JSON.stringify(token.value)} can't be part of a display name.`)
       first = false
