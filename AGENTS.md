@@ -31,7 +31,7 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 Every package follows the same shape, so a caller who knows one knows the rest.
 
 - Callers import a package as a namespace: `import * as Base64 from '@portable/base64'`. Exports therefore use short names without the package name: `Base64.encode`, not `encodeBase64`. Named exports only.
-- Use the same verbs everywhere. `encode` and `decode` convert between a value and its bytes or text. `parse` reads a value out of bytes in one direction only, as image-size and exif do. `parse` and `format` are the pair for a text syntax with structure, such as an address list or a header value with parameters, where the text is meant to be read as well as decoded. A stream input variant adds `Stream` (`parseStream(stream)`), and a sync variant of an async function adds `Sync`.
+- Use the same verbs everywhere. `encode` and `decode` convert between a value and its bytes or text. `parse` reads a value out of bytes in one direction only, as image-size and exif do. `parse` and `format` are the pair for a text syntax with structure, such as an address list or a header value with parameters, where the text is meant to be read as well as decoded. A variant whose bytes or text are a stream adds `Stream`: `ImageSize.parseStream(stream)` reads one, and `JsonStream.encodeStream(value)` returns one. A sync variant of an async function adds `Sync`.
 - Streaming transforms are `TransformStream` subclasses named after `TextDecoderStream`. A transform that reads bytes or text into values is `DecoderStream`, and one that writes values as bytes or text is `EncoderStream`, so `Lines.DecoderStream` splits bytes into lines as `Jsonl.DecoderStream` splits them into JSON values. Name a transform for what it does only when it neither decodes nor encodes. Generic operators that take a function or a number, like the array helpers, are lowercase factories instead: `Streams.map(fn)`, `Streams.limitBytes(n)`.
 - Bytes are `Uint8Array` in and out, never `ArrayBuffer` or `Buffer`. Functions that take text also take its bytes (`string | Uint8Array`). Text comes out as `string`.
 - Sync unless the platform API it needs is async, such as `crypto.subtle` or `CompressionStream`.
@@ -47,7 +47,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 - Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`DecoderStream.Options`).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`.
 - Relative imports end in `.js`.
-- Classes only for errors and for subclasses of platform types. Error `name`s are namespaced by package, like `'Lines.MaxLengthError'`.
+- Classes only for errors and for subclasses of platform types. Error classes extend `Error`, not `TypeError` or another built-in error. Error `name`s are namespaced by package, like `'Lines.MaxLengthError'`.
 - Public exports have JSDoc with an `@example`. Other comments are rare: write one only when the code can't say why, and run the `no-comments` skill before you finish a change.
 
 ## Tests

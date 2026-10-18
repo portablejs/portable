@@ -1,7 +1,7 @@
 import { InvalidInputError, TruncatedError } from './errors.js'
 import { compile, type States } from './path.js'
 
-export declare namespace ParserStream {
+export declare namespace DecoderStream {
   type Options = {
     /**
      * JSONPath expressions for the values to emit. Supported: `$` (the root), `.name`,
@@ -70,13 +70,13 @@ for (const character of ' \t\n\r,:0123456789+-.eEtruefalsn')
  * // {"total_rows":129,"rows":[{"id":"a"},{"id":"b"}]}
  * const response = await fetch('https://example.com/_all_docs')
  * const matches = response.body!.pipeThrough(
- *   new JsonStream.ParserStream({ paths: ['$.total_rows', '$.rows[*]'] }),
+ *   new JsonStream.DecoderStream({ paths: ['$.total_rows', '$.rows[*]'] }),
  * )
  * // { path: ['total_rows'], value: 129 }, { path: ['rows', 0], value: { id: 'a' } }, ...
  * ```
  */
-export class ParserStream extends TransformStream<Uint8Array | string, ParserStream.Match> {
-  constructor(options: ParserStream.Options = {}) {
+export class DecoderStream extends TransformStream<Uint8Array | string, DecoderStream.Match> {
+  constructor(options: DecoderStream.Options = {}) {
     const { paths = ['$'] } = options
     const matcher = compile(paths)
     const decoder = new TextDecoder()
@@ -105,7 +105,7 @@ export class ParserStream extends TransformStream<Uint8Array | string, ParserStr
     let skipString = false
     let skipEscape = false
 
-    let controller!: TransformStreamDefaultController<ParserStream.Match>
+    let controller!: TransformStreamDefaultController<DecoderStream.Match>
     let text = ''
 
     const invalid = (i: number): never => {

@@ -1,5 +1,5 @@
 import { fromIterable, toArray, toText } from '@portable/streams'
-import { encode, ParserStream } from '@portable/json-stream'
+import { encodeStream, DecoderStream } from '@portable/json-stream'
 
 /** U+2028, which the formatter would turn into a literal line break inside a string. */
 export const lineSeparator: string = String.fromCharCode(0x2028)
@@ -31,20 +31,20 @@ export function randomChunks(bytes: Uint8Array, seed: number, maxSize = 64): Uin
 
 export function parse(
   chunks: readonly (string | Uint8Array)[],
-  options?: ParserStream.Options,
-): Promise<ParserStream.Match[]> {
-  return toArray(fromIterable(chunks).pipeThrough(new ParserStream(options)))
+  options?: DecoderStream.Options,
+): Promise<DecoderStream.Match[]> {
+  return toArray(fromIterable(chunks).pipeThrough(new DecoderStream(options)))
 }
 
 export async function parseValues(
   chunks: readonly (string | Uint8Array)[],
-  options?: ParserStream.Options,
+  options?: DecoderStream.Options,
 ): Promise<unknown[]> {
   return (await parse(chunks, options)).map((match) => match.value)
 }
 
-export function encodeText(value: unknown, options?: encode.Options): Promise<string> {
-  return toText(encode(value, options))
+export function encodeText(value: unknown, options?: encodeStream.Options): Promise<string> {
+  return toText(encodeStream(value, options))
 }
 
 export function deferred<T>(): {

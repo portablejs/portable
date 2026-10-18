@@ -3,7 +3,7 @@ import { toArray, toText } from '@portable/streams'
 import { JsonStreamStringify } from 'json-stream-stringify'
 import JSONStream from 'JSONStream'
 import { expect, test } from 'vite-plus/test'
-import { encode, ParserStream } from '@portable/json-stream'
+import { encodeStream, DecoderStream } from '@portable/json-stream'
 import allNpm from './fixtures/all_npm.json?raw'
 import { chunked, encodeUtf8, streamOf } from './utils.js'
 
@@ -24,7 +24,7 @@ function drain(readable: NodeJS.ReadableStream): Promise<number> {
 test('parses the rows of a 3 MB document within 25% of JSONStream', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/json-stream', async () => {
-      await toArray(streamOf(bigChunks).pipeThrough(new ParserStream({ paths: ['$.rows[*]'] })))
+      await toArray(streamOf(bigChunks).pipeThrough(new DecoderStream({ paths: ['$.rows[*]'] })))
     }),
     bench('JSONStream', async () => {
       await drain(Readable.from(bigChunks).pipe(JSONStream.parse('rows.*')))
@@ -42,7 +42,7 @@ test('encodes a 3 MB object within 25% of json-stream-stringify', async ({ bench
   const value = { total_rows: rows.length, offset: 0, rows }
   const result = await bench.compare(
     bench('@portable/json-stream', async () => {
-      await toText(encode(value))
+      await toText(encodeStream(value))
     }),
     bench('json-stream-stringify', async () => {
       await drain(new JsonStreamStringify(value))
@@ -65,7 +65,7 @@ test('encodes rows from an async iterable within 25% of json-stream-stringify', 
   }
   const result = await bench.compare(
     bench('@portable/json-stream', async () => {
-      await toText(encode({ rows: source() }))
+      await toText(encodeStream({ rows: source() }))
     }),
     bench('json-stream-stringify', async () => {
       await drain(new JsonStreamStringify({ rows: Readable.from(source()) }))

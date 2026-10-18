@@ -1,3 +1,3 @@
-export { encode } from './encode.js'
+export { encodeStream } from './encodeStream.js'
 export { InvalidInputError, TruncatedError } from './errors.js'
-export { ParserStream } from './ParserStream.js'
+export { DecoderStream } from './DecoderStream.js'

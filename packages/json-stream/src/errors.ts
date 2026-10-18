@@ -8,14 +8,14 @@
  * import * as Streams from '@portable/streams'
  *
  * try {
- *   await Streams.toArray(body.pipeThrough(new JsonStream.ParserStream()))
+ *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()))
  * } catch (error) {
  *   if (error instanceof JsonStream.InvalidInputError) return new Response('Bad JSON', { status: 400 })
  *   throw error
  * }
  * ```
  */
-export class InvalidInputError extends TypeError {
+export class InvalidInputError extends Error {
   override name = 'JsonStream.InvalidInputError'
 }
 
@@ -28,13 +28,13 @@ export class InvalidInputError extends TypeError {
  * import * as Streams from '@portable/streams'
  *
  * try {
- *   await Streams.toArray(body.pipeThrough(new JsonStream.ParserStream()))
+ *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()))
  * } catch (error) {
  *   if (error instanceof JsonStream.TruncatedError) console.log('connection dropped')
  * }
  * ```
  */
-export class TruncatedError extends TypeError {
+export class TruncatedError extends Error {
   override name = 'JsonStream.TruncatedError'
   constructor() {
     super('JSON input ended inside a value.')

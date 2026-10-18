@@ -2,6 +2,14 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `JsonStream.DecoderStream` and `JsonStream.encodeStream`
+
+- **Options for the writer:** keep `encode`; `encodeStream`; an `EncoderStream` class.
+- **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream<string>` breaks what a caller learned from `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them; `Jsonl.EncoderStream` is the transform for many values. `encodeStream` needed the `Stream` suffix rule to cover a stream output as well as a stream input.
+- **Chosen:** `encodeStream(value)`. AGENTS.md now says the suffix marks a variant whose bytes or text are a stream, in either direction, so `parseStream` and `encodeStream` mirror each other.
+- **The reader is `DecoderStream`, not `ParserStream`,** because AGENTS.md keeps `parse` for packages that only read, and json-stream also writes. With the default `paths: ['$']` it emits every top-level value, as `Jsonl.DecoderStream` does for each line.
+- **`InvalidInputError` and `TruncatedError` extend `Error`,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so a caller that treated `TypeError` as a bug in its own code also caught bad input.
+
 ## Build `@portable/bytes` instead of pointing to uint8array-extras
 
 Kevin approved this on 2026-10-18 after the niftysim, fast.domains and loess audits. All three apps hand-write hex encoding, concatenation and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
@@ -71,7 +79,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## `@portable/json-stream` API
 
-- **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encode(value)` returns a `ReadableStream<string>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs. It is named for JSON Lines (`.jsonl`), the name OpenAI, Hugging Face and agent transcripts use, rather than NDJSON, the older name kept by the `ndjson` npm package and Elasticsearch; the owner chose it. Both names are the same format.
+- **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<string>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs. It is named for JSON Lines (`.jsonl`), the name OpenAI, Hugging Face and agent transcripts use, rather than NDJSON, the older name kept by the `ndjson` npm package and Elasticsearch; the owner chose it. Both names are the same format.
 - **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **Matched values are built with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. A syntax error inside a match is reported when that value ends, not at the bad character.

@@ -48,7 +48,7 @@ function randomValue(seed: number, depth = 0): unknown {
   return build(depth)
 }
 
-describe('ParserStream matches JSONStream', () => {
+describe('DecoderStream matches JSONStream', () => {
   const cases: [string, string, string, string | unknown[]][] = [
     ['all_npm rows', allNpm, '$.rows[*]', 'rows.*'],
     ['all_npm revs at any depth', allNpm, '$.rows..rev', 'rows..rev'],
@@ -94,7 +94,7 @@ describe('ParserStream matches JSONStream', () => {
   })
 })
 
-describe('encode matches json-stream-stringify', () => {
+describe('encodeStream matches json-stream-stringify', () => {
   for (const seed of [21, 22, 23, 24, 25, 26, 27, 28]) {
     test(`random value ${seed}`, async () => {
       const value = { a: randomValue(seed), b: [randomValue(seed + 1)], c: 'x' }

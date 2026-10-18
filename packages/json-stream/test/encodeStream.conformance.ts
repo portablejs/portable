@@ -1,6 +1,6 @@
 import { fromIterable } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { encode } from '@portable/json-stream'
+import { encodeStream } from '@portable/json-stream'
 import { deferred, encodeText, lineSeparator, streamOf } from './utils.js'
 
 async function readRest(reader: ReadableStreamDefaultReader<string>): Promise<string> {
@@ -180,7 +180,7 @@ describe('json-stream-stringify', () => {
       },
       { highWaterMark: 0 },
     )
-    const reader = encode(source).getReader()
+    const reader = encodeStream(source).getReader()
     await reader.read()
     await reader.read()
     await new Promise((resolve) => setTimeout(resolve, 10))
@@ -230,7 +230,7 @@ describe('@worker-tools/json-stream', () => {
   })
 
   test('produces a Response body any JSON parser can read', async () => {
-    const body = encode({ a: 3, b: Promise.resolve(4), c: items([1, 2, 3]) }).pipeThrough(
+    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items([1, 2, 3]) }).pipeThrough(
       new TextEncoderStream(),
     )
     expect(await new Response(body).json()).toEqual({ a: 3, b: 4, c: [1, 2, 3] })
@@ -301,7 +301,7 @@ describe('stream-json', () => {
   })
 })
 
-describe('encode', () => {
+describe('encodeStream', () => {
   test('matches JSON.stringify for nested plain values with indentation', async () => {
     const value = { a: [1, { b: [] }, {}, 'x'], c: { d: null, e: [[]] }, f: '' }
     for (const space of [undefined, 2, '\t', 20, 0, -1]) {
@@ -311,7 +311,7 @@ describe('encode', () => {
 
   test('writes up to the first unresolved value, then waits for it', async () => {
     const b = deferred<number>()
-    const reader = encode({ a: 1, b: b.promise, c: 3 }).getReader()
+    const reader = encodeStream({ a: 1, b: b.promise, c: 3 }).getReader()
     expect((await reader.read()).value).toBe('{"a":1')
     b.resolve(2)
     expect(await readRest(reader)).toBe(',"b":2,"c":3}')
@@ -324,7 +324,7 @@ describe('encode', () => {
         push = (value) => controller.enqueue(value)
       },
     })
-    const reader = encode({ items: source }).getReader()
+    const reader = encodeStream({ items: source }).getReader()
     push({ id: 1 })
     expect((await reader.read()).value).toBe('{"items":[')
     expect((await reader.read()).value).toBe('{"id":1}')
@@ -333,7 +333,7 @@ describe('encode', () => {
   test('calls a function only when the writer reaches it', async () => {
     const calls: string[] = []
     const first = deferred<string>()
-    const reader = encode({
+    const reader = encodeStream({
       a: first.promise,
       b: () => {
         calls.push('b')
@@ -396,13 +396,13 @@ describe('encode', () => {
         iteratorFinished = true
       }
     }
-    const first = encode({ a: stream }).getReader()
+    const first = encodeStream({ a: stream }).getReader()
     await first.read()
     await first.read()
     await first.cancel()
     expect(streamCancelled).toBe(true)
 
-    const second = encode({ a: generator() }).getReader()
+    const second = encodeStream({ a: generator() }).getReader()
     await second.read()
     await second.read()
     await second.cancel()
@@ -416,7 +416,7 @@ describe('encode', () => {
         cancelled = true
       },
     })
-    const reader = encode([stream]).getReader()
+    const reader = encodeStream([stream]).getReader()
     expect((await reader.read()).value).toBe('[[')
     const pending = reader.read()
     await reader.cancel()

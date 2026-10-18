@@ -1,4 +1,4 @@
-export declare namespace encode {
+export declare namespace encodeStream {
   type Replacer = (this: unknown, key: string, value: unknown) => unknown
 
   type Options = {
@@ -51,7 +51,7 @@ const maxQuotedKeys = 1024
  * ```ts
  * import * as JsonStream from '@portable/json-stream'
  *
- * const body = JsonStream.encode({
+ * const body = JsonStream.encodeStream({
  *   user: getUser(id), // a promise
  *   posts: db.posts.cursor(), // an async iterable
  * })
@@ -60,7 +60,10 @@ const maxQuotedKeys = 1024
  * })
  * ```
  */
-export function encode(value: unknown, options: encode.Options = {}): ReadableStream<string> {
+export function encodeStream(
+  value: unknown,
+  options: encodeStream.Options = {},
+): ReadableStream<string> {
   const { replacer, space } = options
   const replace = typeof replacer === 'function' ? replacer : undefined
   const allowed = Array.isArray(replacer) ? [...new Set(replacer.map(String))] : undefined

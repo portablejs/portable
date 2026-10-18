@@ -1,6 +1,11 @@
 import { fromIterable, toArray } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { encode, InvalidInputError, ParserStream, TruncatedError } from '@portable/json-stream'
+import {
+  encodeStream,
+  InvalidInputError,
+  DecoderStream,
+  TruncatedError,
+} from '@portable/json-stream'
 import allNpm from './fixtures/all_npm.json?raw'
 import couchSample from './fixtures/couch_sample.json?raw'
 import depth from './fixtures/depth.json?raw'
@@ -150,15 +155,15 @@ describe('JSONStream', () => {
     expect(await parseValues([JSON.stringify(numbers)], { paths: ['$[*]'] })).toEqual(numbers)
   })
 
-  test('reads back what encode writes', async () => {
+  test('reads back what encodeStream writes', async () => {
     const values = [
       { hello: 'eonuhckmqjk', whatever: 236515, lies: true, nothing: [null], stuff: [0.5, 0.25] },
       ['AOREC', 'reoubaor', { ouec: 62642 }, [[[], {}, 53]]],
     ]
     const parsed = await toArray(
-      encode(fromIterable(values))
+      encodeStream(fromIterable(values))
         .pipeThrough(new TextEncoderStream())
-        .pipeThrough(new ParserStream({ paths: ['$[*]'] })),
+        .pipeThrough(new DecoderStream({ paths: ['$[*]'] })),
     )
     expect(parsed.map((match) => match.value)).toEqual(values)
   })
@@ -228,7 +233,7 @@ describe('stream-json', () => {
         controller.enqueue(sample)
       },
     })
-    await expect(toArray(endless.pipeThrough(new ParserStream()))).rejects.toThrow(
+    await expect(toArray(endless.pipeThrough(new DecoderStream()))).rejects.toThrow(
       InvalidInputError,
     )
   })
@@ -333,7 +338,7 @@ describe('@worker-tools/json-stream', () => {
 
   test('emits each element read one at a time', async () => {
     const reader = new Response(input)
-      .body!.pipeThrough(new ParserStream({ paths: ['$[*]'] }))
+      .body!.pipeThrough(new DecoderStream({ paths: ['$[*]'] }))
       .getReader()
     expect((await reader.read()).value?.value).toEqual({ a: 1 })
     expect((await reader.read()).value?.value).toEqual({ b: 2 })
@@ -371,16 +376,16 @@ describe('@worker-tools/json-stream', () => {
     expect(await parseValues([store], { paths: ['$.store..price'] })).toEqual([1, 2, 3, { b: 5 }])
   })
 
-  test('reads a body built by encode', async () => {
+  test('reads a body built by encodeStream', async () => {
     async function* items() {
       yield 1
       yield 2
       yield 3
     }
-    const body = encode({ a: 3, b: Promise.resolve(4), c: items() }).pipeThrough(
+    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items() }).pipeThrough(
       new TextEncoderStream(),
     )
-    expect(await toArray(body.pipeThrough(new ParserStream({ paths: ['$.c[*]'] })))).toEqual([
+    expect(await toArray(body.pipeThrough(new DecoderStream({ paths: ['$.c[*]'] })))).toEqual([
       { path: ['c', 0], value: 1 },
       { path: ['c', 1], value: 2 },
       { path: ['c', 2], value: 3 },
@@ -388,7 +393,7 @@ describe('@worker-tools/json-stream', () => {
   })
 })
 
-describe('ParserStream', () => {
+describe('DecoderStream', () => {
   const document = {
     id: 'doc',
     'k"e\\y': 'escaped key',
@@ -428,7 +433,7 @@ describe('ParserStream', () => {
         push = (chunk) => controller.enqueue(chunk)
       },
     })
-    const reader = input.pipeThrough(new ParserStream({ paths: ['$.rows[*]'] })).getReader()
+    const reader = input.pipeThrough(new DecoderStream({ paths: ['$.rows[*]'] })).getReader()
     push('{"rows":[{"a":1},')
     expect((await reader.read()).value).toEqual({ path: ['rows', 0], value: { a: 1 } })
   })
@@ -443,7 +448,7 @@ describe('ParserStream', () => {
         cancelled = true
       },
     })
-    const reader = input.pipeThrough(new ParserStream({ paths: ['$[*]'] })).getReader()
+    const reader = input.pipeThrough(new DecoderStream({ paths: ['$[*]'] })).getReader()
     expect((await reader.read()).value?.value).toBe(1)
     await reader.cancel()
     expect(cancelled).toBe(true)
@@ -504,13 +509,13 @@ describe('ParserStream', () => {
 
   for (const path of ['', 'a', '$.', '$..', '$[', '$[-1]', '$[01]', "$['a", '$[a]', '$x', '$[*']) {
     test(`rejects the JSONPath ${JSON.stringify(path)}`, () => {
-      expect(() => new ParserStream({ paths: [path] })).toThrow(TypeError)
+      expect(() => new DecoderStream({ paths: [path] })).toThrow(TypeError)
     })
   }
 
   test('does not modify the options object', () => {
     const options = { paths: ['$.a'] }
-    new ParserStream(options)
+    new DecoderStream(options)
     expect(options).toEqual({ paths: ['$.a'] })
   })
 })
