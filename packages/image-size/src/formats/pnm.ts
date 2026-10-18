@@ -5,11 +5,6 @@ import type { Format } from './format.js'
 
 const isSpace = (byte: number) => byte === 0x20 || (byte >= 0x09 && byte <= 0x0d)
 
-/**
- * Reads the header tokens after the two-byte magic number, skipping whitespace and `#` comments
- * as Netpbm does. A token counts only once the byte after it is present, unless `final` is set
- * and it ends the input.
- */
 function* tokens(input: Uint8Array, final: boolean): Generator<string> {
   let offset = 2
   for (;;) {

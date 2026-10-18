@@ -306,7 +306,7 @@ describe('parseStream', () => {
     const bytes = await fixture('valid/jpg/large.jpg')
     const { stream, read, cancelled } = tracked(chunked(bytes, 1024))
     expect(await ImageSize.parseStream(stream)).toEqual(expected['valid/jpg/large.jpg'])
-    expect(read()).toBeLessThan(bytes.length / 4)
+    expect(read()).toBe(5 * 1024)
     expect(cancelled()).toBe(true)
   })
 

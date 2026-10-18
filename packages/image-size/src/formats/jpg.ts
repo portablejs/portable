@@ -5,7 +5,6 @@ import type { Format } from './format.js'
 const isStartOfFrame = (marker: number) =>
   marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc
 
-/** Reads the Orientation tag (0x0112) from IFD0 of an Exif APP1 segment that ends at `end`. */
 function orientation(input: Uint8Array, start: number, end: number): number | undefined {
   const tiff = start + 6
   if (tiff + 8 > end) return undefined

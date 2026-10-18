@@ -36,8 +36,7 @@ function children(input: Uint8Array, parent: Box, headerSize: number): Box[] {
   return boxes
 }
 
-/** The ID of the primary item, from `pitm`. */
-function primaryItem(input: Uint8Array, meta: Box[]): number | undefined {
+function pitmItem(input: Uint8Array, meta: Box[]): number | undefined {
   const pitm = meta.find((box) => box.name === 'pitm')
   if (!pitm) return undefined
   return u8(input, pitm.offset + 8) === 0
@@ -45,7 +44,6 @@ function primaryItem(input: Uint8Array, meta: Box[]): number | undefined {
     : u32(input, pitm.offset + 12, true)
 }
 
-/** The 1-based `ipco` property indexes that `ipma` associates with `item`, in order. */
 function propertiesOf(input: Uint8Array, ipma: Box, item: number): number[] {
   const version = u8(input, ipma.offset + 8)
   const wideIndexes = (u8(input, ipma.offset + 11) & 1) === 1
@@ -79,7 +77,7 @@ export const heif: Format = {
     if (!ipco) throw new InvalidInputError('Invalid HEIF, no ipco box')
     const properties = children(input, ipco, 8)
 
-    const item = primaryItem(input, metaBoxes)
+    const item = pitmItem(input, metaBoxes)
     const associated =
       item !== undefined && ipma
         ? propertiesOf(input, ipma, item).flatMap((index) => properties[index - 1] ?? [])

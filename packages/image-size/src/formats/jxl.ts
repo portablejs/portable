@@ -6,10 +6,7 @@ import type { Format } from './format.js'
 const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2]
 const sizeBits = [9, 13, 18, 30]
 
-/**
- * Reads the image size from a JPEG XL codestream header (ISO/IEC 18181-1 `SizeHeader`). `end`
- * is how many bytes of the file to ask for when the codestream runs out.
- */
+/** ISO/IEC 18181-1 `SizeHeader`. */
 function sizeHeader(codestream: Uint8Array, end: number): Size {
   let byte = 2
   let bit = 0
@@ -42,7 +39,6 @@ export const jxlStream: Format = {
   calculate: (input) => sizeHeader(input, input.length + 1),
 }
 
-/** Joins the codestream bytes present so far, from a `jxlc` box or a run of `jxlp` boxes. */
 function codestream(input: Uint8Array): Uint8Array[] {
   const parts: Uint8Array[] = []
   for (let offset = 0; offset + 8 <= input.length;) {

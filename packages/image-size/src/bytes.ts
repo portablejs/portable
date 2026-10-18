@@ -73,7 +73,6 @@ export function utf8(input: Uint8Array, start: number, end: number): string {
 
 export type Box = { name: string; offset: number; size: number }
 
-/** Finds the first ISO BMFF box named `name` between `start` and `end`, and needs all of it. */
 export function findBox(
   input: Uint8Array,
   name: string,
