@@ -87,7 +87,7 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
-        files: ['packages/*/scripts/**'],
+        files: ['packages/*/scripts/**', 'scripts/**'],
         rules: {
           'no-restricted-imports': 'off',
           'no-restricted-globals': 'off',
@@ -106,6 +106,12 @@ export default defineConfig({
     // Heavy suites (PngSuite, big base64 inputs) take several seconds when other processes load the
     // machine, such as a pre-push hook running every package's tests.
     testTimeout: 30_000,
+    coverage: {
+      provider: 'v8',
+      include: ['packages/*/src/**/*.ts'],
+      exclude: ['**/*.d.ts', '**/*.test.ts', '**/*.conformance.ts', '**/*.bench.ts'],
+      reporter: ['text-summary', 'json-summary'],
+    },
     projects: [
       {
         extends: true,
@@ -114,7 +120,6 @@ export default defineConfig({
           server: { deps: { external: benchDist ? [/\/packages\/[^/]+\/dist\//] : [] } },
           benchmark: {
             include: ['packages/*/test/**/*.bench.ts', 'packages/*/src/**/*.bench.ts'],
-            outputJson: '.bench/report.json',
           },
           include: [
             'packages/*/{test,src}/**/*.test.ts',

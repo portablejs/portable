@@ -8,6 +8,15 @@ Read [docs/packages.md](docs/packages.md) for what each package does and why it 
 
 Nothing is published to npm yet. **Built** means the package is on `main` with its tests passing in Node and Chromium, every case from the replaced library's tests covered, and a benchmark against that library.
 
+The numbers in the table come from `scripts/readme-stats.ts`. Run `pnpm readme` to measure them again and rewrite the table.
+
+- **Speed** is the package's throughput divided by the replaced library's in one benchmark from `pnpm bench`, run in Node 24 against the built `dist/`. It changes from machine to machine.
+- **Line and branch coverage** come from V8 coverage of each package's `src/` while the Node tests run (`pnpm coverage`). Coverage is measured in Node only, so code that runs only in browsers, such as base64's native `toBase64` path, counts as uncovered.
+- **Upstream cases covered** counts the upstream tests in `test/PARITY.md` that map to one of our tests, out of every upstream test listed there. The n/a ones don't apply to this package, such as tests of Node stream internals.
+- **Upstream bugs fixed** counts the rows under "Known upstream issues" in the same file.
+- Packages that are planned or in progress show "–".
+
+<!-- packages:start -->
 | Layer | Package | Replaces | Status |
 | --- | --- | --- | --- |
 | L0 | [`@portable/streams`](packages/streams) | get-stream, concat-stream, merge2, through2 | Built |
@@ -44,6 +53,7 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 | L3 | `@portable/dmarc` | mailauth's DMARC | In progress |
 | L3 | `@portable/arc` | mailauth's ARC | Planned |
 | L3 | `@portable/mailauth` | mailauth | Planned |
+<!-- packages:end -->
 
 Each layer depends only on the layers below it. Later candidates (XML signatures and SAML, an xlsx writer) are listed at the end of [docs/packages.md](docs/packages.md).
 
