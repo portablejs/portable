@@ -120,6 +120,33 @@ importers:
         specifier: ^1.0.11
         version: 1.0.11
 
+  packages/dkim:
+    dependencies:
+      '@portable/base64':
+        specifier: workspace:*
+        version: link:../base64
+      '@portable/dns':
+        specifier: workspace:*
+        version: link:../dns
+
+  packages/dkim/test:
+    devDependencies:
+      '@portable/dkim':
+        specifier: workspace:*
+        version: link:..
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../../streams
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      mailauth:
+        specifier: ^7.3.0
+        version: 7.3.0
+      nodemailer:
+        specifier: ^10.1.0
+        version: 10.1.2
+
   packages/dns:
     dependencies:
       '@portable/dns-packet':

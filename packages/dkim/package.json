@@ -1,0 +1,50 @@
+{
+  "name": "@portable/dkim",
+  "description": "DKIM signing and verification (RFC 6376, RFC 8463 Ed25519) with WebCrypto and an injected DNS resolver, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "dependencies": {
+    "@portable/base64": "workspace:*",
+    "@portable/dns": "workspace:*"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/dkim"
+  },
+  "keywords": [
+    "dkim",
+    "rfc6376",
+    "rfc8463",
+    "ed25519",
+    "email",
+    "mailauth",
+    "nodemailer",
+    "dmarc",
+    "webcrypto"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
