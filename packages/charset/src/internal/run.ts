@@ -61,8 +61,11 @@ export function run(state: State, input: string, last: boolean): Uint8Array<Arra
   }
 
   const { charset, encoder } = state
-  const bom = state.bom ?? []
-  if (end > 0 || last) state.bom = undefined
+  let bom: readonly number[] = []
+  if (end > 0 || last) {
+    bom = state.bom ?? []
+    state.bom = undefined
+  }
 
   if (encoder.string) {
     const bytes = encoder.string(end === text.length ? text : text.slice(0, end))

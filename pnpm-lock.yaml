@@ -144,9 +144,15 @@ importers:
       '@portable/charset':
         specifier: workspace:*
         version: link:..
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       iconv-lite:
         specifier: ^0.7.3
         version: 0.7.3

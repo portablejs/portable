@@ -217,6 +217,14 @@ describe('EncoderStream', () => {
     expect(hex(await encodeStream([], Charset.utf8, { bom: true }))).toBe('efbbbf')
   })
 
+  test('writes the byte order mark once when a chunk holds no text', async () => {
+    expect(hex(await encodeStream([''], Charset.utf8, { bom: true }))).toBe('efbbbf')
+    expect(hex(await encodeStream(['', 'a'], utf16le, { bom: true }))).toBe('fffe6100')
+    expect(hex(await encodeStream(['\ud83d', '\ude00'], utf16le, { bom: true }))).toBe(
+      'fffe3dd800de',
+    )
+  })
+
   test('keeps ISO-2022-JP state across chunks and returns to ASCII at the end', async () => {
     const bytes = await encodeStream(['日', '本', 'a'], iso2022Jp)
     expect(hex(bytes)).toBe('1b2442467c4b5c1b284261')

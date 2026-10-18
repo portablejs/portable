@@ -4,6 +4,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| Node 24's streaming `TextDecoder` drops a U+FEFF that follows a chunk it returned nothing for: `[ef]`, then `[bf bd ef bb bf]` decodes to `"\ufffd"` without the U+FEFF. charset's fuzz test of `EncoderStream` with byte chunks found it. | That test leaves U+FEFF out of its input. | Report to Node. |
 | The pre-push hook runs `tsc -p tsconfig.test.json`, which type-checks every package's `test/` folder, including untracked files a helper agent is still writing in the same checkout. The push failed on someone else's unfinished file. | Push from a separate `git worktree` of the commit. | Type-check only tracked files in the hook, or give helpers their own worktree. |
 | zile publishes only the `package.json` fields after `"[!start-pkg]"`, and nothing warns when `dependencies` sits before it. dns, spf, dkim and dmarc had it there until 2026-10-18. | Put `dependencies` after `"[!start-pkg]"`, as `mime-headers` does. | A check that every workspace dependency of `src/` appears after the marker. |
 | In browser tests, the Vite dev server refuses module requests from an opaque origin (`Origin: null`), so a sandboxed or `data:` iframe can't load test code. | `rpc`'s `window.browser.test.ts` inlines the child's modules as `data:` URLs. | None needed beyond that helper. |
