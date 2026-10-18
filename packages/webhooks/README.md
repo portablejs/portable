@@ -40,7 +40,7 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 ```
 
 <!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/webhooks` is 7.0 kB, against 4.6 kB (Node only) for standardwebhooks, 20 kB (Node only) for svix, 30 kB (Node only) for stripe and 0.7 kB for @octokit/webhooks-methods. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+Bundled for the browser, minified and gzipped, `@portable/webhooks` is 4.3 kB, against 4.6 kB (Node only) for standardwebhooks, 20 kB (Node only) for svix, 30 kB (Node only) for stripe and 0.7 kB for @octokit/webhooks-methods. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
 <!-- size:end -->
 
 ## API

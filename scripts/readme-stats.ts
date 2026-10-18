@@ -141,9 +141,13 @@ function speedOf(name: string) {
     for (const test of file.assertionResults) {
       if (!test.fullName.includes(speed.test)) continue
       const tasks = test.benchmarks?.flatMap((benchmark) => benchmark.tasks) ?? []
-      const a = tasks.find((task) => task.name === ours)?.throughput.mean
-      const b = tasks.find((task) => task.name === speed.theirs)?.throughput.mean
+      const hz = (label: string) => tasks.find((task) => task.name === label)?.throughput.mean
+      const a = hz(ours)
+      const b = hz(speed.theirs)
       if (!a || !b) continue
+      const noble = hz(`${ours} with @noble/hashes`)
+      if (noble)
+        return `${(a / b).toFixed(1)}× default, ${(noble / b).toFixed(1)}× with noble vs ${speed.theirs} (${speed.label})`
       const ratio = (a / b).toFixed(1)
       if (ratio === '1.0') return `as fast as ${speed.theirs} (${speed.label})`
       return a > b

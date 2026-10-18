@@ -32,7 +32,7 @@ The signature covers what the server will see, because it is computed from the `
 - JSON, multipart and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
 
 <!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/oauth1` is 7.4 kB, against 1.7 kB for oauth-1.0a and 5.2 kB (Node only) for oauth. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
+Bundled for the browser, minified and gzipped, `@portable/oauth1` is 4.6 kB, against 1.7 kB for oauth-1.0a and 5.2 kB (Node only) for oauth. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
 <!-- size:end -->
 
 ## Options
