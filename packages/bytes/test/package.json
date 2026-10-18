@@ -1,0 +1,10 @@
+{
+  "name": "@portable/bytes-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/bytes": "workspace:*",
+    "@types/node": "^26.6.5",
+    "uint8array-extras": "^1.6.0"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@portable/bytes",
+  "description": "Hex, concatenation and comparison for Uint8Array, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/bytes"
+  },
+  "keywords": [
+    "uint8array",
+    "bytes",
+    "hex",
+    "concat",
+    "equal",
+    "timing-safe",
+    "constant-time",
+    "uint8array-extras"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
