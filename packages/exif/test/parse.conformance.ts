@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from 'vite-plus/test'
+import { describe, expect, test } from 'vite-plus/test'
 import * as Exif from '@portable/exif'
 import { ascii, buildTiff, concat, entry, exifPrefix, fixture, jpeg } from './utils.js'
 
@@ -244,64 +244,6 @@ describe('exif-reader', () => {
   test('throws InvalidInputError without a byte order mark', () => {
     expect(() => Exif.parse(ascii('Exif\0\0IM\0*\0\0\0\x08'))).toThrow(Exif.InvalidInputError)
     expect(() => Exif.parse(ascii('Exif\0\0MI\0*\0\0\0\x08'))).toThrow(Exif.InvalidInputError)
-  })
-
-  describe('fuzzing', () => {
-    const names = [
-      'tetons.exif',
-      'IMG_0774.exif',
-      'png-exif.exif',
-      'non-ascii.exif',
-      'starfish.jpg',
-    ]
-    const inputs: Record<string, Uint8Array> = {}
-    beforeAll(async () => {
-      for (const name of names) inputs[name] = await fixture(name)
-    })
-
-    const random = (seed: number) => () => {
-      seed = (seed * 1103515245 + 12345) % 2 ** 31
-      return seed / 2 ** 31
-    }
-
-    const undocumentedErrors = (samples: readonly Uint8Array[]) =>
-      samples.flatMap((bytes) => {
-        try {
-          Exif.parse(bytes)
-          return []
-        } catch (error) {
-          const documented =
-            error instanceof Exif.InvalidInputError ||
-            error instanceof Exif.TruncatedError ||
-            error instanceof Exif.UnsupportedError
-          return documented ? [] : [error]
-        }
-      })
-
-    for (const name of names) {
-      test(`parses or rejects randomly mutated ${name}`, () => {
-        const next = random(name.length)
-        const original = inputs[name]!
-        const limit = name.endsWith('.jpg') ? 30000 : original.length
-        const samples = Array.from({ length: 300 }, () => {
-          const bytes = original.slice()
-          const mutations = 1 + Math.floor(next() * 10)
-          for (let i = 0; i < mutations; i++)
-            bytes[Math.floor(next() * limit)] = Math.floor(next() * 256)
-          return bytes
-        })
-        expect(undocumentedErrors(samples)).toEqual([])
-      })
-
-      test(`parses or rejects randomly truncated ${name}`, () => {
-        const next = random(name.length + 1)
-        const original = inputs[name]!
-        const samples = Array.from({ length: 300 }, () =>
-          original.subarray(0, Math.floor(next() * original.length)),
-        )
-        expect(undocumentedErrors(samples)).toEqual([])
-      })
-    }
   })
 })
 

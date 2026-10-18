@@ -17,7 +17,6 @@ import {
   decodeQuestionName,
   hex,
   nameBytes,
-  random,
   roundTrip,
   roundTripData,
   roundTripRecord,
@@ -771,32 +770,6 @@ describe('decoding malformed input', () => {
 describe('decoding corrupted real responses', () => {
   test('decodes every captured response', () => {
     for (const { hex: text } of responses) expect(decode(hex(text)).questions).toHaveLength(1)
-  })
-
-  test('throws only TruncatedError or InvalidInputError when bytes change at random', () => {
-    const next = random(42)
-    let thrown = 0
-    const unexpected: unknown[] = []
-    for (const { hex: text } of responses) {
-      for (let round = 0; round < 200; round++) {
-        const bytes = hex(text)
-        const changes = 1 + Math.floor(next() * 4)
-        for (let i = 0; i < changes; i++) {
-          const at = Math.floor(next() * bytes.length)
-          bytes[at] = next() < 0.3 ? 0xc0 : Math.floor(next() * 256)
-        }
-        const input = next() < 0.2 ? bytes.subarray(0, Math.floor(next() * bytes.length)) : bytes
-        try {
-          decode(input)
-        } catch (error) {
-          thrown++
-          if (!(error instanceof TruncatedError || error instanceof InvalidInputError))
-            unexpected.push(error)
-        }
-      }
-    }
-    expect(unexpected).toEqual([])
-    expect(thrown).toBeGreaterThan(0)
   })
 })
 

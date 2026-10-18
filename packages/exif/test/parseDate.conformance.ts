@@ -57,6 +57,14 @@ describe('parseDate', () => {
     )
   })
 
+  test('rejects a time zone out of range, and ignores such an offset option', () => {
+    expect(Exif.parseDate('2004-09-04T23:39:06+99:99')).toBeUndefined()
+    expect(Exif.parseDate('2004-09-04T23:39:06-12:60')).toBeUndefined()
+    expect(Exif.parseDate('2013:02:28 10:00:00', { offset: '+99:99' })).toEqual(
+      new Date('2013-02-28T10:00:00Z'),
+    )
+  })
+
   test('keeps fractional seconds', () => {
     expect(Exif.parseDate('2019:10:20 18:34:30.130')?.getUTCMilliseconds()).toBe(130)
   })

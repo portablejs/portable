@@ -49,8 +49,9 @@ export function parseDate(value: string, options: parseDate.Options = {}): Date 
   )
     return undefined
   const offsetMatch = offsetPattern.exec(zone ?? offset?.trim() ?? '')
-  if (!offsetMatch) return date
-  const [, sign, offsetHours, offsetMinutes] = offsetMatch
+  const [, sign, offsetHours, offsetMinutes] = offsetMatch ?? []
+  if (!offsetMatch || Number(offsetHours) > 23 || Number(offsetMinutes) > 59)
+    return zone && zone !== 'Z' ? undefined : date
   const shift = (Number(offsetHours) * 60 + Number(offsetMinutes)) * 60_000
   return new Date(sign === '-' ? time + shift : time - shift)
 }

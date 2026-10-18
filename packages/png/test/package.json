@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/png": "workspace:*",
     "@types/node": "^26.6.5",
     "@types/pngjs": "^6.0.5",
+    "fast-check": "^4.10.2",
     "fflate": "^0.8.2",
     "pngjs": "^7.0.0"
   }

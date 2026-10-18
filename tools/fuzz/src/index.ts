@@ -86,7 +86,10 @@ function documented(errors: readonly ErrorClass[], error: unknown): ErrorClass {
   return type
 }
 
-const byte = fc.oneof(fc.integer({ min: 0, max: 255 }), fc.constantFrom(0x00, 0x7f, 0x80, 0xff))
+const byte = fc.oneof(
+  fc.integer({ min: 0, max: 255 }),
+  fc.constantFrom(0x00, 0x01, 0x7f, 0x80, 0xc0, 0xff),
+)
 
 type Edit = { op: 'set' | 'insert' | 'delete'; at: number; byte: number }
 
@@ -112,15 +115,22 @@ export function mutated(
   return fc
     .tuple(fc.array(edit, { minLength: 1, maxLength: 8 }), fc.option(fc.nat(), { freq: 4 }))
     .map(([edits, cut]) => {
-      const bytes = Array.from(original)
+      let bytes = original.slice()
       for (const { op, at, byte } of edits) {
         const index = at % (Math.min(within, bytes.length) + 1)
-        if (op === 'set') bytes[Math.min(index, bytes.length - 1)] = byte
-        else if (op === 'insert') bytes.splice(index, 0, byte)
-        else bytes.splice(index, 1)
+        if (op === 'set') {
+          if (bytes.length > 0) bytes[Math.min(index, bytes.length - 1)] = byte
+        } else if (op === 'insert' || index < bytes.length) {
+          const next = new Uint8Array(bytes.length + (op === 'insert' ? 1 : -1))
+          next.set(bytes.subarray(0, index))
+          if (op === 'insert') {
+            next[index] = byte
+            next.set(bytes.subarray(index), index + 1)
+          } else next.set(bytes.subarray(index + 1), index)
+          bytes = next
+        }
       }
-      if (cut !== null) bytes.length = cut % (bytes.length + 1)
-      return Uint8Array.from(bytes)
+      return cut === null ? bytes : bytes.slice(0, cut % (bytes.length + 1))
     })
 }
 

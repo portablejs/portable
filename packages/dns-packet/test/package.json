@@ -4,8 +4,10 @@
   "type": "module",
   "devDependencies": {
     "@portable/dns-packet": "workspace:*",
+    "@portable/fuzz": "workspace:*",
     "@types/dns-packet": "^5.6.5",
     "@types/node": "^26.6.5",
-    "dns-packet": "^5.6.1"
+    "dns-packet": "^5.6.1",
+    "fast-check": "^4.10.2"
   }
 }

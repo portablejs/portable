@@ -3,8 +3,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/image-size": "workspace:*",
+    "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "image-size": "^2.0.4"
   }
 }
