@@ -4,6 +4,8 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| Benchmarks fail when several agents run at once: png's decode and lines' split2 comparison each failed under load and passed when re-run. | Re-run the benchmark when the machine is quiet. | Benchmark the built `dist` (planned), and keep benchmarks out of agents' required checks while many run at once. |
+| `@types/jsonstream` declares the module `jsonstream`, which doesn't resolve to the `JSONStream` package. | A local `declare module` in `json-stream`'s `src/_test/env.d.ts`. | None. |
 | A typed `import.meta.glob` with `eager: true` fails `pnpm check` with TS2353. | Use the lazy loader with top-level `await`. | None. |
 | Node's ICU `TextDecoder` decodes Big5, EUC-KR, ISO-2022-JP and Shift_JIS differently from the WHATWG standard. | `charset`'s round-trip tests for those run only in Chromium. Workers and Bun are unverified. | Run them in Workers once that project exists. |
 | The Write tool turns `\uXXXX` escapes into literal characters. | Fix the file with a script afterwards. | None. |

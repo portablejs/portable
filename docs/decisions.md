@@ -2,6 +2,14 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/json-stream` API
+
+- **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions; `NdjsonDecoderStream` and `NdjsonEncoderStream` handle NDJSON; `encode(value)` returns a `ReadableStream<string>`.** The API review may rename these; `encode` returning a stream differs from other packages' `encode`.
+- **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
+- **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
+- **Matched values are built with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. A syntax error inside a match is reported when that value ends, not at the bad character.
+- **Streams and async iterables are always written as arrays.** No `cycle` option: a circular structure or a BigInt fails as in `JSON.stringify`.
+
 ## `@portable/png` API
 
 - **Async `decode`/`encode` use `DecompressionStream`/`CompressionStream`; `decodeSync`/`encodeSync` require a zlib function** (fflate's or `node:zlib`'s). One function with mixed return types or overloads was the alternative.
