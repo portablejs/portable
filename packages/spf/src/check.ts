@@ -1,6 +1,7 @@
 import type * as Dns from '@portable/dns'
 import { Failure, permerror, temperror } from './errors.js'
-import * as Ip from './ip.js'
+import * as Ip from '@portable/ip'
+import { dotted, inNetwork, parseIp } from './ip.js'
 import { expand, isTopLabel, parseMacroString, type Token, uses, type Values } from './macro.js'
 import { type Directive, parseRecord, type Qualifier } from './record.js'
 
@@ -133,7 +134,7 @@ const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
-  const address = typeof input.ip === 'string' ? Ip.parseIp(input.ip.trim()) : undefined
+  const address = typeof input.ip === 'string' ? parseIp(input.ip.trim()) : undefined
   if (!address) throw new TypeError(`Spf.check: "${String(input.ip)}" is not an IP address`)
   const client = Ip.unmap(address)
   const helo = stripDot(input.helo ?? '')
@@ -164,7 +165,7 @@ export async function check(input: check.Input, options: check.Options): Promise
       l: local,
       o: domain,
       d: domain,
-      i: Ip.dotted(client),
+      i: dotted(client),
       p: '',
       v: client.version === 4 ? 'in-addr' : 'ip6',
       h: helo,
@@ -230,7 +231,7 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
       return true
     case 'ip4':
     case 'ip6':
-      return Ip.inNetwork(client, directive.network, directive.prefix)
+      return inNetwork(client, directive.network, directive.prefix)
     case 'include': {
       countLookup(ctx)
       const target = await expandTarget(ctx, directive.domain, values, true)
@@ -255,7 +256,7 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
         : { name: values.d }
       if (!('name' in target)) return false
       const prefix = client.version === 4 ? directive.cidr4 : directive.cidr6
-      const inRange = (ip: Ip.Address) => Ip.inNetwork(client, ip, prefix)
+      const inRange = (ip: Ip.Address) => inNetwork(client, ip, prefix)
       if (directive.kind === 'a')
         return (await addresses(ctx, target.name, family(ctx), true)).some(inRange)
       return mxMatches(ctx, target.name, inRange)
@@ -357,7 +358,9 @@ async function validate(ctx: Context, names: readonly string[]): Promise<string[
     names.slice(0, 10).map(async (name) => {
       try {
         const found = await addresses(ctx, name, family(ctx), false)
-        return found.some((ip) => Ip.equal(ip, ctx.client)) ? stripDot(name).toLowerCase() : ''
+        return found.some((ip) => Ip.compare(ip, ctx.client) === 0)
+          ? stripDot(name).toLowerCase()
+          : ''
       } catch (error) {
         if (error instanceof Failure && !ctx.signal?.aborted) return ''
         throw error
@@ -376,7 +379,7 @@ async function addresses(
   const answer = await query(ctx, type, name)
   if (answer.length === 0 && countVoid) countVoidLookup(ctx)
   return answer.flatMap((text) => {
-    const ip = Ip.parseIp(text)
+    const ip = parseIp(text)
     return ip ? [ip] : []
   })
 }

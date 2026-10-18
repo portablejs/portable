@@ -1,5 +1,6 @@
 import { permerror } from './errors.js'
-import { type Address, parseIp } from './ip.js'
+import type { Address } from '@portable/ip'
+import { parseIp } from './ip.js'
 import { parseDomainSpec, parseMacroString, type Token } from './macro.js'
 
 export type Qualifier = '+' | '-' | '~' | '?'

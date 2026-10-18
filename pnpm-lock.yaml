@@ -726,6 +726,9 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../dns
+      '@portable/ip':
+        specifier: workspace:*
+        version: link:../ip
 
   packages/spf/test:
     devDependencies:

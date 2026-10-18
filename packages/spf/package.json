@@ -6,7 +6,8 @@
     "dev": "zile dev"
   },
   "dependencies": {
-    "@portable/dns": "workspace:*"
+    "@portable/dns": "workspace:*",
+    "@portable/ip": "workspace:*"
   },
   "[!start-pkg]": "",
   "version": "0.0.0",
