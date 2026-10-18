@@ -79,27 +79,52 @@ describe('Dmarc.check', () => {
     })
   })
 
-  test('stops with temperror when the signal aborts', async () => {
-    const controller = new AbortController()
-    controller.abort()
-    const result = await check(reject, { from: 'example.com' }, { signal: controller.signal })
-    expect(result).toMatchObject({ result: 'temperror', disposition: 'none' })
-    expect(result.policy).toBeUndefined()
+  test('rejects with the reason of an aborted signal', async () => {
+    const reason = new Error('stop')
+    for (const from of ['example.com', 'not a domain']) {
+      await expect(check(reject, { from }, { signal: AbortSignal.abort(reason) })).rejects.toBe(
+        reason,
+      )
+    }
   })
 
-  test('gives temperror when the resolver never answers and the signal aborts', async () => {
+  test('rejects with the reason when the signal aborts during a lookup', async () => {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 20)
+    const reason = new Error('timeout')
+    const timer = setTimeout(() => controller.abort(reason), 20)
     const never = () => new Promise<never>(() => {})
-    const result = await Dmarc.check(
-      { from: 'example.com' },
+    const checked = Dmarc.check(
+      { from: 'sub.example.com', dkim: [pass('example.com')] },
       {
         resolver: { resolveTxt: never, resolve4: never, resolveCname: never },
         signal: controller.signal,
       },
     )
+    await expect(checked).rejects.toBe(reason)
     clearTimeout(timer)
-    expect(result.result).toBe('temperror')
+  })
+
+  test('rejects when the signal aborts during the tree walk of an identifier', async () => {
+    const controller = new AbortController()
+    const reason = new Error('timeout')
+    const resolver = zoneResolver(reject)
+    const checked = Dmarc.check(
+      { from: 'example.com', dkim: [pass('mail.example.com')] },
+      {
+        resolver: {
+          ...resolver,
+          resolveTxt: (name) => {
+            if (name === '_dmarc.mail.example.com') {
+              controller.abort(reason)
+              return new Promise<never>(() => {})
+            }
+            return resolver.resolveTxt(name)
+          },
+        },
+        signal: controller.signal,
+      },
+    )
+    await expect(checked).rejects.toBe(reason)
   })
 })
 

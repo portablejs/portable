@@ -103,7 +103,7 @@ export declare namespace check {
      * missing result means the domain is its own organizational domain.
      */
     organizationalDomain?: ((domain: string) => string | null | undefined) | undefined
-    /** Stops the check with `temperror`, such as `AbortSignal.timeout(10_000)`. */
+    /** Stops the check, such as `AbortSignal.timeout(10_000)`. The promise rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
 }
@@ -131,7 +131,7 @@ const maxAlignmentWalks = 10
  * Checks a message against the DMARC policy of its From domain (RFC 9989, which replaces RFC
  * 7489). It finds the policy record with a DNS tree walk and checks whether a passing SPF result or
  * DKIM signature is aligned with the From domain. DNS failures give `temperror`, and a From domain
- * that isn't a domain name gives `permerror`. The promise does not reject.
+ * that isn't a domain name gives `permerror`. The promise rejects only when `signal` aborts.
  *
  * @example
  * ```ts
@@ -150,6 +150,7 @@ const maxAlignmentWalks = 10
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
+  options.signal?.throwIfAborted()
   const author = parseDomain(input.from)
   const domain = author.kind === 'name' ? author.name : input.from.trim().toLowerCase()
   const unaligned = {
@@ -378,7 +379,7 @@ async function query<T>(
   try {
     return { value: await abortable(Promise.resolve().then(run), ctx.signal) }
   } catch (error) {
-    if (error instanceof TempError) throw error
+    if (error instanceof TempError || ctx.signal?.aborted) throw error
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
     if (typeof code === 'string' && emptyCodes.has(code)) return { empty: code }
@@ -388,10 +389,9 @@ async function query<T>(
 
 function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
   if (!signal) return promise
-  const stopped = () => new TempError('The time limit was reached')
-  if (signal.aborted) return Promise.reject(stopped())
+  if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {
-    const onAbort = () => reject(stopped())
+    const onAbort = () => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })
     promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort))
   })
