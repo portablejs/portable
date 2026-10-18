@@ -4,11 +4,12 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| A typed `import.meta.glob` with `eager: true` fails `pnpm check` with TS2353. | Use the lazy loader with top-level `await`. | None. |
 | Node's ICU `TextDecoder` decodes Big5, EUC-KR, ISO-2022-JP and Shift_JIS differently from the WHATWG standard. | `charset`'s round-trip tests for those run only in Chromium. Workers and Bun are unverified. | Run them in Workers once that project exists. |
 | The Write tool turns `\uXXXX` escapes into literal characters. | Fix the file with a script afterwards. | None. |
 | Agents running at the same time share one scratchpad directory. | Use a subdirectory per package. | Put that in the brief. |
 | `vp check --fix` (oxfmt) rewrites escapes such as `'\uFEFF'` and `'\u2028'` into the literal characters, and `no-irregular-whitespace` then rejects them. | `String.fromCharCode(0xfeff)`. | Report to oxfmt. |
-| Vitest wraps each export in a getter when running source, so calls between modules cost more in benchmarks. dns-packet decode measures 1.8× slower than on the build, and exif and image-size print warnings. | dns-packet's decode benchmark allows 50%. | Benchmark the built `dist`, or find the Vitest setting that skips the getters. To be done with the move to `test/` packages. |
+| Vitest rewrites calls between modules into getter lookups, so a hot function imported from another file isn't inlined. dns-packet decode measures 1.8× slower than on the build, png's filters ran 2× slower, and exif and image-size print warnings. | dns-packet's decode benchmark allows 50%; png keeps hot loops and their helpers in one module. | Benchmark the built `dist`: with tests in `test/` packages, the bench project can drop the `src` condition. Planned with that move. |
 | The Write tool's copy of a file goes stale after the formatter rewrites it. | Read the file again before writing. | None. |
 | `minimumReleaseAge` refuses a package published less than a day ago, tarball URLs included, so `quoted-printable` couldn't install libqp 3.0.1 for its oracle. | The 3.0.1 source is copied into `packages/quoted-printable/src/_test/fixtures/`. | Swap the copy for `libqp@^3.0.1` once it is a day old (after 2026-10-19). |
 | `@types/libqp` describes 1.x, so libqp 2.x's `Uint8Array` inputs fail type checks. | A cast in the oracle test. | None. |
