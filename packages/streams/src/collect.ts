@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import { MaxBytesError, byteLength, toUint8Array } from './bytes.js'
 import { type Source, forEach } from './source.js'
 
@@ -33,7 +34,7 @@ export async function toBytes(
     if (length > maxBytes) throw new MaxBytesError(maxBytes)
     chunks.push(bytes)
   })
-  return concatBytes(chunks, length)
+  return Bytes.concat(chunks)
 }
 
 export declare namespace toText {
@@ -117,14 +118,4 @@ export async function toArray<T>(source: Source<T>): Promise<T[]> {
     chunks.push(chunk)
   })
   return chunks
-}
-
-function concatBytes(chunks: readonly Uint8Array[], length: number): Uint8Array<ArrayBuffer> {
-  const bytes = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return bytes
 }
