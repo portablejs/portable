@@ -4,6 +4,16 @@ Encodes and decodes DNS messages in wire format. Runs in browsers, Cloudflare Wo
 
 Replaces [dns-packet](https://www.npmjs.com/package/dns-packet).
 
+## Why use this over dns-packet
+
+dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 6.6 kB minified and gzipped with no dependencies.
+
+- A label over 63 bytes, a TXT string over 255 bytes or an empty label throws `InvalidInputError`. dns-packet writes the first two with overflowing length bytes, and an empty label ends the name early.
+- Names are checked before any bytes are allocated, and buffers are zero-filled. dns-packet before 5.2.2 could send uninitialized memory (CVE-2021-23386).
+- Each record's data must fill its RDLENGTH exactly. dns-packet ignores RDLENGTH for most types, so one bad record leaves the decoder out of step for the rest of the message.
+- `encode` doesn't modify the packet you pass. dns-packet adds empty sections to it and overwrites CAA `flags`.
+- Encoding a DNS-over-HTTPS query was about 1.2× faster than dns-packet, and encoding 48 captured responses ran at the same speed. Decoding them was about 1.25× slower inside the Vitest benchmark. The built package in plain Node decodes about 1.8× faster than dns-packet, and Vitest's export getters account for the difference.
+
 ```sh
 npm install @portable/dns-packet
 ```
