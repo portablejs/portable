@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite-plus'
 import { playwright } from 'vite-plus/test/browser-playwright'
 
+// Set PW_CHROMIUM_PATH to test against an installed Chromium only, such as /opt/pw-browsers/chromium
+// in the cloud dev container, where Playwright's own browsers aren't installed.
+const chromiumPath = process.env.PW_CHROMIUM_PATH
+
 const nodeBuiltins = [
   'assert',
   'buffer',
@@ -43,6 +47,10 @@ export default defineConfig({
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
       'no-console': 'error',
+      'no-irregular-whitespace': [
+        'error',
+        { skipStrings: false, skipRegExps: false, skipTemplates: false },
+      ],
       'no-restricted-imports': [
         'error',
         {
@@ -103,9 +111,13 @@ export default defineConfig({
           include: ['packages/*/src/**/*.browser.test.ts', 'packages/*/src/**/*.conformance.ts'],
           browser: {
             enabled: true,
-            provider: playwright(),
+            provider: playwright(
+              chromiumPath ? { launchOptions: { executablePath: chromiumPath } } : {},
+            ),
             headless: true,
-            instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+            instances: chromiumPath
+              ? [{ browser: 'chromium' }]
+              : [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
             screenshotFailures: false,
           },
         },
