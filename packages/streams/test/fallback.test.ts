@@ -11,6 +11,7 @@ delete prototype[Symbol.asyncIterator]
 await import('./bridge.conformance.js')
 await import('./collect.conformance.js')
 await import('./combine.conformance.js')
+await import('./tee.conformance.js')
 
 test('runs without the native stream iteration APIs', () => {
   expect('from' in ReadableStream).toBe(false)

@@ -146,7 +146,7 @@ export function limitBytes<T extends Uint8Array | string>(maxBytes: number): Tra
   })
 }
 
-function toStream<T>(source: Source<T>): ReadableStream<T> {
+export function toStream<T>(source: Source<T>): ReadableStream<T> {
   assertSource(source)
   return isReadableStream(source) ? source : fromIterable(source)
 }

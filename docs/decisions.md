@@ -218,3 +218,9 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **Options:** keep every byte up to the thumbnail; take `thumbnail.bytes` from the EXIF segment or chunk only.
 - **Trade-offs:** `parse` slices the thumbnail from the whole input, so in a malformed JPEG whose IFD1 points past the APP1 segment it still returns bytes. Keeping everything up to that point would undo the skipping.
 - **Chosen:** the EXIF segment or chunk only. In valid files the thumbnail is inside it, and `parseStream` returns the same result as `parse` on every fixture.
+
+## `Streams.tee` defaults to 16 chunks or 64 KiB
+
+- **Options:** no default, so every caller picks a limit; the platform default of 1 chunk; `Infinity`, as the platform's `tee()` behaves; Node's stream defaults of 16 objects or 64 KiB.
+- **Trade-offs:** 1 chunk makes the fastest branch wait for the slowest on every chunk, which loses most of the point of reading branches at the same time. `Infinity` brings back the unbounded buffering that `tee` exists to prevent. A required option adds a decision to every call, when most callers only need some bound.
+- **Chosen:** Node's defaults, 16 chunks with `unit: 'chunks'` and 65536 bytes with `unit: 'bytes'`. Node users already know these numbers, and they bound memory to 16 chunks or 64 KiB for each slow branch.
