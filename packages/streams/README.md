@@ -29,12 +29,12 @@ Each collector reads a `ReadableStream`, an async iterable (such as a Node `Read
 
 | Function | Returns |
 | --- | --- |
-| `toBytes(source, { maxBytes })` | `Uint8Array`. String chunks are encoded as UTF-8. |
-| `toText(source, { maxBytes, encoding })` | `string`. Byte chunks are decoded with `TextDecoder` (`encoding` defaults to `'utf-8'`), and string chunks are kept. |
-| `toJson(source, { maxBytes, encoding })` | `JSON.parse` of the text, typed `unknown`. |
-| `toArray(source)` | The chunks, unchanged. |
+| `toBytes(source, { maxBytes, signal })` | `Uint8Array`. String chunks are encoded as UTF-8. |
+| `toText(source, { maxBytes, encoding, signal })` | `string`. Byte chunks are decoded with `TextDecoder` (`encoding` defaults to `'utf-8'`), and string chunks are kept. |
+| `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`. |
+| `toArray(source, { signal })` | The chunks, unchanged. |
 
-`toBytes`, `toText` and `toJson` take `Uint8Array` and `string` chunks; any other chunk rejects with a `TypeError`. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit.
+`toBytes`, `toText` and `toJson` take `Uint8Array` and `string` chunks; any other chunk rejects with a `TypeError`. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
 
 ```ts
 const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
@@ -46,7 +46,7 @@ const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
 | --- | --- |
 | `concat(...sources)` | One stream with every chunk of the first source, then the next. A source is read only after the one before it ends. |
 | `merge(...sources)` | One stream that reads every source at once and passes chunks on as they arrive. |
-| `limitBytes(maxBytes)` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
+| `limitBytes(maxBytes, { signal })` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
 | `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`. |
 
 Sources are streams, async iterables or iterables. An error in one source errors the output and cancels the others, and cancelling the output cancels every source.
@@ -77,9 +77,11 @@ await Promise.all([
 | --- | --- |
 | `fromIterable(iterable)` | A `ReadableStream` that pulls one value per read. Cancelling it calls the iterator's `return()`, so a generator's `finally` blocks run. Uses `ReadableStream.from` when the runtime has it. |
 | `toAsyncIterable(stream, { preventCancel })` | An async iterator over a stream. Leaving a `for await` loop early cancels the stream, or with `preventCancel: true` only releases the lock. Uses `stream.values()` when the runtime has it. |
-| `transform(async function* (source) { ... })` | A `{ readable, writable }` pair for `pipeThrough`, built from an async generator that reads `source` and yields output. The generator runs only as fast as the output is read. An error thrown in it errors the output and cancels the input; cancelling the output ends `source` and runs the generator's `finally` blocks. |
-| `map(fn)`, `filter(fn)`, `tap(fn)` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise; chunks stay in order. |
-| `batch(size)` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
+| `transform(async function* (source) { ... }, { signal })` | A `{ readable, writable }` pair for `pipeThrough`, built from an async generator that reads `source` and yields output. The generator runs only as fast as the output is read. An error thrown in it errors the output and cancels the input; cancelling the output ends `source` and runs the generator's `finally` blocks. |
+| `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise; chunks stay in order. |
+| `batch(size, { signal })` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
+
+Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. `concat`, `merge`, `fromIterable` and `toAsyncIterable` take no signal: cancel the stream they return, or pass `signal` to the `pipeTo` that reads it.
 
 ```ts
 const lines = Streams.transform(async function* (source: AsyncIterable<string>) {

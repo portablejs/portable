@@ -1,3 +1,4 @@
+import { abortable } from './abortable.js'
 import { MaxBytesError, byteLength } from './bytes.js'
 import { fromIterable } from './iterable.js'
 import { type Source, assertSource, isReadableStream } from './source.js'
@@ -123,6 +124,13 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
   )
 }
 
+export declare namespace limitBytes {
+  type Options = {
+    /** Errors the stream with `signal.reason` and cancels its source when aborted. */
+    signal?: AbortSignal | undefined
+  }
+}
+
 /**
  * A `TransformStream` that passes chunks through unchanged and fails with `MaxBytesError`
  * once more than `maxBytes` bytes have passed. The chunk that crosses the limit is not
@@ -135,15 +143,23 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
  * await request.body!.pipeThrough(Streams.limitBytes(1_000_000)).pipeTo(upload)
  * ```
  */
-export function limitBytes<T extends Uint8Array | string>(maxBytes: number): TransformStream<T, T> {
+export function limitBytes<T extends Uint8Array | string>(
+  maxBytes: number,
+  options: limitBytes.Options = {},
+): TransformStream<T, T> {
   let length = 0
-  return new TransformStream<T, T>({
-    transform(chunk, controller) {
-      length += byteLength(chunk)
-      if (length > maxBytes) throw new MaxBytesError(maxBytes)
-      controller.enqueue(chunk)
-    },
-  })
+  return new TransformStream<T, T>(
+    abortable(
+      {
+        transform(chunk, controller) {
+          length += byteLength(chunk)
+          if (length > maxBytes) throw new MaxBytesError(maxBytes)
+          controller.enqueue(chunk)
+        },
+      },
+      options.signal,
+    ),
+  )
 }
 
 export function toStream<T>(source: Source<T>): ReadableStream<T> {

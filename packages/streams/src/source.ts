@@ -20,16 +20,21 @@ export function assertSource(source: unknown): void {
   throw new TypeError('The source must be a ReadableStream, an async iterable or an iterable.')
 }
 
-export async function forEach<T>(source: Source<T>, onChunk: (chunk: T) => void): Promise<void> {
+export async function forEach<T>(
+  source: Source<T>,
+  onChunk: (chunk: T) => void,
+  signal?: AbortSignal,
+): Promise<void> {
   assertSource(source)
-  if (!isReadableStream(source)) {
-    for await (const chunk of source) onChunk(chunk)
-    return
-  }
+  if (!isReadableStream(source)) return forEachIterable(source, onChunk, signal)
   const reader = source.getReader()
+  const onAbort = () => void reader.cancel(signal!.reason).catch(() => {})
+  if (signal?.aborted) onAbort()
+  signal?.addEventListener('abort', onAbort, { once: true })
   try {
     for (;;) {
       const { done, value } = await reader.read()
+      signal?.throwIfAborted()
       if (done) return
       try {
         onChunk(value)
@@ -39,6 +44,38 @@ export async function forEach<T>(source: Source<T>, onChunk: (chunk: T) => void)
       }
     }
   } finally {
+    signal?.removeEventListener('abort', onAbort)
     reader.releaseLock()
+  }
+}
+
+async function forEachIterable<T>(
+  source: AsyncIterable<T> | Iterable<T>,
+  onChunk: (chunk: T) => void,
+  signal: AbortSignal | undefined,
+): Promise<void> {
+  if (!signal) {
+    for await (const chunk of source) onChunk(chunk)
+    return
+  }
+  const iterator =
+    Symbol.asyncIterator in source ? source[Symbol.asyncIterator]() : source[Symbol.iterator]()
+  let onAbort = () => {}
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason)
+  })
+  aborted.catch(() => {})
+  signal.addEventListener('abort', onAbort, { once: true })
+  let done = false
+  try {
+    while (!done) {
+      signal.throwIfAborted()
+      const result = await Promise.race([iterator.next(), aborted])
+      done = result.done === true
+      if (!done) onChunk(await Promise.race([result.value, aborted]))
+    }
+  } finally {
+    signal.removeEventListener('abort', onAbort)
+    if (!done) void Promise.resolve(iterator.return?.()).catch(() => {})
   }
 }

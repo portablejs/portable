@@ -6,6 +6,8 @@ export declare namespace toBytes {
   type Options = {
     /** Fail with `MaxBytesError` and cancel the source once it yields more bytes than this. @default Infinity */
     maxBytes?: number | undefined
+    /** Rejects with `signal.reason` and cancels the source when aborted. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -25,15 +27,19 @@ export async function toBytes(
   source: Source<Uint8Array | string>,
   options: toBytes.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { maxBytes = Infinity } = options
+  const { maxBytes = Infinity, signal } = options
   const chunks: Uint8Array[] = []
   let length = 0
-  await forEach(source, (chunk) => {
-    const bytes = toUint8Array(chunk)
-    length += bytes.byteLength
-    if (length > maxBytes) throw new MaxBytesError(maxBytes)
-    chunks.push(bytes)
-  })
+  await forEach(
+    source,
+    (chunk) => {
+      const bytes = toUint8Array(chunk)
+      length += bytes.byteLength
+      if (length > maxBytes) throw new MaxBytesError(maxBytes)
+      chunks.push(bytes)
+    },
+    signal,
+  )
   return Bytes.concat(chunks)
 }
 
@@ -43,6 +49,8 @@ export declare namespace toText {
     encoding?: string | undefined
     /** Fail with `MaxBytesError` and cancel the source once it yields more bytes than this. String chunks count as their UTF-8 length. @default Infinity */
     maxBytes?: number | undefined
+    /** Rejects with `signal.reason` and cancels the source when aborted. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -63,23 +71,27 @@ export async function toText(
   source: Source<Uint8Array | string>,
   options: toText.Options = {},
 ): Promise<string> {
-  const { encoding = 'utf-8', maxBytes = Infinity } = options
+  const { encoding = 'utf-8', maxBytes = Infinity, signal } = options
   const decoder = new TextDecoder(encoding)
   let text = ''
   let decoding = false
   let length = 0
-  await forEach(source, (chunk) => {
-    length += byteLength(chunk)
-    if (length > maxBytes) throw new MaxBytesError(maxBytes)
-    if (typeof chunk === 'string') {
-      if (decoding) text += decoder.decode()
-      decoding = false
-      text += chunk
-    } else {
-      text += decoder.decode(chunk, { stream: true })
-      decoding = true
-    }
-  })
+  await forEach(
+    source,
+    (chunk) => {
+      length += byteLength(chunk)
+      if (length > maxBytes) throw new MaxBytesError(maxBytes)
+      if (typeof chunk === 'string') {
+        if (decoding) text += decoder.decode()
+        decoding = false
+        text += chunk
+      } else {
+        text += decoder.decode(chunk, { stream: true })
+        decoding = true
+      }
+    },
+    signal,
+  )
   if (decoding) text += decoder.decode()
   return text
 }
@@ -101,6 +113,13 @@ export async function toJson(
   return JSON.parse(await toText(source, options))
 }
 
+export declare namespace toArray {
+  type Options = {
+    /** Rejects with `signal.reason` and cancels the source when aborted. */
+    signal?: AbortSignal | undefined
+  }
+}
+
 /**
  * Reads a stream or iterable to the end and returns its chunks in an array.
  *
@@ -112,10 +131,14 @@ export async function toJson(
  * const lines = await Streams.toArray(response.body!.pipeThrough(new Lines.DecoderStream()))
  * ```
  */
-export async function toArray<T>(source: Source<T>): Promise<T[]> {
+export async function toArray<T>(source: Source<T>, options: toArray.Options = {}): Promise<T[]> {
   const chunks: T[] = []
-  await forEach(source, (chunk) => {
-    chunks.push(chunk)
-  })
+  await forEach(
+    source,
+    (chunk) => {
+      chunks.push(chunk)
+    },
+    options.signal,
+  )
   return chunks
 }

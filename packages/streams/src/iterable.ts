@@ -83,6 +83,7 @@ export function toAsyncIterable<T>(
  */
 export function transform<I, O>(
   fn: (source: AsyncIterable<I>) => AsyncIterable<O>,
+  options: transform.Options = {},
 ): ReadableWritablePair<O, I> {
   const input = new TransformStream<I, I>()
   const reader = input.readable.getReader()
@@ -92,7 +93,14 @@ export function transform<I, O>(
       .cancel(reason)
       .catch(() => input.readable.cancel(reason))
       .catch(() => {})
-  return { readable: pull(output, stop), writable: input.writable }
+  return { readable: pull(output, stop, options.signal), writable: input.writable }
+}
+
+export declare namespace transform {
+  type Options = {
+    /** Errors the output with `signal.reason`, cancels the input and ends the generator when aborted. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 function asyncIterator<T>(
@@ -107,22 +115,42 @@ function asyncIterator<T>(
 function pull<T>(
   iterator: AsyncIterator<T>,
   stop?: (reason: unknown) => Promise<void>,
+  signal?: AbortSignal,
 ): ReadableStream<T> {
+  let aborted = false
+  let abort = () => {}
+  const release = () => signal?.removeEventListener('abort', abort)
   return new ReadableStream<T>(
     {
+      start(controller) {
+        if (!signal) return
+        abort = () => {
+          aborted = true
+          controller.error(signal.reason)
+          void stop?.(signal.reason)
+          void Promise.resolve(iterator.return?.(signal.reason)).catch(() => {})
+        }
+        if (signal.aborted) return abort()
+        signal.addEventListener('abort', abort, { once: true })
+      },
       async pull(controller) {
         let result: IteratorResult<T>
         try {
           result = await iterator.next()
         } catch (error) {
+          release()
+          if (aborted) return
           await stop?.(error)
           throw error
         }
+        if (aborted) return
         if (!result.done) return controller.enqueue(result.value)
+        release()
         controller.close()
         await stop?.(undefined)
       },
       async cancel(reason) {
+        release()
         await stop?.(reason)
         await iterator.return?.(reason)
       },
