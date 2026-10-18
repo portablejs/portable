@@ -1,11 +1,11 @@
-import type { Charset, CharsetName } from './Charset.js'
+import type { Charset, Name } from './Charset.js'
 import { UnsupportedError } from './errors.js'
 import { normalizeLabel } from './labels.js'
 import { utf8 } from './utf-8.js'
 
 const singleByte = () => import('./single-byte.js')
 
-const loaders: Record<Exclude<CharsetName, 'replacement'>, () => Promise<Charset>> = {
+const loaders: Record<Name, () => Promise<Charset>> = {
   'UTF-8': async () => utf8,
   IBM866: async () => (await singleByte()).ibm866,
   'ISO-8859-2': async () => (await singleByte()).iso8859_2,
@@ -51,7 +51,7 @@ const loaders: Record<Exclude<CharsetName, 'replacement'>, () => Promise<Charset
  * Loads the charset a label names, for when the charset is only known at runtime, such as from
  * a `Content-Type` header. Each family's tables are imported on first use, so bundlers split
  * them into chunks that load only when needed. Throws `UnsupportedError` for a label
- * `isSupported` rejects.
+ * `normalizeLabel` doesn't know.
  *
  * @example
  * ```ts
@@ -62,7 +62,6 @@ const loaders: Record<Exclude<CharsetName, 'replacement'>, () => Promise<Charset
  */
 export async function load(label: string): Promise<Charset> {
   const name = normalizeLabel(label)
-  if (name === undefined || name === 'replacement')
-    throw new UnsupportedError(`No encoder for charset "${label}".`)
+  if (name === undefined) throw new UnsupportedError(`No encoder for charset "${label}".`)
   return loaders[name]()
 }

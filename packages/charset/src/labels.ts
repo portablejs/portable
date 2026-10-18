@@ -1,4 +1,5 @@
-import { labels, type CharsetName } from './tables/labels.js'
+import type { Name } from './Charset.js'
+import { labels } from './tables/labels.js'
 
 /**
  * Returns the WHATWG Encoding Standard name for a charset label, or `undefined` for an unknown
@@ -7,8 +8,9 @@ import { labels, type CharsetName } from './tables/labels.js'
  * ignored. A label with any other character, such as NUL or a no-break space, is rejected.
  *
  * WHATWG labels win where iconv-lite disagrees: `latin1`, `ascii` and `iso-8859-1` are
- * `windows-1252`, and `gb2312` is `GBK`. A name that resolves to `replacement`, such as
- * `iso-2022-kr`, has no encoder.
+ * `windows-1252`, and `gb2312` is `GBK`. Labels WHATWG maps to the replacement encoding, such
+ * as `iso-2022-kr`, return `undefined`, because nothing can encode them. A label can be
+ * encoded exactly when this returns a name.
  *
  * @example
  * ```ts
@@ -18,27 +20,13 @@ import { labels, type CharsetName } from './tables/labels.js'
  * Charset.normalizeLabel(' Latin1 ') // 'windows-1252'
  * Charset.normalizeLabel('ISO_8859-5:1988') // 'ISO-8859-5'
  * Charset.normalizeLabel('cp437') // undefined
+ * Charset.normalizeLabel('iso-2022-kr') // undefined
  * ```
  */
-export function normalizeLabel(label: string): CharsetName | undefined {
+export function normalizeLabel(label: string): Name | undefined {
   const trimmed = label.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
   if (!/^[\x20-\x7e]+$/.test(trimmed)) return undefined
   const key = trimmed.toLowerCase().replace(/:\d{4}$|[^0-9a-z]/g, '')
-  return Object.hasOwn(labels, key) ? labels[key] : undefined
-}
-
-/**
- * Returns whether `load` and the subpath entries can encode the charset a label names.
- *
- * @example
- * ```ts
- * import * as Charset from '@portable/charset'
- *
- * Charset.isSupported('windows-31j') // true
- * Charset.isSupported('iso-2022-kr') // false, WHATWG maps it to the replacement encoding
- * ```
- */
-export function isSupported(label: string): boolean {
-  const name = normalizeLabel(label)
-  return name !== undefined && name !== 'replacement'
+  const name = Object.hasOwn(labels, key) ? labels[key] : undefined
+  return name === 'replacement' ? undefined : name
 }

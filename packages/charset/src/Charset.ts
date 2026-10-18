@@ -1,6 +1,7 @@
 import type { CharsetName } from './tables/labels.js'
 
-export type { CharsetName }
+/** The WHATWG Encoding Standard name of a charset this package encodes, such as `'Shift_JIS'`. */
+export type Name = Exclude<CharsetName, 'replacement'>
 
 /**
  * A charset that `encode` and `EncoderStream` can write. Import one from the subpath for its
@@ -17,7 +18,7 @@ export type { CharsetName }
  */
 export type Charset = {
   /** The WHATWG Encoding Standard name. */
-  readonly name: CharsetName
+  readonly name: Name
   /** @internal Most bytes one UTF-16 code unit can encode to. */
   readonly maxBytes: number
   /** @internal Byte order mark written when `bom` is set. */

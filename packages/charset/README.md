@@ -25,7 +25,7 @@ Each family is its own entry point, so a bundle only includes the tables it impo
 
 | Entry point | Exports | gzip |
 | --- | --- | --- |
-| `@portable/charset` | `encode`, `EncoderStream`, `utf8`, `normalizeLabel`, `isSupported`, `load`, `UnsupportedError` | 1.0 kB |
+| `@portable/charset` | `encode`, `EncoderStream`, `utf8`, `normalizeLabel`, `load`, `UnsupportedError` | 1.0 kB |
 | `@portable/charset/single-byte` | `ibm866`, `iso8859_2` to `iso8859_16`, `iso8859_8i`, `koi8R`, `koi8U`, `macintosh`, `windows874`, `windows1250` to `windows1258`, `xMacCyrillic`, `xUserDefined` | 1.6 kB for one, 3.1 kB for all |
 | `@portable/charset/shift_jis` | `shiftJis` | 11.6 kB |
 | `@portable/charset/euc-jp` | `eucJp` | 11.5 kB |
@@ -48,7 +48,7 @@ const charset = await Charset.load('windows-31j') // the Shift_JIS charset
 const bytes = Charset.encode(text, charset)
 ```
 
-`load` throws `UnsupportedError` for an unknown label. `isSupported(label)` checks a label first, and `normalizeLabel(label)` returns its WHATWG name, such as `'Shift_JIS'`. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
+`load` throws `UnsupportedError` for an unknown label. `normalizeLabel(label)` returns its WHATWG name, such as `'Shift_JIS'`, or `undefined` for a label nothing can encode, so it also checks a label first. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
 
 Bundlers split `load` into one chunk per family. With every family reachable, the entry chunk is 3.2 kB and each family loads on demand.
 
@@ -86,7 +86,7 @@ Bundled for the browser, minified and gzipped, `@portable/charset` is 69 kB, aga
 | `iconv.encode(text, 'sjis')` | `Charset.encode(text, shiftJis)`, or `Charset.encode(text, await Charset.load('sjis'))` |
 | `iconv.encode(text, 'utf-16', { addBOM: true })` | `Charset.encode(text, utf16le, { bom: true })` |
 | `iconv.encodeStream('gbk')` | `new Charset.EncoderStream(gbk)` |
-| `iconv.encodingExists(label)` | `Charset.isSupported(label)` |
+| `iconv.encodingExists(label)` | `Charset.normalizeLabel(label) !== undefined` |
 | `iconv.decode(bytes, label)` | `new TextDecoder(label).decode(bytes)` |
 | `iconv.decodeStream(label)` | `new TextDecoderStream(label)` |
 | `iconv.defaultCharSingleByte = '#'` | `{ unmappable: () => '#' }` |

@@ -2,6 +2,12 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/charset`'s root exports
+
+- **Options:** keep `encode`, `EncoderStream`, `utf8`, `load`, `normalizeLabel`, `isSupported`, `UnsupportedError` and the types `Charset` and `CharsetName`; drop `isSupported`; also rename the `Charset` type.
+- **Trade-offs:** `isSupported` matched iconv-lite's `encodingExists`, but it was `normalizeLabel` plus one comparison, and `normalizeLabel` returned `'replacement'`, a name nothing here encodes, so callers needed both. `CharsetName` repeats the package name as `Charset.CharsetName`. `Charset.Charset` repeats it too, but it is the type of the package's main value, as `Hex.Hex` is in ox, and every other name for it (`Table`, `Codec`) says less.
+- **Chosen:** `isSupported` is gone and `normalizeLabel` returns `undefined` for replacement labels, so a label can be encoded exactly when it returns a name. `CharsetName` is `Name` and no longer includes `'replacement'`. `Charset.Charset` stays.
+
 ## Webhooks schemes are objects of functions
 
 The owner asked for this redesign: a branch per vendor inside `verify` and `sign` couldn't be kept up as vendors were added.

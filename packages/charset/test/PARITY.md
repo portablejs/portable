@@ -8,8 +8,8 @@ Besides the ported cases, `charset.oracle.test.ts` compares every code point of 
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| should not detect prototype properties as encodings | `labels > isSupported > is false for the replacement encoding, unknown labels and prototype keys` | |
-| should detect encodings | `labels > isSupported > is true for every encoding with an encoder` | |
+| should not detect prototype properties as encodings | `labels > normalizeLabel > returns undefined for unknown labels and object prototype keys` | |
+| should detect encodings | `labels > normalizeLabel > maps every encoding name to itself` | |
 | should detect all available encodings | `labels > normalizeLabel > accepts iconv-lite names` | Only the iconv-lite names for WHATWG charsets. |
 | should not detect 'constructor' as encoding when _codecDataCache is defined | `labels > load > rejects unknown labels and the replacement encoding with UnsupportedError` | No cache to poison; `load('constructor')` is part of that test. |
 | Return values are of correct types | `encode > encode > returns a Uint8Array` | |
@@ -112,7 +112,7 @@ Each has a test here. The oracle accepts iconv-lite's differing bytes only for t
 | windows-125x and windows-874 write `?` for C1 controls the WHATWG index maps to themselves. | `charsets > single-byte charsets > windows-125x and windows-874 encode the C1 controls their index maps` |
 | Not a bug, a different table: iconv-lite's KOI8-U has box drawings at AE and BE where WHATWG's (KOI8-RU) has ў and Ў; its macintosh lacks € and U+F8FF; its x-mac-cyrillic is the pre-Ukrainian variant. | `charsets > single-byte charsets > KOI8-U is KOI8-RU...`, `macintosh maps €...`, `x-mac-cyrillic is the Mac OS Ukrainian variant...` |
 | Labels padded with NUL, NBSP or other non-ASCII-whitespace match (fixed upstream after 0.7.3, #403). | `labels > normalizeLabel > trims ASCII whitespace only` |
-| Prototype keys such as `constructor` resolve as encodings (#328). | `labels > isSupported > is false for the replacement encoding, unknown labels and prototype keys` |
+| Prototype keys such as `constructor` resolve as encodings (#328). | `labels > normalizeLabel > returns undefined for unknown labels and object prototype keys` |
 | Surrogate pairs split across stream chunks (#282). | `encode > EncoderStream > surrogate pairs split across chunks` |
 | ISO-2022-JP is not supported by iconv-lite. | `charsets > ISO-2022-JP > *` and `encode > unmappable characters > in ISO-2022-JP ...` |
 
@@ -124,7 +124,7 @@ The upstream issue tracker was not reachable from this session, so the list come
 | --- | --- | --- |
 | `encode(text, 'label')` | `encode(text, charset)` with charset objects from subpaths, or `await load('label')` | A string registry pulls every table into the bundle. |
 | `encodeStream(label)` (Node stream) | `new EncoderStream(charset)` (`TransformStream`) | Web streams. |
-| `encodingExists(label)` | `isSupported(label)` and `normalizeLabel(label)` | Short names; `normalizeLabel` also returns the WHATWG name. |
+| `encodingExists(label)` | `normalizeLabel(label) !== undefined` | `normalizeLabel` also returns the WHATWG name. |
 | `defaultCharSingleByte`, `defaultCharUnicode` globals | `{ unmappable: 'replace' \| 'html' \| 'error' \| (codePoint) => string }` | Per call instead of global; adds HTML references and throwing. |
 | `addBOM` | `bom` | `utf-16` no longer writes a BOM by default. |
 | `latin1`, `ascii`, `iso-8859-1`, `gb2312`, `ucs2` labels | Resolve as in WHATWG: windows-1252, windows-1252, windows-1252, GBK, UTF-16LE | Same bytes as browsers. |

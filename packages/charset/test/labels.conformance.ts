@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Charset from '@portable/charset'
 import { windows1251 } from '@portable/charset/single-byte'
 
-const names: readonly Charset.CharsetName[] = [
+const names: readonly Charset.Name[] = [
   'UTF-8',
   'IBM866',
   'ISO-8859-2',
@@ -107,24 +107,10 @@ describe('normalizeLabel', () => {
     expect(Charset.normalizeLabel('hasOwnProperty')).toBeUndefined()
   })
 
-  test('maps the labels WHATWG reserves for the replacement encoding', () => {
-    expect(Charset.normalizeLabel('iso-2022-kr')).toBe('replacement')
-    expect(Charset.normalizeLabel('hz-gb-2312')).toBe('replacement')
-  })
-})
-
-describe('isSupported', () => {
-  test('is true for every encoding with an encoder', () => {
-    for (const name of names) expect(Charset.isSupported(name)).toBe(true)
-    expect(Charset.isSupported('utf8')).toBe(true)
-  })
-
-  test('is false for the replacement encoding, unknown labels and prototype keys', () => {
-    expect(Charset.isSupported('iso-2022-kr')).toBe(false)
-    expect(Charset.isSupported('replacement')).toBe(false)
-    expect(Charset.isSupported('xxx')).toBe(false)
-    expect(Charset.isSupported('__proto__')).toBe(false)
-    expect(Charset.isSupported('constructor')).toBe(false)
+  test('returns undefined for the labels WHATWG reserves for the replacement encoding', () => {
+    expect(Charset.normalizeLabel('iso-2022-kr')).toBeUndefined()
+    expect(Charset.normalizeLabel('hz-gb-2312')).toBeUndefined()
+    expect(Charset.normalizeLabel('replacement')).toBeUndefined()
   })
 })
 
