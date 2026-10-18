@@ -18,6 +18,8 @@ import {
 
 export declare namespace fromSocket {
   type Options = {
+    /** Closes the socket with code 1000 and fails both streams with `signal.reason`. */
+    signal?: AbortSignal | undefined
     /** Writes wait while the socket's `bufferedAmount` is above this many bytes. @default 1048576 */
     highWaterMark?: number | undefined
     /**
@@ -51,7 +53,7 @@ export declare namespace fromSocket {
  * ```
  */
 export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Duplex {
-  const { highWaterMark = 1 << 20, maxBuffered = Infinity } = options
+  const { signal, highWaterMark = 1 << 20, maxBuffered = Infinity } = options
   checkSize('highWaterMark', highWaterMark)
   checkSize('maxBuffered', maxBuffered, 1)
   socket.binaryType = 'arraybuffer'
@@ -74,6 +76,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     failure = error
     socket.removeEventListener('message', onMessage)
     socket.removeEventListener('close', onClose)
+    signal?.removeEventListener('abort', onAbort)
     try {
       if (closeReadable) readableController.close()
       else readableController.error(error)
@@ -102,9 +105,12 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     finish(new CloseError(code, event.reason ?? ''), isNormalClose(code))
   }
 
+  const onAbort = () => shutdown(signal!.reason)
+
   socket.addEventListener('message', onMessage)
   socket.addEventListener('close', onClose)
   socket.addEventListener('error', () => {})
+  signal?.addEventListener('abort', onAbort)
 
   const readable = new ReadableStream<Message>(
     {
@@ -122,12 +128,16 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     start(controller) {
       writableController = controller
     },
-    async write(chunk) {
-      await opened
-      await drained(socket, highWaterMark)
-      if (done) throw failure
-      if (socket.readyState !== OPEN) throw closedError()
-      socket.send(chunk)
+    write(chunk) {
+      if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark)
+        return socket.send(chunk)
+      return opened
+        .then(() => drained(socket, highWaterMark))
+        .then(() => {
+          if (done) throw failure
+          if (socket.readyState !== OPEN) throw closedError()
+          socket.send(chunk)
+        })
     },
     close() {
       socket.close(1000)
@@ -137,5 +147,6 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     },
   })
 
+  if (signal?.aborted) onAbort()
   return { readable, writable }
 }

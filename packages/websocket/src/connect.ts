@@ -26,8 +26,8 @@ export declare namespace connect {
     /** Wait before each reconnect. @default { initial: 1000, max: 30000 } */
     delay?: Delay | undefined
     /**
-     * Failed attempts in a row before giving up. The streams then fail with the last attempt's error.
-     * An attempt that reaches `open` resets the count. @default Infinity
+     * Retries in a row that may fail before giving up. The streams then fail with the last error. A
+     * connection that finishes `open` resets the count. @default Infinity
      */
     retries?: number | undefined
     /** Time limit for each attempt to open and finish `open`, in ms. @default 10000 */
@@ -357,6 +357,21 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     }
   }
 
+  const write = (chunk: string | Uint8Array<ArrayBuffer>): Promise<void> | undefined => {
+    if (stop.signal.aborted) throw failure
+    if (current?.readyState === OPEN && queue.length === 0) {
+      if (current.bufferedAmount > highWaterMark)
+        return drained(current, highWaterMark).then(() => write(chunk))
+      current.send(chunk)
+      return
+    }
+    if (queue.length < maxQueued) {
+      queue.push(chunk)
+      return
+    }
+    return changed().then(() => write(chunk))
+  }
+
   const readable = new ReadableStream<Message>(
     {
       start(controller) {
@@ -373,15 +388,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     start(controller) {
       writableController = controller
     },
-    async write(chunk) {
-      for (;;) {
-        if (stop.signal.aborted) throw failure
-        if (current?.readyState === OPEN && queue.length === 0) {
-          if (current.bufferedAmount <= highWaterMark) return current.send(chunk)
-          await drained(current, highWaterMark)
-        } else if (queue.length < maxQueued) return void queue.push(chunk)
-        else await changed()
-      }
+    write(chunk) {
+      return write(chunk)
     },
     async close() {
       while (queue.length > 0 && !stop.signal.aborted) await changed()

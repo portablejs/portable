@@ -81,6 +81,17 @@ describe('fromSocket', () => {
     expect(await errorOf(readable.getReader().read())).toMatchObject({ message: 'stop' })
   })
 
+  test('the signal closes the socket with 1000 and fails both streams', async () => {
+    const socket = new FakeWebSocket('wss://example.com')
+    socket.accept()
+    const controller = new AbortController()
+    const { readable, writable } = WebSockets.fromSocket(socket, { signal: controller.signal })
+    controller.abort(new Error('done'))
+    expect(socket.closedWith).toEqual({ code: 1000, reason: undefined })
+    expect(await errorOf(readable.getReader().read())).toMatchObject({ message: 'done' })
+    expect(await errorOf(writable.getWriter().write('x'))).toMatchObject({ message: 'done' })
+  })
+
   test('writes wait while bufferedAmount is above highWaterMark', async () => {
     const socket = new FakeWebSocket('wss://example.com')
     socket.accept()
