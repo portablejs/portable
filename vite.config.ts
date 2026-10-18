@@ -106,6 +106,9 @@ export default defineConfig({
     // Heavy suites (PngSuite, big base64 inputs) take several seconds when other processes load the
     // machine, such as a pre-push hook running every package's tests.
     testTimeout: 30_000,
+    // Vitest reruns every test when any package.json changes. Each new package adds one, so the
+    // pre-push run of affected tests would otherwise test the whole repo.
+    forceRerunTriggers: ['**/{vitest,vite}.config.*'],
     coverage: {
       provider: 'v8',
       include: ['packages/*/src/**/*.ts'],

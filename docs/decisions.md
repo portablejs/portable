@@ -313,3 +313,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **Options:** no default, so every caller picks a limit; the platform default of 1 chunk; `Infinity`, as the platform's `tee()` behaves; Node's stream defaults of 16 objects or 64 KiB.
 - **Trade-offs:** 1 chunk makes the fastest branch wait for the slowest on every chunk, which loses most of the point of reading branches at the same time. `Infinity` brings back the unbounded buffering that `tee` exists to prevent. A required option adds a decision to every call, when most callers only need some bound.
 - **Chosen:** Node's defaults, 16 chunks with `unit: 'chunks'` and 65536 bytes with `unit: 'bytes'`. Node users already know these numbers, and they bound memory to 16 chunks or 64 KiB for each slow branch.
+
+## Don't rerun every test when a package.json changes
+
+Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test run --changed` ran the whole repo whenever a commit added a package or a test dependency, which was almost every push. `vite.config.ts` now keeps only the config files as triggers. A dependency version bump no longer reruns the tests of the packages that use it before a push; `pnpm test` still covers them.
