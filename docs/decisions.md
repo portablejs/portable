@@ -2,6 +2,13 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/spf` API
+
+- **`Spf.check({ ip, sender, helo }, { resolver, receiver, signal })`, named after RFC 7208's `check_host()`.** `verify` was passed over because in webhooks it throws on failure, and an SPF `fail` is a result, not an error. `check` rejects only for an invalid `ip`.
+- **The resolver is required, with no default.** A default of `Dns.createResolver()` would save one line, but the resolver decides who sees the client's IP through `%{i}` in `exists` lookups, mail servers usually have their own resolver, and it would put DNS-over-HTTPS code into Node bundles. `Spf.Resolver` is a `Pick` of five `Dns.Resolver` methods, so `node:dns/promises` and small test fakes both fit.
+- **RFC 7208 behavior only.** There is no lenient mode like mailauth's default and no options for the lookup limits. A syntax error anywhere gives `permerror`, and empty answers and `EBADNAME` count as void lookups.
+- **No Received-SPF or Authentication-Results headers.** The result's `identity` and `domain` are enough for `@portable/mailauth` to build them.
+
 ## `@portable/dns` API
 
 - **`createResolver({ endpoints, fetch, timeout })` returns Node's method names** (`resolve4`, `resolveTxt`, `resolveMx`, ... `reverse`) plus `query(name, type)` for the whole decoded packet. The `Resolver` type has the one-argument methods, which `node:dns/promises` also fits, so SPF, DMARC and DKIM accept either. Code moving from Node changes only how the resolver is built.
