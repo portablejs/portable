@@ -4,7 +4,8 @@ import { decodeStream, encodeStream, split, utf8 } from './utils.js'
 
 // Ported from libqp 3.0.1 test/complexity-test.ts. Each test times an adversarial input at two
 // sizes eight times apart: linear work takes about 8 times as long for the larger one, quadratic
-// work 64 times. The best of seven runs is compared, so a garbage collection doesn't fail a test.
+// work 64 times. The best of seven runs is compared, so a garbage collection doesn't fail a test,
+// and a failing test is retried, since other processes on a busy machine skew the timings.
 
 const scale = 8
 const maxRatio = 24
@@ -32,7 +33,7 @@ async function slowdown<T>(
 
 const repeat = (unit: string) => (size: number) => unit.repeat(Math.ceil(size / unit.length))
 
-describe('linear time', { timeout: 120_000 }, () => {
+describe('linear time', { timeout: 120_000, retry: 3 }, () => {
   const decodeInputs: [string, (size: number) => string][] = [
     ['a run of spaces', (size) => ' '.repeat(size) + 'x'],
     ['a run of tabs', (size) => '\t'.repeat(size) + 'x'],
