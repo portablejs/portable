@@ -2,6 +2,14 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/base64` API
+
+- **Three decode modes.** `'loose'` (the default) and `'strict'` match the platform's `fromBase64` `lastChunkHandling`. `'mime'` follows RFC 2045 and libbase64: it skips unknown characters, reads both alphabets and never throws. Making libbase64's lenient behavior the default was rejected because silently dropped characters hide corrupt data (base64-js #81).
+- **Native `toBase64`/`fromBase64` are used when the runtime has them.** Node 24 doesn't, so Node runs the JavaScript fallback, and Chromium's tests check the fallback against the native methods on over 1,000 inputs. The stream decoder always uses the JavaScript code, to avoid a second path to test.
+- **Plain encode and decode have no 25% benchmark assertion against libbase64 and `Buffer`.** Both call C++ `Buffer`, about 6× faster than our JavaScript on Node. The comparisons with base64-js, js-base64 and libbase64's wrapping and streams are asserted, and we win them.
+- **`omitPadding` defaults to false even for base64url,** as on the platform, unlike `Buffer` and js-base64. **Wrapping is off by default.**
+- **The oracle is libbase64 1.3.3,** because 1.4.x is less than a day old. The cases come from 1.4.1's tests.
+
 ## `@portable/dns-packet` API
 
 - **`encode(packet, { compress, framing })` and `decode(bytes, { framing })` are the whole API.** `framing: 'tcp'` replaces `streamEncode`/`streamDecode`. `encodingLength`, writing at an offset and `encode.bytes` are dropped, because `encode` returns an exactly sized array.
