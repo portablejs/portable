@@ -1,4 +1,5 @@
 import * as DnsPacket from '@portable/dns-packet'
+import * as Ip from '@portable/ip'
 import { QueryError } from './errors.js'
 
 /** A mail exchange, as `resolveMx` returns it. */
@@ -175,16 +176,10 @@ function toQueryName(name: string, syscall: string): string {
 }
 
 function reverseName(ip: string): string | undefined {
-  const type = ip.includes(':') ? 'AAAA' : 'A'
-  let bytes: Uint8Array
-  try {
-    bytes = DnsPacket.encode({ answers: [{ type, name: '.', data: ip }] })
-  } catch {
-    return undefined
-  }
-  const address = [...bytes.subarray(type === 'A' ? -4 : -16)].reverse()
-  if (type === 'A') return `${address.join('.')}.in-addr.arpa`
-  return `${address.map((byte) => `${(byte & 15).toString(16)}.${(byte >> 4).toString(16)}`).join('.')}.ip6.arpa`
+  if (!Ip.validate(ip)) return undefined
+  const address = Ip.parse(ip)
+  if (address.version === 6 && address.zone !== undefined) return undefined
+  return Ip.reverseName(address)
 }
 
 type DataOf<T extends string> =

@@ -208,7 +208,7 @@ describe('response codes give the same errors as node:dns/promises', () => {
     })
     for (const ip of ['192.0.2.255', '10.0.0.1', '2001:db8::1', '::ffff:192.0.2.4', 'fe80::1'])
       await compare('reverse', ip, ptr)
-    for (const ip of ['1.2.3', 'bogus ip', '1.2.3.256', ':::1'])
+    for (const ip of ['1.2.3', 'bogus ip', '1.2.3.256', ':::1', '01.2.3.4', '::1.2.3.04'])
       expect(await compare('reverse', ip, ptr)).toMatchObject({ error: { code: 'EINVAL' } })
     await compare('reverse', '192.0.2.1', () => ({ rcode: 'NXDOMAIN' }))
     await compare('reverse', '192.0.2.1', () => ({}))

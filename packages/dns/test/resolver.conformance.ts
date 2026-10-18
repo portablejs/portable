@@ -225,7 +225,7 @@ describe('reverse', () => {
 
   test('rejects anything that is not an IP address with EINVAL, without a request', async () => {
     const { resolver, requests } = resolverFor(answering())
-    for (const ip of ['bogus ip', '1.2.3', '1.2.3.256', '1.2.3.4.5', '::1::2', '']) {
+    for (const ip of ['bogus ip', '1.2.3', '1.2.3.256', '1.2.3.4.5', '::1::2', '', '01.2.3.4']) {
       const error = await failure(resolver.reverse(ip))
       expect(error).toMatchObject({ code: 'EINVAL', syscall: 'getHostByAddr', hostname: ip })
       expect(error.message).toBe(`getHostByAddr EINVAL ${ip}`)

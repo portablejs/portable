@@ -232,6 +232,9 @@ importers:
       '@portable/dns-packet':
         specifier: workspace:*
         version: link:../dns-packet
+      '@portable/ip':
+        specifier: workspace:*
+        version: link:../ip
 
   packages/dns-packet: {}
 
