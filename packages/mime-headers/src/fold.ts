@@ -41,7 +41,6 @@ function trimSpace(text: string, start: number): string {
   return text.slice(start, end)
 }
 
-/** Whether a line can be broken in front of `text[i]`: the start of a whitespace run. */
 const isBreak = (text: string, i: number) =>
   isSpace(text.charCodeAt(i)) && !isSpace(text.charCodeAt(i - 1))
 

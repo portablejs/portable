@@ -126,9 +126,7 @@ type Role = 'name' | 'address' | 'skip'
 
 type Token = {
   kind: Kind
-  /** Text as written for `text` and `literal`, the content without escapes for `quoted` and `comment`. */
   value: string
-  /** Whitespace comes before it. */
   space: boolean
   role: Role
 }
@@ -207,7 +205,6 @@ class Parser {
     }
   }
 
-  /** Checks a character inside a quoted string, comment or domain literal and returns its length. */
   private inner(i: number): number {
     const { text } = this
     const code = text.charCodeAt(i)
@@ -403,7 +400,6 @@ class Parser {
     this.group = null
   }
 
-  /** Marks the angle brackets, and every token after the address, as not part of the name. */
   private markAngle() {
     if (this.open < 0) return
     const end = this.close < 0 ? this.tokens.length : this.close
@@ -454,7 +450,6 @@ class Parser {
     return { name: decodeWords(name.text || name.comments), address }
   }
 
-  /** Finds the first run of tokens in `[from, to)` that holds an `@` and returns its address. */
   private takeAddress(from: number, to: number): string {
     const { tokens } = this
     let start = -1
@@ -525,7 +520,6 @@ class Parser {
     return localPart + '@' + domain.map(raw).join('')
   }
 
-  /** A display name has to be words: atoms and quoted strings, with dots allowed after the first. */
   private checkPhrase(tokens: readonly Token[]) {
     let first = true
     for (const token of tokens) {

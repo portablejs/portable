@@ -1,5 +1,5 @@
 import * as Base64 from '@portable/base64'
-import { checkLength, decodeCharset, encodeUtf8, hexDigit, toText } from './internal/text.js'
+import { checkLength, decodeCharset, encodeUtf8Scratch, hexDigit, toText } from './internal/text.js'
 
 /**
  * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
@@ -66,12 +66,20 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
       ? (length: number) => length <= budget
       : (length: number) => Math.ceil(length / 3) * 4 <= budget
   const text = toText(input)
-  const chunks = charset
-    ? splitCharset(text, charset, encoding, fits)
-    : splitUtf8(text, encoding, fits)
-  return chunks
-    .map((bytes) => prefix + (encoding === 'Q' ? encodeQ(bytes) : Base64.encode(bytes)) + '?=')
-    .join(' ')
+  if (charset)
+    return splitCharset(text, charset, encoding, fits)
+      .map((bytes) => prefix + (encoding === 'Q' ? encodeQ(bytes) : Base64.encode(bytes)) + '?=')
+      .join(' ')
+  const bytes = encodeUtf8Scratch(text)
+  if (encoding === 'B' && fits(bytes.length)) return prefix + Base64.encode(bytes) + '?='
+  let result = ''
+  for (const chunk of splitUtf8(bytes, encoding, fits))
+    result +=
+      (result ? ' ' : '') +
+      prefix +
+      (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) +
+      '?='
+  return result
 }
 
 export declare namespace encodeWords {
@@ -87,7 +95,7 @@ export declare namespace encodeWords {
  * ```ts
  * import * as MimeHeaders from '@portable/mime-headers'
  *
- * MimeHeaders.encodeWords('Tere õhtust, Mari') // '=?UTF-8?Q?Tere_=C3=B5htust=2C?= Mari'
+ * MimeHeaders.encodeWords('Tere õhtust, Mari') // 'Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'
  * MimeHeaders.encodeWords('plain ascii') // 'plain ascii'
  * ```
  */
@@ -169,11 +177,10 @@ const withoutLanguage = (charset: string): string => {
 }
 
 function splitUtf8(
-  text: string,
+  bytes: Uint8Array,
   encoding: Encoding,
   fits: (length: number) => boolean,
 ): Uint8Array[] {
-  const bytes = encodeUtf8(text)
   const chunks: Uint8Array[] = []
   let start = 0
   let length = 0
@@ -242,7 +249,7 @@ function encodeQ(bytes: Uint8Array): string {
 }
 
 function decodeQ(payload: string): Uint8Array {
-  const bytes = encodeUtf8(payload.replace(/=[ \t\r\n]+(?=[0-9A-Fa-f])/g, '='))
+  const bytes = encodeUtf8Scratch(payload.replace(/=[ \t\r\n]+(?=[0-9A-Fa-f])/g, '='))
   const out = new Uint8Array(bytes.length)
   let length = 0
   for (let i = 0; i < bytes.length; i++) {

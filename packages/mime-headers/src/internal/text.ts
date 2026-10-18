@@ -7,14 +7,16 @@ export function toText(input: string | Uint8Array): string {
   throw new TypeError('Expected a string or a Uint8Array.')
 }
 
-export const encodeUtf8 = (text: string): Uint8Array => utf8Encoder.encode(text)
+let scratch = new Uint8Array(1024)
+
+export function encodeUtf8Scratch(text: string): Uint8Array {
+  if (text.length > 16384) return utf8Encoder.encode(text)
+  if (text.length * 3 > scratch.length) scratch = new Uint8Array(text.length * 3)
+  return scratch.subarray(0, utf8Encoder.encodeInto(text, scratch).written)
+}
 
 const decoders = new Map<string, TextDecoder>()
 
-/**
- * Decodes bytes in the charset an encoded word or an RFC 2231 value names. A label `TextDecoder`
- * doesn't know, such as `utf-7`, decodes as UTF-8, so text in it stays readable as it was sent.
- */
 export function decodeCharset(bytes: Uint8Array, label: string): string {
   const key = label.trim().toLowerCase()
   let decoder = decoders.get(key)

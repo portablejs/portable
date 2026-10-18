@@ -3,6 +3,10 @@ export const latin1 = (text: string): Uint8Array => Uint8Array.from(text, (c) =>
 
 export const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
 
+/** `String.prototype.toWellFormed`, which the ES2022 lib this repo compiles against lacks. */
+export const wellFormed = (text: string): string =>
+  text.replace(/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g, '�')
+
 /** A seeded generator, so a failing case can be reproduced from its seed. */
 export function random(seed: number): () => number {
   let state = seed >>> 0 || 1

@@ -1,5 +1,5 @@
 import { InvalidInputError } from './errors.js'
-import { decodeCharset, encodeUtf8, hexDigit, toText } from './internal/text.js'
+import { decodeCharset, encodeUtf8Scratch, hexDigit, toText } from './internal/text.js'
 import { decodeWords } from './words.js'
 
 /** A header value with parameters, such as `Content-Type` or `Content-Disposition`. */
@@ -136,7 +136,7 @@ function joinSections(sections: Section[]): string {
 }
 
 function percentDecode(text: string, out: number[]) {
-  const bytes = encodeUtf8(text)
+  const bytes = encodeUtf8Scratch(text)
   for (let i = 0; i < bytes.length; i++) {
     const byte = bytes[i]!
     if (byte === 0x25 && i + 2 < bytes.length) {
@@ -222,6 +222,6 @@ const hex = '0123456789ABCDEF'
 function percentEncode(character: string): string {
   if (/^[A-Za-z0-9\-_.!~]$/.test(character)) return character
   let result = ''
-  for (const byte of encodeUtf8(character)) result += '%' + hex[byte >> 4]! + hex[byte & 15]!
+  for (const byte of encodeUtf8Scratch(character)) result += '%' + hex[byte >> 4]! + hex[byte & 15]!
   return result
 }
