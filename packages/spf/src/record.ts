@@ -26,7 +26,6 @@ const mechanism = /^([+\-~?]?)([a-z\d]*)(.*)$/i
 const dualCidr = /^(?::(.+?))?(?:\/(\d+))?(?:\/\/(\d+))?$/
 const network = /^:([^/]+)(?:\/(.*))?$/
 
-/** Parses the terms after `v=spf1`, rejecting the whole record on any syntax error (RFC 7208 section 4.6). */
 export function parseRecord(terms: readonly string[]): Policy {
   const policy: Policy = { directives: [], redirect: undefined, exp: undefined }
   for (const term of terms) {

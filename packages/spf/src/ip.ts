@@ -47,7 +47,6 @@ function groups(text: string): number[] | undefined {
   return parts.map((part) => parseInt(part, 16))
 }
 
-/** An IPv4-mapped IPv6 address (`::ffff:0:0/96`) becomes the IPv4 address it holds. */
 export function unmap(address: Address): Address {
   const { bytes } = address
   if (address.version === 6 && bytes.subarray(0, 10).every((b) => b === 0)) {
@@ -83,7 +82,6 @@ export function format(address: Address): string {
   return `${hex.slice(0, start).join(':')}::${hex.slice(start + length).join(':')}`
 }
 
-/** The address as `%{i}` expands it: dotted decimal, or 32 dot-separated nibbles for IPv6. */
 export function dotted(address: Address): string {
   if (address.version === 4) return address.bytes.join('.')
   return Array.from(address.bytes, (b) => `${(b >> 4).toString(16)}.${(b & 15).toString(16)}`).join(

@@ -1,4 +1,3 @@
-/** Ends an evaluation early with `temperror` or `permerror`. Never leaves the package. */
 export class Failure extends Error {
   override name = 'Spf.Failure'
   readonly result: 'temperror' | 'permerror'

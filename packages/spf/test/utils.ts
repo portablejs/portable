@@ -21,10 +21,6 @@ export function dnsError(code: string, name: string): Error {
   return Object.assign(new Error(`${code} ${name}`), { code })
 }
 
-/**
- * Answers from `zone` the way `node:dns/promises` does: a missing name rejects with `ENOTFOUND`,
- * a missing type with `ENODATA`, and CNAMEs are followed. Each query is pushed to `log`.
- */
 export function zoneResolver(zone: Zone, log: Query[] = []): Spf.Resolver {
   const names = new Map(Object.entries(zone).map(([name, records]) => [normalize(name), records]))
   async function answer<T>(
@@ -89,12 +85,10 @@ function normalize(name: string): string {
   return name.toLowerCase().replace(/\.$/, '')
 }
 
-/** A zone whose `example.test` publishes `record`, plus `extra`. */
 export function withRecord(record: string | readonly string[], extra: Zone = {}): Zone {
   return { 'example.test': { TXT: typeof record === 'string' ? [record] : record }, ...extra }
 }
 
-/** Checks `user@example.test` from 192.0.2.1 against `zone`, unless `input` says otherwise. */
 export function check(
   zone: Zone,
   input: Partial<Spf.check.Input> = {},

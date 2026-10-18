@@ -3,7 +3,6 @@ import { spf } from 'mailauth/lib/spf/index.js'
 import { expect, test } from 'vite-plus/test'
 import { mailauthResolver, type Zone, zoneResolver } from './utils.js'
 
-// A record shaped like a large provider's: nested includes, ip4 and ip6 ranges, a, mx and exists.
 const zone: Zone = {
   'example.test': {
     TXT: ['v=spf1 include:_spf.provider.test include:_spf.esp.test mx a:relay.example.test ~all'],

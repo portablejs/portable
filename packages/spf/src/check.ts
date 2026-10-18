@@ -117,7 +117,7 @@ const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  * Checks whether an SMTP client may send mail for a domain, as RFC 7208's `check_host()` does. It
  * reads the SPF record of the MAIL FROM domain, or of the HELO name when the sender is empty, and
  * evaluates it against the client's IP address, with the RFC's limits of 10 DNS-querying terms
- * and 2 void lookups. DNS failures give `temperror` and broken records `permerror`; the promise
+ * and 2 void lookups. DNS failures give `temperror` and broken records `permerror`. The promise
  * rejects only for an `ip` that isn't an IP address.
  *
  * @example

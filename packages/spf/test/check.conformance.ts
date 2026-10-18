@@ -1,6 +1,6 @@
 import * as Spf from '@portable/spf'
 import { describe, expect, test } from 'vite-plus/test'
-import { check, dnsError, type Query, withRecord, type Zone, zoneResolver } from './utils.js'
+import { check, type Query, withRecord, type Zone, zoneResolver } from './utils.js'
 
 const resultOf = async (...args: Parameters<typeof check>) => (await check(...args)).result
 
@@ -1354,7 +1354,7 @@ describe('known upstream issues', () => {
     expect(await resultOf(zone, { ip: '192.0.2.2' })).toBe('pass')
   })
 
-  test('mailauth issue on dualStackResolver: an a term for an IPv6 client counts its empty AAAA answer', async () => {
+  test('after the mailauth #104 fix, an a term for an IPv6 client counts its empty AAAA answer', async () => {
     const zone = withRecord('v=spf1 a:v4.example.test -all', {
       'v4.example.test': { A: ['192.0.2.1'] },
     })
@@ -1364,10 +1364,10 @@ describe('known upstream issues', () => {
     })
   })
 
-  test('rejects with code ENOTFOUND or ENODATA count as void for a resolver of any shape', async () => {
+  test('counts an empty array from the resolver as a void lookup', async () => {
     const resolver = {
       ...zoneResolver(withRecord('v=spf1 exists:x.example.test -all')),
-      resolve4: () => Promise.reject(dnsError('ENODATA', 'x.example.test')),
+      resolve4: () => Promise.resolve([]),
     }
     const result = await Spf.check({ ip: '192.0.2.1', sender: 'u@example.test' }, { resolver })
     expect(result).toMatchObject({ result: 'fail', voidLookups: 1 })

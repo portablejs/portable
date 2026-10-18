@@ -11,7 +11,6 @@ export type Token =
       delimiters: string
     }
 
-/** Values for each macro letter (RFC 7208 section 7.3). `p` is looked up only when used. */
 export type Values = Record<'s' | 'l' | 'o' | 'd' | 'i' | 'v' | 'h' | 'c' | 'r' | 't', string> & {
   p: string
 }
@@ -21,11 +20,7 @@ const body = /^([a-z])(\d*)(r?)([.\-+,/_=]*)$/i
 const letters = 'slodiphvcrt'
 const unreserved = /[A-Za-z\d\-._~]/
 
-/**
- * Splits a macro-string into literals and macros. `explain` allows what only an explain-string
- * may hold: spaces and the `c`, `r` and `t` letters.
- */
-export function parseMacroString(text: string, explain: boolean): Token[] {
+export function parseMacroString(text: string, inExplanation: boolean): Token[] {
   const tokens: Token[] = []
   let literal = ''
   const flush = () => {
@@ -37,7 +32,7 @@ export function parseMacroString(text: string, explain: boolean): Token[] {
     if (char !== '%') {
       const code = char.charCodeAt(0)
       if (code < 0x21 || code > 0x7e) {
-        if (!(explain && code === 0x20)) throw permerror(`Invalid character in "${text}"`)
+        if (!(inExplanation && code === 0x20)) throw permerror(`Invalid character in "${text}"`)
       }
       literal += char
       continue
@@ -54,7 +49,7 @@ export function parseMacroString(text: string, explain: boolean): Token[] {
     if (!match) throw permerror(`Invalid macro in "${text}"`)
     const [, letter = '', digits = '', reverse = '', delimiters = ''] = match
     const lower = letter.toLowerCase()
-    if (!letters.includes(lower) || (!explain && 'crt'.includes(lower))) {
+    if (!letters.includes(lower) || (!inExplanation && 'crt'.includes(lower))) {
       throw permerror(`Macro letter "${letter}" is not allowed in "${text}"`)
     }
     if (digits && Number(digits) === 0) throw permerror(`Macro "%{${match[0]}}" keeps zero parts`)
@@ -72,7 +67,6 @@ export function parseMacroString(text: string, explain: boolean): Token[] {
   return tokens
 }
 
-/** Checks the domain-end rule: the spec ends in a macro, or in "." and a valid top label. */
 export function parseDomainSpec(text: string): Token[] {
   const tokens = parseMacroString(text, false)
   const last = tokens.at(-1)
