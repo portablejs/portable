@@ -163,6 +163,14 @@ describe('RSA-SHA1', () => {
       ).rejects.toThrow(OAuth1.InvalidInputError)
     }
   })
+
+  test('a PEM key that imports but can not sign throws InvalidInputError', async () => {
+    // One base64 digit of the public exponent changed, so the key's numbers are inconsistent.
+    const privateKey = pkcs8.replace('cWQaOKm9AgMBAAE', 'cWQaOKmAAgMBAAE')
+    await expect(
+      signature(photos(), { ...options, consumer: { key: 'k', privateKey } }),
+    ).rejects.toThrow(OAuth1.InvalidInputError)
+  })
 })
 
 describe('HMAC', () => {

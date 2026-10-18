@@ -59,7 +59,12 @@ export async function rsaSha1(
     throw new InvalidInputError(
       `RSA-SHA1 needs an RSASSA-PKCS1-v1_5 key with SHA-1, not ${name} with ${hash?.name}`,
     )
-  return new Uint8Array(await crypto.subtle.sign(algorithm.name, key, data))
+  try {
+    return new Uint8Array(await crypto.subtle.sign(algorithm.name, key, data))
+  } catch (cause) {
+    // A PEM key whose numbers are inconsistent imports, then fails here with an OperationError.
+    throw new InvalidInputError('The RSA private key can not sign', { cause })
+  }
 }
 
 async function importPem(text: string): Promise<CryptoKey> {
