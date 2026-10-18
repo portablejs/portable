@@ -84,6 +84,10 @@ A package that replaces a library solves the same problem, but neither its API n
 
 The oracle tests then feed the same input, split into random chunks, to our package and to the original, and compare the results. A difference is either a bug or a deliberate change that `PARITY.md` explains.
 
+### Fuzzing
+
+Each package has a `test/<name>.fuzz.conformance.ts` with [fast-check](https://fast-check.dev) properties, so the fuzz tests run in Node and browsers with the other conformance tests. Parsers and decoders get random input and mutated copies of real fixtures, and must return or throw only their documented errors. Encoders must round-trip through their decoder, and streams must give the same output however the input is chunked. `fuzz()` from the private workspace package `@portable/fuzz` (`tools/fuzz`) runs every property, reading the run count from `FUZZ_RUNS`, which `vite.config.ts` passes to `import.meta.env` through `envPrefix`. The default of 100 runs keeps `pnpm test` fast. `pnpm fuzz` loads `.env.fuzz` with `--mode fuzz`, which sets 10,000. A failure prints fast-check's seed and path, and setting `FUZZ_SEED` and `FUZZ_PATH` with `-t` for that test replays it.
+
 ### Benchmarks
 
 Each package has a benchmark that runs it against the library it replaces, and against the platform API where one exists. Vitest 5's `bench.compare` runs the candidates in one test, and the test fails if the original library is more than 25% faster:

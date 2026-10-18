@@ -163,6 +163,24 @@ describe('DecoderStream', () => {
     expect(await split(['a\n12345'], { maxLength: 2, overflow: 'skip' })).toEqual(['a'])
   })
 
+  test('splits a held CR once when an empty chunk follows it', async () => {
+    expect(await split(['\r', '', '\n'], { separator: unicodeLineBreak })).toEqual([''])
+  })
+
+  test('does not count a CR held for a CRLF toward maxLength', async () => {
+    expect(await split(['a\r', '\n'], { maxLength: 1 })).toEqual(['a'])
+    expect(await split(['\r', '\n'], { maxLength: 0, overflow: 'skip' })).toEqual([''])
+  })
+
+  test('does not count the start of a string separator toward maxLength', async () => {
+    expect(await split(['ab|', '|c'], { separator: '||', maxLength: 2 })).toEqual(['ab', 'c'])
+  })
+
+  test('finds a string separator split across chunks after a skipped line', async () => {
+    const options = { separator: '||', maxLength: 2, overflow: 'skip' } as const
+    expect(await split(['abcd|', '|e'], options)).toEqual(['e'])
+  })
+
   test('cancelling the output cancels the source', async () => {
     let cancelled = false
     const source = new ReadableStream<string>({

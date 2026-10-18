@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - packages/*/test
+  - tools/*
 
 catalog:
   '@changesets/changelog-github': ^1.0.1

@@ -42,7 +42,13 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     const decoder = new TextDecoder(encoding)
     const splitLines = (text: string) =>
       typeof separator === 'string' ? text.split(separator) : text.split(separator)
+    // The end of `partial` may be the start of a string separator, so that much of it doesn't count
+    // toward `maxLength`, and it is kept when an overflowing line is dropped.
+    const slack = typeof separator === 'string' ? Math.max(separator.length - 1, 0) : 0
+    const tail = (text: string) => (slack === 0 ? '' : text.slice(-slack))
     let partial = ''
+    // A trailing CR may be the first half of a CRLF split across chunks, so it is held back.
+    let cr = false
     let overflowed = false
 
     const emit = (line: string, controller: TransformStreamDefaultController<string>) => {
@@ -58,15 +64,15 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       abortable(
         {
           transform(chunk, controller) {
-            const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
-            // A trailing CR may be the first half of a CRLF split across chunks, so hold it back.
-            const holdCr = text.endsWith('\r')
-            const lines = splitLines(partial + (holdCr ? text.slice(0, -1) : text))
-            partial = lines.pop()! + (holdCr ? '\r' : '')
+            let text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            if (cr) text = '\r' + text
+            cr = text.endsWith('\r')
+            const lines = splitLines(partial + (cr ? text.slice(0, -1) : text))
+            partial = lines.pop()!
 
             if (overflowed) {
               if (lines.length === 0) {
-                partial = ''
+                partial = tail(partial)
                 return
               }
               lines.shift()
@@ -74,17 +80,19 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
             }
             for (const line of lines) emit(line, controller)
 
-            if (partial.length > maxLength) {
+            if (partial.length > maxLength + slack) {
               if (overflow === 'error') throw new MaxLengthError(maxLength)
               overflowed = true
-              partial = ''
+              partial = tail(partial)
             }
           },
           flush(controller) {
-            const rest = partial + decoder.decode()
-            if (overflowed) return
-            const lines = splitLines(rest)
+            const lines = splitLines(partial + (cr ? '\r' : '') + decoder.decode())
             const last = lines.pop()!
+            if (overflowed) {
+              if (lines.length === 0) return
+              lines.shift()
+            }
             for (const line of lines) emit(line, controller)
             if (last !== '') emit(last, controller)
           },

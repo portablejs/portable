@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/lines": "workspace:*",
     "@types/node": "^26.6.5",
     "@types/split2": "^4.2.3",
+    "fast-check": "^4.10.2",
     "split2": "catalog:"
   }
 }

@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": { "types": ["node", "vite-plus/client"], "isolatedDeclarations": false },
-  "include": ["packages/*/test"]
+  "include": ["packages/*/test", "tools/*/src"]
 }

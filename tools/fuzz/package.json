@@ -1,0 +1,11 @@
+{
+  "name": "@portable/fuzz",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "fast-check": "^4.10.2"
+  }
+}

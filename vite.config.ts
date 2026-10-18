@@ -33,6 +33,8 @@ const nodeBuiltins = [
 ]
 
 export default defineConfig({
+  // Exposes FUZZ_RUNS, FUZZ_SEED and FUZZ_PATH to tests as import.meta.env in Node and browsers.
+  envPrefix: ['VITE_', 'FUZZ_'],
   fmt: {
     singleQuote: true,
     semi: false,
@@ -52,6 +54,8 @@ export default defineConfig({
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
       'no-console': 'error',
+      // `fuzz` from @portable/fuzz asserts a property, like `expect`.
+      'vitest/expect-expect': ['warn', { assertFunctionNames: ['expect', 'expect*', 'fuzz'] }],
       'no-irregular-whitespace': [
         'error',
         { skipStrings: false, skipRegExps: false, skipTemplates: false },

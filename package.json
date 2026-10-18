@@ -11,6 +11,7 @@
     "test:changed": "vp test run --changed origin/main --project node --testTimeout=120000",
     "test:browser": "vp test run --project browser",
     "coverage": "vp test run --project node --coverage",
+    "fuzz": "vp test run --project node --mode fuzz fuzz.conformance",
     "readme": "pnpm coverage && pnpm bench && node scripts/bundle-size.ts && node scripts/readme-stats.ts",
     "bench": "pnpm build && BENCH_DIST=1 vp test bench --run --reporter=verbose --reporter=json --outputFile.json=.bench/report.json",
     "changeset": "changeset",

@@ -2,6 +2,13 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Fuzzing with fast-check, not a coverage-guided fuzzer
+
+- **Options:** fast-check property tests; a coverage-guided fuzzer such as Jazzer.js; keep each package's hand-rolled seeded loops.
+- **Trade-offs:** Jazzer.js instruments code and finds deep paths through a parser faster, but it runs only in Node, needs a native module and its own runner, and its targets would sit outside Vitest. fast-check runs in Vitest in Node and in browsers, shrinks a failure to a small input, and prints a seed that replays it. The seeded loops had neither shrinking nor replay, and each package wrote its own.
+- **Chosen:** fast-check, through `fuzz()` in a private workspace package, `@portable/fuzz` in `tools/fuzz`, so the run count and replay settings live in one place. Mutated real fixtures make up for the missing coverage feedback, because they reach the code past the header checks that random bytes rarely pass. fast-check is a dev dependency of each test package, so no published package depends on it.
+- **Run counts:** 100 runs per property in `pnpm test` and the git hooks, and 10,000 in `pnpm fuzz`, set in `.env.fuzz`. `FUZZ_RUNS` overrides both.
+
 ## `Spf.check` rejects with `signal.reason`
 
 - **Options:** keep returning a `temperror` result when `signal` aborts; reject with `signal.reason`, as the `signal` rule in AGENTS.md says; return `temperror` only when the reason is a `TimeoutError` and reject otherwise.
