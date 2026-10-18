@@ -1,4 +1,4 @@
-# portable: package philosophy and list
+# Portable: package philosophy and list
 
 How the repository is built and tested is in [architecture.md](architecture.md).
 
@@ -7,7 +7,7 @@ How the repository is built and tested is in [architecture.md](architecture.md).
 In the tradition of sindresorhus and TJ Holowaychuk, and closest in spirit to Remix v3 (`remix-run/remix`, about 50 packages, most with no outside dependencies, layered on each other and re-exported by one `remix` package).
 
 1. **Purpose-sized, not function-sized.** A package solves a problem a developer would name: "split a stream into lines", "compose an email", "verify DKIM". It is not one function (no `is-odd`) and it is not a grab bag. Rough test: if it is under ~50 lines with no edge cases worth a test suite, it is an internal helper. If its README needs two unrelated "what it's for" headings, it is two packages.
-2. **Compose upward.** Higher packages are built from lower portable packages, and the dependency graph is a strict layer DAG (§Layers). This is how Remix's `response` sits on `headers` + `mime` + `html-template`, and how our `mail` sits on `mime-headers` + `base64` + `quoted-printable`.
+2. **Compose upward.** Higher packages are built from lower Portable packages, and the dependency graph is a strict layer DAG (§Layers). This is how Remix's `response` sits on `headers` + `mime` + `html-template`, and how our `mail` sits on `mime-headers` + `base64` + `quoted-printable`.
 3. **No dependencies outside the family.** The one exception is crypto, which is pluggable and defaults to `@noble/hashes` or WebCrypto through an optional peer.
 4. **Web standards are the API.** Inputs and outputs are `Uint8Array`, `string`, `ReadableStream`, `Request`/`Response`, `Headers`, `Blob`/`File`. Streaming transforms are `TransformStream` subclasses used like the platform's own (`stream.pipeThrough(new LineStream())`, as with `TextDecoderStream` and Deno's `TextLineStream`). Where a platform type is close, extend it rather than invent one, as Remix's `SuperHeaders extends Headers` does.
 5. **One thing well, then 1.0.** Small stable API, explicit about what it does not do, and a "Replaces X" migration table in each README.
@@ -15,7 +15,7 @@ In the tradition of sindresorhus and TJ Holowaychuk, and closest in spirit to Re
 7. **Don't duplicate neighbors.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
 8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. Individual `@portable/*` packages stay the real units.
 
-9. **`/node` entrypoints where Node genuinely helps (deferred; low priority, not in the first builds).** The main entry of every package is web-standard only. A package may add a `/node` subpath, exported under the `node` condition, when Node has something better or users need a bridge. It is the only code allowed to import `node:*` (oxlint override on `src/node/**`), it never changes the main API, and no other portable package imports it. Current candidates:
+9. **`/node` entrypoints where Node genuinely helps (deferred; low priority, not in the first builds).** The main entry of every package is web-standard only. A package may add a `/node` subpath, exported under the `node` condition, when Node has something better or users need a bridge. It is the only code allowed to import `node:*` (oxlint override on `src/node/**`), it never changes the main API, and no other Portable package imports it. Current candidates:
    - `streams/node`: Node stream ⇄ web stream conversion (below).
    - `dns/node`: a resolver backed by `node:dns/promises`, so Node users skip DNS-over-HTTPS.
    - `png/node`: sync inflate/deflate via `node:zlib`, so Node users get a sync API without adding fflate.

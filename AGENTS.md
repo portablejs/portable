@@ -1,4 +1,4 @@
-# portable agent guide
+# Portable agent guide
 
 Portable is a monorepo of small npm packages that run unchanged in browsers, Cloudflare Workers, Deno, Bun and Node. Read [docs/architecture.md](docs/architecture.md) for how the repo is built, tested and released, and [docs/packages.md](docs/packages.md) for the package plan. Decisions made without the owner are logged in [docs/decisions.md](docs/decisions.md), and tooling friction in [docs/papercuts.md](docs/papercuts.md). Add an entry to either when you hit one.
 

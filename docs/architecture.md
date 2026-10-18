@@ -1,4 +1,4 @@
-# portable architecture
+# Portable architecture
 
 Portable is a pnpm monorepo of small packages, published to npm under `@portable/*`. Every package runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24 or later, because it uses only the WinterTC common API. [packages.md](packages.md) lists the packages and the rules for what becomes one. This document covers how the repository is built, tested and released.
 
