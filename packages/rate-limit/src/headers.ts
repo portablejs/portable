@@ -1,0 +1,40 @@
+import type { Result } from './create.js'
+
+export declare namespace headers {
+  type Options = {
+    /** The quota policy name in both fields. @default 'default' */
+    name?: string | undefined
+  }
+}
+
+/**
+ * Returns the `RateLimit` and `RateLimit-Policy` fields of draft-ietf-httpapi-ratelimit-headers-11
+ * for a result, and `Retry-After` when the request was denied. Times are whole seconds, rounded up.
+ *
+ * @example
+ * ```ts
+ * import * as RateLimit from '@portable/rate-limit'
+ *
+ * const result = await limiter.take(ip)
+ * if (!result.allowed) return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+ * // RateLimit-Policy: "default";q=100;w=60
+ * // RateLimit: "default";r=0;t=1
+ * // Retry-After: 1
+ * ```
+ */
+export function headers(result: Result, options: headers.Options = {}): Record<string, string> {
+  const { name = 'default' } = options
+  if (!/^[\x20-\x7e]*$/.test(name))
+    throw new RangeError(`\`name\` must be printable ASCII, got ${JSON.stringify(name)}.`)
+  const item = `"${name.replaceAll(/["\\]/g, '\\$&')}"`
+  const retry = !result.allowed && Number.isFinite(result.retryAfter)
+  const window = retry ? result.retryAfter : result.resetAt - Date.now()
+  const fields: Record<string, string> = {
+    'RateLimit-Policy': `${item};q=${result.limit};w=${seconds(result.period)}`,
+    RateLimit: `${item};r=${result.remaining};t=${seconds(window)}`,
+  }
+  if (retry) fields['Retry-After'] = String(seconds(result.retryAfter))
+  return fields
+}
+
+const seconds = (ms: number): number => Math.max(0, Math.ceil(ms / 1000))

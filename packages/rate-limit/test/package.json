@@ -1,0 +1,11 @@
+{
+  "name": "@portable/rate-limit-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/rate-limit": "workspace:*",
+    "@types/node": "^26.6.5",
+    "limiter": "^4.1.0",
+    "rate-limiter-flexible": "^11.2.3"
+  }
+}

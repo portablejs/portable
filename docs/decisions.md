@@ -38,6 +38,17 @@ Calls made without the owner's input, with the options considered and the reason
 - **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 3.5 times slower one at a time and 1.4 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
 - **Chosen:** the 25% assertions compare with direct WebCrypto calls, and the README shows web-push's numbers.
 
+## `@portable/rate-limit`: GCRA and a compare-and-set store
+
+- **Algorithm options:** GCRA; a token bucket; fixed or sliding windows, as rate-limiter-flexible does.
+- **Trade-offs:** a token bucket stores two numbers per key (tokens and the last refill time), so a store must update both atomically. Windows are one counter but let a client make twice the limit across a boundary. GCRA allows exactly what a token bucket of size `burst` refilling at `limit / period` allows, and stores one number, the time at which the key's allowance is full again.
+- **Chosen:** GCRA. With one number, a store needs only `get` and a compare-and-set by value, which memory, a Durable Object and a Redis Lua script all support. Comparing values instead of versions is safe because `take` computes its result from the value alone, so an unchanged value means an unchanged decision.
+- **Store shape:** `get(key)` and `set(key, value, { expected, ttl })`, rather than an atomic `increment` with a TTL. An increment fits a counter, not GCRA, and Workers KV supports neither, so its recipe ignores `expected`. Both methods may return a plain value, so the memory store skips two `await`s per `take`; that took `take` from 1.9× slower than rate-limiter-flexible's memory limiter to 8% slower.
+- **Units:** `period`, `resetAt` and `retryAfter` are milliseconds, as `AbortSignal.timeout` takes, and `headers` rounds them up to the seconds the draft asks for. `resetAt` is a Unix time, so it stays correct after the result is passed around.
+- **A cost larger than `burst`** resolves with `allowed: false` and `retryAfter: Infinity` instead of throwing, because costs often come from request sizes, and a caller sends a 429 either way. `headers` leaves out `Retry-After` then.
+- **Float rounding:** a TAT near `Date.now()` has a resolution of about 0.0002 ms, so summing an inexact `period / limit` could deny the last request of a burst. `take` allows each request up to `min(0.01 ms, interval / 2)` early.
+- **Left out:** `blockDuration`, key prefixes, queues that wait for allowance, and a `delete`. The README shows each with `take`.
+
 ## `JsonStream.DecoderStream` and `JsonStream.encodeStream`
 
 - **Options for the writer:** keep `encode`; `encodeStream`; an `EncoderStream` class.

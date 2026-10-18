@@ -38,6 +38,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 | byline's `test/CRLF.txt` contains no CR, so its "CRLF spanning two chunks" test can't fail. | `lines` builds the CRLF at the chunk boundary itself. | Could be reported upstream, though byline is unmaintained. |
 | Writing a regex containing `\u2028` through a shell heredoc produced the literal character, which ends a line in JavaScript source. The parser reports it as "Unterminated regular expression". | Write such files with an editor or a script that keeps the escape. `no-irregular-whitespace` now also flags the character in strings and templates. | None. |
 | The first `git commit` in an empty repo prints "Skipping backup because there's no initial commit yet" from `vp staged`. | Harmless; it only happens once. | None. |
+| Vitest 5's `bench.compare()` throws "requires at least 2 benchmarks" for a benchmark with nothing to compare against. | Call `await bench(name, fn).run()` instead, as `packages/rate-limit/test/take.bench.ts` does for `headers`. | Mention it next to the bench template in AGENTS.md. |
 
 ## Fixed
 
