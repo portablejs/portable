@@ -64,11 +64,11 @@ await Dkim.verify(message, { resolver: dns })
 | `now` | `new Date()` | The time to check `x=` against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
 | `hash` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
-| `signal` | none | Stops the key lookups, which then give `temperror`. |
+| `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |
 
 There is no default resolver, so you decide which servers see the lookups. A resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` means there is no key, and any other rejection is `temperror`.
 
-`verify` rejects only for invalid options and for a message stream that fails.
+`verify` rejects only for invalid options, a message stream that fails, and an aborted `signal`.
 
 | Field | Description |
 | --- | --- |
@@ -90,7 +90,7 @@ There is no default resolver, so you decide which servers see the lookups. A res
 | `policy` | rsa-sha1, or an RSA key shorter than `minKeyBits`. |
 | `neutral` | The signature can't be processed: a syntax error, a missing tag, an unknown version, algorithm or canonicalization, an `i=` outside `d=`, a `From` field that isn't signed, an `l=` longer than the body, or an expired signature. |
 | `permerror` | The key record: no key, a revoked or invalid key, a syntax error, an unknown version or key type, a key not for email, or a key that doesn't allow the signature's algorithm or `i=`. |
-| `temperror` | The key lookup failed or was aborted. |
+| `temperror` | The key lookup failed. |
 
 ## Crypto
 

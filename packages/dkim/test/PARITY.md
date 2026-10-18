@@ -136,8 +136,8 @@ Each is tested where listed.
 | mailauth: header canonicalization treated every Unicode space as whitespace. | `relaxed does not accept a no-break space`, and nodemailer's 8-bit and ideographic-space messages. |
 | mailauth: lines that start with other whitespace were separate fields, so a reader could show text the signature didn't cover. | `header smuggling` |
 | mailauth: a message without a body could not be signed. | `messages` |
-| nodemailer GHSA-39m8-27wv-hr27: unfolding was quadratic in continuation lines. | `linear time`, 100,000 lines. |
-| nodemailer: trimming a field name was quadratic in a blank run. | `linear time`, 256 KiB of spaces. |
+| nodemailer GHSA-39m8-27wv-hr27: unfolding was quadratic in continuation lines. | `linear time`: 40,000 continuation lines cost at most 8 times what 10,000 do. |
+| nodemailer: trimming a field name was quadratic in a blank run. | `linear time`, up to 256 KiB of spaces. |
 | nodemailer: control characters and tag delimiters in the domain and selector were silently removed, so the signature named a different domain than the caller passed. | Refused with a `RangeError`. |
 | nodemailer: an unusable key made `sign` return `false`, and the message was sent unsigned. | Throws a `TypeError`. |
 

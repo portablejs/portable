@@ -86,7 +86,7 @@ export declare namespace verify {
     minKeyBits?: number | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hash?: (() => Hash) | undefined
-    /** Stops the key lookups, which then give `temperror`. */
+    /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
 }
@@ -135,8 +135,8 @@ const noKeyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  *
  * Results follow RFC 8601: `fail` for a body or signature that doesn't match, `policy` for
  * rsa-sha1 and short RSA keys, `neutral` for a signature that can't be processed, `permerror` for
- * a missing, revoked or unusable key, and `temperror` for a DNS failure. Only `verify`'s options
- * and a failing message stream make the promise reject.
+ * a missing, revoked or unusable key, and `temperror` for a DNS failure. The promise rejects only
+ * for invalid options, a failing message stream or an aborted `signal`.
  *
  * @example
  * ```ts
@@ -154,6 +154,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   const { resolver, now = new Date(), minKeyBits = 1024, hash, signal } = options
   if (typeof resolver?.resolveTxt !== 'function')
     throw new TypeError('options.resolver must have a resolveTxt method.')
+  signal?.throwIfAborted()
   const { header, body } = await splitMessage(message)
   const fields = parseFields(toBinary(header))
   const signatures = fields
@@ -166,13 +167,20 @@ export async function verify(message: Message, options: verify.Options): Promise
   }
 
   const keys = new Map<string, Promise<KeyRecord>>()
-  for (const { keyName } of pending)
-    if (!keys.has(keyName)) keys.set(keyName, fetchKey(resolver, keyName, signal))
+  for (const { keyName } of pending) {
+    if (keys.has(keyName)) continue
+    const key = fetchKey(resolver, keyName, signal)
+    key.catch(() => {})
+    keys.set(keyName, key)
+  }
+  const stop = () => void body.cancel().catch(() => {})
+  signal?.addEventListener('abort', stop, { once: true })
   const digests = await hashBody(
     body,
     pending.map((signature) => signature.body),
     hash,
-  )
+  ).finally(() => signal?.removeEventListener('abort', stop))
+  signal?.throwIfAborted()
 
   return Promise.all(
     signatures.map(async (signature) => {
@@ -363,7 +371,7 @@ async function fetchKey(
   try {
     records = await abortable(resolver.resolveTxt(name), signal)
   } catch (error) {
-    if (signal?.aborted) return { result: 'temperror', reason: 'key lookup aborted' }
+    if (signal?.aborted) throw signal.reason
     const code = (error as { code?: unknown } | null)?.code
     if (typeof code === 'string' && noKeyCodes.has(code))
       return { result: 'permerror', reason: 'no key' }

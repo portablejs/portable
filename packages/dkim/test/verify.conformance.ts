@@ -896,13 +896,45 @@ describe('input', () => {
     await expect(Dkim.verify('', {} as Dkim.verify.Options)).rejects.toThrow(TypeError)
   })
 
-  test('gives temperror for every signature when the signal aborts the lookup', async () => {
+  test('rejects with the reason when the signal aborts a key lookup', async () => {
     const controller = new AbortController()
     const resolver: Dkim.Resolver = { resolveTxt: () => new Promise(() => {}) }
     const pending = Dkim.verify(await std(), { resolver, signal: controller.signal })
-    controller.abort()
-    const [result] = await pending
-    expect(result).toMatchObject({ result: 'temperror', reason: 'key lookup aborted' })
+    const reason = new Error('stop')
+    setTimeout(() => controller.abort(reason), 10)
+    await expect(pending).rejects.toBe(reason)
+  })
+
+  test('rejects with the reason and cancels the message when the signal aborts the read', async () => {
+    const controller = new AbortController()
+    let cancelled = false
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(
+          encode(
+            `DKIM-Signature: v=1; a=rsa-sha256; d=${D}; s=${S}; h=from; bh=AAAA; b=AAAA\r\nFrom: a@example.com\r\n\r\n`,
+          ),
+        )
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true
+      },
+    })
+    const pending = Dkim.verify(message, {
+      resolver: resolverFrom({ [KEY]: [rsaRec] }),
+      signal: controller.signal,
+    })
+    setTimeout(() => controller.abort(), 10)
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    expect(cancelled).toBe(true)
+  })
+
+  test('rejects at once for an aborted signal', async () => {
+    const signal = AbortSignal.abort()
+    await expect(Dkim.verify(await std(), { resolver: resolverFrom({}), signal })).rejects.toBe(
+      signal.reason,
+    )
   })
 
   test('uses the hash option for the body hash', async () => {
