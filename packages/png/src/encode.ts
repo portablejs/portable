@@ -25,11 +25,13 @@ export declare namespace encode {
     background?: { red: number; green: number; blue: number } | undefined
     /** Compresses to zlib format. Set it to choose a compression level. @default `CompressionStream('deflate')` */
     deflate?: ((data: Uint8Array) => Uint8Array | Promise<Uint8Array>) | undefined
+    /** Rejects with `signal.reason` when aborted, and stops compressing. */
+    signal?: AbortSignal | undefined
   }
 }
 
 export declare namespace encodeSync {
-  type Options = Omit<encode.Options, 'deflate'> & {
+  type Options = Omit<encode.Options, 'deflate' | 'signal'> & {
     /** Compresses to zlib format, such as `zlibSync` from fflate. */
     deflate: (data: Uint8Array) => Uint8Array
   }
@@ -48,9 +50,13 @@ export declare namespace encodeSync {
  * ```
  */
 export async function encode(image: RgbaImage, options: encode.Options = {}): Promise<Uint8Array> {
-  const { deflate = zlib.deflate } = options
+  const { signal } = options
+  signal?.throwIfAborted()
   const colorType = options.colorType ?? 6
-  return assemble(image, colorType, await deflate(filtered(image, colorType, options)))
+  const raw = filtered(image, colorType, options)
+  const compressed = options.deflate ? await options.deflate(raw) : await zlib.deflate(raw, signal)
+  signal?.throwIfAborted()
+  return assemble(image, colorType, compressed)
 }
 
 /**

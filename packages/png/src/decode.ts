@@ -33,6 +33,8 @@ export declare namespace decode {
     checkCrc?: boolean | undefined
     /** Decompresses zlib data. @default `DecompressionStream('deflate')` */
     inflate?: ((data: Uint8Array) => Uint8Array | Promise<Uint8Array>) | undefined
+    /** Rejects with `signal.reason` when aborted, and stops decompressing. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -57,13 +59,16 @@ export declare namespace decodeSync {
  * ```
  */
 export async function decode(bytes: Uint8Array, options: decode.Options = {}): Promise<Decoded> {
-  const { checkCrc = true, inflate } = options
+  const { checkCrc = true, inflate, signal } = options
+  signal?.throwIfAborted()
   const png = parse(bytes, checkCrc)
   const size = rawSize(png)
   let raw: Uint8Array
   try {
-    raw = inflate ? await inflate(png.idat) : await zlib.inflate(png.idat, size)
+    raw = inflate ? await inflate(png.idat) : await zlib.inflate(png.idat, size, signal)
+    signal?.throwIfAborted()
   } catch (cause) {
+    signal?.throwIfAborted()
     throw new InvalidInputError('Image data failed to decompress.', { cause })
   }
   return finish(png, raw, size)

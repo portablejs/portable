@@ -44,6 +44,7 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. Both functio
 | --- | --- | --- |
 | `inflate` | `DecompressionStream('deflate')` | Decompresses zlib data. Required for `decodeSync`. `decode` also accepts an async function. |
 | `checkCrc` | `true` | Verify each chunk's CRC. The zlib checksum is always verified by the inflate function. |
+| `signal` | none | `decode` only. Aborting rejects with `signal.reason` and stops the default decompression. |
 
 `Decoded` is a plain object:
 
@@ -71,6 +72,7 @@ Bytes after `IEND` are ignored. Unknown ancillary chunks are skipped.
 | `colorType` | `6` | `0` grayscale, `2` RGB, `4` grayscale with alpha or `6` RGBA. Gray is the BT.709 luma of each pixel. |
 | `background` | `{ red: 255, green: 255, blue: 255 }` | Color that semi-transparent pixels are blended onto for color types without alpha. |
 | `filter` | `[0, 1, 2, 3, 4]` | A filter for every row (0 none, 1 sub, 2 up, 3 average, 4 Paeth), or a list to choose from per row. With a list, each row gets the filter whose output has the smallest sum as signed bytes, as libpng does. |
+| `signal` | none | `encode` only. Aborting rejects with `signal.reason` and stops the default compression. |
 
 The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 

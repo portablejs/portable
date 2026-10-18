@@ -162,6 +162,8 @@ export declare namespace parseStream {
      * @default 524288
      */
     maxBytes?: number | undefined
+    /** Rejects with `signal.reason` when aborted, and cancels the stream. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -171,6 +173,7 @@ export declare namespace parseStream {
  * @throws {UnsupportedError} The bytes don't match a supported format.
  * @throws {TruncatedError} The stream ends before the dimensions.
  * @throws {MaxBytesError} `maxBytes` is reached before the dimensions.
+ * @throws `signal.reason` when `signal` is aborted.
  * @throws {InvalidInputError} The header is malformed.
  *
  * @example
@@ -185,14 +188,18 @@ export async function parseStream(
   stream: ReadableStream<Uint8Array>,
   options: parseStream.Options = {},
 ): Promise<Size> {
-  const { maxBytes = 512 * 1024 } = options
+  const { maxBytes = 512 * 1024, signal } = options
+  signal?.throwIfAborted()
   const reader = stream.getReader()
+  const abort = () => reader.cancel(signal!.reason).catch(() => {})
+  signal?.addEventListener('abort', abort, { once: true })
   let buffer = new Uint8Array(0)
   let length = 0
   let needed = 1
   try {
     for (;;) {
       const { done, value } = await reader.read()
+      signal?.throwIfAborted()
       if (done) return parse(buffer.subarray(0, length))
       if (length + value.length > buffer.length) {
         const grown = new Uint8Array(Math.max(length + value.length, buffer.length * 2))
@@ -217,6 +224,7 @@ export async function parseStream(
       }
     }
   } finally {
+    signal?.removeEventListener('abort', abort)
     reader.cancel().catch(() => {})
   }
 }
