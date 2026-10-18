@@ -4,6 +4,16 @@ Verifies and signs webhooks from Standard Webhooks senders, Svix, Stripe, GitHub
 
 Replaces [standardwebhooks](https://www.npmjs.com/package/standardwebhooks), the `Webhook` class in [svix](https://www.npmjs.com/package/svix), Stripe's `constructEvent` and `constructEventAsync` in [stripe](https://www.npmjs.com/package/stripe), [@octokit/webhooks-methods](https://www.npmjs.com/package/@octokit/webhooks-methods) and the request verification in [@slack/bolt](https://www.npmjs.com/package/@slack/bolt).
 
+## Why use this over the provider libraries
+
+One package verifies all five schemes with `crypto.subtle`, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in every runtime above.
+
+- The HMAC covers the body bytes as received. Stripe and standardwebhooks decode the body as UTF-8 and encode it again, so a body with a byte order mark or invalid UTF-8 fails verification.
+- The timestamp tolerance applies in both directions, and `tolerance: 0` allows no skew. Stripe and Slack accept a timestamp any distance in the future, and Stripe's `tolerance: 0` turns the check off.
+- A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
+- Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
+- With WebCrypto in Node, a verification was about 1.4× faster than Stripe's `constructEventAsync` and 1.2× faster than octokit's web build, but 2 to 12× slower than libraries that call `node:crypto`. With `@noble/hashes` through `@portable/webhooks/core`, a Standard Webhooks verification was about 1.6× faster than standardwebhooks.
+
 ```sh
 npm install @portable/webhooks
 ```

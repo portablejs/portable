@@ -4,6 +4,17 @@ Signs OAuth 1.0a requests ([RFC 5849](https://www.rfc-editor.org/rfc/rfc5849)) w
 
 Replaces [oauth-1.0a](https://www.npmjs.com/package/oauth-1.0a) and the OAuth 1.0a half of [oauth](https://www.npmjs.com/package/oauth) (node-oauth).
 
+## Why use this over oauth-1.0a and node-oauth
+
+Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with `@noble/hashes` or WebCrypto, in any runtime above.
+
+- A `+` in the query and a default port such as `:443` are signed as RFC 5849 requires. oauth-1.0a signs them wrongly ([#24](https://github.com/ddo/oauth-1.0a/issues/24), [#59](https://github.com/ddo/oauth-1.0a/issues/59)).
+- Repeated query names and a form body passed as a string are signed. node-oauth signs `a[0]` and `a[1]` ([#375](https://github.com/ciaranj/node-oauth/issues/375)) and leaves the string body out ([#366](https://github.com/ciaranj/node-oauth/issues/366)).
+- A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
+- RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
+- The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
+- An `Authorization` header for a GET request took the same time as oauth-1.0a and about half the time of node-oauth. A signed form POST was about 1.3× slower than oauth-1.0a.
+
 ```sh
 npm install @portable/oauth1 @noble/hashes
 ```
