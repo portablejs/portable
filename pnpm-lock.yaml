@@ -497,7 +497,11 @@ importers:
         specifier: ^2.2.6
         version: 2.2.6
 
-  packages/png: {}
+  packages/png:
+    dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
 
   packages/png/test:
     devDependencies:

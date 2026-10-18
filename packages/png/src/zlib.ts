@@ -1,3 +1,5 @@
+import * as Bytes from '@portable/bytes'
+
 export async function inflate(data: Uint8Array, expectedLength: number): Promise<Uint8Array> {
   const reader = transform(data, new DecompressionStream('deflate')).getReader()
   const out = new Uint8Array(expectedLength)
@@ -18,21 +20,12 @@ export async function inflate(data: Uint8Array, expectedLength: number): Promise
 export async function deflate(data: Uint8Array): Promise<Uint8Array> {
   const reader = transform(data, new CompressionStream('deflate')).getReader()
   const chunks: Uint8Array[] = []
-  let length = 0
   for (;;) {
     const { done, value } = await reader.read()
     if (done) break
     chunks.push(value)
-    length += value.length
   }
-  if (chunks.length === 1) return chunks[0]!
-  const out = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.length
-  }
-  return out
+  return chunks.length === 1 ? chunks[0]! : Bytes.concat(chunks)
 }
 
 function transform(

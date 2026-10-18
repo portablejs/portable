@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import { crc32 } from './crc32.js'
 import { InvalidInputError, TruncatedError, UnsupportedError } from './errors.js'
 import { unfilter } from './filter.js'
@@ -188,7 +189,13 @@ function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
 
   if (idat.length === 0) throw new InvalidInputError('No IDAT chunk.')
   if (header!.colorType === 3 && !palette) throw new InvalidInputError('No PLTE chunk.')
-  return { ...header!, gamma, palette, transparent, idat: concat(idat) }
+  return {
+    ...header!,
+    gamma,
+    palette,
+    transparent,
+    idat: idat.length === 1 ? idat[0]! : Bytes.concat(idat),
+  }
 }
 
 function readHeader(view: DataView, start: number) {
@@ -212,17 +219,6 @@ function readHeader(view: DataView, start: number) {
     interlace: interlace === 1,
     alpha: colorType === 4 || colorType === 6,
   }
-}
-
-function concat(parts: readonly Uint8Array[]): Uint8Array {
-  if (parts.length === 1) return parts[0]!
-  const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0))
-  let offset = 0
-  for (const part of parts) {
-    out.set(part, offset)
-    offset += part.length
-  }
-  return out
 }
 
 type Pass = { x: number; y: number; dx: number; dy: number; width: number; height: number }
