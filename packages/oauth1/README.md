@@ -81,7 +81,19 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 - A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
 - RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
 - The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
-- On Node, the default WebCrypto hash made an `Authorization` header for a GET request about 5× slower than oauth-1.0a with `node:crypto`, at about 125 µs. With `digest` set to `@noble/hashes`, it was about 1.15× faster than oauth-1.0a and 2× faster than node-oauth, and a signed form POST was about 1.2× slower than oauth-1.0a.
+
+### Performance
+
+Signatures per second on Node 24, from `pnpm bench`.
+
+| | `Authorization` for a GET | Signed form POST |
+| --- | --- | --- |
+| @portable/oauth1 (WebCrypto) | 7.8k | 5.3k |
+| @portable/oauth1 with `@noble/hashes` | 50k | 26k |
+| oauth-1.0a (`node:crypto`) | 41k | 27k |
+| oauth / node-oauth (`node:crypto`) | 24k | |
+
+On Node, `crypto.subtle.digest` is several times slower than a JavaScript hash, so pass `@noble/hashes` as `digest` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
 
 ## Migrating
 

@@ -101,7 +101,23 @@ One package verifies all five schemes with `crypto.subtle` and no dependency for
 - The timestamp tolerance applies in both directions, and `tolerance: 0` allows no skew. Stripe and Slack accept a timestamp any distance in the future, and Stripe's `tolerance: 0` turns the check off.
 - A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
-- On Node, with the default WebCrypto HMAC, a verification was about 1.6× faster than Stripe's `constructEventAsync` and 1.7× faster than octokit's web build. standardwebhooks, `@slack/bolt`, Stripe's `constructEvent` and octokit's Node build were 1.8 to 7× faster. With `hmac` set to `@noble/hashes`, a Standard Webhooks verification was about 1.6× faster than standardwebhooks.
+
+### Performance
+
+Verifications per second on Node 24 for a 581-byte body, from `pnpm bench`. Rows marked `node:crypto` run only on Node.
+
+| | Standard Webhooks | Stripe | GitHub | Slack |
+| --- | --- | --- | --- | --- |
+| @portable/webhooks (WebCrypto) | 22k | 21k | 20k | 22k |
+| @portable/webhooks with `@noble/hashes` | 74k | 68k | 76k | 78k |
+| standardwebhooks | 51k | | | |
+| stripe `constructEventAsync` (WebCrypto) | | 13k | | |
+| stripe `constructEvent` (`node:crypto`) | | 97k | | |
+| @octokit/webhooks-methods, web build (WebCrypto) | | | 17k | |
+| @octokit/webhooks-methods, Node build (`node:crypto`) | | | 252k | |
+| @slack/bolt `verifySlackRequest` (`node:crypto`) | | | | 88k |
+
+On Node, WebCrypto's HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if verification speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
 
 ## Migrating
 

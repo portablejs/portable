@@ -64,6 +64,12 @@ test('verifies a Stripe webhook within 25% of constructEventAsync', async ({ ben
         { scheme: 'stripe', secret },
       )
     }),
+    bench('@portable/webhooks with @noble/hashes', async () => {
+      await Webhooks.verify(
+        { headers: { 'stripe-signature': signature }, body },
+        { scheme: 'stripe', secret, hmac: nobleHmac },
+      )
+    }),
     bench('stripe constructEventAsync with WebCrypto', async () => {
       await stripe.webhooks.constructEventAsync(body, signature, secret, undefined, subtle)
     }),
@@ -85,6 +91,12 @@ test('verifies a GitHub webhook within 25% of @octokit/webhooks-methods for the 
   const result = await bench.compare(
     bench('@portable/webhooks', async () => {
       await Webhooks.verify({ headers: signed, body }, { scheme: 'github', secret })
+    }),
+    bench('@portable/webhooks with @noble/hashes', async () => {
+      await Webhooks.verify(
+        { headers: signed, body },
+        { scheme: 'github', secret, hmac: nobleHmac },
+      )
     }),
     bench('@octokit/webhooks-methods for the web', async () => {
       await octokitWeb.verify(secret, body, signature)
@@ -113,6 +125,9 @@ test('verifies a Slack request within 25% of WebCrypto importKey and verify', as
   const result = await bench.compare(
     bench('@portable/webhooks', async () => {
       await Webhooks.verify({ headers: signed, body }, { scheme: 'slack', secret })
+    }),
+    bench('@portable/webhooks with @noble/hashes', async () => {
+      await Webhooks.verify({ headers: signed, body }, { scheme: 'slack', secret, hmac: nobleHmac })
     }),
     bench('crypto.subtle importKey and verify', async () => {
       const cryptoKey = await crypto.subtle.importKey(
