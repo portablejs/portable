@@ -10,6 +10,9 @@
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
+  "dependencies": {
+    "@portable/bytes": "workspace:*"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/portablejs/portable.git",

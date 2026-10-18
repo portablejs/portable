@@ -66,7 +66,11 @@ importers:
         specifier: 'catalog:'
         version: 0.0.30(typescript@6.0.3)
 
-  packages/base64: {}
+  packages/base64:
+    dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
 
   packages/base64/test:
     devDependencies:

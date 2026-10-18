@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import { checkAlphabet, checkLineLength, encode, toBase64, toBytes } from './encode.js'
 
 export declare namespace EncoderStream {
@@ -46,7 +47,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
       if (highSurrogate === '') return toBytes(chunk)
       const pending = utf8.encode(highSurrogate)
       highSurrogate = ''
-      return concat(pending, toBytes(chunk))
+      return Bytes.concat([pending, toBytes(chunk)])
     }
 
     const encodeLines = (bytes: Uint8Array, final: boolean): string => {
@@ -67,7 +68,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
         let text = ''
         if (carry.length > 0) {
           const fill = Math.min(3 - carry.length, bytes.length)
-          const group = concat(carry, bytes.subarray(0, fill))
+          const group = Bytes.concat([carry, bytes.subarray(0, fill)])
           bytes = bytes.subarray(fill)
           if (group.length < 3) {
             carry = group
@@ -81,17 +82,9 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
         if (text !== '') controller.enqueue(text)
       },
       flush(controller) {
-        const text = encodeLines(concat(carry, utf8.encode(highSurrogate)), true)
+        const text = encodeLines(Bytes.concat([carry, utf8.encode(highSurrogate)]), true)
         if (text !== '') controller.enqueue(text)
       },
     })
   }
-}
-
-function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
-  if (a.length === 0) return b
-  const out = new Uint8Array(a.length + b.length)
-  out.set(a)
-  out.set(b, a.length)
-  return out
 }
