@@ -20,7 +20,7 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 
 - Use only the WinterTC common API: `fetch`, `Request`/`Response`, Web Streams, `TextEncoder`/`TextDecoder`, `Uint8Array`, `crypto.subtle`. No `node:*` imports, `Buffer`, `process` or DOM globals. Lint enforces this outside `*.oracle.test.ts` and `*.bench.ts`.
 - Don't rely on `ReadableStream.from` or `for await` over a `ReadableStream` in package code. Some browsers we support don't have them yet.
-- No runtime dependencies outside `@portable/*`. Crypto comes from an optional peer (`@noble/hashes`) or WebCrypto, and the caller can replace it.
+- No runtime dependencies outside `@portable/*`. Crypto defaults to WebCrypto, and the caller can pass `@noble/hashes` or another function instead. A package takes `@noble/hashes` as an optional peer only for what WebCrypto can't do, such as an incremental hash.
 - Streaming transforms are `TransformStream` subclasses, used as `stream.pipeThrough(new LineStream())`.
 - `package.json` `exports` point at `./src/*.ts`. zile rewrites them to `dist/` when building and publishing. Fields after `"[!start-pkg]"` are the published package.
 - A package exports a small API. Keep helpers private unless a caller needs them.

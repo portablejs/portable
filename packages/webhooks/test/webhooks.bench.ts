@@ -1,4 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { hmac } from '@noble/hashes/hmac.js'
+import { sha256 } from '@noble/hashes/sha2.js'
 import { verify as octokitVerify } from '@octokit/webhooks-methods'
 import { verifySlackRequest } from '@slack/bolt/dist/receivers/verify-request.js'
 import { Webhook as StandardWebhook } from 'standardwebhooks'
@@ -10,6 +12,8 @@ import { octokitWeb } from './octokit-web.js'
 // The libraries that hash with node:crypto's synchronous C++ HMAC are 3 to 8 times faster on Node
 // than WebCrypto or JavaScript HMAC, so they are measured for reference only. The 25% assertions
 // compare against libraries and native calls that use WebCrypto or a JavaScript HMAC.
+// standardwebhooks hashes in JavaScript, and Node's WebCrypto HMAC is about 7 times slower than a
+// JavaScript one, so it is compared with `hmac` set to @noble/hashes.
 
 const stripe = new Stripe('sk_test_bench')
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw'
@@ -19,6 +23,7 @@ const body = JSON.stringify({
   data: { object: { items: Array.from({ length: 20 }, (_, i) => ({ id: i, name: `item ${i}` })) } },
 })
 const bytes = new TextEncoder().encode(body)
+const nobleHmac: Webhooks.Hmac = (key, data) => hmac(sha256, key, data)
 
 async function headers(scheme: Webhooks.Scheme): Promise<Record<string, string>> {
   return Webhooks.sign(body, { scheme, secret })
@@ -33,13 +38,20 @@ test(`verifies a ${body.length}-byte Standard Webhook within 25% of standardwebh
     bench('@portable/webhooks', async () => {
       await Webhooks.verify({ headers: signed, body }, { scheme: 'standard', secret })
     }),
+    bench('@portable/webhooks with @noble/hashes', async () => {
+      await Webhooks.verify(
+        { headers: signed, body },
+        { scheme: 'standard', secret, hmac: nobleHmac },
+      )
+    }),
     bench('standardwebhooks', () => {
       upstream.verify(body, signed)
     }),
   )
-  expect(result.get('standardwebhooks')).not.toBeFasterThan(result.get('@portable/webhooks'), {
-    delta: 0.25,
-  })
+  expect(result.get('standardwebhooks')).not.toBeFasterThan(
+    result.get('@portable/webhooks with @noble/hashes'),
+    { delta: 0.25 },
+  )
 })
 
 test('verifies a Stripe webhook within 25% of constructEventAsync', async ({ bench }) => {

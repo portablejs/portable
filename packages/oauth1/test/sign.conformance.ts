@@ -1,7 +1,6 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Core from '@portable/oauth1/core'
 import * as OAuth1 from '@portable/oauth1'
 import { form, parseHeader, pkcs1, pkcs8, publicKey, signature, twitter } from './utils.js'
 
@@ -193,26 +192,33 @@ describe('HMAC', () => {
   })
 })
 
-describe('@portable/oauth1/core', () => {
-  const nobleDigest: Core.Digest = (algorithm, data) =>
+describe('digest option', () => {
+  const nobleDigest: OAuth1.Digest = (algorithm, data) =>
     algorithm === 'SHA-1' ? sha1(data) : sha256(data)
-  const webCryptoDigest: Core.Digest = async (algorithm, data) =>
-    new Uint8Array(await crypto.subtle.digest(algorithm, data as Uint8Array<ArrayBuffer>))
+  const asyncDigest: OAuth1.Digest = async (algorithm, data) => nobleDigest(algorithm, data)
+  const longSecret = { key: twitter.consumer.key, secret: 'k'.repeat(100) }
 
-  test('a sync or an async digest gives the same header as the root entry', async () => {
-    const expected = await OAuth1.authorization(new Request(tweetUrl, form(tweetBody)), twitter)
-    for (const digest of [nobleDigest, webCryptoDigest]) {
-      expect(
-        await Core.authorization(new Request(tweetUrl, form(tweetBody)), { ...twitter, digest }),
-      ).toBe(expected)
-      const signed = await Core.sign(new Request(tweetUrl, form(tweetBody)), { ...twitter, digest })
-      expect(signed.headers.get('authorization')).toBe(expected)
-    }
-  })
+  for (const signatureMethod of ['HMAC-SHA1', 'HMAC-SHA256'] as const)
+    for (const consumer of [twitter.consumer, longSecret])
+      test(`a sync or an async @noble/hashes digest signs ${signatureMethod} as the default does, with a ${consumer.secret.length}-character secret`, async () => {
+        const options = { ...twitter, consumer, signatureMethod, bodyHash: true }
+        const json = () =>
+          new Request(tweetUrl, {
+            method: 'POST',
+            body: '{"a":1}',
+            headers: { 'content-type': 'application/json' },
+          })
+        const expected = await OAuth1.authorization(json(), options)
+        for (const digest of [nobleDigest, asyncDigest]) {
+          expect(await OAuth1.authorization(json(), { ...options, digest })).toBe(expected)
+          const signed = await OAuth1.sign(json(), { ...options, digest })
+          expect(signed.headers.get('authorization')).toBe(expected)
+        }
+      })
 
-  test('the root entry uses a digest passed in', async () => {
+  test('uses a digest passed in', async () => {
     const calls: string[] = []
-    const digest: Core.Digest = (algorithm, data) => {
+    const digest: OAuth1.Digest = (algorithm, data) => {
       calls.push(algorithm)
       return nobleDigest(algorithm, data)
     }

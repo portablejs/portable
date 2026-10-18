@@ -5,13 +5,14 @@ import { InvalidInputError } from './errors.js'
 export type HashAlgorithm = 'SHA-1' | 'SHA-256'
 
 /**
- * Hashes bytes. `@noble/hashes` and `crypto.subtle.digest` both fit, sync or async.
+ * Hashes bytes, sync or async. The default is `crypto.subtle.digest`. `@noble/hashes` is sync and
+ * 4 to 8 times faster on Node.
  *
  * @example
  * ```ts
  * import { sha1 } from '@noble/hashes/legacy.js'
  * import { sha256 } from '@noble/hashes/sha2.js'
- * import type * as OAuth1 from '@portable/oauth1/core'
+ * import type * as OAuth1 from '@portable/oauth1'
  *
  * const digest: OAuth1.Digest = (algorithm, data) =>
  *   algorithm === 'SHA-1' ? sha1(data) : sha256(data)
@@ -19,8 +20,11 @@ export type HashAlgorithm = 'SHA-1' | 'SHA-256'
  */
 export type Digest = (
   algorithm: HashAlgorithm,
-  data: Uint8Array,
+  data: Uint8Array<ArrayBuffer>,
 ) => Uint8Array | Promise<Uint8Array>
+
+export const subtleDigest: Digest = async (algorithm, data) =>
+  new Uint8Array(await crypto.subtle.digest(algorithm, data))
 
 const blockSize = 64
 
@@ -28,10 +32,10 @@ const blockSize = 64
 export async function hmac(
   digest: Digest,
   algorithm: HashAlgorithm,
-  key: Uint8Array,
+  secret: Uint8Array<ArrayBuffer>,
   data: Uint8Array,
 ): Promise<Uint8Array> {
-  if (key.length > blockSize) key = await digest(algorithm, key)
+  const key = secret.length > blockSize ? await digest(algorithm, secret) : secret
   const inner = new Uint8Array(blockSize + data.length)
   for (let i = 0; i < blockSize; i++) inner[i] = (key[i] ?? 0) ^ 0x36
   inner.set(data, blockSize)

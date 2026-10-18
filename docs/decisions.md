@@ -2,6 +2,16 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Crypto defaults to WebCrypto, with no `/core` entry
+
+The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
+
+- **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for a caller who wants noble.
+- **Trade-offs:** noble HMAC-SHA256 adds about 3.0 kB gzipped to a browser bundle and needs an optional peer. Node's WebCrypto HMAC is about 7× slower than noble's. Export conditions avoid both costs but give each runtime different code, which tests in one runtime don't cover.
+- **Chosen:** WebCrypto everywhere, because it is the platform API and Node's implementation is expected to get faster. Neither package has a noble dependency or peer any more. `/core` existed to keep the noble default out of bundles, so it is gone, and the option is the only way to pass another function. A browser bundle of `verify` from webhooks is 4.7 kB gzipped, and of `sign` from oauth1 5.1 kB, neither with noble code.
+- **On Node:** a webhooks verification with the default is 1.6× faster than Stripe's `constructEventAsync` and about 1.8× slower than standardwebhooks. An oauth1 GET header is about 5× slower than oauth-1.0a with `node:crypto`. With noble passed in, both are faster than the library they replace. The benchmarks assert against the noble path where the upstream library hashes in JavaScript or `node:crypto`, and against the default where it uses WebCrypto.
+- **The webhooks CryptoKey cache stays.** It holds up to 16 imported keys and clears itself when full. Without it, a verification on Node was 2.9× slower, and an HMAC in Chromium took 12 µs instead of 6 µs.
+
 ## `@portable/mime-headers` API
 
 - **Two verb pairs.** Encoded words use `encodeWord`, `encodeWords` and `decodeWords`, because RFC 2047 is an encoding of text. Structured values use `parseValue`/`formatValue` and `parseAddresses`/`formatAddresses`, because the text is a syntax people read and write. AGENTS.md now has a rule for the `parse`/`format` pair. Also offered: one `encode`/`decode` pair for everything, which would hide that `parseAddresses` discards comments and whitespace.
@@ -30,14 +40,14 @@ Calls made without the owner's input, with the options considered and the reason
 - **`sign(request, options)` returns a new signed `Request`; `authorization(request, options)` returns only the header value.** oauth-1.0a's `authorize` and `toHeader` were the alternatives. Inputs are `Request` objects, so what gets signed is exactly the URL and body `fetch` sends, at about 10 µs per POST for reading the body.
 - **The option is `signatureMethod`, defaulting to HMAC-SHA1,** because `method` reads as the HTTP method. oauth-1.0a defaults to PLAINTEXT.
 - **The pluggable function is a hash (`digest`), and HMAC is built on it,** so one function serves the signature and the body hash and has the shape of noble's hashes and `crypto.subtle.digest`. It costs about 15 lines of HMAC code, checked against WebCrypto and `node:crypto`.
-- **The root default is `@noble/hashes`** (8 µs per HMAC on Node against 60 µs for `crypto.subtle`), as docs/architecture.md describes.
+- **The default is `crypto.subtle.digest`,** as for every package (see the decision above). On Node an HMAC takes about 60 µs with it and 8 µs with noble passed as `digest`.
 - **The signed form POST benchmark allows 50%.** Reading the body and building a second `Request` in undici costs more than oauth-1.0a's string handling; hashing is not the gap.
 - **No HTTP client.** `fetch` follows redirects with the old signature, and the README shows how to re-sign.
 
 ## `@portable/webhooks` API
 
 - **One `verify(input, { scheme, secret })` with `scheme: 'standard' | 'svix' | 'stripe' | 'github' | 'slack'`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers.
-- **The root default is `@noble/hashes`, as in oauth1 and docs/architecture.md.** The first version used WebCrypto, which needs no dependency, but `importKey` plus `sign` made it 2.4× slower than standardwebhooks on Node and needed a cache of imported secrets. With noble it is 1.6× faster than standardwebhooks. `/core` takes any sync or async `hmac`, including `crypto.subtle`.
+- **The default is WebCrypto `importKey` plus `sign`, with a cache of imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
 - **`verify` returns `{ body, id, timestamp }` as text, not parsed JSON,** because Slack commands and GitHub form deliveries aren't JSON, and the `id` lets callers drop replays.
 - **One `VerificationError` with a `reason`** (`missing-header`, `malformed-header`, `signature`, `timestamp`) instead of the shared error names, because every failure maps to the same 4xx. Mistakes in the call throw `TypeError` or `RangeError`. The signature is checked first, so `timestamp` always means a genuine but stale message.
 - **The tolerance applies in both directions;** Stripe and Slack accept any future timestamp. No SHA-1 for GitHub, which always sends SHA-256.

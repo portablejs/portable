@@ -6,16 +6,16 @@ Replaces [standardwebhooks](https://www.npmjs.com/package/standardwebhooks), the
 
 ## Why use this over the provider libraries
 
-One package verifies all five schemes, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in every runtime above.
+One package verifies all five schemes with `crypto.subtle` and no dependency for the HMAC, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in every runtime above.
 
 - The HMAC covers the body bytes as received. Stripe and standardwebhooks decode the body as UTF-8 and encode it again, so a body with a byte order mark or invalid UTF-8 fails verification.
 - The timestamp tolerance applies in both directions, and `tolerance: 0` allows no skew. Stripe and Slack accept a timestamp any distance in the future, and Stripe's `tolerance: 0` turns the check off.
 - A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
-- On Node, with the default `@noble/hashes` HMAC, a verification was about 1.6× faster than standardwebhooks, 5× faster than Stripe's `constructEventAsync`, 4.5× faster than octokit's web build, and as fast as `@slack/bolt`. Stripe's `constructEvent` and octokit's Node build, which call `node:crypto`, were 1.5 to 4× faster.
+- On Node, with the default WebCrypto HMAC, a verification was about 1.6× faster than Stripe's `constructEventAsync` and 1.7× faster than octokit's web build. standardwebhooks, `@slack/bolt`, Stripe's `constructEvent` and octokit's Node build were 1.8 to 7× faster. With `hmac` set to `@noble/hashes`, a Standard Webhooks verification was about 1.6× faster than standardwebhooks.
 
 ```sh
-npm install @portable/webhooks @noble/hashes
+npm install @portable/webhooks
 ```
 
 ```ts
@@ -71,7 +71,7 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | `now` | `new Date()` | `verify` only. The time to compare the signed timestamp with. |
 | `timestamp` | `new Date()` | `sign` only. The time to sign. |
 | `id` | random `msg_` id | `sign` only. The delivery id for Standard Webhooks and Svix, and the `x-github-delivery` header for GitHub. |
-| `hmac` | `@noble/hashes` | A function `(key, data) => Uint8Array \| Promise<Uint8Array>` that computes HMAC-SHA256. |
+| `hmac` | `crypto.subtle` | A function `(key, data) => Uint8Array \| Promise<Uint8Array>` that computes HMAC-SHA256. |
 
 ### Schemes
 
@@ -87,14 +87,14 @@ A header may carry several signatures (Standard Webhooks separates them with spa
 
 ## Crypto
 
-The root entry computes HMAC-SHA256 with `@noble/hashes`, an optional peer dependency, as every Portable package that hashes does. Install it next to this package.
+`verify` and `sign` compute HMAC-SHA256 with `crypto.subtle`, which every supported runtime has, so the package has no dependency for it. WebCrypto is async, but `verify` already has to await the request body. Imported keys are cached for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
-`@portable/webhooks/core` exports the same API without that default, and `hmac` is required, so it imports nothing. Pass any sync or async implementation, such as `@noble/hashes` or `crypto.subtle`:
+On Node, WebCrypto's HMAC is about 7× slower than `@noble/hashes`. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
 
 ```ts
 import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
-import * as Webhooks from '@portable/webhooks/core'
+import * as Webhooks from '@portable/webhooks'
 
 const { body } = await Webhooks.verify(request, {
   scheme: 'github',

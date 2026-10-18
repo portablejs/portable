@@ -1,8 +1,9 @@
 import { createHash, createHmac } from 'node:crypto'
+import { sha1 } from '@noble/hashes/legacy.js'
+import { sha256 } from '@noble/hashes/sha2.js'
 import { OAuth as NodeOAuth } from 'oauth'
 import OAuth from 'oauth-1.0a'
 import { expect, test } from 'vite-plus/test'
-import * as Core from '@portable/oauth1/core'
 import * as OAuth1 from '@portable/oauth1'
 import { twitter } from './utils.js'
 
@@ -24,17 +25,24 @@ const nodeOAuth = new NodeOAuth(
   null,
   'HMAC-SHA1',
 )
-const nodeDigest: Core.Digest = (algorithm, data) =>
+const nodeDigest: OAuth1.Digest = (algorithm, data) =>
   createHash(algorithm === 'SHA-1' ? 'sha1' : 'sha256')
     .update(data)
     .digest()
-const webCrypto: Core.Digest = async (algorithm, data) =>
-  new Uint8Array(await crypto.subtle.digest(algorithm, data as Uint8Array<ArrayBuffer>))
+const nobleDigest: OAuth1.Digest = (algorithm, data) =>
+  algorithm === 'SHA-1' ? sha1(data) : sha256(data)
+
+// oauth-1.0a is given node:crypto's HMAC, and Node's crypto.subtle.digest is 4 to 8 times slower
+// than a JavaScript hash, so the assertions compare it with `digest` set to @noble/hashes. The
+// WebCrypto default is measured for reference.
 
 test('Authorization header for a GET request within 25% of oauth-1.0a', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/oauth1', async () => {
       await OAuth1.authorization(new Request(url), twitter)
+    }),
+    bench('@portable/oauth1 with @noble/hashes', async () => {
+      await OAuth1.authorization(new Request(url), { ...twitter, digest: nobleDigest })
     }),
     bench('oauth-1.0a', () => {
       oauth1a.toHeader(oauth1a.authorize({ url, method: 'GET' }, twitter.token))
@@ -42,13 +50,11 @@ test('Authorization header for a GET request within 25% of oauth-1.0a', async ({
     bench('oauth (node-oauth)', () => {
       nodeOAuth.authHeader(url, twitter.token.key, twitter.token.secret, 'GET')
     }),
-    bench('@portable/oauth1/core with crypto.subtle.digest', async () => {
-      await Core.authorization(new Request(url), { ...twitter, digest: webCrypto })
-    }),
   )
-  expect(result.get('oauth-1.0a')).not.toBeFasterThan(result.get('@portable/oauth1'), {
-    delta: 0.25,
-  })
+  expect(result.get('oauth-1.0a')).not.toBeFasterThan(
+    result.get('@portable/oauth1 with @noble/hashes'),
+    { delta: 0.25 },
+  )
 })
 
 // sign() reads the body and builds a second Request, which costs about 10 µs in undici. Hashing is
@@ -61,6 +67,12 @@ test('signed form POST within 50% of oauth-1.0a', async ({ bench }) => {
         twitter,
       )
     }),
+    bench('@portable/oauth1 with @noble/hashes', async () => {
+      await OAuth1.sign(
+        new Request(updateUrl, { method: 'POST', body: new URLSearchParams({ status }) }),
+        { ...twitter, digest: nobleDigest },
+      )
+    }),
     bench('oauth-1.0a', () => {
       const header = oauth1a.toHeader(
         oauth1a.authorize({ url: updateUrl, method: 'POST', data: { status } }, twitter.token),
@@ -71,8 +83,8 @@ test('signed form POST within 50% of oauth-1.0a', async ({ bench }) => {
         headers: { ...header },
       })
     }),
-    bench('@portable/oauth1/core with node:crypto digest', async () => {
-      await Core.sign(
+    bench('@portable/oauth1 with node:crypto digest', async () => {
+      await OAuth1.sign(
         new Request(updateUrl, { method: 'POST', body: new URLSearchParams({ status }) }),
         {
           ...twitter,
@@ -81,7 +93,8 @@ test('signed form POST within 50% of oauth-1.0a', async ({ bench }) => {
       )
     }),
   )
-  expect(result.get('oauth-1.0a')).not.toBeFasterThan(result.get('@portable/oauth1'), {
-    delta: 0.5,
-  })
+  expect(result.get('oauth-1.0a')).not.toBeFasterThan(
+    result.get('@portable/oauth1 with @noble/hashes'),
+    { delta: 0.5 },
+  )
 })

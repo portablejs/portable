@@ -47,7 +47,7 @@ Test vectors come from those suites (MIT), except the Slack example request, whi
 | constructEvent: invalid signature header (unable to extract) | `stripe > rejects a header that does not have the expected format` | |
 | constructEvent: no webhook payload was provided | `stripe > returns a body that is not JSON, for the caller to parse` | An empty body is signed content like any other; Standard Webhooks allows it (`standard > returns an empty body`). |
 | constructEvent: should error if you pass a signature which is an array | skipped | Headers are read from `Headers` or a string record, so there is no array form. |
-| constructEvent: should invoke a custom CryptoProvider | `every scheme > stripe: /core with @noble/hashes matches the WebCrypto default`, `verify > takes a synchronous or an asynchronous hmac` | The `hmac` option replaces `CryptoProvider`. |
+| constructEvent: should invoke a custom CryptoProvider | `every scheme > stripe: an @noble/hashes hmac signs as the WebCrypto default does`, `verify > takes a synchronous or an asynchronous hmac` | The `hmac` option replaces `CryptoProvider`. |
 | constructEvent: should throw when a v2 webhook payload is passed | skipped | `verify` doesn't look inside the body; see the README. |
 | constructEvent: CryptoProviderOnlySupportsAsyncError | skipped | `verify` is always async. |
 | verifyHeader: header does not have the expected format | `stripe > rejects a header that does not have the expected format` | |

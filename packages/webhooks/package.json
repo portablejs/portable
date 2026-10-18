@@ -5,9 +5,6 @@
     "build": "zile",
     "dev": "zile dev"
   },
-  "devDependencies": {
-    "@noble/hashes": "^2.4.0"
-  },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
@@ -15,14 +12,6 @@
   "license": "MIT",
   "dependencies": {
     "@portable/base64": "workspace:^"
-  },
-  "peerDependencies": {
-    "@noble/hashes": "^2.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@noble/hashes": {
-      "optional": true
-    }
   },
   "repository": {
     "type": "git",
@@ -53,11 +42,6 @@
       "src": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./core": {
-      "src": "./src/core.ts",
-      "types": "./dist/core.d.ts",
-      "default": "./dist/core.js"
     }
   },
   "main": "./dist/index.js",

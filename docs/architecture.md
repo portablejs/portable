@@ -122,14 +122,20 @@ JSR is not used. Deno, Bun and Workers all install from npm, and `isolatedDeclar
 
 ## Crypto
 
-Packages that hash or sign never import a crypto library directly. Each declares the function it needs as a type that `@noble/hashes` and WebCrypto already satisfy:
+A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. The option's type is one that `@noble/hashes` and WebCrypto both fit, sync or async:
 
 ```ts
-type HashFn = (data: Uint8Array) => Uint8Array
-type AsyncSignFn = (data: Uint8Array) => Promise<Uint8Array>
+type Hmac = (key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Digest = (algorithm: 'SHA-1' | 'SHA-256', data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
 ```
 
-The root entry passes a default, noble for hashes and HMAC (sync and incremental) or WebCrypto for RSA (async), and a `/core` entry exports the same API with the function required and no default import. Each default is its own module-level binding. ox measured that grouping defaults into one object grew a keccak-only bundle from 3.8 kB to 8.8 kB gzipped, because bundlers can't remove unused properties from an object.
+`@portable/webhooks` takes `hmac` and `@portable/oauth1` takes `digest`. Neither imports a crypto library or lists one as a dependency, and neither has a `/core` entry: a WebCrypto default imports nothing, so the option alone lets a caller choose.
+
+WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC is about 7× slower than noble's. Node's WebCrypto is expected to get faster. Until then, a README shows the noble version of the option for a caller who verifies or signs many messages on Node, or who needs a sync result.
+
+A package needs noble only where WebCrypto can't do the job, such as an incremental or streaming hash, because `crypto.subtle.digest` takes the whole input at once. A DKIM body hash over a stream is one case. Such a package takes noble as an optional peer dependency or requires the caller to pass the function.
+
+Other libraries made this choice in different ways. `@octokit/webhooks-methods` ships a `node:crypto` build and a WebCrypto build, and its `exports` gives browsers the second. Stripe's `stripe` package has separate builds for the `worker`, `workerd`, `browser`, `deno` and `bun` conditions. jose shipped a Node build and a WebCrypto build behind export conditions, then dropped the Node build and now uses WebCrypto in every runtime. We considered export conditions too, and [decisions.md](decisions.md) says why we use WebCrypto everywhere instead.
 
 ## Planned
 

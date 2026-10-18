@@ -1,13 +1,12 @@
 import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Core from '@portable/webhooks/core'
 import * as Webhooks from '@portable/webhooks'
 import { encode, reasonOf, request } from './utils.js'
 
 const schemes = ['standard', 'svix', 'stripe', 'github', 'slack'] as const
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw'
-const nobleHmac: Core.Hmac = (key, data) => hmac(sha256, key, data)
+const nobleHmac: Webhooks.Hmac = (key, data) => hmac(sha256, key, data)
 
 describe('every scheme', () => {
   for (const scheme of schemes) {
@@ -23,15 +22,21 @@ describe('every scheme', () => {
       ).toBe('signature')
     })
 
-    test(`${scheme}: /core with @noble/hashes matches the WebCrypto default`, async () => {
+    test(`${scheme}: an @noble/hashes hmac signs as the WebCrypto default does`, async () => {
       const timestamp = new Date()
       const id = 'msg_1'
-      const headers = await Webhooks.sign('{}', { scheme, secret, timestamp, id })
-      expect(await Core.sign('{}', { scheme, secret, timestamp, id, hmac: nobleHmac })).toEqual(
-        headers,
-      )
-      const result = await Core.verify({ headers, body: '{}' }, { scheme, secret, hmac: nobleHmac })
-      expect(result.body).toBe('{}')
+      const secrets = [secret, new Uint8Array(65).fill(7), new Uint8Array(300).fill(9)]
+      for (const key of secrets) {
+        const headers = await Webhooks.sign('{}', { scheme, secret: key, timestamp, id })
+        expect(
+          await Webhooks.sign('{}', { scheme, secret: key, timestamp, id, hmac: nobleHmac }),
+        ).toEqual(headers)
+        const result = await Webhooks.verify(
+          { headers, body: '{}' },
+          { scheme, secret: key, hmac: nobleHmac },
+        )
+        expect(result.body).toBe('{}')
+      }
     })
 
     test(`${scheme}: accepts any of several secrets, as during rotation`, async () => {
@@ -73,7 +78,7 @@ describe('verify', () => {
 
   test('takes a synchronous or an asynchronous hmac', async () => {
     const headers = await Webhooks.sign('{}', { scheme: 'github', secret })
-    const asyncHmac: Core.Hmac = async (key, data) => nobleHmac(key, data)
+    const asyncHmac: Webhooks.Hmac = async (key, data) => nobleHmac(key, data)
     for (const fn of [nobleHmac, asyncHmac]) {
       const result = await Webhooks.verify(
         { headers, body: '{}' },

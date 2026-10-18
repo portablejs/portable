@@ -6,17 +6,17 @@ Replaces [oauth-1.0a](https://www.npmjs.com/package/oauth-1.0a) and the OAuth 1.
 
 ## Why use this over oauth-1.0a and node-oauth
 
-Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with `@noble/hashes` or WebCrypto, in any runtime above.
+Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with WebCrypto, in any runtime above.
 
 - A `+` in the query and a default port such as `:443` are signed as RFC 5849 requires. oauth-1.0a signs them wrongly ([#24](https://github.com/ddo/oauth-1.0a/issues/24), [#59](https://github.com/ddo/oauth-1.0a/issues/59)).
 - Repeated query names and a form body passed as a string are signed. node-oauth signs `a[0]` and `a[1]` ([#375](https://github.com/ciaranj/node-oauth/issues/375)) and leaves the string body out ([#366](https://github.com/ciaranj/node-oauth/issues/366)).
 - A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
 - RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
 - The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
-- An `Authorization` header for a GET request took the same time as oauth-1.0a and about half the time of node-oauth. A signed form POST was about 1.3× slower than oauth-1.0a.
+- On Node, the default WebCrypto hash made an `Authorization` header for a GET request about 5× slower than oauth-1.0a with `node:crypto`, at about 125 µs. With `digest` set to `@noble/hashes`, it was about 1.15× faster than oauth-1.0a and 2× faster than node-oauth, and a signed form POST was about 1.2× slower than oauth-1.0a.
 
 ```sh
-npm install @portable/oauth1 @noble/hashes
+npm install @portable/oauth1
 ```
 
 ```ts
@@ -55,7 +55,7 @@ The signature covers what the server will see, because it is computed from the `
 | `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed. |
 | `nonce`, `timestamp` | random, now | Fix `oauth_nonce` and `oauth_timestamp` (seconds) in tests. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
 | `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
-| `digest` | `@noble/hashes` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
+| `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
 
 `InvalidInputError` is thrown for an RSA key that can't be used, and `UnsupportedError` for another signature method.
 
@@ -68,14 +68,18 @@ const privateKey = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-P
 await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, privateKey }, token })
 ```
 
-### Without @noble/hashes
+## Crypto
 
-`@noble/hashes` is an optional peer dependency used by the root entry. `@portable/oauth1/core` exports the same functions with `digest` required, so it imports no hash library. WebCrypto works, but it is async and 4 to 8 times slower than noble in Node:
+HMAC is built on `digest`, which hashes with `crypto.subtle.digest` by default, so the package has no dependency for it. RSA-SHA1 uses `crypto.subtle.sign`.
+
+On Node, `crypto.subtle.digest` is 4 to 8 times slower than `@noble/hashes`. To sign many requests on Node, install `@noble/hashes` and pass it as `digest`:
 
 ```ts
-import * as OAuth1 from '@portable/oauth1/core'
+import { sha1 } from '@noble/hashes/legacy.js'
+import { sha256 } from '@noble/hashes/sha2.js'
+import * as OAuth1 from '@portable/oauth1'
 
-const digest: OAuth1.Digest = async (algorithm, data) => new Uint8Array(await crypto.subtle.digest(algorithm, data))
+const digest: OAuth1.Digest = (algorithm, data) => (algorithm === 'SHA-1' ? sha1(data) : sha256(data))
 await OAuth1.sign(request, { consumer, token, digest })
 ```
 
