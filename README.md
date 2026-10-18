@@ -18,6 +18,9 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 | L0 | [`@portable/dns-packet`](packages/dns-packet) | dns-packet | Built |
 | L0 | `@portable/bytes` | uint8array-extras | In progress |
 | L0 | `@portable/random` | random-int, crypto-random-string, seedrandom | In progress |
+| L0 | `@portable/ip` | ip, ipaddr.js, ip-cidr | In progress |
+| L0 | `@portable/queue` | p-limit, p-queue, p-map | In progress |
+| L0 | `@portable/password` | node:crypto pbkdf2 | In progress |
 | L0 | `@portable/timers` | p-retry, async-retry, delay, p-wait-for | In progress |
 | L1 | [`@portable/json-stream`](packages/json-stream) | JSONStream, stream-json, json-stream-stringify | Built |
 | L1 | `@portable/websocket` | reconnecting-websocket, partysocket | In progress |

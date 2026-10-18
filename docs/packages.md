@@ -45,6 +45,9 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
 | `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), hand-written hex and compare loops |
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, seedrandom, nanoid's `customAlphabet` |
+| `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf` and `dns` use it. | ip, ip-cidr, ipaddr.js, is-ip |
+| `@portable/queue` | In-memory concurrency control: a queue with `concurrency` and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map |
+| `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | node:crypto `pbkdf2`, hand-written hash formats |
 | `@portable/timers` | `sleep`, `retry` with backoff and jitter, and `poll` until a value appears, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
 
 #### `streams` bridge API
@@ -123,9 +126,10 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 
 | Package | Purpose | Notes |
 | --- | --- | --- |
-| `@portable/xml-c14n` → `@portable/xml-dsig` → `@portable/saml` | XML canonicalization, XML signatures, then SAML assertions | replaces xml-crypto 21M; biggest effort, needs a careful XML parser choice |
+| `@portable/xml-c14n` → `@portable/xml-dsig` → `@portable/saml` | XML canonicalization, XML signatures, then SAML assertions | replaces xml-crypto 21M; biggest effort, needs a careful XML parser choice. Kevin asked to skip XML for now (2026-10-18). |
 | `@portable/google-auth` | Service-account access tokens | possibly just a documented `jose` recipe; build only if the recipe proves too fiddly |
 | `@portable/xlsx` | Streaming xlsx writer | replaces exceljs 72M for the write path; zips with fflate as a peer |
+| Document formats (pdf, docx) | Read or write office documents | parked with xlsx; Kevin asked to save document formats for later (2026-10-18) |
 
 ## Not building (point to these instead)
 
