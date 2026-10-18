@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { createResolver } from '../index.js'
+import { createResolver } from '@portable/dns'
 
 const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env
 

@@ -3,7 +3,7 @@ import dgram from 'node:dgram'
 import dnsPromises from 'node:dns/promises'
 import TangerineModule from 'tangerine'
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test'
-import { createResolver } from '../index.js'
+import { createResolver } from '@portable/dns'
 import { recorded } from './utils.js'
 
 const cases = [

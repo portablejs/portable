@@ -1,6 +1,6 @@
 import type * as DnsPacket from '@portable/dns-packet'
 import { describe, expect, test } from 'vite-plus/test'
-import { QueryError, createResolver, type Resolver } from '../index.js'
+import { QueryError, createResolver, type Resolver } from '@portable/dns'
 import { decodeQuery, doh, record, replay, respond, utf8, type Server } from './utils.js'
 
 const N = 'example.org'

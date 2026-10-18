@@ -1,0 +1,11 @@
+{
+  "name": "@portable/dns-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/dns": "workspace:*",
+    "@portable/dns-packet": "workspace:*",
+    "@types/node": "^26.6.5",
+    "tangerine": "^2.1.3"
+  }
+}

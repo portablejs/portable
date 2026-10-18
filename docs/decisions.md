@@ -2,6 +2,14 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/dns` API
+
+- **`createResolver({ endpoints, fetch, timeout })` returns Node's method names** (`resolve4`, `resolveTxt`, `resolveMx`, ... `reverse`) plus `query(name, type)` for the whole decoded packet. The `Resolver` type has the one-argument methods, which `node:dns/promises` also fits, so SPF, DMARC and DKIM accept either. Code moving from Node changes only how the resolver is built.
+- **`QueryError` copies Node's `code`, `syscall`, `hostname` and message,** so existing `ENOTFOUND`/`ENODATA` handling keeps working. An abort rejects with `signal.reason`, as `fetch` does.
+- **GET requests with ID 0,** so responses can be cached and browsers send no CORS preflight. A truncated response is an error, and the next endpoint is tried.
+- **No cache, `ttl` option, `resolveAny` or `resolveTlsa`;** `query()` covers them.
+- **Different from Node:** TXT is decoded as UTF-8, only records on the question's CNAME chain are returned, and a CNAME-only answer gives `ENODATA`.
+
 ## `@portable/oauth1` API
 
 - **`sign(request, options)` returns a new signed `Request`; `authorization(request, options)` returns only the header value.** oauth-1.0a's `authorize` and `toHeader` were the alternatives. Inputs are `Request` objects, so what gets signed is exactly the URL and body `fetch` sends, at about 10 µs per POST for reading the body.

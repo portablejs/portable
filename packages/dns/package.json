@@ -8,10 +8,6 @@
   "dependencies": {
     "@portable/dns-packet": "workspace:*"
   },
-  "devDependencies": {
-    "@types/node": "^26.6.5",
-    "tangerine": "^2.1.3"
-  },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
@@ -36,8 +32,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/_test"
+    "src"
   ],
   "exports": {
     ".": {

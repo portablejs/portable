@@ -4,6 +4,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| Node holds `AbortSignal.timeout()` weakly, so a test whose mocked `fetch` never settles can hang instead of timing out. | `AbortController` with `setTimeout`. | None. |
 | The worktree guard rejects any command containing "git" as a substring, including "github" inside a heredoc or sed script. | Put the edit in a script file and run that. | Match `git` only as a word. |
 | `@slack/bolt` 5.1.0 fails to import under pnpm (`Cannot find module 'undici'`), and `@octokit/webhooks-methods` exports its WebCrypto build only under the `browser` condition. | `webhooks` imports `verify-request.js` and the `dist-web` build by path. | None. |
 | Benchmarks fail when several agents run at once: png's decode and lines' split2 comparison each failed under load and passed when re-run. | Re-run the benchmark when the machine is quiet. | Benchmark the built `dist` (planned), and keep benchmarks out of agents' required checks while many run at once. |

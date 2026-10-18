@@ -2,7 +2,7 @@ import * as DnsPacket from '@portable/dns-packet'
 import dgram from 'node:dgram'
 import dnsPromises from 'node:dns/promises'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
-import { createResolver, type Resolver } from '../index.js'
+import { createResolver, type Resolver } from '@portable/dns'
 import { doh, record, recorded, respond, utf8 } from './utils.js'
 
 type Handler = (query: DnsPacket.DecodedPacket) => DnsPacket.Packet | Uint8Array
