@@ -6,7 +6,6 @@ const files = import.meta.glob<string>('./fixtures/**/*.*', {
   import: 'default',
 })
 
-/** Fixture paths relative to `fixtures/`, such as `spectrum/simple.csv`. */
 export const fixtures: readonly string[] = Object.keys(files)
   .map((path) => path.slice('./fixtures/'.length))
   .sort()
@@ -30,7 +29,6 @@ function random(seed: number): () => number {
   }
 }
 
-/** Splits text or bytes at pseudo-random offsets, the same ones for the same seed. */
 export function randomChunks<T extends string | Uint8Array>(
   input: T,
   seed: number,
@@ -46,7 +44,6 @@ export function randomChunks<T extends string | Uint8Array>(
   return chunks
 }
 
-/** Splits text or bytes into chunks of `size`. */
 export function chunked<T extends string | Uint8Array>(input: T, size: number): T[] {
   const chunks: T[] = []
   for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as T)
@@ -94,7 +91,6 @@ export async function decodeAll<const header extends Csv.DecoderStream.Header = 
   return expected
 }
 
-/** Like `decodeAll`, for input that must fail: returns the error, after checking every way throws the same class. */
 export async function decodeError(
   text: string,
   options?: Csv.DecoderStream.Options,

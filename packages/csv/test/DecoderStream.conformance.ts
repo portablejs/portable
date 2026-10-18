@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Csv from '@portable/csv'
 import { decodeStream, encodeUtf8, randomChunks } from './utils.js'
 
-/** Rows of awkward fields, the same ones for the same count. */
 function rows(count: number): string[][] {
   const words = ['', 'plain', 'a,b', 'say "hi"', 'two\r\nlines', 'lf\nonly', 'cr\ronly', 'ü🚀', ' ']
   return Array.from({ length: count }, (_, i) =>

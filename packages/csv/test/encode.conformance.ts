@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Csv from '@portable/csv'
 import { bom, decodeAll, encodeStream } from './utils.js'
 
-/** Encodes with `encode` and with `EncoderStream`, checks they agree, and returns the text. */
 async function encodeAll(rows: readonly Csv.encode.Row[], options?: Csv.encode.Options) {
   const text = Csv.encode(rows, options)
   expect(await encodeStream(rows, options)).toBe(text)
