@@ -1,0 +1,11 @@
+{
+  "name": "@portable/sse-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/sse": "workspace:*",
+    "@portable/streams": "workspace:*",
+    "@types/node": "^26.6.5",
+    "eventsource-parser": "^4.1.2"
+  }
+}
