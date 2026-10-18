@@ -69,7 +69,6 @@ export function filterRows(
   return out
 }
 
-// The sum of each filter's output as signed bytes, the heuristic libpng uses to pick a filter.
 function rowCosts(
   src: Uint8Array,
   line: number,

@@ -9,7 +9,6 @@ export async function inflate(data: Uint8Array, expectedLength: number): Promise
     out.set(take === value.length ? value : value.subarray(0, take), length)
     length += take
     if (length === expectedLength) {
-      // Bytes after the image data, such as trailing garbage inside IDAT, are not needed.
       await reader.cancel().catch(() => {})
       return out
     }

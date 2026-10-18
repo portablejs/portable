@@ -14,7 +14,7 @@ export type RgbaImage = {
 
 export declare namespace encode {
   type Options = {
-    /** Color type to write: 0 grayscale, 2 RGB, 4 grayscale with alpha, 6 RGBA. @default 6 */
+    /** Color type to write: 0 grayscale, 2 RGB, 4 grayscale with alpha, 6 RGBA. Gray is the BT.709 luma of each pixel. @default 6 */
     colorType?: 0 | 2 | 4 | 6 | undefined
     /**
      * Filter for every row, or the filters to choose from per row. With more than one, each row
@@ -104,7 +104,7 @@ function pack(
     let b = data[i + 2]!
     const a = data[i + 3]!
     if (colorType === 4) {
-      out[o++] = luma(r, g, b)
+      out[o++] = bt709Luma(r, g, b)
       out[o++] = a
       continue
     }
@@ -115,7 +115,7 @@ function pack(
       b = Math.round((1 - alpha) * blue + alpha * b)
     }
     if (colorType === 0) {
-      out[o++] = luma(r, g, b)
+      out[o++] = bt709Luma(r, g, b)
     } else {
       out[o++] = r
       out[o++] = g
@@ -154,5 +154,5 @@ function assemble(image: RgbaImage, colorType: number, compressed: Uint8Array): 
   return out
 }
 
-// BT.709 luma, the default of libpng's png_set_rgb_to_gray, in 16-bit fixed point.
-const luma = (r: number, g: number, b: number) => (13933 * r + 46871 * g + 4732 * b + 32768) >> 16
+const bt709Luma = (r: number, g: number, b: number) =>
+  (13933 * r + 46871 * g + 4732 * b + 32768) >> 16
