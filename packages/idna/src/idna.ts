@@ -116,7 +116,10 @@ function process(domain: string, strict: boolean): string[] {
     }
     if (label !== '' && validate(label, strict, decoded[i] === true)) bidiDomain = true
   }
-  if (bidiDomain) for (const label of labels) if (label !== '') checkBidi(label)
+  if (bidiDomain)
+    for (const label of labels)
+      if (label !== '' && !satisfiesBidiRule(label))
+        throw new InvalidInputError(`Label "${label}" breaks the bidi rule of RFC 5893.`)
   return labels
 }
 
@@ -221,10 +224,9 @@ function checkJoiners(label: string, invalid: (reason: string) => InvalidInputEr
   }
 }
 
-/** The six conditions of RFC 5893 section 2, for each label of a domain with right-to-left characters. */
-function checkBidi(label: string): void {
+/** The six conditions of RFC 5893 section 2, which each label of a domain with right-to-left characters must meet. */
+function satisfiesBidiRule(label: string): boolean {
   const classes = Array.from(label, (char) => properties(char.codePointAt(0)!) & 15)
-  const invalid = new InvalidInputError(`Label "${label}" breaks the bidi rule of RFC 5893.`)
   const first = classes[0]
   let end = classes.length - 1
   while (end > 0 && classes[end] === Table.bidiNSM) end--
@@ -233,23 +235,21 @@ function checkBidi(label: string): void {
     let en = false
     let an = false
     for (const bidi of classes) {
-      if (bidi === Table.bidiL || bidi === 0) throw invalid
+      if (bidi === Table.bidiL || bidi === 0) return false
       if (bidi === Table.bidiEN) en = true
       if (bidi === Table.bidiAN) an = true
     }
-    if (en && an) throw invalid
-    if (
-      last !== Table.bidiR &&
-      last !== Table.bidiAL &&
-      last !== Table.bidiEN &&
-      last !== Table.bidiAN
+    return (
+      !(en && an) &&
+      (last === Table.bidiR ||
+        last === Table.bidiAL ||
+        last === Table.bidiEN ||
+        last === Table.bidiAN)
     )
-      throw invalid
-  } else if (first === Table.bidiL) {
-    for (const bidi of classes) {
-      if (bidi === Table.bidiR || bidi === Table.bidiAL || bidi === Table.bidiAN || bidi === 0)
-        throw invalid
-    }
-    if (last !== Table.bidiL && last !== Table.bidiEN) throw invalid
-  } else throw invalid
+  }
+  if (first !== Table.bidiL) return false
+  for (const bidi of classes)
+    if (bidi === Table.bidiR || bidi === Table.bidiAL || bidi === Table.bidiAN || bidi === 0)
+      return false
+  return last === Table.bidiL || last === Table.bidiEN
 }

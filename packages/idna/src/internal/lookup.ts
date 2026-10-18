@@ -50,6 +50,8 @@ const unzigzag = (n: number) => (n & 1 ? -(n + 1) / 2 : n / 2)
 
 type Table = {
   starts: Int32Array
+  /** For each block of 256 code points, the index of the run that holds its first code point. */
+  blocks: Int32Array
   /** The kind in the low two bits; above it the properties, the mapping delta or the string index. */
   values: Int32Array
   strings: string[]
@@ -110,14 +112,19 @@ function decode(): Table {
     }
     start = end
   }
-  return { starts: Int32Array.from(starts), values: Int32Array.from(values), strings }
+  const blocks = new Int32Array((size >> 8) + 1)
+  for (let block = 0, run = 0; block < blocks.length; block++) {
+    while (run + 1 < starts.length && starts[run + 1]! <= block << 8) run++
+    blocks[block] = run
+  }
+  return { starts: Int32Array.from(starts), blocks, values: Int32Array.from(values), strings }
 }
 
 /** The table entry for a code point: the kind in the low two bits, its data above. */
 export function lookup(codePoint: number): number {
-  const { starts, values } = (decoded ??= decode())
-  let low = 0
-  let high = starts.length - 1
+  const { starts, blocks, values } = (decoded ??= decode())
+  let low = blocks[codePoint >> 8]!
+  let high = blocks[(codePoint >> 8) + 1]!
   while (low < high) {
     const middle = (low + high + 1) >> 1
     if (starts[middle]! <= codePoint) low = middle
