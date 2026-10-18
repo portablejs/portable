@@ -98,6 +98,9 @@ export default defineConfig({
     '*.{ts,js,json}': 'vp check --fix',
   },
   test: {
+    // Heavy suites (PngSuite, big base64 inputs) take several seconds when other processes load the
+    // machine, such as a pre-push hook running every package's tests.
+    testTimeout: 30_000,
     projects: [
       {
         extends: true,
