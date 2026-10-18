@@ -1,9 +1,9 @@
 /** Each byte as one character (U+0000 to U+00FF), so header bytes survive string handling. */
 export function toBinary(bytes: Uint8Array): string {
-  let text = ''
+  const parts: string[] = []
   for (let i = 0; i < bytes.length; i += 8192)
-    text += String.fromCharCode(...bytes.subarray(i, i + 8192))
-  return text
+    parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]))
+  return parts.join('')
 }
 
 export function fromBinary(text: string): Uint8Array<ArrayBuffer> {

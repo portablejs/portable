@@ -345,7 +345,7 @@ describe('linear time', () => {
     await expectLinear(async (size) => {
       const text = blank(size)
       await Dkim.verify((await sign(text)) + text, { resolver })
-    }, 64 * 1024)
+    }, 256 * 1024)
   })
 
   test('hashes a 10 MB line', async () => {
