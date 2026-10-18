@@ -381,3 +381,26 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 - **Options:** hold the file; write the RIFF header before knowing the output size.
 - **Trade-offs:** The RIFF header stores the file size and the `VP8X` chunk stores the EXIF flag, both before the `EXIF` chunk, which usually follows the image data. Writing them early would mean guessing.
 - **Chosen:** hold the WebP file and strip it at the end. JPEG and PNG are written as they arrive.
+
+## Decisions from the second batch of packages
+
+Agents that couldn't edit this file reported these. Each package's README and PARITY.md have the details.
+
+- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hash` option takes an incremental hasher such as noble's `sha256.create()` for large messages. Kevin approved this.
+- **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` still reports an abort as `temperror` and should change to match.
+- **dmarc** finds the organizational domain with the RFC 9989 DNS tree walk by default, and takes a public-suffix function as an option, so no suffix list ships with it. Its verb is `check`, as in spf, because a DMARC fail is a result and not an error. `from` is a domain; the caller extracts it from the header.
+- **ip** `contains` treats an IPv4-mapped IPv6 address and the IPv4 address as the same, as Node's `BlockList` does, which is the safer choice for SSRF allowlists. Addresses outside `2000::/3` are classified as `reserved`. `parseCidr` clears host bits.
+- **random** throws `RangeError` for bad arguments, as dns and base64 do, and throws on reversed bounds instead of swapping them. `seeded` is xoshiro128** seeded with SplitMix64, and its output changes only in a major version.
+- **bytes** `concat` always copies, so the result never shares memory with an input. base64, streams and png now depend on bytes, which is why L0 is no longer dependency-free.
+- **password** writes the PHC format and also reads passlib's. Hashes from other algorithms throw `UnsupportedError`, so migration code can fall back to the old verifier. Deployed Workers cap PBKDF2 at 100,000 iterations while `wrangler dev` doesn't, and the README says so.
+- **timers** clears its own timeout timer instead of using `AbortSignal.timeout`, whose timer can't be cleared. `retry` timeouts are per attempt and `poll` timeouts are total.
+- **queue** combines the queue's signal and each task's signal with `AbortSignal.any`. An aborted task keeps its slot until it settles, so `concurrency` is never exceeded. `clear()` rejects waiting tasks.
+- **websocket** treats server close codes 1000, 1002, 1003 and 1007 to 1010 as final, because a retry would get the same rejection. Its namespace is `WebSockets`, so the global `WebSocket` isn't shadowed.
+- **csv** throws on ragged rows unless `relaxColumnCount` is set, and on repeated header names, because the alternatives rename or drop a column without telling the caller. It has no `cast` option.
+- **compress** has no `EncoderStream`, because `CompressionStream` already does that job. Its `DecoderStream` joins small input chunks to avoid the platform's 4 KB output chunks.
+- **mime-stream** is not built on lines, so binary and non-UTF-8 bodies come back byte for byte. `splitHeaders` is a separate function that gives dkim an untouched body stream.
+- **mail** has no file or URL access, so callers pass a stream, a `Blob` or bytes, which avoids SSRF. Invalid addresses throw instead of being quoted and sent.
+- **smtp** requires STARTTLS unless `secure: 'off'`, and AUTH over plain text needs `allowInsecureAuth`. Timeouts come only from `signal`.
+- **sse** splits lines inline instead of using lines, to keep one `TransformStream`. `connect` reconnects after a clean end, and a `retry` field from the server replaces `delay`.
+- **websocket and sse** each hold a private copy of the `Timers.Delay` shape until timers exports its delay function.
+- **idna** ships its own Unicode 18 tables instead of calling `URL`, because Node and Chromium both differ from UTS #46.

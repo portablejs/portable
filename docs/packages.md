@@ -33,7 +33,7 @@ L1  json-stream   jsonl   mime-headers   mime-stream   image-size   exif   png
 L0  streams   lines   base64   quoted-printable   charset   dns-packet
 ```
 
-### L0: primitives (zero dependencies of any kind)
+### L0: primitives (no dependencies, apart from `bytes`)
 
 | Package | Purpose | Replaces (monthly downloads) |
 | --- | --- | --- |
@@ -46,11 +46,11 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), hand-written hex and compare loops |
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, seedrandom, nanoid's `customAlphabet` |
 | `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf` and `dns` use it. | ip, ip-cidr, ipaddr.js, is-ip |
-| `@portable/queue` | In-memory concurrency control: a queue with `concurrency` and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map |
+| `@portable/queue` | In-memory concurrency control: a queue with `concurrency`, a rate limit (`interval`, `intervalCap`) and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map, p-throttle |
 | `@portable/crypto` | Bytes-in, bytes-out helpers over `crypto.subtle`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | node:crypto `pbkdf2`, hand-written hash formats |
 | `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | rate-limiter-flexible, limiter |
-| `@portable/timers` | `sleep`, `retry` with backoff and jitter, and `poll` until a value appears, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
+| `@portable/timers` | `sleep`, `retry` with backoff and jitter, `poll` until a value appears, and `debounce` and `throttle`, all cancellable with `AbortSignal`. | p-retry, async-retry, delay, p-wait-for, lodash.debounce, lodash.throttle |
 
 #### `streams` bridge API
 
@@ -96,6 +96,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `lines`, `timers` | eventsource-parser, eventsource, @microsoft/fetch-event-source |
 | `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | (none) | csv-parse, csv-stringify, papaparse, fast-csv |
 | `@portable/compress` | One-shot gzip, deflate and deflate-raw on `CompressionStream`, a `maxLength` cap on decompression against zip bombs, larger output chunks than `DecompressionStream`'s 4 KB, and `crc32`. | `streams` | pako and fflate (simple one-shot use), node:zlib's sync helpers |
+| `@portable/rpc` | Typed JSON-RPC 2.0 over `MessagePort`, windows, WebSocket and HTTP, with streaming results. | (none) | comlink, penpal, birpc, json-rpc-2.0, tRPC (simple cases) |
 | `@portable/idna` | UTS #46 `toUnicode` and `toAscii` for domain names. The platform's `URL` only converts to ASCII. | (none) | punycode, tr46 |
 | `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | (none) | ndjson 10.5M, the `jsonl` modules of stream-json |
 | `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. | `base64`, `quoted-printable`; `charset` as optional peer | libmime 37M, addressparser, email-addresses |
@@ -122,7 +123,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | Package | Purpose | Depends on |
 | --- | --- | --- |
 | `@portable/spf` | Evaluate SPF for a sender IP and domain, with RFC 7208 lookup limits. | `dns` |
-| `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. Organizational domain via a passed-in public-suffix function (tldts fits). | `dns`, `spf`, `dkim` |
+| `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `dns` (types only) |
 | `@portable/arc` | ARC seal and verify. | `dkim` |
 | `@portable/mailauth` | One `authenticate(message, { resolver, ip, helo, sender })` returning SPF, DKIM, DMARC, ARC and BIMI results in mailauth's shape. This is the motivating gap: mailauth (3.5M) is the only complete implementation and it is Node-only. | all of the above |
 

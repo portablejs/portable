@@ -26,38 +26,39 @@ The numbers in the table come from `scripts/readme-stats.ts`. Run `pnpm readme` 
 | L0 | [`@portable/quoted-printable`](packages/quoted-printable) | libqp, quoted-printable | Built | 1.2× faster than libqp 3.0.1 (encode) | 2.1 kB vs 1.9 kB (Node only) libqp, 1.1 kB quoted-printable | 97.8% | 97.7% | 125 of 132, 7 n/a | 16 |
 | L0 | [`@portable/charset`](packages/charset) | iconv-lite (encoding) | Built | as fast as iconv-lite (encode windows-1251) | 69 kB vs 153 kB (Node only) iconv-lite | 100.0% | 98.1% | 47 of 64, 17 n/a | 14 |
 | L0 | [`@portable/dns-packet`](packages/dns-packet) | dns-packet | Built | 2.1× faster than dns-packet (decode) | 6.7 kB vs 8.7 kB (Node only) dns-packet | 98.6% | 94.4% | 31 of 31, 0 n/a | 17 |
-| L0 | `@portable/bytes` | uint8array-extras | In progress | – | – | – | – | – | – |
-| L0 | `@portable/random` | random-int, crypto-random-string, seedrandom | In progress | – | – | – | – | – | – |
-| L0 | `@portable/ip` | ip, ipaddr.js, ip-cidr | In progress | – | – | – | – | – | – |
-| L0 | `@portable/queue` | p-limit, p-queue, p-map | In progress | – | – | – | – | – | – |
-| L0 | `@portable/password` | node:crypto pbkdf2 | In progress | – | – | – | – | – | – |
-| L0 | `@portable/timers` | p-retry, async-retry, delay, p-wait-for | In progress | – | – | – | – | – | – |
+| L0 | [`@portable/bytes`](packages/bytes) | uint8array-extras | Built | – | – | – | – | – | – |
+| L0 | [`@portable/random`](packages/random) | random-int, crypto-random-string, seedrandom | Built | – | – | – | – | – | – |
+| L0 | [`@portable/ip`](packages/ip) | ip, ipaddr.js, ip-cidr | Built | – | – | – | – | – | – |
+| L0 | [`@portable/queue`](packages/queue) | p-limit, p-queue, p-map | Built | – | – | – | – | – | – |
+| L0 | [`@portable/password`](packages/password) | node:crypto pbkdf2 | Built | – | – | – | – | – | – |
+| L0 | [`@portable/timers`](packages/timers) | p-retry, async-retry, delay, p-wait-for | Built | – | – | – | – | – | – |
 | L1 | [`@portable/json-stream`](packages/json-stream) | JSONStream, stream-json, json-stream-stringify | Built | 2.2× faster than JSONStream (parse) | 3.9 kB vs 3.9 kB (Node only) JSONStream, 2.9 kB (Node only) json-stream-stringify | 99.0% | 96.0% | 103 of 123, 20 n/a | 16 |
-| L1 | `@portable/websocket` | reconnecting-websocket, partysocket | In progress | – | – | – | – | – | – |
-| L1 | `@portable/sse` | eventsource, eventsource-parser, @microsoft/fetch-event-source | In progress | – | – | – | – | – | – |
-| L1 | `@portable/csv` | csv-parse, papaparse, fast-csv | In progress | – | – | – | – | – | – |
-| L1 | `@portable/compress` | pako, fflate (one-shot use) | In progress | – | – | – | – | – | – |
-| L1 | `@portable/idna` | punycode, tr46 | In progress | – | – | – | – | – | – |
+| L1 | [`@portable/websocket`](packages/websocket) | reconnecting-websocket, partysocket | Built | – | – | – | – | – | – |
+| L1 | [`@portable/sse`](packages/sse) | eventsource, eventsource-parser, @microsoft/fetch-event-source | Built | – | – | – | – | – | – |
+| L1 | [`@portable/csv`](packages/csv) | csv-parse, papaparse, fast-csv | Built | – | – | – | – | – | – |
+| L1 | [`@portable/compress`](packages/compress) | pako, fflate (one-shot use) | Built | – | – | – | – | – | – |
+| L1 | [`@portable/idna`](packages/idna) | punycode, tr46 | Built | – | – | – | – | – | – |
 | L1 | [`@portable/jsonl`](packages/jsonl) | ndjson, stream-json's `jsonl` | Built | as fast as ndjson (decode) | 0.6 kB vs 13 kB (Node only) ndjson | 100.0% | 100.0% | 13 of 15, 2 n/a | 3 |
-| L1 | `@portable/mime-headers` | libmime, addressparser, email-addresses | Built | 1.9× faster than libmime 5.4.9 (decode encoded words) | 8.0 kB vs 258 kB (Node only) libmime, 2.6 kB addressparser, 3.1 kB email-addresses | 99.1% | 97.6% | 333 of 389, 56 n/a | 23 |
-| L1 | `@portable/mime-stream` | mailsplit | In progress | – | – | – | – | – | – |
+| L1 | [`@portable/mime-headers`](packages/mime-headers) | libmime, addressparser, email-addresses | Built | 1.9× faster than libmime 5.4.9 (decode encoded words) | 8.0 kB vs 258 kB (Node only) libmime, 2.6 kB addressparser, 3.1 kB email-addresses | 99.1% | 97.6% | 333 of 389, 56 n/a | 23 |
+| L1 | [`@portable/mime-stream`](packages/mime-stream) | mailsplit | Built | – | – | – | – | – | – |
 | L1 | [`@portable/image-size`](packages/image-size) | image-size | Built | 5.5× faster than image-size (PNG) | 4.7 kB vs 4.7 kB image-size | 97.6% | 91.6% | 24 of 33, 9 n/a | 17 |
 | L1 | [`@portable/exif`](packages/exif) | exif-parser, exif-reader | Built | 3.7× faster than exif-parser (parse) | 7.9 kB vs 7.8 kB exif-parser, 4.7 kB exif-reader | 96.3% | 86.7% | 41 of 53, 12 n/a | 11 |
 | L1 | [`@portable/png`](packages/png) | pngjs | Built | 0.8× the speed of pngjs (decode) | 4.3 kB vs 9.1 kB (Node only) pngjs | 99.3% | 92.5% | 18 of 19, 1 n/a | 10 |
-| L2 | `@portable/mail` | nodemailer's MailComposer | In progress | – | – | – | – | – | – |
-| L2 | `@portable/smtp` | nodemailer's SMTP transport | In progress | – | – | – | – | – | – |
+| L2 | [`@portable/mail`](packages/mail) | nodemailer's MailComposer | Built | – | – | – | – | – | – |
+| L2 | [`@portable/smtp`](packages/smtp) | nodemailer's SMTP transport | Built | – | – | – | – | – | – |
 | L2 | [`@portable/dns`](packages/dns) | `node:dns/promises` over DNS-over-HTTPS, tangerine | Built | 1.2× faster than tangerine (resolveTxt) | 8.4 kB vs 563 kB (Node only) tangerine | 99.1% | 96.3% | 50 of 77, 27 n/a | 14 |
-| L2 | `@portable/dkim` | DKIM in mailauth and nodemailer | In progress | – | – | – | – | – | – |
+| L2 | [`@portable/dkim`](packages/dkim) | DKIM in mailauth and nodemailer | Built | – | – | – | – | – | – |
 | L2 | [`@portable/webhooks`](packages/webhooks) | standardwebhooks, svix, Stripe and octokit verifiers | Built | 0.6× default, 1.5× with noble vs standardwebhooks (verify) | 4.3 kB vs 4.6 kB (Node only) standardwebhooks, 20 kB (Node only) svix, 30 kB (Node only) stripe, 0.7 kB @octokit/webhooks-methods | 100.0% | 98.1% | 57 of 67, 10 n/a | 11 |
 | L2 | [`@portable/oauth1`](packages/oauth1) | oauth-1.0a, oauth | Built | 0.4× default, 1.2× with noble vs oauth-1.0a (sign a GET) | 4.6 kB vs 1.7 kB oauth-1.0a, 5.2 kB (Node only) oauth | 100.0% | 96.1% | 47 of 65, 18 n/a | 23 |
-| L3 | `@portable/spf` | mailauth's SPF | Built | 1.6× faster than mailauth (check) | 4.6 kB vs 442 kB (Node only) mailauth | 98.8% | 96.2% | 294 of 301, 7 n/a | 14 |
-| L3 | `@portable/dmarc` | mailauth's DMARC | In progress | – | – | – | – | – | – |
+| L3 | [`@portable/spf`](packages/spf) | mailauth's SPF | Built | 1.6× faster than mailauth (check) | 4.6 kB vs 442 kB (Node only) mailauth | 98.8% | 96.2% | 294 of 301, 7 n/a | 14 |
+| L3 | [`@portable/dmarc`](packages/dmarc) | mailauth's DMARC | Built | – | – | – | – | – | – |
 | L3 | `@portable/arc` | mailauth's ARC | Planned | – | – | – | – | – | – |
 | L3 | `@portable/mailauth` | mailauth | Planned | – | – | – | – | – | – |
 | L0 | [`@portable/crypto`](packages/crypto) | hand-written WebCrypto helpers | Built | not measured | not measured | – | – | 12 of 18, 6 n/a | 6 |
 | L1 | [`@portable/rate-limit`](packages/rate-limit) | rate-limiter-flexible, limiter | Built | not measured | not measured | – | – | 39 of 59, 20 n/a | 6 |
 | L2 | [`@portable/web-push`](packages/web-push) | web-push | Built | not measured | not measured | – | – | 49 of 58, 9 n/a | 13 |
 | L2 | [`@portable/rdap`](packages/rdap) | whoiser, whois-json, node-rdap | Built | not measured | not measured | – | – | 77 of 90, 13 n/a | 11 |
+| L1 | [`@portable/rpc`](packages/rpc) | comlink, penpal, birpc, json-rpc-2.0, tRPC (simple cases) | Built | – | – | – | – | – | – |
 <!-- packages:end -->
 
 Each layer depends only on the layers below it. Later candidates (XML signatures and SAML, an xlsx writer) are listed at the end of [docs/packages.md](docs/packages.md).
