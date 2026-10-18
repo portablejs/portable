@@ -9,6 +9,11 @@ export declare namespace encodeStream {
     replacer?: Replacer | readonly (string | number)[] | undefined
     /** Indentation, as in `JSON.stringify`: a number of spaces (at most 10) or a string. */
     space?: string | number | undefined
+    /**
+     * Errors the output with `signal.reason` when aborted, and cancels nested streams and
+     * iterators as cancelling the output does.
+     */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -64,7 +69,7 @@ export function encodeStream(
   value: unknown,
   options: encodeStream.Options = {},
 ): ReadableStream<string> {
-  const { replacer, space } = options
+  const { replacer, signal, space } = options
   const replace = typeof replacer === 'function' ? replacer : undefined
   const allowed = Array.isArray(replacer) ? [...new Set(replacer.map(String))] : undefined
   const gap =
@@ -272,9 +277,19 @@ export function encodeStream(
     )
   }
 
+  const onAbort = () => {
+    if (cancelled) return
+    cancelled = true
+    controller.error(signal!.reason)
+    void stopAll(signal!.reason)
+  }
+  const release = () => signal?.removeEventListener('abort', onAbort)
+
   return new ReadableStream<string>({
     start(c) {
       controller = c
+      if (signal?.aborted) onAbort()
+      else signal?.addEventListener('abort', onAbort, { once: true })
     },
     async pull() {
       try {
@@ -283,14 +298,19 @@ export function encodeStream(
           if (pending) await pending
         }
       } catch (error) {
+        release()
         await stopAll(error)
         throw error
       }
       if (cancelled) return
       flush()
-      if (done) controller.close()
+      if (done) {
+        release()
+        controller.close()
+      }
     },
     async cancel(reason) {
+      release()
       cancelled = true
       await stopAll(reason)
     },

@@ -29,11 +29,12 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 ## Options
 
-`DecoderStream` takes one option. `EncoderStream` takes none.
+`DecoderStream` takes `invalid` and `signal`. `EncoderStream` takes `signal`.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number; `'skip'` drops the line. |
+| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over ndjson
 

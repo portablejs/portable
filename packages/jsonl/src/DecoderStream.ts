@@ -1,7 +1,10 @@
 import { InvalidInputError } from './errors.js'
+import { abortable } from './abortable.js'
 
 export declare namespace DecoderStream {
   type Options = {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
     /** What to do with a line that isn't valid JSON: fail the stream, or drop the line and continue. @default 'error' */
     invalid?: 'error' | 'skip' | undefined
   }
@@ -43,21 +46,26 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
       controller.enqueue(value)
     }
 
-    super({
-      transform(chunk, controller) {
-        const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
-        if (!text.includes('\n')) {
-          partial += text
-          return
-        }
-        const lines = text.split('\n')
-        lines[0] = partial + lines[0]
-        partial = lines.pop()!
-        for (const line of lines) decode(line, controller)
-      },
-      flush(controller) {
-        decode(partial + decoder.decode(), controller)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            if (!text.includes('\n')) {
+              partial += text
+              return
+            }
+            const lines = text.split('\n')
+            lines[0] = partial + lines[0]
+            partial = lines.pop()!
+            for (const line of lines) decode(line, controller)
+          },
+          flush(controller) {
+            decode(partial + decoder.decode(), controller)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }

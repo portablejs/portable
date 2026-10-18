@@ -25,6 +25,7 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 | Option | Default | Description |
 | --- | --- | --- |
 | `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]` and `..` before any of them. A nested match is emitted before the value that contains it. |
+| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the input ends inside a value.
 
@@ -43,6 +44,7 @@ return new Response(body.pipeThrough(new TextEncoderStream()), {
 | --- | --- | --- |
 | `replacer` | none | As in `JSON.stringify`: a function or a list of keys. The function receives resolved values. |
 | `space` | none | As in `JSON.stringify`. |
+| `signal` | none | Aborting errors the output with `signal.reason` and cancels nested streams and iterators. |
 
 The text matches what `JSON.stringify` gives for the resolved tree. A circular structure or a `BigInt` fails the stream with a `TypeError`.
 

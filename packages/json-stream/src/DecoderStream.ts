@@ -1,8 +1,11 @@
 import { InvalidInputError, TruncatedError } from './errors.js'
 import { compile, type States } from './path.js'
+import { abortable } from './abortable.js'
 
 export declare namespace DecoderStream {
   type Options = {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
     /**
      * JSONPath expressions for the values to emit. Supported: `$` (the root), `.name`,
      * `['name']`, `[0]`, `.*`, `[*]` and `..` (any depth). Every value that matches any path is
@@ -405,29 +408,34 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
       } else held.push(text)
     }
 
-    super({
-      start(c) {
-        controller = c
-      },
-      transform(chunk) {
-        text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
-        scan()
-        hold()
-        offset += text.length
-      },
-      flush() {
-        text = decoder.decode()
-        if (text) {
-          scan()
-          hold()
-          offset += text.length
-        }
-        text = ''
-        if (state === ZERO || state === INTEGER || state === FRACTION || state === EXPONENT) {
-          if (depth === 0) state = endPrimitive(0)
-        }
-        if (state !== ROOT) throw new TruncatedError()
-      },
-    })
+    super(
+      abortable(
+        {
+          start(c) {
+            controller = c
+          },
+          transform(chunk) {
+            text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            scan()
+            hold()
+            offset += text.length
+          },
+          flush() {
+            text = decoder.decode()
+            if (text) {
+              scan()
+              hold()
+              offset += text.length
+            }
+            text = ''
+            if (state === ZERO || state === INTEGER || state === FRACTION || state === EXPONENT) {
+              if (depth === 0) state = endPrimitive(0)
+            }
+            if (state !== ROOT) throw new TruncatedError()
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }
