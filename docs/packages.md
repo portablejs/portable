@@ -104,6 +104,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | Package | Purpose | Depends on | Replaces / fills |
 | --- | --- | --- | --- |
 | `@portable/mail` | Compose a raw RFC 5322 message as a `ReadableStream`: text/html alternatives, attachments, inline images, custom headers. No transport. | `mime-headers`, `base64`, `quoted-printable`, `streams` | nodemailer's MailComposer |
+| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` fits): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | (none) | nodemailer's SMTP transport, smtp-connection |
 | `@portable/dns` | DNS lookups where there is no DNS: `resolveTxt`, `resolveMx` and friends over DNS-over-HTTPS, behind a resolver interface `node:dns/promises` also fits. | `dns-packet` | node:dns on Workers and browsers |
 | `@portable/dkim` | DKIM sign and verify, with streaming body hashes. Keys via WebCrypto (RSA) or noble (ed25519); DNS via an injected resolver. | `mime-headers`, `mime-stream`, `base64`; crypto peer | DKIM in mailauth, nodemailer |
 | `@portable/webhooks` | Verify signed webhooks: Standard Webhooks plus Stripe, GitHub, Slack and Svix schemes, with timing-safe compare and replay window. | `base64`; crypto peer | per-provider SDK verifiers |
