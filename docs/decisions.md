@@ -2,6 +2,30 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `Crypto.derToRawEcdsa` accepts only strict DER
+
+- **Options:** accept what ecdsa-sig-formatter's `derToJose` accepts (BER lengths, extra leading zeros, negative and empty INTEGERs); accept only DER.
+- **Trade-offs:** a lenient parser converts a few more signatures from broken signers. It also gives one signature several encodings, and `derToJose` drops a non-zero top byte of an oversized INTEGER and returns a different signature. Wycheproof flags all of these as invalid.
+- **Chosen:** strict DER. Every Wycheproof case flagged `BerEncodedSignature`, `InvalidEncoding` or `MissingZero` throws `InvalidInputError`. The README lists what `derToJose` accepts and we reject.
+
+## `Crypto.importSeed` returns a non-extractable private key by default
+
+- **Options:** extractable by default, which needs one `importKey`; non-extractable by default, which imports the key a second time after reading its public key.
+- **Trade-offs:** the second import makes `importSeed` about 40% slower (8,100 instead of 12,900 calls a second on Node). An extractable key can be exported by any code that holds it.
+- **Chosen:** non-extractable, as `crypto.subtle` keys are by default for code that doesn't ask. `extractable: true` skips the second import.
+
+## `Crypto` keeps the function names from the package brief
+
+- **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as the approved brief names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
+- **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. The brief's names say both forms.
+- **Chosen:** the brief's names. Each async function still takes `signal`, checked before and after the `crypto.subtle` call, since WebCrypto calls can't be cancelled.
+
+## `Crypto.hmac` and `Crypto.hkdf` take key bytes, not a `CryptoKey`
+
+- **Options:** also accept an imported `CryptoKey` so a caller can reuse it; take bytes or a string only.
+- **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. A caller who reuses a key can call `crypto.subtle.sign` directly.
+- **Chosen:** bytes or a string only.
+
 ## `@portable/rdap` API
 
 - **`domain(name)`, `ip(address)` and `asn(number)`, each returning a plain normalized object with `raw`.** node-rdap's `nameserver()` and `entity()` were left out: a domain result already lists its nameservers and entities, and entity handles can be routed only for the eight RFC 8521 tags.

@@ -47,6 +47,7 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, seedrandom, nanoid's `customAlphabet` |
 | `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf` and `dns` use it. | ip, ip-cidr, ipaddr.js, is-ip |
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency` and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map |
+| `@portable/crypto` | Bytes-in, bytes-out helpers over `crypto.subtle`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | node:crypto `pbkdf2`, hand-written hash formats |
 | `@portable/timers` | `sleep`, `retry` with backoff and jitter, and `poll` until a value appears, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
 

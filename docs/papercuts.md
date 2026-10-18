@@ -4,6 +4,9 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| The cloud session for a thread starts on a `claude/...` branch, not `main`, so `git push origin main` fails with "src refspec main does not match any". | `git push origin HEAD:main`. | Start build threads on `main`, or say so in the brief. |
+| V8 allocates a typed array over 64 bytes outside the JavaScript heap, which costs about 1 µs. A function that returns a fresh 70-byte `Uint8Array` loses benchmarks to Node libraries that slice `Buffer`'s shared pool. | `crypto`'s `rawToDerEcdsa` benchmark compares with ecdsa-sig-formatter for reference only, with the reason in the file. | None in our code. Returning views into a shared pool would expose other data through `.buffer`. |
+| RFC 4231 test case 3 writes `Key` without `=`, so a parser of the RFC text that expects `Key =` skips it. | `crypto`'s vectors accept both. | None. |
 | `curl` to `api.github.com` or `github.com` for a repository outside the session gets 403 from the proxy, so `rdap` couldn't read the issue trackers of whoiser, node-rdap and whois-json either. | Read the changelogs, the source and the test comments. | Allow read-only access to public repositories' issues. |
 | mime-headers' linear-time tests compare timings, and with about 20 agents running (load average around 40) 13 of 43 failed. That blocked every push that changed `pnpm-lock.yaml`. | They now run with the benchmarks (`linear-time.bench.ts`), which run only in `pnpm bench`. | Count operations instead of timing, if the functions expose a counter in tests. |
 | `vp check` on staged files type-checks a test file alone and fails when the test folder has no `tsconfig.json`. | Every `test/` folder has one. | None needed. |
