@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/mime-headers": "workspace:*",
     "@types/node": "^26.6.5",
     "email-addresses": "^5.0.0",
+    "fast-check": "^4.10.2",
     "libmime": "^5.4.9",
     "nodemailer": "^10.1.2"
   }

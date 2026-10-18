@@ -3,10 +3,12 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/jsonl": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/ndjson": "^2.0.4",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "ndjson": "^2.0.0"
   }
 }

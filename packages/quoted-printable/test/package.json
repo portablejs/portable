@@ -3,10 +3,12 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/quoted-printable": "workspace:*",
     "@types/libqp": "^1.1.3",
     "@types/node": "^26.6.5",
     "@types/quoted-printable": "^1.0.2",
+    "fast-check": "^4.10.2",
     "libqp": "^2.1.3",
     "quoted-printable": "^1.0.1"
   }

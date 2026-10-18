@@ -337,7 +337,8 @@ class Parser {
       } else {
         this.markAngle()
         const name = buildName(this.tokens)
-        if (name.text === '') this.invalid('A group has no name.')
+        const quoted = this.tokens.some((token) => token.kind === 'quoted' && token.role === 'name')
+        if (name.text === '' && !quoted) this.invalid('A group has no name.')
         else if (this.strict) this.checkPhrase(this.tokens)
         this.group = { name: decodeWords(name.text || name.comments), members: [] }
       }

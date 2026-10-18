@@ -406,6 +406,9 @@ importers:
 
   packages/json-stream/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/json-stream':
         specifier: workspace:*
         version: link:..
@@ -418,6 +421,9 @@ importers:
       JSONStream:
         specifier: ^1.3.5
         version: 1.3.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       json-stream-stringify:
         specifier: ^3.1.7
         version: 3.1.7
@@ -426,6 +432,9 @@ importers:
 
   packages/jsonl/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/jsonl':
         specifier: workspace:*
         version: link:..
@@ -438,6 +447,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       ndjson:
         specifier: ^2.0.0
         version: 2.0.0
@@ -515,6 +527,9 @@ importers:
 
   packages/mime-headers/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/mime-headers':
         specifier: workspace:*
         version: link:..
@@ -524,6 +539,9 @@ importers:
       email-addresses:
         specifier: ^5.0.0
         version: 5.0.0
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       libmime:
         specifier: ^5.4.9
         version: 5.4.9
@@ -657,6 +675,9 @@ importers:
 
   packages/quoted-printable/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/quoted-printable':
         specifier: workspace:*
         version: link:..
@@ -669,6 +690,9 @@ importers:
       '@types/quoted-printable':
         specifier: ^1.0.2
         version: 1.0.2
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       libqp:
         specifier: ^2.1.3
         version: 2.1.3

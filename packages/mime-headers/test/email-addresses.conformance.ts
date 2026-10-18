@@ -152,6 +152,11 @@ describe('groups (RFC 6854)', () => {
     expect(list.map((entry) => entry.name)).toEqual(['Managing Partners', 'Foo', 'Group2'])
     expect(list[1]).toEqual({ name: 'Foo', address: 'foo@example.com' })
   })
+
+  test('a group named by an empty quoted string, as formatAddresses writes an unnamed group', () => {
+    expect(parseAddresses('"":;', { strict: true })).toEqual([{ name: '', group: [] }])
+    expect(() => parseAddresses(':a@example.com;', { strict: true })).toThrow(InvalidInputError)
+  })
 })
 
 describe('is_email', () => {
