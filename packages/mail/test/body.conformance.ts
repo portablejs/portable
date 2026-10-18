@@ -72,6 +72,7 @@ describe('text bodies', () => {
     const raw = await compose({ text: encode('tere jõgeva') })
     expect(field(raw, 'Content-Transfer-Encoding')).toBe('quoted-printable')
     expect(bodyOf(raw)).toBe('tere j=C3=B5geva\r\n')
+    expect(field(await compose({ text: encode('tere') }), 'Content-Transfer-Encoding')).toBe('7bit')
   })
 
   test('a single part body that ends in a line break gets no second one', async () => {
@@ -255,6 +256,7 @@ describe('attachments', () => {
 
   test.each([
     ['jogeva.txt', 'name=jogeva.txt', 'filename=jogeva.txt'],
+    ['test-file.txt', 'name=test-file.txt', 'filename=test-file.txt'],
     ['jõgeva.txt', 'name="=?UTF-8?Q?j=C3=B5geva=2Etxt?="', "filename*0*=utf-8''j%C3%B5geva.txt"],
     ['document a.test.pdf', 'name="document a.test.pdf"', 'filename="document a.test.pdf"'],
     ['foo\\', 'name="foo\\\\"', 'filename="foo\\\\"'],

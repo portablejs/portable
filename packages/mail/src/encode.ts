@@ -11,10 +11,24 @@ import {
 } from './body.js'
 import { InvalidInputError } from './errors.js'
 
-/** Extra header fields, by name. A list writes one field per value, in order. */
+/**
+ * Extra header fields, by name. A list writes one field per value, in order.
+ *
+ * @example
+ * ```ts
+ * const headers: Mail.HeaderFields = { 'List-Unsubscribe': '<https://example.com/u/1>', Keywords: ['a', 'b'] }
+ * ```
+ */
 export type HeaderFields = Readonly<Record<string, string | readonly string[]>>
 
-/** An alternative body, such as a calendar invitation next to the text and HTML. */
+/**
+ * An alternative body, such as a calendar invitation next to the text and HTML.
+ *
+ * @example
+ * ```ts
+ * const invite: Mail.Part = { contentType: 'text/calendar; charset=utf-8; method=REQUEST', content: ics }
+ * ```
+ */
 export type Part = {
   readonly content: Content
   /** Such as `'text/calendar; charset=utf-8; method=REQUEST'`. */
@@ -24,7 +38,15 @@ export type Part = {
   readonly transferEncoding?: TransferEncoding | undefined
 }
 
-/** A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`. */
+/**
+ * A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`.
+ *
+ * @example
+ * ```ts
+ * const logo: Mail.Attachment = { content: pngBytes, contentType: 'image/png', cid: 'logo' }
+ * const report: Mail.Attachment = { content: file, filename: 'report.pdf' }
+ * ```
+ */
 export type Attachment = {
   readonly content: Content
   /** @default the `File`'s name, or none */
@@ -33,14 +55,21 @@ export type Attachment = {
   readonly contentType?: string | undefined
   /** Content-ID that the HTML refers to as `cid:<cid>`. Puts the attachment beside the HTML in `multipart/related`. */
   readonly cid?: string | undefined
-  /** @default `'inline'` with a `cid`, otherwise `'attachment'` */
+  /** @default `'inline'` for an `image/*` with a `cid`, otherwise `'attachment'` */
   readonly disposition?: 'attachment' | 'inline' | undefined
   readonly headers?: HeaderFields | undefined
   /** @default `8bit` for `message/*`, otherwise `base64` */
   readonly transferEncoding?: TransferEncoding | undefined
 }
 
-/** A message to encode. Every field is optional; a message with no body gets an empty text body. */
+/**
+ * A message to encode. Every field is optional; a message with no body gets an empty text body.
+ *
+ * @example
+ * ```ts
+ * const message: Mail.Message = { from: 'mari@example.com', to: 'jaan@example.com', subject: 'Tere', text: 'Tere!' }
+ * ```
+ */
 export type Message = {
   readonly from?: Addresses | undefined
   readonly sender?: Addresses | undefined
@@ -90,6 +119,8 @@ export declare namespace encode {
 type Leaf = {
   readonly contentType: string
   readonly headers: readonly string[]
+  /** Headers chosen from the content, written after the message fields when the leaf is the root. */
+  readonly computed: readonly string[]
   readonly content: Content | undefined
   readonly body: Body
 }
@@ -97,6 +128,7 @@ type Leaf = {
 type Multipart = {
   readonly contentType: string
   readonly headers: readonly string[]
+  readonly computed: readonly string[]
   readonly boundary: string
   readonly children: readonly Node[]
 }
@@ -162,7 +194,13 @@ export function encode(message: Message, options: encode.Options = {}): Readable
       throw new InvalidInputError(error.message, { cause: error })
     throw error
   }
-  const head = [...fields, ...root.headers, 'MIME-Version: 1.0', root.contentType].join('\r\n')
+  const head = [
+    ...root.headers,
+    ...fields,
+    ...root.computed,
+    'MIME-Version: 1.0',
+    root.contentType,
+  ].join('\r\n')
   return output(write(root, head, context), context)
 }
 
@@ -333,7 +371,12 @@ function leaf(
   content: Content,
   type: string,
   body: Body,
-  extra: { headers?: HeaderFields | undefined; cid?: string | undefined; disposition?: string },
+  extra: {
+    headers?: HeaderFields | undefined
+    cid?: string | undefined
+    disposition?: string
+    computed?: boolean
+  },
 ): Leaf {
   context.id++
   if (!isContent(content))
@@ -347,9 +390,11 @@ function leaf(
   if (extra.cid !== undefined)
     // oxlint-disable-next-line no-control-regex
     headers.push(fold('Content-ID', `<${extra.cid.replace(/[<>\x00-\x1f\x7f]/g, '')}>`))
-  headers.push(fold('Content-Transfer-Encoding', body.encoding))
+  const encoding = fold('Content-Transfer-Encoding', body.encoding)
+  if (!extra.computed) headers.push(encoding)
   if (extra.disposition !== undefined) headers.push(fold('Content-Disposition', extra.disposition))
-  return { contentType: fold('Content-Type', type), headers, content, body }
+  const computed = extra.computed ? [encoding] : []
+  return { contentType: fold('Content-Type', type), headers, computed, content, body }
 }
 
 function textBody(context: Context, content: Content, subtype: string): Leaf {
@@ -357,7 +402,7 @@ function textBody(context: Context, content: Content, subtype: string): Leaf {
   const encoding = chooseTextEncoding(content)
   const bytes = charset && typeof content === 'string' ? charset.encode(content) : content
   const type = `text/${subtype}; charset=${charset && typeof content === 'string' ? charset.name : 'utf-8'}`
-  return leaf(context, bytes, type, { encoding, text: true }, {})
+  return leaf(context, bytes, type, { encoding, text: true }, { computed: true })
 }
 
 function part(context: Context, alternative: Part): Leaf {
@@ -375,9 +420,7 @@ function part(context: Context, alternative: Part): Leaf {
     alternative.content,
     MimeHeaders.formatValue(type),
     { encoding, text: isText },
-    {
-      headers: alternative.headers,
-    },
+    { headers: alternative.headers, computed: alternative.transferEncoding === undefined },
   )
 }
 
@@ -395,7 +438,9 @@ function attachment(context: Context, file: Attachment): Leaf {
   let typeValue = MimeHeaders.formatValue(type)
   if (filename !== undefined) typeValue += '; name=' + nameParam(filename, context.charset)
   const disposition = MimeHeaders.formatValue({
-    value: file.disposition ?? (file.cid === undefined ? 'attachment' : 'inline'),
+    value:
+      file.disposition ??
+      (file.cid !== undefined && /^image\//i.test(type.value) ? 'inline' : 'attachment'),
     params: filename === undefined ? {} : { filename },
   })
   const encoding = file.transferEncoding ?? (messageType.test(type.value) ? '8bit' : 'base64')
@@ -421,6 +466,7 @@ function multipart(
       MimeHeaders.formatValue({ value: type, params: { ...params, boundary } }),
     ),
     headers: [],
+    computed: [],
     boundary,
     children: children(),
   }
@@ -486,6 +532,7 @@ function tree(message: Message, context: Context): Node {
   return {
     contentType: 'Content-Type: text/plain',
     headers: [],
+    computed: [],
     content: undefined,
     body: { encoding: '7bit', text: true },
   }
@@ -504,7 +551,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
       for (let i = 0; i < current.children.length; i++) {
         const child = current.children[i]!
         pending += (i > 0 ? '\r\n--' : '--') + current.boundary + '\r\n'
-        yield* node(child, [child.contentType, ...child.headers].join('\r\n'))
+        yield* node(child, [child.contentType, ...child.headers, ...child.computed].join('\r\n'))
       }
       pending += '\r\n--' + current.boundary + '--\r\n'
       return

@@ -1,19 +1,39 @@
 import * as MimeHeaders from '@portable/mime-headers'
 import { InvalidInputError } from './errors.js'
 
-/** One mailbox. Without a `name`, only the address is written. */
+/**
+ * One mailbox. Without a `name`, only the address is written.
+ *
+ * @example
+ * ```ts
+ * const mailbox: Mail.Mailbox = { name: 'Mari Tamm', address: 'mari@example.com' }
+ * ```
+ */
 export type Mailbox = {
   readonly name?: string | undefined
   readonly address: string
 }
 
 /**
- * The recipients or senders of one header: an address list as text, such as
- * `'Mari <mari@example.com>, team: a@example.com;'`, a `Mailbox`, or a list of either.
+ * The recipients or senders of one header: an address list as text, a `Mailbox`, or a list of
+ * either.
+ *
+ * @example
+ * ```ts
+ * const to: Mail.Addresses = ['Mari <mari@example.com>', { name: 'Jaan', address: 'jaan@example.com' }]
+ * const cc: Mail.Addresses = 'Team: a@example.com, b@example.com;'
+ * ```
  */
 export type Addresses = string | Mailbox | readonly (string | Mailbox)[]
 
-/** The SMTP envelope of a message: the `MAIL FROM` address and every `RCPT TO` address. */
+/**
+ * The SMTP envelope of a message: the `MAIL FROM` address and every `RCPT TO` address.
+ *
+ * @example
+ * ```ts
+ * const { from, to }: Mail.Envelope = Mail.envelope(message)
+ * ```
+ */
 export type Envelope = {
   /** The first `From` address, or the first `Sender` address when there is no `From`. */
   from: string | undefined

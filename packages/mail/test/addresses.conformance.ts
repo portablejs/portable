@@ -169,6 +169,34 @@ describe('envelope', () => {
     expect(Mail.envelope({ to: 'user@(x)good-corp.com' }).to).toEqual(['user@good-corp.com'])
   })
 
+  test.each([
+    ['App <app@good-corp.com(x)evil.com>', ['app@good-corp.com']],
+    ['<cc(c)@good-corp.com>', ['cc@good-corp.com']],
+    ['Bcc <bcc@good-corp.com (note)>', ['bcc@good-corp.com']],
+    ['G: (a; <evil@evil.com>) <v@victim.com>;', ['v@victim.com']],
+    ['G: "a;" "<evil@evil.com>" <v@victim.com>;', ['v@victim.com']],
+    ['<a@[x@evil.com]>', ['a@[x@evil.com]']],
+    ['Name <a@[x@evil.com]>', ['a@[x@evil.com]']],
+    ['<a (b) @c.com>', ['a@c.com']],
+    ['"a" @good.com', ['a@good.com']],
+    ['user @ good.com', ['user@good.com']],
+    ['<@evil.com,@x.com:user@good.com>', ['user@good.com']],
+    ['"user"@good-corp.com(x)evil.com', ['user@good-corp.com']],
+    ['"user name"@good-corp.com(x)evil.com', ['"user name"@good-corp.com']],
+    ['Victim (x(y) <evil@evil.com>) <v@victim.com>', ['v@victim.com']],
+    ['user@good.com (x) evil@evil.com', ['user@good.com']],
+    ['<"a@evil.com>"@good.com>', ['"a@evil.com>"@good.com']],
+  ])('the recipients of %j are %j', (to, expected) => {
+    expect(Mail.envelope({ to }).to).toEqual(expected)
+  })
+
+  test.each(['(a@evil.com)', '<(a@evil.com)>', 'G: (a@evil.com);'])(
+    'a comment that stands alone in %j is not taken as a recipient',
+    (to) => {
+      expect(() => Mail.envelope({ to })).toThrow(Mail.InvalidInputError)
+    },
+  )
+
   test('an own __proto__ key cannot add a recipient', () => {
     const mailbox = JSON.parse(
       '{"address":"to@example.com","__proto__":{"group":[{"address":"exfil@attacker.test"}]}}',

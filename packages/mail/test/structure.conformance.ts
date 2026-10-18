@@ -112,9 +112,27 @@ describe('message structure', () => {
   })
 
   test('cid attachments without html are plain attachments', async () => {
-    const raw = await compose({ text: 'abc', attachments: [{ content: 'abc', cid: 'aaa' }] })
+    const raw = await compose({
+      text: 'abc',
+      attachments: [{ content: 'abc', cid: 'aaa', contentType: 'image/png' }],
+    })
     expect(contentType(raw)).toBe(`multipart/mixed; boundary="${boundary}1"`)
     expect(partsOf(raw, 1)[1]).toContain('Content-Disposition: inline')
+  })
+
+  test('a cid makes an image inline and leaves other types as attachments', async () => {
+    const raw = await compose({
+      html: '<img src="cid:a">',
+      attachments: [
+        { content: 'a', cid: 'a', contentType: 'image/gif' },
+        { content: 'b', cid: 'b', contentType: 'text/css' },
+      ],
+    })
+    expect(partsOf(raw, 1).map((part) => /Content-Disposition: (.*)/.exec(part)?.[1])).toEqual([
+      undefined,
+      'inline',
+      'attachment',
+    ])
   })
 
   test('only text is a single part', async () => {
@@ -263,6 +281,13 @@ describe('message structure', () => {
     const blob = await compose({ text: new Blob([text]) })
     expect(bodyOf(blob)).toBe(bodyOf(expected))
   })
+
+  test.each(['X\r\nX-Evil: injected', 'a\tb', 'a"b', 'x'.repeat(61)])(
+    'the boundary %j throws a RangeError because RFC 2046 does not allow it',
+    (prefix) => {
+      expect(() => Mail.encode({ text: 'a', html: 'b' }, { boundary: prefix })).toThrow(RangeError)
+    },
+  )
 
   test('the default boundary is random and holds "=_", which base64 and quoted-printable never write', async () => {
     const first = await Streams.toText(Mail.encode({ text: 'a', html: 'b' }))
