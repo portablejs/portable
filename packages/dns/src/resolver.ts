@@ -154,15 +154,24 @@ const base64url = (bytes: Uint8Array) =>
     .replaceAll('/', '_')
     .replace(/=+$/, '')
 
+const hostName = /^(?:(?:[\w*/-]|\\.)+(?:\.(?:[\w*/-]|\\.)+)*\.?|\.?)$/
+
+const nonAscii = /[\u{80}-\u{10ffff}]/gu
+
 function toQueryName(name: string, syscall: string): string {
   if (typeof name !== 'string') throw new TypeError('The name must be a string.')
-  if (!/[\u0080-￿]/.test(name)) return name
-  if (/[\s/?#@:\\%[\]]/.test(name)) throw new QueryError('EBADNAME', syscall, name)
+  const masked = name.replace(nonAscii, 'a')
+  if (!hostName.test(masked)) throw new QueryError('EBADNAME', syscall, name)
+  if (masked === name) return name
+  if (/[/\\]/.test(name)) throw new QueryError('EBADNAME', syscall, name)
+  let ascii: string
   try {
-    return new URL(`http://${name}/`).hostname
+    ascii = new URL(`http://${name}/`).hostname
   } catch (cause) {
     throw new QueryError('EBADNAME', syscall, name, { cause })
   }
+  if (!hostName.test(ascii)) throw new QueryError('EBADNAME', syscall, name)
+  return ascii
 }
 
 function reverseName(ip: string): string | undefined {

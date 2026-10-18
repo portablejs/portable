@@ -583,9 +583,9 @@ describe('requests', () => {
     const { resolver, requests } = resolverFor(({ name }) => ({
       answers: [record(name, 'A', '1.1.1.1')],
     }))
-    const names = Array.from({ length: 64 }, (_, i) => 33 + i)
-      .filter((code) => code !== 0x2e && code !== 0x5c)
-      .map((code) => `${String.fromCharCode(code)}~?>.example`)
+    const names = [1, 2, 3].flatMap((prefix) =>
+      [62, 63].map((length) => `${'a'.repeat(prefix)}.${'b'.repeat(length)}.example`),
+    )
     for (const name of names) await resolver.resolve4(name)
     const standard = requests.map((request) => {
       const value = new URL(request.url).searchParams.get('dns')!
@@ -608,21 +608,27 @@ describe('requests', () => {
     ])
   })
 
-  test('accepts a trailing dot, the root and names with underscores', async () => {
+  test('accepts a trailing dot, the root, and names with _, *, / and -', async () => {
     const { resolver, requests } = resolverFor(({ name }) => ({
       answers: [record(name, 'TXT', ['ok'])],
     }))
     await resolver.resolveTxt('example.org.')
     await resolver.resolveTxt('')
     await resolver.resolveTxt('_dmarc.Example.ORG')
+    await resolver.resolveTxt('*.example.org')
+    await resolver.resolveTxt('0/26.2.0.192.in-addr.arpa')
+    await resolver.resolveTxt('-x.example.org')
     expect(requests.map((request) => decodeQuery(request).questions[0]!.name)).toEqual([
       N,
       '.',
       '_dmarc.Example.ORG',
+      '*.example.org',
+      '0/26.2.0.192.in-addr.arpa',
+      '-x.example.org',
     ])
   })
 
-  test('rejects a name DNS cannot hold with EBADNAME, without a request', async () => {
+  test('rejects names with empty labels, long labels, or characters other than A-Z, a-z, 0-9, -, _, *, /, . and backslash escapes with EBADNAME', async () => {
     const { resolver, requests } = resolverFor(answering())
     const names = [
       'foo..com',
@@ -630,6 +636,12 @@ describe('requests', () => {
       `${'a.'.repeat(128)}com`,
       'é/x.com',
       'ex ämple.com',
+      '.example.org',
+      '..',
+      ',.,.',
+      '::1',
+      'with space.org',
+      'evil.example?x',
     ]
     for (const name of names)
       expect(await failure(resolver.resolve4(name))).toMatchObject({
