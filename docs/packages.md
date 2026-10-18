@@ -44,6 +44,7 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |
 | `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
 | `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), hand-written hex and compare loops |
+| `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, seedrandom, nanoid's `customAlphabet` |
 | `@portable/timers` | `sleep`, `retry` with backoff and jitter, and `poll` until a value appears, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
 
 #### `streams` bridge API
