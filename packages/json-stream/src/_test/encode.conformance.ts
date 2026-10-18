@@ -279,6 +279,14 @@ describe('stream-json', () => {
     expect(holders).toEqual([{ '': value }, value, value.a])
   })
 
+  test('writes nothing when the replacer drops the root value', async () => {
+    expect(await encodeText({ a: 1 }, { replacer: () => undefined })).toBe('')
+  })
+
+  test('writes an empty stream as an empty array', async () => {
+    expect(await encodeText(streamOf([]))).toBe('[]')
+  })
+
   test('replaces the root value', async () => {
     expect(
       await encodeText({ a: 1 }, { replacer: (key, value) => (key === '' ? [1] : value) }),
