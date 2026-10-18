@@ -131,6 +131,18 @@ describe('verify', () => {
     }
   })
 
+  test('accepts only the same second when tolerance is 0', async () => {
+    const now = new Date(1_700_000_000_500)
+    const options = { scheme: 'stripe', secret, tolerance: 0, now } as const
+    const same = await Webhooks.sign('{}', { scheme: 'stripe', secret, timestamp: now })
+    expect((await Webhooks.verify({ headers: same, body: '{}' }, options)).body).toBe('{}')
+    const timestamp = new Date(now.getTime() - 1000)
+    const before = await Webhooks.sign('{}', { scheme: 'stripe', secret, timestamp })
+    expect(await reasonOf(Webhooks.verify({ headers: before, body: '{}' }, options))).toBe(
+      'timestamp',
+    )
+  })
+
   test('checks the signature before the timestamp', async () => {
     const headers = await Webhooks.sign('{}', { scheme: 'stripe', secret, timestamp: new Date(0) })
     expect(

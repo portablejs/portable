@@ -215,7 +215,7 @@ export async function sign(
   if (!format) throw new TypeError(`Unknown scheme ${String(scheme)}`)
   const key = format.key(options.secret)
   const seconds = Math.floor(timestamp.getTime() / 1000)
-  const id = options.id ?? (format.idHeader === 'webhook-id' ? randomId() : undefined)
+  const id = options.id ?? (format.signsId ? randomId() : undefined)
   const prefix = format.prefix(String(seconds), id ?? '')
   const bytes = typeof body === 'string' ? utf8.encode(body) : body
   const signature = await hmac(key, concat(utf8.encode(prefix), bytes))
@@ -230,7 +230,7 @@ type Signed = {
 }
 
 type Format = {
-  idHeader: string | undefined
+  signsId: boolean
   key: (secret: Secret) => Uint8Array<ArrayBuffer>
   read: (get: HeaderReader) => Signed
   prefix: (stamp: string, id: string) => string
@@ -291,7 +291,7 @@ function standard(name: 'webhook' | 'svix'): Format {
   const names = (suffix: string) =>
     name === 'svix' ? [`svix-${suffix}`, `webhook-${suffix}`] : [`webhook-${suffix}`]
   return {
-    idHeader: 'webhook-id',
+    signsId: true,
     key: base64Key,
     read(get) {
       const id = required(get, ...names('id'))
@@ -326,7 +326,7 @@ const formats: Record<Scheme, Format> = {
   standard: standard('webhook'),
   svix: standard('svix'),
   stripe: {
-    idHeader: undefined,
+    signsId: false,
     key: textKey,
     read(get) {
       const header = required(get, 'stripe-signature')
@@ -357,7 +357,7 @@ const formats: Record<Scheme, Format> = {
     }),
   },
   github: {
-    idHeader: 'x-github-delivery',
+    signsId: false,
     key: textKey,
     read(get) {
       const header = required(get, 'x-hub-signature-256')
@@ -378,7 +378,7 @@ const formats: Record<Scheme, Format> = {
     }),
   },
   slack: {
-    idHeader: undefined,
+    signsId: false,
     key: textKey,
     read(get) {
       const header = required(get, 'x-slack-signature')
