@@ -1,0 +1,96 @@
+{
+  "name": "@portable/charset",
+  "description": "Encode text into legacy charsets such as Shift_JIS, GBK and windows-1251, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev",
+    "generate": "node scripts/generate.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "iconv-lite": "^0.7.3"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/charset"
+  },
+  "keywords": [
+    "charset",
+    "encoding",
+    "iconv",
+    "iconv-lite",
+    "shift_jis",
+    "gbk",
+    "gb18030",
+    "big5",
+    "euc-kr",
+    "euc-jp",
+    "iso-2022-jp",
+    "windows-1252",
+    "whatwg"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./single-byte": {
+      "src": "./src/single-byte.ts",
+      "types": "./dist/single-byte.d.ts",
+      "default": "./dist/single-byte.js"
+    },
+    "./shift_jis": {
+      "src": "./src/shift_jis.ts",
+      "types": "./dist/shift_jis.d.ts",
+      "default": "./dist/shift_jis.js"
+    },
+    "./euc-jp": {
+      "src": "./src/euc-jp.ts",
+      "types": "./dist/euc-jp.d.ts",
+      "default": "./dist/euc-jp.js"
+    },
+    "./iso-2022-jp": {
+      "src": "./src/iso-2022-jp.ts",
+      "types": "./dist/iso-2022-jp.d.ts",
+      "default": "./dist/iso-2022-jp.js"
+    },
+    "./gbk": {
+      "src": "./src/gbk.ts",
+      "types": "./dist/gbk.d.ts",
+      "default": "./dist/gbk.js"
+    },
+    "./big5": {
+      "src": "./src/big5.ts",
+      "types": "./dist/big5.d.ts",
+      "default": "./dist/big5.js"
+    },
+    "./euc-kr": {
+      "src": "./src/euc-kr.ts",
+      "types": "./dist/euc-kr.d.ts",
+      "default": "./dist/euc-kr.js"
+    },
+    "./utf-16": {
+      "src": "./src/utf-16.ts",
+      "types": "./dist/utf-16.d.ts",
+      "default": "./dist/utf-16.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
