@@ -81,6 +81,16 @@ importers:
         specifier: ^0.7.3
         version: 0.7.3
 
+  packages/dns:
+    dependencies:
+      '@portable/dns-packet':
+        specifier: workspace:*
+        version: link:../dns-packet
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+
   packages/dns-packet:
     devDependencies:
       '@types/dns-packet':

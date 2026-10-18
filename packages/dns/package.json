@@ -1,0 +1,51 @@
+{
+  "name": "@portable/dns",
+  "description": "DNS lookups over DNS-over-HTTPS, behind a resolver interface that node:dns/promises also fits, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "dependencies": {
+    "@portable/dns-packet": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/dns"
+  },
+  "keywords": [
+    "dns",
+    "doh",
+    "dns-over-https",
+    "resolver",
+    "resolveTxt",
+    "resolveMx",
+    "rfc8484"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
