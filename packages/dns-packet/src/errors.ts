@@ -1,14 +1,15 @@
 /**
- * Thrown by `decode` when the input ends before the packet does, or a length field points past the end.
+ * Thrown by `decode` when the input ends before the message does, or a length field points past
+ * the end. With `framing: 'tcp'`, this also means the whole message hasn't arrived yet.
  *
  * @example
  * ```ts
- * import { decode, TruncatedError } from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet'
  *
  * try {
- *   decode(new Uint8Array(4))
+ *   DnsPacket.decode(new Uint8Array(4))
  * } catch (error) {
- *   if (error instanceof TruncatedError) console.log('incomplete packet')
+ *   if (error instanceof DnsPacket.TruncatedError) console.log('incomplete message')
  * }
  * ```
  */
@@ -17,58 +18,41 @@ export class TruncatedError extends Error {
 }
 
 /**
- * Thrown when a domain name can't be encoded or decoded: an empty label, a label over 63 bytes,
- * a name over 255 bytes, or an unknown label type.
+ * Thrown for malformed input. When decoding: an unknown label type, a name over 255 bytes, a
+ * compression pointer that doesn't point backwards (so loops are rejected), or record data that
+ * doesn't match its type. When encoding: an empty label or one over 63 bytes, an invalid IP
+ * address, a TXT string over 255 bytes, an OPT record whose name isn't the root, and so on.
  *
  * @example
  * ```ts
- * import { encode, InvalidNameError } from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet'
  *
  * try {
- *   encode({ questions: [{ type: 'A', name: 'a..b' }] })
+ *   DnsPacket.encode({ answers: [{ type: 'A', name: 'example.com', data: '300.0.0.1' }] })
  * } catch (error) {
- *   if (error instanceof InvalidNameError) console.log(error.message)
+ *   if (error instanceof DnsPacket.InvalidInputError) console.log(error.message)
  * }
  * ```
  */
-export class InvalidNameError extends Error {
-  override name = 'DnsPacket.InvalidNameError'
+export class InvalidInputError extends Error {
+  override name = 'DnsPacket.InvalidInputError'
 }
 
 /**
- * Thrown by `decode` when a compression pointer doesn't point strictly before the name that
- * contains it. Every pointer must move backwards, so a loop is reported with this error.
+ * Thrown by `encode` for an EDNS option that has no `data` and no built-in encoder. Only
+ * CLIENT_SUBNET, TCP_KEEPALIVE, PADDING and KEY_TAG are built in.
  *
  * @example
  * ```ts
- * import { decode, InvalidPointerError } from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet'
  *
  * try {
- *   decode(bytes)
+ *   DnsPacket.encode({ additionals: [{ type: 'OPT', name: '.', options: [{ code: 'NSID' }] }] })
  * } catch (error) {
- *   if (error instanceof InvalidPointerError) console.log('compression loop')
+ *   if (error instanceof DnsPacket.UnsupportedError) console.log('pass the option as data')
  * }
  * ```
  */
-export class InvalidPointerError extends Error {
-  override name = 'DnsPacket.InvalidPointerError'
-}
-
-/**
- * Thrown when record data doesn't match its type: an invalid IP address, a TXT string over
- * 255 bytes, a DNSKEY protocol other than 3, an OPT record whose name isn't the root, and so on.
- *
- * @example
- * ```ts
- * import { encode, InvalidRecordError } from '@portable/dns-packet'
- *
- * try {
- *   encode({ answers: [{ type: 'A', name: 'example.com', data: '300.0.0.1' }] })
- * } catch (error) {
- *   if (error instanceof InvalidRecordError) console.log(error.message)
- * }
- * ```
- */
-export class InvalidRecordError extends Error {
-  override name = 'DnsPacket.InvalidRecordError'
+export class UnsupportedError extends Error {
+  override name = 'DnsPacket.UnsupportedError'
 }

@@ -1,8 +1,14 @@
-import * as classes from './classes.js'
-import { InvalidRecordError, TruncatedError } from './errors.js'
-import * as opcodes from './opcodes.js'
-import * as optioncodes from './optioncodes.js'
-import * as rcodes from './rcodes.js'
+import {
+  classes,
+  opcodes,
+  rcodes,
+  types,
+  type Opcode,
+  type Rcode,
+  type RecordClass,
+  type RecordType,
+} from './codes.js'
+import { InvalidInputError, TruncatedError } from './errors.js'
 import {
   codecs,
   ednsOptionLength,
@@ -10,12 +16,10 @@ import {
   readEdnsOption,
   unknown,
   type Codec,
-  type DecodedEdnsOption,
   type DecodedRecordData,
   type EdnsOption,
   type RecordData,
 } from './records.js'
-import * as types from './types.js'
 import {
   nameLength,
   need,
@@ -27,114 +31,124 @@ import {
   u16,
   u32,
   u8,
+  within,
   type Reader,
   type Writer,
 } from './wire.js'
 
-/** A question: the name and type being looked up. */
-export type Question = {
-  type: types.RecordType
-  name: string
-  /** @default 'IN' */
-  class?: classes.RecordClass | undefined
+/** Header flags. Each is one bit of the header; a missing flag is clear. */
+export type Flags = {
+  /** AA: the answer comes from a server authoritative for the name. */
+  aa?: boolean | undefined
+  /** TC: the message was truncated to fit the transport. */
+  tc?: boolean | undefined
+  /** RD: ask the server to resolve the query recursively. */
+  rd?: boolean | undefined
+  /** RA: the server supports recursion. */
+  ra?: boolean | undefined
+  /** AD: the server validated the answer with DNSSEC. */
+  ad?: boolean | undefined
+  /** CD: the server should not validate DNSSEC. */
+  cd?: boolean | undefined
 }
 
-/** A question as `decode` returns it. */
-export type DecodedQuestion = { type: types.RecordType; name: string; class: classes.RecordClass }
+/** A question: the name, type and class being looked up. */
+export type Question = {
+  name: string
+  type: RecordType
+  /** @default 'IN' */
+  class?: RecordClass | undefined
+  /** The mDNS unicast-response bit, the top bit of the class field (RFC 6762). */
+  qu?: boolean | undefined
+}
 
 type KnownType = keyof RecordData
 
-/** A record type that has no codec here. Its data is the raw RDATA bytes. */
-export type UnknownType = Exclude<types.RecordType, KnownType | 'OPT'>
+/** A record type with no codec here. Its `data` is the raw RDATA. */
+export type UnknownType = Exclude<RecordType, KnownType | 'OPT'>
 
-type RecordFields = {
+type Fields = {
   name: string
   /** Time to live in seconds. @default 0 */
   ttl?: number | undefined
   /** @default 'IN' */
-  class?: classes.RecordClass | undefined
-  /** The mDNS cache-flush bit, the top bit of the class field. */
+  class?: RecordClass | undefined
+  /** The mDNS cache-flush bit, the top bit of the class field (RFC 6762). */
   flush?: boolean | undefined
 }
 
-type DecodedRecordFields = {
-  name: string
-  ttl: number
-  class: classes.RecordClass
-  flush: boolean
-}
-
-/** An EDNS OPT pseudo-record (RFC 6891). Its name must be the root, `'.'`. */
-export type OptAnswer = {
+/** The EDNS OPT pseudo-record (RFC 6891). It goes in `additionals`. */
+export type OptRecord = {
   type: 'OPT'
-  name: string
-  /** @default 4096 */
+  /** Always the root. @default '.' */
+  name?: '.' | undefined
+  /** Largest UDP response the sender accepts. @default 4096 */
   udpPayloadSize?: number | undefined
+  /** The upper 8 bits of the 12-bit response code. @default 0 */
   extendedRcode?: number | undefined
-  ednsVersion?: number | undefined
-  /** EDNS flags, such as `DNSSEC_OK`. */
-  flags?: number | undefined
+  /** @default 0 */
+  version?: number | undefined
+  /** DO: the sender wants DNSSEC records. */
+  dnssecOk?: boolean | undefined
   options?: readonly EdnsOption[] | undefined
 }
 
-/** An OPT record as `decode` returns it. */
-export type DecodedOptAnswer = {
-  type: 'OPT'
-  name: string
-  udpPayloadSize: number
-  extendedRcode: number
-  ednsVersion: number
-  flags: number
-  flag_do: boolean
-  options: DecodedEdnsOption[]
-}
-
 /** A resource record in the answer, authority or additional section. */
-export type Answer =
-  | { [T in KnownType]: RecordFields & { type: T; data: RecordData[T] } }[KnownType]
-  | (RecordFields & { type: UnknownType; data: Uint8Array })
-  | OptAnswer
+export type ResourceRecord =
+  | { [T in KnownType]: Fields & { type: T; data: RecordData[T] } }[KnownType]
+  | (Fields & { type: UnknownType; data: Uint8Array })
+  | OptRecord
 
-/** A resource record as `decode` returns it. */
-export type DecodedAnswer =
-  | { [T in KnownType]: DecodedRecordFields & { type: T; data: DecodedRecordData[T] } }[KnownType]
-  | (DecodedRecordFields & { type: UnknownType; data: Uint8Array })
-  | DecodedOptAnswer
-
-/** A DNS message to encode. Missing sections are empty. */
+/** A DNS message to encode. Missing fields take their defaults and missing sections are empty. */
 export type Packet = {
-  /** Sets the QR bit. @default 'query' */
-  type?: 'query' | 'response' | undefined
   /** @default 0 */
   id?: number | undefined
-  /** The header bits below QR: opcode, AA, TC, RD, RA, Z, AD, CD and rcode. @default 0 */
-  flags?: number | undefined
+  /** Sets the QR bit. @default 'query' */
+  type?: 'query' | 'response' | undefined
+  /** @default 'QUERY' */
+  opcode?: Opcode | undefined
+  /** @default 'NOERROR' */
+  rcode?: Rcode | undefined
+  flags?: Flags | undefined
   questions?: readonly Question[] | undefined
-  answers?: readonly Answer[] | undefined
-  authorities?: readonly Answer[] | undefined
-  additionals?: readonly Answer[] | undefined
+  answers?: readonly ResourceRecord[] | undefined
+  authorities?: readonly ResourceRecord[] | undefined
+  additionals?: readonly ResourceRecord[] | undefined
 }
 
-/** A DNS message as `decode` returns it, with the header flags split out. */
+/** A question as `decode` returns it. */
+export type DecodedQuestion = { name: string; type: RecordType; class: RecordClass; qu: boolean }
+
+type DecodedFields = { name: string; ttl: number; class: RecordClass; flush: boolean }
+
+/** An OPT record as `decode` returns it. */
+export type DecodedOptRecord = {
+  type: 'OPT'
+  name: '.'
+  udpPayloadSize: number
+  extendedRcode: number
+  version: number
+  dnssecOk: boolean
+  options: EdnsOption[]
+}
+
+/** A resource record as `decode` returns it. */
+export type DecodedResourceRecord =
+  | { [T in KnownType]: DecodedFields & { type: T; data: DecodedRecordData[T] } }[KnownType]
+  | (DecodedFields & { type: UnknownType; data: Uint8Array })
+  | DecodedOptRecord
+
+/** A DNS message as `decode` returns it, with every field present. */
 export type DecodedPacket = {
   id: number
   type: 'query' | 'response'
-  /** The header bits below QR. */
-  flags: number
-  flag_qr: boolean
-  opcode: opcodes.Opcode
-  flag_aa: boolean
-  flag_tc: boolean
-  flag_rd: boolean
-  flag_ra: boolean
-  flag_z: boolean
-  flag_ad: boolean
-  flag_cd: boolean
-  rcode: rcodes.Rcode
+  opcode: Opcode
+  rcode: Rcode
+  flags: { [K in keyof Flags]-?: boolean }
   questions: DecodedQuestion[]
-  answers: DecodedAnswer[]
-  authorities: DecodedAnswer[]
-  additionals: DecodedAnswer[]
+  answers: DecodedResourceRecord[]
+  authorities: DecodedResourceRecord[]
+  additionals: DecodedResourceRecord[]
 }
 
 type AnyCodec = Codec<unknown, unknown>
@@ -142,168 +156,136 @@ type AnyCodec = Codec<unknown, unknown>
 const codecFor = (type: string): AnyCodec =>
   (Object.hasOwn(codecs, type) ? codecs[type as KnownType] : unknown) as AnyCodec
 
-const empty: readonly never[] = []
-const FLUSH = 0x8000
+const none: readonly never[] = []
+const TOP_BIT = 0x8000
 
-function questionLength(q: Question): number {
-  return nameLength(q.name) + 4
-}
+const flagBits = { aa: 0x400, tc: 0x200, rd: 0x100, ra: 0x80, ad: 0x20, cd: 0x10 } as const
+const flagNames = Object.keys(flagBits) as (keyof typeof flagBits)[]
 
-function answerLength(answer: Answer): number {
-  const base = nameLength(answer.name) + 10
-  if (answer.type === 'OPT') {
-    let length = base
-    for (const option of answer.options ?? empty)
-      length += ednsOptionLength(option, optioncodes.toCode(option.code))
+function recordLength(record: ResourceRecord): number {
+  if (record.type === 'OPT') {
+    let length = 11
+    for (const option of record.options ?? none) length += ednsOptionLength(option)
     return length
   }
-  return base + codecFor(answer.type).length(answer.data)
+  return nameLength(record.name) + 10 + codecFor(record.type).length(record.data)
 }
 
-function sectionLength(answers: readonly Answer[]): number {
+function sectionLength(records: readonly ResourceRecord[]): number {
   let length = 0
-  for (const answer of answers) length += answerLength(answer)
+  for (const record of records) length += recordLength(record)
   return length
 }
 
-/**
- * Returns the number of bytes `encode` writes for `packet` without name compression. With
- * `compress: true`, `encode` returns this many bytes or fewer.
- *
- * @example
- * ```ts
- * import { encodingLength } from '@portable/dns-packet'
- *
- * encodingLength({ questions: [{ type: 'A', name: 'example.com' }] }) // 29
- * ```
- */
-export function encodingLength(packet: Packet): number {
+/** Returns the uncompressed length of `packet`, checking every name and record on the way. */
+function encodingLength(packet: Packet): number {
   let length = 12
-  for (const q of packet.questions ?? empty) length += questionLength(q)
+  for (const q of packet.questions ?? none) length += nameLength(q.name) + 4
   return (
     length +
-    sectionLength(packet.answers ?? empty) +
-    sectionLength(packet.authorities ?? empty) +
-    sectionLength(packet.additionals ?? empty)
+    sectionLength(packet.answers ?? none) +
+    sectionLength(packet.authorities ?? none) +
+    sectionLength(packet.additionals ?? none)
   )
 }
 
-function putAnswer(w: Writer, answer: Answer): void {
-  putName(w, answer.name, true)
-  putU16(w, types.toType(answer.type))
-  if (answer.type === 'OPT') {
-    if (answer.name !== '.') throw new InvalidRecordError('OPT name must be root.')
-    putU16(w, answer.udpPayloadSize || 4096)
-    putU8(w, answer.extendedRcode || 0)
-    putU8(w, answer.ednsVersion || 0)
-    putU16(w, answer.flags || 0)
+function finishRdata(w: Writer, start: number): void {
+  const length = w.offset - start
+  w.bytes[start - 2] = length >>> 8
+  w.bytes[start - 1] = length
+}
+
+function putRecord(w: Writer, record: ResourceRecord): void {
+  if (record.type === 'OPT') {
+    if ((record.name ?? '.') !== '.') throw new InvalidInputError('An OPT record name must be ".".')
+    putU8(w, 0)
+    putU16(w, 41)
+    putU16(w, record.udpPayloadSize ?? 4096)
+    putU8(w, record.extendedRcode ?? 0)
+    putU8(w, record.version ?? 0)
+    putU16(w, record.dnssecOk ? TOP_BIT : 0)
     const start = (w.offset += 2)
-    for (const option of answer.options ?? empty)
-      putEdnsOption(w, option, optioncodes.toCode(option.code))
-    w.bytes[start - 2] = (w.offset - start) >>> 8
-    w.bytes[start - 1] = w.offset - start
+    for (const option of record.options ?? none) putEdnsOption(w, option)
+    finishRdata(w, start)
     return
   }
-  let klass = classes.toClass(answer.class ?? 'IN')
-  if (answer.flush) klass |= FLUSH
-  putU16(w, klass)
-  putU32(w, answer.ttl || 0)
+  putName(w, record.name, true)
+  putU16(w, types.value(record.type))
+  putU16(w, classes.value(record.class ?? 'IN') | (record.flush ? TOP_BIT : 0))
+  putU32(w, record.ttl ?? 0)
   const start = (w.offset += 2)
-  codecFor(answer.type).write(w, answer.data)
-  w.bytes[start - 2] = (w.offset - start) >>> 8
-  w.bytes[start - 1] = w.offset - start
+  codecFor(record.type).write(w, record.data)
+  finishRdata(w, start)
 }
 
 export declare namespace encode {
   type Options = {
     /**
-     * Replace repeated domain names with pointers (RFC 1035 section 4.1.4). Applies to owner
-     * names and to names inside NS, CNAME, PTR, MX and SOA records. Off by default, so the output
-     * matches dns-packet byte for byte.
+     * Replace repeated names with pointers to their first copy (RFC 1035 section 4.1.4). Applies
+     * to owner names and to names inside NS, CNAME, PTR, MX and SOA records.
      * @default false
      */
     compress?: boolean | undefined
+    /** `'tcp'` adds the 2-byte length prefix used over TCP and TLS (RFC 1035 section 4.2.2). @default 'none' */
+    framing?: 'none' | 'tcp' | undefined
   }
 }
 
 /**
- * Encodes a DNS message into its wire format, as sent over UDP or in a DNS-over-HTTPS body.
+ * Encodes a DNS message into its wire format, as sent over UDP or as a DNS-over-HTTPS body.
+ * Throws `InvalidInputError` for a name, address or record that can't be encoded, and
+ * `UnsupportedError` for an EDNS option with no `data` and no built-in encoder.
  *
  * @example
  * ```ts
- * import { encode, RECURSION_DESIRED } from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet'
  *
- * const query = encode({
+ * const query = DnsPacket.encode({
  *   id: 1,
- *   flags: RECURSION_DESIRED,
- *   questions: [{ type: 'A', name: 'example.com' }],
+ *   flags: { rd: true },
+ *   questions: [{ name: 'example.com', type: 'A' }],
  * })
  * ```
  */
 export function encode(packet: Packet, options: encode.Options = {}): Uint8Array {
-  const length = encodingLength(packet)
+  const tcp = options.framing === 'tcp'
+  const length = encodingLength(packet) + (tcp ? 2 : 0)
+  if (tcp && length > 0xffff + 2)
+    throw new InvalidInputError('A TCP message is limited to 65535 bytes.')
   const w: Writer = {
     bytes: new Uint8Array(length),
-    offset: 0,
+    offset: tcp ? 2 : 0,
+    start: tcp ? 2 : 0,
     names: options.compress ? new Map() : undefined,
   }
-  const questions = packet.questions ?? empty
-  const answers = packet.answers ?? empty
-  const authorities = packet.authorities ?? empty
-  const additionals = packet.additionals ?? empty
-  putU16(w, packet.id || 0)
-  putU16(w, ((packet.flags || 0) & 0x7fff) | (packet.type === 'response' ? 0x8000 : 0))
+  const questions = packet.questions ?? none
+  const answers = packet.answers ?? none
+  const authorities = packet.authorities ?? none
+  const additionals = packet.additionals ?? none
+  let bits =
+    (opcodes.value(packet.opcode ?? 'QUERY') << 11) | rcodes.value(packet.rcode ?? 'NOERROR')
+  if (packet.type === 'response') bits |= TOP_BIT
+  for (const flag of flagNames) if (packet.flags?.[flag]) bits |= flagBits[flag]
+  putU16(w, packet.id ?? 0)
+  putU16(w, bits)
   putU16(w, questions.length)
   putU16(w, answers.length)
   putU16(w, authorities.length)
   putU16(w, additionals.length)
   for (const q of questions) {
     putName(w, q.name, true)
-    putU16(w, types.toType(q.type))
-    putU16(w, classes.toClass(q.class ?? 'IN'))
+    putU16(w, types.value(q.type))
+    putU16(w, classes.value(q.class ?? 'IN') | (q.qu ? TOP_BIT : 0))
   }
-  for (const answer of answers) putAnswer(w, answer)
-  for (const answer of authorities) putAnswer(w, answer)
-  for (const answer of additionals) putAnswer(w, answer)
+  for (const record of answers) putRecord(w, record)
+  for (const record of authorities) putRecord(w, record)
+  for (const record of additionals) putRecord(w, record)
+  if (tcp) {
+    const size = w.offset - 2
+    w.bytes[0] = size >>> 8
+    w.bytes[1] = size
+  }
   return w.offset === length ? w.bytes : w.bytes.subarray(0, w.offset)
-}
-
-function readAnswer(r: Reader): DecodedAnswer {
-  const end = r.bytes.length
-  const name = readName(r, end)
-  const type = types.toString(u16(r, end))
-  if (type === 'OPT') {
-    const udpPayloadSize = u16(r, end)
-    const extendedRcode = u8(r, end)
-    const ednsVersion = u8(r, end)
-    const flags = u16(r, end)
-    const rdEnd = rdataEnd(r)
-    const options: DecodedEdnsOption[] = []
-    while (r.offset < rdEnd) options.push(readEdnsOption(r, rdEnd, optioncodes.toString))
-    return {
-      name,
-      type,
-      udpPayloadSize,
-      extendedRcode,
-      ednsVersion,
-      flags,
-      flag_do: (flags & 0x8000) !== 0,
-      options,
-    }
-  }
-  const klass = u16(r, end)
-  const ttl = u32(r, end)
-  const rdEnd = rdataEnd(r)
-  const data = codecFor(type).read(r, rdEnd)
-  r.offset = rdEnd
-  return {
-    name,
-    type,
-    ttl,
-    class: classes.toString(klass & ~FLUSH),
-    flush: (klass & FLUSH) !== 0,
-    data,
-  } as DecodedAnswer
 }
 
 function rdataEnd(r: Reader): number {
@@ -312,102 +294,104 @@ function rdataEnd(r: Reader): number {
   return r.offset + length
 }
 
+function readRecord(r: Reader): DecodedResourceRecord {
+  const end = r.bytes.length
+  const name = readName(r, end)
+  const type = types.name(u16(r, end))
+  if (type === 'OPT') {
+    if (name !== '.') throw new InvalidInputError('An OPT record name must be ".".')
+    const udpPayloadSize = u16(r, end)
+    const extendedRcode = u8(r, end)
+    const version = u8(r, end)
+    const dnssecOk = (u16(r, end) & TOP_BIT) !== 0
+    const rdEnd = rdataEnd(r)
+    const options: EdnsOption[] = []
+    while (r.offset < rdEnd) options.push(within('OPT', () => readEdnsOption(r, rdEnd)))
+    return { type, name, udpPayloadSize, extendedRcode, version, dnssecOk, options }
+  }
+  const klass = u16(r, end)
+  const ttl = u32(r, end)
+  const rdEnd = rdataEnd(r)
+  const data = within(type, () => codecFor(type).read(r, rdEnd))
+  if (r.offset !== rdEnd) throw new InvalidInputError(`${type} record data has trailing bytes.`)
+  return {
+    type,
+    name,
+    ttl,
+    class: classes.name(klass & ~TOP_BIT),
+    flush: (klass & TOP_BIT) !== 0,
+    data,
+  } as DecodedResourceRecord
+}
+
+export declare namespace decode {
+  type Options = {
+    /** `'tcp'` reads the 2-byte length prefix used over TCP and TLS first. @default 'none' */
+    framing?: 'none' | 'tcp' | undefined
+  }
+}
+
 /**
  * Decodes a DNS message from its wire format. Compression pointers are followed, and each must
- * point before the name that contains it. Throws `TruncatedError`, `InvalidNameError`,
- * `InvalidPointerError` or `InvalidRecordError` on malformed input. Bytes after the last record
- * are ignored.
+ * point backwards, so a pointer loop can't hang the decoder. Bytes after the message are ignored.
+ * Throws `TruncatedError` when the input ends early (with `framing: 'tcp'`, also when the whole
+ * message hasn't arrived yet) and `InvalidInputError` for malformed input.
  *
  * @example
  * ```ts
- * import { decode } from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet'
  *
  * const response = await fetch('https://cloudflare-dns.com/dns-query', {
  *   method: 'POST',
  *   headers: { 'content-type': 'application/dns-message' },
  *   body: query,
  * })
- * const packet = decode(new Uint8Array(await response.arrayBuffer()))
+ * const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
  * for (const answer of packet.answers) if (answer.type === 'A') console.log(answer.data)
  * ```
  */
-export function decode(bytes: Uint8Array): DecodedPacket {
+export function decode(bytes: Uint8Array, options: decode.Options = {}): DecodedPacket {
+  if (options.framing === 'tcp') {
+    if (bytes.length < 2) throw new TruncatedError('The TCP length prefix is 2 bytes.')
+    const length = (bytes[0]! << 8) | bytes[1]!
+    if (bytes.length < length + 2)
+      throw new TruncatedError(`The message is ${length} bytes, and ${bytes.length - 2} arrived.`)
+    bytes = bytes.subarray(2, 2 + length)
+  }
   if (bytes.length < 12) throw new TruncatedError('A DNS header is 12 bytes.')
   const r: Reader = { bytes, offset: 0 }
   const end = bytes.length
   const id = u16(r, end)
-  const flags = u16(r, end)
+  const bits = u16(r, end)
   const counts = [u16(r, end), u16(r, end), u16(r, end), u16(r, end)] as const
   const questions: DecodedQuestion[] = []
   for (let i = 0; i < counts[0]; i++) {
     const name = readName(r, end)
-    questions.push({
-      name,
-      type: types.toString(u16(r, end)),
-      class: classes.toString(u16(r, end)),
-    })
+    const type = types.name(u16(r, end))
+    const klass = u16(r, end)
+    questions.push({ name, type, class: classes.name(klass & ~TOP_BIT), qu: klass >= TOP_BIT })
   }
   const section = (count: number) => {
-    const answers: DecodedAnswer[] = []
-    for (let i = 0; i < count; i++) answers.push(readAnswer(r))
-    return answers
+    const records: DecodedResourceRecord[] = []
+    for (let i = 0; i < count; i++) records.push(readRecord(r))
+    return records
   }
   return {
     id,
-    type: flags & 0x8000 ? 'response' : 'query',
-    flags: flags & 0x7fff,
-    flag_qr: (flags & 0x8000) !== 0,
-    opcode: opcodes.toString((flags >> 11) & 0xf),
-    flag_aa: (flags & 0x400) !== 0,
-    flag_tc: (flags & 0x200) !== 0,
-    flag_rd: (flags & 0x100) !== 0,
-    flag_ra: (flags & 0x80) !== 0,
-    flag_z: (flags & 0x40) !== 0,
-    flag_ad: (flags & 0x20) !== 0,
-    flag_cd: (flags & 0x10) !== 0,
-    rcode: rcodes.toString(flags & 0xf),
+    type: bits & TOP_BIT ? 'response' : 'query',
+    opcode: opcodes.name((bits >> 11) & 0xf),
+    rcode: rcodes.name(bits & 0xf),
+    flags: {
+      aa: (bits & flagBits.aa) !== 0,
+      tc: (bits & flagBits.tc) !== 0,
+      rd: (bits & flagBits.rd) !== 0,
+      ra: (bits & flagBits.ra) !== 0,
+      ad: (bits & flagBits.ad) !== 0,
+      cd: (bits & flagBits.cd) !== 0,
+    },
     questions,
     answers: section(counts[1]),
     authorities: section(counts[2]),
     additionals: section(counts[3]),
   }
-}
-
-/**
- * Encodes a DNS message with the 2-byte length prefix used over TCP and TLS (RFC 1035 section 4.2.2).
- *
- * @example
- * ```ts
- * import { streamEncode } from '@portable/dns-packet'
- *
- * const frame = streamEncode({ questions: [{ type: 'MX', name: 'example.com' }] })
- * ```
- */
-export function streamEncode(packet: Packet, options: encode.Options = {}): Uint8Array {
-  const message = encode(packet, options)
-  const frame = new Uint8Array(message.length + 2)
-  frame[0] = message.length >>> 8
-  frame[1] = message.length
-  frame.set(message, 2)
-  return frame
-}
-
-/**
- * Decodes a length-prefixed DNS message, as read from a TCP or TLS connection. Returns `null`
- * when `bytes` doesn't hold the whole message yet. The message takes `2 + length` bytes, where
- * `length` is the big-endian prefix, so the next message starts there.
- *
- * @example
- * ```ts
- * import { streamDecode } from '@portable/dns-packet'
- *
- * const packet = streamDecode(received)
- * if (packet === null) console.log('wait for more bytes')
- * ```
- */
-export function streamDecode(bytes: Uint8Array): DecodedPacket | null {
-  if (bytes.length < 2) return null
-  const length = (bytes[0]! << 8) | bytes[1]!
-  if (bytes.length < length + 2) return null
-  return decode(bytes.subarray(2, 2 + length))
 }

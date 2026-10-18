@@ -1,9 +1,8 @@
-import { InvalidRecordError } from './errors.js'
-import * as types from './types.js'
+import { types, optionCodes, type OptionCode, type RecordType } from './codes.js'
+import { InvalidInputError, UnsupportedError } from './errors.js'
 import {
   bytes,
   bytesOf,
-  familyOf,
   nameLength,
   need,
   putBytes,
@@ -20,11 +19,13 @@ import {
   readName,
   readString,
   readText,
+  rest,
   stringLength,
   u16,
   u32,
   u8,
   utf8Length,
+  within,
   type Reader,
   type Writer,
 } from './wire.js'
@@ -36,83 +37,24 @@ export type Codec<In, Out> = {
   read(r: Reader, end: number): Out
 }
 
-/** Record data accepted by `encode`, by record type. */
-export type RecordData = {
-  A: string
-  AAAA: string
-  CNAME: string
-  DNAME: string
-  NS: string
-  PTR: string
-  MX: { preference?: number | undefined; exchange: string }
-  SOA: {
-    mname: string
-    rname: string
-    serial?: number | undefined
-    refresh?: number | undefined
-    retry?: number | undefined
-    expire?: number | undefined
-    minimum?: number | undefined
-  }
-  SRV: {
-    priority?: number | undefined
-    weight?: number | undefined
-    port?: number | undefined
-    target: string
-  }
-  TXT: string | Uint8Array | readonly (string | Uint8Array)[]
-  NULL: string | Uint8Array | undefined
-  HINFO: { cpu: string; os: string }
-  CAA: {
-    flags?: number | undefined
-    tag: string
-    value: string
-    issuerCritical?: boolean | undefined
-  }
-  NAPTR: {
-    order?: number | undefined
-    preference?: number | undefined
-    flags: string
-    services: string
-    regexp: string
-    replacement: string
-  }
-  TLSA: { usage: number; selector: number; matchingType: number; certificate: Uint8Array }
-  SSHFP: { algorithm: number; hash: number; fingerprint: string }
-  DS: { keyTag: number; algorithm: number; digestType: number; digest: Uint8Array }
-  DNSKEY: { flags: number; algorithm: number; key: Uint8Array }
-  RRSIG: {
-    typeCovered: types.RecordType
-    algorithm: number
-    labels: number
-    originalTTL: number
-    expiration: number
-    inception: number
-    keyTag: number
-    signersName: string
-    signature: Uint8Array
-  }
-  RP: { mbox?: string | undefined; txt?: string | undefined }
-  NSEC: { nextDomain: string; rrtypes: readonly types.RecordType[] }
-  NSEC3: {
-    algorithm: number
-    flags: number
-    iterations: number
-    salt: Uint8Array
-    nextDomain: Uint8Array
-    rrtypes: readonly types.RecordType[]
-  }
-}
+type DigestData = { keyTag: number; algorithm: number; digestType: number; digest: Uint8Array }
+type KeyData = { flags: number; algorithm: number; key: Uint8Array }
 
-/** Record data returned by `decode`, by record type. */
-export type DecodedRecordData = {
+/**
+ * The `data` of each record type that has a codec. `decode` returns the same shapes, except that
+ * TXT strings always come back as `Uint8Array`.
+ */
+export type RecordData = {
+  /** An IPv4 address, such as `'192.0.2.1'`. */
   A: string
+  /** An IPv6 address. Decoded addresses are formatted as RFC 5952 recommends. */
   AAAA: string
   CNAME: string
   DNAME: string
   NS: string
   PTR: string
   MX: { preference: number; exchange: string }
+  /** `rname` is a mailbox written as a name: `hostmaster.example.com`, or `host\.master.example.com` for a dot in the local part. */
   SOA: {
     mname: string
     rname: string
@@ -123,10 +65,12 @@ export type DecodedRecordData = {
     minimum: number
   }
   SRV: { priority: number; weight: number; port: number; target: string }
-  TXT: Uint8Array[]
+  /** The character-strings of the record. A record holds one or more, each up to 255 bytes. */
+  TXT: readonly (string | Uint8Array)[]
   NULL: Uint8Array
   HINFO: { cpu: string; os: string }
-  CAA: { flags: number; tag: string; value: string; issuerCritical: boolean }
+  /** `flags` is the whole flags byte. 128 is the issuer-critical bit. */
+  CAA: { flags: number; tag: string; value: string }
   NAPTR: {
     order: number
     preference: number
@@ -136,11 +80,14 @@ export type DecodedRecordData = {
     replacement: string
   }
   TLSA: { usage: number; selector: number; matchingType: number; certificate: Uint8Array }
-  SSHFP: { algorithm: number; hash: number; fingerprint: string }
-  DS: { keyTag: number; algorithm: number; digestType: number; digest: Uint8Array }
-  DNSKEY: { flags: number; algorithm: number; key: Uint8Array }
+  SSHFP: { algorithm: number; fingerprintType: number; fingerprint: Uint8Array }
+  DS: DigestData
+  CDS: DigestData
+  /** The protocol field is always 3 and isn't part of the object. */
+  DNSKEY: KeyData
+  CDNSKEY: KeyData
   RRSIG: {
-    typeCovered: types.RecordType
+    typeCovered: RecordType
     algorithm: number
     labels: number
     originalTTL: number
@@ -151,44 +98,36 @@ export type DecodedRecordData = {
     signature: Uint8Array
   }
   RP: { mbox: string; txt: string }
-  NSEC: { nextDomain: string; rrtypes: types.RecordType[] }
+  NSEC: { nextDomain: string; types: readonly RecordType[] }
   NSEC3: {
     algorithm: number
     flags: number
     iterations: number
     salt: Uint8Array
-    nextDomain: Uint8Array
-    rrtypes: types.RecordType[]
+    nextHashedOwner: Uint8Array
+    types: readonly RecordType[]
   }
 }
 
-const rest = (r: Reader, end: number) => bytes(r, end - r.offset, end)
+/** The `data` of each record type as `decode` returns it. */
+export type DecodedRecordData = Omit<RecordData, 'TXT'> & { TXT: Uint8Array[] }
 
-const a: Codec<string, string> = {
-  length: () => 4,
-  write: putIPv4,
+const address = (size: 4 | 16): Codec<string, string> => ({
+  length: () => size,
+  write: size === 4 ? putIPv4 : putIPv6,
   read(r, end) {
-    need(r, 4, end)
-    r.offset += 4
-    return readIPv4(r.bytes, r.offset - 4)
+    if (end - r.offset !== size)
+      throw new InvalidInputError(`An address record must hold ${size} bytes.`)
+    r.offset += size
+    return size === 4 ? readIPv4(r.bytes, end - 4) : readIPv6(r.bytes, end - 16)
   },
-}
-
-const aaaa: Codec<string, string> = {
-  length: () => 16,
-  write: putIPv6,
-  read(r, end) {
-    need(r, 16, end)
-    r.offset += 16
-    return readIPv6(r.bytes, r.offset - 16)
-  },
-}
+})
 
 // RFC 3597 section 4 allows compression only inside the RDATA of the RFC 1035 types.
 const compressedName: Codec<string, string> = {
-  length: (name) => nameLength(name),
+  length: nameLength,
   write: (w, name) => putName(w, name, true),
-  read: (r, end) => readName(r, end),
+  read: readName,
 }
 
 const name: Codec<string, string> = {
@@ -196,29 +135,29 @@ const name: Codec<string, string> = {
   write: (w, name) => putName(w, name, false),
 }
 
-const mx: Codec<RecordData['MX'], DecodedRecordData['MX']> = {
+const mx: Codec<RecordData['MX'], RecordData['MX']> = {
   length: (data) => 2 + nameLength(data.exchange),
   write(w, data) {
-    putU16(w, data.preference || 0)
+    putU16(w, data.preference)
     putName(w, data.exchange, true)
   },
   read: (r, end) => ({ preference: u16(r, end), exchange: readName(r, end) }),
 }
 
-const soa: Codec<RecordData['SOA'], DecodedRecordData['SOA']> = {
-  length: (data) => 20 + nameLength(data.mname) + nameLength(data.rname, true),
+const soa: Codec<RecordData['SOA'], RecordData['SOA']> = {
+  length: (data) => 20 + nameLength(data.mname) + nameLength(data.rname),
   write(w, data) {
     putName(w, data.mname, true)
-    putName(w, data.rname, true, true)
-    putU32(w, data.serial || 0)
-    putU32(w, data.refresh || 0)
-    putU32(w, data.retry || 0)
-    putU32(w, data.expire || 0)
-    putU32(w, data.minimum || 0)
+    putName(w, data.rname, true)
+    putU32(w, data.serial)
+    putU32(w, data.refresh)
+    putU32(w, data.retry)
+    putU32(w, data.expire)
+    putU32(w, data.minimum)
   },
   read: (r, end) => ({
     mname: readName(r, end),
-    rname: readName(r, end, true),
+    rname: readName(r, end),
     serial: u32(r, end),
     refresh: u32(r, end),
     retry: u32(r, end),
@@ -227,12 +166,12 @@ const soa: Codec<RecordData['SOA'], DecodedRecordData['SOA']> = {
   }),
 }
 
-const srv: Codec<RecordData['SRV'], DecodedRecordData['SRV']> = {
+const srv: Codec<RecordData['SRV'], RecordData['SRV']> = {
   length: (data) => 6 + nameLength(data.target),
   write(w, data) {
-    putU16(w, data.priority || 0)
-    putU16(w, data.weight || 0)
-    putU16(w, data.port || 0)
+    putU16(w, data.priority)
+    putU16(w, data.weight)
+    putU16(w, data.port)
     putName(w, data.target, false)
   },
   read: (r, end) => ({
@@ -243,32 +182,15 @@ const srv: Codec<RecordData['SRV'], DecodedRecordData['SRV']> = {
   }),
 }
 
-function txtStrings(data: RecordData['TXT']): readonly (string | Uint8Array)[] {
-  const list = Array.isArray(data) ? data : [data]
-  for (const item of list)
-    if (typeof item !== 'string' && !(item instanceof Uint8Array))
-      throw new InvalidRecordError('TXT data must be strings or Uint8Arrays.')
-  return list
-}
-
 const txt: Codec<RecordData['TXT'], DecodedRecordData['TXT']> = {
   length(data) {
+    if (!Array.isArray(data)) throw new InvalidInputError('TXT data must be an array.')
     let length = 0
-    for (const item of txtStrings(data)) {
-      const size = typeof item === 'string' ? utf8Length(item) : item.length
-      if (size > 255) throw new InvalidRecordError('A TXT string is limited to 255 bytes.')
-      length += size + 1
-    }
+    for (const item of data) length += stringLength(item, 'A TXT string')
     return length
   },
   write(w, data) {
-    for (const item of txtStrings(data)) {
-      if (typeof item === 'string') putString(w, item)
-      else {
-        putU8(w, item.length)
-        putBytes(w, item)
-      }
-    }
+    for (const item of data) putString(w, item)
   },
   read(r, end) {
     const strings: Uint8Array[] = []
@@ -277,27 +199,14 @@ const txt: Codec<RecordData['TXT'], DecodedRecordData['TXT']> = {
   },
 }
 
-const nullBytes = (data: RecordData['NULL']): Uint8Array =>
-  data === undefined
-    ? new Uint8Array(0)
-    : typeof data === 'string'
-      ? new TextEncoder().encode(data)
-      : bytesOf(data, 'NULL data')
-
-const rnull: Codec<RecordData['NULL'], DecodedRecordData['NULL']> = {
-  length: (data) => nullBytes(data).length,
-  write: (w, data) => putBytes(w, nullBytes(data)),
-  read: rest,
-}
-
-export const unknown: Codec<Uint8Array, Uint8Array> = {
+const raw: Codec<Uint8Array, Uint8Array> = {
   length: (data) => bytesOf(data, 'Record data').length,
-  write: (w, data) => putBytes(w, data),
+  write: putBytes,
   read: rest,
 }
 
-const hinfo: Codec<RecordData['HINFO'], DecodedRecordData['HINFO']> = {
-  length: (data) => stringLength(data.cpu) + stringLength(data.os),
+const hinfo: Codec<RecordData['HINFO'], RecordData['HINFO']> = {
+  length: (data) => stringLength(data.cpu, 'HINFO cpu') + stringLength(data.os, 'HINFO os'),
   write(w, data) {
     putString(w, data.cpu)
     putString(w, data.os)
@@ -305,12 +214,10 @@ const hinfo: Codec<RecordData['HINFO'], DecodedRecordData['HINFO']> = {
   read: (r, end) => ({ cpu: readString(r, end), os: readString(r, end) }),
 }
 
-const ISSUER_CRITICAL = 0x80
-
-const caa: Codec<RecordData['CAA'], DecodedRecordData['CAA']> = {
-  length: (data) => 1 + stringLength(data.tag) + utf8Length(data.value),
+const caa: Codec<RecordData['CAA'], RecordData['CAA']> = {
+  length: (data) => 1 + stringLength(data.tag, 'CAA tag') + utf8Length(data.value),
   write(w, data) {
-    putU8(w, data.issuerCritical ? ISSUER_CRITICAL : data.flags || 0)
+    putU8(w, data.flags)
     putString(w, data.tag)
     putText(w, data.value)
   },
@@ -319,20 +226,20 @@ const caa: Codec<RecordData['CAA'], DecodedRecordData['CAA']> = {
     const tag = readString(r, end)
     const value = readText(r.bytes, r.offset, end)
     r.offset = end
-    return { flags, tag, value, issuerCritical: (flags & ISSUER_CRITICAL) !== 0 }
+    return { flags, tag, value }
   },
 }
 
-const naptr: Codec<RecordData['NAPTR'], DecodedRecordData['NAPTR']> = {
+const naptr: Codec<RecordData['NAPTR'], RecordData['NAPTR']> = {
   length: (data) =>
     4 +
-    stringLength(data.flags) +
-    stringLength(data.services) +
-    stringLength(data.regexp) +
+    stringLength(data.flags, 'NAPTR flags') +
+    stringLength(data.services, 'NAPTR services') +
+    stringLength(data.regexp, 'NAPTR regexp') +
     nameLength(data.replacement),
   write(w, data) {
-    putU16(w, data.order || 0)
-    putU16(w, data.preference || 0)
+    putU16(w, data.order)
+    putU16(w, data.preference)
     putString(w, data.flags)
     putString(w, data.services)
     putString(w, data.regexp)
@@ -348,7 +255,7 @@ const naptr: Codec<RecordData['NAPTR'], DecodedRecordData['NAPTR']> = {
   }),
 }
 
-const tlsa: Codec<RecordData['TLSA'], DecodedRecordData['TLSA']> = {
+const tlsa: Codec<RecordData['TLSA'], RecordData['TLSA']> = {
   length: (data) => 3 + bytesOf(data.certificate, 'TLSA certificate').length,
   write(w, data) {
     putU8(w, data.usage)
@@ -364,34 +271,21 @@ const tlsa: Codec<RecordData['TLSA'], DecodedRecordData['TLSA']> = {
   }),
 }
 
-const fingerprintLengths: Partial<Record<number, number>> = { 1: 20, 2: 32 }
-
-function fingerprintLength(data: RecordData['SSHFP']): number {
-  const hex = data.fingerprint
-  const expected = fingerprintLengths[data.hash]
-  if (!/^(?:[0-9a-f]{2})*$/i.test(hex) || (expected !== undefined && hex.length !== expected * 2))
-    throw new InvalidRecordError('Invalid SSHFP fingerprint.')
-  return hex.length / 2
-}
-
-const sshfp: Codec<RecordData['SSHFP'], DecodedRecordData['SSHFP']> = {
-  length: (data) => 2 + fingerprintLength(data),
+const sshfp: Codec<RecordData['SSHFP'], RecordData['SSHFP']> = {
+  length: (data) => 2 + bytesOf(data.fingerprint, 'SSHFP fingerprint').length,
   write(w, data) {
     putU8(w, data.algorithm)
-    putU8(w, data.hash)
-    const hex = data.fingerprint
-    for (let i = 0; i < hex.length; i += 2) putU8(w, Number.parseInt(hex.slice(i, i + 2), 16))
+    putU8(w, data.fingerprintType)
+    putBytes(w, data.fingerprint)
   },
-  read(r, end) {
-    const algorithm = u8(r, end)
-    const hash = u8(r, end)
-    let fingerprint = ''
-    for (const byte of rest(r, end)) fingerprint += byte.toString(16).padStart(2, '0')
-    return { algorithm, hash, fingerprint: fingerprint.toUpperCase() }
-  },
+  read: (r, end) => ({
+    algorithm: u8(r, end),
+    fingerprintType: u8(r, end),
+    fingerprint: rest(r, end),
+  }),
 }
 
-const ds: Codec<RecordData['DS'], DecodedRecordData['DS']> = {
+const ds: Codec<DigestData, DigestData> = {
   length: (data) => 4 + bytesOf(data.digest, 'DS digest').length,
   write(w, data) {
     putU16(w, data.keyTag)
@@ -409,7 +303,7 @@ const ds: Codec<RecordData['DS'], DecodedRecordData['DS']> = {
 
 const PROTOCOL_DNSSEC = 3
 
-const dnskey: Codec<RecordData['DNSKEY'], DecodedRecordData['DNSKEY']> = {
+const dnskey: Codec<KeyData, KeyData> = {
   length: (data) => 4 + bytesOf(data.key, 'DNSKEY key').length,
   write(w, data) {
     putU16(w, data.flags)
@@ -419,16 +313,16 @@ const dnskey: Codec<RecordData['DNSKEY'], DecodedRecordData['DNSKEY']> = {
   },
   read(r, end) {
     const flags = u16(r, end)
-    if (u8(r, end) !== PROTOCOL_DNSSEC) throw new InvalidRecordError('DNSKEY protocol must be 3.')
+    if (u8(r, end) !== PROTOCOL_DNSSEC) throw new InvalidInputError('DNSKEY protocol must be 3.')
     return { flags, algorithm: u8(r, end), key: rest(r, end) }
   },
 }
 
-const rrsig: Codec<RecordData['RRSIG'], DecodedRecordData['RRSIG']> = {
+const rrsig: Codec<RecordData['RRSIG'], RecordData['RRSIG']> = {
   length: (data) =>
     18 + nameLength(data.signersName) + bytesOf(data.signature, 'RRSIG signature').length,
   write(w, data) {
-    putU16(w, types.toType(data.typeCovered))
+    putU16(w, types.value(data.typeCovered))
     putU8(w, data.algorithm)
     putU8(w, data.labels)
     putU32(w, data.originalTTL)
@@ -439,7 +333,7 @@ const rrsig: Codec<RecordData['RRSIG'], DecodedRecordData['RRSIG']> = {
     putBytes(w, data.signature)
   },
   read: (r, end) => ({
-    typeCovered: types.toString(u16(r, end)),
+    typeCovered: types.name(u16(r, end)),
     algorithm: u8(r, end),
     labels: u8(r, end),
     originalTTL: u32(r, end),
@@ -451,19 +345,19 @@ const rrsig: Codec<RecordData['RRSIG'], DecodedRecordData['RRSIG']> = {
   }),
 }
 
-const rp: Codec<RecordData['RP'], DecodedRecordData['RP']> = {
-  length: (data) => nameLength(data.mbox || '.', true) + nameLength(data.txt || '.'),
+const rp: Codec<RecordData['RP'], RecordData['RP']> = {
+  length: (data) => nameLength(data.mbox) + nameLength(data.txt),
   write(w, data) {
-    putName(w, data.mbox || '.', false, true)
-    putName(w, data.txt || '.', false)
+    putName(w, data.mbox, false)
+    putName(w, data.txt, false)
   },
-  read: (r, end) => ({ mbox: readName(r, end, true), txt: readName(r, end) }),
+  read: (r, end) => ({ mbox: readName(r, end), txt: readName(r, end) }),
 }
 
-function typeWindows(rrtypes: readonly string[]): Uint8Array[] {
+function typeWindows(list: readonly RecordType[]): Uint8Array[] {
   const windows: Uint8Array[] = []
-  for (const name of rrtypes) {
-    const type = types.toType(name)
+  for (const name of list) {
+    const type = types.value(name)
     const window = (windows[type >> 8] ??= new Uint8Array(32))
     window[(type >> 3) & 0x1f]! |= 0x80 >> (type & 7)
   }
@@ -476,14 +370,14 @@ const usedLength = (window: Uint8Array) => {
   return length
 }
 
-function typeBitmapLength(rrtypes: readonly string[]): number {
+function typeBitmapLength(list: readonly RecordType[]): number {
   let length = 0
-  for (const window of typeWindows(rrtypes)) if (window) length += 2 + usedLength(window)
+  for (const window of typeWindows(list)) if (window) length += 2 + usedLength(window)
   return length
 }
 
-function putTypeBitmap(w: Writer, rrtypes: readonly string[]): void {
-  const windows = typeWindows(rrtypes)
+function putTypeBitmap(w: Writer, list: readonly RecordType[]): void {
+  const windows = typeWindows(list)
   for (let i = 0; i < windows.length; i++) {
     const window = windows[i]
     if (!window) continue
@@ -494,60 +388,62 @@ function putTypeBitmap(w: Writer, rrtypes: readonly string[]): void {
   }
 }
 
-function readTypeBitmap(r: Reader, end: number): types.RecordType[] {
-  const rrtypes: types.RecordType[] = []
+function readTypeBitmap(r: Reader, end: number): RecordType[] {
+  const list: RecordType[] = []
   while (r.offset < end) {
     const window = u8(r, end)
     const length = u8(r, end)
+    if (length === 0 || length > 32)
+      throw new InvalidInputError('A type bitmap window holds 1 to 32 bytes.')
     need(r, length, end)
     for (let i = 0; i < length; i++) {
       const byte = r.bytes[r.offset + i]!
       for (let bit = 0; bit < 8; bit++)
-        if (byte & (0x80 >> bit)) rrtypes.push(types.toString((window << 8) | (i << 3) | bit))
+        if (byte & (0x80 >> bit)) list.push(types.name((window << 8) | (i << 3) | bit))
     }
     r.offset += length
   }
-  return rrtypes
+  return list
 }
 
-const nsec: Codec<RecordData['NSEC'], DecodedRecordData['NSEC']> = {
-  length: (data) => nameLength(data.nextDomain) + typeBitmapLength(data.rrtypes),
+const nsec: Codec<RecordData['NSEC'], RecordData['NSEC']> = {
+  length: (data) => nameLength(data.nextDomain) + typeBitmapLength(data.types),
   write(w, data) {
     putName(w, data.nextDomain, false)
-    putTypeBitmap(w, data.rrtypes)
+    putTypeBitmap(w, data.types)
   },
-  read: (r, end) => ({ nextDomain: readName(r, end), rrtypes: readTypeBitmap(r, end) }),
+  read: (r, end) => ({ nextDomain: readName(r, end), types: readTypeBitmap(r, end) }),
 }
 
-const nsec3: Codec<RecordData['NSEC3'], DecodedRecordData['NSEC3']> = {
+const nsec3: Codec<RecordData['NSEC3'], RecordData['NSEC3']> = {
   length: (data) =>
-    6 +
-    bytesOf(data.salt, 'NSEC3 salt').length +
-    bytesOf(data.nextDomain, 'NSEC3 nextDomain').length +
-    typeBitmapLength(data.rrtypes),
+    4 +
+    stringLength(bytesOf(data.salt, 'NSEC3 salt'), 'NSEC3 salt') +
+    stringLength(bytesOf(data.nextHashedOwner, 'NSEC3 nextHashedOwner'), 'NSEC3 nextHashedOwner') +
+    typeBitmapLength(data.types),
   write(w, data) {
     putU8(w, data.algorithm)
     putU8(w, data.flags)
     putU16(w, data.iterations)
-    putU8(w, data.salt.length)
-    putBytes(w, data.salt)
-    putU8(w, data.nextDomain.length)
-    putBytes(w, data.nextDomain)
-    putTypeBitmap(w, data.rrtypes)
+    putString(w, data.salt)
+    putString(w, data.nextHashedOwner)
+    putTypeBitmap(w, data.types)
   },
   read(r, end) {
     const algorithm = u8(r, end)
     const flags = u8(r, end)
     const iterations = u16(r, end)
     const salt = bytes(r, u8(r, end), end)
-    const nextDomain = bytes(r, u8(r, end), end)
-    return { algorithm, flags, iterations, salt, nextDomain, rrtypes: readTypeBitmap(r, end) }
+    const nextHashedOwner = bytes(r, u8(r, end), end)
+    return { algorithm, flags, iterations, salt, nextHashedOwner, types: readTypeBitmap(r, end) }
   },
 }
 
-export const codecs: { [T in keyof RecordData]: Codec<RecordData[T], DecodedRecordData[T]> } = {
-  A: a,
-  AAAA: aaaa,
+export const codecs: {
+  readonly [T in keyof RecordData]: Codec<RecordData[T], DecodedRecordData[T]>
+} = {
+  A: address(4),
+  AAAA: address(16),
   CNAME: compressedName,
   DNAME: name,
   NS: compressedName,
@@ -556,141 +452,153 @@ export const codecs: { [T in keyof RecordData]: Codec<RecordData[T], DecodedReco
   SOA: soa,
   SRV: srv,
   TXT: txt,
-  NULL: rnull,
+  NULL: raw,
   HINFO: hinfo,
   CAA: caa,
   NAPTR: naptr,
   TLSA: tlsa,
   SSHFP: sshfp,
   DS: ds,
+  CDS: ds,
   DNSKEY: dnskey,
+  CDNSKEY: dnskey,
   RRSIG: rrsig,
   RP: rp,
   NSEC: nsec,
   NSEC3: nsec3,
 }
 
-/** An EDNS option inside an OPT record. Set `data` to send raw bytes for any code. */
-export type EdnsOption = {
-  /** Option code, as a number or a name from `optioncodes`, such as `'CLIENT_SUBNET'`. */
-  code: number | string
-  data?: Uint8Array | undefined
-  /** CLIENT_SUBNET: 1 for IPv4, 2 for IPv6. Defaults to the family of `ip`. */
-  family?: number | undefined
-  /** CLIENT_SUBNET: the address. Only the first `sourcePrefixLength` bits are sent. */
-  ip?: string | undefined
-  sourcePrefixLength?: number | undefined
-  scopePrefixLength?: number | undefined
-  /** TCP_KEEPALIVE: idle timeout in units of 100 ms. */
-  timeout?: number | undefined
-  /** PADDING: number of zero bytes. */
-  length?: number | undefined
-  /** KEY_TAG: key tags. */
-  tags?: readonly number[] | undefined
-}
+export const unknown: Codec<Uint8Array, Uint8Array> = raw
 
-/** An EDNS option as `decode` returns it. `data` always holds the raw option bytes. */
-export type DecodedEdnsOption = {
-  code: number
-  type: string | null
-  data: Uint8Array
-  family?: number
-  ip?: string
-  sourcePrefixLength?: number
-  scopePrefixLength?: number
-  timeout?: number
-  tags?: number[]
-}
+/**
+ * An EDNS option inside an OPT record. CLIENT_SUBNET, TCP_KEEPALIVE, PADDING and KEY_TAG have
+ * fields; every other code carries its raw bytes in `data`.
+ */
+export type EdnsOption =
+  | {
+      code: 'CLIENT_SUBNET'
+      /** The client address. Only the first `sourcePrefixLength` bits are sent. */
+      ip: string
+      sourcePrefixLength: number
+      /** @default 0 */
+      scopePrefixLength?: number | undefined
+    }
+  | {
+      code: 'TCP_KEEPALIVE'
+      /** Idle timeout in units of 100 ms. Clients leave it out. */
+      timeout?: number | undefined
+    }
+  | {
+      code: 'PADDING'
+      /** Number of zero bytes. */
+      length: number
+    }
+  | { code: 'KEY_TAG'; tags: readonly number[] }
+  | {
+      code: Exclude<OptionCode, 'CLIENT_SUBNET' | 'TCP_KEEPALIVE' | 'PADDING' | 'KEY_TAG'>
+      data: Uint8Array
+    }
 
-export function ednsOptionLength(option: EdnsOption, code: number): number {
-  if (option.data) return 4 + bytesOf(option.data, 'EDNS option data').length
-  switch (code) {
-    case 8:
-      return 8 + Math.ceil((option.sourcePrefixLength || 0) / 8)
-    case 11:
-      return typeof option.timeout === 'number' ? 6 : 4
-    case 12:
-      return 4 + (option.length || 0)
-    case 14:
-      return 4 + (option.tags?.length ?? 0) * 2
+const isIPv6 = (ip: string) => typeof ip === 'string' && ip.includes(':')
+
+export function ednsOptionLength(option: EdnsOption): number {
+  switch (option.code) {
+    case 'CLIENT_SUBNET':
+      return 8 + Math.ceil(option.sourcePrefixLength / 8)
+    case 'TCP_KEEPALIVE':
+      return option.timeout === undefined ? 4 : 6
+    case 'PADDING':
+      return 4 + option.length
+    case 'KEY_TAG':
+      return 4 + option.tags.length * 2
   }
-  throw new InvalidRecordError(`EDNS option ${option.code} needs data.`)
+  optionCodes.value(option.code)
+  if (option.data === undefined)
+    throw new UnsupportedError(`EDNS option ${option.code} has no encoder. Pass its bytes as data.`)
+  return 4 + bytesOf(option.data, 'EDNS option data').length
 }
 
-export function putEdnsOption(w: Writer, option: EdnsOption, code: number): void {
-  putU16(w, code)
-  if (option.data) {
-    putU16(w, option.data.length)
-    putBytes(w, option.data)
-    return
-  }
-  switch (code) {
-    case 8: {
-      const ip = option.ip ?? ''
-      const family = option.family || familyOf(ip)
-      const prefix = option.sourcePrefixLength || 0
-      const address = new Uint8Array(16)
-      const target = { bytes: address, offset: 0, names: undefined }
-      if (familyOf(ip) === 1) putIPv4(target, ip)
-      else putIPv6(target, ip)
+export function putEdnsOption(w: Writer, option: EdnsOption): void {
+  putU16(w, optionCodes.value(option.code))
+  switch (option.code) {
+    case 'CLIENT_SUBNET': {
+      const v6 = isIPv6(option.ip)
+      const prefix = option.sourcePrefixLength
+      if (prefix > (v6 ? 128 : 32))
+        throw new InvalidInputError(`CLIENT_SUBNET prefix ${prefix} is too long.`)
+      const full = new Uint8Array(16)
+      const target = { bytes: full, offset: 0, start: 0, names: undefined }
+      if (v6) putIPv6(target, option.ip)
+      else putIPv4(target, option.ip)
       const length = Math.ceil(prefix / 8)
+      const sent = full.slice(0, length)
+      if (prefix % 8) sent[length - 1]! &= 0xff << (8 - (prefix % 8))
       putU16(w, 4 + length)
-      putU16(w, family)
+      putU16(w, v6 ? 2 : 1)
       putU8(w, prefix)
-      putU8(w, option.scopePrefixLength || 0)
-      putBytes(w, address.subarray(0, length))
+      putU8(w, option.scopePrefixLength ?? 0)
+      putBytes(w, sent)
       return
     }
-    case 11:
-      if (option.timeout) {
+    case 'TCP_KEEPALIVE':
+      if (option.timeout === undefined) putU16(w, 0)
+      else {
         putU16(w, 2)
         putU16(w, option.timeout)
-      } else putU16(w, 0)
+      }
       return
-    case 12: {
-      const length = option.length || 0
-      putU16(w, length)
-      w.bytes.fill(0, w.offset, w.offset + length)
-      w.offset += length
+    case 'PADDING':
+      putU16(w, option.length)
+      w.bytes.fill(0, w.offset, w.offset + option.length)
+      w.offset += option.length
       return
-    }
-    case 14:
-      putU16(w, (option.tags?.length ?? 0) * 2)
-      for (const tag of option.tags ?? []) putU16(w, tag)
+    case 'KEY_TAG':
+      putU16(w, option.tags.length * 2)
+      for (const tag of option.tags) putU16(w, tag)
+      return
   }
+  putU16(w, option.data.length)
+  putBytes(w, option.data)
 }
 
-export function readEdnsOption(
-  r: Reader,
-  end: number,
-  typeOf: (code: number) => string | null,
-): DecodedEdnsOption {
-  const code = u16(r, end)
+export function readEdnsOption(r: Reader, end: number): EdnsOption {
+  const code = optionCodes.name(u16(r, end))
   const length = u16(r, end)
-  const optionEnd = r.offset + length
   need(r, length, end)
-  const option: DecodedEdnsOption = { code, type: typeOf(code), data: bytes(r, length, end) }
-  r.offset = optionEnd - length
+  const optionEnd = r.offset + length
+  const option = within(code, () => readOptionBody(r, code, optionEnd))
+  if (r.offset !== optionEnd) throw new InvalidInputError(`Malformed EDNS option ${code}.`)
+  return option
+}
+
+function readOptionBody(r: Reader, code: OptionCode, end: number): EdnsOption {
   switch (code) {
-    case 8: {
-      option.family = u16(r, optionEnd)
-      option.sourcePrefixLength = u8(r, optionEnd)
-      option.scopePrefixLength = u8(r, optionEnd)
-      const size = option.family === 1 ? 4 : 16
-      const address = new Uint8Array(size)
-      address.set(r.bytes.subarray(r.offset, Math.min(optionEnd, r.offset + size)))
-      option.ip = size === 4 ? readIPv4(address, 0) : readIPv6(address, 0)
-      break
+    case 'CLIENT_SUBNET': {
+      const family = u16(r, end)
+      const sourcePrefixLength = u8(r, end)
+      const scopePrefixLength = u8(r, end)
+      const size = family === 1 ? 4 : family === 2 ? 16 : 0
+      if (size === 0 || end - r.offset > size)
+        throw new InvalidInputError('Malformed EDNS option CLIENT_SUBNET.')
+      const full = new Uint8Array(size)
+      full.set(rest(r, end))
+      const ip = size === 4 ? readIPv4(full, 0) : readIPv6(full, 0)
+      return { code, ip, sourcePrefixLength, scopePrefixLength }
     }
-    case 11:
-      if (length > 0) option.timeout = u16(r, optionEnd)
-      break
-    case 14: {
+    case 'TCP_KEEPALIVE':
+      if (end - r.offset === 0) return { code }
+      if (end - r.offset !== 2) throw new InvalidInputError('Malformed EDNS option TCP_KEEPALIVE.')
+      return { code, timeout: u16(r, end) }
+    case 'PADDING': {
+      const length = end - r.offset
+      r.offset = end
+      return { code, length }
+    }
+    case 'KEY_TAG': {
       const tags: number[] = []
-      while (r.offset + 1 < optionEnd) tags.push(u16(r, optionEnd))
-      option.tags = tags
+      while (r.offset < end) tags.push(u16(r, end))
+      return { code, tags }
     }
   }
-  r.offset = optionEnd
-  return option
+  return { code, data: rest(r, end) }
 }
