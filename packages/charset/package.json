@@ -6,10 +6,6 @@
     "dev": "zile dev",
     "generate": "node scripts/generate.ts"
   },
-  "devDependencies": {
-    "@types/node": "^26.6.5",
-    "iconv-lite": "^0.7.3"
-  },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
@@ -40,8 +36,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/_test"
+    "src"
   ],
   "exports": {
     ".": {

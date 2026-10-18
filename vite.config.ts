@@ -104,13 +104,13 @@ export default defineConfig({
         test: {
           name: 'node',
           benchmark: {
-            include: ['packages/*/src/**/*.bench.ts'],
+            include: ['packages/*/test/**/*.bench.ts', 'packages/*/src/**/*.bench.ts'],
             outputJson: '.bench/report.json',
           },
           include: [
-            'packages/*/src/**/*.test.ts',
-            'packages/*/src/**/*.conformance.ts',
-            '!packages/*/src/**/*.browser.test.ts',
+            'packages/*/{test,src}/**/*.test.ts',
+            'packages/*/{test,src}/**/*.conformance.ts',
+            '!packages/*/{test,src}/**/*.browser.test.ts',
           ],
         },
       },
@@ -119,7 +119,10 @@ export default defineConfig({
         test: {
           name: 'browser',
           benchmark: { include: [] },
-          include: ['packages/*/src/**/*.browser.test.ts', 'packages/*/src/**/*.conformance.ts'],
+          include: [
+            'packages/*/{test,src}/**/*.browser.test.ts',
+            'packages/*/{test,src}/**/*.conformance.ts',
+          ],
           browser: {
             enabled: true,
             provider: playwright(

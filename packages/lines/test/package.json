@@ -1,0 +1,11 @@
+{
+  "name": "@portable/lines-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/lines": "workspace:*",
+    "@types/node": "^26.6.5",
+    "@types/split2": "^4.2.3",
+    "split2": "catalog:"
+  }
+}

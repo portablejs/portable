@@ -6,7 +6,7 @@
     "build": "pnpm --filter './packages/*' build",
     "dev": "pnpm --filter './packages/*' dev",
     "check": "vp check --fix",
-    "check:types": "tsc -b",
+    "check:types": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vp test run",
     "test:changed": "vp test run --changed origin/main --project node",
     "test:browser": "vp test run --project browser",
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "catalog:",
     "@changesets/cli": "catalog:",
+    "@types/node": "^26.6.5",
     "@vitest/browser-playwright": "catalog:",
     "playwright": "catalog:",
     "typescript": "catalog:",

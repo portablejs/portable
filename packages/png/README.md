@@ -101,7 +101,7 @@ Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.Unsuppo
 | `{ skipRescale: true }`, `{ bitDepth: 16 }`, `inputColorType`, `inputHasAlpha` | Not supported. Pixels are always 8-bit RGBA. |
 | `bitblt`, `adjustGamma` | Not supported. |
 
-Behavior that differs from pngjs, each listed with its test in [`PARITY.md`](src/_test/PARITY.md#known-upstream-issues):
+Behavior that differs from pngjs, each listed with its test in [`PARITY.md`](test/PARITY.md#known-upstream-issues):
 
 - A pixel matching the `tRNS` color gets alpha 0 and keeps its color. pngjs makes it black.
 - Grayscale output uses BT.709 luma. pngjs averages the channels.

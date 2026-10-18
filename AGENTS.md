@@ -51,10 +51,10 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 
 ## Tests
 
-- Tests live in `src/_test/`. `*.conformance.ts` runs in Node and in browsers, so put tests there unless they need one runtime. `*.oracle.test.ts` runs only in Node and compares output with the library being replaced. `*.bench.ts` holds benchmarks.
-- When a package replaces a library, design the package fresh and use that library's test suite as the list of cases to cover. `src/_test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply.
+- Tests live in `packages/<name>/test/`, a private workspace package (`@portable/<name>-test`) whose `package.json` holds the libraries we compare against, so the published package lists none of them. Tests import the package by name (`@portable/lines`), as a caller would, and import unexported code by path (`../src/LineStream.js`) only when it needs its own tests. `*.conformance.ts` runs in Node and in browsers, so put tests there unless they need one runtime. `*.oracle.test.ts` runs only in Node and compares output with the library being replaced. `*.bench.ts` holds benchmarks.
+- When a package replaces a library, design the package fresh and use that library's test suite as the list of cases to cover. `test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply.
 - Also look for the replaced library's known traps: open and closed bug reports, edge cases its tests miss, and behavior its users complain about. Add a test for each one we handle differently, and list them under "Known upstream issues" in `PARITY.md`. An oracle test must not lock in an upstream bug.
-- Load binary fixtures with `import.meta.glob('./fixtures/*', { query: '?url&inline', import: 'default' })` and `fetch` the data URL, as `packages/image-size/src/_test/utils.ts` does. It works in Node and browsers for any file extension.
+- Load binary fixtures with `import.meta.glob('./fixtures/*', { query: '?url&inline', import: 'default' })` and `fetch` the data URL, as `packages/image-size/test/utils.ts` does. It works in Node and browsers for any file extension.
 - Assert what a caller can observe. Read the `principle-test-behavior-not-implementation` skill before writing tests.
 
 ## Writing

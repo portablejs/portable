@@ -1,0 +1,12 @@
+{
+  "name": "@portable/exif-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/exif": "workspace:*",
+    "@types/node": "^26.6.5",
+    "exif-parser": "^0.1.12",
+    "exif-reader": "^2.0.3",
+    "exifr": "^7.1.3"
+  }
+}

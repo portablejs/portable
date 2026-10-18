@@ -1,0 +1,13 @@
+{
+  "name": "@portable/quoted-printable-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/quoted-printable": "workspace:*",
+    "@types/libqp": "^1.1.3",
+    "@types/node": "^26.6.5",
+    "@types/quoted-printable": "^1.0.2",
+    "libqp": "^2.1.3",
+    "quoted-printable": "^1.0.1"
+  }
+}

@@ -5,11 +5,6 @@
     "build": "zile",
     "dev": "zile dev"
   },
-  "devDependencies": {
-    "@types/dns-packet": "^5.6.5",
-    "@types/node": "^26.6.5",
-    "dns-packet": "^5.6.1"
-  },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
@@ -34,8 +29,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/_test"
+    "src"
   ],
   "exports": {
     ".": {

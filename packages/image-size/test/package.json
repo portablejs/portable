@@ -1,0 +1,10 @@
+{
+  "name": "@portable/image-size-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/image-size": "workspace:*",
+    "@types/node": "^26.6.5",
+    "image-size": "^2.0.4"
+  }
+}

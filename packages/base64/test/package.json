@@ -1,0 +1,12 @@
+{
+  "name": "@portable/base64-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/base64": "workspace:*",
+    "@types/node": "^26.6.5",
+    "base64-js": "^1.5.1",
+    "js-base64": "^3.9.4",
+    "libbase64": "^1.3.3"
+  }
+}

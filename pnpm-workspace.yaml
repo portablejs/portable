@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/*/test
 
 catalog:
   '@changesets/changelog-github': ^1.0.1

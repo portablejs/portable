@@ -63,7 +63,7 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError` and `
 | `types` | The `ImageSize.Type` union. |
 | `catch (e) { if (e instanceof TypeError) }` | Catch `UnsupportedError`, `TruncatedError` or `InvalidInputError`. |
 
-Behavior that differs from image-size, each fixing a bug listed in [`PARITY.md`](src/_test/PARITY.md#known-upstream-issues):
+Behavior that differs from image-size, each fixing a bug listed in [`PARITY.md`](test/PARITY.md#known-upstream-issues):
 
 - Input that is too short throws `TruncatedError`. image-size throws a `RangeError` from `DataView` or reports a malformed file.
 - JPEG: every start-of-frame marker is read, including lossless and arithmetic-coded ones, and a frame header right after the start-of-image marker. The Exif IFD0 offset is read from the header instead of assumed to be 8.

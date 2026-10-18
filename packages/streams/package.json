@@ -5,12 +5,6 @@
     "build": "zile",
     "dev": "zile dev"
   },
-  "devDependencies": {
-    "@types/merge2": "^1.4.4",
-    "@types/node": "^26.6.5",
-    "get-stream": "^9.0.1",
-    "merge2": "^1.4.1"
-  },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
@@ -36,8 +30,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/_test"
+    "src"
   ],
   "exports": {
     ".": {

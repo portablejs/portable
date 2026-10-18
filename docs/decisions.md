@@ -2,6 +2,12 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Tests are a separate workspace package in `packages/<name>/test/`
+
+- **Options:** `src/_test/` inside each package (the first layout); a sibling `test/` directory with its own `package.json` (the owner's suggestion).
+- **Trade-offs:** a separate package keeps upstream libraries, their `@types` and Node types out of the published `package.json`, and makes tests import the package by name through its `exports` map. It adds one workspace package per package. Unexported code can still be tested by importing it by path.
+- **Chosen:** `test/`, named `@portable/<name>-test`. Shared tools (Vitest, TypeScript, Playwright, `@types/node`) stay in the root. `tsconfig.test.json` type-checks every test directory, which `tsc -b` didn't do before.
+
 ## `@portable/json-stream` API
 
 - **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions; `NdjsonDecoderStream` and `NdjsonEncoderStream` handle NDJSON; `encode(value)` returns a `ReadableStream<string>`.** The API review may rename these; `encode` returning a stream differs from other packages' `encode`.
@@ -48,7 +54,7 @@ Calls made without the owner's input, with the options considered and the reason
 
 ## `@portable/quoted-printable` API
 
-- **The oracle is libqp 3.0.1, copied into `src/_test/fixtures/`.** 3.0.1 fixes chunk-dependent output, split UTF-8 sequences and a boundary injection, but it was published hours ago and `minimumReleaseAge` refuses it, tarball URLs included. libqp 2.1.3 is installed from npm for the cases 3.0.1 didn't change. Replace the copy with `libqp@^3.0.1` once it is a day old.
+- **The oracle is libqp 3.0.1, copied into `test/fixtures/`.** 3.0.1 fixes chunk-dependent output, split UTF-8 sequences and a boundary injection, but it was published hours ago and `minimumReleaseAge` refuses it, tarball URLs included. libqp 2.1.3 is installed from npm for the cases 3.0.1 didn't change. Replace the copy with `libqp@^3.0.1` once it is a day old.
 - **A bad `lineLength` throws a `RangeError`.** libqp quietly treats bad values as 76 or 4. A bad option is a programming mistake, so it doesn't need its own error class.
 - **No `lineEnding` option,** unlike base64. RFC 2045 requires CRLF for soft breaks, and hard breaks are kept as they are in the input.
 - **Strings are UTF-8 in both directions.** libqp's `decode` reads each character's low byte.

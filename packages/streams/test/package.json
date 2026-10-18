@@ -1,0 +1,12 @@
+{
+  "name": "@portable/streams-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/streams": "workspace:*",
+    "@types/merge2": "^1.4.4",
+    "@types/node": "^26.6.5",
+    "get-stream": "^9.0.1",
+    "merge2": "^1.4.1"
+  }
+}
