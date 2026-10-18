@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { LineStream, MaxLengthError } from '@portable/lines'
+import * as Lines from '@portable/lines'
 import empty from './fixtures/empty.txt?raw'
 import rfc from './fixtures/rfc.txt?raw'
 import { chunked, collect, encode, fromChunks, split, unicodeLineBreak } from './utils.js'
@@ -65,7 +65,7 @@ describe('split2', () => {
   })
 
   test('errors when a line exceeds maxLength', async () => {
-    await expect(split(['hey'], { maxLength: 2 })).rejects.toThrow(MaxLengthError)
+    await expect(split(['hey'], { maxLength: 2 })).rejects.toThrow(Lines.MaxLengthError)
   })
 
   test('allows chunks longer than maxLength when every line fits', async () => {
@@ -79,7 +79,7 @@ describe('split2', () => {
   })
 
   test('applies maxLength to whole lines regardless of chunking', async () => {
-    await expect(split(['ok\ntoolong\n'], { maxLength: 4 })).rejects.toThrow(MaxLengthError)
+    await expect(split(['ok\ntoolong\n'], { maxLength: 4 })).rejects.toThrow(Lines.MaxLengthError)
     expect(await split(['ok\ntoolong\nok2'], { maxLength: 4, overflow: 'skip' })).toEqual([
       'ok',
       'ok2',
@@ -140,7 +140,7 @@ describe('byline', () => {
   test('keeps every line when the reader is slow', async () => {
     const expected = rfc.split('\n').filter((line) => line.length > 0)
     const stream = fromChunks(chunked(encode(rfc), 4096)).pipeThrough(
-      new LineStream({ skipEmpty: true }),
+      new Lines.DecoderStream({ skipEmpty: true }),
     )
     const lines = await collect(stream, async (count) => {
       if (count % 500 === 0) await new Promise((resolve) => setTimeout(resolve, 0))
@@ -149,7 +149,7 @@ describe('byline', () => {
   })
 })
 
-describe('LineStream', () => {
+describe('DecoderStream', () => {
   test('decodes bytes with the given encoding', async () => {
     const latin1 = new Uint8Array([0x63, 0x61, 0x66, 0xe9, 0x0a, 0x6f, 0x6b])
     expect(await split([latin1], { encoding: 'latin1' })).toEqual(['café', 'ok'])
@@ -171,7 +171,7 @@ describe('LineStream', () => {
         cancelled = true
       },
     })
-    const reader = source.pipeThrough(new LineStream()).getReader()
+    const reader = source.pipeThrough(new Lines.DecoderStream()).getReader()
     expect((await reader.read()).value).toBe('line')
     await reader.cancel()
     await new Promise((resolve) => setTimeout(resolve, 0))

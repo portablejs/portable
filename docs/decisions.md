@@ -2,6 +2,12 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `LineStream` is `Lines.DecoderStream`
+
+- **Options:** keep `LineStream`; `Lines.DecoderStream`; `Lines.SplitterStream`.
+- **Trade-offs:** `LineStream` describes itself when read alone and echoes Deno's `TextLineStream`, but callers write `Lines.LineStream`, which repeats the package name. `SplitterStream` avoids that and still says what the transform does. `DecoderStream` gives every transform that turns bytes into values the same name, as `Base64`, `QuotedPrintable` and `Jsonl` already do, but it has no `EncoderStream` to pair with, and "decode" says less about a string input, which is only split.
+- **Chosen:** `Lines.DecoderStream`. A caller who has used `Jsonl.DecoderStream` can guess it, and the transform does decode: byte chunks go through `TextDecoder` with the `encoding` option. AGENTS.md now says a transform from bytes or text to values is a `DecoderStream`.
+
 ## Crypto defaults to WebCrypto, with no `/core` entry
 
 The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
@@ -147,7 +153,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **Trade-offs:** copying split2 makes the oracle tests match in every case, but then whether a long line is caught depends on chunk boundaries, which the caller doesn't control.
 - **Chosen:** check every line. The difference is documented in the README and `PARITY.md`, and the oracle test leaves out `maxLength`.
 
-## No mapper argument in `LineStream`
+## No mapper argument in `Lines.DecoderStream`
 
 - **Options:** keep split2's `split2(mapper)`; leave mapping to another `TransformStream`.
 - **Trade-offs:** a mapper is shorter to write, but it is a second job inside a package meant for one, and `@portable/streams` will have `map()`.
@@ -167,7 +173,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 ## Benchmarks fail only when the original is more than 25% faster
 
 - **Options:** require us to be faster; allow any slowdown; allow a fixed margin.
-- **Trade-offs:** `LineStream` is about 8% slower than split2 on Node, mostly because Web Streams cost more per chunk than Node streams. Requiring a win would block a correct package on Node-specific overhead.
+- **Trade-offs:** `Lines.DecoderStream` is about 8% slower than split2 on Node, mostly because Web Streams cost more per chunk than Node streams. Requiring a win would block a correct package on Node-specific overhead.
 - **Chosen:** a 25% margin, which still catches real regressions. Benchmarks are not in the git hooks, because timing on a laptop is noisy.
 
 ## TypeScript 6, not 7

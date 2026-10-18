@@ -1,1 +1,1 @@
-export { LineStream, MaxLengthError, type Separator } from './LineStream.js'
+export { DecoderStream, MaxLengthError, type Separator } from './DecoderStream.js'

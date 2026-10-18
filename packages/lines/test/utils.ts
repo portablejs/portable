@@ -1,4 +1,4 @@
-import { LineStream } from '@portable/lines'
+import * as Lines from '@portable/lines'
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
@@ -28,9 +28,9 @@ export async function collect<T>(
 
 export function split(
   chunks: readonly (Uint8Array | string)[],
-  options?: LineStream.Options,
+  options?: Lines.DecoderStream.Options,
 ): Promise<string[]> {
-  return collect(fromChunks(chunks).pipeThrough(new LineStream(options)))
+  return collect(fromChunks(chunks).pipeThrough(new Lines.DecoderStream(options)))
 }
 
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)

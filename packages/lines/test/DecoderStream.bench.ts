@@ -2,7 +2,7 @@ import { createInterface } from 'node:readline'
 import { Readable } from 'node:stream'
 import split2 from 'split2'
 import { expect, test } from 'vite-plus/test'
-import { LineStream } from '@portable/lines'
+import * as Lines from '@portable/lines'
 import rfc from './fixtures/rfc.txt?raw'
 import { chunked, collect, encode, fromChunks } from './utils.js'
 
@@ -11,7 +11,7 @@ const chunks = chunked(encode(rfc.repeat(4)), 16384)
 test('splits 1.7 MB of text into lines within 25% of split2', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/lines', async () => {
-      await collect(fromChunks(chunks).pipeThrough(new LineStream()))
+      await collect(fromChunks(chunks).pipeThrough(new Lines.DecoderStream()))
     }),
     bench('split2', async () => {
       for await (const _ of Readable.from(chunks).pipe(split2()));

@@ -16,7 +16,7 @@ Upstream suites: [split2 4.2.0 `test.js`](https://github.com/mcollina/split2/blo
 | support an option argument | skipped | Tests Node's `highWaterMark`. Web streams take queuing strategies at `pipeThrough`, not in the transform's options. |
 | support a mapper function | skipped | No mapper; see the README for the `TransformStream` equivalent. |
 | do not end on undefined | skipped | Mapper only. |
-| has destroy method | `LineStream > cancelling the output cancels the source` | Web streams cancel instead of `destroy()`. |
+| has destroy method | `DecoderStream > cancelling the output cancels the source` | Web streams cancel instead of `destroy()`. |
 | support custom matcher and mapper | skipped | Mapper only. The matcher half is covered by the custom separator tests. |
 | support custom matcher and options | skipped | Inspects Node stream internals (`_readableState`). |
 | support mapper and options | skipped | Mapper and Node stream internals. |
@@ -45,10 +45,10 @@ Upstream suites: [split2 4.2.0 `test.js`](https://github.com/mcollina/split2/blo
 | should not split a CRLF which spans two chunks | `byline > does not split a CRLF that spans two chunks` | Upstream's `CRLF.txt` contains no CR, so the test builds a real CRLF at the 64 KiB chunk boundary instead. |
 | should read a large file | `byline > reads a large file` | |
 | should read a huge file | `byline > reads a file with more lines than the default high water mark` | Uses `rfc.txt` twice instead of the 844 KB `rfc_huge.txt`. |
-| should handle encodings like fs | `LineStream > decodes bytes with the given encoding` | Output is always a string, so the `Buffer` type check does not apply. |
+| should handle encodings like fs | `DecoderStream > decodes bytes with the given encoding` | Output is always a string, so the `Buffer` type check does not apply. |
 | should work with old-style streams | skipped | Node streams1 and a live HTTP request. |
 | should pause() and resume() with a huge file | `byline > keeps every line when the reader is slow` | |
 
 ## Benchmarks
 
-split2's `bench.js` compares split2, binary-split and `node:readline` on `package.json`. `LineStream.bench.ts` compares `LineStream`, split2 and `node:readline` on 1.7 MB of text and fails if split2 is more than 25% faster.
+split2's `bench.js` compares split2, binary-split and `node:readline` on `package.json`. `DecoderStream.bench.ts` compares `DecoderStream`, split2 and `node:readline` on 1.7 MB of text and fails if split2 is more than 25% faster.

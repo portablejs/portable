@@ -63,4 +63,4 @@ Deliberate differences from ndjson:
 - `EncoderStream` always ends lines with `\n`. ndjson uses `os.EOL`, which is `\r\n` on Windows.
 - A circular structure fails the stream. ndjson writes `"[Circular ~]"` in its place.
 
-stream-json's `jsonl/Parser` can also replace a bad line with another value or pass its raw text on. To do that, split with `LineStream` from `@portable/lines` and call `JSON.parse` yourself.
+stream-json's `jsonl/Parser` can also replace a bad line with another value or pass its raw text on. To do that, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse` yourself.

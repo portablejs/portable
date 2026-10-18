@@ -1,7 +1,7 @@
 /** Splits text into lines. A string matches literally; anything with `[Symbol.split]` (such as a `RegExp`) is used as is. */
 export type Separator = string | { [Symbol.split](text: string, limit?: number): string[] }
 
-export declare namespace LineStream {
+export declare namespace DecoderStream {
   type Options = {
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined
@@ -17,18 +17,18 @@ export declare namespace LineStream {
 }
 
 /**
- * A `TransformStream` that splits incoming bytes or text into lines.
+ * A `TransformStream` that decodes bytes into lines of text, or splits text into lines.
  *
  * @example
  * ```ts
- * import { LineStream } from '@portable/lines'
+ * import * as Lines from '@portable/lines'
  *
  * const response = await fetch('https://example.com/log.txt')
- * for await (const line of response.body!.pipeThrough(new LineStream())) console.log(line)
+ * for await (const line of response.body!.pipeThrough(new Lines.DecoderStream())) console.log(line)
  * ```
  */
-export class LineStream extends TransformStream<Uint8Array | string, string> {
-  constructor(options: LineStream.Options = {}) {
+export class DecoderStream extends TransformStream<Uint8Array | string, string> {
+  constructor(options: DecoderStream.Options = {}) {
     const {
       encoding = 'utf-8',
       maxLength = Infinity,

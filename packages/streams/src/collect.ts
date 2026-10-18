@@ -106,9 +106,9 @@ export async function toJson(
  * @example
  * ```ts
  * import * as Streams from '@portable/streams'
- * import { LineStream } from '@portable/lines'
+ * import * as Lines from '@portable/lines'
  *
- * const lines = await Streams.toArray(response.body!.pipeThrough(new LineStream()))
+ * const lines = await Streams.toArray(response.body!.pipeThrough(new Lines.DecoderStream()))
  * ```
  */
 export async function toArray<T>(source: Source<T>): Promise<T[]> {

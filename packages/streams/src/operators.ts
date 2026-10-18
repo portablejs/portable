@@ -5,9 +5,9 @@
  * @example
  * ```ts
  * import * as Streams from '@portable/streams'
- * import { LineStream } from '@portable/lines'
+ * import * as Lines from '@portable/lines'
  *
- * const records = body.pipeThrough(new LineStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
+ * const records = body.pipeThrough(new Lines.DecoderStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
  * ```
  */
 export function map<I, O>(

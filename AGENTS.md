@@ -21,7 +21,7 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 - Use only the WinterTC common API: `fetch`, `Request`/`Response`, Web Streams, `TextEncoder`/`TextDecoder`, `Uint8Array`, `crypto.subtle`. No `node:*` imports, `Buffer`, `process` or DOM globals. Lint enforces this outside `*.oracle.test.ts` and `*.bench.ts`.
 - Don't rely on `ReadableStream.from` or `for await` over a `ReadableStream` in package code. Some browsers we support don't have them yet.
 - No runtime dependencies outside `@portable/*`. Crypto defaults to WebCrypto, and the caller can pass `@noble/hashes` or another function instead. A package takes `@noble/hashes` as an optional peer only for what WebCrypto can't do, such as an incremental hash.
-- Streaming transforms are `TransformStream` subclasses, used as `stream.pipeThrough(new LineStream())`.
+- Streaming transforms are `TransformStream` subclasses, used as `stream.pipeThrough(new Lines.DecoderStream())`.
 - `package.json` `exports` point at `./src/*.ts`. zile rewrites them to `dist/` when building and publishing. Fields after `"[!start-pkg]"` are the published package.
 - A package exports a small API. Keep helpers private unless a caller needs them.
 - A package README has these parts in order: the package name, a description, install and usage snippets, the API and options, why to use it over the library it replaces (fixes, benchmarks), and migration notes.
@@ -32,7 +32,7 @@ Every package follows the same shape, so a caller who knows one knows the rest.
 
 - Callers import a package as a namespace: `import * as Base64 from '@portable/base64'`. Exports therefore use short names without the package name: `Base64.encode`, not `encodeBase64`. Named exports only.
 - Use the same verbs everywhere. `encode` and `decode` convert between a value and its bytes or text. `parse` reads a value out of bytes in one direction only, as image-size and exif do. `parse` and `format` are the pair for a text syntax with structure, such as an address list or a header value with parameters, where the text is meant to be read as well as decoded. A stream input variant adds `Stream` (`parseStream(stream)`), and a sync variant of an async function adds `Sync`.
-- Streaming transforms are `TransformStream` subclasses named for what they do, after `TextDecoderStream`: `Base64.EncoderStream`, `Base64.DecoderStream`, `LineStream`. Generic operators that take a function or a number, like the array helpers, are lowercase factories instead: `Streams.map(fn)`, `Streams.limitBytes(n)`.
+- Streaming transforms are `TransformStream` subclasses named after `TextDecoderStream`. A transform that reads bytes or text into values is `DecoderStream`, and one that writes values as bytes or text is `EncoderStream`, so `Lines.DecoderStream` splits bytes into lines as `Jsonl.DecoderStream` splits them into JSON values. Name a transform for what it does only when it neither decodes nor encodes. Generic operators that take a function or a number, like the array helpers, are lowercase factories instead: `Streams.map(fn)`, `Streams.limitBytes(n)`.
 - Bytes are `Uint8Array` in and out, never `ArrayBuffer` or `Buffer`. Functions that take text also take its bytes (`string | Uint8Array`). Text comes out as `string`.
 - Sync unless the platform API it needs is async, such as `crypto.subtle` or `CompressionStream`.
 - One optional `options` object last. No positional booleans or overloads keyed on argument count.
@@ -44,7 +44,7 @@ Every package follows the same shape, so a caller who knows one knows the rest.
 These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 
 - `type` over `interface`. `readonly T[]` in types. No enums.
-- Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`LineStream.Options`).
+- Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`DecoderStream.Options`).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`.
 - Relative imports end in `.js`.
 - Classes only for errors and for subclasses of platform types. Error `name`s are namespaced by package, like `'Lines.MaxLengthError'`.
@@ -52,7 +52,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 
 ## Tests
 
-- Tests live in `packages/<name>/test/`, a private workspace package (`@portable/<name>-test`) whose `package.json` holds the libraries we compare against, so the published package lists none of them. The package's own `devDependencies` hold only its optional peers, such as `@noble/hashes`, which its source needs to type-check. Tests import the package by name (`@portable/lines`), as a caller would, and import unexported code by path (`../src/LineStream.js`) only when it needs its own tests. `*.conformance.ts` runs in Node and in browsers, so put tests there unless they need one runtime. `*.oracle.test.ts` runs only in Node and compares output with the library being replaced. `*.bench.ts` holds benchmarks.
+- Tests live in `packages/<name>/test/`, a private workspace package (`@portable/<name>-test`) whose `package.json` holds the libraries we compare against, so the published package lists none of them. The package's own `devDependencies` hold only its optional peers, such as `@noble/hashes`, which its source needs to type-check. Tests import the package by name (`@portable/lines`), as a caller would, and import unexported code by path (`../src/DecoderStream.js`) only when it needs its own tests. `*.conformance.ts` runs in Node and in browsers, so put tests there unless they need one runtime. `*.oracle.test.ts` runs only in Node and compares output with the library being replaced. `*.bench.ts` holds benchmarks.
 - When a package replaces a library, design the package fresh and use that library's test suite as the list of cases to cover. `test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply.
 - Also look for the replaced library's known traps: open and closed bug reports, edge cases its tests miss, and behavior its users complain about. Add a test for each one we handle differently, and list them under "Known upstream issues" in `PARITY.md`. An oracle test must not lock in an upstream bug.
 - Load binary fixtures with `import.meta.glob('./fixtures/*', { query: '?url&inline', import: 'default' })` and `fetch` the data URL, as `packages/image-size/test/utils.ts` does. It works in Node and browsers for any file extension.

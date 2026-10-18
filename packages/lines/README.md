@@ -9,14 +9,14 @@ npm install @portable/lines
 ```
 
 ```ts
-import { LineStream } from '@portable/lines'
+import * as Lines from '@portable/lines'
 
 const response = await fetch('https://example.com/access.log')
-const reader = response.body!.pipeThrough(new LineStream()).getReader()
+const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
 ```
 
-`LineStream` is a `TransformStream<Uint8Array | string, string>`. Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly, and a CRLF split across chunks counts as one line break.
+`Lines.DecoderStream` is a `TransformStream<Uint8Array | string, string>`. Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly, and a CRLF split across chunks counts as one line break.
 
 ## Options
 
@@ -30,7 +30,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 
 ## Why use this over split2 and byline
 
-split2 and byline are Node `Transform` streams. `LineStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies.
+split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies.
 
 - It split 1.7 MB of text at the same speed as split2 in Node. `node:readline` was about 2× faster than both, but it exists only in Node.
 - `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.
@@ -41,12 +41,12 @@ split2 and byline are Node `Transform` streams. `LineStream` is a `TransformStre
 
 | split2 / byline | @portable/lines |
 | --- | --- |
-| `stream.pipe(split2())` | `stream.pipeThrough(new LineStream())` |
-| `split2('~')`, `split2(/~/)` | `new LineStream({ separator: '~' })` |
-| `split2(JSON.parse)` | `.pipeThrough(new LineStream()).pipeThrough(new TransformStream({ transform: (line, c) => c.enqueue(JSON.parse(line)) }))` |
-| `split2({ maxLength, skipOverflow: true })` | `new LineStream({ maxLength, overflow: 'skip' })` |
-| `byline(stream)` | `stream.pipeThrough(new LineStream({ skipEmpty: true }))` |
-| `byline(stream, { keepEmptyLines: true })` | `stream.pipeThrough(new LineStream())` |
+| `stream.pipe(split2())` | `stream.pipeThrough(new Lines.DecoderStream())` |
+| `split2('~')`, `split2(/~/)` | `new Lines.DecoderStream({ separator: '~' })` |
+| `split2(JSON.parse)` | `.pipeThrough(new Lines.DecoderStream()).pipeThrough(new TransformStream({ transform: (line, c) => c.enqueue(JSON.parse(line)) }))` |
+| `split2({ maxLength, skipOverflow: true })` | `new Lines.DecoderStream({ maxLength, overflow: 'skip' })` |
+| `byline(stream)` | `stream.pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))` |
+| `byline(stream, { keepEmptyLines: true })` | `stream.pipeThrough(new Lines.DecoderStream())` |
 
 Two behaviors differ from split2:
 

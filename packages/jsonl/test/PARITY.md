@@ -32,7 +32,7 @@ Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 | jsonl stringer: custom separator | skipped | NDJSON lines end in `\n`. |
 | jsonl parser: invalid JSON at end, in middle | `stream-json jsonl > fails on an invalid last line`, `fails on an invalid line in the middle, naming the line` | |
 | jsonl parser: skip errors | `stream-json jsonl > skips invalid lines in the middle and at the end` | |
-| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | Only `'error'` and `'skip'`. To recover lines yourself, split with `LineStream` from `@portable/lines` and call `JSON.parse`. |
+| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | Only `'error'` and `'skip'`. To recover lines yourself, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse`. |
 
 ## Known upstream issues
 
