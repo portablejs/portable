@@ -1,6 +1,16 @@
-import { CR, LF } from './bytes.js'
+const CR = 0x0d
+const LF = 0x0a
 
-/** A message as `sign` and `verify` take it. Text is encoded as UTF-8. */
+/**
+ * A message as `sign` and `verify` take it. Text is encoded as UTF-8.
+ *
+ * @example
+ * ```ts
+ * import * as Dkim from '@portable/dkim'
+ *
+ * const message: Dkim.Message = request.body!
+ * ```
+ */
 export type Message = ReadableStream<Uint8Array> | Uint8Array | string
 
 /** Pulls the body chunks that follow the header section. `undefined` ends the body. */

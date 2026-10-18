@@ -1,5 +1,9 @@
-import { CR, LF, SP, TAB } from './bytes.js'
 import type { Canonicalization } from './header.js'
+
+const CR = 0x0d
+const LF = 0x0a
+const SP = 0x20
+const TAB = 0x09
 
 /** Receives canonicalized body bytes. */
 export type Sink = (bytes: Uint8Array) => void
@@ -55,39 +59,48 @@ function relaxed(sink: Sink): Canonicalizer {
     write(chunk) {
       const out = new Uint8Array(chunk.length + lineEnds * 2 + 2)
       let o = 0
-      const flush = () => {
-        for (; lineEnds > 0; lineEnds--) {
-          out[o++] = CR
-          out[o++] = LF
-        }
-        if (space) out[o++] = SP
-        space = false
-        content = true
-      }
+      let pendingSpace = space
+      let pendingCr = cr
+      let pendingLines = lineEnds
       for (let i = 0; i < chunk.length; i++) {
         const byte = chunk[i]!
-        if (cr) {
-          cr = false
+        if (pendingCr) {
+          pendingCr = false
           if (byte === LF) {
-            space = false
-            lineEnds++
+            pendingSpace = false
+            pendingLines++
             continue
           }
-          flush()
+          for (; pendingLines > 0; pendingLines--) {
+            out[o++] = CR
+            out[o++] = LF
+          }
+          if (pendingSpace) out[o++] = SP
+          pendingSpace = false
           out[o++] = CR
         }
-        if (byte === CR) cr = true
-        else if (byte === SP || byte === TAB) space = true
+        if (byte === CR) pendingCr = true
+        else if (byte === SP || byte === TAB) pendingSpace = true
         else if (byte === LF) {
-          space = false
-          lineEnds++
+          pendingSpace = false
+          pendingLines++
         } else {
-          if (lineEnds > 0 || space) flush()
-          content = true
+          for (; pendingLines > 0; pendingLines--) {
+            out[o++] = CR
+            out[o++] = LF
+          }
+          if (pendingSpace) out[o++] = SP
+          pendingSpace = false
           out[o++] = byte
         }
       }
-      if (o > 0) sink(out.subarray(0, o))
+      space = pendingSpace
+      cr = pendingCr
+      lineEnds = pendingLines
+      if (o > 0) {
+        content = true
+        sink(out.subarray(0, o))
+      }
     },
     end() {
       if (cr) {

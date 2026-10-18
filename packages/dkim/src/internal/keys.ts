@@ -21,10 +21,6 @@ export function keyType(key: CryptoKey): KeyType | undefined {
   return undefined
 }
 
-/**
- * Imports a private key from PEM (PKCS #8, or PKCS #1 for RSA) or a JWK, or checks a CryptoKey.
- * Throws a `TypeError` for anything that isn't an RSA or Ed25519 private signing key.
- */
 export async function importPrivateKey(input: CryptoKey | string | JsonWebKey): Promise<CryptoKey> {
   const key = await importKey(input).catch((error: unknown) => {
     throw new TypeError('privateKey is not a valid RSA or Ed25519 private key.', { cause: error })

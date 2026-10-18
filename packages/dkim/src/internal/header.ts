@@ -53,10 +53,8 @@ export function trimWsp(text: string): string {
 }
 
 /**
- * RFC 6376 section 3.4.1 and 3.4.2. Relaxed lower-cases the name, unfolds, turns each run of SP
- * and HTAB into one SP, and drops the whitespace around the colon and at the end. Only SP and
- * HTAB count as whitespace. Every line break goes, including those before the lines
- * `parseFields` joined to a field.
+ * RFC 6376 sections 3.4.1 and 3.4.2. Only SP and HTAB count as whitespace, and every line break
+ * goes, including those before the lines `parseFields` joined to a field.
  */
 export function canonicalizeField(raw: string, canonicalization: Canonicalization): string {
   if (canonicalization === 'simple') return raw

@@ -1,8 +1,3 @@
-export const CR = 0x0d
-export const LF = 0x0a
-export const SP = 0x20
-export const TAB = 0x09
-
 /** Each byte as one character (U+0000 to U+00FF), so header bytes survive string handling. */
 export function toBinary(bytes: Uint8Array): string {
   let text = ''

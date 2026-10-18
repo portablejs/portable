@@ -371,6 +371,39 @@ const cases: Case[] = [
     records: key(() => rsaRec),
     result: 'pass',
   },
+  ...[' ;', ' x-note=1;', ' xnote;', ' 1x=2;'].map((tag): Case => ({
+    title: `a signature with the invalid tag-spec "${tag.trim()}" (RFC 6376 section 3.2)`,
+    message: () => std(tag),
+    records: key(() => rsaRec),
+    result: 'neutral',
+    reason: 'signature syntax error',
+    noDns: true,
+  })),
+  {
+    title: 'a signature with folding whitespace around tags and values',
+    message: () => std(' n =\r\n  two  words \r\n ;'),
+    records: key(() => rsaRec),
+    result: 'pass',
+  },
+  {
+    title: 'a key with a colon and spaces in a value',
+    message: () => std(),
+    records: key(() => rsaRec.replace('k=rsa;', 'k=rsa; n=see: notes (1);')),
+    result: 'pass',
+  },
+  {
+    title: 'a key record with a trailing semicolon',
+    message: () => std(),
+    records: key(() => `${rsaRec};`),
+    result: 'pass',
+  },
+  {
+    title: 'a key record with a tag-spec without "="',
+    message: () => std(),
+    records: key(() => rsaRec.replace('k=rsa;', 'k=rsa; n;')),
+    result: 'permerror',
+    reason: 'key syntax error',
+  },
   {
     title: 'a signature with whitespace between b and "="',
     message: () =>

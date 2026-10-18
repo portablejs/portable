@@ -47,10 +47,6 @@ export const bodyHashKey = (request: BodyHash): string =>
 
 type Pass = { canonicalizer: Canonicalizer; sinks: Sink[]; total: number }
 
-/**
- * Canonicalizes the body once for each canonicalization and hashes each requested prefix of it.
- * The results are keyed by `bodyHashKey`.
- */
 export async function hashBody(
   body: Body,
   requests: readonly BodyHash[],

@@ -231,10 +231,6 @@ function encodeIdentity(identity: string, domain: string): string {
   return `${encoded}@${host}`
 }
 
-/**
- * The fields to sign, from the bottom of the header up, as RFC 6376 section 5.4.2 has a verifier
- * pick them.
- */
 function selectForSigning(fields: readonly Field[], names: readonly string[]): Field[] {
   const wanted = new Set(names.map(lowerAscii))
   const selected: Field[] = []
