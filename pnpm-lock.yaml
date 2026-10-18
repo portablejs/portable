@@ -365,6 +365,33 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
 
+  packages/rpc:
+    dependencies:
+      '@portable/jsonl':
+        specifier: workspace:*
+        version: link:../jsonl
+
+  packages/rpc/test:
+    devDependencies:
+      '@portable/rpc':
+        specifier: workspace:*
+        version: link:..
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../../streams
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      birpc:
+        specifier: ^4.2.0
+        version: 4.2.0
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2
+      json-rpc-2.0:
+        specifier: ^1.7.1
+        version: 1.8.1
+
   packages/spf:
     dependencies:
       '@portable/dns':
@@ -1470,6 +1497,9 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
+  birpc@4.2.0:
+    resolution: {integrity: sha512-KxgKcZPfrtzJDDALHPguGpGJUrzdgpymyiQQgzFjWreHMOpWrnFNVREr5J48x2DBh8ZVioscrV1SBkDipGiX+Q==}
+
   bn.js@4.12.5:
     resolution: {integrity: sha512-3aRg6/JxfffFD+OlOjOFR3Vo79l39ooBTFucxx+MT3dhCtzn3EmiUPQo+6/OZuI2jbXi3YKgmiTFBgChQMwIRQ==}
 
@@ -1537,6 +1567,9 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  comlink@4.4.2:
+    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
   commander@15.0.0:
     resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
@@ -1882,6 +1915,9 @@ packages:
 
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
+
+  json-rpc-2.0@1.8.1:
+    resolution: {integrity: sha512-BmN42JKn6FI36pcMMzHCXQhpKNEfbeqgSIcUYHKnifq0/4Ey6PDinovwUOgajT7NsgUtpWdDXaCWlpI4LHXN3g==}
 
   json-stream-stringify@3.1.7:
     resolution: {integrity: sha512-F4MWetLtY42YMaAKw5cV4e47zMD5aOT+tjjQWjX18ACtdkQ5Y/vrcfbcQ107Rh+MXjOCIx4KhW0wPmOvG8iQ5w==}
@@ -3469,6 +3505,8 @@ snapshots:
 
   base64-js@1.5.1: {}
 
+  birpc@4.2.0: {}
+
   bn.js@4.12.5: {}
 
   body-parser@2.3.0(supports-color@7.2.0):
@@ -3542,6 +3580,8 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  comlink@4.4.2: {}
 
   commander@15.0.0: {}
 
@@ -3880,6 +3920,8 @@ snapshots:
   js-tokens@4.0.0: {}
 
   json-buffer@3.0.1: {}
+
+  json-rpc-2.0@1.8.1: {}
 
   json-stream-stringify@3.1.7: {}
 

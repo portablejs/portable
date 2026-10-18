@@ -1,0 +1,50 @@
+{
+  "name": "@portable/rpc",
+  "description": "Typed JSON-RPC 2.0 over MessagePort, windows, WebSocket and HTTP, with streaming results, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/rpc"
+  },
+  "keywords": [
+    "rpc",
+    "json-rpc",
+    "jsonrpc",
+    "postmessage",
+    "iframe",
+    "worker",
+    "messageport",
+    "comlink",
+    "birpc",
+    "penpal"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "dependencies": {
+    "@portable/jsonl": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
