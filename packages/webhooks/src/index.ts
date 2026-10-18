@@ -1,6 +1,7 @@
 import * as Bytes from '@portable/bytes'
 import { VerificationError } from './errors.js'
 import { utf8 } from './internal.js'
+import { race, readBody } from './race.js'
 import { type Scheme, standard } from './schemes.js'
 
 export { type Reason, VerificationError } from './errors.js'
@@ -49,6 +50,8 @@ export declare namespace verify {
     tolerance?: number | undefined
     /** The time to compare the signed timestamp with. @default new Date() */
     now?: Date | undefined
+    /** Rejects with `signal.reason` when aborted. */
+    signal?: AbortSignal | undefined
   }
 
   type Result = {
@@ -87,7 +90,14 @@ export declare namespace verify {
  * object, or the body isn't a string or `Uint8Array`.
  */
 export async function verify(input: verify.Input, options: verify.Options): Promise<verify.Result> {
-  const { scheme = standard, hmac = hmacSha256, tolerance = 300, now = new Date() } = options
+  const {
+    scheme = standard,
+    hmac = hmacSha256,
+    tolerance = 300,
+    now = new Date(),
+    signal,
+  } = options
+  signal?.throwIfAborted()
   checkScheme(scheme)
   if (!(tolerance >= 0)) throw new RangeError('tolerance must be a non-negative number')
   const secrets =
@@ -107,15 +117,16 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
   let body: Uint8Array
   let text: string | undefined
   if (typeof input.body === 'string') body = utf8.encode((text = input.body))
-  else if (input instanceof Request) body = new Uint8Array(await input.arrayBuffer())
+  else if (input instanceof Request) body = await readBody(input, signal)
   else if (input.body instanceof Uint8Array) body = input.body
   else throw new TypeError('body must be the raw request body as a string or Uint8Array')
 
   const content = bytes(scheme.payload({ id, timestamp, body }))
   let match = false
   for (const key of keys) {
-    const expected = await hmac(key, content)
-    for (const signature of signed.signatures) if (Bytes.timingSafeEqual(signature, expected)) match = true
+    const expected = await race(hmac(key, content), signal)
+    for (const signature of signed.signatures)
+      if (Bytes.timingSafeEqual(signature, expected)) match = true
   }
   if (!match) throw new VerificationError('signature', 'No signature matches the body')
 
@@ -140,6 +151,8 @@ export declare namespace sign {
     timestamp?: Date | undefined
     /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
     id?: string | undefined
+    /** Rejects with `signal.reason` when aborted. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -168,11 +181,14 @@ export async function sign(
     hmac = hmacSha256,
     timestamp = new Date(),
     id = crypto.randomUUID(),
+    signal,
   } = options
+  signal?.throwIfAborted()
   checkScheme(scheme)
   const key = keyOf(scheme, options.secret)
   const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : body
-  const signature = await hmac(key, bytes(scheme.payload({ id, timestamp, body: bytesOfBody })))
+  const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }))
+  const signature = await race(hmac(key, content), signal)
   return scheme.headers({ signature, id, timestamp })
 }
 

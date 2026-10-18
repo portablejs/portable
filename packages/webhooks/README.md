@@ -68,6 +68,7 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | `timestamp` | `new Date()` | `sign` only. The time to sign. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
 | `hmac` | `crypto.subtle` | A function `(key, data) => Uint8Array \| Promise<Uint8Array>` that computes HMAC-SHA256. |
+| `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. |
 
 ### Schemes
 

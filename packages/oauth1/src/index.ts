@@ -1,6 +1,7 @@
 import * as Base64 from '@portable/base64'
 import { type Digest, type HashAlgorithm, hmac, rsaSha1, subtleDigest } from './crypto.js'
 import { UnsupportedError } from './errors.js'
+import { race, readBody } from './race.js'
 import {
   type Pair,
   joinPairs,
@@ -61,6 +62,8 @@ export declare namespace authorization {
      * their parameters are signed already. @default false
      */
     bodyHash?: boolean | undefined
+    /** Rejects with `signal.reason` when aborted. */
+    signal?: AbortSignal | undefined
     /** `oauth_nonce`. Set it only in tests. @default 32 random hex digits */
     nonce?: string | undefined
     /** The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests. @default new Date() */
@@ -101,12 +104,15 @@ export async function authorization(
   request: Request,
   options: authorization.Options,
 ): Promise<string> {
+  const { signal } = options
+  signal?.throwIfAborted()
   const form = isForm(request)
   const body =
     (form || options.bodyHash) && request.body !== null
-      ? new Uint8Array(await request.clone().arrayBuffer())
+      ? await readBody(request.clone(), signal)
       : undefined
-  return header(await protocolParameters(request, form, body, options), options.realm)
+  const pairs = await race(protocolParameters(request, form, body, options), signal)
+  return header(pairs, options.realm)
 }
 
 /**
@@ -134,13 +140,14 @@ export async function authorization(
  * @throws {InvalidInputError} For an RSA private key that can't be used.
  */
 export async function sign(request: Request, options: sign.Options): Promise<Request> {
-  const { placement = 'header' } = options
+  const { placement = 'header', signal } = options
+  signal?.throwIfAborted()
   const form = isForm(request)
   const body =
     (form || options.bodyHash || placement === 'query') && request.body !== null
-      ? new Uint8Array(await request.arrayBuffer())
+      ? await readBody(request, signal)
       : undefined
-  const pairs = await protocolParameters(request, form, body, options)
+  const pairs = await race(protocolParameters(request, form, body, options), signal)
 
   if (placement === 'query') {
     const url = new URL(request.url)
