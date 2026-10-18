@@ -4,7 +4,6 @@ export type Fetch = (url: string, init: RequestInit) => Promise<Response>
 
 const accept = 'application/rdap+json, application/json'
 
-/** Fetches `url` and returns its JSON object, or throws `NotFoundError` or `ResponseError`. */
 export async function request(
   url: string,
   fetch: Fetch,

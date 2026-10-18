@@ -78,7 +78,6 @@ export function parse(text: string): Prefix | undefined {
   return { version: v6 ? 6 : 4, bytes, length }
 }
 
-/** Formats a prefix for an RDAP query path, with IPv6 written as RFC 5952 recommends. */
 export function format({ version, bytes, length }: Prefix): string {
   const full = version === 4 ? 32 : 128
   const suffix = length === full ? '' : `/${length}`
@@ -100,7 +99,6 @@ export function format({ version, bytes, length }: Prefix): string {
   return `${hex.slice(0, start).join(':')}::${hex.slice(start + size).join(':')}${suffix}`
 }
 
-/** Whether `inner` lies entirely inside `outer`. */
 export function contains(outer: Prefix, inner: Prefix): boolean {
   if (outer.version !== inner.version || inner.length < outer.length) return false
   const whole = outer.length >> 3

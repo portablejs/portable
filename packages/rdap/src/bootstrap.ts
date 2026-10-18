@@ -98,7 +98,6 @@ function wait(entry: Entry, signal: AbortSignal | undefined): Promise<Index> {
   })
 }
 
-/** The RDAP base URL for a domain name in A-labels, from the longest matching label suffix. */
 export async function domain(
   name: string,
   fetch: Fetch,
@@ -114,7 +113,6 @@ export async function domain(
   }
 }
 
-/** The RDAP base URL for an address or prefix, from the longest matching prefix. */
 export async function ip(
   prefix: Address.Prefix,
   fetch: Fetch,
@@ -131,7 +129,6 @@ export async function ip(
   return best?.url
 }
 
-/** The RDAP base URL for an AS number. */
 export async function asn(
   number: number,
   fetch: Fetch,

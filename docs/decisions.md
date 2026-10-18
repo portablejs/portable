@@ -2,6 +2,17 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/rdap` API
+
+- **`domain(name)`, `ip(address)` and `asn(number)`, each returning a plain normalized object with `raw`.** node-rdap's `nameserver()` and `entity()` were left out: a domain result already lists its nameservers and entities, and entity handles can be routed only for the eight RFC 8521 tags.
+- **Four error classes.** `InvalidInputError` and `UnsupportedError` (no server in the bootstrap file) are the shared names. `NotFoundError` is separate from `ResponseError` because "is this name registered?" is the most common question a caller asks. A rejected `fetch` passes through unchanged. `@portable/dns` wraps it in `QueryError` to copy Node's error codes, and RDAP has no such codes to copy.
+- **Registrar referrals are followed by default, and a failed referral is reported in `referral.error` instead of rejecting.** Registrar servers fail more often than registries, and the registry's answer is still correct. The other option was to reject, which would make a `.com` lookup fail whenever the registrar's server is down.
+- **The merged result takes entities from the registrar and everything else from the registry.** A registry entity is kept when the registrar's response has none of its roles. Taking the whole registrar response was simpler, but registrars report their own expiration dates (MarkMonitor's `google.com` expiration is a day earlier than Verisign's), and the registry is the authority for them.
+- **Bootstrap files are cached for 24 hours in a `WeakMap` keyed by the `fetch` function, with no TTL option.** A module-level cache leaked bootstrap files between tests that pass different fetches, and node-rdap needs `flushCaches()` for that. 24 hours is IANA's `max-age`. Concurrent lookups share one request, and it is aborted only when every lookup waiting for it has aborted.
+- **Entities are flattened depth first, and each jCard property gives its first value.** A registrar's abuse contact is nested inside the registrar entity, and callers look for it with `roles.includes('abuse')`. Several emails or phones per entity are in `raw`.
+- **A date without a time zone is read as UTC.** `new Date('2020-01-02T03:04:05')` uses the machine's zone, so the same response gave different `Date`s on different machines.
+- **IDNA uses `URL`'s host parser, and IP addresses use a private parser, until `@portable/idna` and `@portable/ip` are on `main`.** Both are in progress. The parser is about 100 lines with the longest-prefix match, and swapping it for `@portable/ip` changes no behavior the tests check.
+
 ## `@portable/web-push` sends aes128gcm only, with no GCM keys
 
 - **Options:** support aesgcm and GCM API keys as web-push does; aes128gcm and VAPID only.

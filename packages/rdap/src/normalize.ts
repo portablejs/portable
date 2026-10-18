@@ -239,7 +239,6 @@ export function toAutnum(json: Json): Autnum {
   }
 }
 
-/** The URL of the registrar's response, from a `related` link to another RDAP domain object. */
 export function relatedLink(json: Json, self: string): string | undefined {
   for (const link of list(json.links)) {
     if (!isObject(link) || link.rel !== 'related' || typeof link.href !== 'string') continue
