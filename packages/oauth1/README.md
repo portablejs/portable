@@ -4,17 +4,6 @@ Signs OAuth 1.0a requests ([RFC 5849](https://www.rfc-editor.org/rfc/rfc5849)) w
 
 Replaces [oauth-1.0a](https://www.npmjs.com/package/oauth-1.0a) and the OAuth 1.0a half of [oauth](https://www.npmjs.com/package/oauth) (node-oauth).
 
-## Why use this over oauth-1.0a and node-oauth
-
-Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with WebCrypto, in any runtime above.
-
-- A `+` in the query and a default port such as `:443` are signed as RFC 5849 requires. oauth-1.0a signs them wrongly ([#24](https://github.com/ddo/oauth-1.0a/issues/24), [#59](https://github.com/ddo/oauth-1.0a/issues/59)).
-- Repeated query names and a form body passed as a string are signed. node-oauth signs `a[0]` and `a[1]` ([#375](https://github.com/ciaranj/node-oauth/issues/375)) and leaves the string body out ([#366](https://github.com/ciaranj/node-oauth/issues/366)).
-- A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
-- RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
-- The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
-- On Node, the default WebCrypto hash made an `Authorization` header for a GET request about 5× slower than oauth-1.0a with `node:crypto`, at about 125 µs. With `digest` set to `@noble/hashes`, it was about 1.15× faster than oauth-1.0a and 2× faster than node-oauth, and a signed form POST was about 1.2× slower than oauth-1.0a.
-
 ```sh
 npm install @portable/oauth1
 ```
@@ -82,6 +71,17 @@ import * as OAuth1 from '@portable/oauth1'
 const digest: OAuth1.Digest = (algorithm, data) => (algorithm === 'SHA-1' ? sha1(data) : sha256(data))
 await OAuth1.sign(request, { consumer, token, digest })
 ```
+
+## Why use this over oauth-1.0a and node-oauth
+
+Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with WebCrypto, in any JavaScript runtime.
+
+- A `+` in the query and a default port such as `:443` are signed as RFC 5849 requires. oauth-1.0a signs them wrongly ([#24](https://github.com/ddo/oauth-1.0a/issues/24), [#59](https://github.com/ddo/oauth-1.0a/issues/59)).
+- Repeated query names and a form body passed as a string are signed. node-oauth signs `a[0]` and `a[1]` ([#375](https://github.com/ciaranj/node-oauth/issues/375)) and leaves the string body out ([#366](https://github.com/ciaranj/node-oauth/issues/366)).
+- A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
+- RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
+- The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
+- On Node, the default WebCrypto hash made an `Authorization` header for a GET request about 5× slower than oauth-1.0a with `node:crypto`, at about 125 µs. With `digest` set to `@noble/hashes`, it was about 1.15× faster than oauth-1.0a and 2× faster than node-oauth, and a signed form POST was about 1.2× slower than oauth-1.0a.
 
 ## Migrating
 
