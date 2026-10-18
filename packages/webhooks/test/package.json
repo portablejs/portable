@@ -3,11 +3,13 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/webhooks": "workspace:*",
     "@noble/hashes": "^2.4.0",
     "@octokit/webhooks-methods": "^6.0.0",
     "@slack/bolt": "^5.1.0",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "standardwebhooks": "^1.1.1",
     "stripe": "^23.0.0",
     "svix": "^2.8.0"

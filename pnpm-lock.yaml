@@ -329,9 +329,15 @@ importers:
       '@portable/dns-packet':
         specifier: workspace:*
         version: link:../../dns-packet
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       tangerine:
         specifier: ^2.1.3
         version: 2.1.3(undici@8.11.2)
@@ -611,6 +617,9 @@ importers:
 
   packages/oauth1/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/oauth1':
         specifier: workspace:*
         version: link:..
@@ -620,6 +629,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       oauth:
         specifier: ^0.10.2
         version: 0.10.2
@@ -860,12 +872,18 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../../dns
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/spf':
         specifier: workspace:*
         version: link:..
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       mailauth:
         specifier: ^7.3.0
         version: 7.3.0
@@ -1005,6 +1023,9 @@ importers:
 
   packages/webhooks/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/webhooks':
         specifier: workspace:*
         version: link:..
@@ -1020,6 +1041,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       standardwebhooks:
         specifier: ^1.1.1
         version: 1.1.1

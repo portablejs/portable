@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/oauth1": "workspace:*",
     "@noble/hashes": "^2.4.0",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "oauth": "^0.10.2",
     "oauth-1.0a": "^2.2.6"
   }

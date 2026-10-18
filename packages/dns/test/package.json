@@ -5,7 +5,9 @@
   "devDependencies": {
     "@portable/dns": "workspace:*",
     "@portable/dns-packet": "workspace:*",
+    "@portable/fuzz": "workspace:*",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "tangerine": "^2.1.3"
   }
 }
