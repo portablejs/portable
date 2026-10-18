@@ -11,13 +11,13 @@ type NativeValues<T> = (options: { preventCancel: boolean }) => AsyncIterableIte
  *
  * @example
  * ```ts
- * import { fromIterable } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
  * async function* countdown() {
  *   for (let i = 3; i > 0; i--) yield `${i}\n`
  * }
  *
- * return new Response(fromIterable(countdown()).pipeThrough(new TextEncoderStream()))
+ * return new Response(Streams.fromIterable(countdown()).pipeThrough(new TextEncoderStream()))
  * ```
  */
 export function fromIterable<T>(
@@ -43,9 +43,9 @@ export declare namespace toAsyncIterable {
  *
  * @example
  * ```ts
- * import { toAsyncIterable } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * for await (const chunk of toAsyncIterable(response.body!)) {
+ * for await (const chunk of Streams.toAsyncIterable(response.body!)) {
  *   if (done(chunk)) break // cancels the response body
  * }
  * ```
@@ -71,9 +71,9 @@ export function toAsyncIterable<T>(
  *
  * @example
  * ```ts
- * import { transform } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * const sum = transform(async function* (source: AsyncIterable<number>) {
+ * const sum = Streams.transform(async function* (source: AsyncIterable<number>) {
  *   let total = 0
  *   for await (const n of source) yield (total += n)
  * })

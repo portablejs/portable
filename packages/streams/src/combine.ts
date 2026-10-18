@@ -1,4 +1,4 @@
-import { type BinaryChunk, MaxBytesError, byteLength } from './bytes.js'
+import { MaxBytesError, byteLength } from './bytes.js'
 import { fromIterable } from './iterable.js'
 import { type Source, assertSource, isReadableStream } from './source.js'
 
@@ -9,9 +9,9 @@ import { type Source, assertSource, isReadableStream } from './source.js'
  *
  * @example
  * ```ts
- * import { concat } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * const body = concat([header], file.stream(), [footer])
+ * const body = Streams.concat([header], file.stream(), [footer])
  * ```
  */
 export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
@@ -56,9 +56,9 @@ export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
  *
  * @example
  * ```ts
- * import { merge } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * const events = merge(serverA.body!, serverB.body!)
+ * const events = Streams.merge(serverA.body!, serverB.body!)
  * ```
  */
 export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
@@ -130,12 +130,12 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
  *
  * @example
  * ```ts
- * import { limitBytes } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * await request.body!.pipeThrough(limitBytes(1_000_000)).pipeTo(upload)
+ * await request.body!.pipeThrough(Streams.limitBytes(1_000_000)).pipeTo(upload)
  * ```
  */
-export function limitBytes<T extends BinaryChunk>(maxBytes: number): TransformStream<T, T> {
+export function limitBytes<T extends Uint8Array | string>(maxBytes: number): TransformStream<T, T> {
   let length = 0
   return new TransformStream<T, T>({
     transform(chunk, controller) {

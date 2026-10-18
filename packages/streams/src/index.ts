@@ -1,4 +1,4 @@
-export { type BinaryChunk, MaxBytesError } from './bytes.js'
+export { MaxBytesError } from './bytes.js'
 export { toArray, toBytes, toJson, toText } from './collect.js'
 export { concat, limitBytes, merge } from './combine.js'
 export { fromIterable, toAsyncIterable, transform } from './iterable.js'

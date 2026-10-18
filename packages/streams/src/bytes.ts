@@ -1,6 +1,3 @@
-/** A chunk that can be read as bytes: text (encoded as UTF-8), an `ArrayBuffer`, or any typed array or `DataView`. */
-export type BinaryChunk = string | ArrayBuffer | ArrayBufferView
-
 /** Thrown when a stream holds more bytes than `maxBytes` allows. */
 export class MaxBytesError extends Error {
   override name = 'Streams.MaxBytesError'
@@ -17,23 +14,19 @@ const encoder = new TextEncoder()
 export function toUint8Array(chunk: unknown): Uint8Array {
   if (chunk instanceof Uint8Array) return chunk
   if (typeof chunk === 'string') return encoder.encode(chunk)
-  if (ArrayBuffer.isView(chunk))
-    return new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength)
-  if (chunk instanceof ArrayBuffer) return new Uint8Array(chunk)
   throw unsupportedChunk(chunk)
 }
 
 export function byteLength(chunk: unknown): number {
+  if (chunk instanceof Uint8Array) return chunk.byteLength
   if (typeof chunk === 'string') return utf8Length(chunk)
-  if (ArrayBuffer.isView(chunk) || chunk instanceof ArrayBuffer) return chunk.byteLength
   throw unsupportedChunk(chunk)
 }
 
-export function unsupportedChunk(chunk: unknown): TypeError {
-  const type = chunk === null ? 'null' : typeof chunk
-  return new TypeError(
-    `Chunk type ${type} is not supported. Expected a string, ArrayBuffer or ArrayBufferView.`,
-  )
+function unsupportedChunk(chunk: unknown): TypeError {
+  const type =
+    typeof chunk === 'object' ? Object.prototype.toString.call(chunk).slice(8, -1) : typeof chunk
+  return new TypeError(`Expected a Uint8Array or string chunk, got ${type}.`)
 }
 
 function utf8Length(text: string): number {

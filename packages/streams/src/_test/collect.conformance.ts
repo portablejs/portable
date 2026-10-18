@@ -7,36 +7,31 @@ const fixtureBytes = encode(fixtureString)
 const fixtureArrayBuffer = fixtureBytes.buffer
 const wide = encode(`  ${fixtureString}  `).buffer
 
+class SubclassedBytes extends Uint8Array {}
+
 const singleChunks: Record<string, unknown> = {
   string: fixtureString,
-  arrayBuffer: fixtureArrayBuffer,
-  typedArray: fixtureBytes,
-  'typedArray with offset': new Uint8Array(wide, 2, fixtureString.length),
-  uint16Array: new Uint16Array(fixtureArrayBuffer),
-  'uint16Array with offset': new Uint16Array(wide, 2, fixtureString.length / 2),
-  dataView: new DataView(fixtureArrayBuffer),
-  'dataView with offset': new DataView(wide, 2, fixtureString.length),
+  Uint8Array: fixtureBytes,
+  'Uint8Array with offset': new Uint8Array(wide, 2, fixtureString.length),
+  'Uint8Array subclass': SubclassedBytes.from(fixtureBytes),
 }
 
-const fixtureByteValues = [...fixtureBytes]
 const multiChunks: Record<string, unknown[]> = {
   string: fixtureString.split(''),
-  arrayBuffer: fixtureByteValues.map((byte) => new Uint8Array([byte]).buffer),
-  typedArray: fixtureByteValues.map((byte) => new Uint8Array([byte])),
-  uint16Array: Array.from(
-    { length: fixtureByteValues.length / 2 },
-    (_, i) => new Uint16Array(new Uint8Array(fixtureByteValues.slice(i * 2, i * 2 + 2)).buffer),
-  ),
-  dataView: fixtureByteValues.map((byte) => new DataView(new Uint8Array([byte]).buffer)),
+  Uint8Array: [...fixtureBytes].map((byte) => new Uint8Array([byte])),
 }
 
 const invalidChunks: Record<string, unknown> = {
+  ArrayBuffer: fixtureArrayBuffer,
+  Uint16Array: new Uint16Array(fixtureArrayBuffer),
+  DataView: new DataView(fixtureArrayBuffer),
   object: {},
   array: [],
   boolean: false,
   number: 0,
   bigint: 0n,
   undefined: undefined,
+  null: null,
   symbol: Symbol('test'),
 }
 
@@ -84,8 +79,13 @@ describe('get-stream: toText', () => {
     await expect(toText(['😀'], { maxBytes: 3 })).rejects.toThrow(MaxBytesError)
   })
 
+  // Valid UTF-8 only: Chromium 141's streaming TextDecoder replaces an ASCII byte that follows
+  // an invalid sequence split across chunks, so random bytes would test the browser.
   test('decodes like Response.text()', async () => {
-    const bytes = randomBytes(1e5)
+    const text = String.fromCodePoint(
+      ...Array.from({ length: 3e4 }, () => Math.floor(Math.random() * 0xd000)),
+    )
+    const bytes = encode(text)
     expect(await toText(fromChunks(chunked(bytes, 1000)))).toBe(await new Response(bytes).text())
   })
 
@@ -133,24 +133,17 @@ describe('get-stream: toBytes', () => {
     })
   }
 
-  const long = encode(`${fixtureString}..`)
-  const tooLong: Record<string, unknown> = {
-    typedArray: long,
-    arrayBuffer: long.buffer,
-    uint16Array: new Uint16Array(long.buffer),
-    dataView: new DataView(long.buffer),
-  }
-  for (const [name, chunk] of Object.entries(tooLong)) {
-    test(`fails when maxBytes is exceeded with ${name}`, async () => {
-      const maxBytes = fixtureString.length
-      await expect(toBytes(anyChunks([chunk]), { maxBytes })).rejects.toThrow(MaxBytesError)
-      expect(await toBytes([fixtureBytes], { maxBytes })).toEqual(fixtureBytes)
-    })
-  }
+  test('fails when maxBytes is exceeded', async () => {
+    const maxBytes = fixtureString.length
+    await expect(toBytes([encode(`${fixtureString}..`)], { maxBytes })).rejects.toThrow(
+      MaxBytesError,
+    )
+    expect(await toBytes([fixtureBytes], { maxBytes })).toEqual(fixtureBytes)
+  })
 
-  test('counts maxBytes in bytes', async () => {
-    await expect(toBytes([new Uint16Array(3)], { maxBytes: 4 })).rejects.toThrow(MaxBytesError)
-    expect(await toBytes([new Uint16Array(2)], { maxBytes: 4 })).toEqual(new Uint8Array(4))
+  test('counts string chunks as their UTF-8 bytes', async () => {
+    await expect(toBytes(['\u1000\u1000'], { maxBytes: 5 })).rejects.toThrow(MaxBytesError)
+    expect(await toBytes(['\u1000\u1000'], { maxBytes: 6 })).toEqual(encode('\u1000\u1000'))
   })
 
   test('returns a fresh buffer of exactly the read length', async () => {
@@ -220,13 +213,7 @@ describe('get-stream: sources', () => {
   })
 
   test('reads mixed chunk types', async () => {
-    const chunks = [
-      fixtureString,
-      fixtureArrayBuffer,
-      fixtureBytes,
-      new Uint16Array(fixtureArrayBuffer),
-      new DataView(fixtureArrayBuffer),
-    ]
+    const chunks = [fixtureString, fixtureBytes, SubclassedBytes.from(fixtureBytes)]
     expect(await toText(chunks)).toBe(fixtureString.repeat(chunks.length))
     expect(decode(await toBytes(chunks))).toBe(fixtureString.repeat(chunks.length))
   })
@@ -329,6 +316,12 @@ describe('MaxBytesError', () => {
     expect(error).toBeInstanceOf(MaxBytesError)
     expect(error.name).toBe('Streams.MaxBytesError')
     expect(error.maxBytes).toBe(3)
+  })
+
+  test('maxBytes: 0 accepts only an empty source', async () => {
+    expect(await toBytes([new Uint8Array()], { maxBytes: 0 })).toHaveLength(0)
+    await expect(toBytes([new Uint8Array(1)], { maxBytes: 0 })).rejects.toThrow(MaxBytesError)
+    await expect(toText(['a'], { maxBytes: 0 })).rejects.toThrow(MaxBytesError)
   })
 
   test('allows a source of exactly maxBytes', async () => {
@@ -535,9 +528,9 @@ describe('raw-body: web streams', () => {
     expect(stream.locked).toBe(false)
   })
 
-  test('counts ArrayBuffer chunks against maxBytes', async () => {
+  test('rejects an ArrayBuffer chunk instead of miscounting it', async () => {
     const stream = fromChunks([new ArrayBuffer(10)])
-    await expect(toBytes(stream, { maxBytes: 5 })).rejects.toThrow(MaxBytesError)
+    await expect(toBytes(stream as never, { maxBytes: 5 })).rejects.toThrow(TypeError)
     expect(stream.locked).toBe(false)
   })
 

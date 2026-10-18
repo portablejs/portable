@@ -4,10 +4,10 @@
  *
  * @example
  * ```ts
- * import { map } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  * import { LineStream } from '@portable/lines'
  *
- * const records = body.pipeThrough(new LineStream()).pipeThrough(map((line) => JSON.parse(line)))
+ * const records = body.pipeThrough(new LineStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
  * ```
  */
 export function map<I, O>(
@@ -29,9 +29,9 @@ export function map<I, O>(
  *
  * @example
  * ```ts
- * import { filter } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * lines.pipeThrough(filter((line) => line !== ''))
+ * lines.pipeThrough(Streams.filter((line) => line !== ''))
  * ```
  */
 export function filter<T, S extends T>(
@@ -64,10 +64,10 @@ export function filter<T>(
  *
  * @example
  * ```ts
- * import { tap } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
  * let received = 0
- * body.pipeThrough(tap((chunk) => { received += chunk.byteLength }))
+ * body.pipeThrough(Streams.tap((chunk) => { received += chunk.byteLength }))
  * ```
  */
 export function tap<T>(
@@ -89,9 +89,9 @@ export function tap<T>(
  *
  * @example
  * ```ts
- * import { batch } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * await rows.pipeThrough(batch(500)).pipeTo(new WritableStream({ write: insertMany }))
+ * await rows.pipeThrough(Streams.batch(500)).pipeTo(new WritableStream({ write: insertMany }))
  * ```
  */
 export function batch<T>(size: number): TransformStream<T, T[]> {

@@ -1,4 +1,4 @@
-import { type BinaryChunk, MaxBytesError, byteLength, toUint8Array } from './bytes.js'
+import { MaxBytesError, byteLength, toUint8Array } from './bytes.js'
 import { type Source, forEach } from './source.js'
 
 export declare namespace toBytes {
@@ -14,14 +14,14 @@ export declare namespace toBytes {
  *
  * @example
  * ```ts
- * import { toBytes } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
  * const response = await fetch('https://example.com/image.png')
- * const bytes = await toBytes(response.body!, { maxBytes: 10_000_000 })
+ * const bytes = await Streams.toBytes(response.body!, { maxBytes: 10_000_000 })
  * ```
  */
 export async function toBytes(
-  source: Source<BinaryChunk>,
+  source: Source<Uint8Array | string>,
   options: toBytes.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { maxBytes = Infinity } = options
@@ -52,40 +52,34 @@ export declare namespace toText {
  *
  * @example
  * ```ts
- * import { toText } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
  * const response = await fetch('https://example.com/')
- * const html = await toText(response.body!, { maxBytes: 1_000_000 })
+ * const html = await Streams.toText(response.body!, { maxBytes: 1_000_000 })
  * ```
  */
 export async function toText(
-  source: Source<BinaryChunk>,
+  source: Source<Uint8Array | string>,
   options: toText.Options = {},
 ): Promise<string> {
   const { encoding = 'utf-8', maxBytes = Infinity } = options
   const decoder = new TextDecoder(encoding)
   let text = ''
-  let pending: Uint8Array[] = []
-  let pendingLength = 0
+  let decoding = false
   let length = 0
-  const decodePending = () => {
-    text += decoder.decode(concatBytes(pending, pendingLength))
-    pending = []
-    pendingLength = 0
-  }
   await forEach(source, (chunk) => {
     length += byteLength(chunk)
     if (length > maxBytes) throw new MaxBytesError(maxBytes)
     if (typeof chunk === 'string') {
-      if (pendingLength > 0) decodePending()
+      if (decoding) text += decoder.decode()
+      decoding = false
       text += chunk
-      return
+    } else {
+      text += decoder.decode(chunk, { stream: true })
+      decoding = true
     }
-    const bytes = toUint8Array(chunk)
-    pending.push(bytes)
-    pendingLength += bytes.byteLength
   })
-  decodePending()
+  if (decoding) text += decoder.decode()
   return text
 }
 
@@ -94,13 +88,13 @@ export async function toText(
  *
  * @example
  * ```ts
- * import { toJson } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  *
- * const body = await toJson(request.body!, { maxBytes: 100_000 })
+ * const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
  * ```
  */
 export async function toJson(
-  source: Source<BinaryChunk>,
+  source: Source<Uint8Array | string>,
   options: toText.Options = {},
 ): Promise<unknown> {
   return JSON.parse(await toText(source, options))
@@ -111,10 +105,10 @@ export async function toJson(
  *
  * @example
  * ```ts
- * import { toArray } from '@portable/streams'
+ * import * as Streams from '@portable/streams'
  * import { LineStream } from '@portable/lines'
  *
- * const lines = await toArray(response.body!.pipeThrough(new LineStream()))
+ * const lines = await Streams.toArray(response.body!.pipeThrough(new LineStream()))
  * ```
  */
 export async function toArray<T>(source: Source<T>): Promise<T[]> {
