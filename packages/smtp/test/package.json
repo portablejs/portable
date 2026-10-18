@@ -1,0 +1,12 @@
+{
+  "name": "@portable/smtp-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/smtp": "workspace:*",
+    "@portable/streams": "workspace:*",
+    "@types/node": "^26.6.5",
+    "nodemailer": "^10.1.2",
+    "smtp-server": "^3.19.23"
+  }
+}
