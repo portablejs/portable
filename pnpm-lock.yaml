@@ -329,6 +329,20 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4
 
+  packages/ip: {}
+
+  packages/ip/test:
+    devDependencies:
+      '@portable/ip':
+        specifier: workspace:*
+        version: link:..
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      ipaddr.js:
+        specifier: ^2.5.0
+        version: 2.5.0
+
   packages/json-stream: {}
 
   packages/json-stream/test:
