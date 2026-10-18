@@ -2,6 +2,16 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/dns-packet` API
+
+- **`encode(packet, { compress, framing })` and `decode(bytes, { framing })` are the whole API.** `framing: 'tcp'` replaces `streamEncode`/`streamDecode`. `encodingLength`, writing at an offset and `encode.bytes` are dropped, because `encode` returns an exactly sized array.
+- **Compression is off by default.** Queries rarely gain anything from it, and dns-packet's default made output depend on name order.
+- **Code tables and flag bits are internal.** Packets carry a `flags` object of booleans, and unnamed codes use RFC 3597 names (`TYPE65534`). An unknown name throws.
+- **TXT decodes to `Uint8Array[]`,** which keeps binary and DNS-SD data intact. `@portable/dns` can turn it into text.
+- **CAA `flags` keeps the whole byte** and SVCB/HTTPS stay raw bytes, so DNSSEC-signed data re-encodes exactly.
+- **No subpath for decode-only use:** encode and decode together are 6.6 kB minified and gzipped, and decode alone 5.7 kB.
+- **The decode benchmark allows 50%, not 25%.** Plain Node on the build is 1.8× faster than dns-packet, but Vitest's export getters make our source 20% slower inside the benchmark (see papercuts.md).
+
 ## `@portable/quoted-printable` API
 
 - **The oracle is libqp 3.0.1, copied into `src/_test/fixtures/`.** 3.0.1 fixes chunk-dependent output, split UTF-8 sequences and a boundary injection, but it was published hours ago and `minimumReleaseAge` refuses it, tarball URLs included. libqp 2.1.3 is installed from npm for the cases 3.0.1 didn't change. Replace the copy with `libqp@^3.0.1` once it is a day old.
