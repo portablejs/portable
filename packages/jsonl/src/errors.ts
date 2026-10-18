@@ -15,6 +15,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends TypeError {
+export class InvalidInputError extends Error {
   override name = 'Jsonl.InvalidInputError'
 }
