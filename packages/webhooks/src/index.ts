@@ -1,4 +1,5 @@
 import * as Base64 from '@portable/base64'
+import * as Bytes from '@portable/bytes'
 
 /**
  * A webhook signature format.
@@ -147,14 +148,16 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
   let text: string | undefined
   if (typeof input.body === 'string') content = utf8.encode(prefix + (text = input.body))
   else if (input instanceof Request)
-    content = concat(utf8.encode(prefix), new Uint8Array(await input.arrayBuffer()))
-  else if (input.body instanceof Uint8Array) content = concat(utf8.encode(prefix), input.body)
+    content = Bytes.concat([utf8.encode(prefix), new Uint8Array(await input.arrayBuffer())])
+  else if (input.body instanceof Uint8Array)
+    content = Bytes.concat([utf8.encode(prefix), input.body])
   else throw new TypeError('body must be the raw request body as a string or Uint8Array')
 
   let match = false
   for (const key of keys) {
     const expected = await hmac(key, content)
-    for (const signature of signed.signatures) if (equal(signature, expected)) match = true
+    for (const signature of signed.signatures)
+      if (Bytes.timingSafeEqual(signature, expected)) match = true
   }
   if (!match) throw new VerificationError('signature', 'No signature matches the body')
 
@@ -219,7 +222,7 @@ export async function sign(
   const id = options.id ?? (format.signsId ? randomId() : undefined)
   const prefix = format.prefix(String(seconds), id ?? '')
   const bytes = typeof body === 'string' ? utf8.encode(body) : body
-  const signature = await hmac(key, concat(utf8.encode(prefix), bytes))
+  const signature = await hmac(key, Bytes.concat([utf8.encode(prefix), bytes]))
   return format.write(signature, seconds, id)
 }
 
@@ -366,7 +369,7 @@ const formats: Record<Scheme, Format> = {
           if (timestamp !== undefined)
             throw new VerificationError('malformed-header', 'stripe-signature has two timestamps')
           timestamp = value
-        } else if (key === 'v1' && hexSignature.test(value)) signatures.push(fromHex(value))
+        } else if (key === 'v1' && hexSignature.test(value)) signatures.push(Bytes.fromHex(value))
       }
       if (timestamp === undefined)
         throw new VerificationError('malformed-header', 'stripe-signature has no timestamp')
@@ -379,7 +382,7 @@ const formats: Record<Scheme, Format> = {
     },
     prefix: (stamp) => `${stamp}.`,
     write: (signature, timestamp) => ({
-      'stripe-signature': `t=${timestamp},v1=${toHex(signature)}`,
+      'stripe-signature': `t=${timestamp},v1=${Bytes.toHex(signature)}`,
     }),
   },
   github: {
@@ -392,14 +395,14 @@ const formats: Record<Scheme, Format> = {
         throw new VerificationError('malformed-header', 'x-hub-signature-256 is not sha256=<hex>')
       return {
         stamp: '',
-        signatures: [fromHex(hex)],
+        signatures: [Bytes.fromHex(hex)],
         id: get('x-github-delivery') ?? undefined,
         timestamp: undefined,
       }
     },
     prefix: () => '',
     write: (signature, _, id) => ({
-      'x-hub-signature-256': `sha256=${toHex(signature)}`,
+      'x-hub-signature-256': `sha256=${Bytes.toHex(signature)}`,
       ...(id === undefined ? {} : { 'x-github-delivery': id }),
     }),
   },
@@ -414,7 +417,7 @@ const formats: Record<Scheme, Format> = {
         throw new VerificationError('malformed-header', 'x-slack-signature is not v0=<hex>')
       return {
         stamp: timestamp,
-        signatures: [fromHex(hex)],
+        signatures: [Bytes.fromHex(hex)],
         id: undefined,
         timestamp: seconds(timestamp, 'x-slack-request-timestamp'),
       }
@@ -422,40 +425,9 @@ const formats: Record<Scheme, Format> = {
     prefix: (stamp) => `v0:${stamp}:`,
     write: (signature, timestamp) => ({
       'x-slack-request-timestamp': String(timestamp),
-      'x-slack-signature': `v0=${toHex(signature)}`,
+      'x-slack-signature': `v0=${Bytes.toHex(signature)}`,
     }),
   },
-}
-
-function concat(a: Uint8Array, b: Uint8Array): Uint8Array<ArrayBuffer> {
-  const out = new Uint8Array(a.length + b.length)
-  out.set(a)
-  out.set(b, a.length)
-  return out
-}
-
-function equal(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a[i]! ^ b[i]!
-  return diff === 0
-}
-
-function fromHex(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < out.length; i++) out[i] = (nibble(hex, i * 2) << 4) | nibble(hex, i * 2 + 1)
-  return out
-}
-
-function nibble(hex: string, at: number): number {
-  const code = hex.charCodeAt(at) | 0x20
-  return code <= 0x39 ? code - 0x30 : code - 0x57
-}
-
-function toHex(bytes: Uint8Array): string {
-  let hex = ''
-  for (const byte of bytes) hex += byte.toString(16).padStart(2, '0')
-  return hex
 }
 
 function randomId(): string {

@@ -757,6 +757,9 @@ importers:
       '@portable/base64':
         specifier: workspace:^
         version: link:../base64
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
 
   packages/webhooks/test:
     devDependencies:
