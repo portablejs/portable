@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import * as MimeHeaders from '../index.js'
+import * as MimeHeaders from '@portable/mime-headers'
 
 // The examples in the JSDoc and the README, so the documented results stay true.
 

@@ -7,7 +7,7 @@ import {
   formatValue,
   parseHeaders,
   parseValue,
-} from '../index.js'
+} from '@portable/mime-headers'
 import { latin1 } from './utils.js'
 
 // Ported from libmime 5.5.1 test/libmime-test.ts. libmime's encodeWord(text, 'Q', n) is

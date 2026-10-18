@@ -5,12 +5,6 @@
     "build": "zile",
     "dev": "zile dev"
   },
-  "devDependencies": {
-    "@types/node": "^26.6.5",
-    "email-addresses": "^5.0.0",
-    "libmime": "^5.4.9",
-    "nodemailer": "^10.1.2"
-  },
   "[!start-pkg]": "",
   "version": "0.0.0",
   "type": "module",
@@ -39,8 +33,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/_test"
+    "src"
   ],
   "dependencies": {
     "@portable/base64": "workspace:*"

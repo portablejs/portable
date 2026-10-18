@@ -10,7 +10,7 @@ import {
   parseHeaders,
   parseValue,
   unfold,
-} from '../index.js'
+} from '@portable/mime-headers'
 import { pick, random } from './utils.js'
 
 // Ported from the linear-time tests in nodemailer 10.1.7 test/addressparser/addressparser-test.ts

@@ -3,8 +3,8 @@ import emailAddresses from 'email-addresses'
 import libmime from 'libmime'
 import addressparser from 'nodemailer/lib/addressparser'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Exports from '../index.js'
-import type { Mailbox, Value } from '../index.js'
+import * as Exports from '@portable/mime-headers'
+import type { Mailbox, Value } from '@portable/mime-headers'
 import { pick, random } from './utils.js'
 
 // Vitest's module runner reads each imported binding through a getter on every call, which the

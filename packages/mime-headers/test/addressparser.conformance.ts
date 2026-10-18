@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { parseAddresses, type Address } from '../index.js'
+import { parseAddresses, type Address } from '@portable/mime-headers'
 
 // Ported from nodemailer 10.1.7 test/addressparser/addressparser-test.ts, the current home of
 // addressparser. addressparser(input) is parseAddresses(input) here, and { flatten: true } is the

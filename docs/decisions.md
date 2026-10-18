@@ -2,6 +2,14 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/mime-headers` API
+
+- **Two verb pairs.** Encoded words use `encodeWord`, `encodeWords` and `decodeWords`, because RFC 2047 is an encoding of text. Structured values use `parseValue`/`formatValue` and `parseAddresses`/`formatAddresses`, because the text is a syntax people read and write. AGENTS.md now has a rule for the `parse`/`format` pair. Also offered: one `encode`/`decode` pair for everything, which would hide that `parseAddresses` discards comments and whitespace.
+- **Charsets come from a caller-supplied `CharsetEncoder`,** not an optional dependency on `@portable/charset`. Decoding uses `TextDecoder`, which covers every charset a mail client meets, and only encoding into a legacy charset needs a table. Callers such as `mail` pass `@portable/charset`, and the package stays free of dependencies.
+- **No dependency on `@portable/quoted-printable`.** RFC 2047 Q encoding writes `_` for a space and has a smaller set of safe characters than quoted-printable, so sharing the encoder would need options that only this package uses.
+- **Strict address parsing is an option on `parseAddresses`,** not a separate validator. email-addresses' strict RFC 5322 mode and addressparser's lenient mode share one grammar here, and the option only rejects what the lenient parser repairs.
+- **Different from upstream:** quotes around a local part are removed, `<x@evil.com @good.com>` keeps only the first address, UTF-8 addresses are accepted (RFC 6532), and `formatValue` writes RFC 2231 continuations for long parameters.
+
 ## `@portable/spf` API
 
 - **`Spf.check({ ip, sender, helo }, { resolver, receiver, signal })`, named after RFC 7208's `check_host()`.** `verify` was passed over because in webhooks it throws on failure, and an SPF `fail` is a result, not an error. `check` rejects only for an invalid `ip`.

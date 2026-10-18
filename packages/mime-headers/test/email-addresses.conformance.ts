@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { InvalidInputError, parseAddresses } from '../index.js'
+import { InvalidInputError, parseAddresses } from '@portable/mime-headers'
 import isEmail from './fixtures/is_email.json' with { type: 'json' }
 
 // Ported from email-addresses 5.0.1 test/email-addresses.js and test/is_email.js. Its

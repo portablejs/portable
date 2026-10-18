@@ -228,7 +228,12 @@ importers:
       '@portable/base64':
         specifier: workspace:*
         version: link:../base64
+
+  packages/mime-headers/test:
     devDependencies:
+      '@portable/mime-headers':
+        specifier: workspace:*
+        version: link:..
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5

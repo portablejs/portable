@@ -9,7 +9,7 @@ import {
   parseAddresses,
   parseHeaders,
   parseValue,
-} from '../index.js'
+} from '@portable/mime-headers'
 
 // Bugs and advisories from the libmime, nodemailer and email-addresses changelogs and issue
 // trackers. Each test names the upstream fix or report it covers; PARITY.md lists them under

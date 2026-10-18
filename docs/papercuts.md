@@ -4,6 +4,8 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| `vp check` on staged files type-checks a test file alone and fails when the test folder has no `tsconfig.json`. | Every `test/` folder has one. | None needed. |
+| Node 24 lacks `Uint8Array.prototype.toBase64`. | `btoa` for short input and `@portable/base64` for long. | Wait for Node. |
 | mailauth's `DNSResolver` type (`Promise<string[][] \| string[]>`) leaves out the MX objects it reads. | A cast in `spf`'s oracle test. | Report upstream. |
 | Node holds `AbortSignal.timeout()` weakly, so a test whose mocked `fetch` never settles can hang instead of timing out. | `AbortController` with `setTimeout`. | None. |
 | The worktree guard rejects any command containing "git" as a substring, including "github" inside a heredoc or sed script. | Put the edit in a script file and run that. | Match `git` only as a word. |

@@ -1,0 +1,12 @@
+{
+  "name": "@portable/mime-headers-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/mime-headers": "workspace:*",
+    "@types/node": "^26.6.5",
+    "email-addresses": "^5.0.0",
+    "libmime": "^5.4.9",
+    "nodemailer": "^10.1.2"
+  }
+}

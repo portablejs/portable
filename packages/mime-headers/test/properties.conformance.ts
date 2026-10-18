@@ -13,7 +13,7 @@ import {
   type Address,
   type CharsetEncoder,
   type Mailbox,
-} from '../index.js'
+} from '@portable/mime-headers'
 import { pick, random, randomText, utf8, wellFormed, type Alphabet } from './utils.js'
 
 // Ported from libmime 5.5.1 test/property-test.ts and test/fuzz-test.ts, with properties for the

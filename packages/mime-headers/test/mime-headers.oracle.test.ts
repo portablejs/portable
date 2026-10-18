@@ -15,7 +15,7 @@ import {
   parseValue,
   type Address,
   type Mailbox,
-} from '../index.js'
+} from '@portable/mime-headers'
 import { pick, random, randomText } from './utils.js'
 
 // Compares this package with libmime 5.4.9, nodemailer 10.1.2's addressparser and
