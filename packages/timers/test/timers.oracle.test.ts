@@ -35,7 +35,6 @@ function cases(count: number): Case[] {
   })
 }
 
-/** Runs `run` under fake timers and returns its value or error with the gaps between attempts. */
 async function observe(run: (attempt: () => number) => Promise<unknown>) {
   const times: number[] = []
   const result = await settle(run(() => times.push(Date.now())))

@@ -10,7 +10,6 @@ export function useFakeTimers(): void {
   })
 }
 
-/** Runs `promise` to completion under fake timers and returns how it settled. */
 export async function settle<T>(
   promise: Promise<T>,
 ): Promise<{ value: T } | { error: unknown; rejected: true }> {
@@ -22,7 +21,6 @@ export async function settle<T>(
   return settled
 }
 
-/** The fake-clock gaps between attempts of a `retry` whose every attempt throws. */
 export async function retryDelays(options: Timers.retry.Options): Promise<number[]> {
   const times: number[] = []
   await settle(

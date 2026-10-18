@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vite-plus/test'
 
 type Listener = EventListenerOrEventListenerObject | null
 
-/** An AbortSignal that records which abort listeners are attached to it. */
 function tracked(): { signal: AbortSignal; count: () => number } {
   const { signal } = new AbortController()
   const listeners = new Set<Listener>()
