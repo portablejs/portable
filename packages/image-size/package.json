@@ -1,0 +1,53 @@
+{
+  "name": "@portable/image-size",
+  "description": "Image type and dimensions from header bytes or a stream, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "image-size": "^2.0.4"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/image-size"
+  },
+  "keywords": [
+    "image",
+    "image-size",
+    "dimensions",
+    "width",
+    "height",
+    "jpeg",
+    "png",
+    "webp",
+    "avif",
+    "svg",
+    "streams"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
