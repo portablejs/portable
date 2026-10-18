@@ -80,7 +80,7 @@ Test helpers build and read streams by hand instead of using `ReadableStream.fro
 
 ### Parity with the replaced library
 
-A package that replaces a library solves the same problem, but neither its API nor its implementation has to match. It is designed fresh, and the upstream test suite is used as the list of cases a caller cares about. `src/_test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply, such as a test of Node stream internals. A test with no row in `PARITY.md` counts as missing. Where two libraries cover the same ground, such as split2 and byline, the package covers both suites.
+A package that replaces a library solves the same problem, but neither its API nor its implementation has to match. It is designed fresh, and the upstream test suite is used as the list of cases a caller cares about. `src/_test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply, such as a test of Node stream internals. A test with no row in `PARITY.md` counts as missing. The package also avoids the upstream library's known bugs and traps, found in its issue tracker, and `PARITY.md` lists each one with the test that shows we handle it. Where two libraries cover the same ground, such as split2 and byline, the package covers both suites.
 
 The oracle tests then feed the same input, split into random chunks, to our package and to the original, and compare the results. A difference is either a bug or a deliberate change that `PARITY.md` explains.
 
