@@ -1,4 +1,4 @@
-# Portable
+# <img src="assets/logo.svg" style="height: 1cap">&nbsp; Portable
 
 Small npm packages that run unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+. They use only web-standard APIs (Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, `crypto.subtle`), are ESM-only, and have no runtime dependencies outside `@portable/*`. Each one replaces a popular Node-only library with a smaller API that does the same job.
 
