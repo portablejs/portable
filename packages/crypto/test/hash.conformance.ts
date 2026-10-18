@@ -38,13 +38,10 @@ describe('digest', () => {
     )
   })
 
-  test('returns a Uint8Array that crypto.subtle accepts as a BufferSource', async () => {
-    const hash = await Crypto.digest('SHA-256', 'abc')
-    expect(hash).toBeInstanceOf(Uint8Array)
+  test('returns bytes backed by an ArrayBuffer', async () => {
+    const hash: Uint8Array<ArrayBuffer> = await Crypto.digest('SHA-256', 'abc')
     expect(hash.buffer).toBeInstanceOf(ArrayBuffer)
-    expect(toHex(await crypto.subtle.digest('SHA-256', hash))).toBe(
-      toHex(await crypto.subtle.digest('SHA-256', fromHex(toHex(hash)))),
-    )
+    expect(hash.byteLength).toBe(hash.buffer.byteLength)
   })
 
   test('rejects with the reason of an aborted signal', async () => {
@@ -80,7 +77,7 @@ describe('hmac', () => {
   })
 
   test('accepts an empty key', async () => {
-    // HMAC-SHA256 with an empty key and empty message, as computed by OpenSSL and Python's hmac.
+    // Expected values from Python's hmac module.
     expect(toHex(await Crypto.hmac('SHA-256', '', ''))).toBe(
       'b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad',
     )

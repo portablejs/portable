@@ -96,30 +96,37 @@ export function rawToDerEcdsa(signature: Uint8Array): Uint8Array<ArrayBuffer> {
     throw new InvalidInputError(
       `A raw ECDSA signature is 64, 96 or 132 bytes, not ${signature.length}`,
     )
-  const r = trimInteger(signature.subarray(0, size))
-  const s = trimInteger(signature.subarray(size))
-  const length = 4 + r.length + s.length + (r[0]! & 0x80 ? 1 : 0) + (s[0]! & 0x80 ? 1 : 0)
+  const r = firstSignificantByte(signature, 0, size)
+  const s = firstSignificantByte(signature, size, size * 2)
+  const rLength = size - r + (signature[r]! >> 7)
+  const sLength = size * 2 - s + (signature[s]! >> 7)
+  const length = 4 + rLength + sLength
   const der = new Uint8Array(length + (length < 0x80 ? 2 : 3))
   let offset = 0
   der[offset++] = 0x30
   if (length >= 0x80) der[offset++] = 0x81
   der[offset++] = length
-  offset = writeInteger(der, offset, r)
-  writeInteger(der, offset, s)
+  offset = writeInteger(der, offset, signature, r, size, rLength)
+  writeInteger(der, offset, signature, s, size * 2, sLength)
   return der
 }
 
-function trimInteger(bytes: Uint8Array): Uint8Array {
-  let start = 0
-  while (start < bytes.length - 1 && bytes[start] === 0) start++
-  return bytes.subarray(start)
+function firstSignificantByte(bytes: Uint8Array, start: number, end: number): number {
+  while (start < end - 1 && bytes[start] === 0) start++
+  return start
 }
 
-function writeInteger(der: Uint8Array, offset: number, value: Uint8Array): number {
-  const pad = value[0]! & 0x80 ? 1 : 0
+function writeInteger(
+  der: Uint8Array,
+  offset: number,
+  signature: Uint8Array,
+  start: number,
+  end: number,
+  length: number,
+): number {
   der[offset++] = 0x02
-  der[offset++] = value.length + pad
-  offset += pad
-  der.set(value, offset)
-  return offset + value.length
+  der[offset++] = length
+  offset += length - (end - start)
+  for (let i = start; i < end; i++) der[offset++] = signature[i]!
+  return offset
 }

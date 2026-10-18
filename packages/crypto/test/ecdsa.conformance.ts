@@ -43,7 +43,9 @@ describe('derToRawEcdsa (ecdsa-sig-formatter)', () => {
       })
 
       test('rejects s that is not an INTEGER', () => {
-        expect(convert(bytes(10, [0x30, 8, 0x02, 2, 0, 0, 0x03]))).toThrow(Crypto.InvalidInputError)
+        expect(convert(bytes(10, [0x30, 8, 0x02, 2, 0, 0x80, 0x03]))).toThrow(
+          Crypto.InvalidInputError,
+        )
       })
 
       test('rejects an s length longer than the input', () => {
@@ -153,21 +155,21 @@ describe('derToRawEcdsa', () => {
   })
 
   test.each([
-    ['indefinite SEQUENCE length', '3080020101020101'],
-    ['long-form SEQUENCE length under 128', '308106020101020101'],
-    ['two-byte SEQUENCE length', '30820006020101020101'],
-    ['long-form INTEGER length', '300702810101020101'],
-    ['empty INTEGER', '30050200020101'],
-    ['negative INTEGER', '3006020181020101'],
-    ['unneeded leading zero', '300702020001020101'],
-    ['empty input', ''],
-    ['SEQUENCE header only', '30'],
-  ])('rejects a %s', (_, hex) => {
+    ['an indefinite SEQUENCE length', '3080020101020101'],
+    ['a long-form SEQUENCE length under 128', '308106020101020101'],
+    ['a two-byte SEQUENCE length', '30820006020101020101'],
+    ['a long-form INTEGER length', '300702810101020101'],
+    ['an empty INTEGER', '30050200020101'],
+    ['a negative INTEGER', '3006020181020101'],
+    ['an unneeded leading zero', '300702020001020101'],
+    ['an empty input', ''],
+    ['a SEQUENCE header alone', '30'],
+  ])('rejects %s', (_, hex) => {
     expect(() => Crypto.derToRawEcdsa(fromHex(hex))).toThrow(Crypto.InvalidInputError)
   })
 
   test('rejects a 33-byte r instead of dropping its top byte', () => {
-    const der = fromHex(`3027022101${'11'.repeat(32)}020101`)
+    const der = fromHex(`3026022101${'11'.repeat(32)}020101`)
     expect(() => Crypto.derToRawEcdsa(der)).toThrow(Crypto.InvalidInputError)
   })
 })
