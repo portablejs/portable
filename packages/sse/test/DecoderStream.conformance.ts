@@ -583,6 +583,32 @@ describe('DecoderStream', () => {
     expect(datas(await decodeChunks(['data: a', utf8('b\n'), '\n']))).toEqual(['ab'])
   })
 
+  test('the signal fails the stream with its reason and cancels the source', async () => {
+    const controller = new AbortController()
+    let cancelled: unknown
+    const source = new ReadableStream<string>({
+      pull: (c) => c.enqueue('data: x\n\n'),
+      cancel: (reason) => {
+        cancelled = reason
+      },
+    })
+    const reader = source
+      .pipeThrough(new Sse.DecoderStream({ signal: controller.signal }))
+      .getReader()
+    await reader.read()
+    const reason = new Error('stop')
+    controller.abort(reason)
+    await expect(reader.read()).rejects.toBe(reason)
+    expect(cancelled).toBe(reason)
+  })
+
+  test('an aborted signal fails the stream at once', async () => {
+    const reason = new Error('already')
+    await expect(decodeChunks(['data: x\n\n'], { signal: AbortSignal.abort(reason) })).rejects.toBe(
+      reason,
+    )
+  })
+
   test('cancelling the output cancels the source', async () => {
     let cancelled = false
     const source = new ReadableStream<string>({
@@ -595,5 +621,27 @@ describe('DecoderStream', () => {
     await reader.read()
     await reader.cancel()
     expect(cancelled).toBe(true)
+  })
+})
+
+describe('known upstream issues', () => {
+  test('eventsource #326: mixed CRLF and LF line breaks drop no events', async () => {
+    const text = 'data: 1\r\n\r\ndata: 2\n\ndata: 3\r\n\ndata: 4\n\r\n'
+    expect(datas(Sse.decode(text))).toEqual(['1', '2', '3', '4'])
+    expect(datas(await decodeChunks(text.split('')))).toEqual(['1', '2', '3', '4'])
+  })
+
+  test('eventsource-parser #11 and #13: empty data lines keep their line breaks', () => {
+    expect(datas(Sse.decode('data: a\ndata\ndata\ndata: b\n\n'))).toEqual(['a\n\n\nb'])
+  })
+
+  test('eventsource-parser #19: a large line in many small chunks is read in linear time', async () => {
+    const chunks = Array.from({ length: 20_000 }, () => 'x'.repeat(50))
+    const events = await decodeChunks(['data: ', ...chunks, '\n\n'])
+    expect(events[0]!.data).toHaveLength(1_000_000)
+  })
+
+  test('eventsource-parser #26: an invalid retry value is ignored', () => {
+    expect(Sse.decode('retry: abc\ndata: x\n\n')[0]?.retry).toBeUndefined()
   })
 })

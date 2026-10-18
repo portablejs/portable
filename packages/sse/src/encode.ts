@@ -1,3 +1,5 @@
+import { errorOnAbort } from './signal.js'
+
 /** A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. */
 export type Message = {
   /** Event type. Must not contain CR or LF. */
@@ -53,6 +55,13 @@ export function encode(message: Message): string {
   return text + '\n'
 }
 
+export declare namespace EncoderStream {
+  type Options = {
+    /** Fails the stream with `signal.reason` and cancels its source when aborted. */
+    signal?: AbortSignal | undefined
+  }
+}
+
 /**
  * A `TransformStream` that writes messages as `text/event-stream` bytes, for the body of a
  * `Response`.
@@ -66,14 +75,28 @@ export function encode(message: Message): string {
  * ```
  */
 export class EncoderStream extends TransformStream<Message, Uint8Array<ArrayBuffer>> {
-  constructor() {
+  constructor(options: EncoderStream.Options = {}) {
     const encoder = new TextEncoder()
-    super({
-      transform(message, controller) {
+    let release: () => void
+    const transformer = {
+      start(controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>) {
+        release = errorOnAbort(options.signal, controller)
+      },
+      transform(
+        message: Message,
+        controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>,
+      ) {
         const text = encode(message)
         if (text !== '') controller.enqueue(encoder.encode(text))
       },
-    })
+      flush() {
+        release()
+      },
+      cancel() {
+        release()
+      },
+    }
+    super(transformer)
   }
 }
 

@@ -141,6 +141,25 @@ describe('encode', () => {
     },
   )
 
+  test('the signal fails the stream with its reason and cancels the source', async () => {
+    const controller = new AbortController()
+    let cancelled: unknown
+    const source = new ReadableStream<Sse.Message>({
+      pull: (c) => c.enqueue({ comment: 'ping' }),
+      cancel: (reason) => {
+        cancelled = reason
+      },
+    })
+    const reader = source
+      .pipeThrough(new Sse.EncoderStream({ signal: controller.signal }))
+      .getReader()
+    await reader.read()
+    const reason = new Error('stop')
+    controller.abort(reason)
+    await expect(reader.read()).rejects.toBe(reason)
+    expect(cancelled).toBe(reason)
+  })
+
   test('EncoderStream output is a valid Response body', async () => {
     const body = Streams.fromIterable<Sse.Message>([
       { comment: 'keep-alive' },
@@ -148,5 +167,25 @@ describe('encode', () => {
     ]).pipeThrough(new Sse.EncoderStream())
     const response = new Response(body, { headers: { 'content-type': 'text/event-stream' } })
     expect(await response.text()).toBe(': keep-alive\ndata: hello\nid: 1\n\n')
+  })
+})
+
+describe('known upstream issues', () => {
+  test('better-sse #112: multi-line data becomes several data lines, not one broken line', () => {
+    expect(Sse.decode(Sse.encode({ data: 'line 1\nline 2' }))[0]?.data).toBe('line 1\nline 2')
+  })
+
+  test('cancelling the output cancels the source, as hono’s onAbort reports', async () => {
+    let cancelled = false
+    const source = new ReadableStream<Sse.Message>({
+      pull: (c) => c.enqueue({ data: 'x' }),
+      cancel: () => {
+        cancelled = true
+      },
+    })
+    const reader = source.pipeThrough(new Sse.EncoderStream()).getReader()
+    await reader.read()
+    await reader.cancel()
+    expect(cancelled).toBe(true)
   })
 })

@@ -1,3 +1,5 @@
+import { errorOnAbort } from './signal.js'
+
 /** An event read from a stream, as `EventSource` would dispatch it. */
 export type Event = {
   /** The event type: the block's last `event` field, or `'message'` when it has none. */
@@ -23,6 +25,8 @@ export declare namespace DecoderStream {
      * stream with `MaxLengthError`. @default Infinity
      */
     maxLength?: number | undefined
+    /** Fails the stream with `signal.reason` and cancels its source when aborted. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -41,22 +45,32 @@ export declare namespace DecoderStream {
 export class DecoderStream extends TransformStream<Uint8Array | string, Event> {
   constructor(options: DecoderStream.Options = {}) {
     let parser: Parser
-    super({
-      start(controller) {
+    let release: () => void
+    const transformer = {
+      start(controller: TransformStreamDefaultController<Event>) {
         parser = createParser((event) => controller.enqueue(event), options.maxLength)
+        release = errorOnAbort(options.signal, controller)
       },
-      transform(chunk) {
+      transform(chunk: Uint8Array | string) {
         parser.push(chunk)
       },
       flush() {
+        release()
         parser.end()
       },
-    })
+      cancel() {
+        release()
+      },
+    }
+    super(transformer)
   }
 }
 
 export declare namespace decode {
-  type Options = DecoderStream.Options
+  type Options = {
+    /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
+    maxLength?: number | undefined
+  }
 }
 
 /**
