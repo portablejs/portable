@@ -16,6 +16,7 @@ Nothing is published to npm yet. **Built** means the package is on `main` with i
 | L0 | [`@portable/quoted-printable`](packages/quoted-printable) | libqp, quoted-printable | Built |
 | L0 | [`@portable/charset`](packages/charset) | iconv-lite (encoding) | Built |
 | L0 | [`@portable/dns-packet`](packages/dns-packet) | dns-packet | Built |
+| L0 | `@portable/bytes` | uint8array-extras | In progress |
 | L0 | `@portable/retry` | p-retry, async-retry, delay, p-wait-for | In progress |
 | L1 | [`@portable/json-stream`](packages/json-stream) | JSONStream, stream-json, json-stream-stringify | Built |
 | L1 | [`@portable/jsonl`](packages/jsonl) | ndjson, stream-json's `jsonl` | Built |

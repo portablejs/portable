@@ -2,6 +2,10 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Build `@portable/bytes` instead of pointing to uint8array-extras
+
+Kevin approved this on 2026-10-18 after the niftysim, fast.domains and loess audits. All three apps hand-write hex encoding, concatenation and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
+
 ## `LineStream` is `Lines.DecoderStream`
 
 - **Options:** keep `LineStream`; `Lines.DecoderStream`; `Lines.SplitterStream`.

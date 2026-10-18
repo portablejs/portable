@@ -43,6 +43,7 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |
 | `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
+| `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), hand-written hex and compare loops |
 | `@portable/retry` | `retry` with backoff and jitter, `poll` until a value appears, and `sleep`, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
 
 #### `streams` bridge API
@@ -121,7 +122,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 
 ## Not building (point to these instead)
 
-Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars, aws4fetch, otpauth, cbor-x, @msgpack/msgpack, uint8array-extras, postal-mime), plus what Remix v3 already covers, which drops two packages from revision 1:
+Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars, aws4fetch, otpauth, cbor-x, @msgpack/msgpack, postal-mime), plus what Remix v3 already covers, which drops two packages from revision 1:
 
 | Need | Use | Effect on our list |
 | --- | --- | --- |
