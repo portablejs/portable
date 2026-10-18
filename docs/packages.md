@@ -130,6 +130,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | `@portable/google-auth` | Service-account access tokens | possibly just a documented `jose` recipe; build only if the recipe proves too fiddly |
 | `@portable/xlsx` | Streaming xlsx writer | replaces exceljs 72M for the write path; zips with fflate as a peer |
 | Document formats (pdf, docx) | Read or write office documents | parked with xlsx; Kevin asked to save document formats for later (2026-10-18) |
+| `@portable/http-signatures` | RFC 9421 HTTP Message Signatures and `Content-Digest` (RFC 9530) on WebCrypto | parked: most ActivityPub servers still use draft-cavage signatures, and Web Bot Auth is new. Revisit if RFC 9421 adoption grows. |
 
 ## Not building (point to these instead)
 
