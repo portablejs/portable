@@ -151,6 +151,17 @@ describe('verify', () => {
     }
   })
 
+  test('keeps verifying correctly across many different secrets', async () => {
+    const secrets = Array.from({ length: 40 }, (_, i) => `secret-${i}`)
+    for (const [i, each] of secrets.entries()) {
+      const headers = await Webhooks.sign('{}', { scheme: 'github', secret: each })
+      const options = { scheme: 'github', secret: each } as const
+      expect((await Webhooks.verify({ headers, body: '{}' }, options)).body).toBe('{}')
+      const other = { scheme: 'github', secret: secrets[(i + 1) % secrets.length]! } as const
+      expect(await reasonOf(Webhooks.verify({ headers, body: '{}' }, other))).toBe('signature')
+    }
+  })
+
   test('signs a body given as bytes the same as its text', async () => {
     const options = { scheme: 'github', secret } as const
     expect(await Webhooks.sign(encode('{"é":1}'), options)).toEqual(

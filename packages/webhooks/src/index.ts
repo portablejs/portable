@@ -73,12 +73,23 @@ async function hmacSha256(
   key: Uint8Array<ArrayBuffer>,
   data: Uint8Array<ArrayBuffer>,
 ): Promise<Uint8Array> {
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    key,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  )
-  return new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, data))
+  return new Uint8Array(await crypto.subtle.sign('HMAC', await importKey(key), data))
+}
+
+// importKey takes two thirds of the time of an HMAC on Node, and a server verifies every webhook
+// with the same one or two secrets.
+const cryptoKeys = new Map<string, Promise<CryptoKey>>()
+
+function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
+  const id = key.length <= 256 ? String.fromCharCode(...key) : undefined
+  const cached = id === undefined ? undefined : cryptoKeys.get(id)
+  if (cached) return cached
+  const cryptoKey = crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+  ])
+  if (id !== undefined) {
+    if (cryptoKeys.size >= 16) cryptoKeys.clear()
+    cryptoKeys.set(id, cryptoKey)
+  }
+  return cryptoKey
 }

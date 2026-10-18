@@ -136,17 +136,17 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
   const keys = secrets.map((secret) => format.key(secret))
   if (keys.length === 0) throw new TypeError('No secret')
 
-  const headers = input instanceof Request ? input.headers : new Headers(input.headers)
-  const signed = format.read(headers)
+  const signed = format.read(headerReader(input.headers))
+  const prefix = format.prefix(signed.stamp, signed.id ?? '')
 
-  let bytes: Uint8Array
+  let content: Uint8Array<ArrayBuffer>
   let text: string | undefined
-  if (input instanceof Request) bytes = new Uint8Array(await input.arrayBuffer())
-  else if (typeof input.body === 'string') bytes = utf8.encode((text = input.body))
-  else if (input.body instanceof Uint8Array) bytes = input.body
+  if (typeof input.body === 'string') content = utf8.encode(prefix + (text = input.body))
+  else if (input instanceof Request)
+    content = concat(utf8.encode(prefix), new Uint8Array(await input.arrayBuffer()))
+  else if (input.body instanceof Uint8Array) content = concat(utf8.encode(prefix), input.body)
   else throw new TypeError('body must be the raw request body as a string or Uint8Array')
 
-  const content = concat(utf8.encode(format.prefix(signed.stamp, signed.id ?? '')), bytes)
   let match = false
   for (const key of keys) {
     const expected = await hmac(key, content)
@@ -161,7 +161,7 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
   }
 
   return {
-    body: text ?? utf8Decoder.decode(bytes),
+    body: text ?? utf8Decoder.decode(content.subarray(utf8.encode(prefix).length)),
     id: signed.id,
     timestamp: signed.timestamp === undefined ? undefined : new Date(signed.timestamp * 1000),
   }
@@ -232,7 +232,7 @@ type Signed = {
 type Format = {
   idHeader: string | undefined
   key: (secret: Secret) => Uint8Array<ArrayBuffer>
-  read: (headers: Headers) => Signed
+  read: (get: HeaderReader) => Signed
   prefix: (stamp: string, id: string) => string
   write: (
     signature: Uint8Array,
@@ -261,9 +261,21 @@ function base64Key(secret: Secret): Uint8Array<ArrayBuffer> {
   return textKey(key)
 }
 
-function required(headers: Headers, ...names: readonly string[]): string {
+type HeaderReader = (name: string) => string | null
+
+function headerReader(init: HeadersInit): HeaderReader {
+  if (init instanceof Headers) return (name) => init.get(name)
+  const entries = Array.isArray(init) ? init : Object.entries(init)
+  return (name) => {
+    for (const [key, value] of entries)
+      if (key.length === name.length && key.toLowerCase() === name) return value
+    return null
+  }
+}
+
+function required(get: HeaderReader, ...names: readonly string[]): string {
   for (const name of names) {
-    const value = headers.get(name)
+    const value = get(name)
     if (value) return value
   }
   throw new VerificationError('missing-header', `Missing ${names[0]} header`)
@@ -281,10 +293,10 @@ function standard(name: 'webhook' | 'svix'): Format {
   return {
     idHeader: 'webhook-id',
     key: base64Key,
-    read(headers) {
-      const id = required(headers, ...names('id'))
-      const timestamp = required(headers, ...names('timestamp'))
-      const header = required(headers, ...names('signature'))
+    read(get) {
+      const id = required(get, ...names('id'))
+      const timestamp = required(get, ...names('timestamp'))
+      const header = required(get, ...names('signature'))
       const signatures: Uint8Array[] = []
       for (const entry of header.split(' ')) {
         if (!entry.startsWith('v1,')) continue
@@ -316,8 +328,8 @@ const formats: Record<Scheme, Format> = {
   stripe: {
     idHeader: undefined,
     key: textKey,
-    read(headers) {
-      const header = required(headers, 'stripe-signature')
+    read(get) {
+      const header = required(get, 'stripe-signature')
       let timestamp: string | undefined
       const signatures: Uint8Array[] = []
       for (const item of header.split(',')) {
@@ -347,15 +359,15 @@ const formats: Record<Scheme, Format> = {
   github: {
     idHeader: 'x-github-delivery',
     key: textKey,
-    read(headers) {
-      const header = required(headers, 'x-hub-signature-256')
+    read(get) {
+      const header = required(get, 'x-hub-signature-256')
       const hex = header.startsWith('sha256=') ? header.slice(7) : ''
       if (!hexSignature.test(hex))
         throw new VerificationError('malformed-header', 'x-hub-signature-256 is not sha256=<hex>')
       return {
         stamp: '',
         signatures: [fromHex(hex)],
-        id: headers.get('x-github-delivery') ?? undefined,
+        id: get('x-github-delivery') ?? undefined,
         timestamp: undefined,
       }
     },
@@ -368,9 +380,9 @@ const formats: Record<Scheme, Format> = {
   slack: {
     idHeader: undefined,
     key: textKey,
-    read(headers) {
-      const header = required(headers, 'x-slack-signature')
-      const timestamp = required(headers, 'x-slack-request-timestamp')
+    read(get) {
+      const header = required(get, 'x-slack-signature')
+      const timestamp = required(get, 'x-slack-request-timestamp')
       const hex = header.startsWith('v0=') ? header.slice(3) : ''
       if (!hexSignature.test(hex))
         throw new VerificationError('malformed-header', 'x-slack-signature is not v0=<hex>')
@@ -405,8 +417,13 @@ function equal(a: Uint8Array, b: Uint8Array): boolean {
 
 function fromHex(hex: string): Uint8Array {
   const out = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < out.length; i++) out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  for (let i = 0; i < out.length; i++) out[i] = (nibble(hex, i * 2) << 4) | nibble(hex, i * 2 + 1)
   return out
+}
+
+function nibble(hex: string, at: number): number {
+  const code = hex.charCodeAt(at) | 0x20
+  return code <= 0x39 ? code - 0x30 : code - 0x57
 }
 
 function toHex(bytes: Uint8Array): string {
