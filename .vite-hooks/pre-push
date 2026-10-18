@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 [ -x "$HOME/bin/node" ] && PATH="$HOME/bin:$PATH"
+# Worktrees share one machine, so take turns running the tests.
+if command -v flock >/dev/null; then
+  exec 9>"$(git rev-parse --git-common-dir)/pre-push.lock"
+  flock 9
+fi
 pnpm check:types
 if git rev-parse --verify --quiet origin/main >/dev/null; then
   pnpm test:changed

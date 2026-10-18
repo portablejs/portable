@@ -57,3 +57,4 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 - The pre-push hook ran Node 22 in cloud sessions, because `git push` doesn't put `~/bin` on `PATH`. The hook now puts `~/bin` first when Node is installed there.
 - Cloud sessions started with Node 22 and pnpm 10. `.claude/hooks/session-start.sh` now installs Node 24 and pnpm 11 when they're missing, and `.nvmrc` pins Node 24 for local machines.
 - Running browser tests in the cloud container needed a temporary edit to `vite.config.ts`. `PW_CHROMIUM_PATH` replaces it.
+| Agents pushing from 15 worktrees at once ran the full pre-push test suite concurrently on 4 cores (load 65). Slow tests such as charset's gb18030 oracle and base64's random round trip went past even a 120 s timeout. | The pre-push hook takes a `flock` on `.git/pre-push.lock`, so pushes from worktrees run their tests one at a time. | None. |
