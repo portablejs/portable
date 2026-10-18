@@ -1,0 +1,47 @@
+{
+  "name": "@portable/password",
+  "description": "Hash and verify passwords with PBKDF2 on WebCrypto, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "dependencies": {
+    "@portable/base64": "workspace:^"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/password"
+  },
+  "keywords": [
+    "password",
+    "hash",
+    "pbkdf2",
+    "phc",
+    "passlib",
+    "webcrypto",
+    "pbkdf2-password"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
