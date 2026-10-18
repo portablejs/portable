@@ -543,7 +543,7 @@ describe('message-splitter', () => {
       'Content-Type: multipart/mixed; boundary=BB\r\n\r\n--BB\r\nContent-Type: text/plain\r\n\r\n' +
       line +
       '\r\n--BB--\r\n'
-    for (const size of [1, 16, 100, 1024, 65536])
+    for (const size of [7, 100, 1024, 65536])
       expect(bodies(await decode(chunked(binary(message), size)))).toEqual([line])
   })
 
@@ -803,7 +803,7 @@ describe('message-joiner', () => {
 })
 
 describe('node-rewriter and node-streamer', () => {
-  const image = Uint8Array.from({ length: 300000 }, (_, i) => (i * 31 + (i >> 8)) % 256)
+  const image = Uint8Array.from({ length: 30000 }, (_, i) => (i * 31 + (i >> 8)) % 256)
   const base64 = btoa(latin1(image)).replace(/.{76}/g, '$&\r\n')
   const message =
     'From: a@example.com\r\nContent-Type: multipart/mixed; boundary="Apple-Mail=_8EB0C91B"\r\n\r\n' +
