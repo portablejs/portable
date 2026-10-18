@@ -247,11 +247,11 @@ describe('truncated input', () => {
     expect(() => ImageSize.parse(bytes.subarray(0, 100))).toThrow(ImageSize.TruncatedError)
   })
 
-  test('throws TruncatedError when maxBytes is reached first', async () => {
+  test('throws MaxBytesError with the limit when maxBytes is reached first', async () => {
     const bytes = jpeg(0xc0, new Uint8Array(1000))
-    await expect(parseChunks(chunked(bytes, 100), { maxBytes: 500 })).rejects.toThrow(
-      ImageSize.TruncatedError,
-    )
+    const error = await parseChunks(chunked(bytes, 100), { maxBytes: 500 }).catch((e) => e)
+    expect(error).toBeInstanceOf(ImageSize.MaxBytesError)
+    expect(error.maxBytes).toBe(500)
     expect(await parseChunks(chunked(bytes, 100), { maxBytes: 2000 })).toEqual({
       ...sample,
       type: 'jpg',

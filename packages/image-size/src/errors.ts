@@ -58,3 +58,28 @@ export class TruncatedError extends Error {
 export class InvalidInputError extends Error {
   override name = 'ImageSize.InvalidInputError'
 }
+
+/**
+ * Thrown by `parseStream` when it has read `maxBytes` and the dimensions still aren't in them.
+ * Raise `maxBytes`, or treat the image as too large to measure.
+ *
+ * @example
+ * ```ts
+ * import * as ImageSize from '@portable/image-size'
+ *
+ * try {
+ *   await ImageSize.parseStream(response.body!, { maxBytes: 64 * 1024 })
+ * } catch (error) {
+ *   if (error instanceof ImageSize.MaxBytesError) console.log(`no size in ${error.maxBytes} bytes`)
+ * }
+ * ```
+ */
+export class MaxBytesError extends Error {
+  override name = 'ImageSize.MaxBytesError'
+  /** The limit that was reached. */
+  readonly maxBytes: number
+  constructor(maxBytes: number) {
+    super(`Image dimensions not found in the first ${maxBytes} bytes.`)
+    this.maxBytes = maxBytes
+  }
+}

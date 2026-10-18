@@ -30,7 +30,7 @@ Reads `stream` until the size is known, then cancels it.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` throws `TruncatedError`. ICNS files list their icons throughout the file, so a large one needs a higher limit. |
+| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` throws `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. |
 
 ### `Size`
 
@@ -50,8 +50,9 @@ An animated PNG reports `png` with the canvas size. A HEIF file reports its prim
 | `UnsupportedError` | The bytes don't match a supported format. |
 | `TruncatedError` | The input ends before the dimensions, including an empty input. |
 | `InvalidInputError` | The header is malformed, such as a PNG without an `IHDR` chunk or an SVG with neither size nor `viewBox`. |
+| `MaxBytesError` | `parseStream` read `maxBytes` without finding the dimensions. Its `maxBytes` holds the limit. |
 
-Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError` and `ImageSize.InvalidInputError`.
+Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `ImageSize.InvalidInputError` and `ImageSize.MaxBytesError`.
 
 ## Why use this over image-size
 

@@ -1,5 +1,5 @@
 import { NeedMore } from './bytes.js'
-import { TruncatedError, UnsupportedError } from './errors.js'
+import { MaxBytesError, TruncatedError, UnsupportedError } from './errors.js'
 import type { Format } from './formats/format.js'
 import { heif } from './formats/heif.js'
 import { icns } from './formats/icns.js'
@@ -169,7 +169,8 @@ export declare namespace parseStream {
  * Reads `stream` only until the image's dimensions are known, then cancels it.
  *
  * @throws {UnsupportedError} The bytes don't match a supported format.
- * @throws {TruncatedError} The stream ends, or `maxBytes` is reached, before the dimensions.
+ * @throws {TruncatedError} The stream ends before the dimensions.
+ * @throws {MaxBytesError} `maxBytes` is reached before the dimensions.
  * @throws {InvalidInputError} The header is malformed.
  *
  * @example
@@ -200,7 +201,13 @@ export async function parseStream(
       }
       buffer.set(value, length)
       length += value.length
-      if (length >= maxBytes) return parse(buffer.subarray(0, maxBytes))
+      if (length >= maxBytes) {
+        try {
+          return parse(buffer.subarray(0, maxBytes))
+        } catch (error) {
+          throw error instanceof TruncatedError ? new MaxBytesError(maxBytes) : error
+        }
+      }
       if (length < needed) continue
       try {
         return measure(buffer.subarray(0, length), false)

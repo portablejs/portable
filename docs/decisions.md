@@ -255,6 +255,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **`parse(bytes)` and `parseStream(stream, { maxBytes })`.** `parseStream` cancels the stream once it knows the size: it reads 5 KB of a 730 KB JPEG. It takes only a `ReadableStream`, and callers pass `blob.stream()` or `response.body`. `imageSizeFromFile`, `disableTypes` (global state) and `types` were dropped.
 - **HEIF size comes from the primary item, with clean aperture and rotation applied.** image-size takes the first or largest `ispe`, which reports a 16×64 image as 63×64 and lists every tile of a tiled photo. HEIF results have no `images` list.
 - **A cut-off box-based file throws `TruncatedError`.** When the input ends while searching for a box, a cut file and one missing the box look the same. `TruncatedError` means a prefix of a valid file is never reported as malformed.
+- **Reaching `maxBytes` throws `MaxBytesError`,** named after the option as AGENTS.md asks, not `TruncatedError`, so a caller can tell a cut-off file from a limit it can raise.
 - **The oracle runs against npm's image-size 2.0.4,** which is newer than the last public GitHub commit (2.0.2).
 
 ## `@portable/exif` API
