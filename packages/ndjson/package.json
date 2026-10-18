@@ -1,0 +1,50 @@
+{
+  "name": "@portable/ndjson",
+  "description": "Decode and encode NDJSON (JSON Lines) streams, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@portable/streams": "workspace:*",
+    "@types/ndjson": "^2.0.4",
+    "@types/node": "^26.6.5",
+    "ndjson": "^2.0.0"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/ndjson"
+  },
+  "keywords": [
+    "ndjson",
+    "jsonl",
+    "json-lines",
+    "json",
+    "streaming",
+    "web-streams"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}

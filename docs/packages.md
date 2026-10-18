@@ -29,7 +29,7 @@ L3  mailauth ──────────────────────�
      ├ dmarc ── spf                                       │
      └ arc ──── dkim                                      │
 L2  mail     dns      dkim     webhooks   oauth1          │
-L1  json-stream   mime-headers   mime-stream   image-size   exif   png
+L1  json-stream   ndjson   mime-headers   mime-stream   image-size   exif   png
 L0  streams   lines   base64   quoted-printable   charset   dns-packet
 ```
 
@@ -83,7 +83,8 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 
 | Package | Purpose | Depends on | Replaces |
 | --- | --- | --- | --- |
-| `@portable/json-stream` | Streaming JSON: NDJSON parse/stringify streams; a streaming parser that emits values at selected paths from one large JSON document; and an async `stringify` that walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | `lines`, `streams` | JSONStream 53M, stream-json 45M, ndjson 10.5M, json-stream-stringify, @worker-tools/json-stream |
+| `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and an async `stringify` that walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | `lines`, `streams` | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
+| `@portable/ndjson` | NDJSON (JSON Lines) decode and encode streams: `new Ndjson.DecoderStream()` parses one value per line, and `new Ndjson.EncoderStream()` writes one per line. | (none) | ndjson 10.5M, the `jsonl` modules of stream-json |
 | `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. | `base64`, `quoted-printable`; `charset` as optional peer | libmime 37M, addressparser, email-addresses |
 | `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `lines`, `mime-headers` | mailsplit 2.7M |
 | `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | (none) | image-size 133M |

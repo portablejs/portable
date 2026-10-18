@@ -1,17 +1,15 @@
 {
   "name": "@portable/json-stream",
-  "description": "Stream JSON in any JavaScript runtime: NDJSON, values at paths in a large document, and JSON written from promises and streams.",
+  "description": "Stream JSON in any JavaScript runtime: values at paths in a large document, and JSON written from promises and streams.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "devDependencies": {
     "@portable/streams": "workspace:*",
-    "@types/ndjson": "^2.0.4",
     "@types/node": "^26.6.5",
     "JSONStream": "^1.3.5",
-    "json-stream-stringify": "^3.1.7",
-    "ndjson": "^2.0.0"
+    "json-stream-stringify": "^3.1.7"
   },
   "[!start-pkg]": "",
   "version": "0.0.0",
@@ -25,8 +23,6 @@
   },
   "keywords": [
     "json",
-    "ndjson",
-    "jsonl",
     "jsonpath",
     "streaming",
     "JSONStream",

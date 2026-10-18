@@ -2,9 +2,8 @@ import { Readable } from 'node:stream'
 import { toArray, toText } from '@portable/streams'
 import { JsonStreamStringify } from 'json-stream-stringify'
 import JSONStream from 'JSONStream'
-import ndjson from 'ndjson'
 import { expect, test } from 'vite-plus/test'
-import { encode, NdjsonDecoderStream, ParserStream } from '../index.js'
+import { encode, ParserStream } from '../index.js'
 import allNpm from './fixtures/all_npm.json?raw'
 import { chunked, encodeUtf8, streamOf } from './utils.js'
 
@@ -12,8 +11,6 @@ const document = JSON.parse(allNpm) as { rows: unknown[] }
 const rows = Array.from({ length: 8 }, () => document.rows).flat()
 const big = JSON.stringify({ total_rows: rows.length, offset: 0, rows })
 const bigChunks = chunked(encodeUtf8(big), 65536)
-const lines = rows.map((row) => JSON.stringify(row)).join('\n') + '\n'
-const lineChunks = chunked(encodeUtf8(lines), 65536)
 
 function drain(readable: NodeJS.ReadableStream): Promise<number> {
   let count = 0
@@ -37,24 +34,6 @@ test('parses the rows of a 3 MB document within 25% of JSONStream', async ({ ben
     }),
   )
   expect(result.get('JSONStream')).not.toBeFasterThan(result.get('@portable/json-stream'), {
-    delta: 0.25,
-  })
-})
-
-test('decodes 3 MB of NDJSON within 25% of ndjson', async ({ bench }) => {
-  const result = await bench.compare(
-    bench('@portable/json-stream', async () => {
-      await toArray(streamOf(lineChunks).pipeThrough(new NdjsonDecoderStream()))
-    }),
-    bench('ndjson', async () => {
-      await drain(Readable.from(lineChunks).pipe(ndjson.parse()))
-    }),
-    bench('split and JSON.parse after reading everything', async () => {
-      const text = await toText(streamOf(lineChunks))
-      for (const line of text.split('\n')) if (line) JSON.parse(line)
-    }),
-  )
-  expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/json-stream'), {
     delta: 0.25,
   })
 })

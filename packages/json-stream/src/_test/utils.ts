@@ -1,5 +1,5 @@
 import { fromIterable, toArray, toText } from '@portable/streams'
-import { encode, NdjsonDecoderStream, NdjsonEncoderStream, ParserStream } from '../index.js'
+import { encode, ParserStream } from '../index.js'
 
 /** U+2028, which the formatter would turn into a literal line break inside a string. */
 export const lineSeparator: string = String.fromCharCode(0x2028)
@@ -41,17 +41,6 @@ export async function parseValues(
   options?: ParserStream.Options,
 ): Promise<unknown[]> {
   return (await parse(chunks, options)).map((match) => match.value)
-}
-
-export function decodeNdjson(
-  chunks: readonly (string | Uint8Array)[],
-  options?: NdjsonDecoderStream.Options,
-): Promise<unknown[]> {
-  return toArray(fromIterable(chunks).pipeThrough(new NdjsonDecoderStream(options)))
-}
-
-export async function encodeNdjson(values: readonly unknown[]): Promise<string> {
-  return (await toArray(fromIterable(values).pipeThrough(new NdjsonEncoderStream()))).join('')
 }
 
 export function encodeText(value: unknown, options?: encode.Options): Promise<string> {

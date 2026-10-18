@@ -1,6 +1,6 @@
 import { InvalidInputError } from './errors.js'
 
-export declare namespace NdjsonDecoderStream {
+export declare namespace DecoderStream {
   type Options = {
     /** What to do with a line that isn't valid JSON: fail the stream, or drop the line and continue. @default 'error' */
     invalid?: 'error' | 'skip' | undefined
@@ -17,14 +17,14 @@ export declare namespace NdjsonDecoderStream {
  *
  * @example
  * ```ts
- * import * as JsonStream from '@portable/json-stream'
+ * import * as Ndjson from '@portable/ndjson'
  *
  * const response = await fetch('https://example.com/events.ndjson')
- * const events = response.body!.pipeThrough(new JsonStream.NdjsonDecoderStream())
+ * const events = response.body!.pipeThrough(new Ndjson.DecoderStream())
  * ```
  */
-export class NdjsonDecoderStream extends TransformStream<Uint8Array | string, unknown> {
-  constructor(options: NdjsonDecoderStream.Options = {}) {
+export class DecoderStream extends TransformStream<Uint8Array | string, unknown> {
+  constructor(options: DecoderStream.Options = {}) {
     const { invalid = 'error' } = options
     const decoder = new TextDecoder()
     let partial = ''

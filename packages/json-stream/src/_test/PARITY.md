@@ -3,12 +3,11 @@
 Upstream suites:
 
 - [JSONStream 1.3.5 `test/`](https://github.com/dominictarr/JSONStream/tree/master/test). Fixtures `all_npm.json`, `couch_sample.json`, `depth.json`, `error.json` and `header_footer.json` are copied from it (MIT or Apache-2.0, Dominic Tarr).
-- [ndjson 2.0.0 `test/index.js`](https://github.com/ndjson/ndjson.js/blob/master/test/index.js). `data.ndjson` is its `test/data.txt` (BSD-3-Clause).
 - [stream-json 3.7.0 `tests/`](https://github.com/uhop/stream-json/tree/master/tests).
 - [json-stream-stringify 3.1.7 `test-src/JsonStreamStringify.spec.ts`](https://github.com/Faleij/json-stream-stringify/blob/master/test-src/JsonStreamStringify.spec.ts).
 - [@worker-tools/json-stream `test/`](https://github.com/worker-tools/json-stream/tree/master/test).
 
-Test names below are the `describe > test` names in `ParserStream.conformance.ts` (P), `Ndjson.conformance.ts` (N) and `encode.conformance.ts` (E).
+Test names below are the `describe > test` names in `ParserStream.conformance.ts` (P) and `encode.conformance.ts` (E). NDJSON moved to `@portable/ndjson`, whose `PARITY.md` maps the ndjson suite and stream-json's JSON Lines tests.
 
 ## JSONStream
 
@@ -39,17 +38,6 @@ Test names below are the `describe > test` names in `ParserStream.conformance.ts
 | stringify.js, stringify_object.js, two-ways.js | E `json-stream-stringify > writes a stream as an array`, P `JSONStream > reads back what encode writes` | `JSONStream.stringify()` is `encode(stream)`. `stringifyObject` has no equivalent; build an object whose values are promises or streams. |
 | test.js | P `JSONStream > emits each row of a large document` | `/\d+/` is `[*]`. |
 | test2.js | P `JSONStream > emits the whole document for the root path` | |
-
-## ndjson
-
-| Upstream test | Covered by | Notes |
-| --- | --- | --- |
-| .parse | N `ndjson > decodes a line` | |
-| .parse twice | N `ndjson > decodes two lines` | |
-| .parse - strict:true error, strict:true error event | N `ndjson > fails on an invalid line` | Errors always fail the stream; nothing is thrown from `write`. |
-| .parse - strict:false error | N `ndjson > skips invalid lines with invalid: skip` | |
-| .stringify | N `ndjson > encodes a value as a line` | |
-| .stringify circular | N `ndjson > fails on a circular value` | Deliberate difference: ndjson writes `"[Circular ~]"` through json-stringify-safe, which changes the data. We fail with `TypeError`, as `JSON.stringify` does. |
 
 ## json-stream-stringify
 
@@ -99,7 +87,7 @@ Test names below are the `describe > test` names in `ParserStream.conformance.ts
 | promises that resolve to undefined are omitted | E `json-stream-stringify > writes a promise of undefined as JSON.stringify does` | |
 | undefined values in generators become null | E `@worker-tools/json-stream > writes undefined from an async generator as null` | |
 | undefined toJSON result | E `@worker-tools/json-stream > omits a property whose toJSON returns undefined` | |
-| playground stringify stream, roundtrip | N `@worker-tools/json-stream > round-trips values through bytes` | `JSONStringifyStream` writes a JSON array; that is `encode(stream)`. |
+| playground stringify stream, roundtrip | E `json-stream-stringify > writes a stream as an array`, P `@worker-tools/json-stream > reads a body built by encode` | `JSONStringifyStream` writes a JSON array; that is `encode(stream)`. |
 | playground Retrieving multiple values and collections | P `JSONStream > emits the values around a selected array when their paths are given` | |
 
 ## stream-json
@@ -152,18 +140,10 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | disassembler: NaN, Infinity, -Infinity (4 tests) | E `stream-json > writes NaN, Infinity and -Infinity as null` | |
 | disassembler: bigint (4 tests) | E `stream-json > fails on a BigInt, as JSON.stringify does` | Deliberate difference, as for json-stream-stringify. |
 | stringer: roundtrip, no packing, useValues | E `encode > matches JSON.stringify for nested plain values with indentation` | |
-| stringer: json streaming objects, json streaming primitives | N `stream-json jsonl > encodes several values read back from lines` | |
+| stringer: json streaming objects, json streaming primitives, all jsonl parser and jsonl stringer tests | `@portable/ndjson` | JSON Lines. Mapped in `packages/ndjson/src/_test/PARITY.md`. |
 | stringer: json streaming objects as array | E `json-stream-stringify > writes a stream as an array` | |
 | stringer: no input as array | E `stream-json > writes an empty stream as an empty array` | |
 | stringer: special symbols, control characters with useValues | E `stream-json > writes special characters as JSON.stringify does` | |
-| jsonl parser: len=1, 2, 3, 5, 10, len=5 quant=3, len=10 quant=7 | N `stream-json jsonl > decodes <n> lines from <size>-character chunks` | |
-| jsonl parser: file | N `ndjson > decodes the ndjson fixture` | Reads a gzipped file with `node:fs`. |
-| jsonl stringer: single, multiple | N `stream-json jsonl > encodes one value…`, `encodes several values…` | |
-| jsonl stringer: default separator | N `stream-json jsonl > separates values with \n` | |
-| jsonl stringer: custom separator | skipped | NDJSON lines end in `\n`. |
-| jsonl parser: invalid JSON at end, in middle | N `stream-json jsonl > fails on an invalid last line`, `fails on an invalid line in the middle, naming the line` | |
-| jsonl parser: skip errors | N `stream-json jsonl > skips invalid lines in the middle and at the end` | |
-| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | Only `'error'` and `'skip'`. To recover lines yourself, split with `LineStream` from `@portable/lines` and call `JSON.parse`. |
 | jsonc parser, stringer, verifier (90 tests), file jsonc (6 tests) | skipped | JSONC (comments and trailing commas) is a different format. |
 | parseFile, stringerToFile, verifyFile (17 tests) | skipped | `node:fs` helpers. |
 | batch (6 tests), emitter (2 tests), drain (6 tests), pipe (4 tests), withParser (1 test), main source test | skipped | Node stream plumbing and stream-chain helpers. `Streams.batch` covers batching. |
@@ -186,9 +166,6 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | stream-json #63: array indexes are wrong when values aren't streamed. | P `known upstream issues > counts array indexes in skipped arrays (stream-json #63)` |
 | stream-json #104, #68, #79: invalid JSON doesn't fail, or the parser hangs. | P `known upstream issues > fails on invalid JSON in a part of the document no path selects (stream-json #104)`, `stream-json > fails on garbage in an endless stream instead of hanging` |
 | stream-json #167: raw control characters inside strings are accepted. | P `stream-json > fails on … inside a string` |
-| ndjson #6: a `null` line ends the stream, because Node object streams treat `null` as the end. | N `known upstream issues > emits a null line instead of ending the stream (ndjson #6)` |
-| ndjson reports a whitespace-only line as invalid. | N `known upstream issues > skips whitespace-only lines, which ndjson reports as invalid` |
-| ndjson ends lines with `os.EOL`, so Windows writes `\r\n`. | N `known upstream issues > ends lines with \n on every platform (ndjson uses os.EOL)` |
 | json-stream-stringify #47: a stream that isn't the first property produces invalid JSON. | E `known upstream issues > writes a stream that is not the first property as valid JSON (json-stream-stringify #47)` |
 | json-stream-stringify #28: empty keys are dropped. | E `known upstream issues > writes keys that are empty strings (json-stream-stringify #28)` |
 | json-stream-stringify #34, #4: empty arrays and repeated references are reported as circular. | E `known upstream issues > does not report empty arrays as circular (json-stream-stringify #34)`, `json-stream-stringify > writes a repeated, non-circular reference each time` |

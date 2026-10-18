@@ -1,6 +1,6 @@
 /**
  * Thrown when the input isn't valid JSON. The message gives the offset of the first bad
- * character, or the line number for NDJSON.
+ * character.
  *
  * @example
  * ```ts

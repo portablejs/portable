@@ -1,19 +1,11 @@
 import { Readable } from 'node:stream'
 import { JsonStreamStringify } from 'json-stream-stringify'
 import JSONStream from 'JSONStream'
-import ndjson from 'ndjson'
 import { describe, expect, test } from 'vite-plus/test'
 import allNpm from './fixtures/all_npm.json?raw'
 import depth from './fixtures/depth.json?raw'
 import headerFooter from './fixtures/header_footer.json?raw'
-import {
-  decodeNdjson,
-  encodeText,
-  encodeUtf8,
-  parseValues,
-  randomChunks,
-  streamOf,
-} from './utils.js'
+import { encodeText, encodeUtf8, parseValues, randomChunks, streamOf } from './utils.js'
 
 function collect(stream: NodeJS.ReadableStream): Promise<unknown[]> {
   const values: unknown[] = []
@@ -29,10 +21,6 @@ function viaJSONStream(
   path: string | unknown[],
 ): Promise<unknown[]> {
   return collect(Readable.from(chunks).pipe(JSONStream.parse(path)))
-}
-
-function viaNdjson(chunks: readonly Uint8Array[]): Promise<unknown[]> {
-  return collect(Readable.from(chunks).pipe(ndjson.parse()))
 }
 
 async function viaJsonStreamStringify(value: unknown, space?: number): Promise<string> {
@@ -104,27 +92,6 @@ describe('ParserStream matches JSONStream', () => {
       await viaJSONStream(chunks, 'rows.*.id'),
     )
   })
-})
-
-describe('NdjsonDecoderStream matches ndjson', () => {
-  const lines =
-    (JSON.parse(allNpm) as { rows: unknown[] }).rows
-      .slice(0, 500)
-      .map((row) => JSON.stringify(row))
-      .join('\n') + '\n'
-  for (const [name, text] of [
-    ['rows', lines],
-    ['rows with CRLF', lines.replaceAll('\n', '\r\n')],
-    ['values of every type', '1\n"two"\n[3]\n{"four":4}\ntrue\n\n-5.5e3\n'],
-    ['no trailing newline', '{"a":1}\n{"b":2}'],
-  ]) {
-    for (const seed of [1, 2, 3]) {
-      test(`${name}, random chunking ${seed}`, async () => {
-        const chunks = randomChunks(encodeUtf8(text!), seed)
-        expect(await decodeNdjson(chunks)).toEqual(await viaNdjson(chunks))
-      })
-    }
-  }
 })
 
 describe('encode matches json-stream-stringify', () => {

@@ -6,16 +6,16 @@
  *
  * @example
  * ```ts
- * import * as JsonStream from '@portable/json-stream'
+ * import * as Ndjson from '@portable/ndjson'
  * import * as Streams from '@portable/streams'
  *
  * const body = Streams.fromIterable(rows)
- *   .pipeThrough(new JsonStream.NdjsonEncoderStream())
+ *   .pipeThrough(new Ndjson.EncoderStream())
  *   .pipeThrough(new TextEncoderStream())
  * return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
  * ```
  */
-export class NdjsonEncoderStream extends TransformStream<unknown, string> {
+export class EncoderStream extends TransformStream<unknown, string> {
   constructor() {
     super({
       transform(value, controller) {

@@ -1,8 +1,8 @@
 # @portable/json-stream
 
-Streams JSON in and out: NDJSON decoding and encoding, values selected by JSONPath from one large document, and JSON text written from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Streams JSON in and out: values selected by JSONPath from one large document, and JSON text written from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [ndjson](https://www.npmjs.com/package/ndjson), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify) and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream).
+Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify) and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use [`@portable/ndjson`](../ndjson).
 
 ```sh
 npm install @portable/json-stream
@@ -27,21 +27,6 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 | `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]` and `..` before any of them. A nested match is emitted before the value that contains it. |
 
 The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the input ends inside a value.
-
-## `NdjsonDecoderStream` and `NdjsonEncoderStream`
-
-`NdjsonDecoderStream` decodes one JSON value per line. Lines may end in LF or CRLF, and blank lines are skipped.
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, `'skip'` drops the line. |
-
-`NdjsonEncoderStream` writes each value as `JSON.stringify(value)` followed by `\n`. A value that `JSON.stringify` can't encode, such as `undefined`, fails the stream with a `TypeError`.
-
-```ts
-const events = response.body!.pipeThrough(new JsonStream.NdjsonDecoderStream())
-const body = events.pipeThrough(new JsonStream.NdjsonEncoderStream())
-```
 
 ## `encode`
 
@@ -72,8 +57,6 @@ The text matches what `JSON.stringify` gives for the resolved tree. A circular s
 | `JSONStream.stringify()` | `encode(stream)` |
 | stream-json `parser()` + `pick({ filter: 'data' })` + `streamArray()` | `new ParserStream({ paths: ['$.data[*]'] })` |
 | stream-json `withParser()` + `streamValues()` | `new ParserStream()` |
-| `ndjson.parse()`, `ndjson.parse({ strict: false })` | `new NdjsonDecoderStream()`, `new NdjsonDecoderStream({ invalid: 'skip' })` |
-| `ndjson.stringify()` | `new NdjsonEncoderStream()` |
 | `new JsonStreamStringify(value, replacer, spaces)` | `encode(value, { replacer, space })` |
 | @worker-tools/json-stream `jsonStringifyStream` | `encode` |
 | @worker-tools/json-stream `JSONParseStream('$.rows.*')` | `new ParserStream({ paths: ['$.rows[*]'] })` |
@@ -83,8 +66,6 @@ Deliberate differences:
 - `null` matches are emitted. JSONStream drops them.
 - A trailing comma fails the stream. JSONStream accepts it.
 - `[*]` and `.*` select object members as well as array items.
-- A `null` line is emitted as `null` instead of ending the stream, as it does in ndjson's Node object stream. A whitespace-only line is skipped, not reported as invalid.
-- `NdjsonEncoderStream` always ends lines with `\n`. ndjson uses `os.EOL`, which is `\r\n` on Windows.
 - `encode` calls functions in the tree. `JSON.stringify` and json-stream-stringify drop them.
 - `encode` has no `cycle` option. A circular structure fails, as in `JSON.stringify`.
 - A `BigInt` fails, as in `JSON.stringify`.

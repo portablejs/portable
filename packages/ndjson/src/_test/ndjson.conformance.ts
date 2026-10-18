@@ -1,8 +1,8 @@
 import { fromIterable, toArray, toText } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { InvalidInputError, NdjsonDecoderStream, NdjsonEncoderStream } from '../index.js'
+import { InvalidInputError, DecoderStream, EncoderStream } from '../index.js'
 import data from './fixtures/data.ndjson?raw'
-import { chunked, decodeNdjson, encodeNdjson, encodeUtf8, lineSeparator } from './utils.js'
+import { chunked, decode, encode, encodeUtf8, lineSeparator } from './utils.js'
 
 const escaped = {
   stringWithTabsAndNewlines: "Did it work?\nNo...\t\tI don't think so...",
@@ -24,38 +24,38 @@ const pattern = {
 
 describe('ndjson', () => {
   test('decodes a line', async () => {
-    expect(await decodeNdjson(['{"hello": "world"}\n'])).toEqual([{ hello: 'world' }])
+    expect(await decode(['{"hello": "world"}\n'])).toEqual([{ hello: 'world' }])
   })
 
   test('decodes two lines', async () => {
-    expect(await decodeNdjson(['{"hello": "world"}\n{"hola": "mundo"}\n'])).toEqual([
+    expect(await decode(['{"hello": "world"}\n{"hola": "mundo"}\n'])).toEqual([
       { hello: 'world' },
       { hola: 'mundo' },
     ])
   })
 
   test('fails on an invalid line', async () => {
-    await expect(decodeNdjson(['{"no":"json"\n'])).rejects.toThrow(InvalidInputError)
+    await expect(decode(['{"no":"json"\n'])).rejects.toThrow(InvalidInputError)
   })
 
   test('skips invalid lines with invalid: skip', async () => {
-    expect(await decodeNdjson(['{"json":false\n{"json":true}\n'], { invalid: 'skip' })).toEqual([
+    expect(await decode(['{"json":false\n{"json":true}\n'], { invalid: 'skip' })).toEqual([
       { json: true },
     ])
   })
 
   test('encodes a value as a line', async () => {
-    expect(await encodeNdjson([{ hello: 'world' }])).toBe('{"hello":"world"}\n')
+    expect(await encode([{ hello: 'world' }])).toBe('{"hello":"world"}\n')
   })
 
   test('fails on a circular value', async () => {
     const value: Record<string, unknown> = {}
     value.obj = value
-    await expect(encodeNdjson([value])).rejects.toThrow(TypeError)
+    await expect(encode([value])).rejects.toThrow(TypeError)
   })
 
   test('decodes the ndjson fixture', async () => {
-    expect(await decodeNdjson([data])).toEqual([{ foo: 'bar' }, { hello: 'world' }])
+    expect(await decode([data])).toEqual([{ foo: 'bar' }, { hello: 'world' }])
   })
 })
 
@@ -72,35 +72,35 @@ describe('stream-json jsonl', () => {
     test(`decodes ${count} lines from ${size}-character chunks`, async () => {
       const objects = Array.from({ length: count }, (_, n) => ({ ...escaped, n }))
       const text = objects.map((object) => JSON.stringify(object)).join('\n')
-      expect(await decodeNdjson(chunked(text, size))).toEqual(objects)
+      expect(await decode(chunked(text, size))).toEqual(objects)
     })
   }
 
   test('encodes one value read back from a line', async () => {
     const line = JSON.stringify(pattern)
-    expect(await encodeNdjson(await decodeNdjson([line]))).toBe(line + '\n')
+    expect(await encode(await decode([line]))).toBe(line + '\n')
   })
 
   test('encodes several values read back from lines', async () => {
     const line = JSON.stringify(pattern)
     const text = `${line}\n${line}\n${line}\n`
-    expect(await encodeNdjson(await decodeNdjson([text]))).toBe(text)
+    expect(await encode(await decode([text]))).toBe(text)
   })
 
   test('separates values with \\n', async () => {
-    expect(await encodeNdjson([1, 2, 3])).toBe('1\n2\n3\n')
+    expect(await encode([1, 2, 3])).toBe('1\n2\n3\n')
   })
 
   test('fails on an invalid last line', async () => {
-    await expect(decodeNdjson(['{'])).rejects.toThrow(InvalidInputError)
+    await expect(decode(['{'])).rejects.toThrow(InvalidInputError)
   })
 
   test('fails on an invalid line in the middle, naming the line', async () => {
-    await expect(decodeNdjson(['{}\n]\n1'])).rejects.toThrow('Invalid JSON on line 2.')
+    await expect(decode(['{}\n]\n1'])).rejects.toThrow('Invalid JSON on line 2.')
   })
 
   test('skips invalid lines in the middle and at the end', async () => {
-    expect(await decodeNdjson(['{}\n]\n1\n{'], { invalid: 'skip' })).toEqual([{}, 1])
+    expect(await decode(['{}\n]\n1\n{'], { invalid: 'skip' })).toEqual([{}, 1])
   })
 })
 
@@ -109,46 +109,47 @@ describe('@worker-tools/json-stream', () => {
     const values = [{ a: 1 }, { b: 2 }, { c: 3 }, 'foo', { a: { nested: { object: true } } }]
     const decoded = await toArray(
       fromIterable(values)
-        .pipeThrough(new NdjsonEncoderStream())
+        .pipeThrough(new EncoderStream())
         .pipeThrough(new TextEncoderStream())
-        .pipeThrough(new NdjsonDecoderStream()),
+        .pipeThrough(new DecoderStream()),
     )
     expect(decoded).toEqual(values)
   })
 })
 
-describe('NdjsonDecoderStream', () => {
+describe('DecoderStream', () => {
   test('accepts CRLF line endings and skips blank lines', async () => {
-    expect(await decodeNdjson(['1\r\n\r\n  \n\t\r\n2\r\n'])).toEqual([1, 2])
+    expect(await decode(['1\r\n\r\n  \n\t\r\n2\r\n'])).toEqual([1, 2])
   })
 
   test('decodes a last line with no newline', async () => {
-    expect(await decodeNdjson(['1\n2'])).toEqual([1, 2])
+    expect(await decode(['1\n2'])).toEqual([1, 2])
   })
 
   test('decodes multi-byte characters split across chunks', async () => {
-    expect(await decodeNdjson(chunked(encodeUtf8('"烫🚀"\n"ü"\n'), 1))).toEqual(['烫🚀', 'ü'])
+    expect(await decode(chunked(encodeUtf8('"烫🚀"\n"ü"\n'), 1))).toEqual(['烫🚀', 'ü'])
   })
 
   test('decodes a line split across many chunks', async () => {
     const value = { text: 'x'.repeat(10_000) }
-    expect(await decodeNdjson(chunked(JSON.stringify(value) + '\n', 7))).toEqual([value])
+    expect(await decode(chunked(JSON.stringify(value) + '\n', 7))).toEqual([value])
   })
 
   test('keeps the cause of an invalid line', async () => {
-    const error = await decodeNdjson(['{]\n']).catch((error: unknown) => error)
+    const error = await decode(['{]\n']).catch((error: unknown) => error)
     expect(error).toBeInstanceOf(InvalidInputError)
+    expect((error as Error).name).toBe('Ndjson.InvalidInputError')
     expect((error as Error).cause).toBeInstanceOf(SyntaxError)
   })
 
   test('does not modify the options object', () => {
     const options = { invalid: 'skip' } as const
-    new NdjsonDecoderStream(options)
+    new DecoderStream(options)
     expect(options).toEqual({ invalid: 'skip' })
   })
 })
 
-describe('NdjsonEncoderStream', () => {
+describe('EncoderStream', () => {
   for (const [name, value] of [
     ['undefined', undefined],
     ['a function', () => 1],
@@ -156,18 +157,18 @@ describe('NdjsonEncoderStream', () => {
     ['a BigInt', 1n],
   ] as const) {
     test(`fails on ${name}`, async () => {
-      await expect(encodeNdjson([value])).rejects.toThrow(TypeError)
+      await expect(encode([value])).rejects.toThrow(TypeError)
     })
   }
 
   test('escapes line separators inside strings, so each value stays on one line', async () => {
-    const text = await encodeNdjson(['a\nb', { 'c\r\nd': lineSeparator }])
+    const text = await encode(['a\nb', { 'c\r\nd': lineSeparator }])
     expect(text.split('\n')).toHaveLength(3)
   })
 
   test('produces bytes with TextEncoderStream', async () => {
     const body = fromIterable([{ a: 1 }])
-      .pipeThrough(new NdjsonEncoderStream())
+      .pipeThrough(new EncoderStream())
       .pipeThrough(new TextEncoderStream())
     expect(await toText(body)).toBe('{"a":1}\n')
   })
@@ -175,14 +176,14 @@ describe('NdjsonEncoderStream', () => {
 
 describe('known upstream issues', () => {
   test('emits a null line instead of ending the stream (ndjson #6)', async () => {
-    expect(await decodeNdjson(['1\nnull\n2\n'])).toEqual([1, null, 2])
+    expect(await decode(['1\nnull\n2\n'])).toEqual([1, null, 2])
   })
 
   test('skips whitespace-only lines, which ndjson reports as invalid', async () => {
-    expect(await decodeNdjson(['1\n   \n2\n'])).toEqual([1, 2])
+    expect(await decode(['1\n   \n2\n'])).toEqual([1, 2])
   })
 
   test('ends lines with \\n on every platform (ndjson uses os.EOL)', async () => {
-    expect(await encodeNdjson([1])).toBe('1\n')
+    expect(await encode([1])).toBe('1\n')
   })
 })
