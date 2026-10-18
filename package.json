@@ -1,0 +1,32 @@
+{
+  "name": "portable-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --filter './packages/*' build",
+    "dev": "pnpm --filter './packages/*' dev",
+    "check": "vp check --fix",
+    "check:types": "tsc -b",
+    "test": "vp test run",
+    "test:changed": "vp test run --changed origin/main --project node",
+    "test:browser": "vp test run --project browser",
+    "bench": "vp test bench --run",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build && pnpm test && pnpm test:browser && pnpm --filter './packages/*' exec zile publish:prepare && changeset publish && pnpm --filter './packages/*' exec zile publish:post",
+    "prepare": "vp config --no-agent"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "playwright": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:",
+    "zile": "catalog:"
+  },
+  "packageManager": "pnpm@11.28.6",
+  "engines": {
+    "node": ">=24"
+  }
+}

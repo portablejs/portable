@@ -1,0 +1,7 @@
+node_modules
+dist
+*.tsbuildinfo
+.vite-hooks/_
+.bench
+coverage
+.DS_Store

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+pnpm check:types
+if git rev-parse --verify --quiet origin/main >/dev/null; then
+  pnpm test:changed
+else
+  pnpm vp test run --project node
+fi
