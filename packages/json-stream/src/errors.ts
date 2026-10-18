@@ -1,0 +1,42 @@
+/**
+ * Thrown when the input isn't valid JSON. The message gives the offset of the first bad
+ * character, or the line number for NDJSON.
+ *
+ * @example
+ * ```ts
+ * import * as JsonStream from '@portable/json-stream'
+ * import * as Streams from '@portable/streams'
+ *
+ * try {
+ *   await Streams.toArray(body.pipeThrough(new JsonStream.ParserStream()))
+ * } catch (error) {
+ *   if (error instanceof JsonStream.InvalidInputError) return new Response('Bad JSON', { status: 400 })
+ *   throw error
+ * }
+ * ```
+ */
+export class InvalidInputError extends TypeError {
+  override name = 'JsonStream.InvalidInputError'
+}
+
+/**
+ * Thrown when the input ends inside a JSON value, such as a response body cut off mid-document.
+ *
+ * @example
+ * ```ts
+ * import * as JsonStream from '@portable/json-stream'
+ * import * as Streams from '@portable/streams'
+ *
+ * try {
+ *   await Streams.toArray(body.pipeThrough(new JsonStream.ParserStream()))
+ * } catch (error) {
+ *   if (error instanceof JsonStream.TruncatedError) console.log('connection dropped')
+ * }
+ * ```
+ */
+export class TruncatedError extends TypeError {
+  override name = 'JsonStream.TruncatedError'
+  constructor() {
+    super('JSON input ended inside a value.')
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "@portable/json-stream",
+  "description": "Stream JSON in any JavaScript runtime: NDJSON, values at paths in a large document, and JSON written from promises and streams.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@portable/streams": "workspace:*",
+    "@types/ndjson": "^2.0.4",
+    "@types/node": "^26.6.5",
+    "JSONStream": "^1.3.5",
+    "json-stream-stringify": "^3.1.7",
+    "ndjson": "^2.0.0"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/json-stream"
+  },
+  "keywords": [
+    "json",
+    "ndjson",
+    "jsonl",
+    "jsonpath",
+    "streaming",
+    "JSONStream",
+    "stream-json",
+    "json-stream-stringify",
+    "web-streams"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
