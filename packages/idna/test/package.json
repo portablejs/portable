@@ -1,0 +1,13 @@
+{
+  "name": "@portable/idna-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/idna": "workspace:*",
+    "@types/node": "^26.6.5",
+    "@types/punycode": "^2.1.4",
+    "@types/tr46": "^5.0.1",
+    "punycode": "^2.3.1",
+    "tr46": "^7.0.0"
+  }
+}

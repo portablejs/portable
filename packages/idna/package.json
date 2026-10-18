@@ -1,0 +1,46 @@
+{
+  "name": "@portable/idna",
+  "description": "Convert internationalized domain names between Unicode and Punycode (UTS #46), in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev",
+    "generate": "node scripts/generate.ts"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/idna"
+  },
+  "keywords": [
+    "idna",
+    "uts46",
+    "tr46",
+    "punycode",
+    "domain",
+    "hostname",
+    "url",
+    "unicode"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
