@@ -17,10 +17,10 @@ export declare namespace DecoderStream {
  *
  * @example
  * ```ts
- * import * as Ndjson from '@portable/ndjson'
+ * import * as Jsonl from '@portable/jsonl'
  *
  * const response = await fetch('https://example.com/events.ndjson')
- * const events = response.body!.pipeThrough(new Ndjson.DecoderStream())
+ * const events = response.body!.pipeThrough(new Jsonl.DecoderStream())
  * ```
  */
 export class DecoderStream extends TransformStream<Uint8Array | string, unknown> {

@@ -4,17 +4,17 @@
  *
  * @example
  * ```ts
- * import * as Ndjson from '@portable/ndjson'
+ * import * as Jsonl from '@portable/jsonl'
  * import * as Streams from '@portable/streams'
  *
  * try {
- *   await Streams.toArray(body.pipeThrough(new Ndjson.DecoderStream()))
+ *   await Streams.toArray(body.pipeThrough(new Jsonl.DecoderStream()))
  * } catch (error) {
- *   if (error instanceof Ndjson.InvalidInputError) return new Response('Bad NDJSON', { status: 400 })
+ *   if (error instanceof Jsonl.InvalidInputError) return new Response('Bad NDJSON', { status: 400 })
  *   throw error
  * }
  * ```
  */
 export class InvalidInputError extends TypeError {
-  override name = 'Ndjson.InvalidInputError'
+  override name = 'Jsonl.InvalidInputError'
 }

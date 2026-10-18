@@ -6,11 +6,11 @@
  *
  * @example
  * ```ts
- * import * as Ndjson from '@portable/ndjson'
+ * import * as Jsonl from '@portable/jsonl'
  * import * as Streams from '@portable/streams'
  *
  * const body = Streams.fromIterable(rows)
- *   .pipeThrough(new Ndjson.EncoderStream())
+ *   .pipeThrough(new Jsonl.EncoderStream())
  *   .pipeThrough(new TextEncoderStream())
  * return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
  * ```

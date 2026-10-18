@@ -186,6 +186,26 @@ importers:
         specifier: ^3.1.7
         version: 3.1.7
 
+  packages/jsonl: {}
+
+  packages/jsonl/test:
+    devDependencies:
+      '@portable/jsonl':
+        specifier: workspace:*
+        version: link:..
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../../streams
+      '@types/ndjson':
+        specifier: ^2.0.4
+        version: 2.0.4
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      ndjson:
+        specifier: ^2.0.0
+        version: 2.0.0
+
   packages/lines: {}
 
   packages/lines/test:
@@ -202,26 +222,6 @@ importers:
       split2:
         specifier: 'catalog:'
         version: 4.2.0
-
-  packages/ndjson: {}
-
-  packages/ndjson/test:
-    devDependencies:
-      '@portable/ndjson':
-        specifier: workspace:*
-        version: link:..
-      '@portable/streams':
-        specifier: workspace:*
-        version: link:../../streams
-      '@types/ndjson':
-        specifier: ^2.0.4
-        version: 2.0.4
-      '@types/node':
-        specifier: ^26.6.5
-        version: 26.6.5
-      ndjson:
-        specifier: ^2.0.0
-        version: 2.0.0
 
   packages/oauth1:
     dependencies:

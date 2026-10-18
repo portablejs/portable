@@ -1,6 +1,6 @@
-# @portable/ndjson
+# @portable/jsonl
 
-Decodes and encodes NDJSON (newline-delimited JSON, also called JSON Lines) streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Decodes and encodes JSON Lines (`.jsonl`, also called NDJSON or newline-delimited JSON) streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [ndjson](https://www.npmjs.com/package/ndjson) and the `jsonl` modules of [stream-json](https://www.npmjs.com/package/stream-json).
 
@@ -15,14 +15,14 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - A whitespace-only line is skipped, where ndjson reports it as invalid.
 
 ```sh
-npm install @portable/ndjson
+npm install @portable/jsonl
 ```
 
 ```ts
-import * as Ndjson from '@portable/ndjson'
+import * as Jsonl from '@portable/jsonl'
 
 const response = await fetch('https://example.com/events.ndjson')
-const reader = response.body!.pipeThrough(new Ndjson.DecoderStream()).getReader()
+const reader = response.body!.pipeThrough(new Jsonl.DecoderStream()).getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
 ```
 
@@ -32,7 +32,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 
 ```ts
 const body = Streams.fromIterable(rows)
-  .pipeThrough(new Ndjson.EncoderStream())
+  .pipeThrough(new Jsonl.EncoderStream())
   .pipeThrough(new TextEncoderStream())
 return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
 ```
@@ -47,14 +47,14 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 ## Migrating
 
-| ndjson / stream-json | @portable/ndjson |
+| ndjson / stream-json | @portable/jsonl |
 | --- | --- |
-| `stream.pipe(ndjson.parse())` | `stream.pipeThrough(new Ndjson.DecoderStream())` |
-| `ndjson.parse({ strict: false })` | `new Ndjson.DecoderStream({ invalid: 'skip' })` |
-| `ndjson.stringify()` | `new Ndjson.EncoderStream()` |
-| stream-json `jsonl/Parser` | `new Ndjson.DecoderStream()`, which emits each value instead of `{ key, value }` |
-| stream-json `jsonl/Parser({ ignoreErrors: true })` | `new Ndjson.DecoderStream({ invalid: 'skip' })` |
-| stream-json `jsonl/Stringer` | `new Ndjson.EncoderStream()` |
+| `stream.pipe(ndjson.parse())` | `stream.pipeThrough(new Jsonl.DecoderStream())` |
+| `ndjson.parse({ strict: false })` | `new Jsonl.DecoderStream({ invalid: 'skip' })` |
+| `ndjson.stringify()` | `new Jsonl.EncoderStream()` |
+| stream-json `jsonl/Parser` | `new Jsonl.DecoderStream()`, which emits each value instead of `{ key, value }` |
+| stream-json `jsonl/Parser({ ignoreErrors: true })` | `new Jsonl.DecoderStream({ invalid: 'skip' })` |
+| stream-json `jsonl/Stringer` | `new Jsonl.EncoderStream()` |
 
 Deliberate differences from ndjson:
 

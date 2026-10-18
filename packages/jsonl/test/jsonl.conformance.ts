@@ -1,6 +1,6 @@
 import { fromIterable, toArray, toText } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { InvalidInputError, DecoderStream, EncoderStream } from '@portable/ndjson'
+import { InvalidInputError, DecoderStream, EncoderStream } from '@portable/jsonl'
 import data from './fixtures/data.ndjson?raw'
 import { chunked, decode, encode, encodeUtf8, lineSeparator } from './utils.js'
 
@@ -138,7 +138,7 @@ describe('DecoderStream', () => {
   test('keeps the cause of an invalid line', async () => {
     const error = await decode(['{]\n']).catch((error: unknown) => error)
     expect(error).toBeInstanceOf(InvalidInputError)
-    expect((error as Error).name).toBe('Ndjson.InvalidInputError')
+    expect((error as Error).name).toBe('Jsonl.InvalidInputError')
     expect((error as Error).cause).toBeInstanceOf(SyntaxError)
   })
 

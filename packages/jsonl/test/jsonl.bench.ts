@@ -2,7 +2,7 @@ import { Readable } from 'node:stream'
 import { toArray, toText } from '@portable/streams'
 import ndjson from 'ndjson'
 import { expect, test } from 'vite-plus/test'
-import { DecoderStream, EncoderStream } from '@portable/ndjson'
+import { DecoderStream, EncoderStream } from '@portable/jsonl'
 import { chunked, encodeUtf8, rows, streamOf } from './utils.js'
 
 const values = rows(20_000)
@@ -20,7 +20,7 @@ function drain(readable: NodeJS.ReadableStream): Promise<number> {
 
 test('decodes 20,000 rows within 25% of ndjson', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/ndjson', async () => {
+    bench('@portable/jsonl', async () => {
       await toArray(streamOf(lineChunks).pipeThrough(new DecoderStream()))
     }),
     bench('ndjson', async () => {
@@ -31,14 +31,14 @@ test('decodes 20,000 rows within 25% of ndjson', async ({ bench }) => {
       for (const line of text.split('\n')) if (line) JSON.parse(line)
     }),
   )
-  expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/ndjson'), {
+  expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/jsonl'), {
     delta: 0.25,
   })
 })
 
 test('encodes 20,000 rows within 25% of ndjson', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/ndjson', async () => {
+    bench('@portable/jsonl', async () => {
       await toArray(streamOf(values).pipeThrough(new EncoderStream()))
     }),
     bench('ndjson', async () => {
@@ -52,7 +52,7 @@ test('encodes 20,000 rows within 25% of ndjson', async ({ bench }) => {
       for (const value of values) JSON.stringify(value)
     }),
   )
-  expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/ndjson'), {
+  expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/jsonl'), {
     delta: 0.25,
   })
 })

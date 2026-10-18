@@ -5,7 +5,7 @@ Upstream suites:
 - [ndjson 2.0.0 `test/index.js`](https://github.com/ndjson/ndjson.js/blob/master/test/index.js). `data.ndjson` is its `test/data.txt` (BSD-3-Clause).
 - [stream-json 3.7.0 `tests/`](https://github.com/uhop/stream-json/tree/master/tests): the JSON Lines tests only. The rest of stream-json is covered by `@portable/json-stream`.
 
-Test names below are the `describe > test` names in `ndjson.conformance.ts`.
+Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 
 ## ndjson
 

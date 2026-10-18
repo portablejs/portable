@@ -1,9 +1,9 @@
 {
-  "name": "@portable/ndjson-test",
+  "name": "@portable/jsonl-test",
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@portable/ndjson": "workspace:*",
+    "@portable/jsonl": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/ndjson": "^2.0.4",
     "@types/node": "^26.6.5",

@@ -36,7 +36,7 @@ Calls made without the owner's input, with the options considered and the reason
 
 ## `@portable/json-stream` API
 
-- **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encode(value)` returns a `ReadableStream<string>`.** NDJSON moved to its own package, `@portable/ndjson`, with `Ndjson.DecoderStream` and `Ndjson.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs.
+- **`ParserStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encode(value)` returns a `ReadableStream<string>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs. It is named for JSON Lines (`.jsonl`), the name OpenAI, Hugging Face and agent transcripts use, rather than NDJSON, the older name kept by the `ndjson` npm package and Elasticsearch; the owner chose it. Both names are the same format.
 - **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **Matched values are built with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. A syntax error inside a match is reported when that value ends, not at the bad character.

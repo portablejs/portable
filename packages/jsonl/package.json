@@ -1,6 +1,6 @@
 {
-  "name": "@portable/ndjson",
-  "description": "Decode and encode NDJSON (JSON Lines) streams, in any JavaScript runtime.",
+  "name": "@portable/jsonl",
+  "description": "Decode and encode JSON Lines (NDJSON) streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/portablejs/portable.git",
-    "directory": "packages/ndjson"
+    "directory": "packages/jsonl"
   },
   "keywords": [
     "ndjson",
@@ -21,7 +21,8 @@
     "json-lines",
     "json",
     "streaming",
-    "web-streams"
+    "web-streams",
+    "ldjson"
   ],
   "engines": {
     "node": ">=24"
