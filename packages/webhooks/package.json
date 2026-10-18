@@ -1,0 +1,65 @@
+{
+  "name": "@portable/webhooks",
+  "description": "Verify and sign Standard Webhooks, Stripe, GitHub, Slack and Svix webhooks, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "dependencies": {
+    "@portable/base64": "workspace:^"
+  },
+  "devDependencies": {
+    "@noble/hashes": "^2.4.0",
+    "@octokit/webhooks-methods": "^6.0.0",
+    "@slack/bolt": "^5.1.0",
+    "@types/node": "^26.6.5",
+    "standardwebhooks": "^1.1.1",
+    "stripe": "^23.0.0",
+    "svix": "^2.8.0"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/webhooks"
+  },
+  "keywords": [
+    "webhooks",
+    "webhook",
+    "signature",
+    "hmac",
+    "standard-webhooks",
+    "standardwebhooks",
+    "stripe",
+    "github",
+    "slack",
+    "svix"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./core": {
+      "src": "./src/core.ts",
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
