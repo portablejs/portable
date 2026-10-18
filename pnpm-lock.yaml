@@ -105,6 +105,24 @@ importers:
         specifier: 'catalog:'
         version: 4.2.0
 
+  packages/quoted-printable:
+    devDependencies:
+      '@types/libqp':
+        specifier: ^1.1.3
+        version: 1.1.3
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      '@types/quoted-printable':
+        specifier: ^1.0.2
+        version: 1.0.2
+      libqp:
+        specifier: ^2.1.3
+        version: 2.1.3
+      quoted-printable:
+        specifier: ^1.0.1
+        version: 1.0.1
+
   packages/streams:
     devDependencies:
       '@types/merge2':
@@ -681,11 +699,17 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
+  '@types/libqp@1.1.3':
+    resolution: {integrity: sha512-sf/KYKzluoY67l1x8L1M7XVIzvqnvDVL0rUvEBWzeVlmv25BJKm9BrDZlLfsEwLgL47FpoW+ZJgEh8ystg9QyQ==}
+
   '@types/merge2@1.4.4':
     resolution: {integrity: sha512-WZLSif3sHKMlq6vW22R9ub5f+/CEFFlSCY8actv9WBU/8RMJes5zHog9+8oEVLTkaIPaM8fp8XpLaHZggPWN9Q==}
 
   '@types/node@26.6.5':
     resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
+
+  '@types/quoted-printable@1.0.2':
+    resolution: {integrity: sha512-3B28oB1rRaZNb3N5dlxysm8lH1ujzvReDuYBiIO4jvpTIg9ksrILCNgPxSGVyTWE/qwuxzgHaVehwMK3CVqAtA==}
 
   '@types/split2@4.2.3':
     resolution: {integrity: sha512-59OXIlfUsi2k++H6CHgUQKEb2HKRokUA39HY1i1dS8/AIcqVjtAAFdf8u+HxTWK/4FUHMJQlKSZ4I6irCBJ1Zw==}
@@ -1052,6 +1076,9 @@ packages:
   launch-editor@2.14.2:
     resolution: {integrity: sha512-NHJEb30MGBCkmZXLZwz25t37QR4aY03ZzPYUJXOJaOa92uWwExI9SBQUuIznBYc1xkD7cJNGX7oc3Nl3sq2kQQ==}
 
+  libqp@2.1.3:
+    resolution: {integrity: sha512-2tRtFndHYRyc6pAuExPbiZbzgwdWp8HIMTE1fLycMwv13YZlN5+DKvgR5WsP1W6vSpGXFuGvV49gteKetlMwLw==}
+
   lightningcss-android-arm64@1.33.0:
     resolution: {integrity: sha512-gEpRTalKdosp4Bb8qWtc2iOgE5SeIHlpS1up9bFq2wAyYhl1UdTObYiHe98zEM9SQvSoqQZ1IQD0JNpg3Ml5pg==}
     engines: {node: '>= 12.0.0'}
@@ -1228,6 +1255,10 @@ packages:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
 
+  quoted-printable@1.0.1:
+    resolution: {integrity: sha512-cihC68OcGiQOjGiXuo5Jk6XHANTHl1K4JLk/xlEJRTIXfy19Sg6XzB95XonYgr+1rB88bCpr7WZE7D7AlZow4g==}
+    hasBin: true
+
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
@@ -1304,6 +1335,9 @@ packages:
 
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
+
+  utf8@2.1.2:
+    resolution: {integrity: sha512-QXo+O/QkLP/x1nyi54uQiG0XrODxdysuQvE5dtVqv7F5K2Qb6FsN+qbr6KhF5wQ20tfcV3VQp0/2x1e1MRSPWg==}
 
   vite-plus@1.3.0:
     resolution: {integrity: sha512-wZGsDeYfPcrCegqgY68pJJHGTpEZdsZvIMH2/mWXkGkBD72UY3M7z24Sv3ZeOL/FrqbbtyqBOfkKO6BvoQ8wMw==}
@@ -1800,6 +1834,10 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
+  '@types/libqp@1.1.3':
+    dependencies:
+      '@types/node': 26.6.5
+
   '@types/merge2@1.4.4':
     dependencies:
       '@types/node': 26.6.5
@@ -1807,6 +1845,8 @@ snapshots:
   '@types/node@26.6.5':
     dependencies:
       undici-types: 8.9.0
+
+  '@types/quoted-printable@1.0.2': {}
 
   '@types/split2@4.2.3':
     dependencies:
@@ -2065,6 +2105,8 @@ snapshots:
       picocolors: 1.1.1
       shell-quote: 1.12.0
 
+  libqp@2.1.3: {}
+
   lightningcss-android-arm64@1.33.0:
     optional: true
 
@@ -2238,6 +2280,10 @@ snapshots:
       ansi-styles: 5.2.0
       react-is: 17.0.2
 
+  quoted-printable@1.0.1:
+    dependencies:
+      utf8: 2.1.2
+
   react-is@17.0.2: {}
 
   semver@7.8.5: {}
@@ -2282,6 +2328,8 @@ snapshots:
   typescript@6.0.3: {}
 
   undici-types@8.9.0: {}
+
+  utf8@2.1.2: {}
 
   vite-plus@1.3.0(@types/node@26.6.5)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(playwright@1.64.1)(typescript@6.0.3)(yaml@2.9.1):
     dependencies:

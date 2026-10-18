@@ -1,0 +1,53 @@
+{
+  "name": "@portable/quoted-printable",
+  "description": "Quoted-printable encode and decode, as functions and as streams, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@types/libqp": "^1.1.3",
+    "@types/node": "^26.6.5",
+    "@types/quoted-printable": "^1.0.2",
+    "libqp": "^2.1.3",
+    "quoted-printable": "^1.0.1"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/quoted-printable"
+  },
+  "keywords": [
+    "quoted-printable",
+    "qp",
+    "mime",
+    "rfc2045",
+    "libqp",
+    "email",
+    "streams",
+    "web-streams"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
