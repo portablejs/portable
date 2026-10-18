@@ -1,4 +1,5 @@
 import * as Base64 from '@portable/base64'
+import * as Bytes from '@portable/bytes'
 import { checkLength, decodeCharset, hexDigit, toText } from './internal/text.js'
 
 /**
@@ -159,7 +160,8 @@ export function decodeWords(input: string | Uint8Array): string {
   let charset = ''
   let pending: Uint8Array[] = []
   const flush = () => {
-    if (pending.length > 0) result += decodeCharset(concat(pending), charset)
+    if (pending.length > 0)
+      result += decodeCharset(pending.length === 1 ? pending[0]! : Bytes.concat(pending), charset)
     pending = []
   }
   for (let match = word.exec(text); match; match = word.exec(text)) {
@@ -283,17 +285,4 @@ function decodeQ(payload: string): Uint8Array {
     out[length++] = byte === 0x5f || byte === 0x09 || byte === 0x0d || byte === 0x0a ? 0x20 : byte
   }
   return out.subarray(0, length)
-}
-
-function concat(chunks: readonly Uint8Array[]): Uint8Array {
-  if (chunks.length === 1) return chunks[0]!
-  let total = 0
-  for (const chunk of chunks) total += chunk.length
-  const result = new Uint8Array(total)
-  let offset = 0
-  for (const chunk of chunks) {
-    result.set(chunk, offset)
-    offset += chunk.length
-  }
-  return result
 }
