@@ -176,6 +176,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **The default is `crypto.subtle.digest`,** as for every package (see the decision above). On Node an HMAC takes about 60 µs with it and 8 µs with noble passed as `digest`.
 - **The signed form POST benchmark allows 50%.** Reading the body and building a second `Request` in undici costs more than oauth-1.0a's string handling; hashing is not the gap.
 - **No HTTP client.** `fetch` follows redirects with the old signature, and the README shows how to re-sign.
+- **`timestamp` is a `Date`,** as in `Webhooks.sign` and every result in this repo. It was a number of seconds, so the same option name took different types in two packages a caller would use together.
 
 ## `@portable/webhooks` API
 

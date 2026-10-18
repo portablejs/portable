@@ -15,7 +15,7 @@ export const twitter = {
     secret: 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE',
   },
   nonce: 'kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg',
-  timestamp: 1318622958,
+  timestamp: new Date(1318622958_000),
 } as const
 
 export function form(

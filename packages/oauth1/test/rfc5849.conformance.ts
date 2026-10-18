@@ -12,7 +12,7 @@ describe('RFC 5849 examples', () => {
         realm: 'Photos',
         callback: 'http://printer.example.com/ready',
         nonce: 'wIjqoS',
-        timestamp: 137131200,
+        timestamp: new Date(137131200_000),
       },
     )
     expect(header).toBe(
@@ -26,7 +26,7 @@ describe('RFC 5849 examples', () => {
       token: { key: 'hh5s93j4hdidpola', secret: 'hdhd0244k9j7ao03' },
       verifier: 'hfdp7dh39dks9884',
       nonce: 'walatlh',
-      timestamp: 137131201,
+      timestamp: new Date(137131201_000),
     }
     const request = () => new Request('https://photos.example.net/token', { method: 'POST' })
     const params = parseHeader(await OAuth1.authorization(request(), options))
@@ -52,7 +52,7 @@ describe('RFC 5849 examples', () => {
       token: { key: 'kkk9d7dh3k39sjv7', secret: 'dh893hdasih9' },
       realm: 'Example',
       nonce: '7d8f3e4a',
-      timestamp: 137131201,
+      timestamp: new Date(137131201_000),
     })
     const base = baseString(
       'POST',
@@ -63,7 +63,7 @@ describe('RFC 5849 examples', () => {
   })
 
   test('§3.4.1.2: scheme and host are lowercased and the default port is dropped', async () => {
-    const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: 1 }
+    const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: new Date(1_000) }
     const base = baseString(
       'GET',
       'http://example.com/r%20v/X',
@@ -75,7 +75,7 @@ describe('RFC 5849 examples', () => {
   })
 
   test('§3.4.1.2: a non-default port is kept', async () => {
-    const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: 1 }
+    const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: new Date(1_000) }
     const base = baseString(
       'GET',
       'https://www.example.net:8080/',
@@ -118,7 +118,7 @@ describe('RFC 5849 examples', () => {
         consumer: { key: 'dpf43f3p2l4k3l03', secret: 'kd94hf93k423kf44' },
         token: { key: 'nnch734d00sl2jdk', secret: 'pfkkdhi9sl3r4s00' },
         nonce: 'kllo9940pd9333jh',
-        timestamp: 1191242096,
+        timestamp: new Date(1191242096_000),
       },
     )
     expect(actual).toBe('tR3+Ty81lMeYAr/Fid0kMTYa/WM=')

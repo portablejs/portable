@@ -63,8 +63,8 @@ export declare namespace authorization {
     bodyHash?: boolean | undefined
     /** `oauth_nonce`. Set it only in tests. @default 32 random hex digits */
     nonce?: string | undefined
-    /** `oauth_timestamp` in seconds. Set it only in tests. @default the current time */
-    timestamp?: number | undefined
+    /** The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests. @default new Date() */
+    timestamp?: Date | undefined
   }
 }
 
@@ -188,7 +188,7 @@ async function protocolParameters(
     ['oauth_consumer_key', percentEncode(options.consumer.key)],
     ['oauth_nonce', percentEncode(options.nonce ?? randomNonce())],
     ['oauth_signature_method', signatureMethod],
-    ['oauth_timestamp', percentEncode(String(options.timestamp ?? Math.floor(Date.now() / 1000)))],
+    ['oauth_timestamp', String(Math.floor((options.timestamp ?? new Date()).getTime() / 1000))],
     ['oauth_version', '1.0'],
   ]
   if (token !== undefined) oauth.push(['oauth_token', percentEncode(token.key)])
