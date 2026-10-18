@@ -1,8 +1,12 @@
 import * as Bytes from '@portable/bytes'
 import { checkAlphabet, checkLineLength, encode, toBase64, toBytes } from './encode.js'
+import { abortable } from './abortable.js'
 
 export declare namespace EncoderStream {
-  type Options = encode.Options
+  type Options = encode.Options & {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 /**
@@ -62,29 +66,34 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
       return text
     }
 
-    super({
-      transform(chunk, controller) {
-        let bytes = readChunk(chunk)
-        let text = ''
-        if (carry.length > 0) {
-          const fill = Math.min(3 - carry.length, bytes.length)
-          const group = Bytes.concat([carry, bytes.subarray(0, fill)])
-          bytes = bytes.subarray(fill)
-          if (group.length < 3) {
-            carry = group
-            return
-          }
-          text = encodeLines(group, false)
-        }
-        const whole = bytes.length - (bytes.length % 3)
-        carry = bytes.slice(whole)
-        text += encodeLines(bytes.subarray(0, whole), false)
-        if (text !== '') controller.enqueue(text)
-      },
-      flush(controller) {
-        const text = encodeLines(Bytes.concat([carry, utf8.encode(highSurrogate)]), true)
-        if (text !== '') controller.enqueue(text)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            let bytes = readChunk(chunk)
+            let text = ''
+            if (carry.length > 0) {
+              const fill = Math.min(3 - carry.length, bytes.length)
+              const group = Bytes.concat([carry, bytes.subarray(0, fill)])
+              bytes = bytes.subarray(fill)
+              if (group.length < 3) {
+                carry = group
+                return
+              }
+              text = encodeLines(group, false)
+            }
+            const whole = bytes.length - (bytes.length % 3)
+            carry = bytes.slice(whole)
+            text += encodeLines(bytes.subarray(0, whole), false)
+            if (text !== '') controller.enqueue(text)
+          },
+          flush(controller) {
+            const text = encodeLines(Bytes.concat([carry, utf8.encode(highSurrogate)]), true)
+            if (text !== '') controller.enqueue(text)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }

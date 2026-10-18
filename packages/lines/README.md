@@ -27,6 +27,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 | `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units. |
 | `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line. |
 | `skipEmpty` | `false` | Drop empty lines. |
+| `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over split2 and byline
 

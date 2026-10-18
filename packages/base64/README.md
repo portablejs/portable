@@ -45,6 +45,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `omitPadding` | `false` | Leave out the trailing `=`. |
 | `lineLength` | `false` | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending. |
 | `lineEnding` | `'\r\n'` | Inserted between lines. |
+| `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ### Decode options
 
@@ -54,6 +55,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | --- | --- | --- |
 | `alphabet` | `'base64'` | Alphabet of the input. `'mime'` mode accepts both. |
 | `mode` | `'loose'` | How to treat input that isn't canonical base64, below. |
+| `signal` | none | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 | Mode | Whitespace | Missing padding | Other characters | Data after padding |
 | --- | --- | --- | --- | --- |

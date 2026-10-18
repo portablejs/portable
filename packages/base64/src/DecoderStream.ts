@@ -1,7 +1,11 @@
 import { createDecoder, decode } from './decode.js'
+import { abortable } from './abortable.js'
 
 export declare namespace DecoderStream {
-  type Options = decode.Options
+  type Options = decode.Options & {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 /**
@@ -28,14 +32,19 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
     ) => {
       if (bytes.length > 0) controller.enqueue(bytes)
     }
-    super({
-      transform(chunk, controller) {
-        const text = typeof chunk === 'string' ? chunk : utf8.decode(chunk, { stream: true })
-        enqueue(write(text, false), controller)
-      },
-      flush(controller) {
-        enqueue(write(utf8.decode(), true), controller)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            const text = typeof chunk === 'string' ? chunk : utf8.decode(chunk, { stream: true })
+            enqueue(write(text, false), controller)
+          },
+          flush(controller) {
+            enqueue(write(utf8.decode(), true), controller)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }

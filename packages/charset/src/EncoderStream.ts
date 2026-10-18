@@ -1,9 +1,13 @@
 import type { Charset } from './Charset.js'
 import type { encode } from './encode.js'
 import { createState, run } from './internal/run.js'
+import { abortable } from './abortable.js'
 
 export declare namespace EncoderStream {
-  type Options = encode.Options
+  type Options = encode.Options & {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 /**
@@ -35,15 +39,20 @@ export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Arr
       }
       return decoder ? decoder.decode() + chunk : chunk
     }
-    super({
-      transform(chunk, controller) {
-        const bytes = run(state, text(chunk), false)
-        if (bytes.length > 0) controller.enqueue(bytes)
-      },
-      flush(controller) {
-        const bytes = run(state, decoder ? decoder.decode() : '', true)
-        if (bytes.length > 0) controller.enqueue(bytes)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            const bytes = run(state, text(chunk), false)
+            if (bytes.length > 0) controller.enqueue(bytes)
+          },
+          flush(controller) {
+            const bytes = run(state, decoder ? decoder.decode() : '', true)
+            if (bytes.length > 0) controller.enqueue(bytes)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }

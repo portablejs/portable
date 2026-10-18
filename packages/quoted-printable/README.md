@@ -25,7 +25,7 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream())
 | `encode(input, options?)` | `Uint8Array` or `string` (encoded as UTF-8) | `string` |
 | `decode(input)` | `string` (read as UTF-8) or `Uint8Array` | `Uint8Array` |
 | `EncoderStream(options?)` | a `TransformStream<Uint8Array \| string, string>` | |
-| `DecoderStream()` | a `TransformStream<string \| Uint8Array, Uint8Array>` | |
+| `DecoderStream(options?)` | a `TransformStream<string \| Uint8Array, Uint8Array>` | |
 
 `encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. Soft line breaks (`=` and CRLF) keep each line within `lineLength`, preferring to break after a space or punctuation, and never inside an escape or a UTF-8 sequence.
 
@@ -39,6 +39,9 @@ Both streams produce the same bytes as the functions, wherever the input is spli
 | --- | --- | --- |
 | `lineLength` | `76` | Longest line, not counting the line break. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
 | `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
+| `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+
+`DecoderStream` takes `signal` too, and no other option.
 
 ## Why use this over libqp and quoted-printable
 

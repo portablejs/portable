@@ -1,4 +1,5 @@
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
+import { abortable } from './abortable.js'
 
 export declare namespace encode {
   type Options = {
@@ -50,21 +51,29 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
   constructor(options: EncoderStream.Options = {}) {
     const encoder = createEncoder(options)
     const utf8 = createUtf8Encoder()
-    super({
-      transform(chunk, controller) {
-        const output = encoder.write(utf8.write(chunk), false)
-        if (output !== '') controller.enqueue(output)
-      },
-      flush(controller) {
-        const output = encoder.write(utf8.flush(), true)
-        if (output !== '') controller.enqueue(output)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            const output = encoder.write(utf8.write(chunk), false)
+            if (output !== '') controller.enqueue(output)
+          },
+          flush(controller) {
+            const output = encoder.write(utf8.flush(), true)
+            if (output !== '') controller.enqueue(output)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }
 
 export declare namespace EncoderStream {
-  type Options = encode.Options
+  type Options = encode.Options & {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 const EQUALS = 0x3d

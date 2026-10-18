@@ -1,4 +1,5 @@
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
+import { abortable } from './abortable.js'
 
 /**
  * Decodes quoted-printable (RFC 2045 section 6.7) into bytes. A string is read as UTF-8.
@@ -19,6 +20,13 @@ export function decode(input: string | Uint8Array): Uint8Array {
   return createDecoder().write(bytes, true)
 }
 
+export declare namespace DecoderStream {
+  type Options = {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
+  }
+}
+
 /**
  * A `TransformStream` that decodes quoted-printable text or bytes. Its output is the same as
  * `decode()` of the whole input, however the input is split into chunks.
@@ -31,19 +39,24 @@ export function decode(input: string | Uint8Array): Uint8Array {
  * ```
  */
 export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array> {
-  constructor() {
+  constructor(options: DecoderStream.Options = {}) {
     const decoder = createDecoder()
     const utf8 = createUtf8Encoder()
-    super({
-      transform(chunk, controller) {
-        const output = decoder.write(utf8.write(chunk), false)
-        if (output.length > 0) controller.enqueue(output)
-      },
-      flush(controller) {
-        const output = decoder.write(utf8.flush(), true)
-        if (output.length > 0) controller.enqueue(output)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            const output = decoder.write(utf8.write(chunk), false)
+            if (output.length > 0) controller.enqueue(output)
+          },
+          flush(controller) {
+            const output = decoder.write(utf8.flush(), true)
+            if (output.length > 0) controller.enqueue(output)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }
 

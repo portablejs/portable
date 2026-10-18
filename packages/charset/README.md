@@ -60,6 +60,7 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 | --- | --- | --- |
 | `unmappable` | `'replace'` | What to write for a character the charset can't represent. `'replace'` writes `?`. `'html'` writes a numeric character reference such as `&#26085;`, as browsers do when submitting forms. `'error'` throws `UnsupportedError`. A function `(codePoint) => string` returns the text to write instead. |
 | `bom` | `false` | Write a byte order mark first. Only UTF-8, UTF-16LE and UTF-16BE have one. |
+| `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 `'?'` is the default because it is what iconv-lite writes, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 

@@ -1,8 +1,11 @@
+import { abortable } from './abortable.js'
 /** Splits text into lines. A string matches literally; anything with `[Symbol.split]` (such as a `RegExp`) is used as is. */
 export type Separator = string | { [Symbol.split](text: string, limit?: number): string[] }
 
 export declare namespace DecoderStream {
   type Options = {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined
     /** Longest partial line to buffer while waiting for a separator. @default Infinity */
@@ -51,39 +54,44 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       controller.enqueue(line)
     }
 
-    super({
-      transform(chunk, controller) {
-        const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
-        // A trailing CR may be the first half of a CRLF split across chunks, so hold it back.
-        const holdCr = text.endsWith('\r')
-        const lines = splitLines(partial + (holdCr ? text.slice(0, -1) : text))
-        partial = lines.pop()! + (holdCr ? '\r' : '')
+    super(
+      abortable(
+        {
+          transform(chunk, controller) {
+            const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            // A trailing CR may be the first half of a CRLF split across chunks, so hold it back.
+            const holdCr = text.endsWith('\r')
+            const lines = splitLines(partial + (holdCr ? text.slice(0, -1) : text))
+            partial = lines.pop()! + (holdCr ? '\r' : '')
 
-        if (overflowed) {
-          if (lines.length === 0) {
-            partial = ''
-            return
-          }
-          lines.shift()
-          overflowed = false
-        }
-        for (const line of lines) emit(line, controller)
+            if (overflowed) {
+              if (lines.length === 0) {
+                partial = ''
+                return
+              }
+              lines.shift()
+              overflowed = false
+            }
+            for (const line of lines) emit(line, controller)
 
-        if (partial.length > maxLength) {
-          if (overflow === 'error') throw new MaxLengthError(maxLength)
-          overflowed = true
-          partial = ''
-        }
-      },
-      flush(controller) {
-        const rest = partial + decoder.decode()
-        if (overflowed) return
-        const lines = splitLines(rest)
-        const last = lines.pop()!
-        for (const line of lines) emit(line, controller)
-        if (last !== '') emit(last, controller)
-      },
-    })
+            if (partial.length > maxLength) {
+              if (overflow === 'error') throw new MaxLengthError(maxLength)
+              overflowed = true
+              partial = ''
+            }
+          },
+          flush(controller) {
+            const rest = partial + decoder.decode()
+            if (overflowed) return
+            const lines = splitLines(rest)
+            const last = lines.pop()!
+            for (const line of lines) emit(line, controller)
+            if (last !== '') emit(last, controller)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }
 
