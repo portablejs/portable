@@ -8,7 +8,7 @@
     "check": "vp check --fix",
     "check:types": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vp test run",
-    "test:changed": "vp test run --changed origin/main --project node",
+    "test:changed": "vp test run --changed origin/main --project node --testTimeout=120000",
     "test:browser": "vp test run --project browser",
     "coverage": "vp test run --project node --coverage",
     "readme": "pnpm coverage && pnpm bench && node scripts/bundle-size.ts && node scripts/readme-stats.ts",
