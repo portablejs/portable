@@ -1,23 +1,14 @@
-import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
+import { VerificationError } from './errors.js'
+import { utf8 } from './internal.js'
+import { type Scheme, standard } from './schemes.js'
+
+export { type Reason, VerificationError } from './errors.js'
+export { github, type Scheme, slack, standard, stripe } from './schemes.js'
 
 /**
- * A webhook signature format.
- *
- * - `'standard'`: [Standard Webhooks](https://www.standardwebhooks.com), with `webhook-id`,
- *   `webhook-timestamp` and `webhook-signature` headers.
- * - `'svix'`: Standard Webhooks with `svix-` headers, falling back to `webhook-` headers.
- * - `'stripe'`: the `stripe-signature` header.
- * - `'github'`: the `x-hub-signature-256` header. The SHA-1 `x-hub-signature` header is ignored.
- * - `'slack'`: the `x-slack-signature` and `x-slack-request-timestamp` headers.
- */
-export type Scheme = 'standard' | 'svix' | 'stripe' | 'github' | 'slack'
-
-/**
- * A signing secret as the provider shows it, or the raw key bytes.
- *
- * Standard Webhooks and Svix secrets are base64, with or without the `whsec_` prefix. Stripe,
- * GitHub and Slack secrets are used as UTF-8 text, so a Stripe `whsec_` secret keeps its prefix.
+ * A signing secret as the sender shows it, or the raw key bytes. A string goes through the
+ * scheme's `key`: base64 for Standard Webhooks, UTF-8 text for the others.
  */
 export type Secret = string | Uint8Array
 
@@ -39,55 +30,21 @@ export type Hmac = (
   data: Uint8Array<ArrayBuffer>,
 ) => Uint8Array | Promise<Uint8Array>
 
-/**
- * Why a webhook failed verification.
- *
- * - `'missing-header'`: a header the scheme requires is absent or empty.
- * - `'malformed-header'`: a header can't be parsed, such as a timestamp that isn't an integer.
- * - `'signature'`: no signature matches the body and any of the secrets.
- * - `'timestamp'`: the signature matches, but the timestamp is further from now than `tolerance`.
- */
-export type Reason = 'missing-header' | 'malformed-header' | 'signature' | 'timestamp'
-
-/**
- * Thrown when a webhook fails verification. Respond with a 4xx status.
- *
- * @example
- * ```ts
- * import * as Webhooks from '@portable/webhooks'
- *
- * try {
- *   await Webhooks.verify(request, { scheme: 'github', secret })
- * } catch (error) {
- *   if (error instanceof Webhooks.VerificationError) return new Response(error.reason, { status: 400 })
- *   throw error
- * }
- * ```
- */
-export class VerificationError extends Error {
-  override name = 'Webhooks.VerificationError'
-  readonly reason: Reason
-
-  constructor(reason: Reason, message: string) {
-    super(message)
-    this.reason = reason
-  }
-}
-
 export declare namespace verify {
   /** A `Request`, or the headers and raw body of one. */
   type Input = Request | { headers: HeadersInit; body: string | Uint8Array }
 
   type Options = {
-    /** The provider's signature format. */
-    scheme: Scheme
+    /** How the sender signs. @default Webhooks.standard */
+    scheme?: Scheme | undefined
     /** The signing secret. Pass several while rotating secrets; any one of them may match. */
     secret: Secret | readonly Secret[]
     /** HMAC-SHA256. @default `crypto.subtle` HMAC-SHA256 */
     hmac?: Hmac | undefined
     /**
      * Largest allowed difference between the signed timestamp and `now`, in seconds, in either
-     * direction. `Infinity` turns the check off. GitHub signs no timestamp. @default 300
+     * direction. `Infinity` turns the check off. Ignored when the scheme reads no timestamp.
+     * @default 300
      */
     tolerance?: number | undefined
     /** The time to compare the signed timestamp with. @default new Date() */
@@ -97,9 +54,9 @@ export declare namespace verify {
   type Result = {
     /** The body as text. */
     body: string
-    /** The delivery id: `webhook-id`, `svix-id` or `x-github-delivery`. Use it to drop duplicates. */
+    /** The delivery id, such as `webhook-id` or `x-github-delivery`. Use it to drop duplicates. */
     id: string | undefined
-    /** The signed timestamp. GitHub signs none. */
+    /** The signed timestamp, if the scheme has one. */
     timestamp: Date | undefined
   }
 }
@@ -115,7 +72,7 @@ export declare namespace verify {
  * export default {
  *   async fetch(request: Request, env: { STRIPE_WEBHOOK_SECRET: string }) {
  *     const { body } = await Webhooks.verify(request, {
- *       scheme: 'stripe',
+ *       scheme: Webhooks.stripe,
  *       secret: env.STRIPE_WEBHOOK_SECRET,
  *     })
  *     const event = JSON.parse(body)
@@ -126,74 +83,68 @@ export declare namespace verify {
  *
  * @throws {VerificationError} When a header is missing or malformed, no signature matches, or
  * the timestamp is outside `tolerance`.
- * @throws {TypeError} When a secret is empty or not valid base64, or the body isn't a string or
- * `Uint8Array`.
+ * @throws {TypeError} When a secret is empty or not valid base64, the scheme isn't a scheme
+ * object, or the body isn't a string or `Uint8Array`.
  */
 export async function verify(input: verify.Input, options: verify.Options): Promise<verify.Result> {
-  const { scheme, hmac = hmacSha256, tolerance = 300, now = new Date() } = options
-  const format = formats[scheme]
-  if (!format) throw new TypeError(`Unknown scheme ${String(scheme)}`)
+  const { scheme = standard, hmac = hmacSha256, tolerance = 300, now = new Date() } = options
+  checkScheme(scheme)
   if (!(tolerance >= 0)) throw new RangeError('tolerance must be a non-negative number')
   const secrets =
     typeof options.secret === 'string' || options.secret instanceof Uint8Array
       ? [options.secret]
       : options.secret
-  const keys = secrets.map((secret) => format.key(secret))
+  const keys = secrets.map((secret) => keyOf(scheme, secret))
   if (keys.length === 0) throw new TypeError('No secret')
 
-  const signed = format.read(headerReader(input.headers))
-  const prefix = format.prefix(signed.stamp, signed.id ?? '')
+  const signed = scheme.parse(
+    input.headers instanceof Headers ? input.headers : new Headers(input.headers),
+  )
+  const { id, timestamp } = signed
+  if (timestamp !== undefined && Number.isNaN(timestamp.getTime()))
+    throw new VerificationError('malformed-header', 'Timestamp is not a valid time')
 
-  let content: Uint8Array<ArrayBuffer>
+  let body: Uint8Array
   let text: string | undefined
-  if (typeof input.body === 'string') content = utf8.encode(prefix + (text = input.body))
-  else if (input instanceof Request)
-    content = Bytes.concat([utf8.encode(prefix), new Uint8Array(await input.arrayBuffer())])
-  else if (input.body instanceof Uint8Array)
-    content = Bytes.concat([utf8.encode(prefix), input.body])
+  if (typeof input.body === 'string') body = utf8.encode((text = input.body))
+  else if (input instanceof Request) body = new Uint8Array(await input.arrayBuffer())
+  else if (input.body instanceof Uint8Array) body = input.body
   else throw new TypeError('body must be the raw request body as a string or Uint8Array')
 
+  const content = bytes(scheme.payload({ id, timestamp, body }))
   let match = false
   for (const key of keys) {
     const expected = await hmac(key, content)
-    for (const signature of signed.signatures)
-      if (Bytes.timingSafeEqual(signature, expected)) match = true
+    for (const signature of signed.signatures) if (Bytes.timingSafeEqual(signature, expected)) match = true
   }
   if (!match) throw new VerificationError('signature', 'No signature matches the body')
 
-  if (signed.timestamp !== undefined) {
-    const skew = Math.abs(Math.floor(now.getTime() / 1000) - signed.timestamp)
+  if (timestamp !== undefined) {
+    const skew = Math.abs(Math.floor(now.getTime() / 1000) - Math.floor(timestamp.getTime() / 1000))
     if (skew > tolerance)
       throw new VerificationError('timestamp', `Timestamp is ${skew} s from now`)
   }
 
-  return {
-    body: text ?? utf8Decoder.decode(content.subarray(utf8.encode(prefix).length)),
-    id: signed.id,
-    timestamp: signed.timestamp === undefined ? undefined : new Date(signed.timestamp * 1000),
-  }
+  return { body: text ?? utf8Decoder.decode(body), id, timestamp }
 }
 
 export declare namespace sign {
   type Options = {
-    /** The provider's signature format. */
-    scheme: Scheme
+    /** How the sender signs. @default Webhooks.standard */
+    scheme?: Scheme | undefined
     /** The signing secret. */
     secret: Secret
     /** HMAC-SHA256. @default `crypto.subtle` HMAC-SHA256 */
     hmac?: Hmac | undefined
-    /** The time to sign. Ignored for GitHub. @default new Date() */
+    /** The time to sign. Schemes without a timestamp ignore it. @default new Date() */
     timestamp?: Date | undefined
-    /**
-     * The delivery id, for Standard Webhooks, Svix and GitHub. Standard Webhooks and Svix get a
-     * random `msg_` id by default.
-     */
+    /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
     id?: string | undefined
   }
 }
 
 /**
- * Signs a body the way the provider does and returns the headers to send with it. Use it to test
+ * Signs a body the way the sender does and returns the headers to send with it. Use it to test
  * a webhook handler, or to send Standard Webhooks.
  *
  * @example
@@ -201,29 +152,47 @@ export declare namespace sign {
  * import * as Webhooks from '@portable/webhooks'
  *
  * const body = JSON.stringify({ type: 'user.created' })
- * const headers = await Webhooks.sign(body, {
- *   scheme: 'standard',
- *   secret: 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw',
- * })
+ * const headers = await Webhooks.sign(body, { secret: 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw' })
  * await fetch('https://example.com/webhooks', { method: 'POST', body, headers })
  * ```
  *
- * @throws {TypeError} When the secret is empty or not valid base64.
+ * @throws {TypeError} When the secret is empty or not valid base64, or the scheme isn't a scheme
+ * object.
  */
 export async function sign(
   body: string | Uint8Array,
   options: sign.Options,
 ): Promise<Record<string, string>> {
-  const { scheme, hmac = hmacSha256, timestamp = new Date() } = options
-  const format = formats[scheme]
-  if (!format) throw new TypeError(`Unknown scheme ${String(scheme)}`)
-  const key = format.key(options.secret)
-  const seconds = Math.floor(timestamp.getTime() / 1000)
-  const id = options.id ?? (format.signsId ? randomId() : undefined)
-  const prefix = format.prefix(String(seconds), id ?? '')
-  const bytes = typeof body === 'string' ? utf8.encode(body) : body
-  const signature = await hmac(key, Bytes.concat([utf8.encode(prefix), bytes]))
-  return format.write(signature, seconds, id)
+  const {
+    scheme = standard,
+    hmac = hmacSha256,
+    timestamp = new Date(),
+    id = crypto.randomUUID(),
+  } = options
+  checkScheme(scheme)
+  const key = keyOf(scheme, options.secret)
+  const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : body
+  const signature = await hmac(key, bytes(scheme.payload({ id, timestamp, body: bytesOfBody })))
+  return scheme.headers({ signature, id, timestamp })
+}
+
+function checkScheme(scheme: Scheme): void {
+  if (typeof scheme?.parse !== 'function' || typeof scheme.payload !== 'function')
+    throw new TypeError('scheme must be a Webhooks.Scheme, such as Webhooks.stripe')
+}
+
+function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
+  const key =
+    typeof secret !== 'string' ? secret : scheme.key ? scheme.key(secret) : utf8.encode(secret)
+  if (key.length === 0) throw new TypeError('Secret is empty')
+  return new Uint8Array(key)
+}
+
+function bytes(content: Uint8Array | string): Uint8Array<ArrayBuffer> {
+  if (typeof content === 'string') return utf8.encode(content)
+  return content.buffer instanceof ArrayBuffer
+    ? (content as Uint8Array<ArrayBuffer>)
+    : new Uint8Array(content)
 }
 
 async function hmacSha256(
@@ -251,185 +220,4 @@ function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   return cryptoKey
 }
 
-type Signed = {
-  stamp: string
-  signatures: readonly Uint8Array[]
-  id: string | undefined
-  timestamp: number | undefined
-}
-
-type Format = {
-  signsId: boolean
-  key: (secret: Secret) => Uint8Array<ArrayBuffer>
-  read: (get: HeaderReader) => Signed
-  prefix: (stamp: string, id: string) => string
-  write: (
-    signature: Uint8Array,
-    timestamp: number,
-    id: string | undefined,
-  ) => Record<string, string>
-}
-
-const utf8 = new TextEncoder()
 const utf8Decoder = new TextDecoder()
-
-function textKey(secret: Secret): Uint8Array<ArrayBuffer> {
-  const key = typeof secret === 'string' ? utf8.encode(secret) : new Uint8Array(secret)
-  if (key.length === 0) throw new TypeError('Secret is empty')
-  return key
-}
-
-function base64Key(secret: Secret): Uint8Array<ArrayBuffer> {
-  if (typeof secret !== 'string') return textKey(secret)
-  let key: Uint8Array
-  try {
-    key = Base64.decode(secret.startsWith('whsec_') ? secret.slice(6) : secret)
-  } catch (error) {
-    throw new TypeError('Secret is not base64', { cause: error })
-  }
-  return textKey(key)
-}
-
-type HeaderReader = (name: string) => string | null
-
-function headerReader(init: HeadersInit): HeaderReader {
-  if (init instanceof Headers) return (name) => init.get(name)
-  const entries = Array.isArray(init) ? init : Object.entries(init)
-  return (name) => {
-    for (const [key, value] of entries)
-      if (key.length === name.length && key.toLowerCase() === name) return value
-    return null
-  }
-}
-
-function required(get: HeaderReader, ...names: readonly string[]): string {
-  for (const name of names) {
-    const value = get(name)
-    if (value) return value
-  }
-  throw new VerificationError('missing-header', `Missing ${names[0]} header`)
-}
-
-function seconds(value: string, header: string): number {
-  if (!/^\d{1,15}$/.test(value))
-    throw new VerificationError('malformed-header', `${header} is not a Unix timestamp`)
-  return Number(value)
-}
-
-function standard(name: 'webhook' | 'svix'): Format {
-  const names = (suffix: string) =>
-    name === 'svix' ? [`svix-${suffix}`, `webhook-${suffix}`] : [`webhook-${suffix}`]
-  return {
-    signsId: true,
-    key: base64Key,
-    read(get) {
-      const id = required(get, ...names('id'))
-      const timestamp = required(get, ...names('timestamp'))
-      const header = required(get, ...names('signature'))
-      const signatures: Uint8Array[] = []
-      for (const entry of header.split(' ')) {
-        if (!entry.startsWith('v1,')) continue
-        try {
-          signatures.push(Base64.decode(entry.slice(3)))
-        } catch {}
-      }
-      return {
-        stamp: timestamp,
-        signatures,
-        id,
-        timestamp: seconds(timestamp, `${name}-timestamp`),
-      }
-    },
-    prefix: (stamp, id) => `${id}.${stamp}.`,
-    write: (signature, timestamp, id = '') => ({
-      [`${name}-id`]: id,
-      [`${name}-timestamp`]: String(timestamp),
-      [`${name}-signature`]: `v1,${Base64.encode(signature)}`,
-    }),
-  }
-}
-
-const hexSignature = /^[\da-f]{64}$/i
-
-const formats: Record<Scheme, Format> = {
-  standard: standard('webhook'),
-  svix: standard('svix'),
-  stripe: {
-    signsId: false,
-    key: textKey,
-    read(get) {
-      const header = required(get, 'stripe-signature')
-      let timestamp: string | undefined
-      const signatures: Uint8Array[] = []
-      for (const item of header.split(',')) {
-        const at = item.indexOf('=')
-        const key = item.slice(0, at).trim()
-        const value = item.slice(at + 1).trim()
-        if (key === 't') {
-          if (timestamp !== undefined)
-            throw new VerificationError('malformed-header', 'stripe-signature has two timestamps')
-          timestamp = value
-        } else if (key === 'v1' && hexSignature.test(value)) signatures.push(Bytes.fromHex(value))
-      }
-      if (timestamp === undefined)
-        throw new VerificationError('malformed-header', 'stripe-signature has no timestamp')
-      return {
-        stamp: timestamp,
-        signatures,
-        id: undefined,
-        timestamp: seconds(timestamp, 'stripe-signature'),
-      }
-    },
-    prefix: (stamp) => `${stamp}.`,
-    write: (signature, timestamp) => ({
-      'stripe-signature': `t=${timestamp},v1=${Bytes.toHex(signature)}`,
-    }),
-  },
-  github: {
-    signsId: false,
-    key: textKey,
-    read(get) {
-      const header = required(get, 'x-hub-signature-256')
-      const hex = header.startsWith('sha256=') ? header.slice(7) : ''
-      if (!hexSignature.test(hex))
-        throw new VerificationError('malformed-header', 'x-hub-signature-256 is not sha256=<hex>')
-      return {
-        stamp: '',
-        signatures: [Bytes.fromHex(hex)],
-        id: get('x-github-delivery') ?? undefined,
-        timestamp: undefined,
-      }
-    },
-    prefix: () => '',
-    write: (signature, _, id) => ({
-      'x-hub-signature-256': `sha256=${Bytes.toHex(signature)}`,
-      ...(id === undefined ? {} : { 'x-github-delivery': id }),
-    }),
-  },
-  slack: {
-    signsId: false,
-    key: textKey,
-    read(get) {
-      const header = required(get, 'x-slack-signature')
-      const timestamp = required(get, 'x-slack-request-timestamp')
-      const hex = header.startsWith('v0=') ? header.slice(3) : ''
-      if (!hexSignature.test(hex))
-        throw new VerificationError('malformed-header', 'x-slack-signature is not v0=<hex>')
-      return {
-        stamp: timestamp,
-        signatures: [Bytes.fromHex(hex)],
-        id: undefined,
-        timestamp: seconds(timestamp, 'x-slack-request-timestamp'),
-      }
-    },
-    prefix: (stamp) => `v0:${stamp}:`,
-    write: (signature, timestamp) => ({
-      'x-slack-request-timestamp': String(timestamp),
-      'x-slack-signature': `v0=${Bytes.toHex(signature)}`,
-    }),
-  },
-}
-
-function randomId(): string {
-  return `msg_${Base64.encode(crypto.getRandomValues(new Uint8Array(18)), { alphabet: 'base64url' })}`
-}

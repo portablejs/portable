@@ -2,6 +2,17 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Webhooks schemes are objects of functions
+
+The owner asked for this redesign: a branch per vendor inside `verify` and `sign` couldn't be kept up as vendors were added.
+
+- **Options:** keep `scheme: 'stripe'` strings with a branch per vendor; a scheme object with declarative fields (`encoding: 'hex'`, a header name, a prefix string) that the package interprets; a scheme object of plain functions.
+- **Trade-offs:** declarative fields are shorter to write, but every new vendor quirk becomes another field for us to interpret and maintain. Plain functions push hex or base64 decoding and the header format into each scheme, so a preset is about 20 lines instead of 5, but the package code doesn't change when a vendor does.
+- **Chosen:** plain functions. `parse(headers)` returns `{ signatures, timestamp?, id? }` with signatures as bytes and the timestamp as a `Date`, `payload({ id, timestamp, body })` returns the signed bytes or text, `headers({ signature, id, timestamp })` writes the headers for `sign`, and the optional `key(secret)` decodes a string secret. `verify` and `sign` keep the HMAC, the length check and constant-time compare, several secrets and the tolerance. We won't add vendors beyond the four presets; the README shows how to write one.
+- **Presets are root exports,** `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github` and `Webhooks.slack`, not a `schemes` subpath. They are plain objects, so a bundle that imports only `verify` keeps `standard` (the default) and drops the other three, checked with a Rolldown build. The owner chose this.
+- **Standard Webhooks is the default `scheme`,** because it is the one spec and Svix, Resend and Clerk use it. The `svix` scheme is gone: `standard` reads the `svix-` headers when the `webhook-` headers are missing.
+- **`sign` gives every scheme a `crypto.randomUUID()` id by default,** so the Standard Webhooks id changed from `msg_…` to a UUID, and GitHub signatures now come with an `x-github-delivery` header, as GitHub's own deliveries do.
+
 ## `@portable/rpc` API
 
 - **Per-call options go through `Rpc.call(remote.method, params, { signal })`.** Also considered: options as a last argument (clashes with a method whose last parameter is an object, and with optional parameters), a marker object built by `Rpc.options()` (the remote's types then need an extra optional parameter after every parameter list, which TypeScript can't add after a rest parameter), and a `remote.with({ signal })` view (a method named `with` on the API would clash with it). `Rpc.call` takes the proxy's method itself, so the params are typed from the API, nothing on the proxy is reserved, and the same function sends params by name for MCP and LSP. A connection-wide `signal` on `connect` covers closing everything.
@@ -168,7 +179,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## `@portable/webhooks` API
 
-- **One `verify(input, { scheme, secret })` with `scheme: 'standard' | 'svix' | 'stripe' | 'github' | 'slack'`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers.
+- **One `verify(input, { scheme, secret })`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers. The `scheme` string became a scheme object; see "Webhooks schemes are objects of functions".
 - **The default is WebCrypto `importKey` plus `sign`, with a cache of imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
 - **`verify` returns `{ body, id, timestamp }` as text, not parsed JSON,** because Slack commands and GitHub form deliveries aren't JSON, and the `id` lets callers drop replays.
 - **One `VerificationError` with a `reason`** (`missing-header`, `malformed-header`, `signature`, `timestamp`) instead of the shared error names, because every failure maps to the same 4xx. Mistakes in the call throw `TypeError` or `RangeError`. The signature is checked first, so `timestamp` always means a genuine but stale message.

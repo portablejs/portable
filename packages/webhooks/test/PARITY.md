@@ -8,7 +8,7 @@ Upstream suites, read at these versions:
 - [@octokit/webhooks-methods 6.0.0 `test/sign.test.ts` and `test/verify.test.ts`](https://github.com/octokit/webhooks-methods.js/tree/main/test)
 - [@slack/bolt 5.1.0 `test/unit/receivers/verify-request.spec.ts`](https://github.com/slackapi/bolt-js/blob/main/test/unit/receivers/verify-request.spec.ts)
 
-Test vectors come from those suites (MIT), except the Slack example request, which is from [Slack's documentation](https://docs.slack.dev/authentication/verifying-requests-from-slack). Every standardwebhooks and svix row is covered twice, once under `standard` and once under `svix`, because `standard.conformance.ts` runs the same tests for both schemes.
+Test vectors come from those suites (MIT), except the Slack example request, which is from [Slack's documentation](https://docs.slack.dev/authentication/verifying-requests-from-slack). Svix uses Standard Webhooks with `svix-` headers, which `Webhooks.standard` reads when the `webhook-` headers are missing, so the standardwebhooks and svix rows share the `standard` tests.
 
 ## standardwebhooks and svix
 
@@ -23,7 +23,7 @@ Test vectors come from those suites (MIT), except the Slack example request, whi
 | partial signature throws error | `standard > rejects a partial signature` | |
 | valid signature is valid and returns valid json | `standard > verifies a valid signature and returns the body` | `verify` returns the text; the test parses it. |
 | valid signature is valid without returning json | `standard > verifies a valid signature and returns the body` | There is no `jsonParse` option, because the body is always returned as text. |
-| valid unbranded signature is valid | `svix > falls back to webhook- headers` | |
+| valid unbranded signature is valid | `standard > verifies a valid signature and returns the body`, `svix > verifies svix- headers` | |
 | old timestamp fails | `standard > rejects a timestamp older than the tolerance` | |
 | new timestamp fails | `standard > rejects a timestamp newer than the tolerance` | |
 | multi sig payload is valid | `standard > accepts any one valid signature among several` | |
@@ -74,7 +74,7 @@ Test vectors come from those suites (MIT), except the Slack example request, whi
 | --- | --- | --- |
 | sign: is a function, sign.VERSION is set | skipped | No version property. |
 | sign: throws without options, secret or eventPayload | `standard > rejects an empty secret` | Missing arguments are type errors. An empty body is valid and signed. |
-| sign(secret, eventPayload) | `github > signs the known vector` | |
+| sign(secret, eventPayload) | `github > signs the known vector with a delivery id` | |
 | sign: throws with eventPayload as object | skipped | The body is typed `string \| Uint8Array`. |
 | verify: is a function, verify.VERSION is set | skipped | No version property. |
 | verify() without options, secret, eventPayload or signature throws | `github > rejects a missing signature` | |

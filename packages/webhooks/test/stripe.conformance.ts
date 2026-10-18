@@ -4,7 +4,7 @@ import { encode, reasonOf, request } from './utils.js'
 
 const payload = JSON.stringify({ id: 'evt_test_webhook', object: 'event' }, null, 2)
 const secret = 'whsec_test_secret'
-const scheme = 'stripe'
+const scheme = Webhooks.stripe
 const vector = {
   now: new Date(1700000000 * 1000),
   header: 't=1700000000,v1=4f1cd7feda9826e746b7d482c4badebb657398df1099e1046364f6196a230150',

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
 import { reasonOf, request } from './utils.js'
 
-const scheme = 'github'
+const scheme = Webhooks.github
 const secret = 'mysecret'
 const payload = '{"foo":"bar"}'
 const signature = 'sha256=4864d2759938a15468b5df9ade20bf161da9b4f737ea61794142f3484236bda3'
@@ -18,13 +18,7 @@ const verify = (
   )
 
 describe('github', () => {
-  test('signs the known vector', async () => {
-    expect(await Webhooks.sign(payload, { scheme, secret })).toEqual({
-      'x-hub-signature-256': signature,
-    })
-  })
-
-  test('adds the delivery id when given one', async () => {
+  test('signs the known vector with a delivery id', async () => {
     expect(await Webhooks.sign(payload, { scheme, secret, id: 'abc' })).toEqual({
       'x-hub-signature-256': signature,
       'x-github-delivery': 'abc',

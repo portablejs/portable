@@ -37,7 +37,17 @@ async function accepts(fn: () => unknown): Promise<boolean> {
   }
 }
 
-const upstream: Record<Webhooks.Scheme, Upstream> = {
+type Name = 'standard' | 'svix' | 'stripe' | 'github' | 'slack'
+
+const presets: Record<Name, Webhooks.Scheme> = {
+  standard: Webhooks.standard,
+  svix: Webhooks.standard,
+  stripe: Webhooks.stripe,
+  github: Webhooks.github,
+  slack: Webhooks.slack,
+}
+
+const upstream: Record<Name, Upstream> = {
   standard: {
     sign: (c) => ({
       'webhook-id': c.id,
@@ -113,7 +123,7 @@ function random(seed: number): () => number {
 
 const chars = [...'abcdefghijklmnopqrstuvwxyz0123456789 "{}:,\n\t\\'.split(''), 'é', '♥', '🚀']
 
-function makeCase(scheme: Webhooks.Scheme, next: () => number): Case {
+function makeCase(scheme: Name, next: () => number): Case {
   const pick = (n: number) => Math.floor(next() * n)
   let text = ''
   for (let i = 0, n = pick(400); i < n; i++) text += chars[pick(chars.length)]
@@ -146,15 +156,15 @@ function chunkedRequest(
 }
 
 const schemes = ['standard', 'svix', 'stripe', 'github', 'slack'] as const
-const timed = (scheme: Webhooks.Scheme) => scheme !== 'github'
+const timed = (scheme: Name) => scheme !== 'github'
 
 describe('matches upstream signatures', () => {
-  for (const scheme of schemes) {
+  for (const scheme of schemes.filter((name) => name !== 'svix')) {
     test(`${scheme}: produces the same headers as upstream`, async () => {
       const next = random(1)
       for (let i = 0; i < 50; i++) {
         const c = makeCase(scheme, next)
-        const ours = await Webhooks.sign(c.body, { ...c, scheme })
+        const ours = await Webhooks.sign(c.body, { ...c, scheme: presets[scheme] })
         const theirs = await upstream[scheme].sign(c)
         expect(
           Object.fromEntries(Object.entries(ours).filter(([name]) => name in theirs!)),
@@ -188,7 +198,11 @@ describe('accepts and rejects the same requests as upstream', () => {
           const now = new Date()
           const theirs = await upstream[scheme].verify(body, headers, secret, now)
           const ours = await accepts(() =>
-            Webhooks.verify(chunkedRequest(body, headers, next), { scheme, secret, now }),
+            Webhooks.verify(chunkedRequest(body, headers, next), {
+              scheme: presets[scheme],
+              secret,
+              now,
+            }),
           )
           expect(ours).toBe(theirs)
           expect(ours).toBe(
@@ -210,7 +224,10 @@ describe('deliberate differences', () => {
       expect(await upstream[scheme].verify(c.body, headers!, c.secret, now)).toBe(true)
       expect(
         await accepts(() =>
-          Webhooks.verify({ headers: headers!, body: c.body }, { scheme, secret: c.secret, now }),
+          Webhooks.verify(
+            { headers: headers!, body: c.body },
+            { scheme: presets[scheme], secret: c.secret, now },
+          ),
         ),
       ).toBe(false)
     })
@@ -227,7 +244,7 @@ describe('deliberate differences', () => {
     ).toBe(false)
     const result = await Webhooks.verify(
       { headers: { 'stripe-signature': header }, body: bytes },
-      { scheme: 'stripe', secret },
+      { scheme: Webhooks.stripe, secret },
     )
     expect(JSON.parse(result.body)).toEqual({ id: 'evt_1' })
   })
@@ -242,7 +259,7 @@ describe('deliberate differences', () => {
       await accepts(() =>
         Webhooks.verify(
           { headers: headers!, body: c.body },
-          { scheme: 'standard', secret: c.secret },
+          { scheme: Webhooks.standard, secret: c.secret },
         ),
       ),
     ).toBe(false)
@@ -254,7 +271,7 @@ describe('deliberate differences', () => {
     expect(await octokitWeb.verify(c.secret, c.body, hex)).toBe(true)
     const result = Webhooks.verify(
       { headers: { 'x-hub-signature-256': hex }, body: c.body },
-      { scheme: 'github', secret: c.secret },
+      { scheme: Webhooks.github, secret: c.secret },
     )
     expect(await reasonOf(result)).toBe('malformed-header')
   })
@@ -268,7 +285,7 @@ describe('deliberate differences', () => {
     for (const header of [padded, 'sha256=zz']) {
       const result = Webhooks.verify(
         { headers: { 'x-hub-signature-256': header }, body: c.body },
-        { scheme: 'github', secret: c.secret },
+        { scheme: Webhooks.github, secret: c.secret },
       )
       expect(await reasonOf(result)).toBe('malformed-header')
     }
