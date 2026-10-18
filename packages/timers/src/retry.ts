@@ -1,0 +1,92 @@
+import {
+  call,
+  checkDelay,
+  checkMs,
+  type Context,
+  type Delay,
+  delayFor,
+  neverAborted,
+  withTimeout,
+} from './Delay.js'
+import { abortable, sleep } from './sleep.js'
+
+export declare namespace retry {
+  type Options = {
+    /** Total number of attempts, including the first. `Infinity` retries until success or abort. @default 3 */
+    attempts?: number | undefined
+    /** Wait before each retry. @default { initial: 200, max: 10_000 } */
+    delay?: Delay | undefined
+    /**
+     * Called with the error and the number of the attempt that threw it, before each retry. Return
+     * `false` to stop and throw that error. Not called after the last attempt. @default () => true
+     */
+    retryIf?: ((error: unknown, attempt: number) => boolean | PromiseLike<boolean>) | undefined
+    /**
+     * Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a
+     * `TimeoutError` `DOMException`, and the attempt fails with it. @default Infinity
+     */
+    timeout?: number | undefined
+    /** Stops retrying and rejects with `signal.reason`, also while an attempt is running. */
+    signal?: AbortSignal | undefined
+  }
+}
+
+const defaultDelay: Delay = { initial: 200, max: 10_000 }
+
+/**
+ * Calls `fn` until it returns without throwing, waiting between attempts. When every attempt fails,
+ * rejects with the last error unchanged.
+ *
+ * @example
+ * ```ts
+ * import * as Timers from '@portable/timers'
+ *
+ * const response = await Timers.retry(
+ *   async ({ signal }) => {
+ *     const response = await fetch('https://example.com/api', { signal })
+ *     if (!response.ok) throw new Error(`HTTP ${response.status}`)
+ *     return response
+ *   },
+ *   { attempts: 5, timeout: 10_000 },
+ * )
+ * ```
+ */
+export async function retry<T>(
+  fn: (context: Context) => T | PromiseLike<T>,
+  options: retry.Options = {},
+): Promise<T> {
+  const { attempts = 3, delay = defaultDelay, retryIf, timeout = Infinity, signal } = options
+  if (!(attempts >= 1) || (attempts !== Infinity && !Number.isInteger(attempts)))
+    throw new RangeError('Expected `attempts` to be a positive integer or Infinity.')
+  checkDelay(delay)
+  checkMs('timeout', timeout)
+  signal?.throwIfAborted()
+
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await run(fn, { attempt, signal: signal ?? neverAborted }, timeout)
+    } catch (error) {
+      signal?.throwIfAborted()
+      if (attempt >= attempts) throw error
+      if (retryIf && !(await retryIf(error, attempt))) throw error
+      signal?.throwIfAborted()
+      const ms = delayFor(delay, attempt, error)
+      if (!(ms <= 0)) await sleep(ms, { signal })
+    }
+  }
+}
+
+function run<T>(
+  fn: (context: Context) => T | PromiseLike<T>,
+  context: Context,
+  timeout: number,
+): Promise<T> {
+  if (timeout === Infinity) {
+    const result = call(fn, context)
+    return context.signal === neverAborted ? result : abortable(result, context.signal)
+  }
+  const deadline = withTimeout(context.signal, timeout)
+  return abortable(call(fn, { ...context, signal: deadline.signal }), deadline.signal).finally(
+    deadline.clear,
+  )
+}
