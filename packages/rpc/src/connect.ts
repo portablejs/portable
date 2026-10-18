@@ -1,8 +1,9 @@
 import { createClient } from './client.js'
 import { TransportError } from './errors.js'
 import { remote } from './remote.js'
-import { createServer, error, noop } from './server.js'
-import type { Codec, Message, Remote, Transport } from './types.js'
+import { direct } from './port.js'
+import { createServer, error, noop, type Send } from './server.js'
+import type { Codec, Remote, Transport } from './types.js'
 
 const decoder = new TextDecoder()
 
@@ -52,26 +53,34 @@ export declare namespace connect {
  */
 export function connect<api>(transport: Transport, options: connect.Options = {}): Remote<api> {
   const { codec = json, serve: api = {}, signal } = options
-  const reader = transport.readable.getReader()
-  const writer = transport.writable.getWriter()
-  const send = (message: Message) => writer.write(codec.encode(message))
+  const port = direct.get(transport)
+  const failed = (cause: unknown) =>
+    close(signal?.aborted ? signal.reason : new TransportError('The transport failed.', { cause }))
+  let unlisten: (() => void) | undefined
+  const reader = port?.listen ? undefined : transport.readable.getReader()
+  const writer = port ? undefined : transport.writable.getWriter()
+  const send: Send = port
+    ? (message) => port.post(codec.encode(message))
+    : (message) => writer!.write(codec.encode(message))
   const client = createClient(send, true)
   const server = createServer(api, send, { flow: true })
 
-  const close = (reason: unknown) => {
+  function close(reason: unknown) {
     signal?.removeEventListener('abort', onAbort)
+    unlisten?.()
     client.close(reason)
     server.close(reason)
   }
-  const onAbort = () => {
+  function onAbort() {
     close(signal!.reason)
-    reader.cancel(signal!.reason).catch(noop)
-    writer.abort(signal!.reason).catch(noop)
+    reader?.cancel(signal!.reason).catch(noop)
+    writer?.abort(signal!.reason).catch(noop)
   }
+  if (port?.listen) unlisten = port.listen(dispatch, failed)
   if (signal?.aborted) onAbort()
   else signal?.addEventListener('abort', onAbort)
 
-  const dispatch = (data: unknown) => {
+  function dispatch(data: unknown) {
     let message: unknown
     try {
       message = codec.decode(data)
@@ -85,20 +94,20 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
     } else void server.handle(message).catch(noop)
   }
 
-  void (async () => {
-    try {
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        dispatch(value)
+  if (reader) {
+    void (async () => {
+      try {
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (done) break
+          dispatch(value)
+        }
+        close(new TransportError('The transport closed.'))
+      } catch (cause) {
+        failed(cause)
       }
-      close(new TransportError('The transport closed.'))
-    } catch (cause) {
-      close(
-        signal?.aborted ? signal.reason : new TransportError('The transport failed.', { cause }),
-      )
-    }
-  })()
+    })()
+  }
 
   return remote(client)
 }

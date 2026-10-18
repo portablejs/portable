@@ -469,7 +469,7 @@ describe('streams', () => {
     ]).toEqual(['a', 'b', true])
   })
 
-  test('the server produces at most 32 values ahead of a slow consumer', async () => {
+  test('the server produces at most 256 values ahead of a slow consumer', async () => {
     let produced = 0
     const remote = pair({
       async *numbers() {
@@ -480,10 +480,10 @@ describe('streams', () => {
     await reader.read()
     await settle()
     expect(produced).toBeGreaterThan(1)
-    expect(produced).toBeLessThanOrEqual(33)
-    for (let i = 0; i < 100; i++) await reader.read()
+    expect(produced).toBeLessThanOrEqual(257)
+    for (let i = 0; i < 300; i++) await reader.read()
     await settle()
-    expect(produced).toBeLessThanOrEqual(101 + 33)
+    expect(produced).toBeLessThanOrEqual(301 + 257)
     await reader.cancel()
   })
 

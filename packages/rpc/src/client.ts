@@ -2,7 +2,7 @@ import { RemoteError } from './errors.js'
 import { deferred, noop, type Send } from './server.js'
 import type { ErrorObject, Id, Params } from './types.js'
 
-const streamWindow = 32
+const streamWindow = 256
 
 type Call = {
   resolve: (value: unknown) => void
@@ -61,7 +61,7 @@ export function createClient(send: Send, flow: boolean): Client {
         ? { jsonrpc: '2.0' as const, id, method }
         : { jsonrpc: '2.0' as const, id, method, params }
       const sent = send(message)
-      if (sent) sent.catch((e: unknown) => fail(id, e))
+      if (sent instanceof Promise) sent.catch((e: unknown) => fail(id, e))
     } catch (e) {
       fail(id, e)
     }
@@ -126,7 +126,7 @@ export function createClient(send: Send, flow: boolean): Client {
         pull(controller) {
           if (!flow) return
           const credit = controller.desiredSize! - call.outstanding
-          if (credit < streamWindow / 2 || calls.get(id) !== call) return
+          if (credit < streamWindow / 4 || calls.get(id) !== call) return
           call.outstanding += credit
           void Promise.resolve(
             send({ jsonrpc: '2.0', method: '$/stream/credit', params: { id, credit } }),

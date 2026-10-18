@@ -32,30 +32,68 @@ export declare namespace port {
  */
 export function port(target: port.Target, options: port.Options = {}): Transport {
   const { signal } = options
-  let listener: (event: MessageEvent) => void
-  const stop = () => {
-    target.removeEventListener('message', listener)
-    signal?.removeEventListener('abort', onAbort)
-  }
-  let onAbort: () => void
-  const readable = new ReadableStream<unknown>({
-    start(controller) {
-      listener = (event) => controller.enqueue(event.data)
-      onAbort = () => {
-        stop()
-        controller.error(signal!.reason)
-      }
-      if (signal?.aborted) return onAbort()
+  let listening = false
+  const listen = (onMessage: (data: unknown) => void, onError: (reason: unknown) => void) => {
+    if (listening) throw new TypeError('The transport is already connected.')
+    listening = true
+    const listener = (event: MessageEvent) => onMessage(event.data)
+    let stopped = false
+    const stop = () => {
+      if (stopped) return
+      stopped = true
+      target.removeEventListener('message', listener)
+      signal?.removeEventListener('abort', onAbort)
+    }
+    const onAbort = () => {
+      stop()
+      onError(signal!.reason)
+    }
+    if (signal?.aborted) onAbort()
+    else {
       signal?.addEventListener('abort', onAbort)
       target.addEventListener('message', listener)
       target.start?.()
+    }
+    return stop
+  }
+  let stop: (() => void) | undefined
+  const readable = new ReadableStream<unknown>(
+    {
+      pull(controller) {
+        if (stop) return
+        stop = listen(
+          (data) => controller.enqueue(data),
+          (reason) => controller.error(reason),
+        )
+      },
+      cancel: () => stop?.(),
     },
-    cancel: stop,
-  })
+    { highWaterMark: 0 },
+  )
   const writable = new WritableStream<unknown>({
     write(message) {
       target.postMessage(message)
     },
   })
-  return { readable, writable }
+  const transport = { readable, writable }
+  direct.set(transport, {
+    post(message) {
+      target.postMessage(message)
+    },
+    listen,
+  })
+  return transport
 }
+
+/**
+ * Lets `connect` post, and for ports receive, messages directly instead of through the streams.
+ * That is faster, and a message that can't be cloned rejects one call instead of erroring the
+ * writable for good.
+ */
+export const direct: WeakMap<
+  Transport,
+  {
+    post(message: unknown): void | Promise<void>
+    listen?(onMessage: (data: unknown) => void, onError: (reason: unknown) => void): () => void
+  }
+> = new WeakMap()

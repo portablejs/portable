@@ -64,12 +64,25 @@ export function createServer(
   async function handle(message: unknown): Promise<void> {
     if (!Array.isArray(message)) {
       const response = await run(message)
-      if (response) await send(response)
+      if (response) await reply(response)
       return
     }
-    if (message.length === 0) return send(error(null, -32600, 'Invalid Request'))
+    if (message.length === 0) return reply(error(null, -32600, 'Invalid Request'))
     const responses = (await Promise.all(message.map(run))).filter((r) => r !== undefined)
-    if (responses.length > 0) await send(responses)
+    if (responses.length > 0) await reply(responses)
+  }
+
+  async function reply(response: ResponseMessage | ResponseMessage[]): Promise<void> {
+    try {
+      await send(response)
+    } catch (e) {
+      if (Array.isArray(response)) for (const single of response) await reply(single)
+      else if (!('error' in response)) {
+        await Promise.resolve(
+          send({ jsonrpc: '2.0', id: response.id, error: toErrorObject(e) }),
+        ).catch(noop)
+      }
+    }
   }
 
   async function run(message: unknown): Promise<ResponseMessage | undefined> {
@@ -125,7 +138,8 @@ export function createServer(
         if (call.done) return
         if (done) break
         call.credit--
-        await send({ jsonrpc: '2.0', method: '$/stream/next', params: { id, value } })
+        const sent = send({ jsonrpc: '2.0', method: '$/stream/next', params: { id, value } })
+        if (sent instanceof Promise) await sent
       }
       finish(id, call)
       await send({ jsonrpc: '2.0', id, result: null })
@@ -219,7 +233,8 @@ export function toErrorObject(e: unknown): ErrorObject {
       ? { code: e.code, message: e.message }
       : { code: e.code, message: e.message, data: e.data }
   }
-  return { code: -32603, message: e instanceof Error ? e.message : String(e) }
+  const message = (e as { message?: unknown } | null)?.message
+  return { code: -32603, message: typeof message === 'string' ? message : String(e) }
 }
 
 export function isStream(value: unknown): value is ReadableStream | AsyncIterable<unknown> {

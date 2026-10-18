@@ -1,4 +1,5 @@
 import { TransportError } from './errors.js'
+import { direct } from './port.js'
 import { deferred, noop } from './server.js'
 import type { Transport } from './types.js'
 
@@ -26,7 +27,8 @@ export declare namespace window {
 /**
  * A transport to another window, such as an iframe or a popup. Both sides send a hello every 100 ms
  * until the other answers, so either may start first, and writes wait until the handshake is done.
- * Pass `signal: AbortSignal.timeout(ms)` to give up.
+ * The handshake has no timeout: give each call a `signal` to stop waiting for a window that never
+ * answers.
  *
  * @example
  * ```ts
@@ -51,12 +53,8 @@ export function window(target: window.Target, options: window.Options): Transpor
   let listener: (event: MessageEvent) => void
   let onAbort: () => void
 
-  const post = (type: string, data?: unknown) =>
+  const post = (type: string, data?: unknown): void =>
     target.postMessage({ [key]: type, version, channel, data }, origin)
-  const hello = () => {
-    post('hello')
-    timer = setTimeout(hello, retryInterval)
-  }
   const stop = () => {
     clearTimeout(timer)
     globalThis.removeEventListener('message', listener)
@@ -69,6 +67,18 @@ export function window(target: window.Target, options: window.Options): Transpor
         stop()
         ready.reject(reason)
         controller.error(reason)
+      }
+      const send = (type: string) => {
+        try {
+          post(type)
+          return true
+        } catch (error) {
+          fail(error)
+          return false
+        }
+      }
+      const hello = () => {
+        if (send('hello')) timer = setTimeout(hello, retryInterval)
       }
       listener = (event) => {
         if (event.source !== target || (origin !== '*' && event.origin !== origin)) return
@@ -84,7 +94,7 @@ export function window(target: window.Target, options: window.Options): Transpor
             ),
           )
         }
-        if (type === 'hello') post('ready')
+        if (type === 'hello' && !send('ready')) return
         if (connected) return
         connected = true
         clearTimeout(timer)
@@ -101,11 +111,11 @@ export function window(target: window.Target, options: window.Options): Transpor
       ready.reject(reason)
     },
   })
-  const writable = new WritableStream<unknown>({
-    async write(message) {
-      await ready.promise
-      post('message', message)
-    },
-  })
-  return { readable, writable }
+  let open = false
+  void ready.promise.then(() => (open = true), noop)
+  const write = (message: unknown) =>
+    open ? post('message', message) : ready.promise.then(() => post('message', message))
+  const transport = { readable, writable: new WritableStream<unknown>({ write }) }
+  direct.set(transport, { post: write })
+  return transport
 }
