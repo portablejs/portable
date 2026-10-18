@@ -31,7 +31,7 @@ Every package follows the same shape, so a caller who knows one knows the rest.
 
 - Callers import a package as a namespace: `import * as Base64 from '@portable/base64'`. Exports therefore use short names without the package name: `Base64.encode`, not `encodeBase64`. Named exports only.
 - Use the same verbs everywhere. `encode` and `decode` convert between a value and its bytes or text. `parse` reads a value out of bytes in one direction only, as image-size and exif do. A stream input variant adds `Stream` (`parseStream(stream)`), and a sync variant of an async function adds `Sync`.
-- Streaming transforms are `TransformStream` subclasses named for what they do, after `TextDecoderStream`: `Base64.EncoderStream`, `Base64.DecoderStream`, `LineStream`.
+- Streaming transforms are `TransformStream` subclasses named for what they do, after `TextDecoderStream`: `Base64.EncoderStream`, `Base64.DecoderStream`, `LineStream`. Generic operators that take a function or a number, like the array helpers, are lowercase factories instead: `Streams.map(fn)`, `Streams.limitBytes(n)`.
 - Bytes are `Uint8Array` in and out, never `ArrayBuffer` or `Buffer`. Functions that take text also take its bytes (`string | Uint8Array`). Text comes out as `string`.
 - Sync unless the platform API it needs is async, such as `crypto.subtle` or `CompressionStream`.
 - One optional `options` object last. No positional booleans or overloads keyed on argument count.

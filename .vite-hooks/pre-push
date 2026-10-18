@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+[ -x "$HOME/bin/node" ] && PATH="$HOME/bin:$PATH"
 pnpm check:types
 if git rev-parse --verify --quiet origin/main >/dev/null; then
   pnpm test:changed
