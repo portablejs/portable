@@ -46,22 +46,28 @@ export function seeded(seed: number): Seeded {
     Number(b & 0xffffffffn),
     Number(b >> 32n),
   )
+  const fill = (bytes: Uint8Array<ArrayBuffer>) => {
+    for (let i = 0; i < bytes.length; i += 4) {
+      const word = next()
+      bytes[i] = word
+      bytes[i + 1] = word >>> 8
+      bytes[i + 2] = word >>> 16
+      bytes[i + 3] = word >>> 24
+    }
+  }
   return {
     int: (min, max) => internal.int(next, min, max),
-    float: () => internal.float(next),
-    string: (length, alphabet = internal.urlAlphabet) => internal.string(next, length, alphabet),
+    float: () => ((next() >>> 11) * 4294967296 + next()) / 9007199254740992,
+    string(length, alphabet = internal.urlAlphabet) {
+      internal.checkLength(length)
+      return internal.string(next, fill, length, internal.alphabet(alphabet))
+    },
     shuffle: (array) => internal.shuffle(next, array),
     pick: (array) => internal.pick(next, array),
     bytes(length) {
       internal.checkLength(length)
       const result = new Uint8Array(length)
-      for (let i = 0; i < length; i += 4) {
-        const word = next()
-        result[i] = word
-        result[i + 1] = word >>> 8
-        result[i + 2] = word >>> 16
-        result[i + 3] = word >>> 24
-      }
+      fill(result)
       return result
     },
   }

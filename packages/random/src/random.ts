@@ -2,16 +2,41 @@ import * as internal from './internal.js'
 
 const poolSize = 4096
 let pool = new Uint32Array(0)
+let poolBytes = new Uint8Array(0)
 let index = 0
 
-function next(): number {
-  if (index === 0) {
-    if (pool.length === 0) pool = new Uint32Array(poolSize)
-    crypto.getRandomValues(pool)
-    index = poolSize
+function refill(): void {
+  if (pool.length === 0) {
+    pool = new Uint32Array(poolSize)
+    poolBytes = new Uint8Array(pool.buffer)
   }
+  crypto.getRandomValues(pool)
+  index = poolSize
+}
+
+function next(): number {
+  if (index === 0) refill()
   return pool[--index]!
 }
+
+function fill(bytes: Uint8Array<ArrayBuffer>): void {
+  const length = bytes.length
+  if (length <= 256) {
+    const words = (length + 3) >>> 2
+    if (index < words) refill()
+    index -= words
+    bytes.set(poolBytes.subarray(index * 4, index * 4 + length))
+    return
+  }
+  for (let offset = 0; offset < length; offset += 65536)
+    crypto.getRandomValues(bytes.subarray(offset, offset + 65536))
+}
+
+const maxTextSize = 32768
+let textAlphabet = ''
+let text = ''
+let textOffset = 0
+let textNext = 0
 
 /**
  * Returns a random integer from `min` to `max`, both included. `min` and `max` must be safe integers,
@@ -63,7 +88,23 @@ export function float(): number {
  * ```
  */
 export function string(length: number, alphabet: string = internal.urlAlphabet): string {
-  return internal.string(next, length, alphabet)
+  internal.checkLength(length)
+  const parsed = internal.alphabet(alphabet)
+  if (parsed.table === undefined) return internal.string(next, fill, length, parsed)
+  if (alphabet !== textAlphabet) {
+    textAlphabet = alphabet
+    text = ''
+    textOffset = 0
+    textNext = 0
+  }
+  if (textOffset + length > text.length) {
+    const size = Math.max(textNext, length)
+    textNext = Math.min(size * 16, maxTextSize)
+    text = internal.string(next, fill, size, parsed)
+    textOffset = 0
+  }
+  textOffset += length
+  return text.slice(textOffset - length, textOffset)
 }
 
 /**
@@ -109,7 +150,6 @@ export function pick<T>(array: readonly T[]): T {
 export function bytes(length: number): Uint8Array<ArrayBuffer> {
   internal.checkLength(length)
   const result = new Uint8Array(length)
-  for (let offset = 0; offset < length; offset += 65536)
-    crypto.getRandomValues(result.subarray(offset, offset + 65536))
+  fill(result)
   return result
 }

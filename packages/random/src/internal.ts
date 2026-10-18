@@ -1,12 +1,21 @@
 /** Returns a uniformly distributed unsigned 32-bit integer. */
 export type Next = () => number
 
+/** Fills `bytes` with uniformly distributed bytes. */
+export type Fill = (bytes: Uint8Array<ArrayBuffer>) => void
+
 export const urlAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 
 const two32 = 2 ** 32
 const two53 = 2 ** 53
 
 export function below(next: Next, n: number): number {
+  if (n <= 0x7fffffff) {
+    const max = 0x7fffffff - (((0x7fffffff % n) + 1) % n)
+    let x = next() >>> 1
+    while (x > max) x = next() >>> 1
+    return x % n
+  }
   const limit = two32 - (two32 % n)
   let x = next()
   while (x >= limit) x = next()
@@ -32,40 +41,60 @@ export function float(next: Next): number {
   return ((next() >>> 11) * two32 + next()) / two53
 }
 
-let cachedAlphabet = urlAlphabet
-let cachedCharacters: readonly string[] = Array.from(urlAlphabet)
+export type Alphabet = {
+  readonly characters: readonly string[]
+  /** For an ASCII alphabet of up to 256 characters, maps a random byte to a character code, or to 255 to draw again. */
+  readonly table: Uint8Array | undefined
+}
 
-export function string(next: Next, length: number, alphabet: string): string {
-  checkLength(length)
-  if (alphabet !== cachedAlphabet) {
-    if (alphabet === '') throw new RangeError('Expected a non-empty alphabet.')
-    cachedCharacters = Array.from(alphabet)
-    cachedAlphabet = alphabet
-  }
-  const characters = cachedCharacters
+function parse(text: string): Alphabet {
+  if (text === '') throw new RangeError('Expected a non-empty alphabet.')
+  const characters = Array.from(text)
   const n = characters.length
-  let result = ''
-  if (n > 256) {
-    for (let i = 0; i < length; i++) result += characters[below(next, n)]
+  if (n > 256 || characters.some((character) => character.charCodeAt(0) > 0x7f))
+    return { characters, table: undefined }
+  const limit = 256 - (256 % n)
+  const table = new Uint8Array(256).fill(255)
+  for (let byte = 0; byte < limit; byte++) table[byte] = text.charCodeAt(byte % n)
+  return { characters, table }
+}
+
+let cachedText = urlAlphabet
+let cached = parse(urlAlphabet)
+
+export function alphabet(text: string): Alphabet {
+  if (text !== cachedText) {
+    cached = parse(text)
+    cachedText = text
+  }
+  return cached
+}
+
+const decoder = new TextDecoder()
+
+export function string(next: Next, fill: Fill, length: number, alphabet: Alphabet): string {
+  const { characters, table } = alphabet
+  if (table === undefined) {
+    let result = ''
+    for (let i = 0; i < length; i++) result += characters[below(next, characters.length)]
     return result
   }
-  const limit = 256 - (256 % n)
-  let word = 0
-  let left = 0
-  for (let i = 0; i < length;) {
-    if (left === 0) {
-      word = next()
-      left = 4
-    }
-    const byte = word & 255
-    word >>>= 8
-    left--
-    if (byte < limit) {
-      result += characters[byte % n]
-      i++
+  const out = new Uint8Array(length)
+  if (256 % characters.length === 0) {
+    fill(out)
+    for (let j = 0; j < length; j++) out[j] = table[out[j]!]!
+    return decoder.decode(out)
+  }
+  let i = 0
+  while (i < length) {
+    const start = i
+    fill(out.subarray(start))
+    for (let j = start; j < length; j++) {
+      const code = table[out[j]!]!
+      if (code < 128) out[i++] = code
     }
   }
-  return result
+  return decoder.decode(out)
 }
 
 export function shuffle<T>(next: Next, array: readonly T[]): T[] {

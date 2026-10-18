@@ -354,18 +354,18 @@ describe('seeded', () => {
       Array.from(random.bytes(6)),
     ]).toMatchInlineSnapshot(`
       [
-        5,
-        4,
+        6,
+        2,
         -596864981147,
         0.7380174259864991,
         "fnJVhHcTT-cgd1xoqKeXl",
         "150798",
         [
-          "d",
-          "b",
           "e",
-          "a",
           "c",
+          "b",
+          "a",
+          "d",
         ],
         10,
         [
