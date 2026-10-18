@@ -1,0 +1,12 @@
+{
+  "name": "@portable/web-push-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/base64": "workspace:*",
+    "@portable/web-push": "workspace:*",
+    "@types/node": "^26.6.5",
+    "http_ece": "^1.2.1",
+    "web-push": "^3.6.7"
+  }
+}

@@ -1,0 +1,132 @@
+import { encrypt, type Subscription } from './encrypt.js'
+import { InvalidInputError, ResponseError } from './errors.js'
+import { authorization, type Vapid } from './vapid.js'
+
+/** How soon the push service should deliver the message (RFC 8030 §5.3). */
+export type Urgency = 'very-low' | 'low' | 'normal' | 'high'
+
+export declare namespace toRequest {
+  type Options = {
+    /** The VAPID subject and key pair that sign the request. */
+    vapid: Vapid
+    /**
+     * How long the push service keeps the message for an offline browser, in seconds. `0` means
+     * deliver now or drop it. Push services may cap it. @default 2419200 (four weeks)
+     */
+    ttl?: number | undefined
+    /** Lets the push service hold back low-priority messages to save battery. Not sent by default. */
+    urgency?: Urgency | undefined
+    /**
+     * Replaces an undelivered message with the same topic, so an offline browser gets only the
+     * latest. Up to 32 base64url characters.
+     */
+    topic?: string | undefined
+    /** Cancels the encryption and, through the `Request`, the `fetch`. */
+    signal?: AbortSignal | undefined
+  }
+}
+
+/**
+ * Builds the push request for a subscription: a `POST` to its endpoint with the encrypted payload
+ * and the `TTL`, `Content-Encoding`, `Authorization`, `Urgency` and `Topic` headers. Use it to send
+ * with your own `fetch` or queue; `send` calls it for you.
+ *
+ * @example
+ * ```ts
+ * import * as WebPush from '@portable/web-push'
+ *
+ * const request = await WebPush.toRequest(subscription, 'hello', { vapid })
+ * const response = await fetch(request)
+ * ```
+ *
+ * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
+ * subscription's keys are missing or malformed.
+ * @throws {TypeError} When `vapid`, `urgency` or `topic` is malformed.
+ * @throws {RangeError} When `ttl` isn't a non-negative integer, or the payload is longer than
+ * `maxPayloadBytes`.
+ */
+export async function toRequest(
+  subscription: Subscription,
+  payload: string | Uint8Array | undefined,
+  options: toRequest.Options,
+): Promise<Request> {
+  const { ttl = 2419200, urgency, topic, signal } = options
+  const endpoint = typeof subscription?.endpoint === 'string' && URL.parse(subscription.endpoint)
+  if (!endpoint || endpoint.protocol !== 'https:')
+    throw new InvalidInputError('The subscription endpoint must be an https: URL')
+  if (!Number.isSafeInteger(ttl) || ttl < 0)
+    throw new RangeError('ttl must be a non-negative integer')
+  if (urgency !== undefined && !urgencies.has(urgency))
+    throw new TypeError(`urgency must be 'very-low', 'low', 'normal' or 'high'`)
+  if (topic !== undefined && !/^[\w-]{1,32}$/.test(topic))
+    throw new TypeError('topic must be 1 to 32 base64url characters')
+
+  const headers = new Headers({ ttl: String(ttl) })
+  if (urgency) headers.set('urgency', urgency)
+  if (topic) headers.set('topic', topic)
+  let body: Uint8Array<ArrayBuffer> | undefined
+  if (payload !== undefined) {
+    body = await encrypt(subscription, payload, { signal })
+    headers.set('content-encoding', 'aes128gcm')
+    headers.set('content-type', 'application/octet-stream')
+  }
+  headers.set('authorization', await authorization(endpoint.origin, options.vapid))
+  signal?.throwIfAborted()
+  return new Request(endpoint, {
+    method: 'POST',
+    headers,
+    body: body ?? null,
+    signal: signal ?? null,
+  })
+}
+
+export declare namespace send {
+  type Options = toRequest.Options & {
+    /** Sends the request. Pass one to add retries, logging or a proxy. @default globalThis.fetch */
+    fetch?: ((request: Request) => Promise<Response>) | undefined
+  }
+
+  /**
+   * - `'sent'`: the push service accepted the message (2xx).
+   * - `'gone'`: the subscription expired or the user unsubscribed (404 or 410). Delete it.
+   */
+  type Result = { kind: 'sent'; status: number } | { kind: 'gone'; status: 404 | 410 }
+}
+
+/**
+ * Encrypts a payload, signs the request with VAPID, and sends it to the subscription's push
+ * service. Leave `payload` `undefined` to send a push with no data.
+ *
+ * @example
+ * ```ts
+ * import * as WebPush from '@portable/web-push'
+ *
+ * const result = await WebPush.send(subscription, JSON.stringify({ title: 'New message' }), {
+ *   vapid: { subject: 'mailto:ops@example.com', publicKey, privateKey },
+ *   ttl: 3600,
+ *   urgency: 'high',
+ * })
+ * if (result.kind === 'gone') await deleteSubscription(subscription.endpoint)
+ * ```
+ *
+ * @throws {ResponseError} When the push service answers with a status other than 2xx, 404 or 410.
+ * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
+ * subscription's keys are missing or malformed.
+ * @throws {TypeError} When an option is malformed, or `fetch` rejects.
+ */
+export async function send(
+  subscription: Subscription,
+  payload: string | Uint8Array | undefined,
+  options: send.Options,
+): Promise<send.Result> {
+  const request = await toRequest(subscription, payload, options)
+  const response = await (options.fetch ?? fetch)(request)
+  const { status } = response
+  if (response.ok || status === 404 || status === 410) {
+    await response.body?.cancel()
+    return status === 404 || status === 410 ? { kind: 'gone', status } : { kind: 'sent', status }
+  }
+  throw new ResponseError(status, response.headers, await response.text())
+}
+
+const urgencies = new Set<unknown>(['very-low', 'low', 'normal', 'high'])

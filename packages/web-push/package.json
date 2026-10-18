@@ -1,0 +1,49 @@
+{
+  "name": "@portable/web-push",
+  "description": "Send Web Push notifications with aes128gcm encryption and VAPID, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "dependencies": {
+    "@portable/base64": "workspace:^"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/web-push"
+  },
+  "keywords": [
+    "web-push",
+    "push",
+    "notifications",
+    "push-notifications",
+    "vapid",
+    "aes128gcm",
+    "rfc8291",
+    "rfc8292",
+    "webcrypto"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
