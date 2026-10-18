@@ -2,6 +2,21 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/image-size` API
+
+- **`parse(bytes)` and `parseStream(stream, { maxBytes })`.** `parseStream` cancels the stream once it knows the size: it reads 5 KB of a 730 KB JPEG. It takes only a `ReadableStream`, and callers pass `blob.stream()` or `response.body`. `imageSizeFromFile`, `disableTypes` (global state) and `types` were dropped.
+- **HEIF size comes from the primary item, with clean aperture and rotation applied.** image-size takes the first or largest `ispe`, which reports a 16×64 image as 63×64 and lists every tile of a tiled photo. HEIF results have no `images` list.
+- **A cut-off box-based file throws `TruncatedError`.** When the input ends while searching for a box, a cut file and one missing the box look the same. `TruncatedError` means a prefix of a valid file is never reported as malformed.
+- **The oracle runs against npm's image-size 2.0.4,** which is newer than the last public GitHub commit (2.0.2).
+
+## `@portable/exif` API
+
+- **`parse(bytes)` returns one tag object per IFD** (`ifd0`, `exif`, `gps`, `interop`, `ifd1`) plus `latitude`, `longitude`, `imageSize` and `thumbnail`. A merged object lets the thumbnail's `Orientation` replace the image's (exif-parser #30), and GPS and interop tag ids collide.
+- **Dates stay strings,** and `parseDate(value, { offset })` turns one into a `Date`. EXIF dates have no time zone, so building a `Date` while parsing would hide a guess.
+- **Rationals are numbers** (n/d), as in exif-parser and exif-reader. **Binary values are `Uint8Array` views** into the input, not copies.
+- **Only a bad TIFF header or an unknown format throws.** A bad IFD or value skips that item, so damaged files still return what can be read.
+- **Tag names are ExifTool's**, as exif-parser and exifr use, plus the EXIF 2.31 and 2.32 tags. Unknown tags are keyed by hex id.
+
 ## `@portable/streams` API
 
 - **Chunk types:** only `Uint8Array` and `string`; anything else throws a `TypeError`. get-stream also accepts `ArrayBuffer`, `DataView` and other typed arrays, but the API conventions say bytes are `Uint8Array`, and raw-body's `NaN` length bug came from mixed chunk types. Some callers have to wrap chunks.

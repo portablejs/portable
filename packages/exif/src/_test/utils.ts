@@ -1,14 +1,10 @@
-const nodeFs = 'node:fs/promises'
+// `?url&inline` turns each fixture into a data URL, which `fetch` reads in Node and in browsers.
+const files = import.meta.glob<string>('./fixtures/*', { query: '?url&inline', import: 'default' })
 
-// Vite can't inline .tif, .heic or .exif files, so fixtures are read by URL: over HTTP from the
-// browser test server, and from disk in Node, whose fetch rejects file: URLs.
 export async function fixture(name: string): Promise<Uint8Array> {
-  const url = new URL(`./fixtures/${name}`, import.meta.url)
-  if (url.protocol !== 'file:') return new Uint8Array(await (await fetch(url)).arrayBuffer())
-  const { readFile } = (await import(/* @vite-ignore */ nodeFs)) as {
-    readFile: (url: URL) => Promise<Uint8Array>
-  }
-  return new Uint8Array(await readFile(url))
+  const load = files[`./fixtures/${name}`]
+  if (!load) throw new Error(`No fixture ${name}`)
+  return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
 export const ascii = (text: string): Uint8Array => new TextEncoder().encode(text)

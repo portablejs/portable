@@ -4,6 +4,9 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 | Papercut | Workaround | Possible fix |
 | --- | --- | --- |
+| Two agents pushing to `main` at once: the pre-push hook takes about 30 s, and main often moves during it, so the push is rejected. One agent pushed with `--no-verify`. | Pull with rebase and push again. The brief now forbids `--no-verify`. | Make the pre-push hook faster, or have agents work on branches. |
+| The GitHub issue pages of upstream repos render empty through WebFetch, so agents can't always read issue trackers. | Find upstream traps by reading the source and running the library on crafted input. | Allow read access to public repos' issues. |
+| Vitest warns about getter overhead when a benchmark reads a module-level table. | None; it only slows our side of the benchmark. | None needed. |
 | Chromium 141's streaming `TextDecoder` turns an ASCII byte into U+FFFD when it follows an invalid sequence split across chunks (`f0` \| `d4 be 25`). A random-bytes test in `streams` failed about 1 run in 5. | That test uses random valid UTF-8; `streams` PARITY.md explains why. | None in our code; it's a browser bug. |
 | A source that always has a chunk ready keeps the microtask queue busy, so `setTimeout` never fires and Vitest hangs with no timeout. | Add a short delay in such test sources. | None. |
 | The GitHub tools in cloud sessions can only read `portablejs/portable`, so agents can't read upstream issue trackers through them. | WebFetch the issue pages. | Add the upstream repos to the session, or accept WebFetch. |
@@ -21,6 +24,8 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 ## Fixed
 
+- `pnpm bench` printed no numbers. It now runs with `--reporter=verbose`.
+- Binary fixtures with extensions Vite doesn't know (`.tif`, `.heic`, `.pfm`) failed to import with `?inline`, and Node's `fetch` rejects `file:` URLs. Both packages now use `import.meta.glob` with `?url&inline`, and AGENTS.md documents it.
 - The pre-push hook ran Node 22 in cloud sessions, because `git push` doesn't put `~/bin` on `PATH`. The hook now puts `~/bin` first when Node is installed there.
 - Cloud sessions started with Node 22 and pnpm 10. `.claude/hooks/session-start.sh` now installs Node 24 and pnpm 11 when they're missing, and `.nvmrc` pins Node 24 for local machines.
 - Running browser tests in the cloud container needed a temporary edit to `vite.config.ts`. `PW_CHROMIUM_PATH` replaces it.
