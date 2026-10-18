@@ -1,0 +1,50 @@
+{
+  "name": "@portable/dns-packet",
+  "description": "Encode and decode DNS packets as Uint8Array, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "devDependencies": {
+    "@types/dns-packet": "^5.6.5",
+    "@types/node": "^26.6.5",
+    "dns-packet": "^5.6.1"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/dns-packet"
+  },
+  "keywords": [
+    "dns",
+    "dns-packet",
+    "packet",
+    "encoding",
+    "doh",
+    "edns",
+    "dnssec"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/_test"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
