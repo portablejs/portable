@@ -1,0 +1,13 @@
+{
+  "name": "@portable/queue-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/queue": "workspace:*",
+    "@types/node": "^26.6.5",
+    "p-limit": "^7.3.3",
+    "p-map": "^7.1.1",
+    "p-queue": "^10.0.0",
+    "p-throttle": "^8.1.1"
+  }
+}

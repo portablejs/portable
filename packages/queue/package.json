@@ -1,0 +1,46 @@
+{
+  "name": "@portable/queue",
+  "description": "Limit how many async tasks run at once, with priorities, rate limits and AbortSignal, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/queue"
+  },
+  "keywords": [
+    "queue",
+    "concurrency",
+    "limit",
+    "rate-limit",
+    "p-limit",
+    "p-queue",
+    "p-map",
+    "p-throttle",
+    "promise"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
