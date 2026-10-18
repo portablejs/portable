@@ -70,7 +70,7 @@ describe('record types', () => {
     ])
   })
 
-  test('resolveMx renames preference to priority', async () => {
+  test('resolveMx renames preference to priority, and returns the root of a null MX as an empty string', async () => {
     const { resolver } = resolverFor(
       answering(
         record(N, 'MX', { preference: 10, exchange: 'Mx1.Example.org' }),
@@ -79,7 +79,7 @@ describe('record types', () => {
     )
     expect(await resolver.resolveMx(N)).toEqual([
       { exchange: 'Mx1.Example.org', priority: 10 },
-      { exchange: '.', priority: 0 },
+      { exchange: '', priority: 0 },
     ])
   })
 
@@ -428,33 +428,27 @@ describe('server failures', () => {
   })
 
   test('a response to another question is EBADRESP', async () => {
-    const resolver = createResolver({
-      fetch: async (request) => {
-        const query = decodeQuery(request)
-        const other = { ...query, questions: [{ name: 'evil.example', type: 'A' as const }] }
-        return new Response(respond(other, { answers: [record('evil.example', 'A', '6.6.6.6')] }))
-      },
-    })
+    const { resolver } = resolverFor(() =>
+      respond(
+        { id: 0, questions: [{ name: 'evil.example', type: 'A' }] },
+        { answers: [record('evil.example', 'A', '6.6.6.6')] },
+      ),
+    )
     expect(await failure(resolver.resolve4(N))).toMatchObject({ code: 'EBADRESP' })
-    const wrongType = createResolver({
-      fetch: async (request) =>
-        new Response(
-          respond(decodeQuery(request), {
-            questions: [{ name: N, type: 'AAAA' }],
-            answers: [record(N, 'A', '1.2.3.4')],
-          }),
-        ),
-    })
-    expect(await failure(wrongType.resolve4(N))).toMatchObject({ code: 'EBADRESP' })
+    const wrongType = resolverFor((_, request) =>
+      respond(decodeQuery(request), {
+        questions: [{ name: N, type: 'AAAA' }],
+        answers: [record(N, 'A', '1.2.3.4')],
+      }),
+    )
+    expect(await failure(wrongType.resolver.resolve4(N))).toMatchObject({ code: 'EBADRESP' })
   })
 
   test('a query echoed back instead of a response is EBADRESP', async () => {
-    const resolver = createResolver({
-      fetch: async (request) => {
-        const url = new URL(request.url)
-        const binary = atob(url.searchParams.get('dns')!.replaceAll('-', '+').replaceAll('_', '/'))
-        return new Response(Uint8Array.from(binary, (c) => c.charCodeAt(0)))
-      },
+    const { resolver } = resolverFor((_, request) => {
+      const value = new URL(request.url).searchParams.get('dns')!
+      const binary = atob(value.replaceAll('-', '+').replaceAll('_', '/'))
+      return Uint8Array.from(binary, (c) => c.charCodeAt(0))
     })
     expect(await failure(resolver.resolve4(N))).toMatchObject({ code: 'EBADRESP' })
   })
@@ -490,15 +484,12 @@ describe('server failures', () => {
 
 describe('endpoints', () => {
   test('uses Cloudflare, then Google, by default', async () => {
-    const hosts: string[] = []
-    const resolver = createResolver({
-      fetch: async (request) => {
-        hosts.push(new URL(request.url).host)
-        throw new TypeError('offline')
-      },
-    })
+    const { resolver, requests } = resolverFor(() => new TypeError('offline'))
     await failure(resolver.resolve4(N))
-    expect(hosts).toEqual(['cloudflare-dns.com', 'dns.google'])
+    expect(requests.map((request) => new URL(request.url).host)).toEqual([
+      'cloudflare-dns.com',
+      'dns.google',
+    ])
   })
 
   test('tries the next endpoint after a failure and stops at the first answer', async () => {
@@ -571,7 +562,7 @@ describe('endpoints', () => {
 })
 
 describe('requests', () => {
-  test('sends a GET with the query as unpadded base64url, an ID of 0 and RD set', async () => {
+  test('sends a GET with the query as unpadded base64url, an ID of 0, and RD and AD set', async () => {
     const { resolver, requests } = resolverFor(answering(record(N, 'TXT', ['x'])), {
       endpoints: ['https://doh.example/dns-query?ct=1'],
     })
@@ -584,7 +575,7 @@ describe('requests', () => {
     expect(url.searchParams.get('ct')).toBe('1')
     expect(url.searchParams.get('dns')).toMatch(/^[\w-]+$/)
     const query = decodeQuery(request!)
-    expect(query).toMatchObject({ id: 0, type: 'query', flags: { rd: true } })
+    expect(query).toMatchObject({ id: 0, type: 'query', flags: { rd: true, ad: true, cd: false } })
     expect(query.questions).toEqual([{ name: N, type: 'TXT', class: 'IN', qu: false }])
   })
 

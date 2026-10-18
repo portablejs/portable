@@ -82,8 +82,12 @@ export declare namespace createResolver {
      * @default ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']
      */
     endpoints?: readonly (string | URL)[] | undefined
-    /** Sends each request. Pass one to add headers, route through a proxy, or mock in tests. @default globalThis.fetch */
-    fetch?: ((request: Request) => Promise<Response>) | undefined
+    /**
+     * Sends each request, called as `fetch(url, { headers, signal })`. Pass one to add headers,
+     * route through a proxy, or mock in tests.
+     * @default globalThis.fetch
+     */
+    fetch?: ((url: string, init: RequestInit) => Promise<Response>) | undefined
     /** Milliseconds to wait for each endpoint, including reading the response body. @default 5000 */
     timeout?: number | undefined
   }
@@ -134,9 +138,13 @@ const failures: Partial<Record<DnsPacket.Rcode, QueryError.Code>> = {
   FORMERR: 'EFORMERR',
 }
 
+const headers = { accept: 'application/dns-message' }
+
 const text = new TextDecoder('utf-8', { ignoreBOM: true })
 
 const canonical = (name: string) => (name.endsWith('.') ? name.slice(0, -1) : name).toLowerCase()
+
+const host = (name: string) => (name === '.' ? '' : name)
 
 const syscallFor = (type: string) => `query${type[0]}${type.slice(1).toLowerCase()}`
 
@@ -213,37 +221,38 @@ function recordsFor<T extends string>(
  * ```
  */
 export function createResolver(options: createResolver.Options = {}): createResolver.ReturnType {
-  const endpoints = (options.endpoints ?? defaultEndpoints).map((endpoint) => new URL(endpoint))
+  const endpoints = (options.endpoints ?? defaultEndpoints).map((endpoint) => {
+    const url = new URL(endpoint)
+    url.hash = ''
+    url.searchParams.delete('dns')
+    return `${url.href}${url.search ? '&' : '?'}dns=`
+  })
   if (endpoints.length === 0) throw new TypeError('At least one endpoint is required.')
   const timeout = options.timeout ?? 5000
   if (!(timeout > 0 && timeout <= 2 ** 31 - 1))
     throw new RangeError('`timeout` must be a number of milliseconds above 0.')
-  const send = options.fetch ?? ((request: Request) => fetch(request))
+  const send = options.fetch ?? ((url: string, init: RequestInit) => fetch(url, init))
 
   async function attempt(
-    endpoint: URL,
+    endpoint: string,
     query: string,
     question: { name: string; type: string; syscall: string; hostname: string },
     signal: AbortSignal | undefined,
   ): Promise<DnsPacket.DecodedPacket | QueryError> {
     const { syscall, hostname } = question
-    const url = new URL(endpoint)
-    url.searchParams.set('dns', query)
     // AbortSignal.timeout holds its signal weakly in Node, so a fetch that never settles could be
     // garbage collected along with its timer and leave the lookup pending forever.
     const deadline = new AbortController()
     const timer = setTimeout(() => deadline.abort(), timeout)
     let bytes: Uint8Array
     try {
-      const response = await send(
-        new Request(url, {
-          headers: { accept: 'application/dns-message' },
-          signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
-        }),
-      )
+      const response = await send(endpoint + query, {
+        headers,
+        signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
+      })
       if (!response.ok)
         return new QueryError('EBADRESP', syscall, hostname, {
-          cause: new Error(`${url.origin} answered HTTP ${response.status}.`),
+          cause: new Error(`${new URL(endpoint).origin} answered HTTP ${response.status}.`),
         })
       bytes = new Uint8Array(await response.arrayBuffer())
     } catch (cause) {
@@ -294,7 +303,9 @@ export function createResolver(options: createResolver.Options = {}): createReso
     if (/(?:^|\.)onion\.?$/i.test(name)) throw new QueryError('ENOTFOUND', syscall, hostname)
     let query: string
     try {
-      query = base64url(DnsPacket.encode({ flags: { rd: true }, questions: [{ name, type }] }))
+      query = base64url(
+        DnsPacket.encode({ flags: { rd: true, ad: true }, questions: [{ name, type }] }),
+      )
     } catch (cause) {
       throw new QueryError('EBADNAME', syscall, hostname, { cause })
     }
@@ -333,12 +344,12 @@ export function createResolver(options: createResolver.Options = {}): createReso
   return {
     resolve4: (name, options) => resolve(name, 'A', options),
     resolve6: (name, options) => resolve(name, 'AAAA', options),
-    resolveCname: (name, options) => resolve(name, 'CNAME', options),
-    resolveNs: (name, options) => resolve(name, 'NS', options),
-    resolvePtr: (name, options) => resolve(name, 'PTR', options),
+    resolveCname: async (name, options) => (await resolve(name, 'CNAME', options)).map(host),
+    resolveNs: async (name, options) => (await resolve(name, 'NS', options)).map(host),
+    resolvePtr: async (name, options) => (await resolve(name, 'PTR', options)).map(host),
     async resolveMx(name, options) {
       const records = await resolve(name, 'MX', options)
-      return records.map((data) => ({ exchange: data.exchange, priority: data.preference }))
+      return records.map((data) => ({ exchange: host(data.exchange), priority: data.preference }))
     },
     async resolveTxt(name, options) {
       const records = await resolve(name, 'TXT', options)
@@ -347,7 +358,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
     async resolveSrv(name, options) {
       const records = await resolve(name, 'SRV', options)
       return records.map((data) => ({
-        name: data.target,
+        name: host(data.target),
         port: data.port,
         priority: data.priority,
         weight: data.weight,
@@ -356,8 +367,8 @@ export function createResolver(options: createResolver.Options = {}): createReso
     async resolveSoa(name, options) {
       const [data] = (await resolve(name, 'SOA', options)) as [DataOf<'SOA'>]
       return {
-        nsname: data.mname,
-        hostmaster: data.rname,
+        nsname: host(data.mname),
+        hostmaster: host(data.rname),
         serial: data.serial,
         refresh: data.refresh,
         retry: data.retry,
@@ -375,7 +386,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
         flags: data.flags,
         service: data.services,
         regexp: data.regexp,
-        replacement: data.replacement,
+        replacement: host(data.replacement),
         order: data.order,
         preference: data.preference,
       }))
@@ -383,7 +394,10 @@ export function createResolver(options: createResolver.Options = {}): createReso
     async reverse(ip, options = {}) {
       const name = reverseName(ip)
       if (name === undefined) throw new QueryError('EINVAL', 'getHostByAddr', ip)
-      return lookup(ip, name, 'PTR', 'getHostByAddr', options.signal)
+      const packet = await exchange(ip, name, 'PTR', 'getHostByAddr', options.signal)
+      const records = recordsFor(packet, name, 'PTR')
+      if (records.length === 0) throw new QueryError('ENOTFOUND', 'getHostByAddr', ip)
+      return records.map(host)
     },
     async query(name, type, options = {}) {
       const syscall = syscallFor(type)
