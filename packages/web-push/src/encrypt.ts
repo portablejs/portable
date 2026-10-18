@@ -73,12 +73,12 @@ export async function encrypt(
     : crypto.getRandomValues(new Uint8Array(16))
   if (salt.length !== 16) throw new RangeError('salt must be 16 bytes')
 
-  const userKey = await subtle
-    .importKey('raw', userPublicKey, ecdh, false, [])
-    .catch((cause: unknown) => {
+  const [userKey, keyPair] = await Promise.all([
+    subtle.importKey('raw', userPublicKey, ecdh, false, []).catch((cause: unknown) => {
       throw new InvalidInputError('p256dh is not a point on the P-256 curve', { cause })
-    })
-  const keyPair = options.keyPair ?? (await subtle.generateKey(ecdh, false, ['deriveBits']))
+    }),
+    options.keyPair ?? subtle.generateKey(ecdh, false, ['deriveBits']),
+  ])
   const [serverPublicKey, secret] = await Promise.all([
     subtle.exportKey('raw', keyPair.publicKey),
     subtle.deriveBits({ name: 'ECDH', public: userKey }, keyPair.privateKey, 256),

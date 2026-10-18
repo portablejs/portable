@@ -6,6 +6,7 @@
     "@portable/base64": "workspace:*",
     "@portable/web-push": "workspace:*",
     "@types/node": "^26.6.5",
+    "@types/web-push": "^3.6.4",
     "http_ece": "^1.2.1",
     "web-push": "^3.6.7"
   }

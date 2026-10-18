@@ -409,6 +409,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      '@types/web-push':
+        specifier: ^3.6.4
+        version: 3.6.4
       http_ece:
         specifier: ^1.2.1
         version: 1.2.1
@@ -1160,6 +1163,9 @@ packages:
 
   '@types/through@0.0.33':
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
+
+  '@types/web-push@3.6.4':
+    resolution: {integrity: sha512-GnJmSr40H3RAnj0s34FNTcJi1hmWFV5KXugE0mYWnYhgTAHLJ/dJKAwDmvPJYMke0RplY2XE9LnM4hqSqKIjhQ==}
 
   '@vitest/browser-playwright@5.0.5':
     resolution: {integrity: sha512-lcdThFUUcMV9mGGV1SUiZXPxfjgW4CssA7o3STxzh8WK0tT2r526kc12tZIBRZfoLMwkhxjLmMXkWXONzdsDQw==}
@@ -3219,6 +3225,10 @@ snapshots:
       '@types/node': 26.6.5
 
   '@types/through@0.0.33':
+    dependencies:
+      '@types/node': 26.6.5
+
+  '@types/web-push@3.6.4':
     dependencies:
       '@types/node': 26.6.5
 

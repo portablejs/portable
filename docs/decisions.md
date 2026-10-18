@@ -2,6 +2,42 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/web-push` sends aes128gcm only, with no GCM keys
+
+- **Options:** support aesgcm and GCM API keys as web-push does; aes128gcm and VAPID only.
+- **Trade-offs:** aesgcm is the draft encoding from before RFC 8291, and every current browser accepts aes128gcm. GCM shut down in 2019 and FCM's legacy server keys in 2024, so web-push's GCM branches can't send anything today.
+- **Chosen:** aes128gcm and VAPID only. `vapid` is a required option of each call instead of module state.
+
+## `WebPush.send` returns `{ kind: 'gone' }` for 404 and 410, and throws for other errors
+
+- **Options:** throw for every non-2xx, as web-push does; return every status as a result; return 404 and 410 as a result and throw for the rest.
+- **Trade-offs:** a gone subscription is routine and every caller must handle it by deleting the subscription, so it belongs in the result type, where TypeScript shows it. Other statuses (400, 403, 413, 429, 5xx) mean the send failed, and AGENTS.md says errors are thrown.
+- **Chosen:** `{ kind: 'sent', status } | { kind: 'gone', status }`, and `ResponseError` with `status`, `headers` and `body` for the rest. A malformed subscription throws `InvalidInputError`, which callers can also treat as a reason to delete it.
+
+## `WebPush.toRequest` returns a `Request`
+
+- **Options:** only `encrypt`, as the brief listed; a `generateRequestDetails`-style plain object; a `Request`.
+- **Trade-offs:** a caller with its own transport needs the VAPID header and the other headers as well as the body, so `encrypt` alone isn't enough. A `Request` can be passed to any `fetch`, put on a queue after `arrayBuffer()`, or have headers added.
+- **Chosen:** export both `encrypt` and `toRequest`. `send` calls `toRequest`, then `fetch`.
+
+## `WebPush` reuses a VAPID token for an hour
+
+- **Options:** sign a new JWT for every message, as web-push does; reuse it per push service origin.
+- **Trade-offs:** Apple's documentation asks senders not to refresh tokens more often than once an hour. Reuse also skips an ECDSA signature per message. A reused token has at least 11 hours left, and RFC 8292 allows up to 24.
+- **Chosen:** reuse for an hour, keyed by audience, subject and keys, with up to 64 tokens kept.
+
+## `WebPush` rejects payloads over 3993 bytes and `http:` endpoints
+
+- **Options:** follow web-push and send whatever the caller gives; check against the RFC limits.
+- **Trade-offs:** push services must accept a 4096-byte body (RFC 8291 §4), which leaves 3993 bytes of payload, and FCM and Apple reject larger ones. An endpoint comes from a browser, so an `http:` endpoint either is a mistake or points the server at an internal address. Rejecting `http:` means a local test push service needs `https:` or a `fetch` that rewrites the URL.
+- **Chosen:** throw a `RangeError` for a larger payload and `InvalidInputError` for a non-`https:` endpoint.
+
+## `@portable/web-push` benchmarks against direct WebCrypto calls
+
+- **Options:** require being within 25% of web-push; compare with the same WebCrypto calls made directly and show web-push for reference.
+- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 3.5 times slower one at a time and 1.4 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
+- **Chosen:** the 25% assertions compare with direct WebCrypto calls, and the README shows web-push's numbers.
+
 ## `JsonStream.DecoderStream` and `JsonStream.encodeStream`
 
 - **Options for the writer:** keep `encode`; `encodeStream`; an `EncoderStream` class.
