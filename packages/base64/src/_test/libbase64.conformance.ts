@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { Base64DecoderStream, Base64EncoderStream, decode, DecodeError, encode } from '../index.js'
+import { DecoderStream, EncoderStream, decode, InvalidInputError, encode } from '../index.js'
 import alice from './fixtures/alice.txt?raw'
 import {
   chunked,
@@ -112,8 +112,8 @@ describe('libbase64', () => {
     test('encodes and decodes a file', async () => {
       const bytes = utf8(alice)
       const output = fromChunks(chunked(bytes, 16384))
-        .pipeThrough(new Base64EncoderStream({ lineLength: 76 }))
-        .pipeThrough(new Base64DecoderStream())
+        .pipeThrough(new EncoderStream({ lineLength: 76 }))
+        .pipeThrough(new DecoderStream())
       expect(concat(await collect(output))).toEqual(bytes)
     })
 
@@ -171,7 +171,7 @@ describe('libbase64', () => {
       expect(text(decode(paddedLines, mime))).toBe('abc')
       expect(text(decode('YQ==Yg==Yw==', mime))).toBe('abc')
       expect(text(decode('YWI=YWJj', mime))).toBe('ababc')
-      expect(() => decode(paddedLines)).toThrow(DecodeError)
+      expect(() => decode(paddedLines)).toThrow(InvalidInputError)
     })
 
     test("decodes padded segments separated by whitespace in 'mime' mode", () => {
@@ -238,7 +238,7 @@ describe('libbase64', () => {
 
     test('rejects a line length that is not a positive integer', () => {
       for (const lineLength of [2.5, 76.9, 0.5, Infinity, -3])
-        expect(() => new Base64EncoderStream({ lineLength })).toThrow(RangeError)
+        expect(() => new EncoderStream({ lineLength })).toThrow(RangeError)
     })
 
     test('ignores empty chunks', async () => {
@@ -332,7 +332,7 @@ describe('libbase64 properties', () => {
       const data = randomBytes((seed * 397) % 4000, seed)
       const input = encode(data, { lineLength: 76 })
       const stream = fromChunks(chunked(latin1(input), randomChunkSizes(seed))).pipeThrough(
-        new Base64DecoderStream(),
+        new DecoderStream(),
       )
       const received = await collect(stream, () => new Promise((resolve) => setTimeout(resolve, 0)))
       expect(concat(received)).toEqual(data)

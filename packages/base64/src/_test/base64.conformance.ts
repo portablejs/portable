@@ -3,9 +3,10 @@ import { createDecoder } from '../decode.js'
 import { encodeFallback } from '../encode.js'
 import {
   type Alphabet,
-  Base64EncoderStream,
+  EncoderStream,
   decode,
-  DecodeError,
+  InvalidInputError,
+  TruncatedError,
   encode,
   type Mode,
 } from '../index.js'
@@ -19,6 +20,8 @@ import {
   random,
   randomBytes,
   randomChunkSizes,
+  referenceEncode,
+  referenceWrap,
   text,
   utf8,
 } from './utils.js'
@@ -31,9 +34,11 @@ const fail = (fn: () => unknown) => {
   }
 }
 
-/** The bytes, or `'error'` for a `DecodeError` or the native `SyntaxError`. */
-const outcome = (result: unknown) =>
-  result instanceof DecodeError || result instanceof SyntaxError ? 'error' : result
+/** The bytes, or the error's name. */
+const outcome = (result: unknown) => (result instanceof Error ? result.name : result)
+
+/** The bytes, or `'error'` for any error, because the native `SyntaxError` has no subclasses. */
+const nativeOutcome = (result: unknown) => (result instanceof Error ? 'error' : result)
 
 /** Valid base64 from random bytes, then edited the ways real input differs: whitespace, missing padding, a stray character. */
 function mostlyValid(seed: number, alphabet: Alphabet): string {
@@ -85,29 +90,24 @@ describe('decode', () => {
     expect(text(decode('YWI'))).toBe('ab')
   })
 
-  test("rejects invalid input in 'loose' mode", () => {
-    for (const input of [
-      'YQ=.',
-      'Y',
-      'YWJjZ',
-      'YQ=',
-      'YQ===',
-      'YQ==YQ==',
-      '=',
-      'YW*j',
-      'YWJé',
-      'YW-j',
-      'Ł',
-    ])
-      expect(() => decode(input)).toThrow(DecodeError)
-    expect(() => decode('YW+j', { alphabet: 'base64url' })).toThrow(DecodeError)
+  test("rejects invalid characters and padding in 'loose' mode", () => {
+    for (const input of ['YQ=.', 'YQ===', 'YQ==YQ==', '=', 'YW*j', 'YWJé', 'YW-j', 'Ł'])
+      expect(() => decode(input)).toThrow(InvalidInputError)
+    expect(() => decode('YW+j', { alphabet: 'base64url' })).toThrow(InvalidInputError)
+  })
+
+  test("rejects input that ends inside a group in 'loose' mode", () => {
+    for (const input of ['Y', 'YWJjZ', 'YQ=', 'YQ= \r\n'])
+      expect(() => decode(input)).toThrow(TruncatedError)
   })
 
   test("requires padding and zero bits before it in 'strict' mode", () => {
     expect(text(decode('YQ==\r\n', { mode: 'strict' }))).toBe('a')
     expect(text(decode('YWJj', { mode: 'strict' }))).toBe('abc')
-    for (const input of ['YQ', 'YWI', 'YR==', 'YWJ='])
-      expect(() => decode(input, { mode: 'strict' })).toThrow(DecodeError)
+    for (const input of ['YQ', 'YWI'])
+      expect(() => decode(input, { mode: 'strict' })).toThrow(TruncatedError)
+    for (const input of ['YR==', 'YWJ='])
+      expect(() => decode(input, { mode: 'strict' })).toThrow(InvalidInputError)
   })
 
   test("never throws in 'mime' mode", () => {
@@ -119,11 +119,9 @@ describe('decode', () => {
     expect(text(decode(utf8('YWJj\r\n')))).toBe('abc')
   })
 
-  test('throws a DecodeError with a namespaced name', () => {
-    const error = fail(() => decode('*'))
-    expect(error).toBeInstanceOf(DecodeError)
-    expect(error).toBeInstanceOf(Error)
-    expect((error as Error).name).toBe('Base64.DecodeError')
+  test('throws errors with namespaced names', () => {
+    expect(fail(() => decode('*'))).toMatchObject({ name: 'Base64.InvalidInputError' })
+    expect(fail(() => decode('Y'))).toMatchObject({ name: 'Base64.TruncatedError' })
   })
 
   test('rejects an unknown mode', () => {
@@ -131,7 +129,7 @@ describe('decode', () => {
   })
 })
 
-describe('Base64EncoderStream', () => {
+describe('EncoderStream', () => {
   test('encodes base64url without padding', async () => {
     const data = randomBytes(1000, 3)
     const options = { alphabet: 'base64url', omitPadding: true } as const
@@ -144,6 +142,22 @@ describe('Base64EncoderStream', () => {
     expect(await encodeStream(chunked(data, 1), options)).toBe(encode(data, options))
   })
 
+  test('wraps large chunks at any line length and line ending', async () => {
+    const data = randomBytes(5000, 6)
+    for (const lineLength of [1, 7, 76, 1000])
+      for (const lineEnding of ['\r\n', '\n', ' é '])
+        for (const omitPadding of [false, true]) {
+          const options = { lineLength, lineEnding, omitPadding }
+          const expected = referenceWrap(
+            referenceEncode(data).replace(/=+$/, omitPadding ? '' : '$&'),
+            lineLength,
+            lineEnding,
+          )
+          expect(await encodeStream(chunked(data, [700, 1001, 650]), options)).toBe(expected)
+          expect(encode(data, options)).toBe(expected)
+        }
+  })
+
   test('encodes a surrogate pair split across string chunks', async () => {
     expect(await encodeStream(['a\uD842', '\uDFB7b'])).toBe(encode('a𠮷b'))
   })
@@ -154,22 +168,25 @@ describe('Base64EncoderStream', () => {
   })
 
   test('emits nothing for empty input', async () => {
-    expect(await collect(fromChunks([]).pipeThrough(new Base64EncoderStream()))).toEqual([])
+    expect(await collect(fromChunks([]).pipeThrough(new EncoderStream()))).toEqual([])
   })
 })
 
-describe('Base64DecoderStream', () => {
+describe('DecoderStream', () => {
   test('decodes string and byte chunks', async () => {
     expect(text(await decodeStream(['YW', utf8('Jj'), 'ZA==']))).toBe('abcd')
   })
 
-  test("errors with a DecodeError on invalid input in 'loose' mode", async () => {
-    await expect(decodeStream(['YWJj', '*'])).rejects.toThrow(DecodeError)
-    await expect(decodeStream(['YQ==', '\r\nYQ=='])).rejects.toThrow(DecodeError)
+  test("errors on invalid input in 'loose' mode", async () => {
+    await expect(decodeStream(['YWJj', '*'])).rejects.toThrow(InvalidInputError)
+    await expect(decodeStream(['YQ==', '\r\nYQ=='])).rejects.toThrow(InvalidInputError)
+    await expect(decodeStream(['YWJj', 'Y'])).rejects.toThrow(TruncatedError)
   })
 
   test("errors at the end when padding is missing in 'strict' mode", async () => {
-    await expect(decodeStream(['YW', 'Jj', 'YQ'], { mode: 'strict' })).rejects.toThrow(DecodeError)
+    await expect(decodeStream(['YW', 'Jj', 'YQ'], { mode: 'strict' })).rejects.toThrow(
+      TruncatedError,
+    )
   })
 
   test('decodes a UTF-8 sequence split across byte chunks in mime mode', async () => {
@@ -222,9 +239,68 @@ describe.runIf(native.toBase64 && native.fromBase64)('fallback matches the nativ
           const input = mostlyValid(seed, alphabet)
           const expected = fail(() => native.fromBase64!(input, { alphabet, lastChunkHandling }))
           const actual = fail(() => createDecoder(alphabet, lastChunkHandling)(input, true))
-          expect(outcome(actual)).toEqual(outcome(expected))
+          expect(nativeOutcome(actual)).toEqual(nativeOutcome(expected))
         }
       }
     }
+  })
+})
+
+describe('known upstream issues', () => {
+  test('base64-js #81 and #47: a character outside the alphabet is rejected, not dropped', () => {
+    expect(() => decode('G\x7F==')).toThrow(InvalidInputError)
+    expect(decode('G\x7F==', { mode: 'mime' })).toEqual(new Uint8Array(0))
+  })
+
+  test('base64-js #73: input of only padding', () => {
+    expect(() => decode('====')).toThrow(InvalidInputError)
+    expect(decode('====', { mode: 'mime' })).toEqual(new Uint8Array(0))
+  })
+
+  test('base64-js #45: unpadded input decodes', () => {
+    expect(decode('HI')).toEqual(new Uint8Array([0x1c]))
+  })
+
+  test('base64-js #31: line breaks are skipped', () => {
+    expect(text(decode('YWJj\r\nZGVm\nZw=='))).toBe('abcdefg')
+  })
+
+  test('base64-js #38 and #43: typed arrays other than Uint8Array are rejected', () => {
+    const digest = new Int8Array([-101, -113, 0, 1])
+    expect(() => encode(digest as unknown as Uint8Array)).toThrow(TypeError)
+    expect(encode(new Uint8Array(digest.buffer))).toBe('m48AAQ==')
+  })
+
+  test('base64-js #44: base64 given as bytes decodes', () => {
+    expect(text(decode(utf8('YWJj\n')))).toBe('abc')
+  })
+
+  test('js-base64 #164: omitPadding removes every padding character', () => {
+    const input = 'asdfasdsdfsdf'
+    expect(encode(input, { omitPadding: true })).toBe(encode(input).replace(/=+$/, ''))
+    expect(encode(input, { omitPadding: true })).not.toContain('=')
+  })
+
+  test('js-base64 #176: a JWT segment decodes as unpadded base64url', () => {
+    const header = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'
+    expect(text(decode(header, { alphabet: 'base64url' }))).toBe('{"alg":"HS256","typ":"JWT"}')
+    expect(() => decode(`${header}.e30`, { alphabet: 'base64url' })).toThrow(InvalidInputError)
+  })
+
+  test('js-base64 #170: multi-byte characters split across chunks encode as one string', async () => {
+    const input = '我们'.repeat(100)
+    for (const size of [1, 2, 4])
+      expect(await encodeStream(chunked(utf8(input), size))).toBe(encode(input))
+  })
+
+  test('libbase64 1.3.3: many padded segments decode into one buffer of the right size', () => {
+    const decoded = decode('AA==\r\n'.repeat(400_000), { mode: 'mime' })
+    expect(decoded.length).toBe(400_000)
+    expect(decoded.buffer.byteLength).toBe(400_000)
+  })
+
+  test('decode returns a buffer of exactly the decoded length', () => {
+    const decoded = decode('YW Jj\r\nZA==')
+    expect(decoded.buffer.byteLength).toBe(decoded.length)
   })
 })

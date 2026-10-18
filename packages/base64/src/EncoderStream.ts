@@ -1,6 +1,6 @@
-import { checkAlphabet, checkLineLength, encode, toBase64, wrap } from './encode.js'
+import { checkAlphabet, checkLineLength, encode, toBase64, toBytes } from './encode.js'
 
-export declare namespace Base64EncoderStream {
+export declare namespace EncoderStream {
   type Options = encode.Options
 }
 
@@ -11,14 +11,14 @@ export declare namespace Base64EncoderStream {
  *
  * @example
  * ```ts
- * import { Base64EncoderStream } from '@portable/base64'
+ * import * as Base64 from '@portable/base64'
  *
  * const response = await fetch('https://example.com/logo.png')
- * const body = response.body!.pipeThrough(new Base64EncoderStream({ lineLength: 76 }))
+ * const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))
  * ```
  */
-export class Base64EncoderStream extends TransformStream<Uint8Array | string, string> {
-  constructor(options: Base64EncoderStream.Options = {}) {
+export class EncoderStream extends TransformStream<Uint8Array | string, string> {
+  constructor(options: EncoderStream.Options = {}) {
     const {
       alphabet = 'base64',
       lineEnding = '\r\n',
@@ -32,7 +32,7 @@ export class Base64EncoderStream extends TransformStream<Uint8Array | string, st
     let highSurrogate = ''
     let column = 0
 
-    const toBytes = (chunk: Uint8Array | string): Uint8Array => {
+    const readChunk = (chunk: Uint8Array | string): Uint8Array => {
       if (typeof chunk === 'string') {
         let text = highSurrogate + chunk
         highSurrogate = ''
@@ -43,29 +43,37 @@ export class Base64EncoderStream extends TransformStream<Uint8Array | string, st
         }
         return utf8.encode(text)
       }
-      if (highSurrogate === '') return chunk
+      if (highSurrogate === '') return toBytes(chunk)
       const pending = utf8.encode(highSurrogate)
       highSurrogate = ''
-      return concat(pending, chunk)
+      return concat(pending, toBytes(chunk))
     }
 
-    const emit = (text: string, controller: TransformStreamDefaultController<string>) => {
-      if (text === '') return
-      if (lineLength === false) return controller.enqueue(text)
-      controller.enqueue(wrap(text, lineLength, lineEnding, column))
-      column = ((column + text.length - 1) % lineLength) + 1
+    const emit = (
+      bytes: Uint8Array,
+      final: boolean,
+      controller: TransformStreamDefaultController<string>,
+    ) => {
+      if (bytes.length === 0) return
+      const pad = final && omitPadding
+      controller.enqueue(
+        toBase64(bytes, { alphabet, omitPadding: pad, lineLength, lineEnding }, column),
+      )
+      if (lineLength === false) return
+      const rest = bytes.length % 3
+      const length = ((bytes.length - rest) / 3) * 4 + (rest === 0 ? 0 : pad ? rest + 1 : 4)
+      column = ((column + length - 1) % lineLength) + 1
     }
 
     super({
       transform(chunk, controller) {
-        const bytes = concat(carry, toBytes(chunk))
+        const bytes = concat(carry, readChunk(chunk))
         const whole = bytes.length - (bytes.length % 3)
         carry = bytes.slice(whole)
-        emit(toBase64(bytes.subarray(0, whole), alphabet, false), controller)
+        emit(bytes.subarray(0, whole), false, controller)
       },
       flush(controller) {
-        const rest = concat(carry, utf8.encode(highSurrogate))
-        emit(toBase64(rest, alphabet, omitPadding), controller)
+        emit(concat(carry, utf8.encode(highSurrogate)), true, controller)
       },
     })
   }

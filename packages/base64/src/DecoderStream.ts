@@ -1,7 +1,6 @@
-import { checkMode, createDecoder, decode } from './decode.js'
-import { checkAlphabet } from './encode.js'
+import { createDecoder, decode } from './decode.js'
 
-export declare namespace Base64DecoderStream {
+export declare namespace DecoderStream {
   type Options = decode.Options
 }
 
@@ -9,20 +8,18 @@ export declare namespace Base64DecoderStream {
  * A `TransformStream` that decodes base64 text or bytes. The output is the same as `decode` of all
  * the input at once, however the input is chunked, so line breaks, padding and groups of four
  * characters can be split anywhere. Invalid input in `'loose'` or `'strict'` mode errors the
- * stream with a `DecodeError`.
+ * stream with an `InvalidInputError` or `TruncatedError`.
  *
  * @example
  * ```ts
- * import { Base64DecoderStream } from '@portable/base64'
+ * import * as Base64 from '@portable/base64'
  *
- * const bytes = mimePartBody.pipeThrough(new Base64DecoderStream({ mode: 'mime' }))
+ * const bytes = mimePartBody.pipeThrough(new Base64.DecoderStream({ mode: 'mime' }))
  * ```
  */
-export class Base64DecoderStream extends TransformStream<string | Uint8Array, Uint8Array> {
-  constructor(options: Base64DecoderStream.Options = {}) {
+export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array> {
+  constructor(options: DecoderStream.Options = {}) {
     const { alphabet = 'base64', mode = 'loose' } = options
-    checkAlphabet(alphabet)
-    checkMode(mode)
     const write = createDecoder(alphabet, mode)
     const utf8 = new TextDecoder()
     const enqueue = (

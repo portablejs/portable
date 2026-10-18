@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { decode, DecodeError, encode } from '../index.js'
+import { decode, InvalidInputError, encode } from '../index.js'
 import { latin1 } from './utils.js'
 
 describe('base64-js', () => {
@@ -35,7 +35,7 @@ describe('base64-js', () => {
   })
 
   test('rejects data after padding, or decodes it in mime mode', () => {
-    expect(() => decode('SQ==QU0=')).toThrow(DecodeError)
+    expect(() => decode('SQ==QU0=')).toThrow(InvalidInputError)
     expect(String.fromCharCode(...decode('SQ==QU0=', { mode: 'mime' }))).toBe('IAM')
   })
 
@@ -44,6 +44,6 @@ describe('base64-js', () => {
     expect(decode('//++/++/++//')).toEqual(expected)
     expect(decode('__--_--_--__', { alphabet: 'base64url' })).toEqual(expected)
     expect(decode('__--_--_--__', { mode: 'mime' })).toEqual(expected)
-    expect(() => decode('__--_--_--__')).toThrow(DecodeError)
+    expect(() => decode('__--_--_--__')).toThrow(InvalidInputError)
   })
 })

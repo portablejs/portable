@@ -1,4 +1,5 @@
-export { Base64DecoderStream } from './Base64DecoderStream.js'
-export { Base64EncoderStream } from './Base64EncoderStream.js'
-export { decode, DecodeError, type Mode } from './decode.js'
+export { decode, type Mode } from './decode.js'
+export { DecoderStream } from './DecoderStream.js'
 export { encode, type Alphabet } from './encode.js'
+export { EncoderStream } from './EncoderStream.js'
+export { InvalidInputError, TruncatedError } from './errors.js'

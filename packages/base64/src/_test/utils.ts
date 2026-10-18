@@ -1,4 +1,4 @@
-import { Base64DecoderStream, Base64EncoderStream, decode, encode } from '../index.js'
+import { DecoderStream, EncoderStream, decode, encode } from '../index.js'
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
@@ -40,14 +40,14 @@ export async function encodeStream(
   chunks: readonly (Uint8Array | string)[],
   options?: encode.Options,
 ): Promise<string> {
-  return (await collect(fromChunks(chunks).pipeThrough(new Base64EncoderStream(options)))).join('')
+  return (await collect(fromChunks(chunks).pipeThrough(new EncoderStream(options)))).join('')
 }
 
 export async function decodeStream(
   chunks: readonly (Uint8Array | string)[],
   options?: decode.Options,
 ): Promise<Uint8Array> {
-  return concat(await collect(fromChunks(chunks).pipeThrough(new Base64DecoderStream(options))))
+  return concat(await collect(fromChunks(chunks).pipeThrough(new DecoderStream(options))))
 }
 
 /** Splits `input` into pieces of the given sizes, used in turn. A size of 0 makes an empty chunk. */

@@ -1,4 +1,5 @@
-import { type Alphabet, checkAlphabet } from './encode.js'
+import type { Alphabet } from './encode.js'
+import { InvalidInputError, TruncatedError } from './errors.js'
 
 /**
  * How `decode` treats input that is not canonical base64.
@@ -25,34 +26,33 @@ export declare namespace decode {
  *
  * @example
  * ```ts
- * import { decode } from '@portable/base64'
+ * import * as Base64 from '@portable/base64'
  *
- * new TextDecoder().decode(decode('aGVs\r\nbG8')) // 'hello'
- * decode('-_8', { alphabet: 'base64url' }) // Uint8Array [0xfb, 0xff]
- * decode('YQ==\r\nYg==', { mode: 'mime' }) // the bytes of 'ab'
+ * new TextDecoder().decode(Base64.decode('aGVs\r\nbG8')) // 'hello'
+ * Base64.decode('-_8', { alphabet: 'base64url' }) // Uint8Array [0xfb, 0xff]
+ * Base64.decode('YQ==\r\nYg==', { mode: 'mime' }) // the bytes of 'ab'
  * ```
  *
- * @throws {DecodeError} When the input is invalid in `'loose'` or `'strict'` mode.
+ * @throws {InvalidInputError} When `'loose'` or `'strict'` mode finds a character or padding
+ * that is not allowed.
+ * @throws {TruncatedError} When `'loose'` or `'strict'` mode finds the input ending inside a group.
  */
 export function decode(input: string | Uint8Array, options: decode.Options = {}): Uint8Array {
   const { alphabet = 'base64', mode = 'loose' } = options
-  checkAlphabet(alphabet)
-  checkMode(mode)
+  const state = createState(alphabet, mode)
   const text = typeof input === 'string' ? input : utf8.decode(input)
   if (nativeFromBase64 && mode !== 'mime') {
     try {
       return nativeFromBase64.call(Uint8Array, text, { alphabet, lastChunkHandling: mode })
     } catch (error) {
-      if (error instanceof SyntaxError) throw new DecodeError(error.message, { cause: error })
-      throw error
+      if (!(error instanceof SyntaxError)) throw error
+      // The native SyntaxError doesn't say which kind of problem it found, and the fallback throws
+      // on exactly the same input with the right error class.
+      decodeChunk(state, text, true)
+      throw new InvalidInputError(error.message, { cause: error })
     }
   }
-  return createDecoder(alphabet, mode)(text, true)
-}
-
-/** Thrown when `decode` or `Base64DecoderStream` gets invalid input in `'loose'` or `'strict'` mode. */
-export class DecodeError extends Error {
-  override name = 'Base64.DecodeError'
+  return decodeChunk(state, text, true)
 }
 
 const utf8 = new TextDecoder()
@@ -62,11 +62,6 @@ type NativeFromBase64 = (
   options: { alphabet: Alphabet; lastChunkHandling: 'loose' | 'strict' },
 ) => Uint8Array
 const nativeFromBase64: NativeFromBase64 | undefined = Reflect.get(Uint8Array, 'fromBase64')
-
-export function checkMode(mode: unknown): void {
-  if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime')
-    throw new TypeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`)
-}
 
 function table(characters: string): Int8Array {
   const values = new Int8Array(128).fill(-1)
@@ -84,6 +79,33 @@ const tables: Record<Alphabet | 'both', Int8Array> = {
 const isWhitespace = (code: number) =>
   code === 0x20 || code === 0x09 || code === 0x0a || code === 0x0c || code === 0x0d
 
+type State = {
+  values: Int8Array
+  mime: boolean
+  strict: boolean
+  bits: number
+  count: number
+  /** 0: no padding yet, 1: one `=` read after two characters, 2: padding complete. */
+  padding: number
+  offset: number
+}
+
+function createState(alphabet: Alphabet, mode: Mode): State {
+  if (alphabet !== 'base64' && alphabet !== 'base64url')
+    throw new TypeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
+  if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime')
+    throw new TypeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`)
+  return {
+    values: mode === 'mime' ? tables.both : tables[alphabet],
+    mime: mode === 'mime',
+    strict: mode === 'strict',
+    bits: 0,
+    count: 0,
+    padding: 0,
+    offset: 0,
+  }
+}
+
 /**
  * Returns a function that decodes text written to it piece by piece. Pass `final: true` with the
  * last piece. Decoding a whole input in one call gives the same result as `Uint8Array.fromBase64`.
@@ -92,24 +114,69 @@ export function createDecoder(
   alphabet: Alphabet,
   mode: Mode,
 ): (text: string, final: boolean) => Uint8Array {
-  const mime = mode === 'mime'
-  const strict = mode === 'strict'
-  const values = mime ? tables.both : tables[alphabet]
-  let bits = 0
-  let count = 0
-  // 0: no padding yet, 1: one `=` read after two characters, 2: padding complete.
-  let padding = 0
-  let offset = 0
+  const state = createState(alphabet, mode)
+  return (text, final) => decodeChunk(state, text, final)
+}
 
-  return (text, final) => {
-    const length = text.length
-    const out = new Uint8Array(Math.ceil((length + count) / 4) * 3)
-    let j = 0
+function invalid(state: State, index: number, problem: string): never {
+  throw new InvalidInputError(`${problem} at index ${state.offset + index}.`)
+}
 
-    const fail = (message: string): never => {
-      throw new DecodeError(message)
+function decodeChunk(state: State, text: string, final: boolean): Uint8Array {
+  const { values, mime, strict } = state
+  let { bits, count, padding } = state
+  const length = text.length
+  let end = length
+  while (end > 0 && text.charCodeAt(end - 1) === 0x3d) end--
+  const out = new Uint8Array(Math.ceil((end + count) / 4) * 3)
+  let j = 0
+  let i = 0
+
+  while (i < length) {
+    if (count === 0 && padding === 0) {
+      for (; i + 4 <= length; i += 4) {
+        const c0 = text.charCodeAt(i)
+        const c1 = text.charCodeAt(i + 1)
+        const c2 = text.charCodeAt(i + 2)
+        const c3 = text.charCodeAt(i + 3)
+        if ((c0 | c1 | c2 | c3) > 127) break
+        const v0 = values[c0]!
+        const v1 = values[c1]!
+        const v2 = values[c2]!
+        const v3 = values[c3]!
+        if ((v0 | v1 | v2 | v3) < 0) break
+        const v = (v0 << 18) | (v1 << 12) | (v2 << 6) | v3
+        out[j] = v >> 16
+        out[j + 1] = v >> 8
+        out[j + 2] = v
+        j += 3
+      }
+      if (i >= length) break
     }
-    const endGroup = () => {
+
+    const code = text.charCodeAt(i)
+    const value = code < 128 ? values[code]! : -1
+    if (value >= 0) {
+      if (padding !== 0) invalid(state, i, 'Unexpected character after padding')
+      bits = (bits << 6) | value
+      if (++count === 4) {
+        out[j] = bits >> 16
+        out[j + 1] = bits >> 8
+        out[j + 2] = bits
+        j += 3
+        bits = 0
+        count = 0
+      }
+    } else if (code === 0x3d) {
+      if (!mime) {
+        if (padding === 1) padding = 2
+        else if (padding === 2 || count < 2) invalid(state, i, 'Unexpected padding')
+        else {
+          if (strict && (count === 2 ? bits & 0xf : bits & 0x3) !== 0)
+            invalid(state, i, 'Non-zero bits before padding')
+          padding = count === 2 ? 1 : 2
+        }
+      }
       if (count === 2) out[j++] = bits >> 4
       else if (count === 3) {
         out[j++] = bits >> 10
@@ -117,69 +184,29 @@ export function createDecoder(
       }
       bits = 0
       count = 0
+    } else if (!mime && !isWhitespace(code)) {
+      invalid(state, i, 'Invalid character')
     }
-
-    let i = 0
-    while (i < length) {
-      if (count === 0 && padding === 0) {
-        for (; i + 4 <= length; i += 4) {
-          const c0 = text.charCodeAt(i)
-          const c1 = text.charCodeAt(i + 1)
-          const c2 = text.charCodeAt(i + 2)
-          const c3 = text.charCodeAt(i + 3)
-          if ((c0 | c1 | c2 | c3) > 127) break
-          const v0 = values[c0]!
-          const v1 = values[c1]!
-          const v2 = values[c2]!
-          const v3 = values[c3]!
-          if ((v0 | v1 | v2 | v3) < 0) break
-          const v = (v0 << 18) | (v1 << 12) | (v2 << 6) | v3
-          out[j] = v >> 16
-          out[j + 1] = v >> 8
-          out[j + 2] = v
-          j += 3
-        }
-        if (i >= length) break
-      }
-
-      const code = text.charCodeAt(i++)
-      const value = code < 128 ? values[code]! : -1
-      if (value >= 0) {
-        if (padding !== 0) fail(`Unexpected character after padding at index ${offset + i - 1}.`)
-        bits = (bits << 6) | value
-        if (++count === 4) {
-          out[j] = bits >> 16
-          out[j + 1] = bits >> 8
-          out[j + 2] = bits
-          j += 3
-          bits = 0
-          count = 0
-        }
-      } else if (code === 0x3d) {
-        if (mime) endGroup()
-        else if (padding === 1) padding = 2
-        else if (padding === 2 || count < 2) fail(`Unexpected padding at index ${offset + i - 1}.`)
-        else {
-          if (strict && (count === 2 ? bits & 0xf : bits & 0x3) !== 0)
-            fail(`Non-zero bits before padding at index ${offset + i - 1}.`)
-          padding = count === 2 ? 1 : 2
-          endGroup()
-        }
-      } else if (!mime && !isWhitespace(code)) {
-        fail(`Invalid character at index ${offset + i - 1}.`)
-      }
-    }
-
-    if (final) {
-      if (padding === 1) fail('Incomplete padding at the end of the input.')
-      if (count > 0) {
-        if (strict) fail('Missing padding at the end of the input.')
-        if (count === 1 && !mime)
-          fail('A single character at the end of the input encodes no byte.')
-        endGroup()
-      }
-    }
-    offset += length
-    return j === out.length ? out : out.slice(0, j)
+    i++
   }
+
+  if (final && !mime) {
+    if (padding === 1) throw new TruncatedError('Incomplete padding at the end of the input.')
+    if (count > 0 && strict) throw new TruncatedError('Missing padding at the end of the input.')
+    if (count === 1) throw new TruncatedError('The input ends with a single character of a group.')
+  }
+  if (final) {
+    if (count === 2) out[j++] = bits >> 4
+    else if (count === 3) {
+      out[j++] = bits >> 10
+      out[j++] = bits >> 2
+    }
+    bits = 0
+    count = 0
+  }
+  state.bits = bits
+  state.count = count
+  state.padding = padding
+  state.offset += length
+  return j === out.length ? out : out.slice(0, j)
 }

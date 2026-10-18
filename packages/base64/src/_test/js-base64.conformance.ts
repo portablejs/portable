@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { decode, DecodeError, encode } from '../index.js'
+import { decode, InvalidInputError, encode } from '../index.js'
 import { latin1, text } from './utils.js'
 
 const binary = (bytes: Uint8Array) => String.fromCharCode(...bytes)
@@ -53,7 +53,7 @@ describe('js-base64', () => {
   })
 
   describe('BOM', () => {
-    const bom = '﻿'
+    const bom = String.fromCharCode(0xfeff)
     const keepBom = new TextDecoder('utf-8', { ignoreBOM: true })
 
     test('decode keeps a leading BOM', () => {
@@ -76,7 +76,7 @@ describe('js-base64', () => {
     test('decode url-safe', () => {
       expect(text(decode('5bCP6aO85by-', { alphabet: 'base64url' }))).toBe('小飼弾')
       expect(text(decode('5bCP6aO85by-', { mode: 'mime' }))).toBe('小飼弾')
-      expect(() => decode('5bCP6aO85by-')).toThrow(DecodeError)
+      expect(() => decode('5bCP6aO85by-')).toThrow(InvalidInputError)
     })
   })
 
