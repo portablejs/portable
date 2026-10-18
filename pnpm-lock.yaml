@@ -221,6 +221,15 @@ importers:
       '@noble/hashes':
         specifier: ^2.4.0
         version: 2.4.0
+
+  packages/oauth1/test:
+    devDependencies:
+      '@portable/oauth1':
+        specifier: workspace:*
+        version: link:..
+      '@noble/hashes':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5

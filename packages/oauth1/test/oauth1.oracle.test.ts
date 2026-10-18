@@ -2,7 +2,7 @@ import { createHash, createHmac } from 'node:crypto'
 import { OAuth as NodeOAuth } from 'oauth'
 import OAuth from 'oauth-1.0a'
 import { describe, expect, test } from 'vite-plus/test'
-import * as OAuth1 from '../index.js'
+import * as OAuth1 from '@portable/oauth1'
 import { parseHeader, pkcs1 } from './utils.js'
 
 function random(seed: number) {

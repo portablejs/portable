@@ -37,6 +37,7 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 
 ## Fixed
 
+- A change to `pnpm-lock.yaml` makes the pre-push hook run every package's tests, and under load from about ten agents some timed out, blocking pushes. The test timeout is now 30 s.
 - Heavy tests (png's PngSuite, base64's big data) passed the 5 s default timeout when several agents loaded the machine, which failed pre-push hooks. The timeout is now 30 s.
 - Build scripts under `packages/*/scripts/` needed an `oxlint-disable` comment to import `node:*`. `vite.config.ts` now has an override for them.
 - Tests couldn't import another workspace package ("Failed to resolve entry for package"), because Vite didn't use the `src` export condition and fell back to an unbuilt `dist/`. `vite.config.ts` now adds `src` to `resolve.conditions` for browsers and Node.

@@ -6,10 +6,7 @@
     "dev": "zile dev"
   },
   "devDependencies": {
-    "@noble/hashes": "^2.4.0",
-    "@types/node": "^26.6.5",
-    "oauth": "^0.10.2",
-    "oauth-1.0a": "^2.2.6"
+    "@noble/hashes": "^2.4.0"
   },
   "[!start-pkg]": "",
   "version": "0.0.0",
@@ -48,8 +45,7 @@
   },
   "files": [
     "dist",
-    "src",
-    "!src/_test"
+    "src"
   ],
   "exports": {
     ".": {

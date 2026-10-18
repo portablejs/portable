@@ -2,6 +2,15 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/oauth1` API
+
+- **`sign(request, options)` returns a new signed `Request`; `authorization(request, options)` returns only the header value.** oauth-1.0a's `authorize` and `toHeader` were the alternatives. Inputs are `Request` objects, so what gets signed is exactly the URL and body `fetch` sends, at about 10 µs per POST for reading the body.
+- **The option is `signatureMethod`, defaulting to HMAC-SHA1,** because `method` reads as the HTTP method. oauth-1.0a defaults to PLAINTEXT.
+- **The pluggable function is a hash (`digest`), and HMAC is built on it,** so one function serves the signature and the body hash and has the shape of noble's hashes and `crypto.subtle.digest`. It costs about 15 lines of HMAC code, checked against WebCrypto and `node:crypto`.
+- **The root default is `@noble/hashes`** (8 µs per HMAC on Node against 60 µs for `crypto.subtle`), as docs/architecture.md describes. `webhooks` chose WebCrypto instead; the API review will make the two consistent.
+- **The signed form POST benchmark allows 50%.** Reading the body and building a second `Request` in undici costs more than oauth-1.0a's string handling; hashing is not the gap.
+- **No HTTP client.** `fetch` follows redirects with the old signature, and the README shows how to re-sign.
+
 ## `@portable/webhooks` API
 
 - **One `verify(input, { scheme, secret })` with `scheme: 'standard' | 'svix' | 'stripe' | 'github' | 'slack'`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers.

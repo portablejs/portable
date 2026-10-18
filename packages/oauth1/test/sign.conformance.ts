@@ -1,8 +1,8 @@
 import { sha1 } from '@noble/hashes/legacy.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Core from '../core.js'
-import * as OAuth1 from '../index.js'
+import * as Core from '@portable/oauth1/core'
+import * as OAuth1 from '@portable/oauth1'
 import { form, parseHeader, pkcs1, pkcs8, publicKey, signature, twitter } from './utils.js'
 
 const tweetUrl = 'https://api.twitter.com/1/statuses/update.json?include_entities=true'

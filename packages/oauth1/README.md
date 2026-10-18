@@ -94,7 +94,7 @@ await OAuth1.sign(request, { consumer, token, digest })
 
 These behaviors differ on purpose:
 
-- Both libraries sign some requests wrongly, and those requests are signed correctly here: a `+` or an escaped name in the query (oauth-1.0a), a name in both the query and the body (oauth-1.0a keeps one), repeated query names (node-oauth signs `a[0]` and `a[1]`), a form body passed as a string (node-oauth doesn't sign it), a JSON body passed as `data` (oauth-1.0a signs its keys), a default port such as `:443` (oauth-1.0a keeps it), and an uppercase host. [PARITY.md](src/_test/PARITY.md) lists each one with its test.
+- Both libraries sign some requests wrongly, and those requests are signed correctly here: a `+` or an escaped name in the query (oauth-1.0a), a name in both the query and the body (oauth-1.0a keeps one), repeated query names (node-oauth signs `a[0]` and `a[1]`), a form body passed as a string (node-oauth doesn't sign it), a JSON body passed as `data` (oauth-1.0a signs its keys), a default port such as `:443` (oauth-1.0a keeps it), and an uppercase host. [PARITY.md](test/PARITY.md) lists each one with its test.
 - The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
 - `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret. RFC 5849 requires both. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
 - The header separator is always `", "`, and the nonce is always 32 hex digits from `crypto.getRandomValues` instead of `Math.random`.

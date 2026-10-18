@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import * as OAuth1 from '../index.js'
+import * as OAuth1 from '@portable/oauth1'
 import { baseString, form, hmac, parseHeader, signature } from './utils.js'
 
 const somehost = {

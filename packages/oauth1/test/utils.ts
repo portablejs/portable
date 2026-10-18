@@ -1,5 +1,5 @@
 import { expect } from 'vite-plus/test'
-import * as OAuth1 from '../index.js'
+import * as OAuth1 from '@portable/oauth1'
 
 export { default as pkcs1 } from './fixtures/rsa-pkcs1.pem?raw'
 export { default as pkcs8 } from './fixtures/rsa-pkcs8.pem?raw'
