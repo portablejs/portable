@@ -54,6 +54,10 @@ The numbers in the table come from `scripts/readme-stats.ts`. Run `pnpm readme` 
 | L3 | `@portable/dmarc` | mailauth's DMARC | In progress | – | – | – | – | – | – |
 | L3 | `@portable/arc` | mailauth's ARC | Planned | – | – | – | – | – | – |
 | L3 | `@portable/mailauth` | mailauth | Planned | – | – | – | – | – | – |
+| L0 | [`@portable/crypto`](packages/crypto) | hand-written WebCrypto helpers | Built | not measured | not measured | – | – | 12 of 18, 6 n/a | 6 |
+| L1 | [`@portable/rate-limit`](packages/rate-limit) | rate-limiter-flexible, limiter | Built | not measured | not measured | – | – | 39 of 59, 20 n/a | 6 |
+| L2 | [`@portable/web-push`](packages/web-push) | web-push | Built | not measured | not measured | – | – | 49 of 58, 9 n/a | 13 |
+| L2 | [`@portable/rdap`](packages/rdap) | whoiser, whois-json, node-rdap | Built | not measured | not measured | – | – | 77 of 90, 13 n/a | 11 |
 <!-- packages:end -->
 
 Each layer depends only on the layers below it. Later candidates (XML signatures and SAML, an xlsx writer) are listed at the end of [docs/packages.md](docs/packages.md).

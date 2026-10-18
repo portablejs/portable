@@ -49,6 +49,7 @@ L0  streams   lines   base64   quoted-printable   charset   dns-packet
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency` and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map |
 | `@portable/crypto` | Bytes-in, bytes-out helpers over `crypto.subtle`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | node:crypto `pbkdf2`, hand-written hash formats |
+| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | rate-limiter-flexible, limiter |
 | `@portable/timers` | `sleep`, `retry` with backoff and jitter, and `poll` until a value appears, all cancellable with `AbortSignal`. Timeouts use `AbortSignal.timeout` and `AbortSignal.any`. | p-retry, async-retry, delay, p-wait-for |
 
 #### `streams` bridge API
@@ -109,6 +110,8 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | --- | --- | --- | --- |
 | `@portable/mail` | Compose a raw RFC 5322 message as a `ReadableStream`: text/html alternatives, attachments, inline images, custom headers. No transport. | `mime-headers`, `base64`, `quoted-printable`, `streams` | nodemailer's MailComposer |
 | `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` fits): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | (none) | nodemailer's SMTP transport, smtp-connection |
+| `@portable/web-push` | Send Web Push messages with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292) on WebCrypto and `fetch`. | (none) | web-push |
+| `@portable/rdap` | RDAP lookups for domains, IPs and ASNs with IANA bootstrap and normalized results. | `idna`, `ip` | whoiser, whois-json, node-rdap |
 | `@portable/dns` | DNS lookups where there is no DNS: `resolveTxt`, `resolveMx` and friends over DNS-over-HTTPS, behind a resolver interface `node:dns/promises` also fits. | `dns-packet` | node:dns on Workers and browsers |
 | `@portable/dkim` | DKIM sign and verify, with streaming body hashes. Keys via WebCrypto (RSA) or noble (ed25519); DNS via an injected resolver. | `mime-headers`, `mime-stream`, `base64`; crypto peer | DKIM in mailauth, nodemailer |
 | `@portable/webhooks` | Verify signed webhooks: Standard Webhooks plus Stripe, GitHub, Slack and Svix schemes, with timing-safe compare and replay window. | `base64`; crypto peer | per-provider SDK verifiers |
