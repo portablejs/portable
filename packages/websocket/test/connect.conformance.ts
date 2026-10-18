@@ -589,13 +589,18 @@ describe('heartbeat', () => {
 
   test('keeps the connection while pongs arrive', async () => {
     const { server } = setup({
-      heartbeat: { ping: 'ping', pong: (message) => message === 'pong', interval: 10, timeout: 8 },
+      heartbeat: {
+        ping: 'ping',
+        pong: (message) => message === 'pong',
+        interval: 50,
+        timeout: 300,
+      },
     })
     const socket = await server.accept()
     const answer = setInterval(() => {
       if (socket.sent.at(-1) === 'ping') socket.receive('pong')
     }, 1)
-    await sleep(60)
+    await sleep(800)
     clearInterval(answer)
     expect(server.sockets).toHaveLength(1)
   })

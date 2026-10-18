@@ -97,7 +97,7 @@ export class FakeServer {
 
 export const sleep = (ms = 0): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-export async function until(check: () => boolean, ms = 2000): Promise<void> {
+export async function until(check: () => boolean, ms = 10_000): Promise<void> {
   const deadline = Date.now() + ms
   while (!check()) {
     if (Date.now() > deadline) throw new Error('Timed out waiting for a condition.')

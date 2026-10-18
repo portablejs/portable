@@ -7,7 +7,7 @@ import {
 
 /** A `ws` server on a free local port. */
 export async function listen(
-  onConnection: (socket: ServerSocket) => void = echo,
+  onConnection: (socket: ServerSocket, request: { url?: string | undefined }) => void = echo,
   options: ServerOptions = {},
 ): Promise<{ server: WebSocketServer; url: string; port: number; close: () => Promise<void> }> {
   const server = new WebSocketServer({ port: 0, host: '127.0.0.1', ...options })
