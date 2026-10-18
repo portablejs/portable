@@ -1,0 +1,10 @@
+{
+  "name": "@portable/rdap-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@portable/rdap": "workspace:*",
+    "@types/node": "^26.6.5",
+    "node-rdap": "^1.0.0"
+  }
+}

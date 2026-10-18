@@ -1,0 +1,45 @@
+{
+  "name": "@portable/rdap",
+  "description": "Look up domains, IP addresses and AS numbers over RDAP, with IANA bootstrap and normalized results, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/rdap"
+  },
+  "keywords": [
+    "rdap",
+    "whois",
+    "domain",
+    "ip",
+    "asn",
+    "registrar",
+    "rfc9083",
+    "rfc9224"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
