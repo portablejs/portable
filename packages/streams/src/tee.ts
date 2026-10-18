@@ -17,6 +17,8 @@ export declare namespace tee {
      * @default 'chunks'
      */
     unit?: 'chunks' | 'bytes' | undefined
+    /** Aborting errors every branch with `signal.reason` and cancels the source. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -32,7 +34,8 @@ type Branch<T> = {
  * as fast as the slowest branch allows: once a branch holds `highWaterMark` unread chunks or
  * bytes, the source isn't read until that branch reads. Cancelling a branch removes it, and
  * the source is cancelled only when every branch is cancelled, with the last branch's reason.
- * An error in the source errors every branch.
+ * An error in the source errors every branch. Aborting `signal` errors every branch with its
+ * reason and cancels the source.
  *
  * Branches receive the same chunk objects, as with `ReadableStream.prototype.tee()`, so a
  * branch must copy a chunk (`chunk.slice()`) before changing it.
@@ -52,7 +55,7 @@ export function tee<T>(
   count: number,
   options: tee.Options = {},
 ): ReadableStream<T>[] {
-  const { unit = 'chunks', highWaterMark = unit === 'bytes' ? 65536 : 16 } = options
+  const { signal, unit = 'chunks', highWaterMark = unit === 'bytes' ? 65536 : 16 } = options
   if (!Number.isInteger(count) || count < 1)
     throw new RangeError(`count must be a positive integer, got ${count}.`)
   if (!(highWaterMark >= 0))
@@ -62,10 +65,19 @@ export function tee<T>(
   const active = new Set<Branch<T>>()
   let reading = false
 
+  const finish = () => {
+    active.clear()
+    signal?.removeEventListener('abort', abort)
+  }
   const fail = (error: unknown) => {
     for (const branch of active) branch.controller.error(error)
-    active.clear()
+    finish()
   }
+  const failAndCancel = (error: unknown) => {
+    fail(error)
+    void reader.cancel(error).catch(() => {})
+  }
+  const abort = () => failAndCancel(signal!.reason)
 
   const pump = () => {
     if (reading) return
@@ -83,16 +95,13 @@ export function tee<T>(
           for (const chunk of queue) controller.enqueue(chunk)
           controller.close()
         }
-        active.clear()
-        return
+        return finish()
       }
       let size: number
       try {
         size = sizeOf(result.value)
       } catch (error) {
-        fail(error)
-        void reader.cancel(error).catch(() => {})
-        return
+        return failAndCancel(error)
       }
       for (const branch of active) {
         if (branch.waiting) {
@@ -107,7 +116,7 @@ export function tee<T>(
     }, fail)
   }
 
-  return Array.from({ length: count }, () => {
+  const branches = Array.from({ length: count }, () => {
     let branch!: Branch<T>
     return new ReadableStream<T>(
       {
@@ -125,12 +134,16 @@ export function tee<T>(
           pump()
         },
         cancel(reason) {
-          active.delete(branch)
+          if (!active.delete(branch)) return
           if (active.size > 0) return pump()
+          finish()
           return reader.cancel(reason)
         },
       },
       { highWaterMark: 0 },
     )
   })
+  if (signal?.aborted) abort()
+  else signal?.addEventListener('abort', abort)
+  return branches
 }

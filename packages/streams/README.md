@@ -47,7 +47,7 @@ const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
 | `concat(...sources)` | One stream with every chunk of the first source, then the next. A source is read only after the one before it ends. |
 | `merge(...sources)` | One stream that reads every source at once and passes chunks on as they arrive. |
 | `limitBytes(maxBytes)` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
-| `tee(source, count, { highWaterMark, unit })` | `count` streams that each receive every chunk of `source`. |
+| `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`. |
 
 Sources are streams, async iterables or iterables. An error in one source errors the output and cancels the others, and cancelling the output cancels every source.
 
@@ -57,7 +57,7 @@ Sources are streams, async iterables or iterables. An error in one source errors
 - It reads the source only as fast as the slowest branch. Once a branch holds `highWaterMark` unread chunks, `tee` stops reading the source until that branch reads, so the fastest branch is at most that far ahead. The platform's `tee()` keeps reading and buffers without limit for a branch that isn't read. `highWaterMark` defaults to 16 chunks. With `unit: 'bytes'` it counts bytes, as `maxBytes` does, and defaults to 65536.
 - Cancelling a branch removes it, so the slowest remaining branch sets the pace. The source is cancelled when every branch is cancelled, with the reason from the last one. The platform's `tee()` does the same, with both reasons in an array.
 
-An error in the source errors every branch. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
+An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
 
 ```ts
 const [forExif, forStorage, forResize] = Streams.tee(upload.stream(), 3, {

@@ -110,6 +110,32 @@ describe('tee', () => {
     ])
   })
 
+  test('aborting the signal errors every branch and cancels the source', async () => {
+    const reason = new Error('aborted')
+    let cancelled: unknown
+    const source = counting({ onCancel: (r) => void (cancelled = r) })
+    const controller = new AbortController()
+    const branches = tee(source.stream, 2, { signal: controller.signal })
+    const reader = branches[0]!.getReader()
+    expect(await reader.read()).toEqual({ done: false, value: 1 })
+    controller.abort(reason)
+    await expect(reader.read()).rejects.toBe(reason)
+    await expect(collect(branches[1]!)).rejects.toBe(reason)
+    expect(cancelled).toBe(reason)
+  })
+
+  test('an aborted signal errors every branch at once', async () => {
+    const reason = new Error('aborted')
+    const source = counting()
+    const branches = tee(source.stream, 2, { signal: AbortSignal.abort(reason) })
+    const results = await Promise.allSettled(branches.map(collect))
+    expect(results).toEqual([
+      { status: 'rejected', reason },
+      { status: 'rejected', reason },
+    ])
+    expect(source.pulls).toBe(0)
+  })
+
   test('stops reading the source while a branch holds highWaterMark unread chunks', async () => {
     const source = counting()
     const [fast, slow] = tee(source.stream, 2, { highWaterMark: 4 })
