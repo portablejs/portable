@@ -99,6 +99,8 @@ expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), {
 
 Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIST=1`. With it set, `vite.config.ts` drops the `src` condition and lets Node load each package's `dist/` directly, because source run through Vitest pays for a getter on every call between modules and measured up to 2× slower. They are not part of the git hooks, because timing on a laptop varies too much to block a push.
 
+`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. A new package needs an entry there, or its README gets no tables. The root README lists packages by category by hand.
+
 ## Git hooks
 
 There is no CI yet, so checks run in git hooks. `pnpm install` installs them through `vp config`, and the scripts are in `.vite-hooks/`:

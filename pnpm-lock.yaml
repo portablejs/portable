@@ -83,6 +83,9 @@ importers:
       '@portable/dkim':
         specifier: workspace:*
         version: link:../../dkim
+      '@portable/dns':
+        specifier: workspace:*
+        version: link:../../dns
       '@portable/fuzz':
         specifier: workspace:*
         version: link:../../../tools/fuzz
@@ -4471,7 +4474,7 @@ snapshots:
 
   '@types/through2@5.0.0':
     dependencies:
-      through2: 4.0.2
+      through2: 5.0.11
 
   '@types/through@0.0.33':
     dependencies:

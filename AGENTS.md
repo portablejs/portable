@@ -11,9 +11,9 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm test` | All test projects: Node and browsers. |
 | `pnpm test:changed` | Node tests affected by changes since `origin/main`. The pre-push hook runs this. |
 | `pnpm fuzz` | Runs only the fuzz tests (`*.fuzz.conformance.ts`) in Node, with 10,000 runs per property instead of 100. |
-| `pnpm bench` | Builds every package, then runs the benchmarks (`*.bench.ts`) against the built `dist/`, comparing each package with the library it replaces. |
+| `pnpm bench` | Builds every package, then runs each package's benchmarks (`*.bench.ts`) against the built `dist/`, one package at a time, and saves the results in `.bench/`. Pass package names to `node scripts/bench.ts` to run only those. |
 | `pnpm coverage` | Node tests with V8 coverage of `packages/*/src`, written to `coverage/coverage-summary.json`. |
-| `pnpm readme` | Runs `pnpm coverage`, `pnpm bench` and `scripts/bundle-size.ts`, then `scripts/readme-stats.ts` rewrites the package table in `README.md` and the size line in each package README. |
+| `pnpm readme` | Runs `pnpm bench` and `scripts/bundle-size.ts`, then `scripts/readme-stats.ts` rewrites the benchmark and stats tables in each package README. `scripts/readme-tables.ts` lists each table's columns and rows. |
 | `pnpm build` | Builds every package with zile into `dist/`. |
 | `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. |
 

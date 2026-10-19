@@ -58,10 +58,15 @@ export const tables: Record<string, Table> = {
         { from: 'mailauth/lib/arc/index.js', use: ['arc', 'sealMessage'] },
         { from: 'mailauth/lib/dkim/verify.js', use: ['dkimVerify'] },
       ]),
+      node('node:crypto, hash and two signatures only', '`node:crypto`, hashing and signing only'),
     ],
     rows: [
-      { label: 'Seal a 10 KB message', test: 'seals a 10 KB message' },
-      { label: 'Verify a 10 KB message with two ARC sets', test: 'verifies a 10 KB message' },
+      {
+        label: 'Verify a 250 KB message with two ARC sets',
+        test: 'verifies a 250 KB message with two ARC sets',
+      },
+      { label: 'Seal a 250 KB message', test: 'seals a 250 KB message' },
+      { label: 'Seal and verify a short message', test: 'seals and verifies a short message' },
     ],
   },
   base64: {
@@ -461,6 +466,22 @@ export const tables: Record<string, Table> = {
       {
         label: 'Encode a message with a 4 MB attachment from a stream',
         test: '4 MB attachment read from a stream',
+      },
+    ],
+  },
+  mailauth: {
+    columns: [
+      ours('mailauth', ['authenticate'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      lib('mailauth', [{ from: 'mailauth', use: ['authenticate'] }]),
+    ],
+    rows: [
+      {
+        label: 'Authenticate a 250 KB message with a DKIM signature and an ARC set',
+        test: 'authenticates a 250 KB message',
+      },
+      {
+        label: 'Authenticate and seal a short message',
+        test: 'authenticates and seals a short message',
       },
     ],
   },

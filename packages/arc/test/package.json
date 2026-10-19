@@ -5,6 +5,7 @@
   "devDependencies": {
     "@portable/arc": "workspace:*",
     "@portable/dkim": "workspace:*",
+    "@portable/dns": "workspace:*",
     "@portable/fuzz": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",

@@ -68,3 +68,5 @@ Friction hit while working in this repo, so it can be fixed or at least not redi
 | Vite's `server.fs.deny` blocks `*.pem`, `*.key` and `*.crt` fixtures in browser tests, despite AGENTS.md saying any extension works. | Name them `.pem.txt` or `.key.txt`, as dkim does. | Note the exception in AGENTS.md. |
 | `gh` and the GitHub API return 403 for upstream repos, so agents can't list upstream issues. | Fetch the issue pages on github.com with WebFetch. | None. |
 | The LCG seed in several test utils makes "random" bytes that compress about 100 times, so size-limit tests pass without testing anything. | Use xorshift, or `Random.seeded` now that random is on main. | Switch the test utils to `Random.seeded`. |
+| The worktree guard refuses shell commands it can't verify, such as heredocs, `cd dir && git ...` or a variable in a `pnpm` command. | Write scripts with the Write tool and run each command on its own. | None. |
+| `spawnSync('vp')` fails without output when `node_modules/.bin` isn't on `PATH`. | Run `scripts/bench.ts` through `pnpm bench` or `pnpm exec`. It now throws the spawn error. | None. |
