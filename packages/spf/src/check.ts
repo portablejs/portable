@@ -139,8 +139,9 @@ const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
-  const address = typeof input.ip === 'string' ? parseIp(input.ip.trim()) : undefined
-  if (!address) throw new TypeError(`Spf.check: "${String(input.ip)}" is not an IP address`)
+  if (typeof input.ip !== 'string') throw new TypeError('Spf.check: ip must be a string')
+  const address = parseIp(input.ip.trim())
+  if (!address) throw new RangeError(`Spf.check: "${String(input.ip)}" is not an IP address`)
   const client = Ip.unmap(address)
   const helo = stripDot(input.helo ?? '')
   const identity = input.sender ? 'mailfrom' : 'helo'

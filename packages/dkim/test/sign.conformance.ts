@@ -208,9 +208,11 @@ describe('private keys', () => {
       ecdsa.privateKey,
       sha1.privateKey,
       rsaPublic,
-      undefined as unknown as string,
     ])
-      await expect(Dkim.sign(MSG, base({ privateKey }))).rejects.toThrow(TypeError)
+      await expect(Dkim.sign(MSG, base({ privateKey }))).rejects.toThrow(RangeError)
+    await expect(
+      Dkim.sign(MSG, base({ privateKey: undefined as unknown as string })),
+    ).rejects.toThrow(TypeError)
   })
 
   test('refuses an RSA key under 1024 bits (RFC 8301 section 3.2)', async () => {

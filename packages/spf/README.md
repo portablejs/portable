@@ -32,7 +32,7 @@ await Spf.check({ ip, sender, helo }, { resolver: dns })
 
 | Field | Description |
 | --- | --- |
-| `ip` | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. Anything that isn't an IP address throws a `TypeError`. |
+| `ip` | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. A string that isn't an IP address throws a `RangeError`, and a value that isn't a string a `TypeError`. |
 | `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4). |
 | `helo` | The HELO or EHLO name, used for `%{h}` and for an empty sender. |
 
@@ -136,6 +136,6 @@ These results differ from mailauth's default mode on purpose, and match its stri
 
 They differ from both modes:
 
-- An invalid `ip` throws a `TypeError`. mailauth returns `temperror`.
+- An invalid `ip` throws a `RangeError`. mailauth returns `temperror`.
 - A resolver answer of `[]` is a void lookup, as RFC 7208 defines one. mailauth counts only `ENOTFOUND` and `ENODATA` rejections.
 - A name the resolver rejects with `EBADNAME` is an empty answer. mailauth's default mode gives `permerror` for any term.

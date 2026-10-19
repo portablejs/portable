@@ -113,9 +113,14 @@ describe('VAPID Authorization header', () => {
     ['an http: subject', 'http://example.gov'],
     ['an ftp: subject', 'ftp://example.net'],
     ['a mailto: subject with a space', 'mailto: example@example.com'],
+  ])('rejects %s with a RangeError', async ([, subject]) => {
+    await expect(authorizationFor({ subject: subject as string })).rejects.toThrow(RangeError)
+  })
+
+  test.for<[string, unknown]>([
     ['an object subject', {}],
     ['a boolean subject', true],
-  ])('rejects %s', async ([, subject]) => {
+  ])('rejects %s with a TypeError', async ([, subject]) => {
     await expect(authorizationFor({ subject: subject as string })).rejects.toThrow(TypeError)
   })
 
@@ -125,8 +130,6 @@ describe('VAPID Authorization header', () => {
     ['a 60-byte public key', { publicKey: zeros(60) }],
     ['a public key that is not base64url', { publicKey: 'This is invalid' }],
     ['an empty public key', { publicKey: '' }],
-    ['an object public key', { publicKey: {} as string }],
-    ['a boolean public key', { publicKey: true as never }],
     [
       'a public key in standard base64',
       { publicKey: Base64.encode(fromBase64url(keys.publicKey)) },
@@ -135,12 +138,19 @@ describe('VAPID Authorization header', () => {
     ['a 31-byte private key', { privateKey: zeros(31) }],
     ['a private key that is not base64url', { privateKey: 'This is invalid' }],
     ['an empty private key', { privateKey: '' }],
-    ['an object private key', { privateKey: {} as string }],
     [
       'a private key in standard base64',
       { privateKey: Base64.encode(fromBase64url(keys.privateKey)) },
     ],
-  ])('rejects %s', async ([, override]) => {
+  ])('rejects %s with a RangeError', async ([, override]) => {
+    await expect(authorizationFor(override)).rejects.toThrow(RangeError)
+  })
+
+  test.for<[string, Partial<WebPush.VapidKeys>]>([
+    ['an object public key', { publicKey: {} as string }],
+    ['a boolean public key', { publicKey: true as never }],
+    ['an object private key', { privateKey: {} as string }],
+  ])('rejects %s with a TypeError', async ([, override]) => {
     await expect(authorizationFor(override)).rejects.toThrow(TypeError)
   })
 
@@ -159,6 +169,6 @@ describe('VAPID Authorization header', () => {
 
   test('rejects a private key that belongs to another public key', async () => {
     const other = await WebPush.generateVapidKeys()
-    await expect(authorizationFor({ privateKey: other.privateKey })).rejects.toThrow(TypeError)
+    await expect(authorizationFor({ privateKey: other.privateKey })).rejects.toThrow(RangeError)
   })
 })

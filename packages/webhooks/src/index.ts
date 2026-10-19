@@ -86,8 +86,9 @@ export declare namespace verify {
  *
  * @throws {VerificationError} When a header is missing or malformed, no signature matches, or
  * the timestamp is outside `tolerance`.
- * @throws {TypeError} When a secret is empty or not valid base64, the scheme isn't a scheme
- * object, or the body isn't a string or `Uint8Array`.
+ * @throws {RangeError} When a secret is empty or not valid base64.
+ * @throws {TypeError} When the scheme isn't a scheme object, or the body isn't a string or
+ * `Uint8Array`.
  */
 export async function verify(input: verify.Input, options: verify.Options): Promise<verify.Result> {
   const {
@@ -105,7 +106,7 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
       ? [options.secret]
       : options.secret
   const keys = secrets.map((secret) => keyOf(scheme, secret))
-  if (keys.length === 0) throw new TypeError('No secret')
+  if (keys.length === 0) throw new RangeError('No secret')
 
   const signed = scheme.parse(
     input.headers instanceof Headers ? input.headers : new Headers(input.headers),
@@ -169,8 +170,8 @@ export declare namespace sign {
  * await fetch('https://example.com/webhooks', { method: 'POST', body, headers })
  * ```
  *
- * @throws {TypeError} When the secret is empty or not valid base64, or the scheme isn't a scheme
- * object.
+ * @throws {RangeError} When the secret is empty or not valid base64.
+ * @throws {TypeError} When the scheme isn't a scheme object.
  */
 export async function sign(
   body: string | Uint8Array,
@@ -200,7 +201,7 @@ function checkScheme(scheme: Scheme): void {
 function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
   const key =
     typeof secret !== 'string' ? secret : scheme.key ? scheme.key(secret) : utf8.encode(secret)
-  if (key.length === 0) throw new TypeError('Secret is empty')
+  if (key.length === 0) throw new RangeError('Secret is empty')
   return new Uint8Array(key)
 }
 

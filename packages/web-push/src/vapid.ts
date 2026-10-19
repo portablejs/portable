@@ -82,11 +82,11 @@ async function sign(audience: string, vapid: Vapid, exp: number): Promise<string
 }
 
 function checkSubject(subject: unknown): asserts subject is string {
-  if (typeof subject !== 'string' || /\s/.test(subject))
-    throw new TypeError('vapid.subject must be a string without spaces')
+  if (typeof subject !== 'string') throw new TypeError('vapid.subject must be a string')
+  if (/\s/.test(subject)) throw new RangeError('vapid.subject must not contain spaces')
   const url = URL.parse(subject)
   if (url?.protocol !== 'mailto:' && url?.protocol !== 'https:')
-    throw new TypeError(`vapid.subject must be a mailto: or https: URL, not ${subject}`)
+    throw new RangeError(`vapid.subject must be a mailto: or https: URL, not ${subject}`)
 }
 
 function signingKey(vapid: Vapid): Promise<CryptoKey> {
@@ -103,7 +103,7 @@ function signingKey(vapid: Vapid): Promise<CryptoKey> {
 
 async function importSigningKey(publicKey: unknown, privateKey: unknown): Promise<CryptoKey> {
   const point = readVapidKey(publicKey, 'publicKey', 65)
-  if (point[0] !== 4) throw new TypeError('vapid.publicKey must be an uncompressed P-256 key')
+  if (point[0] !== 4) throw new RangeError('vapid.publicKey must be an uncompressed P-256 key')
   const d = readVapidKey(privateKey, 'privateKey', 32)
   const jwk = {
     kty: 'EC',
@@ -115,15 +115,15 @@ async function importSigningKey(publicKey: unknown, privateKey: unknown): Promis
   try {
     return await crypto.subtle.importKey('jwk', jwk, ecdsa, false, ['sign'])
   } catch (cause) {
-    throw new TypeError('vapid.publicKey and vapid.privateKey are not a P-256 key pair', { cause })
+    throw new RangeError('vapid.publicKey and vapid.privateKey are not a P-256 key pair', { cause })
   }
 }
 
 function readVapidKey(key: unknown, name: string, length: number): Uint8Array {
-  if (typeof key !== 'string' || !/^[\w-]+$/.test(key))
-    throw new TypeError(`vapid.${name} must be a base64url string without padding`)
+  if (typeof key !== 'string') throw new TypeError(`vapid.${name} must be a string`)
+  if (!/^[\w-]+$/.test(key)) throw new RangeError(`vapid.${name} must be base64url without padding`)
   const bytes = Base64.decode(key, { alphabet: 'base64url' })
-  if (bytes.length !== length) throw new TypeError(`vapid.${name} must be ${length} bytes`)
+  if (bytes.length !== length) throw new RangeError(`vapid.${name} must be ${length} bytes`)
   return bytes
 }
 

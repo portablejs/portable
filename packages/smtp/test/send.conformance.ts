@@ -411,7 +411,7 @@ describe('envelope validation', () => {
     const client = await plain(server)
     const size = '100\r\nRCPT TO:<attacker@evil.com>' as unknown as number
     for (const value of [size, -1, 1.5, Number.NaN]) {
-      await expect(client.send({ ...envelope, message, size: value })).rejects.toThrow(TypeError)
+      await expect(client.send({ ...envelope, message, size: value })).rejects.toThrow(RangeError)
     }
     expect(server.commands).toHaveLength(1)
   })

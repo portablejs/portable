@@ -2,6 +2,12 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Bad arguments throw `TypeError` or `RangeError`, bad data throws `InvalidInputError`
+
+- **Options:** `InvalidInputError` for everything, including options; built-in errors for everything the caller passes; built-in errors for arguments and options, and `InvalidInputError` for the data being processed.
+- **Trade-offs:** Most packages already threw `TypeError` and `RangeError` for options, and the platform does the same. A single `InvalidInputError` for both would make a caller who catches malformed messages also catch its own configuration mistakes. The packages disagreed at the edges: dkim threw `TypeError` for a PEM key that doesn't parse and oauth1 threw `InvalidInputError`; base64, csv, smtp, web-push and webhooks threw `TypeError` for an unknown or malformed option value while dkim, arc and mime-headers threw `RangeError`.
+- **Chosen:** the third. `TypeError` for a wrong type or a missing value, `RangeError` for a right type with a value the function doesn't accept (including keys and secrets that don't parse), and `InvalidInputError` for malformed data. AGENTS.md states the rule. oauth1 no longer exports `InvalidInputError`, since its only use was a key that doesn't parse. jsonl and json-stream keep `JSON.stringify`'s `TypeError` for values it can't serialize.
+
 ## `maxBytes` counts bytes and `maxLength` counts string length
 
 - **Options:** keep each package's name; name every limit `maxLength`; name it by unit.

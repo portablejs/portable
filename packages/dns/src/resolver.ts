@@ -231,7 +231,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
     url.searchParams.delete('dns')
     return `${url.href}${url.search ? '&' : '?'}dns=`
   })
-  if (endpoints.length === 0) throw new TypeError('At least one endpoint is required.')
+  if (endpoints.length === 0) throw new RangeError('At least one endpoint is required.')
   const timeout = options.timeout ?? 5000
   if (!(timeout > 0 && timeout <= 2 ** 31 - 1))
     throw new RangeError('`timeout` must be a number of milliseconds above 0.')

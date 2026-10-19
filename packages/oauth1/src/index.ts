@@ -13,7 +13,7 @@ import {
 } from './parameters.js'
 
 export type { Digest, HashAlgorithm } from './crypto.js'
-export { InvalidInputError, UnsupportedError } from './errors.js'
+export { UnsupportedError } from './errors.js'
 
 /** The `oauth_signature_method` values this package signs with. */
 export type SignatureMethod = 'HMAC-SHA1' | 'HMAC-SHA256' | 'RSA-SHA1' | 'PLAINTEXT'
@@ -98,7 +98,7 @@ const utf8 = new TextEncoder()
  * ```
  *
  * @throws {UnsupportedError} For an unknown `signatureMethod`.
- * @throws {InvalidInputError} For an RSA private key that can't be used.
+ * @throws {RangeError} For an RSA private key that can't be used.
  */
 export async function authorization(
   request: Request,
@@ -137,7 +137,7 @@ export async function authorization(
  * ```
  *
  * @throws {UnsupportedError} For an unknown `signatureMethod`.
- * @throws {InvalidInputError} For an RSA private key that can't be used.
+ * @throws {RangeError} For an RSA private key that can't be used.
  */
 export async function sign(request: Request, options: sign.Options): Promise<Request> {
   const { placement = 'header', signal } = options

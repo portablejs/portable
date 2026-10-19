@@ -94,7 +94,9 @@ describe('encrypt', () => {
   test('rejects a payload one byte over the limit', async () => {
     const agent = await userAgent()
     const payload = new Uint8Array(WebPush.maxPayloadBytes + 1)
-    await expect(WebPush.encrypt(agent.subscription, payload)).rejects.toThrow(RangeError)
+    await expect(WebPush.encrypt(agent.subscription, payload)).rejects.toThrow(
+      WebPush.InvalidInputError,
+    )
   })
 
   test('uses a new salt and server key for every message', async () => {

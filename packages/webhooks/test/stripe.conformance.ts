@@ -135,7 +135,7 @@ describe('stripe', () => {
   })
 
   test('rejects an empty secret', async () => {
-    await expect(verify(await header(), { secret: '' })).rejects.toThrow(TypeError)
+    await expect(verify(await header(), { secret: '' })).rejects.toThrow(RangeError)
   })
 
   test('rejects a re-serialized JSON body', async () => {

@@ -279,8 +279,9 @@ export function create(options: create.Options = {}): Queue {
   return {
     add<T>(task: Task<T>, addOptions: Queue.AddOptions = {}): Promise<T> {
       const { priority = 0, signal } = addOptions
-      if (typeof priority !== 'number' || Number.isNaN(priority))
-        throw new RangeError('Expected `priority` to be a number.')
+      if (typeof priority !== 'number') throw new TypeError('Expected `priority` to be a number.')
+      if (Number.isNaN(priority))
+        throw new RangeError('Expected `priority` to be a number, got NaN.')
       if (queueSignal?.aborted) return Promise.reject(queueSignal.reason)
       if (signal?.aborted) return Promise.reject(signal.reason)
       const entry: Entry = {

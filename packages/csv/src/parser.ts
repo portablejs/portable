@@ -27,7 +27,7 @@ export function createParser(
   } = options
   checkCharacter('delimiter', delimiter)
   if (quote !== false) checkCharacter('quote', quote)
-  if (delimiter === quote) throw new TypeError('delimiter and quote must differ.')
+  if (delimiter === quote) throw new RangeError('delimiter and quote must differ.')
   const delimiterCode = delimiter.charCodeAt(0)
   const quoteCode = quote === false ? -1 : quote.charCodeAt(0)
 
@@ -167,7 +167,7 @@ function indexOf(text: string, search: string, from: number): number {
 
 function checkCharacter(option: string, value: string): void {
   if (value.length !== 1 || value === '\r' || value === '\n')
-    throw new TypeError(`${option} must be one character other than CR or LF.`)
+    throw new RangeError(`${option} must be one character other than CR or LF.`)
 }
 
 function checkNames(names: readonly string[]): readonly string[] {

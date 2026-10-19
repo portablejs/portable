@@ -392,10 +392,8 @@ describe('encode', () => {
   })
 
   test('rejects an unknown filter', async () => {
-    await expect(Png.encode(source, { filter: 5 as Png.FilterType })).rejects.toThrow(
-      Png.InvalidInputError,
-    )
-    await expect(Png.encode(source, { filter: [] })).rejects.toThrow(Png.InvalidInputError)
+    await expect(Png.encode(source, { filter: 5 as Png.FilterType })).rejects.toThrow(RangeError)
+    await expect(Png.encode(source, { filter: [] })).rejects.toThrow(RangeError)
   })
 })
 

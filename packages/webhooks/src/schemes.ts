@@ -81,7 +81,7 @@ export const standard: Scheme = {
     try {
       return Base64.decode(secret.startsWith('whsec_') ? secret.slice(6) : secret)
     } catch (error) {
-      throw new TypeError('Secret is not base64', { cause: error })
+      throw new RangeError('Secret is not base64', { cause: error })
     }
   },
 }

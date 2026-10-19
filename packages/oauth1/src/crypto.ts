@@ -1,5 +1,4 @@
 import * as Base64 from '@portable/base64'
-import { InvalidInputError } from './errors.js'
 
 /** A hash algorithm, named as WebCrypto names it. */
 export type HashAlgorithm = 'SHA-1' | 'SHA-256'
@@ -56,7 +55,7 @@ export async function rsaSha1(
   const key = typeof privateKey === 'string' ? await importPem(privateKey) : privateKey
   const { name, hash } = key.algorithm as Partial<RsaHashedKeyAlgorithm>
   if (name !== algorithm.name || hash?.name !== algorithm.hash)
-    throw new InvalidInputError(
+    throw new RangeError(
       `RSA-SHA1 needs an RSASSA-PKCS1-v1_5 key with SHA-1, not ${name} with ${hash?.name}`,
     )
   try {
@@ -69,18 +68,18 @@ export async function rsaSha1(
 
 async function importPem(text: string): Promise<CryptoKey> {
   const match = pem.exec(text)
-  if (!match) throw new InvalidInputError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block')
+  if (!match) throw new RangeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block')
   let decoded: Uint8Array
   try {
     decoded = Base64.decode(match[2]!)
   } catch (cause) {
-    throw new InvalidInputError('The PEM block is not valid base64', { cause })
+    throw new RangeError('The PEM block is not valid base64', { cause })
   }
   const der = match[1] ? pkcs1ToPkcs8(decoded) : new Uint8Array(decoded)
   try {
     return await crypto.subtle.importKey('pkcs8', der, algorithm, false, ['sign'])
   } catch (cause) {
-    throw new InvalidInputError('The PEM block is not an RSA private key', { cause })
+    throw new RangeError('The PEM block is not an RSA private key', { cause })
   }
 }
 

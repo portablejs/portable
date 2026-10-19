@@ -88,7 +88,7 @@ describe('add', () => {
   test('throws on a priority that is not a number', () => {
     const queue = Queue.create()
     expect(() => queue.add(() => 1, { priority: Number.NaN })).toThrow(RangeError)
-    expect(() => queue.add(() => 1, { priority: '1' as unknown as number })).toThrow(RangeError)
+    expect(() => queue.add(() => 1, { priority: '1' as unknown as number })).toThrow(TypeError)
     expect(queue.size).toBe(0)
   })
 

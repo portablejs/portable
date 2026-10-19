@@ -620,11 +620,11 @@ describe('papaparse', () => {
     })
 
     test('Bad delimiter (\\n)', () => {
-      expect(() => Csv.decode('a,b,c', { delimiter: '\n' })).toThrow(TypeError)
+      expect(() => Csv.decode('a,b,c', { delimiter: '\n' })).toThrow(RangeError)
     })
 
     test('Multi-character delimiter', () => {
-      expect(() => Csv.decode('a, b, c', { delimiter: ', ' })).toThrow(TypeError)
+      expect(() => Csv.decode('a, b, c', { delimiter: ', ' })).toThrow(RangeError)
     })
   })
 

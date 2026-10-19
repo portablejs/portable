@@ -22,11 +22,13 @@ export function keyType(key: CryptoKey): KeyType | undefined {
 }
 
 export async function importPrivateKey(input: CryptoKey | string | JsonWebKey): Promise<CryptoKey> {
+  if (typeof input !== 'string' && (typeof input !== 'object' || input === null))
+    throw new TypeError('privateKey must be a CryptoKey, a PEM string or a JWK.')
   const key = await importKey(input).catch((error: unknown) => {
-    throw new TypeError('privateKey is not a valid RSA or Ed25519 private key.', { cause: error })
+    throw new RangeError('privateKey is not a valid RSA or Ed25519 private key.', { cause: error })
   })
   if (key.type !== 'private' || !key.usages.includes('sign') || !keyType(key))
-    throw new TypeError(
+    throw new RangeError(
       'privateKey must be an RSA (RSASSA-PKCS1-v1_5 with SHA-256) or Ed25519 private key that can sign.',
     )
   return key
@@ -36,7 +38,7 @@ async function importKey(input: CryptoKey | string | JsonWebKey): Promise<Crypto
   if (input instanceof CryptoKey) return input
   if (typeof input === 'string') {
     const pem = /-----BEGIN (RSA )?PRIVATE KEY-----([^-]*)-----END \1?PRIVATE KEY-----/.exec(input)
-    if (!pem) throw new TypeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block.')
+    if (!pem) throw new RangeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block.')
     const der = new Uint8Array(Base64.decode(pem[2]!))
     if (pem[1]) return crypto.subtle.importKey('pkcs8', pkcs1ToPkcs8(der), rsa, false, ['sign'])
     return crypto.subtle.importKey('pkcs8', der, pkcs8Algorithm(der), false, ['sign'])
@@ -51,7 +53,7 @@ function pkcs8Algorithm(der: Uint8Array): typeof rsa | typeof ed25519 {
   const oid = first === undefined ? undefined : contents(der, first)
   if (oid && sameBytes(oid, ed25519Oid)) return ed25519
   if (oid && sameBytes(oid, rsaOid)) return rsa
-  throw new TypeError('The PKCS #8 key is neither RSA nor Ed25519.')
+  throw new RangeError('The PKCS #8 key is neither RSA nor Ed25519.')
 }
 
 const pkcs1ToPkcs8 = (der: Uint8Array): Uint8Array<ArrayBuffer> =>

@@ -40,8 +40,10 @@ export declare namespace encode {
  * Csv.encode([{ name: 'Ada', age: 36 }], { header: true }) // 'name,age\r\nAda,36\r\n'
  * ```
  *
- * @throws {InvalidInputError} When `quote` is `false` and a field needs quoting.
- * @throws {TypeError} When a value isn't an `encode.Value`, or `header` is `true` with array rows.
+ * @throws {InvalidInputError} When `quote` is `false` and a field needs quoting, a value isn't an
+ * `encode.Value`, or an array row follows object rows.
+ * @throws {TypeError} When `header` is `true` with array rows.
+ * @throws {RangeError} When `delimiter`, `quote` or `newline` isn't allowed.
  */
 export function encode(rows: readonly encode.Row[], options: encode.Options = {}): string {
   const encoder = createEncoder(options)

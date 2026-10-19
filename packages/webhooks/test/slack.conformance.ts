@@ -99,6 +99,6 @@ describe('slack', () => {
 
   test('rejects an empty signing secret', async () => {
     const headers = await Webhooks.sign(payload, { scheme, secret })
-    await expect(verify(headers, { secret: '' })).rejects.toThrow(TypeError)
+    await expect(verify(headers, { secret: '' })).rejects.toThrow(RangeError)
   })
 })

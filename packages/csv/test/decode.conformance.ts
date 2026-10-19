@@ -354,8 +354,8 @@ describe('csv-parse', () => {
 
     test('rejects a delimiter that is empty, longer than one character, a line break or the quote', () => {
       for (const delimiter of ['', '!#', '\n', '\r', '"'])
-        expect(() => Csv.decode('a', { delimiter })).toThrow(TypeError)
-      expect(() => Csv.decode('a', { quote: '' })).toThrow(TypeError)
+        expect(() => Csv.decode('a', { delimiter })).toThrow(RangeError)
+      expect(() => Csv.decode('a', { quote: '' })).toThrow(RangeError)
     })
   })
 

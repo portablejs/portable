@@ -88,7 +88,7 @@ function filtered(image: RgbaImage, colorType: 0 | 2 | 4 | 6, options: encode.Op
   const { filter = [0, 1, 2, 3, 4], background } = options
   const filters = typeof filter === 'number' ? [filter] : filter
   if (filters.length === 0 || filters.some((f) => !Number.isInteger(f) || f < 0 || f > 4))
-    throw new InvalidInputError('filter must be 0 to 4 or a non-empty list of them.')
+    throw new RangeError('filter must be 0 to 4 or a non-empty list of them.')
 
   const bpp = channelsByColorType[colorType]
   const pixels = pack(data, colorType, background)

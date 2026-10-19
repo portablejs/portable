@@ -19,12 +19,12 @@ export function createEncoder(options: encode.Options): Encoder {
     quote = '"',
   } = options
   if (delimiter.length !== 1 || delimiter === '\r' || delimiter === '\n')
-    throw new TypeError('delimiter must be one character other than CR or LF.')
+    throw new RangeError('delimiter must be one character other than CR or LF.')
   if (quote !== false && (quote.length !== 1 || quote === '\r' || quote === '\n'))
-    throw new TypeError('quote must be one character other than CR or LF.')
-  if (delimiter === quote) throw new TypeError('delimiter and quote must differ.')
+    throw new RangeError('quote must be one character other than CR or LF.')
+  if (delimiter === quote) throw new RangeError('delimiter and quote must differ.')
   if (newline !== '\r\n' && newline !== '\n')
-    throw new TypeError("newline must be '\\r\\n' or '\\n'.")
+    throw new RangeError("newline must be '\\r\\n' or '\\n'.")
 
   const special = new RegExp(`[${escape(delimiter)}${quote ? escape(quote) : ''}\\r\\n]`)
   const doubled = quote ? quote + quote : ''
@@ -38,7 +38,7 @@ export function createEncoder(options: encode.Options): Encoder {
     else if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint')
       text = String(value)
     else if (value instanceof Date) text = value.toISOString()
-    else throw new TypeError(`Can't encode a value of type ${typeof value} as a CSV field.`)
+    else throw new InvalidInputError(`Can't encode a value of type ${typeof value} as a CSV field.`)
     let quoted = false
     if (escapeFormulas && formula.test(text)) {
       text = `'${text}`
@@ -77,7 +77,7 @@ export function createEncoder(options: encode.Options): Encoder {
     row(row) {
       const prefix = started ? '' : start(row)
       if (isArray(row)) return prefix + line(row)
-      if (!columns) throw new TypeError('Rows must all be arrays or all be objects.')
+      if (!columns) throw new InvalidInputError('Rows must all be arrays or all be objects.')
       const fields: encode.Value[] = []
       for (const name of columns) fields.push(Object.hasOwn(row, name) ? row[name] : undefined)
       return prefix + line(fields)

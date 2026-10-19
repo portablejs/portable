@@ -274,7 +274,7 @@ export async function connect(options: connect.Options): Promise<Client> {
     lmtp = false,
     signal,
   } = options
-  if (/[\r\n]/.test(name)) throw new TypeError('`name` must not contain CR or LF')
+  if (/[\r\n]/.test(name)) throw new RangeError('`name` must not contain CR or LF')
   signal?.throwIfAborted()
 
   let socket: Socket
@@ -465,7 +465,7 @@ function createClient(
       }
     }
     if (mail.size !== undefined && !(Number.isSafeInteger(mail.size) && mail.size >= 0)) {
-      throw new TypeError('`size` must be a non-negative integer')
+      throw new RangeError('`size` must be a non-negative integer')
     }
     const utf8 = nonAscii.test(mail.from) || recipients.some((to) => nonAscii.test(to))
     if (utf8 && !has('SMTPUTF8')) {

@@ -133,7 +133,7 @@ describe('RSA-SHA1', () => {
     expect(await crypto.subtle.verify(algorithm, verifyKey, der(actual), base)).toBe(true)
   })
 
-  test('a key for another algorithm or hash throws InvalidInputError', async () => {
+  test('a key for another algorithm or hash throws RangeError', async () => {
     const key = (
       await crypto.subtle.generateKey(
         {
@@ -148,10 +148,10 @@ describe('RSA-SHA1', () => {
     ).privateKey
     await expect(
       signature(photos(), { ...options, consumer: { key: 'k', privateKey: key } }),
-    ).rejects.toThrow(OAuth1.InvalidInputError)
+    ).rejects.toThrow(RangeError)
   })
 
-  test('a string that is not a PEM private key throws InvalidInputError', async () => {
+  test('a string that is not a PEM private key throws RangeError', async () => {
     for (const privateKey of [
       'secret',
       publicKey,
@@ -160,7 +160,7 @@ describe('RSA-SHA1', () => {
     ]) {
       await expect(
         signature(photos(), { ...options, consumer: { key: 'k', privateKey } }),
-      ).rejects.toThrow(OAuth1.InvalidInputError)
+      ).rejects.toThrow(RangeError)
     }
   })
 

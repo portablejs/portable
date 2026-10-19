@@ -75,7 +75,7 @@ describe('encode', () => {
   })
 
   test('rejects an unknown alphabet', () => {
-    expect(() => encode('a', { alphabet: 'base32' as Alphabet })).toThrow(TypeError)
+    expect(() => encode('a', { alphabet: 'base32' as Alphabet })).toThrow(RangeError)
   })
 })
 
@@ -125,7 +125,7 @@ describe('decode', () => {
   })
 
   test('rejects an unknown mode', () => {
-    expect(() => decode('', { mode: 'lenient' as Mode })).toThrow(TypeError)
+    expect(() => decode('', { mode: 'lenient' as Mode })).toThrow(RangeError)
   })
 })
 

@@ -53,8 +53,8 @@ export declare namespace encrypt {
  * ```
  *
  * @throws {InvalidInputError} When the subscription has no keys, `p256dh` isn't a P-256 public
- * key, or `auth` isn't 16 bytes.
- * @throws {RangeError} When the payload is longer than `maxPayloadBytes`, or `salt` isn't 16 bytes.
+ * key, `auth` isn't 16 bytes, or the payload is longer than `maxPayloadBytes`.
+ * @throws {RangeError} When `salt` isn't 16 bytes.
  */
 export async function encrypt(
   subscription: Pick<Subscription, 'keys'>,
@@ -66,7 +66,7 @@ export async function encrypt(
   const { userPublicKey, auth } = readKeys(subscription)
   const plaintext = toBytes(payload)
   if (plaintext.length > maxPayloadBytes)
-    throw new RangeError(
+    throw new InvalidInputError(
       `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
     )
   const salt = options.salt

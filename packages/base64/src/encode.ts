@@ -209,7 +209,7 @@ function wrap(text: string, lineLength: number, lineEnding: string, column: numb
 
 export function checkAlphabet(alphabet: unknown): void {
   if (alphabet !== 'base64' && alphabet !== 'base64url')
-    throw new TypeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
+    throw new RangeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
 }
 
 export function checkLineLength(lineLength: unknown): void {

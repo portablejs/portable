@@ -162,7 +162,7 @@ Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TL
 | `secure` | `'on'` for port 465, otherwise `'starttls'` | `'on'` starts TLS right away. `'starttls'` requires the server to offer STARTTLS and fails if it doesn't. `'off'` never encrypts. |
 | `auth` | None | `{ user, pass }` for AUTH PLAIN, or LOGIN when the server offers only LOGIN. Set `method: 'LOGIN'` to force it. `{ user, accessToken }` for XOAUTH2. |
 | `allowInsecureAuth` | `false` | Send credentials over an unencrypted connection. Without it, AUTH requires TLS. |
-| `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF throws a `TypeError`. |
+| `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF throws a `RangeError`. |
 | `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
 | `signal` | None | Limits connecting, TLS and login. Aborting rejects with `signal.reason` and closes the socket. |
 
@@ -195,7 +195,7 @@ Connects with `options`, sends one message and closes the connection.
 
 ### `Smtp.CommandError`
 
-Every failure rejects with a `Smtp.CommandError`, except a `TypeError` for invalid options and `signal.reason` when the signal aborts. Credentials never appear in its fields.
+Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `RangeError` for invalid options and `signal.reason` when the signal aborts. Credentials never appear in its fields.
 
 | Field | Description |
 | --- | --- |

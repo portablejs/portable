@@ -91,9 +91,9 @@ type State = {
 
 function createState(alphabet: Alphabet, mode: Mode): State {
   if (alphabet !== 'base64' && alphabet !== 'base64url')
-    throw new TypeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
+    throw new RangeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
   if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime')
-    throw new TypeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`)
+    throw new RangeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`)
   return {
     values: mode === 'mime' ? tables.both : tables[alphabet],
     mime: mode === 'mime',

@@ -49,7 +49,7 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | `Scheme` | The type of a scheme object, for writing one for another sender. |
 | `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `reason` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
-`verify` throws a `TypeError` for a mistake in the call rather than in the request: an empty secret, a Standard Webhooks secret that isn't base64, a `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object.
+`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret or a Standard Webhooks secret that isn't base64 throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
 The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
 

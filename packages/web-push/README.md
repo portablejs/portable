@@ -56,7 +56,7 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 
 `subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
 
-A mistake in the call throws a `TypeError` or `RangeError`: a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, a `ttl` that isn't a non-negative integer, or a payload longer than `maxPayloadBytes`.
+A payload longer than `maxPayloadBytes` throws `InvalidInputError` too. A mistake in the call throws a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
 
 ### Options
 

@@ -509,7 +509,7 @@ describe('DecoderStream', () => {
 
   for (const path of ['', 'a', '$.', '$..', '$[', '$[-1]', '$[01]', "$['a", '$[a]', '$x', '$[*']) {
     test(`rejects the JSONPath ${JSON.stringify(path)}`, () => {
-      expect(() => new DecoderStream({ paths: [path] })).toThrow(TypeError)
+      expect(() => new DecoderStream({ paths: [path] })).toThrow(RangeError)
     })
   }
 

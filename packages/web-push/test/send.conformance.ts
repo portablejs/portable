@@ -93,7 +93,9 @@ describe('send', () => {
   })
 
   test('rejects an unknown urgency', async () => {
-    await expect(sent('hello', { urgency: 'urgent' as WebPush.Urgency })).rejects.toThrow(TypeError)
+    await expect(sent('hello', { urgency: 'urgent' as WebPush.Urgency })).rejects.toThrow(
+      RangeError,
+    )
   })
 
   test('sends a topic', async () => {
@@ -102,7 +104,7 @@ describe('send', () => {
   })
 
   test.for(['', 'a'.repeat(33), 'has space', 'slash/plus+'])('rejects topic %j', async (topic) => {
-    await expect(sent('hello', { topic })).rejects.toThrow(TypeError)
+    await expect(sent('hello', { topic })).rejects.toThrow(RangeError)
   })
 
   test.for([200, 201, 202, 204])('returns sent for status %i', async (status) => {

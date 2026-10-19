@@ -73,15 +73,21 @@ describe('Spf.check', () => {
     expect(await resultOf(zone, { sender: 'example.test' })).toBe('pass')
   })
 
-  test('throws a TypeError for an ip that is not an IP address', async () => {
-    for (const ip of ['', 'not-an-ip', '192.0.2', '127.1', '192.0.2.256', '1::2::3', undefined]) {
+  test('throws a RangeError for an ip that is not an IP address', async () => {
+    for (const ip of ['', 'not-an-ip', '192.0.2', '127.1', '192.0.2.256', '1::2::3']) {
       await expect(
         Spf.check(
           { ip: ip as string, sender: 'user@example.test' },
           { resolver: zoneResolver({}) },
         ),
-      ).rejects.toThrow(TypeError)
+      ).rejects.toThrow(RangeError)
     }
+    await expect(
+      Spf.check(
+        { ip: undefined as unknown as string, sender: 'user@example.test' },
+        { resolver: zoneResolver({}) },
+      ),
+    ).rejects.toThrow(TypeError)
   })
 
   test('expands %{r} to the receiver, or "unknown"', async () => {

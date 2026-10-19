@@ -138,13 +138,15 @@ describe('standard', () => {
   })
 
   test('rejects an empty secret', async () => {
-    await expect(verify(await headers(), { secret: '' })).rejects.toThrow(TypeError)
-    await expect(verify(await headers(), { secret: 'whsec_' })).rejects.toThrow(TypeError)
-    await expect(Webhooks.sign(payload, { scheme, secret: '' })).rejects.toThrow(TypeError)
+    await expect(verify(await headers(), { secret: '' })).rejects.toThrow(RangeError)
+    await expect(verify(await headers(), { secret: 'whsec_' })).rejects.toThrow(RangeError)
+    await expect(Webhooks.sign(payload, { scheme, secret: '' })).rejects.toThrow(RangeError)
   })
 
   test('rejects a secret that is not base64', async () => {
-    await expect(verify(await headers(), { secret: 'whsec_not*base64' })).rejects.toThrow(TypeError)
+    await expect(verify(await headers(), { secret: 'whsec_not*base64' })).rejects.toThrow(
+      RangeError,
+    )
   })
 
   test('takes a raw key as bytes', async () => {

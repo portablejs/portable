@@ -122,7 +122,7 @@ describe('verify', () => {
     const headers = await Webhooks.sign('{}', { scheme: Webhooks.github, secret })
     await expect(
       Webhooks.verify({ headers, body: '{}' }, { scheme: Webhooks.github, secret: [] }),
-    ).rejects.toThrow(TypeError)
+    ).rejects.toThrow(RangeError)
   })
 
   test('accepts a timestamp exactly at the tolerance and rejects one a second past it', async () => {

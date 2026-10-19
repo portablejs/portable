@@ -85,7 +85,7 @@ export function compile(paths: readonly string[]): Matcher {
 
 function parsePath(path: string): Step[] {
   const fail = (at: number): never => {
-    throw new TypeError(`Invalid JSONPath ${JSON.stringify(path)} at offset ${at}.`)
+    throw new RangeError(`Invalid JSONPath ${JSON.stringify(path)} at offset ${at}.`)
   }
   if (path[0] !== '$') fail(0)
   const steps: Step[] = []

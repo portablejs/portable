@@ -41,7 +41,7 @@ export declare namespace toRequest {
  *
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
- * @throws {TypeError} When `vapid`, `urgency` or `topic` is malformed.
+ * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed.
  * @throws {RangeError} When `ttl` isn't a non-negative integer, or the payload is longer than
  * `maxPayloadBytes`.
  */
@@ -57,9 +57,9 @@ export async function toRequest(
   if (!Number.isSafeInteger(ttl) || ttl < 0)
     throw new RangeError('ttl must be a non-negative integer')
   if (urgency !== undefined && !urgencies.has(urgency))
-    throw new TypeError(`urgency must be 'very-low', 'low', 'normal' or 'high'`)
+    throw new RangeError(`urgency must be 'very-low', 'low', 'normal' or 'high'`)
   if (topic !== undefined && !/^[\w-]{1,32}$/.test(topic))
-    throw new TypeError('topic must be 1 to 32 base64url characters')
+    throw new RangeError('topic must be 1 to 32 base64url characters')
 
   const headers = new Headers({ ttl: String(ttl) })
   if (urgency) headers.set('urgency', urgency)
@@ -112,7 +112,8 @@ export declare namespace send {
  * @throws {ResponseError} When the push service answers with a status other than 2xx, 404 or 410.
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
- * @throws {TypeError} When an option is malformed, or `fetch` rejects.
+ * @throws {RangeError} When an option is malformed.
+ * @throws {TypeError} When `fetch` rejects.
  */
 export async function send(
   subscription: Subscription,

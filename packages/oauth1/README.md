@@ -47,7 +47,7 @@ The signature covers what the server will see, because it is computed from the `
 | `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
 
-`InvalidInputError` is thrown for an RSA key that can't be used, and `UnsupportedError` for another signature method.
+A `RangeError` is thrown for an RSA key that can't be used, and `UnsupportedError` for another signature method.
 
 ### RSA-SHA1
 

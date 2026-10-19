@@ -84,14 +84,14 @@ describe('csv-stringify', () => {
     )
   })
 
-  test('throws TypeError for a value it cannot encode', () => {
-    expect(() => Csv.encode([[{} as never]])).toThrow(TypeError)
-    expect(() => Csv.encode([[Symbol('x') as never]])).toThrow(TypeError)
+  test('throws InvalidInputError for a value it cannot encode', () => {
+    expect(() => Csv.encode([[{} as never]])).toThrow(Csv.InvalidInputError)
+    expect(() => Csv.encode([[Symbol('x') as never]])).toThrow(Csv.InvalidInputError)
   })
 
   test('fails the stream for a value it cannot encode', async () => {
     const stream = fromIterable([[['nested']] as never]).pipeThrough(new Csv.EncoderStream())
-    await expect(toArray(stream)).rejects.toThrow(TypeError)
+    await expect(toArray(stream)).rejects.toThrow(Csv.InvalidInputError)
   })
 
   describe('bom', () => {
@@ -122,7 +122,7 @@ describe('csv-stringify', () => {
 
     test('rejects a delimiter that is empty, longer than one character, a line break or the quote', () => {
       for (const delimiter of ['', '::', '\n', '"'])
-        expect(() => Csv.encode([], { delimiter })).toThrow(TypeError)
+        expect(() => Csv.encode([], { delimiter })).toThrow(RangeError)
     })
   })
 
@@ -157,7 +157,7 @@ describe('csv-stringify', () => {
     })
 
     test("rejects line breaks other than '\\r\\n' and '\\n'", () => {
-      expect(() => Csv.encode([], { newline: '\r' as never })).toThrow(TypeError)
+      expect(() => Csv.encode([], { newline: '\r' as never })).toThrow(RangeError)
     })
   })
 
@@ -185,9 +185,9 @@ describe('csv-stringify', () => {
       expect(() => Csv.encode([['a']], { header: true })).toThrow(TypeError)
     })
 
-    test('throws TypeError for an array row after object rows', () => {
+    test('throws InvalidInputError for an array row after object rows', () => {
       expect(() => Csv.encode([{ a: 1 }, ['x']], { header: true })).not.toThrow()
-      expect(() => Csv.encode([['x'], { a: 1 }])).toThrow(TypeError)
+      expect(() => Csv.encode([['x'], { a: 1 }])).toThrow(Csv.InvalidInputError)
     })
   })
 

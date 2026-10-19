@@ -81,7 +81,7 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 | Error | Thrown when |
 | --- | --- |
 | `TruncatedError` | The file ends before `IEND` or inside a chunk, or holds less image data than its header describes. |
-| `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length or an invalid `filter`. |
+| `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length, and a `RangeError` for an invalid `filter`. |
 | `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
 
 Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.UnsupportedError`.

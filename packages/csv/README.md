@@ -61,13 +61,13 @@ Errors are thrown by `decode` and fail the stream. Messages name the row, counti
 | `Csv.TruncatedError` | The input ends inside a quoted field. |
 | `Csv.MaxLengthError` | A row is longer than `maxLength`, which the error stores. |
 
-A bad option, such as a two-character delimiter, throws `TypeError`.
+A bad option, such as a two-character delimiter, throws `RangeError`.
 
 ## Encoding
 
 `Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, string>` that emits one chunk per row, the first one with the header row. Pipe it through `TextEncoderStream` for bytes.
 
-A row is an array of values or an object keyed by column name. Strings are written as they are, numbers, booleans and bigints with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Anything else throws `TypeError`.
+A row is an array of values or an object keyed by column name. Strings are written as they are, numbers, booleans and bigints with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Anything else throws `InvalidInputError`, as does an array row after object rows.
 
 A field is quoted only when it holds the delimiter, the quote, CR or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 

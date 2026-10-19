@@ -553,7 +553,7 @@ describe('endpoints', () => {
   })
 
   test('rejects an empty endpoint list, a bad URL and a bad timeout', () => {
-    expect(() => createResolver({ endpoints: [] })).toThrow(TypeError)
+    expect(() => createResolver({ endpoints: [] })).toThrow(RangeError)
     expect(() => createResolver({ endpoints: ['not a url'] })).toThrow(TypeError)
     for (const timeout of [0, -1, Number.NaN, 2 ** 31, Infinity])
       expect(() => createResolver({ timeout })).toThrow(RangeError)

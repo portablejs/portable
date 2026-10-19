@@ -48,9 +48,9 @@ describe('connecting', () => {
   test('rejects a name with CR or LF before connecting', async () => {
     const server = fakeServer()
     const name = 'legit.host\r\nMAIL FROM:<attacker@evil.com>'
-    await expect(plain(server, { name })).rejects.toThrow(TypeError)
-    await expect(plain(server, { name: 'a\nb' })).rejects.toThrow(TypeError)
-    await expect(plain(server, { name: 'a\rb' })).rejects.toThrow(TypeError)
+    await expect(plain(server, { name })).rejects.toThrow(RangeError)
+    await expect(plain(server, { name: 'a\nb' })).rejects.toThrow(RangeError)
+    await expect(plain(server, { name: 'a\rb' })).rejects.toThrow(RangeError)
     expect(server.sockets).toEqual([])
   })
 
