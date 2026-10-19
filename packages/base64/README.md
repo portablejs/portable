@@ -79,17 +79,10 @@ One package does what the three did separately: base64 and base64url, MIME line 
 
 ### Performance
 
-Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. Mean times for 1 MB on a shared cloud container, from `pnpm bench`:
+Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64's `encode` and `decode` call `Buffer`, which is C++.
 
-| | @portable/base64 | base64-js | js-base64 | libbase64 | `Buffer` |
-| --- | --- | --- | --- | --- | --- |
-| encode | 2.6 ms | 18 ms | 7.2 ms | 0.4 ms | 0.4 ms |
-| encode, 76 columns | 2.8 ms | | | 2.4 ms | |
-| decode | 4.0 ms | 4.2 ms | 47 ms | 0.3 ms | 0.3 ms |
-| `EncoderStream`, 76 columns, 16 KB chunks | 2.8 ms | | | 4.2 ms | |
-| `DecoderStream`, 76 columns, 16 KB chunks | 5.3 ms | | | 8.1 ms | |
-
-libbase64's `encode` and `decode` call `Buffer`, which is C++. For 32 bytes, all four libraries take about 0.5 µs.
+<!-- bench:start -->
+<!-- bench:end -->
 
 <!-- size:start -->
 Bundled for the browser, minified and gzipped, `@portable/base64` is 2.9 kB, against 1.8 kB (Node only) for libbase64, 1.1 kB for base64-js and 1.8 kB for js-base64. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.

@@ -84,14 +84,10 @@ A field is quoted only when it holds the delimiter, the quote, CR or LF, and a r
 
 csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies.
 
-On Node 24, with 5,000 rows (500 kB) of quoted text, prices and dates, on a shared, loaded machine:
+The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
 
-| | @portable/csv | papaparse | csv-parse / csv-stringify | fast-csv |
-| --- | --- | --- | --- | --- |
-| Decode a string | 1× | 2.4× slower | 12× slower | 26× slower |
-| Decode a stream | 1× | 4.5× slower | 12× slower | 29× slower |
-| Encode to a string | 1× | 5.6× slower | 19× slower | 21× slower |
-| Encode a stream | 1× | not streamed | 1.5× slower | about the same |
+<!-- bench:start -->
+<!-- bench:end -->
 
 It also avoids these traps, each with a test in `test/issues.conformance.ts`:
 

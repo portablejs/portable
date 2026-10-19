@@ -224,12 +224,10 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` for inval
 - Every 421 reply is `ECONNECTION`, so one check covers "retry later on a new connection".
 - 8-bit messages are declared with BODY=8BITMIME without an extra option.
 
-On localhost, against a server that answers at once (see `test/send.bench.ts`):
+The benchmarks send to a server on localhost that answers at once.
 
-| Case | `@portable/smtp` | nodemailer `SMTPConnection` |
-| --- | --- | --- |
-| 10 small messages over one connection | 930–1,120 ops/s | 790–810 ops/s |
-| One 1 MB message in 64 KB chunks | 10.9–11.8 ops/s | 7.9–9.6 ops/s |
+<!-- bench:start -->
+<!-- bench:end -->
 
 ## Migrating
 

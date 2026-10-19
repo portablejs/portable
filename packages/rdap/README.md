@@ -106,14 +106,10 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 - Every lookup takes a `signal`, and the `fetch` and cache are per call. node-rdap sets the timeout and cache lifetime for the whole process with `configure`.
 - Prefixes (`8.8.8.0/24`) and IPv4-mapped IPv6 addresses can be looked up. node-rdap rejects the first and finds no server for the second.
 
-On Node, with responses served from memory, a lookup took within 15% of node-rdap's time, although node-rdap does no work after `response.json()`. Normalizing the Verisign response for `google.com` took about 4 µs on top of the 17 µs that `fetch` and `response.json()` took, and following its referral to MarkMonitor added one more request.
+The benchmarks serve recorded responses from memory. node-rdap does no work after `response.json()`.
 
-| Benchmark (mean) | @portable/rdap | node-rdap | `fetch` + `response.json()` |
-| --- | --- | --- | --- |
-| Verisign domain response | 21 µs | 21 µs | 17 µs |
-| Verisign plus the MarkMonitor referral | 61 µs | 53 µs (with a second `fetch`) | |
-| RIPE network response, 16 entities | 80 µs | 70 µs | 79 µs |
-| ARIN autnum response | 36 µs | 34 µs | 30 µs |
+<!-- bench:start -->
+<!-- bench:end -->
 
 ## Migrating
 

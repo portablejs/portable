@@ -98,7 +98,8 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 
 ### Performance
 
-On a 1024x1024 RGB image in Node 24, `decodeSync` with `node:zlib` takes 28 ms and pngjs 40 ms. `decode` takes 60 ms, because Node's `DecompressionStream` runs zlib on the thread pool one 16 KiB output chunk at a time. Encoding with `CompressionStream` takes 174 ms, and pngjs takes 178 ms at the same zlib settings. With `Z_RLE` passed through `deflate`, `encodeSync` takes 85 ms and pngjs's default 116 ms. Numbers come from `pnpm bench` on a shared, loaded machine.
+<!-- bench:start -->
+<!-- bench:end -->
 
 <!-- size:start -->
 Bundled for the browser, minified and gzipped, `@portable/png` is 4.3 kB, against 9.1 kB (Node only) for pngjs. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.

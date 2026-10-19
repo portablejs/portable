@@ -56,21 +56,10 @@ Each helper replaces a few lines that apps write by hand, and handles a trap tho
 - WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.
 - WebAuthn and OpenSSL produce DER ECDSA signatures, and `crypto.subtle.verify` and JWS take raw `r || s`.
 
-Measured on Node 24 against the built package (`pnpm bench`):
-
-| Benchmark | @portable/crypto | crypto.subtle by hand | Reference |
-| --- | --- | --- | --- |
-| `digest`, SHA-256 of 1 KB | 15,000/s | 15,100/s | @noble/hashes 118,000/s, node:crypto 212,000/s |
-| `digest`, SHA-256 of 1 MB | 285/s | 301/s | @noble/hashes 165/s |
-| `hmac`, SHA-256 of 1 KB | 10,600/s | 11,400/s | @noble/hashes 77,000/s, node:crypto 140,000/s |
-| `hkdf`, 32 bytes | 10,300/s | 10,600/s | @noble/hashes 92,000/s, node:crypto 144,000/s |
-| `importSeed`, Ed25519, extractable | 12,900/s | 15,100/s | @noble/curves `getPublicKey` 2,800/s |
-| `importSeed`, Ed25519, not extractable | 8,100/s | | |
-| `publicKeyOf`, P-256 | 15,000/s | 17,300/s | node:crypto 956,000/s |
-| `derToRawEcdsa`, P-256 | 4,770,000/s | | ecdsa-sig-formatter 698,000/s, @noble/curves 256,000/s |
-| `rawToDerEcdsa`, P-256 | 1,290,000/s | | ecdsa-sig-formatter 1,410,000/s, @noble/curves 226,000/s |
-
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 10 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. A non-extractable `importSeed` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
+
+<!-- bench:start -->
+<!-- bench:end -->
 
 ## Migrating from ecdsa-sig-formatter
 

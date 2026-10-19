@@ -89,14 +89,8 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 
 ### Performance
 
-Signatures per second on Node 24, from `pnpm bench`.
-
-| | `Authorization` for a GET | Signed form POST |
-| --- | --- | --- |
-| @portable/oauth1 (WebCrypto) | 7.8k | 5.3k |
-| @portable/oauth1 with `@noble/hashes` | 50k | 26k |
-| oauth-1.0a (`node:crypto`) | 41k | 27k |
-| oauth / node-oauth (`node:crypto`) | 24k | |
+<!-- bench:start -->
+<!-- bench:end -->
 
 On Node, `crypto.subtle.digest` is several times slower than a JavaScript hash, so pass `@noble/hashes` as `digest` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
 

@@ -150,18 +150,8 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 
 ### Performance
 
-Verifications per second on Node 24 for a 581-byte body, from `pnpm bench`. Rows marked `node:crypto` run only on Node.
-
-| | Standard Webhooks | Stripe | GitHub | Slack |
-| --- | --- | --- | --- | --- |
-| @portable/webhooks (WebCrypto) | 22k | 21k | 20k | 22k |
-| @portable/webhooks with `@noble/hashes` | 74k | 68k | 76k | 78k |
-| standardwebhooks | 51k | | | |
-| stripe `constructEventAsync` (WebCrypto) | | 13k | | |
-| stripe `constructEvent` (`node:crypto`) | | 97k | | |
-| @octokit/webhooks-methods, web build (WebCrypto) | | | 17k | |
-| @octokit/webhooks-methods, Node build (`node:crypto`) | | | 252k | |
-| @slack/bolt `verifySlackRequest` (`node:crypto`) | | | | 88k |
+<!-- bench:start -->
+<!-- bench:end -->
 
 On Node, WebCrypto's HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if verification speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
 

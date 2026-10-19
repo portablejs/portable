@@ -86,13 +86,8 @@ It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server c
 
 ### Performance
 
-Operations per second on Node 24, from `pnpm bench`, for a 186-byte JSON payload.
-
-| | Encrypt | Encrypt, 64 at once | Sign a VAPID JWT | Build a request |
-| --- | --- | --- | --- | --- |
-| @portable/web-push | 1.3k | 54 batches | 8.7k | 1.0k |
-| The same WebCrypto calls, made directly | 1.4k | 55 batches | 7.4k | 0.9k |
-| web-push (`node:crypto`) | 5.0k | 73 batches | 10.9k | 3.0k |
+<!-- bench:start -->
+<!-- bench:end -->
 
 On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
 

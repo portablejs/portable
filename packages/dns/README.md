@@ -85,6 +85,11 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` a
 
 A name that isn't a string rejects with a `TypeError`.
 
+## Why use this over tangerine and dohjs
+
+<!-- bench:start -->
+<!-- bench:end -->
+
 ## Migrating
 
 | node:dns/promises | @portable/dns |

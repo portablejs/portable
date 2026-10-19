@@ -237,17 +237,10 @@ Validation is left to the methods. Parse the arguments with your schema library 
 
 ## Why use this over comlink, penpal, birpc and json-rpc-2.0
 
-On Node 24, over a `MessageChannel` with the default JSON codec, measured by `rpc.bench.ts` against the built package:
+The benchmarks run over a `MessageChannel` with the default JSON codec.
 
-| Benchmark | @portable/rpc | birpc | comlink | json-rpc-2.0 |
-| --- | --- | --- | --- | --- |
-| Sequential round trips | 108,000/s | 82,000/s | 55,000/s | |
-| 100 concurrent calls | 1,450/s | 1,010/s | 650/s | |
-| 100 notifications and a call | 3,000/s | 2,600/s | | |
-| A 2 KB record | 21,300/s | 13,800/s | 12,700/s | |
-| A stream of 1,000 values | 165/s | 188/s, an event per value | 68/s, a callback per value | |
-| One call over `Rpc.http` and `Rpc.handler` | 13,900/s | | | 15,400/s |
-| A batch of 10 calls over HTTP | 16,800/s | | | 19,500/s |
+<!-- bench:start -->
+<!-- bench:end -->
 
 Structured-cloning a nested object costs more in Node than cloning one JSON string, so the JSON codec is faster than the identity codec (14,400/s for the 2 KB record) and than the libraries that clone. birpc and comlink have no streamed results, so the stream row compares with the server pushing each value without waiting, which has no backpressure.
 

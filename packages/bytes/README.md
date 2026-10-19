@@ -47,22 +47,10 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 - `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so every caller has to check the length first or catch the error.
 - `fromHex` throws `Bytes.InvalidInputError`, which a caller can tell apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
 - Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, and passing `view.buffer` by mistake reads every byte of the buffer, not only the view's.
-- On Node 24, with random input:
-
-| Function | Input | Compared with uint8array-extras | Compared with Node |
-| --- | --- | --- | --- |
-| `toHex` | 32 B | 1.6× faster | 2× slower than `Buffer#toString('hex')` |
-| `toHex` | 1 MiB | 11× faster | 18× slower than `Buffer#toString('hex')` |
-| `fromHex` | 32 B | 3× faster | 1.8× faster than `Buffer.from(hex, 'hex')` |
-| `fromHex` | 1 MiB | 8× faster | 8× slower than `Buffer.from(hex, 'hex')` |
-| `equal` | 32 B | 2× faster | 4× faster than `Buffer.compare` |
-| `equal` | 1 MiB | 3.7× faster | 8.6× slower than `Buffer.compare` |
-| `timingSafeEqual` | 32 B | none | 5× faster than `crypto.timingSafeEqual` |
-| `timingSafeEqual` | 1 MiB | none | 4× faster than `crypto.timingSafeEqual` |
-| `concat` | 4 × 64 KiB | same speed | same speed as `Buffer.concat` |
-| `concat` | 100 × 32 B | 3× faster | same speed as `Buffer.concat` |
-
 Node's `Buffer` methods are C++ and win on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
+
+<!-- bench:start -->
+<!-- bench:end -->
 
 ## Migrating
 

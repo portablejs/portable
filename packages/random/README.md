@@ -63,18 +63,10 @@ These libraries each cover part of the job: random-int and lodash use `Math.rand
 - `string` throws for a length that is not a non-negative integer. nanoid truncates `2.1` to 2, and a size passed as a string once made it run out of memory ([nanoid#381](https://github.com/ai/nanoid/issues/381)).
 - `seeded` takes integer seeds, and different seeds give different sequences. seedrandom gives `'sf'` and `'sfsf'` the same sequence.
 
-Speed on Node 24, measured by `test/random.bench.ts` with 1000 calls per sample:
+Each benchmark makes 1,000 calls per sample.
 
-| Call | Compared with |
-| --- | --- |
-| `int(1, 100)` | Faster than random-int and `lodash.random`, and about 3× faster than `node:crypto`'s `randomInt`. |
-| `float()` | About the speed of `Math.random()`. |
-| `string(21)` | Within 25% of nanoid's `customAlphabet`, and over 100× faster than crypto-random-string. |
-| `string(12, 36 characters)` | As fast as nanoid's `customAlphabet` or faster, and over 100× faster than crypto-random-string. |
-| `shuffle` of 52 elements | 1.5 to 2× faster than `lodash.shuffle`. |
-| `pick` | Faster than `lodash.sample`. |
-| `bytes(32)` | About 30× faster than `crypto.getRandomValues(new Uint8Array(32))`, because it reads from the pool. |
-| `seeded(1).float()` | Within 25% of seedrandom's `alea` and `xor4096`, and about 3× faster than seedrandom's default ARC4. |
+<!-- bench:start -->
+<!-- bench:end -->
 
 ## Migrating
 
