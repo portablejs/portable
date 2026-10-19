@@ -131,7 +131,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `result.rr` | `result.record` |
 | `result.explanation` | `result.explanation` |
 | `result.lookups.count`, `.void` | `result.lookups`, `result.voidLookups` |
-| `result.header`, `result.info` | Not built. `@portable/mailauth` will build Received-SPF and Authentication-Results headers. |
+| `result.header`, `result.info` | Not built. `@portable/mail-auth` will build Received-SPF and Authentication-Results headers. |
 
 These results differ from mailauth's default mode on purpose, and match its strict mode:
 

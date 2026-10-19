@@ -6,7 +6,7 @@ The ported tests are in `check.conformance.ts`, in a `describe` block named afte
 
 mailauth has a default mode that case-folds tag names, lets the last of duplicate tags win, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. We follow the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
 
-The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so From header parsing belongs to the caller (`@portable/mime-headers` and, later, `@portable/mailauth`). The tests that only parse addresses are listed as not applicable below.
+The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so From header parsing belongs to the caller (`@portable/mime-headers` and, later, `@portable/mail-auth`). The tests that only parse addresses are listed as not applicable below.
 
 ## dmarc-verify-test.js
 
@@ -40,7 +40,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | Should return false for From addresses in different domains | Not applicable: the caller decides what to do with several Author Domains (RFC 9989 section 5.3.1). |
 | Should handle IDN domains | IDN domains in A-label form |
 | Should handle domains with string DKIM/SPF entries | Not applicable: identifiers are `{ result, domain }` objects. |
-| Should include ARC result in comment when provided | Not applicable: no Authentication-Results comment. `@portable/mailauth` will add ARC. |
+| Should include ARC result in comment when provided | Not applicable: no Authentication-Results comment. `@portable/mail-auth` will add ARC. |
 | Should track undersized DKIM signatures | each signature is reported, so a caller can tell an l= signature apart |
 | Should return raw record in rr field | the raw record is in record.text |
 | Should generate formatted info string | Not applicable: no Authentication-Results text. |
@@ -54,7 +54,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | --- | --- |
 | C1 > Should not be fooled by an "@" in a quoted local-part | Not applicable: From address parsing. |
 | C1 > Should use the mailbox domain of an obs-route address | Not applicable: From address parsing. |
-| C1 > Should apply the policy through authenticate() | Not applicable: `authenticate()` will be in `@portable/mailauth`. |
+| C1 > Should apply the policy through authenticate() | Not applicable: `authenticate()` will be in `@portable/mail-auth`. |
 | H6 > Should evaluate mailboxes that share one domain | Edge cases > several From addresses in one domain |
 | H6 > Should report why evaluation is not possible, keeping the false response | Not applicable: several Author Domains are found by the caller. |
 | H6 > Should evaluate through authenticate() | Not applicable: `authenticate()`. |

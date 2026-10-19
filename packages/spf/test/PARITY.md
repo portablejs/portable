@@ -424,7 +424,7 @@ mailauth queries A and AAAA together and uses the other family to decide whether
 | Void lookups: MX hosts, NODATA for the client family, repeated query, below the limit | `Void lookups (RFC 7208 4.6.4)`, one test each | |
 | Should use an explicit limit of 0 | skipped | No option for other limits. |
 | Record selection (3 tests) | `Record selection (RFC 7208 4.5)`, one test each | Plus case, two records, and non-SPF TXT records. |
-| Received-SPF header (4 tests) | skipped | We don't build headers. `@portable/mailauth` will, from the result. |
+| Received-SPF header (4 tests) | skipped | We don't build headers. `@portable/mail-auth` will, from the result. |
 | Authentication-Results ptypes (6 tests) | skipped | We don't build headers. `identity` and `domain` say which `smtp.mailfrom` or `smtp.helo` to report. |
 | Should return temperror when maxElapsedTime is exceeded | `Spf.check > rejects with the reason and aborts the lookup when the signal aborts before the DNS answers` | Pass `signal: AbortSignal.timeout(ms)`. The check rejects with its `TimeoutError`, which the caller reports as `temperror`, because every package in this repo rejects with `signal.reason` on abort. |
 | Should return temperror when a DNS query never completes | `Spf.check > rejects with the reason and aborts the lookup when the signal aborts before the DNS answers` | As above. |

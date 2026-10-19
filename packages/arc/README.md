@@ -27,7 +27,7 @@ const fields = await Arc.seal(message, {
 const forwarded = fields + message
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mailauth` does both, together with SPF, DKIM and DMARC, in one call.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM and DMARC, in one call.
 
 ## Verifying
 
@@ -116,9 +116,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 | mailauth | @portable/arc |
 | --- | --- |
-| `const { arc } = await authenticate(message, { resolver })` | `const arc = await Arc.verify(message, { resolver })`, or `Mailauth.authenticate` from `@portable/mailauth` |
+| `const { arc } = await authenticate(message, { resolver })` | `const arc = await Arc.verify(message, { resolver })`, or `MailAuth.authenticate` from `@portable/mail-auth` |
 | `arc.status.result` | `arc.result` |
-| `arc.status.comment` | `arc.reason`, for failures. The pass comment (`i=1 spf=pass dkim=pass`) is built by `@portable/mailauth`. |
+| `arc.status.comment` | `arc.reason`, for failures. The pass comment (`i=1 spf=pass dkim=pass`) is built by `@portable/mail-auth`. |
 | `arc.i` | `arc.instance` |
 | `arc.authenticationResults` (parsed) | `arc.sets.at(-1).authResults` (text) |
 | `arc.signature` | Not returned. A failing ARC-Message-Signature is in `arc.reason`. |

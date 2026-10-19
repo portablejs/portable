@@ -13,9 +13,9 @@ import { checkAuthservId, formatResults } from './internal/results.js'
  * @example
  * ```ts
  * import * as Dns from '@portable/dns'
- * import * as Mailauth from '@portable/mailauth'
+ * import * as MailAuth from '@portable/mail-auth'
  *
- * const resolver: Mailauth.Resolver = Dns.createResolver()
+ * const resolver: MailAuth.Resolver = Dns.createResolver()
  * ```
  */
 export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver
@@ -25,9 +25,9 @@ export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver
  *
  * @example
  * ```ts
- * import * as Mailauth from '@portable/mailauth'
+ * import * as MailAuth from '@portable/mail-auth'
  *
- * const result: Mailauth.Result = await Mailauth.authenticate(message, options)
+ * const result: MailAuth.Result = await MailAuth.authenticate(message, options)
  * if (result.dmarc?.disposition === 'reject') reject('550 5.7.1 Rejected by DMARC policy')
  * ```
  */
@@ -107,9 +107,9 @@ export declare namespace authenticate {
  * @example
  * ```ts
  * import * as Dns from '@portable/dns'
- * import * as Mailauth from '@portable/mailauth'
+ * import * as MailAuth from '@portable/mail-auth'
  *
- * const result = await Mailauth.authenticate(message, {
+ * const result = await MailAuth.authenticate(message, {
  *   resolver: Dns.createResolver(),
  *   authservId: 'mx.example.net',
  *   ip: '192.0.2.1',

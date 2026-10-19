@@ -469,9 +469,9 @@ export const tables: Record<string, Table> = {
       },
     ],
   },
-  mailauth: {
+  'mail-auth': {
     columns: [
-      ours('mailauth', ['authenticate'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('mail-auth', ['authenticate'], [{ from: '@portable/dns', use: ['createResolver'] }]),
       lib('mailauth', [{ from: 'mailauth', use: ['authenticate'] }]),
     ],
     rows: [

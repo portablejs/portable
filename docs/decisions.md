@@ -42,7 +42,7 @@ Calls made without the owner's input, with the options considered and the reason
 ## `Arc.seal` options
 
 - **Options:** mailauth's `cv` (any case), `i`, `algorithm` and `bodyHash`; fewer options derived from the message and the key.
-- **Trade-offs:** An explicit instance or algorithm can only produce a set that is wrong or that fails, such as a gap in the chain or `a=rsa-sha256` with an Ed25519 key. Sealing from a precomputed body hash saves reading the body twice, but `Mailauth.authenticate` already reads the message once for both.
+- **Trade-offs:** An explicit instance or algorithm can only produce a set that is wrong or that fails, such as a gap in the chain or `a=rsa-sha256` with an Ed25519 key. Sealing from a precomputed body hash saves reading the body twice, but `MailAuth.authenticate` already reads the message once for both.
 - **Chosen:** `chainValidation` takes the lower-case values `verify` returns and is required once the message has ARC fields; the instance follows the message and `a=` follows the key. The AMS always uses relaxed/relaxed, the only canonicalization RFC 8617 sealers use in practice. Options that would produce a broken set throw instead of returning warnings.
 
 ## dkim keeps its own header splitter
@@ -255,7 +255,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **`Spf.check({ ip, sender, helo }, { resolver, receiver, signal })`, named after RFC 7208's `check_host()`.** `verify` was passed over because in webhooks it throws on failure, and an SPF `fail` is a result, not an error. `check` rejects only for an invalid `ip`.
 - **The resolver is required, with no default.** A default of `Dns.createResolver()` would save one line, but the resolver decides who sees the client's IP through `%{i}` in `exists` lookups, mail servers usually have their own resolver, and it would put DNS-over-HTTPS code into Node bundles. `Spf.Resolver` is a `Pick` of five `Dns.Resolver` methods, so `node:dns/promises` and small test fakes both fit.
 - **RFC 7208 behavior only.** There is no lenient mode like mailauth's default and no options for the lookup limits. A syntax error anywhere gives `permerror`, and empty answers and `EBADNAME` count as void lookups.
-- **No Received-SPF or Authentication-Results headers.** The result's `identity` and `domain` are enough for `@portable/mailauth` to build them.
+- **No Received-SPF or Authentication-Results headers.** The result's `identity` and `domain` are enough for `@portable/mail-auth` to build them.
 
 ## `@portable/dns` API
 

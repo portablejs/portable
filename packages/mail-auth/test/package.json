@@ -1,5 +1,5 @@
 {
-  "name": "@portable/mailauth-test",
+  "name": "@portable/mail-auth-test",
   "private": true,
   "type": "module",
   "devDependencies": {
@@ -7,7 +7,7 @@
     "@portable/dkim": "workspace:*",
     "@portable/dns": "workspace:*",
     "@portable/fuzz": "workspace:*",
-    "@portable/mailauth": "workspace:*",
+    "@portable/mail-auth": "workspace:*",
     "@types/node": "^26.6.5",
     "mailauth": "^7.3.0"
   }

@@ -123,7 +123,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `dkimDomains: [{ domain, underSized }]` for passing signatures | `dkim: [{ result, domain }]` for every signature. Each signature's alignment is reported, so look up its `l=` tag yourself. |
 | `resolver: (name, type) => records` | `resolver: dns` from `node:dns/promises`, or an object with `resolveTxt`, `resolve4` and `resolveCname`. |
 | `strict: true` | The only behavior. |
-| `arcResult` | Not taken. `@portable/mailauth` will combine ARC and DMARC. |
+| `arcResult` | Not taken. `@portable/mail-auth` will combine ARC and DMARC. |
 | `false` for a From header without one domain | Decide before calling. A `from` that isn't a domain name gives `permerror`. |
 | `result.status.result` | `result.result` |
 | `result.policy` | `result.policy`. `result.disposition` is the policy for `fail` and `'none'` otherwise. |
@@ -134,7 +134,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `result.alignment.dkim.strict` | `result.record.adkim === 's'` |
 | `result.error` | `result.reason` |
 | A resolver that times out | `signal: AbortSignal.timeout(ms)`, which rejects instead of giving `temperror`. |
-| `result.status.header`, `result.info`, `result.warnings` | Not built. `@portable/mailauth` will build Authentication-Results headers. |
+| `result.status.header`, `result.info`, `result.warnings` | Not built. `@portable/mail-auth` will build Authentication-Results headers. |
 
 These results differ from mailauth's strict mode:
 

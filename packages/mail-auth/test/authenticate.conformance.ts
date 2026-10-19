@@ -1,5 +1,5 @@
 import * as Arc from '@portable/arc'
-import * as Mailauth from '@portable/mailauth'
+import * as MailAuth from '@portable/mail-auth'
 import { describe, expect, test } from 'vite-plus/test'
 import {
   buildMessage,
@@ -26,8 +26,8 @@ const envelope = {
 const authenticate = (
   input: string | Uint8Array | ReadableStream<Uint8Array>,
   zone: Zone,
-  options: Partial<Parameters<typeof Mailauth.authenticate>[1]> = {},
-) => Mailauth.authenticate(input, { ...envelope, resolver: zoneResolver(zone), ...options })
+  options: Partial<Parameters<typeof MailAuth.authenticate>[1]> = {},
+) => MailAuth.authenticate(input, { ...envelope, resolver: zoneResolver(zone), ...options })
 
 const rsaRecord = async () => (await key('rsa')).record
 
@@ -142,7 +142,7 @@ describe('Authentication-Results', () => {
   })
 
   test('quotes an IPv6 smtp.remote-ip', async () => {
-    const input = await Mailauth.authenticate(message, {
+    const input = await MailAuth.authenticate(message, {
       ...envelope,
       ip: '2001:db8::1',
       resolver: zoneResolver({}),
@@ -250,7 +250,7 @@ describe('Author domain', () => {
 })
 
 describe('ARC', () => {
-  const seal = async (): Promise<Mailauth.authenticate.Options['seal']> => ({
+  const seal = async (): Promise<MailAuth.authenticate.Options['seal']> => ({
     domain: 'example.com',
     selector: 'test',
     privateKey: (await key('rsa')).privateKey,
@@ -431,7 +431,7 @@ describe('input', () => {
     )
     const controller = new AbortController()
     const resolver = zoneResolver({})
-    const slow: Mailauth.Resolver = {
+    const slow: MailAuth.Resolver = {
       ...resolver,
       resolveTxt: (name) =>
         new Promise((_, reject) => {
@@ -440,7 +440,7 @@ describe('input', () => {
         }),
     }
     await expect(
-      Mailauth.authenticate(message, { ...envelope, resolver: slow, signal: controller.signal }),
+      MailAuth.authenticate(message, { ...envelope, resolver: slow, signal: controller.signal }),
     ).rejects.toBe(reason)
   })
 

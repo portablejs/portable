@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import * as Arc from '@portable/arc'
-import * as Mailauth from '@portable/mailauth'
+import * as MailAuth from '@portable/mail-auth'
 import { authenticate as upstreamAuthenticate, dkimSign, sealMessage } from 'mailauth'
 import { describe, expect, test } from 'vite-plus/test'
 import { buildMessage, key, resinfos, signed, type Zone, zoneResolver } from './utils.js'
@@ -46,7 +46,7 @@ async function upstream(c: Case): Promise<Upstream> {
 }
 
 const ours = (c: Case) =>
-  Mailauth.authenticate(c.message, {
+  MailAuth.authenticate(c.message, {
     resolver: zoneResolver(c.zone),
     authservId: 'mx.receiver.test',
     ip: c.ip,
@@ -211,7 +211,7 @@ describe('mailauth and authenticate interoperate', () => {
     const results: string[] = []
     for (let hop = 1; hop <= 4; hop++) {
       if (hop % 2 === 1) {
-        const result = await Mailauth.authenticate(message, {
+        const result = await MailAuth.authenticate(message, {
           resolver: zoneResolver(zone),
           authservId: `mx${hop}.test`,
           ip: '192.0.2.1',

@@ -25,7 +25,7 @@ In the tradition of sindresorhus and TJ Holowaychuk, and closest in spirit to Re
 Each line lists the `@portable/*` packages a package depends on, from its `package.json`. Nothing depends on a higher layer.
 
 ```
-L3  mailauth      → arc, dkim, dmarc, spf, mime-headers, streams
+L3  mail-auth     → arc, dkim, dmarc, spf, mime-headers, streams
     arc           → dkim, base64, bytes
     dmarc         → spf, dns
     spf           → dns, ip
@@ -137,7 +137,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | `@portable/spf` | Evaluate SPF for a sender IP and domain, with RFC 7208 lookup limits. | `dns`, `ip` | mailauth's SPF module |
 | `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `spf`, `dns` | mailauth's DMARC module |
 | `@portable/arc` | ARC seal and verify (RFC 8617), with RFC behavior only. Reuses dkim's canonicalization and signing through `@portable/dkim/internal`. | `dkim`, `base64`, `bytes` | mailauth's ARC parts |
-| `@portable/mailauth` | One `authenticate(message, { resolver, ip, helo, sender, authservId })` that returns SPF, DKIM, DMARC and ARC results, writes Authentication-Results, and can ARC-seal the message. No BIMI. This is the motivating gap: mailauth (3.5M) is the only complete implementation and it is Node-only. | `arc`, `dkim`, `dmarc`, `spf`, `mime-headers`, `streams` | mailauth's `authenticate` |
+| `@portable/mail-auth` | One `authenticate(message, { resolver, ip, helo, sender, authservId })` that returns SPF, DKIM, DMARC and ARC results, writes Authentication-Results, and can ARC-seal the message. No BIMI. This is the motivating gap: mailauth (3.5M) is the only complete implementation and it is Node-only. | `arc`, `dkim`, `dmarc`, `spf`, `mime-headers`, `streams` | mailauth's `authenticate` |
 
 ## Later, once the core is proven
 
@@ -148,6 +148,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | `@portable/xlsx` | Streaming xlsx writer | replaces exceljs 72M for the write path; zips with fflate as a peer |
 | Document formats (pdf, docx) | Read or write office documents | parked with xlsx; Kevin asked to save document formats for later (2026-10-18) |
 | `@portable/http-signatures` | RFC 9421 HTTP Message Signatures and `Content-Digest` (RFC 9530) on WebCrypto | parked: most ActivityPub servers still use draft-cavage signatures, and Web Bot Auth is new. Revisit if RFC 9421 adoption grows. |
+| Partial JSON | Snapshots of an incomplete JSON document as deltas arrive, such as streamed tool-call arguments | parked: Kevin asked to wait for a strong use case (2026-10-19) |
 
 ## Not building (point to these instead)
 
@@ -171,7 +172,7 @@ Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars,
 1. L0 in parallel: `lines`, `streams`, `base64`, `quoted-printable`, `dns-packet`, then `charset` (needs its table generator).
 2. L1: `json-stream`, `mime-headers`, then `image-size`, `exif`, `png`.
 3. L2: `mail` and `dns` first (pure composition of what exists), then `dkim`, `webhooks`, `oauth1`.
-4. L3: `spf`, `dkim`-based `arc`, `dmarc`, then `mailauth`.
+4. L3: `spf`, `dkim`-based `arc`, `dmarc`, then `mail-auth`.
 5. `mime-stream` lands just before `dkim` needs it.
 
 The scaffold PR proves the pipeline with `lines` (the first package and a 406M replacement), instead of `content-disposition` from revision 1.

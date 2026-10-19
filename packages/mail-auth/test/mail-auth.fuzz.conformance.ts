@@ -1,5 +1,5 @@
 import { fc, fuzz, mutated } from '@portable/fuzz'
-import * as Mailauth from '@portable/mailauth'
+import * as MailAuth from '@portable/mail-auth'
 import { beforeAll, expect, test } from 'vite-plus/test'
 import {
   buildMessage,
@@ -24,7 +24,7 @@ beforeAll(async () => {
     '_dmarc.example.com': { TXT: ['v=DMARC1; p=reject'] },
   }
   const input = await signed(buildMessage(), 'example.com')
-  const result = await Mailauth.authenticate(input, {
+  const result = await MailAuth.authenticate(input, {
     resolver: zoneResolver(zone),
     authservId: 'mx.test',
     ip: '192.0.2.1',
@@ -34,7 +34,7 @@ beforeAll(async () => {
   message = encode(result.headers + input)
 })
 
-function expectWellFormed(result: Mailauth.Result) {
+function expectWellFormed(result: MailAuth.Result) {
   expect(result.headers.endsWith('\r\n')).toBe(true)
   expect(result.headers.slice(0, -2)).not.toMatch(/\r(?!\n)|(?<!\r)\n|\r\n(?![ \t]|[A-Z])/)
   for (const line of result.headers.split('\r\n'))
@@ -58,7 +58,7 @@ test('authenticate settles with well-formed fields for a changed signed and seal
   const headerLength = new TextDecoder().decode(message).indexOf('\r\n\r\n') + 4
   await fuzz(
     fc.asyncProperty(mutated(message, { within: headerLength }), async (input) => {
-      const result = await Mailauth.authenticate(input, {
+      const result = await MailAuth.authenticate(input, {
         resolver: zoneResolver(zone),
         authservId: 'mx.test',
         ip: '192.0.2.1',
@@ -85,7 +85,7 @@ test('authenticate writes well-formed fields for any From field, sender and HELO
   await fuzz(
     fc.asyncProperty(text, text, text, async (from, local, helo) => {
       const input = `From: ${from.replace(/[\r\n]/g, ' ')}\r\nSubject: x\r\n\r\nbody\r\n`
-      const result = await Mailauth.authenticate(input, {
+      const result = await MailAuth.authenticate(input, {
         resolver: zoneResolver({ 'example.com': { TXT: ['v=spf1 -all'] } }),
         authservId: 'mx.test',
         ip: '2001:db8::1',

@@ -1,18 +1,18 @@
-# @portable/mailauth
+# @portable/mail-auth
 
 Checks a received message's SPF, DKIM, DMARC and ARC in one call, writes the results as an Authentication-Results header field (RFC 8601), and can ARC-seal the message with them. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces `authenticate` from [mailauth](https://www.npmjs.com/package/mailauth).
 
 ```sh
-npm install @portable/mailauth @portable/dns
+npm install @portable/mail-auth @portable/dns
 ```
 
 ```ts
 import * as Dns from '@portable/dns'
-import * as Mailauth from '@portable/mailauth'
+import * as MailAuth from '@portable/mail-auth'
 
-const result = await Mailauth.authenticate(message, {
+const result = await MailAuth.authenticate(message, {
   resolver: Dns.createResolver(),
   authservId: 'mx.example.net',
   ip: '192.0.2.1',
@@ -28,7 +28,7 @@ const delivered = result.headers + message
 A forwarder, such as a mailing list, passes `seal` as well, and `result.headers` then starts with a new ARC set that records these results:
 
 ```ts
-const result = await Mailauth.authenticate(message, {
+const result = await MailAuth.authenticate(message, {
   resolver,
   authservId: 'lists.example.org',
   ip,
@@ -98,8 +98,8 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 
 | Type | Description |
 | --- | --- |
-| `Mailauth.Resolver` | The lookups SPF, DKIM, DMARC and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
-| `Mailauth.Result` | What `authenticate` resolves to, as above. |
+| `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
+| `MailAuth.Result` | What `authenticate` resolves to, as above. |
 
 ## Why use this over mailauth
 
@@ -110,14 +110,14 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 - It has no dependencies outside `@portable/*`.
 
 <!-- bench:start -->
-| | @portable/mailauth | mailauth |
+| | @portable/mail-auth | mailauth |
 | --- | ---: | ---: |
 | Authenticate a 250 KB message with a DKIM signature and an ARC set | 246 | 238 |
 | Authenticate and seal a short message | 433 | 323 |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
 
-| | @portable/mailauth | mailauth |
+| | @portable/mail-auth | mailauth |
 | --- | --- | --- |
 | Minified and gzipped | 32 kB | 715 kB |
 | Runtime dependencies | 11 | 38 |
@@ -130,9 +130,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 ## Migrating
 
-| mailauth | @portable/mailauth |
+| mailauth | @portable/mail-auth |
 | --- | --- |
-| `authenticate(message, { ip, helo, sender, mta, resolver })` | `Mailauth.authenticate(message, { ip, helo, sender, authservId, resolver })`. `authservId` is required, as there is no `os.hostname()`. |
+| `authenticate(message, { ip, helo, sender, mta, resolver })` | `MailAuth.authenticate(message, { ip, helo, sender, authservId, resolver })`. `authservId` is required, as there is no `os.hostname()`. |
 | `resolver: (name, type) => ...` | An object with `resolveTxt` and the other methods, such as `node:dns/promises`. |
 | `strict: true`, `rejectRsaSha1` | The only behavior. |
 | `minBitLength` | `minKeyBits` |

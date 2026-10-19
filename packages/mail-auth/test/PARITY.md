@@ -23,7 +23,7 @@ The oracle allows two differences that come from `@portable/dkim`: a key record 
 | strict option: passes strict and rejectRsaSha1 to the DKIM verification | The oracle's rsa-sha1 cases: `dkim=policy` and `dmarc=fail`. |
 | Authentication-Results above Received-SPF only in strict mode | › "writes only the Authentication-Results field without a seal, and no Received-SPF" |
 | reports the AUID and SDID in strict mode | › "reports each method with its properties" |
-| keeps every generated line within 998 octets | › "keeps every line within 998 octets and every comment balanced", with the same four senders and HELO name, and `mailauth.fuzz.conformance.ts` for any From field, sender and HELO name. |
+| keeps every generated line within 998 octets | › "keeps every line within 998 octets and every comment balanced", with the same four senders and HELO name, and `mail-auth.fuzz.conformance.ts` for any From field, sender and HELO name. |
 | quotes an mta value that is not a token (lax) | Deliberately different: `authservId` › "throws a RangeError when it is not a token", as mailauth's strict mode does. |
 | refuses an mta value that is not a token in strict mode | › "throws a RangeError when it is not a token" |
 | keeps a host name mta value as is | › "is written as given when it is a token" |

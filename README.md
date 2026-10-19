@@ -40,7 +40,7 @@ Nothing is published to npm yet. Each package README has a table of benchmarks a
 - [`@portable/spf`](packages/spf): checks whether a client may send mail for a domain, using SPF. Replaces mailauth's SPF module.
 - [`@portable/dmarc`](packages/dmarc): checks a message against the DMARC policy of its From domain. Replaces mailauth's DMARC module.
 - [`@portable/arc`](packages/arc): seals and verifies ARC sets. Replaces mailauth's ARC module.
-- [`@portable/mailauth`](packages/mailauth): checks a received message's SPF, DKIM, DMARC and ARC in one call and writes the Authentication-Results header. Replaces mailauth's `authenticate`.
+- [`@portable/mail-auth`](packages/mail-auth): checks a received message's SPF, DKIM, DMARC and ARC in one call and writes the Authentication-Results header. Replaces mailauth's `authenticate`.
 - [`@portable/quoted-printable`](packages/quoted-printable): quoted-printable encoding and decoding, as functions and streams. Replaces libqp and quoted-printable.
 - [`@portable/charset`](packages/charset): encodes text into legacy charsets such as Shift_JIS, GBK, Big5 and windows-1251. Replaces the encoding half of iconv-lite.
 

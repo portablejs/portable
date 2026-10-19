@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import * as Arc from '@portable/arc'
-import * as Mailauth from '@portable/mailauth'
+import * as MailAuth from '@portable/mail-auth'
 import { authenticate as upstreamAuthenticate } from 'mailauth'
 import { expect, test } from 'vite-plus/test'
 import { encode, fixtureText, key, signed, type Zone, zoneResolver } from './utils.js'
@@ -49,8 +49,8 @@ test('authenticates a 250 KB message with a DKIM signature and an ARC set within
   bench,
 }) => {
   const result = await bench.compare(
-    bench('@portable/mailauth', async () => {
-      const result = await Mailauth.authenticate(largeSealed, {
+    bench('@portable/mail-auth', async () => {
+      const result = await MailAuth.authenticate(largeSealed, {
         ...envelope,
         resolver,
         authservId: 'mx.example.net',
@@ -69,7 +69,7 @@ test('authenticates a 250 KB message with a DKIM signature and an ARC set within
         throw new Error('fail')
     }),
   )
-  expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/mailauth'), {
+  expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/mail-auth'), {
     delta: 0.25,
   })
 })
@@ -81,8 +81,8 @@ const small = await signed(
 
 test('authenticates and seals a short message within 25% of mailauth', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/mailauth', async () => {
-      await Mailauth.authenticate(small, {
+    bench('@portable/mail-auth', async () => {
+      await MailAuth.authenticate(small, {
         ...envelope,
         resolver,
         authservId: 'mx.example.net',
@@ -100,7 +100,7 @@ test('authenticates and seals a short message within 25% of mailauth', async ({ 
       })
     }),
   )
-  expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/mailauth'), {
+  expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/mail-auth'), {
     delta: 0.25,
   })
 })

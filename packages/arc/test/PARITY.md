@@ -32,7 +32,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | Ed25519: verifies an ed25519-sha256 ARC-Seal | › "verifies an ed25519-sha256 ARC-Seal" |
 | rejects an ed25519 seal made without the pre-hash | › "rejects an ed25519 ARC-Seal made without the SHA-256 pre-hash" |
 | seals with an ed25519 key (algorithm unset, lower case, upper case) | `seal.conformance.ts` › "seals with an Ed25519 key". There is no algorithm option. |
-| seals with an ed25519 key from authenticate() | `@portable/mailauth`'s tests. |
+| seals with an ed25519 key from authenticate() | `@portable/mail-auth`'s tests. |
 | refuses an algorithm that does not match the key; refuses rsa-sha1 | Not applicable: the key type sets `a=`. `verify.conformance.ts` › "fails an rsa-sha1 ARC-Seal" covers the validator side. |
 | tag syntax: duplicate tag, duplicate cv, upper case tag name, empty tag-spec, invalid tag name, non-numeric t=, AMS duplicate tag (strict) | › "fails a duplicate tag" through "fails a duplicate tag in the AMS". |
 | tag syntax: the same cases accepted with a warning (lax) | Not applicable: no lax mode. |
@@ -69,13 +69,13 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | fails an older ARC-Seal with such a d= | › "fails an older ARC-Seal with such a d=" |
 | accepts a U-label d= | › "accepts a U-label d= and looks up its A-label" |
 | AMS header list: signs DKIM-Signature by default; takes an array; never signs ARC fields or Authentication-Results | `seal.conformance.ts` › "signs DKIM-Signature by default", "takes the list as an array", "never signs ARC fields or Authentication-Results" |
-| Authentication-Results reporting: arc=none and smtp.remote-ip; quoted IPv6; lax arc= entry | `@portable/mailauth`, which formats Authentication-Results. |
+| Authentication-Results reporting: arc=none and smtp.remote-ip; quoted IPv6; lax arc= entry | `@portable/mail-auth`, which formats Authentication-Results. |
 
 ## arc-hardening-test.js
 
 | Upstream | Here |
 | --- | --- |
-| Crafted Authentication-Results values (dotted keys, `toString` shadowing, `value=` parts, well-formed `header.i`) | Not applicable here: `verify` returns the AAR text and doesn't parse it into objects. `@portable/mailauth` builds the `arc=pass` comment and has these cases. |
+| Crafted Authentication-Results values (dotted keys, `toString` shadowing, `value=` parts, well-formed `header.i`) | Not applicable here: `verify` returns the AAR text and doesn't parse it into objects. `@portable/mail-auth` builds the `arc=pass` comment and has these cases. |
 | Public key failures: weak key, missing key, unparseable key | `verify.conformance.ts` › "reports a weak, a missing and an unusable key" |
 | Sealing failures: an AMS that can't be signed is not sealed, and no empty line is written | Not applicable: the key type sets the algorithm, and `seal` throws instead of returning partial fields. |
 | createSeal returns the instance of the created set | `seal.conformance.ts` › "seals one message repeatedly, each set over the last" |
@@ -90,7 +90,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | seals concurrent messages sharing one seal object | `seal.conformance.ts` › "does not change the options object, so it can seal several messages at once" |
 | reuses one seal object for consecutive sealMessage() calls | › "seals one message repeatedly, each set over the last" |
 | keeps an explicit instance as given | Not applicable: no instance option. |
-| authenticate() seals a broken chain with cv=fail; a new message with cv=none | `@portable/mailauth`'s tests. |
+| authenticate() seals a broken chain with cv=fail; a new message with cv=none | `@portable/mail-auth`'s tests. |
 | seals a chain with a missing AAR, a missing newest ARC-Seal, a duplicate ARC field, a failing signature with cv=fail | › "seals a chain with a missing ARC-Authentication-Results with cv=fail as i=3" and the other three |
 | does not seal a broken chain whose newest seal says cv=fail | › "refuses a chain whose newest seal is cv=fail" |
 | refuses 10 kinds of invalid authResults | › "refuses a CRLF that starts a new header field" and the other nine |
@@ -100,7 +100,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 
 | Upstream | Here |
 | --- | --- |
-| ARC sealing: does not add a 51st ARC set | `seal.conformance.ts` › "refuses a 51st set". The `authenticate` side is in `@portable/mailauth`. |
+| ARC sealing: does not add a 51st ARC set | `seal.conformance.ts` › "refuses a 51st set". The `authenticate` side is in `@portable/mail-auth`. |
 
 ## Known upstream issues
 

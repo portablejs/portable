@@ -1,6 +1,6 @@
 import type * as Dns from '@portable/dns'
 import * as Dkim from '@portable/dkim'
-import * as Mailauth from '@portable/mailauth'
+import * as MailAuth from '@portable/mail-auth'
 
 const files = import.meta.glob<string>('./fixtures/*', { query: '?url&inline', import: 'default' })
 
@@ -31,7 +31,7 @@ export function dnsError(code: string, name: string): Error {
 const normalize = (name: string): string => name.toLowerCase().replace(/\.$/, '')
 
 /** Fails like `node:dns`, as mailauth's tests expect: ENOTFOUND for a missing name, ENODATA for a missing type. */
-export function zoneResolver(zone: Zone, log: string[] = []): Mailauth.Resolver {
+export function zoneResolver(zone: Zone, log: string[] = []): MailAuth.Resolver {
   const names = new Map(Object.entries(zone).map(([name, records]) => [normalize(name), records]))
   async function answer<T>(
     type: string,
