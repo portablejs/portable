@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import { CommandError } from './CommandError.js'
 
 export type Reply = {
@@ -36,16 +37,6 @@ function decode(bytes: Uint8Array): string {
   }
 }
 
-function concat(parts: readonly Uint8Array[], length: number): Uint8Array {
-  const out = new Uint8Array(length)
-  let offset = 0
-  for (const part of parts) {
-    out.set(part, offset)
-    offset += part.length
-  }
-  return out
-}
-
 function toReply(code: number, lines: string[], raw: string[]): Reply {
   return {
     code,
@@ -63,7 +54,7 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
   let partsLength = 0
 
   const closed = (command: string, cause?: unknown) => {
-    const line = decode(concat(parts, partsLength))
+    const line = decode(Bytes.concat(parts))
     const match = replyLine.exec(line)
     const code = match ? Number(match[1]) : 0
     const reply = code >= 400 ? toReply(code, [match?.[3] ?? ''], [line]) : undefined
@@ -83,7 +74,7 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
         let line = piece
         if (parts.length > 0) {
           parts.push(piece)
-          line = concat(parts, partsLength + piece.length)
+          line = Bytes.concat(parts)
           parts = []
           partsLength = 0
         }

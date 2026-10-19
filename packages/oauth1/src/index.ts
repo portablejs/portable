@@ -1,4 +1,5 @@
 import * as Base64 from '@portable/base64'
+import * as Bytes from '@portable/bytes'
 import { type Digest, type HashAlgorithm, hmac, rsaSha1, subtleDigest } from './crypto.js'
 import { UnsupportedError } from './errors.js'
 import { race, readBody } from './race.js'
@@ -80,7 +81,6 @@ export declare namespace sign {
 
 const methods = new Set<string>(['HMAC-SHA1', 'HMAC-SHA256', 'RSA-SHA1', 'PLAINTEXT'])
 const utf8 = new TextEncoder()
-const hex = '0123456789abcdef'
 
 /**
  * Signs a request and returns the value for its `Authorization` header. The request is not
@@ -248,8 +248,5 @@ function randomNonce(): string {
     crypto.getRandomValues(random)
     randomOffset = 0
   }
-  let nonce = ''
-  for (const byte of random.subarray(randomOffset, (randomOffset += 16)))
-    nonce += hex[byte >> 4]! + hex[byte & 15]!
-  return nonce
+  return Bytes.toHex(random.subarray(randomOffset, (randomOffset += 16)))
 }

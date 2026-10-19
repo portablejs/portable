@@ -1,4 +1,5 @@
 import * as Base64 from '@portable/base64'
+import * as Bytes from '@portable/bytes'
 import { InvalidInputError } from './errors.js'
 
 /**
@@ -88,7 +89,7 @@ export async function encrypt(
   const ikm = await hkdf(
     await subtle.importKey('raw', secret, 'HKDF', false, ['deriveBits']),
     auth,
-    concat(keyInfo, userPublicKey, asPublic),
+    Bytes.concat([keyInfo, userPublicKey, asPublic]),
     256,
   )
   const prk = await subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits'])
@@ -151,16 +152,6 @@ function hkdf(
   bits: number,
 ): Promise<ArrayBuffer> {
   return subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, key, bits)
-}
-
-function concat(...parts: Uint8Array[]): Uint8Array<ArrayBuffer> {
-  const out = new Uint8Array(parts.reduce((length, part) => length + part.length, 0))
-  let offset = 0
-  for (const part of parts) {
-    out.set(part, offset)
-    offset += part.length
-  }
-  return out
 }
 
 const subtle = crypto.subtle

@@ -15,21 +15,3 @@ export function fromBinary(text: string): Uint8Array<ArrayBuffer> {
 const utf8 = new TextDecoder()
 
 export const binaryToText = (text: string): string => utf8.decode(fromBinary(text))
-
-export function concat(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
-  let length = 0
-  for (const chunk of chunks) length += chunk.length
-  const out = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.length
-  }
-  return out
-}
-
-export function equal(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
-  return true
-}

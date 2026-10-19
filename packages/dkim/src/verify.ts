@@ -1,5 +1,6 @@
+import * as Bytes from '@portable/bytes'
 import type * as Dns from '@portable/dns'
-import { equal, toBinary } from './internal/bytes.js'
+import { toBinary } from './internal/bytes.js'
 import { bodyHashKey, type Hash, hashBody } from './internal/digest.js'
 import { parseFields } from './internal/header.js'
 import { type Message, splitMessage } from './internal/message.js'
@@ -140,7 +141,7 @@ export async function verify(message: Message, options: verify.Options): Promise
       const outcome =
         length !== undefined && length > digest.total
           ? { result: 'neutral' as const, reason: 'l= is longer than the body' }
-          : !equal(digest.digest, signature.bodyHash)
+          : !Bytes.equal(digest.digest, signature.bodyHash)
             ? { result: 'fail' as const, reason: 'body hash did not verify' }
             : await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
       result.result = outcome.result

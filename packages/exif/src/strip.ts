@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js'
 import { readTiff } from './tiff.js'
@@ -40,7 +41,7 @@ export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Arra
   const stripper = new Stripper(options, (part) => parts.push(part))
   stripper.push(bytes)
   stripper.close()
-  return concat(parts)
+  return Bytes.concat(parts)
 }
 
 export declare namespace StripStream {
@@ -274,7 +275,9 @@ class Stripper {
     if (marker === 0xe1 && startsWith(payload, 0, exifHeader)) {
       const tiff = this.orientationTiff(payload.subarray(6))
       if (tiff)
-        this.emit(concat([new Uint8Array([0xff, 0xe1, 0, tiff.length + 8]), exifPrefix, tiff]))
+        this.emit(
+          Bytes.concat([new Uint8Array([0xff, 0xe1, 0, tiff.length + 8]), exifPrefix, tiff]),
+        )
     } else if (this.keepJpegSegment(marker!, payload)) this.out(bytes)
     return bytes.length
   }
@@ -324,8 +327,8 @@ class Stripper {
     if (startsWith(data, 0, exifHeader)) data = data.subarray(6)
     const tiff = this.orientationTiff(data)
     if (tiff) {
-      const chunk = concat([bigEndian32(tiff.length), ascii('eXIf'), tiff])
-      this.emit(concat([chunk, bigEndian32(crc32(chunk.subarray(4)))]))
+      const chunk = Bytes.concat([bigEndian32(tiff.length), ascii('eXIf'), tiff])
+      this.emit(Bytes.concat([chunk, bigEndian32(crc32(chunk.subarray(4)))]))
     }
     this.next('pngChunk', 8)
     return bytes.length
@@ -367,7 +370,7 @@ class Stripper {
         const tiff = this.orientationTiff(data)
         if (!tiff) continue
         hasExif = true
-        parts.push(concat([ascii('EXIF'), littleEndian32(tiff.length), tiff]))
+        parts.push(Bytes.concat([ascii('EXIF'), littleEndian32(tiff.length), tiff]))
       } else if (type === 'XMP ') continue
       else if (type === 'ICCP') {
         if (!this.keepColorProfile) continue
@@ -381,7 +384,7 @@ class Stripper {
     if (vp8x && vp8x.length > 8) {
       vp8x[8] = (vp8x[8]! & ~0x2c) | (hasIcc ? 0x20 : 0) | (hasExif ? 0x08 : 0)
     }
-    const out = concat(parts)
+    const out = Bytes.concat(parts)
     out.set(littleEndian32(out.length - 8), 4)
     return out
   }
@@ -430,18 +433,6 @@ class Stripper {
 
 function ascii(text: string): Uint8Array {
   return new TextEncoder().encode(text)
-}
-
-function concat(parts: readonly Uint8Array[]): Uint8Array {
-  let length = 0
-  for (const part of parts) length += part.length
-  const out = new Uint8Array(length)
-  let at = 0
-  for (const part of parts) {
-    out.set(part, at)
-    at += part.length
-  }
-  return out
 }
 
 function bigEndian32(n: number): Uint8Array {

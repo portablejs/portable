@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes'
 import * as MimeHeaders from '@portable/mime-headers'
 import { type Addresses, format, parse, wordEncoding } from './addresses.js'
 import {
@@ -230,10 +231,7 @@ function checkBoundary(prefix: string): string {
 }
 
 function randomHex(bytes: number): string {
-  let hex = ''
-  for (const byte of crypto.getRandomValues(new Uint8Array(bytes)))
-    hex += byte.toString(16).padStart(2, '0')
-  return hex
+  return Bytes.toHex(crypto.getRandomValues(new Uint8Array(bytes)))
 }
 
 const fold = (name: string, value: string) =>

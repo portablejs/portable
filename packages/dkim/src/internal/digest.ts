@@ -1,5 +1,5 @@
 import { type Canonicalizer, createCanonicalizer, type Sink } from './body.js'
-import { concat } from './bytes.js'
+import * as Bytes from '@portable/bytes'
 import type { Canonicalization } from './header.js'
 import type { Body } from './message.js'
 
@@ -26,7 +26,7 @@ function webCryptoHash(): Hash {
     update(data) {
       chunks.push(data)
     },
-    digest: () => sha256(concat(chunks)),
+    digest: () => sha256(Bytes.concat(chunks)),
   }
 }
 
