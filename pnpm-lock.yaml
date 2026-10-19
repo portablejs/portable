@@ -83,6 +83,9 @@ importers:
       '@portable/dkim':
         specifier: workspace:*
         version: link:../../dkim
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/streams':
         specifier: workspace:*
         version: link:../../streams
