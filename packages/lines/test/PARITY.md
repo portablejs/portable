@@ -49,6 +49,14 @@ Upstream suites: [split2 4.2.0 `test.js`](https://github.com/mcollina/split2/blo
 | should work with old-style streams | skipped | Node streams1 and a live HTTP request. |
 | should pause() and resume() with a huge file | `byline > keeps every line when the reader is slow` | |
 
+## Known upstream issues
+
+| Issue | Test |
+| --- | --- |
+| split2 checks `maxLength` only against the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked. | `split2 > applies maxLength to whole lines regardless of chunking` |
+| byline drops empty lines unless `keepEmptyLines` is set, so a reader of a format where blank lines matter loses them without an error. | `byline > keeps empty lines by default` |
+| byline's own CRLF test uses a fixture with no CR, so a CRLF split across chunks was never tested upstream. | `byline > does not split a CRLF that spans two chunks` |
+
 ## Benchmarks
 
 split2's `bench.js` compares split2, binary-split and `node:readline` on `package.json`. `DecoderStream.bench.ts` compares `DecoderStream`, split2 and `node:readline` on 1.7 MB of text and fails if split2 is more than 25% faster.

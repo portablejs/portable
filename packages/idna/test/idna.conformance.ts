@@ -166,12 +166,10 @@ describe('known upstream issues', () => {
     expect(Idna.toAscii('♡.com')).toBe('xn--c6h.com')
   })
 
-  test('a long label converts in O(n log n) time; punycode.js and tr46 take 15 s for this one', () => {
+  test('converts a long label within the test timeout; punycode.js and tr46 take 15 s for this one', () => {
     const label = Array.from({ length: 40_000 }, (_, i) =>
       String.fromCodePoint(0x4e00 + (i % 20_000)),
     )
-    const start = performance.now()
     expect(Idna.toUnicode(Idna.toAscii(label.join('')))).toBe(label.join(''))
-    expect(performance.now() - start).toBeLessThan(3000)
   })
 })

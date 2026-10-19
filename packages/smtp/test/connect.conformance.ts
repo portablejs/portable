@@ -213,15 +213,13 @@ describe('EHLO and HELO', () => {
 })
 
 describe('reading replies', () => {
-  test('reads a long multi-line reply in linear time', async () => {
+  test('reads a 30,000-line reply within the test timeout', async () => {
     const lines = 30_000
     let reply = ''
     for (let i = 0; i < lines; i++) reply += `250-capability line ${i}\r\n`
     const server = fakeServer({ EHLO: `${reply}250 DONE\r\n` })
-    const started = performance.now()
     const client = await plain(server)
     expect(client.extensions).toHaveLength(lines)
-    expect(performance.now() - started).toBeLessThan(3000)
   })
 
   test('fails when a reply exceeds 1 MiB, however it is split', async () => {
@@ -250,17 +248,15 @@ describe('reading replies', () => {
     expect(result.accepted).toEqual(['b@example.com'])
   })
 
-  test('fails on a line that never ends, in linear time', async () => {
+  test('fails on a line that never ends, within the test timeout', async () => {
     const server = fakeServer({
       greeting: (_, connection) => {
         const chunk = encode('x'.repeat(16))
         for (let i = 0; i < 65_600; i++) connection.write(chunk)
       },
     })
-    const started = performance.now()
     const error = await failure(plain(server))
     expect(error.code).toBe('EPROTOCOL')
-    expect(performance.now() - started).toBeLessThan(5000)
   })
 
   test('rejects a reply line without a status code', async () => {

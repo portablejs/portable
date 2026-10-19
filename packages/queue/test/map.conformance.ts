@@ -234,6 +234,7 @@ describe('map', () => {
 describe('map errors', () => {
   test('rejects at once with the first error when stopOnError is true', async () => {
     const started: number[] = []
+    const finished: number[] = []
     const error = new Error('bar')
     const result = Queue.map(
       [0, 1, 2, 3],
@@ -244,13 +245,13 @@ describe('map errors', () => {
           throw error
         }
         await delay(200)
+        finished.push(n)
         return n
       },
       { concurrency: 2 },
     )
-    const t0 = performance.now()
     await expect(result).rejects.toBe(error)
-    expect(performance.now() - t0).toBeLessThan(150)
+    expect(finished).toEqual([])
     expect(started).toEqual([0, 1])
   })
 
