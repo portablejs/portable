@@ -1,0 +1,53 @@
+{
+  "name": "@portable/mailauth",
+  "description": "Check SPF, DKIM, DMARC and ARC for a received message, write its Authentication-Results header and ARC-seal it, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/mailauth"
+  },
+  "keywords": [
+    "mailauth",
+    "authentication-results",
+    "rfc8601",
+    "spf",
+    "dkim",
+    "dmarc",
+    "arc",
+    "email"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "dependencies": {
+    "@portable/arc": "workspace:*",
+    "@portable/dkim": "workspace:*",
+    "@portable/dmarc": "workspace:*",
+    "@portable/mime-headers": "workspace:*",
+    "@portable/spf": "workspace:*",
+    "@portable/streams": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}

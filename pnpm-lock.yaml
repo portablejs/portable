@@ -555,6 +555,51 @@ importers:
         specifier: ^4.0.7
         version: 4.0.8
 
+  packages/mailauth:
+    dependencies:
+      '@portable/arc':
+        specifier: workspace:*
+        version: link:../arc
+      '@portable/dkim':
+        specifier: workspace:*
+        version: link:../dkim
+      '@portable/dmarc':
+        specifier: workspace:*
+        version: link:../dmarc
+      '@portable/mime-headers':
+        specifier: workspace:*
+        version: link:../mime-headers
+      '@portable/spf':
+        specifier: workspace:*
+        version: link:../spf
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
+
+  packages/mailauth/test:
+    devDependencies:
+      '@portable/arc':
+        specifier: workspace:*
+        version: link:../../arc
+      '@portable/dkim':
+        specifier: workspace:*
+        version: link:../../dkim
+      '@portable/dns':
+        specifier: workspace:*
+        version: link:../../dns
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
+      '@portable/mailauth':
+        specifier: workspace:*
+        version: link:..
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      mailauth:
+        specifier: ^7.3.0
+        version: 7.3.0
+
   packages/mime-headers:
     dependencies:
       '@portable/base64':

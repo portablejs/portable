@@ -73,9 +73,9 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `hash` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
-With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed.
+With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed gets `i=1` with `cv=fail`.
 
-`seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't fit the message (`pass` or `fail` on a message without ARC fields, `none` on one with them). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal says `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
+`seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't fit the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal says `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
 
 ## Why use this over mailauth
 

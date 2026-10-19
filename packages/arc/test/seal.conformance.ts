@@ -125,12 +125,25 @@ describe('chainValidation (RFC 8617 section 5.1)', () => {
       ).rejects.toThrow(RangeError)
   })
 
-  test('must be none for the first set and only for the first set', async () => {
+  test('must be none for a message without ARC fields and only for one', async () => {
     await expect(seal(baseMessage, { chainValidation: 'pass' })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { chainValidation: 'fail' })).rejects.toThrow(RangeError)
     await expect(seal((await singleSet()).message, { chainValidation: 'none' })).rejects.toThrow(
       RangeError,
     )
+  })
+
+  test('seals a message whose only ARC fields are malformed as i=1 with cv=fail', async () => {
+    for (const stray of ['ARC-Seal:', 'ARC-Seal: i=0; cv=none', 'ARC-Message-Signature: i=x']) {
+      const message = `${stray}\r\n${baseMessage}`
+      const arc = await check(message)
+      expect(arc).toMatchObject({ result: 'fail', instance: 0 })
+      await expect(seal(message, { chainValidation: 'pass' })).rejects.toThrow(RangeError)
+      await expect(seal(message)).rejects.toThrow(TypeError)
+      const fields = await seal(message, { chainValidation: arc.result })
+      expect(fields).toMatch(/^ARC-Seal: i=1;.* cv=fail;/)
+      expect((await check(fields + message)).result).toBe('fail')
+    }
   })
 
   test('refuses a chain whose newest seal is cv=fail', async () => {

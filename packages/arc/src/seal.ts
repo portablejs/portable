@@ -137,17 +137,18 @@ export async function seal(message: Message, options: seal.Options): Promise<str
       new InvalidInputError(`The message has ${top.instance} ARC sets, the most RFC 8617 allows.`),
     )
   const instance = top.instance + 1
-  const cv = chainValidation ?? (instance === 1 ? 'none' : undefined)
+  const chained = fields.some(isArcField)
+  const cv = chainValidation ?? (chained ? undefined : 'none')
   if (cv === undefined)
     return refuse(
       new TypeError('options.chainValidation is required for a message that has ARC fields.'),
     )
-  if ((instance === 1) !== (cv === 'none'))
+  if (chained === (cv === 'none') || (cv === 'pass' && instance === 1))
     return refuse(
       new RangeError(
-        instance === 1
-          ? `cv=${cv} needs an ARC chain, and the message has none.`
-          : `cv=none is only for a message without ARC fields (this set is i=${instance}).`,
+        cv === 'none'
+          ? `cv=none is only for a message without ARC fields (this set is i=${instance}).`
+          : `cv=${cv} needs an ARC chain, and the message has ${chained ? 'no valid ARC set' : 'none'}.`,
       ),
     )
   const covered: Field[] = []

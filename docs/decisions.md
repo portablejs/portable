@@ -435,3 +435,21 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **Options:** switch dkim's `splitMessage` to `MimeStream.splitHeaders`; keep dkim's.
 - **Trade-offs:** `splitHeaders` doesn't turn bare LF into CRLF, and dkim and arc read bare-LF messages as CRLF, as mailauth does. Switching would need a normalizing pass in front of it.
 - **Chosen:** keep dkim's splitter.
+
+## mailauth leaves out BIMI, Received-SPF and trustReceived
+
+- **Options:** port all of mailauth's `authenticate`; port the SPF, DKIM, DMARC and ARC checks with Authentication-Results and sealing only.
+- **Trade-offs:** BIMI needs SVG Tiny PS validation and VMC certificate chains, each bigger than the rest of the package. Received-SPF repeats the `spf=` result that Authentication-Results already carries (RFC 8601 replaces it for new code). `trustReceived` takes the client address from a Received field, which any earlier hop can write, and an SMTP server always knows the real address.
+- **Chosen:** leave all three out. A caller who needs BIMI can call a BIMI library with `result.dmarc`.
+
+## `authenticate` reports a refused seal in `sealSkipReason`
+
+- **Options:** let `Arc.InvalidInputError` reject `authenticate`; return the results without a seal and the reason in a field.
+- **Trade-offs:** AGENTS.md says errors are thrown, never returned. But a message whose newest ARC-Seal says `cv=fail`, that has 50 sets or no From field must be delivered unsealed (RFC 8617 section 5.1), and a rejection would throw away the SPF, DKIM, DMARC and ARC results the caller still needs for it.
+- **Chosen:** `sealSkipReason`, next to `dmarcSkipReason`, which reports a check that wasn't run in the same way. Invalid seal options still throw.
+
+## `authservId` must be a token
+
+- **Options:** quote a value that isn't a token, as mailauth's default mode does; throw, as its strict mode does.
+- **Trade-offs:** RFC 8601 allows a quoted authserv-id, but readers that split the field on `;` read `"mx.example; dkim=pass"` as a result. An authserv-id is configuration, so a bad one is a bug to fix once.
+- **Chosen:** throw a `RangeError`. The option is required, because there is no `os.hostname()` outside Node.
