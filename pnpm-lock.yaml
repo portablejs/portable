@@ -71,6 +71,9 @@ importers:
       '@portable/base64':
         specifier: workspace:*
         version: link:../base64
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
       '@portable/dkim':
         specifier: workspace:*
         version: link:../dkim
@@ -666,6 +669,9 @@ importers:
 
   packages/mime-stream:
     dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
       '@portable/mime-headers':
         specifier: workspace:*
         version: link:../mime-headers

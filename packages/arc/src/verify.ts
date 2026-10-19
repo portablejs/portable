@@ -1,10 +1,10 @@
+import * as Bytes from '@portable/bytes'
 import type * as Dkim from '@portable/dkim'
 import {
   binaryToText,
   bodyHashKey,
   check,
   decodeBase64,
-  equal,
   type Field,
   fetchKey,
   fitsDns,
@@ -189,7 +189,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   const { length } = signature.body
   if (length !== undefined && length > digest.total)
     return failed(`i=${last.instance} ams l= is longer than the body`)
-  if (!equal(digest.digest, signature.bodyHash))
+  if (!Bytes.equal(digest.digest, signature.bodyHash))
     return failed(`i=${last.instance} ams body hash did not verify`)
   const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
   if (outcome.result !== 'pass') return failed(`i=${last.instance} ams ${outcome.reason}`)
