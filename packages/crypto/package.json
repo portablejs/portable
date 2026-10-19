@@ -1,6 +1,6 @@
 {
   "name": "@portable/crypto",
-  "description": "Bytes-in, bytes-out helpers over WebCrypto: digest, HMAC, HKDF, Ed25519 and X25519 seeds, and ECDSA signature formats.",
+  "description": "Digest, HMAC, HKDF, Ed25519 and X25519 keys from seeds, and ECDSA signature formats over WebCrypto, with bytes in and out, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

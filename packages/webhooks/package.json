@@ -10,10 +10,6 @@
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
-  "dependencies": {
-    "@portable/base64": "workspace:^",
-    "@portable/bytes": "workspace:*"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/portablejs/portable.git",
@@ -38,6 +34,10 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/base64": "workspace:*",
+    "@portable/bytes": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",

@@ -6,10 +6,6 @@
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
-  "dependencies": {
-    "@portable/base64": "workspace:*",
-    "@portable/dns": "workspace:*"
-  },
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,
@@ -37,6 +33,10 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/base64": "workspace:*",
+    "@portable/dns": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",

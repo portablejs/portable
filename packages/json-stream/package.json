@@ -1,6 +1,6 @@
 {
   "name": "@portable/json-stream",
-  "description": "Stream JSON in any JavaScript runtime: values at paths in a large document, and JSON written from promises and streams.",
+  "description": "Read values at paths from a large JSON stream, and write JSON from promises and streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
