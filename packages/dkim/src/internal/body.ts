@@ -12,6 +12,9 @@ export type Canonicalizer = { write(chunk: Uint8Array): void; end(): void }
 
 const crlf = new Uint8Array([CR, LF])
 
+const whitespace = new Uint8Array(256)
+for (const byte of [CR, LF, SP, TAB]) whitespace[byte] = 1
+
 /**
  * RFC 6376 sections 3.4.3 and 3.4.4, for a body whose line ends are CRLF. A CR that no LF follows
  * is body content.
@@ -91,7 +94,12 @@ function relaxed(sink: Sink): Canonicalizer {
           }
           if (pendingSpace) out[o++] = SP
           pendingSpace = false
-          out[o++] = byte
+          let end = i + 1
+          while (end < chunk.length && whitespace[chunk[end]!] === 0) end++
+          if (end - i > 16) out.set(chunk.subarray(i, end), o)
+          else for (let j = i; j < end; j++) out[o + j - i] = chunk[j]!
+          o += end - i
+          i = end - 1
         }
       }
       space = pendingSpace

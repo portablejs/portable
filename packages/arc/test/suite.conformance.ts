@@ -80,19 +80,20 @@ describe('ARC signing suite', () => {
             chainValidation: arc.result,
           }
           const fields = await Arc.seal(message, sealing).catch((error: unknown) => error)
-          if (!data.AS) {
-            expect(fields).toBeInstanceOf(Arc.InvalidInputError)
-            return
-          }
-          if (typeof fields !== 'string') throw fields
+          const outcome =
+            typeof fields === 'string'
+              ? 'sealed'
+              : fields instanceof Arc.InvalidInputError && 'refused'
+          expect(outcome).toBe(data.AS ? 'sealed' : 'refused')
+          if (typeof fields !== 'string') return
           const ams = /^ARC-Message-Signature:(.*(?:\r\n[ \t].*)*)/im.exec(fields)![1]!
           const as = /^ARC-Seal:(.*(?:\r\n[ \t].*)*)/im.exec(fields)![1]!
           expect(bodyHashTag(ams)).toBe(bodyHashTag(data.AMS!))
-          expect(tagValue(as, 'cv')).toBe(tagValue(data.AS, 'cv'))
-          expect(tagValue(as, 'i')).toBe(tagValue(data.AS, 'i'))
+          expect(tagValue(as, 'cv')).toBe(tagValue(data.AS!, 'cv'))
+          expect(tagValue(as, 'i')).toBe(tagValue(data.AS!, 'i'))
 
           const next = await Arc.verify(encode(fields + message), { resolver })
-          expect(next.result).toBe(tagValue(data.AS, 'cv') === 'fail' ? 'fail' : 'pass')
+          expect(next.result).toBe(tagValue(data.AS!, 'cv') === 'fail' ? 'fail' : 'pass')
         })
       }
     })

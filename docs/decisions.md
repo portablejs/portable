@@ -411,3 +411,27 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **sse** splits lines inline instead of using lines, to keep one `TransformStream`. `connect` reconnects after a clean end, and a `retry` field from the server replaces `delay`.
 - **websocket and sse** each hold a private copy of the `Timers.Delay` shape until timers exports its delay function.
 - **idna** ships its own Unicode 18 tables instead of calling `URL`, because Node and Chromium both differ from UTS #46.
+
+## arc reuses dkim through `@portable/dkim/internal`
+
+- **Options:** copy dkim's tag parser, canonicalization, key lookup and signing into arc; export them from dkim's main entry; add an `./internal` subpath export to dkim.
+- **Trade-offs:** A copy would drift from dkim, and the AMS is a DKIM signature with a different tag set, so every fix to one would have to be made twice. Exporting the helpers from the main entry would make them public API. A subpath is importable by anyone, but its doc comment says it is not public and can change in any release.
+- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which publishes as the exact version, so a change to the internal modules is released together with arc.
+
+## arc has only RFC 8617 behavior
+
+- **Options:** mailauth's lenient default with a `strict` option; strict only.
+- **Trade-offs:** The lenient mode accepts what the ARC drafts allowed (an AMS without `c=` signed relaxed, ARC-Seal syntax errors, `i=0x1`), and RFC 8617 validators fail those chains anyway, so a forwarder that trusts a lenient pass seals a chain the next hop fails. A strict-only validator may fail chains from old draft-era sealers.
+- **Chosen:** strict only, with no option. Two cases of ValiMail's draft suite (`ams_fields_h_empty`, `ams_fields_c_na`) expect `fail`, as mailauth's strict mode does.
+
+## `Arc.seal` options
+
+- **Options:** mailauth's `cv` (any case), `i`, `algorithm` and `bodyHash`; fewer options derived from the message and the key.
+- **Trade-offs:** An explicit instance or algorithm can only produce a set that is wrong or that fails, such as a gap in the chain or `a=rsa-sha256` with an Ed25519 key. Sealing from a precomputed body hash saves reading the body twice, but `Mailauth.authenticate` already reads the message once for both.
+- **Chosen:** `chainValidation` takes the lower-case values `verify` returns and is required once the message has ARC fields; the instance follows the message and `a=` follows the key. The AMS always uses relaxed/relaxed, the only canonicalization RFC 8617 sealers use in practice. Options that would produce a broken set throw instead of returning warnings.
+
+## dkim keeps its own header splitter
+
+- **Options:** switch dkim's `splitMessage` to `MimeStream.splitHeaders`; keep dkim's.
+- **Trade-offs:** `splitHeaders` doesn't turn bare LF into CRLF, and dkim and arc read bare-LF messages as CRLF, as mailauth does. Switching would need a normalizing pass in front of it.
+- **Chosen:** keep dkim's splitter.
