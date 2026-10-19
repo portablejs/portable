@@ -101,6 +101,26 @@ async function check(user: User, password: string): Promise<boolean> {
 
 [@noble/hashes](https://github.com/paulmillr/noble-hashes) has `argon2id` and `scrypt` in plain JavaScript, and [hash-wasm](https://github.com/Daninet/hash-wasm) has Argon2, scrypt and bcrypt in WebAssembly. Both run in every runtime this package does. bcryptjs and the `argon2` package are different algorithms, not PBKDF2. Keep using them if you're already on them and their runtime fits. Argon2id is the stronger choice where you can run it, and PBKDF2 is the one WebCrypto can run everywhere.
 
+<!-- bench:start -->
+| | @portable/password | pbkdf2 | pbkdf2-password | `node:crypto` | `crypto.subtle` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Hash a password with 600,000 iterations | 8.88 | 9.26 | 8.69 | 9.23 | 9.23 |
+| Verify a password with 600,000 iterations | 9.33 | – | – | 8.95 | – |
+| Check whether a stored hash needs a rehash | 603,000 | – | – | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/password | pbkdf2 | pbkdf2-password | `node:crypto` | `crypto.subtle` |
+| --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 3.5 kB | 22 kB | 1.5 kB | built in | built in |
+| Runtime dependencies | 2 | 43 | 2 | – | – |
+| Node built-ins used | none | `buffer`, `events`, `util` | `Buffer`, `crypto` | Node only | none |
+| TypeScript types | included | included | none | – | – |
+| Version compared | – | 3.1.7 | 1.2.1 | – | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | Before | @portable/password |

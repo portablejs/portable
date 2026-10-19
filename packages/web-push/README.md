@@ -87,6 +87,24 @@ It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server c
 ### Performance
 
 <!-- bench:start -->
+| | @portable/web-push | web-push | The same WebCrypto calls by hand |
+| --- | ---: | ---: | ---: |
+| Encrypt a 186-byte payload | 1,680 | 4,280 | 1,790 |
+| Encrypt 64 payloads at once | 57.4 | 67.3 | 53.7 |
+| Sign a VAPID JWT | 8,230 | 10,200 | 11,100 |
+| Build a push request | 1,500 | 2,770 | 1,310 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/web-push | web-push | The same WebCrypto calls by hand |
+| --- | --- | --- | --- |
+| Minified and gzipped | 4.6 kB | 32 kB | built in |
+| Runtime dependencies | 2 | 16 | – |
+| Node built-ins used | none | `assert`, `buffer`, `crypto`, `http`, `https`, `net`, `stream`, `tls`, `url`, `util` | none |
+| TypeScript types | included | `@types/web-push` | – |
+| Version compared | – | 3.6.7 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.

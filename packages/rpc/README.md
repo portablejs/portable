@@ -240,6 +240,27 @@ Validation is left to the methods. Parse the arguments with your schema library 
 The benchmarks run over a `MessageChannel` with the default JSON codec.
 
 <!-- bench:start -->
+| | @portable/rpc | birpc | comlink | penpal | json-rpc-2.0 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Make one call at a time over a `MessageChannel` | 114,000 | 86,900 | 64,500 | 89,700 | – |
+| Make 100 concurrent calls | 1,720 | 1,290 | 834 | 1,150 | – |
+| Send 100 notifications and a call | 3,250 | 3,020 | – | – | – |
+| Stream 1,000 items | 193 | 212 | 76.9 | – | – |
+| Send a 2 KB record | 23,400 | 14,100 | 13,700 | 12,300 | – |
+| Make one call over HTTP | 17,100 | – | – | – | 17,200 |
+| Send a batch of 10 calls over HTTP | 20,800 | – | – | – | 23,000 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/rpc | birpc | comlink | penpal | json-rpc-2.0 |
+| --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 3.1 kB | 1.3 kB | 1.7 kB | 2.3 kB | 4.0 kB |
+| Runtime dependencies | 1 | 0 | 0 | 0 | 0 |
+| Node built-ins used | none | none | none | none | none |
+| TypeScript types | included | included | included | included | included |
+| Version compared | – | 4.2.0 | 4.4.2 | 8.0.1 | 1.8.1 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 Structured-cloning a nested object costs more in Node than cloning one JSON string, so the JSON codec is faster than the identity codec (14,400/s for the 2 KB record) and than the libraries that clone. birpc and comlink have no streamed results, so the stream row compares with the server pushing each value without waiting, which has no backpressure.

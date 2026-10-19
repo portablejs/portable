@@ -94,6 +94,26 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 - There is no `path` or `href`, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
 - Cancelling the output cancels every content stream that hasn't been read, and a failing stream errors the output and cancels the rest.
 
+<!-- bench:start -->
+| | @portable/mail | nodemailer |
+| --- | ---: | ---: |
+| Encode 100 text and HTML messages | 89.6 | 30.1 |
+| Encode a message with a 1 MB attachment | 218 | 337 |
+| Encode a message with a 4 MB attachment from a stream | 66.6 | 77.0 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/mail | nodemailer |
+| --- | --- | --- |
+| Minified and gzipped | 13 kB | 38 kB |
+| Runtime dependencies | 4 | 0 |
+| Node built-ins used | none | `Buffer`, `crypto`, `dns`, `fs`, `http`, `https`, `net`, `os`, `path`, `stream`, `url`, `util`, `zlib` |
+| TypeScript types | included | none |
+| Version compared | – | 10.1.2 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | nodemailer | @portable/mail |

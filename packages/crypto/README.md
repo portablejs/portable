@@ -59,6 +59,28 @@ Each helper replaces a few lines that apps write by hand, and handles a trap tho
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 10 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. A non-extractable `importSeed` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
 
 <!-- bench:start -->
+| | @portable/crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| SHA-256 of 1 KB | 27,900 | – | 136,000 | – | 28,900 | 429,000 |
+| SHA-256 of 1 MB | 928 | – | 170 | – | 958 | – |
+| HMAC-SHA256 of 1 KB | 18,500 | – | 84,700 | – | 18,400 | 271,000 |
+| Derive 32 bytes with HKDF | 17,300 | – | 113,000 | – | 18,200 | 215,000 |
+| Import an Ed25519 seed | 15,600 | – | – | 2,920 | 16,500 | – |
+| Read the public key of a P-256 key | 20,500 | – | – | – | 19,000 | 1,240,000 |
+| Convert a DER ECDSA signature to raw | 4,900,000 | 818,000 | – | 361,000 | – | – |
+| Convert a raw ECDSA signature to DER | 1,620,000 | 2,250,000 | – | 253,000 | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 1.4 kB | 1.7 kB | 3.4 kB | 20 kB | built in | built in |
+| Runtime dependencies | 0 | 1 | 0 | 1 | – | – |
+| Node built-ins used | none | `buffer` | none | none | none | Node only |
+| TypeScript types | included | included | included | included | – | – |
+| Version compared | – | 1.0.11 | 2.4.0 | 2.4.0 | – | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 ## Migrating from ecdsa-sig-formatter

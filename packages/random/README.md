@@ -66,6 +66,29 @@ These libraries each cover part of the job: random-int and lodash use `Math.rand
 Each benchmark makes 1,000 calls per sample.
 
 <!-- bench:start -->
+| | @portable/random | random-int | crypto-random-string | nanoid | seedrandom | lodash | `node:crypto` | `Math.random` or `crypto.getRandomValues` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1,000 × `int(1, 100)` | 105,000 | 9,180 | – | – | – | 8,670 | 5,130 | – |
+| 1,000 × `int` over 2^53 integers | 31,200 | 8,080 | – | – | – | – | – | – |
+| 1,000 × `float()` | 54,400 | – | – | – | – | 2,480 | – | 70,000 |
+| 1,000 × `string(21)` | 26,400 | – | 315 | 29,200 | – | – | – | – |
+| 1,000 × `string(12)` from 36 characters | 29,200 | – | 344 | 26,900 | – | – | – | – |
+| 1,000 × `shuffle` of 52 elements | 1,970 | – | – | – | – | 1,120 | – | – |
+| 1,000 × `pick` | 85,000 | – | – | – | – | 8,740 | – | – |
+| 1,000 × `bytes(32)` | 9,230 | – | – | 549 | – | – | – | 478 |
+| 1,000 × `seeded(1).float()` | 57,700 | – | – | – | 20,100 | – | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/random | random-int | crypto-random-string | nanoid | seedrandom | lodash | `node:crypto` | `Math.random` or `crypto.getRandomValues` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 1.6 kB | 0.3 kB | 1.3 kB | 0.3 kB | 2.9 kB | 26 kB | built in | built in |
+| Runtime dependencies | 0 | 0 | 3 | 0 | 0 | 0 | – | – |
+| Node built-ins used | none | none | none | none | `crypto` | `Buffer` | Node only | none |
+| TypeScript types | included | included | included | included | `@types/seedrandom` | `@types/lodash` | – | – |
+| Version compared | – | 3.1.0 | 6.0.0 | 6.0.2 | 3.0.5 | 4.18.1 | – | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 ## Migrating

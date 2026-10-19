@@ -102,6 +102,25 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 - It authenticates and seals a short message faster: 445 times a second against 303 for mailauth's strict mode in one run in Node, and about the same, 243 against 251, for a 250 KB message with a DKIM signature and an ARC set.
 - It has no dependencies outside `@portable/*`.
 
+<!-- bench:start -->
+| | @portable/mailauth | mailauth |
+| --- | ---: | ---: |
+| Authenticate a 250 KB message with a DKIM signature and an ARC set | 246 | 238 |
+| Authenticate and seal a short message | 433 | 323 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/mailauth | mailauth |
+| --- | --- | --- |
+| Minified and gzipped | 32 kB | 715 kB |
+| Runtime dependencies | 11 | 38 |
+| Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` |
+| TypeScript types | included | included |
+| Version compared | – | 7.3.0 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating from mailauth
 
 | mailauth | @portable/mailauth |

@@ -105,9 +105,29 @@ The libraries above were written for Node streams. This package reads web stream
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
 - A number chunk is a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/streams` is 1.9 kB, against 2.1 kB (Node only) for get-stream and 1.2 kB (Node only) for merge2. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Collect 6.8 MB into bytes | 715 | 94.0 | 933 | 973 | – | – | – | – | – | 504 |
+| Collect 6.8 MB into bytes with a 10 MB limit | 751 | – | – | – | – | 1,180 | – | – | – | – |
+| Collect 6.8 MB into text | 256 | 248 | – | – | – | – | – | – | – | 181 |
+| Collect 100,000 objects into an array | 38.7 | 38.8 | – | – | 76.1 | – | – | – | – | – |
+| Merge 3 streams of 10,000 objects | 47.9 | – | – | – | – | – | 228 | 219 | – | 26.5 |
+| Map 30,000 objects | 45.3 | – | – | – | – | – | – | – | 189 | 46.2 |
+| Split 6.8 MB into 3 branches | 803 | – | – | – | – | – | – | – | – | 683 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 1.4 kB | 2.1 kB | 15 kB | 2.0 kB | 0.9 kB | 4.8 kB | 1.2 kB | 0.8 kB | 25 kB | built in |
+| Runtime dependencies | 1 | 2 | 7 | 0 | 1 | 7 | 0 | 0 | 10 | – |
+| Node built-ins used | none | `Buffer` | `buffer`, `events`, `util` | `buffer`, `stream` | none | `Buffer`, `async_hooks` | `stream` | `stream` | `buffer`, `events` | none |
+| TypeScript types | included | included | `@types/concat-stream` | included | `@types/stream-to-array` | included | `@types/merge2` | `@types/merge-stream` | included | – |
+| Version compared | – | 9.0.1 | 2.0.0 | 7.0.12 | 2.3.0 | 4.0.0 | 1.4.1 | 2.0.0 | 5.0.11 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

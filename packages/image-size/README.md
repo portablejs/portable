@@ -65,9 +65,29 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - Lossless and arithmetic-coded JPEGs are read, which image-size rejects, and there is no global `disableTypes` state shared by every caller in the process.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/image-size` is 4.7 kB, against 4.7 kB for image-size.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/image-size | image-size |
+| --- | ---: | ---: |
+| Read the size of a 730 KB JPEG from a stream | 88,700 | 1,250 |
+| Read the size of a 730 KB JPEG | 6,840,000 | 1,800 |
+| Read the size of a PNG | 2,590,000 | 439,000 |
+| Read the size of a HEIC image | 201,000 | 56,600 |
+| Read the size of a WebP image | 2,470,000 | 347,000 |
+| Read the size of an SVG | 550,000 | 86,500 |
+| Read the size of a TIFF | 8,530,000 | 24,000 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/image-size | image-size |
+| --- | --- | --- |
+| Minified and gzipped | 4.8 kB | 4.6 kB |
+| Runtime dependencies | 1 | 0 |
+| Node built-ins used | none | none |
+| TypeScript types | included | included |
+| Version compared | – | 2.0.4 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

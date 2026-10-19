@@ -53,9 +53,28 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
 - `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/quoted-printable` is 2.1 kB, against 1.9 kB (Node only) for libqp and 1.1 kB for quoted-printable. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/quoted-printable | libqp | quoted-printable |
+| --- | ---: | ---: | ---: |
+| Encode 512 KB of text | 106 | 90.6 | 38.2 |
+| Encode 256 KB of random bytes | 155 | 132 | – |
+| Encode a 512 KB text stream in 16 KB chunks | 97.0 | 94.2 | – |
+| Decode the encoded 512 KB of text | 97.8 | 86.3 | 34.3 |
+| Decode the encoded 256 KB of random bytes | 255 | 76.3 | 19.0 |
+| Decode the encoded text as a stream | 105 | 78.1 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/quoted-printable | libqp | quoted-printable |
+| --- | --- | --- | --- |
+| Minified and gzipped | 2.1 kB | 1.9 kB | 1.1 kB |
+| Runtime dependencies | 0 | 0 | 1 |
+| Node built-ins used | none | `buffer`, `stream` | none |
+| TypeScript types | included | `@types/libqp` | `@types/quoted-printable` |
+| Version compared | – | 2.1.3 | 1.0.1 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

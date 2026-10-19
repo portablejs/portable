@@ -85,6 +85,26 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 - It verifies faster. In one run in Node, it verified a 250 KB message with two ARC sets 372 times a second, against 251 for mailauth's strict mode, and sealed it 229 times a second, against 207.
 - It has no dependencies outside `@portable/*`.
 
+<!-- bench:start -->
+| | @portable/arc | mailauth | `node:crypto`, hashing and signing only |
+| --- | ---: | ---: | ---: |
+| Verify a 250 KB message with two ARC sets | 411 | 252 | – |
+| Seal a 250 KB message | 223 | 191 | 988 |
+| Seal and verify a short message | 272 | 288 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/arc | mailauth | `node:crypto`, hashing and signing only |
+| --- | --- | --- | --- |
+| Minified and gzipped | 19 kB | 448 kB | built in |
+| Runtime dependencies | 6 | 38 | – |
+| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | Node only |
+| TypeScript types | included | included | – |
+| Version compared | – | 7.3.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating from mailauth
 
 | mailauth | @portable/arc |

@@ -114,6 +114,26 @@ await Dkim.verify(request.body!, { resolver, hash: () => sha256.create() })
 - It has no dependencies outside `@portable/*`. mailauth pulls in libmime, punycode.js, tldts, joi and more.
 - It verifies faster. In one run in Node, it verified a 250 KB message 170 times a second, against 35 for mailauth's strict mode, and signed it 56 times a second, against 54 for mailauth and 62 for nodemailer.
 
+<!-- bench:start -->
+| | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
+| --- | ---: | ---: | ---: | ---: |
+| Sign a 250 KB message | 287 | 133 | 328 | 1,680 |
+| Verify a 250 KB message | 403 | 133 | – | – |
+| Sign and verify a short message | 501 | 550 | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
+| --- | --- | --- | --- | --- |
+| Minified and gzipped | 18 kB | 448 kB | 4.4 kB | built in |
+| Runtime dependencies | 5 | 38 | 0 | – |
+| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | `Buffer`, `crypto`, `fs`, `path`, `stream` | Node only |
+| TypeScript types | included | included | none | – |
+| Version compared | – | 7.3.0 | 10.1.2 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating from mailauth
 
 | mailauth | @portable/dkim |

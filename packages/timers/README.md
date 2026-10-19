@@ -182,6 +182,29 @@ These libraries cover one job each, with four sets of option names. `retry` and 
 - When `retryIf` returns `false`, `fn` is never called again. async-retry's `bail()` rejects the promise, but if `fn` then throws, attempts continue in the background (async-retry #69).
 - Waits longer than about 24.8 days work. p-retry and p-wait-for pass them to `setTimeout`, which fires after 1 ms instead.
 
+<!-- bench:start -->
+| | @portable/timers | p-retry | async-retry | p-wait-for | delay | lodash.debounce | lodash.throttle | throttle-debounce | p-debounce | `setTimeout` or `try`/`catch` by hand |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Retry 10 attempts | 98,400 | 52,700 | 98.0 | – | – | – | – | – | – | 123,000 |
+| Retry 10 attempts with a signal | 53,200 | 53,700 | – | – | – | – | – | – | – | – |
+| Poll until the 10th check succeeds | 98.7 | – | – | 98.1 | – | – | – | – | – | – |
+| Sleep for 1 ms | 1,200 | – | – | – | 951 | – | – | – | – | 1,400 |
+| Debounce a burst of 1,000 calls | 13,700 | – | – | – | – | 15,400 | – | 4,260 | 2,800 | – |
+| Throttle a burst of 1,000 calls | 13,000 | – | – | – | – | – | 15,300 | 3,530 | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/timers | p-retry | async-retry | p-wait-for | delay | lodash.debounce | lodash.throttle | throttle-debounce | p-debounce | `setTimeout` or `try`/`catch` by hand |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 1.7 kB | 1.8 kB | 1.7 kB | 0.9 kB | 0.9 kB | 1.1 kB | 1.2 kB | 0.5 kB | 0.7 kB | built in |
+| Runtime dependencies | 0 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 | – |
+| Node built-ins used | none | none | none | none | none | none | none | none | none | none |
+| TypeScript types | included | included | `@types/async-retry` | included | included | `@types/lodash.debounce` | `@types/lodash.throttle` | `@types/throttle-debounce` | included | – |
+| Version compared | – | 8.0.1 | 1.3.3 | 7.0.0 | 7.0.0 | 4.0.8 | 4.1.1 | 5.0.2 | 6.0.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Why use this over lodash.debounce, lodash.throttle, throttle-debounce and p-debounce
 
 `debounce` and `throttle` follow lodash's timing: the oracle tests compare the time and arguments of every invocation with lodash 4.18 on random call, `flush` and `cancel` schedules. They differ in what a call returns and in how they end.

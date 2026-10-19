@@ -109,6 +109,24 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 The benchmarks serve recorded responses from memory. node-rdap does no work after `response.json()`.
 
 <!-- bench:start -->
+| | @portable/rdap | node-rdap | `fetch` and `response.json()` |
+| --- | ---: | ---: | ---: |
+| Look up google.com (Verisign response) | 37,800 | 46,400 | 51,500 |
+| Look up google.com and follow the registrar referral | 15,700 | 17,600 | – |
+| Look up a RIPE network with 16 entities | 10,500 | 11,800 | 12,800 |
+| Look up an ARIN AS number | 25,000 | 28,100 | 28,700 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/rdap | node-rdap | `fetch` and `response.json()` |
+| --- | --- | --- | --- |
+| Minified and gzipped | 3.6 kB | 9.9 kB | built in |
+| Runtime dependencies | 0 | 5 | – |
+| Node built-ins used | none | `Buffer`, `events`, `net` | none |
+| TypeScript types | included | included | – |
+| Version compared | – | 1.0.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 ## Migrating

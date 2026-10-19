@@ -77,9 +77,32 @@ It has no dependencies, takes and returns plain strings and `Uint8Array`s, and d
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
 - Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/mime-headers` is 8.0 kB, against 258 kB (Node only) for libmime, 2.6 kB for addressparser and 3.1 kB for email-addresses. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Decode 200 Q-encoded subjects | 1,130 | 602 | – | – | – |
+| Decode 200 B-encoded words | 2,470 | 1,810 | – | – | 7,530 |
+| Encode 200 subjects | 1,720 | 631 | – | – | – |
+| Encode 200 subjects as B words | 7,320 | 7,600 | – | – | 3,450 |
+| Fold a 2,000-word header | 79,200 | 10,300 | – | – | – |
+| Parse 200 folded headers | 18,100 | 4,930 | – | – | – |
+| Parse 200 header values with parameters | 1,330 | 864 | – | – | – |
+| Format 200 header values with parameters | 1,880 | 837 | – | – | – |
+| Parse 500 addresses | 2,070 | – | 861 | 36.8 | – |
+| Parse 500 addresses in strict mode | 969 | – | – | 41.0 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
+| --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 7.9 kB | 258 kB | 2.6 kB | 3.1 kB | built in |
+| Runtime dependencies | 2 | 5 | 0 | 0 | – |
+| Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none | none | Node only |
+| TypeScript types | included | none | none | included | – |
+| Version compared | – | 5.4.9 | 10.1.2 | 5.0.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

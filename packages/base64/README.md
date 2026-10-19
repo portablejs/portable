@@ -82,11 +82,29 @@ One package does what the three did separately: base64 and base64url, MIME line 
 Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64's `encode` and `decode` call `Buffer`, which is C++.
 
 <!-- bench:start -->
-<!-- bench:end -->
+| | @portable/base64 | base64-js | js-base64 | libbase64 | `Buffer` (Node) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Encode 1 MB | 435 | 55.1 | 148 | 5,000 | 4,740 |
+| Encode 1 MB in 76-column lines | 435 | – | – | 554 | – |
+| Decode 1 MB | 255 | 239 | 22.4 | 4,210 | 5,450 |
+| Decode 1 MB of MIME base64 | 219 | – | – | 3,900 | – |
+| Encode 32 bytes | 3,450,000 | 1,050,000 | 2,420,000 | – | 2,370,000 |
+| Decode 32 bytes | 3,110,000 | 2,750,000 | 1,130,000 | – | 2,360,000 |
+| Encode a 1 MB stream in 76-column lines | 413 | – | – | 394 | – |
+| Decode a 1 MB stream of MIME base64 | 233 | – | – | 183 | – |
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/base64` is 2.9 kB, against 1.8 kB (Node only) for libbase64, 1.1 kB for base64-js and 1.8 kB for js-base64. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/base64 | base64-js | js-base64 | libbase64 | `Buffer` (Node) |
+| --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 2.9 kB | 1.1 kB | 1.6 kB | 1.8 kB | built in |
+| Runtime dependencies | 1 | 0 | 0 | 0 | – |
+| Node built-ins used | none | none | none | `buffer`, `stream` | Node only |
+| TypeScript types | included | included | included | none | – |
+| Version compared | – | 1.5.1 | 3.9.4 | 1.3.3 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

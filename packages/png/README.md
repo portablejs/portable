@@ -99,11 +99,25 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 ### Performance
 
 <!-- bench:start -->
-<!-- bench:end -->
+| | @portable/png | pngjs |
+| --- | ---: | ---: |
+| Decode a 1024×1024 PNG | 21.5 | 26.7 |
+| Decode a 1024×1024 PNG with `decodeSync` and `node:zlib` | 35.9 | 26.7 |
+| Encode a 1024×1024 PNG at zlib level 6 | 6.84 | 5.94 |
+| Encode a 1024×1024 PNG at level 9 with `Z_RLE`, through `node:zlib` | 13.1 | 9.84 |
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/png` is 4.3 kB, against 9.1 kB (Node only) for pngjs. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/png | pngjs |
+| --- | --- | --- |
+| Minified and gzipped | 4.3 kB | 9.1 kB |
+| Runtime dependencies | 1 | 0 |
+| Node built-ins used | none | `assert`, `buffer`, `stream`, `util`, `zlib` |
+| TypeScript types | included | `@types/pngjs` |
+| Version compared | – | 7.0.0 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating from pngjs
 

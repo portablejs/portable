@@ -89,6 +89,25 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 - A part with no `Content-Type` is `text/plain`, as RFC 2045 says. mailsplit guesses a type from the file name.
 - Chunks are plain objects. To change a header, enqueue new bytes for the `headers` chunk, for example from `MimeHeaders.fold`. There is no headers object to keep in sync.
 
+<!-- bench:start -->
+| | @portable/mime-stream | mailsplit | `TransformStream` copy |
+| --- | ---: | ---: | ---: |
+| Split and join 1.5 MB of mail | 745 | 126 | 13,600 |
+| Read the header block of 1.5 MB of mail | 17,000 | 126 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/mime-stream | mailsplit | `TransformStream` copy |
+| --- | --- | --- | --- |
+| Minified and gzipped | 4.7 kB | 263 kB | built in |
+| Runtime dependencies | 3 | 6 | – |
+| Node built-ins used | none | `buffer`, `path`, `stream`, `string_decoder` | none |
+| TypeScript types | included | included | – |
+| Version compared | – | 5.4.23 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | mailsplit | @portable/mime-stream |

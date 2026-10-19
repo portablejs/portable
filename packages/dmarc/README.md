@@ -86,6 +86,24 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 - It has no dependencies of its own, and `@portable/dns` and `@portable/spf` are imported for types only.
 - It is about as fast. On a subdomain with an inherited record, relaxed alignment and three identifiers, it runs 18,700 checks a second in Node against 15,900 for mailauth's strict mode, with an in-memory resolver.
 
+<!-- bench:start -->
+| | @portable/dmarc | mailauth, strict mode |
+| --- | ---: | ---: |
+| Check a subdomain with relaxed alignment | 24,600 | 18,900 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/dmarc | mailauth, strict mode |
+| --- | --- | --- |
+| Minified and gzipped | 16 kB | 446 kB |
+| Runtime dependencies | 4 | 38 |
+| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
+| TypeScript types | included | included |
+| Version compared | – | 7.3.0 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating from mailauth
 
 | mailauth | @portable/dmarc |

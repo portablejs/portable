@@ -38,9 +38,23 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 - A multi-byte character or a CRLF split across two chunks is read as one character or one line break.
 - Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`, and here `skipEmpty: true` does the same.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/lines` is 0.6 kB, against 1.1 kB (Node only) for split2. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/lines | split2 | byline | `node:readline` |
+| --- | ---: | ---: | ---: | ---: |
+| Split 1.7 MB into lines | 82.8 | 84.6 | 40.7 | 165 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/lines | split2 | byline | `node:readline` |
+| --- | --- | --- | --- | --- |
+| Minified and gzipped | 0.7 kB | 1.1 kB | 1.2 kB | built in |
+| Runtime dependencies | 0 | 0 | 0 | – |
+| Node built-ins used | none | `stream`, `string_decoder` | `Buffer`, `stream`, `timers`, `util` | Node only |
+| TypeScript types | included | `@types/split2` | `@types/byline` | – |
+| Version compared | – | 4.2.0 | 5.0.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

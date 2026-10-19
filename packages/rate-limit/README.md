@@ -196,6 +196,27 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
 - On Node, `take` with the memory store ran within 10% of `RateLimiterMemory.consume` on allowed requests over 1000 keys (0.41 µs against 0.38 µs per call), and 4× faster on denied requests (0.21 µs against 0.90 µs), because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket was 4× faster than an `await`ed `take`.
 
+<!-- bench:start -->
+| | @portable/rate-limit | rate-limiter-flexible | limiter |
+| --- | ---: | ---: | ---: |
+| 10 rounds of `take` on 1,000 keys | 184 | 218 | – |
+| `take` of a denied request | 4,210 | 891 | – |
+| 1,000 × `take` on one key | 2,910 | – | 16,800 |
+| Build the rate-limit headers | 1,440 | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/rate-limit | rate-limiter-flexible | limiter |
+| --- | --- | --- | --- |
+| Minified and gzipped | 1.0 kB | 17 kB | 1.4 kB |
+| Runtime dependencies | 0 | 0 | 0 |
+| Node built-ins used | none | `Buffer`, `cluster`, `crypto` | none |
+| TypeScript types | included | included | included |
+| Version compared | – | 11.2.3 | 4.1.0 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | Upstream | @portable/rate-limit |

@@ -88,6 +88,23 @@ A name that isn't a string rejects with a `TypeError`.
 ## Why use this over tangerine and dohjs
 
 <!-- bench:start -->
+| | @portable/dns | tangerine | `node:dns/promises` over local UDP |
+| --- | ---: | ---: | ---: |
+| Resolve the TXT records of gmail.com | 47,300 | 37,800 | 19,800 |
+| Resolve the MX records of gmail.com | 56,900 | 36,200 | 16,300 |
+| Resolve the A records of www.microsoft.com | 52,700 | 36,800 | 19,800 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/dns | tangerine | `node:dns/promises` over local UDP |
+| --- | --- | --- | --- |
+| Minified and gzipped | 9.0 kB | 563 kB | built in |
+| Runtime dependencies | 2 | 87 | – |
+| Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `process`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | Node only |
+| TypeScript types | included | included | – |
+| Version compared | – | 2.1.3 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 ## Migrating

@@ -109,6 +109,26 @@ ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and
 - `range` names come from the IANA registries. ipaddr.js reports `100:0:0:1::/64` and every IPv6 address outside `2000::/3` that it doesn't name, such as `4000::1`, as `unicast`, and ip's `isPrivate` misses `198.18.0.0/15`.
 - The IPv4 part of an IPv6 address can't have leading zeros. ipaddr.js reads `::ffff:0177.0.0.1` as `177.0.0.1` and `0177.0.0.1` as `127.0.0.1`.
 
+<!-- bench:start -->
+| | @portable/ip | ipaddr.js | ip | `node:net` |
+| --- | ---: | ---: | ---: | ---: |
+| Parse 8 addresses | 796,000 | 65,100 | 112,000 | 350,000 |
+| Check 8 addresses against a CIDR block | 683,000 | 63,700 | – | 441,000 |
+| Tell public from internal addresses, 8 of them | 517,000 | 46,700 | 196,000 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/ip | ipaddr.js | ip | `node:net` |
+| --- | --- | --- | --- | --- |
+| Minified and gzipped | 2.2 kB | 4.1 kB | 2.6 kB | built in |
+| Runtime dependencies | 0 | 0 | 0 | – |
+| Node built-ins used | none | none | `buffer`, `os` | Node only |
+| TypeScript types | included | included | `@types/ip` | – |
+| Version compared | – | 2.5.0 | 2.0.1 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | Upstream | @portable/ip |

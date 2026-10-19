@@ -50,6 +50,30 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 Node's `Buffer` methods are C++ and win on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
 
 <!-- bench:start -->
+| | @portable/bytes | uint8array-extras | Node `Buffer` or `node:crypto` |
+| --- | ---: | ---: | ---: |
+| Hex-encode 32 bytes | 3,650,000 | 3,150,000 | 7,480,000 |
+| Hex-encode 1 MiB | 312 | 35.9 | 4,910 |
+| Hex-decode 32 bytes | 4,300,000 | 1,410,000 | 2,560,000 |
+| Hex-decode 1 MiB | 152 | 23.4 | 901 |
+| Compare 32 bytes | 13,500,000 | 6,350,000 | 3,320,000 |
+| Compare 1 MiB | 3,820 | 850 | 28,300 |
+| Compare 32 bytes in constant time | 16,300,000 | – | 3,010,000 |
+| Compare 1 MiB in constant time | 4,470 | – | 1,150 |
+| Join 4 × 64 KiB | 38,700 | 35,600 | 50,100 |
+| Join 100 × 32 bytes | 341,000 | 130,000 | 335,000 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/bytes | uint8array-extras | Node `Buffer` or `node:crypto` |
+| --- | --- | --- | --- |
+| Minified and gzipped | 0.9 kB | 0.7 kB | built in |
+| Runtime dependencies | 0 | 0 | – |
+| Node built-ins used | none | none | Node only |
+| TypeScript types | included | included | – |
+| Version compared | – | 1.6.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 ## Migrating

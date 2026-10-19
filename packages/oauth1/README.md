@@ -31,10 +31,6 @@ The signature covers what the server will see, because it is computed from the `
 - Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Bytes that aren't UTF-8 keep their value.
 - JSON, multipart and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/oauth1` is 4.6 kB, against 1.7 kB for oauth-1.0a and 5.2 kB (Node only) for oauth. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
-
 ## Options
 
 | Option | Default | Description |
@@ -90,6 +86,22 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 ### Performance
 
 <!-- bench:start -->
+| | @portable/oauth1 | @portable/oauth1 with @noble/hashes | oauth-1.0a | oauth |
+| --- | ---: | ---: | ---: | ---: |
+| Sign a GET request | 7,210 | 47,700 | 41,600 | 25,800 |
+| Sign a form POST | 6,110 | 26,200 | 30,000 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/oauth1 | @portable/oauth1 with @noble/hashes | oauth-1.0a | oauth |
+| --- | --- | --- | --- | --- |
+| Minified and gzipped | 4.8 kB | 7.5 kB | 1.7 kB | 5.2 kB |
+| Runtime dependencies | 2 | 3 | 0 | 0 |
+| Node built-ins used | none | none | none | `Buffer`, `crypto`, `http`, `https`, `querystring`, `url` |
+| TypeScript types | included | included | included | none |
+| Version compared | – | – | 2.2.6 | 0.10.2 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 On Node, `crypto.subtle.digest` is several times slower than a JavaScript hash, so pass `@noble/hashes` as `digest` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.

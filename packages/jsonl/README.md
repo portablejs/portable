@@ -46,9 +46,24 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
 - A whitespace-only line is skipped, where ndjson reports it as invalid.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/jsonl` is 0.6 kB, against 13 kB (Node only) for ndjson. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
+| --- | ---: | ---: | ---: | ---: |
+| Decode 20,000 rows | 38.6 | 34.3 | 27.8 | 44.5 |
+| Encode 20,000 rows | 29.2 | 19.0 | 38.7 | 79.3 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
+| --- | --- | --- | --- | --- |
+| Minified and gzipped | 0.5 kB | 13 kB | 3.5 kB | built in |
+| Runtime dependencies | 0 | 9 | 1 | – |
+| Node built-ins used | none | `buffer`, `events`, `os`, `string_decoder`, `util` | `stream`, `string_decoder` | none |
+| TypeScript types | included | `@types/ndjson` | included | – |
+| Version compared | – | 2.0.0 | 3.7.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

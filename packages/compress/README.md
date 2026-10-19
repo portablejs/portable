@@ -58,6 +58,24 @@ pako and fflate implement deflate in JavaScript, although every runtime already 
 `gunzip` has the fastest single run of the JavaScript options, but a worse mean: Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at the speed of the `crc-32` package (0.66 / 0.77). `node:zlib`'s is native code.
 
 <!-- bench:start -->
+| | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Gzip 1 MB of text | 42.3 | 21.7 | 22.8 | – | 46.3 | – |
+| Gunzip 1 MB of text | 181 | 135 | 228 | – | 523 | – |
+| Gunzip a stream of 1 KiB chunks | 111 | – | 54.7 | – | 113 | 96.7 |
+| CRC-32 of 1 MB | 1,290 | – | – | 1,410 | 4,250 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 1.3 kB | 13 kB | 12 kB | 1.1 kB | built in | built in |
+| Runtime dependencies | 0 | 0 | 0 | 0 | – | – |
+| Node built-ins used | none | none | none | none | Node only | none |
+| TypeScript types | included | included | included | included | – | – |
+| Version compared | – | 3.0.2 | 0.8.3 | 1.2.2 | – | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 ## Migrating

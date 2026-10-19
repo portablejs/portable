@@ -112,6 +112,25 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - Closing a `ws` client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
 - Throughput matches reconnecting-websocket. Echoing 1000 messages of 100 bytes through a local server took 46 ms on average with `connect`, 44 ms with reconnecting-websocket and 34 ms with a bare `WebSocket` on Node 24, on a machine busy enough that runs varied by ±15%. A server echoing through `fromSocket` took 50 ms against 60 ms with `ws` listeners.
 
+<!-- bench:start -->
+| | @portable/websocket | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Echo 1,000 messages through a local server | 105 | 93.5 | 83.1 | 104 | – | 109 |
+| Echo 1,000 messages on the server | 94.0 | – | – | – | 97.7 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/websocket | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 2.4 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
+| Runtime dependencies | 0 | 0 | 1 | 0 | 0 | – |
+| Node built-ins used | none | none | none | none | none | none |
+| TypeScript types | included | included | included | included | `@types/ws` | – |
+| Version compared | – | 4.4.0 | 1.3.0 | 3.0.0 | 8.22.0 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | reconnecting-websocket / partysocket / websocket-ts | @portable/websocket |

@@ -39,10 +39,6 @@ const headers = await Webhooks.sign(body, { scheme: Webhooks.stripe, secret: 'wh
 const response = await worker.fetch(new Request('https://example.com', { method: 'POST', body, headers }), env)
 ```
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/webhooks` is 4.3 kB, against 4.6 kB (Node only) for standardwebhooks, 20 kB (Node only) for svix, 30 kB (Node only) for stripe and 0.7 kB for @octokit/webhooks-methods. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
-
 ## API
 
 | Export | Does |
@@ -151,6 +147,24 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 ### Performance
 
 <!-- bench:start -->
+| | @portable/webhooks | @portable/webhooks with @noble/hashes | standardwebhooks | svix | stripe, `constructEventAsync` | stripe, `constructEvent` | @octokit/webhooks-methods, web build | @octokit/webhooks-methods, Node build | @slack/bolt | `crypto.subtle` by hand | `node:crypto` by hand |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Verify a Standard Webhook | 17,900 | 59,300 | 47,400 | 59,200 | – | – | – | – | – | – | – |
+| Verify a Stripe webhook | 17,500 | 55,800 | – | – | 13,500 | 102,000 | – | – | – | – | – |
+| Verify a GitHub webhook | 19,300 | 67,700 | – | – | – | – | 16,800 | 232,000 | – | – | 240,000 |
+| Verify a Slack request | 19,100 | 60,700 | – | – | – | – | – | – | 87,400 | 19,000 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/webhooks | @portable/webhooks with @noble/hashes | standardwebhooks | svix | stripe, `constructEventAsync` | stripe, `constructEvent` | @octokit/webhooks-methods, web build | @octokit/webhooks-methods, Node build | @slack/bolt | `crypto.subtle` by hand | `node:crypto` by hand |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 4.5 kB | 7.4 kB | 4.6 kB | 4.5 kB | 30 kB | 30 kB | 0.4 kB | 0.4 kB | 1.3 kB | built in | built in |
+| Runtime dependencies | 2 | 3 | 2 | 3 | 0 | 0 | 0 | 0 | 98 | – | – |
+| Node built-ins used | none | none | `Buffer` | `Buffer` | `Buffer` | `Buffer` | none | none | `crypto` | none | Node only |
+| TypeScript types | included | included | included | included | included | included | included | included | included | – | – |
+| Version compared | – | – | 1.1.1 | 2.8.0 | 23.0.0 | 23.0.0 | 6.0.0 | 6.0.0 | 5.1.0 | – | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
 On Node, WebCrypto's HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if verification speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.

@@ -123,6 +123,27 @@ They run in browsers too, but they are three packages with three APIs and some s
 - **The rate limit is a sliding window** measured with `performance.now()`. p-queue's default fixed windows let twice `intervalCap` tasks start around a boundary, and its use of `Date.now()` stalls the queue if the clock goes back.
 - **Tasks run in the async context of their `add` call**, as in p-limit and p-queue, so `AsyncLocalStorage` values carry over in Node.
 
+<!-- bench:start -->
+| | @portable/queue | p-limit | p-queue | p-map | `Promise.all`, no limit |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Run 1,000 tasks, 10 at a time, with `Queue.create` | 2,200 | – | 478 | – | 14,500 |
+| Run 1,000 tasks, 10 at a time, with `Queue.limit` | 2,150 | 1,250 | – | – | 14,500 |
+| Run 1,000 tasks with priorities and a signal | 1,590 | – | 277 | – | – |
+| Map 1,000 items, 10 at a time | 10,100 | 1,190 | – | 1,360 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/queue | p-limit | p-queue | p-map | `Promise.all`, no limit |
+| --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 2.1 kB | 1.0 kB | 3.5 kB | 2.1 kB | built in |
+| Runtime dependencies | 0 | 1 | 0 | 0 | – |
+| Node built-ins used | none | none | none | none | none |
+| TypeScript types | included | included | included | included | – |
+| Version compared | – | 7.3.3 | 10.0.0 | 7.1.1 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
+
 ## Migrating
 
 | p-limit / p-queue / p-map / p-throttle | @portable/queue |

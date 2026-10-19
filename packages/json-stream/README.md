@@ -58,9 +58,25 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 - `null` matches are emitted. JSONStream drops them.
 - `encodeStream` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/json-stream` is 3.9 kB, against 3.9 kB (Node only) for JSONStream and 2.9 kB (Node only) for json-stream-stringify. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/json-stream | JSONStream | stream-json | stream-json, web streams | json-stream-stringify | `JSON.parse` or `JSON.stringify` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Select the rows of a 3 MB document | 21.1 | 9.02 | 1.94 | 0.816 | – | 55.8 |
+| Encode a 3 MB object | 22.0 | – | – | – | 22.2 | 124 |
+| Encode rows from an async iterable | 99.6 | – | – | – | 79.5 | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/json-stream | JSONStream | stream-json | stream-json, web streams | json-stream-stringify | `JSON.parse` or `JSON.stringify` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Minified and gzipped | 2.6 kB | 3.9 kB | 10 kB | 9.0 kB | 2.8 kB | built in |
+| Runtime dependencies | 0 | 2 | 1 | 1 | 0 | – |
+| Node built-ins used | none | `Buffer`, `stream` | `stream`, `string_decoder` | `string_decoder` | `stream` | none |
+| TypeScript types | included | none | included | included | included | – |
+| Version compared | – | 1.3.5 | 3.7.0 | 3.7.0 | 3.1.7 | – |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

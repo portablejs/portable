@@ -144,9 +144,24 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
 - Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/exif` is 7.9 kB, against 7.8 kB for exif-parser and 4.7 kB for exif-reader.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/exif | exif-parser | exif-reader | exifr |
+| --- | ---: | ---: | ---: | ---: |
+| Parse a 329 KB phone JPEG | 203,000 | 61,500 | 80,400 | 18,000 |
+| Parse a phone JPEG from a stream | 36,700 | – | – | – |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/exif | exif-parser | exif-reader | exifr |
+| --- | --- | --- | --- | --- |
+| Minified and gzipped | 7.5 kB | 7.8 kB | 4.7 kB | 27 kB |
+| Runtime dependencies | 0 | 0 | 0 | 0 |
+| Node built-ins used | none | none | none | `Buffer` |
+| TypeScript types | included | none | included | included |
+| Version compared | – | 0.1.12 | 2.0.3 | 7.1.3 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

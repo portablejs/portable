@@ -59,9 +59,25 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 - `encode` doesn't modify the packet you pass. dns-packet adds empty sections to it and overwrites CAA `flags`.
 - Encoding a DNS-over-HTTPS query was about 1.2× faster than dns-packet, and encoding 48 captured responses ran at the same speed. Decoding them was about 1.25× slower inside the Vitest benchmark. The built package in plain Node decodes about 1.8× faster than dns-packet, and Vitest's export getters account for the difference.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/dns-packet` is 6.7 kB, against 8.7 kB (Node only) for dns-packet. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/dns-packet | dns-packet |
+| --- | ---: | ---: |
+| Decode 48 captured responses | 10,000 | 4,560 |
+| Encode 48 captured responses | 5,970 | 3,070 |
+| Encode a DNS-over-HTTPS query | 1,820,000 | 528,000 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/dns-packet | dns-packet |
+| --- | --- | --- |
+| Minified and gzipped | 6.6 kB | 8.7 kB |
+| Runtime dependencies | 0 | 1 |
+| Node built-ins used | none | `buffer` |
+| TypeScript types | included | `@types/dns-packet` |
+| Version compared | – | 5.6.1 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating
 

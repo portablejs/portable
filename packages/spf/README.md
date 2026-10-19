@@ -92,9 +92,23 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 - It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
 - It is faster. On a record with nested includes and a fake resolver, it runs 11,000 to 13,000 checks a second in Node, against 9,000 for mailauth's default mode and 7,000 for its strict mode.
 
-<!-- size:start -->
-Bundled for the browser, minified and gzipped, `@portable/spf` is 4.6 kB, against 442 kB (Node only) for mailauth. "Node only" marks a library that imports Node builtins or uses `Buffer`, so it needs polyfills in a browser.
-<!-- size:end -->
+<!-- bench:start -->
+| | @portable/spf | mailauth | mailauth, strict mode |
+| --- | ---: | ---: | ---: |
+| Check a record with nested includes | 20,500 | 9,280 | 7,660 |
+
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+
+| | @portable/spf | mailauth | mailauth, strict mode |
+| --- | --- | --- | --- |
+| Minified and gzipped | 13 kB | 442 kB | 442 kB |
+| Runtime dependencies | 3 | 38 | 38 |
+| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
+| TypeScript types | included | included | included |
+| Version compared | – | 7.3.0 | 7.3.0 |
+
+Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
+<!-- bench:end -->
 
 ## Migrating from mailauth
 
