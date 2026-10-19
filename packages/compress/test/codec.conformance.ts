@@ -108,13 +108,13 @@ describe('gzip members', () => {
     expect(text.startsWith('##genome-build b37\n')).toBe(true)
   })
 
-  test('maxLength counts every member', async () => {
+  test('maxBytes counts every member', async () => {
     const joined = new Uint8Array([
       ...(await Compress.encode('foo')),
       ...(await Compress.encode('bar')),
     ])
-    await expect(Compress.decode(joined, { maxLength: 5 })).rejects.toThrow(Compress.MaxLengthError)
-    expect(decode(await Compress.decode(joined, { maxLength: 6 }))).toBe('foobar')
+    await expect(Compress.decode(joined, { maxBytes: 5 })).rejects.toThrow(Compress.MaxBytesError)
+    expect(decode(await Compress.decode(joined, { maxBytes: 6 }))).toBe('foobar')
   })
 
   test('a truncated second member', async () => {
@@ -213,25 +213,25 @@ describe('corrupt input', () => {
   })
 })
 
-describe('maxLength', () => {
+describe('maxBytes', () => {
   test('rejects output past the limit', async () => {
     const compressed = await Compress.encode(new Uint8Array(1_000_000))
-    const error = await Compress.decode(compressed, { maxLength: 999_999 }).catch((e) => e)
-    expect(error).toBeInstanceOf(Compress.MaxLengthError)
-    expect(error.name).toBe('Compress.MaxLengthError')
-    expect(error.maxLength).toBe(999_999)
+    const error = await Compress.decode(compressed, { maxBytes: 999_999 }).catch((e) => e)
+    expect(error).toBeInstanceOf(Compress.MaxBytesError)
+    expect(error.name).toBe('Compress.MaxBytesError')
+    expect(error.maxBytes).toBe(999_999)
   })
 
   test('accepts output exactly at the limit', async () => {
     const compressed = await Compress.encode(new Uint8Array(1_000_000))
-    expect((await Compress.decode(compressed, { maxLength: 1_000_000 })).length).toBe(1_000_000)
+    expect((await Compress.decode(compressed, { maxBytes: 1_000_000 })).length).toBe(1_000_000)
   })
 
   test('stops a zip bomb early', async () => {
     const bomb = await Compress.encode(new Uint8Array(20_000_000))
     expect(bomb.length).toBeLessThan(50_000)
-    await expect(Compress.decode(bomb, { maxLength: 1_000_000 })).rejects.toThrow(
-      Compress.MaxLengthError,
+    await expect(Compress.decode(bomb, { maxBytes: 1_000_000 })).rejects.toThrow(
+      Compress.MaxBytesError,
     )
   })
 })

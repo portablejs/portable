@@ -120,7 +120,7 @@ describe('DecoderStream', () => {
   })
 })
 
-describe('DecoderStream maxLength', () => {
+describe('DecoderStream maxBytes', () => {
   test('fails past the limit and cancels the input', async () => {
     const compressed = await Compress.encode(randomBytes(5_000_000, 11))
     let cancelled: unknown
@@ -136,10 +136,10 @@ describe('DecoderStream maxLength', () => {
       },
     })
     const error = await Streams.toBytes(
-      source.pipeThrough(new Compress.DecoderStream({ maxLength: 1_000_000 })),
+      source.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000 })),
     ).catch((e) => e)
-    expect(error).toBeInstanceOf(Compress.MaxLengthError)
-    expect(error.maxLength).toBe(1_000_000)
+    expect(error).toBeInstanceOf(Compress.MaxBytesError)
+    expect(error.maxBytes).toBe(1_000_000)
     await new Promise((resolve) => setTimeout(resolve, 10))
     expect(cancelled).toBe(error)
     expect(sent).toBeLessThan(chunks.length)
@@ -147,9 +147,9 @@ describe('DecoderStream maxLength', () => {
 
   test('accepts output exactly at the limit', async () => {
     const compressed = await Compress.encode(new Uint8Array(100_000))
-    expect((await decodeChunks([compressed], { maxLength: 100_000 })).length).toBe(100_000)
-    await expect(decodeChunks([compressed], { maxLength: 99_999 })).rejects.toThrow(
-      Compress.MaxLengthError,
+    expect((await decodeChunks([compressed], { maxBytes: 100_000 })).length).toBe(100_000)
+    await expect(decodeChunks([compressed], { maxBytes: 99_999 })).rejects.toThrow(
+      Compress.MaxBytesError,
     )
   })
 })

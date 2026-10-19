@@ -14,14 +14,14 @@ export class InvalidInputError extends Error {
   }
 }
 
-/** Thrown when decompressed output grows past `maxLength`. */
-export class MaxLengthError extends Error {
-  override name = 'Compress.MaxLengthError'
+/** Thrown when decompressed output grows past `maxBytes`. */
+export class MaxBytesError extends Error {
+  override name = 'Compress.MaxBytesError'
   /** The limit that was exceeded. */
-  readonly maxLength: number
-  constructor(maxLength: number) {
-    super(`Decompressed output exceeded maxLength of ${maxLength}.`)
-    this.maxLength = maxLength
+  readonly maxBytes: number
+  constructor(maxBytes: number) {
+    super(`Decompressed output exceeded maxBytes of ${maxBytes}.`)
+    this.maxBytes = maxBytes
   }
 }
 

@@ -220,8 +220,8 @@ describe('known upstream issues', () => {
   test('pako and fflate have no output limit (pako #310)', async () => {
     const bomb = zlib.gzipSync(new Uint8Array(20_000_000))
     expect(pako.ungzip(bomb).length).toBe(20_000_000)
-    await expect(Compress.decode(bomb, { maxLength: 1_000_000 })).rejects.toThrow(
-      Compress.MaxLengthError,
+    await expect(Compress.decode(bomb, { maxBytes: 1_000_000 })).rejects.toThrow(
+      Compress.MaxBytesError,
     )
   })
 

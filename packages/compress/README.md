@@ -12,10 +12,10 @@ npm install @portable/compress
 import * as Compress from '@portable/compress'
 
 const gzipped = await Compress.encode('hello world')
-const bytes = await Compress.decode(gzipped, { maxLength: 10_000_000 })
+const bytes = await Compress.decode(gzipped, { maxBytes: 10_000_000 })
 
 const response = await fetch('https://example.com/export.ndjson.gz')
-const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxLength: 1_000_000_000 }))
+const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }))
 ```
 
 ## API
@@ -23,15 +23,15 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxLength: 
 | Export | Description |
 | --- | --- |
 | `encode(data, { format })` | Compresses a `Uint8Array` or a string (as UTF-8). Returns `Promise<Uint8Array>`. |
-| `decode(data, { format, maxLength })` | Decompresses a `Uint8Array`. Returns `Promise<Uint8Array>`. A gzip file with several members decodes to all of them joined. |
-| `new DecoderStream({ format, maxLength })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. |
+| `decode(data, { format, maxBytes })` | Decompresses a `Uint8Array`. Returns `Promise<Uint8Array>`. A gzip file with several members decodes to all of them joined. |
+| `new DecoderStream({ format, maxBytes })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. |
 | `crc32(data, previous?)` | The CRC-32 of a `Uint8Array` or a string (as UTF-8). Pass the previous result to continue a checksum over several pieces. |
 | `Format` | `'gzip' \| 'deflate' \| 'deflate-raw'`: gzip (RFC 1952), zlib (RFC 1950) and raw deflate (RFC 1951), the formats the platform supports. |
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `format` | `'gzip'` | The compressed format. |
-| `maxLength` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects and `DecoderStream` fails and cancels its input, both with `MaxLengthError`. |
+| `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. |
 
 There is no compression level option and no dictionary, because `CompressionStream` has neither. To compress a stream, use the platform's `CompressionStream`.
 
@@ -41,7 +41,7 @@ There is no compression level option and no dictionary, because `CompressionStre
 | --- | --- |
 | `TruncatedError` | The input ended before the compressed stream did. |
 | `InvalidInputError` | The input is malformed, fails its checksum, or has bytes after its end. |
-| `MaxLengthError` | The output grew past `maxLength`. Its `maxLength` property holds the limit. |
+| `MaxBytesError` | The output grew past `maxBytes`. Its `maxBytes` property holds the limit. |
 
 The platform reports every failure as a `TypeError`. The error's `cause` holds it.
 
@@ -50,7 +50,7 @@ The platform reports every failure as a `TypeError`. The error's `cause` holds i
 pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (14 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` runs only in Node and Bun.
 
 - `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and it allocates its output from the length field, so a forged field returns truncated output (fflate #161, #181).
-- `maxLength` stops a zip bomb. pako and fflate have no output limit (pako #310).
+- `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).
 - Truncated input always throws `TruncatedError`, never partial output.
 - `decode` reads every member of a multi-member gzip file, such as BGZF or `cat a.gz b.gz`. fflate returns only the first member (fflate #102), and `DecompressionStream` throws.
 - `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and each chunk pays the decompressor's and every later stage's per-chunk cost. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
@@ -89,7 +89,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `pako.deflateRaw(data)`, `fflate.deflateSync(data)`, `zlib.deflateRawSync(data)` | `await Compress.encode(data, { format: 'deflate-raw' })` |
 | `pako.inflateRaw(data)`, `fflate.inflateSync(data)`, `zlib.inflateRawSync(data)` | `await Compress.decode(data, { format: 'deflate-raw' })` |
 | `pako.inflate(data, { to: 'string' })`, `fflate.strFromU8(...)` | `new TextDecoder().decode(await Compress.decode(data))` |
-| `zlib.gunzipSync(data, { maxOutputLength })` | `await Compress.decode(data, { maxLength })` |
+| `zlib.gunzipSync(data, { maxOutputLength })` | `await Compress.decode(data, { maxBytes })` |
 | `zlib.createGunzip()`, `new fflate.Gunzip()`, `new pako.Inflate()` | `new Compress.DecoderStream()` |
 | `zlib.crc32(data, value)` | `Compress.crc32(data, previous)` |
 | `{ level }`, `{ dictionary }`, `{ strategy }` | Not supported by `CompressionStream`. Keep fflate for these. |

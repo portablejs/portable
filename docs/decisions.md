@@ -2,6 +2,12 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `maxBytes` counts bytes and `maxLength` counts string length
+
+- **Options:** keep each package's name; name every limit `maxLength`; name it by unit.
+- **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. A caller who knows `Streams.toBytes(stream, { maxBytes })` would guess wrong in compress.
+- **Chosen:** name it by unit. compress's option is now `maxBytes` and its error `Compress.MaxBytesError`, and AGENTS.md states the rule.
+
 ## Fuzzing with fast-check, not a coverage-guided fuzzer
 
 - **Options:** fast-check property tests; a coverage-guided fuzzer such as Jazzer.js; keep each package's hand-rolled seeded loops.

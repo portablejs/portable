@@ -1,6 +1,6 @@
 import { concat, toBufferSource } from './bytes.js'
 import type { Format } from './codec.js'
-import { MaxLengthError, classify } from './errors.js'
+import { MaxBytesError, classify } from './errors.js'
 
 const maxQueued = 64 * 1024
 
@@ -8,13 +8,13 @@ export declare namespace DecoderStream {
   type Options = {
     /** @default 'gzip' */
     format?: Format | undefined
-    /** Fail with `MaxLengthError` and cancel the input once the output grows past this many bytes. @default Infinity */
-    maxLength?: number | undefined
+    /** Fail with `MaxBytesError` and cancel the input once the output grows past this many bytes. @default Infinity */
+    maxBytes?: number | undefined
   }
 }
 
 /**
- * A `TransformStream` that decompresses with `DecompressionStream`, adding a `maxLength` limit and
+ * A `TransformStream` that decompresses with `DecompressionStream`, adding a `maxBytes` limit and
  * the package's error classes. Input chunks that arrive while the decompressor is busy are joined
  * into one write, so small network chunks don't each pay the decompressor's per-chunk cost.
  *
@@ -23,7 +23,7 @@ export declare namespace DecoderStream {
  * import * as Compress from '@portable/compress'
  *
  * const response = await fetch('https://example.com/export.ndjson.gz')
- * const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxLength: 1_000_000_000 }))
+ * const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }))
  * ```
  */
 export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayBuffer>> {
@@ -32,7 +32,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
 
   constructor(options: DecoderStream.Options = {}) {
     super()
-    const { format = 'gzip', maxLength = Infinity } = options
+    const { format = 'gzip', maxBytes = Infinity } = options
     const native = new DecompressionStream(format)
     const writer = native.writable.getWriter()
     const reader = native.readable.getReader()
@@ -107,8 +107,8 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           }
           if (result.done) return controller.close()
           length += result.value.byteLength
-          if (length > maxLength) {
-            const error = fail(new MaxLengthError(maxLength))
+          if (length > maxBytes) {
+            const error = fail(new MaxBytesError(maxBytes))
             await reader.cancel(error).catch(() => {})
             throw error
           }
