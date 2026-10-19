@@ -52,6 +52,7 @@ A row is a `string[]`, or a `Record<string, string>` when `header` is set. Value
 | `skipEmpty` | `true` | Drop lines with no characters. `false` reads each as a row with one empty field. |
 | `maxLength` | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row passes it, so a missing closing quote can't buffer the whole input. |
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. |
+| `signal` | | `DecoderStream` only. Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. |
 
 Errors are thrown by `decode` and fail the stream. Messages name the row, counting from 1 and including skipped empty lines.
 
@@ -79,6 +80,7 @@ A field is quoted only when it holds the delimiter, the quote, CR or LF, and a r
 | `header` | `false` | `true` writes the first object row's keys as a header row. An array writes those names and reads object rows by them, in that order, and is written even with no rows. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. |
 | `bom` | `false` | Start with a byte order mark, which Excel needs to read UTF-8. |
 | `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). |
+| `signal` | | `EncoderStream` only. Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. |
 
 ## Why use this over csv-parse, papaparse and fast-csv
 

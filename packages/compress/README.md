@@ -22,9 +22,9 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 
 | Export | Description |
 | --- | --- |
-| `encode(data, { format })` | Compresses a `Uint8Array` or a string (as UTF-8). Returns `Promise<Uint8Array>`. |
-| `decode(data, { format, maxBytes })` | Decompresses a `Uint8Array`. Returns `Promise<Uint8Array>`. A gzip file with several members decodes to all of them joined. |
-| `new DecoderStream({ format, maxBytes })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. |
+| `encode(data, { format, signal })` | Compresses a `Uint8Array` or a string (as UTF-8). Returns `Promise<Uint8Array>`. |
+| `decode(data, { format, maxBytes, signal })` | Decompresses a `Uint8Array`. Returns `Promise<Uint8Array>`. A gzip file with several members decodes to all of them joined. |
+| `new DecoderStream({ format, maxBytes, signal })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. |
 | `crc32(data, previous?)` | The CRC-32 of a `Uint8Array` or a string (as UTF-8). Pass the previous result to continue a checksum over several pieces. |
 | `Format` | `'gzip' \| 'deflate' \| 'deflate-raw'`: gzip (RFC 1952), zlib (RFC 1950) and raw deflate (RFC 1951), the formats the platform supports. |
 
@@ -32,6 +32,7 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 | --- | --- | --- |
 | `format` | `'gzip'` | The compressed format. |
 | `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. |
+| `signal` | | When it aborts, `encode` and `decode` reject with `signal.reason`, and `DecoderStream` fails with it and cancels its input. |
 
 There is no compression level option and no dictionary, because `CompressionStream` has neither. To compress a stream, use the platform's `CompressionStream`.
 

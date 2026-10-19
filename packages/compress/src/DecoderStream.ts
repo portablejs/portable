@@ -10,6 +10,8 @@ export declare namespace DecoderStream {
     format?: Format | undefined
     /** Fail with `MaxBytesError` and cancel the input once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -32,7 +34,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
 
   constructor(options: DecoderStream.Options = {}) {
     super()
-    const { format = 'gzip', maxBytes = Infinity } = options
+    const { format = 'gzip', maxBytes = Infinity, signal } = options
     const native = new DecompressionStream(format)
     const writer = native.writable.getWriter()
     const reader = native.readable.getReader()
@@ -44,10 +46,19 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
     let length = 0
 
     let writable: WritableStreamDefaultController | undefined
+    let readable: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>> | undefined
+
+    const onAbort = () => {
+      const error = fail(signal!.reason)
+      readable?.error(error)
+      reader.cancel(error).catch(() => {})
+      writer.abort(error).catch(() => {})
+    }
 
     const fail = (error: unknown): unknown => {
       if (failure) return failure.error
       failure = { error }
+      signal?.removeEventListener('abort', onAbort)
       writable?.error(error)
       return error
     }
@@ -98,6 +109,9 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
 
     this.readable = new ReadableStream<Uint8Array<ArrayBuffer>>(
       {
+        start(controller) {
+          readable = controller
+        },
         async pull(controller) {
           let result: ReadableStreamReadResult<Uint8Array<ArrayBuffer>>
           try {
@@ -105,7 +119,10 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           } catch (error) {
             throw fail(classify(error, closing))
           }
-          if (result.done) return controller.close()
+          if (result.done) {
+            signal?.removeEventListener('abort', onAbort)
+            return controller.close()
+          }
           length += result.value.byteLength
           if (length > maxBytes) {
             const error = fail(new MaxBytesError(maxBytes))
@@ -121,5 +138,8 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
       },
       { highWaterMark: 0 },
     )
+
+    if (signal?.aborted) onAbort()
+    else signal?.addEventListener('abort', onAbort, { once: true })
   }
 }

@@ -1,8 +1,12 @@
 import type { encode } from './encode.js'
+import { abortable } from './abortable.js'
 import { createEncoder, type Encoder } from './encoder.js'
 
 export declare namespace EncoderStream {
-  type Options = encode.Options
+  type Options = encode.Options & {
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 /**
@@ -23,14 +27,19 @@ export declare namespace EncoderStream {
 export class EncoderStream extends TransformStream<encode.Row, string> {
   constructor(options: EncoderStream.Options = {}) {
     const encoder: Encoder = createEncoder(options)
-    super({
-      transform(row, controller) {
-        controller.enqueue(encoder.row(row))
-      },
-      flush(controller) {
-        const rest = encoder.end()
-        if (rest) controller.enqueue(rest)
-      },
-    })
+    super(
+      abortable(
+        {
+          transform(row, controller) {
+            controller.enqueue(encoder.row(row))
+          },
+          flush(controller) {
+            const rest = encoder.end()
+            if (rest) controller.enqueue(rest)
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }

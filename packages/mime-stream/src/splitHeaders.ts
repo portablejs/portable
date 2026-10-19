@@ -1,9 +1,12 @@
+import * as Bytes from '@portable/bytes'
 import { MaxHeaderBytesError } from './errors.js'
 
 export declare namespace splitHeaders {
   type Options = {
     /** Longest header block, counted with the empty line that ends it. @default 1048576 */
     maxHeaderBytes?: number | undefined
+    /** Rejects with `signal.reason` while the header block is read, and later errors `body` with it. Either way the input is cancelled. */
+    signal?: AbortSignal | undefined
   }
   type ReturnType = {
     /** The header block as received, with the empty line that ends it. */
@@ -30,8 +33,16 @@ export async function splitHeaders(
   stream: ReadableStream<Uint8Array>,
   options: splitHeaders.Options = {},
 ): Promise<splitHeaders.ReturnType> {
-  const { maxHeaderBytes = 1024 * 1024 } = options
+  const { maxHeaderBytes = 1024 * 1024, signal } = options
+  signal?.throwIfAborted()
   const reader = stream.getReader()
+  let output: ReadableStreamDefaultController<Uint8Array> | undefined
+  const onAbort = () => {
+    output?.error(signal!.reason)
+    reader.cancel(signal!.reason).catch(() => {})
+  }
+  const stop = () => signal?.removeEventListener('abort', onAbort)
+  signal?.addEventListener('abort', onAbort, { once: true })
   const pieces: Uint8Array[] = []
   let length = 0
   let lineLength = 0
@@ -41,6 +52,7 @@ export async function splitHeaders(
   try {
     read: for (;;) {
       const { done, value } = await reader.read()
+      signal?.throwIfAborted()
       if (done) break
       for (let i = 0; i < value.length; i++) {
         const byte = value[i]
@@ -63,18 +75,17 @@ export async function splitHeaders(
     }
     if (length > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
   } catch (error) {
+    stop()
     await reader.cancel(error).catch(() => {})
     throw error
   }
 
-  const headers = new Uint8Array(length)
-  let offset = 0
-  for (const piece of pieces) {
-    headers.set(piece, offset)
-    offset += piece.length
-  }
+  const headers = Bytes.concat(pieces)
 
   const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      output = controller
+    },
     async pull(controller) {
       if (rest) {
         const chunk = rest
@@ -85,10 +96,14 @@ export async function splitHeaders(
         }
       }
       const { done, value } = await reader.read()
-      if (done) controller.close()
-      else controller.enqueue(value)
+      signal?.throwIfAborted()
+      if (done) {
+        stop()
+        controller.close()
+      } else controller.enqueue(value)
     },
     cancel(reason) {
+      stop()
       return reader.cancel(reason)
     },
   })

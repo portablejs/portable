@@ -41,7 +41,7 @@ const { headers, body } = await MimeStream.splitHeaders(message)
 | Export | Description |
 | --- | --- |
 | `new DecoderStream(options?)` | `TransformStream<Uint8Array, Chunk>`. Splits a message into chunks. Nothing is decoded: bodies are still base64 or quoted-printable. |
-| `new EncoderStream()` | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes a `Uint8Array`, or a string, which it writes as UTF-8. |
+| `new EncoderStream(options?)` | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes a `Uint8Array`, or a string, which it writes as UTF-8. |
 | `splitHeaders(stream, options?)` | Resolves to `{ headers, body }`: the root header block as a `Uint8Array` and the rest as a `ReadableStream<Uint8Array>`. If the input ends before an empty line, all of it is the header block. |
 | `MaxHeaderBytesError` | Thrown when a header block is longer than `maxHeaderBytes`. Stores `maxHeaderBytes`. |
 | `MaxBoundaryLineBytesError` | Thrown when a boundary line is longer than `maxBoundaryLineBytes`. Stores `maxBoundaryLineBytes`. |
@@ -74,9 +74,10 @@ Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `embedded` | `DecoderStream` | `false` | Split the message inside a `message/rfc822` or `message/global` part into parts too, unless it is base64 or quoted-printable. Its root part's `parent` is the `message/rfc822` part. |
-| `maxHeaderBytes` | both | `1048576` | Longest header block of a part, counted with the empty line that ends it. |
+| `maxHeaderBytes` | `DecoderStream`, `splitHeaders` | `1048576` | Longest header block of a part, counted with the empty line that ends it. |
 | `maxBoundaryLineBytes` | `DecoderStream` | `1000` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory. |
 | `maxParts` | `DecoderStream` | `1000` | Most parts in a message, the root and embedded messages included. |
+| `signal` | all | | When it aborts, the streams fail with `signal.reason` and cancel their source. `splitHeaders` rejects with it while it reads the header block, and fails `body` with it after. |
 
 ## Why use this over mailsplit
 

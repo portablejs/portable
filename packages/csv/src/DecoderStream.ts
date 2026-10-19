@@ -1,3 +1,4 @@
+import { abortable } from './abortable.js'
 import { createParser, type Parser } from './parser.js'
 
 export declare namespace DecoderStream {
@@ -22,6 +23,8 @@ export declare namespace DecoderStream {
     relaxColumnCount?: boolean | undefined
     /** Drop lines with no characters instead of reading each as a row with one empty field. @default true */
     skipEmpty?: boolean | undefined
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -47,19 +50,26 @@ export class DecoderStream<
   constructor(options: DecoderStream.Options<header> = {}) {
     const decoder = new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true })
     let parser: Parser
-    super({
-      start(controller) {
-        parser = createParser(options, (row) =>
-          controller.enqueue(row as DecoderStream.Row<header>),
-        )
-      },
-      transform(chunk) {
-        parser.write(typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true }))
-      },
-      flush() {
-        parser.write(decoder.decode())
-        parser.end()
-      },
-    })
+    super(
+      abortable(
+        {
+          start(controller) {
+            parser = createParser(options, (row) =>
+              controller.enqueue(row as DecoderStream.Row<header>),
+            )
+          },
+          transform(chunk) {
+            parser.write(
+              typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true }),
+            )
+          },
+          flush() {
+            parser.write(decoder.decode())
+            parser.end()
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }

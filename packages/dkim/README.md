@@ -51,6 +51,7 @@ await Dkim.verify(message, { resolver: dns })
 | `signedAt` | `new Date()` | The signature time (`t=`). |
 | `expiresAt` | none | The expiry (`x=`), at least a second after `signedAt`. |
 | `hash` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
+| `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
 
 `sign` throws a `TypeError` or `RangeError` for an invalid option, such as a domain that isn't a host name, an RSA key under 1024 bits or a header list without `From`. It throws `Dkim.InvalidInputError` for a message without a From field.
 

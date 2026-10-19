@@ -56,6 +56,8 @@ export declare namespace sign {
     expiresAt?: Date | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hash?: (() => Hash) | undefined
+    /** Stops reading the message, and rejects with `signal.reason`. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -93,6 +95,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     signedAt = new Date(),
     expiresAt,
     hash,
+    signal,
   } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
@@ -107,6 +110,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', expiresAt)
   if (expiration !== undefined && expiration <= timestamp)
     throw new RangeError('expiresAt must be at least a second after signedAt.')
+  signal?.throwIfAborted()
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
   if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024)
@@ -124,7 +128,12 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     throw new InvalidInputError('The message has no From field to sign.')
   }
   const request: BodyHash = { canonicalization: bodyCanonicalization }
-  const digests = await hashBody(split.body, [request], hash)
+  const cancel = () => void split.body.cancel().catch(() => {})
+  signal?.addEventListener('abort', cancel, { once: true })
+  const digests = await hashBody(split.body, [request], hash).finally(() =>
+    signal?.removeEventListener('abort', cancel),
+  )
+  signal?.throwIfAborted()
   const bodyHash = Base64.encode(digests.get(bodyHashKey(request))!.digest)
 
   const signedNames = [...selected.map(casedName), ...overSigned(names, selected)]

@@ -8,6 +8,8 @@ export declare namespace encode {
   type Options = {
     /** @default 'gzip' */
     format?: Format | undefined
+    /** Rejects with `signal.reason` when aborted, and stops the compression stream. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -26,14 +28,19 @@ export async function encode(
   data: Uint8Array | string,
   options: encode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { format = 'gzip' } = options
+  const { format = 'gzip', signal } = options
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
   const chunks: Uint8Array[] = []
   let length = 0
-  await run(bytes, new CompressionStream(format), (chunk) => {
-    chunks.push(chunk)
-    length += chunk.byteLength
-  })
+  await run(
+    bytes,
+    new CompressionStream(format),
+    (chunk) => {
+      chunks.push(chunk)
+      length += chunk.byteLength
+    },
+    signal,
+  )
   return concat(chunks, length)
 }
 
@@ -43,6 +50,8 @@ export declare namespace decode {
     format?: Format | undefined
     /** Fail with `MaxBytesError` once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined
+    /** Rejects with `signal.reason` when aborted, and stops the compression stream. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -62,22 +71,27 @@ export async function decode(
   data: Uint8Array,
   options: decode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { format = 'gzip', maxBytes = Infinity } = options
+  const { format = 'gzip', maxBytes = Infinity, signal } = options
   const chunks: Uint8Array[] = []
   let length = 0
   const decodeAll = (input: Uint8Array) =>
-    run(input, new DecompressionStream(format), (chunk) => {
-      length += chunk.byteLength
-      if (length > maxBytes) throw new MaxBytesError(maxBytes)
-      chunks.push(chunk)
-    })
+    run(
+      input,
+      new DecompressionStream(format),
+      (chunk) => {
+        length += chunk.byteLength
+        if (length > maxBytes) throw new MaxBytesError(maxBytes)
+        chunks.push(chunk)
+      },
+      signal,
+    )
 
   let firstError: unknown
   try {
     await decodeAll(data)
     return concat(chunks, length)
   } catch (error) {
-    if (format !== 'gzip' || error instanceof MaxBytesError) throw error
+    if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) throw error
     firstError = error
   }
 
@@ -94,7 +108,7 @@ export async function decode(
         offset = end
         continue members
       } catch (error) {
-        if (error instanceof MaxBytesError) throw error
+        if (error instanceof MaxBytesError || signal?.aborted) throw error
         for (const chunk of chunks.splice(before)) length -= chunk.byteLength
       }
     }
@@ -115,7 +129,9 @@ async function run(
   data: Uint8Array,
   stream: ReadableWritablePair<Uint8Array<ArrayBuffer>, BufferSource>,
   onChunk: (chunk: Uint8Array<ArrayBuffer>) => void,
+  signal: AbortSignal | undefined,
 ): Promise<void> {
+  signal?.throwIfAborted()
   const writer = stream.writable.getWriter()
   let closing = false
   writer
@@ -126,19 +142,30 @@ async function run(
     })
     .catch(() => {})
   const reader = stream.readable.getReader()
-  for (;;) {
-    let result: ReadableStreamReadResult<Uint8Array<ArrayBuffer>>
-    try {
-      result = await reader.read()
-    } catch (error) {
-      throw classify(error, closing)
+  const onAbort = () => {
+    reader.cancel(signal!.reason).catch(() => {})
+    writer.abort(signal!.reason).catch(() => {})
+  }
+  signal?.addEventListener('abort', onAbort, { once: true })
+  try {
+    for (;;) {
+      let result: ReadableStreamReadResult<Uint8Array<ArrayBuffer>>
+      try {
+        result = await reader.read()
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw classify(error, closing)
+      }
+      signal?.throwIfAborted()
+      if (result.done) return
+      try {
+        onChunk(result.value)
+      } catch (error) {
+        await reader.cancel(error).catch(() => {})
+        throw error
+      }
     }
-    if (result.done) return
-    try {
-      onChunk(result.value)
-    } catch (error) {
-      await reader.cancel(error).catch(() => {})
-      throw error
-    }
+  } finally {
+    signal?.removeEventListener('abort', onAbort)
   }
 }

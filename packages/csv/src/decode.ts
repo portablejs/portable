@@ -2,8 +2,10 @@ import type { DecoderStream } from './DecoderStream.js'
 import { createParser } from './parser.js'
 
 export declare namespace decode {
-  type Options<header extends DecoderStream.Header = DecoderStream.Header> =
-    DecoderStream.Options<header>
+  type Options<header extends DecoderStream.Header = DecoderStream.Header> = Omit<
+    DecoderStream.Options<header>,
+    'signal'
+  >
 }
 
 /**

@@ -1,4 +1,5 @@
 import * as MimeHeaders from '@portable/mime-headers'
+import { abortable } from './abortable.js'
 import { MaxBoundaryLineBytesError, MaxHeaderBytesError, MaxPartsError } from './errors.js'
 
 /** One part of a message: the root, a part of a multipart, or the message inside a `message/rfc822` part. */
@@ -39,6 +40,8 @@ export declare namespace DecoderStream {
     maxHeaderBytes?: number | undefined
     /** Most parts in a message, the root included. @default 1000 */
     maxParts?: number | undefined
+    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -60,17 +63,22 @@ export declare namespace DecoderStream {
 export class DecoderStream extends TransformStream<Uint8Array, Chunk> {
   constructor(options: DecoderStream.Options = {}) {
     let decoder: ReturnType<typeof createDecoder>
-    super({
-      start(controller) {
-        decoder = createDecoder(options, (chunk) => controller.enqueue(chunk))
-      },
-      transform(chunk) {
-        decoder.write(chunk)
-      },
-      flush() {
-        decoder.end()
-      },
-    })
+    super(
+      abortable(
+        {
+          start(controller) {
+            decoder = createDecoder(options, (chunk) => controller.enqueue(chunk))
+          },
+          transform(chunk) {
+            decoder.write(chunk)
+          },
+          flush() {
+            decoder.end()
+          },
+        },
+        options.signal,
+      ),
+    )
   }
 }
 

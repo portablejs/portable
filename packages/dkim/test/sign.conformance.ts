@@ -543,3 +543,28 @@ describe('header smuggling', () => {
     expect(await results(tampered)).toEqual(['fail'])
   })
 })
+
+describe('signal', () => {
+  test('rejects at once for an aborted signal', async () => {
+    const signal = AbortSignal.abort()
+    await expect(Dkim.sign(MSG, base({ signal }))).rejects.toBe(signal.reason)
+  })
+
+  test('rejects with the reason and cancels the message when the signal aborts the read', async () => {
+    const controller = new AbortController()
+    let cancelled = false
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n\r\nbody'))
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true
+      },
+    })
+    const pending = Dkim.sign(message, base({ signal: controller.signal }))
+    setTimeout(() => controller.abort(), 10)
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    expect(cancelled).toBe(true)
+  })
+})
