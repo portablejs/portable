@@ -9,6 +9,7 @@
     "@types/ndjson": "^2.0.4",
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
-    "ndjson": "^2.0.0"
+    "ndjson": "^2.0.0",
+    "stream-json": "^3.7.0"
   }
 }

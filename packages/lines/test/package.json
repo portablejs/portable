@@ -5,8 +5,10 @@
   "devDependencies": {
     "@portable/fuzz": "workspace:*",
     "@portable/lines": "workspace:*",
+    "@types/byline": "^4.2.36",
     "@types/node": "^26.6.5",
     "@types/split2": "^4.2.3",
+    "byline": "^5.0.0",
     "fast-check": "^4.10.2",
     "split2": "catalog:"
   }

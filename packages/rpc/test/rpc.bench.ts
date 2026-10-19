@@ -1,6 +1,7 @@
 import { createBirpc } from 'birpc'
 import * as Comlink from 'comlink'
 import { createJSONRPCRequest, JSONRPCClient, JSONRPCServer } from 'json-rpc-2.0'
+import { connect as penpalConnect, PortMessenger } from 'penpal'
 import { afterAll, expect, test } from 'vite-plus/test'
 import * as Rpc from '@portable/rpc'
 
@@ -95,7 +96,17 @@ const comlink = (() => {
   return Comlink.wrap<ComlinkApi>(port2)
 })()
 
-test('sequential round trips over a MessageChannel within 25% of birpc and comlink', async ({
+type PenpalApi = { add(a: number, b: number): number; echo(value: unknown): unknown }
+const penpal = await (() => {
+  const { port1, port2 } = channel()
+  penpalConnect({
+    messenger: new PortMessenger({ port: port1 }),
+    methods: { add: api.add, echo: api.echo },
+  })
+  return penpalConnect<PenpalApi>({ messenger: new PortMessenger({ port: port2 }) }).promise
+})()
+
+test('sequential round trips over a MessageChannel within 25% of birpc, comlink and penpal', async ({
   bench,
 }) => {
   const result = await bench.compare(
@@ -114,14 +125,18 @@ test('sequential round trips over a MessageChannel within 25% of birpc and comli
     bench('comlink', async () => {
       await comlink.add(1, 2)
     }),
+    bench('penpal', async () => {
+      await penpal.add(1, 2)
+    }),
   )
   expect(result.get('birpc')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })
   expect(result.get('comlink')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })
+  expect(result.get('penpal')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })
 })
 
 const concurrent = Array.from({ length: 100 }, (_, i) => i)
 
-test('100 concurrent calls over a MessageChannel within 25% of birpc and comlink', async ({
+test('100 concurrent calls over a MessageChannel within 25% of birpc, comlink and penpal', async ({
   bench,
 }) => {
   const result = await bench.compare(
@@ -134,9 +149,13 @@ test('100 concurrent calls over a MessageChannel within 25% of birpc and comlink
     bench('comlink', async () => {
       await Promise.all(concurrent.map((i) => comlink.add(i, 1)))
     }),
+    bench('penpal', async () => {
+      await Promise.all(concurrent.map((i) => penpal.add(i, 1)))
+    }),
   )
   expect(result.get('birpc')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })
   expect(result.get('comlink')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })
+  expect(result.get('penpal')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })
 })
 
 test('100 notifications and a call within 25% of birpc events', async ({ bench }) => {
@@ -268,6 +287,9 @@ test('a 2 KB record over a MessageChannel with the json and identity codecs, wit
     }),
     bench('comlink', async () => {
       await comlink.echo(record)
+    }),
+    bench('penpal', async () => {
+      await penpal.echo(record)
     }),
   )
   expect(result.get('birpc')).not.toBeFasterThan(result.get('@portable/rpc'), { delta: 0.25 })

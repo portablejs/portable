@@ -2,6 +2,10 @@ import { Readable } from 'node:stream'
 import { toArray, toText } from '@portable/streams'
 import { JsonStreamStringify } from 'json-stream-stringify'
 import JSONStream from 'JSONStream'
+import pick from 'stream-json/filters/pick.js'
+import streamArray from 'stream-json/streamers/stream-array.js'
+import webPick from 'stream-json/web/filters/pick.js'
+import webStreamArray from 'stream-json/web/streamers/stream-array.js'
 import { expect, test } from 'vite-plus/test'
 import { encodeStream, DecoderStream } from '@portable/json-stream'
 import allNpm from './fixtures/all_npm.json?raw'
@@ -21,7 +25,10 @@ function drain(readable: NodeJS.ReadableStream): Promise<number> {
   })
 }
 
-test('parses the rows of a 3 MB document within 25% of JSONStream', async ({ bench }) => {
+// stream-json takes 0.5 to 1.2 s a run, so each candidate runs at least 8 times instead of 64.
+test('parses the rows of a 3 MB document within 25% of JSONStream and stream-json', async ({
+  bench,
+}) => {
   const result = await bench.compare(
     bench('@portable/json-stream', async () => {
       await toArray(streamOf(bigChunks).pipeThrough(new DecoderStream({ paths: ['$.rows[*]'] })))
@@ -29,11 +36,29 @@ test('parses the rows of a 3 MB document within 25% of JSONStream', async ({ ben
     bench('JSONStream', async () => {
       await drain(Readable.from(bigChunks).pipe(JSONStream.parse('rows.*')))
     }),
+    bench('stream-json', async () => {
+      await drain(
+        Readable.from(bigChunks)
+          .pipe(pick.withParserAsStream({ filter: 'rows' }))
+          .pipe(streamArray.asStream()),
+      )
+    }),
+    bench('stream-json, web streams', async () => {
+      await toArray(
+        streamOf(bigChunks)
+          .pipeThrough(webPick.withParserAsWebStream({ filter: 'rows' }))
+          .pipeThrough(webStreamArray.asWebStream()),
+      )
+    }),
     bench('JSON.parse after reading everything', async () => {
       JSON.parse(await toText(streamOf(bigChunks)))
     }),
+    { iterations: 8 },
   )
   expect(result.get('JSONStream')).not.toBeFasterThan(result.get('@portable/json-stream'), {
+    delta: 0.25,
+  })
+  expect(result.get('stream-json')).not.toBeFasterThan(result.get('@portable/json-stream'), {
     delta: 0.25,
   })
 })

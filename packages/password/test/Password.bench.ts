@@ -1,6 +1,7 @@
 import { pbkdf2 as nodePbkdf2, randomBytes, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import pbkdf2 from 'pbkdf2'
+import createHasher from 'pbkdf2-password'
 import { expect, test } from 'vite-plus/test'
 import * as Password from '@portable/password'
 
@@ -8,6 +9,7 @@ const pbkdf2Async = promisify(nodePbkdf2)
 const password = 'correct horse battery staple'
 const iterations = 600_000
 const run = { time: 0, iterations: 10, warmupIterations: 1 }
+const hasher = createHasher({ iterations, digest: 'sha256', keyLength: 32, saltLength: 16 })
 
 test('hashes a password at 600,000 iterations within 25% of node:crypto pbkdf2', async ({
   bench,
@@ -23,6 +25,13 @@ test('hashes a password at 600,000 iterations within 25% of node:crypto pbkdf2',
       await new Promise((resolve, reject) =>
         pbkdf2.pbkdf2(password, randomBytes(16), iterations, 32, 'sha256', (error, key) =>
           error ? reject(error) : resolve(key),
+        ),
+      )
+    }),
+    bench('pbkdf2-password', async () => {
+      await new Promise((resolve, reject) =>
+        hasher({ password }, (error, _password, _salt, hash) =>
+          error ? reject(error) : resolve(hash),
         ),
       )
     }),

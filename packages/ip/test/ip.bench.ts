@@ -1,4 +1,5 @@
 import { BlockList, isIP } from 'node:net'
+import ip from 'ip'
 import ipaddr from 'ipaddr.js'
 import { expect, test } from 'vite-plus/test'
 import * as Ip from '@portable/ip'
@@ -21,6 +22,9 @@ test('parses addresses within 25% of ipaddr.js and node:net isIP', async ({ benc
     }),
     bench('ipaddr.js', () => {
       for (const text of inputs) ipaddr.parse(text)
+    }),
+    bench('ip', () => {
+      for (const text of inputs) ip.toBuffer(text)
     }),
     bench('node:net isIP', () => {
       for (const text of inputs) isIP(text)
@@ -64,4 +68,22 @@ test('checks addresses against a CIDR block within 25% of ipaddr.js and BlockLis
   expect(result.get('node:net BlockList')).not.toBeFasterThan(result.get('@portable/ip'), {
     delta: 0.25,
   })
+})
+
+test('classifies addresses as public or internal within 25% of ipaddr.js and ip', async ({
+  bench,
+}) => {
+  const result = await bench.compare(
+    bench('@portable/ip', () => {
+      for (const text of inputs) Ip.range(Ip.unmap(text))
+    }),
+    bench('ipaddr.js', () => {
+      for (const text of inputs) ipaddr.process(text).range()
+    }),
+    bench('ip', () => {
+      for (const text of inputs) ip.isPublic(text)
+    }),
+  )
+  expect(result.get('ipaddr.js')).not.toBeFasterThan(result.get('@portable/ip'), { delta: 0.25 })
+  expect(result.get('ip')).not.toBeFasterThan(result.get('@portable/ip'), { delta: 0.25 })
 })

@@ -1,3 +1,4 @@
+import { EventSource } from 'eventsource'
 import { EventSourceParserStream } from 'eventsource-parser/stream'
 import { expect, test } from 'vite-plus/test'
 import * as Sse from '@portable/sse'
@@ -30,6 +31,23 @@ test('connect: one response of 2000 events', async ({ bench }) => {
           .body!.pipeThrough(new TextDecoderStream())
           .pipeThrough(new EventSourceParserStream()),
       )
+    }),
+    bench('eventsource', async () => {
+      await new Promise<void>((resolve, reject) => {
+        let count = 0
+        const source = new EventSource('https://example.com/events', {
+          fetch: (url) => fetch(new Request(url)),
+        })
+        source.onmessage = () => {
+          if (++count < chunks.length) return
+          source.close()
+          resolve()
+        }
+        source.onerror = (event) => {
+          source.close()
+          reject(event)
+        }
+      })
     }),
   )
 })

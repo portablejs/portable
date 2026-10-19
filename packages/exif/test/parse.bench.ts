@@ -1,11 +1,22 @@
 import ExifParser from 'exif-parser'
 import exifr from 'exifr'
+import exifReader from 'exif-reader'
 import { expect, test } from 'vite-plus/test'
 import * as Exif from '@portable/exif'
 import { chunked, fixture, tracked } from './utils.js'
 
 const jpeg = await fixture('starfish.jpg')
 const buffer = Buffer.from(jpeg)
+
+// exif-reader takes the APP1 segment, which a caller finds in the JPEG first, as sharp does.
+function app1(bytes: Buffer): Buffer {
+  for (let i = 2; i + 4 <= bytes.length;) {
+    const length = bytes.readUInt16BE(i + 2)
+    if (bytes[i + 1] === 0xe1) return bytes.subarray(i + 4, i + 2 + length)
+    i += 2 + length
+  }
+  throw new Error('No APP1 segment')
+}
 
 test('parses a phone JPEG within 25% of exif-parser', async ({ bench }) => {
   const result = await bench.compare(
@@ -14,6 +25,9 @@ test('parses a phone JPEG within 25% of exif-parser', async ({ bench }) => {
     }),
     bench('exif-parser', () => {
       ExifParser.create(buffer).parse()
+    }),
+    bench('exif-reader', () => {
+      exifReader(app1(buffer))
     }),
     bench('exifr', async () => {
       await exifr.parse(buffer, {

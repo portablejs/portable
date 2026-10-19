@@ -4,9 +4,19 @@
   "type": "module",
   "devDependencies": {
     "@portable/streams": "workspace:*",
+    "@types/concat-stream": "^2.0.3",
+    "@types/merge-stream": "^2.0.0",
     "@types/merge2": "^1.4.4",
     "@types/node": "^26.6.5",
+    "@types/stream-to-array": "^2.3.3",
+    "@types/through2": "^5.0.0",
+    "bl": "^7.0.12",
+    "concat-stream": "^2.0.0",
     "get-stream": "^9.0.1",
-    "merge2": "^1.4.1"
+    "merge-stream": "^2.0.0",
+    "merge2": "^1.4.1",
+    "raw-body": "^4.0.0",
+    "stream-to-array": "^2.3.0",
+    "through2": "^5.0.11"
   }
 }

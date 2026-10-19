@@ -5,6 +5,7 @@ import { verify as octokitVerify } from '@octokit/webhooks-methods'
 import { verifySlackRequest } from '@slack/bolt/dist/receivers/verify-request.js'
 import { Webhook as StandardWebhook } from 'standardwebhooks'
 import Stripe from 'stripe'
+import { Webhook as SvixWebhook } from 'svix'
 import { expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
 import { octokitWeb } from './octokit-web.js'
@@ -29,11 +30,12 @@ async function headers(scheme: Webhooks.Scheme): Promise<Record<string, string>>
   return Webhooks.sign(body, { scheme, secret })
 }
 
-test(`verifies a ${body.length}-byte Standard Webhook within 25% of standardwebhooks`, async ({
+test(`verifies a ${body.length}-byte Standard Webhook within 25% of standardwebhooks and svix`, async ({
   bench,
 }) => {
   const signed = await headers(Webhooks.standard)
   const upstream = new StandardWebhook(secret)
+  const svix = new SvixWebhook(secret)
   const result = await bench.compare(
     bench('@portable/webhooks', async () => {
       await Webhooks.verify({ headers: signed, body }, { scheme: Webhooks.standard, secret })
@@ -47,8 +49,15 @@ test(`verifies a ${body.length}-byte Standard Webhook within 25% of standardwebh
     bench('standardwebhooks', () => {
       upstream.verify(body, signed)
     }),
+    bench('svix', () => {
+      svix.verify(body, signed)
+    }),
   )
   expect(result.get('standardwebhooks')).not.toBeFasterThan(
+    result.get('@portable/webhooks with @noble/hashes'),
+    { delta: 0.25 },
+  )
+  expect(result.get('svix')).not.toBeFasterThan(
     result.get('@portable/webhooks with @noble/hashes'),
     { delta: 0.25 },
   )
