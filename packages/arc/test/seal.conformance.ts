@@ -319,7 +319,7 @@ describe('options', () => {
     await expect(seal(baseMessage, { domain: 'one.example; x=y' })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { selector: '-s' })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { signedAt: new Date(Number.NaN) })).rejects.toThrow(RangeError)
-    await expect(seal(baseMessage, { privateKey: 'not a key' })).rejects.toThrow(TypeError)
+    await expect(seal(baseMessage, { privateKey: 'not a key' })).rejects.toThrow(RangeError)
   })
 
   test('writes a U-label domain as its A-label', async () => {
