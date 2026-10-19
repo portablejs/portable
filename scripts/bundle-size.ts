@@ -1,86 +1,76 @@
-// Writes .bench/sizes.json: each package and each library it replaces, bundled for the browser,
-// minified and gzipped. Ours is read from `dist/`, so run `pnpm build` first.
-import { mkdirSync, writeFileSync } from 'node:fs'
+// Writes .bench/sizes.json: for each column of each package's tables in scripts/readme-tables.ts,
+// the imports a caller uses, bundled for the browser, minified and gzipped, and the Node built-ins
+// the bundle needs. Ours is read from `dist/`, so run `pnpm build` first. Pass package names to
+// measure only those and keep the other entries.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { isBuiltin } from 'node:module'
 import { resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { build, type Rollup } from 'vite-plus'
+import { type Import, tables } from './readme-tables.ts'
 
-const upstreams: Record<string, Record<string, string>> = {
-  streams: { 'get-stream': 'get-stream', merge2: 'merge2' },
-  lines: { split2: 'split2' },
-  base64: { libbase64: 'libbase64', 'base64-js': 'base64-js', 'js-base64': 'js-base64' },
-  'quoted-printable': { libqp: 'libqp', 'quoted-printable': 'quoted-printable' },
-  charset: { 'iconv-lite': 'iconv-lite' },
-  'dns-packet': { 'dns-packet': 'dns-packet' },
-  'json-stream': { JSONStream: 'JSONStream', 'json-stream-stringify': 'json-stream-stringify' },
-  jsonl: { ndjson: 'ndjson' },
-  'mime-headers': {
-    libmime: 'libmime',
-    addressparser: 'nodemailer/lib/addressparser',
-    'email-addresses': 'email-addresses',
-  },
-  'image-size': { 'image-size': 'image-size' },
-  exif: { 'exif-parser': 'exif-parser', 'exif-reader': 'exif-reader' },
-  png: { pngjs: 'pngjs' },
-  dns: { tangerine: 'tangerine' },
-  webhooks: {
-    standardwebhooks: 'standardwebhooks',
-    svix: 'svix',
-    stripe: 'stripe',
-    '@octokit/webhooks-methods': '@octokit/webhooks-methods',
-  },
-  oauth1: { 'oauth-1.0a': 'oauth-1.0a', oauth: 'oauth' },
-  spf: { mailauth: 'mailauth/lib/spf/index.js' },
-}
+export type Size = { gzip: number; builtins: string[] } | { error: string }
 
-export type Size = { gzip: number; nodeOnly: boolean }
-
-async function measure(name: string, specifier: string): Promise<Size> {
+async function measure(name: string, imports: readonly Import[]): Promise<Size> {
   const dir = resolve(`packages/${name}/test`)
   const entry = `${dir}/__size_entry.js`
-  let nodeOnly = false
-  const output = (await build({
-    configFile: false,
-    logLevel: 'silent',
-    root: dir,
-    build: {
-      write: false,
-      minify: true,
-      modulePreload: false,
-      rollupOptions: { input: entry, preserveEntrySignatures: 'strict' },
-    },
-    plugins: [
-      {
-        name: 'size-entry',
-        enforce: 'pre',
-        resolveId(source) {
-          if (source === entry) return entry
-          if (!isBuiltin(source)) return null
-          nodeOnly = true
-          return { id: source, external: true }
-        },
-        load(id) {
-          if (id !== entry) return null
-          return `import * as m from '${specifier}'\nglobalThis.__size = m`
-        },
+  const builtins = new Set<string>()
+  const code = [
+    ...imports.map(({ from }, i) => `import * as m${i} from '${from}'`),
+    `globalThis.__size = [${imports
+      .flatMap(({ use }, i) =>
+        use ? use.map((name) => `m${i}[${JSON.stringify(name)}]`) : [`m${i}`],
+      )
+      .join(', ')}]`,
+  ].join('\n')
+  try {
+    const output = (await build({
+      configFile: false,
+      logLevel: 'silent',
+      root: dir,
+      build: {
+        write: false,
+        minify: true,
+        modulePreload: false,
+        rollupOptions: { input: entry, preserveEntrySignatures: 'strict' },
       },
-    ],
-  })) as Rollup.RollupOutput
-  const code = output.output
-    .filter((file): file is Rollup.OutputChunk => file.type === 'chunk')
-    .map((chunk) => chunk.code)
-    .join('\n')
-  if (/\bBuffer\b/.test(code)) nodeOnly = true
-  return { gzip: gzipSync(code).length, nodeOnly }
+      plugins: [
+        {
+          name: 'size-entry',
+          enforce: 'pre',
+          resolveId(source) {
+            if (source === entry) return entry
+            if (!isBuiltin(source)) return null
+            builtins.add(source.replace(/^node:/, '').split('/')[0]!)
+            return { id: source, external: true }
+          },
+          load(id) {
+            return id === entry ? code : null
+          },
+        },
+      ],
+    })) as Rollup.RollupOutput
+    const bundle = output.output
+      .filter((file): file is Rollup.OutputChunk => file.type === 'chunk')
+      .map((chunk) => chunk.code)
+      .join('\n')
+    if (/\bBuffer\b/.test(bundle) && !builtins.has('buffer')) builtins.add('Buffer')
+    return { gzip: gzipSync(bundle).length, builtins: [...builtins].sort() }
+  } catch (error) {
+    return { error: String((error as Error).message ?? error).split('\n')[0]! }
+  }
 }
 
-const sizes: Record<string, { ours: Size; upstream: Record<string, Size> }> = {}
-for (const [name, libraries] of Object.entries(upstreams)) {
-  const upstream: Record<string, Size> = {}
-  for (const [label, specifier] of Object.entries(libraries))
-    upstream[label] = await measure(name, specifier)
-  sizes[name] = { ours: await measure(name, `@portable/${name}`), upstream }
+const only = process.argv.slice(2)
+const sizes: Record<string, Record<string, Size>> = only.length && existsSync('.bench/sizes.json')
+  ? JSON.parse(readFileSync('.bench/sizes.json', 'utf8'))
+  : {}
+for (const [name, { columns }] of Object.entries(tables)) {
+  if (only.length && !only.includes(name)) continue
+  sizes[name] = {}
+  for (const column of columns)
+    if (column.imports) sizes[name][column.name] = await measure(name, column.imports)
+  console.log(name)
 }
 
 mkdirSync('.bench', { recursive: true })
