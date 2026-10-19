@@ -62,7 +62,7 @@ export async function rsaSha1(
     return new Uint8Array(await crypto.subtle.sign(algorithm.name, key, data))
   } catch (cause) {
     // A PEM key whose numbers are inconsistent imports, then fails here with an OperationError.
-    throw new InvalidInputError('The RSA private key can not sign', { cause })
+    throw new RangeError('The RSA private key can not sign', { cause })
   }
 }
 

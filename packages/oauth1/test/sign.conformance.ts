@@ -164,12 +164,12 @@ describe('RSA-SHA1', () => {
     }
   })
 
-  test('a PEM key that imports but can not sign throws InvalidInputError', async () => {
+  test('a PEM key that imports but can not sign throws RangeError', async () => {
     // One base64 digit of the public exponent changed, so the key's numbers are inconsistent.
     const privateKey = pkcs8.replace('cWQaOKm9AgMBAAE', 'cWQaOKmAAgMBAAE')
     await expect(
       signature(photos(), { ...options, consumer: { key: 'k', privateKey } }),
-    ).rejects.toThrow(OAuth1.InvalidInputError)
+    ).rejects.toThrow(RangeError)
   })
 })
 

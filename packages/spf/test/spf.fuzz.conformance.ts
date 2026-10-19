@@ -88,7 +88,7 @@ test('check settles with an RFC 7208 result for any record, within the lookup li
   )
 })
 
-test('check rejects only with TypeError, for an ip that is not an IP address', async () => {
+test('check rejects only with RangeError, for an ip that is not an IP address', async () => {
   const text = fc.string({
     unit: fc.constantFrom('1', '9', '.', ':', 'a', 'f', ' ', '%'),
     maxLength: 20,
@@ -96,7 +96,7 @@ test('check rejects only with TypeError, for an ip that is not an IP address', a
   await fuzz(
     fc.asyncProperty(text, text, text, async (ip, sender, helo) => {
       const resolver = zoneResolver({})
-      const settled = await outcomeAsync([TypeError], () =>
+      const settled = await outcomeAsync([RangeError], () =>
         Spf.check({ ip, sender, helo }, { resolver }),
       )
       expect(codes).toContain('value' in settled ? settled.value.result : 'none')

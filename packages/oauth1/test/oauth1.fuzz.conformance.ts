@@ -119,10 +119,10 @@ describe('RSA-SHA1 keys', () => {
       return out
     })
 
-  test('a mutated PEM key signs or throws InvalidInputError', async () => {
+  test('a mutated PEM key signs or throws RangeError', async () => {
     await fuzz(
       fc.asyncProperty(mutatedPem, async (privateKey) => {
-        await outcomeAsync([OAuth1.InvalidInputError], () =>
+        await outcomeAsync([RangeError], () =>
           OAuth1.authorization(new Request(url), {
             signatureMethod: 'RSA-SHA1',
             consumer: { key: 'k', privateKey },

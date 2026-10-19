@@ -444,9 +444,9 @@ describe('input', () => {
     ).rejects.toBe(reason)
   })
 
-  test('throws a TypeError for an ip that is not an IP address', async () => {
+  test('throws a RangeError for an ip that is not an IP address', async () => {
     await expect(authenticate(message, {}, { ip: 'mail.example.com' })).rejects.toBeInstanceOf(
-      TypeError,
+      RangeError,
     )
   })
 })
