@@ -1,6 +1,6 @@
 {
   "name": "@portable/dkim",
-  "description": "DKIM signing and verification (RFC 6376, RFC 8463 Ed25519) with WebCrypto and an injected DNS resolver, in any JavaScript runtime.",
+  "description": "Sign and verify DKIM signatures (RFC 6376, RFC 8463 Ed25519) with WebCrypto and an injected DNS resolver, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

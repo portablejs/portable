@@ -77,6 +77,13 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 
 `seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't fit the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal says `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
+| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason` and `sets`, as above. |
+
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:stream` and Buffers, so it doesn't run in Workers or a browser.
@@ -105,7 +112,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from mailauth
+## Migrating
 
 | mailauth | @portable/arc |
 | --- | --- |

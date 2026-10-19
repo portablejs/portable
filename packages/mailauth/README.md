@@ -94,6 +94,13 @@ Authentication-Results: mx.example.net;
 
 Values that aren't a token or an address are quoted, comments keep their parentheses balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender or HELO name holds.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Mailauth.Resolver` | The lookups SPF, DKIM, DMARC and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
+| `Mailauth.Result` | What `authenticate` resolves to, as above. |
+
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os` and Buffers.
@@ -121,7 +128,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from mailauth
+## Migrating
 
 | mailauth | @portable/mailauth |
 | --- | --- |

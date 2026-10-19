@@ -1,6 +1,6 @@
 {
   "name": "@portable/base64",
-  "description": "base64 and base64url encoding with MIME line wrapping and streams, in any JavaScript runtime.",
+  "description": "Encode and decode base64 and base64url, with MIME line wrapping and streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

@@ -20,6 +20,55 @@ Calls made without the owner's input, with the options considered and the reason
 - **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. A caller who knows `Streams.toBytes(stream, { maxBytes })` would guess wrong in compress.
 - **Chosen:** name it by unit. compress's option is now `maxBytes` and its error `Compress.MaxBytesError`, and AGENTS.md states the rule.
 
+## Each stream package keeps its own copy of `abortable`
+
+- **Options:** export `abortable` from streams or another shared package; keep a private copy of the 30-line helper in each package that needs it.
+- **Trade-offs:** A shared export would become public API that callers could start to depend on, and it would add a dependency to packages such as base64 and lines that need nothing else from streams. Copies can drift, but they are identical today and the signal tests in each package catch a broken copy.
+- **Chosen:** keep the copies. The consistency pass added copies to csv and mime-stream. If they ever differ, move the helper to an `./internal` subpath of streams.
+
+## arc reuses dkim through `@portable/dkim/internal`
+
+- **Options:** copy dkim's tag parser, canonicalization, key lookup and signing into arc; export them from dkim's main entry; add an `./internal` subpath export to dkim.
+- **Trade-offs:** A copy would drift from dkim, and the AMS is a DKIM signature with a different tag set, so every fix to one would have to be made twice. Exporting the helpers from the main entry would make them public API. A subpath is importable by anyone, but its doc comment says it is not public and can change in any release.
+- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which publishes as the exact version, so a change to the internal modules is released together with arc.
+- **Reviewed:** the consistency pass kept the subpath, because the alternatives are a copy that drifts or a public API nobody else needs. AGENTS.md now says when a package may add an `./internal` subpath and that only `@portable/*` packages import it.
+
+## arc has only RFC 8617 behavior
+
+- **Options:** mailauth's lenient default with a `strict` option; strict only.
+- **Trade-offs:** The lenient mode accepts what the ARC drafts allowed (an AMS without `c=` signed relaxed, ARC-Seal syntax errors, `i=0x1`), and RFC 8617 validators fail those chains anyway, so a forwarder that trusts a lenient pass seals a chain the next hop fails. A strict-only validator may fail chains from old draft-era sealers.
+- **Chosen:** strict only, with no option. Two cases of ValiMail's draft suite (`ams_fields_h_empty`, `ams_fields_c_na`) expect `fail`, as mailauth's strict mode does.
+
+## `Arc.seal` options
+
+- **Options:** mailauth's `cv` (any case), `i`, `algorithm` and `bodyHash`; fewer options derived from the message and the key.
+- **Trade-offs:** An explicit instance or algorithm can only produce a set that is wrong or that fails, such as a gap in the chain or `a=rsa-sha256` with an Ed25519 key. Sealing from a precomputed body hash saves reading the body twice, but `Mailauth.authenticate` already reads the message once for both.
+- **Chosen:** `chainValidation` takes the lower-case values `verify` returns and is required once the message has ARC fields; the instance follows the message and `a=` follows the key. The AMS always uses relaxed/relaxed, the only canonicalization RFC 8617 sealers use in practice. Options that would produce a broken set throw instead of returning warnings.
+
+## dkim keeps its own header splitter
+
+- **Options:** switch dkim's `splitMessage` to `MimeStream.splitHeaders`; keep dkim's.
+- **Trade-offs:** `splitHeaders` doesn't turn bare LF into CRLF, and dkim and arc read bare-LF messages as CRLF, as mailauth does. Switching would need a normalizing pass in front of it.
+- **Chosen:** keep dkim's splitter.
+
+## mailauth leaves out BIMI, Received-SPF and trustReceived
+
+- **Options:** port all of mailauth's `authenticate`; port the SPF, DKIM, DMARC and ARC checks with Authentication-Results and sealing only.
+- **Trade-offs:** BIMI needs SVG Tiny PS validation and VMC certificate chains, each bigger than the rest of the package. Received-SPF repeats the `spf=` result that Authentication-Results already carries (RFC 8601 replaces it for new code). `trustReceived` takes the client address from a Received field, which any earlier hop can write, and an SMTP server always knows the real address.
+- **Chosen:** leave all three out. A caller who needs BIMI can call a BIMI library with `result.dmarc`.
+
+## `authenticate` reports a refused seal in `sealSkipReason`
+
+- **Options:** let `Arc.InvalidInputError` reject `authenticate`; return the results without a seal and the reason in a field.
+- **Trade-offs:** AGENTS.md says errors are thrown, never returned. But a message whose newest ARC-Seal says `cv=fail`, that has 50 sets or no From field must be delivered unsealed (RFC 8617 section 5.1), and a rejection would throw away the SPF, DKIM, DMARC and ARC results the caller still needs for it.
+- **Chosen:** `sealSkipReason`, next to `dmarcSkipReason`, which reports a check that wasn't run in the same way. Invalid seal options still throw.
+
+## `authservId` must be a token
+
+- **Options:** quote a value that isn't a token, as mailauth's default mode does; throw, as its strict mode does.
+- **Trade-offs:** RFC 8601 allows a quoted authserv-id, but readers that split the field on `;` read `"mx.example; dkim=pass"` as a result. An authserv-id is configuration, so a bad one is a bug to fix once.
+- **Chosen:** throw a `RangeError`. The option is required, because there is no `os.hostname()` outside Node.
+
 ## Fuzzing with fast-check, not a coverage-guided fuzzer
 
 - **Options:** fast-check property tests; a coverage-guided fuzzer such as Jazzer.js; keep each package's hand-rolled seeded loops.
@@ -434,45 +483,3 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **sse** splits lines inline instead of using lines, to keep one `TransformStream`. `connect` reconnects after a clean end, and a `retry` field from the server replaces `delay`.
 - **websocket and sse** take `Timers.Delay` and compute waits with `Timers.backoff`.
 - **idna** ships its own Unicode 18 tables instead of calling `URL`, because Node and Chromium both differ from UTS #46.
-
-## arc reuses dkim through `@portable/dkim/internal`
-
-- **Options:** copy dkim's tag parser, canonicalization, key lookup and signing into arc; export them from dkim's main entry; add an `./internal` subpath export to dkim.
-- **Trade-offs:** A copy would drift from dkim, and the AMS is a DKIM signature with a different tag set, so every fix to one would have to be made twice. Exporting the helpers from the main entry would make them public API. A subpath is importable by anyone, but its doc comment says it is not public and can change in any release.
-- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which publishes as the exact version, so a change to the internal modules is released together with arc.
-
-## arc has only RFC 8617 behavior
-
-- **Options:** mailauth's lenient default with a `strict` option; strict only.
-- **Trade-offs:** The lenient mode accepts what the ARC drafts allowed (an AMS without `c=` signed relaxed, ARC-Seal syntax errors, `i=0x1`), and RFC 8617 validators fail those chains anyway, so a forwarder that trusts a lenient pass seals a chain the next hop fails. A strict-only validator may fail chains from old draft-era sealers.
-- **Chosen:** strict only, with no option. Two cases of ValiMail's draft suite (`ams_fields_h_empty`, `ams_fields_c_na`) expect `fail`, as mailauth's strict mode does.
-
-## `Arc.seal` options
-
-- **Options:** mailauth's `cv` (any case), `i`, `algorithm` and `bodyHash`; fewer options derived from the message and the key.
-- **Trade-offs:** An explicit instance or algorithm can only produce a set that is wrong or that fails, such as a gap in the chain or `a=rsa-sha256` with an Ed25519 key. Sealing from a precomputed body hash saves reading the body twice, but `Mailauth.authenticate` already reads the message once for both.
-- **Chosen:** `chainValidation` takes the lower-case values `verify` returns and is required once the message has ARC fields; the instance follows the message and `a=` follows the key. The AMS always uses relaxed/relaxed, the only canonicalization RFC 8617 sealers use in practice. Options that would produce a broken set throw instead of returning warnings.
-
-## dkim keeps its own header splitter
-
-- **Options:** switch dkim's `splitMessage` to `MimeStream.splitHeaders`; keep dkim's.
-- **Trade-offs:** `splitHeaders` doesn't turn bare LF into CRLF, and dkim and arc read bare-LF messages as CRLF, as mailauth does. Switching would need a normalizing pass in front of it.
-- **Chosen:** keep dkim's splitter.
-
-## mailauth leaves out BIMI, Received-SPF and trustReceived
-
-- **Options:** port all of mailauth's `authenticate`; port the SPF, DKIM, DMARC and ARC checks with Authentication-Results and sealing only.
-- **Trade-offs:** BIMI needs SVG Tiny PS validation and VMC certificate chains, each bigger than the rest of the package. Received-SPF repeats the `spf=` result that Authentication-Results already carries (RFC 8601 replaces it for new code). `trustReceived` takes the client address from a Received field, which any earlier hop can write, and an SMTP server always knows the real address.
-- **Chosen:** leave all three out. A caller who needs BIMI can call a BIMI library with `result.dmarc`.
-
-## `authenticate` reports a refused seal in `sealSkipReason`
-
-- **Options:** let `Arc.InvalidInputError` reject `authenticate`; return the results without a seal and the reason in a field.
-- **Trade-offs:** AGENTS.md says errors are thrown, never returned. But a message whose newest ARC-Seal says `cv=fail`, that has 50 sets or no From field must be delivered unsealed (RFC 8617 section 5.1), and a rejection would throw away the SPF, DKIM, DMARC and ARC results the caller still needs for it.
-- **Chosen:** `sealSkipReason`, next to `dmarcSkipReason`, which reports a check that wasn't run in the same way. Invalid seal options still throw.
-
-## `authservId` must be a token
-
-- **Options:** quote a value that isn't a token, as mailauth's default mode does; throw, as its strict mode does.
-- **Trade-offs:** RFC 8601 allows a quoted authserv-id, but readers that split the field on `;` read `"mx.example; dkim=pass"` as a result. An authserv-id is configuration, so a bad one is a bug to fix once.
-- **Chosen:** throw a `RangeError`. The option is required, because there is no `os.hostname()` outside Node.
