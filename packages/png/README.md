@@ -86,6 +86,14 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 
 Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.UnsupportedError`.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Png.ColorType` | `0 \| 2 \| 3 \| 4 \| 6`: grayscale, RGB, palette, grayscale with alpha and RGBA. |
+| `Png.BitDepth` | `1 \| 2 \| 4 \| 8 \| 16`, bits per sample, or per palette index for color type 3. |
+| `Png.FilterType` | `0 \| 1 \| 2 \| 3 \| 4`: none, sub, up, average and Paeth. |
+
 ## Why use this over pngjs
 
 pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
@@ -119,7 +127,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from pngjs
+## Migrating
 
 | pngjs | @portable/png |
 | --- | --- |

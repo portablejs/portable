@@ -93,7 +93,7 @@ Sse.connect(request, {
 })
 ```
 
-## Why use this over the libraries it replaces
+## Why use this over eventsource-parser, eventsource and fetch-event-source
 
 eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies.
 

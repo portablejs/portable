@@ -235,6 +235,17 @@ Rpc.connect<Api>(transport, { codec: { encode: cbor.encode, decode: cbor.decode 
 
 Validation is left to the methods. Parse the arguments with your schema library at the start of a method.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Rpc.Remote` | The client type `connect` and `http` return for an API type. |
+| `Rpc.Result` | What a remote method returns for a result of a given type. |
+| `Rpc.Transport` | A pair of streams that carry encoded messages. |
+| `Rpc.Codec` | Turns messages into what a transport carries, and back. |
+| `Rpc.Context` | What a method wrapped with `withContext` receives as its first argument. |
+| `Rpc.Message` | A JSON-RPC 2.0 request, notification or response. |
+
 ## Why use this over comlink, penpal, birpc and json-rpc-2.0
 
 The benchmarks run over a `MessageChannel` with the default JSON codec.

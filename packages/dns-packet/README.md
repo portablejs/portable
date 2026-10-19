@@ -49,6 +49,24 @@ Malformed input throws `DnsPacket.TruncatedError` when the message ends early an
 | --- | --- | --- |
 | `framing` | `'none'` | `'tcp'` reads the 2-byte length first, and throws `TruncatedError` until the whole message has arrived. |
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `DnsPacket.Packet` | What `encode` takes: header fields, flags and the four record sections. |
+| `DnsPacket.DecodedPacket` | What `decode` returns. Every field is present, and record data is decoded. |
+| `DnsPacket.Question` | `{ name, type, class? }`. `DecodedQuestion` is its decoded form. |
+| `DnsPacket.ResourceRecord` | A record to encode. `DecodedResourceRecord` is its decoded form. |
+| `DnsPacket.OptRecord` | The EDNS pseudo-record (RFC 6891). `DecodedOptRecord` is its decoded form. |
+| `DnsPacket.RecordData` | The `data` of each record type, keyed by type. `DecodedRecordData` is its decoded form. |
+| `DnsPacket.EdnsOption` | One option of an OPT record. |
+| `DnsPacket.Flags` | The header flags as booleans. |
+| `DnsPacket.RecordType` | A record type name, such as `A` or `TXT`, or `TYPE` and a number for a type without a name. `UnknownType` is a type with no codec here, whose `data` is the raw RDATA. |
+| `DnsPacket.RecordClass` | A class name, such as `IN`. |
+| `DnsPacket.Opcode` | A header opcode name, such as `QUERY`. |
+| `DnsPacket.Rcode` | A response code name, such as `NXDOMAIN`. |
+| `DnsPacket.OptionCode` | An EDNS option name, such as `CLIENT_SUBNET`. |
+
 ## Why use this over dns-packet
 
 dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 6.6 kB minified and gzipped with no dependencies.

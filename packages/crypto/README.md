@@ -46,6 +46,13 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 
 `Crypto.InvalidInputError` is thrown for malformed DER, a raw signature or seed of the wrong length, and a key that is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are thrown unchanged.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Crypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa` and `rawToDerEcdsa`. |
+| `Crypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
+
 ## Why use this over hand-written WebCrypto calls
 
 Each helper replaces a few lines that apps write by hand, and handles a trap those lines often miss.
@@ -83,7 +90,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from ecdsa-sig-formatter
+## Migrating
 
 | ecdsa-sig-formatter | @portable/crypto |
 | --- | --- |

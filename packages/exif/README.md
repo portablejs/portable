@@ -134,6 +134,14 @@ const { exif } = Exif.parse(bytes)
 const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) })
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Exif.Metadata` | What `parse` and `parseStream` return. Every IFD is an object, empty when the file doesn't have it. |
+| `Exif.Tags` | One IFD, keyed by tag name. |
+| `Exif.TagValue` | A tag value: a string for ASCII, a number or `number[]` for numeric tags, and a `Uint8Array` view of the input for UNDEFINED tags. |
+
 ## Why use this over exif-parser
 
 exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies.

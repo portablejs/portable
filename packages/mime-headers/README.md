@@ -65,6 +65,12 @@ Functions come in pairs. `encode*`/`decode*` convert encoded-words and back; `pa
 | `strict` | `parseAddresses` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
 | `flatten` | `parseAddresses` | `false` | Return the members of groups in place of the groups. |
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `MimeHeaders.Encoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
+
 ## Why use this over libmime, addressparser and email-addresses
 
 It has no dependencies, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. One address parser covers what addressparser and email-addresses each do: a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.

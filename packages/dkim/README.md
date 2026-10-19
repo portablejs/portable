@@ -107,6 +107,14 @@ import { sha256 } from '@noble/hashes/sha2.js'
 await Dkim.verify(request.body!, { resolver, hash: () => sha256.create() })
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Dkim.Message` | What `sign` and `verify` read: a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. |
+| `Dkim.Resolver` | `Pick<Dns.Resolver, 'resolveTxt'>`, the lookup `verify` needs. |
+| `Dkim.Hash` | An incremental hasher, `{ update(data), digest() }`, which the `hash` option creates. |
+
 ## Why use this over mailauth and nodemailer
 
 - It runs anywhere. mailauth and nodemailer use `node:crypto`, `node:stream` and Buffers, so they don't run in Workers or a browser.

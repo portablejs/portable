@@ -48,7 +48,7 @@ const charset = await Charset.load('windows-31j') // the Shift_JIS charset
 const bytes = Charset.encode(text, charset)
 ```
 
-`load` throws `UnsupportedError` for an unknown label. `normalizeLabel(label)` returns its WHATWG name, such as `'Shift_JIS'`, or `undefined` for a label nothing can encode, so it also checks a label first. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
+`load` throws `UnsupportedError` for an unknown label. `normalizeLabel(label)` returns its WHATWG name, such as `'Shift_JIS'`, or `undefined` for a label nothing can encode, so it also checks a label first. Its type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
 
 Bundlers split `load` into one chunk per family. With every family reachable, the entry chunk is 3.2 kB and each family loads on demand.
 
@@ -65,6 +65,10 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 `'?'` is the default because it is what iconv-lite writes, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 
 Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
+
+## Decoding
+
+`TextDecoder` decodes every charset here. In browsers it follows the WHATWG standard exactly. Node's `TextDecoder` uses ICU, which differs from WHATWG for Big5, EUC-KR, ISO-2022-JP and Shift_JIS on rarely used code points, and some edge runtimes ship `TextDecoder` with UTF-8 and UTF-16 only. Check the runtime you deploy to if you decode legacy charsets there.
 
 ## Why use this over iconv-lite
 
@@ -96,7 +100,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from iconv-lite
+## Migrating
 
 | iconv-lite | @portable/charset |
 | --- | --- |
@@ -118,7 +122,3 @@ What changed:
 - **U+FFFD and the C1 controls follow the WHATWG tables.** iconv-lite writes U+FFFD as an undefined byte in several single-byte charsets, and `?` for the C1 controls that windows-125x maps.
 - **No `base64`, `hex`, `binary` or `ucs2` codecs.** Use `Uint8Array.prototype.toBase64` and `toHex`, `TextEncoder`, and `utf16le`.
 - **Not yet supported:** cp437, cp850 and the other DOS and IBM code pages, UTF-7, UTF-32 and CESU-8.
-
-## Decoding
-
-`TextDecoder` decodes every charset here. In browsers it follows the WHATWG standard exactly. Node's `TextDecoder` uses ICU, which differs from WHATWG for Big5, EUC-KR, ISO-2022-JP and Shift_JIS on rarely used code points, and some edge runtimes ship `TextDecoder` with UTF-8 and UTF-16 only. Check the runtime you deploy to if you decode legacy charsets there.

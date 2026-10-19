@@ -77,6 +77,15 @@ import { getDomain } from 'tldts'
 await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDomain })
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Dmarc.Resolver` | `Pick<Dns.Resolver, 'resolveTxt' \| 'resolve4' \| 'resolveCname'>`, the lookups `check` needs. |
+| `Dmarc.Record` | A parsed DMARC record, as `Result.record` holds it. |
+| `Dmarc.Policy` | `'none' \| 'quarantine' \| 'reject'`. |
+| `Dmarc.Alignment` | One SPF or DKIM identifier and whether it aligns with the From domain. |
+
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth's DMARC code imports `node:dns` and `node:net`, so it can't run in Workers or a browser.
@@ -104,7 +113,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from mailauth
+## Migrating
 
 | mailauth | @portable/dmarc |
 | --- | --- |

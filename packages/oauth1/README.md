@@ -73,6 +73,16 @@ const digest: OAuth1.Digest = (algorithm, data) => (algorithm === 'SHA-1' ? sha1
 await OAuth1.sign(request, { consumer, token, digest })
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
+| `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
+| `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
+| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`. |
+| `OAuth1.HashAlgorithm` | `'SHA-1' \| 'SHA-256'`, the algorithms `Digest` receives. |
+
 ## Why use this over oauth-1.0a and node-oauth
 
 Both libraries sign some requests wrongly, and the server then rejects the signature. This package computes the signature from the `Request` you send, with WebCrypto, in any JavaScript runtime.

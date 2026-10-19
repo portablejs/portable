@@ -215,6 +215,19 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `EENVELOPE` | The sender or every recipient was refused, or the server can't honor SMTPUTF8 or REQUIRETLS. |
 | `EMESSAGE` | DATA was refused, the message is over the SIZE limit, the server refused the message, or the message stream errored. |
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Smtp.Mail` | A message and its envelope, as `send` takes them. |
+| `Smtp.Result` | The outcome of a send that reached at least one recipient. |
+| `Smtp.Rejection` | A recipient the server refused, with its reply. |
+| `Smtp.Auth` | Credentials for AUTH PLAIN or LOGIN, or an OAuth 2.0 access token for XOAUTH2. |
+| `Smtp.Dsn` | RFC 3461 delivery status notification parameters. |
+| `Smtp.Connect` | The function that opens a socket, such as `connect` from `cloudflare:sockets`. |
+| `Smtp.Socket` | The socket `Connect` returns. |
+| `Smtp.SocketOptions` | The options `Connect` receives. |
+
 ## Why use this over nodemailer
 
 - It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies.

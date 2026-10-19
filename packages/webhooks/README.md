@@ -135,6 +135,13 @@ const { body } = await Webhooks.verify(request, {
 })
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Webhooks.Hmac` | The `hmac` option: `(key, data) => Uint8Array \| Promise<Uint8Array>`. See [Crypto](#crypto). |
+| `Webhooks.Reason` | `VerificationError.reason`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+
 ## Why use this over the provider libraries
 
 One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object, with `crypto.subtle` and no dependency for the HMAC, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in any JavaScript runtime.

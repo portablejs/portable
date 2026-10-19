@@ -178,6 +178,15 @@ next(3) // 4000
 
 `retry` with a wait of 0 starts the next attempt without a timer. `poll` always waits for a timer turn, even with 0, so a check that returns `undefined` at once can't block timers, and the `timeout` can still fire.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Timers.Delay` | The `delay` option. See [Delays](#delays). |
+| `Timers.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff. |
+| `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
+| `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
+
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 
 These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies.

@@ -55,6 +55,12 @@ An animated PNG reports `png` with the canvas size. A HEIF file reports its prim
 
 Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `ImageSize.InvalidInputError` and `ImageSize.MaxBytesError`.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `ImageSize.Image` | `{ width, height, type? }`, one entry of `images` for a file that holds several images. |
+
 ## Why use this over image-size
 
 `parseStream` reads a `fetch` body or a `File` only up to the header and then cancels it, in any JavaScript runtime. The package has no dependencies.

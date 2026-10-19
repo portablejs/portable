@@ -28,7 +28,7 @@ Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-co
 - `package.json` `exports` point at `./src/*.ts`. zile rewrites them to `dist/` when building and publishing. Fields after `"[!start-pkg]"` are the published package, so `dependencies` go after it. Copy the field order of `packages/mail/package.json`: `name`, `description`, `scripts`, `"[!start-pkg]"`, `version`, `type`, `sideEffects`, `license`, `repository`, `keywords`, `engines`, `files`, `dependencies`, `exports`, `main`, `module`, `types`. Workspace dependencies are `workspace:*`.
 - A `description` says what the package does in one sentence, starting with a verb where one fits, and ends with ", in any JavaScript runtime."
 - A package exports a small API. Keep helpers private unless a caller needs them.
-- A package README has these parts in order: the package name, a description, install and usage snippets, the API and options, why to use it over the library it replaces (fixes, benchmarks), and migration notes.
+- A package README has these parts in order: the package name, a description ending in "Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.", a "Replaces" line, install and usage snippets, the API and options, `## Types` for exported types, `## Why use this over <the libraries it replaces>` (fixes, benchmarks), and `## Migrating`. Split migration into `## Migrating from <library>` sections only when each library needs its own table. Every export appears in the README.
 
 ## API conventions
 

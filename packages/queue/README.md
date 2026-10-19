@@ -112,6 +112,13 @@ const response = await Timers.retry(
 
 A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(5000) })`, which also counts the time the task waits. To time only the run, combine the signals inside the task: `AbortSignal.any([signal, AbortSignal.timeout(5000)])`.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Queue.Task` | `(context) => value \| Promise<value>`, a function the queue runs. |
+| `Queue.Context` | `{ signal }`, what a task receives. The signal aborts when the task's or the queue's `signal` aborts. |
+
 ## Why use this over p-limit, p-queue and p-map
 
 They run in browsers too, but they are three packages with three APIs and some sharp edges. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies.

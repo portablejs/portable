@@ -85,6 +85,12 @@ RFC 7208 says `%{p}` SHOULD NOT be used: it is slow and the client controls its 
 
 When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}` doesn't match (RFC 8616 section 4).
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Spf.Resolver` | `Pick<Dns.Resolver, 'resolve4' \| 'resolve6' \| 'resolveMx' \| 'resolvePtr' \| 'resolveTxt'>`, the lookups `check` needs. |
+
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
@@ -110,7 +116,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from mailauth
+## Migrating
 
 | mailauth | @portable/spf |
 | --- | --- |

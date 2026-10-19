@@ -99,6 +99,16 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 | `TypeError` | No `WebSocket` class was found. |
 | `RangeError` | An option is out of range. |
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `WebSockets.Duplex` | `{ readable, writable }`, what `connect` and `fromSocket` return. |
+| `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
+| `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
+| `WebSockets.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
+| `WebSockets.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
+
 ## Why use this over reconnecting-websocket, partysocket and websocket-ts
 
 All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as `@portable/jsonl`'s `DecoderStream`, and writes wait instead of piling up.

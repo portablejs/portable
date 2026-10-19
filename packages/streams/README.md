@@ -95,7 +95,13 @@ const lines = Streams.transform(async function* (source: AsyncIterable<string>) 
 })
 ```
 
-## Why use this over get-stream and the others
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Streams.Source` | What the collectors and combinators read: a `ReadableStream`, an async iterable or an iterable. |
+
+## Why use this over get-stream, concat-stream and merge2
 
 The libraries above were written for Node streams. This package reads web streams with `getReader()`, so it works in every runtime listed above, and it has no dependencies.
 

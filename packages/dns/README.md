@@ -85,7 +85,25 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` a
 
 A name that isn't a string rejects with a `TypeError`.
 
-## Why use this over tangerine and dohjs
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Dns.Resolver` | The lookups `createResolver` returns, which `node:dns/promises` also fits. |
+| `Dns.MxRecord` | `{ exchange, priority }`, from `resolveMx`. |
+| `Dns.SrvRecord` | `{ name, port, priority, weight }`, from `resolveSrv`. |
+| `Dns.SoaRecord` | The object `resolveSoa` returns. |
+| `Dns.CaaRecord` | One record from `resolveCaa`. |
+| `Dns.NaptrRecord` | One record from `resolveNaptr`. |
+
+## Why use this over node:dns/promises, tangerine and dohjs
+
+`node:dns/promises` needs a DNS socket, which Cloudflare Workers and browsers don't have, and tangerine builds on Node's `Resolver`. This package needs only `fetch`.
+
+- Only records in the question's CNAME chain are returned. Node returns every record of the type in the answer, so a bad or poisoned answer can add an SPF record, and tangerine filters by type only.
+- A truncated response fails with `EBADRESP`. tangerine logs it and returns the partial data.
+- TXT strings are decoded as UTF-8, and SOA values above 2^31 stay positive. Node decodes TXT as Latin-1 and returns those SOA values as negative numbers.
+- Each lookup clears its timer when it finishes. tangerine leaked an `AbortController` per lookup (tangerine #12).
 
 <!-- bench:start -->
 | | @portable/dns | tangerine | `node:dns/promises` over local UDP |

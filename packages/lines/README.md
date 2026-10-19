@@ -29,6 +29,12 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 | `skipEmpty` | `false` | Drop empty lines. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Lines.Separator` | The `separator` option: a string to match, or anything with `[Symbol.split]`, such as a `RegExp`. |
+
 ## Why use this over split2 and byline
 
 split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies.

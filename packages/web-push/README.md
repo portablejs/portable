@@ -1,6 +1,6 @@
 # @portable/web-push
 
-Sends Web Push notifications, with aes128gcm payload encryption (RFC 8291) and VAPID (RFC 8292), on WebCrypto and `fetch`. Runs in Cloudflare Workers, Deno, Bun, browsers and Node 24+.
+Sends Web Push notifications, with aes128gcm payload encryption (RFC 8291) and VAPID (RFC 8292), on WebCrypto and `fetch`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [web-push](https://www.npmjs.com/package/web-push), which uses `node:crypto` and `node:https` and runs only on Node.
 
@@ -71,6 +71,13 @@ A payload longer than `maxPayloadBytes` throws `InvalidInputError` too. A mistak
 | `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Only for test vectors: reusing either for two messages weakens the encryption. |
 
 The JWT in the `Authorization` header expires 12 hours after it is signed. `send` and `toRequest` reuse a token for the same push service and keys for up to an hour, because Apple rejects senders that sign new tokens more often.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `WebPush.VapidKeys` | `{ publicKey, privateKey }` as base64url strings, as `generateVapidKeys` returns them. |
+| `WebPush.Vapid` | The `vapid` option: `VapidKeys` and a `subject`. |
 
 ## Why use this over web-push
 

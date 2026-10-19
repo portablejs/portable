@@ -94,6 +94,17 @@ A rejected `fetch`, such as a network failure, is passed through unchanged. An a
 
 Domain names go through `URL`'s IDNA conversion, then must have at least two labels of letters, digits and hyphens, each up to 63 characters and not starting or ending with a hyphen, and at most 253 characters in total. An IPv4-mapped IPv6 address (`::ffff:192.0.2.1`) is looked up as IPv4, and IPv6 is sent in the RFC 5952 form.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Rdap.Domain` | What `domain` returns. |
+| `Rdap.Network` | What `ip` returns. |
+| `Rdap.Autnum` | What `asn` returns. |
+| `Rdap.Entity` | A contact, with its jCard reduced to common fields. |
+| `Rdap.Events` | Registration, expiration and other dates, as `Date`s. |
+| `Rdap.Referral` | The registrar's RDAP server that a registry response points to. |
+
 ## Why use this over whoiser, whois-json and node-rdap
 
 whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers can't open, and parse free text whose format differs for each registry. node-rdap speaks RDAP but runs only in Node, returns the raw JSON, and has no way to cancel a lookup.
