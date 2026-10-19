@@ -31,6 +31,9 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/timers": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",

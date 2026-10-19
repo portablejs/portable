@@ -21,6 +21,7 @@ export type Backoff = {
   jitter?: boolean | undefined
 }
 
+/** What `retry` and `poll` pass to `fn`. */
 export type Context = {
   /** The attempt number, starting at 1. */
   attempt: number
@@ -30,26 +31,41 @@ export type Context = {
 
 export const neverAborted: AbortSignal = new AbortController().signal
 
-export function checkDelay(delay: Delay): void {
-  if (typeof delay === 'function') return
-  if (typeof delay === 'number') return checkMs('delay', delay)
-  checkMs('delay.initial', delay.initial)
-  checkMs('delay.max', delay.max)
-  const { factor = 2 } = delay
+/**
+ * Checks `delay` and returns a function of the attempt number (starting at 1) and the error that
+ * ended it, which gives the wait before the next attempt in ms. `retry` and `poll` use it, and so
+ * do the reconnecting clients in `@portable/websocket` and `@portable/sse`.
+ *
+ * @example
+ * ```ts
+ * import * as Timers from '@portable/timers'
+ *
+ * const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false })
+ * next(1) // 1000
+ * next(3) // 4000
+ * ```
+ *
+ * @throws {RangeError} When a wait, `initial` or `max` is negative, or `factor` isn't a positive finite number.
+ */
+export function backoff(delay: Delay): (attempt: number, error?: unknown) => number {
+  if (typeof delay === 'function') return delay
+  if (typeof delay === 'number') {
+    checkMs('delay', delay)
+    return () => delay
+  }
+  const { initial, max, factor = 2, jitter = true } = delay
+  checkMs('delay.initial', initial)
+  checkMs('delay.max', max)
   if (!(factor > 0) || factor === Infinity)
     throw new RangeError('Expected `delay.factor` to be a positive finite number.')
+  return (attempt) => {
+    const cap = Math.min(max, initial * factor ** (attempt - 1))
+    return jitter ? Math.random() * cap : cap
+  }
 }
 
 export function checkMs(name: string, value: number): void {
   if (!(value >= 0)) throw new RangeError(`Expected \`${name}\` to be a non-negative number.`)
-}
-
-export function delayFor(delay: Delay, attempt: number, error?: unknown): number {
-  if (typeof delay === 'number') return delay
-  if (typeof delay === 'function') return delay(attempt, error)
-  const { initial, max, factor = 2, jitter = true } = delay
-  const cap = Math.min(max, initial * factor ** (attempt - 1))
-  return jitter ? Math.random() * cap : cap
 }
 
 export function call<T>(

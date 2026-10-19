@@ -1,10 +1,9 @@
 import {
+  backoff,
   call,
-  checkDelay,
   checkMs,
   type Context,
   type Delay,
-  delayFor,
   neverAborted,
   withTimeout,
 } from './Delay.js'
@@ -46,7 +45,7 @@ export async function poll<T>(
   options: poll.Options = {},
 ): Promise<T> {
   const { delay = 1000, timeout = Infinity, signal } = options
-  checkDelay(delay)
+  const next = backoff(delay)
   checkMs('timeout', timeout)
   signal?.throwIfAborted()
 
@@ -57,7 +56,7 @@ export async function poll<T>(
       const result = call(fn, { attempt, signal: active ?? neverAborted })
       const value = await (active ? abortable(result, active) : result)
       if (value !== undefined) return value
-      await sleep(delayFor(delay, attempt), { signal: active })
+      await sleep(next(attempt), { signal: active })
     }
   } finally {
     deadline?.clear()

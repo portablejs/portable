@@ -168,6 +168,14 @@ The returned function also has:
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
 | `(attempt, error) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
+`Timers.backoff(delay)` checks a `Delay` and returns the function `retry` and `poll` use to compute each wait, so other code can wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websocket` and `@portable/sse` reconnect with it.
+
+```ts
+const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false })
+next(1) // 1000
+next(3) // 4000
+```
+
 `retry` with a wait of 0 starts the next attempt without a timer. `poll` always waits for a timer turn, even with 0, so a check that returns `undefined` at once can't block timers, and the `timeout` can still fire.
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay

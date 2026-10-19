@@ -414,7 +414,7 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **mail** has no file or URL access, so callers pass a stream, a `Blob` or bytes, which avoids SSRF. Invalid addresses throw instead of being quoted and sent.
 - **smtp** requires STARTTLS unless `secure: 'off'`, and AUTH over plain text needs `allowInsecureAuth`. Timeouts come only from `signal`.
 - **sse** splits lines inline instead of using lines, to keep one `TransformStream`. `connect` reconnects after a clean end, and a `retry` field from the server replaces `delay`.
-- **websocket and sse** each hold a private copy of the `Timers.Delay` shape until timers exports its delay function.
+- **websocket and sse** take `Timers.Delay` and compute waits with `Timers.backoff`.
 - **idna** ships its own Unicode 18 tables instead of calling `URL`, because Node and Chromium both differ from UTS #46.
 
 ## arc reuses dkim through `@portable/dkim/internal`

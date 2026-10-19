@@ -1,4 +1,4 @@
-import { checkDelay, type Delay, delayFor } from './Delay.js'
+import * as Timers from '@portable/timers'
 import {
   CloseError,
   type Duplex,
@@ -12,7 +12,6 @@ import {
   drained,
   isNormalClose,
   messageSize,
-  sleep,
   timeout as startTimer,
   toMessage,
 } from './Socket.js'
@@ -24,7 +23,7 @@ export declare namespace connect {
     /** Closes the socket with code 1000 and fails both streams with `signal.reason`. */
     signal?: AbortSignal | undefined
     /** Wait before each reconnect. @default { initial: 1000, max: 30000 } */
-    delay?: Delay | undefined
+    delay?: Timers.Delay | undefined
     /**
      * Retries in a row that may fail before giving up. The streams then fail with the last error. A
      * connection that finishes `open` resets the count. @default Infinity
@@ -140,7 +139,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   } = options
   if (typeof Impl !== 'function')
     throw new TypeError('No WebSocket class found. Pass one as the `WebSocket` option.')
-  checkDelay(delay)
+  const next = Timers.backoff(delay)
   checkSize('retries', retries)
   checkSize('timeout', timeout, 1)
   checkSize('maxQueued', maxQueued)
@@ -353,7 +352,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
           : new CloseError(outcome.close.code, outcome.close.reason)
       if (outcome.kind === 'error' && outcome.final) return finish(error, false)
       if (++failures > retries) return finish(error, false)
-      await sleep(delayFor(delay, failures, error), stop.signal)
+      await Timers.sleep(next(failures, error), { signal: stop.signal }).catch(() => {})
     }
   }
 

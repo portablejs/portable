@@ -79,7 +79,7 @@ Each attempt sends a clone of `request`, so a POST body is sent again on every r
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `(attempt, error) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. This is the same shape as `@portable/timers`. |
+| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `(attempt, error) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from `@portable/timers`, and an invalid one throws a `RangeError`. |
 | `fetch` | `globalThis.fetch` | Sends each `Request`. A wrapper can change the request first, such as setting a fresh token. |
 | `maxLength` | `Infinity` | As in `DecoderStream`. |
 | `reconnectIf` | see below | `(error, attempt) => boolean`, called after each connection ends. `error` is `undefined` when the response ended normally. Return `false` to close the stream, or to fail it with `error`. |

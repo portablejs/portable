@@ -1,28 +1,10 @@
+import * as Timers from '@portable/timers'
 import { createParser, type Event, MaxLengthError } from './decode.js'
 
 export declare namespace connect {
-  /**
-   * How long to wait before reconnecting: a fixed number of milliseconds, exponential backoff, or a
-   * function of the reconnect attempt (1 for the first since the last accepted response) and the
-   * error that ended the previous connection.
-   */
-  type Delay =
-    | number
-    | {
-        /** Cap for the first wait, in ms. */
-        initial: number
-        /** Largest wait, in ms. */
-        max: number
-        /** Growth of the cap per attempt. @default 2 */
-        factor?: number | undefined
-        /** Wait a random time between 0 and the cap. With `false`, wait exactly the cap. @default true */
-        jitter?: boolean | undefined
-      }
-    | ((attempt: number, error?: unknown) => number)
-
   type Options = {
     /** Wait before each reconnect, until the server sends a `retry` field. @default { initial: 1000, max: 30_000 } */
-    delay?: Delay | undefined
+    delay?: Timers.Delay | undefined
     /** Sends each request. Pass a wrapper to change a request before it is sent. @default globalThis.fetch */
     fetch?: ((request: Request) => Promise<Response>) | undefined
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
@@ -37,8 +19,6 @@ export declare namespace connect {
     signal?: AbortSignal | undefined
   }
 }
-
-const defaultDelay: connect.Delay = { initial: 1000, max: 30_000 }
 
 /**
  * Opens an event stream with `fetch` and returns its events, reconnecting with `Last-Event-ID`
@@ -68,12 +48,13 @@ export function connect(
   options: connect.Options = {},
 ): ReadableStream<Event> {
   const {
-    delay = defaultDelay,
+    delay = { initial: 1000, max: 30_000 },
     fetch = globalThis.fetch,
     maxLength,
     reconnectIf = reconnectByDefault,
     signal,
   } = options
+  const next = Timers.backoff(delay)
   const base = request instanceof Request ? request.clone() : new Request(request)
   const aborter = new AbortController()
   const combined = AbortSignal.any(
@@ -141,7 +122,7 @@ export function connect(
           throw error
         }
         if (error instanceof ResponseError) await error.response.body?.cancel()
-        await sleep(parser.retry ?? delayFor(delay, attempt, error), combined)
+        await Timers.sleep(parser.retry ?? next(attempt, error), { signal: combined })
       }
     },
     async cancel(reason) {
@@ -181,34 +162,4 @@ function toByteString(text: string): string {
   let bytes = ''
   for (const byte of new TextEncoder().encode(text)) bytes += String.fromCharCode(byte)
   return bytes
-}
-
-function delayFor(delay: connect.Delay, attempt: number, error: unknown): number {
-  if (typeof delay === 'number') return delay
-  if (typeof delay === 'function') return delay(attempt, error)
-  const { initial, max, factor = 2, jitter = true } = delay
-  const cap = Math.min(max, initial * factor ** (attempt - 1))
-  return jitter ? Math.random() * cap : cap
-}
-
-const maxTimeout = 2 ** 31 - 1
-
-async function sleep(ms: number, signal: AbortSignal): Promise<void> {
-  for (let remaining = ms; remaining > 0; remaining -= maxTimeout) {
-    await new Promise<void>((resolve, reject) => {
-      const onAbort = () => {
-        clearTimeout(timer)
-        reject(signal.reason)
-      }
-      const timer = setTimeout(
-        () => {
-          signal.removeEventListener('abort', onAbort)
-          resolve()
-        },
-        Math.min(remaining, maxTimeout),
-      )
-      if (signal.aborted) onAbort()
-      else signal.addEventListener('abort', onAbort, { once: true })
-    })
-  }
 }

@@ -1,10 +1,9 @@
 import {
+  backoff,
   call,
-  checkDelay,
   checkMs,
   type Context,
   type Delay,
-  delayFor,
   neverAborted,
   withTimeout,
 } from './Delay.js'
@@ -58,7 +57,7 @@ export async function retry<T>(
   const { attempts = 3, delay = defaultDelay, retryIf, timeout = Infinity, signal } = options
   if (!(attempts >= 1) || (attempts !== Infinity && !Number.isInteger(attempts)))
     throw new RangeError('Expected `attempts` to be a positive integer or Infinity.')
-  checkDelay(delay)
+  const next = backoff(delay)
   checkMs('timeout', timeout)
   signal?.throwIfAborted()
 
@@ -70,7 +69,7 @@ export async function retry<T>(
       if (attempt >= attempts) throw error
       if (retryIf && !(await retryIf(error, attempt))) throw error
       signal?.throwIfAborted()
-      const ms = delayFor(delay, attempt, error)
+      const ms = next(attempt, error)
       if (!(ms <= 0)) await sleep(ms, { signal })
     }
   }

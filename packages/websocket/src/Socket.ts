@@ -1,3 +1,4 @@
+import * as Timers from '@portable/timers'
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>
 
@@ -57,19 +58,6 @@ export function timeout(fn: () => void, ms: number): ReturnType<typeof setTimeou
   return ms === Infinity ? undefined : setTimeout(fn, Math.min(ms, maxTimeout))
 }
 
-export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal?.aborted) return resolve()
-    const done = () => {
-      clearTimeout(id)
-      signal?.removeEventListener('abort', done)
-      resolve()
-    }
-    const id = setTimeout(done, Math.min(ms, maxTimeout))
-    signal?.addEventListener('abort', done)
-  })
-}
-
 export function toMessage(data: unknown): Message {
   if (typeof data === 'string') return data
   if (data instanceof ArrayBuffer) return new Uint8Array(data)
@@ -86,7 +74,7 @@ export const messageSize = (message: Message): number =>
 
 export async function drained(socket: Socket, highWaterMark: number): Promise<void> {
   for (let wait = 1; socket.bufferedAmount > highWaterMark && socket.readyState === OPEN;) {
-    await sleep(wait)
+    await Timers.sleep(wait)
     wait = Math.min(wait * 2, 32)
   }
 }
