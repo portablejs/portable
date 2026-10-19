@@ -132,7 +132,21 @@ export function connect(
   })
 }
 
-/** Thrown by `connect` for a response that isn't an event stream. */
+/**
+ * Thrown by `connect` for a response that isn't an event stream.
+ *
+ * @example
+ * ```ts
+ * import * as Sse from '@portable/sse'
+ *
+ * const reader = Sse.connect('https://example.com/events').getReader()
+ * try {
+ *   await reader.read()
+ * } catch (error) {
+ *   if (error instanceof Sse.ResponseError) console.log(error.response.status)
+ * }
+ * ```
+ */
 export class ResponseError extends Error {
   override name = 'Sse.ResponseError'
   /** The rejected response. Its body is not read, so read or cancel it when you're done. */

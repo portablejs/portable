@@ -14,6 +14,7 @@ export type Group = {
   readonly group: readonly Mailbox[]
 }
 
+/** One entry of an address list: a mailbox or a group. */
 export type Address = Mailbox | Group
 
 export declare namespace parseAddresses {

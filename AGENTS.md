@@ -55,7 +55,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`.
 - Relative imports end in `.js`.
 - Classes only for errors and for subclasses of platform types. Error classes extend `Error`, not `TypeError` or another built-in error. Error `name`s are namespaced by package, like `'Lines.MaxLengthError'`.
-- Public exports have JSDoc with an `@example`. Other comments are rare: write one only when the code can't say why, and run the `no-comments` skill before you finish a change.
+- Public functions, classes and constants, error classes included, have JSDoc with an `@example`. Exported types have JSDoc without one, because the function that takes or returns the type already shows it in use. Other comments are rare: write one only when the code can't say why, and run the `no-comments` skill before you finish a change.
 
 ## Tests
 

@@ -21,7 +21,17 @@ export type Keys = {
   auth: string | Uint8Array
 }
 
-/** The largest payload in bytes. Push services must accept a 4096-byte encrypted body (RFC 8291 §4). */
+/**
+ * The largest payload in bytes. Push services must accept a 4096-byte encrypted body (RFC 8291 §4).
+ *
+ * @example
+ * ```ts
+ * import * as WebPush from '@portable/web-push'
+ *
+ * const payload = new TextEncoder().encode(JSON.stringify(notification))
+ * if (payload.byteLength > WebPush.maxPayloadBytes) throw new Error('notification too large')
+ * ```
+ */
 export const maxPayloadBytes = 3993
 
 export declare namespace encrypt {

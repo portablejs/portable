@@ -24,7 +24,22 @@ export type Socket = {
 /** The fields this package reads from `message` and `close` events. */
 export type SocketEvent = Event & { data?: unknown; code?: number; reason?: string }
 
-/** Thrown when the other side closes the connection, or when it closes for good. */
+/**
+ * Thrown when the other side closes the connection, or when it closes for good.
+ *
+ * @example
+ * ```ts
+ * import * as WebSockets from '@portable/websocket'
+ *
+ * const { readable } = WebSockets.fromSocket(new WebSocket('wss://example.com/feed'))
+ * const reader = readable.getReader()
+ * try {
+ *   for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
+ * } catch (error) {
+ *   if (error instanceof WebSockets.CloseError) console.log(error.code, error.reason)
+ * }
+ * ```
+ */
 export class CloseError extends Error {
   override name = 'WebSockets.CloseError'
   /** The close code, such as 1006 for a dropped connection. */
@@ -38,7 +53,22 @@ export class CloseError extends Error {
   }
 }
 
-/** Thrown when received messages waiting to be read exceed `maxBuffered`. */
+/**
+ * Thrown when received messages waiting to be read exceed `maxBuffered`.
+ *
+ * @example
+ * ```ts
+ * import * as WebSockets from '@portable/websocket'
+ *
+ * const { readable } = WebSockets.connect('wss://example.com/feed', { maxBuffered: 1_000_000 })
+ * const reader = readable.getReader()
+ * try {
+ *   for (let r = await reader.read(); !r.done; r = await reader.read()) await handle(r.value)
+ * } catch (error) {
+ *   if (error instanceof WebSockets.MaxBufferedError) console.log(`fell ${error.maxBuffered} behind`)
+ * }
+ * ```
+ */
 export class MaxBufferedError extends Error {
   override name = 'WebSockets.MaxBufferedError'
   /** The limit that was exceeded. */

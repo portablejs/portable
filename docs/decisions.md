@@ -2,6 +2,12 @@
 
 Calls made without the owner's input, with the options considered and the reason for the choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@example` on values, not types
+
+- **Options:** an `@example` on every export; on functions, classes and constants only.
+- **Trade-offs:** AGENTS.md asked for an `@example` on every public export, but about 100 exported types had JSDoc without one, and an example for `Mailbox` would repeat the `parseAddresses` example. Error classes are values a caller uses in `instanceof`, so their example shows the call that throws them.
+- **Chosen:** functions, classes (error classes included) and constants have an `@example`; types have JSDoc without one.
+
 ## Bad arguments throw `TypeError` or `RangeError`, bad data throws `InvalidInputError`
 
 - **Options:** `InvalidInputError` for everything, including options; built-in errors for everything the caller passes; built-in errors for arguments and options, and `InvalidInputError` for the data being processed.

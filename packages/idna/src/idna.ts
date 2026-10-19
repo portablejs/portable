@@ -88,7 +88,20 @@ export function toUnicode(domain: string, options: toUnicode.Options = {}): stri
   return process(domain, strict).join('.')
 }
 
-/** Thrown when a domain name breaks the rules of UTS #46. */
+/**
+ * Thrown when a domain name breaks the rules of UTS #46.
+ *
+ * @example
+ * ```ts
+ * import * as Idna from '@portable/idna'
+ *
+ * try {
+ *   Idna.toUnicode('www.xn--b.com')
+ * } catch (error) {
+ *   if (error instanceof Idna.InvalidInputError) console.log(error.message)
+ * }
+ * ```
+ */
 export class InvalidInputError extends Error {
   override name = 'Idna.InvalidInputError'
 }

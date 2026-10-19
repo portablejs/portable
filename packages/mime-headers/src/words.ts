@@ -25,6 +25,7 @@ export function encodeUtf8Scratch(text: string): Uint8Array {
   return scratch.subarray(0, utf8Encoder.encodeInto(text, scratch).written)
 }
 
+/** Encodes text in a charset other than UTF-8 for encoded-words. `@portable/charset` provides them. */
 export type CharsetEncoder = {
   /** The name written into each encoded word. */
   readonly name: string

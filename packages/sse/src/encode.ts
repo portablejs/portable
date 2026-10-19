@@ -100,7 +100,20 @@ export class EncoderStream extends TransformStream<Message, Uint8Array<ArrayBuff
   }
 }
 
-/** Thrown by `encode` and `EncoderStream` for a field that can't be written. */
+/**
+ * Thrown by `encode` and `EncoderStream` for a field that can't be written.
+ *
+ * @example
+ * ```ts
+ * import * as Sse from '@portable/sse'
+ *
+ * try {
+ *   Sse.encode({ event: 'a\nb', data: 'x' })
+ * } catch (error) {
+ *   if (error instanceof Sse.InvalidInputError) console.log(error.message)
+ * }
+ * ```
+ */
 export class InvalidInputError extends Error {
   override name = 'Sse.InvalidInputError'
 }

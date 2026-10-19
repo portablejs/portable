@@ -16,6 +16,7 @@ export type Result = {
   retryAfter: number
 }
 
+/** The limiter that `create` returns. */
 export type Limiter = {
   /** Takes `cost` from the key's allowance if it has that much left. */
   take(key: string, options?: Limiter.TakeOptions): Promise<Result>

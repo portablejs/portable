@@ -93,7 +93,20 @@ export function decode(input: Uint8Array | string, options: decode.Options = {})
   return events
 }
 
-/** Thrown when a line or an event's `data` grows past `maxLength`. */
+/**
+ * Thrown when a line or an event's `data` grows past `maxLength`.
+ *
+ * @example
+ * ```ts
+ * import * as Sse from '@portable/sse'
+ *
+ * try {
+ *   Sse.decode(`data: ${'x'.repeat(2000)}\n\n`, { maxLength: 1000 })
+ * } catch (error) {
+ *   if (error instanceof Sse.MaxLengthError) console.log(`longer than ${error.maxLength}`)
+ * }
+ * ```
+ */
 export class MaxLengthError extends Error {
   override name = 'Sse.MaxLengthError'
   /** The limit that was exceeded. */

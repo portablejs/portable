@@ -1,3 +1,4 @@
+/** The standard alphabet with `+` and `/`, or the URL-safe one with `-` and `_` (RFC 4648). */
 export type Alphabet = 'base64' | 'base64url'
 
 export declare namespace encode {
