@@ -22,35 +22,46 @@ In the tradition of sindresorhus and TJ Holowaychuk, and closest in spirit to Re
 
 ## Layers, bottom up
 
-Arrows show internal dependencies. Nothing depends upward.
+Each line lists the `@portable/*` packages a package depends on, from its `package.json`. Nothing depends on a higher layer.
 
 ```
-L3  mailauth ─────────────────────────────────────────────┐
-     ├ dmarc ── spf                                       │
-     └ arc ──── dkim                                      │
-L2  mail     dns      dkim     webhooks   oauth1          │
-L1  json-stream   jsonl   mime-headers   mime-stream   image-size   exif   png
-L0  streams   lines   base64   quoted-printable   charset   dns-packet
+L3  mailauth      → arc, dkim, dmarc, spf, mime-headers, streams
+    arc           → dkim, base64, bytes
+    dmarc         → spf, dns
+    spf           → dns, ip
+L2  dkim          → dns, base64, bytes
+    mail          → mime-headers, quoted-printable, base64, bytes
+    dns           → dns-packet, ip
+    oauth1, password, web-push, webhooks → base64, bytes
+    smtp          → bytes
+    rdap
+L1  mime-stream   → mime-headers, bytes
+    mime-headers  → base64, bytes
+    rpc           → jsonl
+    sse, websocket → timers
+    exif, image-size, png → bytes
+    compress, csv, idna, json-stream, jsonl
+L0  base64, streams → bytes
+    bytes, charset, crypto, dns-packet, ip, lines, queue, quoted-printable, random, rate-limit, timers
 ```
 
 ### L0: primitives (no dependencies, apart from `bytes`)
 
 | Package | Purpose | Replaces (monthly downloads) |
 | --- | --- | --- |
-| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Bridge** (see below): streams ⇄ iterables, async iterables and generators. | get-stream 900M, bl 360M, concat-stream 171M, raw-body (limit handling), merge2 / merge-stream, stream-to-array, it-to-stream |
-| `@portable/lines` | Split byte or text streams into lines. Handles CRLF/LF/CR, a `maxLength` guard, and a trailing line with no newline. `new Lines.DecoderStream()`. | split2 406M, byline, readline (for streams) |
+| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Bridge** (see below): streams ⇄ iterables, async iterables and generators. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
+| `@portable/lines` | Split byte or text streams into lines. Handles CRLF/LF/CR, a `maxLength` guard, and a trailing line with no newline. `new Lines.DecoderStream()`. | split2 406M, byline |
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |
 | `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
-| `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), hand-written hex and compare loops |
-| `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, seedrandom, nanoid's `customAlphabet` |
-| `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf` and `dns` use it. | ip, ip-cidr, ipaddr.js, is-ip |
+| `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), `crypto.timingSafeEqual` from `node:crypto` |
+| `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, nanoid's `customAlphabet`, seedrandom, lodash's `random`, `sample` and `shuffle` |
+| `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf` and `dns` use it. | ip, ipaddr.js, is-ip, ip-cidr, cidr-tools, ip-range-check |
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency`, a rate limit (`interval`, `intervalCap`) and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map, p-throttle |
 | `@portable/crypto` | Bytes-in, bytes-out helpers over `crypto.subtle`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
-| `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | node:crypto `pbkdf2`, hand-written hash formats |
-| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | rate-limiter-flexible, limiter |
-| `@portable/timers` | `sleep`, `retry` with backoff and jitter, `poll` until a value appears, and `debounce` and `throttle`, all cancellable with `AbortSignal`. | p-retry, async-retry, delay, p-wait-for, lodash.debounce, lodash.throttle |
+| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | rate-limiter-flexible, limiter, bottleneck's reservoir options |
+| `@portable/timers` | `sleep`, `retry` with backoff and jitter, `poll` until a value appears, and `debounce` and `throttle`, all cancellable with `AbortSignal`. `backoff` turns a `Delay` into wait times for websocket and sse. | delay, p-retry, async-retry, p-wait-for, lodash.debounce, lodash.throttle, throttle-debounce, p-debounce |
 
 #### `streams` bridge API
 
@@ -93,39 +104,40 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | --- | --- | --- | --- |
 | `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and an async `stringify` that walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | (none) | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
 | `@portable/websocket` | A reconnecting WebSocket client as one `readable`/`writable` pair that spans reconnects, with an `open` hook for handshakes, a queue for writes made while disconnected, backpressure, and `fromSocket` for server-side sockets. | `timers` | reconnecting-websocket, partysocket, websocket-ts |
-| `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `lines`, `timers` | eventsource-parser, eventsource, @microsoft/fetch-event-source |
+| `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `timers` | eventsource-parser, eventsource, @microsoft/fetch-event-source, the event writers in better-sse and hono |
 | `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | (none) | csv-parse, csv-stringify, papaparse, fast-csv |
-| `@portable/compress` | One-shot gzip, deflate and deflate-raw on `CompressionStream`, a `maxBytes` cap on decompression against zip bombs, larger output chunks than `DecompressionStream`'s 4 KB, and `crc32`. | `streams` | pako and fflate (simple one-shot use), node:zlib's sync helpers |
-| `@portable/rpc` | Typed JSON-RPC 2.0 over `MessagePort`, windows, WebSocket and HTTP, with streaming results. | (none) | comlink, penpal, birpc, json-rpc-2.0, tRPC (simple cases) |
+| `@portable/compress` | One-shot gzip, deflate and deflate-raw on `CompressionStream`, a `maxBytes` cap on decompression against zip bombs, larger output chunks than `DecompressionStream`'s 4 KB, and `crc32`. | (none) | pako and fflate (one-shot use), node:zlib's sync helpers |
+| `@portable/rpc` | Typed JSON-RPC 2.0 over `MessagePort`, windows, WebSocket and HTTP, with streaming results. | `jsonl` | comlink, penpal, post-me, birpc, json-rpc-2.0, tRPC (simple cases) |
 | `@portable/idna` | UTS #46 `toUnicode` and `toAscii` for domain names. The platform's `URL` only converts to ASCII. | (none) | punycode, tr46 |
 | `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | (none) | ndjson 10.5M, the `jsonl` modules of stream-json |
-| `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. | `base64`, `quoted-printable`; `charset` as optional peer | libmime 37M, addressparser, email-addresses |
-| `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `lines`, `mime-headers` | mailsplit 2.7M |
-| `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | (none) | image-size 133M |
-| `@portable/exif` | EXIF/TIFF metadata from JPEG, TIFF, HEIC and WebP. | (none) | exif-parser 17M |
-| `@portable/png` | PNG decode/encode to RGBA, deflate via `CompressionStream` by default or a passed-in `{ inflate, deflate }` for sync use. | (none) | pngjs 283M |
+| `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. Other charsets come from a `charset` option, which `@portable/charset` encoders fit. | `base64`, `bytes` | libmime 37M, addressparser, email-addresses |
+| `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `mime-headers`, `bytes` | mailsplit 2.7M |
+| `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | `bytes` | image-size 133M |
+| `@portable/exif` | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF, and stripping it from JPEG, PNG and WebP. | `bytes` | exif-parser 17M |
+| `@portable/png` | PNG decode/encode to RGBA, deflate via `CompressionStream` by default or a passed-in `{ inflate, deflate }` for sync use. | `bytes` | pngjs 283M |
 
 ### L2: purposes
 
 | Package | Purpose | Depends on | Replaces / fills |
 | --- | --- | --- | --- |
-| `@portable/mail` | Compose a raw RFC 5322 message as a `ReadableStream`: text/html alternatives, attachments, inline images, custom headers. No transport. | `mime-headers`, `base64`, `quoted-printable`, `streams` | nodemailer's MailComposer |
-| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` fits): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | (none) | nodemailer's SMTP transport, smtp-connection |
-| `@portable/web-push` | Send Web Push messages with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292) on WebCrypto and `fetch`. | (none) | web-push |
-| `@portable/rdap` | RDAP lookups for domains, IPs and ASNs with IANA bootstrap and normalized results. | `idna`, `ip` | whoiser, whois-json, node-rdap |
-| `@portable/dns` | DNS lookups where there is no DNS: `resolveTxt`, `resolveMx` and friends over DNS-over-HTTPS, behind a resolver interface `node:dns/promises` also fits. | `dns-packet` | node:dns on Workers and browsers |
-| `@portable/dkim` | DKIM sign and verify, with streaming body hashes. Keys via WebCrypto (RSA) or noble (ed25519); DNS via an injected resolver. | `mime-headers`, `mime-stream`, `base64`; crypto peer | DKIM in mailauth, nodemailer |
-| `@portable/webhooks` | Verify signed webhooks: Standard Webhooks plus Stripe, GitHub, Slack and Svix schemes, with timing-safe compare and replay window. | `base64`; crypto peer | per-provider SDK verifiers |
-| `@portable/oauth1` | OAuth 1.0a request signing (HMAC-SHA1, RSA-SHA1, PLAINTEXT) producing `Headers` or a signed `Request`. | `base64`; crypto peer | oauth-1.0a, oauth |
+| `@portable/mail` | Compose a raw RFC 5322 message as a `ReadableStream`: text/html alternatives, attachments, inline images, custom headers. No transport. | `mime-headers`, `quoted-printable`, `base64`, `bytes` | nodemailer's MailComposer |
+| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` fits): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | `bytes` | nodemailer's SMTP transport, smtp-connection |
+| `@portable/web-push` | Send Web Push messages with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292) on WebCrypto and `fetch`. | `base64`, `bytes` | web-push |
+| `@portable/rdap` | RDAP lookups for domains, IPs and ASNs with IANA bootstrap and normalized results. | (none) | whoiser, whois-json, node-rdap |
+| `@portable/dns` | DNS lookups where there is no DNS: `resolveTxt`, `resolveMx` and friends over DNS-over-HTTPS, behind a resolver interface `node:dns/promises` also fits. | `dns-packet`, `ip` | node:dns/promises where it doesn't exist, tangerine, dohjs |
+| `@portable/dkim` | DKIM sign and verify with RSA and Ed25519 keys on WebCrypto. The body hash uses `crypto.subtle.digest` by default, or an incremental hasher such as noble's `sha256.create()`. DNS goes through an injected resolver. | `dns`, `base64`, `bytes` | DKIM in mailauth, nodemailer's DKIM signer |
+| `@portable/webhooks` | Verify and sign webhooks: Standard Webhooks plus Stripe, GitHub and Slack schemes, or any HMAC-SHA256 sender, with timing-safe compare and a replay window. | `base64`, `bytes` | standardwebhooks, svix's `Webhook`, Stripe's `constructEvent`, @octokit/webhooks-methods, @slack/bolt's request verification |
+| `@portable/oauth1` | OAuth 1.0a request signing (HMAC-SHA1, HMAC-SHA256, RSA-SHA1, PLAINTEXT) producing `Headers` or a signed `Request`. | `base64`, `bytes` | oauth-1.0a, oauth |
+| `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | `base64`, `bytes` | node:crypto `pbkdf2`, pbkdf2, pbkdf2-password, hand-written hash formats |
 
 ### L3: suites
 
-| Package | Purpose | Depends on |
-| --- | --- | --- |
-| `@portable/spf` | Evaluate SPF for a sender IP and domain, with RFC 7208 lookup limits. | `dns` |
-| `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `dns` (types only) |
-| `@portable/arc` | ARC seal and verify. | `dkim` |
-| `@portable/mailauth` | One `authenticate(message, { resolver, ip, helo, sender })` returning SPF, DKIM, DMARC, ARC and BIMI results in mailauth's shape. This is the motivating gap: mailauth (3.5M) is the only complete implementation and it is Node-only. | all of the above |
+| Package | Purpose | Depends on | Replaces |
+| --- | --- | --- | --- |
+| `@portable/spf` | Evaluate SPF for a sender IP and domain, with RFC 7208 lookup limits. | `dns`, `ip` | mailauth's SPF module |
+| `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `spf`, `dns` | mailauth's DMARC module |
+| `@portable/arc` | ARC seal and verify (RFC 8617), with RFC behavior only. Reuses dkim's canonicalization and signing through `@portable/dkim/internal`. | `dkim`, `base64`, `bytes` | mailauth's ARC parts |
+| `@portable/mailauth` | One `authenticate(message, { resolver, ip, helo, sender, authservId })` that returns SPF, DKIM, DMARC and ARC results, writes Authentication-Results, and can ARC-seal the message. No BIMI. This is the motivating gap: mailauth (3.5M) is the only complete implementation and it is Node-only. | `arc`, `dkim`, `dmarc`, `spf`, `mime-headers`, `streams` | mailauth's `authenticate` |
 
 ## Later, once the core is proven
 
