@@ -10,7 +10,10 @@ export declare namespace DecoderStream {
     format?: Format | undefined
     /** Fail with `MaxBytesError` and cancel the input once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
+     * cancel the source.
+     */
     signal?: AbortSignal | undefined
   }
 }

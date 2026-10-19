@@ -1,16 +1,26 @@
 import { abortable } from './abortable.js'
-/** Splits text into lines. A string matches literally; anything with `[Symbol.split]` (such as a `RegExp`) is used as is. */
+/**
+ * Splits text into lines. A string matches literally, and anything with `[Symbol.split]`, such as a
+ * `RegExp`, is used as is.
+ */
 export type Separator = string | { [Symbol.split](text: string, limit?: number): string[] }
 
 export declare namespace DecoderStream {
   type Options = {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
+     * from.
+     */
     signal?: AbortSignal | undefined
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined
     /** Longest partial line to buffer while waiting for a separator. @default Infinity */
     maxLength?: number | undefined
-    /** What to do with a line longer than `maxLength`: fail the stream, or drop the line and continue. @default 'error' */
+    /**
+     * What to do with a line longer than `maxLength`: fail the stream, or drop the line and
+     * continue.
+     * @default 'error'
+     */
     overflow?: 'error' | 'skip' | undefined
     /** Where to split lines. @default /\r?\n/ */
     separator?: Separator | undefined
@@ -43,7 +53,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     const splitLines = (text: string) =>
       typeof separator === 'string' ? text.split(separator) : text.split(separator)
     // The end of `partial` may be the start of a string separator, so that much of it doesn't count
-    // toward `maxLength`, and it is kept when an overflowing line is dropped.
+    // toward `maxLength`, and that part is kept when an overflowing line is dropped.
     const slack = typeof separator === 'string' ? Math.max(separator.length - 1, 0) : 0
     const tail = (text: string) => (slack === 0 ? '' : text.slice(-slack))
     let partial = ''

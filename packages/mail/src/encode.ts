@@ -35,7 +35,10 @@ export type Part = {
   /** Such as `'text/calendar; charset=utf-8; method=REQUEST'`. */
   readonly contentType: string
   readonly headers?: HeaderFields | undefined
-  /** @default `7bit`, `quoted-printable` or `base64` for text, chosen from the content; `8bit` for `message/*`; otherwise `base64` */
+  /**
+   * @default `7bit`, `quoted-printable` or `base64` for text, chosen from the content; `8bit` for
+   * `message/*`; otherwise `base64`
+   */
   readonly transferEncoding?: TransferEncoding | undefined
 }
 
@@ -54,7 +57,10 @@ export type Attachment = {
   readonly filename?: string | undefined
   /** @default the `Blob`'s type, or `'application/octet-stream'` */
   readonly contentType?: string | undefined
-  /** Content-ID that the HTML refers to as `cid:<cid>`. Puts the attachment beside the HTML in `multipart/related`. */
+  /**
+   * Content-ID that the HTML refers to as `cid:<cid>`. Puts the attachment beside the HTML in
+   * `multipart/related`.
+   */
   readonly cid?: string | undefined
   /** @default `'inline'` for an `image/*` with a `cid`, otherwise `'attachment'` */
   readonly disposition?: 'attachment' | 'inline' | undefined
@@ -64,7 +70,8 @@ export type Attachment = {
 }
 
 /**
- * A message to encode. Every field is optional; a message with no body gets an empty text body.
+ * A message to encode. Every field is optional, and a message with no body gets an empty
+ * text body.
  *
  * @example
  * ```ts
@@ -102,9 +109,11 @@ export type Message = {
 export declare namespace encode {
   type Options = {
     /**
-     * Start of every multipart boundary. Each multipart part appends its number, counted from 1
-     * in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`.
-     * @default `'=_'` and 16 random hex digits and `'_'`, which no base64 or quoted-printable line can contain
+     * Start of every multipart boundary. Each boundary is this prefix followed by the number of
+     * its multipart part, counted from 1 in the order the parts are written. Up to 60 characters
+     * from RFC 2046's `bchars`.
+     * @default `'=_'` and 16 random hex digits and `'_'`, which no base64 or quoted-printable line
+     * can contain
      */
     boundary?: string | undefined
     /**
@@ -112,7 +121,10 @@ export declare namespace encode {
      * has to use one other than UTF-8. `@portable/charset` provides encoders. @default UTF-8
      */
     charset?: MimeHeaders.CharsetEncoder | undefined
-    /** Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. @default false */
+    /**
+     * Write the `Bcc` header, for a transport such as sendmail that reads recipients from it.
+     * @default false
+     */
     keepBcc?: boolean | undefined
   }
 }
@@ -120,7 +132,10 @@ export declare namespace encode {
 type Leaf = {
   readonly contentType: string
   readonly headers: readonly string[]
-  /** Headers chosen from the content. nodemailer adds these last, so at the root they follow the message fields. */
+  /**
+   * Headers chosen from the content. nodemailer adds these last, so at the root they follow the
+   * message fields.
+   */
   readonly computed: readonly string[]
   readonly content: Content | undefined
   readonly body: Body
@@ -147,13 +162,14 @@ type Context = {
 }
 
 /**
- * Encodes a message as a raw RFC 5322 message, ready for an SMTP `DATA` command, an `.eml`
- * file or an API that takes raw MIME. Text and HTML become `multipart/alternative`, attachments
- * with a `cid` go into `multipart/related` beside the HTML, and other attachments into
+ * Encodes a message as a raw RFC 5322 message, ready for an SMTP `DATA` command, an `.eml` file or
+ * an API that takes raw MIME. Text and HTML become `multipart/alternative`, attachments with a
+ * `cid` go into `multipart/related` beside the HTML, and other attachments into
  * `multipart/mixed`. Blob and stream content is read as the result is read.
  *
- * Mistakes in the message throw before anything is read. A content stream that fails errors
- * the result, and cancelling the result cancels every content stream not yet read to the end.
+ * `encode` throws on mistakes in the message before it reads any content. A content stream that
+ * fails errors the result, and cancelling the result cancels every content stream not yet read to
+ * the end.
  *
  * @example
  * ```ts
@@ -173,8 +189,10 @@ type Context = {
  * await new Response(raw).text()
  * ```
  *
- * @throws {InvalidInputError} When an address, header, content type or file name can't be written.
- * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a stream is locked or given twice.
+ * @throws {InvalidInputError} When an address, header, content type or file name can't be
+ * written.
+ * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
+ * stream is locked or given twice.
  */
 export function encode(message: Message, options: encode.Options = {}): ReadableStream<Uint8Array> {
   const context: Context = {
@@ -355,7 +373,7 @@ function contentType(value: string, drop?: string): MimeHeaders.Value {
   return { value: parsed.value, params }
 }
 
-/** The `name` parameter that clients which ignore `filename` read, as an encoded word if needed. */
+/** The `name` parameter, for clients that ignore `filename`, as an encoded word if needed. */
 function nameParam(filename: string, charset: MimeHeaders.CharsetEncoder | undefined): string {
   if (/[^\x20-\x7e]|"|=\?/.test(filename))
     return `"${MimeHeaders.encodeWord(filename, { charset, encoding: wordEncoding(filename), maxLength: 52 })}"`

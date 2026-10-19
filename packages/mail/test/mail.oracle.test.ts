@@ -8,7 +8,7 @@ import { boundary, fixed } from './utils.js'
 
 // Compares Mail.encode with nodemailer 10.1.2's MailComposer on generated messages. nodemailer's
 // boundary is `--_NmP-<baseBoundary>-Part_<n>`, so baseBoundary 'test' gives the boundary these
-// tests pass to Mail.encode. The generator stays out of the differences listed in PARITY.md.
+// tests pass to Mail.encode. The generator avoids the differences listed in PARITY.md.
 // libqp may break a quoted-printable line that already fits, so quoted-printable bodies are
 // compared by the bytes they decode to. nodemailer never writes a Buffer text body as 7bit, so a
 // Uint8Array text body here is passed to nodemailer as the string it holds.

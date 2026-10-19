@@ -162,7 +162,7 @@ Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TL
 | `secure` | `'on'` for port 465, otherwise `'starttls'` | `'on'` starts TLS right away. `'starttls'` requires the server to offer STARTTLS and fails if it doesn't. `'off'` never encrypts. |
 | `auth` | None | `{ user, pass }` for AUTH PLAIN, or LOGIN when the server offers only LOGIN. Set `method: 'LOGIN'` to force it. `{ user, accessToken }` for XOAUTH2. |
 | `allowInsecureAuth` | `false` | Send credentials over an unencrypted connection. Without it, AUTH requires TLS. |
-| `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF throws a `RangeError`. |
+| `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF makes `connect` reject with a `RangeError`. |
 | `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
 | `signal` | None | Limits connecting, TLS and login. Aborting rejects with `signal.reason` and closes the socket. |
 
@@ -233,7 +233,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 - It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies.
 - STARTTLS is required unless you pass `secure: 'off'`. nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set.
 - Credentials are never sent over plaintext unless `allowInsecureAuth` is set, and never skipped: nodemailer sends the message unauthenticated when the server doesn't advertise AUTH, unless `forceAuth` is set.
-- Bare CR and bare LF are converted to CRLF before dot-stuffing, so a message can't smuggle an end of DATA. The output is byte-identical to nodemailer's, checked by an oracle test.
+- Bare CR and bare LF are converted to CRLF before dot-stuffing, so a message can't smuggle an end of DATA. An oracle test checks that the output is byte-identical to nodemailer's.
 - Every 421 reply is `ECONNECTION`, so one check covers "retry later on a new connection".
 - 8-bit messages are declared with BODY=8BITMIME without an extra option.
 
@@ -286,5 +286,5 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Also different on purpose:
 
-- An empty message is sent as an empty message. nodemailer refuses it.
-- An invalid `name` throws instead of having its CR and LF removed.
+- An empty message is sent. nodemailer refuses it.
+- `Smtp.connect` rejects an invalid `name` instead of removing its CR and LF.

@@ -32,7 +32,10 @@ type CallParams<fn> = 0 extends 1 & fn ? Params : Parameters<fn & ((...args: any
 
 export declare namespace call {
   type Options = {
-    /** Cancels the call: the promise rejects with `signal.reason`, and the remote is sent `$/cancel`. */
+    /**
+     * Cancels the call: the promise rejects with `signal.reason`, and the client sends `$/cancel`
+     * to the remote.
+     */
     signal?: AbortSignal | undefined
   }
 }

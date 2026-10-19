@@ -343,7 +343,7 @@ export function create(options: create.Options = {}): Queue {
 
 /**
  * Returns a function that runs the tasks passed to it, at most `concurrency` at once. It is the
- * `add` method of a new queue; use `create` to also read its size or clear it.
+ * `add` method of a new queue. Use `create` to also read its size or clear it.
  *
  * @example
  * ```ts

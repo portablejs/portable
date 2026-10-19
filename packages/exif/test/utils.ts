@@ -76,7 +76,10 @@ type Entry = { tag: number; type: number; values: readonly number[] | Uint8Array
 
 const sizes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4]
 
-/** Builds a TIFF structure. IFD0 links to IFD1 and points to the Exif and GPS IFDs when they are given. */
+/**
+ * Builds a TIFF structure. IFD0 links to IFD1 and points to the Exif and GPS IFDs when they are
+ * given.
+ */
 export function buildTiff(options: {
   le?: boolean | undefined
   ifd0: readonly Entry[]

@@ -4,7 +4,10 @@ import { abortable } from './abortable.js'
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
+     * cancel the source.
+     */
     signal?: AbortSignal | undefined
   }
 }
@@ -12,7 +15,7 @@ export declare namespace EncoderStream {
 /**
  * A `TransformStream` that encodes bytes, or strings as UTF-8, to base64 text. The output is the
  * same as `encode` of all the input at once, however the input is chunked: lines break at the
- * same places, and no output ends with a line ending.
+ * same places, and no output chunk ends with a line ending.
  *
  * @example
  * ```ts

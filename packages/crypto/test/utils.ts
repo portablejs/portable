@@ -10,7 +10,9 @@ export function toHex(bytes: Uint8Array | ArrayBuffer): string {
 
 export const encode = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder().encode(text)
 
-/** The same bytes at an offset inside a larger buffer, as a `subarray` of a network read would be. */
+/**
+ * The same bytes at an offset inside a larger buffer, as a `subarray` of a network read would be.
+ */
 export function offsetView(bytes: Uint8Array): Uint8Array {
   const buffer = new Uint8Array(bytes.length + 7)
   buffer.fill(0xee)

@@ -47,7 +47,7 @@ The signature covers what the server will see, because it is computed from the `
 | `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
 
-A `RangeError` is thrown for an RSA key that can't be used, and `UnsupportedError` for another signature method.
+`sign` and `authorization` reject with a `RangeError` for an RSA key that can't be used, and with `UnsupportedError` for another signature method.
 
 ### RSA-SHA1
 
@@ -146,4 +146,4 @@ These behaviors differ on purpose:
 - The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
 - `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret. RFC 5849 requires both. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
 - The header separator is always `", "`, and the nonce is always 32 hex digits from `crypto.getRandomValues` instead of `Math.random`.
-- There is no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL. node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
+- The package has no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL. node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.

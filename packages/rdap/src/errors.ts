@@ -61,7 +61,8 @@ export class NotFoundError extends Error {
 
 /**
  * Thrown when an RDAP server or IANA answers with an HTTP error other than 404, or with a body that
- * isn't a JSON object of the expected class. A rejected `fetch` is passed through unchanged.
+ * isn't a JSON object of the expected class. When `fetch` rejects, the lookup rejects with the
+ * same error.
  *
  * @example
  * ```ts

@@ -50,9 +50,9 @@ The platform reports every failure as a `TypeError`. The error's `cause` holds i
 
 pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (14 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` runs only in Node and Bun.
 
-- `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and it allocates its output from the length field, so a forged field returns truncated output (fflate #161, #181).
+- `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and fflate allocates its output from the length field, so a forged length gives truncated output (fflate #161, #181).
 - `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).
-- Truncated input always throws `TruncatedError`, never partial output.
+- Truncated input always gives `TruncatedError`, never partial output.
 - `decode` reads every member of a multi-member gzip file, such as BGZF or `cat a.gz b.gz`. fflate returns only the first member (fflate #102), and `DecompressionStream` throws.
 - `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and each chunk pays the decompressor's and every later stage's per-chunk cost. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
 
@@ -98,6 +98,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 Behavior that differs on purpose:
 
 - Every function is async, because `CompressionStream` is. There are no sync variants.
-- Bytes after the end of the data throw `InvalidInputError`. `node:zlib` and pako ignore them, including a second zlib stream and zero padding after a gzip member.
-- `DecoderStream` reads one gzip member, as `DecompressionStream` does, and a second member fails with `InvalidInputError`. `decode` reads them all.
-- How a zlib header that declares a smaller window than the data uses is handled depends on the runtime: Chromium decodes it, as pako does, and Node throws `InvalidInputError`.
+- `decode` and `DecoderStream` fail with `InvalidInputError` on bytes after the end of the data. `node:zlib` and pako ignore them, including a second zlib stream and zero padding after a gzip member.
+- `DecoderStream` reads one gzip member, as `DecompressionStream` does, and fails with `InvalidInputError` on a second member. `decode` reads them all.
+- Runtimes differ on a zlib header that declares a smaller window than the data uses. Chromium decodes it, as pako does, and Node throws `InvalidInputError`.

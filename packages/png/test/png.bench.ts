@@ -5,7 +5,7 @@ import { expect, test } from 'vite-plus/test'
 import * as Png from '@portable/png'
 
 // accum.png is a 1024x1024 RGB photo-like image (541 KB). Node has no native PNG decoder, so
-// node:zlib through our sync API stands in for the platform's own decompression.
+// the benchmark uses node:zlib through our sync API in place of the platform's decompression.
 const file = readFileSync(new URL('./fixtures/pngjs/accum.png', import.meta.url))
 const bytes = new Uint8Array(file)
 const image = Png.decodeSync(bytes, { inflate: inflateSync })

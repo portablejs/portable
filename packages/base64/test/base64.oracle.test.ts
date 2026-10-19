@@ -72,7 +72,7 @@ describe('matches libbase64', () => {
 
   // libbase64 1.3.3 reads 8-bit and non-Latin-1 characters as base64 digits, which 1.4.0 and
   // 1.4.1 fixed, so the inputs here are ASCII. Its Decoder also skips `-` and `_`, which its
-  // decode() reads as base64url digits; 'mime' mode reads them in both.
+  // decode() reads as base64url digits. 'mime' mode reads them as digits in both.
   const asciiInput = (seed: number) =>
     Array.from(encodedLike(seed))
       .filter((char) => char.charCodeAt(0) < 0x80)

@@ -56,7 +56,7 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 
 `subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
 
-A payload longer than `maxPayloadBytes` throws `InvalidInputError` too. A mistake in the call throws a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
+A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too. A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
 
 ### Options
 
@@ -83,7 +83,7 @@ The JWT in the `Authorization` header expires 12 hours after it is signed. `send
 
 It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server can send notifications. It has one dependency, `@portable/base64`, where web-push has five, including an ASN.1 library and an HTTPS proxy agent.
 
-- A 404 or 410 returns `{ kind: 'gone' }`, so you can tell an expired subscription from a failed send without checking status codes yourself.
+- `send` returns `{ kind: 'gone' }` for a 404 or 410, so you can tell an expired subscription from a failed send without checking status codes yourself.
 - Payloads over 3993 bytes are rejected before sending. web-push has no limit, and http_ece splits a payload over about 4079 bytes into several records, which push services reject.
 - `ttl` must be a non-negative integer. web-push sends `TTL: NaN` for a non-numeric value, and Apple rejects it.
 - `p256dh` must be a point on the P-256 curve and `auth` exactly 16 bytes, as RFC 8291 requires, and both must be valid base64. web-push checks lengths only, and skips characters outside the alphabet.
@@ -140,8 +140,8 @@ On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 ti
 
 These behaviors differ from web-push:
 
-- A 404 or 410 resolves with `{ kind: 'gone' }` instead of rejecting.
+- `send` resolves with `{ kind: 'gone' }` for a 404 or 410 instead of rejecting.
 - An empty string payload is encrypted and sent. web-push sends no body for `''`, so the service worker's `event.data` is `null`.
-- No `Urgency` header unless you pass `urgency`. web-push always sends `Urgency: normal`, which push services treat the same as no header.
-- Payloads over 3993 bytes, `http:` endpoints, `auth` keys longer than 16 bytes, `mailto:` subjects with spaces, and a `ttl` that isn't a non-negative integer throw. web-push accepts them.
+- `send` sends no `Urgency` header unless you pass `urgency`. web-push always sends `Urgency: normal`, which push services treat the same as no header.
+- `send` and `toRequest` reject payloads over 3993 bytes, `http:` endpoints, `auth` keys longer than 16 bytes, `mailto:` subjects with spaces, and a `ttl` that isn't a non-negative integer. web-push accepts them.
 - The VAPID token is reused for up to an hour per push service. web-push signs a new one for every message.

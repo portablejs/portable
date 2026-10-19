@@ -106,8 +106,9 @@ export async function domain(name: string, options: domain.Options = {}): Promis
 }
 
 /**
- * Looks up the network that holds an IPv4 or IPv6 address, or a prefix such as `192.0.2.0/24`. The
- * regional internet registry comes from IANA's bootstrap file, by the longest matching prefix.
+ * Looks up the network that contains an IPv4 or IPv6 address, or a prefix such as
+ * `192.0.2.0/24`. The regional internet registry comes from IANA's bootstrap file, by the
+ * longest matching prefix.
  *
  * Rejects with `InvalidInputError` for a malformed address, `UnsupportedError` for an address no
  * registry serves, such as `10.0.0.1`, and `NotFoundError` when the registry has no record.

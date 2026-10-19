@@ -89,7 +89,7 @@ describe('RSA-SHA1', () => {
     nonce: 'kllo9940pd9333jh',
     timestamp: new Date(1191242096_000),
   } as const
-  // From node-oauth's tests; RSASSA-PKCS1-v1_5 signatures are deterministic.
+  // From node-oauth's tests. RSASSA-PKCS1-v1_5 signatures are deterministic.
   const expected =
     'qS4rhWog7GPgo4ZCJvUdC/1ZAax/Q4Ab9yOBvgxSopvmKUKp5rso+Zda46GbyN2hnYDTiA/g3P/d/YiPWa454BEBb/KWFV83HpLDIoqUUhJnlXX9MqRQQac0oeope4fWbGlfTdL2PXjSFJmvfrzybERD/ZufsFtVrQKS3QBpYiw='
 

@@ -52,7 +52,10 @@ type Table = {
   starts: Int32Array
   /** For each block of 256 code points, the index of the run that holds its first code point. */
   blocks: Int32Array
-  /** The kind in the low two bits; above it the properties, the mapping delta or the string index. */
+  /**
+   * The kind in the low two bits, and above it the properties, the mapping delta or the string
+   * index.
+   */
   values: Int32Array
   strings: string[]
 }

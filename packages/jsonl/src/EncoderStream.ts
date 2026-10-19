@@ -1,7 +1,10 @@
 import { abortable } from './abortable.js'
 export declare namespace EncoderStream {
   type Options = {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
+     * from.
+     */
     signal?: AbortSignal | undefined
   }
 }

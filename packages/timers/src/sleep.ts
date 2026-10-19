@@ -13,8 +13,8 @@ export declare namespace sleep {
 
 /**
  * Resolves after `ms` milliseconds. Uses `scheduler.wait` where the runtime has it, and `setTimeout`
- * otherwise. Delays longer than `setTimeout`'s limit of about 24.8 days, including `Infinity`, are
- * waited out in steps instead of firing at once.
+ * otherwise. Delays longer than `setTimeout`'s limit of about 24.8 days, including
+ * `Infinity`, are waited out in steps, because `setTimeout` would fire such a timer at once.
  *
  * @example
  * ```ts

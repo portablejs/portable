@@ -62,7 +62,9 @@ type Std = {
   length?: number
 }
 
-/** A message signed by the reference signer, with `extra` tags before h=. Mirrors mailauth's `std`. */
+/**
+ * A message signed by the reference signer, with `extra` tags before h=. Mirrors mailauth's `std`.
+ */
 function std(extra = '', o: Std = {}): Promise<string> {
   const algorithm = o.algorithm ?? 'rsa-sha256'
   const c = o.c ?? 'relaxed/relaxed'

@@ -17,8 +17,8 @@ function insertion(prev: number, byte: number): number {
 
 /**
  * Converts every line break to CRLF and doubles a dot at the start of a line. `prev` is the byte
- * before `chunk`, or `START`. A bare CR counts as a line break, because a receiver that ends lines on
- * CR would otherwise read `\r.\r` as the end of the data.
+ * before `chunk`, or `START`. A bare CR counts as a line break, because a receiver that
+ * ends lines on CR would otherwise read `\r.\r` as the end of the data.
  */
 function stuff(chunk: Uint8Array, prev: number): Uint8Array {
   let extra = 0

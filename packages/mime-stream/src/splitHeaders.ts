@@ -5,7 +5,10 @@ export declare namespace splitHeaders {
   type Options = {
     /** Longest header block, counted with the empty line that ends it. @default 1048576 */
     maxHeaderBytes?: number | undefined
-    /** Rejects with `signal.reason` while the header block is read, and later errors `body` with it. Either way the input is cancelled. */
+    /**
+     * Rejects with `signal.reason` while the header block is read, and later errors `body` with
+     * it. Either way the input is cancelled.
+     */
     signal?: AbortSignal | undefined
   }
   type ReturnType = {
@@ -18,8 +21,8 @@ export declare namespace splitHeaders {
 
 /**
  * Reads a message's header block from a stream and returns it with a stream of the rest. Nothing
- * is decoded and the body isn't searched for parts, so this is the cheap way to get the bytes that
- * DKIM signs. If the input ends before an empty line, all of it is the header block.
+ * is decoded and the body isn't searched for parts, so `splitHeaders` is the cheap way to get the
+ * bytes that DKIM signs. If the input ends before an empty line, all of it is the header block.
  *
  * @example
  * ```ts

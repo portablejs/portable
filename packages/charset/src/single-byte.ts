@@ -155,7 +155,8 @@ export const iso8859_8: Charset = {
 }
 
 /**
- * ISO-8859-8-I. The same bytes as ISO-8859-8; the name tells a reader the text is in logical order.
+ * ISO-8859-8-I. The same bytes as ISO-8859-8, but the name tells a reader the text is in logical
+ * order.
  *
  * @example
  * ```ts

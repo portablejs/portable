@@ -15,7 +15,7 @@ describe('parse', () => {
   for (const name of names) {
     test(`returns or throws a documented error for a mutated ${name}`, () => {
       const original = inputs[name]!
-      // Only the first 30 kB of the JPEG hold metadata; the rest is image data that parse skips.
+      // Only the first 30 kB of the JPEG hold metadata. The rest is image data that parse skips.
       const within = name.endsWith('.jpg') ? 30_000 : original.length
       fuzz(
         fc.property(mutated(original, { within }), (bytes) => {

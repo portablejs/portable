@@ -73,7 +73,9 @@ export const recorded: ReadonlyMap<string, Uint8Array<ArrayBuffer>> = new Map(
   responses.map((entry) => [`${entry.query} ${entry.server}`, hex(entry.hex)]),
 )
 
-/** A server that replays the recorded response for each question, re-encoded with the request's ID. */
+/**
+ * A server that replays the recorded response for each question, re-encoded with the request's ID.
+ */
 export function replay(server: 'cloudflare-dns.com' | 'dns.google'): Server {
   return (question) => {
     const bytes = recorded.get(`${question.name} ${question.type} ${server}`)

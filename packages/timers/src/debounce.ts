@@ -1,8 +1,8 @@
 const maxTimeout = 2 ** 31 - 1
 
 /**
- * A debounced or throttled function. Each call returns a promise of the result of the invocation it
- * was folded into.
+ * A debounced or throttled function. Calls that arrive while an invocation is waiting share it,
+ * and each one returns a promise of that invocation's result.
  */
 export type Debounced<Args extends unknown[], Result, This = unknown> = {
   (this: This, ...args: Args): Promise<Awaited<Result>>
@@ -43,7 +43,7 @@ export declare namespace debounce {
  *
  * const save = Timers.debounce((text: string) => fetch('/draft', { method: 'PUT', body: text }), 500)
  * editor.addEventListener('input', () => save(editor.value))
- * const response = await save(editor.value) // the response of the save this call was folded into
+ * const response = await save(editor.value) // the response of the save that this call shares
  * ```
  */
 export function debounce<Args extends unknown[], Result, This = unknown>(

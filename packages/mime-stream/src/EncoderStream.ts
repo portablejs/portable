@@ -1,11 +1,17 @@
 import { abortable } from './abortable.js'
 
 export declare namespace EncoderStream {
-  /** A chunk from `DecoderStream`, or any object with `bytes`, or bytes or text to insert. Text is written as UTF-8. */
+  /**
+   * A chunk from `DecoderStream`, or any object with `bytes`, or bytes or text to insert. Text is
+   * written as UTF-8.
+   */
   type Input = Uint8Array | string | { readonly bytes: Uint8Array | string }
 
   type Options = {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
+     * from.
+     */
     signal?: AbortSignal | undefined
   }
 }

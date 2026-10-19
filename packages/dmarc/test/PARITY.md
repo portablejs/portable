@@ -1,10 +1,10 @@
 # Test parity
 
-Upstream suite: the DMARC tests of [mailauth](https://github.com/postalsys/mailauth) 7.3.1 (MIT), `test/dmarc/*.js`, plus the DMARC cases in `test/tools/tools-test.js` (`getAlignment`), `test/tools/rfc-compliance-test.js` (`toALabel`, `isHostNameDomain`) and `test/mailauth-test.js`. No fixtures were copied; every case builds its own zone.
+Upstream suite: the DMARC tests of [mailauth](https://github.com/postalsys/mailauth) 7.3.1 (MIT), `test/dmarc/*.js`, plus the DMARC cases in `test/tools/tools-test.js` (`getAlignment`), `test/tools/rfc-compliance-test.js` (`toALabel`, `isHostNameDomain`) and `test/mailauth-test.js`. No fixtures were copied, because every case builds its own zone.
 
 The ported tests are in `check.conformance.ts`, in a `describe` block named after the upstream file, and run in Node and Chromium. `check.oracle.test.ts` compares the result, the policy, the policy domain and the first aligned SPF and DKIM identifier with mailauth 7.3.0's `dmarc()` in strict mode, on 400 random zones and on U-label From domains. 7.3.1 was published less than a day ago, so `minimumReleaseAge` refuses it. Its DMARC code differs from 7.3.0 only in From header parsing, which this package doesn't do.
 
-mailauth has a default mode that case-folds tag names, lets the last of duplicate tags win, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. We follow the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
+mailauth has a default mode that case-folds tag names, uses the last of duplicate tags, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. `check` follows the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
 
 The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so From header parsing belongs to the caller (`@portable/mime-headers` and, later, `@portable/mail-auth`). The tests that only parse addresses are listed as not applicable below.
 
@@ -58,7 +58,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | H6 > Should evaluate mailboxes that share one domain | Edge cases > several From addresses in one domain |
 | H6 > Should report why evaluation is not possible, keeping the false response | Not applicable: several Author Domains are found by the caller. |
 | H6 > Should evaluate through authenticate() | Not applicable: `authenticate()`. |
-| I3 > Should not query "_dmarc." for an empty domain | I3: no query for an empty domain (we give `permerror`) |
+| I3 > Should not query "_dmarc." for an empty domain | I3: no query for an empty domain (the result is `permerror`) |
 | F4 > Should fail an identifier that has no parent in common with the author domain | F4: an identifier with no common parent fails when the author walk fails |
 | F4 > Should still give temperror for an identifier that could align | F4: an identifier that could align gives temperror when the author walk fails |
 | F5 > Should give temperror, not fail, when an identifier is past the limit | F5: an identifier past the limit of 10 tree walks gives temperror, not fail |
@@ -252,15 +252,15 @@ Address and header parsing don't apply, because the input is the domain. The dom
 
 ## Known upstream issues
 
-mailauth's issue tracker, read through its GitHub search page, and its strict and default modes give these cases. Each has a test that shows how we handle it.
+These cases come from mailauth's issue tracker, read through its GitHub search page, and from comparing its strict and default modes. Each has a test of how `check` handles it.
 
 | Issue | Our behavior | Test |
 | --- | --- | --- |
 | #74: strict alignment compared organizational domains, so `mail.example.com` aligned with `example.com` under `adkim=s`. Fixed in mailauth. | Strict alignment compares the domains as strings. | dmarc-verify-test.js > adkim=s fails a signature of the organizational domain |
 | #60: the `psl` package mailauth used went unmaintained and returned wrong organizational domains. mailauth moved to tldts, then to the tree walk. | The tree walk is the default, and a caller who wants a public suffix list passes its function as `organizationalDomain`. | organizationalDomain option > uses the function instead of the tree walk; check.oracle.test.ts > the organizationalDomain option with tldts matches the tree walk |
 | #142: a tag name without `=` overrode a valid tag. Fixed in mailauth. | A fragment without `=` is ignored. | get-dmarc-record-test.js > ignores a fragment without "=" or without a name |
-| #143: strict mode accepted whitespace before `v=DMARC1`. Fixed in strict mode; the default mode still accepts it. | Always rejected (RFC 9989 section 4.10 step 2). | ignores a record with whitespace before v=DMARC1 |
-| The default mode lets the last of duplicate tags win and case-folds tag names. | A duplicate tag invalidates the record and an upper case tag name is unknown (RFC 6376 section 3.2). | dmarc-fixes-test.js > F7 tests |
+| #143: strict mode accepted whitespace before `v=DMARC1`. Fixed in strict mode, but the default mode still accepts it. | Always rejected (RFC 9989 section 4.10 step 2). | ignores a record with whitespace before v=DMARC1 |
+| The default mode uses the last of duplicate tags and case-folds tag names. | A duplicate tag invalidates the record and an upper case tag name is unknown (RFC 6376 section 3.2). | dmarc-fixes-test.js > F7 tests |
 | `dmarc()` returns `false`, not a result, for a From domain that isn't a domain name. | `permerror` with a `reason`, so the caller always gets a result. | I3: no query for an empty domain; rejects a domain with a control, format or space character |
 | mailauth walks above the From domain on every message with a record, even when every identifier is identical to the From domain, which costs a `_dmarc.<tld>` query. RFC 9989 section 4.10.2 says that walk isn't needed. | The walk runs only when a relaxed alignment check needs it. | known upstream issues > no tree walk above the From domain when every identifier is identical to it |
 | mailauth queries whether the From domain exists whenever the record has `np`, even when `np` equals the policy that applies anyway. | No query in that case. | known upstream issues > no existence query when np is the policy that applies anyway |

@@ -190,7 +190,7 @@ const store: RateLimit.Store = {
 rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a two-method store, so any storage that can compare and set one number works, and it has no dependencies.
 
 - rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
-- A denied request takes nothing here. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.
+- `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.
 - `take` resolves with `allowed: false` for a denied request. rate-limiter-flexible rejects the promise with a `RateLimiterRes`, which is not an `Error`, so a denial and a Redis outage arrive in the same `catch`.
 - rate-limiter-flexible's memory store sets one timer per key to delete it. `memoryStore()` sets none, so a limiter with many keys doesn't hold a timer for each.
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
@@ -242,5 +242,5 @@ Behavior that differs:
 
 - `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
 - `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
-- There is no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests; use `retryAfter`.
+- The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
 - Bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.

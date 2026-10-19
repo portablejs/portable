@@ -1,6 +1,8 @@
 import * as Dmarc from '@portable/dmarc'
 
-/** A string instead of records rejects every lookup of that type with that `code`. */
+/**
+ * If a type holds a string instead of records, every lookup of that type rejects with that `code`.
+ */
 export type Records = {
   TXT?: readonly (string | readonly string[])[] | string | undefined
   A?: readonly string[] | string | undefined

@@ -1,22 +1,22 @@
 # Portable: package philosophy and list
 
-How the repository is built and tested is in [architecture.md](architecture.md).
+[architecture.md](architecture.md) covers how the repository is built and tested.
 
 ## Philosophy
 
-In the tradition of sindresorhus and TJ Holowaychuk, and closest in spirit to Remix v3 (`remix-run/remix`, about 50 packages, most with no outside dependencies, layered on each other and re-exported by one `remix` package).
+The packages follow the style of sindresorhus and TJ Holowaychuk, and are closest to Remix v3 (`remix-run/remix`, about 50 packages, most with no outside dependencies, layered on each other and re-exported by one `remix` package).
 
-1. **Purpose-sized, not function-sized.** A package solves a problem a developer would name: "split a stream into lines", "compose an email", "verify DKIM". It is not one function (no `is-odd`) and it is not a grab bag. Rough test: if it is under ~50 lines with no edge cases worth a test suite, it is an internal helper. If its README needs two unrelated "what it's for" headings, it is two packages.
-2. **Compose upward.** Higher packages are built from lower Portable packages, and the dependency graph is a strict layer DAG (§Layers). This is how Remix's `response` sits on `headers` + `mime` + `html-template`, and how our `mail` sits on `mime-headers` + `base64` + `quoted-printable`.
+1. **One package per problem.** A package solves a problem a developer would name: "split a stream into lines", "compose an email", "verify DKIM". It is not one function (no `is-odd`) and it is not a grab bag. As a rough test, code under about 50 lines with no edge cases worth a test suite is an internal helper. If its README needs two unrelated "what it's for" headings, it is two packages.
+2. **Compose upward.** A higher package builds on Portable packages in lower layers, and the dependency graph is a strict layer DAG (§Layers). Remix's `response` builds on `headers`, `mime` and `html-template` this way, and our `mail` builds on `mime-headers`, `base64` and `quoted-printable`.
 3. **No dependencies outside the family.** The one exception is crypto: it defaults to WebCrypto and is pluggable, and a package that needs an incremental hash takes `@noble/hashes` as an optional peer.
 4. **Web standards are the API.** Inputs and outputs are `Uint8Array`, `string`, `ReadableStream`, `Request`/`Response`, `Headers`, `Blob`/`File`. Streaming transforms are `TransformStream` subclasses used like the platform's own (`stream.pipeThrough(new Lines.DecoderStream())`, as with `TextDecoderStream` and Deno's `TextLineStream`). Where a platform type is close, extend it rather than invent one, as Remix's `SuperHeaders extends Headers` does.
-5. **One thing well, then 1.0.** Small stable API, explicit about what it does not do, and a "Replaces X" migration table in each README.
-6. **Same coverage as what we replace.** A package that replaces a popular library solves the same problem with its own API and implementation, and covers every case that library's tests cover, with a `PARITY.md` mapping each upstream test to ours or to the reason it doesn't apply (details in [architecture.md](architecture.md#parity-with-the-replaced-library)). Upstream benchmarks are ported too, and every package is benchmarked against the library it replaces ([architecture.md](architecture.md#benchmarks)). It reaches 1.0 only when those tests and the oracle tests both pass and performance is comparable or better.
-7. **Don't duplicate neighbors.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
-8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. Individual `@portable/*` packages stay the real units.
+5. **A small, stable API before 1.0.** Each package documents what it does not do and has a "Replaces X" migration table in its README.
+6. **Same coverage as what we replace.** A package that replaces a popular library solves the same problem with its own API and implementation, and covers every case that library's tests cover, with a `PARITY.md` mapping each upstream test to ours or to the reason it doesn't apply (details in [architecture.md](architecture.md#parity-with-the-replaced-library)). We port upstream benchmarks too, and benchmark every package against the library it replaces ([architecture.md](architecture.md#benchmarks)). It reaches 1.0 only when those tests and the oracle tests both pass and performance is comparable or better.
+7. **Don't rebuild existing web-standard packages.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
+8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. We still publish and version each `@portable/*` package on its own.
 
-9. **`/node` entrypoints where Node genuinely helps (deferred; low priority, not in the first builds).** The main entry of every package is web-standard only. A package may add a `/node` subpath, exported under the `node` condition, when Node has something better or users need a bridge. It is the only code allowed to import `node:*` (oxlint override on `src/node/**`), it never changes the main API, and no other Portable package imports it. Current candidates:
-   - `streams/node`: Node stream ⇄ web stream conversion (below).
+9. **`/node` entrypoints where Node helps (deferred; low priority, not in the first builds).** The main entry of every package is web-standard only. A package may add a `/node` subpath, exported under the `node` condition, when Node has something better or users need a bridge. It is the only code allowed to import `node:*` (oxlint override on `src/node/**`), it never changes the main API, and no other Portable package imports it. Current candidates:
+   - `streams/node`: conversion between Node streams and web streams (below).
    - `dns/node`: a resolver backed by `node:dns/promises`, so Node users skip DNS-over-HTTPS.
    - `png/node`: sync inflate/deflate via `node:zlib`, so Node users get a sync API without adding fflate.
 
@@ -65,7 +65,7 @@ L0  base64, streams → bytes
 
 #### `streams` bridge API
 
-The platform has half of this, unevenly: `ReadableStream.from()` and `for await (const chunk of stream)` are not in every target browser yet, and neither handles cleanup the way people expect. The bridge fills that in with native fast paths where they exist:
+The platform covers part of this: `ReadableStream.from()` and `for await (const chunk of stream)` are not in every target browser yet, and neither handles cleanup the way people expect. The bridge adds the rest and uses the native functions where they exist:
 
 | Function | Does |
 | --- | --- |
@@ -75,7 +75,7 @@ The platform has half of this, unevenly: `ReadableStream.from()` and `for await 
 | `map`, `filter`, `tap`, `batch(n)` | Small `TransformStream` factories for the through2 cases. |
 | `toArray`, `toBytes`, `toText`, `toJson` | Collectors, which accept a stream or any async iterable. |
 
-**Node interop (deferred, low priority)** will live in one quarantined subpath, `@portable/streams/node`, the same way ox ships `ox/node`. It is the only place in the repo allowed to import `node:*` (an oxlint override scoped to `src/node/**`), it is exported under the `node` condition only, and nothing else in the family imports it:
+**Node interop (deferred, low priority)** will go in one subpath, `@portable/streams/node`, as ox ships `ox/node`. It is the only place in the repo allowed to import `node:*` (an oxlint override scoped to `src/node/**`), the package exports it only under the `node` condition, and nothing else in the family imports it:
 
 | Function | Does |
 | --- | --- |
@@ -137,7 +137,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | `@portable/spf` | Evaluate SPF for a sender IP and domain, with RFC 7208 lookup limits. | `dns`, `ip` | mailauth's SPF module |
 | `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `spf`, `dns` | mailauth's DMARC module |
 | `@portable/arc` | ARC seal and verify (RFC 8617), with RFC behavior only. Reuses dkim's canonicalization and signing through `@portable/dkim/internal`. | `dkim`, `base64`, `bytes` | mailauth's ARC parts |
-| `@portable/mail-auth` | One `authenticate(message, { resolver, ip, helo, sender, authservId })` that returns SPF, DKIM, DMARC and ARC results, writes Authentication-Results, and can ARC-seal the message. No BIMI. This is the motivating gap: mailauth (3.5M) is the only complete implementation and it is Node-only. | `arc`, `dkim`, `dmarc`, `spf`, `mime-headers`, `streams` | mailauth's `authenticate` |
+| `@portable/mail-auth` | One `authenticate(message, { resolver, ip, helo, sender, authservId })` that returns SPF, DKIM, DMARC and ARC results, writes Authentication-Results, and can ARC-seal the message. No BIMI. This package is the reason for the project: mailauth (3.5M) is the only complete implementation, and it runs only in Node. | `arc`, `dkim`, `dmarc`, `spf`, `mime-headers`, `streams` | mailauth's `authenticate` |
 
 ## Later, once the core is proven
 
@@ -173,9 +173,9 @@ Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars,
 2. L1: `json-stream`, `mime-headers`, then `image-size`, `exif`, `png`.
 3. L2: `mail` and `dns` first (pure composition of what exists), then `dkim`, `webhooks`, `oauth1`.
 4. L3: `spf`, `dkim`-based `arc`, `dmarc`, then `mail-auth`.
-5. `mime-stream` lands just before `dkim` needs it.
+5. We build `mime-stream` just before `dkim` needs it.
 
-The scaffold PR proves the pipeline with `lines` (the first package and a 406M replacement), instead of `content-disposition` from revision 1.
+The scaffold PR tests the build, test and release setup with `lines` (the first package and a 406M replacement), instead of `content-disposition` from revision 1.
 
 ## Questions for Kevin
 

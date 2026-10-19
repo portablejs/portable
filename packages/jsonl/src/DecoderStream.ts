@@ -3,17 +3,24 @@ import { abortable } from './abortable.js'
 
 export declare namespace DecoderStream {
   type Options = {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
+     * from.
+     */
     signal?: AbortSignal | undefined
-    /** What to do with a line that isn't valid JSON: fail the stream, or drop the line and continue. @default 'error' */
+    /**
+     * What to do with a line that isn't valid JSON: fail the stream, or drop the line and
+     * continue.
+     * @default 'error'
+     */
     invalid?: 'error' | 'skip' | undefined
   }
 }
 
 /**
- * A `TransformStream` that decodes NDJSON (newline-delimited JSON, also called JSON Lines)
- * into values, one per line. Lines may end in LF or CRLF. Blank lines are skipped. Each line
- * is parsed with `JSON.parse`, so a `null` line is emitted as `null`.
+ * A `TransformStream` that decodes NDJSON (newline-delimited JSON, also called JSON Lines) into
+ * values, one per line. Lines may end in LF or CRLF. Blank lines are skipped. Each line is
+ * parsed with `JSON.parse`, so a `null` line is emitted as `null`.
  *
  * The stream fails with `InvalidInputError` on a line that isn't valid JSON, unless
  * `invalid` is `'skip'`.

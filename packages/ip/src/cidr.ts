@@ -1,7 +1,10 @@
 import { type Address, format, from, isMapped, toIpv6, tryParse } from './address.js'
 import { InvalidInputError } from './errors.js'
 
-/** A CIDR block: the network address and the number of leading bits that every address in it shares. */
+/**
+ * A CIDR block: the network address and the number of leading bits that every address in it
+ * shares.
+ */
 export type Cidr = { address: Address; prefix: number }
 
 /**
@@ -56,9 +59,9 @@ export function formatCidr(cidr: Cidr): string {
 
 /**
  * Returns whether the CIDR block contains the address. An IPv4 address and its IPv4-mapped IPv6
- * form (`::ffff:192.0.2.1`) count as the same address, as in Node's `BlockList`, so
- * `127.0.0.0/8` contains `::ffff:127.0.0.1`. Zones are ignored. Strings are parsed with
- * `parseCidr` and `parse`; parse a block once when you check many addresses against it.
+ * form (`::ffff:192.0.2.1`) count as the same address, as in Node's `BlockList`, so `127.0.0.0/8`
+ * contains `::ffff:127.0.0.1`. Zones are ignored. Strings are parsed with `parseCidr` and `parse`,
+ * so parse a block once when you check many addresses against it.
  *
  * @example
  * ```ts

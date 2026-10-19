@@ -27,11 +27,11 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream())
 | `EncoderStream(options?)` | a `TransformStream<Uint8Array \| string, string>` | |
 | `DecoderStream(options?)` | a `TransformStream<string \| Uint8Array, Uint8Array>` | |
 
-`encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. Soft line breaks (`=` and CRLF) keep each line within `lineLength`, preferring to break after a space or punctuation, and never inside an escape or a UTF-8 sequence.
+`encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
 
 `decode()` removes whitespace at the end of each line and soft line breaks (`=` before CRLF, LF or the end), and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
 
-Both streams produce the same bytes as the functions, wherever the input is split into chunks: an escape, a CRLF, a whitespace run or a surrogate pair split across chunks is handled.
+Both streams produce the same bytes as the functions however the input is chunked, including when a chunk boundary splits an escape, a CRLF, a whitespace run or a surrogate pair.
 
 ## Options
 
@@ -93,9 +93,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Output matches libqp 3.0.1's `wrap(encode())` and `Encoder` byte for byte, which the oracle tests check on random input and random chunking. Differences from the two libraries:
 
-- `encode()` breaks lines at 76 by default; libqp's `encode()` doesn't break lines at all.
+- `encode()` breaks lines at 76 by default, and libqp's `encode()` doesn't break lines at all.
 - `lineLength` must be `false` or an integer of at least 4. libqp treats 0, `NaN` and non-numbers as 76 and raises anything below 4 to 4.
-- A string passed to `decode()` is read as UTF-8, like the string passed to `encode()`. libqp reads each character's low byte. Pass a `Uint8Array` to decode raw 8-bit data.
+- `decode()` reads a string as UTF-8, as `encode()` does. libqp reads each character's low byte. Pass a `Uint8Array` to decode raw 8-bit data.
 - quoted-printable escapes every CR and LF, keeps every line within 75 characters, splits UTF-8 sequences across soft line breaks, and throws on text above U+00FF. `encode()` keeps line breaks (use `binary` to escape lone ones), allows 76, never splits a UTF-8 sequence, and encodes text as UTF-8.
 - quoted-printable's `decode()` also treats `=` before a lone CR as a soft line break. RFC 2045 and libqp don't, and neither does `decode()`.
 - The output of the libqp 2.x `Encoder` depended on how the input was chunked, and it kept a hyphen after a lone CR literal, which starts a line once a relay turns the CR into CRLF. libqp 3 fixed both, and this package follows 3.

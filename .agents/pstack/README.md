@@ -1,6 +1,6 @@
 # pstack (vendored)
 
-These skills and the `comment-sicko` agent are copied unchanged from [cursor/plugins](https://github.com/cursor/plugins/tree/0b8e952052d482ee6de06deebf14d590d77b1b34/pstack) at commit `0b8e952052d482ee6de06deebf14d590d77b1b34` (2026-10-18). They are MIT licensed; see [LICENSE](LICENSE).
+These skills and the `comment-sicko` agent are copied unchanged from [cursor/plugins](https://github.com/cursor/plugins/tree/0b8e952052d482ee6de06deebf14d590d77b1b34/pstack) at commit `0b8e952052d482ee6de06deebf14d590d77b1b34` (2026-10-18). They are MIT licensed (see [LICENSE](LICENSE)).
 
 Do not edit the copies. To update them, copy the same folders from a newer upstream commit and change the commit above.
 

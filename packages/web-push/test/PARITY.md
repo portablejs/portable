@@ -1,6 +1,6 @@
 # Parity with web-push
 
-Upstream: [web-push](https://github.com/web-push-libs/web-push) 3.6.7 (MPL-2.0), test files under `test/`. Each upstream test maps to our test for the same case, or to the reason it doesn't apply. Tests marked "both" ran once per content encoding upstream; we support only aes128gcm, so the `aesgcm` run maps to the "aesgcm" row under Not applicable.
+Upstream: [web-push](https://github.com/web-push-libs/web-push) 3.6.7 (MPL-2.0), test files under `test/`. Each upstream test maps to our test for the same case, or to the reason it doesn't apply. Tests marked "both" ran once per content encoding upstream. We support only aes128gcm, so the `aesgcm` run maps to the "aesgcm" row under Not applicable.
 
 Our test files are `encrypt.conformance.ts`, `vapid.conformance.ts` and `send.conformance.ts` (Node and Chromium), `web-push.oracle.test.ts` (Node) and `web-push.bench.ts`.
 
@@ -115,12 +115,12 @@ Runs a real Chrome and Firefox, subscribes, sends through Google's and Mozilla's
 | Issue | Ours |
 | --- | --- |
 | Node only: `crypto.createECDH`, `https.request` and `Buffer` fail on Cloudflare Workers ([#718](https://github.com/web-push-libs/web-push/issues/718)), and Deno payloads failed to decrypt in Chrome ([#904](https://github.com/web-push-libs/web-push/issues/904)). | Only WebCrypto and `fetch`. Every conformance test also runs in Chromium. |
-| No way to tell a gone subscription from other errors; callers check `statusCode` themselves ([#885](https://github.com/web-push-libs/web-push/issues/885)). | send > returns gone for status 404 and 410 |
+| No way to tell a gone subscription from other errors. Callers check `statusCode` themselves ([#885](https://github.com/web-push-libs/web-push/issues/885)). | send > returns gone for status 404 and 410 |
 | No payload size check. http_ece splits a payload over about 4079 bytes into several records, which no push service accepts, and FCM and Apple reject bodies over 4096 bytes. | encrypt > accepts 3993 bytes as one 4096-byte record, > rejects a payload one byte over the limit |
-| `TTL: NaN` and fractions pass the `< 0` check and are sent; Apple answers `BadTtl`. Before PR #492, `TTL: 0` became the four-week default ([#284](https://github.com/web-push-libs/web-push/issues/284)). | send > rejects ttl -1, 1.5, NaN, Infinity, '60'; > sends ttl 0 |
+| `TTL: NaN` and fractions pass the `< 0` check and are sent, and Apple answers `BadTtl`. Before PR #492, `TTL: 0` became the four-week default ([#284](https://github.com/web-push-libs/web-push/issues/284)). | send > rejects ttl -1, 1.5, NaN, Infinity, '60'; > sends ttl 0 |
 | `mailto: user@example.com` with a space passes validation and Apple rejects the token ([#939](https://github.com/web-push-libs/web-push/issues/939)). The localhost warning reads `URL.hostname`, which is empty for `mailto:`. | VAPID Authorization header > rejects a mailto: subject with a space. A localhost subject is accepted, as upstream, and the README says Apple rejects it. |
 | A new JWT for every message. Apple asks senders not to refresh tokens more than once an hour. | VAPID Authorization header > reuses a token for the same origin and keys |
-| Mismatched VAPID keys are signed with and rejected by the push service ([#679](https://github.com/web-push-libs/web-push/issues/679)). | VAPID Authorization header > rejects a private key that belongs to another public key |
+| A token signed with mismatched VAPID keys is sent, and the push service rejects it ([#679](https://github.com/web-push-libs/web-push/issues/679)). | VAPID Authorization header > rejects a private key that belongs to another public key |
 | `p256dh` is checked only for length, so a key off the curve fails deep inside OpenSSL ([#292](https://github.com/web-push-libs/web-push/issues/292)), and `Buffer.from(…, 'base64url')` skips characters outside the alphabet. `auth` longer than 16 bytes is accepted. | encrypt > rejects … p256dh not on the curve, compressed, with characters outside base64, auth of 17 bytes |
 | Short VAPID private keys from `getPrivateKey()` ([#295](https://github.com/web-push-libs/web-push/issues/295)). | generateVapidKeys > returns … a 32-byte private key, run 50 times |
 | Any endpoint URL is accepted, including `http:` ones, so a subscription posted by a client can point the server at an internal address. | send > rejects an http: endpoint |

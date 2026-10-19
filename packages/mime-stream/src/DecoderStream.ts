@@ -2,17 +2,29 @@ import * as MimeHeaders from '@portable/mime-headers'
 import { abortable } from './abortable.js'
 import { MaxBoundaryLineBytesError, MaxHeaderBytesError, MaxPartsError } from './errors.js'
 
-/** One part of a message: the root, a part of a multipart, or the message inside a `message/rfc822` part. */
+/**
+ * One part of a message: the root, a part of a multipart, or the message inside a
+ * `message/rfc822` part.
+ */
 export type Part = {
-  /** The multipart this part belongs to, or the `message/rfc822` part it is embedded in. Missing on the root. */
+  /**
+   * The multipart this part belongs to, or the `message/rfc822` part it is embedded in. Missing on
+   * the root.
+   */
   parent?: Part | undefined
   /** Header fields in order, unfolded, as `MimeHeaders.parseHeaders` reads them. */
   headers: readonly MimeHeaders.Header[]
-  /** Lowercase media type without parameters. `text/plain` when missing or invalid, and `message/rfc822` inside `multipart/digest` (RFC 2046). */
+  /**
+   * Lowercase media type without parameters. `text/plain` when missing or invalid, and
+   * `message/rfc822` inside `multipart/digest` (RFC 2046).
+   */
   contentType: string
   /** Lowercase `Content-Transfer-Encoding` without comments. `7bit` when missing. */
   encoding: string
-  /** The boundary that splits this part into children. Set only on a `multipart/*` part that has one. */
+  /**
+   * The boundary that splits this part into children. Set only on a `multipart/*` part that has
+   * one.
+   */
   boundary?: string | undefined
 }
 
@@ -21,8 +33,10 @@ export type Part = {
  *
  * - `headers`: the header block of `part`, with the empty line that ends it.
  * - `body`: content of a part that has no children, still transfer-encoded.
- * - `preamble`, `epilogue`: text before the first and after the last delimiter of the multipart `part`.
- * - `delimiter`: a boundary line of the multipart `part`, with the line break before it and its own.
+ * - `preamble`, `epilogue`: text before the first and after the last delimiter of the multipart
+ *   `part`.
+ * - `delimiter`: a boundary line of the multipart `part`, with the line break before it and its
+ *   own.
  */
 export type Chunk = {
   type: 'headers' | 'body' | 'preamble' | 'delimiter' | 'epilogue'
@@ -32,15 +46,29 @@ export type Chunk = {
 
 export declare namespace DecoderStream {
   type Options = {
-    /** Read the message inside a `message/rfc822` or `message/global` part as parts too, when it isn't base64 or quoted-printable. @default false */
+    /**
+     * Read the message inside a `message/rfc822` or `message/global` part as parts too, when it
+     * isn't base64 or quoted-printable.
+     * @default false
+     */
     embedded?: boolean | undefined
-    /** Longest boundary line, line break included. Only whitespace after the boundary can make one this long. @default 1000 */
+    /**
+     * Longest boundary line, line break included. Only whitespace after the boundary can make one
+     * this long.
+     * @default 1000
+     */
     maxBoundaryLineBytes?: number | undefined
-    /** Longest header block of a part, counted with the empty line that ends it. @default 1048576 */
+    /**
+     * Longest header block of a part, counted with the empty line that ends it.
+     * @default 1048576
+     */
     maxHeaderBytes?: number | undefined
     /** Most parts in a message, the root included. @default 1000 */
     maxParts?: number | undefined
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
+     * from.
+     */
     signal?: AbortSignal | undefined
   }
 }
@@ -237,7 +265,8 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
       if (frame.state === EPILOGUE) continue
       const result = matchBoundary(b, i, end, frame.boundary, final)
       if (result === PARTIAL) partial = true
-      // RFC 2046 needs a delimiter before a close delimiter, so one in the preamble is text.
+      // RFC 2046 needs a delimiter before a close delimiter, so a close delimiter in
+      // the preamble is treated as text.
       else if (result && !(result.close && frame.state === PREAMBLE))
         return { frame: f, close: result.close, end: result.end }
     }
@@ -404,8 +433,8 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
 
 const utf8 = new TextDecoder()
 
-// Read the way mail clients read a header block: a bare CR doesn't end a line, a continuation
-// line with no field before it is skipped, and a line such as mbox's `From ` line isn't a field.
+// Reads a header block the way mail clients do: a bare CR doesn't end a line, a continuation line
+// with no field before it is skipped, and a line such as mbox's `From ` line isn't a field.
 function readHeaders(bytes: Uint8Array): MimeHeaders.Header[] {
   let text = utf8.decode(bytes)
   if (text.includes('\r')) text = text.replace(/\r(?!\n)/g, ' ')

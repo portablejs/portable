@@ -50,7 +50,9 @@ export async function decodeStream(
   return concat(await collect(fromChunks(chunks).pipeThrough(new DecoderStream(options))))
 }
 
-/** Splits `input` into pieces of the given sizes, used in turn. A size of 0 makes an empty chunk. */
+/**
+ * Splits `input` into pieces of the given sizes, used in turn. A size of 0 makes an empty chunk.
+ */
 export function chunked<T extends Uint8Array | string>(
   input: T,
   sizes: number | readonly number[],

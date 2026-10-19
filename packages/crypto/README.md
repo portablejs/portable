@@ -44,7 +44,7 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
 | `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'` or `'P-521'`. It sets the width of `r` and `s` in the output. |
 
-`Crypto.InvalidInputError` is thrown for malformed DER, a raw signature or seed of the wrong length, and a key that is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are thrown unchanged.
+The functions throw or reject with `Crypto.InvalidInputError` for malformed DER, a raw signature or seed of the wrong length, and a key that is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 
@@ -58,12 +58,12 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 Each helper replaces a few lines that apps write by hand, and handles a trap those lines often miss.
 
 - In TypeScript 5.9 and later, a plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`, which `crypto.subtle` doesn't accept as a `BufferSource`. Hand-written code adds `.slice()` or a cast at every call. These functions take any `Uint8Array`, copy it only when its buffer is not an `ArrayBuffer` (a `SharedArrayBuffer`, for example), and return `Uint8Array<ArrayBuffer>`.
-- `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. Taking a `Uint8Array` rules that out.
+- `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. These functions take a `Uint8Array` and read only the bytes the view covers.
 - WebCrypto refuses an empty HMAC key. HMAC pads the key with zero bytes, so `hmac` uses a single zero byte, which gives the result RFC 2104 defines.
 - WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.
 - WebAuthn and OpenSSL produce DER ECDSA signatures, and `crypto.subtle.verify` and JWS take raw `r || s`.
 
-The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 10 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. A non-extractable `importSeed` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
+The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 10 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
 
 <!-- bench:start -->
 | | @portable/crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
@@ -105,6 +105,6 @@ The functions here take and return bytes. Use [@portable/base64](../base64) for 
 
 - a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE;
 - an INTEGER with a leading zero it does not need, an empty INTEGER, or a negative INTEGER;
-- an INTEGER one byte longer than the curve allows whose top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
+- an INTEGER one byte longer than the curve allows, if its top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
 
 Strict DER means a signature has one encoding, so a verifier that deduplicates signatures or uses them as identifiers can't be given a second form of the same signature.

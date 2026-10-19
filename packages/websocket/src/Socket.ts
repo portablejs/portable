@@ -25,7 +25,8 @@ export type Socket = {
 export type SocketEvent = Event & { data?: unknown; code?: number; reason?: string }
 
 /**
- * Thrown when the other side closes the connection, or when it closes for good.
+ * Thrown when the other side closes the connection, or when the connection closes and `connect`
+ * stops reconnecting.
  *
  * @example
  * ```ts

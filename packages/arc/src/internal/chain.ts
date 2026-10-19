@@ -25,8 +25,8 @@ const value = (field: Field): string => field.raw.slice(field.raw.indexOf(':') +
 
 /**
  * The instance as RFC 8617 section 3.9 writes it, 1 to 50 in one or two digits. An
- * ARC-Authentication-Results field starts with it (section 4.1.1); the other two have it as the
- * `i=` tag.
+ * ARC-Authentication-Results field starts with it (section 4.1.1), and the other two have it as
+ * the `i=` tag.
  */
 function instanceOf(field: Field): number | undefined {
   const text =
@@ -69,8 +69,9 @@ export function readChain(fields: readonly Field[]): ArcSet[] | string {
 }
 
 /**
- * The highest instance on any ARC field, read leniently so that a new set never reuses one, and
- * the `cv=` of the seal with that instance (RFC 8617 section 5.1 steps 2 and 3).
+ * Returns the highest instance on any ARC field and the `cv=` of the seal with that instance
+ * (RFC 8617 section 5.1 steps 2 and 3). Instances are read leniently so that a new set never
+ * reuses one.
  */
 export function newest(fields: readonly Field[]): { instance: number; cv: string | undefined } {
   let instance = 0

@@ -7,7 +7,8 @@ for (const suiteTest of rfc7208) {
   scenarios.set(suiteTest.scenario, [...(scenarios.get(suiteTest.scenario) ?? []), suiteTest])
 }
 
-// The suite writes %{i} of an IPv6 client in upper case, RFC 7208's own example in lower case.
+// The suite writes %{i} of an IPv6 client in upper case, and RFC 7208's own example writes it
+// in lower case.
 const lower = (text: string | undefined) => text?.toLowerCase()
 
 for (const [scenario, tests] of scenarios) {

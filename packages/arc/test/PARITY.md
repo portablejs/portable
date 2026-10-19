@@ -27,7 +27,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | --- | --- |
 | cv values: validates every seal behind a cv=PASS seal (lax, strict) | `verify.conformance.ts` › "validates every seal behind a cv=PASS seal that signed only its own set" |
 | accepts a valid chain that writes cv=Pass and cv=None | › "accepts a valid chain that writes cv=Pass and cv=None" |
-| never returns true from verifyASChain for a newest cv=fail | › "fails a chain whose newest seal is cv=fail without checking older seals" (through `verify`; there is no separate chain function) |
+| never returns true from verifyASChain for a newest cv=fail | › "fails a chain whose newest seal is cv=fail without checking older seals" (through `verify`, because there is no separate chain function) |
 | never returns true from verifyASChain when an older seal is invalid | › "fails when an older seal is invalid" |
 | Ed25519: verifies an ed25519-sha256 ARC-Seal | › "verifies an ed25519-sha256 ARC-Seal" |
 | rejects an ed25519 seal made without the pre-hash | › "rejects an ed25519 ARC-Seal made without the SHA-256 pre-hash" |
@@ -64,7 +64,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | strips b= with FWS around the equals sign | › "strips b= with FWS around the equals sign" |
 | fails a seal whose a= does not match the key type | › "fails a seal whose a= does not match the key type" |
 | applies a key record h=, s=, v= to ARC keys | › "applies the key record h=, s= and v= to ARC keys", and "applies the key record to an ARC-Seal whose key differs from the AMS key" for the seal's own key |
-| ignores c=relaxed, c=relaxed/relaxed, c=simple on an ARC-Seal | › "ignores c=relaxed on an ARC-Seal" and the others. mailauth also checks the seal isn't reported as a DKIM signature; `Arc.verify` reports no DKIM results. |
+| ignores c=relaxed, c=relaxed/relaxed, c=simple on an ARC-Seal | › "ignores c=relaxed on an ARC-Seal" and the others. mailauth also checks the seal isn't reported as a DKIM signature, and `Arc.verify` reports no DKIM results. |
 | d= that is not a host name, 6 separators × 3 placements, without a key query | › "fails d=one.example/x.attacker.test in the ARC-Seal and the AMS without a key query" and the other 17 |
 | fails an older ARC-Seal with such a d= | › "fails an older ARC-Seal with such a d=" |
 | accepts a U-label d= | › "accepts a U-label d= and looks up its A-label" |

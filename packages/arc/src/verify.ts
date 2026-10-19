@@ -120,9 +120,9 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
 
 /**
  * Validates the ARC chain of a message (RFC 8617 section 5.2) and resolves to `pass`, `fail` or
- * `none`. Every set's structure, the newest ARC-Message-Signature and every ARC-Seal are checked,
- * with the RFC 6376 tag syntax, RFC 8301 algorithms and Ed25519 seals (RFC 8463). The body is read
- * once and the keys are looked up while it is read.
+ * `none`. It checks every set's structure, the newest ARC-Message-Signature and every ARC-Seal,
+ * with the RFC 6376 tag syntax, RFC 8301 algorithms and Ed25519 seals (RFC 8463). The body is
+ * read once, and the keys are looked up while it is read.
  *
  * The promise rejects only for invalid options, a failing message stream or an aborted `signal`.
  *

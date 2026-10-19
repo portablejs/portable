@@ -37,7 +37,9 @@ export type Addresses = string | Mailbox | readonly (string | Mailbox)[]
 export type Envelope = {
   /** The first `From` address, or the first `Sender` address when there is no `From`. */
   from: string | undefined
-  /** Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups. */
+  /**
+   * Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups.
+   */
   to: string[]
 }
 
@@ -88,8 +90,9 @@ function normalizeAddress(address: string): string {
 }
 
 /**
- * The URL host parser applies UTS #46, as browsers and `node:url` do, but it also cuts a host at
- * `/`, `?` or `#` and percent-decodes, so a domain holding one of those stays as written.
+ * The URL host parser applies UTS #46, as browsers and `node:url` do. It also cuts a host at `/`,
+ * `?` or `#` and percent-decodes it, so `toAscii` checks for those characters first and returns
+ * the domain unchanged if it finds one.
  */
 function toAscii(domain: string): string {
   if (/[\s/\\?#%@:[\]]/.test(domain)) return domain
@@ -114,7 +117,7 @@ export function format(
     .join(', ')
 }
 
-/** Q keeps mostly Latin text readable; B is shorter for everything else. */
+/** Q keeps mostly Latin text readable, and B is shorter for everything else. */
 export function wordEncoding(text: string): MimeHeaders.Encoding {
   let latin = 0
   let other = 0

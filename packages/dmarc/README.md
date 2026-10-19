@@ -41,9 +41,9 @@ In Node, `node:dns/promises` works as the resolver.
 | `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
 | `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
 
-A resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` means no records. Any other rejection is a DNS error, which gives `temperror` unless the message passes anyway.
+`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as no records, and any other rejection as a DNS error, which gives `temperror` unless the message passes anyway.
 
-`resolve4` and `resolveCname` are called only to find out whether a subdomain exists, when the record that applies has an `np` tag. A name exists unless the `A` query gives `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
+`resolve4` and `resolveCname` are called only when the record that applies has an `np` tag, to find out whether a subdomain exists. A name exists unless the `A` query gives `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
 
 ## Result
 
@@ -65,9 +65,9 @@ A resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` means no r
 
 ## Organizational domains
 
-RFC 9989 replaces the public suffix list with a DNS tree walk. It queries `_dmarc` records from the domain up to the top-level domain, at most 8 queries, and the record with the fewest labels marks the organizational domain, unless a record says otherwise with `psd=n` or `psd=y`. A domain owner can publish `psd=n` to make a subdomain its own organization, and a public suffix operator can publish `psd=y` with a policy for names registered below it.
+RFC 9989 replaces the public suffix list with a DNS tree walk. It queries `_dmarc` records from the domain up to the top-level domain, at most 8 queries, and the domain of the record with the fewest labels is the organizational domain, unless a record says otherwise with `psd=n` or `psd=y`. A domain owner can publish `psd=n` to make a subdomain its own organization, and a public suffix operator can publish `psd=y` with a policy for names registered below it.
 
-The check walks only when it needs to: to find the policy when the From domain has no record, and to check relaxed alignment for an identifier that isn't the From domain. Each name is queried once per check. An identifier outside the From domain's organizational domain can't align and isn't walked, and at most 10 identifiers are walked per message. An identifier past that limit counts as unknown, which gives `temperror` if nothing else aligns.
+The check walks only in two cases: to find the policy when the From domain has no record, and to check relaxed alignment for an identifier that isn't the From domain. Each name is queried once per check. An identifier outside the From domain's organizational domain can't align and isn't walked, and at most 10 identifiers are walked per message. An identifier past that limit counts as unknown, which gives `temperror` if nothing else aligns.
 
 Pass `organizationalDomain` to use a public suffix list instead:
 
@@ -89,9 +89,9 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth's DMARC code imports `node:dns` and `node:net`, so it can't run in Workers or a browser.
-- It follows RFC 9989 and RFC 6376's tag-list rules without a mode switch. mailauth's default mode accepts whitespace before `v=DMARC1`, lets the last of duplicate tags win and case-folds tag names, and RFC behavior needs `strict: true`. The results match mailauth's strict mode on 400 random zones.
+- It follows RFC 9989 and RFC 6376's tag-list rules without a mode switch. mailauth's default mode accepts whitespace before `v=DMARC1`, uses the last of duplicate tags and case-folds tag names, and mailauth follows the RFCs only with `strict: true`. The results match mailauth's strict mode on 400 random zones.
 - It reports the alignment of each DKIM signature, not only the first that aligned, and gives the disposition directly.
-- It makes fewer DNS queries. mailauth walks above the From domain on every message, and asks whether the domain exists whenever the record has `np`. Here the walk runs only for a relaxed alignment check of a different domain, and the existence query only when `np` would change the policy.
+- It makes fewer DNS queries. mailauth walks above the From domain on every message, and asks whether the domain exists whenever the record has `np`. `check` walks only for a relaxed alignment check of a different domain, and asks whether the domain exists only when `np` would change the policy.
 - It has no dependencies of its own, and `@portable/dns` and `@portable/spf` are imported for types only.
 - It is about as fast. On a subdomain with an inherited record, relaxed alignment and three identifiers, it runs 18,700 checks a second in Node against 15,900 for mailauth's strict mode, with an in-memory resolver.
 

@@ -36,7 +36,7 @@ import {
   type Writer,
 } from './wire.js'
 
-/** Header flags. Each is one bit of the header; a missing flag is clear. */
+/** Header flags. Each is one bit of the header, and a missing flag is clear. */
 export type Flags = {
   /** AA: the answer comes from a server authoritative for the name. */
   aa?: boolean | undefined
@@ -226,7 +226,10 @@ export declare namespace encode {
      * @default false
      */
     compress?: boolean | undefined
-    /** `'tcp'` adds the 2-byte length prefix used over TCP and TLS (RFC 1035 section 4.2.2). @default 'none' */
+    /**
+     * `'tcp'` adds the 2-byte length prefix used over TCP and TLS (RFC 1035 section 4.2.2).
+     * @default 'none'
+     */
     framing?: 'none' | 'tcp' | undefined
   }
 }

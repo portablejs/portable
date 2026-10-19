@@ -4,7 +4,7 @@ import { parseAddresses, type Address } from '@portable/mime-headers'
 // Ported from nodemailer 10.1.7 test/addressparser/addressparser-test.ts, the current home of
 // addressparser. addressparser(input) is parseAddresses(input) here, and { flatten: true } is the
 // same option. Where this package reads malformed input differently, the test asserts our result
-// and its comment says why; PARITY.md lists those cases.
+// and its comment says why. PARITY.md lists those cases.
 
 const parse = (input: string) => parseAddresses(input)
 const flat = (input: string) => parseAddresses(input, { flatten: true })
@@ -261,7 +261,7 @@ describe('addressparser', () => {
 
   test('a quoted display name with "@" is not made an address either', () => {
     // addressparser moves it into the address as '"victim@good.com, attacker"@evil.com' when the
-    // angle brackets are empty. A display name never names the mailbox here.
+    // angle brackets are empty. This package never takes the address from a display name.
     expect(parse('"victim@good.com, attacker@evil.com" <(x)>')).toEqual([
       { address: '', name: 'victim@good.com, attacker@evil.com' },
     ])
@@ -758,7 +758,7 @@ describe('comments inside an angle address', () => {
 
   test('a quoted local part keeps its quotes only when it needs them', () => {
     // addressparser keeps '"user"' as written inside angle brackets and drops the quotes outside.
-    // Both spellings name the same mailbox, so this package drops them in both places.
+    // Both spellings refer to the same mailbox, so this package drops them in both places.
     expect(first('A <"user"@good-corp.com(x)evil.com>').address).toBe('user@good-corp.com')
     expect(first('A <"a b"@good-corp.com(x)evil.com>').address).toBe('"a b"@good-corp.com')
   })

@@ -32,7 +32,7 @@ await Spf.check({ ip, sender, helo }, { resolver: dns })
 
 | Field | Description |
 | --- | --- |
-| `ip` | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. A string that isn't an IP address throws a `RangeError`, and a value that isn't a string a `TypeError`. |
+| `ip` | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. `check` rejects with a `RangeError` for a string that isn't an IP address, and with a `TypeError` for a value that isn't a string. |
 | `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4). |
 | `helo` | The HELO or EHLO name, used for `%{h}` and for an empty sender. |
 
@@ -48,7 +48,7 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 
 There is no default resolver. The one you pass decides which servers see the client's IP address (`exists:%{i}...` sends it in queries), and a mail server usually has its own. Pass `Dns.createResolver()` for DNS-over-HTTPS.
 
-A resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` is an empty answer, so an `a`, `mx` or `exists` term doesn't match and an `include` gives `permerror`. Any other rejection is `temperror`.
+`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as an empty answer, so an `a`, `mx` or `exists` term doesn't match and an `include` gives `permerror`. It treats any other rejection as `temperror`.
 
 ## Result
 
@@ -142,6 +142,6 @@ These results differ from mailauth's default mode on purpose, and match its stri
 
 They differ from both modes:
 
-- An invalid `ip` throws a `RangeError`. mailauth returns `temperror`.
+- `check` rejects with a `RangeError` for an invalid `ip`. mailauth returns `temperror`.
 - A resolver answer of `[]` is a void lookup, as RFC 7208 defines one. mailauth counts only `ENOTFOUND` and `ENODATA` rejections.
-- A name the resolver rejects with `EBADNAME` is an empty answer. mailauth's default mode gives `permerror` for any term.
+- `check` treats an `EBADNAME` rejection from the resolver as an empty answer. mailauth's default mode gives `permerror` for any term.

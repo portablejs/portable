@@ -73,7 +73,7 @@ For a timeout, pass `signal: AbortSignal.timeout(5000)`.
 
 ### Registrar referrals
 
-gTLD registries such as Verisign and PIR return the registrar, the dates and the nameservers, and link to the registrar's own RDAP response with a `related` link. The registrar's response holds the registrant and the other contacts. With `follow` on, `Rdap.domain` fetches that response too. `entities` then holds the registrar's entities, plus any registry entity whose roles the registrar's response has none of. `status`, `events` and `nameservers` stay the registry's, because the registry is the authority for them.
+gTLD registries such as Verisign and PIR return the registrar, the dates and the nameservers, and link to the registrar's own RDAP response with a `related` link. The registrar's response holds the registrant and the other contacts. With `follow` on, `Rdap.domain` fetches that response too. `entities` then holds the registrar's entities, plus registry entities in roles the registrar has no entity for. `status`, `events` and `nameservers` stay the registry's, because the registry is the authority for them.
 
 `referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. Only links of type `application/rdap+json`, or with no type, to another URL ending in `/domain/<name>` are followed.
 
@@ -90,7 +90,7 @@ The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use 
 | `NotFoundError` | The server answered 404. `url` holds the URL. |
 | `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url` and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
 
-A rejected `fetch`, such as a network failure, is passed through unchanged. An argument of the wrong type throws a `TypeError`.
+When `fetch` rejects, such as on a network failure, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
 
 Domain names go through `URL`'s IDNA conversion, then must have at least two labels of letters, digits and hyphens, each up to 63 characters and not starting or ending with a hyphen, and at most 253 characters in total. An IPv4-mapped IPv6 address (`::ffff:192.0.2.1`) is looked up as IPv4, and IPv6 is sent in the RFC 5952 form.
 
@@ -112,7 +112,7 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 - Results are normalized: dates are `Date`s, contacts are flat objects, and the same fields come back from every registry. whois-json joins repeated keys into one space-separated string, such as all nameservers in `nameServer`.
 - Registrar referrals are followed, as whoiser does for WHOIS. node-rdap returns only the registry's response, which for `.com` holds no contacts.
 - Unicode domain names are sent in A-labels. node-rdap converts only the TLD, so `münchen.com` is sent as `domain/münchen.com`.
-- IP addresses are routed by the longest matching prefix, as RFC 9224 requires. node-rdap takes the first match.
+- `Rdap.ip` picks the server by the longest matching prefix, as RFC 9224 requires. node-rdap takes the first match.
 - The `https` URL of a bootstrap service is used even when `http` is listed first. node-rdap takes the first URL.
 - Every lookup takes a `signal`, and the `fetch` and cache are per call. node-rdap sets the timeout and cache lifetime for the whole process with `configure`.
 - Prefixes (`8.8.8.0/24`) and IPv4-mapped IPv6 addresses can be looked up. node-rdap rejects the first and finds no server for the second.

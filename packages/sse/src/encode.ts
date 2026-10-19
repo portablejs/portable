@@ -4,7 +4,10 @@ import { errorOnAbort } from './signal.js'
 export type Message = {
   /** Event type. Must not contain CR or LF. */
   event?: string | undefined
-  /** Event data. Line breaks become separate `data` lines. Without `data`, no event is dispatched. */
+  /**
+   * Event data. Line breaks become separate `data` lines. Without `data`, no event is
+   * dispatched.
+   */
   data?: string | undefined
   /** Event ID, which the client sends back as `Last-Event-ID`. Must not contain CR, LF or NUL. */
   id?: string | undefined

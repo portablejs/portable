@@ -58,7 +58,7 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | Option | Default | Description |
 | --- | --- | --- |
 | `scheme` | `Webhooks.standard` | `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github`, `Webhooks.slack`, or a scheme you write. |
-| `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets; `verify` accepts a signature from any of them, and `sign` takes one. |
+| `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one. |
 | `tolerance` | `300` | `verify` only. Largest difference between the signed timestamp and `now`, in seconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
 | `now` | `new Date()` | `verify` only. The time to compare the signed timestamp with. |
 | `timestamp` | `new Date()` | `sign` only. The time to sign. |
@@ -144,7 +144,7 @@ const { body } = await Webhooks.verify(request, {
 
 ## Why use this over the provider libraries
 
-One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object, with `crypto.subtle` and no dependency for the HMAC, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in any JavaScript runtime.
+One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object. It computes the HMAC with `crypto.subtle` and no dependency, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in any JavaScript runtime.
 
 - The HMAC covers the body bytes as received. Stripe and standardwebhooks decode the body as UTF-8 and encode it again, so a body with a byte order mark or invalid UTF-8 fails verification.
 - The timestamp tolerance applies in both directions, and `tolerance: 0` allows no skew. Stripe and Slack accept a timestamp any distance in the future, and Stripe's `tolerance: 0` turns the check off.
@@ -202,4 +202,4 @@ These behaviors differ from upstream:
 - A timestamp must be an integer number of seconds. standardwebhooks and Stripe read `123abc` as `123` with `parseInt`.
 - GitHub signatures need the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a signature without the prefix, skips characters that aren't hex, and throws a `TypeError` when it finds no hex at all.
 - Stripe and standardwebhooks parse JSON for you. `verify` returns the text, because Slack and GitHub can send form-encoded bodies.
-- Stripe's thin events (`v2.core.event`) are not rejected; `verify` doesn't look inside the body.
+- `verify` doesn't reject Stripe's thin events (`v2.core.event`), because it doesn't look inside the body.

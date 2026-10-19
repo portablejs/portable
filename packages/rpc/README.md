@@ -143,7 +143,7 @@ A `MessagePort`, `Worker`, `BroadcastChannel`, or `self` inside a worker. Messag
 Rpc.connect<Api>(Rpc.port(worker), { codec: { encode: (m) => m, decode: (m) => m } })
 ```
 
-A `BroadcastChannel` connects only two peers. With more, every peer would receive every answer. It also doesn't buffer, so a call posted before the other side has opened its channel is lost; pass a `signal` to such calls.
+A `BroadcastChannel` connects only two peers. With more, every peer would receive every answer. It also doesn't buffer, so a call posted before the other side has opened its channel is lost. Pass a `signal` to such calls.
 
 ### `Rpc.window(target, { origin, channel, signal })`
 
@@ -172,7 +172,7 @@ const rpc = Rpc.handler(api)
 export default { fetch: (request: Request) => rpc(request) }
 ```
 
-`Rpc.http` is the client. Calls made in the same tick go out as one batch request.
+`Rpc.http` is the client. Calls made in the same tick are sent as one batch request.
 
 ```ts
 const api = Rpc.http<Api>('https://example.com/rpc', {
@@ -180,11 +180,11 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 })
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. Notifications alone get `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request that holds only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as a `readable`/`writable` pair of strings, such as the one `@portable/websocket` returns, is a transport as is. Without that package, a few lines wrap a socket:
+A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one `@portable/websocket` returns, is a transport as is. Without that package, a few lines wrap a socket:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc')
@@ -225,7 +225,7 @@ Every message is a JSON-RPC 2.0 request, notification or response, or a batch of
 | `$/stream/credit` | client | `{ id, credit }`: the server may send `credit` more values. |
 | `$/cancel` | client | `{ id }`: stop request `id`. The server aborts the method's signal and answers `-32800`. |
 
-A codec turns messages into what the transport carries. `Rpc.json` writes JSON text and reads text or UTF-8 bytes. A binary codec plugs in the same way:
+A codec turns messages into what the transport carries. `Rpc.json` writes JSON text and reads text or UTF-8 bytes. Pass a binary codec the same way:
 
 ```ts
 import * as cbor from 'cborg'
@@ -291,11 +291,11 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 | comlink `Comlink.expose(api, port)` | `Rpc.serve(api, Rpc.port(port))` |
 | comlink `Comlink.wrap<Api>(port)` | `Rpc.connect<Api>(Rpc.port(port))` |
 | comlink `Comlink.proxy(callback)` | `connect(transport, { serve })` on the other side, or return a stream |
-| comlink `Comlink.transfer(value, [buffer])` | Not supported; the identity codec structured-clones without transfer. |
+| comlink `Comlink.transfer(value, [buffer])` | Not supported. The identity codec structured-clones without transfer. |
 | penpal `connect({ messenger: new WindowMessenger({ remoteWindow, allowedOrigins: [origin] }), methods })` | `Rpc.connect<Api>(Rpc.window(remoteWindow, { origin }), { serve: methods })` |
 | penpal `timeout: 5000` | `signal: AbortSignal.timeout(5000)` |
 | penpal `connection.destroy()` | Abort the `signal` passed to `connect`. |
-| post-me `ParentHandshake(messenger)` | `Rpc.connect(Rpc.window(...))`; the handshake runs inside the transport. |
+| post-me `ParentHandshake(messenger)` | `Rpc.connect(Rpc.window(...))`. The handshake runs inside the transport. |
 | birpc `createBirpc(functions, { post, on })` | `Rpc.connect<Remote>(transport, { serve: functions })` |
 | birpc `eventNames: ['bump']`, `rpc.bump.asEvent()` | `Rpc.notify(remote.bump, [])` |
 | birpc `$call('name', ...args)` | `Rpc.call(remote.name, args)` |
@@ -312,6 +312,6 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 Behavior that differs:
 
 - Errors a method throws are sent with code `-32603`. json-rpc-2.0 uses `0`, and birpc and penpal send the error's name and stack too.
-- A method's result must survive the codec. With `Rpc.json`, a `Date` arrives as a string and `undefined` as `null`. comlink, penpal, post-me and birpc structured-clone by default; pass the identity codec over a port for the same behavior.
+- The codec must be able to encode a method's result. With `Rpc.json`, a `Date` arrives as a string and `undefined` as `null`. comlink, penpal, post-me and birpc structured-clone by default. Pass the identity codec over a port for the same behavior.
 - There are no middleware hooks (json-rpc-2.0's `applyMiddleware`, birpc's `onRequest` and `resolver`). Wrap the methods, the `fetch` passed to `Rpc.http`, or the transport instead.
 - `Rpc.window` takes one origin string. penpal also accepts a list of origins and regular expressions.

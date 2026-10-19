@@ -60,8 +60,9 @@ const pkcs1ToPkcs8 = (der: Uint8Array): Uint8Array<ArrayBuffer> =>
   new Uint8Array(sequence([0x02, 0x01, 0x00], rsaAlgorithmId, tlv(0x04, der)))
 
 /**
- * Imports the `p=` key of a DNS key record. RSA keys are a SubjectPublicKeyInfo or a bare
- * RSAPublicKey (RFC 6376 section 3.6.1), Ed25519 keys the 32 raw bytes (RFC 8463 section 4.2).
+ * Imports the `p=` key of a DNS key record. An RSA key is a SubjectPublicKeyInfo or a bare
+ * RSAPublicKey (RFC 6376 section 3.6.1), and an Ed25519 key is the 32 raw bytes (RFC 8463
+ * section 4.2).
  */
 export function importPublicKey(type: KeyType, der: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   if (type === 'ed25519') {

@@ -43,7 +43,7 @@ Deno's `Deno.upgradeWebSocket(request).socket` works the same way. Bun's `Server
 
 ## `connect(url, options)`
 
-Returns `{ readable, writable }`. `readable` is a `ReadableStream<string | Uint8Array>`: text messages are strings and binary messages are `Uint8Array`. `writable` takes the same types. `url` is a string, a `URL`, or a function that returns one (or a promise of one), called before every attempt so it can fetch a fresh token.
+Returns `{ readable, writable }`. `readable` is a `ReadableStream<string | Uint8Array>`: text messages are strings and binary messages are `Uint8Array`. `writable` takes the same types. `url` is a string, a `URL`, or a function that returns one (or a promise of one). `connect` calls the function before every attempt, so it can fetch a fresh token.
 
 The first attempt starts at once. When a connection drops or an attempt fails, `connect` waits `delay` and tries again.
 
@@ -83,7 +83,7 @@ A WebSocket has no acknowledgements. When a connection drops, messages the serve
 
 Writes wait while `bufferedAmount` is above `highWaterMark`. `connect` checks it again after 1 ms, then backs off to every 32 ms.
 
-A WebSocket can't be paused for reading in a browser: messages arrive whether or not anyone reads them, and `readable` queues them. `maxBuffered` sets a limit, so a reader that falls behind gets a `MaxBufferedError` instead of the tab running out of memory.
+A browser can't pause reading from a WebSocket: messages arrive whether or not anyone reads them, and `readable` queues them. `maxBuffered` sets a limit, so a reader that falls behind gets a `MaxBufferedError` instead of the tab running out of memory.
 
 ## `fromSocket(socket, options)`
 
@@ -93,7 +93,7 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 | Error | When |
 | --- | --- |
-| `WebSockets.CloseError` | The connection closed for good. `code` and `reason` hold the close event's values. |
+| `WebSockets.CloseError` | The connection closed permanently. `code` and `reason` hold the close event's values. |
 | `WebSockets.MaxBufferedError` | Received messages exceeded `maxBuffered`, stored in `maxBuffered`. |
 | `TimeoutError` (`DOMException`) | An attempt or a heartbeat reply took too long, once `retries` is used up. |
 | `TypeError` | No `WebSocket` class was found. |
@@ -111,14 +111,14 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 ## Why use this over reconnecting-websocket, partysocket and websocket-ts
 
-All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as `@portable/jsonl`'s `DecoderStream`, and writes wait instead of piling up.
+All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as `@portable/jsonl`'s `DecoderStream`, and writes wait instead of queuing without a limit.
 
 - Writes made while disconnected wait for `open`, so authentication or a resubscribe always comes first. reconnecting-websocket and partysocket send their queue in the `open` event, before your handler runs.
 - The queue is bounded and applies backpressure. reconnecting-websocket and partysocket queue without a limit by default and drop messages past `maxEnqueuedMessages`. websocket-ts drops them without a buffer.
 - Writes wait while `bufferedAmount` is high. None of the three look at it.
 - `heartbeat` replaces a connection that stopped answering. reconnecting-websocket has no heartbeat ([#98](https://github.com/pladaria/reconnecting-websocket/issues/98)), so a silently dropped connection stays open until the operating system notices.
 - Close codes such as 1008 are final by default, so a client the server rejected doesn't reconnect in a loop.
-- A URL function that throws counts as a failed attempt. websocket-ts stopped reconnecting for good.
+- A URL function that throws counts as a failed attempt. websocket-ts stopped reconnecting permanently.
 - Closing a `ws` client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
 - Throughput matches reconnecting-websocket. Echoing 1000 messages of 100 bytes through a local server took 46 ms on average with `connect`, 44 ms with reconnecting-websocket and 34 ms with a bare `WebSocket` on Node 24, on a machine busy enough that runs varied by ±15%. A server echoing through `fromSocket` took 50 ms against 60 ms with `ws` listeners.
 
@@ -154,10 +154,10 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `maxRetries: n` | `retries: n` |
 | `minReconnectionDelay`, `maxReconnectionDelay`, `reconnectionDelayGrowFactor` | `delay: { initial, max, factor }` |
 | `connectionTimeout` | `timeout` |
-| `maxEnqueuedMessages` | `maxQueued`; writes past it wait instead of being dropped. |
+| `maxEnqueuedMessages` | `maxQueued`. Writes past it wait instead of being dropped. |
 | `startClosed: true` | Call `connect` when you want the connection. |
 | `shouldReconnectOnClose` (partysocket) | `reconnectIf` |
-| `binaryType = 'arraybuffer'` | Always; binary messages arrive as `Uint8Array`. |
+| `binaryType = 'arraybuffer'` | Always. Binary messages arrive as `Uint8Array`. |
 | `new PartySocket({ host, room })` | `connect(\`wss://${host}/parties/main/${room}\`)` |
 | websocket-ts `ExponentialBackoff(base, maxExponent)` | `delay: { initial: base, max: base * 2 ** maxExponent, jitter: false }` |
 | websocket-ts `ConstantBackoff(ms)` / `LinearBackoff(initial, increment, max)` | `delay: ms` / `delay: (n) => Math.min(max, initial + (n - 1) * increment)` |

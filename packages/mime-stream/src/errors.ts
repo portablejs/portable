@@ -1,6 +1,6 @@
 /**
- * Thrown when a header block grows past `maxHeaderBytes`. The block is counted with the empty line
- * that ends it.
+ * Thrown when a header block grows past `maxHeaderBytes`. The count includes the empty line that
+ * ends the block.
  *
  * @example
  * ```ts
@@ -24,8 +24,8 @@ export class MaxHeaderBytesError extends Error {
 }
 
 /**
- * Thrown when a line that matches a boundary grows past `maxBoundaryLineBytes`, which only happens
- * when the boundary is followed by that much whitespace.
+ * Thrown when a line that matches a boundary grows past `maxBoundaryLineBytes`, which happens only
+ * when that much whitespace follows the boundary.
  *
  * @example
  * ```ts

@@ -36,7 +36,7 @@ export declare namespace create {
     limit: number
     /** Length of the period in milliseconds. */
     period: number
-    /** Requests allowed at once after a quiet spell. @default limit */
+    /** Requests allowed at once after an idle period. @default limit */
     burst?: number | undefined
     /** Where the limiter keeps one number per key. @default RateLimit.memoryStore() */
     store?: Store | undefined

@@ -20,7 +20,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 
 ## `DecoderStream`
 
-A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built; the rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace.
+A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedE
 
 ## `encodeStream`
 
-Returns a `ReadableStream<string>` with the JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output stops at each unresolved value until it is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
+Returns a `ReadableStream<string>` with the JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
 
 ```ts
 const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() })

@@ -1,4 +1,7 @@
-/** Each byte as one character (U+0000 to U+00FF), so header bytes survive string handling. */
+/**
+ * Converts each byte to one character (U+0000 to U+00FF), so string handling keeps every header
+ * byte unchanged.
+ */
 export function toBinary(bytes: Uint8Array): string {
   const parts: string[] = []
   for (let i = 0; i < bytes.length; i += 8192)

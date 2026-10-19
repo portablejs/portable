@@ -11,7 +11,7 @@ const decodeBytes = (input: string) => String.fromCharCode(...decode(input))
 
 describe('encode()', () => {
   test('equals sign', () => {
-    // quoted-printable breaks at exactly 75 characters; libqp, and so this package, prefers the
+    // quoted-printable breaks at exactly 75 characters. libqp, and so this package, prefers the
     // last space in the final third of the line.
     expect(
       encode(

@@ -20,8 +20,8 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | doubledot2.js | P `JSONStream > emits every value named "value" below docs, inner matches first` | |
 | empty.js | P `JSONStream > emits nothing for an empty array and each element of a full one` | |
 | error_contents.js | P `JSONStream > emits only the other paths when the selected key is missing` | JSONStream's `header` event becomes extra paths. |
-| fn.js | P `JSONStream > emits each row of a large document` | A function that accepts numeric keys is `[*]`. Function filters aren't supported; filter the output stream instead. |
-| gen.js | skipped | Disabled upstream (`return` on line 1). It checks memory on a 100,000-row file; P `stream-json > parses a document nested 100,000 levels deep` and the benchmark parse large input. |
+| fn.js | P `JSONStream > emits each row of a large document` | A function that accepts numeric keys is `[*]`. Function filters aren't supported. Filter the output stream instead. |
+| gen.js | skipped | Disabled upstream (`return` on line 1). It checks memory on a 100,000-row file. P `stream-json > parses a document nested 100,000 levels deep` and the benchmark parse large input. |
 | header_footer.js | P `JSONStream > emits the values around a selected array when their paths are given` | `header` and `footer` events become extra paths, emitted in document order. |
 | issues.js #66 | P `JSONStream > fails on malformed input` | |
 | issues.js #81 | P `JSONStream > parses a nested key without error` | |
@@ -32,10 +32,10 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | map.js map function, filter function | skipped | No mapper. Pipe the output through a `TransformStream` or `Streams.map` and `Streams.filter`. |
 | multiple_objects.js | P `JSONStream > parses several documents written back to back` | |
 | multiple_objects_error.js | P `JSONStream > fails on a document with an extra closing brace` | |
-| null.js | P `JSONStream > emits null values` | Deliberate difference: JSONStream drops null matches, we emit them. |
+| null.js | P `JSONStream > emits null values` | Deliberate difference: JSONStream drops null matches, but `DecoderStream` emits them. |
 | parsejson.js | P `JSONStream > keeps numbers exact` | Tests jsonparse's number parsing. |
 | run.js | skipped | Test runner, not a test. |
-| stringify.js, stringify_object.js, two-ways.js | E `json-stream-stringify > writes a stream as an array`, P `JSONStream > reads back what encodeStream writes` | `JSONStream.stringify()` is `encodeStream(stream)`. `stringifyObject` has no equivalent; build an object whose values are promises or streams. |
+| stringify.js, stringify_object.js, two-ways.js | E `json-stream-stringify > writes a stream as an array`, P `JSONStream > reads back what encodeStream writes` | `JSONStream.stringify()` is `encodeStream(stream)`. `stringifyObject` has no equivalent. Build an object whose values are promises or streams. |
 | test.js | P `JSONStream > emits each row of a large document` | `/\d+/` is `[*]`. |
 | test2.js | P `JSONStream > emits the whole document for the root path` | |
 
@@ -44,7 +44,7 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | null, Infinity, date, true, Symbol, 1, `"\n"`, `"漢字"`, `{}`, `/regex/gi`, `{undefined:null}`, `{"":null}`, `{a:undefined}`, `{a:null}`, `{a:1,b:undefined}`, `{a:1,b:Promise(undefined)}`, `{a:date}`, `({a:1,b:{c:2}})`, `{a:[1], "b": 2}`, `[]`, `[[[]],[[]]]`, `[1, undefined, 2]`, `[1, , 2]`, `[1,'a']`, `Promise(1)`, `Promise(Promise(1))`, `{a:Promise(1)}` | E `json-stream-stringify > writes … as JSON.stringify does` (one test each) | |
-| `{a:0n}` should be `{"a":0}` | E `stream-json > fails on a BigInt, as JSON.stringify does` | Deliberate difference: we follow `JSON.stringify` and fail. Add `BigInt.prototype.toJSON` or a replacer to write them. |
+| `{a:0n}` should be `{"a":0}` | E `stream-json > fails on a BigInt, as JSON.stringify does` | Deliberate difference: `encodeStream` follows `JSON.stringify` and fails. Add `BigInt.prototype.toJSON` or a replacer to write them. |
 | 1 should be 2 (replacer), `{a:undefined}` should be `{"a":1}`, `{a:1, b:2}` should be `{"a":1}` | E `json-stream-stringify > calls a replacer function` | |
 | `{a:1,b:2}` should be `{"b":2}` | E `json-stream-stringify > writes only the keys in a replacer array` | |
 | `{a:1}` should be `{"a":1}` | E `json-stream-stringify > writes … nested objects as JSON.stringify does` | |
@@ -63,23 +63,23 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | cyclic structure (5 tests) | skipped | The `cycle` option writes Crockford `$ref` objects. Few callers use it, and the output needs a matching decoder. |
 | circular structure (3 tests) | E `json-stream-stringify > fails on a circular object`, `… behind promises`, `… inside a stream` | |
 | decycle should not be active | E `json-stream-stringify > writes a repeated, non-circular reference each time` | |
-| bad reader | E `json-stream-stringify > reads a stream only as fast as the output is read` | Tests Node `_read` being called out of turn; web streams call `pull` once at a time. |
+| bad reader | E `json-stream-stringify > reads a stream only as fast as the output is read` | Tests Node `_read` being called out of turn. Web streams don't call `pull` again until the previous call finishes. |
 | prePush | skipped | Tests a private buffer field. |
 
 ## @worker-tools/json-stream
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| index.test.ts transform streams, stringify | skipped | Check that exports exist; every other test uses them. |
+| index.test.ts transform streams, stringify | skipped | These check that exports exist, and every other test uses them. |
 | json-parse-stream exists, ctor | P `@worker-tools/json-stream > emits each element read one at a time` | |
-| simple, simple reader read | P `@worker-tools/json-stream > emits each element read one at a time` | Default path there is `$.*`; ours is `$`, so the test passes `$[*]`. |
+| simple, simple reader read | P `@worker-tools/json-stream > emits each element read one at a time` | The default path there is `$.*` and ours is `$`, so the test passes `$[*]`. |
 | read all | P `@worker-tools/json-stream > emits every value with $..*, children before parents` | |
-| promise value I–IV, read only until first value (eager, lazy, lazy II), lazy promise map, lazy promise map x2, two streams, two generators, boxy selector, from file/fetch, promise/streams/iterations throws without data source, stream remains open when only promises left | skipped | `JSONParseNexus` fans one input out to several lazy consumers. Use one `DecoderStream` with several `paths` and route matches by `path`. |
+| promise value I–IV, read only until first value (eager, lazy, lazy II), lazy promise map, lazy promise map x2, two streams, two generators, boxy selector, from file/fetch, promise/streams/iterations throws without data source, stream remains open when only promises left | skipped | `JSONParseNexus` passes one input to several lazy consumers. Use one `DecoderStream` with several `paths` and route matches by `path`. |
 | json-fetch.test.ts (9 tests) | E `@worker-tools/json-stream > produces a Response body any JSON parser can read`, P `@worker-tools/json-stream > reads a body built by encodeStream` | `JSONStreamRequest`/`JSONStreamResponse` are `new Response(encodeStream(value).pipeThrough(new TextEncoderStream()))`. "GET with body throws" tests `Request`, not JSON. |
 | json-path.test.ts exists | skipped | Export check. |
 | json-path `*` | P `stream-json > picks values at a given depth` | |
 | json-path `..`, `.. with follow-up` | P `@worker-tools/json-stream > matches .. at any depth and only at the named key` | |
-| json-path selection, selection num, range | P `@worker-tools/json-stream > selects array elements by index`, `selects quoted names` | Unions `[a,b]` and slices `[0:2]` aren't supported; pass one path per member or index. |
+| json-path selection, selection num, range | P `@worker-tools/json-stream > selects array elements by index`, `selects quoted names` | Unions `[a,b]` and slices `[0:2]` aren't supported. Pass one path per member or index. |
 | json-stringify exists | skipped | Export check. |
 | json-stringify simple, with promise, with generator | E `@worker-tools/json-stream > writes plain values as JSON.stringify does`, `writes promises and async generators` | |
 | circular throws | E `@worker-tools/json-stream > fails on a circular object` | |
@@ -87,12 +87,12 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | promises that resolve to undefined are omitted | E `json-stream-stringify > writes a promise of undefined as JSON.stringify does` | |
 | undefined values in generators become null | E `@worker-tools/json-stream > writes undefined from an async generator as null` | |
 | undefined toJSON result | E `@worker-tools/json-stream > omits a property whose toJSON returns undefined` | |
-| playground stringify stream, roundtrip | E `json-stream-stringify > writes a stream as an array`, P `@worker-tools/json-stream > reads a body built by encodeStream` | `JSONStringifyStream` writes a JSON array; that is `encodeStream(stream)`. |
+| playground stringify stream, roundtrip | E `json-stream-stringify > writes a stream as an array`, P `@worker-tools/json-stream > reads a body built by encodeStream` | `JSONStringifyStream` writes a JSON array, as `encodeStream(stream)` does. |
 | playground Retrieving multiple values and collections | P `JSONStream > emits the values around a selected array when their paths are given` | |
 
 ## stream-json
 
-stream-json is a toolkit built around a token stream: a parser emits tokens, and filters, streamers and assemblers turn them into values. We have no token stream, so tests of tokens, filters that rewrite a document, and Node-only plumbing don't apply. `tests/web/*` repeat the `tests/node/*` cases through web stream wrappers, with "(web)" in the name; each maps to the row of the same node test. `tests/web/test-web.js` (3 tests) checks that the web subpath exports wrappers; there is nothing to map.
+stream-json is a toolkit built around a token stream: a parser emits tokens, and filters, streamers and assemblers turn them into values. This package has no token stream, so tests of tokens, filters that rewrite a document, and Node-only plumbing don't apply. `tests/web/*` repeat the `tests/node/*` cases through web stream wrappers, with "(web)" in the name, and each maps to the row of the same node test. `tests/web/test-web.js` (3 tests) checks that the web subpath exports wrappers, so there is nothing to map.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -107,8 +107,8 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | parser: empty stream | P `stream-json > emits nothing for empty input` | |
 | parser: issue #167 zero byte, newline, tab | P `stream-json > fails on … inside a string` | |
 | parser: jsonStreaming adjacent number then array, object, string, true | P `stream-json > parses values that touch without whitespace` | |
-| verifier: valid array, with newlines, with CRLF, valid jsonStreaming, exponent followed by EOF | P `stream-json > roundtrips`, `parses 5 documents separated by "\n"`, `parses a number with an exponent at the end of input` | There is no separate verifier; the parser fails on invalid input. |
-| verifier: error position (3 tests) | P `stream-json > fails on a missing comma`, `DecoderStream > gives the offset of a bad character outside the selected values` | We report a character offset, not line and column. |
+| verifier: valid array, with newlines, with CRLF, valid jsonStreaming, exponent followed by EOF | P `stream-json > roundtrips`, `parses 5 documents separated by "\n"`, `parses a number with an exponent at the end of input` | There is no separate verifier. The parser fails on invalid input. |
+| verifier: error position (3 tests) | P `stream-json > fails on a missing comma`, `DecoderStream > gives the offset of a bad character outside the selected values` | The error gives a character offset, not line and column. |
 | verifier: comma in jsonStreaming | P `stream-json > fails on a comma between top-level values` | |
 | verifier: mismatched bracket, infinite fail, issue #167 (3 tests) | as the parser rows above | |
 | pick: pick events, packed events, packed events no streaming | skipped | Token stream internals. |
@@ -127,7 +127,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | streamObject: fail | P `stream-json > selects nothing with an index when the value is an object` | |
 | streamValues: stream values, no streaming tokens | P `stream-json > parses 5 documents separated by " "` | |
 | streamValues: no values | P `stream-json > emits nothing for empty input` | |
-| filter (10 tests), ignore (9 tests), replace (18 tests) | skipped | These rewrite a document by dropping or replacing tokens. We select values; rewriting a document is out of scope. |
+| filter (10 tests), ignore (9 tests), replace (18 tests) | skipped | These rewrite a document by dropping or replacing tokens. This package selects values, and rewriting a document is out of scope. |
 | assembler (12 tests), flexAssembler (27 tests) | skipped | Token assembly, revivers and custom containers. `__proto__` handling is covered by P `stream-json > creates "__proto__" as an own property, as JSON.parse does`. |
 | disassembler: roundtrip | E `encodeStream > matches JSON.stringify for nested plain values with indentation` | |
 | disassembler: bad top-level values, bad values in object, bad values in array | E `json-stream-stringify > calls a function property and writes what it returns`, `writes … as JSON.stringify does` | |
@@ -140,7 +140,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | disassembler: NaN, Infinity, -Infinity (4 tests) | E `stream-json > writes NaN, Infinity and -Infinity as null` | |
 | disassembler: bigint (4 tests) | E `stream-json > fails on a BigInt, as JSON.stringify does` | Deliberate difference, as for json-stream-stringify. |
 | stringer: roundtrip, no packing, useValues | E `encodeStream > matches JSON.stringify for nested plain values with indentation` | |
-| stringer: json streaming objects, json streaming primitives, all jsonl parser and jsonl stringer tests | `@portable/jsonl` | JSON Lines. Mapped in `packages/jsonl/src/_test/PARITY.md`. |
+| stringer: json streaming objects, json streaming primitives, all jsonl parser and jsonl stringer tests | `@portable/jsonl` | JSON Lines. Mapped in `packages/jsonl/test/PARITY.md`. |
 | stringer: json streaming objects as array | E `json-stream-stringify > writes a stream as an array` | |
 | stringer: no input as array | E `stream-json > writes an empty stream as an empty array` | |
 | stringer: special symbols, control characters with useValues | E `stream-json > writes special characters as JSON.stringify does` | |
@@ -162,7 +162,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | JSONStream accepts a trailing comma; its own `couch_sample.json` fixture has one. | P `known upstream issues > fails on a trailing comma, which JSONStream accepts` |
 | JSONStream drops matches whose value is `null` (`null.js` asserts this). | P `known upstream issues > emits null matches (JSONStream drops them)` |
 | JSONStream #10, #129: numbers in exponential notation fail to parse. | P `known upstream issues > parses numbers in exponential notation (JSONStream #10)` |
-| JSONStream #32, #101: parsing a large file runs out of memory, because jsonparse keeps the parents of every match. | P `stream-json > parses a document nested 100,000 levels deep`; parents of a match are never built. |
+| JSONStream #32, #101: parsing a large file runs out of memory, because jsonparse keeps the parents of every match. | P `stream-json > parses a document nested 100,000 levels deep`. Parents of a match are never built. |
 | stream-json #63: array indexes are wrong when values aren't streamed. | P `known upstream issues > counts array indexes in skipped arrays (stream-json #63)` |
 | stream-json #104, #68, #79: invalid JSON doesn't fail, or the parser hangs. | P `known upstream issues > fails on invalid JSON in a part of the document no path selects (stream-json #104)`, `stream-json > fails on garbage in an endless stream instead of hanging` |
 | stream-json #167: raw control characters inside strings are accepted. | P `stream-json > fails on … inside a string` |

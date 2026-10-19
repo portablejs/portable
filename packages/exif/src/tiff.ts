@@ -8,7 +8,10 @@ import { gpsTagNames, tagNames } from './tags.js'
  */
 export type TagValue = string | number | readonly number[] | Uint8Array
 
-/** Tags of one IFD by name. A tag missing from the name table is keyed by its hex id, such as `'0xC4A5'`. */
+/**
+ * Tags of one IFD by name. A tag missing from the name table is keyed by its hex id, such as
+ * `'0xC4A5'`.
+ */
 export type Tags = { readonly [name: string]: TagValue }
 
 export type Ifds = {

@@ -23,7 +23,10 @@ export declare namespace DecoderStream {
     relaxColumnCount?: boolean | undefined
     /** Drop lines with no characters instead of reading each as a row with one empty field. @default true */
     skipEmpty?: boolean | undefined
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
+     * cancel the source.
+     */
     signal?: AbortSignal | undefined
   }
 }

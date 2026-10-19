@@ -7,8 +7,9 @@ import { type Directive, parseRecord, type Qualifier } from './record.js'
 
 /**
  * The DNS lookups SPF needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or a
- * plain object with these methods. Rejections with `code` `ENOTFOUND` or `ENODATA` mean an empty
- * answer, `EBADNAME` an invalid name, and any other rejection a temporary DNS error.
+ * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`,
+ * `ENODATA` or `EBADNAME` (an invalid name) as an empty answer, and any other rejection as a
+ * temporary DNS error.
  *
  * @example
  * ```ts
@@ -63,7 +64,10 @@ export declare namespace check {
   type Input = {
     /** The SMTP client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address is checked as IPv4. */
     ip: string
-    /** The MAIL FROM address. Empty or missing for a bounce, which checks the HELO name instead. */
+    /**
+     * The MAIL FROM address. Empty or missing for a bounce, and then the HELO name is checked
+     * instead.
+     */
     sender?: string | undefined
     /** The HELO or EHLO name. */
     helo?: string | undefined
@@ -123,8 +127,9 @@ const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  * Checks whether an SMTP client may send mail for a domain, as RFC 7208's `check_host()` does. It
  * reads the SPF record of the MAIL FROM domain, or of the HELO name when the sender is empty, and
  * evaluates it against the client's IP address, with the RFC's limits of 10 DNS-querying terms
- * and 2 void lookups. DNS failures give `temperror` and broken records `permerror`. The promise
- * rejects only for an `ip` that isn't an IP address, or with `signal.reason` when `signal` aborts.
+ * and 2 void lookups. DNS failures give `temperror`, and broken records give `permerror`. The
+ * promise rejects only for an `ip` that isn't an IP address, or with `signal.reason` when
+ * `signal` aborts.
  *
  * @example
  * ```ts

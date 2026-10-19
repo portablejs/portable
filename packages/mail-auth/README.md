@@ -59,7 +59,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 
 ## Result
 
-`authenticate` resolves to a plain object. It rejects only for invalid options, a failing message stream or an aborted `signal`. DNS failures are results, such as `temperror`.
+`authenticate` resolves to a plain object. It rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure gives a result such as `temperror` instead of a rejection.
 
 | Field | Description |
 | --- | --- |
@@ -89,10 +89,10 @@ Authentication-Results: mx.example.net;
 
 - `dkim` is `none` for an unsigned message, and otherwise one line per signature with `header.d`, `header.i`, `header.s`, `header.a` and the first 8 characters of `b=` as `header.b` (RFC 6008).
 - `spf` reports `smtp.mailfrom` with the MAIL FROM domain, or `smtp.helo` for a bounce.
-- `arc` reports `smtp.remote-ip` (RFC 8617 section 6). On a pass, the comment repeats what the newest sealer recorded. The sealer's text is untrusted, so only results that are keywords and domains that are host names are copied from it.
+- `arc` reports `smtp.remote-ip` (RFC 8617 section 6). On a pass, the comment repeats what the newest sealer recorded. The sealer's text is untrusted, so only keyword results and host-name domains are copied from it.
 - `dmarc` reports the applied policy as `policy.dmarc` and the From domain as `header.from` (RFC 9989 section 9.1), and is left out when `dmarcSkipReason` is set.
 
-Values that aren't a token or an address are quoted, comments keep their parentheses balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender or HELO name holds.
+Values that aren't a token or an address are quoted, comments keep their parentheses balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender or HELO name contains.
 
 ## Types
 
@@ -104,8 +104,8 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os` and Buffers.
-- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. Here RFC behavior is the only behavior. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
-- It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so a reader that splits the field on semicolons can still be fooled by `mx.example; dkim=pass`.
+- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
+- It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a reader that splits the field on semicolons.
 - It authenticates and seals a short message faster: 445 times a second against 303 for mailauth's strict mode in one run in Node, and about the same, 243 against 251, for a 250 KB message with a DKIM signature and an ARC set.
 - It has no dependencies outside `@portable/*`.
 

@@ -78,7 +78,7 @@ export function run(state: State, input: string, last: boolean): Uint8Array<Arra
 
   const { maxBytes } = charset
   const reserve = encoder.flush && last ? 8 : 0
-  // Capacity for maxBytes per remaining code unit is kept free, so only replacements grow it.
+  // The buffer holds maxBytes per remaining code unit, so only replacements grow it.
   const out: Output = { bytes: new Uint8Array(bom.length + end * maxBytes + reserve), length: 0 }
   out.bytes.set(bom)
   out.length = bom.length

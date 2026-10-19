@@ -73,7 +73,10 @@ export function decodeChunks(
   )
 }
 
-/** Where two byte arrays first differ, or `undefined` if they are equal. Faster than `toEqual` on megabytes. */
+/**
+ * Describes the first byte or the length where two byte arrays differ, or returns `undefined` if
+ * they are equal. Faster than `toEqual` on megabytes.
+ */
 export function difference(actual: Uint8Array, expected: Uint8Array): string | undefined {
   const length = Math.min(actual.length, expected.length)
   for (let i = 0; i < length; i++)

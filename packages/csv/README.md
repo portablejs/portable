@@ -41,7 +41,7 @@ A row is a `string[]`, or a `Record<string, string>` when `header` is set. Value
 - CRLF, LF and CR each end a row. A final line break is optional and adds no row.
 - A leading byte order mark is dropped.
 - Spaces and tabs between a closing quote and the next delimiter are skipped.
-- A quote that doesn't start a field is text: `5" pipe` reads as `5" pipe`.
+- A quote that doesn't start a field is read as text, so `5" pipe` decodes to `5" pipe`.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ A row is a `string[]`, or a `Record<string, string>` when `header` is set. Value
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. |
 | `signal` | | `DecoderStream` only. Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. |
 
-Errors are thrown by `decode` and fail the stream. Messages name the row, counting from 1 and including skipped empty lines.
+`decode` throws these errors, and `DecoderStream` fails with them. Their messages give the row number, counting from 1 and including skipped empty lines.
 
 | Error | When |
 | --- | --- |
@@ -118,7 +118,7 @@ It also avoids these traps, each with a test in `test/issues.conformance.ts`:
 - The BOM is dropped from the first column name. csv-parse keeps it unless `bom: true`.
 - A blank line is skipped. csv-parse throws "Invalid Record Length" unless `skip_empty_lines: true`.
 - `true` and `false` are written as `true` and `false`, and a `Date` as ISO 8601. csv-stringify writes `1`, an empty field and milliseconds.
-- A lone LF in a field is quoted with CRLF line breaks. csv-stringify with `record_delimiter: 'windows'` leaves it bare, so readers split the row there.
+- With CRLF line breaks, a field that holds a lone LF is quoted. csv-stringify with `record_delimiter: 'windows'` leaves it bare, so readers split the row there.
 
 ## Migrating
 
@@ -148,5 +148,5 @@ Options with no equivalent, and what to do instead:
 - **Delimiter guessing** (papaparse's default): pass `delimiter`.
 - **Comments, trimming, `from`/`to`, `preview`**: filter or map rows, or cancel the reader to stop early.
 - **Multi-character delimiters and escape characters other than `""`**: not supported.
-- **Forced quoting** (`quoted`, `quotes`): not supported; fields are quoted only when needed.
+- **Forced quoting** (`quoted`, `quotes`): not supported. Fields are quoted only when needed.
 - **Nested column paths** (csv-stringify `columns: ['a.b']`): flatten rows first.

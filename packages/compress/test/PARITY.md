@@ -11,18 +11,18 @@ Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master
 | Inflate defaults: inflate, no options | `round trips > deflate: <sample>` | One test per sample. |
 | Inflate defaults: inflate raw, no options | `round trips > deflate-raw: <sample>` | |
 | Inflate defaults: inflate raw from compressed samples | `decoding existing data > raw deflate sample <name>`; oracle `matches node:zlib > raw deflate sample <name>` | The oracle compares with `zlib.inflateRawSync`, as upstream does. |
-| Inflate ungzip: with autodetect, with method set directly | `round trips > gzip: <sample>` | There is no autodetect; `format` is always given or defaults to gzip. |
+| Inflate ungzip: with autodetect, with method set directly | `round trips > gzip: <sample>` | There is no autodetect. `format` defaults to gzip. |
 | Inflate levels 0 to 9; Inflate RAW levels 0 to 9 | oracle `decodes what pako compresses > <sample>` | Decodes pako's output at every level in all three formats. |
 | Inflate windowBits 8 to 15 | oracle `decodes what pako compresses > every window size` | windowBits 8 is written as 9 by zlib, so the test starts at 9. |
 | Inflate strategy (5 tests) | oracle `decodes what pako compresses > every strategy` | |
 | Inflate with dictionary (6 tests) | skipped | No dictionary in `DecompressionStream`. |
-| Deflate vs canonical zlib snapshots and vs node.js zlib (defaults, levels, windowBits, memLevel, strategy, raw, dictionary) | oracle `matches node:zlib > our output decodes with node:zlib` and `compresses within 5% of zlib` | These compare pako's bytes with zlib's. Our bytes come from the platform's zlib, so we check that node:zlib reads them and that they are no larger than zlib's output. |
+| Deflate vs canonical zlib snapshots and vs node.js zlib (defaults, levels, windowBits, memLevel, strategy, raw, dictionary) | oracle `matches node:zlib > our output decodes with node:zlib` and `compresses within 5% of zlib` | These compare pako's bytes with zlib's. Our bytes come from the platform's zlib, so the test checks that node:zlib reads them and that they are no larger than zlib's output. |
 
 ## pako `chunks.test.mjs`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| deflate 100b by 1b chunk; deflate 20000b by 10b chunk | skipped | Compression is one-shot; `CompressionStream` covers streaming compression. |
+| deflate 100b by 1b chunk; deflate 20000b by 10b chunk | skipped | Compression is one-shot, and `CompressionStream` covers streaming compression. |
 | inflate 100b result by 1b chunk | `DecoderStream > 100 bytes, one byte per chunk` | |
 | inflate 20000b result by 10b chunk | `DecoderStream > 20,000 bytes, ten bytes per chunk` | |
 | Dummy push (force end): deflate end, inflate end | `DecoderStream > empty chunks` | Pushing an empty final chunk is the closest case. |
@@ -56,9 +56,9 @@ Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master
 | Read with Z_SYNC_FLUSH emits the tail | `DecoderStream > emits output before the input ends` | Uses the same sync-flushed raw stream that node:zlib produces. |
 | Read with Z_SYNC_FLUSH across multiple pushes (no double emit) | `DecoderStream > emits output before the input ends` | |
 | gzip file with two members decodes both | `gzip members > joins every member, as gunzip does`; oracle `multi-member gzip files` | |
-| anything after the first zlib stream is ignored | `data after the end > rejects a second zlib stream` | Deliberate difference: we throw `InvalidInputError`. |
+| anything after the first zlib stream is ignored | `data after the end > rejects a second zlib stream` | Deliberate difference: `decode` throws `InvalidInputError`. |
 | autodetect over zlib: does not loop into trailing data | `data after the end > rejects a second zlib stream` | |
-| gzip zero padding via ArrayBuffer is not misread as a new member | `data after the end > rejects zero padding after a gzip member` | Deliberate difference: we throw `InvalidInputError`, as `DecompressionStream` does. |
+| gzip zero padding via ArrayBuffer is not misread as a new member | `data after the end > rejects zero padding after a gzip member` | Deliberate difference: `decode` throws `InvalidInputError`, as `DecompressionStream` does. |
 | extra pushes after a finished stream return true and keep result | `data after the end > rejects bytes after a raw deflate stream` | Deliberate difference, as above. |
 | pushes after a failed stream keep returning false | `DecoderStream > truncated input fails with TruncatedError` | The stream stays errored. |
 | one-shot inflate throws on incomplete data | `truncated input > deflate cut before its end` | |
@@ -88,15 +88,15 @@ Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Inflate states, Inflate cover, Inflate fast (38 hex cases) | `zlib inflate coverage > <case>` | Every hex case, with the format pako's windowBits selects. pako pushes the bytes without ending the stream, so cases that pass there with an incomplete stream are `TruncatedError` here, and the three cases with zero bytes after a complete raw stream are `InvalidInputError`. |
-| inflate bad parameters; cover trees; Inflate support (window allocation) | skipped | Test zlib internals that are not reachable through `DecompressionStream`. |
-| Inflate chunked input: byte-by-byte gzip with header | `DecoderStream > 100 bytes, one byte per chunk` | Without header fields, which we can't write. |
-| Deflate support, gzip header, flush / data type, states | skipped | Test the internals of pako's deflate. |
+| inflate bad parameters; cover trees; Inflate support (window allocation) | skipped | These test zlib internals that `DecompressionStream` doesn't expose. |
+| Inflate chunked input: byte-by-byte gzip with header | `DecoderStream > 100 bytes, one byte per chunk` | Without header fields, which `CompressionStream` can't write. |
+| Deflate support, gzip header, flush / data type, states | skipped | These test the internals of pako's deflate. |
 
 ## pako `dist.test.mjs`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| loads CJS / ESM / UMD bundles | skipped | We publish one ESM build, which `pnpm bench` loads from `dist/`. |
+| loads CJS / ESM / UMD bundles | skipped | The package is published as one ESM build, which `pnpm bench` loads from `dist/`. |
 
 ## fflate
 

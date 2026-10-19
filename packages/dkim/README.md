@@ -57,7 +57,7 @@ await Dkim.verify(message, { resolver: dns })
 
 ## Verifying
 
-`verify` resolves to one result per DKIM-Signature field, in header order. A message without signatures gives an empty array. Keys are looked up while the body is read, each key once, and the body is read once whatever the number of signatures.
+`verify` resolves to one result per DKIM-Signature field, in header order. A message without signatures gives an empty array. Each key is looked up once, while the body is read, and the body is read once whatever the number of signatures.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ await Dkim.verify(message, { resolver: dns })
 | `hash` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |
 
-There is no default resolver, so you decide which servers see the lookups. A resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` means there is no key, and any other rejection is `temperror`.
+There is no default resolver, so you decide which servers see the lookups. It treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as no key, and any other rejection as `temperror`.
 
 `verify` rejects only for invalid options, a message stream that fails, and an aborted `signal`.
 
@@ -97,7 +97,7 @@ There is no default resolver, so you decide which servers see the lookups. A res
 
 RSA and Ed25519 signing and verification use WebCrypto (`crypto.subtle`), which every supported runtime has. There are no crypto dependencies.
 
-The body hash is different. `crypto.subtle.digest` can't hash incrementally, so by default the canonicalized body is collected and hashed with one call. Mail is bounded by MTA size limits, usually 25 to 50 MB, so this stays within what a mail server already holds. A signer has to buffer the message anyway, because the DKIM-Signature field goes before the body and contains the body hash, so only verification would gain from streaming. If WebCrypto adds streaming digests, the default can switch to one without an API change.
+The body hash is different. `crypto.subtle.digest` can't hash incrementally, so by default the canonicalized body is collected and hashed with one call. MTAs usually limit a message to 25 to 50 MB, so the buffer is no larger than what a mail server already holds. A signer has to buffer the message anyway, because the DKIM-Signature field goes before the body and contains the body hash, so only verification would gain from streaming. If WebCrypto adds streaming digests, the default can switch to one without an API change.
 
 To verify in constant memory, pass an incremental SHA-256 as `hash`, a function that returns `{ update(bytes), digest() }`. That is the shape of `sha256.create()` in `@noble/hashes`:
 
@@ -118,7 +118,7 @@ await Dkim.verify(request.body!, { resolver, hash: () => sha256.create() })
 ## Why use this over mailauth and nodemailer
 
 - It runs anywhere. mailauth and nodemailer use `node:crypto`, `node:stream` and Buffers, so they don't run in Workers or a browser.
-- It follows the RFCs by default. mailauth's default mode accepts signatures that RFC 6376 rejects, such as a missing `v=`, a duplicate tag or rsa-sha1, and RFC behavior needs `strict: true`. Its signatures pass in mailauth's strict mode, mailauth's and nodemailer's pass here, and the two verifiers agree on 12 kinds of changed message.
+- It follows the RFCs by default. mailauth's default mode accepts signatures that RFC 6376 rejects, such as a missing `v=`, a duplicate tag or rsa-sha1, and mailauth follows the RFC only with `strict: true`. mailauth's strict mode accepts the signatures `sign` makes, `verify` accepts the signatures of mailauth and nodemailer, and the two verifiers agree on 12 kinds of changed message.
 - It refuses what it can't sign safely. nodemailer silently removes tag delimiters from the domain and sends the message unsigned when the key is unusable. `sign` throws for both.
 - It has no dependencies outside `@portable/*`. mailauth pulls in libmime, punycode.js, tldts, joi and more.
 - It verifies faster. In one run in Node, it verified a 250 KB message 170 times a second, against 35 for mailauth's strict mode, and signed it 56 times a second, against 54 for mailauth and 62 for nodemailer.
@@ -175,5 +175,5 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `headerFieldNames: 'from:to:subject'` | `headers: ['From', 'To', 'Subject']` |
 | `skipFields` | Leave the names out of `headers`. |
 | `hashAlgo` | Not supported. DKIM uses SHA-256 (RFC 8301). |
-| `cacheDir`, `cacheTreshold` | Not needed. The body is hashed as it streams, and the caller keeps the message. |
+| `cacheDir`, `cacheTreshold` | Not needed. By default `sign` holds the canonicalized body in memory for one `crypto.subtle.digest` call, and an incremental `hash` hashes it as it streams. The caller keeps the message. |
 | `keys: [...]` | Call `sign` once per key and prepend each field. |

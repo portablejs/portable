@@ -2,11 +2,10 @@ import { type Address, from } from './address.js'
 import { matches, parseCidr } from './cidr.js'
 
 /**
- * The special-purpose block an address belongs to, named after its entry in the IANA IPv4 and
- * IPv6 Special-Purpose Address Registries. `'multicast'`, `'deprecatedSiteLocal'` and
- * `'ipv4Translated'` come from RFC 5771, RFC 3879 and RFC 2765. `'unicast'` is every other IPv4
- * address and every other IPv6 address in `2000::/3`; `'reserved'` is the rest of the IPv6 space
- * and `240.0.0.0/4`.
+ * The special-purpose block an address belongs to, named after its entry in the IANA IPv4 and IPv6
+ * Special-Purpose Address Registries. `'multicast'`, `'deprecatedSiteLocal'` and `'ipv4Translated'`
+ * come from RFC 5771, RFC 3879 and RFC 2765. `'unicast'` is every other IPv4 address and every
+ * other IPv6 address in `2000::/3`. `'reserved'` is the rest of the IPv6 space and `240.0.0.0/4`.
  */
 export type Range =
   | '6to4'
@@ -101,7 +100,7 @@ const ipv6 = table([
 /**
  * Returns the special-purpose block the address is in, or `'unicast'` for an ordinary public
  * address. To reject internal destinations before a server-side request (SSRF), allow only
- * `'unicast'`. An IPv4-mapped address returns `'ipv4Mapped'`; pass it through `unmap` first to
+ * `'unicast'`. An IPv4-mapped address returns `'ipv4Mapped'`, so pass it through `unmap` first to
  * classify the IPv4 address inside.
  *
  * @example

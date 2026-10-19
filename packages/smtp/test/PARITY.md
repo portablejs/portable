@@ -166,7 +166,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | Anonymous: not fail auth, fail auth with forceAuth | `auth > method selection > tries AUTH PLAIN when the server advertises no AUTH`, `fails when the server refuses AUTH it did not advertise` | Credentials always mean AUTH, as with `forceAuth`. |
 | Anonymous: send mail | `send > signals and closing > Smtp.send connects, sends and quits` | |
 | Anonymous: recover unexpected close during transmission | `smtp-server > plaintext > reports a server that closes the connection during DATA` | |
-| verify (6 tests) | `connect > connecting > *`, `smtp-server > TLS and authentication > reports a wrong password with code 535` | `connect` then `close` is the verify. |
+| verify (6 tests) | `connect > connecting > *`, `smtp-server > TLS and authentication > reports a wrong password with code 535` | Calling `connect` and then `close` takes the place of `verify`. |
 | Authenticated: login and send, through a proxied socket | `smtp-server > TLS and authentication > *` | Proxies are a `connect` function. |
 | behavior: getSocket error (2 tests) | `connect > connecting > reports a connect function that throws` | |
 | behavior: ECONNECTION before the greeting (2 tests) | `connect > connecting > reports a server that drops the connection before the greeting` | |

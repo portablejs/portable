@@ -24,7 +24,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| `unicode.js` IdnaTestV2.txt, toASCII nontransitional | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | tr46 allows itself to fail where the file expects success. We match every line exactly. |
+| `unicode.js` IdnaTestV2.txt, toASCII nontransitional | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | tr46 allows itself to fail where the file expects success. `toAscii` matches every line exactly. |
 | `unicode.js` IdnaTestV2.txt, toASCII transitional | skipped | Transitional processing isn't supported. |
 | `unicode.js` IdnaTestV2.txt, toUnicode | `IdnaTestV2.txt > toUnicode with strict: true matches toUnicode` | |
 | `std3ASCIIRules.js` STD3 range (a-z, 0-9) | `tr46: ToASCII with useSTD3ASCIIRules > keeps a-z and 0-9` | |
@@ -32,8 +32,8 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 | `std3ASCIIRules.js` Outside of STD3 range | `tr46: ToASCII with useSTD3ASCIIRules > rejects every other ASCII character except A-Z` | |
 | `std3ASCIIRules.js` Unicode, Valid label, Valid unicode label | `tr46: ToASCII with useSTD3ASCIIRules > encodes a Unicode label` | |
 | `std3ASCIIRules.js` Invalid label, Invalid unicode label | `tr46: ToASCII with useSTD3ASCIIRules > rejects labels with a disallowed character` | |
-| `toascii.js` ToASCII (WPT `toascii.json`) | `tr46: WPT URL tests > toascii.json` | tr46 skips ASCII input and the `urlStandardOnly` cases. We run all 87, because `toAscii` follows the URL Standard. |
-| `toascii.js` ToASCII via IdnaTestV2.json in wpt | `tr46: WPT URL tests > IdnaTestV2.json` | tr46 skips ASCII input and input with `?`. We run all 2676. The empty input expects `""`, and we throw, because the URL Standard's domain parser fails on an empty result; WPT never passes an empty host to it. |
+| `toascii.js` ToASCII (WPT `toascii.json`) | `tr46: WPT URL tests > toascii.json` | tr46 skips ASCII input and the `urlStandardOnly` cases. This package runs all 87, because `toAscii` follows the URL Standard. |
+| `toascii.js` ToASCII via IdnaTestV2.json in wpt | `tr46: WPT URL tests > IdnaTestV2.json` | tr46 skips ASCII input and input with `?`. This package runs all 2676. The empty input expects `""`, but `toAscii` throws, because the URL Standard's domain parser fails on an empty result. WPT never passes an empty host to it. |
 | `url-host-parsing.js` WPT host parsing, toASCII | `tr46: WPT host parsing of ASCII characters > toAscii lowercases each character URL allows and rejects the others` | Different on purpose: the URL Standard's forbidden domain code points, such as space and `%`, throw. |
 | `url-host-parsing.js` WPT host parsing, toUnicode | `tr46: WPT host parsing of ASCII characters > toUnicode lowercases each character` | |
 
@@ -41,9 +41,9 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| `punycode.ucs2.decode` (7 cases) | skipped | `Array.from(text, (char) => char.codePointAt(0))` does this, and we don't export it. |
+| `punycode.ucs2.decode` (7 cases) | skipped | `Array.from(text, (char) => char.codePointAt(0))` does this, so the package doesn't export it. |
 | `punycode.ucs2.encode` (7 cases), does not mutate argument array | skipped | `String.fromCodePoint(...codePoints)` does this. |
-| `punycode.decode` throws RangeError: Illegal input >= 0x80 | `punycode.js: decode > rejects a non-basic code point before the delimiter` | `decode` is internal; the tests import it by path. |
+| `punycode.decode` throws RangeError: Illegal input >= 0x80 | `punycode.js: decode > rejects a non-basic code point before the delimiter` | `decode` is internal, and the tests import it by path. |
 | `punycode.decode` throws RangeError: Overflow | `punycode.js: decode > rejects a non-basic code point after the delimiter` | The upstream name is wrong: `\x81` is rejected as an invalid digit. `rejects a delta that overflows` covers overflow. |
 | `punycode.decode` (24 strings) | `punycode.js: decode > <description>` | One test per string. Russian is decoded without mixed-case annotation, as upstream. |
 | `punycode.decode` handles uppercase Z | `punycode.js: decode > handles uppercase Z` | |

@@ -34,7 +34,7 @@ Each collector reads a `ReadableStream`, an async iterable (such as a Node `Read
 | `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`. |
 | `toArray(source, { signal })` | The chunks, unchanged. |
 
-`toBytes`, `toText` and `toJson` take `Uint8Array` and `string` chunks; any other chunk rejects with a `TypeError`. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
+`toBytes`, `toText` and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
 
 ```ts
 const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
@@ -55,7 +55,7 @@ Sources are streams, async iterables or iterables. An error in one source errors
 
 - It makes any number of branches. The platform's `tee()` makes two, so three branches need a chain of two calls.
 - It reads the source only as fast as the slowest branch. Once a branch holds `highWaterMark` unread chunks, `tee` stops reading the source until that branch reads, so the fastest branch is at most that far ahead. The platform's `tee()` keeps reading and buffers without limit for a branch that isn't read. `highWaterMark` defaults to 16 chunks. With `unit: 'bytes'` it counts bytes, as `maxBytes` does, and defaults to 65536.
-- Cancelling a branch removes it, so the slowest remaining branch sets the pace. The source is cancelled when every branch is cancelled, with the reason from the last one. The platform's `tee()` does the same, with both reasons in an array.
+- Cancelling a branch removes it, and `tee` then reads only as fast as the slowest remaining branch. The source is cancelled when every branch is cancelled, with the reason from the last one. The platform's `tee()` does the same, with both reasons in an array.
 
 An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
 
@@ -77,8 +77,8 @@ await Promise.all([
 | --- | --- |
 | `fromIterable(iterable)` | A `ReadableStream` that pulls one value per read. Cancelling it calls the iterator's `return()`, so a generator's `finally` blocks run. Uses `ReadableStream.from` when the runtime has it. |
 | `toAsyncIterable(stream, { preventCancel })` | An async iterator over a stream. Leaving a `for await` loop early cancels the stream, or with `preventCancel: true` only releases the lock. Uses `stream.values()` when the runtime has it. |
-| `transform(async function* (source) { ... }, { signal })` | A `{ readable, writable }` pair for `pipeThrough`, built from an async generator that reads `source` and yields output. The generator runs only as fast as the output is read. An error thrown in it errors the output and cancels the input; cancelling the output ends `source` and runs the generator's `finally` blocks. |
-| `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise; chunks stay in order. |
+| `transform(async function* (source) { ... }, { signal })` | A `{ readable, writable }` pair for `pipeThrough`, built from an async generator that reads `source` and yields output. The generator runs only as fast as the output is read. An error thrown in it errors the output and cancels the input. Cancelling the output ends `source` and runs the generator's `finally` blocks. |
+| `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise, and chunks stay in order. |
 | `batch(size, { signal })` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
 
 Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. `concat`, `merge`, `fromIterable` and `toAsyncIterable` take no signal: cancel the stream they return, or pass `signal` to the `pipeTo` that reads it.
@@ -109,7 +109,7 @@ The libraries above were written for Node streams. This package reads web stream
 - `maxBytes` cancels the source as soon as the limit is crossed. get-stream's `maxBuffer` kept buffering ([get-stream #42](https://github.com/sindresorhus/get-stream/issues/42)), and raw-body's limit became `NaN` for `ArrayBuffer` chunks, which turned it off.
 - An error in any source of `concat` or `merge` errors the output and cancels the other sources. merge-stream and merge2 didn't propagate errors ([merge-stream #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7)), and concat-stream never called back when the stream errored ([concat-stream #50](https://github.com/max-mapper/concat-stream/issues/50)).
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
-- A number chunk is a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
+- The collectors reject a number chunk with a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
 
 <!-- bench:start -->
 | | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
@@ -158,11 +158,11 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Behavior that differs:
 
-- `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`; `toArray` has no limit.
+- `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`. `toArray` has no limit.
 - Errors carry no `bufferedData`. A collector that fails has already cancelled its source and dropped what it read.
 - Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView` and other typed arrays, and concat-stream accepted numbers.
-- Arrays and other iterables are valid sources; get-stream rejected them.
+- Arrays and other iterables are valid sources, where get-stream rejected them.
 - Errors in any source always propagate through `concat` and `merge`. merge2 needed `pipeError: true`.
 - There is no `.add()` or `{ end: false }`: pass every source when calling `concat` or `merge`.
-- `map` passes on `undefined` like any other value. through2 dropped it; use `filter` to drop chunks.
+- `map` passes on `undefined` like any other value. through2 dropped it. Use `filter` to drop chunks.
 - A `transform` generator starts when the output is first read, not when the first chunk is written.

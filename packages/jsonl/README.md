@@ -33,7 +33,7 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number; `'skip'` drops the line. |
+| `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number, and `'skip'` drops the line. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over ndjson
@@ -41,7 +41,7 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they read a `fetch` body and write a `Response` body in any JavaScript runtime, and the package has no dependencies.
 
 - Decoding 20,000 rows ran at the same speed as ndjson, and encoding them was about 1.5× faster.
-- A `null` line is emitted as `null`. In ndjson it ends the stream, because Node object streams treat `null` as the end (ndjson #6).
+- A `null` line is emitted as `null`. In ndjson a `null` line ends the stream, because Node object streams treat `null` as the end (ndjson #6).
 - `EncoderStream` ends every line with `\n`. ndjson uses `os.EOL`, so on Windows it writes `\r\n`.
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
 - A whitespace-only line is skipped, where ndjson reports it as invalid.

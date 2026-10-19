@@ -5,9 +5,10 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
 
 /**
  * The DNS lookups DMARC needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or a
- * plain object with these methods. A rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME`
- * means no records, and any other rejection a temporary DNS error. `resolve4` and `resolveCname`
- * are called only to find out whether a subdomain exists, for a record with an `np` tag.
+ * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`, `ENODATA`
+ * or `EBADNAME` as no records, and any other rejection as a temporary DNS error. `resolve4` and
+ * `resolveCname` are called only to find out whether a subdomain exists, for a record with an
+ * `np` tag.
  *
  * @example
  * ```ts

@@ -37,7 +37,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | test-dns-reverse-dns-only.js | `reverse > queries in-addr.arpa for IPv4 and ip6.arpa for IPv6` | |
 | test-dns-channel-timeout.js | `endpoints > rejects ... a bad timeout`, `timeouts and cancellation > an endpoint that does not answer within timeout is ETIMEOUT` | `timeout` must be above 0. Node also accepts -1 and 0 as "use the default". |
 | test-dns-resolver-max-timeout.js | `timeouts and cancellation` | There is no backoff between tries, so no `maxTimeout`. |
-| test-dns-channel-cancel.js, test-dns-channel-cancel-promise.js, test-dns-cancel-reverse-lookup.js | `timeouts and cancellation > aborting the signal rejects with its reason ...` | `resolver.cancel()` is an `AbortSignal` per call, and the rejection is `signal.reason`, not ECANCELLED. |
+| test-dns-channel-cancel.js, test-dns-channel-cancel-promise.js, test-dns-cancel-reverse-lookup.js | `timeouts and cancellation > aborting the signal rejects with its reason ...` | An `AbortSignal` per call replaces `resolver.cancel()`, and the rejection is `signal.reason`, not ECANCELLED. |
 | test-dns-multi-channel.js | `endpoints > two resolvers keep their own endpoints and fetch` | |
 | test-dns-setserver-when-querying.js | Not applicable | Endpoints can't change after `createResolver`. |
 | test-dns-get-server.js, test-dns-setservers-type-check.js, test-dns-setlocaladdress.js | Not applicable | No `getServers`, `setServers` or `setLocalAddress`. Endpoint URLs are checked by `new URL`. |
@@ -124,7 +124,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | Issue | Test |
 | --- | --- |
 | Node decodes TXT strings as Latin-1, so UTF-8 text comes back garbled. tangerine uses `Buffer.toString()`, which is UTF-8. | `record types > resolveTxt decodes UTF-8 ...`, oracle `TXT is decoded as UTF-8` |
-| A TXT string starting with a byte order mark loses it with a default `TextDecoder`. | `record types > resolveTxt decodes UTF-8, keeps a leading BOM ...` |
+| A default `TextDecoder` strips a byte order mark at the start of a TXT string. | `record types > resolveTxt decodes UTF-8, keeps a leading BOM ...` |
 | Node returns every record of the requested type in the answer, including records for names outside the CNAME chain, so a bad or poisoned answer can add an SPF record. tangerine filters by type only. | `CNAME chains > ignores records owned by names outside the chain`, oracle `records owned by names outside the CNAME chain are left out` |
 | Node returns `[]` for a NOERROR answer that holds only a CNAME, and tangerine does the same after filtering. Node's own internet test expects ENODATA. | `NXDOMAIN and NODATA > a CNAME to a name without TXT records is ENODATA`, oracle |
 | Node reports response codes it has no error for, such as YXDOMAIN, as ENODATA. | `server failures > YXDOMAIN is EBADRESP ...`, oracle |
@@ -133,7 +133,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | tangerine returns an SOA array when there are several records, and one object otherwise. | `resolveSoa returns one object ...` |
 | tangerine leaked an `AbortController` per lookup (tangerine #12). | No set of controllers is kept. Each attempt clears its timer when it finishes. |
 | `AbortSignal.timeout` holds its signal weakly in Node. A `fetch` that never settles can be garbage collected along with the timer, and the lookup never settles. Found here while writing the timeout test. | `timeouts and cancellation > an endpoint that does not answer within timeout is ETIMEOUT` |
-| dohjs encodes GET queries as standard base64, so `+` and `/` reach the URL. | `requests > encodes the query as base64url, never with +, / or =` |
+| dohjs encodes GET queries as standard base64, so `+` and `/` appear in the URL. | `requests > encodes the query as base64url, never with +, / or =` |
 | dohjs decodes the body of any HTTP status as DNS. @sagi.io/dns-over-https resolves HTTP errors as strings instead of rejecting, and decodes only the first `data` chunk. | `server failures > an HTTP error status is EBADRESP ...` |
-| A response for another question, such as one from a misconfigured cache, is used as the answer by dohjs and @sagi.io/dns-over-https. | `server failures > a response to another question is EBADRESP` |
+| dohjs and @sagi.io/dns-over-https use a response for another question, such as one from a misconfigured cache, as the answer. | `server failures > a response to another question is EBADRESP` |
 | CAA tags come from the network. A `__proto__` tag must not change the result's prototype. | `record types > resolveCaa keys each value by its tag` |

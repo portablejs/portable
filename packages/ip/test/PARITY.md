@@ -17,7 +17,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | converts IPv4 CIDR to string correctly | `ipaddr.js > formats an IPv4 CIDR block` | |
 | returns correct kind for IPv4 | `ipaddr.js > reports the version` | |
 | allows to access IPv4 octets | `ipaddr.js > exposes IPv4 bytes` | |
-| checks IPv4 address format | `ipaddr.js > accepts only four-part decimal IPv4` | `isIPv4` checks only the shape; we have one strict check. |
+| checks IPv4 address format | `ipaddr.js > accepts only four-part decimal IPv4` | `isIPv4` checks only the shape, but this package has one strict check. |
 | validates IPv4 addresses | `ipaddr.js > accepts only four-part decimal IPv4` | `192.168.007.0xa` is invalid here. |
 | validates IPv4 addresses in CIDR notation | `ipaddr.js > rejects malformed CIDR text` | |
 | parses IPv4 in several weird formats | `ipaddr.js > rejects the octal, hex, integer and short IPv4 forms` | Deliberate: every one throws. See the README. |
@@ -30,7 +30,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | checks the conventional IPv4 address format | `ipaddr.js > accepts only four-part decimal IPv4` | |
 | checks the conventional IPv4 CIDR format | `ipaddr.js > rejects malformed CIDR text` | |
 | refuses to construct IPv4 address with trailing and leading zeros | `ipaddr.js > accepts only four-part decimal IPv4` | |
-| can construct IPv6 from 16bit parts | `ipaddr.js > builds an IPv6 address from bytes` | Bytes only; the test builds them from 16-bit words. |
+| can construct IPv6 from 16bit parts | `ipaddr.js > builds an IPv6 address from bytes` | Bytes only, so the test builds them from 16-bit words. |
 | rejects invalid IPv6 CIDR prefix lengths in match | `ipaddr.js > rejects an invalid prefix length in a CIDR object` | |
 | can construct IPv6 from 8bit parts | `ipaddr.js > builds an IPv6 address from bytes` | |
 | refuses to construct invalid IPv6 | `ipaddr.js > rejects bytes that are not 4 or 16 long` | |
@@ -64,14 +64,14 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | correctly detects IPv4 and IPv6 CIDR addresses | `ipaddr.js > parses the version from CIDR text` | |
 | does not consider a very large or very small number a valid IP address | `ipaddr.js > rejects malformed IPv4` | |
 | does not hang on ::8:8:8:8:8:8:8:8:8 | `ipaddr.js > validates IPv6` | The parser is a single pass, so there is no regex to backtrack. |
-| subnetMatch does not fail on empty range | skipped | No `subnetMatch`; `blocks.some((cidr) => Ip.contains(cidr, address))` on an empty list is `false`. |
+| subnetMatch does not fail on empty range | skipped | No `subnetMatch`. `blocks.some((cidr) => Ip.contains(cidr, address))` on an empty list is `false`. |
 | subnetMatch returns default subnet on empty range | skipped | Same. |
 | subnetMatch does not fail on IPv4 when looking for IPv6 | `ipaddr.js > matches an address only against blocks of its own version` | |
 | subnetMatch does not fail on IPv6 when looking for IPv4 | `ipaddr.js > matches an address only against blocks of its own version` | |
 | subnetMatch can use a hybrid IPv4/IPv6 range list | `ipaddr.js > matches an address only against blocks of its own version` | |
 | subnetMatch rejects invalid CIDR prefix lengths | `ipaddr.js > rejects an invalid prefix length in a CIDR object` | |
 | is able to determine IP address type from byte array input | `ipaddr.js > builds either version from bytes` | |
-| prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks | skipped | No dotted subnet masks; CIDR prefixes replace them. |
+| prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks | skipped | No dotted subnet masks. CIDR prefixes replace them. |
 | prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks | skipped | Same. |
 | subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length | skipped | Same. |
 | subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length | skipped | Same. |
@@ -86,7 +86,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | toBuffer()/toString(): should convert to buffer IPv4 address | `ip > converts IPv4 to bytes and back` | |
-| should convert to buffer IPv4 address in-place | `ip > reads an address out of a larger buffer` | `fromBytes` on a `subarray`; there is no write-at-offset. |
+| should convert to buffer IPv4 address in-place | `ip > reads an address out of a larger buffer` | `fromBytes` on a `subarray`. There is no write-at-offset. |
 | should convert to buffer IPv6 address | `ip > converts IPv6 to bytes and back` | |
 | should convert to buffer IPv6 address in-place | `ip > reads an address out of a larger buffer` | |
 | should convert to buffer IPv6 mapped IPv4 address | `ip > converts IPv6 with an embedded IPv4 address` | Deliberate: mapped addresses format as `::ffff:127.0.0.1`. |
@@ -98,17 +98,17 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | subnet(): network address | `ip > computes the network of a subnet and what it contains` | |
 | subnet(): first address, last address, broadcast address, number of addresses, number of hosts, subnet mask, mask length | skipped | No subnet arithmetic. `parseCidr(text).prefix` is the mask length. |
 | subnet(): contains / does not contain an address | `ip > computes the network of a subnet and what it contains` | |
-| subnet() with mask length 32 and 31 | `ip > computes the network of a subnet and what it contains` | Only containment; first and last addresses are skipped as above. |
+| subnet() with mask length 32 and 31 | `ip > computes the network of a subnet and what it contains` | Only containment. First and last addresses are skipped as above. |
 | cidrSubnet(): every test | `ip > computes the network of a subnet and what it contains` | As for `subnet()`. |
 | cidr(): should mask address in CIDR notation | `ip > masks CIDR text to its network` | |
 | isEqual(): should check if addresses are equal | `ip > compares addresses, treating IPv4-mapped IPv6 as IPv4 after unmap` | Deliberate: `127.0.0.1` is not `::7f00:1`, which is IPv4-compatible, not mapped. |
-| normalizeIpv4(): every test | `ip > accepts only the dotted-decimal IPv4 form` | Deliberate: only `127.0.0.1` is accepted; every other spelling throws. |
-| isPrivate(): every test | `ip > classifies private and internal addresses` | `range` names the block; mapped addresses are checked after `unmap`. |
+| normalizeIpv4(): every test | `ip > accepts only the dotted-decimal IPv4 form` | Deliberate: only `127.0.0.1` is accepted, and every other spelling throws. |
+| isPrivate(): every test | `ip > classifies private and internal addresses` | `range` returns the block's name, and mapped addresses are checked after `unmap`. |
 | loopback(): every test | skipped | Returns constants. |
 | isLoopback(): 127.0.0.1, 127.8.8.8, 8.8.8.8, ::1 | `ip > detects loopback addresses` | |
 | isLoopback(): fe80::1, :: | `ip > detects loopback addresses` | Deliberate: `linkLocal` and `unspecified`. |
 | address(): every test | skipped | Reads the machine's network interfaces, which no web runtime exposes. |
-| toLong(): should respond with a int | skipped | `DataView.getUint32` covers it; see the README. |
+| toLong(): should respond with a int | skipped | `DataView.getUint32` covers it. See the README. |
 | fromLong(): should repond with ipv4 address | skipped | `DataView.setUint32` and `fromBytes` cover it. |
 | should return true for octal, hexadecimal and long representations (7 tests) | `ip > rejects octal, hex and integer loopback forms instead of guessing` | Deliberate: these throw. |
 | should return false for "192.168.1.1" | `ip > detects loopback addresses` | |
@@ -134,7 +134,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | ip #159: `isV4Format('999.999.999.999')` is `true`; ip #135: `isV6Format` accepts IPv4 | `known upstream issues > 999.999.999.999 is not an address, and IPv4 is not IPv6` | |
 | ip #134: `isPrivate` misses `198.18.0.0/15` | `known upstream issues > 198.18.0.0/15 is benchmarking, not public` | |
 | ipaddr.js #213: `::ffff:0177.0.0.1` reads as `177.0.0.1` while `0177.0.0.1` reads as `127.0.0.1` | `known upstream issues > the IPv4 part of an IPv6 address may not have leading zeros` | Both throw. |
-| ipaddr.js parses `::8.8.8.8` as `::ffff:8.8.8.8` | `known upstream issues > ::a.b.c.d is IPv4-compatible, not IPv4-mapped` | Bytes as written; range `reserved`. |
+| ipaddr.js parses `::8.8.8.8` as `::ffff:8.8.8.8` | `known upstream issues > ::a.b.c.d is IPv4-compatible, not IPv4-mapped` | Bytes as written, with range `reserved`. |
 | ipaddr.js #165, #162: `match` throws for an address of the other version | `known upstream issues > matching across versions returns false instead of throwing` | |
 | ipaddr.js #179, #182: `1.1` and other short forms are valid | `ipaddr.js > rejects the octal, hex, integer and short IPv4 forms` | |
 | ipaddr.js reports IPv6 outside `2000::/3`, such as `4000::1`, as `unicast` | `range > names every IANA special-purpose IPv6 block` | `reserved`. |

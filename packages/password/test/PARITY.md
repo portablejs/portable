@@ -27,7 +27,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | should throw if the password is not a string or an ArrayBuffer | skipped | The TypeScript type is `string \| Uint8Array`. |
 | should throw if the salt is not a string or an ArrayBuffer | skipped | The salt is generated or read from the stored string. |
 | sha1, sha256, sha512: every valid fixture, sync and async | `pbkdf2 fixtures > #<n> <digest>, ...` | All 17 fixtures for the three digests. Int32Array and Float64Array keys are passed as the `Uint8Array` of their bytes, which is what Node hashes. |
-| sha224, sha384, ripemd160 fixtures | skipped | No PHC identifier exists for them; `verify` throws `UnsupportedError` for `$pbkdf2-sha384$`. |
+| sha224, sha384, ripemd160 fixtures | skipped | No PHC identifier exists for them, so `verify` throws `UnsupportedError` for `$pbkdf2-sha384$`. |
 | Unicode salt, no truncation | `pbkdf2 fixtures > #8 ...` | The hex form of the same salt is in the fixtures. |
 | invalid fixtures (NaN, negative iterations, bad key length) | `hash > rejects iterations outside 1 to 2^32 - 1`, `stored hash format > throws InvalidInputError for zero iterations`, `... non-numeric iterations`, `... negative iterations`, `... empty hash` | The key length is the stored hash's length, so a bad one is a malformed string. |
 | does not return all zeroes for any algorithm | `stored hash format > throws UnsupportedError for a SHA-384 PBKDF2 hash`, `... uppercase identifier` | Names other than our three identifiers throw instead of hashing. |
@@ -38,7 +38,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| should generate an hash from a password twice | `verify > ...`, `hash > uses a new salt every time` | There is no salt option; the same password and salt giving the same hash is what `verify` checks. |
+| should generate an hash from a password twice | `verify > ...`, `hash > uses a new salt every time` | There is no salt option. `verify` checks that the same password and salt give the same hash. |
 | should generate a password if one is not present | skipped | Out of scope. Use `crypto.getRandomValues` or `@portable/random`. |
 | should generate an hash from a password twice (known salt and hash) | `pbkdf2-password > verifies a known hash once its salt and hash are in a PHC string` | Also `Password.oracle.test.ts > verify accepts a pbkdf2-password hash` with a fresh hash. |
 
@@ -55,7 +55,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | missing or null digest | skipped | No digest argument. |
 | password or salt of a wrong type | skipped | TypeScript types. |
 | iterations of a wrong type | `hash > rejects iterations outside 1 to 2^32 - 1` | `NaN` and `1.5`. |
-| any TypedArray works for password and salt | `pbkdf2 fixtures` | Only `Uint8Array`; other views are passed as their bytes. |
+| any TypedArray works for password and salt | `pbkdf2 fixtures` | Only `Uint8Array`. Other views are passed as their bytes. |
 | invalid digest `md55`, `%` | `stored hash format > throws UnsupportedError for ...` | |
 | every digest from `getHashes()` | skipped | SHA-1, SHA-256 and SHA-512 only. |
 
@@ -74,7 +74,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | `test_03_hash_workflow`, `test_03_legacy_hash_workflow` | `hash > writes PBKDF2-SHA256 ...`, `verify > returns false for a wrong password` | |
 | `test_04_hash_types` | `verify > accepts the bytes of a password` | |
 | `test_11_unique_salt` | `hash > uses a new salt every time` | |
-| `test_12_min_salt_size`, `test_13_max_salt_size`, `test_14_salt_chars`, `test_15_salt_type`, `test_using_salt_size` | skipped | No salt options; the salt is always 16 random bytes. |
+| `test_12_min_salt_size`, `test_13_max_salt_size`, `test_14_salt_chars`, `test_15_salt_type`, `test_using_salt_size` | skipped | No salt options. The salt is always 16 random bytes. |
 | `test_21_min_rounds`, `test_21b_max_rounds` | `hash > rejects iterations outside 1 to 2^32 - 1`, `stored hash format > throws InvalidInputError for iterations above 2^32 - 1` | |
 | `test_has_rounds_using_*` (min, max, default, rounds) | `hash > uses the given iterations`, `needsRehash > compares iterations with the given minimum` | No `vary_rounds`. |
 | `test_has_rounds_using_and_needs_update` | `needsRehash > ...` | |
@@ -82,7 +82,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | `test_61_secret_case_sensitive` | `verify > is case sensitive` | |
 | `test_62_secret_border` | skipped | TypeScript types. |
 | `test_63_large_secret` | `maxBytes > accepts 4096 bytes by default and rejects more` | Same 4096-byte default as passlib's `MAX_PASSWORD_SIZE`. |
-| `test_64_forbidden_chars` | `RFC 6070 (PBKDF2-HMAC-SHA1) > "pass\u0000word", ...` | No forbidden characters; NUL is hashed. |
+| `test_64_forbidden_chars` | `RFC 6070 (PBKDF2-HMAC-SHA1) > "pass\u0000word", ...` | No forbidden characters. NUL is hashed like any other character. |
 | `test_70_hashes`, `test_71_alternates` | `passlib > ...` | |
 | `test_72_configs` | skipped | No config strings without a hash. |
 | `test_73_unidentified`, `test_74_malformed` | `stored hash format > throws InvalidInputError for ...` | |
@@ -95,10 +95,10 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 
 | Issue | How we differ | Test |
 | --- | --- | --- |
-| pbkdf2 3.1.2 and earlier returned a zero-filled key in browsers for unrecognized algorithm names such as `SHA256` (CVE-2025-6545, GHSA-h7cp-r72f-jxh6). | Only three exact identifiers are accepted; anything else throws. | `stored hash format > throws UnsupportedError for a SHA-384 PBKDF2 hash`, `... InvalidInputError for uppercase identifier` |
+| pbkdf2 3.1.2 and earlier returned a zero-filled key in browsers for unrecognized algorithm names such as `SHA256` (CVE-2025-6545, GHSA-h7cp-r72f-jxh6). | Only three exact identifiers are accepted, and anything else throws. | `stored hash format > throws UnsupportedError for a SHA-384 PBKDF2 hash`, `... InvalidInputError for uppercase identifier` |
 | pbkdf2 aborted the process on a `-0` key length (GHSA-xcx4-h4w9-hqq4). | The length comes from the stored hash, and an empty hash is malformed. | `stored hash format > throws InvalidInputError for empty hash` |
 | pbkdf2 rehashed long passwords on every iteration (GHSA-477h-4r7f-fvrx). | WebCrypto hashes the key once. | `verify > verifies a password longer than the HMAC block as its SHA-256 digest` |
 | pbkdf2-password defaults to 10,000 SHA-1 iterations and returns the salt and hash for the caller to store and compare. | One string with the algorithm and iterations, 600,000 SHA-256 iterations, and a constant-time `verify`. `needsRehash` flags pbkdf2-password hashes. | `pbkdf2-password > ...` |
-| passlib and `node:crypto` hash a string's code units as given, so the composed and decomposed forms of a password give different hashes. | String passwords are normalized to NFC; bytes are not. | `NFC normalization > ...` |
+| passlib and `node:crypto` hash a string's code units as given, so the composed and decomposed forms of a password give different hashes. | String passwords are normalized to NFC, and bytes are hashed as given. | `NFC normalization > ...` |
 | passlib's `pbkdf2_sha256` can't read the PHC `i=` form. | `verify` reads both forms. | `stored hash format > reads the PHC format ...`, `... reads passlib's format ...` |
-| Cloudflare Workers rejects more than 100,000 PBKDF2 iterations in production, but local workerd (`wrangler dev`, Miniflare) doesn't. | Documented in the README with the setting to use. | None; there is no Workers test project yet. |
+| Cloudflare Workers rejects more than 100,000 PBKDF2 iterations in production, but local workerd (`wrangler dev`, Miniflare) doesn't. | Documented in the README with the setting to use. | None. There is no Workers test project yet. |

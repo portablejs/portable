@@ -1,7 +1,7 @@
 // Writes the benchmark and stats tables in each package README, between `<!-- bench:start -->` and
 // `<!-- bench:end -->`, from the tables in scripts/readme-tables.ts, the reports that `pnpm bench`
 // writes to .bench/<package>.json and the sizes in .bench/sizes.json. `pnpm readme` produces all of
-// them first. A README without the markers gets them at the end of its "Why use this" section.
+// them first. If a README has no markers, they are added at the end of its "Why use this" section.
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import type { Size } from './bundle-size.ts'

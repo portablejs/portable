@@ -38,7 +38,10 @@ export function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
   return chunks
 }
 
-/** A stream of `bytes` in chunks that records how many bytes were pulled and whether it was cancelled. */
+/**
+ * A stream of `bytes` in chunks that records how many bytes were pulled and whether it was
+ * cancelled.
+ */
 export function tracked(chunks: readonly Uint8Array[]): {
   stream: ReadableStream<Uint8Array>
   read: () => number

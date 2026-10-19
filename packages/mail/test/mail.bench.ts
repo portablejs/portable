@@ -5,8 +5,8 @@ import MailComposer from 'nodemailer/lib/mail-composer'
 import { describe, expect, test } from 'vite-plus/test'
 import { chunked, randomBytes } from './utils.js'
 
-// Vitest's module runner reads each imported binding through a getter on every call, which
-// nodemailer, loaded by Node, doesn't pay. Copying the exports once measures the functions.
+// Vitest's module runner reads each imported binding through a getter on every call, but Node
+// loads nodemailer without that getter. Copying the exports once measures the functions.
 const { encode } = { ...Exports }
 const upstream = 'nodemailer 10.1.2'
 const date = new Date(Date.UTC(2024, 0, 2))

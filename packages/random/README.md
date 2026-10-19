@@ -41,13 +41,13 @@ Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound
 
 `int`, `string`, `shuffle` and `pick` use rejection sampling. A random value at or above the largest multiple of the range size is discarded and drawn again, so every result comes from the same number of source values. Reducing the value with a modulo instead, as `Math.floor(Math.random() * n)` and `bytes[i] % n` do, makes some results more likely whenever `n` is not a power of two. The tests check every function with a chi-squared test over ranges that aren't powers of two.
 
-`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each value is handed out once. The pooled values sit in memory until they are used, as in nanoid.
+`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each value is handed out once. Pooled values stay in memory until they are used, as in nanoid.
 
 ### Seeded generator
 
 `Random.seeded(seed)` is for tests and reproducible simulations. It is not for secrets: anyone who sees a few outputs can predict the rest.
 
-The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend. Its 32-bit outputs, which `seeded(seed).bytes(n)` returns least significant byte first, match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`, and a negative seed is read as its 64-bit two's complement. It uses 32-bit integer arithmetic only, so a seed gives the same values in every runtime. The values for a seed change only in a major version.
+The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend. Its 32-bit outputs, which `seeded(seed).bytes(n)` returns least significant byte first, match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`, and a negative seed is read as its 64-bit two's complement. The generator uses 32-bit integer arithmetic only, so a seed gives the same values in every runtime. The values for a seed change only in a major version.
 
 xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 2^128 orders. That is fewer than the 35! orders of a 35-element array. `Random.shuffle` doesn't have that limit.
 

@@ -31,7 +31,7 @@ if (await Password.verify(password, stored)) {
 
 `password` is a `string` or its bytes as a `Uint8Array`. A string is normalized to NFC before it is encoded as UTF-8, so `'café'` typed as one code point or as `e` plus a combining accent gives the same hash. Bytes are hashed as they are.
 
-`verify` returns `false` for a wrong password and throws for a bad `stored` string. It reads:
+`verify` resolves to `false` for a wrong password and rejects for a bad `stored` string. It reads:
 
 - the PHC format `hash` writes: `$pbkdf2-sha256$i=600000$<salt>$<hash>`, with an optional `l=<length>` after the iterations, as Rust's `pbkdf2` crate can write it;
 - [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.pbkdf2_digest.html)'s `pbkdf2_sha256`, `pbkdf2_sha512` and `pbkdf2_sha1` (`$pbkdf2$`), which write the iterations without `i=` and `.` instead of `+`.
@@ -54,7 +54,7 @@ The hash length comes from the stored string, so a 20-byte or 64-byte hash from 
 | `UnsupportedError` | `stored` is another algorithm's hash, such as `$2b$` (bcrypt), `$argon2id$` or `$scrypt$`. |
 | `MaxBytesError` | The password is longer than `maxBytes`. The error's `maxBytes` property holds the limit. |
 
-A bad `iterations` or `maxBytes` option throws a `RangeError`.
+A bad `iterations` or `maxBytes` option gives a `RangeError`: `needsRehash` throws it, and `hash` and `verify` reject with it.
 
 ## Cloudflare Workers
 
@@ -84,7 +84,7 @@ Password.needsRehash(stored, options) // false
 
 ### Other algorithms
 
-WebCrypto has PBKDF2 and no other password hash, so this package can't verify bcrypt, scrypt or Argon2 hashes. Node 24 has an experimental `Argon2id` in `crypto.subtle`, but browsers and Workers don't. For those hashes, `verify` throws `UnsupportedError`, and you can verify them with another library and rehash on the next login:
+WebCrypto has PBKDF2 and no other password hash, so this package can't verify bcrypt, scrypt or Argon2 hashes. Node 24 has an experimental `Argon2id` in `crypto.subtle`, but browsers and Workers don't. For those hashes, `verify` rejects with `UnsupportedError`, and you can verify them with another library and rehash on the next login:
 
 ```ts
 async function check(user: User, password: string): Promise<boolean> {
@@ -142,7 +142,7 @@ const stored = `$pbkdf2$i=10000$${unpad(user.salt)}$${unpad(user.hash)}`
 await Password.verify(password, stored) // then rehash, since needsRehash(stored) is true
 ```
 
-The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` and `$pbkdf2-sha512$`. Salts that were stored as text, rather than as random bytes, go in as the base64 of their UTF-8 bytes.
+The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` and `$pbkdf2-sha512$`. For a salt you stored as text, rather than as random bytes, put the base64 of its UTF-8 bytes in the string.
 
 Two behaviors differ from these libraries:
 

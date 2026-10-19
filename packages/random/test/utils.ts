@@ -56,7 +56,7 @@ function normalQuantile(p: number): number {
 
 /**
  * Returns whether `values` look uniform over `categories` outcomes at significance `p`. Seeded tests
- * use p = 0.001, which a fixed seed passes or fails the same way every run. Tests of
+ * use p = 0.001, and a fixed seed passes or fails the same way every run. Tests of
  * `crypto.getRandomValues` use p = 1e-9, so a uniform source fails about once in a billion runs.
  */
 export function looksUniform(

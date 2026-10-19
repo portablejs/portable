@@ -27,7 +27,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should create Alternative structure with text, watchHtml and html | Not applicable: `watchHtml` is not supported. Apple Watch reads `text/watch-html` from `alternatives`, which structure: alternatives go after html covers. |
 | should create Alternative structure with text, amp and html | structure: amp goes between text and html |
 | should create Alternative structure with text, icalEvent and html | structure: a calendar invitation is an alternative and an attachment |
-| should create Alternative structure using encoded icalEvent | structure: a calendar invitation is an alternative and an attachment. There is no `icalEvent` option; the README shows the alternative plus attachment recipe. |
+| should create Alternative structure using encoded icalEvent | structure: a calendar invitation is an alternative and an attachment. There is no `icalEvent` option. The README shows the alternative plus attachment recipe. |
 | should create Alternative structure with text, html and cid attachment | structure: text, html and cid attachments nest multipart/related in multipart/alternative |
 | should create Related structure with html and cid attachment | structure: html and cid attachments make multipart/related |
 | should create content node with only text | structure: only text is a single part |
@@ -109,12 +109,12 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should format a Date object for the Date header | headers: a Date is written in RFC 5322 form; an invalid Date throws |
 | should report an error for content that can not be streamed | body: content of another type throws a TypeError |
 | should report an error for raw content that can not be streamed | Not applicable: no `raw`. |
-| should not let an own \_\_proto\_\_ key of a header value emit the value raw | Not applicable: header values are strings or lists of strings; there are no `{ prepared, value }` objects. |
+| should not let an own \_\_proto\_\_ key of a header value emit the value raw | Not applicable: header values are strings or lists of strings, and there are no `{ prepared, value }` objects. |
 | should build child node | structure: text and one attachment make multipart/mixed |
 | should build multipart node | structure: text and html make multipart/alternative, text first |
-| should strip line breaks from custom boundary material | structure: the boundary … throws a RangeError. We refuse the value instead of cleaning it. |
+| should strip line breaks from custom boundary material | structure: the boundary … throws a RangeError. `Mail.encode` refuses the value instead of cleaning it. |
 | should drop control characters from boundary material | structure: the boundary … throws a RangeError |
-| should fall back to a generated boundary when a boundary of … strips to nothing | Not applicable: an invalid boundary throws, nothing is stripped. |
+| should fall back to a generated boundary when a boundary of … strips to nothing | Not applicable: an invalid boundary throws, and nothing is stripped. |
 | should strip control characters from an explicit boundary parameter | body: a multipart content type throws. Callers can't set a boundary parameter. |
 | should declare a single boundary when a parameter ahead of it has no value | body: a multipart content type throws |
 | should strip line breaks from an explicit boundary parameter | body: a multipart content type throws |
@@ -265,7 +265,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should return a error for an errored stream | stream: an error in a content stream errors the output and cancels the other streams |
 | should return a stream error | stream: an error in a content stream errors the output and cancels the other streams |
 | #transform: should pipe through provided stream, should accept a function that creates the transform, should pass a content error through the transforms | Not applicable: no transforms. Callers use `pipeThrough` on the result. |
-| Line breaks: should convert line breaks to LF when newline is linux, should convert line breaks to CRLF when newline is win, should pass a content error through the newline transform | Not applicable: no `newline` option, output always uses CRLF. body: line breaks in text become CRLF |
+| Line breaks: should convert line breaks to LF when newline is linux, should convert line breaks to CRLF when newline is win, should pass a content error through the newline transform | Not applicable: no `newline` option, and output always uses CRLF. body: line breaks in text become CRLF |
 | #processFunc: should pipe through provided process function | Not applicable: no process function. |
 | Raw content: should return pregenerated content, …for a child node, …from a stream, should catch error from a raw stream 1, should catch error from a raw stream 2 | Not applicable: no `raw`. |
 
@@ -282,7 +282,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should deliver to the domain before a comment, not the text after it | addresses: the domain before a comment is used, not the text after it |
 | should keep a comment beside the @ inside the same address | addresses: the domain before a comment is used, not the text after it |
 | should not let a quoted local part carry the text after a comment into the envelope | addresses: the recipients of … are … |
-| should deliver to the domain of the angle-addr when a quoted local part holds a ">" | addresses: the recipients of … are …. The `>` stays inside the quoted local part, where `RCPT TO` allows it; nodemailer replaces it with a space. |
+| should deliver to the domain of the angle-addr when a quoted local part holds a ">" | addresses: the recipients of … are …. The `>` stays inside the quoted local part, where `RCPT TO` allows it. nodemailer replaces it with a space. |
 | should not take a recipient out of a quoted string or a comment inside a group | addresses: the recipients of … are … |
 | should not deliver a domain literal holding an "@" to the domain inside it | addresses: the recipients of … are … |
 | should read whitespace and comments beside the "@" as nothing | addresses: the recipients of … are … |
@@ -292,7 +292,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should not take a recipient out of a nested comment | addresses: the recipients of … are … |
 | should fold away an ignored code point like a validator does | addresses: the domain is mapped with UTS #46 as browsers do |
 | should map full width characters to their canonical form | addresses: the domain is mapped with UTS #46 as browsers do |
-| should agree with url.domainToASCII on every encodable domain | addresses: the domain is mapped with UTS #46 as browsers do. We call the URL host parser, which is `domainToASCII` in Node. |
+| should agree with url.domainToASCII on every encodable domain | addresses: the domain is mapped with UTS #46 as browsers do. The package calls the URL host parser, which is `domainToASCII` in Node. |
 | should map the domain for an SMTPUTF8 address too | Different: a domain beside a non-ASCII local part is only lowercased. See differences. |
 | should leave address literals and non hostnames alone | addresses: a domain literal is split off at the @ in front of it; a domain the URL parser rejects is kept as written |
 | should not let a URL delimiter truncate the domain | addresses: the URL delimiter in … does not truncate the domain; a backslash in the domain throws |
@@ -335,13 +335,13 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 
 ## Known upstream issues
 
-Each of these is a nodemailer behavior we handle differently, with the test that checks ours.
+Each row is a nodemailer behavior that this package handles differently, with the test that checks ours.
 
 | Upstream behavior | Ours | Test |
 | --- | --- | --- |
 | libqp's `wrap` breaks the last quoted-printable line at a space even when the line already fits, which adds a soft line break. | Lines are broken only past 76 characters. The decoded text is the same. | body: a line longer than 76 characters is quoted-printable with soft breaks |
-| A text body given as a `Buffer` is never `7bit`; only strings are scanned. | A `Uint8Array` text body is scanned like a string. | body: bytes are read as UTF-8 text |
-| Without the `newline` option, a bare LF or CR in a `7bit` or `8bit` body is written as is. A bare LF after a line ending is how SMTP smuggling starts. | Line breaks in `7bit`, `8bit` and text quoted-printable bodies become CRLF, including a CR and LF split across stream chunks. | body: line breaks in text become CRLF; a CR and LF split across stream chunks make one line break; an 8bit message with LF line endings is written with CRLF |
+| A text body given as a `Buffer` is never `7bit`, because only strings are scanned. | A `Uint8Array` text body is scanned like a string. | body: bytes are read as UTF-8 text |
+| Without the `newline` option, a bare LF or CR in a `7bit` or `8bit` body is written as is. SMTP smuggling starts with a bare LF after a line ending. | Line breaks in `7bit`, `8bit` and text quoted-printable bodies become CRLF, including a CR and LF split across stream chunks. | body: line breaks in text become CRLF; a CR and LF split across stream chunks make one line break; an 8bit message with LF line endings is written with CRLF |
 | An address that isn't valid, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, is quoted or kept so that something is sent. | It throws `Mail.InvalidInputError`, so the caller sees the mistake. | addresses: an unquoted special or second @ in the local part throws; a bare name is not an address |
 | A recipient made only of a comment, such as `(a@evil.com)`, is dropped silently. | It throws. | addresses: a comment that stands alone in … is not taken as a recipient |
 | 10.1.7 encodes a `"` in a subject as an encoded word, which makes the subject unreadable in clients that don't decode it. | Quotes stay as they are. They are allowed in unstructured text. | headers: quotes in a subject stay readable |
@@ -354,8 +354,8 @@ Each of these is a nodemailer behavior we handle differently, with the test that
 These are deliberate and documented in the README. The oracle test's generator avoids them.
 
 - Header names keep the caller's case. nodemailer capitalizes each word (`X-Processed`), which is the same for the names most callers write.
-- An address name over about 40 bytes is encoded in words of up to 75 characters, as `@portable/mime-headers` writes them; nodemailer uses 52.
+- An address name over about 40 bytes is encoded in words of up to 75 characters, as `@portable/mime-headers` writes them, where nodemailer uses 52.
 - A file name holding `"` is written as a quoted string with `\"` in `filename` instead of RFC 2231 encoding.
-- An A-label domain beside a non-ASCII local part (`jõser@xn--jgeva-dua.ee`) is kept as given. nodemailer decodes it to UTF-8, which needs a Punycode decoder; WinterTC has none.
+- An A-label domain beside a non-ASCII local part (`jõser@xn--jgeva-dua.ee`) is kept as given. nodemailer decodes it to UTF-8, which needs a Punycode decoder, and WinterTC has none.
 - A domain beside a non-ASCII local part is lowercased but not mapped with UTS #46, since the URL host parser always returns an A-label.
 - A backslash in a domain throws: the URL parser reads it as a path separator and the address can't be checked.

@@ -261,8 +261,8 @@ function rawSize(png: Parsed): number {
     (sum, pass) => sum + (rowBytes(png, pass.width) + 1) * pass.height,
     0,
   )
-  // Deflate expands at most 1032:1, so a header that claims more pixels than the data can hold
-  // is rejected here instead of allocating for it.
+  // Deflate expands at most 1032:1, so `rawSize` rejects a header that claims more pixels than
+  // the data can hold instead of allocating for it.
   if (size > png.idat.length * 1032 + 1024)
     throw new TruncatedError('Image data is too short for the image size in IHDR.')
   return size

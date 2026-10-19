@@ -26,7 +26,7 @@ function encoder(): Encoder {
 
 /**
  * EUC-JP. As the WHATWG Encoding Standard specifies, it encodes JIS X 0208 and halfwidth katakana
- * only. JIS X 0212 characters are decoded but never encoded.
+ * only. WHATWG decoders read JIS X 0212 characters, but `eucJp` never encodes them.
  *
  * @example
  * ```ts

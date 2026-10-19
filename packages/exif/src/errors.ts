@@ -38,7 +38,8 @@ export class InvalidInputError extends Error {
 }
 
 /**
- * Thrown when the input is not JPEG, TIFF, PNG, WebP, HEIF or raw EXIF data, or when `strip` gets a format other than JPEG, PNG or WebP.
+ * Thrown when the input is not JPEG, TIFF, PNG, WebP, HEIF or raw EXIF data, or when `strip` gets a
+ * format other than JPEG, PNG or WebP.
  *
  * @example
  * ```ts

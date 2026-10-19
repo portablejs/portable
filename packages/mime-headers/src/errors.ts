@@ -1,7 +1,7 @@
 /**
  * Thrown by `parseAddresses` with `strict: true` when the input isn't a valid RFC 5322 address
- * list, and by `formatValue` and `formatAddresses` when given something a header can't carry,
- * such as a line break in a parameter name or an address that doesn't parse.
+ * list, and by `formatValue` and `formatAddresses` when given something that can't be
+ * written in a header, such as a line break in a parameter name or an address that doesn't parse.
  *
  * @example
  * ```ts

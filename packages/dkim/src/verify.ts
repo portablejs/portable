@@ -8,8 +8,8 @@ import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.j
 
 /**
  * The DNS lookup DKIM needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
- * object with `resolveTxt`. A rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` means
- * there is no key, and any other rejection a temporary DNS error.
+ * object with `resolveTxt`. `verify` treats a rejection with `code` `ENOTFOUND`, `ENODATA` or
+ * `EBADNAME` as no key, and any other rejection as a temporary DNS error.
  *
  * @example
  * ```ts

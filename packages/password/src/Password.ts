@@ -26,7 +26,8 @@ export declare namespace hash {
     maxBytes?: number | undefined
     /**
      * Rejects the returned promise with `signal.reason` when aborted. WebCrypto can't stop a
-     * derivation that has started, so it finishes in the background and its result is dropped.
+     * derivation that has started, so the derivation finishes in the background and its result is
+     * dropped.
      */
     signal?: AbortSignal | undefined
   }
@@ -34,8 +35,8 @@ export declare namespace hash {
 
 /**
  * Hashes a password with PBKDF2-HMAC-SHA256 and a random 16-byte salt, and returns a 32-byte hash
- * in PHC string format. A string password is normalized to NFC and encoded as UTF-8; bytes are
- * hashed as they are.
+ * in PHC string format. A string password is normalized to NFC and encoded as UTF-8, and bytes
+ * are hashed as they are.
  *
  * @example
  * ```ts
@@ -70,7 +71,8 @@ export declare namespace verify {
     maxBytes?: number | undefined
     /**
      * Rejects the returned promise with `signal.reason` when aborted. WebCrypto can't stop a
-     * derivation that has started, so it finishes in the background and its result is dropped.
+     * derivation that has started, so the derivation finishes in the background and its result is
+     * dropped.
      */
     signal?: AbortSignal | undefined
   }

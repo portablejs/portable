@@ -1,5 +1,5 @@
 /**
- * Thrown by `load` for a label that names no charset this package can encode, and by `encode`
+ * Thrown by `load` when it doesn't know the label or can't encode its charset, and by `encode`
  * and `EncoderStream` when `unmappable` is `'error'` and the text has a character the charset
  * can't represent.
  *

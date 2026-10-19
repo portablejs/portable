@@ -23,8 +23,9 @@ export declare namespace Store {
 }
 
 /**
- * Creates a store that keeps keys in a `Map` in this isolate or process. Expired keys are deleted
- * when read, and all of them whenever the map has doubled in size since the last sweep.
+ * Creates a store that keeps keys in a `Map` in this isolate or process. An expired key is
+ * deleted when it is read, and all expired keys are deleted whenever the map has doubled in size
+ * since the last sweep.
  *
  * @example
  * ```ts

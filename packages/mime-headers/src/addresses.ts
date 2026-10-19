@@ -2,13 +2,15 @@ import { InvalidInputError } from './errors.js'
 import { toText } from './internal/text.js'
 import { decodeWords, encodeWord } from './words.js'
 
-/** One mailbox. `address` is `''` when the input named nobody, as in `Undisclosed recipients`. */
+/** One mailbox. `address` is `''` when the input has no address, as in `Undisclosed recipients`. */
 export type Mailbox = {
   readonly name: string
   readonly address: string
 }
 
-/** A named group of mailboxes (RFC 5322 section 3.4), as in `Team: a@example.com, b@example.com;`. */
+/**
+ * A named group of mailboxes (RFC 5322 section 3.4), as in `Team: a@example.com, b@example.com;`.
+ */
 export type Group = {
   readonly name: string
   readonly group: readonly Mailbox[]
@@ -31,9 +33,9 @@ export declare namespace parseAddresses {
 
 /**
  * Parses an address list, such as the value of a `To` or `From` header. Display names are
- * unquoted and their encoded words decoded, and a comment is the name when nothing else names the
- * mailbox. Without `strict`, malformed input never throws: each entry gets the first address
- * written in it, and the rest of its text becomes the name.
+ * unquoted and their encoded words decoded, and a comment is used as the name when the mailbox has
+ * no other name. Without `strict`, malformed input never throws: each entry gets the first address
+ * written in it, and the rest of the entry's text becomes the name.
  *
  * @example
  * ```ts
@@ -74,8 +76,8 @@ export declare namespace formatAddresses {
 
 /**
  * Formats mailboxes and groups as an address list, the reverse of `parseAddresses`. A name that
- * needs it is quoted, or written as encoded words when it holds characters outside printable
- * ASCII. Fold the whole header line afterwards.
+ * needs quoting is quoted, or written as encoded words when it contains characters outside
+ * printable ASCII. Fold the whole header line afterwards.
  *
  * @example
  * ```ts
@@ -536,7 +538,9 @@ class Parser {
   }
 }
 
-/** Skips an obsolete source route (RFC 5322 section 4.4), as in `<@relay.example:user@example.com>`. */
+/**
+ * Skips an obsolete source route (RFC 5322 section 4.4), as in `<@relay.example:user@example.com>`.
+ */
 function skipRoute(tokens: Token[], from: number, to: number): number {
   if (tokens[from]?.kind !== '@') return from
   for (let i = from; i < to; i++) {

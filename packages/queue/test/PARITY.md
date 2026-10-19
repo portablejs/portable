@@ -12,9 +12,9 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | p-queue [#219](https://github.com/sindresorhus/p-queue/issues/219), [#241](https://github.com/sindresorhus/p-queue/issues/241): an aborted signal didn't remove a waiting task or reject its promise. | Removed and rejected with `signal.reason` at once. | `signal > aborting while the task waits removes it and rejects with the reason` |
 | p-queue [#239](https://github.com/sindresorhus/p-queue/issues/239), p-limit `clearQueue()`: cleared tasks' promises stayed pending forever. | `clear()` always rejects them with an `AbortError`, and marks the promises handled. | `p-limit > clear removes the waiting tasks and rejects them with an AbortError`, `idle, pause and clear > an ignored promise of a removed task is not an unhandled rejection` |
 | p-queue [#237](https://github.com/sindresorhus/p-queue/issues/237): `idle` never fires when the queue never had a task. | `idle()` resolves at once. | `idle, pause and clear > idle resolves at once for a queue that never had a task` |
-| p-queue [#255](https://github.com/sindresorhus/p-queue/issues/255): adding tasks from a listener exceeds the concurrency. | No listeners; a task added from inside a running task waits for a slot. | `add > a task added from inside a running task waits for a free slot` |
+| p-queue [#255](https://github.com/sindresorhus/p-queue/issues/255): adding tasks from a listener exceeds the concurrency. | No listeners. A task added from inside a running task waits for a slot. | `add > a task added from inside a running task waits for a free slot` |
 | p-queue: aborting a running task frees its slot while the task may still run, so more than `concurrency` tasks run. | The slot stays taken until the task settles. `add` still rejects at once. | `signal > an aborted running task keeps its slot until it settles` |
-| p-queue: fixed windows let `2 × intervalCap` tasks start around a window boundary; `strict: true` is opt-in. | The rate limit is always a sliding window. | `rate limit > has no burst at a window boundary` |
+| p-queue: fixed windows let `2 × intervalCap` tasks start around a window boundary unless the caller sets `strict: true`. | The rate limit is always a sliding window. | `rate limit > has no burst at a window boundary` |
 | p-queue: the rate limit uses `Date.now()`, so a clock that goes back stalls the queue (documented in its options). | `performance.now()`, which never goes back. | Not testable without moving the system clock. |
 | p-queue: an `interval` above 2³¹−1 ms made `setTimeout` fire every 1 ms (now rejected). | The timer waits in steps of at most 2³¹−1 ms and rechecks the window. | `rate limit > waits out an interval longer than the timer limit instead of firing early` |
 | p-limit [#110](https://github.com/sindresorhus/p-limit/issues/110): `limit.map` left unhandled rejections when the iterable threw. | Every call's promise has a handler. | `map errors > an iterable that throws after its first items leaves no unhandled rejection` |
@@ -33,7 +33,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 
 ## Not built
 
-- **events.** No events. The queue is a plain object, not an `EventTarget`; each `add()` promise reports its own task.
+- **events.** No events. The queue is a plain object, not an `EventTarget`. Each `add()` promise reports its own task.
 - **timeout.** No `timeout` option. Pass `signal: AbortSignal.timeout(ms)` to `add`, or use `Timers.retry` with `timeout` inside the task (README).
 - **addAll.** No `addAll()`. Use `Promise.all(tasks.map((task) => queue.add(task)))`.
 - **setPriority.** No task ids or `setPriority()`. Abort the waiting task and add it again with the new priority.
@@ -148,7 +148,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | .addAll() | skipped | Not built: addAll |
 | .addAll() assigns unique IDs to each task | skipped | Not built: addAll |
 | .addAll() with options does not mutate the options object | skipped | Not built: addAll |
-| autoStart: false | `idle, pause and clear > pause stops starting tasks and resume starts them again` | There is no `autoStart`; call `pause()` after `create`. |
+| autoStart: false | `idle, pause and clear > pause stops starting tasks and resume starts them again` | There is no `autoStart`. Call `pause()` after `create`. |
 | .start() - return this | skipped | `resume()` returns nothing. The queue has no chained calls. |
 | .start() - not paused | `idle, pause and clear > pause stops starting tasks and resume starts them again` |  |
 | .pause() | `idle, pause and clear > pause stops starting tasks and resume starts them again` |  |
@@ -168,7 +168,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | .onError() - works with Promise.race pattern | skipped | Not built: onError |
 | .onError() - multiple listeners | skipped | Not built: onError |
 | .onError() - works when called before adding tasks | skipped | Not built: onError |
-| an active listener cannot exceed the concurrency limit | `add > a task added from inside a running task waits for a free slot` | There are no listeners; adding from inside a task is the same re-entrant case. |
+| an active listener cannot exceed the concurrency limit | `add > a task added from inside a running task waits for a free slot` | There are no listeners. Adding from inside a task is the same re-entrant case. |
 | .add() runs tasks with `Infinity` priority first, in the order they were added | `add > keeps the order of equal priorities, including Infinity and -Infinity` |  |
 | .onError() - pausing in an `error` listener stops the remaining tasks, as documented | skipped | Not built: onError |
 | .addAll() resolves with the results in task order when the tasks finish in reverse order | skipped | Not built: addAll |
@@ -270,13 +270,13 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| PriorityQueue ignores dequeued items in queue operations | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
-| PriorityQueue inserts high-priority items correctly after partial dequeue | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
-| PriorityQueue appends same-priority and lower-priority items correctly after partial dequeue | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue ignores dequeued items in queue operations | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue inserts high-priority items correctly after partial dequeue | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue appends same-priority and lower-priority items correctly after partial dequeue | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
 | PriorityQueue removes the live duplicate id after partial dequeue | skipped | Not built: queueClass |
-| PriorityQueue removes by run after partial dequeue | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
-| PriorityQueue ignores consumed items with no live match | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
-| PriorityQueue stays ordered after cursor compaction | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue removes by run after partial dequeue | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue ignores consumed items with no live match | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue stays ordered after cursor compaction | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
 | PriorityQueue setPriority works when only one live item remains | skipped | Not built: setPriority |
 | PriorityQueue keeps FIFO order among `Infinity` priorities | `add > keeps the order of equal priorities, including Infinity and -Infinity` |  |
 | PriorityQueue orders `-Infinity` priorities last and keeps their FIFO order | `add > keeps the order of equal priorities, including Infinity and -Infinity` |  |
@@ -286,7 +286,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | PriorityQueue keeps FIFO order among `Infinity` priorities inserted after partial dequeue | `add > keeps priority order after many tasks have started` |  |
 | PriorityQueue does not keep dequeued items, so their functions can be garbage collected | skipped | Needs `--expose-gc`. Our queue sets a started task's slot to `undefined` so it can be collected. |
 | tasks that ran can be garbage collected while other tasks still wait | skipped | Needs `--expose-gc`. Our queue sets a started task's slot to `undefined` so it can be collected. |
-| PriorityQueue removes the first item, also after dequeues and compaction, and keeps the order | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal; its effect on order is covered by `add > keeps priority order after many tasks have started`. |
+| PriorityQueue removes the first item, also after dequeues and compaction, and keeps the order | skipped | Tests p-queue's exported `PriorityQueue` class. Ours is internal, and its effect on order is covered by `add > keeps priority order after many tasks have started`. |
 
 ### p-queue 10.0.0 `test/validation.ts`
 
@@ -699,7 +699,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | pMap - maps a 100k element sync generator where most results are skipped | skipped | Not built: pMapSkip |
 | pMap - an endless sync source with the default concurrency stops when the first mapper throws | `map errors > ends an endless source when the first call throws` |  |
 | pMap - rejects invalid `concurrency` values with a message that names the value | `map > throws on an invalid concurrency or fn` |  |
-| pMap - invalid arguments reject instead of throwing, and do not start iterating the input | `map > throws on an invalid concurrency or fn` | Different: argument errors throw at once instead of rejecting; the input is not read either way. |
+| pMap - invalid arguments reject instead of throwing, and do not start iterating the input | `map > throws on an invalid concurrency or fn` | Different: argument errors throw at once instead of rejecting, and the input is not read either way. |
 | pMap - an already aborted signal does not pull from the source or call the mapper | `map signal > rejects with an already aborted signal without reading the input` |  |
 | pMap - rejects with an abort reason that is not an `Error` as is | `map signal > rejects with the abort reason and aborts the signal passed to fn` |  |
 | pMap - a mapper that aborts the signal stops the run at once | `map signal > rejects with the abort reason and aborts the signal passed to fn` |  |
@@ -836,7 +836,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | strict mode | `rate limit > starts at most intervalCap tasks in any interval` |  |
 | strict mode handles limit 0 without crashing | `` rate limit > rejects invalid interval and intervalCap values (`intervalCap: 0` throws) `` |  |
 | strict mode never exceeds the limit within an interval | `rate limit > keeps the limit when many tasks are added over time` |  |
-| strict mode enforces spacing between saturated executions | skipped | P-throttle's strict mode spaces saturated calls `interval / limit` apart. Ours starts a call as soon as the window allows; the oracle checks it never starts later than p-throttle and never exceeds the limit. |
+| strict mode enforces spacing between saturated executions | skipped | p-throttle's strict mode spaces saturated calls `interval / limit` apart. Ours starts a call as soon as the window allows, and the oracle checks that it never starts a call later than p-throttle and never exceeds the limit. |
 | limits after pause in strict mode | `rate limit > starts a task at once after a long idle period` |  |
 | limits after pause in windowed mode | skipped | Not built: fixed windows |
 | passes arguments through | `rate limit > throttles a function like p-throttle` |  |

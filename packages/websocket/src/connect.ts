@@ -25,8 +25,8 @@ export declare namespace connect {
     /** Wait before each reconnect. @default { initial: 1000, max: 30000 } */
     delay?: Timers.Delay | undefined
     /**
-     * Retries in a row that may fail before giving up. The streams then fail with the last error. A
-     * connection that finishes `open` resets the count. @default Infinity
+     * How many retries in a row may fail before `connect` gives up. The streams then fail with the
+     * last error. A connection that finishes `open` resets the count. @default Infinity
      */
     retries?: number | undefined
     /** Time limit for each attempt to open and finish `open`, in ms. @default 10000 */
@@ -37,7 +37,7 @@ export declare namespace connect {
      */
     open?: ((context: Context) => void | PromiseLike<void>) | undefined
     /**
-     * Decides whether a close the client didn't start is followed by a reconnect. By default, codes
+     * Decides whether `connect` reconnects after a close the client didn't start. By default, codes
      * 1000, 1002, 1003, 1007, 1008, 1009 and 1010 are final and every other code reconnects.
      */
     reconnectIf?: ((event: Close) => boolean) | undefined
@@ -58,11 +58,14 @@ export declare namespace connect {
 
   /** What `open` receives. */
   type Context = {
-    /** Sends a message on this connection now, ahead of queued writes. Throws once it has closed. */
+    /**
+     * Sends a message on this connection now, ahead of queued writes. Throws once the connection
+     * has closed.
+     */
     send: (message: string | Uint8Array<ArrayBuffer>) => void
     /**
-     * Messages received while `open` runs. Messages it doesn't read go to `readable` once it returns
-     * or cancels this stream.
+     * Messages received while `open` runs. Messages that `open` doesn't read go to `readable` once
+     * `open` returns or cancels this stream.
      */
     messages: ReadableStream<Message>
     /** Aborts when this connection closes or the attempt times out. */

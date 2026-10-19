@@ -54,7 +54,10 @@ export type Result = {
    * message was sealed, then Authentication-Results.
    */
   headers: string
-  /** Why the message wasn't sealed, when `seal` was given: the reason from `Arc.InvalidInputError`. */
+  /**
+   * Why the message wasn't sealed when `seal` was given: the reason from
+   * `Arc.InvalidInputError`.
+   */
   sealSkipReason?: string | undefined
 }
 
@@ -68,14 +71,17 @@ export declare namespace authenticate {
     resolver: Resolver
     /**
      * The authserv-id of Authentication-Results (RFC 8601 section 2.5), usually this server's host
-     * name in A-label form. It must be a token, so a value such as `mx; dkim=pass` throws.
+     * name in A-label form. It must be a token, so a value such as `mx; dkim=pass` is rejected.
      */
     authservId: string
     /** The SMTP client's IP address. */
     ip: string
     /** The HELO or EHLO name. */
     helo?: string | undefined
-    /** The MAIL FROM address. Empty or missing for a bounce, which checks the HELO name instead. */
+    /**
+     * The MAIL FROM address. Empty or missing for a bounce, for which SPF checks the HELO name
+     * instead.
+     */
     sender?: string | undefined
     /** Seals the message with an ARC set that records these results. */
     seal?: Seal | undefined
@@ -83,9 +89,15 @@ export declare namespace authenticate {
     now?: Date | undefined
     /** RSA keys shorter than this give DKIM `policy` and fail the ARC chain. @default 1024 */
     minKeyBits?: number | undefined
-    /** Creates the body hashes, as in `Dkim.verify`. @default buffers the body for `crypto.subtle.digest` */
+    /**
+     * Creates the body hashes, as in `Dkim.verify`.
+     * @default buffers the body for `crypto.subtle.digest`
+     */
     hash?: (() => Dkim.Hash) | undefined
-    /** Finds organizational domains from a public suffix list, as in `Dmarc.check`. @default the DNS tree walk */
+    /**
+     * Finds organizational domains from a public suffix list, as in `Dmarc.check`.
+     * @default the DNS tree walk
+     */
     organizationalDomain?: Dmarc.check.Options['organizationalDomain']
     /** Stops reading the message and every lookup, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
@@ -102,7 +114,7 @@ export declare namespace authenticate {
  * `cv=`.
  *
  * The promise rejects only for invalid options, a failing message stream or an aborted `signal`.
- * DNS failures are results, such as `temperror`.
+ * DNS failures are reported as results, such as `temperror`.
  *
  * @example
  * ```ts

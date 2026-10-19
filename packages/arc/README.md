@@ -73,7 +73,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `hash` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
-With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed gets `i=1` with `cv=fail`.
+With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed is sealed with `i=1` and `cv=fail`.
 
 `seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't fit the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal says `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
 
@@ -87,8 +87,8 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:stream` and Buffers, so it doesn't run in Workers or a browser.
-- It follows RFC 8617 by default. mailauth's default mode accepts ARC-Seal syntax errors, instances such as `i=0x1`, and an ARC-Message-Signature without `c=` signed relaxed/relaxed, as the ARC drafts did. RFC behavior needs `strict: true`. Here it is the only behavior, and it gives mailauth's strict result on every message of ValiMail's ARC test suite and on chains it seals, changed in 11 ways.
-- Sealing is explicit. `chainValidation` is required once a chain exists, and options that would produce a set no validator accepts, such as an instance with a gap, throw instead of producing that set with a warning.
+- It follows RFC 8617 by default. mailauth's default mode accepts ARC-Seal syntax errors, instances such as `i=0x1`, and an ARC-Message-Signature without `c=` signed relaxed/relaxed, as the ARC drafts did. mailauth follows the RFC only with `strict: true`. This package always follows the RFC, and it gives mailauth's strict result on every message of ValiMail's ARC test suite and on 11 altered copies of chains it seals.
+- Sealing is explicit. `seal` requires `chainValidation` once a chain exists, and it throws for options that would produce a set no validator accepts, such as an instance with a gap, instead of producing that set with a warning.
 - It verifies faster. In one run in Node, it verified a 250 KB message with two ARC sets 372 times a second, against 251 for mailauth's strict mode, and sealed it 229 times a second, against 207.
 - It has no dependencies outside `@portable/*`.
 
@@ -118,11 +118,11 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | --- | --- |
 | `const { arc } = await authenticate(message, { resolver })` | `const arc = await Arc.verify(message, { resolver })`, or `MailAuth.authenticate` from `@portable/mail-auth` |
 | `arc.status.result` | `arc.result` |
-| `arc.status.comment` | `arc.reason`, for failures. The pass comment (`i=1 spf=pass dkim=pass`) is built by `@portable/mail-auth`. |
+| `arc.status.comment` | `arc.reason`, for failures. `@portable/mail-auth` builds the pass comment (`i=1 spf=pass dkim=pass`). |
 | `arc.i` | `arc.instance` |
 | `arc.authenticationResults` (parsed) | `arc.sets.at(-1).authResults` (text) |
 | `arc.signature` | Not returned. A failing ARC-Message-Signature is in `arc.reason`. |
-| `arc.status.shouldSeal` | `true` unless the newest seal says `cv=fail`; `seal` throws `Arc.InvalidInputError` in that case. |
+| `arc.status.shouldSeal` | `true` unless the newest seal says `cv=fail`, and in that case `seal` throws `Arc.InvalidInputError`. |
 | `strict: true` | The only behavior. |
 | `minBitLength` | `minKeyBits` |
 | `sealMessage(message, { signingDomain, selector, privateKey, authResults, cv })` | `Arc.seal(message, { domain, selector, privateKey, authResults, chainValidation })`. It resolves to a string, not a Buffer. |

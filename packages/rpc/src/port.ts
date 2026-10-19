@@ -88,7 +88,7 @@ export function port(target: port.Target, options: port.Options = {}): Transport
 /**
  * Lets `connect` post, and for ports receive, messages directly instead of through the streams.
  * That is faster, and a message that can't be cloned rejects one call instead of erroring the
- * writable for good.
+ * writable permanently.
  */
 export const direct: WeakMap<
   Transport,

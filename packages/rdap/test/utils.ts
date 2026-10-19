@@ -45,7 +45,7 @@ export const recorded: Readonly<Record<string, Record<string, unknown>>> = {
 }
 
 /**
- * What the fake server sends for a URL. A plain value is sent as JSON. `'hang'` never answers,
+ * What the fake server sends for a URL. A plain value is sent as JSON. `'hang'` doesn't answer
  * until the request is aborted. A URL with no reply gets an empty 404, as RDAP servers send.
  */
 export type Reply = unknown

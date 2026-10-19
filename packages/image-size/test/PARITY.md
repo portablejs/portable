@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suite: [image-size](https://github.com/image-size/image-size) `specs/*.spec.ts` at commit `06fad4f` (the last public commit; npm's 2.0.4 adds bounds checks but no tests). The oracle test compares against image-size 2.0.4 from npm.
+Upstream suite: [image-size](https://github.com/image-size/image-size) `specs/*.spec.ts` at commit `06fad4f` (the last public commit, and npm's 2.0.4 adds bounds checks but no tests). The oracle test compares against image-size 2.0.4 from npm.
 
 Fixtures in `fixtures/` are copied from image-size's `specs/images` (MIT, Copyright © 2013-Present Aditya Yadav). The icons in `fixtures/valid/ico/` are CC BY-SA 4.0 from iconarchive, as their `LICENSE.md` says. `fixtures/valid/png/animated.png` is a two-frame APNG made with Pillow for this package.
 
@@ -11,20 +11,20 @@ Tests load fixtures with `import.meta.glob(..., { query: '?url&inline' })`, whic
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Valid images, one test per file in `specs/images/valid` | `valid images > <path>` for the same path | Each fixture is also parsed from 4 KiB chunks and from 1-byte chunks. `valid images > every fixture has an expected size` fails if a fixture has no expectation. |
-| Expected `images` for `sample.heic` | `valid images > valid/heif/sample.heic` | Upstream lists the ICO sizes for `sample.heic`, a copy-paste slip that its test never checks because image-size returns no `images` there. We expect none. |
+| Expected `images` for `sample.heic` | `valid images > valid/heif/sample.heic` | Upstream lists the ICO sizes for `sample.heic`, a copy-paste slip that its test never checks because image-size returns no `images` there. Our test expects none. |
 
 ## `specs/invalid.spec.ts`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| Invalid images, one test per file in `specs/images/invalid` | `invalid images > <path>` | Upstream checks for a `TypeError` with `Invalid <format>`. We check for `InvalidInputError`. |
+| Invalid images, one test per file in `specs/images/invalid` | `invalid images > <path>` | Upstream checks for a `TypeError` with `Invalid <format>`. Our test checks for `InvalidInputError`. |
 | non-existent file | not applicable | There is no file API. Callers open the file and pass its stream. |
 
 ## `specs/others.spec.ts`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| Invalid invocation > passing buffer for tiff | `invalid images > a TIFF cut off before its first IFD is truncated` | Upstream throws "Invalid Tiff. Missing tags" for the first 2048 bytes. The IFD lies past them, so we throw `TruncatedError`. |
+| Invalid invocation > passing buffer for tiff | `invalid images > a TIFF cut off before its first IFD is truncated` | Upstream throws "Invalid Tiff. Missing tags" for the first 2048 bytes. The IFD lies past them, so `parse` throws `TruncatedError`. |
 | Invalid invocation > for a disabled image type | not applicable | `disableTypes` is global mutable state. Callers check `size.type` instead. |
 | .types property | not applicable | The list is the `ImageSize.Type` union, which the type checker enforces. |
 
@@ -33,7 +33,7 @@ Tests load fixtures with `import.meta.glob(..., { query: '?url&inline' })`, whic
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | after done reading from files > should close the file descriptor | `parseStream > reads only the header of a large JPEG, then cancels the stream` | The stream equivalent of closing the file is cancelling the stream. |
-| when Uint8Array allocation fails > should close the file descriptor | `parseStream > cancels the stream when the input is invalid`, `parseStream > passes on an error from the source stream` | We can't replace the global `Uint8Array` in a browser test. These cover cancelling on a parse error and passing on a source error. |
+| when Uint8Array allocation fails > should close the file descriptor | `parseStream > cancels the stream when the input is invalid`, `parseStream > passes on an error from the source stream` | A browser test can't replace the global `Uint8Array`. These cover cancelling on a parse error and passing on a source error. |
 
 ## `specs/bit-reader.spec.ts`
 
@@ -58,12 +58,12 @@ Tests load fixtures with `import.meta.glob(..., { query: '?url&inline' })`, whic
 
 ## `specs/utils.spec.ts`
 
-These test internal byte helpers. We test the formats that use them.
+These test internal byte helpers. Our tests cover the formats that use them instead.
 
 | Upstream test | Covered by |
 | --- | --- |
 | toUTF8String (2 tests) | the SVG and ICNS fixtures |
-| toHexString (2 tests) | not applicable: we compare bytes directly |
+| toHexString (2 tests) | not applicable: the tests compare bytes directly |
 | readInt16LE, readUInt16LE, readUInt24LE, readInt32LE, readUInt32LE | the BMP, GIF, ICO, TGA, WebP and little-endian TIFF fixtures, and `other formats > BMP stored top-down reports a positive height` for the signed read |
 | readUInt16BE, readUInt32BE | the PNG, PSD, JPEG and big-endian TIFF fixtures |
 | readUInt (2 tests) | `valid/tiff/little-endian.tiff`, `valid/tiff/big-endian.tiff` |

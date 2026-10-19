@@ -53,7 +53,7 @@ export const latin1 = (binary: string): Uint8Array =>
 
 export const decodeText = (input: string | Uint8Array): string => text(decode(input))
 
-/** Splits bytes into chunks of the given sizes; the last size repeats until the input is used up. */
+/** Splits bytes into chunks of the given sizes, repeating the last size until the input ends. */
 export function split(bytes: Uint8Array, sizes: number | readonly number[]): Uint8Array[] {
   const list = typeof sizes === 'number' ? [sizes] : sizes
   const chunks: Uint8Array[] = []

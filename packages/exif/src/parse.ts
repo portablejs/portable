@@ -3,9 +3,13 @@ import { type Ifds, type Tiff, readTiff } from './tiff.js'
 
 /** Metadata read by `parse`. Every IFD is an object, empty when the file doesn't have it. */
 export type Metadata = Ifds & {
-  /** GPS latitude in signed decimal degrees, south negative. Set when `gps.GPSLatitude` is numeric. */
+  /**
+   * GPS latitude in signed decimal degrees, south negative. Set when `gps.GPSLatitude` is numeric.
+   */
   latitude?: number | undefined
-  /** GPS longitude in signed decimal degrees, west negative. Set when `gps.GPSLongitude` is numeric. */
+  /**
+   * GPS longitude in signed decimal degrees, west negative. Set when `gps.GPSLongitude` is numeric.
+   */
   longitude?: number | undefined
   /** Size of the stored image in pixels, before any `Orientation` rotation. */
   imageSize?: { width: number; height: number } | undefined
@@ -22,9 +26,9 @@ export type Metadata = Ifds & {
 }
 
 /**
- * Reads EXIF metadata from a JPEG, TIFF, PNG, WebP, HEIC or AVIF file, or from raw EXIF data that starts
- * with `Exif\0\0` or a TIFF header. The input can be just the start of the file: tags whose values lie
- * past its end are left out.
+ * Reads EXIF metadata from a JPEG, TIFF, PNG, WebP, HEIC or AVIF file, or from raw EXIF data that
+ * starts with `Exif\0\0` or a TIFF header. The input can be just the start of the file: tags
+ * with values past the end of the input are left out.
  *
  * @example
  * ```ts

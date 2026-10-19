@@ -12,7 +12,7 @@ const suiteResolver = (records: Records): Arc.Resolver => ({
   async resolveTxt(name) {
     const record = records[name.toLowerCase().trim()]
     if (record === undefined) throw dnsError('ENOTFOUND', name)
-    // The signing suite's YAML splits the key over lines, which a TXT record can't contain.
+    // The signing suite's YAML splits the key with line breaks, which a TXT record can't contain.
     return [[record.replaceAll('\n', '')]]
   },
 })
@@ -25,7 +25,7 @@ const rfcResults: Record<string, Arc.Result.Code> = {
   // RFC 8617 section 4.1.2 gives the AMS DKIM-Signature semantics, where h= must not be empty
   // and must include From (RFC 6376 sections 3.5 and 6.1.1).
   ams_fields_h_empty: 'fail',
-  // An AMS without c= is simple/simple (RFC 6376 section 3.5); the drafts used relaxed/relaxed.
+  // An AMS without c= is simple/simple (RFC 6376 section 3.5), but the drafts used relaxed/relaxed.
   ams_fields_c_na: 'fail',
 }
 

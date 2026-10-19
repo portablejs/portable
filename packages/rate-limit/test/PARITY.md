@@ -6,7 +6,7 @@ Upstream suites: [rate-limiter-flexible 11.2.3 `test/`](https://github.com/animi
 
 ## rate-limiter-flexible
 
-The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoDB, Memcache, etcd, Prisma, Drizzle, Valkey, cluster). Each repeats the memory tests against a database client, which this package doesn't ship; the store contract is tested once in `store.conformance.ts`. The table maps `RateLimiterMemory.test.js` and the shared files.
+The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoDB, Memcache, etcd, Prisma, Drizzle, Valkey, cluster). Each repeats the memory tests against a database client, which this package doesn't ship. The store contract is tested once in `store.conformance.ts`. The table maps `RateLimiterMemory.test.js` and the shared files.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -18,11 +18,11 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 | keeps execEvenly immediate when points is mutated to zero | skipped | As above. |
 | makes penalty | `cost > takes cost from the allowance` | `penalty` adds points without a check. Use `take` with a cost. |
 | reward points | `cost > a negative cost gives allowance back, up to burst` | |
-| use keyPrefix from options | skipped | No `keyPrefix`; prefix the key. |
+| use keyPrefix from options | skipped | No `keyPrefix`. Prefix the key yourself. |
 | blocks key for block duration / do not block twice / block expires / block custom key | skipped | No `blockDuration`. The README shows a second limiter instead. |
 | get by key | `cost > a cost of 0 reads the state without changing it` | |
 | get resolves null if key is not set | `take > starts each key with a full allowance` | |
-| delete resolves true / false | `cost > a negative cost gives allowance back, up to burst` | No `delete`; a cost of `-burst` restores the key. |
+| delete resolves true / false | `cost > a negative cost gives allowance back, up to burst` | No `delete`. A cost of `-burst` restores the key. |
 | consume / penalty / reward applies options.customDuration | skipped | No per-call duration. |
 | does not expire key if duration set to 0 | `options > throws a RangeError for period 0` | A counter that never resets isn't a rate. |
 | block key forever, set points by key, set points by key forever | skipped | No `block` or `set`. |
@@ -37,15 +37,15 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 | BurstyRateLimiter: do not consume from burst limiter if the first rejects with an error; reject with burst limiter error | `store errors > reject take with the error from get`, `store errors > reject take with the error from set` | |
 | BurstyRateLimiter: combined msBeforeNext, returns points, null if key does not exist, msBeforeNext=0 if not set | `take > resetAt is when the allowance is full again`, `take > starts each key with a full allowance` | |
 | RateLimiterStoreAbstract: delete in-memory blocked keys | skipped | No in-memory block cache in front of the store. |
-| RateLimiterQueue (21 tests) | skipped | No queue. A Worker can't hold a request across others to wait; callers wait `retryAfter`. |
-| RateLimiterMemoryPersistence, RLWrapperBlackAndWhite, RLWrapperTimeouts, RateLimiterUnion, RateLimiterInsuredAbstract, ExpressBruteFlexible, RateLimiterCompatibleAbstract | skipped | Wrappers and integrations outside the limiter. An allow list is an `if` before `take`; a union is several `take` calls. |
+| RateLimiterQueue (21 tests) | skipped | No queue. A Worker can't keep a request waiting while others are served, so the caller waits `retryAfter` itself. |
+| RateLimiterMemoryPersistence, RLWrapperBlackAndWhite, RLWrapperTimeouts, RateLimiterUnion, RateLimiterInsuredAbstract, ExpressBruteFlexible, RateLimiterCompatibleAbstract | skipped | Wrappers and integrations outside the limiter. An allow list is an `if` before `take`, and a union is several `take` calls. |
 
 ## limiter
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | TokenBucket: is initialized empty | `take > starts each key with a full allowance` | We start full on purpose (see Known upstream issues). |
-| TokenBucket: removing 10 tokens takes 1 second; removing another 10 takes 1 second; removing 1 token takes 100ms | `take > gives allowance back continuously, one request per period / limit`, `take > allows the request once retryAfter has passed, and not a millisecond sooner` | `take` doesn't wait; `retryAfter` says how long. |
+| TokenBucket: removing 10 tokens takes 1 second; removing another 10 takes 1 second; removing 1 token takes 100ms | `take > gives allowance back continuously, one request per period / limit`, `take > allows the request once retryAfter has passed, and not a millisecond sooner` | `take` doesn't wait. `retryAfter` says how long to wait. |
 | TokenBucket: waiting 2 seconds gives us only 10 tokens | `take > never holds more than burst after a long idle time` | |
 | RateLimiter: invalid interval, valid intervals | `options > throws a RangeError for period %s` | `period` is milliseconds, not a unit name. |
 | accounts for concurrent immediate calls before their promises resolve | `concurrent takes > allow exactly limit of 100 racing takes` | |
@@ -58,7 +58,7 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 | rejects impossible parent requests without poisoning the queue | `cost > denies a cost larger than burst forever` | |
 | rejects cyclic hierarchies | skipped | No parent buckets. |
 | supports fractional counts and intervals | `cost > accepts fractional costs`, `options > accepts a fractional period` | |
-| does not corrupt balances when a finite interval produces an infinite rate; computes finite waits for very small inputs | skipped | Time comes from `Date.now()` in whole milliseconds; see `take > allows exactly limit requests in one millisecond when period / limit is not a whole number` for the float handling. |
+| does not corrupt balances when a finite interval produces an infinite rate; computes finite waits for very small inputs | skipped | Time comes from `Date.now()` in whole milliseconds. `take > allows exactly limit requests in one millisecond when period / limit is not a whole number` covers the float handling. |
 | caps long delays instead of overflowing platform timers | skipped | No timers. |
 | matches an integer reference model across competing hierarchical requests | `take.oracle.test.ts` | Compared with `TokenBucket` itself, without parents. |
 | rechecks capacity consumed by synchronous callers while an async request waits | `concurrent takes > retry a take whose compare-and-set lost, and decide again on the new value` | |

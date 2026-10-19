@@ -18,7 +18,7 @@ Idna.toUnicode(hostname) // 'bücher.example'
 Idna.toAscii('Bücher.example') // 'xn--bcher-kva.example'
 ```
 
-`URL` converts hostnames to ASCII, but the platform has no way back: `toUnicode` is the part this package adds. `toAscii` gives the same result as `URL` without parsing a URL, and in every runtime.
+`URL` converts hostnames to ASCII, but the platform has no function that converts them back to Unicode. `toUnicode` is that function. `toAscii` gives the same result as `URL` without parsing a URL, and in every runtime.
 
 ## API
 
@@ -26,7 +26,7 @@ Idna.toAscii('Bücher.example') // 'xn--bcher-kva.example'
 
 Decodes each `xn--` label and checks the result against UTS #46 with the URL Standard's settings: the bidi rule (CheckBidi), the joiner rules (CheckJoiners) and nontransitional processing. Unicode input is mapped and normalized too, so `toUnicode('BÜCHER.example')` returns `'bücher.example'`.
 
-It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn--` label that isn't valid Punycode or that decodes to a character IDNA doesn't allow. UTS #46 leaves it to the caller what to show instead. Browsers show the ASCII form:
+It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn--` label that isn't valid Punycode or that decodes to a character IDNA doesn't allow. UTS #46 lets the caller decide what to show instead. Browsers show the ASCII form:
 
 ```ts
 function displayHost(hostname: string): string {
@@ -57,8 +57,8 @@ punycode only converts the Punycode encoding of each label. It doesn't map upper
 - All 6396 cases in Unicode's `IdnaTestV2.txt` 18.0.0 pass in Node and Chromium, and so do WPT's URL tests for IDNA. The output equals tr46 7.0.0's on those cases and 20,000 random domains.
 - It is 15 kB minified and gzipped with both functions, against 63 kB for tr46 with punycode. The tables are generated from the Unicode data files by `scripts/generate.ts`.
 - `toUnicode` on 10 hostnames was 6.6× as fast as tr46 and as fast as punycode, which does no mapping or validation. `toAscii` was 5.9× as fast as tr46 and as fast as punycode. `new URL()` is about 1.4× faster than `toAscii` in Node, where it runs in C++.
-- Long labels take O(n log n) time. punycode and tr46 take about 15 s to encode a 40,000-character label, as Python's idna did before CVE-2024-3651.
-- Errors are thrown. tr46's `toUnicode` returns `{ domain, error }`, and code that reads only `domain` displays `xn--google-` as `google`.
+- `toAscii` and `toUnicode` take O(n log n) time on long labels. punycode and tr46 take about 15 s to encode a 40,000-character label, as Python's idna did before CVE-2024-3651.
+- Both functions throw errors instead of returning them. tr46's `toUnicode` returns `{ domain, error }`, and code that reads only `domain` displays `xn--google-` as `google`.
 
 ### Where `URL` isn't exact
 

@@ -394,7 +394,10 @@ export function putIPv6(w: Writer, ip: string): void {
   for (const word of words) putU16(w, word)
 }
 
-/** Formats an IPv6 address as RFC 5952 recommends: lowercase, with the longest run of two or more zero groups replaced by `::`. */
+/**
+ * Formats an IPv6 address as RFC 5952 recommends: lowercase, with the longest run of two or more
+ * zero groups replaced by `::`.
+ */
 export function readIPv6(b: Uint8Array, o: number): string {
   const words: number[] = []
   for (let i = 0; i < 16; i += 2) words.push((b[o + i]! << 8) | b[o + i + 1]!)

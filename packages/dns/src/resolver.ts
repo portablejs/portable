@@ -94,7 +94,7 @@ export declare namespace createResolver {
   }
 
   type CallOptions = {
-    /** Cancels the lookup. It rejects with `signal.reason`, as `fetch` does. */
+    /** Cancels the lookup, which then rejects with `signal.reason`, as `fetch` does. */
     signal?: AbortSignal | undefined
   }
 
@@ -120,7 +120,7 @@ export declare namespace createResolver {
     /**
      * Sends one question of any type and returns the whole decoded response, with TTLs, the
      * authority section and the AD flag. It resolves for NOERROR and NXDOMAIN, so `answers` can be
-     * empty, and throws `QueryError` like the other methods for everything else.
+     * empty, and rejects with `QueryError` like the other methods for everything else.
      */
     query(
       name: string,

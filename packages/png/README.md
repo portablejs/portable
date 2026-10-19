@@ -98,10 +98,10 @@ Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.Unsuppo
 
 pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
 
-- A header that claims more pixels than the data can hold throws before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB.
+- A header that claims more pixels than the data can hold is rejected before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB.
 - Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.4× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool.
 - Encoding with `CompressionStream` was about as fast as pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
-- A file with no `IDAT` throws `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
+- A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
 - Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
 
 ### Performance
@@ -149,6 +149,6 @@ Behavior that differs from pngjs, each listed with its test in [`PARITY.md`](tes
 - A pixel matching the `tRNS` color gets alpha 0 and keeps its color. pngjs makes it black.
 - Grayscale output uses BT.709 luma. pngjs averages the channels.
 - Bytes after `IEND` are ignored. `PNG.sync.read` throws.
-- A file with no `IDAT` throws `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
+- A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
 - The decoder never allocates more than the compressed data can expand to, so a header that claims a huge image throws `TruncatedError` instead of a `RangeError` from a failed allocation.
 - The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs.

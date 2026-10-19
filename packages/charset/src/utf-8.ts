@@ -2,7 +2,7 @@ import type { Charset } from './Charset.js'
 
 /**
  * UTF-8, encoded with the platform's `TextEncoder`. Use it when the charset comes from a label
- * at runtime and may be UTF-8; otherwise `TextEncoder` does the same job.
+ * at runtime and may be UTF-8. Otherwise `TextEncoder` does the same job.
  *
  * @example
  * ```ts

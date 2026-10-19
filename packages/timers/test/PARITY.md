@@ -13,12 +13,12 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | throws useful error message when non-error is thrown | `retry > attempts > rethrows a non-Error value unchanged` | Deliberate difference: p-retry wraps it in a `TypeError`. |
 | no retry on TypeError | `retry > attempts > retries a TypeError` | Deliberate difference. See known issues. |
 | shouldRetry is not called for non-network TypeError | `retry > attempts > retries a TypeError` | Same difference. |
-| async shouldRetry respects maxRetryTime after callback | `retry > signal > stops during an async retryIf` | No `maxRetryTime`; a caller `signal` limits the whole call. |
+| async shouldRetry respects maxRetryTime after callback | `retry > signal > stops during an async retryIf` | No `maxRetryTime`. A caller `signal` limits the whole call. |
 | does not retry non-network TypeError when shouldConsumeRetry returns false | skipped | No `shouldConsumeRetry`, and TypeErrors are retried. |
 | throws on invalid callback options | skipped | The option types reject a non-function. |
 | retry on TypeError - failed to fetch | `retry > attempts > resolves with a Response from fetch-like code` | |
 | errors are preserved when maxRetryTime exceeded | `retry > signal > limits total time with a caller signal` | Deliberate difference: a timeout signal rejects with its `TimeoutError`, as `fetch` does. |
-| AbortError - string | skipped | No `AbortError` class; `retryIf` returns `false` instead. |
+| AbortError - string | skipped | No `AbortError` class. `retryIf` returns `false` instead. |
 | AbortError - error | skipped | Same. |
 | aborts | `retry > retryIf > stops retrying when it returns false and throws that error` | |
 | operation stops immediately on AbortError | `retry > retryIf > stops retrying when it returns false and throws that error` | |
@@ -27,7 +27,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | aborts with an AbortSignal (commented out upstream) | `retry > signal > rejects with signal.reason when aborted while an attempt is pending` | Upstream disabled it because AVA lacks `DOMException`. |
 | preserves the abort reason | `retry > signal > preserves the abort reason when fn aborts on attempt 3` | |
 | shouldRetry controls retry behavior | `retry > retryIf > stops retrying when it returns false and throws that error` | |
-| shouldConsumeRetry then onFailedAttempt then shouldRetry order | skipped | Only `retryIf` and a `delay` function are called; no callback order to keep. |
+| shouldConsumeRetry then onFailedAttempt then shouldRetry order | skipped | Only `retryIf` and a `delay` function are called, so there is no callback order to keep. |
 | handles async shouldRetry with maxRetryTime | `retry > retryIf > can be async, and the next attempt waits for it` | |
 | onFailedAttempt provides correct error details | `retry > retryIf > receives each error and the number of the attempt that threw it` | |
 | onFailedAttempt is called even when shouldRetry returns false | skipped | No `onFailedAttempt`. |
@@ -45,7 +45,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | skipped attempts do not impact backoff | skipped | No `shouldConsumeRetry`. |
 | shouldConsumeRetry time counts toward maxRetryTime | skipped | No `shouldConsumeRetry` or `maxRetryTime`. |
 | maxTimeout lower than minTimeout caps delay | `retry > delay > is capped by max when max is below initial` | |
-| randomize affects retry delays | `retry > delay > jitter picks a random wait between 0 and the cap` | Full jitter waits 0 to 1 times the cap; p-retry's `randomize` waits 1 to 2 times. |
+| randomize affects retry delays | `retry > delay > jitter picks a random wait between 0 and the cap` | Full jitter waits 0 to 1 times the cap, and p-retry's `randomize` waits 1 to 2 times. |
 | maxRetryTime limits total retry duration | `retry > signal > limits total time with a caller signal` | |
 | onFailedAttempt time counts toward maxRetryTime | skipped | No `onFailedAttempt` or `maxRetryTime`. |
 | signal already aborted when entering delay phase cancels immediately | `retry > signal > rejects with signal.reason when aborted inside fn, without waiting` | |
@@ -69,7 +69,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | unref option prevents timeout from keeping process alive | skipped | `unref` exists only in Node. A pending `sleep` can be aborted instead. |
 | unref option handles missing unref gracefully | skipped | Same. |
 | preserves user stack trace through async retries | `retry > attempts > makes 3 attempts by default and rejects with the last error unchanged` | The error is the object `fn` threw, so its stack is the one `fn` created. Upstream runs a Node child process. |
-| makeRetriable wraps and retries the function | skipped | No `makeRetriable`; the README shows the one-line wrapper. |
+| makeRetriable wraps and retries the function | skipped | No `makeRetriable`. The README shows the one-line wrapper. |
 | makeRetriable passes arguments and options | skipped | Same. |
 | makeRetriable preserves `this` context | skipped | Same. |
 | throws error from shouldRetry | `retry > retryIf > rejects with the error it throws` | |
@@ -101,13 +101,13 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | returns a resolved promise | `sleep > sleep > resolves after the given time`, `oracle > sleep matches delay` | |
-| able to resolve a falsy value | skipped | No `value` option; use `.then(() => value)`. |
+| able to resolve a falsy value | skipped | No `value` option. Use `.then(() => value)`. |
 | delay defaults to 0 ms | `sleep > sleep > waits for the next timer turn with 0 ms` | `ms` is required. |
 | can clear a delayed resolution | skipped | No `clearDelay`. Aborting rejects instead of resolving early. |
 | resolution can be aborted with an AbortSignal | `sleep > sleep > rejects with signal.reason when aborted, and clears its timer` | |
 | resolution can be aborted with an AbortSignal if a value is passed | skipped | No `value` option. |
 | rejects with AbortError if AbortSignal is already aborted | `sleep > sleep > rejects at once when the signal is already aborted` | |
-| returns a promise that is resolved in a random range of time | skipped | No `rangeDelay`; the README shows `sleep(min + Math.random() * (max - min))`. |
+| returns a promise that is resolved in a random range of time | skipped | No `rangeDelay`. The README shows `sleep(min + Math.random() * (max - min))`. |
 | can create a new instance with fixed timeout methods | `sleep > sleep with scheduler.wait > uses scheduler.wait when the runtime has it` | `createDelay` lets callers swap the timer functions. Here the runtime's `scheduler.wait` is used when present. |
 
 ## p-wait-for
@@ -119,13 +119,13 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | rejects if condition returns non-boolean | `poll > results > resolves with ... which is not undefined` | Deliberate difference: any value other than `undefined` ends the poll. |
 | timeout rejects with TimeoutError | `poll > timeout > rejects with a TimeoutError DOMException when the time passes` | A `DOMException`, not p-wait-for's own `TimeoutError` class. |
 | timeout has a default message | skipped | The message is the `DOMException`'s. |
-| timeout with custom error message | skipped | No `message` option; catch and rethrow. |
+| timeout with custom error message | skipped | No `message` option. Catch and rethrow. |
 | timeout with custom error object | skipped | Same. |
-| timeout with fallback function | skipped | No `fallback`; use `.catch()`. |
+| timeout with fallback function | skipped | No `fallback`. Use `.catch()`. |
 | timeout with fallback function when `before` is false | skipped | No `fallback` or `before`. |
 | timeout with custom error message when `before` is false | skipped | Same. |
 | stops checking after timeout | `poll > timeout > stops checking after the timeout` | |
-| before option delays first check | skipped | No `before`; call `sleep` first. |
+| before option delays first check | skipped | No `before`. Call `sleep` first. |
 | resolveWith returns custom value | `poll > results > resolves with the first value that is not undefined` | |
 | aborts when signal is aborted | `poll > signal > rejects with signal.reason when aborted between checks` | |
 | handles pre-aborted signal | `poll > signal > does not check when the signal is already aborted` | |
@@ -238,7 +238,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | throttle: `{ noLeading: true }` | `throttle > throttle-debounce throttle > leading: false skips the start and runs once after the burst` | |
 | throttle: single call with `{ noLeading: true }` | `throttle > throttle-debounce throttle > a single call with leading: false runs later` | |
 | throttle: `{ noLeading: true, noTrailing: true }` | `debounce > lodash debounce and throttle > throttle rejects leading and trailing both false with a RangeError` | Deliberate difference: throttle-debounce accepts it and never calls the callback. |
-| throttle: cancel | `throttle > throttle-debounce throttle > an aborted signal stops all future calls` | throttle-debounce's `cancel()` disables the function for good. Here an abort does that, and `.cancel()` drops only the waiting invocation. |
+| throttle: cancel | `throttle > throttle-debounce throttle > an aborted signal stops all future calls` | throttle-debounce's `cancel()` disables the function permanently. Here an abort does that, and `.cancel()` drops only the waiting invocation. |
 | debounce: no option | `debounce > throttle-debounce debounce > runs once after a burst ends` | |
 | debounce: `{ atBegin: false }` | same | The default. |
 | debounce: `{ atBegin: true }` | `debounce > throttle-debounce debounce > with leading and no trailing, runs once at the start of a burst` | |
@@ -331,7 +331,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | lodash `debounce` and `throttle` read `Date.now()`. When the system clock jumps forward, `throttle` invokes again on the next call. | Time is read from `performance.now()`, which doesn't jump. | `debounce > lodash debounce and throttle > throttle is not invoked early when the system clock jumps forward` |
 | lodash.debounce 4.0.8, the standalone package, restarts its timer in a tight loop with `maxWait` below `ms` without clearing the old one, so it invokes at other times than lodash 4.18. | Matches lodash 4.18. | `oracle > lodash.debounce and lodash.throttle 4.x > lodash.debounce 4.0.8 invokes at other times when maxWait is below ms, and lodash 4.18 does not` |
 | lodash returns the previous invocation's result and throttle-debounce returns nothing, so a caller can't wait for the invocation its call was folded into. | Each call returns a promise of that invocation's result. | `debounce > promises > every call in a burst resolves with the one invocation` |
-| throttle-debounce's `cancel()` disables the function for good, unlike lodash's `cancel()`. | `.cancel()` drops the waiting invocation, and an abort disables the function. | `debounce > throttle-debounce debounce > a cancel in the middle of a burst drops only the waiting invocation` |
+| throttle-debounce's `cancel()` disables the function permanently, unlike lodash's `cancel()`. | `.cancel()` drops the waiting invocation, and an abort disables the function. | `debounce > throttle-debounce debounce > a cancel in the middle of a burst drops only the waiting invocation` |
 
 ## Oracle tests
 

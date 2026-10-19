@@ -8,8 +8,8 @@ export { type Reason, VerificationError } from './errors.js'
 export { github, type Scheme, slack, standard, stripe } from './schemes.js'
 
 /**
- * A signing secret as the sender shows it, or the raw key bytes. A string goes through the
- * scheme's `key`: base64 for Standard Webhooks, UTF-8 text for the others.
+ * A signing secret as the sender shows it, or the raw key bytes. The scheme's `key` reads a
+ * string as base64 for Standard Webhooks and as UTF-8 text for the others.
  */
 export type Secret = string | Uint8Array
 
@@ -38,13 +38,14 @@ export declare namespace verify {
   type Options = {
     /** How the sender signs. @default Webhooks.standard */
     scheme?: Scheme | undefined
-    /** The signing secret. Pass several while rotating secrets; any one of them may match. */
+    /** The signing secret. Pass several while rotating secrets. Any one of them may match. */
     secret: Secret | readonly Secret[]
     /** HMAC-SHA256. @default `crypto.subtle` HMAC-SHA256 */
     hmac?: Hmac | undefined
     /**
      * Largest allowed difference between the signed timestamp and `now`, in seconds, in either
-     * direction. `Infinity` turns the check off. Ignored when the scheme reads no timestamp.
+     * direction. `Infinity` turns the check off. The check is skipped when the scheme reads
+     * no timestamp.
      * @default 300
      */
     tolerance?: number | undefined

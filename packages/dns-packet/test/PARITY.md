@@ -33,7 +33,7 @@ Upstream's `testEncoder` helper encodes a value, decodes it, re-encodes it, and 
 | opt | `dns-packet cases > opt` | Decoded options have the same shape as the encoded ones. |
 | dnskey | `dns-packet cases > dnskey` | |
 | rrsig | `dns-packet cases > rrsig` | |
-| rrp | `dns-packet cases > rp` | `mbox` and `txt` are required; the root `'.'` means none. |
+| rrp | `dns-packet cases > rp` | `mbox` and `txt` are required, and the root `'.'` means none. |
 | nsec | `dns-packet cases > nsec` | `rrtypes` is `types`. |
 | nsec3 | `dns-packet cases > nsec3` | `nextDomain` is `nextHashedOwner`, the RFC 5155 name. |
 | ds | `dns-packet cases > ds` | Also covers CDS. |
@@ -61,7 +61,7 @@ GitHub's issue tracker couldn't be reached from the session that wrote this pack
 | `streamDecode` throws a `RangeError` on fewer than 2 bytes. | `TruncatedError` | TCP framing with fewer than 2 bytes throws TruncatedError |
 | SSHFP fingerprint types other than 1 and 2 can't be encoded, and decode to an empty fingerprint. | Any fingerprint type round-trips. | SSHFP records with any fingerprint type round-trip |
 | In mailbox names, an escaped dot after the first unescaped label is dropped. | Escapes work in every label. | escaped dots work in any label |
-| A label containing `.` decodes to text indistinguishable from two labels (outside mailbox names). | Decoded labels escape `.` and `\`. | a label containing a dot or backslash decodes with escapes |
+| Outside mailbox names, a label that contains `.` decodes to the same text as two labels. | Decoded labels escape `.` and `\`. | a label containing a dot or backslash decodes with escapes |
 | CLIENT_SUBNET sends the address bits past the source prefix, which RFC 7871 requires to be zero. | Bits past the prefix are cleared. | CLIENT_SUBNET clears address bits past the source prefix |
 | EDNS option lengths aren't checked against the option's fields, so TCP_KEEPALIVE and CLIENT_SUBNET read past them. | `InvalidInputError` | EDNS options with a bad length are rejected |
 | An OPT record with a name other than the root is decoded. | `InvalidInputError` both ways | an OPT record must have the root as its name |

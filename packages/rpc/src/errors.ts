@@ -41,8 +41,8 @@ export class RemoteError extends Error {
 }
 
 /**
- * Rejects calls that were waiting when the transport closed or failed, or when an HTTP request
- * failed. `cause` holds the underlying error or the failed `Response`.
+ * The error that waiting calls reject with when the transport closes or fails, or when an HTTP
+ * request fails. `cause` holds the underlying error or the failed `Response`.
  *
  * @example
  * ```ts

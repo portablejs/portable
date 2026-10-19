@@ -4,12 +4,15 @@ import { abortable } from './abortable.js'
 
 export declare namespace DecoderStream {
   type Options = {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
+     * from.
+     */
     signal?: AbortSignal | undefined
     /**
-     * JSONPath expressions for the values to emit. Supported: `$` (the root), `.name`,
-     * `['name']`, `[0]`, `.*`, `[*]` and `..` (any depth). Every value that matches any path is
-     * emitted, a nested match before the value that contains it.
+     * JSONPath expressions for the values to emit. Supported: `$` (the root), `.name`, `['name']`,
+     * `[0]`, `.*`, `[*]` and `..` (any depth). Every value that matches any path is emitted, and
+     * a nested match is emitted before the value that contains it.
      * @default ['$']
      */
     paths?: readonly string[] | undefined
@@ -57,14 +60,14 @@ for (const character of ' \t\n\r,:0123456789+-.eEtruefalsn')
   jsonCharacters[character.charCodeAt(0)] = 1
 
 /**
- * A `TransformStream` that parses JSON text as it arrives and emits the values found at the
- * given JSONPath expressions, without holding the whole document in memory. Only matched values
- * are built, with `JSON.parse`; everything else is checked for syntax and dropped. Input may
- * hold several top-level values separated by whitespace, as in NDJSON or concatenated JSON.
+ * A `TransformStream` that parses JSON text as it arrives and emits the values found at the given
+ * JSONPath expressions, without holding the whole document in memory. Only matched values are
+ * built, with `JSON.parse`, and everything else is checked for syntax and dropped. Input may hold
+ * several top-level values separated by whitespace, as in NDJSON or concatenated JSON.
  *
- * The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when
- * the input ends inside a value. A structural error inside a matched value, such as a missing
- * comma, is reported when that value ends.
+ * The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the
+ * input ends inside a value. A structural error inside a matched value, such as a missing comma,
+ * is reported when that value ends.
  *
  * @example
  * ```ts

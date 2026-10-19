@@ -18,7 +18,10 @@ export type Entity = {
   address: string | undefined
 }
 
-/** The events most callers need. An event the response doesn't have, or has with an unreadable date, is `undefined`. */
+/**
+ * The events most callers need. Each one is `undefined` when the response doesn't have it or
+ * its date is unreadable.
+ */
 export type Events = {
   registration: Date | undefined
   expiration: Date | undefined
@@ -258,9 +261,9 @@ export function relatedLink(json: Json, self: string): string | undefined {
 }
 
 /**
- * Adds the registrar's response. Entities come from the registrar, which holds the contacts, plus
- * any registry entity whose roles the registrar has none of. Everything else stays the registry's,
- * because the registry is the authority for status, dates and nameservers.
+ * Adds the registrar's response. Entities come from the registrar, which has the contacts, plus
+ * registry entities in roles the registrar has no entity for. All other fields stay as the
+ * registry sent them, because the registry is the authority for status, dates and nameservers.
  */
 export function withReferral(result: Domain, url: string, json: Json): Domain {
   const theirs = entities(json.entities)

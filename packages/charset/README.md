@@ -35,7 +35,7 @@ Each family is its own entry point, so a bundle only includes the tables it impo
 | `@portable/charset/euc-kr` | `eucKr` | 13.5 kB |
 | `@portable/charset/utf-16` | `utf16le`, `utf16be` | 0.4 kB |
 
-The three Japanese charsets share one table, so all three together are about 13 kB. Tables are unpacked on first use; each table takes 128 kB of memory after that.
+The three Japanese charsets share one table, so all three together are about 13 kB. Each table is unpacked on first use and takes 128 kB of memory after that.
 
 ## Labels known at runtime
 
@@ -48,7 +48,7 @@ const charset = await Charset.load('windows-31j') // the Shift_JIS charset
 const bytes = Charset.encode(text, charset)
 ```
 
-`load` throws `UnsupportedError` for an unknown label. `normalizeLabel(label)` returns its WHATWG name, such as `'Shift_JIS'`, or `undefined` for a label nothing can encode, so it also checks a label first. Its type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
+`load` throws `UnsupportedError` for an unknown label. `normalizeLabel(label)` returns the label's WHATWG name, such as `'Shift_JIS'`, or `undefined` if the label is unknown or its charset has no encoder, so it can also check a label before calling `load`. The name's type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
 
 Bundlers split `load` into one chunk per family. With every family reachable, the entry chunk is 3.2 kB and each family loads on demand.
 
@@ -62,7 +62,7 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 | `bom` | `false` | Write a byte order mark first. Only UTF-8, UTF-16LE and UTF-16BE have one. |
 | `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`'?'` is the default because it is what iconv-lite writes, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
+`'?'` is the default because iconv-lite writes `?`, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 
 Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
 
@@ -72,7 +72,7 @@ Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encod
 
 ## Why use this over iconv-lite
 
-iconv-lite looks charsets up by name in one registry, so a bundle includes every table. Here each charset family is its own entry point, decoding is left to `TextDecoder`, and the package has no dependencies.
+iconv-lite looks charsets up by name in one registry, so a bundle includes every table. In this package, each charset family is its own entry point, decoding is left to `TextDecoder`, and the package has no dependencies.
 
 - `encode` from the root is 1.0 kB gzipped, and one single-byte charset adds 0.6 kB. The gb18030 table is 17 kB gzipped, against 32 kB in iconv-lite.
 - Encoding 230 kB of Japanese text to Shift_JIS was about 2× faster than iconv-lite, and 380 kB of Cyrillic text to windows-1251 ran at the same speed. UTF-8 is slightly slower than `TextEncoder`, so call `TextEncoder` when you only need UTF-8.
@@ -115,7 +115,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 What changed:
 
 - **Charsets are values, not strings.** `encode` takes a charset object, so a bundle only includes the families it imports. `load` covers labels known only at runtime.
-- **WHATWG labels win.** `latin1`, `ascii` and `iso-8859-1` are windows-1252, and `gb2312` is GBK, as in browsers. `KOI8-U` is KOI8-RU, `x-mac-cyrillic` is the Ukrainian variant, and `macintosh` has € at 0xDB.
+- **Labels follow WHATWG.** `latin1`, `ascii` and `iso-8859-1` are windows-1252, and `gb2312` is GBK, as in browsers. `KOI8-U` is KOI8-RU, `x-mac-cyrillic` is the Ukrainian variant, and `macintosh` has € at 0xDB.
 - **The `utf-16` label writes UTF-16LE without a byte order mark** unless you pass `bom: true`. iconv-lite writes one by default.
 - **Lone surrogates become U+FFFD** in every charset. iconv-lite writes them unchanged in UTF-16 and as `?` elsewhere.
 - **Characters a charset only decodes are not encoded.** HKSCS in Big5, JIS X 0212 in EUC-JP and the IBM duplicates in Shift_JIS's NEC rows decode with `TextDecoder` but are unmappable when encoding, as WHATWG specifies.

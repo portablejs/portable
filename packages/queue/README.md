@@ -2,7 +2,7 @@
 
 Limits how many async tasks run at once, in memory. A queue runs tasks by priority, pauses and resumes, cancels with `AbortSignal`, and can cap how many tasks start per interval. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` shares one call between concurrent callers. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [p-limit](https://www.npmjs.com/package/p-limit), [p-queue](https://www.npmjs.com/package/p-queue), [p-map](https://www.npmjs.com/package/p-map) and [p-throttle](https://www.npmjs.com/package/p-throttle). It is not a persistent job queue: tasks live in memory and are lost when the process exits.
+Replaces [p-limit](https://www.npmjs.com/package/p-limit), [p-queue](https://www.npmjs.com/package/p-queue), [p-map](https://www.npmjs.com/package/p-map) and [p-throttle](https://www.npmjs.com/package/p-throttle). It is not a persistent job queue: tasks are kept in memory and are lost when the process exits.
 
 ```sh
 npm install @portable/queue
@@ -42,7 +42,7 @@ Returns a queue object.
 
 | Member | Description |
 | --- | --- |
-| `add(task, { priority, signal })` | Adds a task and returns a promise for its result. `task` receives `{ signal }`. Higher `priority` starts first (default `0`); equal priorities start in the order they were added. |
+| `add(task, { priority, signal })` | Adds a task and returns a promise for its result. `task` receives `{ signal }`. Higher `priority` starts first (default `0`), and equal priorities start in the order they were added. |
 | `idle()` | Resolves when no task is waiting or running. It never rejects. |
 | `pause()`, `resume()` | Stop and restart starting tasks. Running tasks continue. |
 | `clear()` | Removes every waiting task and rejects its promise with an `AbortError` `DOMException`. Running tasks continue. |
@@ -53,9 +53,9 @@ Returns a queue object.
 
 The `signal` passed to a task aborts when the task's own `signal` or the queue's `signal` aborts. If the task is still waiting, it is removed. If it is running, `add` rejects with the abort reason at once, but the task keeps its slot until it settles, so no more than `concurrency` tasks ever run. Pass the signal on to `fetch` or whatever the task awaits so it stops early.
 
-A promise from `add` for a task that never started (removed by `clear()` or by an abort) is marked as handled, so ignoring it doesn't cause an unhandled rejection. A task that fails still rejects its promise as usual, so handle it or `await` it.
+When `clear()` or an abort removes a task that never started, the queue marks the promise from `add` as handled, so ignoring it doesn't cause an unhandled rejection. A task that fails still rejects its promise as usual, so handle it or `await` it.
 
-A task added from inside a running task waits for a free slot like any other. If the outer task awaits it with `concurrency: 1`, both wait forever; give nested work its own queue.
+A task added from inside a running task waits for a free slot like any other. If the outer task awaits it with `concurrency: 1`, both wait forever, so give nested work its own queue.
 
 ### `Queue.limit(concurrency)`
 
@@ -63,7 +63,7 @@ Returns `create({ concurrency }).add`, for code that only needs to run tasks.
 
 ### `Queue.map(input, fn, options?)`
 
-Calls `fn(item, { index, signal })` on every item of `input`, at most `concurrency` at once, and resolves with the results in input order. `input` is any iterable or async iterable, and is read one item at a time as slots free up, so an endless generator works. Items are passed to `fn` as they are; a promise item is not awaited first.
+Calls `fn(item, { index, signal })` on every item of `input`, at most `concurrency` at once, and resolves with the results in input order. `input` is any iterable or async iterable, and is read one item at a time as slots free up, so an endless generator works. Items are passed to `fn` as they are, and a promise item is not awaited first.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(50
 
 ## Why use this over p-limit, p-queue and p-map
 
-They run in browsers too, but they are three packages with three APIs and some sharp edges. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies.
+They run in browsers too, but they are three packages with three APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies.
 
 - **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 1 µs with p-limit and 4 µs with p-queue. With priorities and a shared `signal`, it is about 1 µs against p-queue's 14 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 1 µs for p-map and p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
 - **An aborted running task keeps its slot.** p-queue frees the slot when a running task's signal aborts, while the task may still be running, so more than `concurrency` tasks can run at once.
@@ -168,7 +168,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `queue.start()`, `autoStart: false` | `queue.resume()`, `queue.pause()` after `create` |
 | `{ interval, intervalCap, strict: true }` | `{ interval, intervalCap }` |
 | `{ timeout }` | `{ signal: AbortSignal.timeout(ms) }`, or `Timers.retry` with `timeout` |
-| `queue.on('error')`, `onEmpty()`, `onSizeLessThan()`, `setPriority()` | none; see `test/PARITY.md` |
+| `queue.on('error')`, `onEmpty()`, `onSizeLessThan()`, `setPriority()` | none, see `test/PARITY.md` |
 | `pMap(items, (item, index) => ..., { concurrency, stopOnError, signal })` | `Queue.map(items, (item, { index, signal }) => ..., { concurrency, stopOnError, signal })` |
 | `pMapSkip` | filter the results |
 | `pMapIterable`, `pMapSettled`, `pMapKeyed` | none |
@@ -180,4 +180,4 @@ Behavior that differs:
 - `map` doesn't await promise items. p-map awaits each item before calling the mapper.
 - `map` doesn't call `return()` on an iterator whose `next()` threw, as `for...of` doesn't. p-map does.
 - Invalid arguments throw at once. p-queue and p-map reject the returned promise.
-- p-throttle's strict mode spaces saturated calls `interval / limit` apart; the queue starts a call as soon as the window has room.
+- p-throttle's strict mode spaces saturated calls `interval / limit` apart. The queue starts a call as soon as the window has room.

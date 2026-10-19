@@ -62,7 +62,7 @@ export type Type =
   | 'tiff'
   | 'webp'
 
-/** One image of a multi-image file. ICNS entries carry their icon type, such as `ic08`. */
+/** One image of a multi-image file. ICNS entries include their icon type, such as `ic08`. */
 export type Image = { width: number; height: number; type?: string | undefined }
 
 /** Detection order, the same as image-size's. */

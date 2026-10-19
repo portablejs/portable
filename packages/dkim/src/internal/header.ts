@@ -8,10 +8,10 @@ const nameOnly = /^[\x21-\x39\x3b-\x7e]+[ \t]*$/
 const colonFirst = /^[ \t]*:/
 
 /**
- * Splits a header section (binary text, CRLF line ends) into fields. A line that does not start
- * a field is part of the field above it. That covers RFC 5322 folding, and also lines that start
+ * Splits a header section (binary text, CRLF line ends) into fields. Any line that doesn't start a
+ * field is joined to the field above. That covers RFC 5322 folding, and also lines that start
  * with other whitespace such as a vertical tab or a UTF-8 no-break space, which some mail readers
- * show as part of the field above: a signature covers what they show.
+ * show as part of the field above, so the signature covers the text those readers show.
  */
 export function parseFields(header: string): Field[] {
   const lines = header.split('\r\n')
@@ -54,7 +54,7 @@ export function trimWsp(text: string): string {
 
 /**
  * RFC 6376 sections 3.4.1 and 3.4.2. Only SP and HTAB count as whitespace, and every line break
- * goes, including those before the lines `parseFields` joined to a field.
+ * is removed, including those before the lines `parseFields` joined to a field.
  */
 export function canonicalizeField(raw: string, canonicalization: Canonicalization): string {
   if (canonicalization === 'simple') return raw
@@ -67,7 +67,7 @@ export function canonicalizeField(raw: string, canonicalization: Canonicalizatio
 /**
  * The fields an `h=` list covers, in its order (RFC 6376 section 5.4.2): for each name, the last
  * field of that name not taken yet. A name with no field left adds nothing. `skip` is the
- * signature field itself, which is never one of the fields it signs.
+ * signature field itself, which the signature never signs.
  */
 export function selectFields(
   fields: readonly Field[],

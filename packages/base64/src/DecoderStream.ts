@@ -3,7 +3,10 @@ import { abortable } from './abortable.js'
 
 export declare namespace DecoderStream {
   type Options = decode.Options & {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /**
+     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
+     * cancel the source.
+     */
     signal?: AbortSignal | undefined
   }
 }
@@ -11,8 +14,8 @@ export declare namespace DecoderStream {
 /**
  * A `TransformStream` that decodes base64 text or bytes. The output is the same as `decode` of all
  * the input at once, however the input is chunked, so line breaks, padding and groups of four
- * characters can be split anywhere. Invalid input in `'loose'` or `'strict'` mode errors the
- * stream with an `InvalidInputError` or `TruncatedError`.
+ * characters can be split anywhere. Invalid input in `'loose'` or `'strict'` mode
+ * errors the stream with an `InvalidInputError` or `TruncatedError`.
  *
  * @example
  * ```ts

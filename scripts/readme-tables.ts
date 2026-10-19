@@ -22,7 +22,7 @@ export type Row = {
   label: string
   /** A substring of the test's full name, or a pattern for it. */
   test: string | RegExp
-  /** Column name to task name for this row. `null` leaves the column empty. */
+  /** Maps a column name to a task name for this row. `null` leaves the column empty. */
   tasks?: Readonly<Record<string, string | null>> | undefined
 }
 

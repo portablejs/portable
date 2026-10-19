@@ -8,15 +8,15 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 
 | Upstream | Ours | Why |
 | --- | --- | --- |
-| `getStream`, `getStreamAsBuffer`, `getStreamAsArrayBuffer`, `getStreamAsArray` | `toText`, `toBytes`, `toArray`, plus `toJson` | One verb per result type. `toBytes` returns a `Uint8Array`; `.buffer` is an exactly sized `ArrayBuffer`. |
-| `maxBuffer` (characters for text, elements for arrays) | `maxBytes`, always bytes; no limit on `toArray` | A limit on untrusted input is about memory, which is bytes. Object streams come from code the caller controls. |
-| `MaxBufferError`, `error.bufferedData` | `MaxBytesError` with `maxBytes`; no partial data | Keeping partial data on the error holds up to `maxBytes` in memory after the caller has given up on it. |
-| Chunks of `ArrayBuffer`, `DataView`, any typed array | `Uint8Array` or `string` only; anything else is a `TypeError` | AGENTS.md: bytes are `Uint8Array`. A `Uint16Array` chunk in a byte stream is almost always a bug. |
+| `getStream`, `getStreamAsBuffer`, `getStreamAsArrayBuffer`, `getStreamAsArray` | `toText`, `toBytes`, `toArray`, plus `toJson` | One verb per result type. `toBytes` returns a `Uint8Array` whose `.buffer` is an exactly sized `ArrayBuffer`. |
+| `maxBuffer` (characters for text, elements for arrays) | `maxBytes`, always in bytes, and no limit on `toArray` | A limit on untrusted input is about memory, which is bytes. Object streams come from code the caller controls. |
+| `MaxBufferError`, `error.bufferedData` | `MaxBytesError` with `maxBytes`, and no partial data | Keeping partial data on the error holds up to `maxBytes` in memory after the caller has given up on it. |
+| Chunks of `ArrayBuffer`, `DataView`, any typed array | `Uint8Array` or `string` only, and anything else is a `TypeError` | AGENTS.md: bytes are `Uint8Array`. A `Uint16Array` chunk in a byte stream is almost always a bug. |
 | concat-stream's `encoding` option and type inference from the first chunk | Pick the collector | The result type no longer depends on what the stream happens to send first. |
 | `merge2(a, [b, c])`, `merge2().add()`, `{ end: false }` | `concat(a, merge(b, c))` | Two functions that compose. Web streams can't gain sources after construction. |
-| `through2(fn)` with `this.push` and callbacks | `map`, `filter`, `tap`, `batch`, `transform(async function* ...)` | Return values and generators instead of callbacks. A returned `undefined` is a value; use `filter` to drop chunks. |
+| `through2(fn)` with `this.push` and callbacks | `map`, `filter`, `tap`, `batch`, `transform(async function* ...)` | Return values and generators instead of callbacks. A returned `undefined` is a value. Use `filter` to drop chunks. |
 | raw-body's `limit` (`'1mb'` strings), `length`, `encoding`, HTTP status codes | `maxBytes` (a number), `toText`'s `encoding` | No string parsing, and no HTTP concepts in a stream package. Compare `Content-Length` with `maxBytes` before reading. |
-| A string or array as the source is rejected by get-stream | Arrays and other iterables are accepted; strings are rejected | Iterables are valid sources everywhere in this package. |
+| A string or array as the source is rejected by get-stream | Arrays and other iterables are accepted, and strings are rejected | Iterables are valid sources everywhere in this package. |
 
 ## get-stream
 
@@ -25,7 +25,7 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | `contents.js` works with async iterable | `get-stream: sources > reads an async iterable` | |
 | `contents.js` async iterable .return() is called on error, but not .throw() | `get-stream: sources > calls an async iterable's return() on error, but not throw()` | |
 | `contents.js` get stream with mixed chunk types | `get-stream: sources > reads mixed chunk types` | Strings, `Uint8Array` and a subclass. Other views are rejected. |
-| `contents.js` getStream should not affect additional listeners | doesn't apply | A web stream has one reader at a time; Node `data` listeners are Node stream internals. |
+| `contents.js` getStream should not affect additional listeners | doesn't apply | A web stream has one reader at a time, and Node `data` listeners are Node stream internals. |
 | `contents.js` set error.bufferedData when stream errors (×4: Error, string, null, undefined) | `get-stream: sources > rejects with the source's error when it throws …` (×4) | We reject with the thrown value unchanged and don't attach `bufferedData`. |
 | `contents.js` handles infinite stream | `get-stream: sources > stops an infinite source at maxBytes` | |
 | `contents.js` Throws if the first argument is undefined, null, a string | `get-stream: sources > rejects a … source` (×3) | |
@@ -35,7 +35,7 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | `string.js` get stream from object/array/boolean/number/bigint/undefined/symbol to string | `get-stream: toText > rejects a … chunk` | Also `null`. |
 | `string.js` maxBuffer throws when size is exceeded with a string | `get-stream: toText > fails when maxBytes is exceeded` | |
 | `string.js` maxBuffer unit is characters with getStream() | `get-stream: toText > counts maxBytes in UTF-8 bytes, also for string chunks` | Deliberate: the unit is bytes. |
-| `string.js` set error.bufferedData when `maxBuffer` is hit (×2) | doesn't apply | No `bufferedData`; see API changes. |
+| `string.js` set error.bufferedData when `maxBuffer` is hit (×2) | doesn't apply | No `bufferedData`. See API changes. |
 | `string.js` handles streams larger than string max length (×2) | doesn't apply | Needs over 512 MB of memory per run. Past the engine's string limit, `toText` rejects with the engine's `RangeError` and cancels the source. |
 | `string.js` getStream() behaves like text() | `get-stream: toText > decodes like Response.text()` | Compared with `Response.text()`, on random valid UTF-8. Chromium 141's streaming `TextDecoder` turns an ASCII byte after an invalid sequence split across chunks (`f0` \| `d4 be 25`) into U+FFFD, so random bytes test the browser, not us. Invalid sequences are covered by the tests below. |
 | `string.js` get stream with partial UTF-8 sequences | `get-stream: toText > decodes a multi-byte character split across chunks` | |
@@ -56,7 +56,7 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | `array-buffer.js` behaves like arrayBuffer(), can behave like blob() | `get-stream: toBytes > reads like Response.arrayBuffer() and Blob` | |
 | `array.js` get stream from … to array (×15) | `get-stream: toArray > keeps a … chunk as it is`, `> keeps multiple … chunks as they are` | |
 | `array.js` get stream from object/…/symbol to array | `get-stream: toArray > accepts a … chunk` | |
-| `array.js` maxBuffer unit is each array element | doesn't apply | `toArray` has no limit; see API changes. |
+| `array.js` maxBuffer unit is each array element | doesn't apply | `toArray` has no limit. See API changes. |
 | `array.js` set error.bufferedData … (×2) | doesn't apply | No `bufferedData`. |
 | `array.js` behaves like readable.toArray() | `get-stream: Node streams as async iterables > reads a Readable` (oracle file) | |
 | `array.js` can stream JSON | `get-stream: toArray > reads many object chunks` | stream-json is a Node stream library. |
@@ -75,16 +75,16 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | `web-stream-ponyfill.js` (web-stream.js without async iteration), Should not polyfill ReadableStream | `fallback.test.ts`, and the browser run in Chromium 141 | `fallback.test.ts` also checks the natives stay deleted. |
 | `integration.js` can use TextDecoderStream | `get-stream: ReadableStream > reads text decoded by a TextDecoderStream` | |
 | `integration.js` works with fetch(), ReadableStream | `raw-body: web streams > reads the body of a Response` | No network in tests. |
-| `integration.js` Node/Browser entrypoint works with … (×6); opendir(); createReadStream() (×2); child_process.spawn(); readableWebStream (×2) | doesn't apply | One entry point; Node file and process APIs. A Node `Readable` is covered in the oracle file. |
+| `integration.js` Node/Browser entrypoint works with … (×6); opendir(); createReadStream() (×2); child_process.spawn(); readableWebStream (×2) | doesn't apply | One entry point, and the rest test Node file and process APIs. A Node `Readable` is covered in the oracle file. |
 
 ## concat-stream
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| `array.js` array stream | `concat-stream > array stream` | `toArray` keeps each chunk; `.flat()` joins arrays. |
+| `array.js` array stream | `concat-stream > array stream` | `toArray` keeps each chunk, and `.flat()` joins arrays. |
 | `buffer.js` buffer stream | `concat-stream > buffer stream` | |
-| `buffer.js` buffer mixed writes | `concat-stream > buffer mixed writes`, `> rejects number chunks` | Number and number-array chunks are rejected; see known issues. |
-| `infer.js` type inference works as expected | doesn't apply | No inference; the caller picks the collector. |
+| `buffer.js` buffer mixed writes | `concat-stream > buffer mixed writes`, `> rejects number chunks` | Number and number-array chunks are rejected. See known issues. |
+| `infer.js` type inference works as expected | doesn't apply | No inference. The caller picks the collector. |
 | `nothing.js` no callback stream | doesn't apply | No callback. |
 | `nothing.js` no encoding set, no data | `concat-stream > no encoding set, no data` | |
 | `nothing.js` encoding set to string, no data | `concat-stream > encoding set to string, no data` | |
@@ -113,10 +113,10 @@ Only the web stream suite applies. `index.spec.ts`, `flowing.spec.ts`, `http.spe
 | should decode multi-byte characters split across chunks | `raw-body: web streams > decodes multi-byte characters split across chunks` | |
 | should work with string chunks | `raw-body: web streams > reads string chunks into bytes` | |
 | should read a TextDecoderStream as a utf-8 Buffer | `raw-body: web streams > reads a TextDecoderStream as UTF-8 bytes` | |
-| should error on string chunks when encoding is set | doesn't apply | `toText` keeps string chunks as text; it never re-decodes them. |
+| should error on string chunks when encoding is set | doesn't apply | `toText` keeps string chunks as text and never decodes them again. |
 | should work with a custom decoder; decode encodings unsupported by TextDecoder; decoder throws while writing / at the end | doesn't apply | No custom decoder. Use `transform` for a non-`TextDecoder` charset. |
 | should work with the callback style; not invoke the callback synchronously; not catch or re-invoke a callback that throws | doesn't apply | Promises only. |
-| should check length; error with length mismatch; error early when length > limit | doesn't apply | No `length`; see API changes. |
+| should check length; error with length mismatch; error early when length > limit | doesn't apply | No `length`. See API changes. |
 | should error when limit is exceeded | `raw-body: web streams > fails when maxBytes is exceeded` | |
 | should error for an unsupported encoding | `get-stream: toText > decodes other encodings` | An unknown label throws `TextDecoder`'s `RangeError`. |
 | should error when the stream is locked | `raw-body: web streams > rejects a locked stream` | |
@@ -163,10 +163,10 @@ bl's tests are almost all about `BufferList`, a random-access list of buffers (`
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | merge2(read1, read2, through3) | `merge2 > merge2(read1, read2, through3)` | `concat` |
-| merge2 - error handling | `merge2 > merge2 - error handling` | Errors always propagate; there is no `pipeError` flag. |
+| merge2 - error handling | `merge2 > merge2 - error handling` | Errors always propagate, and there is no `pipeError` flag. |
 | merge2(TransformStream) | `merge2 > merge2(TransformStream)` | |
 | merge2(read1, [read2, through3], through4, [through5, read6]) | `merge2 > merge2(read1, [read2, through3], through4, [through5, read6])` | `concat(read1, merge(read2, through3), through4, merge(through5, read6))` |
-| merge2().add(read1, [read2, through3], through4, [through5, read6]) | doesn't apply | No `add()`; build the list before calling `concat`. Same ordering as the test above. |
+| merge2().add(read1, [read2, through3], through4, [through5, read6]) | doesn't apply | No `add()`. Build the list before calling `concat`. Same ordering as the test above. |
 | merge2(read1, read2, through3, {objectMode: false}) | `merge2 > merge2(read1, read2, through3, {objectMode: false})` | |
 | merge2([read1, read2]) with classic style streams | doesn't apply | Node streams1. |
 | merge2(read1, read2, {end: false}) | doesn't apply | A web stream can't gain sources after construction. |
@@ -186,7 +186,7 @@ The oracle tests compare `concat` with `merge2(a, b, c)`, `merge` with `merge2([
 
 ## through2
 
-The map and filter cases map to `map`, `filter`, `tap` and `batch`; stateful cases map to `transform`.
+The map and filter cases map to `map`, `filter`, `tap` and `batch`, and stateful cases map to `transform`.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -204,7 +204,7 @@ The map and filter cases map to `map`, `filter`, `tap` and `batch`; stateful cas
 | `test.js` classicNoopTransform, classicCallbackShorthand, legacyDefault | `through2: node > classicNoopTransform and classicCallbackShorthand` | A plain `TransformStream`. |
 | `test.js` classicFlush, asyncgenWithClassicFlush | `through2: node > classicFlush and asyncgenWithClassicFlush` | |
 | `test.js` asyncReturnedValuePushed | `through2: node > asyncReturnedValuePushed` | |
-| `test.js` asyncUndefinedSkipsEmission | `through2: node > asyncUndefinedSkipsEmission` | `filter`; `map` passes `undefined` on as a value. |
+| `test.js` asyncUndefinedSkipsEmission | `through2: node > asyncUndefinedSkipsEmission` | `filter`, because `map` passes `undefined` on as a value. |
 | `test.js` asyncRejectedPropagatesError | `map, filter, tap, batch > a throwing function errors the stream` | |
 | `test.js` asyncgenOneToOne, asyncgenFanOut, asyncgenFilter, asyncgenThrownPropagates | `through2: node > asyncgenOneToOne`, `through2: web > asyncgenFanOut`, `> asyncgenFilter`, `> asyncgenThrownPropagates` | |
 | `test.js` objectTransformPassthrough, legacyDefaultObj, legacyDefaultCtor | `through2: node > objectTransformPassthrough and legacyDefaultObj` | |
@@ -223,16 +223,16 @@ The map and filter cases map to `map`, `filter`, `tap` and `batch`; stateful cas
 | Issue | How we handle it | Test |
 | --- | --- | --- |
 | get-stream 9.0.1: `getStreamAsArrayBuffer(stream, { maxBuffer: 0 })` throws `TypeError: Method ArrayBuffer.prototype.resize called on incompatible receiver` instead of `MaxBufferError`. Found by the oracle test, which leaves out `0`. | `maxBytes: 0` accepts an empty source and fails any byte with `MaxBytesError`. | `MaxBytesError > maxBytes: 0 accepts only an empty source` |
-| [get-stream #116](https://github.com/sindresorhus/get-stream/issues/116): failed on Chrome because it needed `ReadableStream` async iteration. | Collectors read with `getReader()`; `fromIterable` and `toAsyncIterable` fall back when the natives are missing. | Browser run in Chromium 141; `fallback.test.ts` |
+| [get-stream #116](https://github.com/sindresorhus/get-stream/issues/116): failed on Chrome because it needed `ReadableStream` async iteration. | Collectors read with `getReader()`, and `fromIterable` and `toAsyncIterable` fall back when the natives are missing. | Browser run in Chromium 141, `fallback.test.ts` |
 | [get-stream #42](https://github.com/sindresorhus/get-stream/issues/42): `maxBuffer` didn't stop buffering. | The source is cancelled as soon as the limit is crossed. | `get-stream: ReadableStream > cancels the ReadableStream when maxBytes is exceeded`, `limitBytes > fails with MaxBytesError and cancels the source past the limit` |
 | [get-stream #50](https://github.com/sindresorhus/get-stream/issues/50): never completed for a stream that had already ended. | | `get-stream: ReadableStream > reads an already ended ReadableStream as empty` |
 | [concat-stream #50](https://github.com/max-mapper/concat-stream/issues/50): callback never fired when the stream errored. | Collectors reject. | `get-stream: ReadableStream > rejects with the error of an errored ReadableStream` |
 | [concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57): writing a number exposed uninitialized `Buffer` memory. | Number chunks are a `TypeError`. | `concat-stream > rejects number chunks` |
 | [concat-stream #19](https://github.com/max-mapper/concat-stream/issues/19): an object stream of numbers was collected into a `Buffer`. | `toArray` keeps chunks as they are. | `get-stream: toArray > accepts a number chunk` |
-| raw-body `webstream.spec.ts` "non-byte chunks": an `ArrayBuffer` had no `.length`, which made the limit `NaN` and turned it off. | Only `Uint8Array` and `string` chunks are counted; anything else is a `TypeError`. | `raw-body: web streams > rejects an ArrayBuffer chunk instead of miscounting it` |
+| raw-body `webstream.spec.ts` "non-byte chunks": an `ArrayBuffer` had no `.length`, which made the limit `NaN` and turned it off. | Only `Uint8Array` and `string` chunks are counted, and anything else is a `TypeError`. | `raw-body: web streams > rejects an ArrayBuffer chunk instead of miscounting it` |
 | [merge-stream #26](https://github.com/grncdr/merge-stream/issues/26): never ended with no sources. | `merge()` and `concat()` with no sources close at once. | `merge > with no sources is empty`, `concat > with no sources is empty` |
 | [merge-stream #13, #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7): errors were not propagated. | An error in any source errors the output and cancels the other sources. | `merge-stream > propagates errors`, `concat > an error in one source cancels the sources not yet read` |
-| [merge-stream #28](https://github.com/grncdr/merge-stream/issues/28), [merge2 #25](https://github.com/teambition/merge2/issues/25): output order surprised users. | `concat` keeps source order; `merge` is documented as arrival order. | `concat > joins streams, iterables and async iterables in order`, `merge > passes chunks on in the order they arrive` |
+| [merge-stream #28](https://github.com/grncdr/merge-stream/issues/28), [merge2 #25](https://github.com/teambition/merge2/issues/25): output order surprised users. | `concat` keeps source order, and `merge` is documented to pass chunks on in arrival order. | `concat > joins streams, iterables and async iterables in order`, `merge > passes chunks on in the order they arrive` |
 | through2's async-generator transform needed Node `drain` and a queue of 16 chunks for backpressure. | `transform` pulls one output per read and the input waits for the generator. | `through2: web > asyncgenWritableBackpressure`, `> asyncgenReaderBackpressure` |
 
 ## Benchmarks

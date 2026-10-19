@@ -14,8 +14,8 @@ export type Value = {
  * Parses a header value with parameters (RFC 2045 section 5.1), such as
  * `text/plain; charset=utf-8`. Parameter names are lowercased. Values are unquoted and fully
  * decoded: RFC 2231 continuations (`name*0*=`) are joined and decoded from their charset, and RFC
- * 2047 encoded words in plain values are decoded, as mail clients send them in file names. When
- * a parameter has both forms, the RFC 2231 one wins (RFC 6266 section 4.3). Never throws.
+ * 2047 encoded words in plain values are decoded, as mail clients send them in file names. When a
+ * parameter has both forms, the RFC 2231 value is used (RFC 6266 section 4.3). Never throws.
  *
  * @example
  * ```ts
@@ -154,7 +154,7 @@ function percentDecode(text: string, out: number[]) {
 
 /**
  * Formats a header value with parameters, the reverse of `parseValue`. A parameter value is
- * quoted when it holds a special character. A value with characters outside printable ASCII, or
+ * quoted when it contains a special character. A value with characters outside printable ASCII, or
  * one that would read as an encoded word, is percent-encoded as UTF-8 (RFC 2231), and a value too
  * long for one line is split into numbered sections. Fold the whole header line afterwards.
  *
@@ -168,7 +168,7 @@ function percentDecode(text: string, out: number[]) {
  * // "attachment; filename*0*=utf-8''J%C3%B5geva.txt"
  * ```
  *
- * @throws {InvalidInputError} When `value` holds a control character or a character outside
+ * @throws {InvalidInputError} When `value` contains a control character or a character outside
  * ASCII, or a parameter name isn't an RFC 2231 attribute (a token without `*`, `'` or `%`).
  */
 export function formatValue(input: Value): string {

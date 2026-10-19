@@ -10,7 +10,7 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | --- | --- | --- |
 | concatUint8Arrays - combining multiple Uint8Arrays | `concat > joins several arrays in order` | |
 | concatUint8Arrays - with an empty array | `concat > returns an empty array for no chunks or empty chunks` | |
-| concatUint8Arrays - throws when input is not a Uint8Array | skipped | The parameter type is `readonly Uint8Array[]`, so TypeScript rejects a number. We don't check types at runtime. |
+| concatUint8Arrays - throws when input is not a Uint8Array | skipped | The parameter type is `readonly Uint8Array[]`, so TypeScript rejects a number. `concat` doesn't check types at runtime. |
 | concatUint8Arrays - with ArrayBuffer | skipped | Inputs are `Uint8Array` only, see "Known upstream issues". The `totalLength` argument it also tests doesn't exist here. |
 | areUint8ArraysEqual - with identical Uint8Arrays | `equal > identical arrays are equal` | |
 | areUint8ArraysEqual - with different content | `equal > arrays with different content are unequal` | |
@@ -37,8 +37,8 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | TypedArrays with different lengths but equal byteLengths | `timingSafeEqual > compares only the bytes each subarray covers` | Inputs are `Uint8Array` only, so the case becomes different views of the same bytes. |
 | floating-point inputs compare bytes, not values | `timingSafeEqual > compares the bytes of other typed arrays, not their values` | Same NaN, `-0` and signaling NaN cases, through `Uint8Array` views. |
 | throws `ERR_CRYPTO_TIMING_SAFE_EQUAL_LENGTH` for different lengths | `timingSafeEqual > arrays of different lengths are unequal` | Returns `false` instead, see "Known upstream issues". |
-| throws `ERR_INVALID_ARG_TYPE` for a string (2 tests) | skipped | TypeScript rejects a string. We don't check types at runtime. |
-| V8 fast API path (`-fast.js`) | `timingSafeEqual > finds a difference at any position, length and alignment` | The upstream test checks that V8's optimized call gives the same results. Here the matching risk is the four-bytes-at-a-time path, which this test drives with lengths around 64 and unaligned views. |
+| throws `ERR_INVALID_ARG_TYPE` for a string (2 tests) | skipped | TypeScript rejects a string. `timingSafeEqual` doesn't check types at runtime. |
+| V8 fast API path (`-fast.js`) | `timingSafeEqual > finds a difference at any position, length and alignment` | The upstream test checks that V8's optimized call gives the same results. Here the code that could give different results is the path that compares four bytes at a time, and this test drives it with lengths around 64 and unaligned views. |
 
 ## Known upstream issues
 

@@ -49,15 +49,15 @@ type Cidr = { address: Address; prefix: number }
 
 ### Strict parsing
 
-`parse` accepts IPv4 only as four decimal numbers from 0 to 255 without leading zeros. `inet_aton` reads `0177.0.0.1` as octal (127.0.0.1), `0x7f.1` as hex, `2130706433` as an integer and `127.1` as two parts, while other parsers read `0177` as decimal 177 or reject it. A check that reads an address one way while the network stack reads it another is how CVE-2023-42282 and CVE-2024-29415 in `ip` let `127.1` and `0x7f.1` pass as public. Those spellings throw `InvalidInputError` here, so treat a parse error as a refusal.
+`parse` accepts IPv4 only as four decimal numbers from 0 to 255 without leading zeros. `inet_aton` reads `0177.0.0.1` as octal (127.0.0.1), `0x7f.1` as hex, `2130706433` as an integer and `127.1` as two parts, while other parsers read `0177` as decimal 177 or reject it. CVE-2023-42282 and CVE-2024-29415 let `127.1` and `0x7f.1` pass `ip`'s public-address check because the check read them one way and the network stack read them another. `parse` throws `InvalidInputError` for those spellings, so treat a parse error as a refusal.
 
 The WHATWG `URL` parser converts those spellings to dotted decimal, so `new URL('http://0x7f.1/').hostname` is `'127.0.0.1'`. Parse the `hostname` of a `URL`, after removing the brackets around an IPv6 host, rather than the raw text.
 
-IPv6 follows RFC 4291: one to four hex digits per group, at most one `::`, which replaces at least one group, an optional dotted IPv4 address in the last 32 bits (also without leading zeros), and an optional zone of letters, digits, `.`, `_`, `~` and `-`.
+IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `::`, which replaces at least one group, an optional dotted IPv4 address in the last 32 bits (also without leading zeros), and an optional zone of letters, digits, `.`, `_`, `~` and `-`.
 
 ### Ranges
 
-`range` names blocks after the IANA IPv4 and IPv6 Special-Purpose Address Registries. Check `unmap(address)` rather than `address` when the address may be IPv4-mapped, because `::ffff:127.0.0.1` returns `'ipv4Mapped'`, not `'loopback'`. To refuse internal destinations, allow only `'unicast'`.
+`range` uses the block names of the IANA IPv4 and IPv6 Special-Purpose Address Registries. Check `unmap(address)` rather than `address` when the address may be IPv4-mapped, because `::ffff:127.0.0.1` returns `'ipv4Mapped'`, not `'loopback'`. To refuse internal destinations, allow only `'unicast'`.
 
 | Range | IPv4 | IPv6 |
 | --- | --- | --- |
@@ -91,11 +91,11 @@ IPv6 follows RFC 4291: one to four hex digits per group, at most one `::`, which
 | `reserved` | `240.0.0.0/4` | everything outside `2000::/3` not named above |
 | `unicast` | every other address | every other address in `2000::/3` |
 
-A more specific block wins, so `2001:db8::1` is `documentation`, not `ietfProtocolAssignments`.
+When blocks overlap, `range` returns the most specific one, so `2001:db8::1` is `documentation`, not `ietfProtocolAssignments`.
 
 ### IPv4-mapped addresses
 
-A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` treats the two forms as one address, as Node's `BlockList` does, so `Ip.contains('127.0.0.0/8', '::ffff:7f00:1')` is `true`. `compare`, `range` and `reverseName` don't; call `unmap` first. `format` writes mapped addresses in mixed notation, `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends.
+A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` treats the two forms as one address, as Node's `BlockList` does, so `Ip.contains('127.0.0.0/8', '::ffff:7f00:1')` is `true`. `compare`, `range` and `reverseName` treat them as different addresses, so call `unmap` first. `format` writes mapped addresses in mixed notation, `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends.
 
 `::192.0.2.1` is an IPv4-compatible address, deprecated by RFC 4291, and is not treated as mapped. Its range is `'reserved'`.
 

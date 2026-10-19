@@ -8,7 +8,7 @@ import { fromHex, prefixed, required, seconds, toHex, unix } from './internal.js
  * compare, several secrets, and the timestamp tolerance.
  *
  * Use `standard` (the default), `stripe`, `github` or `slack`, or write one for another sender.
- * `stripe` is a complete example; see the README.
+ * `stripe` is a complete example. See the README.
  */
 export type Scheme = {
   /**

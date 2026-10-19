@@ -16,7 +16,7 @@ The oracle allows two differences that come from `@portable/dkim`: a key record 
 | Upstream | Here |
 | --- | --- |
 | reports an org level signature as aligned under relaxed alignment | `authenticate.conformance.ts` › "an organizational domain signature aligns under relaxed alignment" |
-| not aligned when the domain publishes adkim=s | › "an organizational domain signature does not align when the record has adkim=s". mailauth also rewrites `status.aligned` on the DKIM result; here alignment is in `dmarc.dkim`. |
+| not aligned when the domain publishes adkim=s | › "an organizational domain signature does not align when the record has adkim=s". mailauth also rewrites `status.aligned` on the DKIM result. Here alignment is in `dmarc.dkim`. |
 | not aligned when the Tree Walk stops at the author domain | › "the tree walk stops at the author domain when the parent publishes no record" |
 | aligned when the Tree Walk finds an org domain the Public Suffix List does not | › "the tree walk finds an organizational domain the public suffix list would not" |
 | strict option: accepts rsa-sha1 by default and marks it | Not applicable: no lenient mode. rsa-sha1 gives `dkim=policy`, in the oracle cases. |
@@ -57,5 +57,5 @@ The oracle allows two differences that come from `@portable/dkim`: a key record 
 | In the default mode, an authserv-id that isn't a token is written as a quoted string, which readers that split on `;` misread. | `authservId` must be a token. |
 | Crafted keys in the sealer's ARC-Authentication-Results were copied into the `arc=pass` comment as `[object Object]`, or threw on keys such as `toString` (fixed in [7eb9ea2](https://github.com/postalsys/mailauth/commit/7eb9ea24ed19032b63e9f9993971b77b8d77109e)). | The AAR is read into a `Map`, and only keywords and host names are copied: the "crafted AAR" cases. |
 | A sender, HELO name or From field longer than 998 octets produced longer lines, and an unbalanced parenthesis in a comment could hide the results after it. | The 998-octet test and the fuzz test. |
-| A prepended second From field borrowed the DMARC result of the signed one. | `multiple-from-fields`. |
+| A second From field added above the signed one was given the signed one's DMARC result. | `multiple-from-fields`. |
 | [#160](https://github.com/postalsys/mailauth/issues/160): `authenticate` sealed with the `cv` and `authResults` from the caller's seal options instead of the chain's result and its own. | `seal` takes neither: › "seals a broken chain with cv=fail and its own results". |

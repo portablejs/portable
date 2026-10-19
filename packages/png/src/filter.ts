@@ -137,8 +137,8 @@ function applyFilter(
   }
 }
 
-// Branch-free, because on photographic images the comparisons are unpredictable and the
-// mispredictions cost more than the arithmetic.
+// `paeth` is branch-free, because on photographic images the comparisons are unpredictable and
+// the mispredictions cost more than the arithmetic.
 function paeth(a: number, b: number, c: number): number {
   let pa = b - c
   let pb = a - c

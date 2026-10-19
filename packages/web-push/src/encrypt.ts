@@ -51,7 +51,7 @@ export declare namespace encrypt {
 /**
  * Encrypts a payload for a subscription with the aes128gcm content encoding (RFC 8188, RFC 8291),
  * and returns the request body: an 86-byte header holding the salt, record size and server public
- * key, then one AES-GCM record. Use it to send with your own transport; `toRequest` and `send`
+ * key, then one AES-GCM record. Use it to send with your own transport. `toRequest` and `send`
  * call it for you.
  *
  * @example

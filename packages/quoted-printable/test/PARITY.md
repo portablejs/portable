@@ -66,7 +66,7 @@ libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(en
 | Hyphens > Encoder escapes a hyphen at the start of a chunk only when it starts a line | `... > the stream escapes a hyphen at the start of a chunk only when it starts a line` | |
 | Hyphens > Encoder output never starts a line with a hyphen | `... > the stream output never starts a line with a hyphen` | |
 | Encoder > encodes a stream | `EncoderStream > encodes a stream` | |
-| Encoder > encodes string chunks in their encoding | `EncoderStream > encodes string chunks as UTF-8` | Web streams have no per-chunk encoding argument; strings are UTF-8. |
+| Encoder > encodes string chunks in their encoding | `EncoderStream > encodes string chunks as UTF-8` | Web streams have no per-chunk encoding argument, so strings are UTF-8. |
 | Encoder > encodes string chunks of a stream that does not decode strings | `EncoderStream > encodes string chunks as UTF-8` | `decodeStrings` is a Node stream option. |
 | Encoder > produces no output for empty input | same name | |
 | Encoder > wraps lines at 76 chars by default | `EncoderStream > wraps lines at 76 characters by default` | |
@@ -79,7 +79,7 @@ libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(en
 | Encoder > wraps held back whitespace with the line it ends | same name | |
 | Encoder > wraps a CR at the end of a chunk once it is known whether LF follows | same name | |
 | Encoder > ignores empty chunks | same name | |
-| Encoder > encodes a chunk larger than the slice size | `EncoderStream > encodes a large chunk` | No slices; output is decoded in 64 KiB pieces. |
+| Encoder > encodes a chunk larger than the slice size | `EncoderStream > encodes a large chunk` | No slices. The output is turned into text in 64 KiB pieces. |
 | Encoder > encodes a whitespace run longer than the slice size | `EncoderStream > encodes a long whitespace run` | |
 | Encoder > binary option > encodes a CR or LF that is not part of a CRLF pair | `binary > encodes a CR or LF that is not part of a CRLF pair` | Also through `encode()`. |
 | Encoder > binary option > encodes a trailing CR | `binary > encodes a trailing CR` | |
@@ -95,7 +95,7 @@ libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(en
 
 ## libqp `property-test.ts`
 
-`properties.conformance.ts`. libqp generates inputs with fast-check; these tests use the same kinds of input (special bytes, text fragments, quoted-printable fragments, chunk sizes 1 to 16) from a seeded generator in `utils.ts`, 200 inputs per property.
+`properties.conformance.ts`. libqp generates inputs with fast-check. These tests use the same kinds of input (special bytes, text fragments, quoted-printable fragments, chunk sizes 1 to 16) from a seeded generator in `utils.ts`, 200 inputs per property.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -109,7 +109,7 @@ libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(en
 | decode() > reads a Buffer, a Uint8Array and a binary string the same way | `decode() > reads an ASCII string the same as its bytes` | Strings are UTF-8, so only ASCII strings equal their bytes. |
 | decode() > never throws and never produces more bytes than it was given | `decode() > never produces more bytes than it was given` | |
 | wrap() > round trips any bytes through encode(), wrap() and decode() | `encode() with line breaks > round trips any bytes through decode()` | |
-| wrap() > keeps every line within the line length | same name | Line lengths are valid ones; invalid ones throw. |
+| wrap() > keeps every line within the line length | same name | Only valid line lengths are used, because invalid ones throw. |
 | wrap() > produces well-formed output | same name | |
 | wrap() > only adds soft line breaks | same name | |
 | wrap() > returns input that fits on a line as is | `... > returns output that fits on a line as is` | |
@@ -161,14 +161,14 @@ Skipped. They test libqp's dual CommonJS and ES module build, its old deep impor
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| encode: Equals sign | `encode() > equals sign` | Different break position: we break after the last space in the final third of a line, as libqp does; upstream cuts at exactly 75. |
+| encode: Equals sign | `encode() > equals sign` | Different break position: we break after the last space in the final third of a line, as libqp does. Upstream cuts at exactly 75. |
 | encode: 76-char line limit | `encode() > 76-character line limit` | Asserts line length, the first line and the round trip, since break positions differ as above. |
 | encode: Trailing space | `encode() > trailing space` | |
 | encode: Trailing tab | `encode() > trailing tab` | |
 | encode: CRLF | `encode() > CRLF` | Deliberate difference: upstream escapes every CR and LF. We keep line breaks, and `binary: true` escapes only a lone CR or LF. |
-| encode: Exactly 73 to 77 chars, last one `=` | `encode() > exactly 73 to 77 characters of which the last one is "="` | 74 characters differs: upstream keeps every line, even the last, within 75; RFC 2045 allows 76. |
+| encode: Exactly 73 to 77 chars, last one `=` | `encode() > exactly 73 to 77 characters of which the last one is "="` | 74 characters differs: upstream keeps every line, even the last, within 75, and RFC 2045 allows 76. |
 | encode: Exactly 73 to 77 chars, last one a space | `encode() > exactly 73 to 77 characters of which the last one is a space` | |
-| encode: UTF-8 can be used for non-ASCII symbols | `encode() > UTF-8 can be used for non-ASCII symbols` | Upstream splits the emoji's escapes across a soft break; we move the whole sequence to the next line. |
+| encode: UTF-8 can be used for non-ASCII symbols | `encode() > UTF-8 can be used for non-ASCII symbols` | Upstream splits the emoji's escapes across a soft break, and we move the whole sequence to the next line. |
 | encode: Invalid input (RangeError above U+00FF) | `encode() > encodes a string as UTF-8 instead of rejecting characters above U+00FF` | Strings are text, encoded as UTF-8. |
 | decode: Equals sign (both) | `decode() > equals sign` | |
 | decode: Hard new line characters | `decode() > hard line breaks` | |

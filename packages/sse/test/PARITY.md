@@ -41,7 +41,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 | a BOM split after byte %i survives empty decoder output | D > eventsource-parser > strips a BOM split across byte chunks, with empty chunks between | |
 | a raw BOM split as $chunks is stripped | D > eventsource-parser > strips a BOM split across byte chunks, with empty chunks between | Raw BOMs are bytes here, not Latin-1 strings. |
 | an incomplete raw BOM %j is preserved on mismatch | D > eventsource-parser > an incomplete BOM is not a BOM | |
-| reset discards an incomplete raw BOM %j | skipped | No `reset()`; a new `DecoderStream` starts fresh, and `connect` restarts the parser on each response (C > reconnecting > strips a BOM at the start of each response, and drops an unfinished event). |
+| reset discards an incomplete raw BOM %j | skipped | No `reset()`. A new `DecoderStream` starts fresh, and `connect` restarts the parser on each response (C > reconnecting > strips a BOM at the start of each response, and drops an unfinished event). |
 | only one leading BOM %j is stripped | D > eventsource-parser > strips only one of two leading BOMs | |
 | empty chunks do not make a later BOM a leading BOM | D > eventsource-parser > empty chunks do not make a later BOM a leading BOM | |
 | stream using carriage returns | D > eventsource-parser > splits lines on CR | |
@@ -55,7 +55,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 | stream with cr separating chunks of same event | D > eventsource-parser > a CRLF split across chunks is one line break | |
 | stream with partially incorrect retry fields | D > eventsource-parser > ignores a retry field that is not all digits | No `onError`. |
 | stream with `id` field containing a NULL character | D > eventsource-parser > ignores an id field containing NUL | |
-| reports an `id` from a block without data when the block is dispatched | D > eventsource-parser > an id from a block without data applies to later events | No `onId`; the id appears on later events. |
+| reports an `id` from a block without data when the block is dispatched | D > eventsource-parser > an id from a block without data applies to later events | No `onId`. The id appears on later events. |
 | reports an `id` before dispatching an event from the same block | D > eventsource-parser > reads ids and a retry interval | |
 | reports an `id` from a block using %s line endings | D > eventsource-parser > reads an id-only block ended with %s | |
 | stream with incorrect retry fields | D > eventsource-parser > ignores a retry field that is not all digits | |
@@ -64,7 +64,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 | skips onError when the stream is invalid but not newline-terminated (through `reset()`) | D > eventsource-parser > a body that is not an event stream gives no events | No `onError`. |
 | skips onError when ... (through `reset()` with `consume: false`) | D > eventsource-parser > a body that is not an event stream gives no events | |
 | skips onError when an invalid line was discarded before reset({consume: true}) | skipped | No `reset({ consume })`. |
-| calls onError when the stream is invalid (through newline) | D > eventsource-parser > a body that is not an event stream gives no events | No `onError`; the events are what a caller sees. |
+| calls onError when the stream is invalid (through newline) | D > eventsource-parser > a body that is not an event stream gives no events | No `onError`. The events are what a caller sees. |
 | calls onError when the stream is invalid (no field separator) | D > eventsource-parser > a body that is not an event stream gives no events | |
 | maxBufferSize: discards unterminated unknown fields without buffering | D > maxLength > applies to every line, including complete ones in one chunk | Deliberately different, see above. |
 | maxBufferSize: discards invalid lines as soon as their field name cannot become valid | D > maxLength > applies to every line, including complete ones in one chunk | Deliberately different. |
@@ -77,11 +77,11 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 | discarded lines arriving with their own bare cr terminator do not swallow the next line | D > eventsource-parser > a %s ended by a CR at the end of a chunk is one line | |
 | discarded lines arriving with a trailing cr consume a following lf as one terminator | D > eventsource-parser > a %s ended by a CR at the end of a chunk is one line | |
 | bare field lines terminated by a cr at a chunk boundary are processed, not discarded | D > eventsource-parser > a %s ended by a CR at the end of a chunk is one line | `data field` case. |
-| unknown field lines completed by a cr at a chunk boundary still emit unknown-field errors | D > eventsource-parser > a %s ended by a CR at the end of a chunk is one line | `unknown field` case; no `onError`. |
+| unknown field lines completed by a cr at a chunk boundary still emit unknown-field errors | D > eventsource-parser > a %s ended by a CR at the end of a chunk is one line | The `unknown field` case. No `onError`. |
 | a blank cr line ending a chunk dispatches the pending event exactly once | D > eventsource-parser > a blank line split across chunks as CR, CR LF dispatches once | |
 | maxBufferSize: preserves unterminated comments when onComment callback exists | D > eventsource-parser > reads a comment split across chunks | |
 | maxBufferSize: triggers on data buffer overflow (no blank line) | D > maxLength > fails when an event has more data than it allows, before a blank line | |
-| maxBufferSize: feed throws after overflow, until reset | skipped | The stream is errored for good; there is no `reset()`. |
+| maxBufferSize: feed throws after overflow, until reset | skipped | The stream is errored permanently, and there is no `reset()`. |
 | maxBufferSize: stops processing overflowing data within one chunk (%j) | D > maxLength > delivers the events before the one that fails | |
 | maxBufferSize: checks completed data after joining a pending field (%j) | D > maxLength > gives the same result however the input is chunked | |
 | maxBufferSize: dispatches multiple buffered events at the exact limit (%j) | D > maxLength > allows events up to the limit (%j) | |
@@ -129,8 +129,8 @@ Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventLis
 | will close stream on HTTP 204 | C > when to stop > a 204 response closes the stream without reconnecting | |
 | throws if `url` is not a string/url | skipped | TypeScript rejects it, and `new Request` throws a `TypeError` for a bad URL. |
 | can request cross-origin | skipped | CORS is up to `fetch`. |
-| redirects: handles ${status} to same origin | C > connect > sends the method, headers and body of the request on every attempt | `fetch` follows redirects; every attempt starts from the original request. |
-| redirects: handles ${status} to different origin | skipped | `fetch` strips `Authorization` on a cross-origin redirect; nothing here changes that. |
+| redirects: handles ${status} to same origin | C > connect > sends the method, headers and body of the request on every attempt | `fetch` follows redirects, and every attempt starts from the original request. |
+| redirects: handles ${status} to different origin | skipped | `fetch` strips `Authorization` on a cross-origin redirect. Nothing here changes that. |
 | can use the `withCredentials` option to control cookies | skipped | Set `credentials` on the `Request`. |
 | validates the event stream MIME type: $contentType | C > when to stop > checks the content type %j, C > when to stop > the content type with a non-breaking space is rejected | |
 | aborts a rejected HTTP %i response before reporting failure | C > when to stop > the ResponseError keeps the body for the caller to read | Deliberately different, see above. With `reconnectIf` retrying, the body is cancelled (C > when to stop > reconnectIf can retry a 503, and the rejected body is cancelled). |
@@ -172,7 +172,7 @@ Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 ad
 | --- | --- | --- |
 | serializer > can override the data serializer | E > better-sse EventBuffer > writes data as given; serializing is up to the caller | `data` is a string. |
 | serialize > JSON-stringifies input | E > better-sse EventBuffer > writes data as given; serializing is up to the caller | |
-| sanitizer > can override the field value sanitizer | skipped | No sanitizer option; line breaks in `data` become data lines and in `event` or `id` throw. |
+| sanitizer > can override the field value sanitizer | skipped | No sanitizer option. Line breaks in `data` start new data lines, and line breaks in `event` or `id` throw. |
 | sanitizer > sanitizes all fields with custom-given values | skipped | Same. |
 | sanitize > newline standardization (3 tests) | E > hono streamSSE > splits data on %s | |
 | sanitize > strips trailing newlines | E > better-sse EventBuffer > keeps a trailing line break in data | Deliberately different: stripping it loses data. |
@@ -185,9 +185,9 @@ Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 ad
 | comment > can write a comment with no value | E > better-sse EventBuffer > writes an empty comment | |
 | dispatch > writes a newline when calling dispatch | E > better-sse EventBuffer > writes every field of one message | Every message with a field ends with the blank line. |
 | push > calls all field writing methods with the given data, type and id | E > better-sse EventBuffer > writes every field of one message | |
-| clear > can clear the buffer contents | skipped | No buffer; `encode` returns a string. |
+| clear > can clear the buffer contents | skipped | No buffer. `encode` returns a string. |
 | read > can get the buffer contents | E > better-sse EventBuffer > writes nothing for an empty message | |
-| createPushFromIterable, createPushFromStream (8 tests) | E > encode > EncoderStream output is a valid Response body | Pipe any stream of messages through `EncoderStream`; Node `Readable` support is out of scope. |
+| createPushFromIterable, createPushFromStream (8 tests) | E > encode > EncoderStream output is a valid Response body | Pipe any stream of messages through `EncoderStream`. Node `Readable` support is out of scope. |
 
 ## hono
 
@@ -199,8 +199,8 @@ Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 ad
 | Should include retry in the SSE message | E > hono streamSSE > writes retry | |
 | Should accept retry: 0 and not skip it | E > hono streamSSE > writes retry: 0 | |
 | Should emit an empty id to reset Last-Event-ID | E > hono streamSSE > writes an empty id, which resets the last event ID | |
-| Check stream Response if error occurred | E > hono streamSSE > fails the stream for an invalid message | hono writes an `error` event; here an error fails the stream. |
-| Check streamSSE Response via Promise<string> | skipped | `data` is a string; await it before writing. |
+| Check stream Response if error occurred | E > hono streamSSE > fails the stream for an invalid message | hono writes an `error` event, and here an error fails the stream. |
+| Check streamSSE Response via Promise<string> | skipped | `data` is a string. Await it before writing. |
 | via JSX.Element, ErrorBoundary, Suspense (6 tests) | skipped | hono's JSX rendering. |
 | Check streamSSE handles \r (CR) line ending correctly | E > hono streamSSE > splits data on %s | |
 | Check streamSSE handles \r\n (CRLF) line ending correctly | E > hono streamSSE > splits data on %s | |
@@ -239,7 +239,7 @@ Tests of the `EventSource` object, document realms, workers and browser networki
 | eventsource-close.window.js (reconnect, then 204) | C > when to stop > a 204 response closes the stream without reconnecting |
 | eventsource-reconnect.window.js | C > reconnecting > reconnects when the response ends, with the last event ID |
 | request-accept.any.js | C > connect > sends Accept: text/event-stream unless the request sets Accept |
-| request-cache-control.any.js | skipped: browsers add `Cache-Control: no-cache`; set it on the `Request` if a proxy needs it |
+| request-cache-control.any.js | skipped: browsers add `Cache-Control: no-cache`. Set it on the `Request` if a proxy needs it. |
 | request-status-error.window.js | C > when to stop > a 204 response closes the stream without reconnecting, C > when to stop > a %i response fails the stream with ResponseError, without reconnecting |
 
 ## Known upstream issues

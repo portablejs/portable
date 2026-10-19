@@ -33,7 +33,10 @@ const pieces = [
   '=1',
 ]
 
-/** papaparse quotes a field that starts or ends with whitespace, so its comparisons leave out spaces and tabs. */
+/**
+ * papaparse quotes a field that starts or ends with whitespace, so its comparisons leave out
+ * spaces and tabs.
+ */
 const papaPieces = pieces.filter((piece) => piece.trim() !== '' || piece === '')
 
 function randomRows(seed: number, count: number, width: number, from = pieces): string[][] {

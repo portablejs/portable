@@ -27,7 +27,9 @@ const digits = 'abcdefghijklmnopqrstuvwxyz0123456789'
 // Both directions count positions with a Fenwick tree, so a long label takes O(n log n) time. The
 // RFC's sample code inserts into an array and rescans the input for each code point, both O(n²).
 
-/** RFC 3492 decoding of one label without its `xn--` prefix. Returns `undefined` for invalid input. */
+/**
+ * RFC 3492 decoding of one label without its `xn--` prefix. Returns `undefined` for invalid input.
+ */
 export function decode(input: string): string | undefined {
   const delimiter = input.lastIndexOf('-')
   const positions: number[] = []

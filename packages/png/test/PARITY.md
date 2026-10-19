@@ -13,7 +13,7 @@ pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four fu
 
 | pngjs | @portable/png | Why |
 | --- | --- | --- |
-| `fs.createReadStream(f).pipe(new PNG()).on('parsed', cb)`, `new PNG().parse(buf, cb)` | `await Png.decode(bytes)` | A promise instead of events. PNG can't be decoded before the last IDAT anyway, so a stream input buys nothing. |
+| `fs.createReadStream(f).pipe(new PNG()).on('parsed', cb)`, `new PNG().parse(buf, cb)` | `await Png.decode(bytes)` | A promise instead of events. PNG can't be decoded before the last IDAT anyway, so a stream input wouldn't make the result arrive sooner. |
 | `PNG.sync.read(buf)` | `Png.decodeSync(bytes, { inflate })` | Web platforms have no sync zlib, so the caller passes one, such as fflate's `unzlibSync`. |
 | `png.pack().pipe(out)`, `PNG.sync.write(png, opts)` | `await Png.encode(image, options)`, `Png.encodeSync(image, { deflate })` | |
 | `metadata` event | Fields of the result: `depth`, `colorType`, `interlace`, `alpha`, `gamma` | |
@@ -67,7 +67,7 @@ pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four fu
 
 ## Oracle tests
 
-`png.oracle.test.ts` decodes every fixture with pngjs's stream parser and with ours and compares the metadata and pixels. pngjs rejects the same 15 files we do. It also checks that pngjs decodes our output of every fixture to the input pixels, that both encoders' output of every color type and filter decodes the same, and the same both ways on 12 random images.
+`png.oracle.test.ts` decodes every fixture with pngjs's stream parser and with ours and compares the metadata and pixels. pngjs rejects the same 15 files we do. It also checks that pngjs decodes our output of every fixture to the input pixels, that both encoders' output of every color type and filter decodes the same, and that on 12 random images each library decodes the other's output to the same pixels.
 
 Two differences are deliberate, and the oracle test leaves them out instead of asserting pngjs's behavior:
 

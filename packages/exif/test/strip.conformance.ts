@@ -32,7 +32,10 @@ function indexOfScan(bytes: Uint8Array): number {
   return i
 }
 
-/** Reads `stream` to the end. `Response.arrayBuffer` would replace a stream error with a `TypeError` in Chromium. */
+/**
+ * Reads `stream` to the end. `Response.arrayBuffer` would replace a stream error with a `TypeError`
+ * in Chromium.
+ */
 async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
   const reader = stream.getReader()
   const parts: Uint8Array[] = []

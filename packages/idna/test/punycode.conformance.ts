@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Idna from '@portable/idna'
 import { decode, encode } from '../src/internal/punycode.js'
 
-// Cases from punycode.js 2.3.1 tests/tests.js (MIT, Mathias Bynens), most from RFC 3492 section 7.1.
+// Cases from punycode.js 2.3.1 tests/tests.js (MIT, Mathias Bynens), most of them from RFC 3492
+// section 7.1.
 const strings = [
   { description: 'a single basic code point', decoded: 'Bach', encoded: 'Bach-' },
   { description: 'a single non-ASCII character', decoded: '\xFC', encoded: 'tda' },

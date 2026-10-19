@@ -11,9 +11,9 @@ export declare namespace once {
 }
 
 /**
- * Wraps `fn` so that callers share one call: while it runs, every caller gets the same promise. After
- * it fulfills, the result is kept (unless `cache` is `false`). After it rejects, the next call
- * calls `fn` again.
+ * Wraps `fn` so that callers share one call: while it runs, every caller gets the same promise.
+ * After it fulfills, the result is kept (unless `cache` is `false`). After it rejects,
+ * the next call calls `fn` again.
  *
  * @example
  * ```ts

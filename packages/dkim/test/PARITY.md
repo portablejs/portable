@@ -45,9 +45,9 @@ The other `describe` blocks:
 | Alignment with the From header field | Not applicable. Alignment is DMARC's job and belongs to `@portable/dmarc`. |
 | EAI: look up the key of a U-label d= under its A-label | `EAI (RFC 8616)` |
 | EAI: report A-labels in strict mode | Same test. The result always holds A-labels. |
-| rejectRsaSha1 (2 tests) | rsa-sha1 is always `policy`; covered by the rsa-sha1 cases. |
+| rejectRsaSha1 (2 tests) | rsa-sha1 is always `policy`, as the rsa-sha1 cases check. |
 | Body length: report the content after l=0 as unsigned | `body length (l=)` |
-| Body length: an l= larger than the canonicalized body | Same, with the reason `l= is longer than the body`. mailauth reports `signature syntax error` without looking up the key; we hash the body first because keys are looked up while it is read. |
+| Body length: an l= larger than the canonicalized body | Same, with the reason `l= is longer than the body`. mailauth reports `signature syntax error` without looking up the key. `verify` looks up keys while it reads the body, and checks `l=` after hashing it. |
 | Body length: an l= equal to the body length | Same |
 | Body length: content after l= in pieces | Same |
 | Header section: a leading empty line | `header section` |
@@ -77,7 +77,7 @@ The other `describe` blocks:
 | Refuse a header list without From | `options` |
 | Write the identity into i=, identity outside d=, identity that breaks out of the tag, invalid identity syntax, empty local-part | `options` and `i=` |
 | Write the identity as dkim-quoted-printable | `i=` |
-| Hash a non-ASCII signature header line as UTF-8 | `the signature field` hashes the field `sign` writes; every case in `i=` round-trips. |
+| Hash a non-ASCII signature header line as UTF-8 | `the signature field` hashes the field `sign` writes, and every case in `i=` round-trips. |
 | ARC instance, ARC-Message-Signature fields (4 tests) | Not applicable. |
 
 ## Other mailauth files
@@ -93,12 +93,12 @@ The other `describe` blocks:
 | `body-length-test.js` | `sign` never writes `l=`, so these run with the reference signer in `verify.conformance.ts > body length (l=)`. |
 | `message-parser-test.js`: line endings (8 bodies in 3 chunkings) | `canonicalization.conformance.ts > line endings` |
 | `message-parser-test.js`: a leading empty line, an ordinary split | `messages` and `line endings` |
-| `body/relaxed-test.js` | `relaxed body canonicalization`: empty body, message1.eml whole and byte by byte, the edge cases, the #115 splits, 300 generated bodies against the line-based reference. The sha1 cases don't apply. `l=` cases are in `body length (l=)`. The tests of internal buffers (`fixLineBuffer`, `pendingLineBreaks`) have no public equivalent; the 10 MB line test covers the long-line case. |
+| `body/relaxed-test.js` | `relaxed body canonicalization`: empty body, message1.eml whole and byte by byte, the edge cases, the #115 splits, 300 generated bodies against the line-based reference. The sha1 cases don't apply. `l=` cases are in `body length (l=)`. The tests of internal buffers (`fixLineBuffer`, `pendingLineBreaks`) have no public equivalent. The 10 MB line test covers the long-line case. |
 | `body/simple-test.js` | `simple body canonicalization`, the same way. |
 | `header/relaxed-test.js`, `header/simple-test.js`, `header/index-test.js` | These test internal functions. Their canonicalization cases are in `header canonicalization`, observed through signatures that do or don't verify after the header changes. |
 | `ec/verify-signatures-test.js` | `verify.conformance.ts > the RFC 8463 example message` and `sign.conformance.ts > private keys` |
 | `parse-dkim-headers-test.js`: tag-list grammar | The tag-list cases are in the RFC compliance table (quotes, parentheses, backslashes, colons, FWS, invalid tag-specs, trailing semicolon). The Authentication-Results parsing tests don't apply. |
-| `sign-time-test.js` | `t=` comes from `signedAt` once; `the signature field` checks the default. The ARC test doesn't apply. |
+| `sign-time-test.js` | `t=` is taken from `signedAt` once, and `the signature field` checks the default. The ARC test doesn't apply. |
 | `mime-structure-start-test.js` | Not applicable. `mimeStructureStart` is not reported. |
 
 ## nodemailer
@@ -129,7 +129,7 @@ Each is tested where listed.
 | mailauth #146: the key type was not checked against `a=` in the lenient mode. | Always checked: `inappropriate key algorithm`. |
 | mailauth #147: an `l=` larger than the body passed. | `neutral`, `l= is longer than the body`. |
 | mailauth #148, #152: `c=` syntax was not validated. | `c=` cases in the RFC compliance table. |
-| mailauth #149: whitespace inside key record values was removed. | `v=DKIM 1` is an unknown version; `n=see: notes (1)` is accepted. |
+| mailauth #149: whitespace inside key record values was removed. | `v=DKIM 1` is an unknown version, and `n=see: notes (1)` is accepted. |
 | mailauth #150: `i=` was written without dkim-quoted-printable. | `i=` tests. |
 | mailauth #153: no way to over-sign. | `over-signing` tests. |
 | mailauth: a lone CR was a line ending. | Lone CR cases in both body canonicalizations. |
@@ -138,7 +138,7 @@ Each is tested where listed.
 | mailauth: a message without a body could not be signed. | `messages` |
 | nodemailer GHSA-39m8-27wv-hr27: unfolding was quadratic in continuation lines. | `linear time`: 40,000 continuation lines cost at most 8 times what 10,000 do. |
 | nodemailer: trimming a field name was quadratic in a blank run. | `linear time`, up to 256 KiB of spaces. |
-| nodemailer: control characters and tag delimiters in the domain and selector were silently removed, so the signature named a different domain than the caller passed. | Refused with a `RangeError`. |
+| nodemailer: control characters and tag delimiters in the domain and selector were silently removed, so the signature was for a different domain than the caller passed. | Refused with a `RangeError`. |
 | nodemailer: an unusable key made `sign` return `false`, and the message was sent unsigned. | Throws a `TypeError`. |
 
 ## Deliberate differences

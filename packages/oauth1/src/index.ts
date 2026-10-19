@@ -27,7 +27,7 @@ export type Token = {
 }
 
 /**
- * The client credentials and how to sign with them. HMAC and PLAINTEXT use the shared `secret`;
+ * The client credentials and how to sign with them. HMAC and PLAINTEXT use the shared `secret`.
  * RSA-SHA1 uses the client's RSA private key, as a `CryptoKey` or a PEM string.
  */
 export type Credentials =
@@ -58,23 +58,29 @@ export declare namespace authorization {
     /** Sent as `oauth_verifier` when exchanging temporary credentials for an access token. */
     verifier?: string | undefined
     /**
-     * Add `oauth_body_hash`, the base64 SHA-1 (SHA-256 for HMAC-SHA256) of the request body, as
-     * the OAuth Request Body Hash extension and LTI require. Form bodies never get one, because
-     * their parameters are signed already. @default false
+     * Add `oauth_body_hash`, the base64 SHA-1 (SHA-256 for HMAC-SHA256) of the request body, as the
+     * OAuth Request Body Hash extension and LTI require. Form bodies never get one, because their
+     * parameters are signed already. @default false
      */
     bodyHash?: boolean | undefined
     /** Rejects with `signal.reason` when aborted. */
     signal?: AbortSignal | undefined
     /** `oauth_nonce`. Set it only in tests. @default 32 random hex digits */
     nonce?: string | undefined
-    /** The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests. @default new Date() */
+    /**
+     * The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests.
+     * @default new Date()
+     */
     timestamp?: Date | undefined
   }
 }
 
 export declare namespace sign {
   type Options = authorization.Options & {
-    /** Where the protocol parameters go: the `Authorization` header, or the URL query. @default 'header' */
+    /**
+     * Where the protocol parameters go: the `Authorization` header, or the URL query.
+     * @default 'header'
+     */
     placement?: 'header' | 'query' | undefined
   }
 }
@@ -116,9 +122,9 @@ export async function authorization(
 }
 
 /**
- * Signs a request and returns a new `Request` that carries the signature in its `Authorization`
- * header, or in its URL with `placement: 'query'`. Like `new Request(request)`, it uses up the
- * body of the original request.
+ * Signs a request and returns a new `Request` with the signature in its `Authorization` header,
+ * or in its URL with `placement: 'query'`. Like `new Request(request)`, it uses up the body of the
+ * original request.
  *
  * @example
  * ```ts

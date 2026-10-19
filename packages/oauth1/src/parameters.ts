@@ -7,7 +7,10 @@ for (const c of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-
   unreserved[c.charCodeAt(0)] = 1
 const plain = /^[A-Za-z0-9._~-]*$/
 
-/** RFC 5849 §3.6: UTF-8, then every byte outside RFC 3986's unreserved set as `%XX`. */
+/**
+ * Percent-encodes as RFC 5849 §3.6 requires: UTF-8, then every byte outside RFC 3986's unreserved
+ * set as `%XX`.
+ */
 export function percentEncode(text: string): string {
   if (plain.test(text)) return text
   try {
@@ -55,7 +58,8 @@ function hexValue(byte: number): number {
 
 /**
  * Reads `application/x-www-form-urlencoded` bytes into percent-encoded pairs (RFC 5849
- * §3.4.1.3). Decoding and encoding work on bytes, so a value that isn't UTF-8 keeps its bytes.
+ * §3.4.1.3). Decoding and encoding work on bytes, so a value that isn't UTF-8 keeps its original
+ * bytes.
  */
 export function parseForm(bytes: Uint8Array, pairs: Pair[]): void {
   let start = 0

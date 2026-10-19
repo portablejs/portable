@@ -53,9 +53,9 @@ export declare namespace StripStream {
 
 /**
  * A `TransformStream` that removes the EXIF and XMP metadata from a JPEG, PNG or WebP file, as
- * `strip` does. A JPEG or PNG is written as it arrives, holding at most one metadata segment or
- * chunk. A WebP is held whole, because its RIFF header and `VP8X` flags come before the chunks
- * that change them.
+ * `strip` does. A JPEG or PNG is written out as it arrives, and the stream holds at most one
+ * metadata segment or chunk. A WebP is held whole, because its RIFF header and `VP8X` flags come
+ * before the chunks that change them.
  *
  * @example
  * ```ts

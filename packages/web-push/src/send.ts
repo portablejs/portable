@@ -14,7 +14,10 @@ export declare namespace toRequest {
      * deliver now or drop it. Push services may cap it. @default 2419200 (four weeks)
      */
     ttl?: number | undefined
-    /** Lets the push service hold back low-priority messages to save battery. Not sent by default. */
+    /**
+     * Lets the push service hold back low-priority messages to save battery. `toRequest` adds no
+     * `Urgency` header by default.
+     */
     urgency?: Urgency | undefined
     /**
      * Replaces an undelivered message with the same topic, so an offline browser gets only the
@@ -29,7 +32,7 @@ export declare namespace toRequest {
 /**
  * Builds the push request for a subscription: a `POST` to its endpoint with the encrypted payload
  * and the `TTL`, `Content-Encoding`, `Authorization`, `Urgency` and `Topic` headers. Use it to send
- * with your own `fetch` or queue; `send` calls it for you.
+ * with your own `fetch` or queue. `send` calls it for you.
  *
  * @example
  * ```ts

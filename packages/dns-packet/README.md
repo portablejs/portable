@@ -26,13 +26,13 @@ const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
 for (const answer of packet.answers) if (answer.type === 'A') console.log(answer.data)
 ```
 
-Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS and PTR, and an object for the rest. Types without a codec here, such as SVCB and HTTPS, carry their raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>` as in RFC 3597.
+Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS and PTR, and an object for the rest. Types without a codec here, such as SVCB and HTTPS, carry their raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.
 
 Supported types: A, AAAA, CAA, CDNSKEY, CDS, CNAME, DNAME, DNSKEY, DS, HINFO, MX, NAPTR, NS, NSEC, NSEC3, NULL, OPT, PTR, RP, RRSIG, SOA, SRV, SSHFP, TLSA and TXT.
 
 TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8. Decode them with `new TextDecoder().decode(bytes)` when you know they are text. Strings passed to `encode` are written as UTF-8.
 
-Malformed input throws `DnsPacket.TruncatedError` when the message ends early and `DnsPacket.InvalidInputError` when it can't be valid, including compression loops and record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
+`decode` throws `DnsPacket.TruncatedError` when the message ends early and `DnsPacket.InvalidInputError` when it can't be valid, including compression loops and record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
 
 ## Options
 
@@ -40,7 +40,7 @@ Malformed input throws `DnsPacket.TruncatedError` when the message ends early an
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `compress` | `false` | Compress repeated names with pointers. Saves space in responses; queries rarely gain anything. |
+| `compress` | `false` | Compress repeated names with pointers. Saves space in responses. Queries rarely gain anything from it. |
 | `framing` | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS. |
 
 `decode(bytes, options)`:
@@ -123,10 +123,10 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Other differences from dns-packet:
 
-- Compression is off unless you ask for it, and it applies only to names in the RDATA of NS, CNAME, PTR, MX and SOA, as RFC 3597 requires.
-- Names are checked: empty labels, labels over 63 bytes and names over 255 bytes throw instead of being written corrupted. `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels escape `.` and `\`.
+- Compression is off unless you pass `compress: true`, and inside RDATA it applies only to the names of NS, CNAME, PTR, MX and SOA records, as RFC 3597 requires.
+- Names are checked: empty labels, labels over 63 bytes and names over 255 bytes throw instead of being written corrupted. `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped.
 - Decoding checks that each record's data fills its RDLENGTH exactly and that EDNS options have the right length for their fields.
 - IPv6 addresses decode in RFC 5952 form, and invalid addresses throw on encode.
-- CLIENT_SUBNET clears the address bits past the source prefix, as RFC 7871 requires.
+- `encode` clears the bits of a CLIENT_SUBNET address past the source prefix, as RFC 7871 requires.
 - Unknown type, class, opcode, rcode and option names throw instead of encoding as 0.
 - `encode` doesn't modify the packet it's given.

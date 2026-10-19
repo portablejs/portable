@@ -13,14 +13,14 @@ Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 | --- | --- | --- |
 | .parse | `ndjson > decodes a line` | |
 | .parse twice | `ndjson > decodes two lines` | |
-| .parse - strict:true error, strict:true error event | `ndjson > fails on an invalid line` | Errors always fail the stream; nothing is thrown from `write`. |
+| .parse - strict:true error, strict:true error event | `ndjson > fails on an invalid line` | Errors always fail the stream, and nothing is thrown from `write`. |
 | .parse - strict:false error | `ndjson > skips invalid lines with invalid: skip` | |
 | .stringify | `ndjson > encodes a value as a line` | |
-| .stringify circular | `ndjson > fails on a circular value` | Deliberate difference: ndjson writes `"[Circular ~]"` through json-stringify-safe, which changes the data. We fail with `TypeError`, as `JSON.stringify` does. |
+| .stringify circular | `ndjson > fails on a circular value` | Deliberate difference: ndjson writes `"[Circular ~]"` through json-stringify-safe, which changes the data. `EncoderStream` fails with `TypeError`, as `JSON.stringify` does. |
 
 ## stream-json
 
-`tests/web/*` repeat the `tests/node/*` cases through web stream wrappers, with "(web)" in the name; each maps to the row of the same node test.
+`tests/web/*` repeat the `tests/node/*` cases through web stream wrappers, with "(web)" in the name, and each maps to the row of the same node test.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |

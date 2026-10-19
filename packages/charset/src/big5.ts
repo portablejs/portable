@@ -40,7 +40,7 @@ function encoder(): Encoder {
 
 /**
  * Big5 as the WHATWG Encoding Standard defines it, which decodes the Hong Kong Supplementary
- * Character Set but never encodes it, so the output is readable by plain Big5 decoders.
+ * Character Set but never encodes it, so plain Big5 decoders can read the output.
  *
  * @example
  * ```ts

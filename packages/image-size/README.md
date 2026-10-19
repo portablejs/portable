@@ -30,7 +30,7 @@ Reads `stream` until the size is known, then cancels it.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` throws `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. |
+| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. |
 | `signal` | none | Aborting rejects with `signal.reason` and cancels the stream. |
 
 ### `Size`
@@ -42,7 +42,7 @@ Reads `stream` until the size is known, then cancels it.
 | `orientation` | The EXIF orientation of a JPEG (1 to 8), when it has one. `width` and `height` are the stored dimensions, before rotation. |
 | `images` | Every image in an ICO, CUR or ICNS file with more than one. ICNS entries also have their icon `type`, such as `ic08`. |
 
-An animated PNG reports `png` with the canvas size. A HEIF file reports its primary image, cropped by its clean aperture (`clap`) and rotated by its `irot` property.
+The size of an animated PNG is the canvas size, with type `png`. The size of a HEIF file is the size of its primary image, cropped by its clean aperture (`clap`) and rotated by its `irot` property.
 
 ### Errors
 
@@ -67,7 +67,7 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 
 - `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 60× slower, and image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
 - `parse` read `large.jpg` about 400× faster than image-size, and was 2.5 to 55× faster on the PNG, HEIC, WebP, SVG and TIFF fixtures.
-- Input that ends early throws `TruncatedError`. image-size throws a `RangeError` from `DataView`.
+- Input that ends early gives `TruncatedError`. image-size throws a `RangeError` from `DataView`.
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - Lossless and arithmetic-coded JPEGs are read, which image-size rejects, and there is no global `disableTypes` state shared by every caller in the process.
 
@@ -107,7 +107,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Behavior that differs from image-size, each fixing a bug listed in [`PARITY.md`](test/PARITY.md#known-upstream-issues):
 
-- Input that is too short throws `TruncatedError`. image-size throws a `RangeError` from `DataView` or reports a malformed file.
+- Input that is too short gives `TruncatedError`. image-size throws a `RangeError` from `DataView` or reports a malformed file.
 - JPEG: every start-of-frame marker is read, including lossless and arithmetic-coded ones, and a frame header right after the start-of-image marker. The Exif IFD0 offset is read from the header instead of assumed to be 8.
 - HEIF: the size is the primary item's, with the clean aperture and rotation applied, and there is no `images` list. image-size reports every `ispe` property, subtracts the aperture's denominator from the width, and ignores rotation. Animated AVIF (`avis`) is detected.
 - TIFF: only the entries the first IFD declares are read, and the undocumented `compression` field is not returned.

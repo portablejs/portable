@@ -7,8 +7,9 @@ import * as Exports from '@portable/mime-headers'
 import type { Mailbox, Value } from '@portable/mime-headers'
 import { pick, random } from './utils.js'
 
-// Vitest's module runner reads each imported binding through a getter on every call, which the
-// upstream libraries, loaded by Node, don't pay. Copying the exports once measures the functions.
+// Vitest's module runner reads each imported binding through a getter on every call, and the
+// upstream libraries, loaded by Node, have no such getter. Copying the exports once measures only
+// the functions.
 const {
   decodeWords,
   encodeWord,

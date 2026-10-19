@@ -35,9 +35,9 @@ pnpm 11 manages the workspace. Every shared dev dependency has one version in th
 
 ## TypeScript
 
-`tsconfig.base.json` is ox's strict config (`strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`) plus `isolatedDeclarations`. The last one requires explicit types on every export. That keeps the public API deliberate, and JSR requires it, so publishing to JSR later needs no code changes. `importHelpers` is on with no `tslib` installed, so the build fails if TypeScript ever needs a helper.
+`tsconfig.base.json` is ox's strict config (`strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`) plus `isolatedDeclarations`. The last one requires explicit types on every export, so a change to a function body can't change the public API by accident. JSR requires the same, so publishing to JSR later needs no code changes. `importHelpers` is on with no `tslib` installed, so the build fails if TypeScript ever needs a helper.
 
-`lib` is `ES2023`, `DOM` and `DOM.Iterable`, because TypeScript has no WinterTC library and DOM is where `fetch`, Web Streams and `crypto.subtle` are typed. `types` is empty, so `@types/node` never applies to package code.
+`lib` is `ES2023`, `DOM` and `DOM.Iterable`, because TypeScript has no WinterTC library and declares `fetch`, Web Streams and `crypto.subtle` in its DOM library. `types` is empty, so `@types/node` never applies to package code.
 
 oxlint rejects what the types allow but the runtimes don't share:
 
@@ -58,13 +58,13 @@ Both rules are off for `*.oracle.test.ts` and `*.bench.ts`, which run in Node to
 
 zile reads `exports`, builds those files, and rewrites each entry to `{ "src", "types", "default" }` paths in the published `package.json`. Only the fields after the `"[!start-pkg]"` key are published, so scripts and dev dependencies stay in the repo. Inside the workspace, `customConditions: ["src"]` points TypeScript at source, so nothing needs a build before tests or type checks.
 
-If zile gets in the way, removing it takes two steps: commit the `package.json` that `zile publish:prepare` writes, and change the build script to `tsc`.
+If zile causes problems, removing it takes two steps: commit the `package.json` that `zile publish:prepare` writes, and change the build script to `tsc`.
 
 ## Tests
 
 ### Projects
 
-`vite.config.ts` defines the Vitest projects. Test files sit in each package's `test/` directory and their suffix decides where they run. `test/` is its own private workspace package, so the libraries a package is compared against are dev dependencies there and never appear in the published `package.json`. Tests import the package by name, which resolves through its `exports` map to source because `vite.config.ts` and `tsconfig.base.json` add the `src` condition. `pnpm check:types` type-checks them with Node and Vite types through `tsconfig.test.json`.
+`vite.config.ts` defines the Vitest projects and assigns each test file in a package's `test/` directory to projects by its suffix. `test/` is its own private workspace package, so the libraries a package's tests compare against are dev dependencies there and never appear in the published `package.json`. Tests import the package by name, which resolves through its `exports` map to source because `vite.config.ts` and `tsconfig.base.json` add the `src` condition. `pnpm check:types` type-checks them with Node and Vite types through `tsconfig.test.json`.
 
 | Suffix | Runs in | Purpose |
 | --- | --- | --- |
@@ -74,19 +74,19 @@ If zile gets in the way, removing it takes two steps: commit the `package.json` 
 | `*.oracle.test.ts` | Node | Byte-for-byte comparison with the library a package replaces. |
 | `*.bench.ts` | Node | Benchmarks against that library. |
 
-The `browser` project uses Vitest browser mode with Playwright and runs Chromium, Firefox and WebKit. A Workers project is planned but not set up, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Until then, the lint rules above are the only check against Node APIs in Workers.
+The `browser` project uses Vitest browser mode with Playwright and runs Chromium, Firefox and WebKit. We plan a Workers project but haven't set it up, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Until then, the lint rules above are the only check against Node APIs in Workers.
 
-Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream. Chromium 141 has neither, and `@portable/lines` found that out on its first browser run.
+Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream. Chromium 141 has neither, which made the first browser run of `@portable/lines` fail.
 
 ### Parity with the replaced library
 
-A package that replaces a library solves the same problem, but neither its API nor its implementation has to match. It is designed fresh, and the upstream test suite is used as the list of cases a caller cares about. `test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply, such as a test of Node stream internals. A test with no row in `PARITY.md` counts as missing. The package also avoids the upstream library's known bugs and traps, found in its issue tracker, and `PARITY.md` lists each one with the test that shows we handle it. Where two libraries cover the same ground, such as split2 and byline, the package covers both suites.
+A package that replaces a library solves the same problem, but neither its API nor its implementation has to match. We design it fresh and use the upstream test suite as the list of cases a caller cares about. `test/PARITY.md` maps each upstream test to our test for the same case, or gives the reason it doesn't apply, such as a test of Node stream internals. A test with no row in `PARITY.md` counts as missing. The package also avoids the known bugs and traps we find in the upstream issue tracker, and `PARITY.md` lists each one with the test that shows we handle it. Where two libraries solve the same problem, such as split2 and byline, the package's tests cover both suites.
 
 The oracle tests then feed the same input, split into random chunks, to our package and to the original, and compare the results. A difference is either a bug or a deliberate change that `PARITY.md` explains.
 
 ### Fuzzing
 
-Each package has a `test/<name>.fuzz.conformance.ts` with [fast-check](https://fast-check.dev) properties, so the fuzz tests run in Node and browsers with the other conformance tests. Parsers and decoders get random input and mutated copies of real fixtures, and must return or throw only their documented errors. Encoders must round-trip through their decoder, and streams must give the same output however the input is chunked. `fuzz()` from the private workspace package `@portable/fuzz` (`tools/fuzz`) runs every property, reading the run count from `FUZZ_RUNS`, which `vite.config.ts` passes to `import.meta.env` through `envPrefix`. The default of 100 runs keeps `pnpm test` fast. `pnpm fuzz` loads `.env.fuzz` with `--mode fuzz`, which sets 10,000. A failure prints fast-check's seed and path, and setting `FUZZ_SEED` and `FUZZ_PATH` with `-t` for that test replays it.
+Each package has a `test/<name>.fuzz.conformance.ts` with [fast-check](https://fast-check.dev) properties, so the fuzz tests run in Node and browsers with the other conformance tests. Parsers and decoders get random input and mutated copies of real fixtures, and must return or throw only their documented errors. Encoders must round-trip through their decoder, and streams must give the same output however the input is chunked. `fuzz()` from the private workspace package `@portable/fuzz` (`tools/fuzz`) runs every property, reading the run count from `FUZZ_RUNS`, which `vite.config.ts` passes to `import.meta.env` through `envPrefix`. The default of 100 runs keeps `pnpm test` fast. `pnpm fuzz` loads `.env.fuzz` with `--mode fuzz`, which sets 10,000. When a property fails, fast-check prints its seed and path. To replay the failure, set `FUZZ_SEED` and `FUZZ_PATH` and run that test with `-t`.
 
 ### Benchmarks
 
@@ -97,22 +97,22 @@ const result = await bench.compare(bench('@portable/lines', ...), bench('split2'
 expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), { delta: 0.25 })
 ```
 
-Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIST=1`. With it set, `vite.config.ts` drops the `src` condition and lets Node load each package's `dist/` directly, because source run through Vitest pays for a getter on every call between modules and measured up to 2× slower. They are not part of the git hooks, because timing on a laptop varies too much to block a push.
+Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIST=1`. With it set, `vite.config.ts` drops the `src` condition and lets Node load each package's `dist/` directly, because Vitest wraps every call between source modules in a getter, which slowed source benchmarks by up to 2×. The git hooks don't run benchmarks, because timing on a laptop varies too much to block a push.
 
-`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. A new package needs an entry there, or its README gets no tables. The root README lists packages by category by hand.
+`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. `pnpm readme` writes no tables for a package without an entry there, so add one for each new package. The root README's package list, grouped by category, is edited by hand.
 
 ## Git hooks
 
-There is no CI yet, so checks run in git hooks. `pnpm install` installs them through `vp config`, and the scripts are in `.vite-hooks/`:
+The repo has no CI yet, so git hooks run the checks. `pnpm install` installs them through `vp config`, and the scripts are in `.vite-hooks/`:
 
 | Hook | Runs |
 | --- | --- |
 | pre-commit | `vp staged`, which runs `vp check --fix` on staged files |
 | pre-push | `tsc -b`, then the Node tests affected by changes since `origin/main` (`vitest --changed`) |
 
-Browser tests are slower and run on demand (`pnpm test:browser`) and before every release. `git push --no-verify` skips the hooks.
+Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `pnpm changeset:publish` runs them before every release. `git push --no-verify` skips the hooks.
 
-When CI is added, it will follow ox: a reusable `verify.yml` with the same checks, called by a pull-request workflow and by the release workflow.
+When we add CI, it will follow ox: a reusable `verify.yml` with the same checks, called by a pull-request workflow and by the release workflow.
 
 ## Releases
 
@@ -122,13 +122,13 @@ When CI is added, it will follow ox: a reusable `verify.yml` with the same check
 2. `pnpm changeset:version` bumps versions and writes changelogs.
 3. `pnpm changeset:publish` builds, runs every test project including the browsers, has zile write each published `package.json`, publishes to npm, and restores the source `package.json` files.
 
-Releases run from a maintainer's machine with `npm login`, so packages have no provenance yet. With CI, publishing moves to GitHub Actions with npm trusted publishing (OIDC), which adds provenance and removes the npm token.
+A maintainer publishes releases from their own machine after `npm login`, so packages have no provenance yet. With CI, publishing moves to GitHub Actions with npm trusted publishing (OIDC), which adds provenance and removes the npm token.
 
-JSR is not used. Deno, Bun and Workers all install from npm, and `isolatedDeclarations` keeps the code ready if JSR becomes worth adding.
+We don't publish to JSR. Deno, Bun and Workers all install from npm, and because of `isolatedDeclarations`, adding JSR later needs no code changes.
 
 ## Crypto
 
-A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. The option's type is one that `@noble/hashes` and WebCrypto both fit, sync or async:
+A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. Both `@noble/hashes` and WebCrypto fit the option's type, sync or async:
 
 ```ts
 type Hmac = (key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
@@ -137,7 +137,7 @@ type Digest = (algorithm: 'SHA-1' | 'SHA-256', data: Uint8Array<ArrayBuffer>) =>
 
 `@portable/webhooks` takes `hmac` and `@portable/oauth1` takes `digest`. Neither imports a crypto library or lists one as a dependency, and neither has a `/core` entry: a WebCrypto default imports nothing, so the option alone lets a caller choose.
 
-WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC is about 7× slower than noble's. Node's WebCrypto is expected to get faster. Until then, a README shows the noble version of the option for a caller who verifies or signs many messages on Node, or who needs a sync result.
+WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC is about 7× slower than noble's. We expect Node's WebCrypto to get faster. Until then, a README shows the noble version of the option for a caller who verifies or signs many messages on Node, or who needs a sync result.
 
 A package needs noble only where WebCrypto can't do the job, such as an incremental or streaming hash, because `crypto.subtle.digest` takes the whole input at once. A DKIM body hash over a stream is one case. Such a package takes noble as an optional peer dependency or requires the caller to pass the function.
 

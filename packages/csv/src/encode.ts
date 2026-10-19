@@ -1,7 +1,10 @@
 import { createEncoder } from './encoder.js'
 
 export declare namespace encode {
-  /** A field value. `null` and `undefined` are written as an empty field, a `Date` with `toISOString()`, and the rest with `String()`. */
+  /**
+   * A field value. `null` and `undefined` are written as an empty field, a `Date` with
+   * `toISOString()`, and the rest with `String()`.
+   */
   type Value = string | number | boolean | bigint | Date | null | undefined
 
   /** A row as an array of fields, or as an object keyed by column name. */

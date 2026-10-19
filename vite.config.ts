@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite-plus'
 import { playwright } from 'vite-plus/test/browser-playwright'
 
-// Set PW_CHROMIUM_PATH to test against an installed Chromium only, such as /opt/pw-browsers/chromium
-// in the cloud dev container, where Playwright's own browsers aren't installed.
+// Set PW_CHROMIUM_PATH to test against an installed Chromium only, such as
+// /opt/pw-browsers/chromium in the cloud dev container, where Playwright's own browsers aren't
+// installed.
 const chromiumPath = process.env.PW_CHROMIUM_PATH
 
-// `pnpm bench` sets BENCH_DIST=1 after building, so benchmarks import each package's built `dist/` and
-// Node loads it directly. Source run through Vitest pays for a getter on every call between modules.
+// `pnpm bench` sets BENCH_DIST=1 after building, so benchmarks import each package's built `dist/`
+// and Node loads it directly. Vitest wraps every call between source modules in a getter.
 const benchDist = process.env.BENCH_DIST === '1'
 const src = benchDist ? [] : ['src']
 

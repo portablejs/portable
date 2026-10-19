@@ -166,7 +166,10 @@ function map(domain: string): string {
   return (result + domain.slice(kept)).normalize('NFC')
 }
 
-/** UTS #46 validity criteria except CheckBidi. Returns whether the label has right-to-left characters. */
+/**
+ * UTS #46 validity criteria except CheckBidi. Returns whether the label has right-to-left
+ * characters.
+ */
 function validate(label: string, strict: boolean, decoded: boolean): boolean {
   const invalid = (reason: string) => new InvalidInputError(`Label "${label}" ${reason}.`)
   if (decoded) {
@@ -215,7 +218,10 @@ const hex = (code: number) => code.toString(16).toUpperCase().padStart(4, '0')
 const properties = (code: number) => Table.lookup(code) >> 2
 const joiningType = (code: number) => (properties(code) >> 4) & 7
 
-/** The ContextJ rules of RFC 5892 appendix A for U+200C ZERO WIDTH NON-JOINER and U+200D ZERO WIDTH JOINER. */
+/**
+ * The ContextJ rules of RFC 5892 appendix A for U+200C ZERO WIDTH NON-JOINER and U+200D ZERO WIDTH
+ * JOINER.
+ */
 function checkJoiners(label: string, invalid: (reason: string) => InvalidInputError): void {
   const codePoints = Array.from(label, (char) => char.codePointAt(0)!)
   for (let i = 0; i < codePoints.length; i++) {
@@ -237,7 +243,10 @@ function checkJoiners(label: string, invalid: (reason: string) => InvalidInputEr
   }
 }
 
-/** The six conditions of RFC 5893 section 2, which each label of a domain with right-to-left characters must meet. */
+/**
+ * The six conditions of RFC 5893 section 2, which each label of a domain with right-to-left
+ * characters must meet.
+ */
 function satisfiesBidiRule(label: string): boolean {
   const classes = Array.from(label, (char) => properties(char.codePointAt(0)!) & 15)
   const first = classes[0]

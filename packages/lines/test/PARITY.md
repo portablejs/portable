@@ -14,7 +14,7 @@ Upstream suites: [split2 4.2.0 `test.js`](https://github.com/mcollina/split2/blo
 | split using a custom regexp matcher | `split2 > splits on a custom regexp separator` | |
 | supports Symbol.split | `split2 > splits on a custom Symbol.split separator` | |
 | support an option argument | skipped | Tests Node's `highWaterMark`. Web streams take queuing strategies at `pipeThrough`, not in the transform's options. |
-| support a mapper function | skipped | No mapper; see the README for the `TransformStream` equivalent. |
+| support a mapper function | skipped | No mapper. See the README for the `TransformStream` equivalent. |
 | do not end on undefined | skipped | Mapper only. |
 | has destroy method | `DecoderStream > cancelling the output cancels the source` | Web streams cancel instead of `destroy()`. |
 | support custom matcher and mapper | skipped | Mapper only. The matcher half is covered by the custom separator tests. |
@@ -39,7 +39,7 @@ Upstream suites: [split2 4.2.0 `test.js`](https://github.com/mcollina/split2/blo
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | should pipe a small file | `byline > pipes a small file` | |
-| should work with streams2 API | skipped | Node streams2 `readable` event. Reading through a reader is what every other test does. |
+| should work with streams2 API | skipped | Node streams2 `readable` event. Every other test reads through a reader. |
 | should ignore empty lines by default | `byline > ignores empty lines when skipEmpty is set` | Empty lines are kept by default, as in split2. |
 | should keep empty lines when keepEmptyLines is true | `byline > keeps empty lines by default` | |
 | should not split a CRLF which spans two chunks | `byline > does not split a CRLF that spans two chunks` | Upstream's `CRLF.txt` contains no CR, so the test builds a real CRLF at the 64 KiB chunk boundary instead. |

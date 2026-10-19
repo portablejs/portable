@@ -6,7 +6,7 @@ let tables: { gb18030: Uint16Array; gbk: Uint16Array } | undefined
 let ranges: { pointers: number[]; codePoints: number[] } | undefined
 
 // GB18030-2022 moved these characters out of the Private Use Area. The encoder keeps their
-// GB18030-2005 two-byte forms; see the gb18030 encoder in the WHATWG Encoding Standard.
+// GB18030-2005 two-byte forms (see the gb18030 encoder in the WHATWG Encoding Standard).
 const privateUse: Record<number, number> = {
   0xe78d: 0xa6d9,
   0xe78e: 0xa6da,

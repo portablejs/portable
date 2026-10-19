@@ -29,7 +29,7 @@ const { from, to } = Mail.envelope(message) // for MAIL FROM and RCPT TO
 await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' })
 ```
 
-The report is read from the network while the message is read, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
+The report is read from the network while the caller reads the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
 
 ## API
 
@@ -85,13 +85,13 @@ Mail.encode(
 
 nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.
 
-- In the benchmarks on Node 24, `encode` was 2.5× faster than `MailComposer` on 100 text and HTML messages and 1.2× faster on a 4 MB attachment read from a stream. With a 1 MB attachment in memory the two were within the noise of each other. There is no native API that composes MIME to compare with.
+- In the benchmarks on Node 24, `encode` was 2.5× faster than `MailComposer` on 100 text and HTML messages and 1.2× faster on a 4 MB attachment read from a stream. With a 1 MB attachment in memory the difference was within the noise. There is no native API that composes MIME to compare with.
 - Line breaks in `7bit` and `8bit` bodies are written as CRLF. Without its `newline` option, nodemailer writes a bare LF as is, which is how SMTP smuggling starts.
 - An invalid address, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
-- A recipient that is only a comment, such as `(a@evil.com)`, throws instead of being dropped.
-- Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so a reader sees the subject the sender wrote. Quotes in a subject stay readable; nodemailer 10.1.7 encodes them.
+- `encode` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
+- Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so a reader sees the subject the sender wrote. Quotes in a subject stay readable, but nodemailer 10.1.7 encodes them.
 - A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.
-- There is no `path` or `href`, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
+- `Message` has no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
 - Cancelling the output cancels every content stream that hasn't been read, and a failing stream errors the output and cancels the rest.
 
 <!-- bench:start -->
@@ -142,8 +142,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 ### Differences
 
 - Header names keep the case you give. nodemailer capitalizes each word.
-- `message/rfc822` attachments default to `attachment`; nodemailer uses `inline`.
-- A file name holding `"` is written as a quoted string with `\"` in `filename`; nodemailer uses RFC 2231 encoding.
-- A name over about 40 bytes is split into encoded words of up to 75 characters, as `@portable/mime-headers` writes them; nodemailer uses 52.
+- `message/rfc822` attachments default to `attachment`, where nodemailer uses `inline`.
+- A file name containing `"` is written as a quoted string with `\"` in `filename`, where nodemailer uses RFC 2231 encoding.
+- A name over about 40 bytes is split into encoded words of up to 75 characters, as `@portable/mime-headers` writes them. nodemailer uses 52.
 - An address with a non-ASCII local part keeps its domain as given, lowercased. nodemailer decodes an A-label domain to UTF-8 and maps it with UTS #46.
 - A backslash in a domain throws.

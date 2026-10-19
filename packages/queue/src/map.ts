@@ -8,8 +8,8 @@ export declare namespace map {
     signal?: AbortSignal | undefined
     /**
      * With `true`, the first error rejects at once, aborts the `signal` passed to `fn` and stops
-     * reading `input`. With `false`, every item is mapped, and then the errors reject as one
-     * `AggregateError`, in input order.
+     * reading `input`. With `false`, `map` calls `fn` on every item and then rejects with the
+     * errors as one `AggregateError`, in input order.
      * @default true
      */
     stopOnError?: boolean | undefined

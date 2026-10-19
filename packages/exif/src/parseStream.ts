@@ -110,7 +110,10 @@ class Source {
     this.signal = signal
   }
 
-  /** Returns the bytes from `offset` to `offset + length`, fewer if the stream ends first. Unless `keep` is set, discards the bytes before `offset`. */
+  /**
+   * Returns the bytes from `offset` to `offset + length`, fewer if the stream ends first. Unless
+   * `keep` is set, discards the bytes before `offset`.
+   */
   async read(offset: number, length: number): Promise<Uint8Array> {
     if (!this.keep && offset > this.start) {
       this.buffer =

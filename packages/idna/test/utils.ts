@@ -45,7 +45,10 @@ export const idnaTestCases: readonly IdnaTestCase[] = idnaTestV2
     return [{ line: index + 1, source, toUnicode, toUnicodeStatus, toAsciiN, toAsciiNStatus }]
   })
 
-/** Status codes for the checks that the `strict` option turns on: CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength. */
+/**
+ * Status codes for the checks that the `strict` option turns on: CheckHyphens, UseSTD3ASCIIRules
+ * and VerifyDnsLength.
+ */
 export const strictCodes: ReadonlySet<string> = new Set(['V2', 'V3', 'U1', 'A4_1', 'A4_2'])
 
 /** The result of `fn`, or `null` if it throws. */

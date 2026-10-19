@@ -35,11 +35,11 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) throw new Error(
 | `timingSafeEqual(a, b)` | Whether `a` and `b` hold the same bytes, in time that depends only on the length. Returns `false` for different lengths. |
 | `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. |
 
-`fromHex` follows `Uint8Array.fromHex`: whitespace, a `0x` prefix and any other character throw. The error message gives the position of the first bad character.
+`fromHex` follows `Uint8Array.fromHex` and throws for whitespace, a `0x` prefix and any other character that isn't a hex digit. The error message gives the position of the first bad character.
 
 Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a value from the request. `equal` returns as soon as it finds a difference, so its timing shows an attacker how many leading bytes they guessed right. `timingSafeEqual` returns `false` at once for arrays of different lengths, so it doesn't hide the length. For a signature or a hash the algorithm fixes the length, so it isn't secret.
 
-`concat`'s and `fromHex`'s results are typed `Uint8Array<ArrayBuffer>`, so TypeScript 5.9 and later accept them as a `BlobPart` or a `BufferSource` for `crypto.subtle`.
+`concat` and `fromHex` return `Uint8Array<ArrayBuffer>`, so TypeScript 5.9 and later accept them as a `BlobPart` or a `BufferSource` for `crypto.subtle`.
 
 ## Why use this over uint8array-extras and node:crypto
 
@@ -47,7 +47,8 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 - `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so every caller has to check the length first or catch the error.
 - `fromHex` throws `Bytes.InvalidInputError`, which a caller can tell apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
 - Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, and passing `view.buffer` by mistake reads every byte of the buffer, not only the view's.
-Node's `Buffer` methods are C++ and win on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
+
+Node's `Buffer` methods are C++ and are faster on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
 
 <!-- bench:start -->
 | | @portable/bytes | uint8array-extras | Node `Buffer` or `node:crypto` |

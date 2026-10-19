@@ -13,7 +13,10 @@ export type Auth =
     }
   | { user: string; accessToken: string }
 
-/** RFC 3461 delivery status notification parameters. They are sent only when the server offers DSN. */
+/**
+ * RFC 3461 delivery status notification parameters. They are sent only when the server offers
+ * DSN.
+ */
 export type Dsn = {
   /** Whether a bounce returns the whole message or only its headers. */
   ret?: 'FULL' | 'HDRS' | undefined
@@ -31,7 +34,10 @@ export type Mail = {
   to: string | readonly string[]
   /** The raw RFC 5322 message. Line breaks are converted to CRLF and dot-stuffing is applied. */
   message: ReadableStream<Uint8Array> | Uint8Array | string
-  /** The message size in bytes, declared with SIZE and checked against the server's limit. Computed for bytes and strings. */
+  /**
+   * The message size in bytes, declared with SIZE and checked against the server's limit. For
+   * bytes and strings, `send` computes the size and ignores this value.
+   */
   size?: number | undefined
   dsn?: Dsn | undefined
   /** Ask the server to relay only over TLS (RFC 8689 REQUIRETLS). The send fails if the server doesn't offer it. */

@@ -22,7 +22,7 @@ function utf16(littleEndian: boolean): Encoder {
 }
 
 /**
- * UTF-16 little-endian. The WHATWG labels `utf-16` and `unicode` name this charset. Pass
+ * UTF-16 little-endian. The WHATWG labels `utf-16` and `unicode` map to this charset. Pass
  * `bom: true` to `encode` to write the byte order mark iconv-lite writes for `utf-16`.
  *
  * @example

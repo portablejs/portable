@@ -99,8 +99,8 @@ describe('folding', () => {
   test('fold breaks lines where libmime.foldLines breaks them', () => {
     const failures: unknown[] = []
     each(5, (next) => {
-      // fold never breaks in front of trailing whitespace, which would leave a line of only
-      // whitespace, and libmime does.
+      // libmime breaks in front of trailing whitespace, which leaves a line of only whitespace.
+      // fold never does.
       const input = words(next, 40).trimEnd()
       const lineLength = Math.floor(next() * 70) + 10
       // libmime keeps each line shorter than lineLength, and fold allows lineLength itself.

@@ -25,14 +25,19 @@ export function encodeUtf8Scratch(text: string): Uint8Array {
   return scratch.subarray(0, utf8Encoder.encodeInto(text, scratch).written)
 }
 
-/** Encodes text in a charset other than UTF-8 for encoded-words. `@portable/charset` provides them. */
+/**
+ * Encodes text in a charset other than UTF-8 for encoded-words. `@portable/charset` provides
+ * encoders.
+ */
 export type CharsetEncoder = {
   /** The name written into each encoded word. */
   readonly name: string
   readonly encode: (text: string) => Uint8Array
 }
 
-/** `'Q'` keeps ASCII letters and digits readable; `'B'` is base64 and shorter for non-Latin text. */
+/**
+ * `'Q'` keeps ASCII letters and digits readable. `'B'` is base64 and shorter for non-Latin text.
+ */
 export type Encoding = 'Q' | 'B'
 
 export declare namespace encodeWord {
@@ -43,7 +48,7 @@ export declare namespace encodeWord {
     encoding?: Encoding | undefined
     /**
      * Longest encoded word, `=?` and `?=` included. Longer text is split into several words that
-     * each hold whole characters. RFC 2047 allows 75. A word holding a single character may be
+     * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
      * longer when the limit is too small for it. `false` writes one word. @default 75
      */
     maxLength?: number | false | undefined
@@ -100,7 +105,7 @@ export declare namespace encodeWords {
 }
 
 /**
- * Encodes the part of `text` that a header can't carry as is, and leaves the rest readable. The
+ * Encodes the part of `text` that can't appear in a header as is, and leaves the rest readable. The
  * encoded part runs from the first word that needs encoding to the last one: a word with a
  * character outside printable ASCII, or one that would read as an encoded word.
  *
@@ -184,7 +189,7 @@ export function decodeWords(input: string | Uint8Array): string {
   return result + text.slice(last)
 }
 
-/** RFC 2231 section 5 lets an encoded word's charset carry a language, as in `UTF-8*en`. */
+/** RFC 2231 section 5 lets an encoded word's charset include a language, as in `UTF-8*en`. */
 const withoutLanguage = (charset: string): string => {
   const star = charset.indexOf('*')
   return star < 0 ? charset : charset.slice(0, star)
@@ -237,7 +242,10 @@ function splitCharset(
   return chunks
 }
 
-/** Spreading bytes into arguments hits the engine's argument limit, so long input skips `btoa`. */
+/**
+ * Spreading bytes into arguments hits the engine's argument limit, so `encodeB` uses
+ * `Base64.encode` instead of `btoa` for long input.
+ */
 const encodeB = (bytes: Uint8Array): string =>
   bytes.length > 4096
     ? Base64.encode(bytes)

@@ -32,7 +32,7 @@ MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\
 
 ## API
 
-Functions come in pairs. `encode*`/`decode*` convert encoded-words and back; `parse*`/`format*` read structured values from header text and write them back. Every function that takes text also takes a `Uint8Array`, which it reads as UTF-8.
+Functions come in pairs. `encode*` and `decode*` convert text to encoded-words and back, and `parse*` and `format*` read structured values from header text and write them back. Every function that takes text also takes a `Uint8Array`, which it reads as UTF-8.
 
 | Export | Takes | Returns |
 | --- | --- | --- |
@@ -48,11 +48,11 @@ Functions come in pairs. `encode*`/`decode*` convert encoded-words and back; `pa
 | `formatAddresses(addresses, options?)` | `Address[]` | the address list |
 | `InvalidInputError` | | thrown by `parseAddresses` in strict mode and by `formatValue` and `formatAddresses` |
 
-`decodeWords` joins encoded words that only whitespace separates, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`; a label `TextDecoder` doesn't know, such as `utf-7`, is read as UTF-8. It never throws.
+`decodeWords` joins encoded words that only whitespace separates, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
-`parseValue` lowercases parameter names, joins RFC 2231 sections (`name*0*`, `name*1*`), decodes their charset, and decodes encoded words in plain values. When a parameter has both forms, the RFC 2231 one wins (RFC 6266 section 4.3). `formatValue` quotes values that need it and writes values outside printable ASCII, or ones that look like encoded words, as UTF-8 RFC 2231 sections.
+`parseValue` lowercases parameter names, joins RFC 2231 sections (`name*0*`, `name*1*`), decodes their charset, and decodes encoded words in plain values. When a parameter has both forms, `parseValue` uses the RFC 2231 one (RFC 6266 section 4.3). `formatValue` quotes values that need it and writes values outside printable ASCII, or ones that look like encoded words, as UTF-8 RFC 2231 sections.
 
-`parseAddresses` reads RFC 5322 address lists with the obsolete syntax, RFC 6532 UTF-8, comments, groups and encoded-word names. In the default mode it never throws and reads malformed input the way mail clients do: an unquoted name split by a comma is joined back, a stray `<` drops what came before it, and text around the address becomes the name. A quoted string is never searched for an address. With `strict: true` it throws `InvalidInputError` for anything RFC 5322 doesn't allow.
+`parseAddresses` reads RFC 5322 address lists with the obsolete syntax, RFC 6532 UTF-8, comments, groups and encoded-word names. In the default mode it never throws and reads malformed input the way mail clients do: an unquoted name split by a comma is joined back, anything before a stray `<` is dropped, and text around the address becomes the name. A quoted string is never searched for an address. With `strict: true` it throws `InvalidInputError` for anything RFC 5322 doesn't allow.
 
 ## Options
 
@@ -76,8 +76,8 @@ Functions come in pairs. `encode*`/`decode*` convert encoded-words and back; `pa
 It has no dependencies, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. One address parser covers what addressparser and email-addresses each do: a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
 
 - In the benchmarks on Node 24, `parseAddresses` was 2× faster than addressparser and about 50× faster than email-addresses (25× in strict mode). `fold` was 7× faster than libmime's `foldLines`, `parseHeaders` 3.5× faster than `decodeHeaders`, `encodeWords` 3× faster and `formatValue` 2× faster. `decodeWords`, `parseValue` and `encodeWord` were 1.1 to 1.3× faster. `Buffer` and `TextDecoder` decode a single B word 3.7× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
-- An address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, stays the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.1.2 still moves a quoted display name holding "@" into the address.
-- A comment never holds the address: `(evil@evil.com) Name <good@good.com>` is good.com. nodemailer fixed this in 10.1.4.
+- `parseAddresses` reads an address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, as the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.1.2 still moves a quoted display name that contains "@" into the address.
+- `parseAddresses` never takes the address from a comment: `(evil@evil.com) Name <good@good.com>` parses to `good@good.com`. nodemailer fixed this in 10.1.4.
 - `encodeWords` encodes text that looks like an encoded word, so a reader can't decode a subject the sender didn't encode. libmime 5.5.1 leaves it as is.
 - `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
@@ -119,7 +119,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `libmime.encodeWords(buffer, 'Q', 0, 'iso-8859-1')` | `encodeWords(new TextDecoder('iso-8859-1').decode(bytes))` |
 | `libmime.decodeWords(text)` | `decodeWords(text)` |
 | `libmime.foldLines(text, n)` | `fold(text, { lineLength: n })` |
-| `libmime.decodeHeaders(text)` | `parseHeaders(text)`, a list in order; lowercase the names to group them |
+| `libmime.decodeHeaders(text)` | `parseHeaders(text)`, a list in order. Lowercase the names to group them. |
 | `libmime.decodeHeader(line)` | `parseHeaders(line)[0]` |
 | `libmime.parseHeaderValue(text)` | `parseValue(text)` (there is no `decodedParams`: every parameter is decoded) |
 | `libmime.buildHeaderValue({ value, params })` | `formatValue({ value, params })` |
@@ -127,20 +127,20 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `addressparser(text)` | `parseAddresses(text)` |
 | `addressparser(text, { flatten: true })` | `parseAddresses(text, { flatten: true })` |
 | `emailAddresses.parseOneAddress(text)` | `parseAddresses(text, { strict: true })`, then check for one entry |
-| `emailAddresses.parseAddressList(text)` | `parseAddresses(text, { strict: true })`; it throws where email-addresses returns `null` |
+| `emailAddresses.parseAddressList(text)` | `parseAddresses(text, { strict: true })`, which throws where email-addresses returns `null` |
 | `result.local`, `result.domain` | Split `address` at its last `@`. |
 | nodemailer's address formatting | `formatAddresses(addresses)` |
 
 The oracle tests compare this package with libmime 5.4.9, nodemailer 10.1.2's addressparser and email-addresses 5.0.0 on generated input. Differences:
 
-- `encodeWord` limits words to 75 characters by default; libmime's `encodeWord` writes one word unless given a length. A trailing space in a Q word is `_` here and `=20` in libmime.
+- `encodeWord` limits words to 75 characters by default, where libmime's `encodeWord` writes one word unless given a length. A trailing space in a Q word is written as `_`, where libmime writes `=20`.
 - `encodeWords` encodes words with control characters, and words that read as encoded words. libmime leaves both as they are.
-- `fold` allows a line of exactly `lineLength`; libmime's lines stay one shorter. `fold` never breaks in front of trailing whitespace, which would leave a line of only whitespace.
+- `fold` allows a line of exactly `lineLength`, and libmime keeps its lines one character shorter. `fold` never breaks in front of trailing whitespace, which would leave a line of only whitespace.
 - `parseHeaders` keeps the case of names and the whitespace a fold leaves, and returns a list. libmime lowercases names, collapses the whitespace to one space and groups values by name.
 - `parseValue` also decodes encoded words in plain parameter values. A backslash escapes only inside quotes.
-- `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name; libmime 5.5 drops it. It marks every section of an encoded value with `*`.
-- Names from `parseAddresses` have their encoded words decoded; addressparser and email-addresses return them encoded.
-- Quotes a local part doesn't need are dropped, inside angle brackets as well (`<"user"@example.com>` gives `user@example.com`). Whitespace inside a quoted name is kept; email-addresses collapses it.
+- `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name, where libmime 5.5 drops it. It marks every section of an encoded value with `*`.
+- `parseAddresses` decodes the encoded words in names. addressparser and email-addresses return them encoded.
+- Quotes a local part doesn't need are dropped, inside angle brackets as well (`<"user"@example.com>` gives `user@example.com`). Whitespace inside a quoted name is kept, where email-addresses collapses it.
 - Where malformed input could be read two ways, `parseAddresses` takes the first complete address and makes the rest the name: `<x@evil.com @good.com>` gives `x@evil.com` named `@good.com`, where addressparser returns the whole value. `PARITY.md` lists each case.
-- Strict mode accepts the obsolete syntax RFC 5322 says to read, such as `H.P. Lovecraft <a@b.c>`, and UTF-8 (RFC 6532). email-addresses' `strict` refuses the first and needs `rfc6532: true` for the second. There are no `rejectTLD`, `atInDisplayName`, `commaInDisplayName` or `addressListSeparator` options.
+- Strict mode accepts the obsolete syntax RFC 5322 says to read, such as `H.P. Lovecraft <a@b.c>`, and UTF-8 (RFC 6532). email-addresses' `strict` refuses the first and needs `rfc6532: true` for the second. `parseAddresses` has no `rejectTLD`, `atInDisplayName`, `commaInDisplayName` or `addressListSeparator` options.
 - There are no `local` or `domain` fields and no IDN conversion: `user@münchen.de` stays as written.

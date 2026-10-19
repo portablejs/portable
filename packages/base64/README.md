@@ -31,7 +31,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
 | `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
 | `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, string>`. Same output as `encode` of the whole input, however it is chunked. |
-| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input; line breaks, padding and groups of four characters can be split across chunks anywhere. |
+| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding and groups of four characters can be split across chunks anywhere. |
 | `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
 | `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |
 
@@ -63,7 +63,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `'strict'` | skipped | `TruncatedError` | `InvalidInputError` | `InvalidInputError` |
 | `'mime'` | skipped | accepted | skipped | decoded as a new segment |
 
-`'loose'` and `'strict'` are `Uint8Array.fromBase64` with `lastChunkHandling` set to the same name. `'strict'` also rejects non-zero bits before the padding (`'YR=='`). Both throw `TruncatedError` for one leftover character (`'YWJjZ'`) or a single `=` where two are needed (`'YQ='`).
+`'loose'` and `'strict'` match `Uint8Array.fromBase64` with `lastChunkHandling` set to the same name. `'strict'` also rejects non-zero bits before the padding (`'YR=='`). Both throw `TruncatedError` for one leftover character (`'YWJjZ'`) or a single `=` where two are needed (`'YQ='`).
 
 `'mime'` follows RFC 2045 §6.8, which tells decoders to ignore characters outside the alphabet, and libbase64, which decodes each `=`-terminated segment on its own. It reads both alphabets and never throws, so use it for mail bodies and other input you don't control.
 
@@ -126,10 +126,10 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 These behaviors differ on purpose:
 
-- Wrapping is off by default; libbase64's `Encoder` wraps at 76. Pass `lineLength: 76` for MIME.
-- `lineLength` must be a positive integer or `false`. libbase64 rounds fractions down and replaces anything else with 76; we throw `RangeError`.
+- Lines aren't wrapped by default, but libbase64's `Encoder` wraps at 76. Pass `lineLength: 76` for MIME.
+- `lineLength` must be a positive integer or `false`, and anything else throws `RangeError`. libbase64 rounds fractions down and replaces anything else with 76.
 - The default `'loose'` mode throws on characters outside the alphabet and on data after padding. libbase64 and js-base64 skip them, and base64-js returns wrong bytes or stops at the first `=`. `'mime'` mode gives libbase64's result.
-- base64-js and js-base64 accept `+/` and `-_` mixed in one string. We take one alphabet, chosen with `alphabet`, except in `'mime'` mode.
+- base64-js and js-base64 accept `+/` and `-_` mixed in one string. `decode` accepts only the alphabet that `alphabet` selects, except in `'mime'` mode.
 - `decode` of a `Uint8Array` reads it as base64 text. libbase64 returns a `Buffer` argument unchanged.
 - Strings are encoded with `TextEncoder`, which replaces a lone surrogate with U+FFFD. js-base64 encodes lone surrogates as is.
 - `EncoderStream` has no `skipStartBytes`, `limitOutputBytes`, `startPadding` or byte counters, and string chunks are always UTF-8.

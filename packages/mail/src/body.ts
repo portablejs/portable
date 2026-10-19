@@ -2,9 +2,9 @@ import * as Base64 from '@portable/base64'
 import * as QuotedPrintable from '@portable/quoted-printable'
 
 /**
- * A body or attachment: text (written as UTF-8), bytes, a `Blob` or `File`, or a stream of
- * bytes such as `response.body`. Blobs and streams are read only while the message is read, so
- * a large attachment is never held in memory.
+ * A body or attachment: text (written as UTF-8), bytes, a `Blob` or `File`, or a stream of bytes
+ * such as `response.body`. Blobs and streams are read only while the message is read, so a
+ * large attachment is never held in memory.
  *
  * @example
  * ```ts
@@ -33,7 +33,7 @@ export function isContent(value: unknown): value is Content {
   )
 }
 
-/** Plain text that a `7bit` part can carry: no control characters and no line over 76. */
+/** Plain text allowed in a `7bit` part: no control characters and no line over 76. */
 function isShortAscii(text: string): boolean {
   // oxlint-disable-next-line no-control-regex
   if (/[\x00-\x08\x0b\x0c\x0e-\x1f\u0080-\uffff]/.test(text)) return false
@@ -46,7 +46,7 @@ function isShortAscii(text: string): boolean {
   return true
 }
 
-/** Mostly Latin text stays readable as quoted-printable; base64 is shorter for anything else. */
+/** Quoted-printable keeps mostly Latin text readable, and base64 is shorter for anything else. */
 function textEncoding(text: string): TransferEncoding {
   let latin = 0
   let other = 0
@@ -59,7 +59,9 @@ function textEncoding(text: string): TransferEncoding {
   return other < latin ? 'quoted-printable' : 'base64'
 }
 
-/** The encoding for a text part that names none. A stream can't be scanned up front. */
+/**
+ * The encoding for a text part without a `transferEncoding`. A stream can't be scanned up front.
+ */
 export function chooseTextEncoding(content: Content): TransferEncoding {
   if (typeof content !== 'string' && !(content instanceof Uint8Array)) return 'quoted-printable'
   const text = typeof content === 'string' ? content : new TextDecoder().decode(content)
@@ -82,7 +84,7 @@ function hasBareBreak(bytes: Uint8Array): boolean {
 
 /**
  * Writes every CR, LF and CRLF as CRLF. `afterCr` says whether the previous chunk ended in CR,
- * whose CRLF was already written, so an LF that starts this chunk belongs to it.
+ * whose CRLF was already written, so an LF that starts this chunk is part of that CRLF.
  */
 function toCrlfBytes(bytes: Uint8Array, afterCr: boolean): Uint8Array {
   if (!afterCr && !hasBareBreak(bytes)) return bytes

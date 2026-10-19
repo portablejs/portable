@@ -4,9 +4,9 @@ import { abortable } from './abortable.js'
 /**
  * Decodes quoted-printable (RFC 2045 section 6.7) into bytes. A string is read as UTF-8.
  *
- * Whitespace at the end of a line is removed, soft line breaks (`=` followed by CRLF, LF or the end
- * of the input) are removed, and `=XX` escapes with upper- or lowercase hex digits are decoded.
- * Anything else, including a malformed escape, is copied as is. Decoding never throws.
+ * Whitespace at the end of a line and soft line breaks (`=` followed by CRLF, LF or the end of the
+ * input) are removed, and `=XX` escapes with upper- or lowercase hex digits are decoded. Anything
+ * else, including a malformed escape, is copied as is. Decoding never throws.
  *
  * @example
  * ```ts
@@ -72,9 +72,10 @@ for (let i = 0; i < 6; i++) hexValue[0x41 + i] = hexValue[0x61 + i] = 10 + i
 
 type Decoder = { write: (bytes: Uint8Array, final: boolean) => Uint8Array }
 
-// Three passes in one, each holding back the bytes whose meaning depends on what follows:
-// whitespace runs (dropped before a line break or at the end), "=" and "=\r" (a soft line break
-// if LF or the end follows), and "=" with up to one hex digit (an escape if hex digits follow).
+// The decoder makes three passes in one. Each holds back the bytes whose meaning depends on what
+// follows: whitespace runs (dropped before a line break or at the end), "=" and "=\r" (a soft line
+// break if LF or the end follows), and "=" with up to one hex digit (an escape if hex digits
+// follow).
 function createDecoder(): Decoder {
   let whitespace = new Uint8Array(64)
   let whitespaceLength = 0

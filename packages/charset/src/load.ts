@@ -48,7 +48,7 @@ const loaders: Record<Name, () => Promise<Charset>> = {
 }
 
 /**
- * Loads the charset a label names, for when the charset is only known at runtime, such as from
+ * Loads the charset for a label, for when the charset is only known at runtime, such as from
  * a `Content-Type` header. Each family's tables are imported on first use, so bundlers split
  * them into chunks that load only when needed. Throws `UnsupportedError` for a label
  * `normalizeLabel` doesn't know.

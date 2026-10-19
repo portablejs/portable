@@ -65,7 +65,7 @@ export class MaxBytesError extends Error {
   }
 }
 
-// Runtimes report every decompression failure as a TypeError. Node adds a zlib `code`;
+// Runtimes report every decompression failure as a TypeError. Node adds a zlib `code`, and
 // Chromium fails the write for bad data and the close for missing data.
 export function classify(error: unknown, closing: boolean): Error {
   const code =

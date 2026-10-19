@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suite: [mailsplit 5.4.26 `test/`](https://github.com/zone-eu/mailsplit/tree/master/test) (`@zone-eu/mailsplit`, formerly `andris9/mailsplit`). The oracle tests run against `@zone-eu/mailsplit` 5.4.23, the newest release older than a day. Fixtures `message.eml`, `mimetorture.eml`, `original.txt`, `source1.eml` and `source2.eml` are copied from mailsplit (MIT, Andris Reinman and Zone Media OÜ). `form-data.eml` (2.4 MB) and `large_image.eml` (3.7 MB) are not copied; the tests that used them build an equivalent message.
+Upstream suite: [mailsplit 5.4.26 `test/`](https://github.com/zone-eu/mailsplit/tree/master/test) (`@zone-eu/mailsplit`, formerly `andris9/mailsplit`). The oracle tests run against `@zone-eu/mailsplit` 5.4.23, the newest release older than a day. Fixtures `message.eml`, `mimetorture.eml`, `original.txt`, `source1.eml` and `source2.eml` are copied from mailsplit (MIT, Andris Reinman and Zone Media OÜ). `form-data.eml` (2.4 MB) and `large_image.eml` (3.7 MB) are not copied. The tests that used them build an equivalent message instead.
 
 Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts` has this package's own tests, and `mailsplit.oracle.test.ts` compares with mailsplit.
 
@@ -19,7 +19,7 @@ Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts
 | Fetch attachment from form-data | `message-splitter > gets an attachment out of multipart/form-data` | Builds a form-data request with a binary file instead of copying the 2.4 MB fixture, and checks the file's bytes instead of an MD5. |
 | Split multipart message with embedded message/rfc88 | `message-splitter > keeps a message/rfc822 part as one body by default` | |
 | Split multipart message with embedded inline message/rfc88 | `message-splitter > reads the message inside a message/rfc822 part with embedded` | mailsplit reads inline embedded messages by default. Here `embedded: true` reads all of them. |
-| handles line break lines split into 2-byte chunks | `message-splitter > reads original.txt written two bytes at a time` | Upstream only logs; this compares the chunks with a single write. |
+| handles line break lines split into 2-byte chunks | `message-splitter > reads original.txt written two bytes at a time` | Upstream only logs. Our test compares the chunks with those of a single write. |
 | Split multipart message with embedded message/rfc822 with header only | `message-splitter > reads a message/rfc822 part with only headers` | Also checks it with `embedded: true`. |
 | Split multipart message and ignore embedded message/rfc88 | `message-splitter > keeps a message/rfc822 part as one body by default` | `ignoreEmbedded: true` is the default here. |
 | Split multipart message and embedded message/rfc88 | `message-splitter > reads the message inside a message/rfc822 part with embedded` | `defaultInlineEmbedded: true` is `embedded: true`. |
@@ -60,9 +60,9 @@ mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the 
 | Return original MBOX headers | `headers > returns an mbox header block as received and skips its From line` | |
 | Return modified MBOX headers | skipped | No rebuilding. |
 | Get specific headers, Get first header value, Get header boolean if it exists, Get all rows | `headers > lists every header field in order` | Callers filter `part.headers`. |
-| Add new header, Remove header, Replace header, Replace header at relative key index | `headers > writes a replaced header block instead of the original` | No editing API; the test shows the replacement. |
+| Add new header, Remove header, Replace header, Replace header at relative key index | `headers > writes a replaced header block instead of the original` | There is no editing API, so the test writes a replacement header block. |
 | Preserve SMTPUTF8 mailbox local part, with UTF-8 domain, UTF-8 display name and mailbox, ASCII address round-trip | `headers > decodes UTF-8 header values and keeps their bytes` | |
-| Strip CR and LF from added header values, Strip CR and LF from added header keys, Strip injected header lines from addFormatted, from supplied header objects, from a Buffer header line, Drop a leading fold from an added header line, Use lineEnd literally when rebuilding | skipped | They test the escaping of values added through `Headers`. Header text a caller enqueues is written as given; `MimeHeaders.fold` and `formatValue` build safe header lines. |
+| Strip CR and LF from added header values, Strip CR and LF from added header keys, Strip injected header lines from addFormatted, from supplied header objects, from a Buffer header line, Drop a leading fold from an added header line, Use lineEnd literally when rebuilding | skipped | They test the escaping of values added through `Headers`. Header text a caller enqueues is written as given. `MimeHeaders.fold` and `formatValue` build safe header lines. |
 | Drop lone CR from modified headers | `headers > does not end a header line at a bare CR` | |
 | Drop lone CR that precedes whitespace, Keep a trailing CR from ending the header block | `headers > does not end the header block at a bare CR before a line break` | |
 | Keep an indented first header line folded | `headers > does not read an indented first line as a header field` | |
@@ -78,7 +78,7 @@ mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Add and parse headers | `headers > returns the header block as received` | |
-| Update Content-Type, Set filename, Delete filename, Update existing filename, Set character set, Update character set, Remove character set | skipped | Header editing; callers build values with `MimeHeaders.formatValue`. |
+| Update Content-Type, Set filename, Delete filename, Update existing filename, Set character set, Update character set, Remove character set | skipped | No header editing. Callers build values with `MimeHeaders.formatValue`. |
 | Get filename from Content-Type, Get split filename from Content-Type, Get filename from Content-Disposition, Get split filename from Content-Disposition, Do not decode an RFC 2231 filename a second time | `mime-node > reads a filename from the header fields with MimeHeaders.parseValue` | Parameter decoding belongs to `@portable/mime-headers`, whose tests cover each of these cases. |
 | Strip comments from Content-Transfer-Encoding | `mime-node > reads Content-Transfer-Encoding without comments` | Deliberate difference: an unclosed comment is dropped too. mailsplit keeps `base64 (unclosed` as it is. |
 | Parse Content-Transfer-Encoding with many comment openers in linear time | `mime-node > reads Content-Transfer-Encoding with many comment openers in linear time` | |

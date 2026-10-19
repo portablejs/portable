@@ -42,7 +42,7 @@ type KeyData = { flags: number; algorithm: number; key: Uint8Array }
 
 /**
  * The `data` of each record type that has a codec. `decode` returns the same shapes, except that
- * TXT strings always come back as `Uint8Array`.
+ * TXT strings are always `Uint8Array`.
  */
 export type RecordData = {
   /** An IPv4 address, such as `'192.0.2.1'`. */
@@ -54,7 +54,10 @@ export type RecordData = {
   NS: string
   PTR: string
   MX: { preference: number; exchange: string }
-  /** `rname` is a mailbox written as a name: `hostmaster.example.com`, or `host\.master.example.com` for a dot in the local part. */
+  /**
+   * `rname` is a mailbox written as a name: `hostmaster.example.com`, or
+   * `host\.master.example.com` for a dot in the local part.
+   */
   SOA: {
     mname: string
     rname: string
@@ -472,7 +475,7 @@ export const unknown: Codec<Uint8Array, Uint8Array> = raw
 
 /**
  * An EDNS option inside an OPT record. CLIENT_SUBNET, TCP_KEEPALIVE, PADDING and KEY_TAG have
- * fields; every other code carries its raw bytes in `data`.
+ * fields. For any other code, `data` holds the raw bytes.
  */
 export type EdnsOption =
   | {

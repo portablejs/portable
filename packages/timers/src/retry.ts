@@ -16,8 +16,9 @@ export declare namespace retry {
     /** Wait before each retry. @default { initial: 200, max: 10_000 } */
     delay?: Delay | undefined
     /**
-     * Called with the error and the number of the attempt that threw it, before each retry. Return
-     * `false` to stop and throw that error. Not called after the last attempt. @default () => true
+     * Called before each retry with the error and the number of the attempt that threw it. Return
+     * `false` to stop and throw that error. It isn't called after the last attempt.
+     * @default () => true
      */
     retryIf?: ((error: unknown, attempt: number) => boolean | PromiseLike<boolean>) | undefined
     /**

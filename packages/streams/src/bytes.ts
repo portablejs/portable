@@ -1,5 +1,5 @@
 /**
- * Thrown when a stream holds more bytes than `maxBytes` allows.
+ * Thrown when a stream has more bytes than `maxBytes` allows.
  *
  * @example
  * ```ts

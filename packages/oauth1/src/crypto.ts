@@ -27,7 +27,7 @@ export const subtleDigest: Digest = async (algorithm, data) =>
 
 const blockSize = 64
 
-/** RFC 2104 over the caller's `digest`. SHA-1 and SHA-256 both use 64-byte blocks. */
+/** Computes an RFC 2104 HMAC with the caller's `digest`. SHA-1 and SHA-256 use 64-byte blocks. */
 export async function hmac(
   digest: Digest,
   algorithm: HashAlgorithm,
@@ -61,7 +61,8 @@ export async function rsaSha1(
   try {
     return new Uint8Array(await crypto.subtle.sign(algorithm.name, key, data))
   } catch (cause) {
-    // A PEM key whose numbers are inconsistent imports, then fails here with an OperationError.
+    // A PEM key with inconsistent numbers is imported without error, and signing then fails here
+    // with an OperationError.
     throw new RangeError('The RSA private key can not sign', { cause })
   }
 }
@@ -87,7 +88,9 @@ const rsaEncryption = [
   0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
 ]
 
-/** WebCrypto imports only PKCS #8, so a PKCS #1 `RSA PRIVATE KEY` is wrapped in a PrivateKeyInfo. */
+/**
+ * WebCrypto imports only PKCS #8, so a PKCS #1 `RSA PRIVATE KEY` is wrapped in a PrivateKeyInfo.
+ */
 function pkcs1ToPkcs8(pkcs1: Uint8Array): Uint8Array<ArrayBuffer> {
   const octetString = [0x04, ...derLength(pkcs1.length)]
   const contentLength = 3 + rsaEncryption.length + octetString.length + pkcs1.length

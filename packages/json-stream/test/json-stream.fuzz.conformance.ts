@@ -74,7 +74,7 @@ test('DecoderStream returns the same values or error however the bytes are chunk
   )
 })
 
-/** The outcome JSON.parse promises for one document, or undefined when the text isn't one. */
+/** The outcome JSON.parse gives for one document, or undefined when the text isn't one. */
 function parsesAs(text: string): { value: JsonStream.DecoderStream.Match[] } | undefined {
   if (text.trim() === '') return undefined
   try {

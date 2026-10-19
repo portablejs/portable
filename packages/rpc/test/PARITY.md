@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suites: [birpc 4.2.0 `test/`](https://github.com/antfu-collective/birpc/tree/main/test), [json-rpc-2.0 1.8.1 `src/*.spec.ts`](https://github.com/shogowada/json-rpc-2.0/tree/master/src) and [penpal 8.0.1 `test/`](https://github.com/Aaronius/penpal/tree/main/test), plus the examples in section 7 of the [JSON-RPC 2.0 specification](https://www.jsonrpc.org/specification#examples), which `spec.conformance.ts` runs one by one. `fixtures/methods.ts` adapts the method set of penpal's `generalMethods` test fixture (MIT, Aaron Hardy) to our API; no other upstream code is copied.
+Upstream suites: [birpc 4.2.0 `test/`](https://github.com/antfu-collective/birpc/tree/main/test), [json-rpc-2.0 1.8.1 `src/*.spec.ts`](https://github.com/shogowada/json-rpc-2.0/tree/master/src) and [penpal 8.0.1 `test/`](https://github.com/Aaronius/penpal/tree/main/test), plus the examples in section 7 of the [JSON-RPC 2.0 specification](https://www.jsonrpc.org/specification#examples), which `spec.conformance.ts` runs one by one. `fixtures/methods.ts` adapts the method set of penpal's `generalMethods` test fixture (MIT, Aaron Hardy) to our API. No other upstream code is copied.
 
 Test files: `connect.conformance.ts` (calls over a `MessageChannel`), `json-rpc.conformance.ts`, `http.conformance.ts`, `spec.conformance.ts`, `penpal.conformance.ts`, `window.browser.test.ts` and `rpc.oracle.test.ts`. A test is named `file > describe > test`.
 
@@ -14,7 +14,7 @@ birpc's tests talk between "Alice" (`hello`) and "Bob" (`hi`, `bump`, `bumpWithR
 | close > stops the rpc promises with a custom message | `connect > cancellation > aborting the connection rejects waiting and later calls with the reason` | The abort reason is the custom error. |
 | close > custom error's cause is not overwritten | `connect > cancellation > aborting the connection rejects waiting and later calls with the reason` | Calls reject with the reason itself, so its `cause` is never touched. |
 | dynamic > dynamic | `connect > calls > looks up the method on every call, so replacing or adding one takes effect` | |
-| error > on function error | `connect > errors > rejects a call to an unknown method with -32601` | There is no `onFunctionError` hook; the caller gets the error. |
+| error > on function error | `connect > errors > rejects a call to an unknown method with -32601` | There is no `onFunctionError` hook. The caller gets the error. |
 | error > on serialize error | `connect > errors > answers a result the codec cannot encode with an error, and keeps serving`, `connect > errors > rejects a call whose arguments the codec cannot encode` | No `onGeneralError` hook. |
 | error > on parse error | `connect > errors > answers undecodable input with a parse error` | Answered with `-32700`, as the specification says. |
 | error > on async post error | `connect > errors > rejects calls and notifications when the transport fails to write` | |
@@ -27,8 +27,8 @@ birpc's tests talk between "Alice" (`hello`) and "Bob" (`hi`, `bump`, `bumpWithR
 | index > basic without proxify | `connect > call > passes positional params as arguments` | `$call` is `Rpc.call`. |
 | index > await on birpc should not throw error | `connect > calls > a remote can be awaited without making a call` | |
 | index > $call | `connect > call > passes positional params as arguments`, `connect > notifications > notify runs the method without waiting for a result` | `$callEvent` is `Rpc.notify`. |
-| index > $callOptional | `connect > errors > rejects a call to an unknown method with -32601` | No optional calls; the error code tells the caller the method is missing. |
-| reject-pending-calls > rejects pending calls | `connect > cancellation > aborting the connection rejects waiting and later calls with the reason`, `connect > cancellation > the transport closing rejects waiting calls with TransportError` | No `$rejectPendingCalls`; abort the connection, or abort each call's own signal. |
+| index > $callOptional | `connect > errors > rejects a call to an unknown method with -32601` | No optional calls. The error code tells the caller the method is missing. |
+| reject-pending-calls > rejects pending calls | `connect > cancellation > aborting the connection rejects waiting and later calls with the reason`, `connect > cancellation > the transport closing rejects waiting calls with TransportError` | No `$rejectPendingCalls`. Abort the connection, or abort each call's own signal. |
 | reject-pending-calls > rejects pending calls with custom handler | `connect > cancellation > aborting a call rejects it and aborts the signal the method received` | The reason passed to `abort()` is what the call rejects with. |
 | reject-pending-calls > rejected calls are cleared from rpc | `json-rpc > client > ignores a response for a call that already settled` | |
 | resolver > resolver | `connect > calls > looks up the method on every call, so replacing or adding one takes effect` | No `resolver` option. The API object can be a `Proxy` or have getters. |
@@ -72,7 +72,7 @@ json-rpc-2.0 has no transport: a method returns a response object and the test p
 | having an async method > using middleware that catches exception > (2 tests) | `connect > errors > rejects with RemoteError carrying the code, message and data the method threw` | The error-mapping half: a thrown `RemoteError` sets the code. |
 | having an async method > using multiple middleware > should call middleware in the applied order | skipped | Middleware. |
 | receiving batch requests > of 3 requests > should return 3 responses | `json-rpc > server > answers a batch in request order` | |
-| receiving batch requests > of 1 request > should return 1 response | `json-rpc > server > answers a batch of one request with an array of one response` | Upstream returns a bare object; the specification requires an array. |
+| receiving batch requests > of 1 request > should return 1 response | `json-rpc > server > answers a batch of one request with an array of one response` | Upstream returns a bare object, and the specification requires an array. |
 | receiving batch requests > of notifications > should return null | `spec > rpc call Batch (all notifications)` | Nothing is written, as the specification says. |
 | receiving batch requests > of an empty array > should return error | `spec > rpc call with an empty Array` | |
 | receiving batch requests > of a valid and an invalid request > should return a failure and a success response | `json-rpc > server > answers a batch of a valid and an invalid request with both responses` | |
@@ -95,7 +95,7 @@ json-rpc-2.0 has no transport: a method returns a response object and the test p
 | failed on client side > should reject the promise | `connect > errors > rejects calls and notifications when the transport fails to write` | |
 | failed on client side with no error object > should reject the promise | `connect > errors > rejects calls and notifications when the transport fails to write` | The call rejects with whatever the transport rejected with. |
 | failed on client side with an error object without message > should reject the promise | `connect > errors > rejects calls and notifications when the transport fails to write` | |
-| requesting batch > should send requests in batch | `http > http > sends calls made in the same tick as one batch request` | Batches are sent by `Rpc.http`; message transports send each call when it is made. |
+| requesting batch > should send requests in batch | `http > http > sends calls made in the same tick as one batch request` | Only `Rpc.http` sends batches. Message transports send each call when it is made. |
 | requesting batch > should return responses | `http > http > sends calls made in the same tick as one batch request` | |
 | requesting with client params > should pass the client params to send function | `http > handler > gives withContext methods the request` | Per-request data travels in the `Request`, set by the `fetch` passed to `Rpc.http`. |
 | requesting with timeout > timing out > should reject | `connect > cancellation > a call times out with AbortSignal.timeout when nothing answers` | |
@@ -188,11 +188,11 @@ API differences that decide many rows:
 | unit/shakeHands.spec.ts > shakeHands > rejects with TRANSMISSION_FAILED when sending SYN fails | window.browser.test.ts > handshake > rejects calls with Rpc.TransportError when posting to the target throws |
 | unit/shakeHandsProtocol.spec.ts > shakeHands protocol behavior > completes handshake on ACK1 and wires call handler + proxy once | window.browser.test.ts > handshake > connects when the parent starts before the child page loads. The internal wiring isn't observable. |
 | unit/shakeHandsProtocol.spec.ts > shakeHands protocol behavior > keeps handshake completion idempotent when ACK2 is received multiple times | window.browser.test.ts > reconnecting > runs a parent method once per call after the child reloads twice (each reload sends a new hello to a connected parent) |
-| unit/shakeHandsProtocol.spec.ts > shakeHands protocol behavior > rejects with TRANSMISSION_FAILED when sending ACK2 fails | window.browser.test.ts > handshake > rejects calls with Rpc.TransportError when posting to the target throws. A failed `ready` reply fails the transport the same way as a failed hello; no test posts a `ready` that throws. |
+| unit/shakeHandsProtocol.spec.ts > shakeHands protocol behavior > rejects with TRANSMISSION_FAILED when sending ACK2 fails | window.browser.test.ts > handshake > rejects calls with Rpc.TransportError when posting to the target throws. A failed `ready` reply fails the transport the same way as a failed hello. No test posts a `ready` that throws. |
 | unit/shakeHandsProtocol.spec.ts > shakeHands protocol behavior > rejects with CONNECTION_TIMEOUT when handshake does not complete in time | window.browser.test.ts > handshake > gives up on a child that never answers when the call signal times out |
 | unit/shakeHandsProtocol.spec.ts > shakeHands protocol behavior > cancels pending handshake state when destroyed before completion | window.browser.test.ts > closing > rejects calls with signal.reason when the signal aborts during the handshake |
 | unit/windowMessenger.spec.ts > WindowMessenger > filters out messages from disallowed origins | window.browser.test.ts > origins > doesn't connect when the parent's origin option doesn't match the child; window.browser.test.ts > origins > connects to a cross-origin child when origin is the child origin |
-| unit/windowMessenger.spec.ts > WindowMessenger > accepts repeated messages when the allowed origin regex uses the global flag | Doesn't apply: `origin` is one string; there are no regular expressions. |
+| unit/windowMessenger.spec.ts > WindowMessenger > accepts repeated messages when the allowed origin regex uses the global flag | Doesn't apply: `origin` is one string, and there are no regular expressions. |
 | unit/windowMessenger.spec.ts > WindowMessenger > accepts repeated messages when the allowed origin regex uses the sticky flag | Doesn't apply: no regular expressions. |
 | unit/windowMessenger.spec.ts > WindowMessenger > ignores ACK2 without a MessagePort and keeps port disconnected | Doesn't apply: `Rpc.window` hands over no MessagePort. |
 | unit/windowMessenger.spec.ts > WindowMessenger > sends non-handshake messages over MessagePort after ACK2 includes a port | Doesn't apply: data messages go through `window.postMessage` with the same source and origin checks as the handshake. |
@@ -220,7 +220,7 @@ penpal's describe names are `communication between parent and child <type>` and 
 | communication between parent and child `<type>` > handles a promised reply instance with a promised return value | Doesn't apply: no `Reply` class. A promise result is awaited: contract.ts > communication with * > awaits a method that returns a promise |
 | communication between parent and child `<type>` > calls a function on the parent | contract.ts > communication with * > lets the remote call a method served by this side |
 | communication between parent and child `<type>` > handles promises rejected with strings | Differs: contract.ts > communication with * > rejects with Rpc.RemoteError when a method rejects with a string. The caller gets an `Rpc.RemoteError` whose message is the string, not the string itself. |
-| communication between parent and child `<type>` > handles promises rejected with objects | Differs: contract.ts > communication with * > rejects with Rpc.RemoteError when a method rejects with an object. The message is `String(value)`, `'[object Object]'`; throw an `Rpc.RemoteError` with `data` to send an object. |
+| communication between parent and child `<type>` > handles promises rejected with objects | Differs: contract.ts > communication with * > rejects with Rpc.RemoteError when a method rejects with an object. The message is `String(value)`, `'[object Object]'`. Throw an `Rpc.RemoteError` with `data` to send an object. |
 | communication between parent and child `<type>` > handles promises rejected with undefined | Differs: contract.ts > communication with * > rejects with Rpc.RemoteError when a method rejects with undefined (message `'undefined'`) |
 | communication between parent and child `<type>` > handles promises rejected with error instances | Differs: contract.ts > communication with * > rejects with an error's message but not its name or stack |
 | communication between parent and child `<type>` > handles thrown errors | contract.ts > communication with * > rejects when a method throws synchronously |
@@ -265,7 +265,7 @@ penpal's describe names are `communication between parent and child <type>` and 
 | browser/connectionTimeouts.spec.ts > connection management: timeout behavior across messengers > times out for non-responsive worker targets | window.browser.test.ts > closing > gives up on a worker that never answers when the call signal times out |
 | browser/connectionTimeouts.spec.ts > connection management: timeout behavior across messengers > times out for message ports without a remote participant | penpal.conformance.ts > connecting > rejects a call with signal.reason when nothing listens on the other port |
 | browser/destroy.spec.ts > parent calling destroy() > when child is iframe > rejects the connection promise when destroyed before establishment | window.browser.test.ts > closing > rejects calls with signal.reason when the signal aborts during the handshake |
-| browser/destroy.spec.ts > parent calling destroy() > when child is iframe > prevents method calls from being sent | window.browser.test.ts > closing > rejects calls to an iframe made after the signal aborted with signal.reason. Ours rejects the returned promise; penpal throws synchronously. |
+| browser/destroy.spec.ts > parent calling destroy() > when child is iframe > prevents method calls from being sent | window.browser.test.ts > closing > rejects calls to an iframe made after the signal aborted with signal.reason. Ours rejects the returned promise, where penpal throws synchronously. |
 | browser/destroy.spec.ts > parent calling destroy() > when child is worker > rejects the connection promise when destroyed before establishment | window.browser.test.ts > closing > rejects calls with signal.reason when the signal aborts before a worker answers |
 | browser/destroy.spec.ts > parent calling destroy() > when child is worker > prevents method calls from being sent | window.browser.test.ts > closing > rejects calls to a worker made after the signal aborted with signal.reason |
 | browser/destroy.spec.ts > parent calling destroy() > when child is port > rejects the connection promise when destroyed before establishment | penpal.conformance.ts > connecting > rejects calls with signal.reason when the signal aborted before connecting |
@@ -291,7 +291,7 @@ penpal's describe names are `communication between parent and child <type>` and 
 | json-rpc-2.0 sends thrown errors with code `0`, which the specification doesn't define. | `-32603`. | `connect > errors > sends any other thrown or rejected error as -32603 with its message` |
 | json-rpc-2.0's two `index.spec.ts` tests assert nothing. | Both cases have real tests. | see above |
 | birpc's and json-rpc-2.0's timeouts reject the caller but leave the method running on the other side. | Aborting a call sends `$/cancel`, which aborts the method's signal. | `connect > cancellation > aborting a call rejects it and aborts the signal the method received` |
-| comlink and birpc call any property the proxy names, including `constructor` and other `Object.prototype` names, if the exposed object has them through its prototype. | Only own properties and class methods, never `Object.prototype` names or `rpc.*`. | `connect > errors > does not call rpc.* methods or names inherited from Object.prototype` |
+| comlink and birpc call any property accessed through the proxy, including `constructor` and other `Object.prototype` names, if the exposed object has them through its prototype. | Only own properties and class methods, never `Object.prototype` names or `rpc.*`. | `connect > errors > does not call rpc.* methods or names inherited from Object.prototype` |
 
 ### penpal
 
@@ -305,14 +305,14 @@ From penpal's issue tracker (61 issues, all closed, read on 2026-10-18).
 - [#3](https://github.com/Aaronius/penpal/issues/3) Several children on the same origin. Messages are matched by `event.source`, so a sibling's messages are ignored: window.browser.test.ts > origins > ignores messages from a window other than the target
 - [#56](https://github.com/Aaronius/penpal/issues/56) Passing an object with a function throws a `DataCloneError`. The default JSON codec drops function properties instead: penpal.conformance.ts > sending calls > drops function properties of an argument with the JSON codec. With the identity codec the call rejects with the `DataCloneError` and the connection keeps working: penpal.conformance.ts > sending calls > rejects a call whose arguments cannot be cloned, and keeps working
 - [#15](https://github.com/Aaronius/penpal/issues/15) Errors as rejection reasons. We send the message and, for `Rpc.RemoteError`, `code` and `data`, but not the name or stack: contract.ts > communication with * > rejects with an error's message but not its name or stack
-- [#113](https://github.com/Aaronius/penpal/issues/113) `postMessage` threw while sending SYN (iOS 13). `Rpc.window` used to throw that error out of the `Rpc.window` call, or out of a timer on a retry; it now fails the transport: window.browser.test.ts > handshake > rejects calls with Rpc.TransportError when posting to the target throws
+- [#113](https://github.com/Aaronius/penpal/issues/113) `postMessage` threw while sending SYN (iOS 13). `Rpc.window` used to throw that error out of the `Rpc.window` call, or out of a timer on a retry. It now fails the transport: window.browser.test.ts > handshake > rejects calls with Rpc.TransportError when posting to the target throws
 - [#111](https://github.com/Aaronius/penpal/issues/111) Task cancellation was a feature request. We send `$/cancel` when a call's signal aborts: contract.ts > communication with * > runs the remote generator's finally block when the loop breaks, and contract.ts > method call lifecycle with * > rejects a call with signal.reason when its signal times out
 
 Not from penpal, found while porting: a `BroadcastChannel` doesn't buffer, so calls posted before the other side opens its channel are lost and stay pending: window.browser.test.ts > BroadcastChannel > loses calls posted before the other side opens its BroadcastChannel
 
 ## Oracle differences
 
-Each one is asserted in `packages/rpc/test/rpc.oracle.test.ts` (describe "server follows the spec where JSONRPCServer does not", and "client sends the same bytes as JSONRPCClient"). Both outputs are pinned, so a change on either side fails the test. Upstream output is `JSON.stringify(await server.receiveJSON(text))`; ours is the exact text written to a transport and the body of `Rpc.handler`'s response.
+Each one is asserted in `packages/rpc/test/rpc.oracle.test.ts` (describe "server follows the spec where JSONRPCServer does not", and "client sends the same bytes as JSONRPCClient"). Both outputs are pinned, so a change on either side fails the test. Upstream output is `JSON.stringify(await server.receiveJSON(text))`. Ours is the exact text written to a transport and the body of `Rpc.handler`'s response.
 
 Everything else compared byte for byte is identical, including key order: single requests, by-name and positional params, nested `a.b` methods, unknown methods, `toString`/`__proto__`, string/number/fractional/negative/null ids, results of every JSON type, `undefined` as `null`, `RemoteError` vs `JSONRPCErrorException` with code and data (including falsy data), parse errors, empty batch, batches with two or more responses, duplicate ids, notifications, and 300 seeded random messages and batches.
 
@@ -323,17 +323,17 @@ Everything else compared byte for byte is identical, including key order: single
 | `[{"jsonrpc":"2.0","id":1,"method":"add","params":[1,2]}]` (batch of one request) | `{"jsonrpc":"2.0","id":1,"result":3}` | `[{"jsonrpc":"2.0","id":1,"result":3}]` | Spec section 6: the server returns an Array containing the Response objects for a batch. Upstream unwraps any batch that yields exactly one response. |
 | Batch of one request among notifications | bare object | one-element array | Same rule. |
 | `[1]` | bare Invalid Request object | `[{"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"Invalid Request"}}]` | Same rule. |
-| Batch of notifications only | resolves `null` (README sends 204) | writes nothing; `Rpc.handler` answers 204 | Spec: "there should be no response". Equivalent on the wire; pinned because upstream's API returns `null`. |
-| `crash('boom')` throws `new Error('boom')` | `{"code":0,"message":"boom"}` | `{"code":-32603,"message":"boom"}` | 0 is outside the spec's error codes; -32603 is "Internal error". |
-| Method throws the string `'boom'` | `{"code":0,"message":"An unexpected error occurred"}` | `{"code":-32603,"message":"boom"}` | Same code rule; ours keeps `String(e)` as the message. |
+| Batch of notifications only | resolves `null` (README sends 204) | writes nothing, and `Rpc.handler` answers 204 | Spec: "there should be no response". Equivalent on the wire, but pinned because upstream's API returns `null`. |
+| `crash('boom')` throws `new Error('boom')` | `{"code":0,"message":"boom"}` | `{"code":-32603,"message":"boom"}` | 0 is outside the spec's error codes, and -32603 is "Internal error". |
+| Method throws the string `'boom'` | `{"code":0,"message":"An unexpected error occurred"}` | `{"code":-32603,"message":"boom"}` | Same code rule, and ours keeps `String(e)` as the message. |
 | `{"jsonrpc":"2.0","id":1,"method":5}` (also `method: null`) | `id:1`, `-32601 Method not found` | `id:null`, `-32600 Invalid Request` | Spec: `method` MUST be a String, so the object is not a valid Request. |
 | `id: {"a":1}` or `id: true` | runs the method and echoes the id | `id:null`, `-32600` | Spec: an id MUST be a String, Number or Null. |
 | `params: "str"` or `params: null` | passes the value to the method | `-32600` | Spec: `params` MUST be a Structured value (array or object) when present. |
-| `{"jsonrpc":"1.0","id":7,"method":"echo"}` | `-32600` with `id:7` | `-32600` with `id:null` | Spec, Response object: if there was an error detecting the id (e.g. Invalid Request) the id MUST be Null. Both readings are defensible; ours matches the spec's examples. |
-| JSON text `null`, `0`, `false`, `""` | `-32700 Parse error` | `-32600 Invalid Request` | The text parses; it is valid JSON that isn't a Request object. Upstream treats any falsy parse result as a parse failure. |
+| `{"jsonrpc":"1.0","id":7,"method":"echo"}` | `-32600` with `id:7` | `-32600` with `id:null` | Spec, Response object: if there was an error detecting the id (e.g. Invalid Request) the id MUST be Null. Both readings are defensible, and ours matches the spec's examples. |
+| JSON text `null`, `0`, `false`, `""` | `-32700 Parse error` | `-32600 Invalid Request` | The text parses as valid JSON that isn't a Request object. Upstream treats any falsy parse result as a parse failure. |
 | `[null, {valid request}]` | `receiveJSON` rejects with `TypeError` (no response at all) | `[{-32600, id:null}, {result}]` | Spec: each invalid element gets its own Invalid Request response. |
 | `rpc.ping` registered as a method | runs it | `-32601` | Spec: names starting with `rpc.` are reserved for rpc-internal methods. |
-| `RemoteError` with `data: null` | omits `data` | `"data":null` | Spec: `data` is a primitive or structured value defined by the server; `null` is a value. Ours sends what the method gave and omits only `undefined`. |
+| `RemoteError` with `data: null` | omits `data` | `"data":null` | Spec: `data` is a primitive or structured value defined by the server, and `null` is a value. Ours sends what the method gave and omits only `undefined`. |
 | Request with an extra `result` member: `{"jsonrpc":"2.0","id":1,"method":"echo","params":[1],"result":5}` | `-32600` | runs it: `{"result":1}` | The spec is silent on extra members. Ours ignores them (only `$/stream*` messages with `method` are routed to the client side). Listed so the difference is visible, not as a spec argument. |
 
 ### Client
@@ -345,4 +345,4 @@ Everything else compared byte for byte is identical, including key order: single
 
 All other client requests and notifications (positional, by name, nested, non-ASCII, HTTP batch body with a notification) are byte-identical once ids are normalized (both start at 1 anyway).
 
-Interop: our `Rpc.connect` and `Rpc.http` clients resolve and reject correctly against `JSONRPCServer`, including its bare-object one-response batch, its code 0 errors (surface as `RemoteError` with `code: 0`), and `$/cancel` (a notification it ignores). `JSONRPCClient` works against our server over a transport and over `Rpc.handler`, including `requestAdvanced` batches of one.
+Interop: our `Rpc.connect` and `Rpc.http` clients resolve and reject correctly against `JSONRPCServer`, including its bare-object one-response batch, its code 0 errors (which reject with a `RemoteError` with `code: 0`), and `$/cancel` (a notification it ignores). `JSONRPCClient` works against our server over a transport and over `Rpc.handler`, including `requestAdvanced` batches of one.

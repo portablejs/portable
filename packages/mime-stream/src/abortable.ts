@@ -29,7 +29,8 @@ export function abortable<I, O>(
   }
 }
 
-// TypeScript's DOM types don't have Transformer.cancel yet. Runtimes without it never call it.
+// TypeScript's DOM types don't have Transformer.cancel yet. Runtimes that don't support it never
+// call `cancel`.
 type Cancellable<I, O> = Transformer<I, O> & {
   cancel?: ((reason: unknown) => void | PromiseLike<void>) | undefined
 }

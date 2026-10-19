@@ -70,8 +70,8 @@ const canonicalizations = new Set([
 
 /**
  * Signs a message (RFC 6376, RFC 8463) and resolves to the DKIM-Signature field, ending in CRLF,
- * to put above the message's other fields. The algorithm is `rsa-sha256` or `ed25519-sha256`
- * after the key. The signature always has `t=` and never `l=`.
+ * to put above the message's other fields. The key type sets the algorithm: `rsa-sha256` or
+ * `ed25519-sha256`. The signature always has `t=` and never `l=`.
  *
  * Throws a `TypeError` or `RangeError` for invalid options, and `Dkim.InvalidInputError` for a
  * message without a From field.

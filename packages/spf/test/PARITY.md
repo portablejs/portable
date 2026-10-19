@@ -258,7 +258,7 @@ Every test is in `rfc7208.conformance.ts`, as `<scenario> > <test> (<spec>)`, an
 | exp-txt-macro-char | 7.1/20 | fail |  |
 | domain-name-truncation | 7.1/25 | fail |  |
 | v-macro-ip4 | 7.1/6 | fail |  |
-| v-macro-ip6 | 7.1/6 | fail | Explanation compared ignoring case: the suite writes the `%{i}` nibbles in upper case, RFC 7208 section 7.4 in lower case. |
+| v-macro-ip6 | 7.1/6 | fail | Explanation compared ignoring case: the suite writes the `%{i}` nibbles in upper case, and RFC 7208 section 7.4 writes them in lower case. |
 | undef-macro | 7.1/6 | permerror |  |
 | p-macro-ip4-novalid | 7.1/22 | fail |  |
 | p-macro-ip4-valid | 7.1/22 | fail |  |

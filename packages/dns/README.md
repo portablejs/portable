@@ -50,11 +50,11 @@ In tests, pass an object whose methods return fixed records.
 | `reverse(ip)` | `string[]` of host names, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. |
 | `query(name, type)` | The whole decoded response as a [`@portable/dns-packet`](https://www.npmjs.com/package/@portable/dns-packet) `DecodedPacket`, with TTLs, the authority section and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
 
-Each method takes `{ signal }` as a last argument. Aborting the signal rejects with `signal.reason`, as `fetch` does.
+Each method takes `{ signal }` as a last argument. When the signal aborts, the method rejects with `signal.reason`, as `fetch` does.
 
 When the answer holds a CNAME chain, the records of the requested type at the end of the chain are returned. Records owned by names outside the chain are ignored. The root name is returned as `''`, so a null MX (RFC 7505) is `{ exchange: '', priority: 0 }`, as in Node.
 
-Names with non-ASCII characters are converted to punycode with the IDNA 2008 rules that `URL` uses, so `straße.de` is sent as `xn--strae-oqa.de`. Names ending in `.onion` fail with `ENOTFOUND` without a request, as RFC 7686 asks.
+Names with non-ASCII characters are converted to punycode with the IDNA 2008 rules that `URL` uses, so `straße.de` is sent as `xn--strae-oqa.de`. A lookup of a name ending in `.onion` rejects with `ENOTFOUND` without sending a request, as RFC 7686 asks.
 
 ## Options
 
@@ -83,7 +83,7 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` a
 | `EBADNAME` | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.` and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
 | `EINVAL` | `reverse` was given something that isn't an IP address. |
 
-A name that isn't a string rejects with a `TypeError`.
+Each method rejects with a `TypeError` for a name that isn't a string.
 
 ## Types
 

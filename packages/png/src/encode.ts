@@ -21,7 +21,10 @@ export declare namespace encode {
      * gets the filter whose output has the smallest sum of absolute values. @default [0, 1, 2, 3, 4]
      */
     filter?: FilterType | readonly FilterType[] | undefined
-    /** Color that transparent pixels are blended onto when `colorType` has no alpha. @default white */
+    /**
+     * Color to blend transparent pixels onto when `colorType` has no alpha.
+     * @default white
+     */
     background?: { red: number; green: number; blue: number } | undefined
     /** Compresses to zlib format. Set it to choose a compression level. @default `CompressionStream('deflate')` */
     deflate?: ((data: Uint8Array) => Uint8Array | Promise<Uint8Array>) | undefined

@@ -12,8 +12,8 @@ export declare namespace throttle {
 }
 
 /**
- * Wraps `fn` so that it runs at most once every `ms` milliseconds, however often it is called. Each
- * call resolves with the result of the invocation it was folded into.
+ * Wraps `fn` so that it runs at most once every `ms` milliseconds, however often it is called.
+ * Calls that share an invocation all resolve with its result.
  *
  * @example
  * ```ts

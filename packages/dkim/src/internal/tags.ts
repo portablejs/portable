@@ -5,8 +5,8 @@ const tagValue =
 /**
  * Reads a tag-list (RFC 6376 section 3.2) from binary text. Names are case-sensitive and values
  * keep their inner whitespace. `valid` is false for anything outside the grammar, including a
- * repeated tag; `tags` then holds what could be read. Bytes above 0x7F are allowed in values for
- * UTF-8 domain names (RFC 8616).
+ * repeated tag, and `tags` then holds what could be read. Bytes above 0x7F are allowed in values
+ * for UTF-8 domain names (RFC 8616).
  */
 export function parseTags(text: string): { tags: Map<string, string>; valid: boolean } {
   const tags = new Map<string, string>()

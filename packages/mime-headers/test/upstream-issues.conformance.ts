@@ -12,8 +12,8 @@ import {
 } from '@portable/mime-headers'
 
 // Bugs and advisories from the libmime, nodemailer and email-addresses changelogs and issue
-// trackers. Each test names the upstream fix or report it covers; PARITY.md lists them under
-// "Known upstream issues".
+// trackers. Each test's name cites the upstream fix or report it covers, and PARITY.md lists
+// them under "Known upstream issues".
 
 describe('addresses', () => {
   test('a quoted local part holding an address is not read as that address (GHSA-mm7p-fcc7-pg87)', () => {

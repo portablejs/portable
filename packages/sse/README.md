@@ -71,7 +71,7 @@ A block without a `data` field is not an event, but its `id` and `retry` still a
 Sends `request` (a `Request`, URL or string) with `fetch` and returns a `ReadableStream<Sse.Event>` that reconnects like `EventSource`:
 
 - It adds `Accept: text/event-stream` unless the request has an `Accept` header.
-- A response other than 200, or one whose content type is not `text/event-stream`, fails the stream with `Sse.ResponseError`. Its `response` is left unread so you can read the error body. A 204 closes the stream.
+- A response other than 200, or one whose content type is not `text/event-stream`, fails the stream with `Sse.ResponseError`. The error's `response` is left unread so you can read the error body. A 204 closes the stream.
 - When a response ends or fails, it waits and sends the request again with `Last-Event-ID` set to the last event ID. An empty `id` field removes the header. Events continue in the same stream.
 - Cancelling the stream, or aborting `signal` or the request's own signal, aborts the request in flight and any wait.
 
@@ -104,7 +104,7 @@ eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source
 - better-sse writes multi-line `data` as one `data:` line, so every line after the first is lost, and strips trailing line breaks.
 - `maxLength` gives the same result however the input is chunked.
 
-`test/PARITY.md` maps every upstream test to ours and lists the upstream bugs we handle differently.
+`test/PARITY.md` maps every upstream test to ours and lists the upstream bugs this package handles differently.
 
 <!-- bench:start -->
 | | @portable/sse | eventsource-parser | eventsource | Hand-written with web APIs |
@@ -140,7 +140,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `event.event ?? 'message'` | `event.event` |
 | `onId(id)` | `event.id` on every later event |
 | `onRetry(ms)` | `event.retry` on the next event |
-| `onComment`, `onError` | Not available; comments and invalid lines are ignored, as `EventSource` does. |
+| `onComment`, `onError` | Not available. Comments and invalid lines are ignored, as `EventSource` does. |
 | `maxBufferSize` | `maxLength` |
 | `new EventSource(url)` from `eventsource` | `Sse.connect(url)` |
 | `new EventSource(url, { fetch: (u, init) => fetch(u, { ...init, headers }) })` | `Sse.connect(new Request(url, { headers }))` |
@@ -156,7 +156,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 Differences to know about:
 
 - An event without its closing blank line is dropped at the end of a stream, as `EventSource` does. Some servers omit the last blank line, and their last event is lost in both.
-- `connect` reconnects after a response that ends normally, like `EventSource`. fetch-event-source stops there instead; pass `reconnectIf: () => false` for the same.
+- `connect` reconnects after a response that ends normally, like `EventSource`. fetch-event-source stops there instead. Pass `reconnectIf: () => false` for the same.
 - `connect` doesn't close the stream while a browser tab is hidden, unlike fetch-event-source's default.
 - `connect` doesn't set `cache: 'no-store'`, because Cloudflare Workers needs a compatibility flag for it. Set `cache` on the `Request` if you need it.
 - `data` is a string. Call `JSON.stringify` before writing, where better-sse does it for you.

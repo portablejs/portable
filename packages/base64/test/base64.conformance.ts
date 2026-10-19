@@ -40,7 +40,10 @@ const outcome = (result: unknown) => (result instanceof Error ? result.name : re
 /** The bytes, or `'error'` for any error, because the native `SyntaxError` has no subclasses. */
 const nativeOutcome = (result: unknown) => (result instanceof Error ? 'error' : result)
 
-/** Valid base64 from random bytes, then edited the ways real input differs: whitespace, missing padding, a stray character. */
+/**
+ * Valid base64 from random bytes, then edited in the ways real input differs: whitespace,
+ * missing padding, a stray character.
+ */
 function mostlyValid(seed: number, alphabet: Alphabet): string {
   const next = random(seed)
   const data = randomBytes(Math.floor(next() * 40), seed)

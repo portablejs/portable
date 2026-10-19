@@ -53,7 +53,8 @@ describe('matches get-stream', () => {
     expect(await toText(chunks)).toBe(await getStream(Readable.from(chunks)))
   })
 
-  // maxBuffer: 0 throws a TypeError from ArrayBuffer.prototype.resize in get-stream 9.0.1; see PARITY.md.
+  // maxBuffer: 0 throws a TypeError from ArrayBuffer.prototype.resize in get-stream 9.0.1.
+  // PARITY.md has the details.
   test('maxBytes fails exactly where maxBuffer does for bytes', async () => {
     const chunks = randomChunks(encode(inputs.multibyte), 4)
     const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0)

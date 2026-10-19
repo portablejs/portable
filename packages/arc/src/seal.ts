@@ -79,9 +79,9 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders]
 /**
  * Adds an ARC set to a message (RFC 8617 section 5.1) and resolves to its three fields, ending in
  * CRLF, to put above the message's other fields: ARC-Seal, ARC-Message-Signature and
- * ARC-Authentication-Results. The instance follows the highest one on the message. The
- * ARC-Message-Signature uses relaxed/relaxed canonicalization, and with `cv=fail` the seal
- * covers only the new set (section 5.1.2).
+ * ARC-Authentication-Results. The new set's instance is one above the highest instance on the
+ * message. The ARC-Message-Signature uses relaxed/relaxed canonicalization, and with `cv=fail`
+ * the seal covers only the new set (section 5.1.2).
  *
  * Throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line
  * break that isn't folding, and `Arc.InvalidInputError` for a message that must not be sealed.
