@@ -2,6 +2,7 @@ packages:
   - packages/*
   - packages/*/test
   - tools/*
+  - site
 
 catalog:
   '@changesets/changelog-github': ^1.0.1

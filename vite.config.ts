@@ -111,7 +111,9 @@ export default defineConfig({
     categories: { suspicious: 'error', perf: 'error' },
     jsPlugins: ['./tools/lint/src/plugin.ts'],
     options: { typeAware: true, typeCheck: true },
-    ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
+    // site/ needs its generated pages and its own dependencies to type-check, and `vocs build`
+    // checks it instead.
+    ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**', 'site/**'],
     rules: {
       // Every if, else and loop body needs braces, so a reader always sees where the body ends.
       curly: ['error', 'all'],

@@ -1,0 +1,21 @@
+{
+  "name": "@portable/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen": "node scripts/gen.mjs",
+    "dev": "pnpm gen && vocs dev",
+    "build": "pnpm gen && vocs build",
+    "preview": "vocs preview",
+    "deploy:preview": "node scripts/herenow.mjs"
+  },
+  "dependencies": {
+    "prettier": "^3.9.10",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "catalog:",
+    "vite": "^8.3.4",
+    "vocs": "^2.10.3",
+    "waku": "1.0.0-rc.3"
+  }
+}

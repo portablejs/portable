@@ -6,3 +6,5 @@ dist
 coverage
 .DS_Store
 .claude/worktrees
+site/src/pages/packages
+site/src/packages.json

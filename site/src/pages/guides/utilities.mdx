@@ -1,0 +1,20 @@
+# Utilities
+
+These packages work with byte arrays and random values.
+
+- [`bytes`](/packages/bytes) converts `Uint8Array`s to and from hex and compares them in constant time.
+- [`random`](/packages/random) gives unbiased random integers, strings, and shuffles from `crypto.getRandomValues`, and a seeded generator for tests.
+
+## Check a signature in constant time
+
+Compare secrets with `Bytes.timingSafeEqual`. An ordinary comparison returns at the first byte that differs, and the time it takes leaks how much of the signature an attacker guessed right.
+
+```ts
+import * as Bytes from '@portable/bytes'
+
+const expected = new Uint8Array(
+  await crypto.subtle.sign('HMAC', key, payload),
+)
+if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature)))
+  throw new Error('Bad signature')
+```

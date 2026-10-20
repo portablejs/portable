@@ -1,0 +1,44 @@
+# Crypto and auth
+
+These packages use `crypto.subtle` for every cryptographic operation, and none of them ships its own implementation. The same code signs and verifies in a browser, a Worker, and Node.
+
+- [`crypto`](/packages/crypto) has bytes-in, bytes-out helpers that WebCrypto leaves out, such as HKDF and Ed25519 keys from seeds.
+- [`password`](/packages/password) hashes and verifies passwords with PBKDF2.
+- [`webhooks`](/packages/webhooks) verifies and signs webhooks from Stripe, GitHub, Slack, and Standard Webhooks senders.
+- [`oauth1`](/packages/oauth1) signs OAuth 1.0a requests.
+- [`web-push`](/packages/web-push) sends encrypted Web Push notifications with VAPID.
+- [`dkim`](/packages/dkim) signs and verifies email.
+
+## Verify a webhook and rate limit the sender
+
+```ts
+import * as RateLimit from '@portable/rate-limit'
+import * as Webhooks from '@portable/webhooks'
+
+const limiter = RateLimit.create({ limit: 100, period: 60_000 })
+
+export default {
+  async fetch(request: Request, env: { GITHUB_SECRET: string }) {
+    const result = await limiter.take(
+      request.headers.get('cf-connecting-ip') ?? 'unknown',
+    )
+    if (!result.allowed)
+      return new Response(null, {
+        status: 429,
+        headers: RateLimit.headers(result),
+      })
+    try {
+      const { body } = await Webhooks.verify(request, {
+        scheme: Webhooks.github,
+        secret: env.GITHUB_SECRET,
+      })
+      await handle(JSON.parse(body))
+      return new Response(null, { status: 204 })
+    } catch (error) {
+      if (error instanceof Webhooks.VerificationError)
+        return new Response(null, { status: 401 })
+      throw error
+    }
+  },
+}
+```
