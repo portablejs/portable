@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## CI tests Node 24 and 26, not 22
+
+- **Options:** keep `engines` at `>=24` and test 24; lower it to `>=22` and test 22, 24 and 26; keep `>=24` and test 24 and 26.
+- **Trade-offs:** On Node 22.23, 15 Node tests fail. Five compress tests fail because callers would see different behavior: Node 22's `DecompressionStream` ignores bytes after the end of the stream, so `Compress.decode` accepts trailing data and a second gzip member. The other ten fail because Node 22 differs from the specs or from Node 24. Its `TextDecoder` and `domainToASCII` disagree with the WHATWG specs, it calls a WebCrypto error `InvalidAccessException`, and its streams pass a cancellation to the source one tick later than Node 24 does. Node 22 reaches end of life in April 2027. Node 26.12 passes every test. It is the only Node version with native `Uint8Array.toBase64` and `fromHex`, so it runs the tests that compare the base64 and hex fallbacks with the native API, which Node 24 skips.
+- **Chosen:** keep `>=24` and test 24 and 26, because supporting Node 22 would need our own check for trailing data in compress, and Node 26 runs the native base64 and hex comparisons. Kevin asked for CI to run only on pushes to `main` and on `workflow_dispatch`.
+
 ## The prose review is a repo skill, not an edit to `interrogate`
 
 - **Options:** add a prose pass to the vendored `interrogate` skill; add a repo-owned `prose-review` skill and have AGENTS.md call for it.

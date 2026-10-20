@@ -103,7 +103,7 @@ Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIS
 
 ## Git hooks
 
-The repo has no CI yet, so git hooks run the checks. `pnpm install` installs them through `vp config`, and the scripts are in `.vite-hooks/`:
+Git hooks run the checks before each commit and push. `pnpm install` installs the hooks through `vp config`. Their scripts are in `.vite-hooks/`, and each one runs the following:
 
 | Hook | Runs |
 | --- | --- |
@@ -112,7 +112,11 @@ The repo has no CI yet, so git hooks run the checks. `pnpm install` installs the
 
 Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `pnpm changeset:publish` runs them before every release. `git push --no-verify` skips the hooks.
 
-When we add CI, it will follow ox: a reusable `verify.yml` with the same checks, called by a pull-request workflow and by the release workflow.
+## CI
+
+`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs six jobs in parallel: one runs `vp check` and `tsc -b`, two run the Node tests on Node 24 and on Node 26, and three run the browser tests, one each in Chromium, Firefox and WebKit. Each job has a time limit, so a stalled test run fails within 15 minutes instead of running for hours. CI doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+
+The tests that compare the base64 and hex fallbacks with the native API run only where the runtime has `Uint8Array.toBase64` and `fromHex`. Node 26 has them and Node 24 doesn't, so CI tests both versions. CI doesn't test Node 22, because `engines` requires Node 24 and because Node 22's `DecompressionStream` ignores bytes after the end of a compressed stream, which makes `Compress.decode` accept trailing data.
 
 ## Releases
 

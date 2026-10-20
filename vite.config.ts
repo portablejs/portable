@@ -140,6 +140,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'browser',
+          // rpc's window tests load a cross-origin iframe from whichever of `localhost` and
+          // 127.0.0.1 the page isn't on. With Vite's default host, the page was on `localhost` and
+          // the iframe at 127.0.0.1 never loaded on GitHub's runners.
+          api: { host: '127.0.0.1' },
           benchmark: { include: [] },
           include: [
             'packages/*/{test,src}/**/*.browser.test.ts',
