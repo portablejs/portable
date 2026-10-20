@@ -1,9 +1,9 @@
 # Publishes a preview of the docs site to here.now for each pull request, and records it as a GitHub deployment so
 # the pull request shows a "View deployment" link.
 #
-# With a HERENOW_API_KEY secret, each pull request keeps one site that every push updates. The deployment payload
-# stores the site's slug for the next push. Without the secret, every push creates an anonymous site that expires
-# after 24 hours.
+# Previews are anonymous here.now sites, which expire 24 hours after they are created. The site's slug and claim
+# token are kept in the Actions cache, which only this pull request's runs can read, so later pushes update the same
+# site until it is about to expire.
 name: Docs preview
 
 on:
@@ -19,13 +19,9 @@ concurrency:
 
 jobs:
   preview:
-    # Pull requests from forks get no secrets and a read-only token.
+    # Pull requests from forks get a read-only token, so they can't create deployments.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    env:
-      ENVIRONMENT: docs-preview-pr-${{ github.event.pull_request.number }}
-      # Only the publish step gets the key itself, so install scripts never see it.
-      HAS_KEY: ${{ secrets.HERENOW_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -36,39 +32,29 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @portable/site build
 
-      - id: previous
-        if: env.HAS_KEY == 'true'
-        uses: actions/github-script@v9
+      - uses: actions/cache/restore@v6
         with:
-          result-encoding: string
-          script: |
-            const { data } = await github.rest.repos.listDeployments({
-              ...context.repo,
-              environment: process.env.ENVIRONMENT,
-              per_page: 1,
-            })
-            const payload = data[0]?.payload
-            return (typeof payload === 'string' ? JSON.parse(payload || '{}') : payload ?? {}).slug ?? ''
-
+          path: site/.herenow.json
+          key: docs-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          restore-keys: docs-preview-${{ github.event.pull_request.number }}-
       - id: publish
         working-directory: site
-        run: node scripts/herenow.mjs ${{ steps.previous.outputs.result }}
-        env:
-          HERENOW_API_KEY: ${{ secrets.HERENOW_API_KEY }}
-          HERENOW_TITLE: Portable docs, PR ${{ github.event.pull_request.number }}
+        run: node scripts/herenow.mjs .herenow.json
+      - uses: actions/cache/save@v6
+        with:
+          path: site/.herenow.json
+          key: docs-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - uses: actions/github-script@v9
         env:
-          SLUG: ${{ env.HAS_KEY == 'true' && steps.publish.outputs.slug || '' }}
           URL: ${{ steps.publish.outputs.url }}
         with:
           script: |
             const { data: deployment } = await github.rest.repos.createDeployment({
               ...context.repo,
               ref: context.payload.pull_request.head.sha,
-              environment: process.env.ENVIRONMENT,
+              environment: `docs-preview-pr-${context.payload.pull_request.number}`,
               description: 'Docs preview on here.now',
-              payload: { slug: process.env.SLUG },
               auto_merge: false,
               required_contexts: [],
               transient_environment: true,

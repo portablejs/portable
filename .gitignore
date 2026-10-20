@@ -8,3 +8,4 @@ coverage
 .claude/worktrees
 site/src/pages/packages
 site/src/packages.json
+site/.herenow.json
