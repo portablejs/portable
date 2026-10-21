@@ -25,6 +25,7 @@
 .home h2 { font-size: 16px; font-weight: 600; margin: 56px 0 8px; padding: 0; border: 0; }
 .home-row { display: grid; grid-template-columns: 180px 1fr; gap: 24px; padding: 12px 0; border-top: 1px solid var(--vocs-border-color-secondary); }
 .home-row > code { font-size: 15px; color: var(--vocs-text-color-link); }
+.home-row:hover > code { text-decoration: underline; text-underline-offset: 2px; }
 .home-row p { margin: 0; color: var(--vocs-text-color-secondary); }
 .home-row small { display: block; color: var(--vocs-text-color-muted); font-size: 14px; }
 .home-footer { margin: 96px 0 48px; color: var(--vocs-text-color-muted); font-size: 14px; }
@@ -52,6 +53,9 @@
   --vocs-color-accent9: #fc7c00;
   --vocs-text-color-link: #fc7c00;
 }
+
+[data-v-content] [data-v-link] { text-decoration-line: none; }
+[data-v-content] [data-v-link]:hover { color: var(--vocs-text-color-link); text-decoration-line: underline; text-decoration-style: solid; }
 
 .package-tabs { display: flex; gap: 20px; margin-top: -8px; color: var(--vocs-text-color-secondary); }
 .package-tabs a { color: inherit; text-decoration: none; }
