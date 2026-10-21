@@ -92,6 +92,15 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
+        // The worker harness declares one test for each test it collects from the worker.
+        files: ['tools/worker/src/*.browser.test.ts'],
+        rules: {
+          'vitest/expect-expect': 'off',
+          'vitest/no-conditional-tests': 'off',
+          'vitest/valid-title': 'off',
+        },
+      },
+      {
         files: ['packages/*/scripts/**', 'scripts/**'],
         rules: {
           'no-restricted-imports': 'off',
@@ -138,6 +147,9 @@ export default defineConfig({
       },
       {
         extends: true,
+        // Only the worker harness imports this entry. Without it here, Vite finds it during the run
+        // and reloads the page, and the browser test files that hadn't started yet fail to start.
+        optimizeDeps: { include: ['vite-plus/test/internal/browser'] },
         test: {
           name: 'browser',
           // rpc's window tests load a cross-origin iframe from whichever of `localhost` and
@@ -148,6 +160,7 @@ export default defineConfig({
           include: [
             'packages/*/{test,src}/**/*.browser.test.ts',
             'packages/*/{test,src}/**/*.conformance.ts',
+            'tools/*/src/**/*.browser.test.ts',
           ],
           browser: {
             enabled: true,

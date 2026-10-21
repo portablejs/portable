@@ -74,7 +74,9 @@ If zile causes problems, removing it takes two steps: commit the `package.json` 
 | `*.oracle.test.ts` | Node | Byte-for-byte comparison with the library a package replaces. |
 | `*.bench.ts` | Node | Benchmarks against that library. |
 
-The `browser` project uses Vitest browser mode with Playwright and runs Chromium, Firefox and WebKit. We plan a Workers project but haven't set it up, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Until then, the lint rules above are the only check against Node APIs in Workers.
+The `browser` project uses Vitest browser mode with Playwright and runs Chromium, Firefox and WebKit. Browser mode runs every test file on the page's main thread, so the project also runs `tools/worker/src/conformance.browser.test.ts`, which runs every `*.conformance.ts` file again inside a dedicated module worker. Vitest has no option for this, so `tools/worker/src/worker.ts` sets up the worker state that Vitest's browser tester sets up on the page and runs each file with Vitest's own runner, `expect` and `vi`. One worker collects the test names of every file, and the page declares one test for each, so a failure in the worker is reported as a failed page test with the worker's error. Each file then runs in a fresh worker. An error outside a test, such as an unhandled rejection or a failed hook, fails the file's suite. `-t` filters these tests by their page names, which start with the file path, such as `-t "packages/lines/"`.
+
+We plan a Workers project but haven't set it up, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Until then, the lint rules above are the only check against Node APIs in Workers.
 
 Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream. Chromium 141 has neither, which made the first browser run of `@portable/lines` fail.
 
