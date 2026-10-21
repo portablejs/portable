@@ -51,7 +51,8 @@
   --vocs-color-accent7: #fc7c00;
   --vocs-color-accent8: #fc7c00;
   --vocs-color-accent9: #fc7c00;
-  --vocs-text-color-link: #fc7c00;
+  /* The logo orange is 2.5:1 on the light background, so light mode links use a darker orange (4.6:1). */
+  --vocs-text-color-link: light-dark(#b85600, #fc7c00);
 }
 
 [data-v-content] [data-v-link] { text-decoration-line: none; }
