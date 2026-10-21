@@ -37,7 +37,7 @@ pnpm 11 manages the workspace. Every shared dev dependency has one version in th
 
 `tsconfig.base.json` is ox's strict config (`strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`) plus `isolatedDeclarations`. The last one requires explicit types on every export, so a change to a function body can't change the public API by accident. JSR requires the same, so publishing to JSR later needs no code changes. `importHelpers` is on with no `tslib` installed, so the build fails if TypeScript ever needs a helper.
 
-`lib` is `ES2023`, `DOM` and `DOM.Iterable`, because TypeScript has no WinterTC library and declares `fetch`, Web Streams and `crypto.subtle` in its DOM library. `types` is empty, so `@types/node` never applies to package code.
+`target` is `es2022` and `lib` is `ES2022`, `DOM` and `DOM.Iterable`. [Runtime baseline](#runtime-baseline) explains why packages target ES2022. `lib` includes `DOM` because TypeScript has no WinterTC library and declares `fetch`, Web Streams and `crypto.subtle` only in its DOM library. `types` is empty, so `@types/node` never applies to package code. `tsconfig.test.json` raises `lib` to `ES2023`, because tests run only in current runtimes.
 
 oxlint rejects what the types allow but the runtimes don't share:
 
@@ -45,6 +45,37 @@ oxlint rejects what the types allow but the runtimes don't share:
 - `no-restricted-globals` rejects `Buffer`, `process`, `global`, `require`, `__dirname`, `window`, `document`, `navigator` and `localStorage`.
 
 Both rules are off for `*.oracle.test.ts` and `*.bench.ts`, which run in Node to compare against Node libraries.
+
+## Runtime baseline
+
+Packages run on ES2022 and on the web APIs listed below. We don't ship polyfills, and a package never patches a global. An app that has to support older browsers adds polyfills itself, for example with core-js. Vite, esbuild and `tsc` rewrite newer syntax for older targets but never add a missing API, so the app's build doesn't add polyfills either. ox, viem, hono and jose don't ship polyfills either: each documents the oldest runtimes it supports and leaves polyfills to the app. A polyfill patches a global when its module loads, so a package that contained one couldn't declare `"sideEffects": false`, and a bundler that trusts the flag would drop the polyfill.
+
+For each ES version, the table gives the share of global browser usage that comes from browsers supporting all of its features, and the first Chrome, Firefox and Safari versions that support them. The data is from caniuse-lite 1.0.30001817 and @mdn/browser-compat-data 8.1.6 as of October 2026. No ES version can reach more than 96.7%, because caniuse counts the remaining usage, from Opera Mini, UC Browser, QQ Browser, Internet Explorer and browsers it doesn't track, as supporting none of them. The rows don't count top-level await, because no package uses it and MDN lists Safari support before 27 as partial.
+
+| ES version | Usage share | Chrome | Firefox | Safari and iOS |
+| --- | --- | --- | --- | --- |
+| ES2021 | 96.1% | 85 | 79 | 16.4 |
+| ES2022 | 96.0% | 94 | 93 | 16.4 |
+| ES2023 | 94.8% | 110 | 115 | 16.4 |
+| ES2024 | 92.8% | 119 | 128 | 17.4 |
+| ES2025 | 86.6% | 136 | 138 | 26 |
+| ES2026 | 69.5% | 147 | 138 | none |
+
+Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so every version from ES2018 to ES2023 needs Safari 16.4. We chose ES2022 because packages already use its built-ins, such as `Array.prototype.at`, `Object.hasOwn` and the `cause` option of `Error`, and moving up from ES2021 costs 0.1%. No package uses an ES2023 API. With `lib` set to ES2022, `tsc` rejects `findLast`, `toSorted`, `Promise.withResolvers` and other newer built-ins in package code. Raise `target` and `lib` when a package needs one of them.
+
+`tsc` can't reject a web API that is too new, because TypeScript's DOM library declares every web API, however new. These are the newest ones packages use:
+
+| API | Packages | Usage share | Chrome | Firefox | Safari |
+| --- | --- | --- | --- | --- | --- |
+| `AbortSignal.timeout` | dkim, dmarc, dns, mail-auth, rpc, smtp, spf, sse, timers | 96.1% | 103 | 100 | 16 |
+| `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
+| `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
+| WebCrypto X25519 | crypto | 90.5% | 133 | 130 | 17 |
+| WebCrypto Ed25519 | arc, crypto, dkim | 89.8% | 137 | 129 | 17 |
+
+Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
+
+A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, and timers uses `scheduler.wait`. Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
 
 ## Building
 
