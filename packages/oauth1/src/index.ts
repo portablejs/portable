@@ -114,7 +114,7 @@ export async function authorization(
   signal?.throwIfAborted()
   const form = isForm(request)
   const body =
-    (form || options.bodyHash) && request.body !== null
+    (form || options.bodyHash) && hasBody(request)
       ? await readBody(request.clone(), signal)
       : undefined
   const pairs = await race(protocolParameters(request, form, body, options), signal)
@@ -150,7 +150,7 @@ export async function sign(request: Request, options: sign.Options): Promise<Req
   signal?.throwIfAborted()
   const form = isForm(request)
   const body =
-    (form || options.bodyHash || placement === 'query') && request.body !== null
+    (form || options.bodyHash || placement === 'query') && hasBody(request)
       ? await readBody(request, signal)
       : undefined
   const pairs = await race(protocolParameters(request, form, body, options), signal)
@@ -178,6 +178,13 @@ export async function sign(request: Request, options: sign.Options): Promise<Req
   const headers = new Headers(request.headers)
   headers.set('authorization', header(pairs, options.realm))
   return new Request(request, body === undefined ? { headers } : { headers, body })
+}
+
+// Firefox has no `Request.prototype.body`, so there only the method shows whether a request can
+// have a body.
+function hasBody(request: Request): boolean {
+  if (request.body !== undefined) return request.body !== null
+  return request.method !== 'GET' && request.method !== 'HEAD'
 }
 
 function isForm(request: Request): boolean {

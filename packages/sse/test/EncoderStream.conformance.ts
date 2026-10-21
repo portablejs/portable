@@ -176,16 +176,16 @@ describe('known upstream issues', () => {
   })
 
   test('cancelling the output cancels the source, as hono’s onAbort reports', async () => {
-    let cancelled = false
+    // The pipe cancels the source after `reader.cancel()` resolves, a tick later in some runtimes.
+    let onCancel!: () => void
+    const cancelled = new Promise<void>((resolve) => (onCancel = resolve))
     const source = new ReadableStream<Sse.Message>({
       pull: (c) => c.enqueue({ data: 'x' }),
-      cancel: () => {
-        cancelled = true
-      },
+      cancel: () => onCancel(),
     })
     const reader = source.pipeThrough(new Sse.EncoderStream()).getReader()
     await reader.read()
     await reader.cancel()
-    expect(cancelled).toBe(true)
+    await expect(cancelled).resolves.toBeUndefined()
   })
 })

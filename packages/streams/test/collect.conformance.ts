@@ -2,6 +2,9 @@ import { describe, expect, test } from 'vite-plus/test'
 import { MaxBytesError, toArray, toBytes, toJson, toText } from '@portable/streams'
 import { chunked, decode, delay, encode, fromChunks } from './utils.js'
 
+// Firefox has no `Request.prototype.body` and sends a ReadableStream request body as text.
+const streamBodies = 'body' in Request.prototype
+
 const fixtureString = 'unicorn\n'
 const fixtureBytes = encode(fixtureString)
 const fixtureArrayBuffer = fixtureBytes.buffer
@@ -556,7 +559,7 @@ describe('raw-body: web streams', () => {
     expect(await toText(new Blob(['hello, world!']).stream())).toBe('hello, world!')
   })
 
-  test('reads the body of a Request', async () => {
+  test.runIf(streamBodies)('reads the body of a Request', async () => {
     const request = new Request('http://localhost/', { method: 'POST', body: 'hello, world!' })
     expect(await toText(request.body!)).toBe('hello, world!')
   })

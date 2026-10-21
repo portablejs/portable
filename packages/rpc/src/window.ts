@@ -53,8 +53,13 @@ export function window(target: window.Target, options: window.Options): Transpor
   let listener: (event: MessageEvent) => void
   let onAbort: () => void
 
-  const post = (type: string, data?: unknown): void =>
+  // The block body keeps `postMessage` out of tail position. JavaScriptCore runs a call in tail
+  // position as a proper tail call and drops this frame, and WebKit reads the caller's frame to set
+  // `event.source`. Without this frame, a post from a promise callback or a timer to a same-origin
+  // window arrives with the target window as its `event.source`, and the target ignores it.
+  const post = (type: string, data?: unknown): void => {
     target.postMessage({ [key]: type, version, channel, data }, origin)
+  }
   const stop = () => {
     clearTimeout(timer)
     globalThis.removeEventListener('message', listener)

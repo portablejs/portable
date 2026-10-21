@@ -8,7 +8,11 @@ export function start(config: Config): void {
   if (config.page === 'silent') return
   if (config.page === 'version') {
     const hello = { '@portable/rpc': 'hello', version: 2, channel: '' }
-    setInterval(() => target.postMessage(hello, '*'), 50)
+    // A block body keeps this frame on the stack, as in `Rpc.window`'s `post`, so WebKit sets
+    // `event.source` to this window.
+    setInterval(() => {
+      target.postMessage(hello, '*')
+    }, 50)
     return
   }
   const parents = new Map<string, Rpc.Remote<ParentApi>>()

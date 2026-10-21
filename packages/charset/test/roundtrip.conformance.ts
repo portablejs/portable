@@ -106,11 +106,13 @@ const names = [
 ]
 
 // Node's TextDecoder uses ICU's converters for these charsets, which differ from the WHATWG
-// decoders. Each probe is a byte sequence the two decode differently.
+// decoders, and WebKit's TextDecoder decodes ISO-8859-16 to an empty string. Each probe is a byte
+// sequence that the WHATWG decoder and the runtime's decoder decode differently.
 const probes: Record<string, [bytes: number[], text: string]> = {
   Big5: [[0xc6, 0xd8], '\u00a8'],
   'EUC-KR': [[0xa2, 0xe7], '\u00ae'],
   'ISO-2022-JP': [[0x1a], '\x1a'],
+  'ISO-8859-16': [[0x41], 'A'],
   Shift_JIS: [[0x1a], '\x1a'],
 }
 

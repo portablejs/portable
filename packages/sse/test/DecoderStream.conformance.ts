@@ -610,17 +610,17 @@ describe('DecoderStream', () => {
   })
 
   test('cancelling the output cancels the source', async () => {
-    let cancelled = false
+    // The pipe cancels the source after `reader.cancel()` resolves, a tick later in some runtimes.
+    let onCancel!: () => void
+    const cancelled = new Promise<void>((resolve) => (onCancel = resolve))
     const source = new ReadableStream<string>({
       pull: (controller) => controller.enqueue('data: x\n\n'),
-      cancel: () => {
-        cancelled = true
-      },
+      cancel: () => onCancel(),
     })
     const reader = source.pipeThrough(new Sse.DecoderStream()).getReader()
     await reader.read()
     await reader.cancel()
-    expect(cancelled).toBe(true)
+    await expect(cancelled).resolves.toBeUndefined()
   })
 })
 

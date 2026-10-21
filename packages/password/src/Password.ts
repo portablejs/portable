@@ -229,6 +229,10 @@ async function derive(
   digest: Digest,
   length: number,
 ): Promise<Uint8Array> {
+  // WebKit's PBKDF2 rejects an empty password or salt. HMAC pads its key with zero bytes, so an
+  // empty password derives the same bits as a single zero byte.
+  if (password.length === 0) password = new Uint8Array(1)
+  if (salt.length === 0) return deriveWithHmac(password, iterations, digest, length)
   const key = await crypto.subtle.importKey('raw', password, 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', hash: digest, salt, iterations },
@@ -236,6 +240,35 @@ async function derive(
     length * 8,
   )
   return new Uint8Array(bits)
+}
+
+/** PBKDF2 from RFC 8018 with an empty salt, computed with one HMAC call per iteration. */
+async function deriveWithHmac(
+  password: Uint8Array<ArrayBuffer>,
+  iterations: number,
+  digest: Digest,
+  length: number,
+): Promise<Uint8Array> {
+  const hmac = { name: 'HMAC', hash: digest }
+  const key = await crypto.subtle.importKey('raw', password, hmac, false, ['sign'])
+  const out = new Uint8Array(length)
+  for (let block = 1, offset = 0; offset < length; block++) {
+    let u = new Uint8Array(
+      await crypto.subtle.sign(
+        hmac,
+        key,
+        new Uint8Array([block >>> 24, block >>> 16, block >>> 8, block]),
+      ),
+    )
+    const t = u.slice()
+    for (let i = 1; i < iterations; i++) {
+      u = new Uint8Array(await crypto.subtle.sign(hmac, key, u))
+      for (let j = 0; j < t.length; j++) t[j]! ^= u[j]!
+    }
+    out.set(t.subarray(0, length - offset), offset)
+    offset += t.length
+  }
+  return out
 }
 
 function abortable<T>(start: () => Promise<T>, signal: AbortSignal | undefined): Promise<T> {

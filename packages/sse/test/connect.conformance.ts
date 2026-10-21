@@ -3,6 +3,9 @@ import * as Sse from '@portable/sse'
 import * as Streams from '@portable/streams'
 import { datas, mockFetch } from './utils.js'
 
+// Firefox has no `Request.prototype.body` and sends a ReadableStream request body as text.
+const streamBodies = 'body' in Request.prototype
+
 const url = 'https://example.com/events'
 
 async function take(stream: ReadableStream<Sse.Event>, count: number): Promise<Sse.Event[]> {
@@ -82,7 +85,7 @@ describe('connect', () => {
     expect(mock.requests[1]!.request.headers.get('last-event-id')).toBe('1')
   })
 
-  test('sends a stream body again on every attempt', async () => {
+  test.runIf(streamBodies)('sends a stream body again on every attempt', async () => {
     const mock = mockFetch([{ chunks: ['data: a\n\n'] }, { chunks: ['data: b\n\n'] }])
     const body = Streams.fromIterable(['{"prompt":', '"hi"}']).pipeThrough(new TextEncoderStream())
     const request = new Request(url, { method: 'POST', body, duplex: 'half' } as RequestInit)

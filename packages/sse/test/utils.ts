@@ -84,7 +84,7 @@ export function mockFetch(replies: readonly (Reply | Error)[]): MockFetch {
       return new Promise((resolve) => waiting.push({ count, resolve }))
     },
     async fetch(request) {
-      const body = request.body ? await request.text() : ''
+      const body = await request.text()
       mock.requests.push({ request, body })
       for (const w of waiting.filter((w) => w.count <= mock.requests.length)) w.resolve()
       request.signal.throwIfAborted()
