@@ -24,9 +24,8 @@
 .home-cta code { color: var(--vocs-text-color-secondary); }
 .home h2 { font-size: 16px; font-weight: 600; margin: 56px 0 8px; padding: 0; border: 0; }
 .home-row { display: grid; grid-template-columns: 180px 1fr; gap: 24px; padding: 12px 0; border-top: 1px solid var(--vocs-border-color-secondary); }
-.home-row > code { font-size: 15px; }
+.home-row > code { font-size: 15px; color: var(--vocs-text-color-link); }
 .home-row p { margin: 0; color: var(--vocs-text-color-secondary); }
-.home-row:hover > code { color: var(--vocs-color-accent); }
 .home-row small { display: block; color: var(--vocs-text-color-muted); font-size: 14px; }
 .home-footer { margin: 96px 0 48px; color: var(--vocs-text-color-muted); font-size: 14px; }
 @media (max-width: 620px) {
