@@ -1,7 +1,13 @@
 import * as Rpc from '@portable/rpc'
 import { describe, expect, onTestFinished, test, vi } from 'vite-plus/test'
 import { communicationContract } from './contract.js'
-import { codecOf, type Config, type Methods, type ParentApi } from './fixtures/methods.js'
+import {
+  type BridgeApi,
+  codecOf,
+  type Config,
+  type Methods,
+  type ParentApi,
+} from './fixtures/methods.js'
 
 type WorkerConfig = Config & { mode?: 'self' | 'broadcast' | 'ports'; broadcast?: string }
 
@@ -125,6 +131,28 @@ communicationContract('a cross-origin iframe', async ({ codec, serve, signal }) 
     signal,
   })
 })
+
+/**
+ * Loads a cross-origin child that serves the general methods over a MessagePort, and transfers
+ * the other end of the channel to it.
+ */
+async function portChild(config: Config = {}): Promise<MessagePort> {
+  const element = child({ ...config, page: 'port', origin: location.origin }, otherOrigin)
+  await loaded(element)
+  const { port1, port2 } = new MessageChannel()
+  element.contentWindow!.postMessage('port', otherOrigin, [port2])
+  return port1
+}
+
+communicationContract(
+  'a cross-origin iframe over a transferred MessagePort',
+  async ({ codec, serve, signal }) =>
+    Rpc.connect<Methods>(Rpc.port(await portChild({ codec }), { signal }), {
+      codec: codecOf({ codec }),
+      serve,
+      signal,
+    }),
+)
 
 communicationContract('a module Worker', async ({ codec, serve, signal }) => {
   return Rpc.connect<Methods>(Rpc.port(worker({ codec }), { signal }), {
@@ -352,6 +380,51 @@ describe('channels', () => {
         b!.getChannelFromParent(),
       ]),
     ).toEqual(['A', 'B', 'A', 'B'])
+  })
+})
+
+describe('a bridge on the main thread', () => {
+  /**
+   * Connects to a Worker and to a cross-origin child, and serves the child a `worker` API whose
+   * methods call the Worker.
+   */
+  function bridge(): Rpc.Remote<Methods> {
+    const signal = closer().signal
+    const toWorker = Rpc.connect<Methods>(Rpc.port(worker(), { signal }), {
+      serve: parentApi(),
+      signal,
+    })
+    const api: BridgeApi = {
+      ...parentApi(),
+      worker: {
+        multiply: (a, b) => toWorker.multiply(a, b),
+        count: (n) => toWorker.count(n),
+        forever: () => toWorker.forever(),
+        wasCancelled: () => toWorker.wasCancelled(),
+      },
+    }
+    const element = child({ origin: location.origin }, otherOrigin)
+    return Rpc.connect<Methods>(
+      Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }),
+      {
+        serve: api,
+        signal,
+      },
+    )
+  }
+
+  test('forwards a call from a cross-origin iframe to a Worker', async () => {
+    expect(await bridge().relayMultiply(2, 3)).toBe(6)
+  })
+
+  test("forwards the Worker's streamed values to the iframe", async () => {
+    expect(await bridge().relayCount(3)).toEqual([0, 1, 2])
+  })
+
+  test("stops the Worker's generator when the iframe stops reading", async () => {
+    const remote = bridge()
+    expect(await remote.relayUntilBreak(2)).toEqual([0, 1])
+    await vi.waitFor(async () => expect(await remote.relayWasCancelled()).toBe(true))
   })
 })
 
