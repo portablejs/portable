@@ -9,24 +9,28 @@ Each package replaces a popular Node-only library.
 Install only the packages you use. They are ESM-only, and their only runtime dependencies are other `@portable/*` packages.
 
 ```sh
-npm install @portable/lines
+npm install @portable/streams
 ```
 
 ## Use
 
-Import a package as a namespace. Exports have short names such as `DecoderStream`, and the namespace shows which package each one comes from. This Cloudflare Worker counts the lines of a log file. The same code runs in Node and Bun:
+Import a package as a namespace. Exports have short names such as `toJson`, and the namespace shows which package each one comes from. This Cloudflare Worker reads a JSON request body, and answers 413 if the body is larger than 1 MB instead of reading all of it. The same code runs in Node and Bun:
 
 ```ts
-import * as Lines from '@portable/lines'
 import * as Streams from '@portable/streams'
 
 export default {
-  async fetch() {
-    const response = await fetch('https://example.com/access.log')
-    const lines = await Streams.toArray(
-      response.body!.pipeThrough(new Lines.DecoderStream()),
-    )
-    return Response.json({ lines: lines.length })
+  async fetch(request: Request) {
+    try {
+      const body = await Streams.toJson(request.body!, {
+        maxBytes: 1_000_000,
+      })
+      return Response.json({ received: body })
+    } catch (error) {
+      if (error instanceof Streams.MaxBytesError)
+        return new Response('Body too large', { status: 413 })
+      throw error
+    }
   },
 }
 ```
@@ -38,7 +42,7 @@ All packages follow the same [conventions](/conventions) for names, options, err
 With a bundler, import the package as in the example above. Without one, import it from esm.sh in a module script:
 
 ```js
-import * as Lines from 'https://esm.sh/@portable/lines'
+import * as Streams from 'https://esm.sh/@portable/streams'
 ```
 
 esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You don't need an import map.
