@@ -42,6 +42,7 @@
 :root[style*='color-scheme:dark'] .home-logo-dark, :root[style*='color-scheme: dark'] .home-logo-dark { display: inline; }
 .home-hero h1 { font-size: 32px; }
   .home-row { grid-template-columns: 1fr; gap: 4px; }
+  .home-row small { display: none; }
 }
 
 /* Vocs darkens the accent for text; use the logo's orange as is. */
@@ -50,6 +51,7 @@
   --vocs-color-accent7: #fc7c00;
   --vocs-color-accent8: #fc7c00;
   --vocs-color-accent9: #fc7c00;
+  --vocs-text-color-link: #fc7c00;
 }
 
 .package-tabs { display: flex; gap: 20px; margin-top: -8px; color: var(--vocs-text-color-secondary); }
