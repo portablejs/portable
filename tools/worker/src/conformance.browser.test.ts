@@ -14,6 +14,8 @@ const files = Object.keys(import.meta.glob('../../../packages/*/test/*.conforman
 // WebKit garbage-collects a running worker that only its own listeners reference, which stops it.
 const running = new Set<Worker>()
 
+class StallError extends Error {}
+
 const collected = await run('collect', files)
 
 test('collects the files in a dedicated worker', () => {
@@ -69,24 +71,44 @@ function flatten(tasks: readonly Task[]): Task[] {
 
 type Done = Extract<Response, { type: 'done' }>
 
-function run(mode: Request['mode'], files: readonly string[]): Promise<Done> {
+// WebKit's `ReadableStreamDefaultReader.releaseLock()` holds the reader's lock while it calls into
+// JavaScript. If that call starts a garbage collection, the collector waits for the same lock and the
+// thread never runs again. Workers collect often enough that this hung about one WebKit run in three,
+// so in WebKit a file whose worker stops responding runs once more in a new worker. See
+// docs/papercuts.md.
+async function run(mode: Request['mode'], files: readonly string[]): Promise<Done> {
+  try {
+    return await attempt(mode, files)
+  } catch (error) {
+    if (!(error instanceof StallError) || server.browser !== 'webkit') throw error
+    // oxlint-disable-next-line no-console
+    console.warn(`${error.message}. Running it again in a new worker.`)
+    return attempt(mode, files)
+  }
+}
+
+function attempt(mode: Request['mode'], files: readonly string[]): Promise<Done> {
   const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
   running.add(worker)
   const request: Request = { mode, files, config: server.config }
   let timer: ReturnType<typeof setTimeout> | undefined
   return new Promise<Done>((resolve, reject) => {
     // A test or hook in the worker fails when its timeout passes, so a worker that sends nothing
-    // for much longer is stuck in a synchronous loop or has crashed.
+    // for much longer is stuck in a synchronous loop or deadlocked.
     const wait = (started: string, timeout: number) => {
-      const idle = Math.max(2 * timeout, 120_000)
+      const idle = Math.max(2 * timeout, 60_000)
       clearTimeout(timer)
       timer = setTimeout(
-        () => reject(new Error(`The worker sent nothing for ${idle} ms after starting ${started}`)),
+        () =>
+          reject(
+            new StallError(`The worker sent nothing for ${idle} ms after starting ${started}`),
+          ),
         idle,
       )
     }
     worker.addEventListener('message', ({ data }: MessageEvent<Response>) => {
       if (data.type === 'done') resolve(data)
+      else if (data.type === 'error') reject(new Error(`The worker failed: ${data.message}`))
       else wait(data.name, data.timeout)
     })
     worker.addEventListener('error', (event) =>

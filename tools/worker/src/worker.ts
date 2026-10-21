@@ -27,12 +27,24 @@ export type Response =
       unhandledErrors: readonly TestError[]
       scope: string
     }
+  | { type: 'error'; message: string }
 
 const unhandled: unknown[] = []
 addEventListener('error', (event) => unhandled.push(event.error ?? event.message))
 addEventListener('unhandledrejection', (event) => unhandled.push(event.reason))
 
-addEventListener('message', async ({ data }: MessageEvent<Request>) => {
+addEventListener('message', ({ data }: MessageEvent<Request>) => {
+  run(data).then(
+    (response) => postMessage(response),
+    (error: unknown) =>
+      postMessage({
+        type: 'error',
+        message: error instanceof Error ? (error.stack ?? error.message) : String(error),
+      } satisfies Response),
+  )
+})
+
+async function run(data: Request): Promise<Response> {
   const config: SerializedConfig = {
     ...data.config,
     // `-t` matches the page's test names, which start with the file path, so the worker runs them all.
@@ -98,14 +110,13 @@ addEventListener('message', async ({ data }: MessageEvent<Request>) => {
     data.mode === 'collect'
       ? await collectTests([...data.files], runner)
       : await startTests([...data.files], runner)
-  const response: Response = {
+  return {
     type: 'done',
     files: files.map(toTask),
     unhandledErrors: unhandled.map((error) => processError(error)),
     scope: Object.prototype.toString.call(globalThis),
   }
-  postMessage(response)
-})
+}
 
 const snapshotEnvironment = {
   getVersion: () => '1',

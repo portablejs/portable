@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite-plus'
+import type { Plugin } from 'vite-plus'
 import { playwright } from 'vite-plus/test/browser-playwright'
+import type { Reporter, Vitest } from 'vite-plus/test/node'
 
 // Set PW_CHROMIUM_PATH to test against an installed Chromium only, such as
 // /opt/pw-browsers/chromium in the cloud dev container, where Playwright's own browsers aren't
@@ -32,6 +34,53 @@ const nodeBuiltins = [
   'util',
   'zlib',
 ]
+
+// When a browser stops running a page's JavaScript, as WebKit does when a collection deadlocks, no
+// timer on the page fires and the run waits forever. The watchdog exits when browser tests report
+// nothing for 4 minutes, so a CI job fails with the stuck file's name before its time limit.
+function watchdog(idle = 240_000): Plugin {
+  let vitest: Vitest
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let running = 0
+  const arm = () => {
+    clearTimeout(timer)
+    if (running === 0) return
+    timer = setTimeout(() => {
+      const stuck = vitest.state
+        .getTestModules()
+        .filter((module) => module.project.config.browser.enabled && module.state() === 'pending')
+        .map((module) => `  ${module.project.name}: ${module.moduleId}`)
+      vitest.logger.error(
+        `Browser tests reported nothing for ${idle / 1000} s, so the run stops. Running:\n${stuck.join('\n')}`,
+      )
+      process.exit(1)
+    }, idle)
+  }
+  const reporter: Reporter = {
+    onTestModuleStart(module) {
+      if (!module.project.config.browser.enabled) return
+      running++
+      arm()
+    },
+    onTestModuleEnd(module) {
+      if (!module.project.config.browser.enabled) return
+      running--
+      arm()
+    },
+    onTestCaseReady: arm,
+    onTestCaseResult: arm,
+    onHookStart: arm,
+    onHookEnd: arm,
+    onTestRunEnd: () => clearTimeout(timer),
+  }
+  return {
+    name: 'portable:watchdog',
+    configureVitest(context) {
+      vitest = context.vitest
+      if (!vitest.config.reporters.includes(reporter)) vitest.config.reporters.push(reporter)
+    },
+  }
+}
 
 export default defineConfig({
   // Exposes FUZZ_RUNS, FUZZ_SEED and FUZZ_PATH to tests as import.meta.env in Node and browsers.
@@ -150,6 +199,7 @@ export default defineConfig({
         // Only the worker harness imports this entry. Without it here, Vite finds it during the run
         // and reloads the page, and the browser test files that hadn't started yet fail to start.
         optimizeDeps: { include: ['vite-plus/test/internal/browser'] },
+        plugins: [watchdog()],
         test: {
           name: 'browser',
           // rpc's window tests load a cross-origin iframe from whichever of `localhost` and
@@ -170,7 +220,29 @@ export default defineConfig({
             headless: true,
             instances: chromiumPath
               ? [{ browser: 'chromium' }]
-              : [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+              : [
+                  { browser: 'chromium' },
+                  { browser: 'firefox' },
+                  {
+                    browser: 'webkit',
+                    // When a worker deadlocks in garbage collection (see
+                    // tools/worker/src/conformance.browser.test.ts), the JIT threads it paused and
+                    // the marking helper threads it uses stay blocked. WebKit shares both sets of
+                    // threads between the page and every worker, so the page stopped at its next
+                    // collection, or later workers never exited and the page grew past WebKit's
+                    // 8 GB limit. These options start neither set, so only the deadlocked worker
+                    // stops.
+                    provider: playwright({
+                      launchOptions: {
+                        env: {
+                          ...process.env,
+                          JSC_useConcurrentJIT: 'false',
+                          JSC_numberOfGCMarkers: '1',
+                        },
+                      },
+                    }),
+                  },
+                ],
             screenshotFailures: false,
           },
         },
