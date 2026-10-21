@@ -75,7 +75,7 @@ Sends `request` (a `Request`, URL or string) with `fetch` and returns a `Readabl
 - When a response ends or fails, it waits and sends the request again with `Last-Event-ID` set to the last event ID. An empty `id` field removes the header. Events continue in the same stream.
 - Cancelling the stream, or aborting `signal` or the request's own signal, aborts the request in flight and any wait.
 
-Each attempt sends a clone of `request`, so a POST body is sent again on every reconnect. `connect` clones the request once when you call it, which leaves yours unread, and throws a `TypeError` if its body was already read. A `ReadableStream` body works too: the clone keeps a copy of it in memory for as long as the stream runs.
+Each attempt sends a clone of `request`, so a POST body is sent again on every reconnect. `connect` clones the request once when you call it, which leaves yours unread, and throws a `TypeError` if its body was already read. A `ReadableStream` body works too: the clone keeps a copy of it in memory for as long as the stream runs. Of the browsers, only Chrome can send a `ReadableStream` body, and only over HTTP/2 or HTTP/3. Firefox and Safari send the text `[object ReadableStream]` instead, so collect the stream first there with `body: await Streams.toBytes(stream)` from `@portable/streams`.
 
 | Option | Default | Description |
 | --- | --- | --- |

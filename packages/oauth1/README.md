@@ -43,7 +43,7 @@ The signature covers what the server will see, because it is computed from the `
 | `verifier` | none | `oauth_verifier`, for the token request. |
 | `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed. |
 | `nonce`, `timestamp` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `timestamp` is a `Date`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
-| `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. |
+| `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 | `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
 
