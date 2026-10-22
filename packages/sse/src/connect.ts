@@ -27,7 +27,8 @@ export declare namespace connect {
  * have any method, headers and body, and the events are a `ReadableStream` that can be piped and
  * cancelled. Cancelling it aborts the request in flight.
  *
- * Each attempt sends a clone of `request`, so a request body is sent again on every reconnect.
+ * Each attempt sends a clone of `request`, so a request body is sent again on every reconnect,
+ * and a `fetch` wrapper can change the headers of each attempt.
  * A 204 response closes the stream. Any other status than 200, or a content type other than
  * `text/event-stream`, fails it with `ResponseError`.
  *
@@ -37,10 +38,17 @@ export declare namespace connect {
  *
  * const request = new Request('https://example.com/events', {
  *   method: 'POST',
- *   headers: { authorization: `Bearer ${token}` },
  *   body: JSON.stringify({ topic: 'prices' }),
  * })
- * const reader = Sse.connect(request, { signal: AbortSignal.timeout(60_000) }).getReader()
+ * const events = Sse.connect(request, {
+ *   // Each reconnect gets a fresh token.
+ *   fetch: async (request) => {
+ *     request.headers.set('authorization', `Bearer ${await getToken()}`)
+ *     return fetch(request)
+ *   },
+ *   signal: AbortSignal.timeout(60_000),
+ * })
+ * const reader = events.getReader()
  * for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.data)
  * ```
  */
