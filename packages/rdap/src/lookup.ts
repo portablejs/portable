@@ -12,6 +12,7 @@ import {
   type Network,
 } from './normalize.js'
 import { request, type Fetch } from './request.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 type Shared = {
   /**
@@ -50,14 +51,8 @@ const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/
 
 function toAscii(name: string): string {
   if (typeof name !== 'string') throw new TypeError('The domain name must be a string')
-  if (/[\s/\\?#@:%[\]]/.test(name)) throw new InvalidInputError(`Not a domain name: ${name}`)
-  let host: string
-  try {
-    host = new URL(`http://${name}/`).hostname
-  } catch {
-    throw new InvalidInputError(`Not a domain name: ${name}`)
-  }
-  host = host.replace(/\.$/, '')
+  const host = hostToAscii(name)?.replace(/\.$/, '')
+  if (host === undefined) throw new InvalidInputError(`Not a domain name: ${name}`)
   const labels = host.split('.')
   if (
     host.length > 253 ||

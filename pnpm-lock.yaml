@@ -193,15 +193,15 @@ importers:
 
   packages/crypto/test:
     devDependencies:
-      '@portable/crypto':
-        specifier: workspace:*
-        version: link:..
       '@noble/curves':
         specifier: ^2.4.0
         version: 2.4.0
       '@noble/hashes':
         specifier: ^2.4.0
         version: 2.4.0
+      '@portable/crypto':
+        specifier: workspace:*
+        version: link:..
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
@@ -213,18 +213,18 @@ importers:
 
   packages/csv/test:
     devDependencies:
-      '@portable/csv':
-        specifier: workspace:*
-        version: link:..
-      '@portable/streams':
-        specifier: workspace:*
-        version: link:../../streams
       '@fast-csv/format':
         specifier: ^5.0.8
         version: 5.0.8
       '@fast-csv/parse':
         specifier: ^5.0.8
         version: 5.0.8
+      '@portable/csv':
+        specifier: workspace:*
+        version: link:..
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../../streams
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
@@ -252,6 +252,9 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../dns
+      '@portable/idna':
+        specifier: workspace:*
+        version: link:../idna
 
   packages/dkim/test:
     devDependencies:
@@ -276,6 +279,9 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../dns
+      '@portable/idna':
+        specifier: workspace:*
+        version: link:../idna
       '@portable/spf':
         specifier: workspace:*
         version: link:../spf
@@ -306,6 +312,9 @@ importers:
       '@portable/dns-packet':
         specifier: workspace:*
         version: link:../dns-packet
+      '@portable/idna':
+        specifier: workspace:*
+        version: link:../idna
       '@portable/ip':
         specifier: workspace:*
         version: link:../ip
@@ -555,6 +564,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/idna':
+        specifier: workspace:*
+        version: link:../idna
       '@portable/mime-headers':
         specifier: workspace:*
         version: link:../mime-headers
@@ -705,15 +717,15 @@ importers:
 
   packages/oauth1/test:
     devDependencies:
+      '@noble/hashes':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@portable/fuzz':
         specifier: workspace:*
         version: link:../../../tools/fuzz
       '@portable/oauth1':
         specifier: workspace:*
         version: link:..
-      '@noble/hashes':
-        specifier: ^2.4.0
-        version: 2.4.0
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
@@ -888,7 +900,14 @@ importers:
         specifier: ^11.2.3
         version: 11.2.3
 
-  packages/rdap: {}
+  packages/rdap:
+    dependencies:
+      '@portable/idna':
+        specifier: workspace:*
+        version: link:../idna
+      '@portable/ip':
+        specifier: workspace:*
+        version: link:../ip
 
   packages/rdap/test:
     devDependencies:
@@ -961,6 +980,9 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../dns
+      '@portable/idna':
+        specifier: workspace:*
+        version: link:../idna
       '@portable/ip':
         specifier: workspace:*
         version: link:../ip
@@ -1161,18 +1183,18 @@ importers:
 
   packages/webhooks/test:
     devDependencies:
-      '@portable/fuzz':
-        specifier: workspace:*
-        version: link:../../../tools/fuzz
-      '@portable/webhooks':
-        specifier: workspace:*
-        version: link:..
       '@noble/hashes':
         specifier: ^2.4.0
         version: 2.4.0
       '@octokit/webhooks-methods':
         specifier: ^6.0.0
         version: 6.0.0
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
+      '@portable/webhooks':
+        specifier: workspace:*
+        version: link:..
       '@slack/bolt':
         specifier: ^5.1.0
         version: 5.1.0(supports-color@7.2.0)(undici@8.11.2)

@@ -1204,6 +1204,13 @@ describe('author-domain-test.js and from-header-test.js', () => {
     }
   })
 
+  test('maps fullwidth letters and the ideographic full stop as SPF and URL do', async () => {
+    for (const from of ['ＥＸＡＭＰＬＥ.com', 'example。com']) {
+      const result = await check(reject, { from })
+      expect(result).toMatchObject({ domain: 'example.com', policy: 'reject' })
+    }
+  })
+
   test('aligns a U-label identifier with an A-label From domain', async () => {
     const zone = withRecord('v=DMARC1; p=reject', 'xn--bcher-kva.example')
     const result = await check(zone, {

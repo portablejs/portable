@@ -1,6 +1,7 @@
 import * as DnsPacket from '@portable/dns-packet'
 import * as Ip from '@portable/ip'
 import { QueryError } from './errors.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 /** A mail exchange, as `resolveMx` returns it. */
 export type MxRecord = { exchange: string; priority: number }
@@ -164,14 +165,8 @@ function toQueryName(name: string, syscall: string): string {
   const masked = name.replace(nonAscii, 'a')
   if (!hostName.test(masked)) throw new QueryError('EBADNAME', syscall, name)
   if (masked === name) return name
-  if (/[/\\]/.test(name)) throw new QueryError('EBADNAME', syscall, name)
-  let ascii: string
-  try {
-    ascii = new URL(`http://${name}/`).hostname
-  } catch (cause) {
-    throw new QueryError('EBADNAME', syscall, name, { cause })
-  }
-  if (!hostName.test(ascii)) throw new QueryError('EBADNAME', syscall, name)
+  const ascii = hostToAscii(name)
+  if (ascii === undefined || !hostName.test(ascii)) throw new QueryError('EBADNAME', syscall, name)
   return ascii
 }
 

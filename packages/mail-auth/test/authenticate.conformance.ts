@@ -213,6 +213,11 @@ describe('Author domain', () => {
       { helo: 'h.attacker.example', sender: 'x@attacker.example', ip: '192.0.2.1' },
     )
 
+  test('applies the policy of a From domain written in fullwidth letters', async () => {
+    const result = await run('From: ceo@ＢＡＮＫ.example\r\n')
+    expect(result.dmarc).toMatchObject({ result: 'fail', policy: 'reject', domain: 'bank.example' })
+  })
+
   test('is the domain of the mailbox in a group (RFC 6854)', async () => {
     const result = await run('From: Bank: CEO <ceo@bank.example>;\r\n')
     expect(result.dmarc).toMatchObject({ result: 'fail', policy: 'reject', domain: 'bank.example' })

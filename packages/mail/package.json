@@ -37,6 +37,7 @@
   "dependencies": {
     "@portable/base64": "workspace:*",
     "@portable/bytes": "workspace:*",
+    "@portable/idna": "workspace:*",
     "@portable/mime-headers": "workspace:*",
     "@portable/quoted-printable": "workspace:*"
   },

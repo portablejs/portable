@@ -36,7 +36,8 @@
   "dependencies": {
     "@portable/base64": "workspace:*",
     "@portable/bytes": "workspace:*",
-    "@portable/dns": "workspace:*"
+    "@portable/dns": "workspace:*",
+    "@portable/idna": "workspace:*"
   },
   "exports": {
     ".": {

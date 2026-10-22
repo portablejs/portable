@@ -32,6 +32,10 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/idna": "workspace:*",
+    "@portable/ip": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",

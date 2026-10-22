@@ -4,6 +4,7 @@ import * as Ip from '@portable/ip'
 import { dotted, inNetwork, parseIp } from './ip.js'
 import { expand, isTopLabel, parseMacroString, type Token, uses, type Values } from './macro.js'
 import { type Directive, parseRecord, type Qualifier } from './record.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 /**
  * The DNS lookups SPF needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or a
@@ -464,9 +465,5 @@ function isValidName(name: string): boolean {
 
 function toAscii(domain: string): string {
   if (/^\p{ASCII}*$/u.test(domain)) return domain
-  try {
-    return new URL(`http://${domain}/`).hostname
-  } catch {
-    return domain
-  }
+  return hostToAscii(domain) ?? domain
 }

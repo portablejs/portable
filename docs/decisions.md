@@ -171,7 +171,7 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 - **Bootstrap files are cached for 24 hours in a `WeakMap` keyed by the `fetch` function, with no TTL option.** A module-level cache leaked bootstrap files between tests that pass different fetches, and node-rdap needs `flushCaches()` for that. 24 hours is IANA's `max-age`. Concurrent lookups share one request, and it is aborted only when every lookup waiting for it has aborted.
 - **The result flattens entities depth first and takes the first value of each jCard property.** A registrar's abuse contact is nested inside the registrar entity, and callers look for it with `roles.includes('abuse')`. An entity's other emails and phone numbers are only in `raw`.
 - **A date without a time zone is read as UTC.** `new Date('2020-01-02T03:04:05')` uses the machine's zone, so the same response gave different `Date`s on different machines.
-- **IDNA uses `URL`'s host parser, and IP addresses use a private parser, until `@portable/idna` and `@portable/ip` are on `main`.** Both are in progress. The parser is about 100 lines with the longest-prefix match, and swapping it for `@portable/ip` changes no behavior the tests check.
+- **IP addresses and prefixes use `@portable/ip`, and domains use the URL-based `hostToAscii` from `@portable/idna/internal`.** Full `Idna.toAscii` would add about 15 kB gzipped of mapping tables, and the URL host parser applies the same UTS #46 mapping with the runtime's tables. A prefix's host bits are cleared before the query, as `Ip.parseCidr` does.
 
 ## `@portable/web-push` sends aes128gcm only, with no GCM keys
 

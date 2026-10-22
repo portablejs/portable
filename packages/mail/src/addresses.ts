@@ -1,5 +1,6 @@
 import * as MimeHeaders from '@portable/mime-headers'
 import { InvalidInputError } from './errors.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 /**
  * One mailbox. Without a `name`, only the address is written.
@@ -85,22 +86,8 @@ function normalizeAddress(address: string): string {
   if (at < 0) return address
   const local = address.slice(0, at)
   let domain = address.slice(at + 1).toLowerCase()
-  if (nonAscii.test(domain) && !nonAscii.test(local)) domain = toAscii(domain)
+  if (nonAscii.test(domain) && !nonAscii.test(local)) domain = hostToAscii(domain) || domain
   return local + '@' + domain
-}
-
-/**
- * The URL host parser applies UTS #46, as browsers and `node:url` do. It also cuts a host at `/`,
- * `?` or `#` and percent-decodes it, so `toAscii` checks for those characters first and returns
- * the domain unchanged if it finds one.
- */
-function toAscii(domain: string): string {
-  if (/[\s/\\?#%@:[\]]/.test(domain)) return domain
-  try {
-    return new URL(`http://${domain}/`).hostname || domain
-  } catch {
-    return domain
-  }
 }
 
 export function format(

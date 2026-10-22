@@ -118,11 +118,11 @@ export async function ip(
   fetch: Fetch,
   signal: AbortSignal | undefined,
 ): Promise<string | undefined> {
-  const { ranges } = await load(prefix.version === 4 ? 'ipv4' : 'ipv6', fetch, signal)
+  const { ranges } = await load(prefix.address.version === 4 ? 'ipv4' : 'ipv6', fetch, signal)
   let best: (typeof ranges)[number] | undefined
   for (const range of ranges)
     if (
-      (!best || range.prefix.length > best.prefix.length) &&
+      (!best || range.prefix.prefix > best.prefix.prefix) &&
       Address.contains(range.prefix, prefix)
     )
       best = range
