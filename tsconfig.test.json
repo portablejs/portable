@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "types": ["node", "vite-plus/client"], "isolatedDeclarations": false },
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite-plus/client"],
+    "isolatedDeclarations": false
+  },
   "include": ["packages/*/test", "tools/*/src"]
 }
