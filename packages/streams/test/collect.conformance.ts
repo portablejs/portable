@@ -622,9 +622,9 @@ describe('bl', () => {
 describe('toBlob', () => {
   test('joins byte and string chunks into a Blob with the given type', async () => {
     const blob = await toBlob(fromChunks([encode('uni'), 'corn', encode('\n')]), {
-      type: 'text/plain',
+      type: 'application/octet-stream',
     })
-    expect(blob.type).toBe('text/plain')
+    expect(blob.type).toBe('application/octet-stream')
     expect(await blob.text()).toBe(fixtureString)
   })
 
