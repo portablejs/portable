@@ -5,7 +5,7 @@ Decisions agents made without the owner's input, with the options they considere
 ## Workers runs a smoke check in CI, not the conformance tests
 
 - **Options:** `@cloudflare/vitest-pool-workers` pinned to Vitest 4 in its own package; bundle each conformance file with Vitest's runner and run it in workerd; bundle every package into one Worker and run one hand-written check per package.
-- **Trade-offs:** the Vitest 4 pool means two Vitest versions in one repo. Bundling Vitest's runner and `expect` for workerd needs a harness like `tools/worker`, which imports test files from the Vite server and can't run in workerd. One Worker with a check per package is about 400 lines, runs in seconds and catches what fails only in workerd: the first run found that queue and timers created an `AbortController` at the top level, which workerd refuses, so neither package nor sse or websockets could load on Workers, and that websockets passed `highWaterMark: Infinity`, which workerd rejects although the Streams spec allows it. The checks cover one call per package, so a behavior difference outside those calls still goes untested.
+- **Trade-offs:** the Vitest 4 pool means two Vitest versions in one repo. Bundling Vitest's runner and `expect` for workerd needs a harness like `tools/worker`, which imports test files from the Vite server and can't run in workerd. One Worker with a check per package is about 400 lines, runs in seconds and catches failures that happen only in workerd. Its first run found that queue and timers created an `AbortController` at the top level of a module, which workerd refuses, so neither of them could load on Workers, and neither could sse or websockets, which depend on timers. It also found that websockets passed `highWaterMark: Infinity`, which workerd rejects although the Streams spec allows it. The checks cover one call per package, so a behavior difference outside those calls still goes untested.
 - **Chosen:** `pnpm test:workers` and a blocking `test-workers` CI job. Replace it with a Workers test project once the Vitest pool supports Vitest 5.
 
 ## Streams gets `toBlob` but no `toResponse`
@@ -23,13 +23,13 @@ Decisions agents made without the owner's input, with the options they considere
 ## AGENTS.md states the parameter, naming and `fetch` rules
 
 - **Options:** fix each exception the API review found and leave the rules as they were; write each fix down as a rule in AGENTS.md.
-- **Trade-offs:** AGENTS.md said "one optional options object last", but not how many required positionals may come first or in what order, so `WebPush.send(subscription, payload | undefined, options)` and `Random.string(length, alphabet?)` followed it. Without written rules, the next package repeats the same exceptions. Each rule is a constraint that can rule out a signature someone would prefer, but every package is still at 0.0.0, so the breaking fixes cost nothing now.
-- **Chosen:** the rules are in AGENTS.md, under API conventions. Parameters follow ox: copy a platform signature where one exists, make the converted value positional with options after it, and put inputs with distinct roles in one object. A namespace is the package name capitalized and never shadows a global. A package's main factory is `create`. A boolean function starts with `is`, `has` or `can` unless a standard name exists, so `Ip.validate` became `Ip.canParse` after `URL.canParse`. A `fetch` option takes one `Request`, the signature sse and web-push already used, because dns and rdap took `(url, init)` and rpc took `typeof fetch`, and no wrapper fitted all three. The clock, units, crypto, encoder stream and result type rules each have their own entry above.
+- **Trade-offs:** AGENTS.md said "one optional options object last", but not how many required positionals may come first or in what order, so `WebPush.send(subscription, payload | undefined, options)` and `Random.string(length, alphabet?)` met the rule as written. Without written rules, the next package repeats the same exceptions. A rule can forbid a signature someone would prefer, but every package is still at 0.0.0, so the breaking fixes cost nothing now.
+- **Chosen:** the rules are in AGENTS.md, under API conventions. Parameters follow ox: copy a platform signature where one exists, make the converted value positional with options after it, and put inputs with distinct roles in one object. A namespace is the package name capitalized and never shadows a global. A package's main factory is `create`. A boolean function starts with `is`, `has` or `can` unless a standard name exists, so `Ip.validate` became `Ip.canParse` after `URL.canParse`. dns and rdap called `fetch` with `(url, init)` and rpc took `typeof fetch`, so no single wrapper fitted all three. A `fetch` option now takes one `Request`, as sse and web-push already did. The clock, units, crypto, encoder stream and result type rules each have their own entry above.
 
 ## Decoders that buffer input take a size limit, with no limit by default
 
 - **Options:** no limit; a limit that is off by default; a finite default such as 1 MiB.
-- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` kept growing a buffer until a line, value or header block ended, so untrusted input with no line break used all the memory it was sent. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects a caller who doesn't read the docs, but picks a number that breaks a valid large record, and the three older packages would have needed the same breaking change.
+- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` kept growing a buffer until a line, value or header block ended, so the buffer grew with every byte of untrusted input that had no line break. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects a caller who doesn't read the docs, but any number we choose rejects some valid large record, and the three older packages would have needed the same breaking change.
 - **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop.
 
 ## Every function that reads the clock takes `now`
@@ -37,12 +37,12 @@ Decisions agents made without the owner's input, with the options they considere
 - **Options:** keep the per-package names (`signedAt` in dkim and arc, `timestamp` in oauth1 and webhooks, no option in rate-limit, spf and web-push); name the option after what it sets; call it `now` everywhere.
 - **Trade-offs:** `signedAt` says what the time is used for, but a test that fixes the clock had to know a different name in each package, and rate-limit, spf and web-push read `Date.now()` with no way to pass a time. `now` is the name the verifiers already used.
 - **Chosen:** `now?: Date` on every function that reads the clock: `Dkim.sign`, `Arc.seal`, `OAuth1.sign`, `Webhooks.sign`, `Spf.check`, `WebPush.send` and `toRequest`, `RateLimit` `take` and `headers`. Instants are `Date` in options and results, so `RateLimit.Result.resetAt` is a `Date`. Durations are milliseconds unless the wire format defines the field, so `Webhooks.verify`'s `tolerance` is now `300_000`, while `WebPush`'s `ttl` stays in seconds. The rdap bootstrap cache still reads `Date.now()`, because its expiry isn't visible to a caller.
-- **`Timers.poll` lost its `timeout`.** A limit on the whole call is what `AbortSignal.timeout` does, and AGENTS.md keeps `timeout` options for a limit on one step of many. `retry`, dns and websockets keep their per-attempt `timeout`.
+- **`Timers.poll` lost its `timeout`.** `AbortSignal.timeout` already limits the whole call, and AGENTS.md keeps `timeout` options for a limit on one step of many. `retry`, dns and websockets keep their per-attempt `timeout`.
 
 ## `attempts` counts the first try everywhere
 
 - **Options:** `retries` everywhere; `attempts` everywhere; keep both.
-- **Trade-offs:** `Timers.retry` took `attempts`, which includes the first try, and `WebSockets.connect` took `retries`, which doesn't, so the same number meant one more connection in one of them. `retries` matches reconnecting-websocket's `maxRetries`, but `attempts` needs no off-by-one when a caller reads "3" as "three tries".
+- **Trade-offs:** `Timers.retry` took `attempts`, which includes the first try, and `WebSockets.connect` took `retries`, which doesn't, so `retries: 3` allowed four connections where `attempts: 3` allowed three. `retries` matches reconnecting-websocket's `maxRetries`, but a caller who reads "3" as three tries gets three tries from `attempts` without adding one.
 - **Chosen:** `attempts`, at least 1. The websocket package is also renamed to `@portable/websockets`, because its namespace is `WebSockets` (so the global `WebSocket` isn't shadowed) and it was the only namespace that differed from its package name.
 
 ## `@portable/web-crypto` defines the pluggable crypto types
@@ -54,14 +54,14 @@ Decisions agents made without the owner's input, with the options they considere
 ## Verdict types keep their top-level names
 
 - **Options:** rename every result type to `fn.ReturnType`; rename only results that live in a function's namespace; keep all names.
-- **Trade-offs:** `Spf.Result`, `Dkim.Result`, `Dmarc.Result`, `Arc.Result` and `MailAuth.Result` are values a caller stores and passes on: `Dmarc.check` takes an SPF and DKIM result, and `MailAuth.Result` holds all four. `Smtp.Result` and `RateLimit.Result` are also returned by methods of a long-lived object, which have no namespace. `Dkim.verify.ReturnType` would be an array, so a caller would write `Dkim.verify.ReturnType[number]` for one signature.
+- **Trade-offs:** `Spf.Result`, `Dkim.Result`, `Dmarc.Result`, `Arc.Result` and `MailAuth.Result` are values a caller stores and passes on: `Dmarc.check` takes an SPF and DKIM result, and `MailAuth.Result` holds all four. `Smtp.Result` and `RateLimit.Result` are also returned by methods of a long-lived object, and a method has no namespace to hold a `ReturnType`. `Dkim.verify.ReturnType` would be an array, so a caller would write `Dkim.verify.ReturnType[number]` for one signature.
 - **Chosen:** `WebPush.send.Result` and `Webhooks.verify.Result` became `ReturnType`, and the verdict types kept their names, as domain types like `MimeHeaders.Address` do. AGENTS.md says when each applies.
 
 ## Encoder streams emit bytes
 
 - **Options:** every `EncoderStream` and `*Stream()` function emits `Uint8Array`; they all emit `string`; each package picks.
 - **Trade-offs:** Base64, QuotedPrintable, Csv and Jsonl emitted strings, and Charset, MimeStream, Sse and Mail emitted bytes. A `Response` body or a socket's writable needs bytes, so a caller of the string encoders added a `TextEncoderStream`, and `@portable/mail` and `@portable/rpc` had code to handle both kinds of chunk. The platform's `TextEncoderStream` and `CompressionStream` emit bytes.
-- **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. A caller who wants base64 text in a stream pipes the output through `TextDecoderStream`, which is rarer than writing it to a body.
+- **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. Callers write the output to a body more often than they read it as text, so a caller who wants base64 text pipes the output through `TextDecoderStream`.
 
 ## One `@portable/errors` package, branded with `Symbol.for`
 
@@ -170,7 +170,7 @@ Decisions agents made without the owner's input, with the options they considere
 ## `Streams.fromIterable` and `toAsyncIterable` take no signal
 
 - **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors, the combinators and the transforms used with `pipeThrough`.
-- **Trade-offs:** `fromIterable` and `toAsyncIterable` return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels the source. `concat` and `merge` took their sources as rest parameters, which left no place for an options object. They now take an array, which costs nothing before the first release, so they take `signal` like every other function that holds readers.
+- **Trade-offs:** `fromIterable` and `toAsyncIterable` return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels the source. `concat` and `merge` took their sources as rest parameters, which left no place for an options object. They now take an array, so an options object with `signal` can follow it, as in every other function that holds readers. The change breaks no one, because nothing is released yet.
 - **Chosen:** `toBytes`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform` and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
 
 ## `@portable/charset`'s root exports
@@ -291,7 +291,7 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 ## `JsonStream.DecoderStream` and `JsonStream.encodeStream`
 
 - **Options for the writer:** keep `encode`; `encodeStream`; an `EncoderStream` class.
-- **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream` breaks what a caller learned from `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them. `Jsonl.EncoderStream` is the transform for many values. `encodeStream` needed the `Stream` suffix rule to cover a stream output as well as a stream input.
+- **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream` doesn't match what a caller expects after using `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them. `Jsonl.EncoderStream` is the transform for many values. `encodeStream` needed the `Stream` suffix rule to cover a stream output as well as a stream input.
 - **Chosen:** `encodeStream(value)`. AGENTS.md now says the suffix marks a variant whose bytes or text are a stream, in either direction, so `parseStream` and `encodeStream` mirror each other.
 - **The reader is `DecoderStream`, not `ParserStream`,** because AGENTS.md keeps `parse` for packages that only read, and json-stream also writes. With the default `paths: ['$']` it emits every top-level value, as `Jsonl.DecoderStream` does for each line.
 - **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so a caller that treated `TypeError` as a bug in its own code also caught bad input.
@@ -345,7 +345,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## `@portable/dns` API
 
-- **`Dns.create({ endpoints, fetch, timeout })` (first named `createResolver`) returns Node's method names** (`resolve4`, `resolveTxt`, `resolveMx`, ... `reverse`) plus `query(name, type)` for the whole decoded packet. The `Resolver` type has the one-argument methods, which `node:dns/promises` also fits, so SPF, DMARC and DKIM accept either. Code moving from Node changes only how the resolver is built.
+- **`Dns.create({ endpoints, fetch, timeout })` (first named `createResolver`) returns Node's method names** (`resolve4`, `resolveTxt`, `resolveMx`, ... `reverse`) plus `query(name, type)` for the whole decoded packet. The `Resolver` type has the one-argument methods, which `node:dns/promises` also fits, so SPF, DMARC and DKIM accept either. A caller moving from Node changes only the line that builds the resolver.
 - **`QueryError` copies Node's `code`, `syscall`, `hostname` and message,** so existing `ENOTFOUND`/`ENODATA` handling keeps working. An abort rejects with `signal.reason`, as `fetch` does.
 - **GET requests with ID 0,** so responses can be cached and browsers send no CORS preflight. A truncated response is an error, and the next endpoint is tried.
 - **No cache, `ttl` option, `resolveAny` or `resolveTlsa`,** because `query()` covers them.
@@ -378,7 +378,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## `@portable/json-stream` API
 
-- **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<Uint8Array>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs. It is named for JSON Lines (`.jsonl`), the name OpenAI, Hugging Face and agent transcripts use, rather than NDJSON, the older name kept by the `ndjson` npm package and Elasticsearch. The owner chose the name. Both names are the same format.
+- **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<Uint8Array>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: it is a problem developers name on its own, and the move gives it the same names as the other codecs. It is named for JSON Lines (`.jsonl`), the name OpenAI, Hugging Face and agent transcripts use, rather than NDJSON, the older name kept by the `ndjson` npm package and Elasticsearch. The owner chose the name. JSON Lines and NDJSON describe the same format.
 - **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **The decoder builds each matched value with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. The decoder reports a syntax error inside a match when that value ends, not at the bad character.
@@ -558,7 +558,7 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **random** throws `RangeError` for bad arguments, as dns and base64 do, and throws on reversed bounds instead of swapping them. `seeded` is xoshiro128** seeded with SplitMix64, and its output changes only in a major version.
 - **bytes** `concat` always copies, so the result never shares memory with an input. base64, streams and png now depend on bytes, which is why L0 is no longer dependency-free.
 - **password** writes the PHC format and also reads passlib's. Hashes from other algorithms throw `UnsupportedError`, so migration code can fall back to the old verifier. Deployed Workers cap PBKDF2 at 100,000 iterations while `wrangler dev` doesn't, and the README says so.
-- **timers** clears its own timeout timer instead of using `AbortSignal.timeout`, whose timer can't be cleared. `retry` timeouts are per attempt. `poll` has no `timeout`, because a limit on the whole call is `AbortSignal.timeout`.
+- **timers** clears its own timeout timer instead of using `AbortSignal.timeout`, whose timer can't be cleared. `retry` timeouts are per attempt. `poll` has no `timeout`, because `AbortSignal.timeout` limits the whole call.
 - **queue** combines the queue's signal and each task's signal with `AbortSignal.any`. An aborted task keeps its slot until it settles, so `concurrency` is never exceeded. `clear()` rejects waiting tasks.
 - **websockets** treats server close codes 1000, 1002, 1003 and 1007 to 1010 as final, because a retry would get the same rejection. Its namespace is `WebSockets`, so the global `WebSocket` isn't shadowed.
 - **csv** throws on ragged rows unless `relaxColumnCount` is set, and on repeated header names, because the alternatives rename or drop a column without telling the caller. It has no `cast` option.

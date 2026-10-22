@@ -45,7 +45,7 @@ test('a changed hash verifies to a boolean or throws a documented error', async 
     fc.asyncProperty(
       mutated(stored)
         .map((bytes) => decoder.decode(bytes))
-        // A stored hash is trusted, so it may ask for billions of iterations. Keep the runs fast.
+        // verify trusts the iteration count in a stored hash, which can be in the billions, so skip counts of four digits or more to keep the runs fast.
         .filter((text) => !/(?:i=|\$)\d{4}/.test(text)),
       async (text) => {
         const verified = await outcomeAsync(errors, () => Password.verify('password', text))

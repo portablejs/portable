@@ -1,7 +1,7 @@
 import * as Errors from '@portable/errors'
 /**
  * Thrown for a malformed DER signature, a raw signature or seed of the wrong length, or a key
- * that has no public half.
+ * that is not an extractable private key.
  *
  * @example
  * ```ts

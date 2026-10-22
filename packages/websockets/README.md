@@ -58,7 +58,7 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `signal` | | Closes the socket with code 1000 and fails both streams with `signal.reason`. |
 | `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes. If `open` throws, the socket closes and `connect` tries again after `delay`. |
 | `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `(attempt, error) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from `@portable/timers`. |
-| `attempts` | `Infinity` | Attempts in a row, the first one included, that may fail before giving up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
+| `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` gives up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
 | `reconnectIf` | see below | `({ code, reason }) => boolean`. Called when the server closes the connection or it drops. `false` makes the close final. |
 | `maxQueued` | `1000` | Writes to hold while disconnected. Further writes wait, so `writer.ready` and `writer.write()` stay pending. |
