@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vite-plus/test'
 import * as Rdap from '@portable/rdap'
-import { rejection, server, services } from './utils.js'
+import { recorded, rejection, server, services } from './utils.js'
 
 const iana = 'https://data.iana.org/rdap/dns.json'
 
@@ -611,4 +611,10 @@ test('error names are namespaced by the package', () => {
     new Rdap.ResponseError({ response: new Response(null, { status: 500 }), url: 'https://x/' })
       .name,
   ).toBe('Rdap.ResponseError')
+})
+
+test('an empty ldhName gives the name that was looked up', async () => {
+  const registry = 'https://rdap.verisign.com/com/v1/domain/google.com'
+  const { fetch } = server({ [registry]: { ...recorded[registry], ldhName: '' } })
+  expect((await Rdap.domain('google.com', { fetch, follow: false })).name).toBe('google.com')
 })

@@ -194,6 +194,9 @@ importers:
       '@portable/compress':
         specifier: workspace:*
         version: link:..
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/streams':
         specifier: workspace:*
         version: link:../../streams
@@ -203,6 +206,9 @@ importers:
       crc-32:
         specifier: ^1.2.2
         version: 1.2.2
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
@@ -278,12 +284,18 @@ importers:
       '@portable/dkim':
         specifier: workspace:*
         version: link:..
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/streams':
         specifier: workspace:*
         version: link:../../streams
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       mailauth:
         specifier: ^7.3.0
         version: 7.3.0
@@ -311,12 +323,18 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../../dns
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/spf':
         specifier: workspace:*
         version: link:../../spf
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       mailauth:
         specifier: ^7.3.0
         version: 7.3.0
@@ -778,6 +796,9 @@ importers:
 
   packages/mime-stream/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/mime-headers':
         specifier: workspace:*
         version: link:../../mime-headers
@@ -793,6 +814,9 @@ importers:
       '@zone-eu/mailsplit':
         specifier: ^5.4.23
         version: 5.4.23
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
 
   packages/oauth1:
     dependencies:
@@ -1014,12 +1038,18 @@ importers:
 
   packages/rdap/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/rdap':
         specifier: workspace:*
         version: link:..
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       node-rdap:
         specifier: ^1.0.0
         version: 1.0.0
@@ -1074,6 +1104,9 @@ importers:
       '@portable/dkim':
         specifier: workspace:*
         version: link:../../dkim
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/mail':
         specifier: workspace:*
         version: link:../../mail
@@ -1086,6 +1119,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       nodemailer:
         specifier: ^10.1.2
         version: 10.1.2
@@ -1143,6 +1179,9 @@ importers:
 
   packages/sse/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/sse':
         specifier: workspace:*
         version: link:..
@@ -1158,6 +1197,9 @@ importers:
       eventsource-parser:
         specifier: ^4.1.2
         version: 4.1.2
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
 
   packages/streams:
     dependencies:

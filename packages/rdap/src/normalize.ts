@@ -201,7 +201,7 @@ function common(json: Json): Common {
 export function toDomain(json: Json, name: string): Domain {
   return {
     ...common(json),
-    name: hostname(json.ldhName) ?? name,
+    name: hostname(json.ldhName) || name,
     unicodeName: string(json.unicodeName)?.replace(/\.$/, ''),
     nameservers: list(json.nameservers).flatMap((server) => {
       const host = isObject(server) ? hostname(server.ldhName) : undefined

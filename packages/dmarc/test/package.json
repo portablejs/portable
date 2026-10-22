@@ -5,8 +5,10 @@
   "devDependencies": {
     "@portable/dmarc": "workspace:*",
     "@portable/dns": "workspace:*",
+    "@portable/fuzz": "workspace:*",
     "@portable/spf": "workspace:*",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "mailauth": "^7.3.0",
     "tldts": "^7.4.18"
   }
