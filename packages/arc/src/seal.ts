@@ -59,7 +59,7 @@ export declare namespace seal {
      */
     headers?: readonly string[] | undefined
     /** The signature time (`t=`). @default new Date() */
-    signedAt?: Date | undefined
+    now?: Date | undefined
     /** Creates the body hash, as in `Dkim.sign`. @default buffers the body for `crypto.subtle.digest` */
     hasher?: (() => Dkim.Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
@@ -102,7 +102,7 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders]
  * ```
  */
 export async function seal(message: Message, options: seal.Options): Promise<string> {
-  const { headers = arcDefaultHeaders, signedAt = new Date(), hasher, signal } = options
+  const { headers = arcDefaultHeaders, now = new Date(), hasher, signal } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
   if (!fitsDns(`${selector}._domainkey.${domain}`))
@@ -112,7 +112,7 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   if (chainValidation !== undefined && !statuses.has(chainValidation))
     throw new RangeError('options.chainValidation must be none, pass or fail.')
   const names = checkHeaders(headers).filter((name) => !unsigned.has(lowerAscii(name)))
-  const timestamp = seconds('signedAt', signedAt)
+  const timestamp = seconds('now', now)
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
   if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024)

@@ -19,6 +19,13 @@ describe('headers', () => {
     expect(RateLimit.headers(result).RateLimit).toBe('"default";r=5;t=30')
   })
 
+  test('counts t from the now option', async () => {
+    const limiter = RateLimit.create({ limit: 10, period: 60_000 })
+    const now = new Date(Date.UTC(2030, 0, 1))
+    const result = await limiter.take('a', { cost: 5, now })
+    expect(RateLimit.headers(result, { now }).RateLimit).toBe('"default";r=5;t=30')
+  })
+
   test('adds Retry-After to a denied request, and sets t to the same delay', async () => {
     const limiter = RateLimit.create({ limit: 2, period: 10_000 })
     await takeMany(limiter, 'a', 2)

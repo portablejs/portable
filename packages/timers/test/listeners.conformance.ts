@@ -51,7 +51,7 @@ describe('abort listeners on the caller signal are removed', () => {
     const { signal, count } = tracked()
     let checks = 0
     await Timers.poll(() => (++checks >= 200 ? true : undefined), { delay: 0, signal })
-    await Timers.poll(() => true, { timeout: 1000, signal })
+    await Timers.poll(() => true, { signal })
     expect(count()).toBe(0)
   })
 
@@ -62,7 +62,7 @@ describe('abort listeners on the caller signal are removed', () => {
         () => {
           throw new Error('test')
         },
-        { timeout: 1000, signal },
+        { signal },
       ),
     ).rejects.toThrow('test')
     expect(count()).toBe(0)

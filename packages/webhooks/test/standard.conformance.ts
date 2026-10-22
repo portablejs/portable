@@ -17,7 +17,7 @@ describe('standard', () => {
   async function headers(
     options: { timestamp?: Date; body?: string } = {},
   ): Promise<Record<string, string>> {
-    return Webhooks.sign(options.body ?? payload, { scheme, secret, id, ...options })
+    return Webhooks.sign(options.body ?? payload, { scheme, secret, id, now: options.timestamp })
   }
 
   const verify = (
@@ -32,7 +32,7 @@ describe('standard', () => {
         scheme,
         secret: `whsec_${secret}`,
         id,
-        timestamp: vector.timestamp,
+        now: vector.timestamp,
       }),
     ).toEqual({
       [`${prefix}-id`]: id,
@@ -190,7 +190,7 @@ describe('svix', () => {
 
 describe('scheme option', () => {
   test('defaults to Standard Webhooks', async () => {
-    const headers = await Webhooks.sign(payload, { secret, id, timestamp: vector.timestamp })
+    const headers = await Webhooks.sign(payload, { secret, id, now: vector.timestamp })
     expect(headers['webhook-signature']).toBe(vector.signature)
     const now = vector.timestamp
     expect((await Webhooks.verify({ headers, body: payload }, { secret, now })).body).toBe(payload)

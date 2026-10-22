@@ -164,7 +164,7 @@ describe('poll matches p-wait-for', () => {
     let ours = 0
     let theirs = 0
     const [a, b] = await Promise.allSettled([
-      Timers.poll(() => void ours++, { delay: 30, timeout: 200 }),
+      Timers.poll(() => void ours++, { delay: 30, signal: AbortSignal.timeout(200) }),
       pWaitFor(() => (theirs++, false), { interval: 30, timeout: 200 }),
     ])
     expect(a).toMatchObject({ status: 'rejected', reason: { name: 'TimeoutError' } })

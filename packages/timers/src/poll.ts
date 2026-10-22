@@ -1,12 +1,4 @@
-import {
-  backoff,
-  call,
-  checkMs,
-  type Context,
-  type Delay,
-  neverAborted,
-  withTimeout,
-} from './Delay.js'
+import { backoff, call, type Context, type Delay, neverAborted } from './Delay.js'
 import { abortable, sleep } from './sleep.js'
 
 export declare namespace poll {
@@ -14,11 +6,9 @@ export declare namespace poll {
     /** Wait after each check that returns `undefined`. @default 1000 */
     delay?: Delay | undefined
     /**
-     * Time limit for the whole poll, in ms. When it passes, the poll rejects with a `TimeoutError`
-     * `DOMException`, and the running check's `signal` aborts. @default Infinity
+     * Stops polling and rejects with `signal.reason`, also while a check is running. Pass
+     * `AbortSignal.timeout(ms)` to limit the whole poll.
      */
-    timeout?: number | undefined
-    /** Stops polling and rejects with `signal.reason`, also while a check is running. */
     signal?: AbortSignal | undefined
   }
 }
@@ -36,7 +26,7 @@ export declare namespace poll {
  *     const order = await (await fetch(`/orders/${id}`, { signal })).json()
  *     return order.status === 'paid' ? order : undefined
  *   },
- *   { delay: 2000, timeout: 120_000 },
+ *   { delay: 2000, signal: AbortSignal.timeout(120_000) },
  * )
  * ```
  */
@@ -44,21 +34,13 @@ export async function poll<T>(
   fn: (context: Context) => T | undefined | PromiseLike<T | undefined>,
   options: poll.Options = {},
 ): Promise<T> {
-  const { delay = 1000, timeout = Infinity, signal } = options
+  const { delay = 1000, signal } = options
   const next = backoff(delay)
-  checkMs('timeout', timeout)
   signal?.throwIfAborted()
-
-  const deadline = timeout === Infinity ? undefined : withTimeout(signal, timeout)
-  const active = deadline?.signal ?? signal
-  try {
-    for (let attempt = 1; ; attempt++) {
-      const result = call(fn, { attempt, signal: active ?? neverAborted })
-      const value = await (active ? abortable(result, active) : result)
-      if (value !== undefined) return value
-      await sleep(next(attempt), { signal: active })
-    }
-  } finally {
-    deadline?.clear()
+  for (let attempt = 1; ; attempt++) {
+    const result = call(fn, { attempt, signal: signal ?? neverAborted })
+    const value = await (signal ? abortable(result, signal) : result)
+    if (value !== undefined) return value
+    await sleep(next(attempt), { signal })
   }
 }

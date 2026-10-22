@@ -79,6 +79,8 @@ export declare namespace check {
     resolver: Resolver
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined
+    /** The time for `%{t}` in explanations. @default new Date() */
+    now?: Date | undefined
     /** Rejects with `signal.reason` and cancels the pending lookups when aborted. */
     signal?: AbortSignal | undefined
   }
@@ -177,7 +179,7 @@ export async function check(input: check.Input, options: check.Options): Promise
       h: helo,
       c: Ip.format(client),
       r: options.receiver ?? 'unknown',
-      t: String(Math.floor(Date.now() / 1000)),
+      t: String(Math.floor((options.now ?? new Date()).getTime() / 1000)),
     },
     asciiLocal: /^\p{ASCII}*$/u.test(local),
     lookups: 0,

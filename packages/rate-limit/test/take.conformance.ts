@@ -24,7 +24,7 @@ describe('take', () => {
       limit: 10,
       period: 1000,
       remaining: 9,
-      resetAt: start + 100,
+      resetAt: new Date(start + 100),
       retryAfter: 0,
     })
   })
@@ -38,7 +38,7 @@ describe('take', () => {
       limit: 2,
       period: 1000,
       remaining: 0,
-      resetAt: start + 1000,
+      resetAt: new Date(start + 1000),
       retryAfter: 300,
     })
   })
@@ -100,11 +100,20 @@ describe('take', () => {
     expect((await limiter.take('a')).allowed).toBe(false)
   })
 
+  test('counts from the now option instead of the clock', async () => {
+    const limiter = RateLimit.create({ limit: 2, period: 1000 })
+    const now = new Date(Date.UTC(2030, 0, 1))
+    await takeMany(limiter, 'a', 2)
+    expect((await limiter.take('b', { now })).resetAt).toEqual(new Date(now.getTime() + 500))
+    expect((await limiter.take('a', { now })).allowed).toBe(true)
+    await expect(limiter.take('a', { now: new Date(Number.NaN) })).rejects.toThrow(RangeError)
+  })
+
   test('resetAt is when the allowance is full again', async () => {
     const limiter = RateLimit.create({ limit: 4, period: 1000 })
     await takeMany(limiter, 'a', 3)
     const { resetAt } = await limiter.take('a', { cost: 0 })
-    expect(resetAt).toBe(start + 750)
+    expect(resetAt).toEqual(new Date(start + 750))
     advance(749)
     expect((await limiter.take('a', { cost: 0 })).remaining).toBe(3)
     advance(1)

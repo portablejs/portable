@@ -70,6 +70,7 @@ A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too
 | `ttl` | `2419200` (four weeks) | Seconds the push service keeps the message for an offline browser. `0` means deliver now or drop it. |
 | `urgency` | not sent | `'very-low'`, `'low'`, `'normal'` or `'high'`. Push services may hold back low-urgency messages to save battery. |
 | `topic` | not sent | Up to 32 base64url characters. A new message with the same topic replaces an undelivered one. |
+| `now` | `new Date()` | The time the VAPID token's 12-hour expiry is counted from. |
 | `fetch` | `globalThis.fetch` | `send` only. Called with the `Request`. Pass one to add retries, logging or a proxy. |
 | `signal` | none | Cancels the encryption and the `fetch`. Rejects with `signal.reason`. |
 | `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Only for test vectors: reusing either for two messages weakens the encryption. |

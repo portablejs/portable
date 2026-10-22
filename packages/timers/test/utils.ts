@@ -39,3 +39,13 @@ export function gaps(times: readonly number[]): number[] {
 export function isTimeoutError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'TimeoutError'
 }
+
+/** A signal that aborts with a `TimeoutError` after `ms`, as `AbortSignal.timeout` does, on fake timers. */
+export function timeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController()
+  setTimeout(
+    () => controller.abort(new DOMException('The operation timed out.', 'TimeoutError')),
+    ms,
+  )
+  return controller.signal
+}

@@ -104,7 +104,7 @@ export declare namespace authenticate {
   }
 
   /** The `Arc.seal` options that `authenticate` doesn't fill in itself. */
-  type Seal = Pick<Arc.seal.Options, 'domain' | 'selector' | 'privateKey' | 'headers' | 'signedAt'>
+  type Seal = Pick<Arc.seal.Options, 'domain' | 'selector' | 'privateKey' | 'headers' | 'now'>
 }
 
 /**

@@ -59,9 +59,8 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | --- | --- | --- |
 | `scheme` | `Webhooks.standard` | `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github`, `Webhooks.slack`, or a scheme you write. |
 | `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one. |
-| `tolerance` | `300` | `verify` only. Largest difference between the signed timestamp and `now`, in seconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
-| `now` | `new Date()` | `verify` only. The time to compare the signed timestamp with. |
-| `timestamp` | `new Date()` | `sign` only. The time to sign. |
+| `tolerance` | `300_000` | `verify` only. Largest difference between the signed timestamp and `now`, in milliseconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
+| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
 | `hmac` | `crypto.subtle` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
@@ -182,9 +181,9 @@ On Node, WebCrypto's HMAC is several times slower than a JavaScript one, so pass
 | --- | --- |
 | `new Webhook(secret).verify(payload, headers)` (standardwebhooks) | `JSON.parse((await Webhooks.verify({ headers, body: payload }, { secret })).body)` |
 | `new Webhook(secret).verify(payload, headers)` (svix) | `await Webhooks.verify({ headers, body: payload }, { secret })` |
-| `new Webhook(secret).sign(id, date, payload)` | `(await Webhooks.sign(payload, { secret, id, timestamp: date }))['webhook-signature']` |
+| `new Webhook(secret).sign(id, date, payload)` | `(await Webhooks.sign(payload, { secret, id, now: date }))['webhook-signature']` |
 | `new Webhook(bytes, { format: 'raw' })` | `secret: bytes` |
-| `stripe.webhooks.constructEvent(body, signature, secret, tolerance)` | `JSON.parse((await Webhooks.verify(request, { scheme: Webhooks.stripe, secret, tolerance })).body)` |
+| `stripe.webhooks.constructEvent(body, signature, secret, tolerance)` | `JSON.parse((await Webhooks.verify(request, { scheme: Webhooks.stripe, secret, tolerance: tolerance * 1000 })).body)` |
 | `constructEvent(…, tolerance = 0)` | `tolerance: Infinity` |
 | `constructEvent(…, receivedAt)` | `now: new Date(receivedAt)` |
 | `stripe.webhooks.generateTestHeaderString({ payload, secret, timestamp })` | `(await Webhooks.sign(payload, { scheme: Webhooks.stripe, secret, timestamp: new Date(timestamp * 1000) }))['stripe-signature']` |

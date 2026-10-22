@@ -30,10 +30,10 @@ export declare namespace verify {
      */
     hmac?: Hmac | undefined
     /**
-     * Largest allowed difference between the signed timestamp and `now`, in seconds, in either
-     * direction. `Infinity` turns the check off. The check is skipped when the scheme reads
-     * no timestamp.
-     * @default 300
+     * Largest allowed difference between the signed timestamp and `now`, in milliseconds, in
+     * either direction. Timestamps are whole seconds, so the difference is too. `Infinity` turns
+     * the check off. The check is skipped when the scheme reads no timestamp.
+     * @default 300000 (five minutes)
      */
     tolerance?: number | undefined
     /** The time to compare the signed timestamp with. @default new Date() */
@@ -85,7 +85,7 @@ export async function verify(
   const {
     scheme = standard,
     hmac = hmacSha256,
-    tolerance = 300,
+    tolerance = 300_000,
     now = new Date(),
     signal,
   } = options
@@ -128,7 +128,7 @@ export async function verify(
 
   if (timestamp !== undefined) {
     const skew = Math.abs(Math.floor(now.getTime() / 1000) - Math.floor(timestamp.getTime() / 1000))
-    if (skew > tolerance)
+    if (skew * 1000 > tolerance)
       throw new VerificationError({
         reason: 'timestamp',
         message: `Timestamp is ${skew} s from now`,
@@ -150,7 +150,7 @@ export declare namespace sign {
      */
     hmac?: Hmac | undefined
     /** The time to sign. Schemes without a timestamp ignore it. @default new Date() */
-    timestamp?: Date | undefined
+    now?: Date | undefined
     /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
     id?: string | undefined
     /** Rejects with `signal.reason` when aborted. */
@@ -181,7 +181,7 @@ export async function sign(
   const {
     scheme = standard,
     hmac = hmacSha256,
-    timestamp = new Date(),
+    now: timestamp = new Date(),
     id = crypto.randomUUID(),
     signal,
   } = options

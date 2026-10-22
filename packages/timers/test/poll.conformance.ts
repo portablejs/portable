@@ -1,6 +1,6 @@
 import * as Timers from '@portable/timers'
 import { describe, expect, test, vi } from 'vite-plus/test'
-import { gaps, isTimeoutError, settle, useFakeTimers } from './utils.js'
+import { gaps, isTimeoutError, settle, timeoutSignal, useFakeTimers } from './utils.js'
 
 useFakeTimers()
 
@@ -85,13 +85,13 @@ describe('results', () => {
     })
   })
 
-  test('rejects with undefined when a check throws undefined and a timeout is set', async () => {
+  test('rejects with undefined when a check throws undefined and a signal is set', async () => {
     const result = await settle(
       Timers.poll(
         () => {
           throw undefined
         },
-        { timeout: 1000 },
+        { signal: timeoutSignal(1000) },
       ),
     )
     expect(result).toEqual({ error: undefined, rejected: true })
@@ -143,7 +143,7 @@ describe('delay', () => {
     expect(gaps(times)).toEqual([10, 20, 30])
   })
 
-  test('with 0, still lets timers run between checks so a timeout can fire', async () => {
+  test('with 0, still lets timers run between checks so a timeout signal can fire', async () => {
     let checks = 0
     let error: unknown
     Timers.poll(
@@ -151,7 +151,7 @@ describe('delay', () => {
         checks++
         return undefined
       },
-      { delay: 0, timeout: 100 },
+      { delay: 0, signal: timeoutSignal(100) },
     ).catch((e: unknown) => (error = e))
     await vi.advanceTimersByTimeAsync(100)
     expect(isTimeoutError(error)).toBe(true)
@@ -167,9 +167,9 @@ describe('delay', () => {
   })
 })
 
-describe('timeout', () => {
-  test('rejects with a TimeoutError DOMException when the time passes', async () => {
-    const polling = Timers.poll(() => undefined, { delay: 20, timeout: 100 })
+describe('a timeout signal', () => {
+  test('rejects with its TimeoutError when the time passes', async () => {
+    const polling = Timers.poll(() => undefined, { delay: 20, signal: timeoutSignal(100) })
     let error: unknown
     polling.catch((e: unknown) => (error = e))
     await vi.advanceTimersByTimeAsync(99)
@@ -180,7 +180,9 @@ describe('timeout', () => {
 
   test('stops checking after the timeout', async () => {
     let checks = 0
-    await settle(Timers.poll(() => (checks++, undefined), { delay: 10, timeout: 100 }))
+    await settle(
+      Timers.poll(() => (checks++, undefined), { delay: 10, signal: timeoutSignal(100) }),
+    )
     const atTimeout = checks
     await vi.advanceTimersByTimeAsync(50)
     expect(checks).toBe(atTimeout)
@@ -193,7 +195,7 @@ describe('timeout', () => {
         checkSignal = signal
         return after(200, true)
       },
-      { timeout: 10 },
+      { signal: timeoutSignal(10) },
     )
     let error: unknown
     polling.catch((e: unknown) => (error = e))
@@ -202,21 +204,10 @@ describe('timeout', () => {
     expect(isTimeoutError(checkSignal?.reason)).toBe(true)
   })
 
-  test('with Infinity never times out', async () => {
-    let checks = 0
-    expect(
-      await settle(Timers.poll(() => (++checks >= 3 ? true : undefined), { timeout: Infinity })),
-    ).toEqual({ value: true })
-  })
-
   test('resolves with a value found before the timeout', async () => {
-    expect(await settle(Timers.poll(() => 'value', { timeout: 1000 }))).toEqual({
+    expect(await settle(Timers.poll(() => 'value', { signal: timeoutSignal(1000) }))).toEqual({
       value: 'value',
     })
-  })
-
-  test('rejects a negative timeout with a RangeError', async () => {
-    await expect(Timers.poll(() => true, { timeout: -100 })).rejects.toBeInstanceOf(RangeError)
   })
 })
 
@@ -275,23 +266,6 @@ describe('signal', () => {
     await vi.advanceTimersByTimeAsync(150)
   })
 
-  test('an abort before the timeout wins', async () => {
-    const controller = new AbortController()
-    setTimeout(() => controller.abort(aborted), 50)
-    expect(
-      await settle(Timers.poll(() => undefined, { timeout: 200, signal: controller.signal })),
-    ).toEqual({ error: aborted, rejected: true })
-  })
-
-  test('a timeout before the abort wins', async () => {
-    const controller = new AbortController()
-    setTimeout(() => controller.abort(aborted), 500)
-    const result = await settle(
-      Timers.poll(() => after(200, true), { timeout: 10, signal: controller.signal }),
-    )
-    expect(isTimeoutError((result as { error: unknown }).error)).toBe(true)
-  })
-
   test('resolves when a check returns a value while a signal is passed', async () => {
     const controller = new AbortController()
     expect(
@@ -301,13 +275,12 @@ describe('signal', () => {
 })
 
 describe('timers', () => {
-  test('leaves no timer after success with a timeout and a signal', async () => {
+  test('leaves no timer after success with a signal', async () => {
     const controller = new AbortController()
     let checks = 0
     await settle(
       Timers.poll(() => (++checks >= 3 ? true : undefined), {
         delay: 10,
-        timeout: 60_000,
         signal: controller.signal,
       }),
     )
@@ -320,7 +293,7 @@ describe('timers', () => {
         () => {
           throw aborted
         },
-        { timeout: 60_000 },
+        { signal: new AbortController().signal },
       ),
     )
     expect(vi.getTimerCount()).toBe(0)
@@ -328,10 +301,7 @@ describe('timers', () => {
 
   test('leaves no timer after an abort', async () => {
     const controller = new AbortController()
-    const polling = Timers.poll(() => undefined, {
-      timeout: 60_000,
-      signal: controller.signal,
-    })
+    const polling = Timers.poll(() => undefined, { signal: controller.signal })
     await vi.advanceTimersByTimeAsync(10)
     controller.abort()
     await expect(polling).rejects.toMatchObject({ name: 'AbortError' })

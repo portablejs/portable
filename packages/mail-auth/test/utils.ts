@@ -105,7 +105,7 @@ export async function signed(message: string, domain: string, selector = 'test')
     domain,
     selector,
     privateKey: (await key('rsa')).privateKey,
-    signedAt: new Date('2024-01-01T00:00:00Z'),
+    now: new Date('2024-01-01T00:00:00Z'),
   })
   return signature + message
 }

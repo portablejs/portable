@@ -141,7 +141,7 @@ function options(c: Case) {
     token: c.token,
     realm: c.realm,
     nonce,
-    timestamp: new Date(timestamp * 1000),
+    now: new Date(timestamp * 1000),
   }
 }
 
@@ -210,7 +210,7 @@ describe('matches node-oauth', () => {
           consumer: { key: c.consumer.key, privateKey: pkcs1 },
           token,
           nonce,
-          timestamp: new Date(timestamp * 1000),
+          now: new Date(timestamp * 1000),
         }),
       )
       expect(actual).toEqual(expected)

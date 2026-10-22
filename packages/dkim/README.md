@@ -48,8 +48,8 @@ await Dkim.verify(message, { resolver: dns })
 | `headers` | mailauth's list, from `From` to `BIMI-Selector` | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times, so listing a name more often than the message has it over-signs it, and a field of that name added later breaks the signature (RFC 6376 section 8.15). |
 | `canonicalization` | `'relaxed/relaxed'` | `'relaxed/relaxed'`, `'relaxed/simple'`, `'simple/relaxed'` or `'simple/simple'`. |
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
-| `signedAt` | `new Date()` | The signature time (`t=`). |
-| `expiresAt` | none | The expiry (`x=`), at least a second after `signedAt`. |
+| `now` | `new Date()` | The signature time (`t=`). |
+| `expiresAt` | none | The expiry (`x=`), at least a second after `now`. |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
 
@@ -161,7 +161,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `result.status.aligned`, `result.headerFrom` | Not computed. Alignment is DMARC's job (`@portable/dmarc`). |
 | `result.info`, `result.mimeStructureStart` | Not built. |
 | `dkimSign(message, { signatureData: [{ signingDomain, selector, privateKey }] })` | `Dkim.sign(message, { domain, selector, privateKey })`, once per signature. |
-| `signTime`, `expires` | `signedAt`, `expiresAt` |
+| `signTime`, `expires` | `now`, `expiresAt` |
 | `headerList` | `headers`, an array |
 | `algorithm` | Follows the key type. |
 | `maxBodyLength` | Not supported. `l=` lets anyone append to the body. |

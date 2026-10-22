@@ -49,7 +49,7 @@ describe('cases from the oauth-1.0a test suite', () => {
         secret: 'ZACXtYe6LQ4C5X0KbJcDkbW77GYtlaoU',
       },
       nonce: 'xsEYfvjTEiPTR3TqJbmhCpUdrDoHF6nk',
-      timestamp: new Date(1504882975_000),
+      now: new Date(1504882975_000),
     })
     expect(actual).toBe('b6nMehqpHnpx0VlZB9IhqFh4Jq0=')
   })
@@ -70,7 +70,7 @@ describe('cases from the oauth-1.0a test suite', () => {
         secret: '4S4Rvm25CJZWv7HBg5HOhhlRTBSZ7npl',
       },
       nonce: 'tKOQtKan8PHIrIoOlrl17zHkZQ2H5CsP',
-      timestamp: new Date(1445951836_000),
+      now: new Date(1445951836_000),
     }
     const params = parseHeader(await OAuth1.authorization(request, options))
     expect(params.oauth_nonce).toBe('tKOQtKan8PHIrIoOlrl17zHkZQ2H5CsP')
@@ -87,7 +87,7 @@ describe('cases from the oauth-1.0a test suite', () => {
 
   test('realm comes first in the header and is not signed', async () => {
     const request = () => new Request('http://localhost:3737/rest?alt=json')
-    const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: new Date(1_000) }
+    const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', now: new Date(1_000) }
     const header = await OAuth1.authorization(request(), { ...options, realm: 'https://ddo.me/' })
     expect(header.startsWith('OAuth realm="https://ddo.me/", oauth_consumer_key="k", ')).toBe(true)
     expect(parseHeader(header).oauth_signature).toBe(await signature(request(), options))
@@ -147,7 +147,7 @@ describe('oauth_body_hash, from the oauth-1.0a test suite', () => {
       secret: '932a216f-fb94-43b6-a2d2-e9c6b345cbea',
     },
     nonce: 't62lMDp9DLwKZJJbZTpmSAhRINGBEOcF',
-    timestamp: new Date(1484599369_000),
+    now: new Date(1484599369_000),
     bodyHash: true,
   }
 
@@ -249,7 +249,7 @@ describe('oauth_body_hash, from the oauth-1.0a test suite', () => {
 })
 
 describe('known oauth-1.0a issues', () => {
-  const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: new Date(1_000) }
+  const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', now: new Date(1_000) }
   const oauthParams =
     'oauth_consumer_key=k&oauth_nonce=n&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1&oauth_version=1.0'
   const expected = (method: string, uri: string, parameters: string) =>

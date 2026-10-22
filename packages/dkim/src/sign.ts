@@ -52,8 +52,8 @@ export declare namespace sign {
     /** The agent or user identifier (`i=`), such as `user@example.com` or `@mail.example.com`. */
     identity?: string | undefined
     /** The signature time (`t=`). @default new Date() */
-    signedAt?: Date | undefined
-    /** The expiry (`x=`). It must be after `signedAt`. */
+    now?: Date | undefined
+    /** The expiry (`x=`). It must be after `now`. */
     expiresAt?: Date | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hasher?: (() => Hasher) | undefined
@@ -93,7 +93,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const {
     headers = defaultHeaders,
     canonicalization = 'relaxed/relaxed',
-    signedAt = new Date(),
+    now = new Date(),
     expiresAt,
     hasher,
     signal,
@@ -107,10 +107,10 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const names = checkHeaders(headers)
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain)
-  const timestamp = seconds('signedAt', signedAt)
+  const timestamp = seconds('now', now)
   const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', expiresAt)
   if (expiration !== undefined && expiration <= timestamp)
-    throw new RangeError('expiresAt must be at least a second after signedAt.')
+    throw new RangeError('expiresAt must be at least a second after now.')
   signal?.throwIfAborted()
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!

@@ -15,7 +15,7 @@ const header = async (options: { timestamp?: Date; secret?: string; body?: strin
     await Webhooks.sign(options.body ?? payload, {
       scheme,
       secret: options.secret ?? secret,
-      ...(options.timestamp ? { timestamp: options.timestamp } : {}),
+      ...(options.timestamp ? { now: options.timestamp } : {}),
     })
   )['stripe-signature']!
 
@@ -31,7 +31,7 @@ const verify = (
 
 describe('stripe', () => {
   test('signs a header in t=<seconds>,v1=<hex> form', async () => {
-    expect(await Webhooks.sign(payload, { scheme, secret, timestamp: vector.now })).toEqual({
+    expect(await Webhooks.sign(payload, { scheme, secret, now: vector.now })).toEqual({
       'stripe-signature': vector.header,
     })
   })
@@ -89,21 +89,23 @@ describe('stripe', () => {
 
   test('rejects a timestamp outside the tolerance of now', async () => {
     const signature = await header({ timestamp: new Date(vector.now.getTime() - 15_000) })
-    expect(await reasonOf(verify(signature, { tolerance: 10, now: vector.now }))).toBe('timestamp')
+    expect(await reasonOf(verify(signature, { tolerance: 10_000, now: vector.now }))).toBe(
+      'timestamp',
+    )
   })
 
   test('rejects a timestamp outside the tolerance of the current time', async () => {
     const signature = await header({ timestamp: new Date(Date.now() - 15_000) })
-    expect(await reasonOf(verify(signature, { tolerance: 10 }))).toBe('timestamp')
+    expect(await reasonOf(verify(signature, { tolerance: 10_000 }))).toBe('timestamp')
   })
 
   test('accepts a timestamp within the tolerance of the current time', async () => {
-    expect((await verify(await header(), { tolerance: 10 })).body).toBe(payload)
+    expect((await verify(await header(), { tolerance: 10_000 })).body).toBe(payload)
   })
 
   test('accepts a timestamp within the tolerance of now', async () => {
     const signature = await header({ timestamp: new Date(vector.now.getTime() - 9_000) })
-    expect((await verify(signature, { tolerance: 10, now: vector.now })).body).toBe(payload)
+    expect((await verify(signature, { tolerance: 10_000, now: vector.now })).body).toBe(payload)
   })
 
   test('accepts a header with at least one valid signature', async () => {

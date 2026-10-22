@@ -42,7 +42,7 @@ The signature covers what the server will see, because it is computed from the `
 | `callback` | none | `oauth_callback`, for the temporary credentials request. |
 | `verifier` | none | `oauth_verifier`, for the token request. |
 | `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed. |
-| `nonce`, `timestamp` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `timestamp` is a `Date`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
+| `nonce`, `now` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `now` is a `Date`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 | `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
@@ -123,7 +123,7 @@ On Node, `crypto.subtle.digest` is several times slower than a JavaScript hash, 
 | `oauth.toHeader(oauth.authorize({ url, method, data }, token))` | `await OAuth1.authorization(new Request(url, { method, body: new URLSearchParams(data) }), { consumer, token })` |
 | `includeBodyHash: true` | `bodyHash: true` |
 | `realm` | `realm` |
-| `oauth.getNonce = () => …`, `oauth.getTimeStamp = () => …` | `nonce`, `timestamp: new Date(seconds * 1000)` |
+| `oauth.getNonce = () => …`, `oauth.getTimeStamp = () => …` | `nonce`, `now: new Date(seconds * 1000)` |
 | `nonce_length`, `version`, `parameter_seperator`, `last_ampersand` | Not supported. See below. |
 | `form: oauth.authorize(request, token)` (parameters in the body) | Not supported. Use the header, or `placement: 'query'`. |
 

@@ -32,9 +32,9 @@ describe('every scheme', () => {
       const id = 'msg_1'
       const secrets = [secret, new Uint8Array(65).fill(7), new Uint8Array(300).fill(9)]
       for (const key of secrets) {
-        const headers = await Webhooks.sign('{}', { scheme, secret: key, timestamp, id })
+        const headers = await Webhooks.sign('{}', { scheme, secret: key, now: timestamp, id })
         expect(
-          await Webhooks.sign('{}', { scheme, secret: key, timestamp, id, hmac: nobleHmac }),
+          await Webhooks.sign('{}', { scheme, secret: key, now: timestamp, id, hmac: nobleHmac }),
         ).toEqual(headers)
         const result = await Webhooks.verify(
           { headers, body: '{}' },
@@ -129,13 +129,13 @@ describe('verify', () => {
     const now = new Date(1_700_000_000_000)
     for (const offset of [-300, 300]) {
       const timestamp = new Date(now.getTime() + offset * 1000)
-      const headers = await Webhooks.sign('{}', { scheme: Webhooks.slack, secret, timestamp })
+      const headers = await Webhooks.sign('{}', { scheme: Webhooks.slack, secret, now: timestamp })
       await Webhooks.verify({ headers, body: '{}' }, { scheme: Webhooks.slack, secret, now })
       const late = new Date(timestamp.getTime() + Math.sign(offset) * 1000)
       const lateHeaders = await Webhooks.sign('{}', {
         scheme: Webhooks.slack,
         secret,
-        timestamp: late,
+        now: late,
       })
       expect(
         await reasonOf(
@@ -151,10 +151,10 @@ describe('verify', () => {
   test('accepts only the same second when tolerance is 0', async () => {
     const now = new Date(1_700_000_000_500)
     const options = { scheme: Webhooks.stripe, secret, tolerance: 0, now } as const
-    const same = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, timestamp: now })
+    const same = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, now })
     expect((await Webhooks.verify({ headers: same, body: '{}' }, options)).body).toBe('{}')
     const timestamp = new Date(now.getTime() - 1000)
-    const before = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, timestamp })
+    const before = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, now: timestamp })
     expect(await reasonOf(Webhooks.verify({ headers: before, body: '{}' }, options))).toBe(
       'timestamp',
     )
@@ -164,7 +164,7 @@ describe('verify', () => {
     const headers = await Webhooks.sign('{}', {
       scheme: Webhooks.stripe,
       secret,
-      timestamp: new Date(0),
+      now: new Date(0),
     })
     expect(
       await reasonOf(
@@ -245,7 +245,7 @@ describe('a scheme written by the caller', () => {
 
   test('signs and verifies with the shared checks', async () => {
     const timestamp = new Date(1_700_000_000_000)
-    const headers = await Webhooks.sign('{"a":1}', { scheme: acme, secret, timestamp })
+    const headers = await Webhooks.sign('{"a":1}', { scheme: acme, secret, now: timestamp })
     expect(Object.keys(headers)).toEqual(['acme-timestamp', 'acme-signature'])
     const options = { scheme: acme, secret, now: timestamp }
     expect((await Webhooks.verify({ headers, body: '{"a":1}' }, options)).body).toBe('{"a":1}')

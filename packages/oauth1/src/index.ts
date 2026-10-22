@@ -75,7 +75,7 @@ export declare namespace authorization {
      * The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests.
      * @default new Date()
      */
-    timestamp?: Date | undefined
+    now?: Date | undefined
   }
 }
 
@@ -212,7 +212,7 @@ async function protocolParameters(
     ['oauth_consumer_key', percentEncode(options.consumer.key)],
     ['oauth_nonce', percentEncode(options.nonce ?? randomNonce())],
     ['oauth_signature_method', signatureMethod],
-    ['oauth_timestamp', String(Math.floor((options.timestamp ?? new Date()).getTime() / 1000))],
+    ['oauth_timestamp', String(Math.floor((options.now ?? new Date()).getTime() / 1000))],
     ['oauth_version', '1.0'],
   ]
   if (token !== undefined) oauth.push(['oauth_token', percentEncode(token.key)])

@@ -59,7 +59,7 @@ describe('sign()', () => {
     const signed = await OAuth1.sign(new Request('https://example.com/a'), {
       consumer: { key: 'k', secret: 's' },
       nonce: 'n',
-      timestamp: new Date(1_000),
+      now: new Date(1_000),
       placement: 'query',
     })
     expect(signed.url).toMatch(
@@ -87,7 +87,7 @@ describe('RSA-SHA1', () => {
     signatureMethod: 'RSA-SHA1',
     token: { key: 'nnch734d00sl2jdk', secret: 'ignored' },
     nonce: 'kllo9940pd9333jh',
-    timestamp: new Date(1191242096_000),
+    now: new Date(1191242096_000),
   } as const
   // From node-oauth's tests. RSASSA-PKCS1-v1_5 signatures are deterministic.
   const expected =
@@ -194,7 +194,7 @@ describe('HMAC', () => {
         signatureMethod: 'HMAC-SHA256',
         consumer: { key: 'k', secret },
         nonce: 'n',
-        timestamp: new Date(1_000),
+        now: new Date(1_000),
       }),
     ).toBe(expected)
   })

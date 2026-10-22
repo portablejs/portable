@@ -74,7 +74,7 @@ describe('ARC signing suite', () => {
             domain: file.domain,
             selector: file.sel,
             privateKey: file.privatekey,
-            signedAt: new Date(data.t * 1000),
+            now: new Date(data.t * 1000),
             headers: data['sig-headers'].split(':'),
             authResults: `${data['srv-id']}; arc=${arc.result}`,
             chainValidation: arc.result,

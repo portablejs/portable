@@ -28,6 +28,8 @@ export declare namespace toRequest {
      * latest. Up to 32 base64url characters.
      */
     topic?: string | undefined
+    /** The time the VAPID token's expiry is counted from. @default new Date() */
+    now?: Date | undefined
     /** Cancels the encryption and, through the `Request`, the `fetch`. */
     signal?: AbortSignal | undefined
   }
@@ -73,7 +75,10 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
     headers.set('content-encoding', 'aes128gcm')
     headers.set('content-type', 'application/octet-stream')
   }
-  headers.set('authorization', await authorization(endpoint.origin, options.vapid))
+  headers.set(
+    'authorization',
+    await authorization(endpoint.origin, options.vapid, options.now ?? new Date()),
+  )
   signal?.throwIfAborted()
   return new Request(endpoint, {
     method: 'POST',

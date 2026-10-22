@@ -51,6 +51,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 | Option | Default | Description |
 | --- | --- | --- |
 | `cost` | `1` | How much of the allowance the request uses, such as its size. `0` reads the state without changing it. A negative cost gives allowance back, up to `burst`. |
+| `now` | `new Date()` | The time of the request, for tests or for a clock other than the system's. |
 | `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
 
 ### `Result`
@@ -60,7 +61,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 | `allowed` | Whether the request fits. |
 | `limit`, `period` | The limiter's options, for `headers`. |
 | `remaining` | How many more requests of cost 1 fit right now. |
-| `resetAt` | Unix time in milliseconds at which `remaining` is back to `burst`. |
+| `resetAt` | The `Date` at which `remaining` is back to `burst`. |
 | `retryAfter` | Milliseconds until the same request would fit. `0` when allowed, and `Infinity` when `cost` is larger than `burst`. |
 
 ### `headers`
@@ -70,7 +71,7 @@ RateLimit.headers(result)
 // { 'RateLimit-Policy': '"default";q=100;w=60', RateLimit: '"default";r=0;t=3', 'Retry-After': '3' }
 ```
 
-`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. `t` is the seconds until the allowance is full, or `retryAfter` for a denied request, so `Retry-After` is never earlier than the end of `t`, as the draft asks. All times round up to whole seconds. Pass `{ name }` to change the policy name from `"default"`. `Retry-After` is left out when `retryAfter` is `Infinity`.
+`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. `t` is the seconds until the allowance is full, or `retryAfter` for a denied request, so `Retry-After` is never earlier than the end of `t`, as the draft asks. All times round up to whole seconds. Pass `{ name }` to change the policy name from `"default"`, and `{ now }` to count `t` from a time other than the current one. `Retry-After` is left out when `retryAfter` is `Infinity`.
 
 ## Stores
 
@@ -224,7 +225,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `new RateLimiterMemory({ points: 10, duration: 1 })` | `RateLimit.create({ limit: 10, period: 1000 })` |
 | `new RateLimiterRedis({ storeClient, points, duration })` | `RateLimit.create({ limit, period, store })` with a store from [Stores](#stores) |
 | `await limiter.consume(key, points)` in `try`/`catch` | `const result = await limiter.take(key, { cost: points })`, then check `result.allowed` |
-| `res.remainingPoints`, `res.msBeforeNext` | `result.remaining`, and `result.retryAfter` (denied) or `result.resetAt - Date.now()` (allowed) |
+| `res.remainingPoints`, `res.msBeforeNext` | `result.remaining`, and `result.retryAfter` (denied) or `result.resetAt.getTime() - Date.now()` (allowed) |
 | `limiter.reward(key, points)` | `limiter.take(key, { cost: -points })` |
 | `limiter.get(key)` | `limiter.take(key, { cost: 0 })` |
 | `limiter.delete(key)` | `limiter.take(key, { cost: -burst })` |

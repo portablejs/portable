@@ -23,7 +23,7 @@ const verify = (headers: Record<string, string>, options: Partial<Webhooks.verif
 describe('slack', () => {
   test('signs the documented example', async () => {
     expect(
-      await Webhooks.sign(example.body, { scheme, secret: example.secret, timestamp: example.now }),
+      await Webhooks.sign(example.body, { scheme, secret: example.secret, now: example.now }),
     ).toEqual(example.headers)
   })
 
@@ -46,7 +46,7 @@ describe('slack', () => {
     const headers = await Webhooks.sign(payload, {
       scheme,
       secret,
-      timestamp: new Date(Date.now() - 600_000),
+      now: new Date(Date.now() - 600_000),
     })
     expect(await reasonOf(verify(headers))).toBe('timestamp')
   })
@@ -55,7 +55,7 @@ describe('slack', () => {
     const headers = await Webhooks.sign(payload, {
       scheme,
       secret,
-      timestamp: new Date(Date.now() + 600_000),
+      now: new Date(Date.now() + 600_000),
     })
     expect(await reasonOf(verify(headers))).toBe('timestamp')
   })

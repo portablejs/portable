@@ -98,7 +98,7 @@ The other `describe` blocks:
 | `header/relaxed-test.js`, `header/simple-test.js`, `header/index-test.js` | These test internal functions. Their canonicalization cases are in `header canonicalization`, observed through signatures that do or don't verify after the header changes. |
 | `ec/verify-signatures-test.js` | `verify.conformance.ts > the RFC 8463 example message` and `sign.conformance.ts > private keys` |
 | `parse-dkim-headers-test.js`: tag-list grammar | The tag-list cases are in the RFC compliance table (quotes, parentheses, backslashes, colons, FWS, invalid tag-specs, trailing semicolon). The Authentication-Results parsing tests don't apply. |
-| `sign-time-test.js` | `t=` is taken from `signedAt` once, and `the signature field` checks the default. The ARC test doesn't apply. |
+| `sign-time-test.js` | `t=` is taken from `now` once, and `the signature field` checks the default. The ARC test doesn't apply. |
 | `mime-structure-start-test.js` | Not applicable. `mimeStructureStart` is not reported. |
 
 ## nodemailer

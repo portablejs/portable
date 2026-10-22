@@ -23,7 +23,7 @@ const order = await Timers.poll(
     const order = await getOrder(id)
     return order.status === 'paid' ? order : undefined
   },
-  { delay: 2000, timeout: 120_000 },
+  { delay: 2000, signal: AbortSignal.timeout(120_000) },
 )
 
 const save = Timers.debounce((text: string) => fetch('/draft', { method: 'PUT', body: text }), 500)
@@ -118,10 +118,9 @@ Calls `fn` until it returns a value other than `undefined`, and resolves with th
 | Option | Default | Description |
 | --- | --- | --- |
 | `delay` | `1000` | Wait after each check that returns `undefined`. See [Delays](#delays). |
-| `timeout` | `Infinity` | Time limit for the whole poll, in ms. When it passes, the poll rejects with a `TimeoutError` `DOMException`, and the running check's `signal` aborts. |
-| `signal` | | Stops polling. The call rejects with `signal.reason`, also while a check is running. |
+| `signal` | | Stops polling. The call rejects with `signal.reason`, also while a check is running, and the check's `signal` aborts. |
 
-`timeout` limits each attempt in `retry`, and the whole call in `poll`. A poll of a slow endpoint needs a deadline for the whole wait, while a retry needs to give up on one hung request and try again. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)`.
+A poll of a slow endpoint needs a deadline for the whole wait, so pass `signal: AbortSignal.timeout(ms)`, which rejects with a `TimeoutError` `DOMException`. `retry` has a `timeout` option because it limits one attempt of many, and a signal can't do that. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)` there too.
 
 ## `debounce(fn, ms, options)` and `throttle(fn, ms, options)`
 
@@ -176,7 +175,7 @@ next(1) // 1000
 next(3) // 4000
 ```
 
-`retry` with a wait of 0 starts the next attempt without a timer. `poll` always waits for a timer turn, even with 0, so a check that returns `undefined` at once can't block timers, and the `timeout` can still fire.
+`retry` with a wait of 0 starts the next attempt without a timer. `poll` always waits for a timer turn, even with 0, so a check that returns `undefined` at once can't block timers, and a timeout signal can still fire.
 
 ## Types
 
@@ -194,7 +193,7 @@ These libraries cover one job each, with four sets of option names. `retry` and 
 - Ten attempts with no delay take 10 µs on Node, against 17 µs with p-retry. With a `signal` they take 17 µs, against 19 µs.
 - An abort settles the call at once, also while an attempt is running. p-retry waits for the running attempt to settle first.
 - `timeout` gives each attempt a deadline through its `signal`. None of the four libraries limits a single attempt.
-- Every timer and abort listener is removed when a call settles. p-wait-for's `timeout` uses `AbortSignal.timeout`, whose timer keeps running after the poll succeeds.
+- Every timer and abort listener that `retry` and `poll` create is removed when a call settles.
 - Errors pass through unchanged. p-retry wraps a thrown string in a `TypeError` and never retries a `TypeError` unless its message matches a list of known network errors. That list misses errors such as Chrome's failed dynamic `import()` (p-retry #85).
 - When `retryIf` returns `false`, `fn` is never called again. async-retry's `bail()` rejects the promise, but if `fn` then throws, attempts continue in the background (async-retry #69).
 - Waits longer than about 24.8 days work. p-retry and p-wait-for pass them to `setTimeout`, which fires after 1 ms instead.
@@ -254,7 +253,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `pWaitFor(condition, { interval })` | `Timers.poll(async () => (await condition()) || undefined, { delay: interval })`. A check that returns `false` ends the poll, so turn `false` into `undefined`. |
 | `pWaitFor(() => pWaitFor.resolveWith(value))` | `Timers.poll(() => value)` |
 | `pWaitFor(condition, { before: false })` | `await Timers.sleep(interval)` first. |
-| `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { timeout: milliseconds }).catch((error) => ...)` |
+| `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { signal: AbortSignal.timeout(milliseconds) }).catch((error) => ...)` |
 | `_.debounce(fn, wait, options)`, `lodashDebounce(fn, wait, options)` | `Timers.debounce(fn, wait, options)`. Calls return a promise of the invocation's result. |
 | `_.throttle(fn, wait, options)`, `lodashThrottle(fn, wait, options)` | `Timers.throttle(fn, wait, options)` |
 | `debounced.cancel()`, `debounced.flush()` | The same. Calls dropped by `cancel` reject with an `AbortError`, and `flush` returns a promise. |

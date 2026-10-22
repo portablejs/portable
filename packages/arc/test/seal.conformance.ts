@@ -17,7 +17,7 @@ const options = async (extra: Partial<Arc.seal.Options> = {}): Promise<Arc.seal.
   selector: 's',
   privateKey: (await keyPair('k1')).pem,
   authResults: 'mx.one.example; spf=pass smtp.mailfrom=example.com',
-  signedAt: new Date('2024-01-01T00:00:00Z'),
+  now: new Date('2024-01-01T00:00:00Z'),
   ...extra,
 })
 
@@ -318,7 +318,7 @@ describe('options', () => {
     )
     await expect(seal(baseMessage, { domain: 'one.example; x=y' })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { selector: '-s' })).rejects.toThrow(RangeError)
-    await expect(seal(baseMessage, { signedAt: new Date(Number.NaN) })).rejects.toThrow(RangeError)
+    await expect(seal(baseMessage, { now: new Date(Number.NaN) })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { privateKey: 'not a key' })).rejects.toThrow(RangeError)
   })
 

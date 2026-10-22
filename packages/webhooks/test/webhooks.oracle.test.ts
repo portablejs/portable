@@ -164,7 +164,11 @@ describe('matches upstream signatures', () => {
       const next = random(1)
       for (let i = 0; i < 50; i++) {
         const c = makeCase(scheme, next)
-        const ours = await Webhooks.sign(c.body, { ...c, scheme: presets[scheme] })
+        const ours = await Webhooks.sign(c.body, {
+          ...c,
+          now: c.timestamp,
+          scheme: presets[scheme],
+        })
         const theirs = await upstream[scheme].sign(c)
         expect(
           Object.fromEntries(Object.entries(ours).filter(([name]) => name in theirs!)),

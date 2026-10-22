@@ -69,7 +69,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `signedAt` | `new Date()` | The time (`t=`) of both signatures. |
+| `now` | `new Date()` | The time (`t=`) of both signatures. |
 | `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
@@ -130,6 +130,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `seal.i` | Not supported. The instance always follows the highest on the message. |
 | `seal.algorithm` | Follows the key type. |
 | `seal.headerList` | `headers`, an array. |
-| `seal.signTime` | `signedAt` |
+| `seal.signTime` | `now` |
 | `seal.bodyHash`, `seal.headers` (sealing without the message) | Not supported. Pass the message. |
 | `cv: 'PASS'` | Lower case only: `'none'`, `'pass'` or `'fail'`, as `Arc.verify` returns them. |
