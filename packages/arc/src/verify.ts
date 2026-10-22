@@ -43,7 +43,7 @@ import {
  * import * as Arc from '@portable/arc'
  * import * as Dns from '@portable/dns'
  *
- * const resolver: Arc.Resolver = Dns.createResolver()
+ * const resolver: Arc.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Dkim.Resolver
@@ -90,7 +90,7 @@ export declare namespace Result {
 
 export declare namespace verify {
   type Options = {
-    /** Looks up the keys. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up the keys. `Dns.create()` and `node:dns/promises` both fit. */
     resolver: Resolver
     /** The time to check the ARC-Message-Signature's `x=` against. @default new Date() */
     now?: Date | undefined
@@ -131,7 +131,7 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
  * import * as Arc from '@portable/arc'
  * import * as Dns from '@portable/dns'
  *
- * const arc = await Arc.verify(message, { resolver: Dns.createResolver() })
+ * const arc = await Arc.verify(message, { resolver: Dns.create() })
  * console.log(`arc=${arc.result}${arc.reason ? ` (${arc.reason})` : ''}`)
  * ```
  */

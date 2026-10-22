@@ -215,7 +215,7 @@ test('a stream of 1000 items within 25% of birpc and comlink callbacks', async (
 
 const url = 'https://rpc.test/'
 const handle = Rpc.handler(api)
-const http = Rpc.http<Api>(url, { fetch: async (input, init) => handle(new Request(input, init)) })
+const http = Rpc.http<Api>(url, { fetch: handle })
 
 const jsonRpcServer = new JSONRPCServer()
 for (const name of ['add', 'echo', 'log'] as const) {

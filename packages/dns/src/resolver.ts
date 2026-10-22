@@ -47,7 +47,7 @@ export type NaptrRecord = {
 
 /**
  * The lookups that SPF, DMARC and DKIM need, with the method names and result shapes of
- * `node:dns/promises`. The object `createResolver` returns fits it, and so do `node:dns/promises`
+ * `node:dns/promises`. The object `create` returns fits it, and so do `node:dns/promises`
  * itself, `new Resolver()` from it, and a plain object of functions in tests.
  *
  * @example
@@ -59,25 +59,31 @@ export type NaptrRecord = {
  *   return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
  * }
  *
- * await dmarcRecord(Dns.createResolver(), 'example.com')
+ * await dmarcRecord(Dns.create(), 'example.com')
  * ```
  */
 export type Resolver = {
-  resolve4(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolve6(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolveCname(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolveMx(name: string, options?: createResolver.CallOptions): Promise<MxRecord[]>
-  resolveNs(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolvePtr(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolveTxt(name: string, options?: createResolver.CallOptions): Promise<string[][]>
-  resolveSrv(name: string, options?: createResolver.CallOptions): Promise<SrvRecord[]>
-  resolveSoa(name: string, options?: createResolver.CallOptions): Promise<SoaRecord>
-  resolveCaa(name: string, options?: createResolver.CallOptions): Promise<CaaRecord[]>
-  resolveNaptr(name: string, options?: createResolver.CallOptions): Promise<NaptrRecord[]>
-  reverse(ip: string, options?: createResolver.CallOptions): Promise<string[]>
+  /** IPv4 addresses (A records). */
+  resolve4(name: string, options?: create.CallOptions): Promise<string[]>
+  /** IPv6 addresses (AAAA records), formatted as RFC 5952 recommends. */
+  resolve6(name: string, options?: create.CallOptions): Promise<string[]>
+  /** The CNAME targets of `name` itself. */
+  resolveCname(name: string, options?: create.CallOptions): Promise<string[]>
+  resolveMx(name: string, options?: create.CallOptions): Promise<MxRecord[]>
+  resolveNs(name: string, options?: create.CallOptions): Promise<string[]>
+  resolvePtr(name: string, options?: create.CallOptions): Promise<string[]>
+  /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
+  resolveTxt(name: string, options?: create.CallOptions): Promise<string[][]>
+  resolveSrv(name: string, options?: create.CallOptions): Promise<SrvRecord[]>
+  /** The first SOA record. */
+  resolveSoa(name: string, options?: create.CallOptions): Promise<SoaRecord>
+  resolveCaa(name: string, options?: create.CallOptions): Promise<CaaRecord[]>
+  resolveNaptr(name: string, options?: create.CallOptions): Promise<NaptrRecord[]>
+  /** Host names for an IPv4 or IPv6 address, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. */
+  reverse(ip: string, options?: create.CallOptions): Promise<string[]>
 }
 
-export declare namespace createResolver {
+export declare namespace create {
   type Options = {
     /**
      * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The next one is tried when a request
@@ -86,11 +92,10 @@ export declare namespace createResolver {
      */
     endpoints?: readonly (string | URL)[] | undefined
     /**
-     * Sends each request, called as `fetch(url, { headers, signal })`. Pass one to add headers,
-     * route through a proxy, or mock in tests.
+     * Sends each request. Pass one to add headers, route through a proxy, or mock in tests.
      * @default globalThis.fetch
      */
-    fetch?: ((url: string, init: RequestInit) => Promise<Response>) | undefined
+    fetch?: ((request: Request) => Promise<Response>) | undefined
     /** Milliseconds to wait for each endpoint, including reading the response body. @default 5000 */
     timeout?: number | undefined
   }
@@ -100,25 +105,7 @@ export declare namespace createResolver {
     signal?: AbortSignal | undefined
   }
 
-  type ReturnType = {
-    /** IPv4 addresses (A records). */
-    resolve4(name: string, options?: CallOptions): Promise<string[]>
-    /** IPv6 addresses (AAAA records), formatted as RFC 5952 recommends. */
-    resolve6(name: string, options?: CallOptions): Promise<string[]>
-    /** The CNAME targets of `name` itself. */
-    resolveCname(name: string, options?: CallOptions): Promise<string[]>
-    resolveMx(name: string, options?: CallOptions): Promise<MxRecord[]>
-    resolveNs(name: string, options?: CallOptions): Promise<string[]>
-    resolvePtr(name: string, options?: CallOptions): Promise<string[]>
-    /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
-    resolveTxt(name: string, options?: CallOptions): Promise<string[][]>
-    resolveSrv(name: string, options?: CallOptions): Promise<SrvRecord[]>
-    /** The first SOA record. */
-    resolveSoa(name: string, options?: CallOptions): Promise<SoaRecord>
-    resolveCaa(name: string, options?: CallOptions): Promise<CaaRecord[]>
-    resolveNaptr(name: string, options?: CallOptions): Promise<NaptrRecord[]>
-    /** Host names for an IPv4 or IPv6 address, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. */
-    reverse(ip: string, options?: CallOptions): Promise<string[]>
+  type ReturnType = Resolver & {
     /**
      * Sends one question of any type and returns the whole decoded response, with TTLs, the
      * authority section and the AD flag. It resolves for NOERROR and NXDOMAIN, so `answers` can be
@@ -210,12 +197,12 @@ function recordsFor<T extends string>(
  * ```ts
  * import * as Dns from '@portable/dns'
  *
- * const resolver = Dns.createResolver({ timeout: 2000 })
+ * const resolver = Dns.create({ timeout: 2000 })
  * const records = await resolver.resolveTxt('example.com')
  * const spf = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=spf1'))
  * ```
  */
-export function createResolver(options: createResolver.Options = {}): createResolver.ReturnType {
+export function create(options: create.Options = {}): create.ReturnType {
   const endpoints = (options.endpoints ?? defaultEndpoints).map((endpoint) => {
     const url = new URL(endpoint)
     url.hash = ''
@@ -226,7 +213,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
   const timeout = options.timeout ?? 5000
   if (!(timeout > 0 && timeout <= 2 ** 31 - 1))
     throw new RangeError('`timeout` must be a number of milliseconds above 0.')
-  const send = options.fetch ?? ((url: string, init: RequestInit) => fetch(url, init))
+  const send = options.fetch ?? ((request: Request) => fetch(request))
 
   async function attempt(
     endpoint: string,
@@ -241,10 +228,12 @@ export function createResolver(options: createResolver.Options = {}): createReso
     const timer = setTimeout(() => deadline.abort(), timeout)
     let bytes: Uint8Array
     try {
-      const response = await send(endpoint + query, {
-        headers,
-        signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
-      })
+      const response = await send(
+        new Request(endpoint + query, {
+          headers,
+          signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
+        }),
+      )
       if (!response.ok)
         return new QueryError({
           code: 'EBADRESP',
@@ -344,7 +333,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
   async function resolve<T extends DnsPacket.RecordType>(
     name: string,
     type: T,
-    options: createResolver.CallOptions = {},
+    options: create.CallOptions = {},
   ): Promise<DataOf<T>[]> {
     const syscall = syscallFor(type)
     return lookup(name, toQueryName(name, syscall), type, syscall, options.signal)

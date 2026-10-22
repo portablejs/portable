@@ -43,7 +43,7 @@ export declare namespace QueryError {
  * ```ts
  * import * as Dns from '@portable/dns'
  *
- * const resolver = Dns.createResolver()
+ * const resolver = Dns.create()
  * try {
  *   await resolver.resolveTxt('_dmarc.example.com')
  * } catch (error) {
@@ -80,7 +80,7 @@ const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  * ```ts
  * import * as Dns from '@portable/dns'
  *
- * const resolver = Dns.createResolver()
+ * const resolver = Dns.create()
  * const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
  *   if (Dns.isNotFound(error)) return []
  *   throw error

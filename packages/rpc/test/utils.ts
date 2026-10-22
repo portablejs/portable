@@ -49,8 +49,7 @@ export const settle = (): Promise<void> => new Promise((resolve) => setTimeout(r
 export function fetcher(api: object) {
   const handle = Rpc.handler(api)
   const requests: Request[] = []
-  const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const request = new Request(input, init)
+  const fetch = async (request: Request) => {
     requests.push(request.clone())
     return handle(request)
   }

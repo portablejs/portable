@@ -7,8 +7,8 @@ const bodies = new Map(
   Object.entries({ ...bootstrap, ...recorded }).map(([url, json]) => [url, JSON.stringify(json)]),
 )
 
-async function fetch(url: string): Promise<Response> {
-  const body = bodies.get(url)
+async function fetch(input: Request | string): Promise<Response> {
+  const body = bodies.get(typeof input === 'string' ? input : input.url)
   return new Response(body ?? null, { status: body ? 200 : 404 })
 }
 

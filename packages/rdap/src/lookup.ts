@@ -16,7 +16,7 @@ import { hostToAscii } from '@portable/idna/internal'
 
 type Shared = {
   /**
-   * Sends each request, called as `fetch(url, { headers, signal })`. Pass one to add headers, set a
+   * Sends each request, called with a `Request`. Pass one to add headers, set a
    * timeout, route through a proxy, or mock responses. Bootstrap files are cached separately for
    * each `fetch` function.
    * @default globalThis.fetch
@@ -45,7 +45,7 @@ export declare namespace asn {
   type Options = Shared
 }
 
-const defaultFetch: Fetch = (url, init) => globalThis.fetch(url, init)
+const defaultFetch: Fetch = (request) => globalThis.fetch(request)
 
 const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/
 

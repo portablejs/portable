@@ -15,7 +15,7 @@ import { checkAuthservId, formatResults } from './internal/results.js'
  * import * as Dns from '@portable/dns'
  * import * as MailAuth from '@portable/mail-auth'
  *
- * const resolver: MailAuth.Resolver = Dns.createResolver()
+ * const resolver: MailAuth.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver
@@ -67,7 +67,7 @@ export declare namespace Result {
 
 export declare namespace authenticate {
   type Options = {
-    /** Answers the DNS lookups. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Answers the DNS lookups. `Dns.create()` and `node:dns/promises` both fit. */
     resolver: Resolver
     /**
      * The authserv-id of Authentication-Results (RFC 8601 section 2.5), usually this server's host
@@ -122,7 +122,7 @@ export declare namespace authenticate {
  * import * as MailAuth from '@portable/mail-auth'
  *
  * const result = await MailAuth.authenticate(message, {
- *   resolver: Dns.createResolver(),
+ *   resolver: Dns.create(),
  *   authservId: 'mx.example.net',
  *   ip: '192.0.2.1',
  *   helo: 'mail.example.com',

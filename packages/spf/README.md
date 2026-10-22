@@ -14,7 +14,7 @@ import * as Spf from '@portable/spf'
 
 const spf = await Spf.check(
   { ip: '192.0.2.10', sender: 'alice@example.com', helo: 'mail.example.com' },
-  { resolver: Dns.createResolver(), signal: AbortSignal.timeout(20_000) },
+  { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
 )
 
 if (spf.result === 'fail') reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`)
@@ -42,11 +42,11 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.createResolver()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
+| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
 | `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
 | `signal` | none | Rejects with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
-There is no default resolver. The one you pass decides which servers see the client's IP address (`exists:%{i}...` sends it in queries), and a mail server usually has its own. Pass `Dns.createResolver()` for DNS-over-HTTPS.
+There is no default resolver. The one you pass decides which servers see the client's IP address (`exists:%{i}...` sends it in queries), and a mail server usually has its own. Pass `Dns.create()` for DNS-over-HTTPS.
 
 `check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as an empty answer, so an `a`, `mx` or `exists` term doesn't match and an `include` gives `permerror`. It treats any other rejection as `temperror`.
 

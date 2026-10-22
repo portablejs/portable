@@ -20,7 +20,7 @@ const field = await Dkim.sign(message, {
 const signed = field + message
 
 const results = await Dkim.verify(signed, {
-  resolver: Dns.createResolver(),
+  resolver: Dns.create(),
   signal: AbortSignal.timeout(10_000),
 })
 for (const r of results) console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
@@ -61,7 +61,7 @@ await Dkim.verify(message, { resolver: dns })
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Looks up the keys. `Dns.createResolver()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`. |
+| `resolver` | required | Looks up the keys. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check `x=` against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
 | `hash` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |

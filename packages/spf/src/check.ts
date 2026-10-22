@@ -17,7 +17,7 @@ import { hostToAscii } from '@portable/idna/internal'
  * import * as Dns from '@portable/dns'
  * import * as Spf from '@portable/spf'
  *
- * const resolver: Spf.Resolver = Dns.createResolver()
+ * const resolver: Spf.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Pick<
@@ -75,7 +75,7 @@ export declare namespace check {
   }
 
   type Options = {
-    /** Answers the DNS lookups. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Answers the DNS lookups. `Dns.create()` and `node:dns/promises` both fit. */
     resolver: Resolver
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined
@@ -108,11 +108,7 @@ const results: Record<Qualifier, Result.Code> = {
   '?': 'neutral',
 }
 
-type Lookup<T> = (
-  resolver: Resolver,
-  name: string,
-  options: Dns.createResolver.CallOptions,
-) => Promise<T>
+type Lookup<T> = (resolver: Resolver, name: string, options: Dns.create.CallOptions) => Promise<T>
 
 const methods: { [K in keyof Answers]: Lookup<Answers[K]> } = {
   A: (resolver, name, options) => resolver.resolve4(name, options),
@@ -137,7 +133,7 @@ const methods: { [K in keyof Answers]: Lookup<Answers[K]> } = {
  *
  * const spf = await Spf.check(
  *   { ip: '192.0.2.10', sender: 'alice@example.com', helo: 'mail.example.com' },
- *   { resolver: Dns.createResolver(), signal: AbortSignal.timeout(20_000) },
+ *   { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
  * )
  * spf.result // 'pass', 'fail', 'softfail', 'neutral', 'none', 'temperror' or 'permerror'
  * ```

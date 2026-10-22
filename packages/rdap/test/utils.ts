@@ -51,7 +51,7 @@ export const recorded: Readonly<Record<string, Record<string, unknown>>> = {
 export type Reply = unknown
 
 export type Server = {
-  fetch: (url: string, init: RequestInit) => Promise<Response>
+  fetch: (input: Request | string, init?: RequestInit) => Promise<Response>
   /** The URLs requested, in order. */
   urls: string[]
   /** The requests, in order. */
@@ -62,8 +62,9 @@ export type Server = {
 export function server(routes: Readonly<Record<string, Reply>> = {}): Server {
   const urls: string[] = []
   const requests: Request[] = []
-  async function fetch(url: string, init: RequestInit): Promise<Response> {
-    const request = new Request(url, init)
+  async function fetch(input: Request | string, init?: RequestInit): Promise<Response> {
+    const request = typeof input === 'string' ? new Request(input, init) : input
+    const url = typeof input === 'string' ? input : request.url
     urls.push(url)
     requests.push(request)
     const reply = url in routes ? routes[url] : (bootstrap[url] ?? recorded[url])

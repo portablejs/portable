@@ -521,8 +521,8 @@ describe('client sends the same bytes as JSONRPCClient', () => {
   test('a batch over HTTP', async () => {
     const bodies: string[] = []
     const remote = Rpc.http<Api>('https://rpc.test/', {
-      fetch: async (input, init) => {
-        bodies.push(await new Request(input, init).text())
+      fetch: async (request) => {
+        bodies.push(await request.text())
         return new Response(null, { status: 204 })
       },
     })
@@ -564,8 +564,8 @@ function toUpstream() {
 function httpToUpstream() {
   const bodies: string[] = []
   const remote = Rpc.http<Api>('https://rpc.test/', {
-    fetch: async (input, init) => {
-      const body = await new Request(input, init).text()
+    fetch: async (request) => {
+      const body = await request.text()
       bodies.push(body)
       const response = await upstream.receiveJSON(body)
       return response === null ? new Response(null, { status: 204 }) : Response.json(response)
@@ -768,8 +768,8 @@ describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
   for (let seed = 0; seed < 40; seed++) {
     test(`seed ${seed}`, async () => {
       const remote = Rpc.http<typeof streaming>('https://rpc.test/', {
-        fetch: async (input, init) => {
-          const response = await handleStreaming(new Request(input, init))
+        fetch: async (request) => {
+          const response = await handleStreaming(request)
           expect(response.headers.get('content-type')).toMatch(/^application\/x-ndjson/)
           const chunks = randomChunks(await response.bytes(), seed)
           const body = new ReadableStream<Uint8Array>({

@@ -517,8 +517,10 @@ describe('bootstrap cache', () => {
   test('does not cache a failed bootstrap request', async () => {
     let fail = true
     const { fetch: inner, urls } = server()
-    const fetch = (url: string, init: RequestInit) =>
-      fail && url === iana ? Promise.resolve(new Response(null, { status: 500 })) : inner(url, init)
+    const fetch = (request: Request) =>
+      fail && request.url === iana
+        ? Promise.resolve(new Response(null, { status: 500 }))
+        : inner(request)
     const error = await rejection(Rdap.domain('sidn.nl', { fetch }))
     expect(error).toBeInstanceOf(Rdap.ResponseError)
     expect(error).toMatchObject({ status: 500, url: iana })
@@ -586,9 +588,9 @@ describe('cancellation', () => {
   test('aborting one of two lookups waiting for a bootstrap file leaves the other running', async () => {
     let release = () => {}
     const { fetch: inner, requests } = server()
-    const fetch = async (url: string, init: RequestInit) => {
-      if (url === iana) await new Promise<void>((resolve) => (release = resolve))
-      return inner(url, init)
+    const fetch = async (request: Request) => {
+      if (request.url === iana) await new Promise<void>((resolve) => (release = resolve))
+      return inner(request)
     }
     const controller = new AbortController()
     const first = Rdap.domain('sidn.nl', { fetch, signal: controller.signal })

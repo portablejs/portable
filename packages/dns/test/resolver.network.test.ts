@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { createResolver } from '@portable/dns'
+import { create } from '@portable/dns'
 
 const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env
 
 describe.skipIf(!env?.DNS_NETWORK)('live DNS-over-HTTPS (set DNS_NETWORK=1)', () => {
   for (const endpoint of ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query'])
     describe(`${new URL(endpoint).host}`, () => {
-      const resolver = createResolver({ endpoints: [endpoint] })
+      const resolver = create({ endpoints: [endpoint] })
 
       test('resolves the records SPF, DKIM and DMARC read', async () => {
         const spf = await resolver.resolveTxt('gmail.com')

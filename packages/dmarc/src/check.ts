@@ -15,7 +15,7 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
  * import * as Dns from '@portable/dns'
  * import * as Dmarc from '@portable/dmarc'
  *
- * const resolver: Dmarc.Resolver = Dns.createResolver()
+ * const resolver: Dmarc.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>
@@ -96,7 +96,7 @@ export declare namespace check {
   }
 
   type Options = {
-    /** Answers the DNS lookups. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Answers the DNS lookups. `Dns.create()` and `node:dns/promises` both fit. */
     resolver: Resolver
     /**
      * Returns the organizational domain of a domain from a public suffix list, as tldts'
@@ -139,7 +139,7 @@ const maxAlignmentWalks = 10
  * import * as Dns from '@portable/dns'
  * import * as Spf from '@portable/spf'
  *
- * const resolver = Dns.createResolver()
+ * const resolver = Dns.create()
  * const spf = await Spf.check({ ip, sender, helo }, { resolver })
  * const dmarc = await Dmarc.check(
  *   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'mail.example.com' }] },

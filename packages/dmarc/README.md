@@ -13,7 +13,7 @@ import * as Dmarc from '@portable/dmarc'
 import * as Dns from '@portable/dns'
 import * as Spf from '@portable/spf'
 
-const resolver = Dns.createResolver()
+const resolver = Dns.create()
 const spf = await Spf.check({ ip, sender, helo }, { resolver })
 const dmarc = await Dmarc.check(
   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'example.com' }] },
@@ -37,7 +37,7 @@ In Node, `node:dns/promises` works as the resolver.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.createResolver()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4` and `resolveCname`. |
+| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4` and `resolveCname`. |
 | `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
 | `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
 

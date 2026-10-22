@@ -20,7 +20,7 @@ const lookup = fc.constantFrom(...lookups)
 
 /** A resolver whose one endpoint answers every request with `body`. */
 const answering = (body: Uint8Array) =>
-  Dns.createResolver({
+  Dns.create({
     endpoints: ['https://dns.example/dns-query'],
     fetch: async () =>
       new Response(body.slice(), { headers: { 'content-type': 'application/dns-message' } }),

@@ -1,6 +1,6 @@
 import { NotFoundError, ResponseError } from './errors.js'
 
-export type Fetch = (url: string, init: RequestInit) => Promise<Response>
+export type Fetch = (request: Request) => Promise<Response>
 
 const accept = 'application/rdap+json, application/json'
 
@@ -11,7 +11,7 @@ export async function request(
   fetch: Fetch,
   signal: AbortSignal | undefined,
 ): Promise<Json> {
-  const response = await fetch(url, { headers: { accept }, ...(signal && { signal }) })
+  const response = await fetch(new Request(url, { headers: { accept }, ...(signal && { signal }) }))
   if (response.status === 404) {
     await response.body?.cancel()
     throw new NotFoundError({ url })

@@ -16,7 +16,7 @@ import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.j
  * import * as Dns from '@portable/dns'
  * import * as Dkim from '@portable/dkim'
  *
- * const resolver: Dkim.Resolver = Dns.createResolver()
+ * const resolver: Dkim.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt'>
@@ -61,7 +61,7 @@ export declare namespace Result {
 
 export declare namespace verify {
   type Options = {
-    /** Looks up the keys. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up the keys. `Dns.create()` and `node:dns/promises` both fit. */
     resolver: Resolver
     /** The time to check `x=` against. @default new Date() */
     now?: Date | undefined
@@ -90,7 +90,7 @@ export declare namespace verify {
  * import * as Dkim from '@portable/dkim'
  *
  * const results = await Dkim.verify(request.body!, {
- *   resolver: Dns.createResolver(),
+ *   resolver: Dns.create(),
  *   signal: AbortSignal.timeout(10_000),
  * })
  * for (const r of results) console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)

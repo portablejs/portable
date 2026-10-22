@@ -83,7 +83,7 @@ export function handler(methods: object): (request: Request) => Promise<Response
 export declare namespace http {
   type Options = {
     /** The `fetch` to send requests with, such as one that adds an `authorization` header. @default globalThis.fetch */
-    fetch?: typeof globalThis.fetch | undefined
+    fetch?: ((request: Request) => Promise<Response>) | undefined
     /** Aborts every request and rejects waiting calls with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -110,7 +110,7 @@ type Batch = {
  * ```
  */
 export function http<api>(url: string | URL, options: http.Options = {}): Remote<api> {
-  const { fetch = globalThis.fetch, signal } = options
+  const { fetch = (request: Request) => globalThis.fetch(request), signal } = options
   const batches = new Map<Id, Batch>()
   let queued: Batch | undefined
 
@@ -161,12 +161,14 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
     queued = undefined
     const { messages, controller, pending } = batch
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
-        body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
-        signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
-      })
+      const response = await fetch(
+        new Request(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
+          body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
+          signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+        }),
+      )
       if (!response.ok) {
         throw new TransportError(`The server answered ${response.status}.`, { cause: response })
       }

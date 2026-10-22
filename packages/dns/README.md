@@ -11,14 +11,14 @@ npm install @portable/dns
 ```ts
 import * as Dns from '@portable/dns'
 
-const resolver = Dns.createResolver()
+const resolver = Dns.create()
 const records = await resolver.resolveTxt('_dmarc.example.com')
 const dmarc = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
 ```
 
 ## Bring your own resolver
 
-`Dns.Resolver` is a type listing the lookups that SPF, DMARC and DKIM need, with Node's method names and result shapes. The resolver from `createResolver` fits it, and so do `node:dns/promises` and `new Resolver()` from it:
+`Dns.Resolver` is a type listing the lookups that SPF, DMARC and DKIM need, with Node's method names and result shapes. The resolver from `create` fits it, and so do `node:dns/promises` and `new Resolver()` from it:
 
 ```ts
 import * as Dns from '@portable/dns'
@@ -29,7 +29,7 @@ async function dmarcRecord(resolver: Dns.Resolver, domain: string) {
   return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
 }
 
-await dmarcRecord(Dns.createResolver(), 'example.com')
+await dmarcRecord(Dns.create(), 'example.com')
 await dmarcRecord(dns, 'example.com')
 ```
 
@@ -61,7 +61,7 @@ Names with non-ASCII characters are converted to punycode with the IDNA 2008 rul
 | Option | Default | Description |
 | --- | --- | --- |
 | `endpoints` | Cloudflare, then Google | DNS-over-HTTPS URLs, tried in order. |
-| `fetch` | `globalThis.fetch` | Called as `fetch(url, { headers, signal })`. Pass one to add headers, use a proxy or mock responses. |
+| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, use a proxy or mock responses. |
 | `timeout` | `5000` | Milliseconds to wait for each endpoint, including the response body. |
 
 Queries are GET requests with an ID of 0, as RFC 8484 recommends, so HTTP caches can store the responses and browsers send no CORS preflight. They set RD and AD, so the AD flag in `query()` results reports DNSSEC validation (RFC 6840 section 5.7).
@@ -98,7 +98,7 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 
 | Type | Description |
 | --- | --- |
-| `Dns.Resolver` | The lookups `createResolver` returns, which `node:dns/promises` also fits. |
+| `Dns.Resolver` | The lookups `create` returns, which `node:dns/promises` also fits. |
 | `Dns.MxRecord` | `{ exchange, priority }`, from `resolveMx`. |
 | `Dns.SrvRecord` | `{ name, port, priority, weight }`, from `resolveSrv`. |
 | `Dns.SoaRecord` | The object `resolveSoa` returns. |
@@ -138,8 +138,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 | node:dns/promises | @portable/dns |
 | --- | --- |
-| `import dns from 'node:dns/promises'` | `const dns = Dns.createResolver()` |
-| `new Resolver({ timeout })`, `resolver.setServers(servers)` | `Dns.createResolver({ timeout, endpoints })` |
+| `import dns from 'node:dns/promises'` | `const dns = Dns.create()` |
+| `new Resolver({ timeout })`, `resolver.setServers(servers)` | `Dns.create({ timeout, endpoints })` |
 | `resolver.cancel()` | Pass `{ signal }` to each call and abort it. |
 | `resolve4(name, { ttl: true })` | `(await resolver.query(name, 'A')).answers` has each record's `ttl`. |
 | `resolve(name, type)` | The `resolve*` method for that type, or `query(name, type)`. |
@@ -148,10 +148,10 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 | tangerine / dohjs | @portable/dns |
 | --- | --- |
-| `new Tangerine({ timeout, servers })` | `Dns.createResolver({ timeout, endpoints })` |
-| `new Tangerine(options, got)` | `Dns.createResolver({ fetch })` |
+| `new Tangerine({ timeout, servers })` | `Dns.create({ timeout, endpoints })` |
+| `new Tangerine(options, got)` | `Dns.create({ fetch })` |
 | `tangerine.resolve(name, 'A', { dnssecSecure: true })` | `(await resolver.query(name, 'A')).flags.ad` |
-| `new DohResolver(url).query(name, type)` | `Dns.createResolver({ endpoints: [url] }).query(name, type)` |
+| `new DohResolver(url).query(name, type)` | `Dns.create({ endpoints: [url] }).query(name, type)` |
 
 These results differ from `node:dns/promises` on purpose:
 

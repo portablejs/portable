@@ -172,11 +172,14 @@ const rpc = Rpc.handler(api)
 export default { fetch: (request: Request) => rpc(request) }
 ```
 
-`Rpc.http` is the client. Calls made in the same tick are sent as one batch request.
+`Rpc.http` is the client. Calls made in the same tick are sent as one batch request. Its `fetch` option is called with a `Request`, so a handler from `Rpc.handler` works as one in tests.
 
 ```ts
 const api = Rpc.http<Api>('https://example.com/rpc', {
-  fetch: (input, init) => fetch(input, { ...init, headers: { ...init?.headers, authorization } }),
+  fetch: (request) => {
+    request.headers.set('authorization', authorization)
+    return fetch(request)
+  },
 })
 ```
 

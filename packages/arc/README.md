@@ -14,7 +14,7 @@ A forwarder, such as a mailing list, validates the chain that arrived and seals 
 import * as Arc from '@portable/arc'
 import * as Dns from '@portable/dns'
 
-const resolver = Dns.createResolver()
+const resolver = Dns.create()
 const arc = await Arc.verify(message, { resolver, signal: AbortSignal.timeout(10_000) })
 
 const fields = await Arc.seal(message, {
@@ -49,7 +49,7 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) deliver()
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Looks up the keys: `Dns.createResolver()`, `node:dns/promises`, or any object with `resolveTxt`. |
+| `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
 | `hash` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |

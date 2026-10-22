@@ -1,6 +1,6 @@
 export { isNotFound, QueryError } from './errors.js'
 export {
-  createResolver,
+  create,
   type CaaRecord,
   type MxRecord,
   type NaptrRecord,

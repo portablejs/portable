@@ -65,7 +65,7 @@ An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` ho
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `fetch` | `globalThis.fetch` | Called as `fetch(url, { headers, signal })`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
+| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
 | `signal` | | Cancels the lookup, including a bootstrap request no other lookup is waiting for. It rejects with `signal.reason`. |
 | `follow` | `true` | `Rdap.domain` only. Fetches the registrar's response when the registry links to it. |
 

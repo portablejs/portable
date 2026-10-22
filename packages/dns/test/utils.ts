@@ -39,12 +39,11 @@ export function respond(
 
 /** A `fetch` that answers DNS-over-HTTPS requests with `server`, and the requests it received. */
 export function doh(server: Server): {
-  fetch: (url: string, init: RequestInit) => Promise<Response>
+  fetch: (request: Request) => Promise<Response>
   requests: Request[]
 } {
   const requests: Request[] = []
-  async function fetch(url: string, init: RequestInit): Promise<Response> {
-    const request = new Request(url, init)
+  async function fetch(request: Request): Promise<Response> {
     requests.push(request)
     const query = decodeQuery(request)
     const reply = server(query.questions[0]!, request)

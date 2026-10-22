@@ -148,9 +148,9 @@ describe('http', () => {
       },
     })
     const remote = Rpc.http<{ forever(): AsyncGenerator<number> }>(url, {
-      fetch: async (input, init) => {
-        requestSignal = init?.signal ?? undefined
-        return handle(new Request(input, init))
+      fetch: async (request) => {
+        requestSignal = request.signal
+        return handle(request)
       },
     })
     for await (const value of remote.forever()) if (value === 2) break
@@ -204,9 +204,9 @@ describe('http', () => {
   test('aborting the signal rejects waiting and later calls with its reason', async () => {
     const controller = new AbortController()
     const remote = Rpc.http<typeof api>(url, {
-      fetch: (_, init) =>
+      fetch: (request) =>
         new Promise((_, reject) =>
-          init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)),
+          request.signal.addEventListener('abort', () => reject(request.signal.reason)),
         ),
       signal: controller.signal,
     })

@@ -1,13 +1,13 @@
 import type * as DnsPacket from '@portable/dns-packet'
 import { describe, expect, test } from 'vite-plus/test'
-import { QueryError, createResolver, isNotFound, type Resolver } from '@portable/dns'
+import { QueryError, create, isNotFound, type Resolver } from '@portable/dns'
 import { decodeQuery, doh, record, replay, respond, utf8, type Server } from './utils.js'
 
 const N = 'example.org'
 
-function resolverFor(server: Server, options: createResolver.Options = {}) {
+function resolverFor(server: Server, options: create.Options = {}) {
   const { fetch, requests } = doh(server)
-  return { resolver: createResolver({ fetch, ...options }), requests }
+  return { resolver: create({ fetch, ...options }), requests }
 }
 
 const answering =
@@ -411,7 +411,7 @@ describe('CNAME chains', () => {
   })
 
   test('follows the recorded www.github.com chain to TXT records', async () => {
-    const resolver = createResolver({ fetch: doh(replay('dns.google')).fetch })
+    const resolver = create({ fetch: doh(replay('dns.google')).fetch })
     const records = await resolver.resolveTxt('www.github.com')
     expect(records.length).toBeGreaterThan(0)
     expect(records.some((strings) => strings.join('').startsWith('v=spf1'))).toBe(true)
@@ -577,11 +577,11 @@ describe('endpoints', () => {
   })
 
   test('rejects an empty endpoint list, a bad URL and a bad timeout', () => {
-    expect(() => createResolver({ endpoints: [] })).toThrow(RangeError)
-    expect(() => createResolver({ endpoints: ['not a url'] })).toThrow(TypeError)
+    expect(() => create({ endpoints: [] })).toThrow(RangeError)
+    expect(() => create({ endpoints: ['not a url'] })).toThrow(TypeError)
     for (const timeout of [0, -1, Number.NaN, 2 ** 31, Infinity])
-      expect(() => createResolver({ timeout })).toThrow(RangeError)
-    for (const timeout of [1, 2 ** 31 - 1]) expect(() => createResolver({ timeout })).not.toThrow()
+      expect(() => create({ timeout })).toThrow(RangeError)
+    for (const timeout of [1, 2 ** 31 - 1]) expect(() => create({ timeout })).not.toThrow()
   })
 })
 
@@ -749,7 +749,7 @@ describe('recorded responses', () => {
   const servers = ['cloudflare-dns.com', 'dns.google'] as const
 
   test.each(servers)('%s answers decode into node:dns shapes', async (server) => {
-    const resolver = createResolver({ fetch: doh(replay(server)).fetch })
+    const resolver = create({ fetch: doh(replay(server)).fetch })
     const gmailMx = await resolver.resolveMx('gmail.com')
     expect(gmailMx.map((mx) => mx.exchange).sort()[0]).toBe('alt1.gmail-smtp-in.l.google.com')
     const dmarc = await resolver.resolveTxt('_dmarc.gmail.com')
@@ -777,7 +777,7 @@ describe('recorded responses', () => {
   })
 })
 
-test('a plain object of functions fits the Resolver type, as createResolver does', () => {
+test('a plain object of functions fits the Resolver type, as create does', () => {
   const fake: Resolver = {
     resolve4: async () => ['192.0.2.1'],
     resolve6: async () => [],
@@ -800,7 +800,7 @@ test('a plain object of functions fits the Resolver type, as createResolver does
     resolveNaptr: async () => [],
     reverse: async () => [],
   }
-  const ours: Resolver = createResolver()
+  const ours: Resolver = create()
   expect(Object.keys(fake).every((key) => typeof ours[key as keyof Resolver] === 'function')).toBe(
     true,
   )
