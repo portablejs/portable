@@ -3,10 +3,17 @@ import { describe, expect, test } from 'vite-plus/test'
 import { encodeStream } from '@portable/json-stream'
 import { deferred, encodeText, lineSeparator, streamOf } from './utils.js'
 
-async function readRest(reader: ReadableStreamDefaultReader<string>): Promise<string> {
+const decoder = new TextDecoder()
+
+async function readText(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
+  const { value } = await reader.read()
+  return value === undefined ? '' : decoder.decode(value)
+}
+
+async function readRest(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
   let text = ''
   for (let result = await reader.read(); !result.done; result = await reader.read())
-    text += result.value
+    text += decoder.decode(result.value)
   return text
 }
 
@@ -230,9 +237,7 @@ describe('@worker-tools/json-stream', () => {
   })
 
   test('produces a Response body any JSON parser can read', async () => {
-    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items([1, 2, 3]) }).pipeThrough(
-      new TextEncoderStream(),
-    )
+    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items([1, 2, 3]) })
     expect(await new Response(body).json()).toEqual({ a: 3, b: 4, c: [1, 2, 3] })
   })
 })
@@ -312,7 +317,7 @@ describe('encodeStream', () => {
   test('writes up to the first unresolved value, then waits for it', async () => {
     const b = deferred<number>()
     const reader = encodeStream({ a: 1, b: b.promise, c: 3 }).getReader()
-    expect((await reader.read()).value).toBe('{"a":1')
+    expect(await readText(reader)).toBe('{"a":1')
     b.resolve(2)
     expect(await readRest(reader)).toBe(',"b":2,"c":3}')
   })
@@ -326,8 +331,8 @@ describe('encodeStream', () => {
     })
     const reader = encodeStream({ items: source }).getReader()
     push({ id: 1 })
-    expect((await reader.read()).value).toBe('{"items":[')
-    expect((await reader.read()).value).toBe('{"id":1}')
+    expect(await readText(reader)).toBe('{"items":[')
+    expect(await readText(reader)).toBe('{"id":1}')
   })
 
   test('calls a function only when the writer reaches it', async () => {
@@ -417,7 +422,7 @@ describe('encodeStream', () => {
       },
     })
     const reader = encodeStream([stream]).getReader()
-    expect((await reader.read()).value).toBe('[[')
+    expect(await readText(reader)).toBe('[[')
     const pending = reader.read()
     await reader.cancel()
     expect(cancelled).toBe(true)

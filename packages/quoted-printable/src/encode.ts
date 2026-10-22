@@ -37,8 +37,8 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 }
 
 /**
- * A `TransformStream` that encodes bytes or text as quoted-printable. Its output is the same as
- * `encode()` of the whole input, however the input is split into chunks.
+ * A `TransformStream` that encodes bytes or text as quoted-printable, emitted as ASCII bytes. Its
+ * output is the same as `encode()` of the whole input, however the input is split into chunks.
  *
  * @example
  * ```ts
@@ -47,20 +47,21 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
  * const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream())
  * ```
  */
-export class EncoderStream extends TransformStream<Uint8Array | string, string> {
+export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
     const encoder = createEncoder(options)
     const utf8 = createUtf8Encoder()
+    const ascii = new TextEncoder()
     super(
       abortable(
         {
           transform(chunk, controller) {
             const output = encoder.write(utf8.write(chunk), false)
-            if (output !== '') controller.enqueue(output)
+            if (output !== '') controller.enqueue(ascii.encode(output))
           },
           flush(controller) {
             const output = encoder.write(utf8.flush(), true)
-            if (output !== '') controller.enqueue(output)
+            if (output !== '') controller.enqueue(ascii.encode(output))
           },
         },
         options.signal,

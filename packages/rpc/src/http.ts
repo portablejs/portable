@@ -74,7 +74,7 @@ export function handler(methods: object): (request: Request) => Promise<Response
         void writer.write(single).catch(noop)
     }
     if (streams.size === 0) void writer.close().catch(noop)
-    return new Response(encoder.readable.pipeThrough(new TextEncoderStream()), {
+    return new Response(encoder.readable, {
       headers: { 'content-type': ndjson },
     })
   }

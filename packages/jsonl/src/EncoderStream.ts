@@ -11,7 +11,7 @@ export declare namespace EncoderStream {
 
 /**
  * A `TransformStream` that encodes each value as one line of NDJSON: `JSON.stringify(value)`
- * followed by `\n`. A value `JSON.stringify` can't encode (`undefined`, a function, a symbol, a
+ * followed by `\n`, as UTF-8 bytes. A value `JSON.stringify` can't encode (`undefined`, a function, a symbol, a
  * `BigInt` or a circular structure) fails the stream with a `TypeError`, so no line is lost
  * or malformed.
  *
@@ -22,19 +22,19 @@ export declare namespace EncoderStream {
  *
  * const body = Streams.fromIterable(rows)
  *   .pipeThrough(new Jsonl.EncoderStream())
- *   .pipeThrough(new TextEncoderStream())
  * return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
  * ```
  */
-export class EncoderStream extends TransformStream<unknown, string> {
+export class EncoderStream extends TransformStream<unknown, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
+    const utf8 = new TextEncoder()
     super(
       abortable(
         {
           transform(value, controller) {
             const json: string | undefined = JSON.stringify(value)
             if (json === undefined) throw new TypeError(`Can't encode ${typeof value} as JSON.`)
-            controller.enqueue(json + '\n')
+            controller.enqueue(utf8.encode(json + '\n'))
           },
         },
         options.signal,

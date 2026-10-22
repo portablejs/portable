@@ -61,7 +61,13 @@ export async function encodeStream(
   rows: readonly Csv.encode.Row[],
   options?: Csv.EncoderStream.Options,
 ): Promise<string> {
-  return (await toArray(fromIterable(rows).pipeThrough(new Csv.EncoderStream(options)))).join('')
+  return (
+    await toArray(
+      fromIterable(rows)
+        .pipeThrough(new Csv.EncoderStream(options))
+        .pipeThrough(new TextDecoderStream('utf-8', { ignoreBOM: true })),
+    )
+  ).join('')
 }
 
 /**

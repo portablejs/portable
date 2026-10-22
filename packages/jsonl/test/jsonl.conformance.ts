@@ -1,4 +1,4 @@
-import { fromIterable, toArray, toText } from '@portable/streams'
+import { fromIterable, toArray } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
 import { InvalidInputError, DecoderStream, EncoderStream } from '@portable/jsonl'
 import data from './fixtures/data.ndjson?raw'
@@ -108,10 +108,7 @@ describe('@worker-tools/json-stream', () => {
   test('round-trips values through bytes', async () => {
     const values = [{ a: 1 }, { b: 2 }, { c: 3 }, 'foo', { a: { nested: { object: true } } }]
     const decoded = await toArray(
-      fromIterable(values)
-        .pipeThrough(new EncoderStream())
-        .pipeThrough(new TextEncoderStream())
-        .pipeThrough(new DecoderStream()),
+      fromIterable(values).pipeThrough(new EncoderStream()).pipeThrough(new DecoderStream()),
     )
     expect(decoded).toEqual(values)
   })
@@ -166,11 +163,10 @@ describe('EncoderStream', () => {
     expect(text.split('\n')).toHaveLength(3)
   })
 
-  test('produces bytes with TextEncoderStream', async () => {
-    const body = fromIterable([{ a: 1 }])
-      .pipeThrough(new EncoderStream())
-      .pipeThrough(new TextEncoderStream())
-    expect(await toText(body)).toBe('{"a":1}\n')
+  test('produces UTF-8 bytes', async () => {
+    const chunks = await toArray(fromIterable([{ a: 'é' }]).pipeThrough(new EncoderStream()))
+    expect(chunks.every((chunk) => chunk instanceof Uint8Array)).toBe(true)
+    expect(new TextDecoder().decode(chunks[0])).toBe('{"a":"é"}\n')
   })
 })
 

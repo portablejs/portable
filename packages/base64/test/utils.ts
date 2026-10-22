@@ -40,7 +40,13 @@ export async function encodeStream(
   chunks: readonly (Uint8Array | string)[],
   options?: encode.Options,
 ): Promise<string> {
-  return (await collect(fromChunks(chunks).pipeThrough(new EncoderStream(options)))).join('')
+  return (
+    await collect(
+      fromChunks(chunks)
+        .pipeThrough(new EncoderStream(options))
+        .pipeThrough(new TextDecoderStream()),
+    )
+  ).join('')
 }
 
 export async function decodeStream(

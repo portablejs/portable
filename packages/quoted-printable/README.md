@@ -24,7 +24,7 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream())
 | --- | --- | --- |
 | `encode(input, options?)` | `Uint8Array` or `string` (encoded as UTF-8) | `string` |
 | `decode(input)` | `string` (read as UTF-8) or `Uint8Array` | `Uint8Array` |
-| `EncoderStream(options?)` | a `TransformStream<Uint8Array \| string, string>` | |
+| `EncoderStream(options?)` | a `TransformStream<Uint8Array \| string, Uint8Array>` that emits ASCII bytes | |
 | `DecoderStream(options?)` | a `TransformStream<string \| Uint8Array, Uint8Array>` | |
 
 `encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.

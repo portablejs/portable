@@ -161,9 +161,7 @@ describe('JSONStream', () => {
       ['AOREC', 'reoubaor', { ouec: 62642 }, [[[], {}, 53]]],
     ]
     const parsed = await toArray(
-      encodeStream(fromIterable(values))
-        .pipeThrough(new TextEncoderStream())
-        .pipeThrough(new DecoderStream({ paths: ['$[*]'] })),
+      encodeStream(fromIterable(values)).pipeThrough(new DecoderStream({ paths: ['$[*]'] })),
     )
     expect(parsed.map((match) => match.value)).toEqual(values)
   })
@@ -382,9 +380,7 @@ describe('@worker-tools/json-stream', () => {
       yield 2
       yield 3
     }
-    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items() }).pipeThrough(
-      new TextEncoderStream(),
-    )
+    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items() })
     expect(await toArray(body.pipeThrough(new DecoderStream({ paths: ['$.c[*]'] })))).toEqual([
       { path: ['c', 0], value: 1 },
       { path: ['c', 1], value: 2 },

@@ -141,7 +141,7 @@ export function encodeSync(content: string | Uint8Array, body: Body): string | U
 export function encodeStream(
   source: ReadableStream<Uint8Array>,
   body: Body,
-): ReadableStream<Uint8Array | string> {
+): ReadableStream<Uint8Array> {
   switch (body.encoding) {
     case 'base64':
       return source.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))

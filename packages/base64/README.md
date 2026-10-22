@@ -30,7 +30,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | --- | --- |
 | `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
 | `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
-| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, string>`. Same output as `encode` of the whole input, however it is chunked. |
+| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. Same output as `encode` of the whole input, however it is chunked. |
 | `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding and groups of four characters can be split across chunks anywhere. |
 | `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
 | `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |

@@ -601,19 +601,9 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
         const { done, value } = await reader.read()
         if (context.cancelled) throw new Error('cancelled')
         if (done) return
-        if (typeof value === 'string') {
-          if (value.length === 0) continue
-          pending += value
-          last = value.charCodeAt(value.length - 1)
-          if (pending.length < 65536) continue
-          yield encoder.encode(pending)
-          pending = ''
-        } else if (value.length > 0) {
-          if (pending !== '') yield encoder.encode(pending)
-          pending = ''
-          yield value
-          last = value[value.length - 1]!
-        }
+        if (value.length === 0) continue
+        yield value
+        last = value[value.length - 1]!
       }
     } finally {
       context.reader = undefined

@@ -57,7 +57,11 @@ export function decode(
 }
 
 export async function encode(values: readonly unknown[]): Promise<string> {
-  return (await toArray(fromIterable(values).pipeThrough(new EncoderStream()))).join('')
+  return (
+    await toArray(
+      fromIterable(values).pipeThrough(new EncoderStream()).pipeThrough(new TextDecoderStream()),
+    )
+  ).join('')
 }
 
 /** A stream that yields `values` one per pull, then closes. */
