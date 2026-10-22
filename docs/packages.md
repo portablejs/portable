@@ -27,20 +27,20 @@ Each line lists the `@portable/*` packages a package depends on, from its `packa
 ```
 L3  mail-auth     → arc, dkim, dmarc, spf, mime-headers, streams
     arc           → dkim, base64, bytes
-    dmarc         → spf, dns
-    spf           → dns, ip
-L2  dkim          → dns, base64, bytes
-    mail          → mime-headers, quoted-printable, base64, bytes
-    dns           → dns-packet, ip
-    oauth1, password, web-push, webhooks → base64, bytes
-    smtp          → bytes
-    rdap
+    dmarc         → spf, dns, idna
+    spf           → dns, idna, ip
+L2  dkim          → dns, idna, web-crypto, base64, bytes
+    mail          → mime-headers, quoted-printable, idna, base64, bytes
+    dns           → dns-packet, idna, ip, base64
+    oauth1, webhooks → web-crypto, base64, bytes
+    password, smtp, web-push → base64, bytes
+    rdap          → idna, ip
 L1  mime-stream   → mime-headers, bytes
     mime-headers  → base64, bytes
     rpc           → jsonl
     sse, websockets → timers
-    exif, image-size, png → bytes
-    compress, csv, idna, json-stream, jsonl
+    compress, exif, image-size, png → bytes
+    csv, idna, json-stream, jsonl
 L0  base64, streams → bytes
     bytes, charset, dns-packet, ip, lines, queue, quoted-printable, random, rate-limit, timers, web-crypto
     errors        (every package that throws depends on it)
@@ -50,7 +50,7 @@ L0  base64, streams → bytes
 
 | Package | Purpose | Replaces (monthly downloads) |
 | --- | --- | --- |
-| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Bridge** (see below): streams ⇄ iterables, async iterables and generators. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
+| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, a `Blob`, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Bridge** (see below): streams ⇄ iterables, async iterables and generators. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
 | `@portable/lines` | Split byte or text streams into lines. Handles CRLF/LF/CR, a `maxLength` guard, and a trailing line with no newline. `new Lines.DecoderStream()`. | split2 406M, byline |
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
@@ -74,7 +74,7 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 | `toAsyncIterable(stream)` | Async iterator over a `ReadableStream`. Breaking out of `for await` cancels the stream (or, with `{ preventCancel: true }`, just releases the lock). |
 | `transform(async function* (source) { ... })` | Build a `TransformStream` from an async generator that reads `source` and `yield`s output, which is the easiest way to write a stateful transform. Errors and cancellation propagate both ways. |
 | `map`, `filter`, `tap`, `batch(n)` | Small `TransformStream` factories for the through2 cases. |
-| `toArray`, `toBytes`, `toText`, `toJson` | Collectors, which accept a stream or any async iterable. |
+| `toArray`, `toBytes`, `toBlob`, `toText`, `toJson` | Collectors, which accept a stream or any async iterable. |
 
 **Node interop (deferred, low priority)** will go in one subpath, `@portable/streams/node`, as ox ships `ox/node`. It is the only place in the repo allowed to import `node:*` (an oxlint override scoped to `src/node/**`), the package exports it only under the `node` condition, and nothing else in the family imports it:
 
