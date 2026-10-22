@@ -1,4 +1,4 @@
-import type { Charset, Encoder } from './Charset.js'
+import type { Charset, Definition, Encoder } from './Charset.js'
 import { byteTable, codeTable } from './internal/tables.js'
 import { jis0208 } from './tables/jis0208.js'
 
@@ -46,4 +46,8 @@ function encoder(): Encoder {
  * Charset.encode('日本ｶﾅ', shiftJis) // Uint8Array [0x93, 0xfa, 0x96, 0x7b, 0xb6, 0xc5]
  * ```
  */
-export const shiftJis: Charset = { name: 'Shift_JIS', maxBytes: 2, encoder }
+export const shiftJis = {
+  name: 'Shift_JIS',
+  maxBytes: 2,
+  encoder,
+} satisfies Definition as unknown as Charset

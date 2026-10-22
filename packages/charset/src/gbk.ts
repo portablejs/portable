@@ -1,4 +1,4 @@
-import type { Charset, Encoder } from './Charset.js'
+import type { Charset, Definition, Encoder } from './Charset.js'
 import { byteTable, codeTable, unpackInts } from './internal/tables.js'
 import { gb18030 as index, gb18030Ranges } from './tables/gb18030.js'
 
@@ -90,7 +90,11 @@ function encoder(isGbk: boolean): Encoder {
  * Charset.encode('中国€', gbk) // Uint8Array [0xd6, 0xd0, 0xb9, 0xfa, 0x80]
  * ```
  */
-export const gbk: Charset = { name: 'GBK', maxBytes: 2, encoder: () => encoder(true) }
+export const gbk = {
+  name: 'GBK',
+  maxBytes: 2,
+  encoder: () => encoder(true),
+} satisfies Definition as unknown as Charset
 
 /**
  * gb18030, which encodes every Unicode scalar value except U+E5E5.
@@ -103,4 +107,8 @@ export const gbk: Charset = { name: 'GBK', maxBytes: 2, encoder: () => encoder(t
  * Charset.encode('中€😀', gb18030) // Uint8Array [0xd6, 0xd0, 0xa2, 0xe3, 0x94, 0x39, 0xfc, 0x36]
  * ```
  */
-export const gb18030: Charset = { name: 'gb18030', maxBytes: 4, encoder: () => encoder(false) }
+export const gb18030 = {
+  name: 'gb18030',
+  maxBytes: 4,
+  encoder: () => encoder(false),
+} satisfies Definition as unknown as Charset

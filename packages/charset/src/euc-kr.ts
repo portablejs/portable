@@ -1,4 +1,4 @@
-import type { Charset, Encoder } from './Charset.js'
+import type { Charset, Definition, Encoder } from './Charset.js'
 import { byteTable, codeTable } from './internal/tables.js'
 import { eucKr as index } from './tables/euc-kr.js'
 
@@ -25,4 +25,8 @@ function encoder(): Encoder {
  * Charset.encode('한국', eucKr) // Uint8Array [0xc7, 0xd1, 0xb1, 0xb9]
  * ```
  */
-export const eucKr: Charset = { name: 'EUC-KR', maxBytes: 2, encoder }
+export const eucKr = {
+  name: 'EUC-KR',
+  maxBytes: 2,
+  encoder,
+} satisfies Definition as unknown as Charset

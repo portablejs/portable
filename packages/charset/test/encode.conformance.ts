@@ -12,6 +12,16 @@ const latin1Text = 'Hello123!£Å÷×çþÿ¿®'
 const sample = '<?xml version="1.0" encoding="UTF-8"?>\n<俄语>данные</俄语>'
 const utf8 = (text: string) => new TextEncoder().encode(text)
 
+describe('Charset', () => {
+  test('exposes only its name in the type, so callers cannot construct one or read its tables', () => {
+    expect(shiftJis.name).toBe('Shift_JIS')
+    // @ts-expect-error
+    void shiftJis.maxBytes
+    // @ts-expect-error
+    expect(() => Charset.encode('a', { name: 'Shift_JIS' })).toThrow(TypeError)
+  })
+})
+
 describe('encode', () => {
   test('returns a Uint8Array', () => {
     expect(Charset.encode('Hello123!', windows1252)).toBeInstanceOf(Uint8Array)

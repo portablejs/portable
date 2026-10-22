@@ -19,18 +19,24 @@ export type Name = Exclude<CharsetName, 'replacement'>
 export type Charset = {
   /** The WHATWG Encoding Standard name. */
   readonly name: Name
-  /** @internal Most bytes one UTF-16 code unit can encode to. */
+  readonly [definition]: true
+}
+
+declare const definition: unique symbol
+
+/** What `encode` reads from a `Charset`. Callers see only `name`. */
+export type Definition = {
+  readonly name: Name
+  /** Most bytes one UTF-16 code unit can encode to. */
   readonly maxBytes: number
-  /** @internal Byte order mark written when `bom` is set. */
+  /** Byte order mark written when `bom` is set. */
   readonly bom?: readonly number[] | undefined
-  /** @internal Creates the state for one `encode` call or one stream. */
+  /** Creates the state for one `encode` call or one stream. */
   readonly encoder: () => Encoder
 }
 
-/** @internal */
 export type Output = { bytes: Uint8Array<ArrayBuffer>; length: number }
 
-/** @internal */
 export type Encoder = {
   /**
    * Maps each UTF-16 code unit to its bytes: `0x100 | byte` for one byte, `leading << 8 | trailing`

@@ -1,4 +1,4 @@
-import type { Charset, Encoder, Output } from '../Charset.js'
+import type { Charset, Definition, Encoder, Output } from '../Charset.js'
 import { UnsupportedError } from '../errors.js'
 
 export type Unmappable = 'replace' | 'html' | 'error' | ((codePoint: number) => string)
@@ -9,14 +9,15 @@ export type Options = {
 }
 
 export type State = {
-  readonly charset: Charset
+  readonly charset: Definition
   readonly encoder: Encoder
   readonly unmappable: Unmappable
   bom: readonly number[] | undefined
   pending: string
 }
 
-export function createState(charset: Charset, options: Options): State {
+export function createState(input: Charset, options: Options): State {
+  const charset = input as unknown as Definition
   return {
     charset,
     encoder: charset.encoder(),

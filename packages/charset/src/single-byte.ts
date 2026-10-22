@@ -1,4 +1,4 @@
-import type { Charset, Encoder } from './Charset.js'
+import type { Charset, Definition, Encoder } from './Charset.js'
 import { asciiTable, byteTable, unpackIndex } from './internal/tables.js'
 import * as tables from './tables/single-byte.js'
 
@@ -29,11 +29,11 @@ function singleByte(index: string): Encoder {
  * Charset.encode('р', ibm866) // Uint8Array [0xe0]
  * ```
  */
-export const ibm866: Charset = {
+export const ibm866 = {
   name: 'IBM866',
   maxBytes: 1,
   encoder: () => singleByte(tables.ibm866),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-2.
@@ -46,11 +46,11 @@ export const ibm866: Charset = {
  * Charset.encode('ŕ', iso8859_2) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_2: Charset = {
+export const iso8859_2 = {
   name: 'ISO-8859-2',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_2),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-3.
@@ -63,11 +63,11 @@ export const iso8859_2: Charset = {
  * Charset.encode('à', iso8859_3) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_3: Charset = {
+export const iso8859_3 = {
   name: 'ISO-8859-3',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_3),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-4.
@@ -80,11 +80,11 @@ export const iso8859_3: Charset = {
  * Charset.encode('ā', iso8859_4) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_4: Charset = {
+export const iso8859_4 = {
   name: 'ISO-8859-4',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_4),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-5.
@@ -97,11 +97,11 @@ export const iso8859_4: Charset = {
  * Charset.encode('р', iso8859_5) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_5: Charset = {
+export const iso8859_5 = {
   name: 'ISO-8859-5',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_5),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-6.
@@ -114,11 +114,11 @@ export const iso8859_5: Charset = {
  * Charset.encode('ـ', iso8859_6) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_6: Charset = {
+export const iso8859_6 = {
   name: 'ISO-8859-6',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_6),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-7.
@@ -131,11 +131,11 @@ export const iso8859_6: Charset = {
  * Charset.encode('ΰ', iso8859_7) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_7: Charset = {
+export const iso8859_7 = {
   name: 'ISO-8859-7',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_7),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-8.
@@ -148,11 +148,11 @@ export const iso8859_7: Charset = {
  * Charset.encode('א', iso8859_8) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_8: Charset = {
+export const iso8859_8 = {
   name: 'ISO-8859-8',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_8),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-8-I. The same bytes as ISO-8859-8, but the name tells a reader the text is in logical
@@ -166,11 +166,11 @@ export const iso8859_8: Charset = {
  * Charset.encode('א', iso8859_8i) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_8i: Charset = {
+export const iso8859_8i = {
   name: 'ISO-8859-8-I',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_8),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-10.
@@ -183,11 +183,11 @@ export const iso8859_8i: Charset = {
  * Charset.encode('ā', iso8859_10) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_10: Charset = {
+export const iso8859_10 = {
   name: 'ISO-8859-10',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_10),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-13.
@@ -200,11 +200,11 @@ export const iso8859_10: Charset = {
  * Charset.encode('ą', iso8859_13) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_13: Charset = {
+export const iso8859_13 = {
   name: 'ISO-8859-13',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_13),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-14.
@@ -217,11 +217,11 @@ export const iso8859_13: Charset = {
  * Charset.encode('à', iso8859_14) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_14: Charset = {
+export const iso8859_14 = {
   name: 'ISO-8859-14',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_14),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-15.
@@ -234,11 +234,11 @@ export const iso8859_14: Charset = {
  * Charset.encode('à', iso8859_15) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_15: Charset = {
+export const iso8859_15 = {
   name: 'ISO-8859-15',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_15),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * ISO-8859-16.
@@ -251,11 +251,11 @@ export const iso8859_15: Charset = {
  * Charset.encode('à', iso8859_16) // Uint8Array [0xe0]
  * ```
  */
-export const iso8859_16: Charset = {
+export const iso8859_16 = {
   name: 'ISO-8859-16',
   maxBytes: 1,
   encoder: () => singleByte(tables.iso8859_16),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * KOI8-R.
@@ -268,11 +268,11 @@ export const iso8859_16: Charset = {
  * Charset.encode('Ю', koi8R) // Uint8Array [0xe0]
  * ```
  */
-export const koi8R: Charset = {
+export const koi8R = {
   name: 'KOI8-R',
   maxBytes: 1,
   encoder: () => singleByte(tables.koi8R),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * KOI8-U.
@@ -285,11 +285,11 @@ export const koi8R: Charset = {
  * Charset.encode('Ю', koi8U) // Uint8Array [0xe0]
  * ```
  */
-export const koi8U: Charset = {
+export const koi8U = {
   name: 'KOI8-U',
   maxBytes: 1,
   encoder: () => singleByte(tables.koi8U),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * macintosh.
@@ -302,11 +302,11 @@ export const koi8U: Charset = {
  * Charset.encode('‡', macintosh) // Uint8Array [0xe0]
  * ```
  */
-export const macintosh: Charset = {
+export const macintosh = {
   name: 'macintosh',
   maxBytes: 1,
   encoder: () => singleByte(tables.macintosh),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-874.
@@ -319,11 +319,11 @@ export const macintosh: Charset = {
  * Charset.encode('เ', windows874) // Uint8Array [0xe0]
  * ```
  */
-export const windows874: Charset = {
+export const windows874 = {
   name: 'windows-874',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows874),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1250.
@@ -336,11 +336,11 @@ export const windows874: Charset = {
  * Charset.encode('ŕ', windows1250) // Uint8Array [0xe0]
  * ```
  */
-export const windows1250: Charset = {
+export const windows1250 = {
   name: 'windows-1250',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1250),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1251.
@@ -353,11 +353,11 @@ export const windows1250: Charset = {
  * Charset.encode('а', windows1251) // Uint8Array [0xe0]
  * ```
  */
-export const windows1251: Charset = {
+export const windows1251 = {
   name: 'windows-1251',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1251),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1252.
@@ -370,11 +370,11 @@ export const windows1251: Charset = {
  * Charset.encode('à', windows1252) // Uint8Array [0xe0]
  * ```
  */
-export const windows1252: Charset = {
+export const windows1252 = {
   name: 'windows-1252',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1252),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1253.
@@ -387,11 +387,11 @@ export const windows1252: Charset = {
  * Charset.encode('ΰ', windows1253) // Uint8Array [0xe0]
  * ```
  */
-export const windows1253: Charset = {
+export const windows1253 = {
   name: 'windows-1253',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1253),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1254.
@@ -404,11 +404,11 @@ export const windows1253: Charset = {
  * Charset.encode('à', windows1254) // Uint8Array [0xe0]
  * ```
  */
-export const windows1254: Charset = {
+export const windows1254 = {
   name: 'windows-1254',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1254),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1255.
@@ -421,11 +421,11 @@ export const windows1254: Charset = {
  * Charset.encode('א', windows1255) // Uint8Array [0xe0]
  * ```
  */
-export const windows1255: Charset = {
+export const windows1255 = {
   name: 'windows-1255',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1255),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1256.
@@ -438,11 +438,11 @@ export const windows1255: Charset = {
  * Charset.encode('à', windows1256) // Uint8Array [0xe0]
  * ```
  */
-export const windows1256: Charset = {
+export const windows1256 = {
   name: 'windows-1256',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1256),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1257.
@@ -455,11 +455,11 @@ export const windows1256: Charset = {
  * Charset.encode('ą', windows1257) // Uint8Array [0xe0]
  * ```
  */
-export const windows1257: Charset = {
+export const windows1257 = {
   name: 'windows-1257',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1257),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * windows-1258.
@@ -472,11 +472,11 @@ export const windows1257: Charset = {
  * Charset.encode('à', windows1258) // Uint8Array [0xe0]
  * ```
  */
-export const windows1258: Charset = {
+export const windows1258 = {
   name: 'windows-1258',
   maxBytes: 1,
   encoder: () => singleByte(tables.windows1258),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * x-mac-cyrillic.
@@ -489,11 +489,11 @@ export const windows1258: Charset = {
  * Charset.encode('а', xMacCyrillic) // Uint8Array [0xe0]
  * ```
  */
-export const xMacCyrillic: Charset = {
+export const xMacCyrillic = {
   name: 'x-mac-cyrillic',
   maxBytes: 1,
   encoder: () => singleByte(tables.xMacCyrillic),
-}
+} satisfies Definition as unknown as Charset
 
 /**
  * x-user-defined, which maps bytes 0x80 to 0xFF to the private use code points U+F780 to U+F7FF.
@@ -506,7 +506,7 @@ export const xMacCyrillic: Charset = {
  * Charset.encode('\uf7ff', xUserDefined) // Uint8Array [0xff]
  * ```
  */
-export const xUserDefined: Charset = {
+export const xUserDefined = {
   name: 'x-user-defined',
   maxBytes: 1,
   encoder: () => ({
@@ -517,4 +517,4 @@ export const xUserDefined: Charset = {
       return -1
     },
   }),
-}
+} satisfies Definition as unknown as Charset
