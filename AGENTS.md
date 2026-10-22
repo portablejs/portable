@@ -10,6 +10,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm check:types` | `tsc -b` over every package. |
 | `pnpm test` | All test projects: Node and browsers. |
 | `pnpm test:bun`, `pnpm test:deno` | The conformance tests with Vitest running on Bun or Deno, which must be installed. |
+| `pnpm test:workers` | Bundles every package into one Worker and runs `tools/workers/src/checks.ts` in workerd through Miniflare. |
 | `pnpm test:changed` | Node tests affected by changes since `origin/main`. The pre-push hook runs this. |
 | `pnpm fuzz` | Runs only the fuzz tests (`*.fuzz.conformance.ts`) in Node, with 10,000 runs per property instead of 100. |
 | `pnpm bench` | Builds every package, then runs each package's benchmarks (`*.bench.ts`) against the built `dist/`, one package at a time, and saves the results in `.bench/`. Pass package names to `node scripts/bench.ts` to run only those. |
@@ -18,7 +19,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm build` | Builds every package with zile into `dist/`. |
 | `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. |
 
-Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files. The pre-push hook type-checks and runs the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `tsc -b`, every test project, and the conformance tests on Bun and Deno (see [docs/architecture.md](docs/architecture.md#ci)).
+Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files. The pre-push hook type-checks and runs the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `tsc -b`, every test project, the conformance tests on Bun and Deno, and the workerd checks (see [docs/architecture.md](docs/architecture.md#ci)).
 
 ## Package rules
 

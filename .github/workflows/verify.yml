@@ -95,3 +95,20 @@ jobs:
         with:
           deno-version: v2.x
       - run: pnpm test:${{ matrix.runtime }}
+
+  # Every package bundled into one Worker and run in workerd through Miniflare. See
+  # tools/workers/src/run.ts.
+  test-workers:
+    name: Test (workerd)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          check-latest: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:workers

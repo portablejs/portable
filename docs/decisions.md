@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Workers runs a smoke check in CI, not the conformance tests
+
+- **Options:** `@cloudflare/vitest-pool-workers` pinned to Vitest 4 in its own package; bundle each conformance file with Vitest's runner and run it in workerd; bundle every package into one Worker and run one hand-written check per package.
+- **Trade-offs:** the Vitest 4 pool means two Vitest versions in one repo. Bundling Vitest's runner and `expect` for workerd needs a harness like `tools/worker`, which imports test files from the Vite server and can't run in workerd. One Worker with a check per package is about 400 lines, runs in seconds and catches what fails only in workerd: the first run found that queue and timers created an `AbortController` at the top level, which workerd refuses, so neither package nor sse or websockets could load on Workers, and that websockets passed `highWaterMark: Infinity`, which workerd rejects although the Streams spec allows it. The checks cover one call per package, so a behavior difference outside those calls still goes untested.
+- **Chosen:** `pnpm test:workers` and a blocking `test-workers` CI job. Replace it with a Workers test project once the Vitest pool supports Vitest 5.
+
 ## Streams gets `toBlob` but no `toResponse`
 
 - **Options:** add both, as the review proposed; add `toBlob` only; add neither.
@@ -12,7 +18,7 @@ Decisions agents made without the owner's input, with the options they considere
 
 - **Options:** a Workers job through Miniflare, as the review proposed; run Vitest itself on Bun and Deno; wait for `@cloudflare/vitest-pool-workers` to support Vitest 5.
 - **Trade-offs:** Running Vitest on the runtime puts every test file in Bun or Deno with no new harness, and `pnpm test:bun` and `pnpm test:deno` run the same command locally. A Workers job needs a bundle of each test file and a runner inside workerd, which the Web Worker harness doesn't provide, because it imports test files from the Vite server. The first runs failed 2 tests on Bun and 19 on Deno, all caused by the runtimes' `DecompressionStream` and Deno's `BroadcastChannel` (see docs/papercuts.md). Blocking on them would keep CI red until Bun and Deno fix them, and changing the tests to expect each runtime's behavior would hide the differences.
-- **Chosen:** a `test-runtime` job for Bun and Deno with `continue-on-error`, so its failures show in the run without failing it. Make it blocking once the papercuts are fixed or worked around. Workers stays untested until the Vitest pool supports Vitest 5.
+- **Chosen:** a `test-runtime` job for Bun and Deno with `continue-on-error`, so its failures show in the run without failing it. Make it blocking once the papercuts are fixed or worked around. Workers got its own job, described in the entry above.
 
 ## AGENTS.md states the parameter, naming and `fetch` rules
 

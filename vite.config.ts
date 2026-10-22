@@ -150,7 +150,7 @@ export default defineConfig({
         },
       },
       {
-        files: ['packages/*/scripts/**', 'scripts/**'],
+        files: ['packages/*/scripts/**', 'scripts/**', 'tools/workers/src/run.ts'],
         rules: {
           'no-restricted-imports': 'off',
           'no-restricted-globals': 'off',
