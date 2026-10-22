@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/concat-stream": "^2.0.3",
     "@types/merge-stream": "^2.0.0",
@@ -12,6 +13,7 @@
     "@types/through2": "^5.0.0",
     "bl": "^7.0.12",
     "concat-stream": "^2.0.0",
+    "fast-check": "^4.10.2",
     "get-stream": "^9.0.1",
     "merge-stream": "^2.0.0",
     "merge2": "^1.4.1",

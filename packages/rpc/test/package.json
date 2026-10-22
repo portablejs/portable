@@ -3,11 +3,13 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/rpc": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
     "birpc": "^4.2.0",
     "comlink": "^4.4.2",
+    "fast-check": "^4.10.2",
     "json-rpc-2.0": "^1.7.1",
     "penpal": "^8.0.1"
   }

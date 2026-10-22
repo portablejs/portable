@@ -4,9 +4,11 @@
   "type": "module",
   "devDependencies": {
     "@portable/base64": "workspace:*",
+    "@portable/fuzz": "workspace:*",
     "@portable/web-push": "workspace:*",
     "@types/node": "^26.6.5",
     "@types/web-push": "^3.6.4",
+    "fast-check": "^4.10.2",
     "http_ece": "^1.2.1",
     "web-push": "^3.6.7"
   }

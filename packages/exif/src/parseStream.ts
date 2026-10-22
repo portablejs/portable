@@ -163,6 +163,7 @@ function tiffOf(region: Region | undefined): Tiff | undefined {
   if (!region) return undefined
   const tiff = readTiff(region.bytes, 0, region.bytes.length)
   if (tiff.thumbnailOffset !== undefined) tiff.thumbnailOffset += region.offset
+  tiff.limit += region.offset
   return tiff
 }
 

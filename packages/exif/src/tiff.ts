@@ -28,6 +28,8 @@ export type Tiff = {
   thumbnailLength: number | undefined
   /** End of the bytes, relative to the input, that the IFDs and thumbnail reference. */
   end: number
+  /** End of the TIFF block, relative to the input, such as the end of a JPEG's APP1 segment. */
+  limit: number
 }
 
 const typeSizes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4]
@@ -87,6 +89,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     thumbnailOffset: hasThumbnail ? start + thumbnailOffset : undefined,
     thumbnailLength: hasThumbnail ? thumbnailLength : undefined,
     end: start + r.end,
+    limit: end,
   }
 }
 
