@@ -85,7 +85,7 @@ export async function retry<T>(
 
   for (let attempt = 1; ; attempt++) {
     try {
-      return await run(fn, { attempt, signal: signal ?? neverAborted }, timeout)
+      return await run(fn, { attempt, signal: signal ?? neverAborted() }, timeout)
     } catch (error) {
       signal?.throwIfAborted()
       if (attempt >= attempts) throw error
@@ -108,7 +108,7 @@ function run<T>(
 ): Promise<T> {
   if (timeout === Infinity) {
     const result = call(fn, context)
-    return context.signal === neverAborted ? result : abortable(result, context.signal)
+    return context.signal === neverAborted() ? result : abortable(result, context.signal)
   }
   const deadline = withTimeout(context.signal, timeout)
   return abortable(call(fn, { ...context, signal: deadline.signal }), deadline.signal).finally(

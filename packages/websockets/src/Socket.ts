@@ -121,6 +121,11 @@ export function checkSize(name: string, value: number, min = 0): void {
   if (!(value >= min)) throw new RangeError(`Expected \`${name}\` to be a number >= ${min}.`)
 }
 
+// Workers throws a TypeError for a `highWaterMark` of `Infinity`, which the Streams spec allows.
+export function queueLimit(maxBuffered: number): number {
+  return Math.min(maxBuffered, Number.MAX_SAFE_INTEGER)
+}
+
 export const closedError = (): DOMException =>
   new DOMException('The WebSocket is closed.', 'InvalidStateError')
 

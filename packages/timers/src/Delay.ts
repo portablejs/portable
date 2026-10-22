@@ -29,7 +29,12 @@ export type Context = {
   signal: AbortSignal
 }
 
-export const neverAborted: AbortSignal = new AbortController().signal
+let never: AbortSignal | undefined
+
+// Workers refuses to create an AbortController at the top level of a module.
+export function neverAborted(): AbortSignal {
+  return (never ??= new AbortController().signal)
+}
 
 /**
  * Checks `delay` and returns a function of the attempt number (starting at 1) and the error that

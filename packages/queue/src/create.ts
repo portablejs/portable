@@ -73,7 +73,12 @@ type Entry = {
 
 type State = 'waiting' | 'running' | 'settled'
 
-const neverAborted = new AbortController().signal
+let never: AbortSignal | undefined
+
+// Workers refuses to create an AbortController at the top level of a module.
+function neverAborted(): AbortSignal {
+  return (never ??= new AbortController().signal)
+}
 const noop = () => {}
 const maxDelay = 2 ** 31 - 1
 
@@ -220,7 +225,7 @@ export function create(options: create.Options = {}): Queue {
     pending++
     entry.state = 'running'
     const { signal } = entry.context
-    watch(entry, signal === neverAborted ? undefined : signal)
+    watch(entry, signal === never ? undefined : signal)
     entry.begin()
   }
 
@@ -365,7 +370,7 @@ export function checkLimit(name: string, value: number): number {
 
 function combine(a: AbortSignal | undefined, b: AbortSignal | undefined): AbortSignal {
   if (a && b) return AbortSignal.any([a, b])
-  return a ?? b ?? neverAborted
+  return a ?? b ?? neverAborted()
 }
 
 export function isThenable(value: unknown): value is PromiseLike<unknown> {

@@ -38,7 +38,7 @@ export async function poll<T>(
   const next = backoff(delay)
   signal?.throwIfAborted()
   for (let attempt = 1; ; attempt++) {
-    const result = call(fn, { attempt, signal: signal ?? neverAborted })
+    const result = call(fn, { attempt, signal: signal ?? neverAborted() })
     const value = await (signal ? abortable(result, signal) : result)
     if (value !== undefined) return value
     await sleep(next(attempt), { signal })

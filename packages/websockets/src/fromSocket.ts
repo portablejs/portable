@@ -9,6 +9,7 @@ import {
   type SocketEvent,
   cancelledError,
   checkSize,
+  queueLimit,
   closedError,
   drained,
   isNormalClose,
@@ -121,7 +122,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
         shutdown(reason ?? cancelledError())
       },
     },
-    { highWaterMark: maxBuffered, size: messageSize },
+    { highWaterMark: queueLimit(maxBuffered), size: messageSize },
   )
 
   const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({

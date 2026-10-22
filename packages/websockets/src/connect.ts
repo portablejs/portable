@@ -9,6 +9,7 @@ import {
   type SocketEvent,
   cancelledError,
   checkSize,
+  queueLimit,
   drained,
   isNormalClose,
   messageSize,
@@ -384,7 +385,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         finish(reason ?? cancelledError(), false)
       },
     },
-    { highWaterMark: maxBuffered, size: messageSize },
+    { highWaterMark: queueLimit(maxBuffered), size: messageSize },
   )
 
   const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({
