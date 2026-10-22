@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
 
+// Firefox has no `Request.prototype.body` and sends a ReadableStream request body as text.
+const streamBodies = 'body' in Request.prototype
+
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw'
 
 function slowRequest(headers: Record<string, string>) {
@@ -21,17 +24,20 @@ function slowRequest(headers: Record<string, string>) {
 }
 
 describe('signal', () => {
-  test('aborting verify while it reads the body rejects with the reason and cancels the body', async () => {
-    const headers = await Webhooks.sign('{}', { secret })
-    const { request, source } = slowRequest(headers)
-    const controller = new AbortController()
-    const reason = new Error('stop')
-    const verifying = Webhooks.verify(request, { secret, signal: controller.signal })
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    controller.abort(reason)
-    await expect(verifying).rejects.toBe(reason)
-    expect(source.cancelled).toBe(reason)
-  })
+  test.runIf(streamBodies)(
+    'aborting verify while it reads the body rejects with the reason and cancels the body',
+    async () => {
+      const headers = await Webhooks.sign('{}', { secret })
+      const { request, source } = slowRequest(headers)
+      const controller = new AbortController()
+      const reason = new Error('stop')
+      const verifying = Webhooks.verify(request, { secret, signal: controller.signal })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      controller.abort(reason)
+      await expect(verifying).rejects.toBe(reason)
+      expect(source.cancelled).toBe(reason)
+    },
+  )
 
   test('aborting verify while the hmac runs rejects with the reason', async () => {
     const headers = await Webhooks.sign('{}', { secret })

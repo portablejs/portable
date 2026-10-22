@@ -175,12 +175,12 @@ describe('publicKeyOf', () => {
   })
 
   test('rejects a private key that cannot be exported', async () => {
-    const { privateKey } = await Crypto.importSeed('Ed25519', new Uint8Array(32))
+    const { privateKey } = await Crypto.importSeed('Ed25519', fromHex(ed25519Rfc8032[0]!.secretKey))
     await expect(Crypto.publicKeyOf(privateKey)).rejects.toThrow(Crypto.InvalidInputError)
   })
 
   test('rejects a public key and a secret key', async () => {
-    const { publicKey } = await Crypto.importSeed('Ed25519', new Uint8Array(32))
+    const { publicKey } = await Crypto.importSeed('Ed25519', fromHex(ed25519Rfc8032[0]!.secretKey))
     await expect(Crypto.publicKeyOf(publicKey)).rejects.toThrow(Crypto.InvalidInputError)
     const secret = await crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, true, [
       'sign',

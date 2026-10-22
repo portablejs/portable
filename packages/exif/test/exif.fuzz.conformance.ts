@@ -60,8 +60,8 @@ describe('parseDate', () => {
     fuzz(
       fc.property(
         fc.date({
-          min: new Date('1900-01-01Z'),
-          max: new Date('9999-12-31Z'),
+          min: new Date('1900-01-01T00:00:00Z'),
+          max: new Date('9999-12-31T00:00:00Z'),
           noInvalidDate: true,
         }),
         fc.constantFrom(':', '-'),
@@ -82,8 +82,8 @@ describe('parseDate', () => {
     fuzz(
       fc.property(
         fc.date({
-          min: new Date('1970-01-02Z'),
-          max: new Date('9999-12-30Z'),
+          min: new Date('1970-01-02T00:00:00Z'),
+          max: new Date('9999-12-30T00:00:00Z'),
           noInvalidDate: true,
         }),
         fc.integer({ min: -(23 * 60 + 59), max: 23 * 60 + 59 }),

@@ -85,7 +85,12 @@ export async function encrypt(
   if (salt.length !== 16) throw new RangeError('salt must be 16 bytes')
 
   const [userKey, keyPair] = await Promise.all([
-    subtle.importKey('raw', userPublicKey, ecdh, false, []).catch((cause: unknown) => {
+    // WebKit imports a point that isn't on the curve, and ECDH with it then fails or returns
+    // bits that depend on the server key, so the point is checked here first.
+    (isOnCurve(userPublicKey)
+      ? subtle.importKey('raw', userPublicKey, ecdh, false, [])
+      : Promise.reject(new Error('The point is not on the curve'))
+    ).catch((cause: unknown) => {
       throw new InvalidInputError('p256dh is not a point on the P-256 curve', { cause })
     }),
     options.keyPair ?? subtle.generateKey(ecdh, false, ['deriveBits']),
@@ -172,3 +177,24 @@ const headerLength = 86
 const keyInfo = utf8.encode('WebPush: info\0')
 const cekInfo = utf8.encode('Content-Encoding: aes128gcm\0')
 const nonceInfo = utf8.encode('Content-Encoding: nonce\0')
+
+const p256 = {
+  p: 0xffffffff00000001000000000000000000000000ffffffffffffffffffffffffn,
+  b: 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604bn,
+}
+
+/** Whether `point`, an uncompressed P-256 point, satisfies y² = x³ - 3x + b (mod p). */
+function isOnCurve(point: Uint8Array): boolean {
+  if (point.length !== 65 || point[0] !== 4) return false
+  const x = toBigInt(point.subarray(1, 33))
+  const y = toBigInt(point.subarray(33))
+  const { p, b } = p256
+  if (x >= p || y >= p) return false
+  return (y * y - (x * x * x - 3n * x + b)) % p === 0n
+}
+
+function toBigInt(bytes: Uint8Array): bigint {
+  let n = 0n
+  for (const byte of bytes) n = (n << 8n) | BigInt(byte)
+  return n
+}

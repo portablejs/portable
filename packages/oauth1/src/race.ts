@@ -16,7 +16,8 @@ export async function readBody(
   body: Body,
   signal: AbortSignal | undefined,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  if (!signal || body.body === null) return new Uint8Array(await body.arrayBuffer())
+  // Firefox has no `Request.prototype.body`, so a request body there can only be read whole.
+  if (!signal || !body.body) return new Uint8Array(await race(body.arrayBuffer(), signal))
   signal.throwIfAborted()
   const reader = body.body.getReader()
   const onAbort = () => reader.cancel(signal.reason).catch(() => {})

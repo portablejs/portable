@@ -17,7 +17,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm build` | Builds every package with zile into `dist/`. |
 | `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. |
 
-Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files. The pre-push hook type-checks and runs the affected tests. There is no CI yet.
+Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files. The pre-push hook type-checks and runs the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `tsc -b` and every test project (see [docs/architecture.md](docs/architecture.md#ci)).
 
 ## Package rules
 

@@ -73,11 +73,7 @@ async function sign(audience: string, vapid: Vapid, exp: number): Promise<string
   const key = await signingKey(vapid)
   const claims = { aud: audience, exp, sub: vapid.subject }
   const input = `${jwtHeader}.${base64url(utf8.encode(JSON.stringify(claims)))}`
-  const signature = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
-    key,
-    utf8.encode(input),
-  )
+  const signature = await crypto.subtle.sign(ecdsaSha256, key, utf8.encode(input))
   return `vapid t=${input}.${base64url(new Uint8Array(signature))}, k=${vapid.publicKey}`
 }
 
@@ -112,11 +108,23 @@ async function importSigningKey(publicKey: unknown, privateKey: unknown): Promis
     y: base64url(point.subarray(33)),
     d: base64url(d),
   }
+  let key: CryptoKey
+  let matches: boolean
   try {
-    return await crypto.subtle.importKey('jwk', jwk, ecdsa, false, ['sign'])
+    key = await crypto.subtle.importKey('jwk', jwk, ecdsa, false, ['sign'])
+    // Firefox imports a JWK whose `d` doesn't belong to its `x` and `y`, so a test signature
+    // checks that the keys are a pair.
+    const verifier = await crypto.subtle.importKey('raw', new Uint8Array(point), ecdsa, false, [
+      'verify',
+    ])
+    const signature = await crypto.subtle.sign(ecdsaSha256, key, new Uint8Array())
+    matches = await crypto.subtle.verify(ecdsaSha256, verifier, signature, new Uint8Array())
   } catch (cause) {
     throw new RangeError('vapid.publicKey and vapid.privateKey are not a P-256 key pair', { cause })
   }
+  if (!matches)
+    throw new RangeError('vapid.publicKey and vapid.privateKey are not a P-256 key pair')
+  return key
 }
 
 function readVapidKey(key: unknown, name: string, length: number): Uint8Array {
@@ -132,6 +140,7 @@ const base64url = (bytes: Uint8Array): string =>
 
 const utf8 = new TextEncoder()
 const ecdsa = { name: 'ECDSA', namedCurve: 'P-256' }
+const ecdsaSha256 = { name: 'ECDSA', hash: 'SHA-256' }
 const jwtHeader = base64url(utf8.encode('{"typ":"JWT","alg":"ES256"}'))
 const keys = new Map<string, Promise<CryptoKey>>()
 const tokens = new Map<string, { issued: number; header: Promise<string> }>()

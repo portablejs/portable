@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as OAuth1 from '@portable/oauth1'
 
+// Firefox has no `Request.prototype.body` and sends a ReadableStream request body as text.
+const streamBodies = 'body' in Request.prototype
+
 const consumer = { key: 'k', secret: 's' }
 
 function slowFormRequest() {
@@ -26,16 +29,19 @@ function slowFormRequest() {
 }
 
 describe('signal', () => {
-  test('aborting sign while it reads a form body rejects with the reason and cancels the body', async () => {
-    const { request, source } = slowFormRequest()
-    const controller = new AbortController()
-    const reason = new Error('stop')
-    const signing = OAuth1.sign(request, { consumer, signal: controller.signal })
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    controller.abort(reason)
-    await expect(signing).rejects.toBe(reason)
-    expect(source.cancelled).toBe(reason)
-  })
+  test.runIf(streamBodies)(
+    'aborting sign while it reads a form body rejects with the reason and cancels the body',
+    async () => {
+      const { request, source } = slowFormRequest()
+      const controller = new AbortController()
+      const reason = new Error('stop')
+      const signing = OAuth1.sign(request, { consumer, signal: controller.signal })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      controller.abort(reason)
+      await expect(signing).rejects.toBe(reason)
+      expect(source.cancelled).toBe(reason)
+    },
+  )
 
   test('aborting while the digest runs rejects with the reason', async () => {
     const controller = new AbortController()

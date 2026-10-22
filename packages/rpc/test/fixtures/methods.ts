@@ -5,14 +5,27 @@ export type ParentApi = {
   getChannel(): string
 }
 
+/** The API of a parent that forwards some of a Worker's methods. */
+export type BridgeApi = ParentApi & { worker: WorkerBridge }
+
+export type WorkerBridge = {
+  multiply(a: number, b: number): Promise<number>
+  count(n: number): AsyncIterable<number>
+  forever(): AsyncIterable<number>
+  wasCancelled(): Promise<boolean>
+}
+
 export type Config = {
   /** The origin the child passes to `Rpc.window`. */
   origin?: string | undefined
   /** One connection per channel, opened in this order. */
   channels?: string[] | undefined
   codec?: 'json' | 'identity' | undefined
-  /** `other` serves a different API, `version` speaks protocol version 2, `silent` never connects. */
-  page?: 'general' | 'other' | 'version' | 'silent' | undefined
+  /**
+   * `other` serves a different API, `version` speaks protocol version 2, `silent` never connects,
+   * and `port` serves over a MessagePort that the parent transfers.
+   */
+  page?: 'general' | 'other' | 'version' | 'silent' | 'port' | undefined
   /** Milliseconds to wait before connecting. */
   delay?: number | undefined
   /** A URL to navigate to instead of connecting. */
@@ -35,6 +48,7 @@ export function createMethods(
   } = {},
 ) {
   const parent = () => options.parent!()
+  const worker = () => (parent() as Rpc.Remote<BridgeApi>).worker
   let parentReturnValue: number | undefined
   let cancelled = false
   return {
@@ -98,6 +112,21 @@ export function createMethods(
     origin: () => globalThis.location.origin,
     getChannel: () => options.channel ?? '',
     getChannelFromParent: () => parent().getChannel(),
+    relayMultiply: (a: number, b: number) => worker().multiply(a, b),
+    async relayCount(n: number) {
+      const values: number[] = []
+      for await (const value of worker().count(n)) values.push(value)
+      return values
+    },
+    async relayUntilBreak(n: number) {
+      const values: number[] = []
+      for await (const value of worker().forever()) {
+        values.push(value)
+        if (values.length === n) break
+      }
+      return values
+    },
+    relayWasCancelled: () => worker().wasCancelled(),
     reload: () => void options.reload?.(),
     navigate: (to: string) => void options.navigate?.(to),
   }

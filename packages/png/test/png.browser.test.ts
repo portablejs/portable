@@ -2,8 +2,26 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Png from '@portable/png'
 import { fixture, fixtures, randomBytes } from './utils.js'
 
+const colorChunks = new Set(['gAMA', 'cHRM', 'sRGB', 'iCCP'])
+
+// WebKit applies `gAMA` even with `colorSpaceConversion: 'none'`, so a PngSuite sample of 127 with
+// gamma 1.0 comes back as 186. `decode` doesn't apply gamma, so `viaBrowser` removes the color
+// chunks before the browser decodes the file.
+function withoutColorChunks(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const kept = [bytes.subarray(0, 8)]
+  for (let at = 8; at + 8 <= bytes.length;) {
+    const end = at + 12 + view.getUint32(at)
+    const type = String.fromCharCode(...bytes.subarray(at + 4, at + 8))
+    if (!colorChunks.has(type)) kept.push(bytes.subarray(at, end))
+    at = end
+  }
+  return new Uint8Array(kept.flatMap((chunk) => [...chunk]))
+}
+
 async function viaBrowser(bytes: Uint8Array): Promise<Uint8ClampedArray> {
-  const bitmap = await createImageBitmap(new Blob([bytes.slice()], { type: 'image/png' }), {
+  const png = withoutColorChunks(bytes)
+  const bitmap = await createImageBitmap(new Blob([png], { type: 'image/png' }), {
     colorSpaceConversion: 'none',
     premultiplyAlpha: 'none',
   })

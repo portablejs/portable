@@ -1,7 +1,13 @@
 import * as Rpc from '@portable/rpc'
 import { describe, expect, onTestFinished, test, vi } from 'vite-plus/test'
 import { communicationContract } from './contract.js'
-import { codecOf, type Config, type Methods, type ParentApi } from './fixtures/methods.js'
+import {
+  type BridgeApi,
+  codecOf,
+  type Config,
+  type Methods,
+  type ParentApi,
+} from './fixtures/methods.js'
 
 type WorkerConfig = Config & { mode?: 'self' | 'broadcast' | 'ports'; broadcast?: string }
 
@@ -102,6 +108,21 @@ const multiplyWithin = (remote: Rpc.Remote<Methods>, ms: number) =>
 
 const timeout = { name: 'TimeoutError' }
 
+/**
+ * Calls `multiply(2, 5)` until the worker answers. Chromium registers a new BroadcastChannel
+ * asynchronously, so the worker's `ready` message can arrive before its channel receives
+ * messages, and the first calls are lost.
+ */
+async function untilAnswered(remote: Rpc.Remote<Methods>): Promise<number> {
+  for (;;) {
+    try {
+      return await Rpc.call(remote.multiply, [2, 5], { signal: AbortSignal.timeout(200) })
+    } catch (error) {
+      if ((error as Error).name !== 'TimeoutError') throw error
+    }
+  }
+}
+
 communicationContract('a cross-origin iframe', async ({ codec, serve, signal }) => {
   const element = child({ codec, origin: location.origin }, otherOrigin)
   return Rpc.connect<Methods>(Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }), {
@@ -110,6 +131,28 @@ communicationContract('a cross-origin iframe', async ({ codec, serve, signal }) 
     signal,
   })
 })
+
+/**
+ * Loads a cross-origin child that serves the general methods over a MessagePort, and transfers
+ * the other end of the channel to it.
+ */
+async function portChild(config: Config = {}): Promise<MessagePort> {
+  const element = child({ ...config, page: 'port', origin: location.origin }, otherOrigin)
+  await loaded(element)
+  const { port1, port2 } = new MessageChannel()
+  element.contentWindow!.postMessage('port', otherOrigin, [port2])
+  return port1
+}
+
+communicationContract(
+  'a cross-origin iframe over a transferred MessagePort',
+  async ({ codec, serve, signal }) =>
+    Rpc.connect<Methods>(Rpc.port(await portChild({ codec }), { signal }), {
+      codec: codecOf({ codec }),
+      serve,
+      signal,
+    }),
+)
 
 communicationContract('a module Worker', async ({ codec, serve, signal }) => {
   return Rpc.connect<Methods>(Rpc.port(worker({ codec }), { signal }), {
@@ -125,11 +168,13 @@ communicationContract('a Worker over BroadcastChannel', async ({ codec, serve, s
   await new Promise((resolve) => created.addEventListener('message', resolve, { once: true }))
   const channel = new BroadcastChannel(name)
   onTestFinished(() => channel.close())
-  return Rpc.connect<Methods>(Rpc.port(channel, { signal }), {
+  const remote = Rpc.connect<Methods>(Rpc.port(channel, { signal }), {
     codec: codecOf({ codec }),
     serve,
     signal,
   })
+  await untilAnswered(remote)
+  return remote
 })
 
 describe('handshake', () => {
@@ -149,6 +194,13 @@ describe('handshake', () => {
   test('connects when the child starts connecting after the parent', async () => {
     const remote = connect(child({ delay: 500 }).contentWindow!, { origin: location.origin })
     await expect(remote.multiply(2, 5)).resolves.toBe(10)
+  })
+
+  test('answers calls to a same-origin child made from a timer', async () => {
+    const remote = connect(child().contentWindow!, { origin: location.origin })
+    await remote.multiply(1, 1)
+    const result = new Promise((resolve) => setTimeout(() => resolve(remote.multiply(2, 5))))
+    await expect(result).resolves.toBe(10)
   })
 
   test('rejects calls with Rpc.TransportError when the child uses another protocol version', async () => {
@@ -331,6 +383,51 @@ describe('channels', () => {
   })
 })
 
+describe('a bridge on the main thread', () => {
+  /**
+   * Connects to a Worker and to a cross-origin child, and serves the child a `worker` API whose
+   * methods call the Worker.
+   */
+  function bridge(): Rpc.Remote<Methods> {
+    const signal = closer().signal
+    const toWorker = Rpc.connect<Methods>(Rpc.port(worker(), { signal }), {
+      serve: parentApi(),
+      signal,
+    })
+    const api: BridgeApi = {
+      ...parentApi(),
+      worker: {
+        multiply: (a, b) => toWorker.multiply(a, b),
+        count: (n) => toWorker.count(n),
+        forever: () => toWorker.forever(),
+        wasCancelled: () => toWorker.wasCancelled(),
+      },
+    }
+    const element = child({ origin: location.origin }, otherOrigin)
+    return Rpc.connect<Methods>(
+      Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }),
+      {
+        serve: api,
+        signal,
+      },
+    )
+  }
+
+  test('forwards a call from a cross-origin iframe to a Worker', async () => {
+    expect(await bridge().relayMultiply(2, 3)).toBe(6)
+  })
+
+  test("forwards the Worker's streamed values to the iframe", async () => {
+    expect(await bridge().relayCount(3)).toEqual([0, 1, 2])
+  })
+
+  test("stops the Worker's generator when the iframe stops reading", async () => {
+    const remote = bridge()
+    expect(await remote.relayUntilBreak(2)).toEqual([0, 1])
+    await vi.waitFor(async () => expect(await remote.relayWasCancelled()).toBe(true))
+  })
+})
+
 describe('BroadcastChannel', () => {
   test('loses calls posted before the other side opens its BroadcastChannel', async () => {
     const name = `rpc-${crypto.randomUUID()}`
@@ -338,9 +435,8 @@ describe('BroadcastChannel', () => {
     onTestFinished(() => channel.close())
     const remote = Rpc.connect<Methods>(Rpc.port(channel), { signal: closer().signal })
     const early = multiplyWithin(remote, 1000)
-    const created = worker({ mode: 'broadcast', broadcast: name })
-    await new Promise((resolve) => created.addEventListener('message', resolve, { once: true }))
-    await expect(remote.multiply(2, 5)).resolves.toBe(10)
+    worker({ mode: 'broadcast', broadcast: name })
+    await expect(untilAnswered(remote)).resolves.toBe(10)
     await expect(early).rejects.toMatchObject(timeout)
   })
 })
@@ -565,7 +661,8 @@ describe('targets', () => {
   })
 
   test('connects to a Worker created from a blob URL', async () => {
-    const code = `import { servePort } from ${JSON.stringify(methodsUrl)}; servePort(self)`
+    const methods = await inlineModule(methodsUrl)
+    const code = `import { servePort } from ${JSON.stringify(methods)}; servePort(self)`
     const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }))
     onTestFinished(() => URL.revokeObjectURL(url))
     const created = new Worker(url, { type: 'module' })
@@ -575,7 +672,8 @@ describe('targets', () => {
   })
 
   test('connects to a Worker created from a data URL', async () => {
-    const code = `import { servePort } from ${JSON.stringify(methodsUrl)}; servePort(self)`
+    const methods = await inlineModule(methodsUrl)
+    const code = `import { servePort } from ${JSON.stringify(methods)}; servePort(self)`
     const created = new Worker(`data:text/javascript,${encodeURIComponent(code)}`, {
       type: 'module',
     })
