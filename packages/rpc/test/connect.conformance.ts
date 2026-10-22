@@ -430,6 +430,31 @@ describe('cancellation', () => {
     await expect(call).rejects.toMatchObject({ name: 'Rpc.TransportError', cause: failure })
   })
 
+  test('a method wrapped by another copy of the package still gets the context', async () => {
+    let methodSignal: AbortSignal | undefined
+    const method = (context: { signal: AbortSignal }) => {
+      methodSignal = context.signal
+      return 'ok'
+    }
+    const wrapped = Object.defineProperty(() => 'wrapper', Symbol.for('portable.rpc.context'), {
+      value: method,
+    })
+    const remote = pair({ wrapped })
+    expect(await remote.wrapped()).toBe('ok')
+    expect(methodSignal).toBeInstanceOf(AbortSignal)
+  })
+
+  test('Rpc.call accepts a method of a remote from another copy of the package', async () => {
+    const client = {
+      request: async (method: string, params: unknown) => [method, params],
+      notify: async () => {},
+    }
+    const method = Object.defineProperty(() => {}, Symbol.for('portable.rpc.target'), {
+      value: { client, method: 'add' },
+    })
+    expect(await Rpc.call(method, [1, 2])).toEqual(['add', [1, 2]])
+  })
+
   test('a withContext method called locally gets a signal that is not aborted', () => {
     const fn = Rpc.withContext(({ signal }, a: number) => (signal.aborted ? -1 : a))
     expect(fn(5)).toBe(5)

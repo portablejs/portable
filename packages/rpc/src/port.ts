@@ -85,15 +85,23 @@ export function port(target: port.Target, options: port.Options = {}): Transport
   return transport
 }
 
+type Direct = {
+  post(message: unknown): void | Promise<void>
+  listen?(onMessage: (data: unknown) => void, onError: (reason: unknown) => void): () => void
+}
+
+const directKey = Symbol.for('portable.rpc.direct')
+
 /**
  * Lets `connect` post, and for ports receive, messages directly instead of through the streams.
  * That is faster, and a message that can't be cloned rejects one call instead of erroring the
- * writable permanently.
+ * writable permanently. The functions are stored on the transport under a `Symbol.for` key, so
+ * `connect` from another copy of this package finds them too.
  */
-export const direct: WeakMap<
-  Transport,
-  {
-    post(message: unknown): void | Promise<void>
-    listen?(onMessage: (data: unknown) => void, onError: (reason: unknown) => void): () => void
-  }
-> = new WeakMap()
+export const direct = {
+  get: (transport: Transport): Direct | undefined =>
+    (transport as { [directKey]?: Direct })[directKey],
+  set(transport: Transport, value: Direct): void {
+    Object.defineProperty(transport, directKey, { value })
+  },
+}

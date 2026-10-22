@@ -13,7 +13,7 @@ type Call = {
 
 type Source = { next: () => Promise<IteratorResult<unknown>>; cancel: () => void }
 
-const contextual = new WeakMap<Function, Function>()
+const contextKey = Symbol.for('portable.rpc.context')
 
 /**
  * Wraps a method so that it receives a `Context` as its first argument when it is called
@@ -38,7 +38,7 @@ export function withContext<args extends unknown[], result>(
   const wrapper = function (this: unknown, ...args: args) {
     return fn.call(this, { signal: new AbortController().signal }, ...args)
   }
-  contextual.set(wrapper, fn)
+  Object.defineProperty(wrapper, contextKey, { value: fn })
   return wrapper
 }
 
@@ -106,7 +106,7 @@ export function createServer(
     if (!notification) calls.set(id, call)
     try {
       const args = params === undefined ? [] : Array.isArray(params) ? params : [params]
-      const original = contextual.get(fn)
+      const original = (fn as { [contextKey]?: Function })[contextKey]
       let result: unknown = original
         ? original.call(holder, { signal: call.controller.signal, request }, ...args)
         : fn.apply(holder, args)
