@@ -35,7 +35,7 @@ type Cidr = { address: Address; prefix: number }
 | Function | Returns |
 | --- | --- |
 | `parse(text)` | An `Address`. Throws `InvalidInputError` for anything else. |
-| `validate(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string. |
+| `canParse(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string. |
 | `format(address)` | Text: dotted decimal for IPv4, RFC 5952 for IPv6, with `%zone` if present. |
 | `fromBytes(bytes)` | An `Address` built from a copy of 4 or 16 bytes. Throws `InvalidInputError` for any other length. |
 | `compare(a, b)` | A negative number, zero or a positive number: IPv4 before IPv6, then by bytes, then by zone. Fits `Array.prototype.sort`. |
@@ -134,8 +134,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | Upstream | @portable/ip |
 | --- | --- |
 | `ipaddr.parse(text)`, `ipaddr.IPv4.parse(text)` | `Ip.parse(text)` |
-| `ipaddr.isValid(text)`, `isIP(text)`, `net.isIP(text) !== 0` | `Ip.validate(text)` |
-| `isIPv4(text)`, `ipaddr.IPv4.isValidFourPartDecimal(text)` | `Ip.validate(text, { version: 4 })` |
+| `ipaddr.isValid(text)`, `isIP(text)`, `net.isIP(text) !== 0` | `Ip.canParse(text)` |
+| `isIPv4(text)`, `ipaddr.IPv4.isValidFourPartDecimal(text)` | `Ip.canParse(text, { version: 4 })` |
 | `ipVersion(text)`, `addr.kind()` | `Ip.parse(text).version` |
 | `addr.toString()`, `addr.toRFC5952String()`, `ip.toString(buffer)` | `Ip.format(address)` |
 | `addr.toByteArray()`, `ip.toBuffer(text)` | `Ip.parse(text).bytes` |

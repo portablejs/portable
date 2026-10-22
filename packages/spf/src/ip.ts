@@ -1,7 +1,7 @@
 import * as Ip from '@portable/ip'
 
 export function parseIp(text: string): Ip.Address | undefined {
-  if (!Ip.validate(text)) return undefined
+  if (!Ip.canParse(text)) return undefined
   const address = Ip.parse(text)
   return address.version === 6 && address.zone !== undefined ? undefined : address
 }

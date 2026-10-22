@@ -34,7 +34,7 @@ export function parse(text: string): Address {
   return address
 }
 
-export declare namespace validate {
+export declare namespace canParse {
   type Options = {
     /** Accept only this IP version. @default undefined, which accepts both */
     version?: 4 | 6 | undefined
@@ -49,12 +49,12 @@ export declare namespace validate {
  * ```ts
  * import * as Ip from '@portable/ip'
  *
- * Ip.validate('2001:db8::1') // true
- * Ip.validate('2001:db8::1', { version: 4 }) // false
- * Ip.validate('010.0.0.1') // false
+ * Ip.canParse('2001:db8::1') // true
+ * Ip.canParse('2001:db8::1', { version: 4 }) // false
+ * Ip.canParse('010.0.0.1') // false
  * ```
  */
-export function validate(text: unknown, options: validate.Options = {}): boolean {
+export function canParse(text: unknown, options: canParse.Options = {}): boolean {
   if (typeof text !== 'string') return false
   const address = tryParse(text)
   return (

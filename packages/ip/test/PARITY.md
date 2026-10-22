@@ -2,7 +2,7 @@
 
 Upstream suites: [ipaddr.js `test/ipaddr.test.js`](https://github.com/whitequark/ipaddr.js/blob/main/test/ipaddr.test.js) (main branch, after 2.5.0), [ip 2.0.1 `test/api-test.js`](https://github.com/indutny/node-ip/blob/main/test/api-test.js) and [is-ip `test.js`](https://github.com/sindresorhus/is-ip/blob/main/test.js). Tests are in `ip.conformance.ts` unless noted. No fixtures are copied.
 
-The oracle tests in `ip.oracle.test.ts` compare `validate` with `net.isIP`, `parse`, `format`, `contains` and `range` with ipaddr.js 2.5.0, `format` with `net.SocketAddress`, and `contains` with `net.BlockList`, on 2,000 random addresses in five spellings each and 5,000 random strings.
+The oracle tests in `ip.oracle.test.ts` compare `canParse` with `net.isIP`, `parse`, `format`, `contains` and `range` with ipaddr.js 2.5.0, `format` with `net.SocketAddress`, and `contains` with `net.BlockList`, on 2,000 random addresses in five spellings each and 5,000 random strings.
 
 ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, merging, excluding, expanding), which this package leaves out. Their contains cases are the same as ipaddr.js's and ip's.
 

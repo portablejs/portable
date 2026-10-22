@@ -154,7 +154,7 @@ function toQueryName(name: string, syscall: string): string {
 }
 
 function reverseName(ip: string): string | undefined {
-  if (!Ip.validate(ip)) return undefined
+  if (!Ip.canParse(ip)) return undefined
   const address = Ip.parse(ip)
   if (address.version === 6 && address.zone !== undefined) return undefined
   return Ip.reverseName(address)

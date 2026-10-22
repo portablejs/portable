@@ -31,9 +31,9 @@ describe('ipaddr.js', () => {
   })
 
   test('accepts only four-part decimal IPv4', () => {
-    expect(Ip.validate('0.0.0.0')).toBe(true)
-    expect(Ip.validate('127.0.0.1')).toBe(true)
-    expect(Ip.validate('192.168.1.1')).toBe(true)
+    expect(Ip.canParse('0.0.0.0')).toBe(true)
+    expect(Ip.canParse('127.0.0.1')).toBe(true)
+    expect(Ip.canParse('192.168.1.1')).toBe(true)
     for (const text of [
       '192.168.007.0xa',
       '1024.0.0.1',
@@ -44,7 +44,7 @@ describe('ipaddr.js', () => {
       '192.168.100.00000002',
       '192.168.100.20000000',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
   })
 
   test('rejects the octal, hex, integer and short IPv4 forms', () => {
@@ -251,7 +251,7 @@ describe('ipaddr.js', () => {
       '1:2:3:4:5:6:7::',
       '::1:2:3:4:5:6:7',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, true])
+      expect([text, Ip.canParse(text)]).toEqual([text, true])
     for (const text of [
       '200001::1',
       '::ffff:300.168.1.1',
@@ -268,8 +268,8 @@ describe('ipaddr.js', () => {
       '::8:8:8:8:8:8:8:8:8',
       '::8:8:8:8:8:8:8:8:8%z',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
-    expect(Ip.validate(undefined)).toBe(false)
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
+    expect(Ip.canParse(undefined)).toBe(false)
   })
 
   test('parses IPv6 in different notations', () => {
@@ -484,7 +484,7 @@ describe('ip', () => {
       '',
       '192.168.0.1.100',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
   })
 
   test('classifies private and internal addresses', () => {
@@ -557,7 +557,7 @@ describe('is-ip', () => {
       '::1',
       '2001:0dc5:72a3:0000:0000:802e:3370:73E4',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, true])
+      expect([text, Ip.canParse(text)]).toEqual([text, true])
   })
 
   test('accepts only IPv6 with version 6', () => {
@@ -568,18 +568,18 @@ describe('is-ip', () => {
       '0000:0000:0000:0000:0000:ffff:192.168.100.228',
       '2001:0dc5:72a3:0000:0000:802e:3370:73E4',
     ])
-      expect([text, Ip.validate(text, { version: 6 })]).toEqual([text, true])
-    expect(Ip.validate('2001:0dc5:72a3:0000:0000:802e:3370:73E4XXXXXXXX', { version: 6 })).toBe(
+      expect([text, Ip.canParse(text, { version: 6 })]).toEqual([text, true])
+    expect(Ip.canParse('2001:0dc5:72a3:0000:0000:802e:3370:73E4XXXXXXXX', { version: 6 })).toBe(
       false,
     )
-    expect(Ip.validate('192.168.0.1', { version: 6 })).toBe(false)
+    expect(Ip.canParse('192.168.0.1', { version: 6 })).toBe(false)
   })
 
   test('accepts only IPv4 with version 4', () => {
-    expect(Ip.validate('192.168.0.1', { version: 4 })).toBe(true)
-    expect(Ip.validate('123.123.123.1234', { version: 4 })).toBe(false)
-    expect(Ip.validate('123.123.123.12345', { version: 4 })).toBe(false)
-    expect(Ip.validate('::1', { version: 4 })).toBe(false)
+    expect(Ip.canParse('192.168.0.1', { version: 4 })).toBe(true)
+    expect(Ip.canParse('123.123.123.1234', { version: 4 })).toBe(false)
+    expect(Ip.canParse('123.123.123.12345', { version: 4 })).toBe(false)
+    expect(Ip.canParse('::1', { version: 4 })).toBe(false)
   })
 
   test('reports the version', () => {
@@ -593,12 +593,12 @@ describe('is-ip', () => {
 describe('known upstream issues', () => {
   test('CVE-2023-42282: a hex or short loopback address is not accepted as public', () => {
     for (const text of ['0x7f.1', '0x7f.0.0.1', '127.1', '0'])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
   })
 
   test('CVE-2024-29415: octal, integer and odd IPv6 spellings of internal addresses', () => {
     for (const text of ['127.1', '01200034567', '012.1.2.3', '017700000001', '0177.0.0.1'])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
     expect(Ip.range('000:0:0000::01')).toBe('loopback')
     expect(Ip.range('::fFFf:127.0.0.1')).toBe('ipv4Mapped')
     expect(Ip.range(Ip.unmap('::fFFf:127.0.0.1'))).toBe('loopback')
@@ -614,13 +614,13 @@ describe('known upstream issues', () => {
   })
 
   test('the IPv4 part of an IPv6 address may not have leading zeros', () => {
-    expect(Ip.validate('::ffff:0177.0.0.1')).toBe(false)
-    expect(Ip.validate('::ffff:010.0.0.1')).toBe(false)
+    expect(Ip.canParse('::ffff:0177.0.0.1')).toBe(false)
+    expect(Ip.canParse('::ffff:010.0.0.1')).toBe(false)
   })
 
   test('999.999.999.999 is not an address, and IPv4 is not IPv6', () => {
-    expect(Ip.validate('999.999.999.999')).toBe(false)
-    expect(Ip.validate('127.0.0.1', { version: 6 })).toBe(false)
+    expect(Ip.canParse('999.999.999.999')).toBe(false)
+    expect(Ip.canParse('127.0.0.1', { version: 6 })).toBe(false)
   })
 
   test('198.18.0.0/15 is benchmarking, not public', () => {
@@ -656,7 +656,7 @@ describe('parse', () => {
       '00.0.0.0',
       '1.2.3.4%z',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
   })
 
   test('accepts every edge of the IPv6 grammar', () => {
@@ -670,7 +670,7 @@ describe('parse', () => {
       'fe80::1%eth0',
       'fe80::1%en0.1_a~b-c',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, true])
+      expect([text, Ip.canParse(text)]).toEqual([text, true])
     for (const text of [
       ':',
       ':::',
@@ -687,7 +687,7 @@ describe('parse', () => {
       '[::1]',
       'g::',
     ])
-      expect([text, Ip.validate(text)]).toEqual([text, false])
+      expect([text, Ip.canParse(text)]).toEqual([text, false])
   })
 
   test('copies the bytes passed to fromBytes', () => {

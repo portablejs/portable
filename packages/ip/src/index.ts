@@ -1,5 +1,6 @@
 export {
   type Address,
+  canParse,
   compare,
   format,
   fromBytes,
@@ -7,7 +8,6 @@ export {
   reverseName,
   toIpv6,
   unmap,
-  validate,
 } from './address.js'
 export { type Cidr, contains, formatCidr, parseCidr } from './cidr.js'
 export { InvalidInputError } from './errors.js'
