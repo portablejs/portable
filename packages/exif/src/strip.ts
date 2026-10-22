@@ -36,7 +36,7 @@ export declare namespace strip {
  * Exif.parse(stripped).gps // {}
  * ```
  */
-export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array {
+export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
   const parts: Uint8Array[] = []
   const stripper = new Stripper(options, (part) => parts.push(part))
   stripper.push(bytes)

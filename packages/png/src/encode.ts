@@ -52,7 +52,10 @@ export declare namespace encodeSync {
  * return new Response(bytes, { headers: { 'content-type': 'image/png' } })
  * ```
  */
-export async function encode(image: RgbaImage, options: encode.Options = {}): Promise<Uint8Array> {
+export async function encode(
+  image: RgbaImage,
+  options: encode.Options = {},
+): Promise<Uint8Array<ArrayBuffer>> {
   const { signal } = options
   signal?.throwIfAborted()
   const colorType = options.colorType ?? 6
@@ -73,7 +76,7 @@ export async function encode(image: RgbaImage, options: encode.Options = {}): Pr
  * const bytes = Png.encodeSync({ width, height, data }, { deflate: (raw) => zlibSync(raw, { level: 9 }) })
  * ```
  */
-export function encodeSync(image: RgbaImage, options: encodeSync.Options): Uint8Array {
+export function encodeSync(image: RgbaImage, options: encodeSync.Options): Uint8Array<ArrayBuffer> {
   const colorType = options.colorType ?? 6
   return assemble(image, colorType, options.deflate(filtered(image, colorType, options)))
 }
@@ -134,7 +137,11 @@ function pack(
   return out
 }
 
-function assemble(image: RgbaImage, colorType: number, compressed: Uint8Array): Uint8Array {
+function assemble(
+  image: RgbaImage,
+  colorType: number,
+  compressed: Uint8Array,
+): Uint8Array<ArrayBuffer> {
   const header = new Uint8Array(13)
   const view = new DataView(header.buffer)
   view.setUint32(0, image.width)

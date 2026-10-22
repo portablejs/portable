@@ -250,7 +250,7 @@ export declare namespace encode {
  * })
  * ```
  */
-export function encode(packet: Packet, options: encode.Options = {}): Uint8Array {
+export function encode(packet: Packet, options: encode.Options = {}): Uint8Array<ArrayBuffer> {
   const tcp = options.framing === 'tcp'
   const length = encodingLength(packet) + (tcp ? 2 : 0)
   if (tcp && length > 0xffff + 2)

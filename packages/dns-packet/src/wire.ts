@@ -3,7 +3,7 @@ import { InvalidInputError, TruncatedError } from './errors.js'
 export type Reader = { readonly bytes: Uint8Array; offset: number }
 
 export type Writer = {
-  readonly bytes: Uint8Array
+  readonly bytes: Uint8Array<ArrayBuffer>
   offset: number
   /** Where the DNS message starts in `bytes`. Compression pointers count from here. */
   readonly start: number

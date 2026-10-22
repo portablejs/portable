@@ -37,7 +37,10 @@ export declare namespace decode {
  * that is not allowed.
  * @throws {TruncatedError} When `'loose'` or `'strict'` mode finds the input ending inside a group.
  */
-export function decode(input: string | Uint8Array, options: decode.Options = {}): Uint8Array {
+export function decode(
+  input: string | Uint8Array,
+  options: decode.Options = {},
+): Uint8Array<ArrayBuffer> {
   const { alphabet = 'base64', mode = 'loose' } = options
   const state = createState(alphabet, mode)
   const text = typeof input === 'string' ? input : utf8.decode(input)
@@ -60,7 +63,7 @@ const utf8 = new TextDecoder()
 type NativeFromBase64 = (
   text: string,
   options: { alphabet: Alphabet; lastChunkHandling: 'loose' | 'strict' },
-) => Uint8Array
+) => Uint8Array<ArrayBuffer>
 const nativeFromBase64: NativeFromBase64 | undefined = Reflect.get(Uint8Array, 'fromBase64')
 
 function table(characters: string): Int8Array {
@@ -121,7 +124,7 @@ function invalid(state: State, index: number, problem: string): never {
   throw new InvalidInputError(`${problem} at index ${state.offset + index}.`)
 }
 
-function decodeChunk(state: State, text: string, final: boolean): Uint8Array {
+function decodeChunk(state: State, text: string, final: boolean): Uint8Array<ArrayBuffer> {
   const { values, mime, strict } = state
   let { bits, count, padding } = state
   const length = text.length

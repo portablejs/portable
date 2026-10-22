@@ -83,6 +83,12 @@ describe('encode', () => {
 })
 
 describe('decode', () => {
+  test('returns bytes that crypto.subtle and Blob accept as a BufferSource', async () => {
+    const digest = await crypto.subtle.digest('SHA-256', decode('YQ=='))
+    expect(digest.byteLength).toBe(32)
+    expect(new Blob([decode('YQ==')]).size).toBe(1)
+  })
+
   test("skips ASCII whitespace anywhere in 'loose' mode", () => {
     expect(text(decode(' Y\tW\nJ\fj\rZA = = '))).toBe('abcd')
   })

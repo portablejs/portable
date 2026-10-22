@@ -24,7 +24,7 @@ export declare namespace DecoderStream {
  * const bytes = mimePartBody.pipeThrough(new Base64.DecoderStream({ mode: 'mime' }))
  * ```
  */
-export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array> {
+export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
   constructor(options: DecoderStream.Options = {}) {
     const { alphabet = 'base64', mode = 'loose' } = options
     const write = createDecoder(alphabet, mode)
