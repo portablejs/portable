@@ -44,7 +44,9 @@ const sentence = (count: number) =>
 
 const subjects = Array.from({ length: 200 }, () => sentence(12))
 const qSubjects = subjects.map((subject) => encodeWords(subject))
-const bWords = subjects.map((subject) => encodeWord(subject, { encoding: 'B', maxLength: false }))
+const bWords = subjects.map((subject) =>
+  encodeWord(subject, { wordEncoding: 'B', maxLength: false }),
+)
 const bPayloads = bWords.map((word) => word.slice('=?UTF-8?B?'.length, -2))
 const longHeader = 'Subject: ' + sentence(2000).replace(/[^\x20-\x7e]/g, 'x')
 
@@ -124,7 +126,7 @@ describe('encoded words', () => {
   test('encodeWord in B of 200 subjects', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
-        for (const subject of subjects) encodeWord(subject, { encoding: 'B', maxLength: false })
+        for (const subject of subjects) encodeWord(subject, { wordEncoding: 'B', maxLength: false })
       }),
       bench('libmime 5.4.9', () => {
         for (const subject of subjects) libmime.encodeWord(subject, 'B')
@@ -138,7 +140,7 @@ describe('encoded words', () => {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
       })
-    expect(sink).toBe(encodeWord(subjects.at(-1)!, { encoding: 'B', maxLength: false }))
+    expect(sink).toBe(encodeWord(subjects.at(-1)!, { wordEncoding: 'B', maxLength: false }))
   })
 })
 

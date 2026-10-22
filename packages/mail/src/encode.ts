@@ -263,7 +263,7 @@ function text(value: string, charset: MimeHeaders.CharsetEncoder | undefined): s
   // oxlint-disable-next-line no-control-regex
   const control = /[\x00-\x08\x0b-\x1f\x7f]/.test(line)
   if (!control && MimeHeaders.encodeWords(line) === line) return line
-  return MimeHeaders.encodeWord(line, { charset, encoding: wordEncoding(line), maxLength: 52 })
+  return MimeHeaders.encodeWord(line, { charset, wordEncoding: wordEncoding(line), maxLength: 52 })
 }
 
 // oxlint-disable-next-line no-control-regex
@@ -376,7 +376,7 @@ function contentType(value: string, drop?: string): MimeHeaders.Value {
 /** The `name` parameter, for clients that ignore `filename`, as an encoded word if needed. */
 function nameParam(filename: string, charset: MimeHeaders.CharsetEncoder | undefined): string {
   if (/[^\x20-\x7e]|"|=\?/.test(filename))
-    return `"${MimeHeaders.encodeWord(filename, { charset, encoding: wordEncoding(filename), maxLength: 52 })}"`
+    return `"${MimeHeaders.encodeWord(filename, { charset, wordEncoding: wordEncoding(filename), maxLength: 52 })}"`
   return /[\s'\\;:/=(),<>@[\]?]|^-/.test(filename)
     ? `"${filename.replace(/["\\]/g, '\\$&')}"`
     : filename

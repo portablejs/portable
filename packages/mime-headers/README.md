@@ -59,7 +59,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
-| `encoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | `'Q'` keeps ASCII readable, `'B'` is base64. |
+| `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | `'Q'` keeps ASCII readable, `'B'` is base64. |
 | `maxLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. `false` writes one word. |
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. `@portable/charset` provides the encoders. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
@@ -69,7 +69,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 | Type | Description |
 | --- | --- |
-| `MimeHeaders.Encoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
+| `MimeHeaders.WordEncoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
 
 ## Why use this over libmime, addressparser and email-addresses
 
@@ -115,7 +115,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | libmime / addressparser / email-addresses | @portable/mime-headers |
 | --- | --- |
 | `libmime.encodeWord(text, 'Q', n)` | `encodeWord(text, { maxLength: n })` (`maxLength: false` for libmime's 0) |
-| `libmime.encodeWords(text, 'B', n)` | `encodeWords(text, { encoding: 'B', maxLength: n })` |
+| `libmime.encodeWords(text, 'B', n)` | `encodeWords(text, { wordEncoding: 'B', maxLength: n })` |
 | `libmime.encodeWords(buffer, 'Q', 0, 'iso-8859-1')` | `encodeWords(new TextDecoder('iso-8859-1').decode(bytes))` |
 | `libmime.decodeWords(text)` | `decodeWords(text)` |
 | `libmime.foldLines(text, n)` | `fold(text, { lineLength: n })` |

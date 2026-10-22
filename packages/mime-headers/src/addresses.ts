@@ -91,7 +91,7 @@ export function parseMailboxes(
 }
 
 export declare namespace formatAddresses {
-  type Options = Pick<encodeWord.Options, 'charset' | 'encoding'>
+  type Options = Pick<encodeWord.Options, 'charset' | 'wordEncoding'>
 }
 
 /**

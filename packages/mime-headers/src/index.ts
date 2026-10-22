@@ -14,5 +14,5 @@ export {
   encodeWord,
   encodeWords,
   type CharsetEncoder,
-  type Encoding,
+  type WordEncoding,
 } from './words.js'

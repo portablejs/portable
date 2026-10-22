@@ -43,11 +43,11 @@ describe('encoded words', () => {
       const input = randomText(next, 80)
       for (const encoding of ['Q', 'B'] as const) {
         const maxLength = pick(next, [false, 13, 20, 30, 52, 75] as const)
-        const encoded = encodeWord(input, { encoding, maxLength })
+        const encoded = encodeWord(input, { wordEncoding: encoding, maxLength })
         const ok =
           encodedWords.test(encoded) &&
           decodeWords(encoded) === input &&
-          encodeWord(utf8(input), { encoding, maxLength }) === encoded &&
+          encodeWord(utf8(input), { wordEncoding: encoding, maxLength }) === encoded &&
           (maxLength === false ||
             input === '' ||
             encoded.split(' ').every((word) => {
@@ -70,7 +70,7 @@ describe('encoded words', () => {
       const input = randomText(next, 10) + loneSurrogate(next) + randomText(next, 10)
       for (const encoding of ['Q', 'B'] as const) {
         const encoded = encodeWord(input, {
-          encoding,
+          wordEncoding: encoding,
           maxLength: pick(next, [false, 20, 40] as const),
         })
         if (decodeWords(encoded) !== wellFormed(input)) failures.push({ input, encoded })
@@ -84,7 +84,7 @@ describe('encoded words', () => {
     each(3, (next) => {
       const input = words(next, 10, ['ascii', 'specials', 'latin', 'cjk', 'astral', 'controls'])
       const encoded = encodeWords(input, {
-        encoding: pick(next, ['Q', 'B'] as const),
+        wordEncoding: pick(next, ['Q', 'B'] as const),
         maxLength: pick(next, [false, 40] as const),
       })
       const plain = /^[ -~\t]*$/.test(input) && !/=\?|\?=/.test(input)
@@ -112,7 +112,7 @@ describe('encoded words', () => {
       const bytes = latin1.encode(input)
       const base64 = btoa(String.fromCharCode(...bytes))
       for (const encoding of ['Q', 'B'] as const) {
-        const encoded = encodeWord(input, { charset: latin1, encoding })
+        const encoded = encodeWord(input, { charset: latin1, wordEncoding: encoding })
         if (decodeWords(encoded) !== input) failures.push({ input, encoded })
       }
       if (decodeWords(`=?iso-8859-1*en?B?${base64}?=`) !== decoder.decode(bytes))

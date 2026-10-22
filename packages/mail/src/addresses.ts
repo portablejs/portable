@@ -98,14 +98,14 @@ export function format(
     .map((entry) =>
       MimeHeaders.formatAddresses([entry], {
         charset,
-        encoding: wordEncoding(entry.name),
+        wordEncoding: wordEncoding(entry.name),
       }),
     )
     .join(', ')
 }
 
 /** Q keeps mostly Latin text readable, and B is shorter for everything else. */
-export function wordEncoding(text: string): MimeHeaders.Encoding {
+export function wordEncoding(text: string): MimeHeaders.WordEncoding {
   let latin = 0
   let other = 0
   for (let i = 0; i < text.length; i++) {

@@ -21,7 +21,7 @@ describe('encodeWord()', () => {
   })
 
   test('encodes base64', () => {
-    expect(encodeWord('See on õhin test', { encoding: 'B' })).toBe(
+    expect(encodeWord('See on õhin test', { wordEncoding: 'B' })).toBe(
       '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?=',
     )
   })
@@ -34,7 +34,7 @@ describe('encodeWord()', () => {
 
   test('keeps surrogate pairs together when splitting base64', () => {
     const input = 'Hello 😊😊😊😊😊😊 world'
-    const encoded = encodeWord(input, { encoding: 'B', maxLength: 25 })
+    const encoded = encodeWord(input, { wordEncoding: 'B', maxLength: 25 })
     expect(encoded).toContain('?= =?')
     expect(decodeWords(encoded)).toBe(input)
   })
@@ -42,22 +42,22 @@ describe('encodeWord()', () => {
   test('encodes bytes as the UTF-8 text they hold, the same as the string', () => {
     const input = 'ÕÄÖÜ'.repeat(10)
     const bytes = new TextEncoder().encode(input)
-    const encoded = encodeWord(bytes, { encoding: 'B', maxLength: 30 })
+    const encoded = encodeWord(bytes, { wordEncoding: 'B', maxLength: 30 })
     expect(encoded.split(' ').length).toBeGreaterThan(1)
     expect(decodeWords(encoded)).toBe(input)
-    expect(encoded).toBe(encodeWord(input, { encoding: 'B', maxLength: 30 }))
+    expect(encoded).toBe(encodeWord(input, { wordEncoding: 'B', maxLength: 30 }))
   })
 
   test('keeps astral characters outside the emoji block whole', () => {
     const input = '\u{20000}'.repeat(10) + ' \u{1F600}'
     for (const maxLength of [13, 16, 19, 32]) {
-      const encoded = encodeWord(input, { encoding: 'B', maxLength })
+      const encoded = encodeWord(input, { wordEncoding: 'B', maxLength })
       expect(decodeWords(encoded)).toBe(input)
     }
   })
 
   test('replaces an unpaired surrogate without swallowing the next character', () => {
-    const encoded = encodeWord('a\ud800\u{1F600}b', { encoding: 'B', maxLength: 16 })
+    const encoded = encodeWord('a\ud800\u{1F600}b', { wordEncoding: 'B', maxLength: 16 })
     expect(decodeWords(encoded)).toBe('a�\u{1F600}b')
   })
 
@@ -84,7 +84,7 @@ describe('encodeWords()', () => {
   })
 
   test('encodes using base64', () => {
-    expect(encodeWords('Tere õhin', { encoding: 'B' })).toBe('Tere =?UTF-8?B?w7VoaW4=?=')
+    expect(encodeWords('Tere õhin', { wordEncoding: 'B' })).toBe('Tere =?UTF-8?B?w7VoaW4=?=')
   })
 
   test('takes bytes as UTF-8', () => {
@@ -113,7 +113,7 @@ describe('encodeWords()', () => {
 
   test('splits base64 at maxLength', () => {
     const input = 'õõõõõ õõõõõ õõõõõ mugeva õõõõõ õõõõõ õõõõõ õõõõõ Jõgeva'
-    const encoded = encodeWords(input, { encoding: 'B', maxLength: 30 })
+    const encoded = encodeWords(input, { wordEncoding: 'B', maxLength: 30 })
     expect(encoded).toBe(
       '=?UTF-8?B?w7XDtcO1w7XDtSA=?= =?UTF-8?B?w7XDtcO1w7XDtSA=?= =?UTF-8?B?w7XDtcO1w7XDtSBt?= =?UTF-8?B?dWdldmEgw7XDtcO1?= =?UTF-8?B?w7XDtSDDtcO1w7U=?= =?UTF-8?B?w7XDtSDDtcO1w7U=?= =?UTF-8?B?w7XDtSDDtcO1w7U=?= =?UTF-8?B?w7XDtSBKw7VnZXZh?=',
     )

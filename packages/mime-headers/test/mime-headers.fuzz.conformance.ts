@@ -100,9 +100,12 @@ describe('round trips', () => {
           minLength: 1,
           maxLength: 4,
         }),
-        fc.constantFrom<MimeHeaders.Encoding | undefined>(undefined, 'Q', 'B'),
+        fc.constantFrom<MimeHeaders.WordEncoding | undefined>(undefined, 'Q', 'B'),
         (list, encoding) => {
-          const formatted = MimeHeaders.formatAddresses(list, encoding ? { encoding } : {})
+          const formatted = MimeHeaders.formatAddresses(
+            list,
+            encoding ? { wordEncoding: encoding } : {},
+          )
           const parsed = MimeHeaders.parseAddresses(formatted, { strict: true })
           expect(parsed.map(normalEntry)).toEqual(list.map(normalEntry))
         },
@@ -131,9 +134,9 @@ describe('round trips', () => {
     fuzz(
       fc.property(
         text,
-        fc.constantFrom<MimeHeaders.Encoding | undefined>(undefined, 'Q', 'B'),
+        fc.constantFrom<MimeHeaders.WordEncoding | undefined>(undefined, 'Q', 'B'),
         (text, encoding) => {
-          const options = encoding ? { encoding } : {}
+          const options = encoding ? { wordEncoding: encoding } : {}
           expect(MimeHeaders.decodeWords(MimeHeaders.encodeWords(text, options))).toBe(
             wellFormed(text),
           )

@@ -38,14 +38,14 @@ export type CharsetEncoder = {
 /**
  * `'Q'` keeps ASCII letters and digits readable. `'B'` is base64 and shorter for non-Latin text.
  */
-export type Encoding = 'Q' | 'B'
+export type WordEncoding = 'Q' | 'B'
 
 export declare namespace encodeWord {
   type Options = {
     /** Charset of the encoded bytes. @default UTF-8 */
     charset?: CharsetEncoder | undefined
     /** @default 'Q' */
-    encoding?: Encoding | undefined
+    wordEncoding?: WordEncoding | undefined
     /**
      * Longest encoded word, `=?` and `?=` included. Longer text is split into several words that
      * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
@@ -64,13 +64,13 @@ export declare namespace encodeWord {
  * import * as MimeHeaders from '@portable/mime-headers'
  *
  * MimeHeaders.encodeWord('See on õhin test') // '=?UTF-8?Q?See_on_=C3=B5hin_test?='
- * MimeHeaders.encodeWord('See on õhin test', { encoding: 'B' }) // '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?='
+ * MimeHeaders.encodeWord('See on õhin test', { wordEncoding: 'B' }) // '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?='
  * ```
  */
 export function encodeWord(input: string | Uint8Array, options: encodeWord.Options = {}): string {
-  const { charset, encoding = 'Q', maxLength = 75 } = options
+  const { charset, wordEncoding: encoding = 'Q', maxLength = 75 } = options
   if (encoding !== 'Q' && encoding !== 'B')
-    throw new RangeError(`Unknown encoding ${String(encoding)}.`)
+    throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`)
   if (maxLength !== false) checkLength('maxLength', maxLength)
   const prefix = charset
     ? `=?${charset.name}?${encoding}?`
@@ -200,7 +200,7 @@ const withoutLanguage = (charset: string): string => {
 
 function splitUtf8(
   bytes: Uint8Array,
-  encoding: Encoding,
+  encoding: WordEncoding,
   fits: (length: number) => boolean,
 ): Uint8Array[] {
   const chunks: Uint8Array[] = []
@@ -225,7 +225,7 @@ function splitUtf8(
 function splitCharset(
   text: string,
   charset: CharsetEncoder,
-  encoding: Encoding,
+  encoding: WordEncoding,
   fits: (length: number) => boolean,
 ): Uint8Array[] {
   const characters = Array.from(text)

@@ -142,7 +142,7 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['unfold()', unfold],
     ['encodeWords()', (input) => encodeWords(input)],
     ['encodeWord()', (input) => encodeWord(input, { maxLength: 52 })],
-    ['encodeWord() in B', (input) => encodeWord(input, { encoding: 'B' })],
+    ['encodeWord() in B', (input) => encodeWord(input, { wordEncoding: 'B' })],
     ['formatValue()', (input) => formatValue({ value: 'x', params: { f: input } })],
     ['fold()', (input) => fold(input)],
     ['parseAddresses()', (input) => parseAddresses(input)],

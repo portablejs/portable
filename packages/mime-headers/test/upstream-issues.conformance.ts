@@ -78,7 +78,7 @@ describe('encoded words', () => {
 
   test('B words keep every astral character whole (libmime 5.5.0)', () => {
     const input = '\u{20000}\u{1F600}\u{10000}'.repeat(10)
-    const words = encodeWord(input, { encoding: 'B', maxLength: 20 }).split(' ')
+    const words = encodeWord(input, { wordEncoding: 'B', maxLength: 20 }).split(' ')
     expect(words.every((word) => !decodeWords(word).includes('�'))).toBe(true)
     expect(decodeWords(words.join(' '))).toBe(input)
   })
