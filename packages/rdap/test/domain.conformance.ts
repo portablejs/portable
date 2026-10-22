@@ -604,6 +604,9 @@ describe('cancellation', () => {
 test('error names are namespaced by the package', () => {
   expect(new Rdap.InvalidInputError('x').name).toBe('Rdap.InvalidInputError')
   expect(new Rdap.UnsupportedError('x').name).toBe('Rdap.UnsupportedError')
-  expect(new Rdap.NotFoundError('https://x/').name).toBe('Rdap.NotFoundError')
-  expect(new Rdap.ResponseError('x', 500, 'https://x/').name).toBe('Rdap.ResponseError')
+  expect(new Rdap.NotFoundError({ url: 'https://x/' }).name).toBe('Rdap.NotFoundError')
+  expect(
+    new Rdap.ResponseError({ response: new Response(null, { status: 500 }), url: 'https://x/' })
+      .name,
+  ).toBe('Rdap.ResponseError')
 })

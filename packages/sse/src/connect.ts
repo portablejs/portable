@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import * as Timers from '@portable/timers'
 import { createParser, type Event, MaxLengthError } from './decode.js'
 
@@ -81,10 +82,13 @@ export function connect(
       return undefined
     }
     if (response.status !== 200)
-      throw new ResponseError(response, `Expected status 200, got ${response.status}.`)
+      throw new ResponseError({ response, message: `Expected status 200, got ${response.status}.` })
     const type = response.headers.get('content-type')
     if (!isEventStream(type))
-      throw new ResponseError(response, `Expected content type text/event-stream, got ${type}.`)
+      throw new ResponseError({
+        response,
+        message: `Expected content type text/event-stream, got ${type}.`,
+      })
     attempt = 0
     parser.restart()
     return (response.body ?? new ReadableStream({ start: (c) => c.close() })).getReader()
@@ -147,14 +151,8 @@ export function connect(
  * }
  * ```
  */
-export class ResponseError extends Error {
-  override name = 'Sse.ResponseError'
-  /** The rejected response. Its body is not read, so read or cancel it when you're done. */
-  readonly response: Response
-  constructor(response: Response, message: string) {
-    super(message)
-    this.response = response
-  }
+export class ResponseError extends Errors.ResponseError {
+  static override readonly kind: string = 'Sse.ResponseError'
 }
 
 function reconnectByDefault(error: unknown): boolean {

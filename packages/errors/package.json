@@ -1,0 +1,42 @@
+{
+  "name": "@portable/errors",
+  "description": "Defines the error classes every @portable package throws, and checks them across duplicate package copies, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/errors"
+  },
+  "keywords": [
+    "error",
+    "errors",
+    "instanceof",
+    "error-class",
+    "custom-error"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}

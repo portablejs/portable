@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `decode` when the file ends early: before `IEND`, inside a chunk, or with less image data than the image needs.
  *
@@ -12,8 +13,8 @@
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'Png.TruncatedError'
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'Png.TruncatedError'
 }
 
 /**
@@ -31,8 +32,8 @@ export class TruncatedError extends Error {
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Png.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Png.InvalidInputError'
 }
 
 /**
@@ -50,6 +51,6 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'Png.UnsupportedError'
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'Png.UnsupportedError'
 }

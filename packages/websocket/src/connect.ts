@@ -187,7 +187,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   const push = (message: Message) => {
     if (stop.signal.aborted) return
     readableController.enqueue(message)
-    if (readableController.desiredSize! < 0) finish(new MaxBufferedError(maxBuffered), false)
+    if (readableController.desiredSize! < 0) finish(new MaxBufferedError({ maxBuffered }), false)
   }
 
   const onAbort = () => finish(signal!.reason, false)
@@ -347,12 +347,12 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       if (outcome.ready) failures = 0
       if (outcome.kind === 'close' && !reconnectIf(outcome.close)) {
         const { code, reason } = outcome.close
-        return finish(new CloseError(code, reason), isNormalClose(code))
+        return finish(new CloseError({ code, reason }), isNormalClose(code))
       }
       const error =
         outcome.kind === 'error'
           ? outcome.error
-          : new CloseError(outcome.close.code, outcome.close.reason)
+          : new CloseError({ code: outcome.close.code, reason: outcome.close.reason })
       if (outcome.kind === 'error' && outcome.final) return finish(error, false)
       if (++failures > retries) return finish(error, false)
       await Timers.sleep(next(failures, error), { signal: stop.signal }).catch(() => {})

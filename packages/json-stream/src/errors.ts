@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when the input isn't valid JSON. The message gives the offset of the first bad
  * character.
@@ -15,8 +16,8 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'JsonStream.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'JsonStream.InvalidInputError'
 }
 
 /**
@@ -34,9 +35,9 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'JsonStream.TruncatedError'
-  constructor() {
-    super('JSON input ended inside a value.')
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'JsonStream.TruncatedError'
+  constructor(message: string = 'JSON input ended inside a value.', options?: ErrorOptions) {
+    super(message, options)
   }
 }

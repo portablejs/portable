@@ -36,6 +36,9 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/errors": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",

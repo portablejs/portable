@@ -35,7 +35,7 @@ export async function toBytes(
     (chunk) => {
       const bytes = toUint8Array(chunk)
       length += bytes.byteLength
-      if (length > maxBytes) throw new MaxBytesError(maxBytes)
+      if (length > maxBytes) throw new MaxBytesError({ maxBytes })
       chunks.push(bytes)
     },
     signal,
@@ -80,7 +80,7 @@ export async function toText(
     source,
     (chunk) => {
       length += byteLength(chunk)
-      if (length > maxBytes) throw new MaxBytesError(maxBytes)
+      if (length > maxBytes) throw new MaxBytesError({ maxBytes })
       if (typeof chunk === 'string') {
         if (decoding) text += decoder.decode()
         decoding = false

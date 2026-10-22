@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `parseAddresses` with `strict: true` when the input isn't a valid RFC 5322 address
  * list, and by `formatValue` and `formatAddresses` when given something that can't be
@@ -14,6 +15,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'MimeHeaders.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'MimeHeaders.InvalidInputError'
 }

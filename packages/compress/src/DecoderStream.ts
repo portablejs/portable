@@ -128,7 +128,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           }
           length += result.value.byteLength
           if (length > maxBytes) {
-            const error = fail(new MaxBytesError(maxBytes))
+            const error = fail(new MaxBytesError({ maxBytes }))
             await reader.cancel(error).catch(() => {})
             throw error
           }

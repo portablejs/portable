@@ -13,6 +13,7 @@ Nothing is published to npm yet. Each package README has a table of benchmarks a
 - [`@portable/streams`](packages/streams): collects, combines and transforms web streams and iterables. Replaces get-stream, concat-stream, bl, stream-to-array, merge2, merge-stream and through2.
 - [`@portable/lines`](packages/lines): splits a stream of bytes or text into lines. Replaces split2 and byline.
 - [`@portable/bytes`](packages/bytes): hex encoding, concatenation and constant-time comparison of `Uint8Array`s. Replaces uint8array-extras and `crypto.timingSafeEqual`.
+- [`@portable/errors`](packages/errors): the error classes every package throws, with checks that work across duplicate package copies. Replaces hand-written error classes and `instanceof` checks.
 - [`@portable/compress`](packages/compress): gzip and deflate on the platform's `CompressionStream`, a decompression stream with an output limit, and CRC-32. Replaces pako, fflate and the one-shot functions of `node:zlib`.
 
 ### Encodings

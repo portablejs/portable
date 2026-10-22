@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import { abortable } from './abortable.js'
 /**
  * Splits text into lines. A string matches literally, and anything with `[Symbol.split]`, such as a
@@ -64,7 +65,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     const emit = (line: string, controller: TransformStreamDefaultController<string>) => {
       if (skipEmpty && line === '') return
       if (line.length > maxLength) {
-        if (overflow === 'error') throw new MaxLengthError(maxLength)
+        if (overflow === 'error') throw new MaxLengthError({ maxLength })
         return
       }
       controller.enqueue(line)
@@ -91,7 +92,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
             for (const line of lines) emit(line, controller)
 
             if (partial.length > maxLength + slack) {
-              if (overflow === 'error') throw new MaxLengthError(maxLength)
+              if (overflow === 'error') throw new MaxLengthError({ maxLength })
               overflowed = true
               partial = tail(partial)
             }
@@ -128,12 +129,9 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
  * }
  * ```
  */
-export class MaxLengthError extends Error {
-  override name = 'Lines.MaxLengthError'
-  /** The limit that was exceeded. */
-  readonly maxLength: number
-  constructor(maxLength: number) {
-    super(`Line exceeded maxLength of ${maxLength}.`)
-    this.maxLength = maxLength
+export class MaxLengthError extends Errors.MaxLengthError {
+  static override readonly kind: string = 'Lines.MaxLengthError'
+  constructor(options: Errors.MaxLengthError.Options) {
+    super({ message: `Line exceeded maxLength of ${options.maxLength}.`, ...options })
   }
 }

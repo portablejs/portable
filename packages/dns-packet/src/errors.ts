@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `decode` when the input ends before the message does, or a length field points past
  * the end. With `framing: 'tcp'`, this also means the whole message hasn't arrived yet.
@@ -13,8 +14,8 @@
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'DnsPacket.TruncatedError'
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'DnsPacket.TruncatedError'
 }
 
 /**
@@ -34,8 +35,8 @@ export class TruncatedError extends Error {
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'DnsPacket.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'DnsPacket.InvalidInputError'
 }
 
 /**
@@ -53,6 +54,6 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'DnsPacket.UnsupportedError'
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'DnsPacket.UnsupportedError'
 }

@@ -49,7 +49,7 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 | `encrypt(subscription, payload, options?)` | Returns the aes128gcm body for `payload`: an 86-byte header, then one AES-GCM record. |
 | `generateVapidKeys(options?)` | Returns a new `{ publicKey, privateKey }` pair as base64url strings. |
 | `maxPayloadBytes` | `3993`, the largest payload in bytes. |
-| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, `headers` and the response `body` as text. |
+| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, the whole `response` and its `body` as text. |
 | `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
 
 `payload` is a string, sent as UTF-8, or a `Uint8Array`. Pass `undefined` to send a push with no data, which also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
@@ -131,7 +131,7 @@ On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 ti
 | `options.contentEncoding: 'aesgcm'` | Not supported. Every current browser accepts aes128gcm. |
 | `options.gcmAPIKey`, `setGCMAPIKey` | Not supported. GCM shut down in 2019, and FCM takes VAPID. |
 | `catch (e) { if (e.statusCode === 410 \|\| e.statusCode === 404) … }` | `if ((await WebPush.send(…)).kind === 'gone') …` |
-| `WebPushError` with `statusCode`, `headers`, `body` | `ResponseError` with `status`, `headers` (a `Headers`), `body` |
+| `WebPushError` with `statusCode`, `headers`, `body` | `ResponseError` with `status`, `response.headers`, `body` |
 | `webpush.generateVAPIDKeys()` | `await WebPush.generateVapidKeys()` |
 | `webpush.generateRequestDetails(…)` | `await WebPush.toRequest(…)`, which returns a `Request`. |
 | `webpush.encrypt(p256dh, auth, payload, 'aes128gcm').cipherText` | `await WebPush.encrypt({ keys: { p256dh, auth } }, payload)` |

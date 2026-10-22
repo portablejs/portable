@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `verify` and `needsRehash` for a stored hash that is not a PBKDF2 hash in PHC or
  * passlib format.
@@ -13,8 +14,8 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Password.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Password.InvalidInputError'
 }
 
 /**
@@ -31,13 +32,10 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class MaxBytesError extends Error {
-  override name = 'Password.MaxBytesError'
-  /** The limit that was exceeded. */
-  readonly maxBytes: number
-  constructor(maxBytes: number) {
-    super(`Password exceeded maxBytes of ${maxBytes}.`)
-    this.maxBytes = maxBytes
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'Password.MaxBytesError'
+  constructor(options: Errors.MaxBytesError.Options) {
+    super({ message: `Password exceeded maxBytes of ${options.maxBytes}.`, ...options })
   }
 }
 
@@ -58,6 +56,6 @@ export class MaxBytesError extends Error {
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'Password.UnsupportedError'
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'Password.UnsupportedError'
 }

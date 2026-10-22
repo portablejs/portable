@@ -80,7 +80,7 @@ export async function decode(
       new DecompressionStream(format),
       (chunk) => {
         length += chunk.byteLength
-        if (length > maxBytes) throw new MaxBytesError(maxBytes)
+        if (length > maxBytes) throw new MaxBytesError({ maxBytes })
         chunks.push(chunk)
       },
       signal,

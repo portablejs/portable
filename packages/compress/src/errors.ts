@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when compressed input ends before the end of the compressed stream.
  *
@@ -13,10 +14,10 @@
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'Compress.TruncatedError'
-  constructor(options?: ErrorOptions) {
-    super('Compressed input ended early.', options)
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'Compress.TruncatedError'
+  constructor(message: string = 'Compressed input ended early.', options?: ErrorOptions) {
+    super(message, options)
   }
 }
 
@@ -34,10 +35,10 @@ export class TruncatedError extends Error {
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Compress.InvalidInputError'
-  constructor(options?: ErrorOptions) {
-    super('Compressed input is invalid.', options)
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Compress.InvalidInputError'
+  constructor(message: string = 'Compressed input is invalid.', options?: ErrorOptions) {
+    super(message, options)
   }
 }
 
@@ -55,13 +56,10 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class MaxBytesError extends Error {
-  override name = 'Compress.MaxBytesError'
-  /** The limit that was exceeded. */
-  readonly maxBytes: number
-  constructor(maxBytes: number) {
-    super(`Decompressed output exceeded maxBytes of ${maxBytes}.`)
-    this.maxBytes = maxBytes
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'Compress.MaxBytesError'
+  constructor(options: Errors.MaxBytesError.Options) {
+    super({ message: `Decompressed output exceeded maxBytes of ${options.maxBytes}.`, ...options })
   }
 }
 
@@ -71,5 +69,7 @@ export function classify(error: unknown, closing: boolean): Error {
   const code =
     typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
   const truncated = typeof code === 'string' ? code === 'Z_BUF_ERROR' : closing
-  return truncated ? new TruncatedError({ cause: error }) : new InvalidInputError({ cause: error })
+  return truncated
+    ? new TruncatedError('Compressed input ended early.', { cause: error })
+    : new InvalidInputError('Compressed input is invalid.', { cause: error })
 }

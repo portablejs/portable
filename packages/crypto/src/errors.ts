@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown for a malformed DER signature, a raw signature or seed of the wrong length, or a key
  * that has no public half.
@@ -13,6 +14,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Crypto.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Crypto.InvalidInputError'
 }

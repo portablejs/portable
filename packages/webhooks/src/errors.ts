@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Why a webhook failed verification.
  *
@@ -24,12 +25,13 @@ export type Reason = 'missing-header' | 'malformed-header' | 'signature' | 'time
  * }
  * ```
  */
-export class VerificationError extends Error {
-  override name = 'Webhooks.VerificationError'
+export class VerificationError extends Errors.BaseError {
+  static override readonly kind: string = 'Webhooks.VerificationError'
   readonly reason: Reason
 
-  constructor(reason: Reason, message: string) {
-    super(message)
+  constructor(options: ErrorOptions & { reason: Reason; message: string }) {
+    const { reason, message, ...rest } = options
+    super(message, rest)
     this.reason = reason
   }
 }

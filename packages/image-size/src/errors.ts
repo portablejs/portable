@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when the bytes don't match any supported image format.
  *
@@ -12,10 +13,10 @@
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'ImageSize.UnsupportedError'
-  constructor() {
-    super('Unsupported image type.')
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'ImageSize.UnsupportedError'
+  constructor(message: string = 'Unsupported image type.', options?: ErrorOptions) {
+    super(message, options)
   }
 }
 
@@ -34,10 +35,10 @@ export class UnsupportedError extends Error {
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'ImageSize.TruncatedError'
-  constructor() {
-    super('Image data ended before its dimensions.')
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'ImageSize.TruncatedError'
+  constructor(message: string = 'Image data ended before its dimensions.', options?: ErrorOptions) {
+    super(message, options)
   }
 }
 
@@ -55,8 +56,8 @@ export class TruncatedError extends Error {
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'ImageSize.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'ImageSize.InvalidInputError'
 }
 
 /**
@@ -74,12 +75,12 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class MaxBytesError extends Error {
-  override name = 'ImageSize.MaxBytesError'
-  /** The limit that was reached. */
-  readonly maxBytes: number
-  constructor(maxBytes: number) {
-    super(`Image dimensions not found in the first ${maxBytes} bytes.`)
-    this.maxBytes = maxBytes
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'ImageSize.MaxBytesError'
+  constructor(options: Errors.MaxBytesError.Options) {
+    super({
+      message: `Image dimensions not found in the first ${options.maxBytes} bytes.`,
+      ...options,
+    })
   }
 }

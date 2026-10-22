@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `encode` and `envelope` when the message contains something that a mail header can't
  * hold as given: an address that isn't one addr-spec, a header name outside printable ASCII, a
@@ -14,6 +15,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Mail.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Mail.InvalidInputError'
 }

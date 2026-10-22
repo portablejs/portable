@@ -37,6 +37,7 @@
     "@portable/base64": "workspace:*",
     "@portable/bytes": "workspace:*",
     "@portable/dns": "workspace:*",
+    "@portable/errors": "workspace:*",
     "@portable/idna": "workspace:*"
   },
   "exports": {

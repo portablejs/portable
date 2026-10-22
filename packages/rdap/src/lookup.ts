@@ -88,12 +88,12 @@ export async function domain(name: string, options: domain.Options = {}): Promis
   const base = await Bootstrap.domain(ascii, fetch, signal)
   if (!base) throw new UnsupportedError(`IANA lists no RDAP server for ${ascii}`)
   const url = new URL(`domain/${ascii}`, base).href
-  const json = await request(url, fetch, signal)
+  const { json } = await request(url, fetch, signal)
   const result = toDomain(json, ascii)
   const related = follow ? relatedLink(json, url) : undefined
   if (!related) return result
   try {
-    return withReferral(result, related, await request(related, fetch, signal))
+    return withReferral(result, related, (await request(related, fetch, signal)).json)
   } catch (error) {
     signal?.throwIfAborted()
     return { ...result, referral: { url: related, error } }
@@ -125,7 +125,7 @@ export async function ip(address: string, options: ip.Options = {}): Promise<Net
   const query = Address.format(prefix)
   const base = await Bootstrap.ip(prefix, fetch, signal)
   if (!base) throw new UnsupportedError(`IANA lists no RDAP server for ${query}`)
-  return toNetwork(await request(new URL(`ip/${query}`, base).href, fetch, signal))
+  return toNetwork((await request(new URL(`ip/${query}`, base).href, fetch, signal)).json)
 }
 
 /**
@@ -149,5 +149,5 @@ export async function asn(number: number, options: asn.Options = {}): Promise<Au
     throw new InvalidInputError(`Not an AS number: ${number}`)
   const base = await Bootstrap.asn(number, fetch, signal)
   if (!base) throw new UnsupportedError(`IANA lists no RDAP server for AS${number}`)
-  return toAutnum(await request(new URL(`autnum/${number}`, base).href, fetch, signal))
+  return toAutnum((await request(new URL(`autnum/${number}`, base).href, fetch, signal)).json)
 }

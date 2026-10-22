@@ -43,6 +43,7 @@ L1  mime-stream   → mime-headers, bytes
     compress, csv, idna, json-stream, jsonl
 L0  base64, streams → bytes
     bytes, charset, crypto, dns-packet, ip, lines, queue, quoted-printable, random, rate-limit, timers
+    errors        (every package that throws depends on it)
 ```
 
 ### L0: primitives (no dependencies, apart from `bytes`)

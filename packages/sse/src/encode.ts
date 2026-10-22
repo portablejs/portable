@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import { errorOnAbort } from './signal.js'
 
 /** A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. */
@@ -117,6 +118,6 @@ export class EncoderStream extends TransformStream<Message, Uint8Array<ArrayBuff
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Sse.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Sse.InvalidInputError'
 }

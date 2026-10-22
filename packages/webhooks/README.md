@@ -96,9 +96,9 @@ const acme: Webhooks.Scheme = {
     const signature = headers.get('acme-signature')
     const timestamp = headers.get('acme-timestamp')
     if (!signature || !timestamp)
-      throw new Webhooks.VerificationError('missing-header', 'Missing Acme headers')
+      throw new Webhooks.VerificationError({ reason: 'missing-header', message: 'Missing Acme headers' })
     if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp))
-      throw new Webhooks.VerificationError('malformed-header', 'Malformed Acme headers')
+      throw new Webhooks.VerificationError({ reason: 'malformed-header', message: 'Malformed Acme headers' })
     return {
       signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
       timestamp: new Date(Number(timestamp) * 1000),

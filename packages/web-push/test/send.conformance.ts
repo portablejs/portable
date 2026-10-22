@@ -125,7 +125,7 @@ describe('send', () => {
     }).catch((error: unknown) => error)
     expect(error).toBeInstanceOf(WebPush.ResponseError)
     expect(error).toMatchObject({ status, body: '{"reason":"BadJwtToken"}' })
-    expect((error as WebPush.ResponseError).headers).toBeInstanceOf(Headers)
+    expect((error as WebPush.ResponseError).response.headers).toBeInstanceOf(Headers)
   })
 
   test('rejects with the fetch error when the push service is unreachable', async () => {

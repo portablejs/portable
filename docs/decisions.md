@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## One `@portable/errors` package, branded with `Symbol.for`
+
+- **Options:** keep an `errors.ts` in each package; share the classes through an internal package; publish `@portable/errors`. For checks: `instanceof`; comparing `name` strings; a brand under a `Symbol.for` key.
+- **Trade-offs:** 26 packages defined about 55 classes, and they had drifted: `TruncatedError` took `(message?, options?)` in base64, `(options?)` in compress and nothing in exif, and `ResponseError` had three unrelated shapes. A caller who piped `Streams.limitBytes` into `Compress.DecoderStream` and then `Exif.parseStream` needed three checks for one condition. zile doesn't bundle, so an internal package would still be published and installed, and a public one lets callers check a kind from any package. `instanceof` fails when an app holds two copies of a package, which viem and ox users hit, and our exact `workspace:*` pins make duplicates more likely. Comparing `name` matches any library that happens to use the same string.
+- **Chosen:** a public `@portable/errors`. Each error stores the kinds of its class chain under `Symbol.for('portable.error')`, `Errors.is(error, 'MaxBytes')` reads it, and the classes' `Symbol.hasInstance` reads it too, so `instanceof Errors.MaxBytesError` matches every package's error and `instanceof Compress.MaxBytesError` matches only compress's, from any copy. The symbol key and the kind strings are a protocol that later versions must keep. An error with only a message takes `(message?, options?)`, as `Error` does, and one with other fields takes one object.
+
 ## The worker harness runs a stalled file again in WebKit
 
 - **Options:** drop WebKit from the worker suite; stop calling `releaseLock()` in `@portable/streams`; run a file again in a new worker when its WebKit worker stops responding; leave the suite as it is.
@@ -226,7 +232,7 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 - **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream<string>` breaks what a caller learned from `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them. `Jsonl.EncoderStream` is the transform for many values. `encodeStream` needed the `Stream` suffix rule to cover a stream output as well as a stream input.
 - **Chosen:** `encodeStream(value)`. AGENTS.md now says the suffix marks a variant whose bytes or text are a stream, in either direction, so `parseStream` and `encodeStream` mirror each other.
 - **The reader is `DecoderStream`, not `ParserStream`,** because AGENTS.md keeps `parse` for packages that only read, and json-stream also writes. With the default `paths: ['$']` it emits every top-level value, as `Jsonl.DecoderStream` does for each line.
-- **`InvalidInputError` and `TruncatedError` extend `Error`,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so a caller that treated `TypeError` as a bug in its own code also caught bad input.
+- **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so a caller that treated `TypeError` as a bug in its own code also caught bad input.
 
 ## Build `@portable/bytes` instead of pointing to uint8array-extras
 

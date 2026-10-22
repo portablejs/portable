@@ -35,7 +35,8 @@
   ],
   "dependencies": {
     "@portable/base64": "workspace:*",
-    "@portable/bytes": "workspace:*"
+    "@portable/bytes": "workspace:*",
+    "@portable/errors": "workspace:*"
   },
   "exports": {
     ".": {

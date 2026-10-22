@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import * as Table from './internal/lookup.js'
 import * as Punycode from './internal/punycode.js'
 
@@ -102,8 +103,8 @@ export function toUnicode(domain: string, options: toUnicode.Options = {}): stri
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Idna.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Idna.InvalidInputError'
 }
 
 const nonAscii = /[^\0-\x7f]/

@@ -213,7 +213,7 @@ function toBytes(password: string | Uint8Array, maxBytes: number): Uint8Array<Ar
     typeof password === 'string'
       ? encoder.encode(password.normalize('NFC'))
       : new Uint8Array(password)
-  if (bytes.length > maxBytes) throw new MaxBytesError(maxBytes)
+  if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
   return bytes
 }
 

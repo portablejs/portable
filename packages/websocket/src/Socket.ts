@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import * as Timers from '@portable/timers'
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>
@@ -41,13 +42,14 @@ export type SocketEvent = Event & { data?: unknown; code?: number; reason?: stri
  * }
  * ```
  */
-export class CloseError extends Error {
-  override name = 'WebSockets.CloseError'
+export class CloseError extends Errors.BaseError {
+  static override readonly kind: string = 'WebSockets.CloseError'
   /** The close code, such as 1006 for a dropped connection. */
   readonly code: number
   /** The close reason the other side sent, or `''`. */
   readonly reason: string
-  constructor(code: number, reason: string) {
+  constructor(options: { code: number; reason: string }) {
+    const { code, reason } = options
     super(`The WebSocket closed with code ${code}${reason ? ` (${reason})` : ''}.`)
     this.code = code
     this.reason = reason
@@ -70,11 +72,12 @@ export class CloseError extends Error {
  * }
  * ```
  */
-export class MaxBufferedError extends Error {
-  override name = 'WebSockets.MaxBufferedError'
+export class MaxBufferedError extends Errors.BaseError {
+  static override readonly kind: string = 'WebSockets.MaxBufferedError'
   /** The limit that was exceeded. */
   readonly maxBuffered: number
-  constructor(maxBuffered: number) {
+  constructor(options: { maxBuffered: number }) {
+    const { maxBuffered } = options
     super(`Received messages exceeded maxBuffered of ${maxBuffered}.`)
     this.maxBuffered = maxBuffered
   }

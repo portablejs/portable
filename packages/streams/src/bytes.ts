@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when a stream has more bytes than `maxBytes` allows.
  *
@@ -13,13 +14,10 @@
  * }
  * ```
  */
-export class MaxBytesError extends Error {
-  override name = 'Streams.MaxBytesError'
-  /** The limit that was exceeded. */
-  readonly maxBytes: number
-  constructor(maxBytes: number) {
-    super(`Stream exceeded maxBytes of ${maxBytes}.`)
-    this.maxBytes = maxBytes
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'Streams.MaxBytesError'
+  constructor(options: Errors.MaxBytesError.Options) {
+    super({ message: `Stream exceeded maxBytes of ${options.maxBytes}.`, ...options })
   }
 }
 

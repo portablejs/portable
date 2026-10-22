@@ -114,7 +114,10 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
   )
   const { id, timestamp } = signed
   if (timestamp !== undefined && Number.isNaN(timestamp.getTime()))
-    throw new VerificationError('malformed-header', 'Timestamp is not a valid time')
+    throw new VerificationError({
+      reason: 'malformed-header',
+      message: 'Timestamp is not a valid time',
+    })
 
   let body: Uint8Array
   let text: string | undefined
@@ -130,12 +133,16 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
     for (const signature of signed.signatures)
       if (Bytes.timingSafeEqual(signature, expected)) match = true
   }
-  if (!match) throw new VerificationError('signature', 'No signature matches the body')
+  if (!match)
+    throw new VerificationError({ reason: 'signature', message: 'No signature matches the body' })
 
   if (timestamp !== undefined) {
     const skew = Math.abs(Math.floor(now.getTime() / 1000) - Math.floor(timestamp.getTime() / 1000))
     if (skew > tolerance)
-      throw new VerificationError('timestamp', `Timestamp is ${skew} s from now`)
+      throw new VerificationError({
+        reason: 'timestamp',
+        message: `Timestamp is ${skew} s from now`,
+      })
   }
 
   return { body: text ?? utf8Decoder.decode(body), id, timestamp }

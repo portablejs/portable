@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when a line isn't valid JSON. The message gives the line number, and `cause` holds the
  * `SyntaxError` from `JSON.parse`.
@@ -15,6 +16,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Jsonl.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Jsonl.InvalidInputError'
 }

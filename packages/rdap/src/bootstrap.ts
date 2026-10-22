@@ -1,6 +1,6 @@
 import * as Address from './address.js'
 import { ResponseError } from './errors.js'
-import { request, type Fetch } from './request.js'
+import { type Fetch, type Json, request } from './request.js'
 
 const base = 'https://data.iana.org/rdap/'
 const ttl = 24 * 60 * 60 * 1000
@@ -26,10 +26,10 @@ function isStrings(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
 }
 
-function index(json: Record<string, unknown>, url: string): Index {
+function index({ json, response }: Json, url: string): Index {
   const result: Index = { names: new Map(), ranges: [], numbers: [] }
   if (!Array.isArray(json.services))
-    throw new ResponseError(`${url} has no services array`, 200, url, json)
+    throw new ResponseError({ message: `${url} has no services array`, response, url, body: json })
   for (const service of json.services) {
     if (!Array.isArray(service) || !isStrings(service[0]) || !isStrings(service[1])) continue
     const urls = service[1]
@@ -63,7 +63,7 @@ function load(kind: Kind, fetch: Fetch, signal: AbortSignal | undefined): Promis
     const url = `${base}${kind}.json`
     const created: Entry = {
       expires: Date.now() + ttl,
-      index: request(url, fetch, controller.signal).then((json) => index(json, url)),
+      index: request(url, fetch, controller.signal).then((result) => index(result, url)),
       waiters: 0,
       controller,
     }

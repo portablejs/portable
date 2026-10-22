@@ -212,7 +212,7 @@ export async function parseStream(
         try {
           return parse(buffer.subarray(0, maxBytes))
         } catch (error) {
-          throw error instanceof TruncatedError ? new MaxBytesError(maxBytes) : error
+          throw error instanceof TruncatedError ? new MaxBytesError({ maxBytes }) : error
         }
       }
       if (length < needed) continue

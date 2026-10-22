@@ -123,7 +123,7 @@ class Source {
     const want = offset + Math.max(length, 0)
     while (this.end < want && !this.done) {
       const held = Math.max(this.end - this.start, 0)
-      if (held >= this.maxBytes) throw new MaxBytesError(this.maxBytes)
+      if (held >= this.maxBytes) throw new MaxBytesError({ maxBytes: this.maxBytes })
       const { done, value } = await this.reader.read()
       this.signal?.throwIfAborted()
       if (done) {

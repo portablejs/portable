@@ -33,6 +33,7 @@
   ],
   "dependencies": {
     "@portable/dns": "workspace:*",
+    "@portable/errors": "workspace:*",
     "@portable/idna": "workspace:*",
     "@portable/ip": "workspace:*"
   },

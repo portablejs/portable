@@ -32,6 +32,7 @@
     "src"
   ],
   "dependencies": {
+    "@portable/errors": "workspace:*",
     "@portable/timers": "workspace:*"
   },
   "exports": {

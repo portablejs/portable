@@ -1,12 +1,15 @@
-export class Failure extends Error {
-  override name = 'Spf.Failure'
+import * as Errors from '@portable/errors'
+export class Failure extends Errors.BaseError {
+  static override readonly kind: string = 'Spf.Failure'
   readonly result: 'temperror' | 'permerror'
 
-  constructor(result: 'temperror' | 'permerror', reason: string) {
-    super(reason)
-    this.result = result
+  constructor(options: { result: 'temperror' | 'permerror'; message: string }) {
+    super(options.message)
+    this.result = options.result
   }
 }
 
-export const permerror = (reason: string): Failure => new Failure('permerror', reason)
-export const temperror = (reason: string): Failure => new Failure('temperror', reason)
+export const permerror = (reason: string): Failure =>
+  new Failure({ result: 'permerror', message: reason })
+export const temperror = (reason: string): Failure =>
+  new Failure({ result: 'temperror', message: reason })

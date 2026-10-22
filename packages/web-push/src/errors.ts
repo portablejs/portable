@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when a subscription can't be used: its endpoint isn't an `https:` URL, `p256dh` isn't a P-256
  * public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that
@@ -15,8 +16,8 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'WebPush.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'WebPush.InvalidInputError'
 }
 
 /**
@@ -36,19 +37,16 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class ResponseError extends Error {
-  override name = 'WebPush.ResponseError'
-  /** The HTTP status code. */
-  readonly status: number
-  /** The response headers. */
-  readonly headers: Headers
+export class ResponseError extends Errors.ResponseError {
+  static override readonly kind: string = 'WebPush.ResponseError'
   /** The response body as text. Push services usually explain the error in it. */
-  readonly body: string
+  declare readonly body: string
 
-  constructor(status: number, headers: Headers, body: string) {
-    super(`Push service responded with ${status}${body ? `: ${body.slice(0, 200)}` : ''}`)
-    this.status = status
-    this.headers = headers
-    this.body = body
+  constructor(options: Errors.ResponseError.Options & { body: string }) {
+    const { response, body } = options
+    super({
+      message: `Push service responded with ${response.status}${body ? `: ${body.slice(0, 200)}` : ''}`,
+      ...options,
+    })
   }
 }

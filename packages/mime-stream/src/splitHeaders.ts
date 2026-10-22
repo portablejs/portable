@@ -71,12 +71,12 @@ export async function splitHeaders(
           if (lineLength === 0) lineStartsWithCr = byte === 0x0d
           lineLength++
         }
-        if (length + i + 1 > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
+        if (length + i + 1 > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
       }
       pieces.push(value)
       length += value.length
     }
-    if (length > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
+    if (length > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
   } catch (error) {
     stop()
     await reader.cancel(error).catch(() => {})

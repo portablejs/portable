@@ -77,6 +77,9 @@ importers:
       '@portable/dkim':
         specifier: workspace:*
         version: link:../dkim
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/arc/test:
     devDependencies:
@@ -107,6 +110,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/base64/test:
     devDependencies:
@@ -132,7 +138,11 @@ importers:
         specifier: ^1.3.3
         version: 1.3.3
 
-  packages/bytes: {}
+  packages/bytes:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/bytes/test:
     devDependencies:
@@ -146,7 +156,11 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
 
-  packages/charset: {}
+  packages/charset:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/charset/test:
     devDependencies:
@@ -171,6 +185,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/compress/test:
     devDependencies:
@@ -193,7 +210,11 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
 
-  packages/crypto: {}
+  packages/crypto:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/crypto/test:
     devDependencies:
@@ -213,7 +234,11 @@ importers:
         specifier: ^1.0.11
         version: 1.0.11
 
-  packages/csv: {}
+  packages/csv:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/csv/test:
     devDependencies:
@@ -256,6 +281,9 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../dns
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
@@ -319,6 +347,9 @@ importers:
       '@portable/dns-packet':
         specifier: workspace:*
         version: link:../dns-packet
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
@@ -326,7 +357,11 @@ importers:
         specifier: workspace:*
         version: link:../ip
 
-  packages/dns-packet: {}
+  packages/dns-packet:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/dns-packet/test:
     devDependencies:
@@ -370,11 +405,28 @@ importers:
         specifier: ^2.1.3
         version: 2.1.3(undici@8.11.2)
 
+  packages/errors: {}
+
+  packages/errors/test:
+    devDependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:..
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+
   packages/exif:
     dependencies:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/exif/test:
     devDependencies:
@@ -406,7 +458,11 @@ importers:
         specifier: ^4.10.2
         version: 4.10.2
 
-  packages/idna: {}
+  packages/idna:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/idna/test:
     devDependencies:
@@ -434,6 +490,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/image-size/test:
     devDependencies:
@@ -456,7 +515,11 @@ importers:
         specifier: ^2.0.4
         version: 2.0.4
 
-  packages/ip: {}
+  packages/ip:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/ip/test:
     devDependencies:
@@ -476,7 +539,11 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
 
-  packages/json-stream: {}
+  packages/json-stream:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/json-stream/test:
     devDependencies:
@@ -505,7 +572,11 @@ importers:
         specifier: ^3.7.0
         version: 3.7.0
 
-  packages/jsonl: {}
+  packages/jsonl:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/jsonl/test:
     devDependencies:
@@ -534,7 +605,11 @@ importers:
         specifier: ^3.7.0
         version: 3.7.0
 
-  packages/lines: {}
+  packages/lines:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/lines/test:
     devDependencies:
@@ -571,6 +646,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
@@ -661,6 +739,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/mime-headers/test:
     devDependencies:
@@ -691,6 +772,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/mime-headers':
         specifier: workspace:*
         version: link:../mime-headers
@@ -721,6 +805,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/oauth1/test:
     devDependencies:
@@ -754,6 +841,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/password/test:
     devDependencies:
@@ -781,6 +871,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/png/test:
     devDependencies:
@@ -909,6 +1002,9 @@ importers:
 
   packages/rdap:
     dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
@@ -930,6 +1026,9 @@ importers:
 
   packages/rpc:
     dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/jsonl':
         specifier: workspace:*
         version: link:../jsonl
@@ -966,6 +1065,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/smtp/test:
     devDependencies:
@@ -990,6 +1092,9 @@ importers:
       '@portable/dns':
         specifier: workspace:*
         version: link:../dns
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
@@ -1023,6 +1128,9 @@ importers:
 
   packages/sse:
     dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/timers':
         specifier: workspace:*
         version: link:../timers
@@ -1050,6 +1158,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/streams/test:
     devDependencies:
@@ -1160,6 +1271,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/web-push/test:
     devDependencies:
@@ -1190,6 +1304,9 @@ importers:
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/webhooks/test:
     devDependencies:
@@ -1226,6 +1343,9 @@ importers:
 
   packages/websocket:
     dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
       '@portable/timers':
         specifier: workspace:*
         version: link:../timers

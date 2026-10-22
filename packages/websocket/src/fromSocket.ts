@@ -97,12 +97,12 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
       return shutdown(error)
     }
     readableController.enqueue(message)
-    if (readableController.desiredSize! < 0) shutdown(new MaxBufferedError(maxBuffered))
+    if (readableController.desiredSize! < 0) shutdown(new MaxBufferedError({ maxBuffered }))
   }
 
   const onClose = (event: SocketEvent) => {
     const code = event.code ?? 1005
-    finish(new CloseError(code, event.reason ?? ''), isNormalClose(code))
+    finish(new CloseError({ code, reason: event.reason ?? '' }), isNormalClose(code))
   }
 
   const onAbort = () => shutdown(signal!.reason)

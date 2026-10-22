@@ -158,10 +158,11 @@ const nonAscii = /[\u{80}-\u{10ffff}]/gu
 function toQueryName(name: string, syscall: string): string {
   if (typeof name !== 'string') throw new TypeError('The name must be a string.')
   const masked = name.replace(nonAscii, 'a')
-  if (!hostName.test(masked)) throw new QueryError('EBADNAME', syscall, name)
+  if (!hostName.test(masked)) throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
   if (masked === name) return name
   const ascii = hostToAscii(name)
-  if (ascii === undefined || !hostName.test(ascii)) throw new QueryError('EBADNAME', syscall, name)
+  if (ascii === undefined || !hostName.test(ascii))
+    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
   return ascii
 }
 
@@ -245,18 +246,21 @@ export function createResolver(options: createResolver.Options = {}): createReso
         signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
       })
       if (!response.ok)
-        return new QueryError('EBADRESP', syscall, hostname, {
+        return new QueryError({
+          code: 'EBADRESP',
+          syscall,
+          hostname,
           cause: new Error(`${new URL(endpoint).origin} answered HTTP ${response.status}.`),
         })
       bytes = new Uint8Array(await response.arrayBuffer())
     } catch (cause) {
       signal?.throwIfAborted()
-      return new QueryError(
-        deadline.signal.aborted ? 'ETIMEOUT' : 'ECONNREFUSED',
+      return new QueryError({
+        code: deadline.signal.aborted ? 'ETIMEOUT' : 'ECONNREFUSED',
         syscall,
         hostname,
-        { cause },
-      )
+        cause,
+      })
     } finally {
       clearTimeout(timer)
     }
@@ -264,7 +268,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
     try {
       packet = DnsPacket.decode(bytes)
     } catch (cause) {
-      return new QueryError('EBADRESP', syscall, hostname, { cause })
+      return new QueryError({ code: 'EBADRESP', syscall, hostname, cause })
     }
     const echoed = packet.questions[0]
     if (
@@ -273,15 +277,24 @@ export function createResolver(options: createResolver.Options = {}): createReso
       echoed?.type !== question.type ||
       canonical(echoed.name) !== canonical(question.name)
     )
-      return new QueryError('EBADRESP', syscall, hostname, {
+      return new QueryError({
+        code: 'EBADRESP',
+        syscall,
+        hostname,
         cause: new Error('The response is for a different question.'),
       })
     if (packet.flags.tc)
-      return new QueryError('EBADRESP', syscall, hostname, {
+      return new QueryError({
+        code: 'EBADRESP',
+        syscall,
+        hostname,
         cause: new Error('The response is truncated.'),
       })
     if (packet.rcode === 'NOERROR' || packet.rcode === 'NXDOMAIN') return packet
-    return new QueryError(failures[packet.rcode] ?? 'EBADRESP', syscall, hostname, {
+    return new QueryError({
+      code: failures[packet.rcode] ?? 'EBADRESP',
+      syscall,
+      hostname,
       cause: new Error(`The server answered ${packet.rcode}.`),
     })
   }
@@ -294,7 +307,8 @@ export function createResolver(options: createResolver.Options = {}): createReso
     signal: AbortSignal | undefined,
   ): Promise<DnsPacket.DecodedPacket> {
     signal?.throwIfAborted()
-    if (/(?:^|\.)onion\.?$/i.test(name)) throw new QueryError('ENOTFOUND', syscall, hostname)
+    if (/(?:^|\.)onion\.?$/i.test(name))
+      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
     let query: string
     try {
       query = Base64.encode(
@@ -302,7 +316,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
         { alphabet: 'base64url', omitPadding: true },
       )
     } catch (cause) {
-      throw new QueryError('EBADNAME', syscall, hostname, { cause })
+      throw new QueryError({ code: 'EBADNAME', syscall, hostname, cause })
     }
     let error: QueryError | undefined
     for (const endpoint of endpoints) {
@@ -321,9 +335,9 @@ export function createResolver(options: createResolver.Options = {}): createReso
     signal: AbortSignal | undefined,
   ): Promise<DataOf<T>[]> {
     const packet = await exchange(hostname, name, type, syscall, signal)
-    if (packet.rcode === 'NXDOMAIN') throw new QueryError('ENOTFOUND', syscall, hostname)
+    if (packet.rcode === 'NXDOMAIN') throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
     const records = recordsFor(packet, name, type)
-    if (records.length === 0) throw new QueryError('ENODATA', syscall, hostname)
+    if (records.length === 0) throw new QueryError({ code: 'ENODATA', syscall, hostname })
     return records
   }
 
@@ -388,10 +402,12 @@ export function createResolver(options: createResolver.Options = {}): createReso
     },
     async reverse(ip, options = {}) {
       const name = reverseName(ip)
-      if (name === undefined) throw new QueryError('EINVAL', 'getHostByAddr', ip)
+      if (name === undefined)
+        throw new QueryError({ code: 'EINVAL', syscall: 'getHostByAddr', hostname: ip })
       const packet = await exchange(ip, name, 'PTR', 'getHostByAddr', options.signal)
       const records = recordsFor(packet, name, 'PTR')
-      if (records.length === 0) throw new QueryError('ENOTFOUND', 'getHostByAddr', ip)
+      if (records.length === 0)
+        throw new QueryError({ code: 'ENOTFOUND', syscall: 'getHostByAddr', hostname: ip })
       return records.map(host)
     },
     async query(name, type, options = {}) {

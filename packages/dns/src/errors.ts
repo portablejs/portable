@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 export declare namespace QueryError {
   /**
    * The error codes of `node:dns`, so code that checks `error.code` works with either resolver.
@@ -23,6 +24,14 @@ export declare namespace QueryError {
     | 'ECONNREFUSED'
     | 'EBADNAME'
     | 'EINVAL'
+
+  type Options = ErrorOptions & {
+    code: Code
+    /** The `node:dns` name of the operation. */
+    syscall: string
+    /** The name or address the caller passed. */
+    hostname: string
+  }
 }
 
 /**
@@ -42,16 +51,17 @@ export declare namespace QueryError {
  * }
  * ```
  */
-export class QueryError extends Error {
-  override name = 'Dns.QueryError'
+export class QueryError extends Errors.BaseError {
+  static override readonly kind: string = 'Dns.QueryError'
   readonly code: QueryError.Code
   /** The `node:dns` name of the operation, such as `queryTxt` or `getHostByAddr`. */
   readonly syscall: string
   /** The name or address the caller passed. */
   readonly hostname: string
 
-  constructor(code: QueryError.Code, syscall: string, hostname: string, options?: ErrorOptions) {
-    super(`${syscall} ${code} ${hostname}`, options)
+  constructor(options: QueryError.Options) {
+    const { code, syscall, hostname, ...rest } = options
+    super(`${syscall} ${code} ${hostname}`, rest)
     this.code = code
     this.syscall = syscall
     this.hostname = hostname

@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when the domain name, IP address or AS number can't be looked up as given, such as
  * `example..com`, `999.1.1.1` or `-1`. No request is sent.
@@ -9,8 +10,8 @@
  * await Rdap.ip('not an address').catch((error) => error instanceof Rdap.InvalidInputError) // true
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Rdap.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Rdap.InvalidInputError'
 }
 
 /**
@@ -25,8 +26,8 @@ export class InvalidInputError extends Error {
  * await Rdap.ip('10.0.0.1').catch((error) => error instanceof Rdap.UnsupportedError) // true
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'Rdap.UnsupportedError'
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'Rdap.UnsupportedError'
 }
 
 /**
@@ -48,13 +49,14 @@ export class UnsupportedError extends Error {
  * }
  * ```
  */
-export class NotFoundError extends Error {
-  override name = 'Rdap.NotFoundError'
+export class NotFoundError extends Errors.BaseError {
+  static override readonly kind: string = 'Rdap.NotFoundError'
   /** The URL that answered 404. */
   readonly url: string
 
-  constructor(url: string, options?: ErrorOptions) {
-    super(`${url} answered 404 Not Found`, options)
+  constructor(options: ErrorOptions & { url: string }) {
+    const { url, ...rest } = options
+    super(`${url} answered 404 Not Found`, rest)
     this.url = url
   }
 }
@@ -75,25 +77,16 @@ export class NotFoundError extends Error {
  * }
  * ```
  */
-export class ResponseError extends Error {
-  override name = 'Rdap.ResponseError'
-  /** The HTTP status. It is 200 when the body was the problem. */
-  readonly status: number
+export class ResponseError extends Errors.ResponseError {
+  static override readonly kind: string = 'Rdap.ResponseError'
   /** The URL that sent the response. */
   readonly url: string
   /** The parsed JSON body, such as an RDAP error object with `errorCode` and `title`, when there was one. */
-  readonly body: unknown
+  declare readonly body: unknown
 
-  constructor(
-    message: string,
-    status: number,
-    url: string,
-    body?: unknown,
-    options?: ErrorOptions,
-  ) {
-    super(message, options)
-    this.status = status
+  constructor(options: Errors.ResponseError.Options & { url: string }) {
+    const { url, ...rest } = options
+    super(rest)
     this.url = url
-    this.body = body
   }
 }

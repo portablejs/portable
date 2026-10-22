@@ -58,7 +58,9 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
     const match = replyLine.exec(line)
     const code = match ? Number(match[1]) : 0
     const reply = code >= 400 ? toReply(code, [match?.[3] ?? ''], [line]) : undefined
-    return new CommandError('ECONNECTION', 'Connection closed unexpectedly', {
+    return new CommandError({
+      code: 'ECONNECTION',
+      message: 'Connection closed unexpectedly',
       command,
       reply,
       cause,
@@ -111,7 +113,9 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
         const line = decode(bytes)
         const match = replyLine.exec(line)
         if (!match) {
-          throw new CommandError('EPROTOCOL', `Invalid reply line ${JSON.stringify(line)}`, {
+          throw new CommandError({
+            code: 'EPROTOCOL',
+            message: `Invalid reply line ${JSON.stringify(line)}`,
             command,
           })
         }
@@ -136,5 +140,9 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
 }
 
 function tooLong(command: string) {
-  return new CommandError('EPROTOCOL', `Reply exceeds ${maxReplyLength} bytes`, { command })
+  return new CommandError({
+    code: 'EPROTOCOL',
+    message: `Reply exceeds ${maxReplyLength} bytes`,
+    command,
+  })
 }

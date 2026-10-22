@@ -33,6 +33,7 @@
     "src"
   ],
   "dependencies": {
+    "@portable/errors": "workspace:*",
     "@portable/idna": "workspace:*",
     "@portable/ip": "workspace:*"
   },

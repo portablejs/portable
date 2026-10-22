@@ -130,7 +130,7 @@ export async function send(
     await response.body?.cancel()
     return status === 404 || status === 410 ? { kind: 'gone', status } : { kind: 'sent', status }
   }
-  throw new ResponseError(status, response.headers, await response.text())
+  throw new ResponseError({ response, body: await response.text() })
 }
 
 const urgencies = new Set<unknown>(['very-low', 'low', 'normal', 'high'])

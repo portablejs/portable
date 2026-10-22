@@ -151,7 +151,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   let sectionStart = 0
 
   function startPart(owner: Part) {
-    if (++partCount > maxParts) throw new MaxPartsError(maxParts)
+    if (++partCount > maxParts) throw new MaxPartsError({ maxParts })
     parent = owner
     inHeader = true
     headLength = 0
@@ -165,7 +165,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   }
 
   function finishHeaders(bytes: Uint8Array) {
-    if (bytes.length > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
+    if (bytes.length > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
     if (head.length > 64 * 1024) head = new Uint8Array(1024)
     const headers = readHeaders(bytes)
     let contentType: string | undefined
@@ -237,7 +237,8 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
     }
     while (k < end && (b[k] === SP || b[k] === TAB)) {
       k++
-      if (k - i > maxBoundaryLineBytes) throw new MaxBoundaryLineBytesError(maxBoundaryLineBytes)
+      if (k - i > maxBoundaryLineBytes)
+        throw new MaxBoundaryLineBytesError({ maxBoundaryLineBytes })
     }
     if (k === end) return final ? { close, end: k } : PARTIAL
     if (b[k] === CR) {
@@ -246,7 +247,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
       k += 2
     } else if (b[k] === LF) k++
     else return undefined
-    if (k - i > maxBoundaryLineBytes) throw new MaxBoundaryLineBytesError(maxBoundaryLineBytes)
+    if (k - i > maxBoundaryLineBytes) throw new MaxBoundaryLineBytesError({ maxBoundaryLineBytes })
     return { close, end: k }
   }
 
@@ -283,7 +284,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   function append(b: Uint8Array, start: number, end: number) {
     const length = headLength + end - start
     if (length > maxHeaderBytes + maxBoundaryLineBytes)
-      throw new MaxHeaderBytesError(maxHeaderBytes)
+      throw new MaxHeaderBytesError({ maxHeaderBytes })
     if (length > head.length) {
       const grown = new Uint8Array(Math.max(length, head.length * 2))
       grown.set(head.subarray(0, headLength))
@@ -315,7 +316,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
       }
     }
     const headerLength = final ? headLength : endingStart(head, headLength, 0)
-    if (headerLength > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
+    if (headerLength > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
     headLineStart = headLength
     return false
   }
@@ -331,7 +332,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
           headLength - (head[headLength - 1] === CR ? 1 : 0) > maxHeaderBytes &&
           !(hasBoundary() && matchDelimiter(head, headLineStart, headLength, false) === PARTIAL)
         )
-          throw new MaxHeaderBytesError(maxHeaderBytes)
+          throw new MaxHeaderBytesError({ maxHeaderBytes })
         return i
       }
       if (endHeaderLine(false)) {

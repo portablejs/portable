@@ -35,6 +35,7 @@
     "src"
   ],
   "dependencies": {
+    "@portable/errors": "workspace:*",
     "@portable/jsonl": "workspace:*"
   },
   "exports": {

@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when TIFF or raw EXIF input ends before its 8-byte header.
  *
@@ -12,10 +13,10 @@
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'Exif.TruncatedError'
-  constructor() {
-    super('Input ended inside the TIFF header.')
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'Exif.TruncatedError'
+  constructor(message: string = 'Input ended inside the TIFF header.', options?: ErrorOptions) {
+    super(message, options)
   }
 }
 
@@ -33,8 +34,8 @@ export class TruncatedError extends Error {
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Exif.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Exif.InvalidInputError'
 }
 
 /**
@@ -52,10 +53,13 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'Exif.UnsupportedError'
-  constructor() {
-    super('Unsupported format: expected JPEG, TIFF, PNG, WebP, HEIF or EXIF data.')
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'Exif.UnsupportedError'
+  constructor(
+    message: string = 'Unsupported format: expected JPEG, TIFF, PNG, WebP, HEIF or EXIF data.',
+    options?: ErrorOptions,
+  ) {
+    super(message, options)
   }
 }
 
@@ -74,12 +78,12 @@ export class UnsupportedError extends Error {
  * }
  * ```
  */
-export class MaxBytesError extends Error {
-  override name = 'Exif.MaxBytesError'
-  /** The limit that was exceeded. */
-  readonly maxBytes: number
-  constructor(maxBytes: number) {
-    super(`Reading the EXIF data needs more than maxBytes (${maxBytes}) in memory.`)
-    this.maxBytes = maxBytes
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'Exif.MaxBytesError'
+  constructor(options: Errors.MaxBytesError.Options) {
+    super({
+      message: `Reading the EXIF data needs more than maxBytes (${options.maxBytes}) in memory.`,
+      ...options,
+    })
   }
 }

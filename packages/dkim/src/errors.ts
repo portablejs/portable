@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `sign` for a message it can't sign: one without a From field, which RFC 6376
  * section 5.4 requires every signature to cover.
@@ -13,6 +14,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Dkim.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Dkim.InvalidInputError'
 }

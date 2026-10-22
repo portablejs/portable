@@ -73,7 +73,7 @@ export function createParser(
 
       const lineBreak = (code: number, at: number) => {
         const length = carried + at - rowStart
-        if (length > maxLength) throw new MaxLengthError(maxLength)
+        if (length > maxLength) throw new MaxLengthError({ maxLength })
         carried = 0
         rowStart = at + 1
         state = code === 13 ? afterCr : fieldStart
@@ -139,7 +139,7 @@ export function createParser(
         }
       }
       carried += n - rowStart
-      if (carried > maxLength) throw new MaxLengthError(maxLength)
+      if (carried > maxLength) throw new MaxLengthError({ maxLength })
     },
 
     end() {

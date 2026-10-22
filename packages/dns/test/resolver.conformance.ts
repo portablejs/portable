@@ -334,12 +334,16 @@ describe('NXDOMAIN and NODATA', () => {
 describe('isNotFound', () => {
   test('is true for the codes that mean there are no records', () => {
     for (const code of ['ENOTFOUND', 'ENODATA', 'EBADNAME'] as const)
-      expect(isNotFound(new QueryError(code, 'queryTxt', 'example.com'))).toBe(true)
+      expect(
+        isNotFound(new QueryError({ code, syscall: 'queryTxt', hostname: 'example.com' })),
+      ).toBe(true)
   })
 
   test('is false for temporary failures and errors without a code', () => {
     for (const code of ['ESERVFAIL', 'ETIMEOUT', 'ECONNREFUSED'] as const)
-      expect(isNotFound(new QueryError(code, 'queryTxt', 'example.com'))).toBe(false)
+      expect(
+        isNotFound(new QueryError({ code, syscall: 'queryTxt', hostname: 'example.com' })),
+      ).toBe(false)
     expect(isNotFound(new Error('ENOTFOUND'))).toBe(false)
     expect(isNotFound(undefined)).toBe(false)
   })

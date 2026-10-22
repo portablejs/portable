@@ -153,7 +153,7 @@ export function limitBytes<T extends Uint8Array | string>(
       {
         transform(chunk, controller) {
           length += byteLength(chunk)
-          if (length > maxBytes) throw new MaxBytesError(maxBytes)
+          if (length > maxBytes) throw new MaxBytesError({ maxBytes })
           controller.enqueue(chunk)
         },
       },

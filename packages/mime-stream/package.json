@@ -34,6 +34,7 @@
   ],
   "dependencies": {
     "@portable/bytes": "workspace:*",
+    "@portable/errors": "workspace:*",
     "@portable/mime-headers": "workspace:*"
   },
   "exports": {

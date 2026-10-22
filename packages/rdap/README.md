@@ -88,7 +88,7 @@ The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use 
 | `InvalidInputError` | The name, address or number is malformed. No request is sent. |
 | `UnsupportedError` | IANA lists no RDAP server for it, as for `.de` domains or `10.0.0.1`. |
 | `NotFoundError` | The server answered 404. `url` holds the URL. |
-| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url` and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
+| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url`, the whole `response` and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
 
 When `fetch` rejects, such as on a network failure, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
 

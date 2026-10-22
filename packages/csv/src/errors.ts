@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown for malformed CSV: text between a closing quote and the next delimiter or line break, a
  * row whose field count differs from the first row's, or a repeated header name.
@@ -13,8 +14,8 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Csv.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Csv.InvalidInputError'
 }
 
 /**
@@ -31,8 +32,8 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'Csv.TruncatedError'
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'Csv.TruncatedError'
 }
 
 /**
@@ -49,12 +50,9 @@ export class TruncatedError extends Error {
  * }
  * ```
  */
-export class MaxLengthError extends Error {
-  override name = 'Csv.MaxLengthError'
-  /** The limit that was exceeded. */
-  readonly maxLength: number
-  constructor(maxLength: number) {
-    super(`Row exceeded maxLength of ${maxLength}.`)
-    this.maxLength = maxLength
+export class MaxLengthError extends Errors.MaxLengthError {
+  static override readonly kind: string = 'Csv.MaxLengthError'
+  constructor(options: Errors.MaxLengthError.Options) {
+    super({ message: `Row exceeded maxLength of ${options.maxLength}.`, ...options })
   }
 }

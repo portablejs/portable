@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import type { Reply } from './reader.js'
 
 /** A recipient the server refused, with its reply. */
@@ -23,6 +24,9 @@ export declare namespace CommandError {
   type Code = 'ECONNECTION' | 'EPROTOCOL' | 'ETLS' | 'EAUTH' | 'EENVELOPE' | 'EMESSAGE'
 
   type Options = {
+    code: Code
+    /** What failed. The server's reply, if there was one, is appended. */
+    message: string
     command?: string | undefined
     reply?: Reply | undefined
     rejected?: readonly Rejection[] | undefined
@@ -45,8 +49,8 @@ export declare namespace CommandError {
  * }
  * ```
  */
-export class CommandError extends Error {
-  override name = 'Smtp.CommandError'
+export class CommandError extends Errors.BaseError {
+  static override readonly kind: string = 'Smtp.CommandError'
   readonly code: CommandError.Code
   /** The command that failed, such as `'RCPT TO'` or `'AUTH PLAIN'`, or `'CONNECT'` before the first one. Never includes credentials. */
   readonly command: string | undefined
@@ -59,8 +63,8 @@ export class CommandError extends Error {
   /** Every refused recipient, when the send failed because none was accepted. */
   readonly rejected: readonly Rejection[] | undefined
 
-  constructor(code: CommandError.Code, message: string, options: CommandError.Options = {}) {
-    const { command, reply, rejected, cause } = options
+  constructor(options: CommandError.Options) {
+    const { code, message, command, reply, rejected, cause } = options
     super(reply ? `${message}: ${reply.response}` : message, cause === undefined ? {} : { cause })
     this.code = code
     this.command = command
