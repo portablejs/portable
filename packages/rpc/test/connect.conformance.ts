@@ -449,7 +449,7 @@ describe('cancellation', () => {
       request: async (method: string, params: unknown) => [method, params],
       notify: async () => {},
     }
-    const method = Object.defineProperty(() => {}, Symbol.for('portable.rpc.target'), {
+    const method = Object.defineProperty(async () => {}, Symbol.for('portable.rpc.target'), {
       value: { client, method: 'add' },
     })
     expect(await Rpc.call(method, [1, 2])).toEqual(['add', [1, 2]])
