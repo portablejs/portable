@@ -75,7 +75,7 @@ function wire(served: object) {
   })
   const controller = new AbortController()
   onTestFinished(() => controller.abort())
-  Rpc.serve(served, { readable, writable }, { signal: controller.signal })
+  Rpc.provide({ readable, writable }, served, { signal: controller.signal })
   return async (text: string): Promise<string[]> => {
     const start = written.length
     input.enqueue(text)
@@ -675,7 +675,7 @@ describe('JSONRPCClient against our server', () => {
     })
     const controller = new AbortController()
     onTestFinished(() => controller.abort())
-    Rpc.serve(api, { readable, writable }, { signal: controller.signal })
+    Rpc.provide({ readable, writable }, api, { signal: controller.signal })
     return client
   }
 

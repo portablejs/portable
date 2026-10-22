@@ -1,4 +1,4 @@
-export { connect, json, serve } from './connect.js'
+export { connect, json, provide } from './connect.js'
 export { RemoteError, TransportError } from './errors.js'
 export { handler, http } from './http.js'
 export { port } from './port.js'

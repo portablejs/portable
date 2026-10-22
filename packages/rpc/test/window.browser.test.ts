@@ -97,7 +97,7 @@ function connect(
   const { origin, channel = '', codec, signal = closer().signal } = options
   return Rpc.connect<Methods>(Rpc.window(target, { origin, channel, signal }), {
     codec: codecOf({ codec }),
-    serve: parentApi(channel),
+    methods: parentApi(channel),
     signal,
   })
 }
@@ -123,11 +123,11 @@ async function untilAnswered(remote: Rpc.Remote<Methods>): Promise<number> {
   }
 }
 
-communicationContract('a cross-origin iframe', async ({ codec, serve, signal }) => {
+communicationContract('a cross-origin iframe', async ({ codec, methods, signal }) => {
   const element = child({ codec, origin: location.origin }, otherOrigin)
   return Rpc.connect<Methods>(Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
 })
@@ -146,23 +146,23 @@ async function portChild(config: Config = {}): Promise<MessagePort> {
 
 communicationContract(
   'a cross-origin iframe over a transferred MessagePort',
-  async ({ codec, serve, signal }) =>
+  async ({ codec, methods, signal }) =>
     Rpc.connect<Methods>(Rpc.port(await portChild({ codec }), { signal }), {
       codec: codecOf({ codec }),
-      serve,
+      methods,
       signal,
     }),
 )
 
-communicationContract('a module Worker', async ({ codec, serve, signal }) => {
+communicationContract('a module Worker', async ({ codec, methods, signal }) => {
   return Rpc.connect<Methods>(Rpc.port(worker({ codec }), { signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
 })
 
-communicationContract('a Worker over BroadcastChannel', async ({ codec, serve, signal }) => {
+communicationContract('a Worker over BroadcastChannel', async ({ codec, methods, signal }) => {
   const name = `rpc-${crypto.randomUUID()}`
   const created = worker({ codec, mode: 'broadcast', broadcast: name })
   await new Promise((resolve) => created.addEventListener('message', resolve, { once: true }))
@@ -170,7 +170,7 @@ communicationContract('a Worker over BroadcastChannel', async ({ codec, serve, s
   onTestFinished(() => channel.close())
   const remote = Rpc.connect<Methods>(Rpc.port(channel, { signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
   await untilAnswered(remote)
@@ -368,7 +368,7 @@ describe('channels', () => {
       const { port1, port2 } = new MessageChannel()
       created.postMessage({ channel }, [port2])
       return Rpc.connect<Methods>(Rpc.port(port1, { signal }), {
-        serve: parentApi(channel),
+        methods: parentApi(channel),
         signal,
       })
     })
@@ -391,7 +391,7 @@ describe('a bridge on the main thread', () => {
   function bridge(): Rpc.Remote<Methods> {
     const signal = closer().signal
     const toWorker = Rpc.connect<Methods>(Rpc.port(worker(), { signal }), {
-      serve: parentApi(),
+      methods: parentApi(),
       signal,
     })
     const api: BridgeApi = {
@@ -407,7 +407,7 @@ describe('a bridge on the main thread', () => {
     return Rpc.connect<Methods>(
       Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }),
       {
-        serve: api,
+        methods: api,
         signal,
       },
     )
@@ -490,7 +490,7 @@ describe('reconnecting', () => {
     const signal = closer().signal
     const remote = Rpc.connect<Methods>(
       Rpc.window(element.contentWindow!, { origin: location.origin, signal }),
-      { serve: { ...parentApi(), add: (a: number, b: number) => (calls++, a + b) }, signal },
+      { methods: { ...parentApi(), add: (a: number, b: number) => (calls++, a + b) }, signal },
     )
     for (let i = 0; i < 2; i++) {
       const reloaded = loaded(element)
@@ -635,7 +635,7 @@ describe('targets', () => {
     })
     const signal = closer().signal
     const remote = Rpc.connect<Methods>(Rpc.port(shared.port, { signal }), {
-      serve: parentApi(),
+      methods: parentApi(),
       signal,
     })
     await expect(remote.multiply(3, 2)).resolves.toBe(6)
@@ -652,7 +652,7 @@ describe('targets', () => {
     sw.postMessage(null, [port2])
     const signal = closer().signal
     const remote = Rpc.connect<Methods>(Rpc.port(port1, { signal }), {
-      serve: parentApi(),
+      methods: parentApi(),
       signal,
     })
     await expect(remote.multiply(3, 2)).resolves.toBe(6)

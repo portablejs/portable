@@ -255,11 +255,11 @@ describe('both directions', () => {
     const controller = new AbortController()
     const bobApi = bob()
     const toBob = Rpc.connect<typeof bobApi>(Rpc.port(port1), {
-      serve: alice,
+      methods: alice,
       signal: controller.signal,
     })
     const toAlice = Rpc.connect<typeof alice>(Rpc.port(port2), {
-      serve: bobApi,
+      methods: bobApi,
       signal: controller.signal,
     })
     expect(await toAlice.hello('Bob')).toBe('Hello Bob, my name is Alice')
@@ -273,11 +273,11 @@ describe('both directions', () => {
     const controller = new AbortController()
     const main = { progress: vi.fn<(percent: number) => void>() }
     const worker = Rpc.connect<{ ready(): string }>(Rpc.port(port2), {
-      serve: main,
+      methods: main,
       signal: controller.signal,
     })
     const toMain = Rpc.connect<typeof main>(Rpc.port(port1), {
-      serve: {
+      methods: {
         async ready() {
           await toMain.progress(50)
           await toMain.progress(100)
@@ -303,7 +303,7 @@ describe('codecs', () => {
     }
     const remote = pair(
       { add: (a: number, b: number) => a + b },
-      { serve: { codec: bytes }, connect: { codec: bytes } },
+      { provide: { codec: bytes }, connect: { codec: bytes } },
     )
     expect(await remote.add(1, 2)).toBe(3)
   })
@@ -312,7 +312,7 @@ describe('codecs', () => {
     const identity = { encode: (m: Rpc.Message) => m, decode: (m: unknown) => m }
     const remote = pair(
       { inspect: (d: Date, b: Uint8Array) => ({ year: d.getUTCFullYear(), bytes: b }) },
-      { serve: { codec: identity }, connect: { codec: identity } },
+      { provide: { codec: identity }, connect: { codec: identity } },
     )
     const result = await remote.inspect(new Date('2020-01-01T00:00:00Z'), new Uint8Array([1, 2]))
     expect(result).toEqual({ year: 2020, bytes: new Uint8Array([1, 2]) })
@@ -393,9 +393,9 @@ describe('cancellation', () => {
     const { port1, port2 } = new MessageChannel()
     const server = new AbortController()
     let methodSignal: AbortSignal | undefined
-    Rpc.serve(
-      { slow: Rpc.withContext(({ signal }) => ((methodSignal = signal), new Promise(() => {}))) },
+    Rpc.provide(
       Rpc.port(port1),
+      { slow: Rpc.withContext(({ signal }) => ((methodSignal = signal), new Promise(() => {}))) },
       { signal: server.signal },
     )
     const client = new AbortController()

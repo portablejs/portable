@@ -38,7 +38,7 @@ birpc's tests talk between "Alice" (`hello`) and "Bob" (`hi`, `bump`, `bumpWithR
 
 ## json-rpc-2.0
 
-json-rpc-2.0 has no transport: a method returns a response object and the test passes it on. Our tests feed raw JSON text to `Rpc.serve` (`raw()` in `utils.ts`) or call through a connected remote. `rpc.oracle.test.ts` compares the wire output of both servers and clients on the same input.
+json-rpc-2.0 has no transport: a method returns a response object and the test passes it on. Our tests feed raw JSON text to `Rpc.provide` (`raw()` in `utils.ts`) or call through a connected remote. `rpc.oracle.test.ts` compares the wire output of both servers and clients on the same input.
 
 ### server.spec.ts
 

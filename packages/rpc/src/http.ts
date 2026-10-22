@@ -8,7 +8,7 @@ import type { Id, Message, Remote } from './types.js'
 const ndjson = 'application/x-ndjson'
 
 /**
- * Serves `api` over HTTP. The returned function answers a POST of a JSON-RPC request or batch. The
+ * Answers calls to `methods` over HTTP. The returned function answers a POST of a JSON-RPC request or batch. The
  * response is JSON, or, when a method returns a stream, newline-delimited messages that carry the
  * stream's values as they are produced. Methods wrapped with `withContext` get the `Request`, and
  * their `signal` aborts when the client disconnects.
@@ -21,7 +21,7 @@ const ndjson = 'application/x-ndjson'
  * export default { fetch: (request: Request) => rpc(request) }
  * ```
  */
-export function handler(api: object): (request: Request) => Promise<Response> {
+export function handler(methods: object): (request: Request) => Promise<Response> {
   return async (request) => {
     if (request.method !== 'POST') {
       return new Response(null, { status: 405, headers: { allow: 'POST' } })
@@ -50,7 +50,7 @@ export function handler(api: object): (request: Request) => Promise<Response> {
       return writer.write(message)
     }
 
-    const server = createServer(api, send, { flow: false, request })
+    const server = createServer(methods, send, { flow: false, request })
     const onAbort = () => server.close(request.signal.reason)
     request.signal.addEventListener('abort', onAbort)
     await server.handle(message)

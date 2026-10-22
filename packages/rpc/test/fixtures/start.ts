@@ -39,7 +39,7 @@ export function start(config: Config): void {
             })
       parents.set(
         channel,
-        Rpc.connect<ParentApi>(transport, { codec: codecOf(config), serve: methods }),
+        Rpc.connect<ParentApi>(transport, { codec: codecOf(config), methods }),
       )
     }
   }

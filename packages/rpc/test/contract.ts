@@ -6,7 +6,7 @@ export declare namespace communicationContract {
   type Options = {
     codec?: 'json' | 'identity' | undefined
     /** The API the test page serves back to the remote. */
-    serve: ParentApi
+    methods: ParentApi
     signal: AbortSignal
   }
   /** Starts the remote side, serving `fixtures/methods.ts`, and connects to it. */
@@ -26,7 +26,7 @@ export function communicationContract(name: string, setup: communicationContract
   async function connect(options: { codec?: 'json' | 'identity' } = {}) {
     const controller = new AbortController()
     onTestFinished(() => controller.abort())
-    const remote = await setup({ ...options, serve: parentApi, signal: controller.signal })
+    const remote = await setup({ ...options, methods: parentApi, signal: controller.signal })
     return { remote, controller }
   }
 

@@ -45,7 +45,7 @@ const identity: Rpc.Codec = { encode: (message) => message, decode: (data) => da
 
 function ours(codec?: Rpc.Codec) {
   const { port1, port2 } = channel()
-  Rpc.serve(api, Rpc.port(port1), codec ? { codec } : {})
+  Rpc.provide(Rpc.port(port1), api, codec ? { codec } : {})
   return Rpc.connect<Api>(Rpc.port(port2), codec ? { codec } : {})
 }
 const remote = ours()

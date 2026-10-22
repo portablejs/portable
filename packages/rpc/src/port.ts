@@ -25,7 +25,7 @@ export declare namespace port {
  * import * as Rpc from '@portable/rpc'
  *
  * const { port1, port2 } = new MessageChannel()
- * Rpc.serve({ add: (a: number, b: number) => a + b }, Rpc.port(port1))
+ * Rpc.provide(Rpc.port(port1), { add: (a: number, b: number) => a + b })
  * const remote = Rpc.connect<{ add(a: number, b: number): number }>(Rpc.port(port2))
  * await remote.add(1, 2)
  * ```

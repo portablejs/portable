@@ -29,8 +29,8 @@ export declare namespace connect {
   type Options = {
     /** Encodes messages for the transport. @default Rpc.json */
     codec?: Codec<any> | undefined
-    /** An API to serve to the other side over the same transport. */
-    serve?: object | undefined
+    /** Methods the other side can call over the same transport. */
+    methods?: object | undefined
     /** Closes the connection: waiting calls reject with `signal.reason`, and the transport is cancelled. */
     signal?: AbortSignal | undefined
   }
@@ -38,8 +38,8 @@ export declare namespace connect {
 
 /**
  * Connects to an API served on the other side of `transport` and returns a proxy for it. Calling
- * a method sends a JSON-RPC request and returns a promise for the result. Pass `serve` to serve an
- * API back over the same transport.
+ * a method sends a JSON-RPC request and returns a promise for the result. Pass `methods` to answer
+ * calls from the other side over the same transport.
  *
  * @example
  * ```ts
@@ -52,7 +52,7 @@ export declare namespace connect {
  * ```
  */
 export function connect<api>(transport: Transport, options: connect.Options = {}): Remote<api> {
-  const { codec = json, serve: api = {}, signal } = options
+  const { codec = json, methods = {}, signal } = options
   const port = direct.get(transport)
   const failed = (cause: unknown) =>
     close(signal?.aborted ? signal.reason : new TransportError('The transport failed.', { cause }))
@@ -63,7 +63,7 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
     ? (message) => port.post(codec.encode(message))
     : (message) => writer!.write(codec.encode(message))
   const client = createClient(send, true)
-  const server = createServer(api, send, { flow: true })
+  const server = createServer(methods, send, { flow: true })
 
   function close(reason: unknown) {
     signal?.removeEventListener('abort', onAbort)
@@ -112,12 +112,12 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
   return remote(client)
 }
 
-export declare namespace serve {
-  type Options = Omit<connect.Options, 'serve'>
+export declare namespace provide {
+  type Options = Omit<connect.Options, 'methods'>
 }
 
 /**
- * Serves `api` over `transport`: every method, including methods of nested objects as
+ * Answers calls to `methods` over `transport`: every method, including methods of nested objects as
  * `'name.method'`, can be called with JSON-RPC. A method that returns an async iterable or a
  * `ReadableStream` streams its values back with backpressure.
  *
@@ -133,11 +133,15 @@ export declare namespace serve {
  * }
  * export type Api = typeof api
  *
- * Rpc.serve(api, Rpc.port(self))
+ * Rpc.provide(Rpc.port(self), api)
  * ```
  */
-export function serve(api: object, transport: Transport, options: serve.Options = {}): void {
-  connect(transport, { ...options, serve: api })
+export function provide(
+  transport: Transport,
+  methods: object,
+  options: provide.Options = {},
+): void {
+  connect(transport, { ...options, methods })
 }
 
 function isResponse(message: unknown): message is Record<string, unknown> {

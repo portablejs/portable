@@ -20,7 +20,7 @@ const api = {
 }
 export type Api = typeof api
 
-Rpc.serve(api, Rpc.port(self))
+Rpc.provide(Rpc.port(self), api)
 ```
 
 ```ts
@@ -40,12 +40,12 @@ The type of the remote comes from the server's code, so there is no schema or co
 
 `Rpc.connect<Api>(transport, options)` returns a proxy. Calling `remote.add(1, 2)` sends `{"jsonrpc":"2.0","id":1,"method":"add","params":[1,2]}` and resolves with the result. Methods of nested objects are called by dotted name, so `remote.math.add()` calls `'math.add'`.
 
-`Rpc.serve(api, transport, options)` answers those calls. A method can be sync or async, and is called with the object that holds it as `this`, so class instances work.
+`Rpc.provide(transport, methods, options)` answers those calls. A method can be sync or async, and is called with the object that holds it as `this`, so class instances work.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `codec` | `Rpc.json` | Encodes messages for the transport. Any `{ encode, decode }`. |
-| `serve` | | `connect` only: an API to serve back over the same transport. |
+| `methods` | | `connect` only: methods the other side can call over the same transport. |
 | `signal` | | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
 
 ### Options per call
@@ -100,18 +100,18 @@ Breaking out of the loop or cancelling the stream stops the generator on the ser
 
 ### Both directions
 
-Pass `serve` to `connect` to serve an API back over the same transport. A worker can report progress to the page that called it:
+Pass `methods` to `connect` to answer calls from the other side over the same transport. A worker can report progress to the page that called it:
 
 ```ts
 // main.ts
 const worker = Rpc.connect<WorkerApi>(Rpc.port(new Worker('./worker.ts', { type: 'module' })), {
-  serve: { progress: (percent: number) => (bar.value = percent) },
+  methods: { progress: (percent: number) => (bar.value = percent) },
 })
 await worker.convert(file)
 
 // worker.ts
 const main = Rpc.connect<MainApi>(Rpc.port(self), {
-  serve: {
+  methods: {
     async convert(file: File) {
       await main.progress(50)
       // ...
@@ -156,7 +156,7 @@ const child = Rpc.connect<ChildApi>(
 )
 
 // iframe
-Rpc.serve(api, Rpc.window(window.parent, { origin: 'https://parent.example.com' }))
+Rpc.provide(Rpc.window(window.parent, { origin: 'https://parent.example.com' }), api)
 ```
 
 Both sides post a hello every 100 ms until the other answers, so either can load first, and writes wait until the handshake is done. The hello carries a protocol version. Messages whose `event.origin` differs from `origin`, or that come from a window other than `target`, are ignored, and messages are posted only to `origin`. `origin` is required: pass `'*'` to accept any origin. `channel` lets several connections share one window.
@@ -216,7 +216,7 @@ const transport = {
 
 ## Protocol
 
-Every message is a JSON-RPC 2.0 request, notification or response, or a batch of them, so `Rpc.serve` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
+Every message is a JSON-RPC 2.0 request, notification or response, or a batch of them, so `Rpc.provide` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
 
 | Message | Sent by | Params |
 | --- | --- | --- |
@@ -281,29 +281,29 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 - The wire format is JSON-RPC 2.0, so the server also answers clients written in other languages, and the client talks to LSP and MCP servers.
 - Async generators and `ReadableStream` results stream back with backpressure and cancellation. comlink needs a proxied callback per value, and birpc and penpal have no streams.
 - Cancellation is an `AbortSignal` that reaches the method on the server. birpc and json-rpc-2.0 have timeouts but can't stop the remote work.
-- json-rpc-2.0 answers a batch of one request with a bare object and an all-notification batch with `null`, and treats a non-string method as unknown. `Rpc.serve` follows the specification in each case.
+- json-rpc-2.0 answers a batch of one request with a bare object and an all-notification batch with `null`, and treats a non-string method as unknown. `Rpc.provide` follows the specification in each case.
 - Methods are looked up only as own properties or class methods, never `Object.prototype` names, so `constructor` and `__proto__` can't be called remotely.
 
 ## Migrating
 
 | Library | @portable/rpc |
 | --- | --- |
-| comlink `Comlink.expose(api, port)` | `Rpc.serve(api, Rpc.port(port))` |
+| comlink `Comlink.expose(api, port)` | `Rpc.provide(Rpc.port(port), api)` |
 | comlink `Comlink.wrap<Api>(port)` | `Rpc.connect<Api>(Rpc.port(port))` |
-| comlink `Comlink.proxy(callback)` | `connect(transport, { serve })` on the other side, or return a stream |
+| comlink `Comlink.proxy(callback)` | `connect(transport, { methods })` on the other side, or return a stream |
 | comlink `Comlink.transfer(value, [buffer])` | Not supported. The identity codec structured-clones without transfer. |
-| penpal `connect({ messenger: new WindowMessenger({ remoteWindow, allowedOrigins: [origin] }), methods })` | `Rpc.connect<Api>(Rpc.window(remoteWindow, { origin }), { serve: methods })` |
+| penpal `connect({ messenger: new WindowMessenger({ remoteWindow, allowedOrigins: [origin] }), methods })` | `Rpc.connect<Api>(Rpc.window(remoteWindow, { origin }), { methods })` |
 | penpal `timeout: 5000` | `signal: AbortSignal.timeout(5000)` |
 | penpal `connection.destroy()` | Abort the `signal` passed to `connect`. |
 | post-me `ParentHandshake(messenger)` | `Rpc.connect(Rpc.window(...))`. The handshake runs inside the transport. |
-| birpc `createBirpc(functions, { post, on })` | `Rpc.connect<Remote>(transport, { serve: functions })` |
+| birpc `createBirpc(functions, { post, on })` | `Rpc.connect<Remote>(transport, { methods: functions })` |
 | birpc `eventNames: ['bump']`, `rpc.bump.asEvent()` | `Rpc.notify(remote.bump, [])` |
 | birpc `$call('name', ...args)` | `Rpc.call(remote.name, args)` |
 | birpc `timeout: 1000` | `Rpc.call(remote.name, args, { signal: AbortSignal.timeout(1000) })` |
 | birpc `$close()` | Abort the `signal` passed to `connect`. |
 | birpc `serialize`/`deserialize` | `codec: { encode, decode }` |
-| json-rpc-2.0 `server.addMethod('echo', fn)` | A method on the `api` object. |
-| json-rpc-2.0 `server.receive(request)` | `Rpc.serve(api, transport)` or `Rpc.handler(api)(request)` |
+| json-rpc-2.0 `server.addMethod('echo', fn)` | A method on the `methods` object. |
+| json-rpc-2.0 `server.receive(request)` | `Rpc.provide(transport, api)` or `Rpc.handler(api)(request)` |
 | json-rpc-2.0 `client.request('echo', params)` | `Rpc.call(remote.echo, params)` |
 | json-rpc-2.0 `serverParams` | `Rpc.withContext(({ request }) => ...)` with `Rpc.handler` |
 | json-rpc-2.0 `JSONRPCErrorException(message, code, data)` | `new Rpc.RemoteError({ code, message, data })` |
