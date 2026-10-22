@@ -1,6 +1,6 @@
 import type * as DnsPacket from '@portable/dns-packet'
 import { describe, expect, test } from 'vite-plus/test'
-import { QueryError, createResolver, type Resolver } from '@portable/dns'
+import { QueryError, createResolver, isNotFound, type Resolver } from '@portable/dns'
 import { decodeQuery, doh, record, replay, respond, utf8, type Server } from './utils.js'
 
 const N = 'example.org'
@@ -328,6 +328,26 @@ describe('NXDOMAIN and NODATA', () => {
     expect(packet.answers).toEqual([
       { name: N, type: 'A', class: 'IN', ttl: 123, flush: false, data: '192.0.2.1' },
     ])
+  })
+})
+
+describe('isNotFound', () => {
+  test('is true for the codes that mean there are no records', () => {
+    for (const code of ['ENOTFOUND', 'ENODATA', 'EBADNAME'] as const)
+      expect(isNotFound(new QueryError(code, 'queryTxt', 'example.com'))).toBe(true)
+  })
+
+  test('is false for temporary failures and errors without a code', () => {
+    for (const code of ['ESERVFAIL', 'ETIMEOUT', 'ECONNREFUSED'] as const)
+      expect(isNotFound(new QueryError(code, 'queryTxt', 'example.com'))).toBe(false)
+    expect(isNotFound(new Error('ENOTFOUND'))).toBe(false)
+    expect(isNotFound(undefined)).toBe(false)
+  })
+
+  test('reads the code of an error from node:dns or another copy of the package', () => {
+    expect(isNotFound(Object.assign(new Error('queryTxt ENODATA x'), { code: 'ENODATA' }))).toBe(
+      true,
+    )
   })
 })
 

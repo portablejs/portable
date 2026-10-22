@@ -313,6 +313,9 @@ importers:
 
   packages/dns:
     dependencies:
+      '@portable/base64':
+        specifier: workspace:*
+        version: link:../base64
       '@portable/dns-packet':
         specifier: workspace:*
         version: link:../dns-packet
@@ -957,6 +960,9 @@ importers:
 
   packages/smtp:
     dependencies:
+      '@portable/base64':
+        specifier: workspace:*
+        version: link:../base64
       '@portable/bytes':
         specifier: workspace:*
         version: link:../bytes

@@ -84,19 +84,22 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
   const text = typeof input === 'string' ? input : toText(input)
   const bytes = charset ? undefined : encodeUtf8Scratch(text)
   if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget)
-    return prefix + encodeB(bytes) + '?='
+    return prefix + Base64.encode(bytes) + '?='
   const fits =
     encoding === 'Q'
       ? (length: number) => length <= budget
       : (length: number) => Math.ceil(length / 3) * 4 <= budget
   if (!bytes)
     return splitCharset(text, charset!, encoding, fits)
-      .map((chunk) => prefix + (encoding === 'Q' ? encodeQ(chunk) : encodeB(chunk)) + '?=')
+      .map((chunk) => prefix + (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) + '?=')
       .join(' ')
   let result = ''
   for (const chunk of splitUtf8(bytes, encoding, fits))
     result +=
-      (result ? ' ' : '') + prefix + (encoding === 'Q' ? encodeQ(chunk) : encodeB(chunk)) + '?='
+      (result ? ' ' : '') +
+      prefix +
+      (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) +
+      '?='
   return result
 }
 
@@ -241,15 +244,6 @@ function splitCharset(
   chunks.push(current)
   return chunks
 }
-
-/**
- * Spreading bytes into arguments hits the engine's argument limit, so `encodeB` uses
- * `Base64.encode` instead of `btoa` for long input.
- */
-const encodeB = (bytes: Uint8Array): string =>
-  bytes.length > 4096
-    ? Base64.encode(bytes)
-    : btoa(String.fromCharCode.apply(null, bytes as unknown as number[]))
 
 /** RFC 2047 section 5 (3): the characters a Q word may keep as is anywhere, even in a phrase. */
 const qSafe = /* @__PURE__ */ (() => {

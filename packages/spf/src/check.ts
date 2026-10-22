@@ -1,4 +1,4 @@
-import type * as Dns from '@portable/dns'
+import * as Dns from '@portable/dns'
 import { Failure, permerror, temperror } from './errors.js'
 import * as Ip from '@portable/ip'
 import { dotted, inNetwork, parseIp } from './ip.js'
@@ -121,8 +121,6 @@ const methods: { [K in keyof Answers]: Lookup<Answers[K]> } = {
   TXT: (resolver, name, options) => resolver.resolveTxt(name, options),
   PTR: (resolver, name, options) => resolver.resolvePtr(name, options),
 }
-
-const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
 
 /**
  * Checks whether an SMTP client may send mail for a domain, as RFC 7208's `check_host()` does. It
@@ -416,7 +414,7 @@ async function query<K extends keyof Answers>(
     if (error instanceof Failure) throw error
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
-    if (typeof code === 'string' && emptyCodes.has(code)) return []
+    if (Dns.isNotFound(error)) return []
     throw temperror(
       `${type} lookup of ${name} failed: ${typeof code === 'string' ? code : String(error)}`,
     )

@@ -57,3 +57,27 @@ export class QueryError extends Error {
     this.hostname = hostname
   }
 }
+
+const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
+
+/**
+ * Whether a lookup failed because there are no records to return: the name doesn't exist
+ * (`ENOTFOUND`), has no records of the type (`ENODATA`), or can't be a DNS name (`EBADNAME`). It
+ * reads `code`, so it works for a `QueryError` from any copy of this package and for errors from
+ * `node:dns/promises`. Any other failure is temporary, and a caller can retry it.
+ *
+ * @example
+ * ```ts
+ * import * as Dns from '@portable/dns'
+ *
+ * const resolver = Dns.createResolver()
+ * const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
+ *   if (Dns.isNotFound(error)) return []
+ *   throw error
+ * })
+ * ```
+ */
+export function isNotFound(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code
+  return typeof code === 'string' && notFoundCodes.has(code)
+}

@@ -1,4 +1,5 @@
 import * as Base64 from '@portable/base64'
+import * as Dns from '@portable/dns'
 import type { Resolver, Result } from '../verify.js'
 import { binaryToText, fromBinary, toBinary } from './bytes.js'
 import { type BodyHash, sha256 } from './digest.js'
@@ -56,7 +57,6 @@ const canonicalizationAlgorithm = '[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?'
 const canonicalizationSyntax = new RegExp(
   `^${canonicalizationAlgorithm}(?:/${canonicalizationAlgorithm})?$`,
 )
-const noKeyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
 
 /**
  * Reads a DKIM-Signature field, or with `kind` `'arc'` an ARC-Message-Signature (RFC 8617 section
@@ -242,9 +242,8 @@ export async function fetchKey(
     records = await abortable(resolver.resolveTxt(name), signal)
   } catch (error) {
     if (signal?.aborted) throw signal.reason
+    if (Dns.isNotFound(error)) return { result: 'permerror', reason: 'no key' }
     const code = (error as { code?: unknown } | null)?.code
-    if (typeof code === 'string' && noKeyCodes.has(code))
-      return { result: 'permerror', reason: 'no key' }
     return {
       result: 'temperror',
       reason: `key lookup failed${typeof code === 'string' ? `: ${code}` : ''}`,

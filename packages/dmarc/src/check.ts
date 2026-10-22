@@ -1,4 +1,4 @@
-import type * as Dns from '@portable/dns'
+import * as Dns from '@portable/dns'
 import type * as Spf from '@portable/spf'
 import { canExist, parseDomain } from './domain.js'
 import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './record.js'
@@ -124,7 +124,6 @@ class TempError extends Error {
   override name = 'Dmarc.TempError'
 }
 
-const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
 const maxWalkLabels = 7
 const maxAlignmentWalks = 10
 
@@ -383,7 +382,7 @@ async function query<T>(
     if (error instanceof TempError || ctx.signal?.aborted) throw error
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
-    if (typeof code === 'string' && emptyCodes.has(code)) return { empty: code }
+    if (Dns.isNotFound(error)) return { empty: code as string }
     throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`)
   }
 }

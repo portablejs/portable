@@ -32,6 +32,7 @@
     "src"
   ],
   "dependencies": {
+    "@portable/base64": "workspace:*",
     "@portable/dns-packet": "workspace:*",
     "@portable/idna": "workspace:*",
     "@portable/ip": "workspace:*"

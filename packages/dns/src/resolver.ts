@@ -1,3 +1,4 @@
+import * as Base64 from '@portable/base64'
 import * as DnsPacket from '@portable/dns-packet'
 import * as Ip from '@portable/ip'
 import { QueryError } from './errors.js'
@@ -150,12 +151,6 @@ const host = (name: string) => (name === '.' ? '' : name)
 
 const syscallFor = (type: string) => `query${type[0]}${type.slice(1).toLowerCase()}`
 
-const base64url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replace(/=+$/, '')
-
 const hostName = /^(?:(?:[\w*/-]|\\.)+(?:\.(?:[\w*/-]|\\.)+)*\.?|\.?)$/
 
 const nonAscii = /[\u{80}-\u{10ffff}]/gu
@@ -302,8 +297,9 @@ export function createResolver(options: createResolver.Options = {}): createReso
     if (/(?:^|\.)onion\.?$/i.test(name)) throw new QueryError('ENOTFOUND', syscall, hostname)
     let query: string
     try {
-      query = base64url(
+      query = Base64.encode(
         DnsPacket.encode({ flags: { rd: true, ad: true }, questions: [{ name, type }] }),
+        { alphabet: 'base64url', omitPadding: true },
       )
     } catch (cause) {
       throw new QueryError('EBADNAME', syscall, hostname, { cause })

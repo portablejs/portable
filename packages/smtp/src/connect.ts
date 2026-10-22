@@ -1,3 +1,4 @@
+import * as Base64 from '@portable/base64'
 import { CommandError, type Rejection } from './CommandError.js'
 import { DataStream, encodeData } from './DataStream.js'
 import { createReader, type Reader, type Reply } from './reader.js'
@@ -209,12 +210,6 @@ async function guard<T>(
   }
 }
 
-function base64(text: string): string {
-  let binary = ''
-  for (const byte of encoder.encode(text)) binary += String.fromCharCode(byte)
-  return btoa(binary)
-}
-
 function xtext(text: string): string {
   let out = ''
   for (const byte of encoder.encode(text)) {
@@ -353,7 +348,7 @@ export async function connect(options: connect.Options): Promise<Client> {
 
     if ('accessToken' in credentials) {
       const command = 'AUTH XOAUTH2'
-      const token = base64(
+      const token = Base64.encode(
         `user=${credentials.user}\x01auth=Bearer ${credentials.accessToken}\x01\x01`,
       )
       let reply = await step(`${command} ${token}`, command)
@@ -373,14 +368,14 @@ export async function connect(options: connect.Options): Promise<Client> {
     }
     const command = `AUTH ${method}`
     if (method === 'PLAIN') {
-      const response = base64(`\0${credentials.user}\0${credentials.pass}`)
+      const response = Base64.encode(`\0${credentials.user}\0${credentials.pass}`)
       let reply = await step(`${command} ${response}`, command)
       if (reply.code === 334) reply = await step(response, command)
       return expect(reply, 235, command)
     }
     expect(await step(command, command), 334, command)
-    expect(await step(base64(credentials.user), command), 334, command)
-    expect(await step(base64(credentials.pass), command), 235, command)
+    expect(await step(Base64.encode(credentials.user), command), 334, command)
+    expect(await step(Base64.encode(credentials.pass), command), 235, command)
   }
 
   try {
