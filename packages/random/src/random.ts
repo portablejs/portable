@@ -71,6 +71,16 @@ export function float(): number {
   return internal.float(next)
 }
 
+export declare namespace string {
+  type Options = {
+    /**
+     * The characters to pick from, split into code points.
+     * @default the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-` and `_`
+     */
+    alphabet?: string | undefined
+  }
+}
+
 /**
  * Returns a random string of `length` characters, each picked with equal chance from `alphabet`.
  * The default alphabet is the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21
@@ -84,10 +94,11 @@ export function float(): number {
  * import * as Random from '@portable/random'
  *
  * const id = Random.string(21)
- * const pin = Random.string(6, '0123456789')
+ * const pin = Random.string(6, { alphabet: '0123456789' })
  * ```
  */
-export function string(length: number, alphabet: string = internal.urlAlphabet): string {
+export function string(length: number, options: string.Options = {}): string {
+  const { alphabet = internal.urlAlphabet } = options
   internal.checkLength(length)
   const parsed = internal.alphabet(alphabet)
   if (parsed.table === undefined) return internal.string(next, fill, length, parsed)

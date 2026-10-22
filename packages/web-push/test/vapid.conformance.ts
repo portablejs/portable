@@ -18,7 +18,10 @@ async function authorizationFor(
   options: Partial<WebPush.Vapid> & { endpoint?: string } = {},
 ): Promise<string | null> {
   const { endpoint = freshEndpoint(), ...rest } = options
-  const request = await WebPush.toRequest({ endpoint }, undefined, { vapid: { ...vapid, ...rest } })
+  const request = await WebPush.toRequest({
+    subscription: { endpoint },
+    vapid: { ...vapid, ...rest },
+  })
   return request.headers.get('authorization')
 }
 
@@ -156,13 +159,15 @@ describe('VAPID Authorization header', () => {
 
   test('rejects a missing vapid option', async () => {
     await expect(
-      WebPush.toRequest({ endpoint: freshEndpoint() }, undefined, {} as WebPush.toRequest.Options),
+      WebPush.toRequest({
+        subscription: { endpoint: freshEndpoint() },
+      } as WebPush.toRequest.Options),
     ).rejects.toThrow(TypeError)
   })
 
   test('send passes the header to the push service', async () => {
     const service = pushService()
-    await WebPush.send({ endpoint: freshEndpoint() }, undefined, { vapid, fetch: service.fetch })
+    await WebPush.send({ subscription: { endpoint: freshEndpoint() }, vapid, fetch: service.fetch })
     const jwt = await verifyVapid(service.requests[0]!.headers.get('authorization'))
     expect(jwt.publicKey).toBe(keys.publicKey)
   })

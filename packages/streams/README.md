@@ -44,8 +44,8 @@ const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
 
 | Function | Does |
 | --- | --- |
-| `concat(...sources)` | One stream with every chunk of the first source, then the next. A source is read only after the one before it ends. |
-| `merge(...sources)` | One stream that reads every source at once and passes chunks on as they arrive. |
+| `concat(sources, { signal })` | One stream with every chunk of the first source in the array, then the next. A source is read only after the one before it ends. |
+| `merge(sources, { signal })` | One stream that reads every source in the array at once and passes chunks on as they arrive. |
 | `limitBytes(maxBytes, { signal })` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
 | `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`. |
 
@@ -81,7 +81,7 @@ await Promise.all([
 | `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise, and chunks stay in order. |
 | `batch(size, { signal })` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
 
-Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. `concat`, `merge`, `fromIterable` and `toAsyncIterable` take no signal: cancel the stream they return, or pass `signal` to the `pipeTo` that reads it.
+Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. Aborting the `signal` of `concat` or `merge` errors the output with `signal.reason` and cancels every source. `fromIterable` and `toAsyncIterable` take no signal: cancel the stream they return, or pass `signal` to the `pipeTo` that reads it.
 
 ```ts
 const lines = Streams.transform(async function* (source: AsyncIterable<string>) {
@@ -148,9 +148,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `concat({ encoding: 'string' }, cb)` | `await toText(stream)` |
 | `concat({ encoding: 'objects' }, cb)` | `await toArray(stream)` |
 | `await getRawBody(stream, { limit: '1mb', encoding: 'utf-8' })` | `await toText(stream, { maxBytes: 1_000_000 })` |
-| `merge2(a, b, c)` | `concat(a, b, c)` |
-| `merge2([a, b])`, `merge(a, b)` (merge-stream) | `merge(a, b)` |
-| `merge2(a, [b, c])` | `concat(a, merge(b, c))` |
+| `merge2(a, b, c)` | `concat([a, b, c])` |
+| `merge2([a, b])`, `merge(a, b)` (merge-stream) | `merge([a, b])` |
+| `merge2(a, [b, c])` | `concat([a, merge([b, c])])` |
 | `through2.obj((chunk, enc, cb) => cb(null, f(chunk)))` | `map(f)` |
 | `through2.obj(function (chunk, enc, cb) { if (keep(chunk)) this.push(chunk); cb() })` | `filter(keep)` |
 | `through2.obj(transformFn, flushFn)` with state in `this` | `transform(async function* (source) { ... })` with state in local variables and the flush after the loop |

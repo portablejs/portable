@@ -54,7 +54,7 @@ for (const [name, source, p] of sources) {
     for (const size of [2, 10, 26, 36, 62, 64, 100, 255, 256, 257, 1000]) {
       test(`string characters from an alphabet of ${size}`, () => {
         const random = source()
-        const text = random.string(Math.max(100000, size * 200), alphabetOf(size))
+        const text = random.string(Math.max(100000, size * 200), { alphabet: alphabetOf(size) })
         expect(looksUniform(text, size, p).uniform).toBe(true)
       })
     }
@@ -63,7 +63,7 @@ for (const [name, source, p] of sources) {
       const random = source()
       expect(
         looksUniform(
-          draws(20000, () => random.string(2, '0123456789')),
+          draws(20000, () => random.string(2, { alphabet: '0123456789' })),
           100,
           p,
         ).uniform,
@@ -72,7 +72,9 @@ for (const [name, source, p] of sources) {
 
     test('string characters from an emoji alphabet', () => {
       const random = source()
-      expect(looksUniform(Array.from(random.string(6000, '😀🎉🚀')), 3, p).uniform).toBe(true)
+      expect(
+        looksUniform(Array.from(random.string(6000, { alphabet: '😀🎉🚀' })), 3, p).uniform,
+      ).toBe(true)
     })
 
     test('shuffle orders of 4 elements', () => {

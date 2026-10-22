@@ -106,11 +106,11 @@ Decisions agents made without the owner's input, with the options they considere
 - **Trade-offs:** `temperror` on abort reads well for RFC 7208's time limit (section 4.6.4), but a caller that aborts because its client went away gets a result it has to throw away, and spf would stay the only package that doesn't reject. Branching on the reason's type makes `AbortSignal.timeout` and `AbortSignal.any([timeout, request.signal])` behave differently in ways a caller can't see from the types.
 - **Chosen:** reject with `signal.reason`. A caller that wants the RFC behavior catches the `TimeoutError` and reports `temperror`, as the README says. `check` also passes the signal to each resolver call as `{ signal }`, and `Dns.Resolver`'s methods now declare that optional argument, so `Dns.createResolver()` cancels its in-flight `fetch` calls. `node:dns/promises` ignores the argument.
 
-## `Streams.concat`, `merge`, `fromIterable` and `toAsyncIterable` take no signal
+## `Streams.fromIterable` and `toAsyncIterable` take no signal
 
-- **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors and to the transforms used with `pipeThrough`.
-- **Trade-offs:** `concat` and `merge` take their sources as rest parameters, so an options object can't go last without changing them to take an array. All four return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels every source. A caller with a signal passes it to the `pipeTo` or collector that reads the result, and that cancels the chain.
-- **Chosen:** `toBytes`, `toText`, `toJson`, `toArray`, `map`, `filter`, `tap`, `batch`, `limitBytes` and `transform` take `signal`, and `tee` already did. The other four don't, and the README says how to cancel them.
+- **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors, the combinators and the transforms used with `pipeThrough`.
+- **Trade-offs:** `fromIterable` and `toAsyncIterable` return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels the source. `concat` and `merge` took their sources as rest parameters, which left no place for an options object. They now take an array, which costs nothing before the first release, so they take `signal` like every other function that holds readers.
+- **Chosen:** `toBytes`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform` and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
 
 ## `@portable/charset`'s root exports
 

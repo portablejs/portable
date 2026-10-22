@@ -37,7 +37,7 @@ function handMerge<T>(sources: readonly ReadableStream<T>[]): ReadableStream<T> 
 test('merges 3 streams of 10,000 objects within 25% of a hand-written merge', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/streams', async () => {
-      await collect(Streams.merge(...thirds.map((third) => fromChunks(third))))
+      await collect(Streams.merge(thirds.map((third) => fromChunks(third))))
     }),
     bench('merge2', async () => {
       await drain(

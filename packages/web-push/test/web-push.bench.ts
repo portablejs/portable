@@ -89,7 +89,7 @@ test(`encrypts a ${payload.length}-byte payload within 25% of direct WebCrypto c
 }) => {
   const result = await bench.compare(
     bench('@portable/web-push', async () => {
-      await WebPush.encrypt(agent.subscription, payload)
+      await WebPush.encrypt({ subscription: agent.subscription, payload })
     }),
     bench('WebCrypto', webCryptoEncrypt),
     bench('web-push (node:crypto)', () => {
@@ -105,7 +105,9 @@ test('encrypts 64 payloads at once within 25% of direct WebCrypto calls', async 
   const batch = Array.from({ length: 64 })
   const result = await bench.compare(
     bench('@portable/web-push', async () => {
-      await Promise.all(batch.map(() => WebPush.encrypt(agent.subscription, payload)))
+      await Promise.all(
+        batch.map(() => WebPush.encrypt({ subscription: agent.subscription, payload })),
+      )
     }),
     bench('WebCrypto', async () => {
       await Promise.all(batch.map(webCryptoEncrypt))
@@ -129,7 +131,7 @@ test('signs a VAPID JWT within 25% of direct WebCrypto calls', async ({ bench })
   const result = await bench.compare(
     bench('@portable/web-push', async () => {
       const origin = origins[signed++ % origins.length]!
-      await WebPush.toRequest({ endpoint: `${origin}/p/1` }, undefined, { vapid })
+      await WebPush.toRequest({ subscription: { endpoint: `${origin}/p/1` }, vapid })
     }),
     bench('WebCrypto', async () => {
       await webCryptoSign(origins[next++ % origins.length]!)
@@ -148,7 +150,7 @@ test('signs a VAPID JWT within 25% of direct WebCrypto calls', async ({ bench })
 test('builds a push request within 25% of direct WebCrypto calls', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/web-push', async () => {
-      await WebPush.toRequest(agent.subscription, payload, { vapid })
+      await WebPush.toRequest({ subscription: agent.subscription, payload, vapid })
     }),
     bench('WebCrypto', async () => {
       await webCryptoEncrypt()

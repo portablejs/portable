@@ -7,7 +7,7 @@ const text = new TextDecoder()
 
 async function roundTrip(payload: string | Uint8Array): Promise<Uint8Array> {
   const agent = await userAgent()
-  return decrypt(await WebPush.encrypt(agent.subscription, payload), agent)
+  return decrypt(await WebPush.encrypt({ subscription: agent.subscription, payload }), agent)
 }
 
 const agent = await userAgent()
@@ -36,11 +36,12 @@ describe('RFC 8291 §5 and Appendix A', () => {
       fromBase64url(vector.asPrivate),
       fromBase64url(vector.asPublic),
     )
-    const body = await WebPush.encrypt(
-      { keys: { p256dh: vector.uaPublic, auth: vector.auth } },
-      fromBase64url(vector.plaintext),
-      { keyPair, salt: fromBase64url(vector.salt) },
-    )
+    const body = await WebPush.encrypt({
+      subscription: { keys: { p256dh: vector.uaPublic, auth: vector.auth } },
+      payload: fromBase64url(vector.plaintext),
+      keyPair,
+      salt: fromBase64url(vector.salt),
+    })
     expect(base64url(body)).toBe(vector.message)
   })
 
@@ -76,7 +77,7 @@ describe('encrypt', () => {
 
   test('writes an 86-byte header with record size 4096 and the server key', async () => {
     const agent = await userAgent()
-    const body = await WebPush.encrypt(agent.subscription, 'hello')
+    const body = await WebPush.encrypt({ subscription: agent.subscription, payload: 'hello' })
     expect(body.length).toBe(86 + 5 + 1 + 16)
     expect(new DataView(body.buffer).getUint32(16)).toBe(4096)
     expect(body[20]).toBe(65)
@@ -86,7 +87,7 @@ describe('encrypt', () => {
   test(`accepts ${WebPush.maxPayloadBytes} bytes as one 4096-byte record`, async () => {
     const payload = crypto.getRandomValues(new Uint8Array(WebPush.maxPayloadBytes))
     const agent = await userAgent()
-    const body = await WebPush.encrypt(agent.subscription, payload)
+    const body = await WebPush.encrypt({ subscription: agent.subscription, payload })
     expect(body.length).toBe(4096)
     expect(await decrypt(body, agent)).toEqual(payload)
   })
@@ -94,15 +95,15 @@ describe('encrypt', () => {
   test('rejects a payload one byte over the limit', async () => {
     const agent = await userAgent()
     const payload = new Uint8Array(WebPush.maxPayloadBytes + 1)
-    await expect(WebPush.encrypt(agent.subscription, payload)).rejects.toThrow(
+    await expect(WebPush.encrypt({ subscription: agent.subscription, payload })).rejects.toThrow(
       WebPush.InvalidInputError,
     )
   })
 
   test('uses a new salt and server key for every message', async () => {
     const agent = await userAgent()
-    const a = await WebPush.encrypt(agent.subscription, 'hello')
-    const b = await WebPush.encrypt(agent.subscription, 'hello')
+    const a = await WebPush.encrypt({ subscription: agent.subscription, payload: 'hello' })
+    const b = await WebPush.encrypt({ subscription: agent.subscription, payload: 'hello' })
     expect(a.subarray(0, 16)).not.toEqual(b.subarray(0, 16))
     expect(a.subarray(21, 86)).not.toEqual(b.subarray(21, 86))
   })
@@ -110,16 +111,16 @@ describe('encrypt', () => {
   test('accepts standard base64 keys with padding', async () => {
     const agent = await userAgent()
     const keys = { p256dh: Base64.encode(agent.publicKey), auth: Base64.encode(agent.auth) }
-    const body = await WebPush.encrypt({ keys }, 'hello')
+    const body = await WebPush.encrypt({ subscription: { keys }, payload: 'hello' })
     expect(text.decode(await decrypt(body, agent))).toBe('hello')
   })
 
   test('accepts keys as bytes', async () => {
     const agent = await userAgent()
-    const body = await WebPush.encrypt(
-      { keys: { p256dh: agent.publicKey, auth: agent.auth } },
-      'hi',
-    )
+    const body = await WebPush.encrypt({
+      subscription: { keys: { p256dh: agent.publicKey, auth: agent.auth } },
+      payload: 'hi',
+    })
     expect(text.decode(await decrypt(body, agent))).toBe('hi')
   })
 
@@ -127,20 +128,30 @@ describe('encrypt', () => {
     const agent = await userAgent()
     const reason = new Error('stop')
     await expect(
-      WebPush.encrypt(agent.subscription, 'hello', { signal: AbortSignal.abort(reason) }),
+      WebPush.encrypt({
+        subscription: agent.subscription,
+        payload: 'hello',
+        signal: AbortSignal.abort(reason),
+      }),
     ).rejects.toBe(reason)
   })
 
   test('rejects a salt that is not 16 bytes', async () => {
     const agent = await userAgent()
     await expect(
-      WebPush.encrypt(agent.subscription, 'hello', { salt: new Uint8Array(15) }),
+      WebPush.encrypt({
+        subscription: agent.subscription,
+        payload: 'hello',
+        salt: new Uint8Array(15),
+      }),
     ).rejects.toThrow(RangeError)
   })
 
   test('rejects a payload that is not a string or bytes', async () => {
     const agent = await userAgent()
-    await expect(WebPush.encrypt(agent.subscription, [] as never)).rejects.toThrow(TypeError)
+    await expect(
+      WebPush.encrypt({ subscription: agent.subscription, payload: [] as never }),
+    ).rejects.toThrow(TypeError)
   })
 
   describe('rejects malformed subscription keys', () => {
@@ -164,9 +175,9 @@ describe('encrypt', () => {
       ['an empty auth', { p256dh, auth: '' }],
     ]
     test.for(cases)('%s', async ([, keys]) => {
-      await expect(WebPush.encrypt({ keys: keys as WebPush.Keys }, 'hello')).rejects.toThrow(
-        WebPush.InvalidInputError,
-      )
+      await expect(
+        WebPush.encrypt({ subscription: { keys: keys as WebPush.Keys }, payload: 'hello' }),
+      ).rejects.toThrow(WebPush.InvalidInputError)
     })
   })
 })

@@ -58,7 +58,9 @@ describe('encrypt matches web-push byte for byte', () => {
       const server = await serverKey()
       const salt = crypto.randomBytes(16)
       const payload = crypto.randomBytes(randomLength())
-      const ours = await WebPush.encrypt(agent.subscription, payload, {
+      const ours = await WebPush.encrypt({
+        subscription: agent.subscription,
+        payload,
         keyPair: server.keyPair,
         salt,
       })
@@ -71,7 +73,9 @@ describe('encrypt matches web-push byte for byte', () => {
     const agent = await userAgent()
     const server = await serverKey()
     const salt = crypto.randomBytes(16)
-    const ours = await WebPush.encrypt(agent.subscription, payload, {
+    const ours = await WebPush.encrypt({
+      subscription: agent.subscription,
+      payload,
       keyPair: server.keyPair,
       salt,
     })
@@ -87,10 +91,12 @@ describe('web-push and http_ece read our output', () => {
     const publicKey = ecdh.generateKeys()
     const auth = crypto.randomBytes(16)
     const payload = crypto.randomBytes(500)
-    const body = await WebPush.encrypt(
-      { keys: { p256dh: publicKey.toString('base64url'), auth: auth.toString('base64url') } },
+    const body = await WebPush.encrypt({
+      subscription: {
+        keys: { p256dh: publicKey.toString('base64url'), auth: auth.toString('base64url') },
+      },
       payload,
-    )
+    })
     const decrypted = ece.decrypt(Buffer.from(body), {
       version: 'aes128gcm',
       privateKey: ecdh,
@@ -121,7 +127,8 @@ describe('web-push and http_ece read our output', () => {
       ours.privateKey,
       'aes128gcm',
     )
-    const request = await WebPush.toRequest({ endpoint }, undefined, {
+    const request = await WebPush.toRequest({
+      subscription: { endpoint },
       vapid: { subject: 'mailto:ops@example.com', ...upstream },
     })
     const a = await verifyVapid(theirs.Authorization)
@@ -144,7 +151,12 @@ describe('toRequest matches generateRequestDetails', () => {
         ...('ttl' in options ? { TTL: options.ttl } : {}),
         ...('urgency' in options ? { urgency: options.urgency, topic: options.topic } : {}),
       })
-      const ours = await WebPush.toRequest(agent.subscription, 'hello', { vapid, ...options })
+      const ours = await WebPush.toRequest({
+        subscription: agent.subscription,
+        payload: 'hello',
+        vapid,
+        ...options,
+      })
       expect(ours.method).toBe(theirs.method)
       expect(ours.url).toBe(theirs.endpoint)
       const headers = Object.fromEntries(

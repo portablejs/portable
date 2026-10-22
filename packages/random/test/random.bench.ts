@@ -102,7 +102,7 @@ test('string(12) from 36 characters within 25% of nanoid and crypto-random-strin
   const result = await bench.compare(
     bench(
       '@portable/random',
-      repeat(() => Random.string(12, lowercase)),
+      repeat(() => Random.string(12, { alphabet: lowercase })),
     ),
     bench(
       'nanoid customAlphabet',

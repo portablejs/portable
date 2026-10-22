@@ -7,6 +7,10 @@ export type Urgency = 'very-low' | 'low' | 'normal' | 'high'
 
 export declare namespace toRequest {
   type Options = {
+    /** The browser's push subscription, from `PushSubscription.toJSON()`. */
+    subscription: Subscription
+    /** The message to encrypt. Leave it out to send a push with no data. */
+    payload?: string | Uint8Array | undefined
     /** The VAPID subject and key pair that sign the request. */
     vapid: Vapid
     /**
@@ -38,7 +42,7 @@ export declare namespace toRequest {
  * ```ts
  * import * as WebPush from '@portable/web-push'
  *
- * const request = await WebPush.toRequest(subscription, 'hello', { vapid })
+ * const request = await WebPush.toRequest({ subscription, payload: 'hello', vapid })
  * const response = await fetch(request)
  * ```
  *
@@ -48,12 +52,8 @@ export declare namespace toRequest {
  * @throws {RangeError} When `ttl` isn't a non-negative integer, or the payload is longer than
  * `maxPayloadBytes`.
  */
-export async function toRequest(
-  subscription: Subscription,
-  payload: string | Uint8Array | undefined,
-  options: toRequest.Options,
-): Promise<Request> {
-  const { ttl = 2419200, urgency, topic, signal } = options
+export async function toRequest(options: toRequest.Options): Promise<Request> {
+  const { subscription, payload, ttl = 2419200, urgency, topic, signal } = options
   const endpoint = typeof subscription?.endpoint === 'string' && URL.parse(subscription.endpoint)
   if (!endpoint || endpoint.protocol !== 'https:')
     throw new InvalidInputError('The subscription endpoint must be an https: URL')
@@ -69,7 +69,7 @@ export async function toRequest(
   if (topic) headers.set('topic', topic)
   let body: Uint8Array<ArrayBuffer> | undefined
   if (payload !== undefined) {
-    body = await encrypt(subscription, payload, { signal })
+    body = await encrypt({ subscription, payload, signal })
     headers.set('content-encoding', 'aes128gcm')
     headers.set('content-type', 'application/octet-stream')
   }
@@ -98,13 +98,15 @@ export declare namespace send {
 
 /**
  * Encrypts a payload, signs the request with VAPID, and sends it to the subscription's push
- * service. Leave `payload` `undefined` to send a push with no data.
+ * service. Leave out `payload` to send a push with no data.
  *
  * @example
  * ```ts
  * import * as WebPush from '@portable/web-push'
  *
- * const result = await WebPush.send(subscription, JSON.stringify({ title: 'New message' }), {
+ * const result = await WebPush.send({
+ *   subscription,
+ *   payload: JSON.stringify({ title: 'New message' }),
  *   vapid: { subject: 'mailto:ops@example.com', publicKey, privateKey },
  *   ttl: 3600,
  *   urgency: 'high',
@@ -118,12 +120,8 @@ export declare namespace send {
  * @throws {RangeError} When an option is malformed.
  * @throws {TypeError} When `fetch` rejects.
  */
-export async function send(
-  subscription: Subscription,
-  payload: string | Uint8Array | undefined,
-  options: send.Options,
-): Promise<send.Result> {
-  const request = await toRequest(subscription, payload, options)
+export async function send(options: send.Options): Promise<send.Result> {
+  const request = await toRequest(options)
   const response = await (options.fetch ?? fetch)(request)
   const { status } = response
   if (response.ok || status === 404 || status === 410) {

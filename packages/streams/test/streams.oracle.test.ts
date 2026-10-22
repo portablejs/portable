@@ -82,20 +82,20 @@ describe('matches merge2', () => {
       Readable.from(chunks, { objectMode: true }),
     )
 
-  test('concat(a, b, c) equals merge2(a, b, c)', async () => {
-    expect(await toArray(concat(...sources()))).toEqual(await toArray(merge2(...sources())))
+  test('concat([a, b, c]) equals merge2(a, b, c)', async () => {
+    expect(await toArray(concat(sources()))).toEqual(await toArray(merge2(...sources())))
   })
 
-  test('merge(a, b, c) yields the same chunks as merge2([a, b, c])', async () => {
-    const ours = await toArray(merge(...sources()))
+  test('merge([a, b, c]) yields the same chunks as merge2([a, b, c])', async () => {
+    const ours = await toArray(merge(sources()))
     const theirs = await toArray(merge2(sources()))
     expect(ours.toSorted(byString)).toEqual(theirs.toSorted(byString))
   })
 
-  test('concat(a, merge(b, c)) equals merge2(a, [b, c])', async () => {
+  test('concat([a, merge([b, c])]) equals merge2(a, [b, c])', async () => {
     const [a, b, c] = sources()
     const [a2, b2, c2] = sources()
-    const ours = await toArray(concat(a!, merge(b!, c!)))
+    const ours = await toArray(concat([a!, merge([b!, c!])]))
     const theirs = await toArray(merge2(a2!, [b2!, c2!]))
     expect(ours.slice(0, 2)).toEqual(theirs.slice(0, 2))
     expect(ours.toSorted(byString)).toEqual(theirs.toSorted(byString))

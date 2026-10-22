@@ -36,6 +36,10 @@ export const maxPayloadBytes = 3993
 
 export declare namespace encrypt {
   type Options = {
+    /** The subscription whose `keys` the payload is encrypted for. */
+    subscription: Pick<Subscription, 'keys'>
+    /** The message. */
+    payload: string | Uint8Array
     /** The 16-byte salt. Use a fresh random salt for every message. @default 16 random bytes */
     salt?: Uint8Array | undefined
     /**
@@ -58,7 +62,7 @@ export declare namespace encrypt {
  * ```ts
  * import * as WebPush from '@portable/web-push'
  *
- * const body = await WebPush.encrypt(subscription, JSON.stringify({ title: 'Hi' }))
+ * const body = await WebPush.encrypt({ subscription, payload: JSON.stringify({ title: 'Hi' }) })
  * // send with the headers `Content-Encoding: aes128gcm`, `TTL` and a VAPID `Authorization`
  * ```
  *
@@ -66,12 +70,8 @@ export declare namespace encrypt {
  * key, `auth` isn't 16 bytes, or the payload is longer than `maxPayloadBytes`.
  * @throws {RangeError} When `salt` isn't 16 bytes.
  */
-export async function encrypt(
-  subscription: Pick<Subscription, 'keys'>,
-  payload: string | Uint8Array,
-  options: encrypt.Options = {},
-): Promise<Uint8Array<ArrayBuffer>> {
-  const { signal } = options
+export async function encrypt(options: encrypt.Options): Promise<Uint8Array<ArrayBuffer>> {
+  const { subscription, payload, signal } = options
   signal?.throwIfAborted()
   const { userPublicKey, auth } = readKeys(subscription)
   const plaintext = toBytes(payload)

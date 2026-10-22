@@ -3,6 +3,13 @@ import { MaxBytesError, byteLength } from './bytes.js'
 import { fromIterable } from './iterable.js'
 import { type Source, assertSource, isReadableStream } from './source.js'
 
+export declare namespace concat {
+  type Options = {
+    /** Errors the output with `signal.reason` and cancels every source when aborted. */
+    signal?: AbortSignal | undefined
+  }
+}
+
 /**
  * Joins sources end to end: every chunk of the first source, then every chunk of the next.
  * A source is read only once the one before it has ended. An error in any source errors the
@@ -12,16 +19,20 @@ import { type Source, assertSource, isReadableStream } from './source.js'
  * ```ts
  * import * as Streams from '@portable/streams'
  *
- * const body = Streams.concat([header], file.stream(), [footer])
+ * const body = Streams.concat([[header], file.stream(), [footer]])
  * ```
  */
-export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
+export function concat<T>(
+  sources: readonly Source<T>[],
+  options: concat.Options = {},
+): ReadableStream<T> {
+  if (!Array.isArray(sources as unknown)) throw new TypeError('concat takes an array of sources.')
   const streams = sources.map(toStream)
   let index = 0
   let reader: ReadableStreamDefaultReader<T> | undefined
   const cancelRest = (reason: unknown) =>
     Promise.all(streams.slice(index + 1).map((stream) => stream.cancel(reason).catch(() => {})))
-  return new ReadableStream<T>(
+  const output = new ReadableStream<T>(
     {
       async pull(controller) {
         for (; index < streams.length; index++) {
@@ -48,6 +59,14 @@ export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     },
     { highWaterMark: 0 },
   )
+  return withSignal(output, options.signal)
+}
+
+export declare namespace merge {
+  type Options = {
+    /** Errors the output with `signal.reason` and cancels every source when aborted. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 /**
@@ -59,10 +78,14 @@ export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
  * ```ts
  * import * as Streams from '@portable/streams'
  *
- * const events = Streams.merge(serverA.body!, serverB.body!)
+ * const events = Streams.merge([serverA.body!, serverB.body!], { signal })
  * ```
  */
-export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
+export function merge<T>(
+  sources: readonly Source<T>[],
+  options: merge.Options = {},
+): ReadableStream<T> {
+  if (!Array.isArray(sources as unknown)) throw new TypeError('merge takes an array of sources.')
   const readers = new Set(sources.map((source) => toStream(source).getReader()))
   const idle = new Set(readers)
   let wake: (() => void) | undefined
@@ -101,7 +124,7 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     )
   }
 
-  return new ReadableStream<T>(
+  const output = new ReadableStream<T>(
     {
       start(controller) {
         if (readers.size === 0) {
@@ -122,6 +145,14 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     },
     { highWaterMark: 0 },
   )
+  return withSignal(output, options.signal)
+}
+
+function withSignal<T>(
+  stream: ReadableStream<T>,
+  signal: AbortSignal | undefined,
+): ReadableStream<T> {
+  return signal ? stream.pipeThrough(new TransformStream<T, T>(abortable({}, signal))) : stream
 }
 
 export declare namespace limitBytes {

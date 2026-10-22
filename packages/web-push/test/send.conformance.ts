@@ -17,7 +17,9 @@ async function sent(
   status = 201,
 ) {
   const service = pushService(status, 'ok')
-  const result = await WebPush.send(agent.subscription, payload, {
+  const result = await WebPush.send({
+    subscription: agent.subscription,
+    payload,
     vapid,
     fetch: service.fetch,
     ...options,
@@ -68,7 +70,8 @@ describe('send', () => {
 
   test('sends an empty push to a subscription without keys', async () => {
     const service = pushService()
-    const result = await WebPush.send({ endpoint: agent.subscription.endpoint }, undefined, {
+    const result = await WebPush.send({
+      subscription: { endpoint: agent.subscription.endpoint },
       vapid,
       fetch: service.fetch,
     })
@@ -119,7 +122,9 @@ describe('send', () => {
 
   test.for([400, 403, 413, 429, 500, 503])('throws ResponseError for status %i', async (status) => {
     const service = pushService(status, '{"reason":"BadJwtToken"}')
-    const error = await WebPush.send(agent.subscription, 'hello', {
+    const error = await WebPush.send({
+      subscription: agent.subscription,
+      payload: 'hello',
       vapid,
       fetch: service.fetch,
     }).catch((error: unknown) => error)
@@ -155,7 +160,9 @@ describe('send', () => {
     const service = pushService()
     const reason = new Error('stop')
     await expect(
-      WebPush.send(agent.subscription, 'hello', {
+      WebPush.send({
+        subscription: agent.subscription,
+        payload: 'hello',
         vapid,
         fetch: service.fetch,
         signal: AbortSignal.abort(reason),
@@ -184,7 +191,12 @@ describe('send', () => {
   ])('rejects %s', async ([, subscription, payload]) => {
     const service = pushService()
     await expect(
-      WebPush.send(subscription as WebPush.Subscription, payload, { vapid, fetch: service.fetch }),
+      WebPush.send({
+        subscription: subscription as WebPush.Subscription,
+        payload,
+        vapid,
+        fetch: service.fetch,
+      }),
     ).rejects.toThrow(WebPush.InvalidInputError)
     expect(service.requests).toHaveLength(0)
   })
@@ -196,7 +208,9 @@ describe('send', () => {
 
 describe('toRequest', () => {
   test('returns the request send would make', async () => {
-    const request = await WebPush.toRequest(agent.subscription, 'hello', {
+    const request = await WebPush.toRequest({
+      subscription: agent.subscription,
+      payload: 'hello',
       vapid,
       ttl: 60,
       urgency: 'high',
