@@ -52,8 +52,35 @@ function inlineModule(url: string): Promise<string> {
   return module
 }
 
-const opaqueChild = async (config: Config) =>
-  `data:text/html,${encodeURIComponent(inlineChild(config, await inlineModule(startUrl)))}`
+/**
+ * Adds data URLs of the module at `url` and every module it imports to `graph`, keyed by their
+ * URLs, for an import map. `inlineModule` copies a module into every module that imports it, so a
+ * data URL page built from it passed Chromium's 2 MB URL limit.
+ */
+async function moduleGraph(url: string, graph: Record<string, string> = {}) {
+  if (url in graph) return graph
+  graph[url] = ''
+  let code = await (await fetch(url)).text()
+  const specifiers = new Set(
+    [...code.matchAll(/(?:from|import)\s*"([^"]+)"/g)].map((match) => match[1]!),
+  )
+  for (const specifier of specifiers) {
+    const resolved = new URL(specifier, url).href
+    code = code.replaceAll(`"${specifier}"`, JSON.stringify(resolved))
+    await moduleGraph(resolved, graph)
+  }
+  graph[url] = `data:text/javascript,${encodeURIComponent(code)}`
+  return graph
+}
+
+async function opaqueChild(config: Config): Promise<string> {
+  const imports = JSON.stringify({ imports: await moduleGraph(startUrl) })
+  const html = inlineChild(config).replace(
+    '<!doctype html>',
+    `<!doctype html><script type="importmap">${imports}</script>`,
+  )
+  return `data:text/html,${encodeURIComponent(html)}`
+}
 
 function iframe(set: (iframe: HTMLIFrameElement) => void): HTMLIFrameElement {
   const element = globalThis.document.createElement('iframe')
