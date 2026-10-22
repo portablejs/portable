@@ -252,9 +252,12 @@ const encodeB = (bytes: Uint8Array): string =>
     : btoa(String.fromCharCode.apply(null, bytes as unknown as number[]))
 
 /** RFC 2047 section 5 (3): the characters a Q word may keep as is anywhere, even in a phrase. */
-const qSafe = new Uint8Array(128)
-for (const character of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!*+-/ ')
-  qSafe[character.charCodeAt(0)] = 1
+const qSafe = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(128)
+  for (const character of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!*+-/ ')
+    table[character.charCodeAt(0)] = 1
+  return table
+})()
 
 const qLength = (byte: number): number => (byte < 0x80 && qSafe[byte] ? 1 : 3)
 

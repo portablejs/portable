@@ -87,22 +87,31 @@ const OUTPUT_CHUNK = 64 * 1024
 const ESCAPE = 0
 const LITERAL = 1
 const DEPENDS_ON_NEIGHBOURS = 2
-const kind = new Uint8Array(256)
-for (let i = 0x20; i <= 0x7e; i++) kind[i] = LITERAL
-for (const b of [SPACE, TAB, HYPHEN, CR, LF]) kind[b] = DEPENDS_ON_NEIGHBOURS
-kind[EQUALS] = ESCAPE
+const kind = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(256)
+  for (let i = 0x20; i <= 0x7e; i++) table[i] = LITERAL
+  for (const b of [SPACE, TAB, HYPHEN, CR, LF]) table[b] = DEPENDS_ON_NEIGHBOURS
+  table[EQUALS] = ESCAPE
+  return table
+})()
 
 const hexDigits = new TextEncoder().encode('0123456789ABCDEF')
 
-const hexValue = new Int8Array(256).fill(-1)
-for (let i = 0; i < 16; i++) {
-  hexValue[hexDigits[i]!] = i
-  hexValue[hexDigits[i]! | 0x20] = i
-}
+const hexValue = /* @__PURE__ */ (() => {
+  const table = new Int8Array(256).fill(-1)
+  for (let i = 0; i < 16; i++) {
+    table[hexDigits[i]!] = i
+    table[hexDigits[i]! | 0x20] = i
+  }
+  return table
+})()
 
 // libqp prefers to break a line after one of these characters.
-const breakAfter = new Uint8Array(256)
-for (const c of ' \t.,!?') breakAfter[c.charCodeAt(0)] = 1
+const breakAfter = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(256)
+  for (const c of ' \t.,!?') table[c.charCodeAt(0)] = 1
+  return table
+})()
 
 const outputDecoder = new TextDecoder()
 

@@ -35,6 +35,9 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/bytes": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/index.ts",

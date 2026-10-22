@@ -1,4 +1,4 @@
-import { crc32 } from './crc32.js'
+import { crc32 } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { type FilterType, filterRows } from './filter.js'
 import * as zlib from './zlib.js'
@@ -164,7 +164,10 @@ function assemble(
     outView.setUint32(offset, data.length)
     outView.setUint32(offset + 4, type)
     out.set(data, offset + 8)
-    outView.setUint32(offset + 8 + data.length, crc32(out, offset + 4, offset + 8 + data.length))
+    outView.setUint32(
+      offset + 8 + data.length,
+      crc32(out.subarray(offset + 4, offset + 8 + data.length)),
+    )
     offset += data.length + 12
   }
   return out

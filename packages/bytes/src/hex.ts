@@ -73,11 +73,14 @@ export function toHexFallback(bytes: Uint8Array): string {
   return ascii.decode(out)
 }
 
-const values = new Int8Array(128).fill(-1)
-for (let i = 0; i < 16; i++) {
-  values[digits.charCodeAt(i)] = i
-  values[digits.toUpperCase().charCodeAt(i)] = i
-}
+const values = /* @__PURE__ */ (() => {
+  const table = new Int8Array(128).fill(-1)
+  for (let i = 0; i < 16; i++) {
+    table[digits.charCodeAt(i)] = i
+    table[digits.toUpperCase().charCodeAt(i)] = i
+  }
+  return table
+})()
 
 export function fromHexFallback(hex: string): Uint8Array<ArrayBuffer> {
   if (hex.length % 2 !== 0)

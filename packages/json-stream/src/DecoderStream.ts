@@ -55,9 +55,11 @@ const BACKSLASH = 0x5c
 
 const literals = ['true', 'false', 'null']
 
-const jsonCharacters = new Uint8Array(0x80)
-for (const character of ' \t\n\r,:0123456789+-.eEtruefalsn')
-  jsonCharacters[character.charCodeAt(0)] = 1
+const jsonCharacters = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(0x80)
+  for (const character of ' \t\n\r,:0123456789+-.eEtruefalsn') table[character.charCodeAt(0)] = 1
+  return table
+})()
 
 /**
  * A `TransformStream` that parses JSON text as it arrives and emits the values found at the given

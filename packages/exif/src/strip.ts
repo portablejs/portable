@@ -1,4 +1,5 @@
 import * as Bytes from '@portable/bytes'
+import { crc32 } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js'
 import { readTiff } from './tiff.js'
@@ -441,20 +442,4 @@ function bigEndian32(n: number): Uint8Array {
 
 function littleEndian32(n: number): Uint8Array {
   return new Uint8Array([n & 255, (n >>> 8) & 255, (n >>> 16) & 255, n >>> 24])
-}
-
-let crcTable: Uint32Array | undefined
-
-function crc32(bytes: Uint8Array): number {
-  if (!crcTable) {
-    crcTable = new Uint32Array(256)
-    for (let n = 0; n < 256; n++) {
-      let c = n
-      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
-      crcTable[n] = c
-    }
-  }
-  let crc = 0xffffffff
-  for (const byte of bytes) crc = crcTable[(crc ^ byte) & 255]! ^ (crc >>> 8)
-  return (crc ^ 0xffffffff) >>> 0
 }

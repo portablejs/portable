@@ -66,9 +66,12 @@ const TAB = 0x09
 const CR = 0x0d
 const LF = 0x0a
 
-const hexValue = new Int8Array(256).fill(-1)
-for (let i = 0; i < 10; i++) hexValue[0x30 + i] = i
-for (let i = 0; i < 6; i++) hexValue[0x41 + i] = hexValue[0x61 + i] = 10 + i
+const hexValue = /* @__PURE__ */ (() => {
+  const table = new Int8Array(256).fill(-1)
+  for (let i = 0; i < 10; i++) table[0x30 + i] = i
+  for (let i = 0; i < 6; i++) table[0x41 + i] = table[0x61 + i] = 10 + i
+  return table
+})()
 
 type Decoder = { write: (bytes: Uint8Array, final: boolean) => Uint8Array<ArrayBuffer> }
 

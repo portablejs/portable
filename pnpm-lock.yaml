@@ -166,7 +166,11 @@ importers:
         specifier: ^0.7.3
         version: 0.7.3
 
-  packages/compress: {}
+  packages/compress:
+    dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
 
   packages/compress/test:
     devDependencies:

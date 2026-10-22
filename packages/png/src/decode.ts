@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { crc32 } from './crc32.js'
+import { crc32 } from '@portable/bytes/internal'
 import { InvalidInputError, TruncatedError, UnsupportedError } from './errors.js'
 import { unfilter } from './filter.js'
 import * as zlib from './zlib.js'
@@ -148,7 +148,7 @@ function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
     if (end + 4 > bytes.length) throw new TruncatedError('Unexpected end of file inside a chunk.')
     const name = String.fromCharCode(...bytes.subarray(offset + 4, start))
     if (!/^[A-Za-z]{4}$/.test(name)) throw new InvalidInputError('Invalid chunk type.')
-    if (checkCrc && crc32(bytes, offset + 4, end) !== view.getUint32(end))
+    if (checkCrc && crc32(bytes.subarray(offset + 4, end)) !== view.getUint32(end))
       throw new InvalidInputError(`CRC mismatch in ${name} chunk.`)
     if (!header && type !== IHDR) throw new InvalidInputError('IHDR must be the first chunk.')
     offset = end + 4

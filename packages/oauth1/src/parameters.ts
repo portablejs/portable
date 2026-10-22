@@ -2,9 +2,12 @@ export type Pair = [name: string, value: string]
 
 const utf8 = new TextEncoder()
 const hex = '0123456789ABCDEF'
-const unreserved = new Uint8Array(128)
-for (const c of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
-  unreserved[c.charCodeAt(0)] = 1
+const unreserved = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(128)
+  for (const c of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
+    table[c.charCodeAt(0)] = 1
+  return table
+})()
 const plain = /^[A-Za-z0-9._~-]*$/
 
 /**
