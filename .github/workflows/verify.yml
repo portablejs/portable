@@ -66,3 +66,32 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - run: pnpm vp test run --project "browser (${{ matrix.browser }})"
+
+  # The conformance tests again, inside Bun and Deno. Vitest runs on the runtime itself, so every
+  # test file runs there too. These jobs don't block yet: docs/papercuts.md lists the
+  # DecompressionStream and BroadcastChannel differences they report.
+  test-runtime:
+    name: Test (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          check-latest: true
+      - run: pnpm install --frozen-lockfile
+      - if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: pnpm test:${{ matrix.runtime }}

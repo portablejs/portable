@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Bun and Deno run the conformance tests in CI without blocking
+
+- **Options:** a Workers job through Miniflare, as the review proposed; run Vitest itself on Bun and Deno; wait for `@cloudflare/vitest-pool-workers` to support Vitest 5.
+- **Trade-offs:** Running Vitest on the runtime puts every test file in Bun or Deno with no new harness, and `pnpm test:bun` and `pnpm test:deno` run the same command locally. A Workers job needs a bundle of each test file and a runner inside workerd, which the Web Worker harness doesn't provide, because it imports test files from the Vite server. The first runs failed 2 tests on Bun and 19 on Deno, all caused by the runtimes' `DecompressionStream` and Deno's `BroadcastChannel` (see docs/papercuts.md). Blocking on them would keep CI red until Bun and Deno fix them, and changing the tests to expect each runtime's behavior would hide the differences.
+- **Chosen:** a `test-runtime` job for Bun and Deno with `continue-on-error`, so its failures show in the run without failing it. Make it blocking once the papercuts are fixed or worked around. Workers stays untested until the Vitest pool supports Vitest 5.
+
 ## AGENTS.md states the parameter, naming and `fetch` rules
 
 - **Options:** fix each exception the API review found and leave the rules as they were; write each fix down as a rule in AGENTS.md.
