@@ -1,3 +1,4 @@
+import { MaxLengthError } from './errors.js'
 import { checkLength, toText } from './internal/text.js'
 
 export declare namespace fold {
@@ -85,11 +86,21 @@ export type Header = {
   readonly value: string
 }
 
+export declare namespace parseHeaders {
+  type Options = {
+    /**
+     * Longest header block, in UTF-16 code units, up to the end of its last line. A longer block
+     * throws `MaxLengthError`. @default Infinity
+     */
+    maxLength?: number | undefined
+  }
+}
+
 /**
  * Splits a header block into fields. Reading stops at the first empty line, so a whole message can
- * be passed in. Each value is unfolded, with the whitespace around it removed, and its encoded
- * words are left as they are, because whether to decode them depends on the field. Names keep
- * their case, and a line without a colon is skipped.
+ * be passed in, and the body isn't read. Each value is unfolded, with the whitespace around it
+ * removed, and its encoded words are left as they are, because whether to decode them depends on
+ * the field. Names keep their case, and a line without a colon is skipped.
  *
  * @example
  * ```ts
@@ -98,16 +109,31 @@ export type Header = {
  * MimeHeaders.parseHeaders('Subject: Hello\r\n world\r\nTo: a@example.com\r\n\r\nBody')
  * // [{ name: 'Subject', value: 'Hello world' }, { name: 'To', value: 'a@example.com' }]
  * ```
+ *
+ * @throws {MaxLengthError} When the header block is longer than `maxLength`.
  */
-export function parseHeaders(input: string | Uint8Array): Header[] {
-  const lines = toText(input).split(/\r\n|\r|\n/)
-  let first = 0
-  while (first < lines.length && lines[first] === '') first++
+export function parseHeaders(
+  input: string | Uint8Array,
+  options: parseHeaders.Options = {},
+): Header[] {
+  const { maxLength = Infinity } = options
+  if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
+  const text = toText(input)
+  const lineBreak = /\r\n|\r|\n/g
   const fields: string[] = []
-  for (let i = first; i < lines.length && lines[i] !== ''; i++) {
-    const line = lines[i]!
-    if (fields.length > 0 && isSpace(line.charCodeAt(0))) fields[fields.length - 1] += line
-    else fields.push(line)
+  let blockStart = -1
+  for (let start = 0; ;) {
+    const match = lineBreak.exec(text)
+    const end = match ? match.index : text.length
+    if (end > start) {
+      if (blockStart < 0) blockStart = start
+      if (end - blockStart > maxLength) throw new MaxLengthError({ maxLength })
+      const line = text.slice(start, end)
+      if (fields.length > 0 && isSpace(line.charCodeAt(0))) fields[fields.length - 1] += line
+      else fields.push(line)
+    } else if (blockStart >= 0) break
+    if (!match) break
+    start = lineBreak.lastIndex
   }
   const headers: Header[] = []
   for (const field of fields) {

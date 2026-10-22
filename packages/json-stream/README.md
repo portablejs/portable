@@ -25,9 +25,10 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 | Option | Default | Description |
 | --- | --- | --- |
 | `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]` and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
+| `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. A matched value is held until it ends, so a longer one fails the stream with `MaxLengthError` as soon as it grows past the limit. Values outside `paths` are never held. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the input ends inside a value.
+The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError`, whose `maxLength` holds the limit, on a matched value longer than `maxLength`.
 
 ## `encodeStream`
 

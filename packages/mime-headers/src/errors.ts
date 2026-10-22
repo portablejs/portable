@@ -18,3 +18,24 @@ import * as Errors from '@portable/errors'
 export class InvalidInputError extends Errors.InvalidInputError {
   static override readonly kind: string = 'MimeHeaders.InvalidInputError'
 }
+
+/**
+ * Thrown by `parseHeaders` when the header block is longer than `maxLength`.
+ *
+ * @example
+ * ```ts
+ * import * as MimeHeaders from '@portable/mime-headers'
+ *
+ * try {
+ *   MimeHeaders.parseHeaders(message, { maxLength: 64 * 1024 })
+ * } catch (error) {
+ *   if (error instanceof MimeHeaders.MaxLengthError) console.log(error.maxLength)
+ * }
+ * ```
+ */
+export class MaxLengthError extends Errors.MaxLengthError {
+  static override readonly kind: string = 'MimeHeaders.MaxLengthError'
+  constructor(options: Errors.MaxLengthError.Options) {
+    super({ message: `The header block exceeded maxLength of ${options.maxLength}.`, ...options })
+  }
+}

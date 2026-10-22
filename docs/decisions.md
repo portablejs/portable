@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Decoders that buffer input take a size limit, with no limit by default
+
+- **Options:** no limit; a limit that is off by default; a finite default such as 1 MiB.
+- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` kept growing a buffer until a line, value or header block ended, so untrusted input with no line break used all the memory it was sent. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects a caller who doesn't read the docs, but picks a number that breaks a valid large record, and the three older packages would have needed the same breaking change.
+- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop.
+
 ## Every function that reads the clock takes `now`
 
 - **Options:** keep the per-package names (`signedAt` in dkim and arc, `timestamp` in oauth1 and webhooks, no option in rate-limit, spf and web-push); name the option after what it sets; call it `now` everywhere.

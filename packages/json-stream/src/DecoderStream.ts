@@ -1,4 +1,4 @@
-import { InvalidInputError, TruncatedError } from './errors.js'
+import { InvalidInputError, MaxLengthError, TruncatedError } from './errors.js'
 import { compile, type States } from './path.js'
 import { abortable } from './abortable.js'
 
@@ -16,6 +16,13 @@ export declare namespace DecoderStream {
      * @default ['$']
      */
     paths?: readonly string[] | undefined
+    /**
+     * Longest matched value, in UTF-16 code units of its JSON text. The stream holds a matched value's
+     * text until the value ends, so a longer one fails the stream with `MaxLengthError` as soon as
+     * it grows past the limit. Values outside `paths` are never held and don't count.
+     * @default Infinity
+     */
+    maxLength?: number | undefined
   }
 
   /** A value found at one of the `paths`. */
@@ -68,7 +75,8 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * several top-level values separated by whitespace, as in NDJSON or concatenated JSON.
  *
  * The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the
- * input ends inside a value. A structural error inside a matched value, such as a missing comma,
+ * input ends inside a value, and with `MaxLengthError` on a matched value longer than `maxLength`.
+ * A structural error inside a matched value, such as a missing comma,
  * is reported when that value ends.
  *
  * @example
@@ -85,7 +93,8 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  */
 export class DecoderStream extends TransformStream<Uint8Array | string, DecoderStream.Match> {
   constructor(options: DecoderStream.Options = {}) {
-    const { paths = ['$'] } = options
+    const { paths = ['$'], maxLength = Infinity } = options
+    if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
     const matcher = compile(paths)
     const decoder = new TextDecoder()
 
@@ -131,6 +140,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
     }
 
     const emit = (start: number, end: number, valueDepth: number) => {
+      if (end + offset - start > maxLength) throw new MaxLengthError({ maxLength })
       let value: unknown
       try {
         value = JSON.parse(slice(start, end))
@@ -407,6 +417,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
         held = []
         return
       }
+      if (offset + text.length - start > maxLength) throw new MaxLengthError({ maxLength })
       if (start >= offset) {
         held = [text.slice(start - offset)]
         heldStart = start

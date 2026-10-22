@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
+import * as MimeHeaders from '@portable/mime-headers'
 import {
   decodeWords,
   encodeWord,
@@ -329,5 +330,40 @@ describe('addresses', () => {
       ).toBe(true)
       expect(parseMailboxes(input).every((entry) => !('group' in entry))).toBe(true)
     })
+  })
+})
+
+describe('parseHeaders maxLength', () => {
+  const block = 'Subject: Hello\r\nTo: a@example.com'
+
+  test('accepts a block exactly maxLength long and counts no body', () => {
+    const message = `${block}\r\n\r\n${'x'.repeat(1000)}`
+    expect(MimeHeaders.parseHeaders(message, { maxLength: block.length })).toEqual([
+      { name: 'Subject', value: 'Hello' },
+      { name: 'To', value: 'a@example.com' },
+    ])
+  })
+
+  test('throws MaxLengthError for a block one code unit longer', () => {
+    let error: unknown
+    try {
+      MimeHeaders.parseHeaders(`${block}\r\n\r\nbody`, { maxLength: block.length - 1 })
+    } catch (caught) {
+      error = caught
+    }
+    expect(error).toBeInstanceOf(MimeHeaders.MaxLengthError)
+    expect((error as MimeHeaders.MaxLengthError).maxLength).toBe(block.length - 1)
+  })
+
+  test('counts a long folded field', () => {
+    const folded = `Subject: ${'a'.repeat(50)}\r\n ${'b'.repeat(50)}`
+    expect(() => MimeHeaders.parseHeaders(folded, { maxLength: 80 })).toThrow(
+      MimeHeaders.MaxLengthError,
+    )
+  })
+
+  test('rejects a negative or NaN maxLength', () => {
+    expect(() => MimeHeaders.parseHeaders(block, { maxLength: -1 })).toThrow(RangeError)
+    expect(() => MimeHeaders.parseHeaders(block, { maxLength: Number.NaN })).toThrow(RangeError)
   })
 })

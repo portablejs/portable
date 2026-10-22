@@ -1,6 +1,6 @@
 import { fromIterable, toArray } from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
-import { InvalidInputError, DecoderStream, EncoderStream } from '@portable/jsonl'
+import { InvalidInputError, DecoderStream, EncoderStream, MaxLengthError } from '@portable/jsonl'
 import data from './fixtures/data.ndjson?raw'
 import { chunked, decode, encode, encodeUtf8, lineSeparator } from './utils.js'
 
@@ -137,6 +137,32 @@ describe('DecoderStream', () => {
     expect(error).toBeInstanceOf(InvalidInputError)
     expect((error as Error).name).toBe('Jsonl.InvalidInputError')
     expect((error as Error).cause).toBeInstanceOf(SyntaxError)
+  })
+
+  test('accepts a line of exactly maxLength, CR excluded', async () => {
+    expect(await decode(['"abc"\r\n"de"\n'], { maxLength: 5 })).toEqual(['abc', 'de'])
+  })
+
+  test('fails with MaxLengthError on a longer line, even before its newline arrives', async () => {
+    const error = await decode(['"abcd"\n'], { maxLength: 5 }).catch((error: unknown) => error)
+    expect(error).toBeInstanceOf(MaxLengthError)
+    expect(error).toMatchObject({ name: 'Jsonl.MaxLengthError', maxLength: 5 })
+    let pulled = 0
+    const endless = new ReadableStream<string>({
+      pull(controller) {
+        pulled++
+        controller.enqueue('x'.repeat(100))
+      },
+    })
+    await expect(
+      toArray(endless.pipeThrough(new DecoderStream({ maxLength: 1000 }))),
+    ).rejects.toBeInstanceOf(MaxLengthError)
+    expect(pulled).toBeLessThan(20)
+  })
+
+  test('rejects a negative or NaN maxLength with a RangeError', () => {
+    expect(() => new DecoderStream({ maxLength: -1 })).toThrow(RangeError)
+    expect(() => new DecoderStream({ maxLength: Number.NaN })).toThrow(RangeError)
   })
 
   test('does not modify the options object', () => {

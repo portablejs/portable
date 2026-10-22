@@ -18,7 +18,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 
 `DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines may end in LF or CRLF, blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly.
 
-`EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt` or a circular structure) fails the stream with a `TypeError`. Pipe it through `TextEncoderStream` for bytes:
+`EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt` or a circular structure) fails the stream with a `TypeError`. Its output can be a `Response` body as it is:
 
 ```ts
 const body = Streams.fromIterable(rows)
@@ -28,11 +28,12 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 ## Options
 
-`DecoderStream` takes `invalid` and `signal`. `EncoderStream` takes `signal`.
+`DecoderStream` takes `invalid`, `maxLength` and `signal`. `EncoderStream` takes `signal`.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number, and `'skip'` drops the line. |
+| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, line ending excluded. A longer line fails the stream with `Jsonl.MaxLengthError`, whose `maxLength` holds the limit, as soon as the line grows past it. Set it when the input comes from outside the program. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over ndjson
