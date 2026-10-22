@@ -227,6 +227,9 @@ importers:
       '@portable/csv':
         specifier: workspace:*
         version: link:..
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/streams':
         specifier: workspace:*
         version: link:../../streams
@@ -242,6 +245,9 @@ importers:
       csv-stringify:
         specifier: ^6.9.0
         version: 6.9.0
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       papaparse:
         specifier: ^5.7.0
         version: 5.7.0
@@ -445,6 +451,9 @@ importers:
 
   packages/idna/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/idna':
         specifier: workspace:*
         version: link:..
@@ -457,6 +466,9 @@ importers:
       '@types/tr46':
         specifier: ^5.0.1
         version: 5.0.1
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       punycode:
         specifier: ^2.3.1
         version: 2.3.1
@@ -502,6 +514,9 @@ importers:
 
   packages/ip/test:
     devDependencies:
+      '@portable/fuzz':
+        specifier: workspace:*
+        version: link:../../../tools/fuzz
       '@portable/ip':
         specifier: workspace:*
         version: link:..
@@ -511,6 +526,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      fast-check:
+        specifier: ^4.10.2
+        version: 4.10.2
       ip:
         specifier: ^2.0.1
         version: 2.0.1

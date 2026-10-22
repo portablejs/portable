@@ -129,6 +129,9 @@ export function createParser(
             if (code === delimiterCode) state = fieldStart
             else lineBreak(code, i - 1)
           } else if (code === 32 || code === 9) state = afterQuoteSpace
+          // `write` also checks the length at the end of each chunk, so the error is the same
+          // however the input is split.
+          else if (carried + i - rowStart > maxLength) throw new MaxLengthError({ maxLength })
           else throw new InvalidInputError(`Row ${rowCount + 1} has text after a closing quote.`)
         } else {
           if (text.charCodeAt(i) === 10) {

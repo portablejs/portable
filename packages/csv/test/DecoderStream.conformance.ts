@@ -71,3 +71,8 @@ describe('DecoderStream', () => {
     expect(name).toBe('Ada')
   })
 })
+
+test('a row over maxLength with text after a closing quote throws MaxLengthError however it is chunked', async () => {
+  expect(() => Csv.decode('""a', { maxLength: 0 })).toThrow(Csv.MaxLengthError)
+  await expect(decodeStream(['"', '"a'], { maxLength: 0 })).rejects.toThrow(Csv.MaxLengthError)
+})

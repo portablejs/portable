@@ -3,14 +3,16 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@portable/csv": "workspace:*",
-    "@portable/streams": "workspace:*",
     "@fast-csv/format": "^5.0.8",
     "@fast-csv/parse": "^5.0.8",
+    "@portable/csv": "workspace:*",
+    "@portable/fuzz": "workspace:*",
+    "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
     "@types/papaparse": "^5.5.2",
     "csv-parse": "^7.0.3",
     "csv-stringify": "^6.9.0",
+    "fast-check": "^4.10.2",
     "papaparse": "^5.7.0"
   }
 }
