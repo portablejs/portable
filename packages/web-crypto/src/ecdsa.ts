@@ -19,9 +19,9 @@ export declare namespace derToRawEcdsa {
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
- * const raw = Crypto.derToRawEcdsa(assertion.signature)
+ * const raw = WebCrypto.derToRawEcdsa(assertion.signature)
  * await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, publicKey, raw, signedData)
  * ```
  */
@@ -84,10 +84,10 @@ function readInteger(
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
  * const raw = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, privateKey, data)
- * const der = Crypto.rawToDerEcdsa(new Uint8Array(raw))
+ * const der = WebCrypto.rawToDerEcdsa(new Uint8Array(raw))
  * ```
  */
 export function rawToDerEcdsa(signature: Uint8Array): Uint8Array<ArrayBuffer> {

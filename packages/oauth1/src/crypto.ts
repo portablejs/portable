@@ -1,36 +1,12 @@
 import * as Base64 from '@portable/base64'
-
-/** A hash algorithm, named as WebCrypto names it. */
-export type HashAlgorithm = 'SHA-1' | 'SHA-256'
-
-/**
- * Hashes bytes, sync or async. The default is `crypto.subtle.digest`. `@noble/hashes` is sync and
- * 4 to 8 times faster on Node.
- *
- * @example
- * ```ts
- * import { sha1 } from '@noble/hashes/legacy.js'
- * import { sha256 } from '@noble/hashes/sha2.js'
- * import type * as OAuth1 from '@portable/oauth1'
- *
- * const digest: OAuth1.Digest = (algorithm, data) =>
- *   algorithm === 'SHA-1' ? sha1(data) : sha256(data)
- * ```
- */
-export type Digest = (
-  algorithm: HashAlgorithm,
-  data: Uint8Array<ArrayBuffer>,
-) => Uint8Array | Promise<Uint8Array>
-
-export const subtleDigest: Digest = async (algorithm, data) =>
-  new Uint8Array(await crypto.subtle.digest(algorithm, data))
+import type { Digest, Hash } from '@portable/web-crypto'
 
 const blockSize = 64
 
 /** Computes an RFC 2104 HMAC with the caller's `digest`. SHA-1 and SHA-256 use 64-byte blocks. */
 export async function hmac(
   digest: Digest,
-  algorithm: HashAlgorithm,
+  algorithm: Hash,
   secret: Uint8Array<ArrayBuffer>,
   data: Uint8Array,
 ): Promise<Uint8Array> {

@@ -1,6 +1,7 @@
 import * as Base64 from '@portable/base64'
 import { fromBinary, toBinary } from './internal/bytes.js'
-import { bodyHashKey, type BodyHash, type Hash, hashBody } from './internal/digest.js'
+import type { Hasher } from '@portable/web-crypto'
+import { bodyHashKey, type BodyHash, hashBody } from './internal/digest.js'
 import { InvalidInputError } from './errors.js'
 import { type Canonicalization, parseFields, signedData } from './internal/header.js'
 import { importPrivateKey, keyType } from './internal/keys.js'
@@ -55,7 +56,7 @@ export declare namespace sign {
     /** The expiry (`x=`). It must be after `signedAt`. */
     expiresAt?: Date | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
-    hash?: (() => Hash) | undefined
+    hasher?: (() => Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -94,7 +95,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     canonicalization = 'relaxed/relaxed',
     signedAt = new Date(),
     expiresAt,
-    hash,
+    hasher,
     signal,
   } = options
   const domain = checkName('domain', options.domain, isDomainName)
@@ -130,7 +131,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const request: BodyHash = { canonicalization: bodyCanonicalization }
   const cancel = () => void split.body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
-  const digests = await hashBody(split.body, [request], hash).finally(() =>
+  const digests = await hashBody(split.body, [request], hasher).finally(() =>
     signal?.removeEventListener('abort', cancel),
   )
   signal?.throwIfAborted()

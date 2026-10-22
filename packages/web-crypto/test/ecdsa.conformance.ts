@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import * as Crypto from '@portable/crypto'
+import * as WebCrypto from '@portable/web-crypto'
 import p256 from './fixtures/wycheproof/ecdsa_secp256r1_sha256_test.json' with { type: 'json' }
 import p384 from './fixtures/wycheproof/ecdsa_secp384r1_sha384_test.json' with { type: 'json' }
 import p521 from './fixtures/wycheproof/ecdsa_secp521r1_sha512_test.json' with { type: 'json' }
@@ -13,7 +13,7 @@ const curves = [
 
 describe('derToRawEcdsa (ecdsa-sig-formatter)', () => {
   for (const { namedCurve, size } of curves) {
-    const convert = (der: Uint8Array) => () => Crypto.derToRawEcdsa(der, { namedCurve })
+    const convert = (der: Uint8Array) => () => WebCrypto.derToRawEcdsa(der, { namedCurve })
     const bytes = (length: number, head: readonly number[]) => {
       const der = new Uint8Array(length)
       der.set(head)
@@ -22,45 +22,47 @@ describe('derToRawEcdsa (ecdsa-sig-formatter)', () => {
 
     describe(`${namedCurve}`, () => {
       test('rejects input without a SEQUENCE', () => {
-        expect(convert(bytes(10, [0x31]))).toThrow(Crypto.InvalidInputError)
+        expect(convert(bytes(10, [0x31]))).toThrow(WebCrypto.InvalidInputError)
       })
 
       test('rejects a SEQUENCE length longer than the input', () => {
-        expect(convert(bytes(10, [0x30, 10]))).toThrow(Crypto.InvalidInputError)
+        expect(convert(bytes(10, [0x30, 10]))).toThrow(WebCrypto.InvalidInputError)
       })
 
       test('rejects r that is not an INTEGER', () => {
-        expect(convert(bytes(10, [0x30, 8, 0x03]))).toThrow(Crypto.InvalidInputError)
+        expect(convert(bytes(10, [0x30, 8, 0x03]))).toThrow(WebCrypto.InvalidInputError)
       })
 
       test('rejects an r length longer than the input', () => {
-        expect(convert(bytes(10, [0x30, 8, 0x02, 7]))).toThrow(Crypto.InvalidInputError)
+        expect(convert(bytes(10, [0x30, 8, 0x02, 7]))).toThrow(WebCrypto.InvalidInputError)
       })
 
       test('rejects an r longer than the curve allows', () => {
         const der = bytes(size + 8, [0x30, size + 6, 0x02, size + 2, 0x01])
-        expect(convert(der)).toThrow(Crypto.InvalidInputError)
+        expect(convert(der)).toThrow(WebCrypto.InvalidInputError)
       })
 
       test('rejects s that is not an INTEGER', () => {
         expect(convert(bytes(10, [0x30, 8, 0x02, 2, 0, 0x80, 0x03]))).toThrow(
-          Crypto.InvalidInputError,
+          WebCrypto.InvalidInputError,
         )
       })
 
       test('rejects an s length longer than the input', () => {
-        expect(convert(bytes(10, [0x30, 8, 0x02, 1, 1, 0x02, 4]))).toThrow(Crypto.InvalidInputError)
+        expect(convert(bytes(10, [0x30, 8, 0x02, 1, 1, 0x02, 4]))).toThrow(
+          WebCrypto.InvalidInputError,
+        )
       })
 
       test('rejects bytes after s', () => {
         expect(convert(bytes(10, [0x30, 8, 0x02, 1, 1, 0x02, 1, 1]))).toThrow(
-          Crypto.InvalidInputError,
+          WebCrypto.InvalidInputError,
         )
       })
 
       test('rejects an s longer than the curve allows', () => {
         const der = bytes(size + 9, [0x30, size + 7, 0x02, 1, 1, 0x02, size + 2, 0x01])
-        expect(convert(der)).toThrow(Crypto.InvalidInputError)
+        expect(convert(der)).toThrow(WebCrypto.InvalidInputError)
       })
     })
   }
@@ -68,7 +70,9 @@ describe('derToRawEcdsa (ecdsa-sig-formatter)', () => {
 
 describe('rawToDerEcdsa (ecdsa-sig-formatter)', () => {
   test.each([0, 63, 65, 95, 97, 131, 133])('rejects a %i-byte signature', (length) => {
-    expect(() => Crypto.rawToDerEcdsa(new Uint8Array(length))).toThrow(Crypto.InvalidInputError)
+    expect(() => WebCrypto.rawToDerEcdsa(new Uint8Array(length))).toThrow(
+      WebCrypto.InvalidInputError,
+    )
   })
 })
 
@@ -94,12 +98,12 @@ describe('round trips (ecdsa-sig-formatter)', () => {
   for (const { namedCurve, raw, der } of vectors) {
     test(`${namedCurve} raw to DER and back (made with WebCrypto)`, () => {
       const bytes = fromBase64(raw)
-      expect(Crypto.derToRawEcdsa(Crypto.rawToDerEcdsa(bytes), { namedCurve })).toEqual(bytes)
+      expect(WebCrypto.derToRawEcdsa(WebCrypto.rawToDerEcdsa(bytes), { namedCurve })).toEqual(bytes)
     })
 
     test(`${namedCurve} DER to raw and back (made with OpenSSL)`, () => {
       const bytes = fromBase64(der)
-      expect(Crypto.rawToDerEcdsa(Crypto.derToRawEcdsa(bytes, { namedCurve }))).toEqual(bytes)
+      expect(WebCrypto.rawToDerEcdsa(WebCrypto.derToRawEcdsa(bytes, { namedCurve }))).toEqual(bytes)
     })
   }
 
@@ -115,7 +119,7 @@ describe('round trips (ecdsa-sig-formatter)', () => {
         const data = crypto.getRandomValues(new Uint8Array(1 + i * 13))
         const raw = new Uint8Array(await crypto.subtle.sign(algorithm, privateKey, data))
         expect(raw).toHaveLength(size * 2)
-        const back = Crypto.derToRawEcdsa(Crypto.rawToDerEcdsa(raw), { namedCurve })
+        const back = WebCrypto.derToRawEcdsa(WebCrypto.rawToDerEcdsa(raw), { namedCurve })
         expect(back).toEqual(raw)
         expect(await crypto.subtle.verify(algorithm, publicKey, back, data)).toBe(true)
       }
@@ -128,13 +132,13 @@ describe('rawToDerEcdsa', () => {
     const raw = new Uint8Array(64)
     raw[31] = 0x01
     raw[32] = 0x80
-    expect(toHex(Crypto.rawToDerEcdsa(raw))).toBe(`3026020101022100${'80'}${'00'.repeat(31)}`)
-    expect(toHex(Crypto.rawToDerEcdsa(new Uint8Array(64)))).toBe('3006020100020100')
+    expect(toHex(WebCrypto.rawToDerEcdsa(raw))).toBe(`3026020101022100${'80'}${'00'.repeat(31)}`)
+    expect(toHex(WebCrypto.rawToDerEcdsa(new Uint8Array(64)))).toBe('3006020100020100')
   })
 
   test('uses the long length form for P-521 signatures', () => {
     const raw = new Uint8Array(132).fill(0x01)
-    const der = Crypto.rawToDerEcdsa(raw)
+    const der = WebCrypto.rawToDerEcdsa(raw)
     expect(toHex(der.subarray(0, 6))).toBe('308188024201')
     expect(der).toHaveLength(3 + 2 * (2 + 66))
   })
@@ -143,13 +147,13 @@ describe('rawToDerEcdsa', () => {
     const raw = crypto.getRandomValues(new Uint8Array(64))
     const padded = new Uint8Array(70)
     padded.set(raw, 3)
-    expect(Crypto.rawToDerEcdsa(padded.subarray(3, 67))).toEqual(Crypto.rawToDerEcdsa(raw))
+    expect(WebCrypto.rawToDerEcdsa(padded.subarray(3, 67))).toEqual(WebCrypto.rawToDerEcdsa(raw))
   })
 })
 
 describe('derToRawEcdsa', () => {
   test('reads P-256 by default', () => {
-    expect(Crypto.derToRawEcdsa(fromHex('3006020101020102'))).toEqual(
+    expect(WebCrypto.derToRawEcdsa(fromHex('3006020101020102'))).toEqual(
       fromHex(`${'00'.repeat(31)}01${'00'.repeat(31)}02`),
     )
   })
@@ -165,17 +169,17 @@ describe('derToRawEcdsa', () => {
     ['an empty input', ''],
     ['a SEQUENCE header alone', '30'],
   ])('rejects %s', (_, hex) => {
-    expect(() => Crypto.derToRawEcdsa(fromHex(hex))).toThrow(Crypto.InvalidInputError)
+    expect(() => WebCrypto.derToRawEcdsa(fromHex(hex))).toThrow(WebCrypto.InvalidInputError)
   })
 
   test('rejects a 33-byte r instead of dropping its top byte', () => {
     const der = fromHex(`3026022101${'11'.repeat(32)}020101`)
-    expect(() => Crypto.derToRawEcdsa(der)).toThrow(Crypto.InvalidInputError)
+    expect(() => WebCrypto.derToRawEcdsa(der)).toThrow(WebCrypto.InvalidInputError)
   })
 })
 
 describe('Wycheproof', () => {
-  const suites: [WycheproofEcdsa['groups'], Crypto.NamedCurve, string][] = [
+  const suites: [WycheproofEcdsa['groups'], WebCrypto.NamedCurve, string][] = [
     [p256.groups, 'P-256', 'SHA-256'],
     [p384.groups, 'P-384', 'SHA-384'],
     [p521.groups, 'P-521', 'SHA-512'],
@@ -197,11 +201,11 @@ describe('Wycheproof', () => {
         const outcome = async (sig: string, msg: string): Promise<string> => {
           let raw: Uint8Array<ArrayBuffer>
           try {
-            raw = Crypto.derToRawEcdsa(fromHex(sig), { namedCurve })
+            raw = WebCrypto.derToRawEcdsa(fromHex(sig), { namedCurve })
           } catch (error) {
-            return error instanceof Crypto.InvalidInputError ? 'rejected' : String(error)
+            return error instanceof WebCrypto.InvalidInputError ? 'rejected' : String(error)
           }
-          if (toHex(Crypto.rawToDerEcdsa(raw)) !== sig) return 'converted to different DER'
+          if (toHex(WebCrypto.rawToDerEcdsa(raw)) !== sig) return 'converted to different DER'
           const algorithm = { name: 'ECDSA', hash }
           return (await crypto.subtle.verify(algorithm, publicKey, raw, fromHex(msg)))
             ? 'verified'
@@ -234,11 +238,11 @@ test('derToRawEcdsa turns a WebAuthn-style DER signature into one crypto.subtle 
   )
   const data = encode('authenticatorData || clientDataHash')
   const algorithm = { name: 'ECDSA', hash: 'SHA-256' }
-  const der = Crypto.rawToDerEcdsa(
+  const der = WebCrypto.rawToDerEcdsa(
     new Uint8Array(await crypto.subtle.sign(algorithm, privateKey, data)),
   )
   expect(der[0]).toBe(0x30)
-  expect(await crypto.subtle.verify(algorithm, publicKey, Crypto.derToRawEcdsa(der), data)).toBe(
+  expect(await crypto.subtle.verify(algorithm, publicKey, WebCrypto.derToRawEcdsa(der), data)).toBe(
     true,
   )
 })

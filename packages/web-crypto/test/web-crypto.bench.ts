@@ -6,7 +6,7 @@ import { hmac as nobleHmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { derToJose, joseToDer } from 'ecdsa-sig-formatter'
 import { expect, test } from 'vite-plus/test'
-import * as Crypto from '@portable/crypto'
+import * as WebCrypto from '@portable/web-crypto'
 
 // node:crypto and @noble/hashes are synchronous and skip WebCrypto's per-call promise and copy,
 // so on Node they beat any crypto.subtle call on small input. They are measured for reference.
@@ -19,8 +19,8 @@ const encoder = new TextEncoder()
 
 test('digest hashes 1 KB within 25% of crypto.subtle.digest', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/crypto', async () => {
-      await Crypto.digest('SHA-256', body)
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.digest('SHA-256', body)
     }),
     bench('crypto.subtle', async () => {
       new Uint8Array(await crypto.subtle.digest('SHA-256', body))
@@ -32,15 +32,15 @@ test('digest hashes 1 KB within 25% of crypto.subtle.digest', async ({ bench }) 
       nodeCrypto.createHash('sha256').update(body).digest()
     }),
   )
-  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
 
 test('digest hashes 1 MB within 25% of crypto.subtle.digest', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/crypto', async () => {
-      await Crypto.digest('SHA-256', large)
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.digest('SHA-256', large)
     }),
     bench('crypto.subtle', async () => {
       new Uint8Array(await crypto.subtle.digest('SHA-256', large))
@@ -49,15 +49,15 @@ test('digest hashes 1 MB within 25% of crypto.subtle.digest', async ({ bench }) 
       sha256(large)
     }),
   )
-  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
 
 test('hmac signs 1 KB with a string key within 25% of crypto.subtle', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/crypto', async () => {
-      await Crypto.hmac('SHA-256', secret, body)
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.hmac('SHA-256', secret, body)
     }),
     bench('crypto.subtle', async () => {
       const key = await crypto.subtle.importKey(
@@ -76,7 +76,7 @@ test('hmac signs 1 KB with a string key within 25% of crypto.subtle', async ({ b
       nodeCrypto.createHmac('sha256', secret).update(body).digest()
     }),
   )
-  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
@@ -86,8 +86,8 @@ test('hkdf derives 32 bytes within 25% of crypto.subtle', async ({ bench }) => {
   const salt = body.subarray(32, 64)
   const info = encoder.encode('portable bench')
   const result = await bench.compare(
-    bench('@portable/crypto', async () => {
-      await Crypto.hkdf('SHA-256', ikm, { info, salt })
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.hkdf('SHA-256', ikm, { info, salt })
     }),
     bench('crypto.subtle', async () => {
       const key = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits'])
@@ -102,7 +102,7 @@ test('hkdf derives 32 bytes within 25% of crypto.subtle', async ({ bench }) => {
       nodeCrypto.hkdfSync('sha256', ikm, salt, info, 32)
     }),
   )
-  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
@@ -114,11 +114,11 @@ const pkcs8Prefix = [
 
 test('importSeed imports an Ed25519 seed within 25% of crypto.subtle', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/crypto', async () => {
-      await Crypto.importSeed('Ed25519', seed, { extractable: true })
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.importSeed('Ed25519', seed, { extractable: true })
     }),
-    bench('@portable/crypto, not extractable', async () => {
-      await Crypto.importSeed('Ed25519', seed)
+    bench('@portable/web-crypto, not extractable', async () => {
+      await WebCrypto.importSeed('Ed25519', seed)
     }),
     bench('crypto.subtle', async () => {
       const pkcs8 = new Uint8Array(48)
@@ -134,7 +134,7 @@ test('importSeed imports an Ed25519 seed within 25% of crypto.subtle', async ({ 
       ed25519.getPublicKey(seed)
     }),
   )
-  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
@@ -147,8 +147,8 @@ test('publicKeyOf reads a P-256 public key within 25% of crypto.subtle', async (
   )
   const nodeKey = nodeCrypto.KeyObject.from(privateKey)
   const result = await bench.compare(
-    bench('@portable/crypto', async () => {
-      await Crypto.publicKeyOf(privateKey)
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.publicKeyOf(privateKey)
     }),
     bench('crypto.subtle', async () => {
       const { crv, kty, x, y } = await crypto.subtle.exportKey('jwk', privateKey)
@@ -164,7 +164,7 @@ test('publicKeyOf reads a P-256 public key within 25% of crypto.subtle', async (
       nodeCrypto.createPublicKey(nodeKey)
     }),
   )
-  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
@@ -179,8 +179,8 @@ test('derToRawEcdsa converts a P-256 signature within 25% of ecdsa-sig-formatter
   bench,
 }) => {
   const result = await bench.compare(
-    bench('@portable/crypto', () => {
-      Crypto.derToRawEcdsa(derBytes)
+    bench('@portable/web-crypto', () => {
+      WebCrypto.derToRawEcdsa(derBytes)
     }),
     bench('ecdsa-sig-formatter', () => {
       derToJose(der, 'ES256')
@@ -189,10 +189,10 @@ test('derToRawEcdsa converts a P-256 signature within 25% of ecdsa-sig-formatter
       p256.Signature.fromBytes(derBytes, 'der').toBytes('compact')
     }),
   )
-  expect(result.get('ecdsa-sig-formatter')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('ecdsa-sig-formatter')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
-  expect(result.get('@noble/curves')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('@noble/curves')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })
@@ -203,8 +203,8 @@ test('derToRawEcdsa converts a P-256 signature within 25% of ecdsa-sig-formatter
 // own ArrayBuffer instead, so ecdsa-sig-formatter is measured for reference only here.
 test('rawToDerEcdsa converts a P-256 signature within 25% of @noble/curves', async ({ bench }) => {
   const result = await bench.compare(
-    bench('@portable/crypto', () => {
-      Crypto.rawToDerEcdsa(rawBytes)
+    bench('@portable/web-crypto', () => {
+      WebCrypto.rawToDerEcdsa(rawBytes)
     }),
     bench('ecdsa-sig-formatter', () => {
       joseToDer(raw, 'ES256')
@@ -213,7 +213,7 @@ test('rawToDerEcdsa converts a P-256 signature within 25% of @noble/curves', asy
       p256.Signature.fromBytes(rawBytes, 'compact').toBytes('der')
     }),
   )
-  expect(result.get('@noble/curves')).not.toBeFasterThan(result.get('@portable/crypto'), {
+  expect(result.get('@noble/curves')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   })
 })

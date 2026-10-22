@@ -55,7 +55,7 @@ Nothing is published to npm yet. Each package README has a table of benchmarks a
 
 ### Crypto and auth
 
-- [`@portable/crypto`](packages/crypto): bytes-in, bytes-out helpers over `crypto.subtle`, such as HKDF, Ed25519 keys from seeds and ECDSA signature conversion. Replaces ecdsa-sig-formatter and hand-written WebCrypto wrappers.
+- [`@portable/web-crypto`](packages/web-crypto): bytes-in, bytes-out helpers over `crypto.subtle`, such as HKDF, Ed25519 keys from seeds and ECDSA signature conversion. Replaces ecdsa-sig-formatter and hand-written WebCrypto wrappers.
 - [`@portable/password`](packages/password): hashes and verifies passwords with PBKDF2 on WebCrypto. Replaces the PBKDF2 calls of `node:crypto`, pbkdf2 and pbkdf2-password.
 - [`@portable/webhooks`](packages/webhooks): verifies and signs webhooks from Standard Webhooks senders, Stripe, GitHub, Slack and other HMAC-SHA256 senders. Replaces standardwebhooks, svix's `Webhook`, stripe's `constructEvent`, @octokit/webhooks-methods and @slack/bolt's request verification.
 - [`@portable/oauth1`](packages/oauth1): signs OAuth 1.0a requests. Replaces oauth-1.0a and oauth.

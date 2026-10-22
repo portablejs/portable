@@ -11,7 +11,7 @@ const schemes = Object.entries({
   slack: Webhooks.slack,
 })
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw'
-const nobleHmac: Webhooks.Hmac = (key, data) => hmac(sha256, key, data)
+const nobleHmac: Webhooks.Hmac = (_hash, key, data) => hmac(sha256, key, data)
 
 describe('every scheme', () => {
   for (const [name, scheme] of schemes) {
@@ -83,7 +83,7 @@ describe('verify', () => {
 
   test('takes a synchronous or an asynchronous hmac', async () => {
     const headers = await Webhooks.sign('{}', { scheme: Webhooks.github, secret })
-    const asyncHmac: Webhooks.Hmac = async (key, data) => nobleHmac(key, data)
+    const asyncHmac: Webhooks.Hmac = async (hash, key, data) => nobleHmac(hash, key, data)
     for (const fn of [nobleHmac, asyncHmac]) {
       const result = await Webhooks.verify(
         { headers, body: '{}' },

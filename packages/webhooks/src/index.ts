@@ -1,4 +1,5 @@
 import * as Bytes from '@portable/bytes'
+import type { Hmac } from '@portable/web-crypto'
 import { VerificationError } from './errors.js'
 import { utf8 } from './internal.js'
 import { race, readBody } from './race.js'
@@ -6,30 +7,13 @@ import { type Scheme, standard } from './schemes.js'
 
 export { type Reason, VerificationError } from './errors.js'
 export { github, type Scheme, slack, standard, stripe } from './schemes.js'
+export type { Hmac } from '@portable/web-crypto'
 
 /**
  * A signing secret as the sender shows it, or the raw key bytes. The scheme's `key` reads a
  * string as base64 for Standard Webhooks and as UTF-8 text for the others.
  */
 export type Secret = string | Uint8Array
-
-/**
- * Computes HMAC-SHA256, sync or async. The default uses `crypto.subtle`. `@noble/hashes` is sync
- * and about 7 times faster on Node.
- *
- * @example
- * ```ts
- * import { hmac } from '@noble/hashes/hmac.js'
- * import { sha256 } from '@noble/hashes/sha2.js'
- * import * as Webhooks from '@portable/webhooks'
- *
- * const hmacSha256: Webhooks.Hmac = (key, data) => hmac(sha256, key, data)
- * ```
- */
-export type Hmac = (
-  key: Uint8Array<ArrayBuffer>,
-  data: Uint8Array<ArrayBuffer>,
-) => Uint8Array | Promise<Uint8Array>
 
 export declare namespace verify {
   /** A `Request`, or the headers and raw body of one. */
@@ -40,7 +24,10 @@ export declare namespace verify {
     scheme?: Scheme | undefined
     /** The signing secret. Pass several while rotating secrets. Any one of them may match. */
     secret: Secret | readonly Secret[]
-    /** HMAC-SHA256. @default `crypto.subtle` HMAC-SHA256 */
+    /**
+     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and about 7 times faster
+     * on Node. @default `crypto.subtle` HMAC
+     */
     hmac?: Hmac | undefined
     /**
      * Largest allowed difference between the signed timestamp and `now`, in seconds, in either
@@ -55,7 +42,7 @@ export declare namespace verify {
     signal?: AbortSignal | undefined
   }
 
-  type Result = {
+  type ReturnType = {
     /** The body as text. */
     body: string
     /** The delivery id, such as `webhook-id` or `x-github-delivery`. Use it to drop duplicates. */
@@ -91,7 +78,10 @@ export declare namespace verify {
  * @throws {TypeError} When the scheme isn't a scheme object, or the body isn't a string or
  * `Uint8Array`.
  */
-export async function verify(input: verify.Input, options: verify.Options): Promise<verify.Result> {
+export async function verify(
+  input: verify.Input,
+  options: verify.Options,
+): Promise<verify.ReturnType> {
   const {
     scheme = standard,
     hmac = hmacSha256,
@@ -129,7 +119,7 @@ export async function verify(input: verify.Input, options: verify.Options): Prom
   const content = bytes(scheme.payload({ id, timestamp, body }))
   let match = false
   for (const key of keys) {
-    const expected = await race(hmac(key, content), signal)
+    const expected = await race(hmac('SHA-256', key, content), signal)
     for (const signature of signed.signatures)
       if (Bytes.timingSafeEqual(signature, expected)) match = true
   }
@@ -154,7 +144,10 @@ export declare namespace sign {
     scheme?: Scheme | undefined
     /** The signing secret. */
     secret: Secret
-    /** HMAC-SHA256. @default `crypto.subtle` HMAC-SHA256 */
+    /**
+     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and about 7 times faster
+     * on Node. @default `crypto.subtle` HMAC
+     */
     hmac?: Hmac | undefined
     /** The time to sign. Schemes without a timestamp ignore it. @default new Date() */
     timestamp?: Date | undefined
@@ -197,7 +190,7 @@ export async function sign(
   const key = keyOf(scheme, options.secret)
   const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : body
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }))
-  const signature = await race(hmac(key, content), signal)
+  const signature = await race(hmac('SHA-256', key, content), signal)
   return scheme.headers({ signature, id, timestamp })
 }
 
@@ -221,6 +214,7 @@ function bytes(content: Uint8Array | string): Uint8Array<ArrayBuffer> {
 }
 
 async function hmacSha256(
+  _hash: 'SHA-256',
   key: Uint8Array<ArrayBuffer>,
   data: Uint8Array<ArrayBuffer>,
 ): Promise<Uint8Array> {

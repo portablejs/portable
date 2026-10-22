@@ -3,6 +3,33 @@ import { run, toBufferSource } from './internal.js'
 /** A hash algorithm, named as WebCrypto names it. */
 export type Hash = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'
 
+/**
+ * Hashes `data` with `hash`, sync or async. Packages that hash take one as their `digest` option.
+ * `WebCrypto.digest` fits this type.
+ */
+export type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+
+/**
+ * Computes an HMAC of `data` with `key` and `hash`, sync or async. Packages that sign with HMAC
+ * take one as their `hmac` option. `WebCrypto.hmac` fits this type, and so does a wrapper around
+ * `@noble/hashes`, which is sync and faster on Node.
+ */
+export type Hmac = (
+  hash: Hash,
+  key: Uint8Array<ArrayBuffer>,
+  data: Uint8Array<ArrayBuffer>,
+) => Uint8Array | Promise<Uint8Array>
+
+/**
+ * An incremental hash, the shape of `@noble/hashes`' `sha256.create()`. Packages that hash a
+ * stream take a function that returns one as their `hasher` option, because `crypto.subtle.digest`
+ * needs the whole input at once.
+ */
+export type Hasher = {
+  update(data: Uint8Array): unknown
+  digest(): Uint8Array | Promise<Uint8Array>
+}
+
 export declare namespace digest {
   type Options = {
     /** Rejects with `signal.reason` once aborted. */
@@ -15,9 +42,9 @@ export declare namespace digest {
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
- * const hash = await Crypto.digest('SHA-256', 'hello')
+ * const hash = await WebCrypto.digest('SHA-256', 'hello')
  * ```
  */
 export function digest(
@@ -43,9 +70,9 @@ export declare namespace hmac {
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
- * const signature = await Crypto.hmac('SHA-256', 'whsec_secret', '{"id":1}')
+ * const signature = await WebCrypto.hmac('SHA-256', 'whsec_secret', '{"id":1}')
  * ```
  */
 export function hmac(
@@ -94,9 +121,9 @@ export declare namespace hkdf {
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
- * const key = await Crypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', length: 32 })
+ * const key = await WebCrypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', length: 32 })
  * ```
  */
 export function hkdf(

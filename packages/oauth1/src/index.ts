@@ -1,6 +1,7 @@
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
-import { type Digest, type HashAlgorithm, hmac, rsaSha1, subtleDigest } from './crypto.js'
+import * as WebCrypto from '@portable/web-crypto'
+import { hmac, rsaSha1 } from './crypto.js'
 import { UnsupportedError } from './errors.js'
 import { race, readBody } from './race.js'
 import {
@@ -12,7 +13,7 @@ import {
   sortPairs,
 } from './parameters.js'
 
-export type { Digest, HashAlgorithm } from './crypto.js'
+export type { Digest } from '@portable/web-crypto'
 export { UnsupportedError } from './errors.js'
 
 /** The `oauth_signature_method` values this package signs with. */
@@ -47,8 +48,11 @@ export type Credentials =
 
 export declare namespace authorization {
   type Options = Credentials & {
-    /** Hashes for HMAC and `oauth_body_hash`. @default `crypto.subtle.digest` */
-    digest?: Digest | undefined
+    /**
+     * Hashes for HMAC and `oauth_body_hash`. `@noble/hashes` is sync and 4 to 8 times faster on Node.
+     * @default WebCrypto.digest
+     */
+    digest?: WebCrypto.Digest | undefined
     /** Omit it to sign with client credentials only, as when requesting temporary credentials. */
     token?: Token | undefined
     /** Sent as the `realm` header parameter. It is not signed. */
@@ -201,8 +205,8 @@ async function protocolParameters(
   const signatureMethod = options.signatureMethod ?? 'HMAC-SHA1'
   if (!methods.has(signatureMethod))
     throw new UnsupportedError(`Unsupported signature method: ${String(signatureMethod)}`)
-  const { callback, digest = subtleDigest, token, verifier } = options
-  const hash: HashAlgorithm = signatureMethod === 'HMAC-SHA256' ? 'SHA-256' : 'SHA-1'
+  const { callback, digest = WebCrypto.digest, token, verifier } = options
+  const hash: WebCrypto.Hash = signatureMethod === 'HMAC-SHA256' ? 'SHA-256' : 'SHA-1'
 
   const oauth: Pair[] = [
     ['oauth_consumer_key', percentEncode(options.consumer.key)],

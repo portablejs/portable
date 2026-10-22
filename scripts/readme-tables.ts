@@ -188,9 +188,9 @@ export const tables: Record<string, Table> = {
       { label: 'CRC-32 of 1 MB', test: 'crc32 of 1 MB', tasks: { 'node:zlib': 'node:zlib crc32' } },
     ],
   },
-  crypto: {
+  'web-crypto': {
     columns: [
-      ours('crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'derToRawEcdsa']),
+      ours('web-crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'derToRawEcdsa']),
       lib('ecdsa-sig-formatter'),
       lib('@noble/hashes', [
         { from: '@noble/hashes/sha2.js', use: ['sha256'] },

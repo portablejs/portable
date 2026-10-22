@@ -1,7 +1,8 @@
 import * as Bytes from '@portable/bytes'
 import type * as Dns from '@portable/dns'
 import { toBinary } from './internal/bytes.js'
-import { bodyHashKey, type Hash, hashBody } from './internal/digest.js'
+import type { Hasher } from '@portable/web-crypto'
+import { bodyHashKey, hashBody } from './internal/digest.js'
 import { parseFields } from './internal/header.js'
 import { type Message, splitMessage } from './internal/message.js'
 import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.js'
@@ -68,7 +69,7 @@ export declare namespace verify {
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
-    hash?: (() => Hash) | undefined
+    hasher?: (() => Hasher) | undefined
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -97,7 +98,7 @@ export declare namespace verify {
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result[]> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hash, signal } = options
+  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
   if (typeof resolver?.resolveTxt !== 'function')
     throw new TypeError('options.resolver must have a resolveTxt method.')
   signal?.throwIfAborted()
@@ -124,7 +125,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   const digests = await hashBody(
     body,
     pending.map((signature) => signature.body),
-    hash,
+    hasher,
   ).finally(() => signal?.removeEventListener('abort', stop))
   signal?.throwIfAborted()
 

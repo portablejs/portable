@@ -110,9 +110,9 @@ describe('the signature field', () => {
     expect(await Dkim.sign(encode(MSG), options)).toBe(expected)
   })
 
-  test('uses the hash option for the body hash', async () => {
+  test('uses the hasher option for the body hash', async () => {
     const seen: Uint8Array[] = []
-    const hash = (): Dkim.Hash => ({
+    const hasher = (): Dkim.Hasher => ({
       update: (data) => seen.push(data.slice()),
       digest: async () => {
         const all = new Uint8Array(seen.reduce((n, c) => n + c.length, 0))
@@ -124,7 +124,7 @@ describe('the signature field', () => {
         return new Uint8Array(await crypto.subtle.digest('SHA-256', all))
       },
     })
-    const { out } = await signed({ hash })
+    const { out } = await signed({ hasher })
     expect(seen.map(binary).join('')).toBe('Hello world\r\n')
     expect(await results(out)).toEqual(['pass'])
   })

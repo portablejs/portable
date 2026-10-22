@@ -33,10 +33,10 @@ export declare namespace importSeed {
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
  * const seed = crypto.getRandomValues(new Uint8Array(32))
- * const { privateKey, publicKey } = await Crypto.importSeed('Ed25519', seed)
+ * const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed)
  * const signature = await crypto.subtle.sign('Ed25519', privateKey, data)
  * ```
  */
@@ -83,10 +83,10 @@ export declare namespace publicKeyOf {
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
  * const privateKey = await crypto.subtle.importKey('pkcs8', der, 'Ed25519', true, ['sign'])
- * const publicKey = await Crypto.publicKeyOf(privateKey)
+ * const publicKey = await WebCrypto.publicKeyOf(privateKey)
  * ```
  */
 export function publicKeyOf(

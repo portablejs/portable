@@ -38,7 +38,8 @@
     "@portable/bytes": "workspace:*",
     "@portable/dns": "workspace:*",
     "@portable/errors": "workspace:*",
-    "@portable/idna": "workspace:*"
+    "@portable/idna": "workspace:*",
+    "@portable/web-crypto": "workspace:*"
   },
   "exports": {
     ".": {

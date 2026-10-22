@@ -939,9 +939,9 @@ describe('input', () => {
     )
   })
 
-  test('uses the hash option for the body hash', async () => {
+  test('uses the hasher option for the body hash', async () => {
     let updates = 0
-    const hash = (): Dkim.Hash => {
+    const hasher = (): Dkim.Hasher => {
       const chunks: Uint8Array[] = []
       return {
         update(data) {
@@ -961,7 +961,7 @@ describe('input', () => {
     }
     const results = await Dkim.verify(await std(), {
       resolver: resolverFrom({ [KEY]: [rsaRec] }),
-      hash,
+      hasher,
     })
     expect(results[0]!.result).toBe('pass')
     expect(updates).toBeGreaterThan(0)

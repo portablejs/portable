@@ -1,6 +1,6 @@
 ---
 '@portable/base64': patch
-'@portable/crypto': patch
+'@portable/web-crypto': patch
 '@portable/dkim': patch
 '@portable/dmarc': patch
 '@portable/dns': patch

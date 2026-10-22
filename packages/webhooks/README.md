@@ -63,7 +63,7 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | `now` | `new Date()` | `verify` only. The time to compare the signed timestamp with. |
 | `timestamp` | `new Date()` | `sign` only. The time to sign. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
-| `hmac` | `crypto.subtle` | A function `(key, data) => Uint8Array \| Promise<Uint8Array>` that computes HMAC-SHA256. |
+| `hmac` | `crypto.subtle` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 
 ### Schemes
@@ -131,7 +131,7 @@ import * as Webhooks from '@portable/webhooks'
 const { body } = await Webhooks.verify(request, {
   scheme: Webhooks.github,
   secret,
-  hmac: (key, data) => hmac(sha256, key, data),
+  hmac: (_hash, key, data) => hmac(sha256, key, data),
 })
 ```
 
@@ -139,7 +139,7 @@ const { body } = await Webhooks.verify(request, {
 
 | Type | Description |
 | --- | --- |
-| `Webhooks.Hmac` | The `hmac` option: `(key, data) => Uint8Array \| Promise<Uint8Array>`. See [Crypto](#crypto). |
+| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
 | `Webhooks.Reason` | `VerificationError.reason`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
 ## Why use this over the provider libraries

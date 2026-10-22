@@ -5,15 +5,15 @@ import * as Errors from '@portable/errors'
  *
  * @example
  * ```ts
- * import * as Crypto from '@portable/crypto'
+ * import * as WebCrypto from '@portable/web-crypto'
  *
  * try {
- *   Crypto.derToRawEcdsa(new Uint8Array([0x30, 0x00]))
+ *   WebCrypto.derToRawEcdsa(new Uint8Array([0x30, 0x00]))
  * } catch (error) {
- *   if (error instanceof Crypto.InvalidInputError) console.log(error.message)
+ *   if (error instanceof WebCrypto.InvalidInputError) console.log(error.message)
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'Crypto.InvalidInputError'
+  static override readonly kind: string = 'WebCrypto.InvalidInputError'
 }

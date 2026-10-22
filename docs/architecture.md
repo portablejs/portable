@@ -70,8 +70,8 @@ Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so ev
 | `AbortSignal.timeout` | dkim, dmarc, dns, mail-auth, rpc, smtp, spf, sse, timers | 96.1% | 103 | 100 | 16 |
 | `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
 | `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
-| WebCrypto X25519 | crypto | 90.5% | 133 | 130 | 17 |
-| WebCrypto Ed25519 | arc, crypto, dkim | 89.8% | 137 | 129 | 17 |
+| WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
+| WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
 
 Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
 
@@ -165,14 +165,15 @@ We don't publish to JSR. Deno, Bun and Workers all install from npm, and because
 
 ## Crypto
 
-A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. Both `@noble/hashes` and WebCrypto fit the option's type, sync or async:
+A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. `@portable/web-crypto` defines the three option types once, and both `@noble/hashes` and WebCrypto fit them, sync or async:
 
 ```ts
-type Hmac = (key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
-type Digest = (algorithm: 'SHA-1' | 'SHA-256', data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promise<Uint8Array> }
 ```
 
-`@portable/webhooks` takes `hmac` and `@portable/oauth1` takes `digest`. Neither imports a crypto library or lists one as a dependency, and neither has a `/core` entry: a WebCrypto default imports nothing, so the option alone lets a caller choose.
+Each package takes only the one it needs, under an option with the type's name: `@portable/oauth1` takes `digest`, `@portable/webhooks` takes `hmac`, and `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take `hasher`, a function that returns a `Hasher`. They re-export the type, so a caller doesn't need to install `@portable/web-crypto`. None of them imports a crypto library or lists one as a dependency, and none has a `/core` entry: a WebCrypto default imports nothing, so the option alone lets a caller choose.
 
 WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC is about 7× slower than noble's. We expect Node's WebCrypto to get faster. Until then, a README shows the noble version of the option for a caller who verifies or signs many messages on Node, or who needs a sync result.
 

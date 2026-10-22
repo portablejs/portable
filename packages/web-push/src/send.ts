@@ -93,7 +93,7 @@ export declare namespace send {
    * - `'sent'`: the push service accepted the message (2xx).
    * - `'gone'`: the subscription expired or the user unsubscribed (404 or 410). Delete it.
    */
-  type Result = { kind: 'sent'; status: number } | { kind: 'gone'; status: 404 | 410 }
+  type ReturnType = { kind: 'sent'; status: number } | { kind: 'gone'; status: 404 | 410 }
 }
 
 /**
@@ -120,7 +120,7 @@ export declare namespace send {
  * @throws {RangeError} When an option is malformed.
  * @throws {TypeError} When `fetch` rejects.
  */
-export async function send(options: send.Options): Promise<send.Result> {
+export async function send(options: send.Options): Promise<send.ReturnType> {
   const request = await toRequest(options)
   const response = await (options.fetch ?? fetch)(request)
   const { status } = response

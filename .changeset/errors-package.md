@@ -5,7 +5,7 @@
 '@portable/bytes': minor
 '@portable/charset': minor
 '@portable/compress': minor
-'@portable/crypto': minor
+'@portable/web-crypto': minor
 '@portable/csv': minor
 '@portable/dkim': minor
 '@portable/dns': minor

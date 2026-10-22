@@ -50,7 +50,7 @@ await Dkim.verify(message, { resolver: dns })
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
 | `signedAt` | `new Date()` | The signature time (`t=`). |
 | `expiresAt` | none | The expiry (`x=`), at least a second after `signedAt`. |
-| `hash` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
+| `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
 
 `sign` throws a `TypeError` or `RangeError` for an invalid option, such as a domain that isn't a host name, an RSA key under 1024 bits or a header list without `From`. It throws `Dkim.InvalidInputError` for a message without a From field.
@@ -64,7 +64,7 @@ await Dkim.verify(message, { resolver: dns })
 | `resolver` | required | Looks up the keys. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check `x=` against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
-| `hash` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
+| `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |
 
 There is no default resolver, so you decide which servers see the lookups. It treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as no key, and any other rejection as `temperror`.
@@ -99,12 +99,12 @@ RSA and Ed25519 signing and verification use WebCrypto (`crypto.subtle`), which 
 
 The body hash is different. `crypto.subtle.digest` can't hash incrementally, so by default the canonicalized body is collected and hashed with one call. MTAs usually limit a message to 25 to 50 MB, so the buffer is no larger than what a mail server already holds. A signer has to buffer the message anyway, because the DKIM-Signature field goes before the body and contains the body hash, so only verification would gain from streaming. If WebCrypto adds streaming digests, the default can switch to one without an API change.
 
-To verify in constant memory, pass an incremental SHA-256 as `hash`, a function that returns `{ update(bytes), digest() }`. That is the shape of `sha256.create()` in `@noble/hashes`:
+To verify in constant memory, pass an incremental SHA-256 as `hasher`, a function that returns `{ update(bytes), digest() }`. That is the shape of `sha256.create()` in `@noble/hashes`:
 
 ```ts
 import { sha256 } from '@noble/hashes/sha2.js'
 
-await Dkim.verify(request.body!, { resolver, hash: () => sha256.create() })
+await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() })
 ```
 
 ## Types
@@ -113,7 +113,7 @@ await Dkim.verify(request.body!, { resolver, hash: () => sha256.create() })
 | --- | --- |
 | `Dkim.Message` | What `sign` and `verify` read: a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. |
 | `Dkim.Resolver` | `Pick<Dns.Resolver, 'resolveTxt'>`, the lookup `verify` needs. |
-| `Dkim.Hash` | An incremental hasher, `{ update(data), digest() }`, which the `hash` option creates. |
+| `Dkim.Hasher` | An incremental hasher, `{ update(data), digest() }`, which the `hasher` option creates. Re-exported from `@portable/web-crypto`. |
 
 ## Why use this over mailauth and nodemailer
 
@@ -175,5 +175,5 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `headerFieldNames: 'from:to:subject'` | `headers: ['From', 'To', 'Subject']` |
 | `skipFields` | Leave the names out of `headers`. |
 | `hashAlgo` | Not supported. DKIM uses SHA-256 (RFC 8301). |
-| `cacheDir`, `cacheTreshold` | Not needed. By default `sign` holds the canonicalized body in memory for one `crypto.subtle.digest` call, and an incremental `hash` hashes it as it streams. The caller keeps the message. |
+| `cacheDir`, `cacheTreshold` | Not needed. By default `sign` holds the canonicalized body in memory for one `crypto.subtle.digest` call, and an incremental `hasher` hashes it as it streams. The caller keeps the message. |
 | `keys: [...]` | Call `sign` once per key and prepend each field. |

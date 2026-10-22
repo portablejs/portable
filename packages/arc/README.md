@@ -52,7 +52,7 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) deliver()
 | `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
-| `hash` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
+| `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
 
 The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, as every ARC failure is permanent (RFC 8617 section 5.2).
@@ -70,7 +70,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
 | `signedAt` | `new Date()` | The time (`t=`) of both signatures. |
-| `hash` | WebCrypto | Creates the body hash. |
+| `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
 With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed is sealed with `i=1` and `cv=fail`.

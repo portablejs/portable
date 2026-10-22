@@ -2,6 +2,18 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `@portable/web-crypto` defines the pluggable crypto types
+
+- **Options:** keep a crypto function type in each package; define them in `@portable/web-crypto` and re-export them; define them in `@portable/errors` or another package every package already depends on.
+- **Trade-offs:** webhooks took `hmac(key, data)`, oauth1 took `digest(algorithm, data)`, and dkim, arc and mail-auth took `hash: () => { update, digest }`. `Crypto.Hash` was an algorithm name and `Dkim.Hash` a hasher object. Defining the types in web-crypto adds a dependency to three packages, but `WebCrypto.digest` and `WebCrypto.hmac` already fit them.
+- **Chosen:** `WebCrypto.Digest`, `WebCrypto.Hmac` and `WebCrypto.Hasher`, with the algorithm first in both functions. Each package re-exports the one it takes, under an option with the same name. The package is renamed from `crypto` to `web-crypto` because `import * as Crypto` shadows the global `Crypto` class in browsers, Node, Deno and Bun.
+
+## Verdict types keep their top-level names
+
+- **Options:** rename every result type to `fn.ReturnType`; rename only results that live in a function's namespace; keep all names.
+- **Trade-offs:** `Spf.Result`, `Dkim.Result`, `Dmarc.Result`, `Arc.Result` and `MailAuth.Result` are values a caller stores and passes on: `Dmarc.check` takes an SPF and DKIM result, and `MailAuth.Result` holds all four. `Smtp.Result` and `RateLimit.Result` are also returned by methods of a long-lived object, which have no namespace. `Dkim.verify.ReturnType` would be an array, so a caller would write `Dkim.verify.ReturnType[number]` for one signature.
+- **Chosen:** `WebPush.send.Result` and `Webhooks.verify.Result` became `ReturnType`, and the verdict types kept their names, as domain types like `MimeHeaders.Address` do. AGENTS.md says when each applies.
+
 ## Encoder streams emit bytes
 
 - **Options:** every `EncoderStream` and `*Stream()` function emits `Uint8Array`; they all emit `string`; each package picks.

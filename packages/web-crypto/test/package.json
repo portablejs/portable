@@ -1,9 +1,9 @@
 {
-  "name": "@portable/crypto-test",
+  "name": "@portable/web-crypto-test",
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@portable/crypto": "workspace:*",
+    "@portable/web-crypto": "workspace:*",
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@types/node": "^26.6.5",

@@ -210,30 +210,6 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
 
-  packages/crypto:
-    dependencies:
-      '@portable/errors':
-        specifier: workspace:*
-        version: link:../errors
-
-  packages/crypto/test:
-    devDependencies:
-      '@noble/curves':
-        specifier: ^2.4.0
-        version: 2.4.0
-      '@noble/hashes':
-        specifier: ^2.4.0
-        version: 2.4.0
-      '@portable/crypto':
-        specifier: workspace:*
-        version: link:..
-      '@types/node':
-        specifier: ^26.6.5
-        version: 26.6.5
-      ecdsa-sig-formatter:
-        specifier: ^1.0.11
-        version: 1.0.11
-
   packages/csv:
     dependencies:
       '@portable/errors':
@@ -287,6 +263,9 @@ importers:
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
+      '@portable/web-crypto':
+        specifier: workspace:*
+        version: link:../web-crypto
 
   packages/dkim/test:
     devDependencies:
@@ -808,6 +787,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/web-crypto':
+        specifier: workspace:*
+        version: link:../web-crypto
 
   packages/oauth1/test:
     devDependencies:
@@ -1263,6 +1245,30 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2
 
+  packages/web-crypto:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
+
+  packages/web-crypto/test:
+    devDependencies:
+      '@noble/curves':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@noble/hashes':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@portable/web-crypto':
+        specifier: workspace:*
+        version: link:..
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.5
+      ecdsa-sig-formatter:
+        specifier: ^1.0.11
+        version: 1.0.11
+
   packages/web-push:
     dependencies:
       '@portable/base64':
@@ -1307,6 +1313,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/web-crypto':
+        specifier: workspace:*
+        version: link:../web-crypto
 
   packages/webhooks/test:
     devDependencies:

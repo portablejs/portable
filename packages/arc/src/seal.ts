@@ -61,7 +61,7 @@ export declare namespace seal {
     /** The signature time (`t=`). @default new Date() */
     signedAt?: Date | undefined
     /** Creates the body hash, as in `Dkim.sign`. @default buffers the body for `crypto.subtle.digest` */
-    hash?: (() => Dkim.Hash) | undefined
+    hasher?: (() => Dkim.Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -102,7 +102,7 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders]
  * ```
  */
 export async function seal(message: Message, options: seal.Options): Promise<string> {
-  const { headers = arcDefaultHeaders, signedAt = new Date(), hash, signal } = options
+  const { headers = arcDefaultHeaders, signedAt = new Date(), hasher, signal } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
   if (!fitsDns(`${selector}._domainkey.${domain}`))
@@ -167,8 +167,8 @@ export async function seal(message: Message, options: seal.Options): Promise<str
 
   const cancel = () => void split.body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
-  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hash).finally(() =>
-    signal?.removeEventListener('abort', cancel),
+  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hasher).finally(
+    () => signal?.removeEventListener('abort', cancel),
   )
   signal?.throwIfAborted()
   const bodyHash = Base64.encode([...digests.values()][0]!.digest)

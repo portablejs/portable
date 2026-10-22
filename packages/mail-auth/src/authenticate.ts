@@ -93,7 +93,7 @@ export declare namespace authenticate {
      * Creates the body hashes, as in `Dkim.verify`.
      * @default buffers the body for `crypto.subtle.digest`
      */
-    hash?: (() => Dkim.Hash) | undefined
+    hasher?: (() => Dkim.Hasher) | undefined
     /**
      * Finds organizational domains from a public suffix list, as in `Dmarc.check`.
      * @default the DNS tree walk
@@ -137,7 +137,7 @@ export async function authenticate(
   message: Dkim.Message,
   options: authenticate.Options,
 ): Promise<Result> {
-  const { resolver, ip, helo, sender, seal, now, minKeyBits, hash, signal } = options
+  const { resolver, ip, helo, sender, seal, now, minKeyBits, hasher, signal } = options
   const authservId = checkAuthservId(options.authservId)
   signal?.throwIfAborted()
   const bytes =
@@ -146,7 +146,7 @@ export async function authenticate(
       : message instanceof Uint8Array
         ? message
         : await Streams.toBytes(message, { signal })
-  const verifyOptions = { resolver, now, minKeyBits, hash, signal }
+  const verifyOptions = { resolver, now, minKeyBits, hasher, signal }
   const [spf, dkim, arc] = await Promise.all([
     Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal }),
     Dkim.verify(bytes, verifyOptions),
@@ -175,7 +175,7 @@ export async function authenticate(
         ...seal,
         authResults,
         chainValidation: arc.result,
-        hash,
+        hasher,
         signal,
       })
       result.headers = fields + result.headers

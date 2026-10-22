@@ -1,23 +1,23 @@
-# @portable/crypto
+# @portable/web-crypto
 
 Bytes-in, bytes-out helpers over `crypto.subtle`: `digest`, `hmac` and `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, the public key of a private key, and ECDSA signatures converted between DER and raw `r || s`. It contains no cryptography of its own. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [ecdsa-sig-formatter](https://www.npmjs.com/package/ecdsa-sig-formatter) and the WebCrypto wrappers that apps write by hand.
 
 ```sh
-npm install @portable/crypto
+npm install @portable/web-crypto
 ```
 
 ```ts
-import * as Crypto from '@portable/crypto'
+import * as WebCrypto from '@portable/web-crypto'
 
-const hash = await Crypto.digest('SHA-256', 'hello')
-const mac = await Crypto.hmac('SHA-256', 'whsec_secret', body)
-const key = await Crypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', length: 32 })
+const hash = await WebCrypto.digest('SHA-256', 'hello')
+const mac = await WebCrypto.hmac('SHA-256', 'whsec_secret', body)
+const key = await WebCrypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', length: 32 })
 
-const { privateKey, publicKey } = await Crypto.importSeed('Ed25519', seed)
+const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed)
 
-const raw = Crypto.derToRawEcdsa(assertion.signature)
+const raw = WebCrypto.derToRawEcdsa(assertion.signature)
 await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, raw, signedData)
 ```
 
@@ -44,14 +44,18 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
 | `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'` or `'P-521'`. It sets the width of `r` and `s` in the output. |
 
-The functions throw or reject with `Crypto.InvalidInputError` for malformed DER, a raw signature or seed of the wrong length, and a key that is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are passed on unchanged.
+The functions throw or reject with `WebCrypto.InvalidInputError` for malformed DER, a raw signature or seed of the wrong length, and a key that is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `Crypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa` and `rawToDerEcdsa`. |
-| `Crypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
+| `WebCrypto.Hash` | `'SHA-1' \| 'SHA-256' \| 'SHA-384' \| 'SHA-512'`, the algorithm names WebCrypto uses. |
+| `WebCrypto.Digest` | `(hash, data) => bytes`, sync or async. `@portable/oauth1` takes one as `digest`, and `WebCrypto.digest` fits it. |
+| `WebCrypto.Hmac` | `(hash, key, data) => bytes`, sync or async. `@portable/webhooks` takes one as `hmac`, and `WebCrypto.hmac` fits it. |
+| `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take a function that returns one as `hasher`. |
+| `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa` and `rawToDerEcdsa`. |
+| `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
 
 ## Why use this over hand-written WebCrypto calls
 
@@ -66,7 +70,7 @@ Each helper replaces a few lines that apps write by hand, and handles a trap tho
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 10 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
 
 <!-- bench:start -->
-| | @portable/crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
+| | @portable/web-crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | SHA-256 of 1 KB | 27,900 | – | 136,000 | – | 28,900 | 429,000 |
 | SHA-256 of 1 MB | 928 | – | 170 | – | 958 | – |
@@ -79,7 +83,7 @@ The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchr
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
 
-| | @portable/crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
+| | @portable/web-crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
 | --- | --- | --- | --- | --- | --- | --- |
 | Minified and gzipped | 1.4 kB | 1.7 kB | 3.4 kB | 20 kB | built in | built in |
 | Runtime dependencies | 0 | 1 | 0 | 1 | – | – |
@@ -92,12 +96,12 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 ## Migrating
 
-| ecdsa-sig-formatter | @portable/crypto |
+| ecdsa-sig-formatter | @portable/web-crypto |
 | --- | --- |
-| `derToJose(der, 'ES256')` | `Base64.encode(Crypto.derToRawEcdsa(der), { alphabet: 'base64url', omitPadding: true })` |
-| `derToJose(der, 'ES384')` | `Crypto.derToRawEcdsa(der, { namedCurve: 'P-384' })`, then base64url |
-| `derToJose(der, 'ES512')` | `Crypto.derToRawEcdsa(der, { namedCurve: 'P-521' })`, then base64url |
-| `joseToDer(jose, alg)` | `Crypto.rawToDerEcdsa(Base64.decode(jose, { alphabet: 'base64url' }))` |
+| `derToJose(der, 'ES256')` | `Base64.encode(WebCrypto.derToRawEcdsa(der), { alphabet: 'base64url', omitPadding: true })` |
+| `derToJose(der, 'ES384')` | `WebCrypto.derToRawEcdsa(der, { namedCurve: 'P-384' })`, then base64url |
+| `derToJose(der, 'ES512')` | `WebCrypto.derToRawEcdsa(der, { namedCurve: 'P-521' })`, then base64url |
+| `joseToDer(jose, alg)` | `WebCrypto.rawToDerEcdsa(Base64.decode(jose, { alphabet: 'base64url' }))` |
 
 The functions here take and return bytes. Use [@portable/base64](../base64) for the base64url text JWS uses.
 

@@ -80,8 +80,7 @@ await OAuth1.sign(request, { consumer, token, digest })
 | `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
 | `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
 | `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
-| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`. |
-| `OAuth1.HashAlgorithm` | `'SHA-1' \| 'SHA-256'`, the algorithms `Digest` receives. |
+| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
 
 ## Why use this over oauth-1.0a and node-oauth
 

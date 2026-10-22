@@ -97,7 +97,7 @@ export declare namespace verify {
     /** RSA keys shorter than this fail the chain (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined
     /** Creates the body hash, as in `Dkim.verify`. @default buffers the body for `crypto.subtle.digest` */
-    hash?: (() => Dkim.Hash) | undefined
+    hasher?: (() => Dkim.Hasher) | undefined
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -136,7 +136,7 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hash, signal } = options
+  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
   if (typeof resolver?.resolveTxt !== 'function')
     throw new TypeError('options.resolver must have a resolveTxt method.')
   signal?.throwIfAborted()
@@ -180,7 +180,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   }
   const cancel = () => void body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
-  const digests = await hashBody(body, [signature.body], hash).finally(() =>
+  const digests = await hashBody(body, [signature.body], hasher).finally(() =>
     signal?.removeEventListener('abort', cancel),
   )
   signal?.throwIfAborted()

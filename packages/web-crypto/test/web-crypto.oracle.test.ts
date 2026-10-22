@@ -7,7 +7,7 @@ import { sha1 } from '@noble/hashes/legacy.js'
 import { sha256, sha384, sha512 } from '@noble/hashes/sha2.js'
 import { derToJose, joseToDer } from 'ecdsa-sig-formatter'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Crypto from '@portable/crypto'
+import * as WebCrypto from '@portable/web-crypto'
 
 const hashes = [
   ['SHA-1', 'sha1', sha1],
@@ -24,7 +24,7 @@ describe('digest, hmac and hkdf match node:crypto and @noble/hashes', () => {
     test(`digest with ${hash}`, async () => {
       for (const length of lengths) {
         const data = random(length)
-        const ours = await Crypto.digest(hash, data)
+        const ours = await WebCrypto.digest(hash, data)
         expect(ours).toEqual(new Uint8Array(nodeCrypto.createHash(nodeName).update(data).digest()))
         expect(ours).toEqual(noble(data))
       }
@@ -35,7 +35,7 @@ describe('digest, hmac and hkdf match node:crypto and @noble/hashes', () => {
         for (const length of lengths) {
           const key = random(keyLength)
           const data = random(length)
-          const ours = await Crypto.hmac(hash, key, data)
+          const ours = await WebCrypto.hmac(hash, key, data)
           expect(ours).toEqual(
             new Uint8Array(nodeCrypto.createHmac(nodeName, key).update(data).digest()),
           )
@@ -49,7 +49,7 @@ describe('digest, hmac and hkdf match node:crypto and @noble/hashes', () => {
         const key = random(1 + (length % 80))
         const salt = random(length % 3 === 0 ? 0 : 16)
         const info = random(length % 50)
-        const ours = await Crypto.hkdf(hash, key, { info, length, salt })
+        const ours = await WebCrypto.hkdf(hash, key, { info, length, salt })
         expect(ours).toEqual(new Uint8Array(nodeCrypto.hkdfSync(nodeName, key, salt, info, length)))
         expect(ours).toEqual(nobleHkdf(noble, key, salt, info, length))
       }
@@ -62,7 +62,7 @@ describe('importSeed matches @noble/curves and node:crypto', () => {
     for (let i = 0; i < 50; i++) {
       const seed = random(32)
       const message = random(i * 7)
-      const { privateKey, publicKey } = await Crypto.importSeed('Ed25519', seed)
+      const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed)
       const raw = new Uint8Array(await crypto.subtle.exportKey('raw', publicKey))
       expect(raw).toEqual(ed25519.getPublicKey(seed))
       const signature = new Uint8Array(await crypto.subtle.sign('Ed25519', privateKey, message))
@@ -74,7 +74,7 @@ describe('importSeed matches @noble/curves and node:crypto', () => {
     for (let i = 0; i < 50; i++) {
       const seed = random(32)
       const peer = x25519.utils.randomSecretKey()
-      const { privateKey, publicKey } = await Crypto.importSeed('X25519', seed)
+      const { privateKey, publicKey } = await WebCrypto.importSeed('X25519', seed)
       expect(new Uint8Array(await crypto.subtle.exportKey('raw', publicKey))).toEqual(
         x25519.getPublicKey(seed),
       )
@@ -118,7 +118,7 @@ describe('publicKeyOf matches node:crypto createPublicKey', () => {
     const pair = await crypto.subtle.generateKey(algorithm, true, usages)
     const keyPair = 'privateKey' in pair ? pair : undefined
     if (!keyPair) throw new Error('Expected a key pair')
-    const ours = await Crypto.publicKeyOf(keyPair.privateKey)
+    const ours = await WebCrypto.publicKeyOf(keyPair.privateKey)
     const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey))
     const node = nodeCrypto
       .createPublicKey(
@@ -143,10 +143,10 @@ describe('ECDSA conversion matches ecdsa-sig-formatter and @noble/curves', () =>
       const { privateKey } = nodeCrypto.generateKeyPairSync('ec', { namedCurve: nodeCurve })
       for (let i = 0; i < 500; i++) {
         const der = nodeCrypto.sign(nodeHash, random(1 + (i % 200)), privateKey)
-        const raw = Crypto.derToRawEcdsa(der, { namedCurve })
+        const raw = WebCrypto.derToRawEcdsa(der, { namedCurve })
         expect(raw).toEqual(new Uint8Array(Buffer.from(derToJose(der, alg), 'base64url')))
         expect(raw).toEqual(noble.Signature.fromBytes(der, 'der').toBytes('compact'))
-        expect(Crypto.rawToDerEcdsa(raw)).toEqual(new Uint8Array(der))
+        expect(WebCrypto.rawToDerEcdsa(raw)).toEqual(new Uint8Array(der))
       }
     })
 
@@ -157,7 +157,7 @@ describe('ECDSA conversion matches ecdsa-sig-formatter and @noble/curves', () =>
           key: privateKey,
           dsaEncoding: 'ieee-p1363',
         })
-        const der = Crypto.rawToDerEcdsa(raw)
+        const der = WebCrypto.rawToDerEcdsa(raw)
         expect(der).toEqual(new Uint8Array(joseToDer(Buffer.from(raw), alg)))
         expect(der).toEqual(noble.Signature.fromBytes(raw, 'compact').toBytes('der'))
       }
@@ -175,6 +175,6 @@ describe('known ecdsa-sig-formatter issues', () => {
   ])('derToJose accepts %s, and derToRawEcdsa rejects it', (_, hex) => {
     const der = Buffer.from(hex, 'hex')
     expect(derToJose(der, 'ES256')).toBeTypeOf('string')
-    expect(() => Crypto.derToRawEcdsa(der)).toThrow(Crypto.InvalidInputError)
+    expect(() => WebCrypto.derToRawEcdsa(der)).toThrow(WebCrypto.InvalidInputError)
   })
 })
