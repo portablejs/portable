@@ -451,6 +451,14 @@ describe('macro-test.js', () => {
     const seconds = Number((await check(zone)).explanation)
     expect(Math.abs(seconds - Date.now() / 1000)).toBeLessThan(5)
   })
+
+  test('expands %{t} from the now option', async () => {
+    const zone = withRecord('v=spf1 -all exp=explain.example.test', {
+      'explain.example.test': { TXT: ['%{t}'] },
+    })
+    const now = new Date(1_700_000_000_900)
+    expect((await check(zone, {}, { now })).explanation).toBe('1700000000')
+  })
 })
 
 describe('limited-resolver-test.js', () => {
