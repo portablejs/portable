@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { InvalidInputError, parseAddresses } from '@portable/mime-headers'
+import { InvalidInputError, parseAddresses, parseMailboxes } from '@portable/mime-headers'
 import isEmail from './fixtures/is_email.json' with { type: 'json' }
 
 // Ported from email-addresses 5.0.1 test/email-addresses.js and test/is_email.js. Its
 // parseOneAddress and parseAddressList are parseAddresses(input, { strict: true }) here, and
 // a null result is a thrown InvalidInputError. PARITY.md maps each upstream assertion.
 
-const strict = (input: string) => parseAddresses(input, { strict: true, flatten: true })
+const strict = (input: string) => parseMailboxes(input, { strict: true })
 const one = (input: string) => {
   const list = strict(input)
   expect(list).toHaveLength(1)

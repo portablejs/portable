@@ -45,8 +45,9 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `parseValue(text)` | a value such as `text/plain; charset=utf-8` | `Value`, `{ value, params }` |
 | `formatValue(value)` | `Value` | the header value |
 | `parseAddresses(text, options?)` | an address list | `Address[]`, each a `Mailbox` `{ name, address }` or a `Group` `{ name, group }` |
+| `parseMailboxes(text, options?)` | an address list | `Mailbox[]`, with the members of each group in place of the group |
 | `formatAddresses(addresses, options?)` | `Address[]` | the address list |
-| `InvalidInputError` | | thrown by `parseAddresses` in strict mode and by `formatValue` and `formatAddresses` |
+| `InvalidInputError` | | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses` |
 
 `decodeWords` joins encoded words that only whitespace separates, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
@@ -62,8 +63,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `maxLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. `false` writes one word. |
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. `@portable/charset` provides the encoders. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
-| `strict` | `parseAddresses` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
-| `flatten` | `parseAddresses` | `false` | Return the members of groups in place of the groups. |
+| `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
 
 ## Types
 
@@ -125,7 +125,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `libmime.buildHeaderValue({ value, params })` | `formatValue({ value, params })` |
 | `libmime.encodeFlowed`, `decodeFlowed`, `detectMimeType`, `charset.*` | Not in this package. |
 | `addressparser(text)` | `parseAddresses(text)` |
-| `addressparser(text, { flatten: true })` | `parseAddresses(text, { flatten: true })` |
+| `addressparser(text, { flatten: true })` | `parseMailboxes(text)` |
 | `emailAddresses.parseOneAddress(text)` | `parseAddresses(text, { strict: true })`, then check for one entry |
 | `emailAddresses.parseAddressList(text)` | `parseAddresses(text, { strict: true })`, which throws where email-addresses returns `null` |
 | `result.local`, `result.domain` | Split `address` at its last `@`. |

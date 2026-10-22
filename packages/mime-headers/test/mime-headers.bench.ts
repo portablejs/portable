@@ -19,6 +19,7 @@ const {
   formatValue,
   parseAddresses,
   parseHeaders,
+  parseMailboxes,
   parseValue,
 } = { ...Exports }
 
@@ -222,6 +223,21 @@ describe('addresses', () => {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
       })
+  })
+
+  test('parseMailboxes of 500 addresses', async ({ bench }) => {
+    const result = await bench.compare(
+      bench('@portable/mime-headers', () => {
+        parseMailboxes(addressList)
+      }),
+      bench('addressparser (nodemailer 10.1.2)', () => {
+        addressparser(addressList, { flatten: true })
+      }),
+    )
+    expect(result.get('addressparser (nodemailer 10.1.2)')).not.toBeFasterThan(
+      result.get('@portable/mime-headers'),
+      { delta: 0.25 },
+    )
   })
 
   test('parseAddresses in strict mode of 500 addresses', async ({ bench }) => {

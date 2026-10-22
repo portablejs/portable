@@ -47,7 +47,7 @@ describe('parsers', () => {
     fuzz(
       fc.property(input, (input) => {
         MimeHeaders.parseAddresses(input)
-        MimeHeaders.parseAddresses(input, { flatten: true })
+        MimeHeaders.parseMailboxes(input)
         MimeHeaders.parseValue(input)
         MimeHeaders.parseHeaders(input)
         MimeHeaders.unfold(input)

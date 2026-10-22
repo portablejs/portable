@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { parseAddresses, type Address } from '@portable/mime-headers'
+import { parseAddresses, parseMailboxes, type Address } from '@portable/mime-headers'
 
 // Ported from nodemailer 10.1.7 test/addressparser/addressparser-test.ts, the current home of
-// addressparser. addressparser(input) is parseAddresses(input) here, and { flatten: true } is the
-// same option. Where this package reads malformed input differently, the test asserts our result
+// addressparser. addressparser(input) is parseAddresses(input) here, and addressparser(input,
+// { flatten: true }) is parseMailboxes(input). Where this package reads malformed input differently, the test asserts our result
 // and its comment says why. PARITY.md lists those cases.
 
 const parse = (input: string) => parseAddresses(input)
-const flat = (input: string) => parseAddresses(input, { flatten: true })
-const first = (input: string) => parseAddresses(input, { flatten: true })[0]!
+const flat = (input: string) => parseMailboxes(input)
+const first = (input: string) => parseMailboxes(input)[0]!
 
 /** Pairs each input with its result, so a failing diff shows which input it came from. */
 function parseCases(cases: readonly (readonly [string, Address[]])[]) {

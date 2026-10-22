@@ -1,6 +1,7 @@
 export {
   formatAddresses,
   parseAddresses,
+  parseMailboxes,
   type Address,
   type Group,
   type Mailbox,

@@ -21,8 +21,6 @@ export type Address = Mailbox | Group
 
 export declare namespace parseAddresses {
   type Options = {
-    /** Return the members of groups in place of the groups. @default false */
-    flatten?: boolean | undefined
     /**
      * Throw `InvalidInputError` unless the input is a valid RFC 5322 address list, with the
      * obsolete syntax of section 4 and the UTF-8 of RFC 6532 allowed. @default false
@@ -52,22 +50,44 @@ export declare namespace parseAddresses {
  */
 export function parseAddresses(
   input: string | Uint8Array,
-  options: parseAddresses.Options & { flatten: true },
-): Mailbox[]
-export function parseAddresses(
-  input: string | Uint8Array,
-  options?: parseAddresses.Options,
-): Address[]
-export function parseAddresses(
-  input: string | Uint8Array,
   options: parseAddresses.Options = {},
 ): Address[] {
-  const { flatten = false, strict = false } = options
+  const { strict = false } = options
   const parser = new Parser(toText(input), strict)
   const list = parser.run()
   if (strict && parser.error) throw new InvalidInputError(parser.error)
-  if (!flatten) return list
-  return list.flatMap((entry) => ('group' in entry ? entry.group : [entry]))
+  return list
+}
+
+export declare namespace parseMailboxes {
+  type Options = parseAddresses.Options
+}
+
+/**
+ * Parses an address list as `parseAddresses` does, and returns the members of each group in place
+ * of the group.
+ *
+ * @example
+ * ```ts
+ * import * as MimeHeaders from '@portable/mime-headers'
+ *
+ * MimeHeaders.parseMailboxes('andris@example.com, team: a@example.com, b@example.com;')
+ * // [
+ * //   { name: '', address: 'andris@example.com' },
+ * //   { name: '', address: 'a@example.com' },
+ * //   { name: '', address: 'b@example.com' },
+ * // ]
+ * ```
+ *
+ * @throws {InvalidInputError} With `strict: true`, when the input isn't a valid address list.
+ */
+export function parseMailboxes(
+  input: string | Uint8Array,
+  options: parseMailboxes.Options = {},
+): Mailbox[] {
+  return parseAddresses(input, options).flatMap((entry) =>
+    'group' in entry ? entry.group : [entry],
+  )
 }
 
 export declare namespace formatAddresses {

@@ -7,6 +7,7 @@ import {
   formatAddresses,
   formatValue,
   parseAddresses,
+  parseMailboxes,
   parseHeaders,
   parseValue,
   unfold,
@@ -326,9 +327,7 @@ describe('addresses', () => {
           (entry) => typeof entry.name === 'string' && typeof entry.address === 'string',
         ),
       ).toBe(true)
-      expect(parseAddresses(input, { flatten: true }).every((entry) => !('group' in entry))).toBe(
-        true,
-      )
+      expect(parseMailboxes(input).every((entry) => !('group' in entry))).toBe(true)
     })
   })
 })
