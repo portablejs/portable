@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## AGENTS.md states the parameter, naming and `fetch` rules
+
+- **Options:** fix each exception the API review found and leave the rules as they were; write each fix down as a rule in AGENTS.md.
+- **Trade-offs:** AGENTS.md said "one optional options object last", but not how many required positionals may come first or in what order, so `WebPush.send(subscription, payload | undefined, options)` and `Random.string(length, alphabet?)` followed it. Without written rules, the next package repeats the same exceptions. Each rule is a constraint that can rule out a signature someone would prefer, but every package is still at 0.0.0, so the breaking fixes cost nothing now.
+- **Chosen:** the rules are in AGENTS.md, under API conventions. Parameters follow ox: copy a platform signature where one exists, make the converted value positional with options after it, and put inputs with distinct roles in one object. A namespace is the package name capitalized and never shadows a global. A package's main factory is `create`. A boolean function starts with `is`, `has` or `can` unless a standard name exists, so `Ip.validate` became `Ip.canParse` after `URL.canParse`. A `fetch` option takes one `Request`, the signature sse and web-push already used, because dns and rdap took `(url, init)` and rpc took `typeof fetch`, and no wrapper fitted all three. The clock, units, crypto, encoder stream and result type rules each have their own entry above.
+
 ## Decoders that buffer input take a size limit, with no limit by default
 
 - **Options:** no limit; a limit that is off by default; a finite default such as 1 MiB.
@@ -182,25 +188,25 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 - **`connect` posts to and listens on ports and windows directly instead of through the transport's streams.** `Rpc.port` and `Rpc.window` register a private fast path that `connect` uses, and the `{ readable, writable }` pair stays for other uses. Going through the streams made a stream of 1,000 values about 50% slower than birpc, and a `DataCloneError` in a `WritableStream`'s `write` errors the stream permanently, so one unclonable argument broke every later call. Now that call rejects and the connection keeps working.
 - **The credit window is 256 values, granted again when 64 have been read.** With 32, the credit round trip every 16 values cost about 15% of a 1,000-value stream.
 
-## `Crypto.derToRawEcdsa` accepts only strict DER
+## `WebCrypto.derToRawEcdsa` accepts only strict DER
 
 - **Options:** accept what ecdsa-sig-formatter's `derToJose` accepts (BER lengths, extra leading zeros, negative and empty INTEGERs); accept only DER.
 - **Trade-offs:** a lenient parser converts a few more signatures from broken signers. It also gives one signature several encodings, and `derToJose` drops a non-zero top byte of an oversized INTEGER and returns a different signature. Wycheproof flags all of these as invalid.
 - **Chosen:** strict DER. Every Wycheproof case flagged `BerEncodedSignature`, `InvalidEncoding` or `MissingZero` throws `InvalidInputError`. The README lists what `derToJose` accepts and we reject.
 
-## `Crypto.importSeed` returns a non-extractable private key by default
+## `WebCrypto.importSeed` returns a non-extractable private key by default
 
 - **Options:** extractable by default, which needs one `importKey`; non-extractable by default, which imports the key a second time after reading its public key.
 - **Trade-offs:** the second import makes `importSeed` about 40% slower (8,100 instead of 12,900 calls a second on Node). An extractable key can be exported by any code that holds it.
 - **Chosen:** non-extractable, as `crypto.subtle` keys are by default for code that doesn't ask. `extractable: true` skips the second import.
 
-## `Crypto` keeps the function names from the package brief
+## `WebCrypto` keeps the function names from the package brief
 
 - **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as the approved brief names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
 - **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. The brief's names say both forms.
 - **Chosen:** the brief's names. Each async function still takes `signal`, which it checks before and after the `crypto.subtle` call, because WebCrypto has no way to cancel a call.
 
-## `Crypto.hmac` and `Crypto.hkdf` take key bytes, not a `CryptoKey`
+## `WebCrypto.hmac` and `WebCrypto.hkdf` take key bytes, not a `CryptoKey`
 
 - **Options:** also accept an imported `CryptoKey` so a caller can reuse it; take bytes or a string only.
 - **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. A caller who reuses a key can call `crypto.subtle.sign` directly.
