@@ -1053,6 +1053,12 @@ importers:
 
   packages/smtp/test:
     devDependencies:
+      '@portable/dkim':
+        specifier: workspace:*
+        version: link:../../dkim
+      '@portable/mail':
+        specifier: workspace:*
+        version: link:../../mail
       '@portable/smtp':
         specifier: workspace:*
         version: link:..

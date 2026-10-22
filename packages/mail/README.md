@@ -68,6 +68,7 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 | `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each one appends its number, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
 | `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. `@portable/charset` provides them. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
+| `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
 
 Set `boundary`, `messageId` and `date` to get the same bytes on every run, for example in tests.
 
@@ -80,6 +81,35 @@ Mail.encode(
   { charset: { name: 'ISO-2022-JP', encode: (text) => Charset.encode(text, iso2022Jp) } },
 )
 ```
+
+### Signing and sending
+
+`@portable/dkim` signs the bytes `encode` produces and `@portable/smtp` sends them. DKIM hashes the whole body before it writes the signature field above the headers, so read the message into bytes first:
+
+```ts
+import * as Bytes from '@portable/bytes'
+import * as Dkim from '@portable/dkim'
+import * as Mail from '@portable/mail'
+import * as Smtp from '@portable/smtp'
+import * as Streams from '@portable/streams'
+import { connect } from 'cloudflare:sockets'
+
+const signal = AbortSignal.timeout(30_000)
+const raw = await Streams.toBytes(Mail.encode(message, { signal }))
+const field = await Dkim.sign(raw, {
+  domain: 'example.com',
+  selector: 'mail',
+  privateKey: env.DKIM_PRIVATE_KEY,
+  signal,
+})
+const { to } = Mail.envelope(message)
+await Smtp.send(
+  { from: 'mari@example.com', to, message: Bytes.concat([new TextEncoder().encode(field), raw]) },
+  { connect, host: 'smtp.example.com', auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD }, signal },
+)
+```
+
+Without DKIM, pass `Mail.encode(message)` to `Smtp.send` as the message and it is sent as it is read.
 
 ## Why use this over nodemailer
 

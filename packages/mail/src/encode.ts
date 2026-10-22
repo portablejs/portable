@@ -126,6 +126,8 @@ export declare namespace encode {
      * @default false
      */
     keepBcc?: boolean | undefined
+    /** Errors the result with `signal.reason` and cancels every content stream not yet read. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -220,7 +222,7 @@ export function encode(message: Message, options: encode.Options = {}): Readable
     'MIME-Version: 1.0',
     root.contentType,
   ].join('\r\n')
-  return output(write(root, head, context), context)
+  return output(write(root, head, context), context, options.signal)
 }
 
 const reserved = new Set([
@@ -616,29 +618,51 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
   if (pending !== '') yield encoder.encode(pending)
 }
 
-function output(chunks: AsyncGenerator<Uint8Array>, context: Context): ReadableStream<Uint8Array> {
+function output(
+  chunks: AsyncGenerator<Uint8Array>,
+  context: Context,
+  signal: AbortSignal | undefined,
+): ReadableStream<Uint8Array> {
   const release = (reason: unknown) =>
     Promise.all([...context.streams].map((stream) => stream.cancel(reason).catch(() => {})))
+  const stop = (reason: unknown) => {
+    context.cancelled = true
+    signal?.removeEventListener('abort', onAbort)
+    return Promise.all([
+      context.reader?.cancel(reason).catch(() => {}),
+      release(reason),
+      chunks.return(undefined).catch(() => {}),
+    ])
+  }
+  let onAbort = () => {}
   return new ReadableStream({
+    start(controller) {
+      if (!signal) return
+      onAbort = () => {
+        controller.error(signal.reason)
+        void stop(signal.reason)
+      }
+      if (signal.aborted) onAbort()
+      else signal.addEventListener('abort', onAbort, { once: true })
+    },
     async pull(controller) {
       let result: IteratorResult<Uint8Array>
       try {
         result = await chunks.next()
       } catch (error) {
         if (context.cancelled) return
+        signal?.removeEventListener('abort', onAbort)
         await release(error)
         throw error
       }
-      if (result.done) controller.close()
-      else controller.enqueue(result.value)
+      if (context.cancelled) return
+      if (result.done) {
+        signal?.removeEventListener('abort', onAbort)
+        controller.close()
+      } else controller.enqueue(result.value)
     },
     async cancel(reason) {
-      context.cancelled = true
-      await Promise.all([
-        context.reader?.cancel(reason).catch(() => {}),
-        release(reason),
-        chunks.return(undefined).catch(() => {}),
-      ])
+      await stop(reason)
     },
   })
 }
