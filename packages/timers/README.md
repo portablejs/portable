@@ -55,6 +55,7 @@ Calls `fn` until it returns without throwing and resolves with its value. When t
 | `attempts` | `3` | Total number of calls, including the first. `Infinity` retries until success or abort. |
 | `delay` | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays). |
 | `retryIf` | retry every error | `(error, attempt) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
+| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called after `retryIf` decides to retry, with the wait in ms, for logging. The next attempt waits for its promise, and an error it throws rejects `retry`. |
 | `timeout` | `Infinity` | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error. |
 | `signal` | | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running. |
 
@@ -185,6 +186,7 @@ next(3) // 4000
 | `Timers.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff. |
 | `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
 | `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
+| `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 
@@ -244,12 +246,12 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `pRetry(fn, { minTimeout, maxTimeout, factor, randomize: false })` | `Timers.retry(fn, { delay: { initial: minTimeout, max: maxTimeout, factor, jitter: false } })` |
 | `throw new AbortError(error)` | Return `false` from `retryIf` for that error. |
 | `shouldRetry: ({ error }) => ...` | `retryIf: (error) => ...` |
-| `onFailedAttempt: ({ error, attemptNumber }) => log(...)` | Log in `retryIf`, which runs before each retry, or catch inside `fn`. |
+| `onFailedAttempt: ({ error, attemptNumber }) => log(...)` | `onRetry: (error, { attempt }) => log(...)`, which runs before each retry. To log the last failure too, catch the rejection. |
 | `maxRetryTime: ms` | `signal: AbortSignal.timeout(ms)`. The call rejects with a `TimeoutError` instead of the last error. |
 | `makeRetriable(fn, options)` | `(...args) => Timers.retry(() => fn(...args), options)` |
 | `asyncRetry(async (bail, attempt) => ..., { retries })` | `Timers.retry(async ({ attempt }) => ..., { attempts: retries + 1 })`. async-retry's `randomize` defaults to `true` and waits 1 to 2 times the backoff, and the default here waits 0 to 1 times. |
 | `bail(error)` | Throw `error` and return `false` from `retryIf` for it. |
-| `onRetry: (error, attempt) => ...` | `retryIf: (error, attempt) => (..., true)` |
+| `onRetry: (error, attempt) => ...` | `onRetry: (error, { attempt }) => ...` |
 | `pWaitFor(condition, { interval })` | `Timers.poll(async () => (await condition()) || undefined, { delay: interval })`. A check that returns `false` ends the poll, so turn `false` into `undefined`. |
 | `pWaitFor(() => pWaitFor.resolveWith(value))` | `Timers.poll(() => value)` |
 | `pWaitFor(condition, { before: false })` | `await Timers.sleep(interval)` first. |

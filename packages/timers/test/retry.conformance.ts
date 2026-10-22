@@ -627,3 +627,67 @@ describe('timers', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 })
+
+describe('onRetry', () => {
+  test('receives each error, the attempt that threw it and the wait, only before a retry', async () => {
+    const seen: unknown[][] = []
+    const result = await settle(
+      Timers.retry(
+        ({ attempt }) => {
+          throw new Error(`attempt ${attempt}`)
+        },
+        {
+          attempts: 3,
+          delay: (attempt) => attempt * 2,
+          onRetry: (error, { attempt, delay }) => {
+            seen.push([(error as Error).message, attempt, delay])
+          },
+        },
+      ),
+    )
+    expect(result).toMatchObject({ rejected: true })
+    expect(seen).toEqual([
+      ['attempt 1', 1, 2],
+      ['attempt 2', 2, 4],
+    ])
+  })
+
+  test('is not called when retryIf stops the retries', async () => {
+    let called = false
+    await settle(
+      Timers.retry(
+        () => {
+          throw fixtureError
+        },
+        { retryIf: () => false, onRetry: () => void (called = true) },
+      ),
+    )
+    expect(called).toBe(false)
+  })
+
+  test('rejects with the error it throws, and the next attempt waits for its promise', async () => {
+    const stop = new Error('stop')
+    let calls = 0
+    let waited = false
+    const result = await settle(
+      Timers.retry(
+        () => {
+          calls++
+          throw fixtureError
+        },
+        {
+          attempts: 5,
+          delay: 0,
+          onRetry: async (_, { attempt }) => {
+            await new Promise((resolve) => setTimeout(resolve, 1))
+            waited = true
+            if (attempt === 2) throw stop
+          },
+        },
+      ),
+    )
+    expect(result).toEqual({ error: stop, rejected: true })
+    expect(calls).toBe(2)
+    expect(waited).toBe(true)
+  })
+})
