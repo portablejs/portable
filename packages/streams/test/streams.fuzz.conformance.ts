@@ -25,7 +25,7 @@ test('map, filter, tap and batch match the array methods', async () => {
   )
 })
 
-test('toText and toBytes give the same text however it is chunked, as bytes or strings', async () => {
+test('toText, toBytes and toBlob give the same text however it is chunked, as bytes or strings', async () => {
   await fuzz(
     fc.asyncProperty(text, cuts, async (value, at) => {
       const bytes = new TextEncoder().encode(value)
@@ -34,6 +34,8 @@ test('toText and toBytes give the same text however it is chunked, as bytes or s
         split(value, at).join(''),
       )
       expect(await Streams.toBytes(Streams.fromIterable(split(bytes, at)))).toEqual(bytes)
+      const blob = await Streams.toBlob(Streams.fromIterable(split(bytes, at)))
+      expect(new Uint8Array(await blob.arrayBuffer())).toEqual(bytes)
     }),
   )
 })

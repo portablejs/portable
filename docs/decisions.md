@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Streams gets `toBlob` but no `toResponse`
+
+- **Options:** add both, as the review proposed; add `toBlob` only; add neither.
+- **Trade-offs:** `new Response(stream).blob()` reads only a `ReadableStream`, takes no limit or signal, and ran 1.7× slower than collecting the chunks into `new Blob(chunks)`. A `toResponse(source, init)` would only wrap `new Response(Streams.fromIterable(source), init)`, which adds an export without adding a behavior.
+- **Chosen:** `Streams.toBlob(source, { maxBytes, type, signal })`, with the same chunk rules as `toBytes`. A caller who needs a `Response` passes `fromIterable(source)` to `new Response`.
+
 ## Bun and Deno run the conformance tests in CI without blocking
 
 - **Options:** a Workers job through Miniflare, as the review proposed; run Vitest itself on Bun and Deno; wait for `@cloudflare/vitest-pool-workers` to support Vitest 5.

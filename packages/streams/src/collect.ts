@@ -43,6 +43,46 @@ export async function toBytes(
   return Bytes.concat(chunks)
 }
 
+export declare namespace toBlob {
+  type Options = toBytes.Options & {
+    /** The `Blob`'s `type`, such as `'image/png'`. @default '' */
+    type?: string | undefined
+  }
+}
+
+/**
+ * Reads a stream or iterable to the end and returns its bytes in a `Blob`. String chunks are
+ * encoded as UTF-8. Unlike `new Response(stream).blob()`, it takes a `maxBytes` limit and a
+ * `signal`, and reads async iterables.
+ *
+ * @example
+ * ```ts
+ * import * as Streams from '@portable/streams'
+ *
+ * const response = await fetch('https://example.com/image.png')
+ * const blob = await Streams.toBlob(response.body!, { maxBytes: 10_000_000, type: 'image/png' })
+ * ```
+ */
+export async function toBlob(
+  source: Source<Uint8Array | string>,
+  options: toBlob.Options = {},
+): Promise<Blob> {
+  const { maxBytes = Infinity, signal, type = '' } = options
+  const chunks: BlobPart[] = []
+  let length = 0
+  await forEach(
+    source,
+    (chunk) => {
+      const bytes = toUint8Array(chunk)
+      length += bytes.byteLength
+      if (length > maxBytes) throw new MaxBytesError({ maxBytes })
+      chunks.push(bytes as Uint8Array<ArrayBuffer>)
+    },
+    signal,
+  )
+  return new Blob(chunks, { type })
+}
+
 export declare namespace toText {
   type Options = {
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
