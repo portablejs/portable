@@ -1,4 +1,4 @@
-import type * as WebSockets from '@portable/websocket'
+import type * as WebSockets from '@portable/websockets'
 
 type Data = string | Uint8Array<ArrayBuffer>
 

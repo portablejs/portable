@@ -22,7 +22,7 @@
 '@portable/timers': patch
 '@portable/web-push': patch
 '@portable/webhooks': patch
-'@portable/websocket': patch
+'@portable/websockets': patch
 ---
 
 READMEs follow one structure: a `Types` section lists every exported type, the "Why use this over" heading names the libraries, and migration notes sit under `Migrating`. dns gains a "Why use this over" section.

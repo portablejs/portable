@@ -1,4 +1,4 @@
-import * as WebSockets from '@portable/websocket'
+import * as WebSockets from '@portable/websockets'
 import { describe, expect, test } from 'vite-plus/test'
 import { FakeServer, bytes, errorOf, read, sleep, until } from './utils.js'
 
@@ -39,7 +39,7 @@ describe('connecting', () => {
 
   test('throws a RangeError for invalid options', () => {
     const { WebSocket } = new FakeServer()
-    expect(() => WebSockets.connect(url, { WebSocket, retries: -1 })).toThrow(RangeError)
+    expect(() => WebSockets.connect(url, { WebSocket, attempts: 0 })).toThrow(RangeError)
     expect(() => WebSockets.connect(url, { WebSocket, maxQueued: Number.NaN })).toThrow(RangeError)
     expect(() => WebSockets.connect(url, { WebSocket, delay: -5 })).toThrow(RangeError)
     expect(() => WebSockets.connect(url, { WebSocket, timeout: 0 })).toThrow(RangeError)
@@ -376,17 +376,17 @@ describe('reconnecting', () => {
     expect(seen).toEqual([1000, 4001])
   })
 
-  test.each([0, 1, 5])('gives up after %i retries with the last error', async (retries) => {
-    const { server, readable } = setup({ retries })
+  test.each([1, 2, 6])('gives up with the last error when attempts is %i', async (attempts) => {
+    const { server, readable } = setup({ attempts })
     const reader = readable.getReader()
-    for (let i = 0; i <= retries; i++) (await server.socket(i)).fail()
+    for (let i = 0; i < attempts; i++) (await server.socket(i)).fail()
     expect(await errorOf(reader.read())).toMatchObject({ code: 1006 })
     await sleep(10)
-    expect(server.sockets).toHaveLength(retries + 1)
+    expect(server.sockets).toHaveLength(attempts)
   })
 
-  test('a successful connection resets the retry count', async () => {
-    const { server, readable } = setup({ retries: 1 })
+  test('a successful connection resets the attempt count', async () => {
+    const { server, readable } = setup({ attempts: 2 })
     ;(await server.socket(0)).fail()
     ;(await server.accept(1)).drop()
     await server.accept(2)
@@ -397,7 +397,7 @@ describe('reconnecting', () => {
   })
 
   test('times out an attempt that never opens', async () => {
-    const { server, readable } = setup({ timeout: 20, retries: 1 })
+    const { server, readable } = setup({ timeout: 20, attempts: 2 })
     const error = await errorOf(readable.getReader().read())
     expect(error).toMatchObject({ name: 'TimeoutError' })
     expect(server.sockets).toHaveLength(2)

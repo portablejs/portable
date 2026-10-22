@@ -1,4 +1,4 @@
-import * as WebSockets from '@portable/websocket'
+import * as WebSockets from '@portable/websockets'
 import ReconnectingWebSocketModule from 'reconnecting-websocket'
 import { afterEach, describe, expect, test } from 'vite-plus/test'
 import type { WebSocket as ServerSocket } from 'ws'

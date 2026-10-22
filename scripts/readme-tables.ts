@@ -975,9 +975,9 @@ export const tables: Record<string, Table> = {
       },
     ],
   },
-  websocket: {
+  websockets: {
     columns: [
-      ours('websocket', ['connect']),
+      ours('websockets', ['connect']),
       lib('reconnecting-websocket'),
       lib('partysocket', [{ from: 'partysocket/ws' }]),
       lib('websocket-ts', [{ from: 'websocket-ts', use: ['Websocket'] }]),
@@ -989,7 +989,7 @@ export const tables: Record<string, Table> = {
       {
         label: 'Echo 1,000 messages on the server',
         test: 'through fromSocket',
-        tasks: { '@portable/websocket': 'fromSocket' },
+        tasks: { '@portable/websockets': 'fromSocket' },
       },
     ],
   },

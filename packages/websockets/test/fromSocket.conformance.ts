@@ -1,4 +1,4 @@
-import * as WebSockets from '@portable/websocket'
+import * as WebSockets from '@portable/websockets'
 import { describe, expect, test } from 'vite-plus/test'
 import { FakeWebSocket, bytes, errorOf, read, sleep } from './utils.js'
 

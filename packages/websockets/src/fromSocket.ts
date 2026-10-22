@@ -39,7 +39,7 @@ export declare namespace fromSocket {
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websocket'
+ * import * as WebSockets from '@portable/websockets'
  *
  * export default {
  *   fetch(request: Request) {

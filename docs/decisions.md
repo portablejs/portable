@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `attempts` counts the first try everywhere
+
+- **Options:** `retries` everywhere; `attempts` everywhere; keep both.
+- **Trade-offs:** `Timers.retry` took `attempts`, which includes the first try, and `WebSockets.connect` took `retries`, which doesn't, so the same number meant one more connection in one of them. `retries` matches reconnecting-websocket's `maxRetries`, but `attempts` needs no off-by-one when a caller reads "3" as "three tries".
+- **Chosen:** `attempts`, at least 1. The websocket package is also renamed to `@portable/websockets`, because its namespace is `WebSockets` (so the global `WebSocket` isn't shadowed) and it was the only namespace that differed from its package name.
+
 ## `@portable/web-crypto` defines the pluggable crypto types
 
 - **Options:** keep a crypto function type in each package; define them in `@portable/web-crypto` and re-export them; define them in `@portable/errors` or another package every package already depends on.
@@ -517,12 +523,12 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **password** writes the PHC format and also reads passlib's. Hashes from other algorithms throw `UnsupportedError`, so migration code can fall back to the old verifier. Deployed Workers cap PBKDF2 at 100,000 iterations while `wrangler dev` doesn't, and the README says so.
 - **timers** clears its own timeout timer instead of using `AbortSignal.timeout`, whose timer can't be cleared. `retry` timeouts are per attempt and `poll` timeouts are total.
 - **queue** combines the queue's signal and each task's signal with `AbortSignal.any`. An aborted task keeps its slot until it settles, so `concurrency` is never exceeded. `clear()` rejects waiting tasks.
-- **websocket** treats server close codes 1000, 1002, 1003 and 1007 to 1010 as final, because a retry would get the same rejection. Its namespace is `WebSockets`, so the global `WebSocket` isn't shadowed.
+- **websockets** treats server close codes 1000, 1002, 1003 and 1007 to 1010 as final, because a retry would get the same rejection. Its namespace is `WebSockets`, so the global `WebSocket` isn't shadowed.
 - **csv** throws on ragged rows unless `relaxColumnCount` is set, and on repeated header names, because the alternatives rename or drop a column without telling the caller. It has no `cast` option.
 - **compress** has no `EncoderStream`, because `CompressionStream` already does that job. Its `DecoderStream` joins small input chunks to avoid the platform's 4 KB output chunks.
 - **mime-stream** is not built on lines, so binary and non-UTF-8 bodies come back byte for byte. `splitHeaders` is a separate function that gives dkim an untouched body stream.
 - **mail** has no file or URL access, so callers pass a stream, a `Blob` or bytes, which avoids SSRF. It throws for an invalid address instead of quoting and sending it.
 - **smtp** requires STARTTLS unless `secure: 'off'`, and AUTH over plain text needs `allowInsecureAuth`. Timeouts come only from `signal`.
 - **sse** splits lines inline instead of using lines, to keep one `TransformStream`. `connect` reconnects after a clean end, and a `retry` field from the server replaces `delay`.
-- **websocket and sse** take `Timers.Delay` and compute waits with `Timers.backoff`.
+- **websockets and sse** take `Timers.Delay` and compute waits with `Timers.backoff`.
 - **idna** ships its own Unicode 18 tables instead of calling `URL`, because Node and Chromium both differ from UTS #46.

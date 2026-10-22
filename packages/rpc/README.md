@@ -187,7 +187,7 @@ A response is JSON, or, when a method returns a stream, `application/x-ndjson` w
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one `@portable/websocket` returns, is a transport as is. Without that package, a few lines wrap a socket:
+A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one `@portable/websockets` returns, is a transport as is. Without that package, a few lines wrap a socket:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc')

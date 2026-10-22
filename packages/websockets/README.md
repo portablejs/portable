@@ -1,15 +1,15 @@
-# @portable/websocket
+# @portable/websockets
 
 A WebSocket that reconnects when the connection drops, read and written as a `ReadableStream` and a `WritableStream` that stay the same across reconnects. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [reconnecting-websocket](https://www.npmjs.com/package/reconnecting-websocket), [partysocket](https://www.npmjs.com/package/partysocket) and [websocket-ts](https://www.npmjs.com/package/websocket-ts).
 
 ```sh
-npm install @portable/websocket
+npm install @portable/websockets
 ```
 
 ```ts
-import * as WebSockets from '@portable/websocket'
+import * as WebSockets from '@portable/websockets'
 
 const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
   async open({ send, messages }) {
@@ -58,7 +58,7 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `signal` | | Closes the socket with code 1000 and fails both streams with `signal.reason`. |
 | `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes. If `open` throws, the socket closes and `connect` tries again after `delay`. |
 | `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `(attempt, error) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from `@portable/timers`. |
-| `retries` | `Infinity` | Retries in a row that may fail before giving up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
+| `attempts` | `Infinity` | Attempts in a row, the first one included, that may fail before giving up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
 | `reconnectIf` | see below | `({ code, reason }) => boolean`. Called when the server closes the connection or it drops. `false` makes the close final. |
 | `maxQueued` | `1000` | Writes to hold while disconnected. Further writes wait, so `writer.ready` and `writer.write()` stay pending. |
@@ -95,7 +95,7 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 | --- | --- |
 | `WebSockets.CloseError` | The connection closed permanently. `code` and `reason` hold the close event's values. |
 | `WebSockets.MaxBufferedError` | Received messages exceeded `maxBuffered`, stored in `maxBuffered`. |
-| `TimeoutError` (`DOMException`) | An attempt or a heartbeat reply took too long, once `retries` is used up. |
+| `TimeoutError` (`DOMException`) | An attempt or a heartbeat reply took too long, once `attempts` is used up. |
 | `TypeError` | No `WebSocket` class was found. |
 | `RangeError` | An option is out of range. |
 
@@ -123,14 +123,14 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - Throughput matches reconnecting-websocket. Echoing 1000 messages of 100 bytes through a local server took 46 ms on average with `connect`, 44 ms with reconnecting-websocket and 34 ms with a bare `WebSocket` on Node 24, on a machine busy enough that runs varied by ±15%. A server echoing through `fromSocket` took 50 ms against 60 ms with `ws` listeners.
 
 <!-- bench:start -->
-| | @portable/websocket | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
+| | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Echo 1,000 messages through a local server | 105 | 93.5 | 83.1 | 104 | – | 109 |
 | Echo 1,000 messages on the server | 94.0 | – | – | – | 97.7 | – |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
 
-| | @portable/websocket | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
+| | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
 | --- | --- | --- | --- | --- | --- | --- |
 | Minified and gzipped | 2.4 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
 | Runtime dependencies | 0 | 0 | 1 | 0 | 0 | – |
@@ -143,7 +143,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 ## Migrating
 
-| reconnecting-websocket / partysocket / websocket-ts | @portable/websocket |
+| reconnecting-websocket / partysocket / websocket-ts | @portable/websockets |
 | --- | --- |
 | `new ReconnectingWebSocket(url, protocols, options)` | `WebSockets.connect(url, { protocols, ...options })` |
 | `ws.send(data)` | `await writer.write(data)` with `const writer = writable.getWriter()` |
@@ -151,7 +151,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `ws.onopen = () => { ws.send(auth) }` | `open: ({ send }) => send(auth)` |
 | `ws.close()` | `await writable.close()`, or `controller.abort()` with the `signal` option |
 | `ws.reconnect()` | No equivalent. Use `heartbeat` to replace a dead connection, or close and call `connect` again. |
-| `maxRetries: n` | `retries: n` |
+| `maxRetries: n` | `attempts: n + 1` |
 | `minReconnectionDelay`, `maxReconnectionDelay`, `reconnectionDelayGrowFactor` | `delay: { initial, max, factor }` |
 | `connectionTimeout` | `timeout` |
 | `maxEnqueuedMessages` | `maxQueued`. Writes past it wait instead of being dropped. |
@@ -168,4 +168,4 @@ These behave differently on purpose:
 
 - A close with 1000, 1002, 1003, 1007, 1008, 1009 or 1010 from the server is final unless `reconnectIf` says otherwise. reconnecting-websocket and partysocket reconnect after any close they didn't start.
 - The first connection doesn't wait for the delay.
-- The retry count resets when `open` finishes, not after reconnecting-websocket's `minUptime`.
+- The attempt count resets when `open` finishes, not after reconnecting-websocket's `minUptime`.

@@ -1,4 +1,4 @@
-import * as WebSockets from '@portable/websocket'
+import * as WebSockets from '@portable/websockets'
 import PartySocket from 'partysocket/ws'
 import ReconnectingWebSocketModule from 'reconnecting-websocket'
 import { afterAll, expect, test } from 'vite-plus/test'
@@ -75,7 +75,7 @@ test(`echoes ${count} messages through a local server within 25% of reconnecting
   bench,
 }) => {
   const result = await bench.compare(
-    bench('@portable/websocket', async () => {
+    bench('@portable/websockets', async () => {
       for (let i = 0; i < count; i++) void writer.write(message)
       for (let i = 0; i < count; i++) await reader.read()
     }),
@@ -97,13 +97,13 @@ test(`echoes ${count} messages through a local server within 25% of reconnecting
     }),
   )
   expect(result.get('reconnecting-websocket')).not.toBeFasterThan(
-    result.get('@portable/websocket'),
+    result.get('@portable/websockets'),
     { delta: 0.25 },
   )
-  expect(result.get('partysocket')).not.toBeFasterThan(result.get('@portable/websocket'), {
+  expect(result.get('partysocket')).not.toBeFasterThan(result.get('@portable/websockets'), {
     delta: 0.25,
   })
-  expect(result.get('websocket-ts')).not.toBeFasterThan(result.get('@portable/websocket'), {
+  expect(result.get('websocket-ts')).not.toBeFasterThan(result.get('@portable/websockets'), {
     delta: 0.25,
   })
 })

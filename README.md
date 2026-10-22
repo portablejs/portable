@@ -65,7 +65,7 @@ Nothing is published to npm yet. Each package README has a table of benchmarks a
 
 ### Realtime
 
-- [`@portable/websocket`](packages/websocket): a WebSocket that reconnects, read and written as streams. Replaces reconnecting-websocket, partysocket and websocket-ts.
+- [`@portable/websockets`](packages/websockets): a WebSocket that reconnects, read and written as streams. Replaces reconnecting-websocket, partysocket and websocket-ts.
 - [`@portable/sse`](packages/sse): reads, writes and reconnects server-sent event streams. Replaces eventsource-parser, the eventsource polyfill and @microsoft/fetch-event-source.
 - [`@portable/rpc`](packages/rpc): typed JSON-RPC 2.0 calls between workers, windows, servers and browsers. Replaces comlink, penpal, post-me, birpc and json-rpc-2.0.
 - [`@portable/web-push`](packages/web-push): sends Web Push notifications with payload encryption and VAPID. Replaces web-push.

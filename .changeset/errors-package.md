@@ -31,7 +31,7 @@
 '@portable/streams': minor
 '@portable/web-push': minor
 '@portable/webhooks': minor
-'@portable/websocket': minor
+'@portable/websockets': minor
 ---
 
 Every error class extends a class from the new `@portable/errors` package. `instanceof` against a package's class, and `Errors.is(error, kind)` across packages, work when an app holds two copies of a package. Errors with fields take one object: `new Dns.QueryError({ code, syscall, hostname })`, `new Smtp.CommandError({ code, message, ... })`, `new WebSockets.CloseError({ code, reason })`, `new Webhooks.VerificationError({ reason, message })`, `new Rdap.NotFoundError({ url })`, and the `MaxBytesError` and `MaxLengthError` classes take `{ maxBytes }` or `{ maxLength }`. `ResponseError` in rdap, sse and web-push keeps the whole `response`, and `WebPush.ResponseError` no longer has its own `headers` field: read `error.response.headers`.

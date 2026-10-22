@@ -1350,7 +1350,7 @@ importers:
         specifier: ^2.8.0
         version: 2.8.0
 
-  packages/websocket:
+  packages/websockets:
     dependencies:
       '@portable/errors':
         specifier: workspace:*
@@ -1359,12 +1359,12 @@ importers:
         specifier: workspace:*
         version: link:../timers
 
-  packages/websocket/test:
+  packages/websockets/test:
     devDependencies:
       '@portable/streams':
         specifier: workspace:*
         version: link:../../streams
-      '@portable/websocket':
+      '@portable/websockets':
         specifier: workspace:*
         version: link:..
       '@types/node':

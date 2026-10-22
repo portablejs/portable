@@ -1,5 +1,5 @@
 ---
-'@portable/websocket': patch
+'@portable/websockets': patch
 '@portable/sse': patch
 ---
 

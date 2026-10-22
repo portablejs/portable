@@ -34,7 +34,7 @@ export const neverAborted: AbortSignal = new AbortController().signal
 /**
  * Checks `delay` and returns a function of the attempt number (starting at 1) and the error that
  * ended it, which gives the wait before the next attempt in ms. `retry` and `poll` use it, and so
- * do the reconnecting clients in `@portable/websocket` and `@portable/sse`.
+ * do the reconnecting clients in `@portable/websockets` and `@portable/sse`.
  *
  * @example
  * ```ts

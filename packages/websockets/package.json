@@ -1,5 +1,5 @@
 {
-  "name": "@portable/websocket",
+  "name": "@portable/websockets",
   "description": "A WebSocket that reconnects, as a readable and a writable stream, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/portablejs/portable.git",
-    "directory": "packages/websocket"
+    "directory": "packages/websockets"
   },
   "keywords": [
     "websocket",

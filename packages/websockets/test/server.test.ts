@@ -1,4 +1,4 @@
-import * as WebSockets from '@portable/websocket'
+import * as WebSockets from '@portable/websockets'
 import { afterEach, describe, expect, test } from 'vite-plus/test'
 import { WebSocket as WsClient, type WebSocket as ServerSocket } from 'ws'
 import { echo, listen, text } from './server.js'

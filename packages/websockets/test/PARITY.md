@@ -24,7 +24,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | undefined websocket protocol | `connect > connecting > passes the URL and protocols to the WebSocket class` | |
 | null websocket protocol | skipped | `null` is a type error. |
 | connection status constants | skipped | No `readyState`. |
-| max retries: 0 / 1 / 5 | `connect > reconnecting > gives up after %i retries with the last error` | Same three values. |
+| max retries: 0 / 1 / 5 | `connect > reconnecting > gives up with the last error when attempts is %i` | The same three cases, as `attempts` 1, 2 and 6. |
 | level0 event listeners are kept after reconnect | `connect > sending and receiving > keeps the same streams across reconnects` | The streams play the role of the handlers. |
 | level2 event listeners | skipped | No `addEventListener`. |
 | level2 event listeners using object with handleEvent | skipped | No `addEventListener`. |
@@ -37,7 +37,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | connect, send, receive, close | `connect > sending and receiving > sends and receives text`, `connect > closing > writable.close() sends queued writes, then closes with 1000 for good`, `server > connect against a ws server > writable.close() closes the connection with 1000` | |
 | connect, send, receive, reconnect | `connect > sending and receiving > keeps the same streams across reconnects` | |
 | immediately-failed connection should not timeout | `connect > reconnecting > reconnects after a failed attempt` | |
-| immediately-failed connection with 0 maxRetries must not retry | `connect > reconnecting > gives up after 0 retries with the last error` | |
+| immediately-failed connection with 0 maxRetries must not retry | `connect > reconnecting > gives up with the last error when attempts is 1` | |
 | connect and close before establishing connection | `connect > closing > writable.close() before the socket opens opens nothing` | |
 | enqueue messages | `connect > writes while disconnected > are queued and sent in order once connected` | |
 | respect maximum enqueued messages | `connect > writes while disconnected > wait once maxQueued writes are queued` | Upstream drops writes past the limit. We make the writer wait. |
@@ -45,7 +45,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | closing from the other side should reconnect | `connect > reconnecting > reconnects after a dropped connection`, `server > connect against a ws server > reconnects after the server terminates the connection and sends queued writes` | |
 | closing from the other side should allow to keep closed | `connect > reconnecting > reconnectIf decides which closes are final` | Upstream calls `close()` from the close handler. |
 | reconnection delay grow factor | `connect > reconnecting > waits the backoff cap when jitter is off`, `connect > reconnecting > passes the failure count and error to a delay function` | |
-| minUptime | `connect > reconnecting > a successful connection resets the retry count` | The count resets when `open` finishes, not after a minimum uptime. A connection that opens and drops at once waits `delay(1)` each time, so a nonzero delay prevents a tight loop. |
+| minUptime | `connect > reconnecting > a successful connection resets the attempt count` | The count resets when `open` finishes, not after a minimum uptime. A connection that opens and drops at once waits `delay(1)` each time, so a nonzero delay prevents a tight loop. |
 | reconnect after closing | skipped | No `reconnect()`. Call `connect` again. |
 
 ## partysocket
@@ -68,7 +68,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | reconnecting: reconnect() immediately after close() does not dispatch a duplicate close event | skipped | No `reconnect()`. |
 | reconnecting: warns when send() is called after close() | `connect > closing > cancelling readable closes the socket and stops reconnecting` | A write after closing rejects instead of being queued forever. |
 | reconnecting: messages sent after close() are delivered after reconnect(), and the warning resets | skipped | No `reconnect()`. |
-| reconnecting: reconnect() works after maxRetries has been exhausted | skipped | No `reconnect()`. After `retries`, the streams fail and the caller calls `connect` again. |
+| reconnecting: reconnect() works after maxRetries has been exhausted | skipped | No `reconnect()`. After `attempts`, the streams fail and the caller calls `connect` again. |
 | reconnecting-node: pass WebSocket via options | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` | Passes the `ws` package's class. |
 | partysocket: throws if host or room is not set; room is updated after updateProperties | skipped | PartyKit URLs. Pass a URL function. |
 | partysocket-url (53 tests: host, room, party, path, prefix, query, id, name validation, protocols, option pass-through) | skipped | PartyKit URL building. `connect` takes a URL or a function that returns one. |
@@ -95,7 +95,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | error-handling: PartyKit path, host, room and basePath checks (6 tests) | skipped | PartyKit URLs. |
 | error-handling: missing WebSocket constructor | `connect > connecting > throws a TypeError when there is no WebSocket class` | |
 | error-handling: immediate connection failure | `connect > reconnecting > reconnects after a failed attempt` | |
-| error-handling: stops retrying after maxRetries | `connect > reconnecting > gives up after %i retries with the last error` | |
+| error-handling: stops retrying after maxRetries | `connect > reconnecting > gives up with the last error when attempts is %i` | |
 | error-handling: connection timeout | `connect > reconnecting > times out an attempt that never opens` | |
 | error-handling: respects maxEnqueuedMessages limit | `connect > writes while disconnected > wait once maxQueued writes are queued` | |
 | error-handling: buffered amount for different message types | skipped | No `bufferedAmount` getter. |
@@ -108,7 +108,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | error-handling: empty message send | `connect > sending and receiving > sends and receives text` | Any string, including `''`, is sent as is. |
 | error-handling: rapid reconnect calls | skipped | No `reconnect()`. |
 | error-handling: binaryType changes while disconnected | skipped | `binaryType` is fixed. |
-| error-handling: resets retry count on successful connection | `connect > reconnecting > a successful connection resets the retry count` | |
+| error-handling: resets retry count on successful connection | `connect > reconnecting > a successful connection resets the attempt count` | |
 | error-handling: exponential backoff increases delay correctly | `connect > reconnecting > waits the backoff cap when jitter is off` | |
 | error-handling: custom debugLogger, debug mode logs | skipped | No logging. |
 | integration: complete lifecycle: connect, send, receive, close | `server > connect against a ws server > echoes text and binary messages`, `server > connect against a ws server > writable.close() closes the connection with 1000` | |
@@ -128,7 +128,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | Getter/setter: Url (2 tests) | `connect > connecting > calls a URL function on every attempt` | No `url` getter. |
 | Getter/setter: Protocols (3 tests) | `connect > connecting > passes the URL and protocols to the WebSocket class` | |
 | Getter/setter: Buffer (2 tests) | skipped | No pluggable buffer. `maxQueued` bounds the queue. |
-| Getter/setter: MaxRetries (2 tests) | `connect > reconnecting > gives up after %i retries with the last error` | |
+| Getter/setter: MaxRetries (2 tests) | `connect > reconnecting > gives up with the last error when attempts is %i` | |
 | Getter/setter: InstantReconnect (2 tests) | `connect > reconnecting > passes the failure count and error to a delay function` | `delay: (n) => (n === 1 ? 0 : 1000)` gives an instant first retry. |
 | Getter/setter: Backoff (2 tests) | `connect > reconnecting > waits the backoff cap when jitter is off` | |
 | Getter/setter: Listeners | skipped | No listeners. |
@@ -150,7 +150,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | Retry & Reconnect: retry delays beyond the timer limit are capped | `connect > reconnecting > caps a delay longer than the timer limit instead of retrying at once` | |
 | UrlProvider: called on each connection attempt | `connect > connecting > calls a URL function on every attempt` | |
 | InstantReconnect: reconnects immediately when true / not when false | `connect > reconnecting > passes the failure count and error to a delay function`, `connect > reconnecting > waits the delay before reconnecting` | |
-| MaxRetries: stops when maxRetries is reached | `connect > reconnecting > gives up after %i retries with the last error` | |
+| MaxRetries: stops when maxRetries is reached | `connect > reconnecting > gives up with the last error when attempts is %i` | |
 | Send: server receives a message | `server > connect against a ws server > echoes text and binary messages` | |
 | Send: server receives a Uint8Array | `connect > sending and receiving > sends Uint8Array writes as binary` | |
 | Send: buffers messages before open | `connect > writes while disconnected > are queued and sent in order once connected` | |
@@ -166,14 +166,14 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | callback_reentrancy: URL provider is called without the websocket as receiver | skipped | `connect` calls it as a plain function. |
 | callback_reentrancy: URL rejected by the WebSocket constructor leaves url unchanged | `connect > connecting > fails without retrying when the WebSocket class rejects a fixed URL` | |
 | dispatch_mutation (3 tests) | skipped | No listeners. |
-| exhausted_reconnect: 'exhausted' fires once after maxRetries and retrying stops | `connect > reconnecting > gives up after %i retries with the last error` | The streams fail once. |
-| exhausted_reconnect: no 'exhausted' when reconnected within budget | `connect > reconnecting > a successful connection resets the retry count` | |
+| exhausted_reconnect: 'exhausted' fires once after maxRetries and retrying stops | `connect > reconnecting > gives up with the last error when attempts is %i` | The streams fail once. |
+| exhausted_reconnect: no 'exhausted' when reconnected within budget | `connect > reconnecting > a successful connection resets the attempt count` | |
 | exhausted_reconnect: reconnect() after exhausted / after close / on an open socket (3 tests) | skipped | No `reconnect()`. |
 | exhausted_reconnect: retry options require a backoff (4 tests) | skipped | `delay` has a default. |
 | exhausted_reconnect: maxRetries must be Infinity or a non-negative integer (3 tests) | `connect > connecting > throws a RangeError for invalid options` | |
 | exhausted_reconnect: maxRetries of Infinity never exhausts | `connect > reconnecting > reconnects after a dropped connection` | The default is `Infinity`. |
-| exhausted_reconnect: maxRetries of zero exhausts on the first disconnect | `connect > reconnecting > gives up after 0 retries with the last error` | |
-| initial_failure_recovery (3 tests) | `connect > reconnecting > a successful connection resets the retry count`, `server > connect against a ws server > reconnects after the server restarts on the same port` | |
+| exhausted_reconnect: maxRetries of zero exhausts on the first disconnect | `connect > reconnecting > gives up with the last error when attempts is 1` | |
+| initial_failure_recovery (3 tests) | `connect > reconnecting > a successful connection resets the attempt count`, `server > connect against a ws server > reconnects after the server restarts on the same port` | |
 | instant_reconnect: skip the backoff only for the first retry | `connect > reconnecting > passes the failure count and error to a delay function` | |
 | lifecycle_reentrancy (6 tests: close or reconnect from close, retry, error, open and reconnect listeners) | `connect > open > closes the socket and reconnects when it throws, keeping queued writes`, `connect > closing > the signal closes the socket with 1000 and fails both streams` | There are no listeners to re-enter. `open` throwing and aborting the signal are the two ways a caller interrupts a connection. |
 | listener_exception (7 tests) | `connect > open > closes the socket and reconnects when it throws, keeping queued writes` | `open` is the only callback, and a throw from it reconnects. |
@@ -198,7 +198,7 @@ None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messa
 | reconnecting-websocket and partysocket flush queued messages in the `open` event, before the app can authenticate. | Queued writes wait for `open` to finish. | `connect > open > holds queued writes until it resolves` |
 | reconnecting-websocket and partysocket queue without limit by default, and drop messages past `maxEnqueuedMessages`. | The queue holds `maxQueued` writes, then the writer waits. | `connect > writes while disconnected > wait once maxQueued writes are queued` |
 | partysocket: `send()` after `close()` queues the message forever (it now logs a warning). | Writes after closing reject. | `connect > closing > cancelling readable closes the socket and stops reconnecting` |
-| partysocket [#252](https://github.com/cloudflare/partykit/issues/252): `reconnect()` did nothing after `maxRetries`. | The streams fail with the last error, so the caller sees that it gave up. | `connect > reconnecting > gives up after %i retries with the last error` |
+| partysocket [#252](https://github.com/cloudflare/partykit/issues/252): `reconnect()` did nothing after `maxRetries`. | The streams fail with the last error, so the caller sees that it gave up. | `connect > reconnecting > gives up with the last error when attempts is %i` |
 | websocket-ts: a URL function that throws on a retry stopped reconnecting permanently. | The attempt counts as failed and the next one runs after `delay`. | `connect > connecting > retries when the URL function throws` |
 | websocket-ts: a delay above 2^31 - 1 ms overflowed `setTimeout` and retried at once. | Delays are capped at 2^31 - 1 ms. | `connect > reconnecting > caps a delay longer than the timer limit instead of retrying at once` |
 | websocket-ts: draining the buffer re-added messages forever when an `open` listener closed the socket. | The queue is sent only while the socket is open, and the rest waits for the next connection. | `connect > writes while disconnected > are not sent on a socket that is closing` |

@@ -25,10 +25,11 @@ export declare namespace connect {
     /** Wait before each reconnect. @default { initial: 1000, max: 30000 } */
     delay?: Timers.Delay | undefined
     /**
-     * How many retries in a row may fail before `connect` gives up. The streams then fail with the
-     * last error. A connection that finishes `open` resets the count. @default Infinity
+     * How many attempts in a row, the first one included, may fail before `connect` gives up. The
+     * streams then fail with the last error. A connection that finishes `open` resets the count.
+     * @default Infinity
      */
-    retries?: number | undefined
+    attempts?: number | undefined
     /** Time limit for each attempt to open and finish `open`, in ms. @default 10000 */
     timeout?: number | undefined
     /**
@@ -113,7 +114,7 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websocket'
+ * import * as WebSockets from '@portable/websockets'
  *
  * const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
  *   async open({ send }) {
@@ -130,7 +131,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     protocols,
     signal,
     delay = { initial: 1000, max: 30_000 },
-    retries = Infinity,
+    attempts = Infinity,
     timeout = 10_000,
     open,
     reconnectIf = defaultReconnectIf,
@@ -143,7 +144,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   if (typeof Impl !== 'function')
     throw new TypeError('No WebSocket class found. Pass one as the `WebSocket` option.')
   const next = Timers.backoff(delay)
-  checkSize('retries', retries)
+  checkSize('attempts', attempts, 1)
   checkSize('timeout', timeout, 1)
   checkSize('maxQueued', maxQueued)
   checkSize('highWaterMark', highWaterMark)
@@ -354,7 +355,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
           ? outcome.error
           : new CloseError({ code: outcome.close.code, reason: outcome.close.reason })
       if (outcome.kind === 'error' && outcome.final) return finish(error, false)
-      if (++failures > retries) return finish(error, false)
+      if (++failures >= attempts) return finish(error, false)
       await Timers.sleep(next(failures, error), { signal: stop.signal }).catch(() => {})
     }
   }

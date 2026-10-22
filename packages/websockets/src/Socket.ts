@@ -31,7 +31,7 @@ export type SocketEvent = Event & { data?: unknown; code?: number; reason?: stri
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websocket'
+ * import * as WebSockets from '@portable/websockets'
  *
  * const { readable } = WebSockets.fromSocket(new WebSocket('wss://example.com/feed'))
  * const reader = readable.getReader()
@@ -61,7 +61,7 @@ export class CloseError extends Errors.BaseError {
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websocket'
+ * import * as WebSockets from '@portable/websockets'
  *
  * const { readable } = WebSockets.connect('wss://example.com/feed', { maxBuffered: 1_000_000 })
  * const reader = readable.getReader()
