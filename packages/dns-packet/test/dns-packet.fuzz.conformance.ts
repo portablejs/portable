@@ -1,5 +1,5 @@
 import * as DnsPacket from '@portable/dns-packet'
-import { fc, fuzz, mutated, outcome } from '@portable/fuzz'
+import { byteForm, fc, fuzz, mutated, outcome, toByteForm } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 import responses from './fixtures/responses.json' with { type: 'json' }
 import { hex } from './utils.js'
@@ -47,5 +47,20 @@ test('a decoded packet encodes to bytes that decode to the same packet', () => {
       },
     ),
     { scale: 10 },
+  )
+})
+
+test('decode reads every byte form like a Uint8Array', () => {
+  fuzz(
+    fc.property(fc.uint8Array({ maxLength: 64 }), byteForm, (bytes, form) => {
+      const errors = [
+        DnsPacket.InvalidInputError,
+        DnsPacket.TruncatedError,
+        DnsPacket.UnsupportedError,
+      ]
+      expect(outcome(errors, () => DnsPacket.decode(toByteForm(bytes, form)))).toEqual(
+        outcome(errors, () => DnsPacket.decode(bytes)),
+      )
+    }),
   )
 })

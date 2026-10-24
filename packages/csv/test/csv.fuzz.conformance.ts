@@ -1,5 +1,15 @@
 import * as Csv from '@portable/csv'
-import { cuts, fc, fuzz, mutated, outcome, outcomeAsync, split } from '@portable/fuzz'
+import {
+  byteForm,
+  cuts,
+  fc,
+  fuzz,
+  mutated,
+  outcome,
+  outcomeAsync,
+  split,
+  toByteForm,
+} from '@portable/fuzz'
 import { fromIterable, toArray } from '@portable/streams'
 import { expect, test } from 'vite-plus/test'
 import { bom, encodeUtf8 } from './utils.js'
@@ -84,6 +94,17 @@ test('rejects mutated CSV only with documented errors', () => {
   fuzz(
     fc.property(mutated(original), (bytes) => {
       outcome(errors, () => Csv.decode(bytes))
+    }),
+  )
+})
+
+test('decode reads every byte form like a Uint8Array', () => {
+  fuzz(
+    fc.property(fc.uint8Array({ maxLength: 64 }), byteForm, (bytes, form) => {
+      const errors = [Csv.InvalidInputError, Csv.TruncatedError]
+      expect(outcome(errors, () => Csv.decode(toByteForm(bytes, form)))).toEqual(
+        outcome(errors, () => Csv.decode(bytes)),
+      )
     }),
   )
 })

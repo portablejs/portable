@@ -1,4 +1,14 @@
-import { cuts, fc, fuzz, outcomeAsync, split } from '@portable/fuzz'
+import {
+  byteForm,
+  byteForms,
+  cuts,
+  fc,
+  fuzz,
+  outcomeAsync,
+  split,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 import * as Streams from '@portable/streams'
 import { expect, test } from 'vite-plus/test'
 
@@ -105,5 +115,21 @@ test('toJson parses the text however it is chunked', async () => {
         await Streams.toJson(Streams.fromIterable(split(new TextEncoder().encode(json), at))),
       ).toEqual(JSON.parse(json))
     }),
+  )
+})
+
+test('toBytes joins chunks in any byte form', async () => {
+  await fuzz(
+    fc.asyncProperty(
+      fc.uint8Array({ maxLength: 64 }),
+      cuts,
+      fc.array(byteForm, { minLength: 17, maxLength: 17 }),
+      async (bytes, at, forms) => {
+        const chunks = split(bytes, at).map((chunk, i) =>
+          toByteForm(chunk, forms[i] ?? byteForms[0]),
+        )
+        expect(await Streams.toBytes(streamOf(chunks))).toEqual(bytes)
+      },
+    ),
   )
 })

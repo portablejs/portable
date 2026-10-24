@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## Byte inputs stay `Uint8Array` only
+
+- **Options:** keep `Uint8Array` as the only byte input; accept any `ArrayBuffer`, `SharedArrayBuffer` or view, as `TextDecoder` does.
+- **Trade-offs:** if packages accepted any buffer or view, a caller could pass the `ArrayBuffer` from `crypto.subtle` without wrapping it in a `Uint8Array`. Most byte input comes from `response.bytes()` or `blob.bytes()`, which already return a `Uint8Array`. Accepting an `Int16Array` or another wider view would let a caller's samples be read in the platform's byte order without an error, and every package would have to convert its input to a `Uint8Array`. `@noble/hashes` and ox also take only `Uint8Array`.
+- **Chosen:** `Uint8Array` only. A package can start accepting more types later without breaking callers, but if it stops accepting a type after a release, callers that pass that type break. A `Uint8Array` can still start partway into a larger buffer, so each package's `test/inputs.conformance.ts` passes one and checks that every function reads only the bytes in its range.
+
 ## Multi-member gzip decoding searches for each member's end
 
 - **Options:** try each `1f 8b 08` position in turn as the end of the current member; parse the deflate blocks to find where a member ends; binary search the positions, using whether `DecompressionStream` throws `TruncatedError` or `InvalidInputError` for a prefix of the input.

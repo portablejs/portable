@@ -172,3 +172,85 @@ export function split<value extends Uint8Array | string>(
   chunks.push(data.slice(start) as value)
   return chunks
 }
+
+/**
+ * The forms of `Uint8Array` that the tests pass to each function that takes bytes.
+ * `'Uint8Array with offset'` is a view that starts 3 bytes into a buffer padded with `0xee`, so a
+ * function that reads `bytes.buffer` instead of the view's range returns a different result.
+ */
+export const byteForms = ['Uint8Array', 'Uint8Array with offset'] as const
+
+/** One of {@link byteForms}. */
+export type ByteForm = (typeof byteForms)[number]
+
+/**
+ * Picks one of {@link byteForms}.
+ *
+ * @example
+ * fc.property(fc.uint8Array(), byteForm, (bytes, form) => ... toByteForm(bytes, form) ...)
+ */
+export const byteForm: fc.Arbitrary<ByteForm> = fc.constantFrom(...byteForms)
+
+/**
+ * Copies `bytes` into the given form.
+ *
+ * @example
+ * toByteForm(new Uint8Array([1, 2]), 'Uint8Array with offset') // [1, 2] inside [0xee, 0xee, 0xee, 1, 2, 0xee, 0xee]
+ */
+export function toByteForm(bytes: Uint8Array, form: ByteForm): Uint8Array<ArrayBuffer> {
+  switch (form) {
+    case 'Uint8Array':
+      return bytes.slice()
+    case 'Uint8Array with offset': {
+      const padded = new Uint8Array(bytes.length + 5).fill(0xee)
+      padded.set(bytes, 3)
+      return padded.subarray(3, 3 + bytes.length)
+    }
+  }
+}
+
+/**
+ * A `ReadableStream` that enqueues `chunks` and closes.
+ *
+ * @example
+ * await Streams.toBytes(streamOf([new Uint8Array(2), new Uint8Array(1)]))
+ */
+export function streamOf<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
+  return new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk)
+      controller.close()
+    },
+  })
+}
+
+/**
+ * Reads every chunk of `stream`.
+ *
+ * @example
+ * const lines = await readAll(streamOf([bytes]).pipeThrough(new Lines.DecoderStream()))
+ */
+export async function readAll<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
+  const chunks: chunk[] = []
+  const reader = stream.getReader()
+  for (let next = await reader.read(); !next.done; next = await reader.read())
+    chunks.push(next.value)
+  return chunks
+}
+
+/**
+ * Reads every chunk of a byte stream and joins them.
+ *
+ * @example
+ * const encoded = await readBytes(streamOf([bytes]).pipeThrough(new Base64.EncoderStream()))
+ */
+export async function readBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
+  const chunks = await readAll(stream)
+  const bytes = new Uint8Array(chunks.reduce((length, chunk) => length + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.length
+  }
+  return bytes
+}
