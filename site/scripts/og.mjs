@@ -11,6 +11,7 @@ import { ImageResponse } from '@takumi-rs/image-response/wasm'
 import { createElement as h } from 'react'
 
 const dist = 'dist/public'
+const accent = '#fc7c00'
 // Crawlers need an absolute image URL. Previews leave DOCS_SITE_URL unset because the here.now URL
 // isn't known until the site is published, so a preview's tags hold a path without a host.
 const site = process.env.DOCS_SITE_URL ?? process.env.DOCS_BASE_PATH ?? ''
@@ -85,8 +86,10 @@ function image({ title, description }) {
           },
         },
         scoped
-          ? [h('span', { key: 'scope', style: { color: '#a3a3a3' } }, scoped[1]), scoped[2]]
-          : title,
+          ? [h('span', { key: 'scope', style: { color: accent } }, scoped[1]), scoped[2]]
+          : title === 'Portable'
+            ? [title, h('span', { key: 'dot', style: { color: accent } }, '.')]
+            : title,
       ),
       description &&
         h('div', { style: { fontSize: 32, lineHeight: 1.4, color: '#a3a3a3' } }, description),
