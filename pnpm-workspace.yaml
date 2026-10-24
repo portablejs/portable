@@ -33,3 +33,13 @@ autoInstallPeers: false
 # workerd ships its binary in an optional dependency, so its postinstall only checks for it.
 allowBuilds:
   workerd: false
+
+# miniflare pins undici and sharp, oxfmt under zile pins tinypool, and mailauth and smtp-server pin
+# nodemailer, at versions with security advisories. These raise each one to its next patched
+# release in the same major.
+overrides:
+  nodemailer@10: ^10.2.1
+  sharp@0.35: ^0.35.5
+  tinypool@2: ^2.2.0
+  undici@7: ^7.30.1
+  undici@8: ^8.12.3
