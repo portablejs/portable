@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/errors": "workspace:*",
     "@portable/fuzz": "workspace:*",
     "@portable/mime-headers": "workspace:*",
     "@portable/mime-stream": "workspace:*",

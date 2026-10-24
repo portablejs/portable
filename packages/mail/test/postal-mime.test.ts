@@ -9,12 +9,12 @@ import { chunked, randomBytes } from './utils.js'
 const text = (bytes: ArrayBuffer | Uint8Array | string) =>
   typeof bytes === 'string' ? bytes : new TextDecoder().decode(bytes)
 
-describe('postal-mime parses what Mail.encode writes', () => {
+describe('postal-mime parses what Mail.encodeStream writes', () => {
   test('a message with every kind of part', async () => {
     const image = randomBytes(5000, 1)
     const report = randomBytes(70_000, 2)
     const parsed = await PostalMime.parse(
-      Mail.encode({
+      Mail.encodeStream({
         from: { name: 'Jõgeva Ants', address: 'ants@jõgeva.ee' },
         to: ['Mari <mari@example.com>', { name: '山田 太郎', address: 'taro@example.jp' }],
         cc: 'Team: a@example.com, b@example.com;',
@@ -110,7 +110,7 @@ describe('postal-mime parses what Mail.encode writes', () => {
       encode: (value: string) => Charset.encode(value, iso2022Jp),
     }
     const parsed = await PostalMime.parse(
-      Mail.encode(
+      Mail.encodeStream(
         { from: '差出人 <a@example.com>', subject: 'こんにちは', text: 'こんにちは、世界' },
         { charset },
       ),

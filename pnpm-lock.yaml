@@ -811,6 +811,9 @@ importers:
 
   packages/mime-stream/test:
     devDependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../../errors
       '@portable/fuzz':
         specifier: workspace:*
         version: link:../../../tools/fuzz

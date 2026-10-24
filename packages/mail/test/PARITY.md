@@ -1,6 +1,6 @@
 # Parity with nodemailer
 
-`@portable/mail` replaces nodemailer's `MailComposer` (`src/mail-composer`) and `MimeNode` (`src/mime-node`), version 10.1.7. Each upstream test below maps to the test here that covers the same case, or gives the reason it doesn't apply. Many `MimeNode` tests exercise its tree-editing API or Node-specific options, which this package doesn't have: callers describe a message as one object and `Mail.encode` builds the tree.
+`@portable/mail` replaces nodemailer's `MailComposer` (`src/mail-composer`) and `MimeNode` (`src/mime-node`), version 10.1.7. Each upstream test below maps to the test here that covers the same case, or gives the reason it doesn't apply. Many `MimeNode` tests exercise its tree-editing API or Node-specific options, which this package doesn't have: callers describe a message as one object and `Mail.encodeStream` builds the tree.
 
 Our test files:
 
@@ -20,7 +20,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 
 | Upstream test | Ours |
 | --- | --- |
-| should create new MailComposer | Not applicable: there is no composer object, `Mail.encode` is a function. |
+| should create new MailComposer | Not applicable: there is no composer object, `Mail.encodeStream` is a function. |
 | should use Mixed structure with text and attachment | structure: text and one attachment make multipart/mixed |
 | should use Mixed structure with multiple attachments | structure: several attachments make multipart/mixed |
 | should create Alternative structure with text and html | structure: text and html make multipart/alternative, text first |
@@ -89,7 +89,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 
 ### Tree editing
 
-`MimeNode` is a mutable tree. `Mail.encode` takes the whole message at once, so none of these apply.
+`MimeNode` is a mutable tree. `Mail.encodeStream` takes the whole message at once, so none of these apply.
 
 | Upstream test | Ours |
 | --- | --- |
@@ -112,7 +112,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should not let an own \_\_proto\_\_ key of a header value emit the value raw | Not applicable: header values are strings or lists of strings, and there are no `{ prepared, value }` objects. |
 | should build child node | structure: text and one attachment make multipart/mixed |
 | should build multipart node | structure: text and html make multipart/alternative, text first |
-| should strip line breaks from custom boundary material | structure: the boundary … throws a RangeError. `Mail.encode` refuses the value instead of cleaning it. |
+| should strip line breaks from custom boundary material | structure: the boundary … throws a RangeError. `Mail.encodeStream` refuses the value instead of cleaning it. |
 | should drop control characters from boundary material | structure: the boundary … throws a RangeError |
 | should fall back to a generated boundary when a boundary of … strips to nothing | Not applicable: an invalid boundary throws, and nothing is stripped. |
 | should strip control characters from an explicit boundary parameter | body: a multipart content type throws. Callers can't set a boundary parameter. |

@@ -6,8 +6,8 @@ import {
   type Content,
   type TransferEncoding,
   chooseTextEncoding,
-  encodeStream,
-  encodeSync,
+  encodeBody,
+  encodeBodyStream,
   isContent,
 } from './body.js'
 import { InvalidInputError } from './errors.js'
@@ -83,7 +83,7 @@ export type Message = {
   readonly sender?: Addresses | undefined
   readonly to?: Addresses | undefined
   readonly cc?: Addresses | undefined
-  /** Read by `envelope`. `encode` leaves the header out unless `keepBcc` is set. */
+  /** Read by `envelope`. `encodeStream` leaves the header out unless `keepBcc` is set. */
   readonly bcc?: Addresses | undefined
   readonly replyTo?: Addresses | undefined
   readonly inReplyTo?: string | undefined
@@ -91,7 +91,7 @@ export type Message = {
   readonly subject?: string | undefined
   /** `Message-ID`, with or without angle brackets. @default a random id at the `From` domain */
   readonly messageId?: string | undefined
-  /** @default the time `encode` is called */
+  /** @default the time `encodeStream` is called */
   readonly date?: Date | string | undefined
   /** Plain text body. */
   readonly text?: Content | undefined
@@ -106,7 +106,7 @@ export type Message = {
   readonly headers?: HeaderFields | undefined
 }
 
-export declare namespace encode {
+export declare namespace encodeStream {
   type Options = {
     /**
      * Start of every multipart boundary. Each boundary is this prefix followed by the number of
@@ -169,7 +169,7 @@ type Context = {
  * `cid` go into `multipart/related` beside the HTML, and other attachments into
  * `multipart/mixed`. Blob and stream content is read as the result is read.
  *
- * `encode` throws on mistakes in the message before it reads any content. A content stream that
+ * `encodeStream` throws on mistakes in the message before it reads any content. A content stream that
  * fails errors the result, and cancelling the result cancels every content stream not yet read to
  * the end.
  *
@@ -177,7 +177,7 @@ type Context = {
  * ```ts
  * import * as Mail from '@portable/mail'
  *
- * const raw = Mail.encode({
+ * const raw = Mail.encodeStream({
  *   from: 'Mari <mari@example.com>',
  *   to: 'jaan@example.com',
  *   subject: 'Tere',
@@ -196,7 +196,10 @@ type Context = {
  * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
  * stream is locked or given twice.
  */
-export function encode(message: Message, options: encode.Options = {}): ReadableStream<Uint8Array> {
+export function encodeStream(
+  message: Message,
+  options: encodeStream.Options = {},
+): ReadableStream<Uint8Array> {
   const context = {
     charset: options.charset,
     prefix: checkBoundary(options.boundary ?? `=_${randomHex(8)}_`),
@@ -265,7 +268,7 @@ function text(value: string, charset: MimeHeaders.CharsetEncoder | undefined): s
   // oxlint-disable-next-line no-control-regex
   const control = /[\x00-\x08\x0b-\x1f\x7f]/.test(line)
   if (!control && MimeHeaders.encodeWords(line) === line) return line
-  return MimeHeaders.encodeWord(line, { charset, wordEncoding: wordEncoding(line), maxLength: 52 })
+  return MimeHeaders.encodeWord(line, { charset, wordEncoding: wordEncoding(line), wordLength: 52 })
 }
 
 // oxlint-disable-next-line no-control-regex
@@ -378,7 +381,7 @@ function contentType(value: string, drop?: string): MimeHeaders.Value {
 /** The `name` parameter, for clients that ignore `filename`, as an encoded word if needed. */
 function nameParam(filename: string, charset: MimeHeaders.CharsetEncoder | undefined): string {
   if (/[^\x20-\x7e]|"|=\?/.test(filename))
-    return `"${MimeHeaders.encodeWord(filename, { charset, wordEncoding: wordEncoding(filename), maxLength: 52 })}"`
+    return `"${MimeHeaders.encodeWord(filename, { charset, wordEncoding: wordEncoding(filename), wordLength: 52 })}"`
   return /[\s'\\;:/=(),<>@[\]?]|^-/.test(filename)
     ? `"${filename.replace(/["\\]/g, '\\$&')}"`
     : filename
@@ -577,7 +580,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
     const content = current.content
     if (content === undefined || content === '') return
     if (typeof content === 'string' || content instanceof Uint8Array) {
-      const encoded = encodeSync(content, current.body)
+      const encoded = encodeBody(content, current.body)
       if (typeof encoded === 'string') {
         pending += encoded
         if (encoded.length > 0) last = encoded.charCodeAt(encoded.length - 1)
@@ -594,7 +597,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
       context.streams.delete(content)
       source = content
     } else source = content.stream()
-    const reader = encodeStream(source, current.body).getReader()
+    const reader = encodeBodyStream(source, current.body).getReader()
     context.reader = reader
     try {
       if (pending !== '') yield encoder.encode(pending)

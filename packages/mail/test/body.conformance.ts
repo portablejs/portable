@@ -306,17 +306,19 @@ describe('attachments', () => {
 
   test('a content type that is not type/subtype throws', () => {
     for (const contentType of ['other', 'mult\x01ipart/mixed', 'text/plain\r\nX-Evil: 1'])
-      expect(() => Mail.encode({ attachments: [{ content: 'x', contentType }] })).toThrow(
+      expect(() => Mail.encodeStream({ attachments: [{ content: 'x', contentType }] })).toThrow(
         Mail.InvalidInputError,
       )
   })
 
   test('a multipart content type throws', () => {
     expect(() =>
-      Mail.encode({ attachments: [{ content: 'x', contentType: 'multipart/mixed; boundary=a' }] }),
+      Mail.encodeStream({
+        attachments: [{ content: 'x', contentType: 'multipart/mixed; boundary=a' }],
+      }),
     ).toThrow(Mail.InvalidInputError)
     expect(() =>
-      Mail.encode({ alternatives: [{ content: 'x', contentType: 'multipart/alternative' }] }),
+      Mail.encodeStream({ alternatives: [{ content: 'x', contentType: 'multipart/alternative' }] }),
     ).toThrow(Mail.InvalidInputError)
   })
 
@@ -332,7 +334,7 @@ describe('attachments', () => {
 
   test('part headers the package writes are refused', () => {
     expect(() =>
-      Mail.encode({
+      Mail.encodeStream({
         attachments: [{ content: 'x', headers: { 'Content-Disposition': 'inline' } }],
       }),
     ).toThrow(Mail.InvalidInputError)
@@ -340,9 +342,9 @@ describe('attachments', () => {
 
   test('content of another type throws a TypeError', () => {
     expect(() =>
-      Mail.encode({ attachments: [{ content: { foo: 'bar' } as unknown as Mail.Content }] }),
+      Mail.encodeStream({ attachments: [{ content: { foo: 'bar' } as unknown as Mail.Content }] }),
     ).toThrow(TypeError)
-    expect(() => Mail.encode({ text: 42 as unknown as Mail.Content })).toThrow(TypeError)
+    expect(() => Mail.encodeStream({ text: 42 as unknown as Mail.Content })).toThrow(TypeError)
   })
 
   test('binary quoted-printable keeps every byte', async () => {

@@ -733,6 +733,11 @@ function createClient(
   }
 }
 
+export declare namespace send {
+  /** The same options as `connect`. */
+  type Options = connect.Options
+}
+
 /**
  * Connects, sends one message and closes the connection.
  *
@@ -747,7 +752,7 @@ function createClient(
  * )
  * ```
  */
-export async function send(mail: Mail, options: connect.Options): Promise<Result> {
+export async function send(mail: Mail, options: send.Options): Promise<Result> {
   let client: Client
   try {
     client = await connect(options)

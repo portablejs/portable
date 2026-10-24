@@ -78,7 +78,7 @@ describe('address headers', () => {
     '"a"@evil.com"@good.com',
     '',
   ])('the address %j throws because it is not one addr-spec', (address) => {
-    expect(() => Mail.encode({ to: { address } })).toThrow(Mail.InvalidInputError)
+    expect(() => Mail.encodeStream({ to: { address } })).toThrow(Mail.InvalidInputError)
   })
 
   test('the header lists exactly the recipients of the envelope', async () => {

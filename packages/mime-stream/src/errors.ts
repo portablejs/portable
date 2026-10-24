@@ -1,7 +1,7 @@
 import * as Errors from '@portable/errors'
 /**
  * Thrown when a header block grows past `maxHeaderBytes`. The count includes the empty line that
- * ends the block.
+ * ends the block. It extends `Errors.MaxBytesError`, so its `maxBytes` holds the same limit.
  *
  * @example
  * ```ts
@@ -14,13 +14,17 @@ import * as Errors from '@portable/errors'
  * }
  * ```
  */
-export class MaxHeaderBytesError extends Errors.BaseError {
+export class MaxHeaderBytesError extends Errors.MaxBytesError {
   static override readonly kind: string = 'MimeStream.MaxHeaderBytesError'
-  /** The limit that was exceeded. */
+  /** The limit that was exceeded, the same as `maxBytes`. */
   readonly maxHeaderBytes: number
   constructor(options: ErrorOptions & { maxHeaderBytes: number }) {
     const { maxHeaderBytes, ...rest } = options
-    super(`Header block exceeded maxHeaderBytes of ${maxHeaderBytes}.`, rest)
+    super({
+      maxBytes: maxHeaderBytes,
+      message: `Header block exceeded maxHeaderBytes of ${maxHeaderBytes}.`,
+      ...rest,
+    })
     this.maxHeaderBytes = maxHeaderBytes
   }
 }
@@ -37,13 +41,17 @@ export class MaxHeaderBytesError extends Errors.BaseError {
  * // A read rejects with MimeStream.MaxBoundaryLineBytesError on '--boundary' plus 200 spaces.
  * ```
  */
-export class MaxBoundaryLineBytesError extends Errors.BaseError {
+export class MaxBoundaryLineBytesError extends Errors.MaxBytesError {
   static override readonly kind: string = 'MimeStream.MaxBoundaryLineBytesError'
-  /** The limit that was exceeded. */
+  /** The limit that was exceeded, the same as `maxBytes`. */
   readonly maxBoundaryLineBytes: number
   constructor(options: ErrorOptions & { maxBoundaryLineBytes: number }) {
     const { maxBoundaryLineBytes, ...rest } = options
-    super(`Boundary line exceeded maxBoundaryLineBytes of ${maxBoundaryLineBytes}.`, rest)
+    super({
+      maxBytes: maxBoundaryLineBytes,
+      message: `Boundary line exceeded maxBoundaryLineBytes of ${maxBoundaryLineBytes}.`,
+      ...rest,
+    })
     this.maxBoundaryLineBytes = maxBoundaryLineBytes
   }
 }

@@ -184,7 +184,12 @@ export const checks: Record<string, () => Promise<void> | void> = {
   },
   async mail() {
     const raw = await Streams.toText(
-      Mail.encode({ from: 'a@example.com', to: 'b@example.com', subject: 'tere', text: 'Hello.' }),
+      Mail.encodeStream({
+        from: 'a@example.com',
+        to: 'b@example.com',
+        subject: 'tere',
+        text: 'Hello.',
+      }),
     )
     if (!raw.includes('Subject: tere')) throw new Error(raw)
   },

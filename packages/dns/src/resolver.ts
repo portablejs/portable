@@ -65,23 +65,44 @@ export type NaptrRecord = {
  */
 export type Resolver = {
   /** IPv4 addresses (A records). */
-  resolve4(name: string, options?: create.CallOptions): Promise<string[]>
+  resolve4(name: string, options?: Resolver.CallOptions): Promise<string[]>
   /** IPv6 addresses (AAAA records), formatted as RFC 5952 recommends. */
-  resolve6(name: string, options?: create.CallOptions): Promise<string[]>
+  resolve6(name: string, options?: Resolver.CallOptions): Promise<string[]>
   /** The CNAME targets of `name` itself. */
-  resolveCname(name: string, options?: create.CallOptions): Promise<string[]>
-  resolveMx(name: string, options?: create.CallOptions): Promise<MxRecord[]>
-  resolveNs(name: string, options?: create.CallOptions): Promise<string[]>
-  resolvePtr(name: string, options?: create.CallOptions): Promise<string[]>
+  resolveCname(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolveMx(name: string, options?: Resolver.CallOptions): Promise<MxRecord[]>
+  resolveNs(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolvePtr(name: string, options?: Resolver.CallOptions): Promise<string[]>
   /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
-  resolveTxt(name: string, options?: create.CallOptions): Promise<string[][]>
-  resolveSrv(name: string, options?: create.CallOptions): Promise<SrvRecord[]>
+  resolveTxt(name: string, options?: Resolver.CallOptions): Promise<string[][]>
+  resolveSrv(name: string, options?: Resolver.CallOptions): Promise<SrvRecord[]>
   /** The first SOA record. */
-  resolveSoa(name: string, options?: create.CallOptions): Promise<SoaRecord>
-  resolveCaa(name: string, options?: create.CallOptions): Promise<CaaRecord[]>
-  resolveNaptr(name: string, options?: create.CallOptions): Promise<NaptrRecord[]>
+  resolveSoa(name: string, options?: Resolver.CallOptions): Promise<SoaRecord>
+  resolveCaa(name: string, options?: Resolver.CallOptions): Promise<CaaRecord[]>
+  resolveNaptr(name: string, options?: Resolver.CallOptions): Promise<NaptrRecord[]>
   /** Host names for an IPv4 or IPv6 address, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. */
-  reverse(ip: string, options?: create.CallOptions): Promise<string[]>
+  reverse(ip: string, options?: Resolver.CallOptions): Promise<string[]>
+}
+
+export declare namespace Resolver {
+  type CallOptions = {
+    /** Cancels the lookup, which then rejects with `signal.reason`, as `fetch` does. */
+    signal?: AbortSignal | undefined
+  }
+}
+
+/** The resolver that `create` returns: every `Resolver` lookup, and `query` for any record type. */
+export type DohResolver = Resolver & {
+  /**
+   * Sends one question of any type and returns the whole decoded response, with TTLs, the
+   * authority section and the AD flag. It resolves for NOERROR and NXDOMAIN, so `answers` can be
+   * empty, and rejects with `QueryError` like the other methods for everything else.
+   */
+  query(
+    name: string,
+    type: DnsPacket.RecordType,
+    options?: Resolver.CallOptions,
+  ): Promise<DnsPacket.DecodedPacket>
 }
 
 export declare namespace create {
@@ -99,24 +120,6 @@ export declare namespace create {
     fetch?: ((request: Request) => Promise<Response>) | undefined
     /** Milliseconds to wait for each endpoint, including reading the response body. @default 5000 */
     timeout?: number | undefined
-  }
-
-  type CallOptions = {
-    /** Cancels the lookup, which then rejects with `signal.reason`, as `fetch` does. */
-    signal?: AbortSignal | undefined
-  }
-
-  type ReturnType = Resolver & {
-    /**
-     * Sends one question of any type and returns the whole decoded response, with TTLs, the
-     * authority section and the AD flag. It resolves for NOERROR and NXDOMAIN, so `answers` can be
-     * empty, and rejects with `QueryError` like the other methods for everything else.
-     */
-    query(
-      name: string,
-      type: DnsPacket.RecordType,
-      options?: CallOptions,
-    ): Promise<DnsPacket.DecodedPacket>
   }
 }
 
@@ -203,7 +206,7 @@ function recordsFor<value extends string>(
  * const spf = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=spf1'))
  * ```
  */
-export function create(options: create.Options = {}): create.ReturnType {
+export function create(options: create.Options = {}): DohResolver {
   const endpoints = (options.endpoints ?? defaultEndpoints).map((endpoint) => {
     const url = new URL(endpoint)
     url.hash = ''
@@ -339,7 +342,7 @@ export function create(options: create.Options = {}): create.ReturnType {
   async function resolve<value extends DnsPacket.RecordType>(
     name: string,
     type: value,
-    options: create.CallOptions = {},
+    options: Resolver.CallOptions = {},
   ): Promise<DataOf<value>[]> {
     const syscall = syscallFor(type)
     return lookup(name, toQueryName(name, syscall), type, syscall, options.signal)

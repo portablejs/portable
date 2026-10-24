@@ -51,7 +51,7 @@ export declare namespace encodeWord {
      * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
      * longer when the limit is too small for it. `false` writes one word. @default 75
      */
-    maxLength?: number | false | undefined
+    wordLength?: number | false | undefined
   }
 }
 
@@ -68,19 +68,19 @@ export declare namespace encodeWord {
  * ```
  */
 export function encodeWord(input: string | Uint8Array, options: encodeWord.Options = {}): string {
-  const { charset, wordEncoding: encoding = 'Q', maxLength = 75 } = options
+  const { charset, wordEncoding: encoding = 'Q', wordLength = 75 } = options
   if (encoding !== 'Q' && encoding !== 'B')
     throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`)
-  if (maxLength !== false) checkLength('maxLength', maxLength)
+  if (wordLength !== false) checkLength('wordLength', wordLength)
   const prefix = charset
     ? `=?${charset.name}?${encoding}?`
     : encoding === 'Q'
       ? '=?UTF-8?Q?'
       : '=?UTF-8?B?'
   const budget =
-    maxLength === false
+    wordLength === false
       ? Infinity
-      : Math.max(maxLength - prefix.length - 2, encoding === 'Q' ? 12 : 4)
+      : Math.max(wordLength - prefix.length - 2, encoding === 'Q' ? 12 : 4)
   const text = typeof input === 'string' ? input : toText(input)
   const bytes = charset ? undefined : encodeUtf8Scratch(text)
   if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget)

@@ -98,7 +98,9 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 
 | Type | Description |
 | --- | --- |
-| `Dns.Resolver` | The type of the object `create` returns, with one method per lookup. `node:dns/promises` also fits it. |
+| `Dns.Resolver` | One method per lookup, with Node's names and result shapes. The resolver from `create` and `node:dns/promises` both fit it. |
+| `Dns.Resolver.CallOptions` | The options each lookup takes: `signal`. |
+| `Dns.DohResolver` | The type of the object `create` returns: a `Resolver` with `query`. |
 | `Dns.MxRecord` | `{ exchange, priority }`, from `resolveMx`. |
 | `Dns.SrvRecord` | `{ name, port, priority, weight }`, from `resolveSrv`. |
 | `Dns.SoaRecord` | The object `resolveSoa` returns. |

@@ -4,7 +4,7 @@ import * as Streams from '@portable/streams'
 import { expect, test } from 'vite-plus/test'
 import { fakeServer, plain } from './utils.js'
 
-// Follows the mail README: builds a message with Mail.encode, signs it with Dkim.sign and sends
+// Follows the mail README: builds a message with Mail.encodeStream, signs it with Dkim.sign and sends
 // it with Smtp, then checks that Dkim.verify accepts the signature on the received message.
 
 test('a message encoded, signed and sent arrives with a valid DKIM signature', async () => {
@@ -19,7 +19,7 @@ test('a message encoded, signed and sent arrives with a valid DKIM signature', a
   } satisfies Dkim.Resolver
 
   const message = await Streams.toBytes(
-    Mail.encode({
+    Mail.encodeStream({
       from: 'Mari <mari@example.com>',
       to: 'jaan@example.org',
       subject: 'Tere õhtust',

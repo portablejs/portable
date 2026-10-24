@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import { describe, expect, test } from 'vite-plus/test'
 import * as MimeStream from '@portable/mime-stream'
 import { fromIterable, toArray, toBytes } from '@portable/streams'
@@ -282,6 +283,8 @@ describe('splitHeaders', () => {
       (e: unknown) => e,
     )
     expect(error).toBeInstanceOf(MimeStream.MaxHeaderBytesError)
+    expect(Errors.is(error, 'MaxBytes')).toBe(true)
+    expect(error).toMatchObject({ maxBytes: 1000, maxHeaderBytes: 1000 })
     expect(cancelled).toBe(true)
     const exact = 'Subject: a\r\n\r\n'
     const { headers } = await MimeStream.splitHeaders(fromIterable([binary(exact)]), {

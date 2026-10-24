@@ -13,7 +13,7 @@ export declare namespace splitHeaders {
   }
   type ReturnType = {
     /** The header block as received, with the empty line that ends it. */
-    headers: Uint8Array
+    headers: Uint8Array<ArrayBuffer>
     /** Every byte after the header block, unchanged. */
     body: ReadableStream<Uint8Array>
   }

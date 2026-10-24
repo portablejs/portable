@@ -125,7 +125,7 @@ export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {
 
 /**
  * Returns the SMTP envelope for a message, the addresses a transport passes to `MAIL FROM` and
- * `RCPT TO`. `Bcc` recipients are included, although `encode` leaves the `Bcc` header out.
+ * `RCPT TO`. `Bcc` recipients are included, although `encodeStream` leaves the `Bcc` header out.
  * Addresses are normalized as in the message headers, and each recipient is listed once.
  *
  * @example

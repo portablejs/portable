@@ -141,7 +141,7 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['parseHeaders()', parseHeaders],
     ['unfold()', unfold],
     ['encodeWords()', (input) => encodeWords(input)],
-    ['encodeWord()', (input) => encodeWord(input, { maxLength: 52 })],
+    ['encodeWord()', (input) => encodeWord(input, { wordLength: 52 })],
     ['encodeWord() in B', (input) => encodeWord(input, { wordEncoding: 'B' })],
     ['formatValue()', (input) => formatValue({ value: 'x', params: { f: input } })],
     ['fold()', (input) => fold(input)],

@@ -14,7 +14,7 @@ export type BitDepth = 1 | 2 | 4 | 8 | 16
 export type Decoded = {
   width: number
   height: number
-  data: Uint8Array
+  data: Uint8Array<ArrayBuffer>
   /** Bit depth of the file. `data` is always 8-bit. */
   depth: BitDepth
   /** Color type of the file. `data` is always RGBA. */

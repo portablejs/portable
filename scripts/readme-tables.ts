@@ -453,7 +453,7 @@ export const tables: Record<string, Table> = {
   },
   mail: {
     columns: [
-      ours('mail', ['encode', 'envelope']),
+      ours('mail', ['encodeStream', 'envelope']),
       {
         name: 'nodemailer 10.1.2',
         header: 'nodemailer',

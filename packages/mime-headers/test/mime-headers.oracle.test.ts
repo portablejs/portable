@@ -45,7 +45,7 @@ describe('encoded words', () => {
       const input = randomText(next, 80)
       const encoding = pick(next, ['Q', 'B'] as const)
       const maxLength = pick(next, [0, 20, 52, 75])
-      const ours = encodeWord(input, { wordEncoding: encoding, maxLength: maxLength || false })
+      const ours = encodeWord(input, { wordEncoding: encoding, wordLength: maxLength || false })
       const theirs = libmime.encodeWord(input, encoding, maxLength)
       const skip = encoding === 'B' && maxLength > 0 && splitsAstral(input)
       if (libmime.decodeWords(ours) !== input || (!skip && decodeWords(theirs) !== input))
@@ -60,7 +60,7 @@ describe('encoded words', () => {
       // libmime writes a trailing space in a Q word as "=20", and this package as "_".
       const input = randomText(next, 80).trimEnd()
       const encoding = pick(next, ['Q', 'B'] as const)
-      const ours = encodeWord(input, { wordEncoding: encoding, maxLength: false })
+      const ours = encodeWord(input, { wordEncoding: encoding, wordLength: false })
       if (ours !== libmime.encodeWord(input, encoding)) failures.push({ input, encoding, ours })
     })
     expect(failures).toEqual([])

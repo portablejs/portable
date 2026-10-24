@@ -23,7 +23,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { maxLen
 | #hasLongerLines > should detect longer lines | skipped | Not exported. |
 | #encodeWord > should encode quoted-printable | `encodeWord() > encodes quoted-printable` | |
 | #encodeWord > should encode base64 | `encodeWord() > encodes base64` | |
-| #encodeWord > should split quoted-printable on maxLength | `encodeWord() > splits quoted-printable at maxLength` | |
+| #encodeWord > should split quoted-printable on maxLength | `encodeWord() > splits quoted-printable at wordLength` | |
 | #encodeWord > should keep emoji surrogate pairs together when splitting base64 | `encodeWord() > keeps surrogate pairs together when splitting base64` | |
 | #encodeWords > should treat U+0080 as a char that needs encoding | `encodeWords() > treats U+0080 as a character that needs encoding` | |
 | #encodeWords > should encode Ascii range | `encodeWords() > encodes the ASCII range between non-ASCII words` | |
@@ -43,8 +43,8 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { maxLen
 | #decodeWords > should decode ascii range | `decodeWords() > decodes the ASCII range` | |
 | #decodeWords > should join before parsing | `decodeWords() > joins a character split across two base64 words` | |
 | #decodeWords > should join base64 encoding which end with = and decode correctly | `decodeWords() > joins base64 words that end with padding` | |
-| #decodeWords > should split QP on maxLength | `encodeWords() > splits QP at maxLength` | |
-| #decodeWords > should split base64 on maxLength | `encodeWords() > splits base64 at maxLength` | |
+| #decodeWords > should split QP on maxLength | `encodeWords() > splits QP at wordLength` | |
+| #decodeWords > should split base64 on maxLength | `encodeWords() > splits base64 at wordLength` | |
 | #decodeWords > should ignore language param | `decodeWords() > ignores an RFC 2231 language in the charset` | |
 | #decodeWords > should handle invalidly split mime words | `decodeWords() > decodes words split in the wrong places and folded inside a word` | |
 | #decodeWords > should decode using jconv module | `decodeWords() > decodes ISO-2022-JP` | Decoded by `TextDecoder`. |
@@ -135,7 +135,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { maxLen
 | mimetypes > #detectMimeType > should fall back to application/octet-stream for unknown extensions | skipped | As above. |
 | mimetypes > #detectMimeType > should not resolve inherited Object.prototype members | skipped | As above. |
 | #splitMimeEncodedString > should only walk back over UTF-8 continuation bytes | `encodeWord() > keeps astral characters outside the emoji block whole` | Not exported. `encodeWord` splits the bytes before it encodes them, so a split always falls between characters. |
-| #splitMimeEncodedString > should split plain text at maxlen | `encodeWord() > splits quoted-printable at maxLength` | |
+| #splitMimeEncodedString > should split plain text at maxlen | `encodeWord() > splits quoted-printable at wordLength` | |
 | #splitMimeEncodedString > should not split an escaped octet | `properties.conformance.ts > decodeWords gives back what encodeWord encoded, as well-formed words` | Every word decodes on its own without U+FFFD. |
 | #splitMimeEncodedString > should not split a multi byte UTF-8 sequence | as above | |
 | #splitMimeEncodedString > should use at least 12 characters per part | as above | A word holds at least one character, so a limit below one character's escape is exceeded instead of looping. |

@@ -27,12 +27,12 @@ describe('message headers', () => {
   })
 
   test('an invalid Date throws', () => {
-    expect(() => Mail.encode({ date: new Date('nope') })).toThrow(Mail.InvalidInputError)
+    expect(() => Mail.encodeStream({ date: new Date('nope') })).toThrow(Mail.InvalidInputError)
   })
 
   test('Date, Message-ID and MIME-Version are generated', async () => {
     const before = Date.now() - 1000
-    const raw = await Streams.toText(Mail.encode({ text: 'x' }))
+    const raw = await Streams.toText(Mail.encodeStream({ text: 'x' }))
     expect(Date.parse(field(raw, 'Date')!)).toBeGreaterThanOrEqual(Math.floor(before / 1000) * 1000)
     expect(field(raw, 'Message-ID')).toMatch(
       /^<[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}@localhost>$/,
@@ -41,7 +41,7 @@ describe('message headers', () => {
   })
 
   test('a generated Message-ID uses the From domain', async () => {
-    const raw = await Streams.toText(Mail.encode({ from: 'test@example.com', text: 'x' }))
+    const raw = await Streams.toText(Mail.encodeStream({ from: 'test@example.com', text: 'x' }))
     expect(field(raw, 'Message-ID')).toMatch(/^<[0-9a-f-]+@example\.com>$/)
   })
 
@@ -240,14 +240,14 @@ describe('message headers', () => {
   test.each(['From: ceo@example.com (', 'x-my key', 'x-cu\x01stom', 'Ä', ''])(
     'the header name %j throws because it is outside printable ASCII or holds a colon',
     (name) => {
-      expect(() => Mail.encode({ headers: { [name]: 'x' } })).toThrow(Mail.InvalidInputError)
+      expect(() => Mail.encodeStream({ headers: { [name]: 'x' } })).toThrow(Mail.InvalidInputError)
     },
   )
 
   test.each(['From', 'bcc', 'Subject', 'Message-ID', 'Content-Type', 'MIME-Version'])(
     'the header %s is refused in headers because encode writes it',
     (name) => {
-      expect(() => Mail.encode({ headers: { [name]: 'x' } })).toThrow(Mail.InvalidInputError)
+      expect(() => Mail.encodeStream({ headers: { [name]: 'x' } })).toThrow(Mail.InvalidInputError)
     },
   )
 

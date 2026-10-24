@@ -115,7 +115,7 @@ const results: Record<Qualifier, Result.Code> = {
 type Lookup<value> = (
   resolver: Resolver,
   name: string,
-  options: Dns.create.CallOptions,
+  options: Dns.Resolver.CallOptions,
 ) => Promise<value>
 
 const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
