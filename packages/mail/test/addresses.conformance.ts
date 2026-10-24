@@ -5,6 +5,8 @@ import { compose, head } from './utils.js'
 const field = (raw: string, name: string) =>
   new RegExp(`^${name}: (.*(?:\\r\\n[ \\t].*)*)$`, 'm').exec(head(raw))?.[1]?.replace(/\r\n /g, ' ')
 
+const from = 'sender@example.com'
+
 const to = async (value: Mail.Addresses) => field(await compose({ to: value }), 'To')
 
 describe('address headers', () => {
@@ -54,20 +56,26 @@ describe('address headers', () => {
     expect(await to([{ address: '"a,b"@good.com' }, { address: '"c;d"@good.com' }])).toBe(
       '"a,b"@good.com, "c;d"@good.com',
     )
-    expect(Mail.envelope({ to: '"a@evil.com"@good.com' }).to).toEqual(['"a@evil.com"@good.com'])
+    expect(Mail.envelope({ from, to: '"a@evil.com"@good.com' }).to).toEqual([
+      '"a@evil.com"@good.com',
+    ])
   })
 
   test('an unquoted special or second @ in the local part throws', () => {
     for (const address of ['a,b@good.com', 'c;d@good.com', 'a@evil.com@good.com'])
-      expect(() => Mail.envelope({ to: { address } })).toThrow(Mail.InvalidInputError)
+      expect(() => Mail.envelope({ from, to: { address } })).toThrow(Mail.InvalidInputError)
   })
 
   test('a domain literal is split off at the @ in front of it', () => {
-    expect(Mail.envelope({ to: { address: 'a@[x@evil.com]' } }).to).toEqual(['a@[x@evil.com]'])
-    expect(Mail.envelope({ to: { address: 'a@[IPv6:2001:db8::1]' } }).to).toEqual([
+    expect(Mail.envelope({ from, to: { address: 'a@[x@evil.com]' } }).to).toEqual([
+      'a@[x@evil.com]',
+    ])
+    expect(Mail.envelope({ from, to: { address: 'a@[IPv6:2001:db8::1]' } }).to).toEqual([
       'a@[ipv6:2001:db8::1]',
     ])
-    expect(Mail.envelope({ to: { address: 'user@[127.0.0.1]' } }).to).toEqual(['user@[127.0.0.1]'])
+    expect(Mail.envelope({ from, to: { address: 'user@[127.0.0.1]' } }).to).toEqual([
+      'user@[127.0.0.1]',
+    ])
   })
 
   test.each([
@@ -87,7 +95,9 @@ describe('address headers', () => {
       'x@example.com, grp: y@example.com, "z, w" <z@example.com>;',
     ] satisfies Mail.Addresses[]
     for (const input of inputs)
-      expect(Mail.envelope({ to: (await to(input))! }).to).toEqual(Mail.envelope({ to: input }).to)
+      expect(Mail.envelope({ from, to: (await to(input))! }).to).toEqual(
+        Mail.envelope({ from, to: input }).to,
+      )
   })
 })
 
@@ -98,8 +108,8 @@ describe('international domains', () => {
   })
 
   test('the domain is mapped with UTS #46 as browsers do', () => {
-    expect(Mail.envelope({ to: 'victim@compa­ny.com' }).to).toEqual(['victim@company.com'])
-    expect(Mail.envelope({ to: 'user@ｅｘａｍｐｌｅ.com' }).to).toEqual(['user@example.com'])
+    expect(Mail.envelope({ from, to: 'victim@compa­ny.com' }).to).toEqual(['victim@company.com'])
+    expect(Mail.envelope({ from, to: 'user@ｅｘａｍｐｌｅ.com' }).to).toEqual(['user@example.com'])
   })
 
   test('a domain is kept as UTF-8 when the local part is not ASCII', async () => {
@@ -115,17 +125,19 @@ describe('international domains', () => {
     'attacker.example#mail.corp.example',
     'attacker.example%2email.corp.example',
   ])('the URL delimiter in %j does not truncate the domain', (domain) => {
-    expect(Mail.envelope({ to: { address: 'user@' + domain } }).to).toEqual(['user@' + domain])
+    expect(Mail.envelope({ from, to: { address: 'user@' + domain } }).to).toEqual([
+      'user@' + domain,
+    ])
   })
 
   test('a backslash in the domain throws', () => {
     expect(() =>
-      Mail.envelope({ to: { address: 'user@attacker.example\\mail.corp.example' } }),
+      Mail.envelope({ from, to: { address: 'user@attacker.example\\mail.corp.example' } }),
     ).toThrow(Mail.InvalidInputError)
   })
 
   test('a domain the URL parser rejects is kept as written', () => {
-    expect(Mail.envelope({ to: 'user@ex_ample.com' }).to).toEqual(['user@ex_ample.com'])
+    expect(Mail.envelope({ from, to: 'user@ex_ample.com' }).to).toEqual(['user@ex_ample.com'])
   })
 })
 
@@ -135,12 +147,19 @@ describe('envelope', () => {
       Mail.envelope({ from: 'A <a@example.com>, b@example.com', sender: 's@example.com' }).from,
     ).toBe('a@example.com')
     expect(Mail.envelope({ sender: 'S <s@example.com>' }).from).toBe('s@example.com')
-    expect(Mail.envelope({}).from).toBeUndefined()
+  })
+
+  test('throws InvalidInputError for a message without a From or Sender address', () => {
+    expect(() => Mail.envelope({ to: 'a@example.com' })).toThrow(Mail.InvalidInputError)
+    expect(() => Mail.envelope({ from: 'grp:;', to: 'a@example.com' })).toThrow(
+      Mail.InvalidInputError,
+    )
   })
 
   test('to lists To, Cc and Bcc once each, in order', () => {
     expect(
       Mail.envelope({
+        from,
         to: 'a@example.com, b@example.com',
         cc: 'b@example.com, c@example.com',
         bcc: 'a@example.com, d@example.com',
@@ -150,7 +169,10 @@ describe('envelope', () => {
 
   test('a group is replaced by its members and deduped against the addresses around it', () => {
     expect(
-      Mail.envelope({ to: 'x@example.com, grp: x@example.com, y@example.com;, y@example.com' }).to,
+      Mail.envelope({
+        from,
+        to: 'x@example.com, grp: x@example.com, y@example.com;, y@example.com',
+      }).to,
     ).toEqual(['x@example.com', 'y@example.com'])
   })
 
@@ -159,14 +181,14 @@ describe('envelope', () => {
     expect(field(await compose(message), 'To')).toBe(
       'A <a@example.com>, a@example.com, b@example.com',
     )
-    expect(Mail.envelope(message).to).toEqual(['a@example.com', 'b@example.com'])
+    expect(Mail.envelope({ from, ...message }).to).toEqual(['a@example.com', 'b@example.com'])
   })
 
   test('the domain before a comment is used, not the text after it', () => {
-    expect(Mail.envelope({ to: 'user@good-corp.com(x)evil.com' }).to).toEqual([
+    expect(Mail.envelope({ from, to: 'user@good-corp.com(x)evil.com' }).to).toEqual([
       'user@good-corp.com',
     ])
-    expect(Mail.envelope({ to: 'user@(x)good-corp.com' }).to).toEqual(['user@good-corp.com'])
+    expect(Mail.envelope({ from, to: 'user@(x)good-corp.com' }).to).toEqual(['user@good-corp.com'])
   })
 
   test.each([
@@ -187,13 +209,13 @@ describe('envelope', () => {
     ['user@good.com (x) evil@evil.com', ['user@good.com']],
     ['<"a@evil.com>"@good.com>', ['"a@evil.com>"@good.com']],
   ])('the recipients of %j are %j', (to, expected) => {
-    expect(Mail.envelope({ to }).to).toEqual(expected)
+    expect(Mail.envelope({ from, to }).to).toEqual(expected)
   })
 
   test.each(['(a@evil.com)', '<(a@evil.com)>', 'G: (a@evil.com);'])(
     'a comment that stands alone in %j is not taken as a recipient',
     (to) => {
-      expect(() => Mail.envelope({ to })).toThrow(Mail.InvalidInputError)
+      expect(() => Mail.envelope({ from, to })).toThrow(Mail.InvalidInputError)
     },
   )
 
@@ -201,16 +223,16 @@ describe('envelope', () => {
     const mailbox = JSON.parse(
       '{"address":"to@example.com","__proto__":{"group":[{"address":"exfil@attacker.test"}]}}',
     ) as Mail.Mailbox
-    expect(Mail.envelope({ to: mailbox }).to).toEqual(['to@example.com'])
+    expect(Mail.envelope({ from, to: mailbox }).to).toEqual(['to@example.com'])
   })
 
   test('a bare name is not an address', () => {
-    expect(() => Mail.envelope({ to: 'John Doe' })).toThrow(Mail.InvalidInputError)
-    expect(() => Mail.envelope({ to: 'root' })).toThrow(Mail.InvalidInputError)
+    expect(() => Mail.envelope({ from, to: 'John Doe' })).toThrow(Mail.InvalidInputError)
+    expect(() => Mail.envelope({ from, to: 'root' })).toThrow(Mail.InvalidInputError)
   })
 
   test('100,000 recipients finish within the test timeout, which a quadratic parser would not', () => {
     const list = Array.from({ length: 100_000 }, (_, i) => `user${i}@example.com`)
-    expect(Mail.envelope({ to: list.join(', ') }).to).toHaveLength(100_000)
+    expect(Mail.envelope({ from, to: list.join(', ') }).to).toHaveLength(100_000)
   })
 })

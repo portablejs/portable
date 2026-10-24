@@ -27,17 +27,10 @@ export type Mailbox = {
  */
 export type Addresses = string | Mailbox | readonly (string | Mailbox)[]
 
-/**
- * The SMTP envelope of a message: the `MAIL FROM` address and every `RCPT TO` address.
- *
- * @example
- * ```ts
- * const { from, to }: Mail.Envelope = Mail.envelope(message)
- * ```
- */
+/** The SMTP envelope of a message: the `MAIL FROM` address and every `RCPT TO` address. */
 export type Envelope = {
   /** The first `From` address, or the first `Sender` address when there is no `From`. */
-  from: string | undefined
+  from: string
   /**
    * Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups.
    */
@@ -126,7 +119,8 @@ export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {
 /**
  * Returns the SMTP envelope for a message, the addresses a transport passes to `MAIL FROM` and
  * `RCPT TO`. `Bcc` recipients are included, although `encodeStream` leaves the `Bcc` header out.
- * Addresses are normalized as in the message headers, and each recipient is listed once.
+ * Addresses are normalized as in the message headers, and each recipient is listed once. The
+ * result can be spread into `Smtp.send`.
  *
  * @example
  * ```ts
@@ -140,7 +134,8 @@ export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {
  * // { from: 'mari@example.com', to: ['a@example.com', 'b@example.com', 'c@example.com'] }
  * ```
  *
- * @throws {InvalidInputError} When an address isn't one addr-spec.
+ * @throws {InvalidInputError} When an address isn't one addr-spec, or the message has neither a
+ * `From` nor a `Sender` address.
  */
 export function envelope(message: {
   readonly from?: Addresses | undefined
@@ -150,8 +145,10 @@ export function envelope(message: {
   readonly bcc?: Addresses | undefined
 }): Envelope {
   const from = mailboxes(message.from)[0] ?? mailboxes(message.sender)[0]
+  if (from === undefined)
+    throw new InvalidInputError('The message has no From or Sender address for MAIL FROM.')
   const to = new Set<string>()
   for (const input of [message.to, message.cc, message.bcc])
     for (const mailbox of mailboxes(input)) to.add(mailbox.address)
-  return { from: from?.address, to: [...to] }
+  return { from: from.address, to: [...to] }
 }

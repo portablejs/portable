@@ -36,7 +36,7 @@ The report is read from the network while the caller reads the message, so a lar
 | Export | Description |
 | --- | --- |
 | `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. Throws `InvalidInputError` or `TypeError` before anything is read if the message can't be written. |
-| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. |
+| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
 | `InvalidInputError` | Thrown for an address, header name, content type or file name that can't be written. |
 | `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope` | Types. |
 
@@ -101,9 +101,8 @@ const field = await Dkim.sign(raw, {
   privateKey: env.DKIM_PRIVATE_KEY,
   signal,
 })
-const { to } = Mail.envelope(message)
 await Smtp.send(
-  { from: 'mari@example.com', to, message: Bytes.concat([new TextEncoder().encode(field), raw]) },
+  { ...Mail.envelope(message), message: Bytes.concat([new TextEncoder().encode(field), raw]) },
   { connect, host: 'smtp.example.com', auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD }, signal },
 )
 ```
@@ -149,7 +148,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | --- | --- |
 | `new MailComposer(mail).compile().build()` | `await new Response(Mail.encodeStream(message)).bytes()` |
 | `compile().createReadStream()` | `Mail.encodeStream(message)` |
-| `compile().getEnvelope()` | `Mail.envelope(message)` |
+| `compile().getEnvelope()` | `Mail.envelope(message)`, which throws for a message without a sender where nodemailer returns `from: false`. |
 | `from`, `to`, `cc`, `bcc`, `replyTo`, `sender`, `inReplyTo`, `references`, `subject`, `messageId`, `date`, `text`, `html`, `amp`, `alternatives`, `attachments`, `headers` | The same names. |
 | attachment `content: Buffer \| string \| Readable` | `content: Uint8Array \| string \| Blob \| ReadableStream`. In Node, `Readable.toWeb(stream)`. |
 | attachment or alternative `path`, `href` | `content: (await fetch(url)).body` or `content: await fs.openAsBlob(path)` with `filename`. |
