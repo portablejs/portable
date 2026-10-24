@@ -67,16 +67,10 @@ function image({ title, description }) {
         fontFamily: 'Geist',
       },
     },
-    h('img', {
-      src: logo,
-      width: 260,
-      height: 260,
-      style: { position: 'absolute', right: 80, top: 185, width: 260, height: 260, opacity: 0.1 },
-    }),
     h('div', { style: { display: 'flex' } }),
     h(
       'div',
-      { style: { display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 720 } },
+      { style: { display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1000 } },
       // A package page's title is its npm name. The scope goes on a smaller line above the name, so
       // the longest name, quoted-printable, still fits on one line.
       scoped &&
