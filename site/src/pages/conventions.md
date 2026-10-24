@@ -50,6 +50,8 @@ Functions throw errors. No function returns an error as a value.
 
 Each error's `name` starts with the package's namespace, such as `Lines.MaxLengthError`.
 
+Every error class extends a class from [`errors`](/packages/errors). `Errors.is(error, 'MaxBytes')` matches any package's `MaxBytesError`, even when an app has two copies of the package.
+
 ## Results
 
 Functions return plain objects and arrays with documented types, not class instances.

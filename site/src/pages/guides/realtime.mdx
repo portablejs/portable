@@ -2,7 +2,7 @@
 
 A long-lived connection can drop and has to reconnect. A slow reader also must not force the sender to buffer without limit. These packages give you each connection as a `ReadableStream` and a `WritableStream`. Backpressure and cancellation then work as they do for a `fetch` body.
 
-- [`websocket`](/packages/websocket) is a WebSocket that reconnects, read and written as streams.
+- [`websockets`](/packages/websockets) is a WebSocket that reconnects, read and written as streams.
 - [`sse`](/packages/sse) reads and writes server-sent event streams.
 - [`rpc`](/packages/rpc) makes typed JSON-RPC calls between workers, windows, servers, and browsers.
 - [`web-push`](/packages/web-push) sends notifications to a browser that isn't open.

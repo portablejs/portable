@@ -35,7 +35,7 @@ const message: Mail.Message = {
   ],
 }
 
-const [forSigning, forSending] = Mail.encode(message).tee()
+const [forSigning, forSending] = Mail.encodeStream(message).tee()
 const field = await Dkim.sign(forSigning, {
   domain: 'example.com',
   selector: 'mail',
@@ -45,10 +45,10 @@ const field = await Dkim.sign(forSigning, {
 await Smtp.send(
   {
     ...Mail.envelope(message),
-    message: Streams.concat(
+    message: Streams.concat([
       [new TextEncoder().encode(field)],
       forSending,
-    ),
+    ]),
   },
   {
     connect,

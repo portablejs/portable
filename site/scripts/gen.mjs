@@ -22,8 +22,8 @@ for (const line of root.split('\n')) {
   }
 }
 
-// bytes and random are general helpers, not stream, encoding, or crypto packages, so the site
-// lists them under Utilities.
+// bytes, errors, and random are general helpers, not stream, encoding, or crypto packages, so
+// the site lists them under Utilities.
 const take = (name) => {
   for (const group of groups) {
     const index = group.items.findIndex((i) => i.name === name)
@@ -31,7 +31,7 @@ const take = (name) => {
   }
 }
 groups.find((g) => g.title === 'Streams and bytes').title = 'Streams'
-groups.push({ title: 'Utilities', items: [take('bytes'), take('random')] })
+groups.push({ title: 'Utilities', items: [take('bytes'), take('errors'), take('random')] })
 
 const out = 'src/pages/packages'
 rmSync(out, { recursive: true, force: true })

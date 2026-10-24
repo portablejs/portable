@@ -50,7 +50,7 @@ export function api(name) {
           .join('\n')
       } else if (cls) {
         const heritage = cls.heritageClauses?.map((h) => h.getText()).join(' ') ?? ''
-        section = /\bextends\s+\w*Error\b/.test(heritage) ? 'Errors' : 'Classes'
+        section = /\bextends\s+[\w.]*Error\b/.test(heritage) ? 'Errors' : 'Classes'
         const ctors = cls.members.filter(ts.isConstructorDeclaration)
         const ctorSigs = (ctors.filter((c) => !c.body).length ? ctors.filter((c) => !c.body) : ctors).map((c) => `  constructor(${c.parameters.map((p) => print(ts.factory.updateParameterDeclaration(p, undefined, p.dotDotDotToken, p.name, p.questionToken, p.type, p.initializer))).join(', ')})`)
         const props = cls.members.filter((m) => (ts.isPropertyDeclaration(m) || ts.isGetAccessor(m)) && !m.modifiers?.some((x) => x.kind === ts.SyntaxKind.PrivateKeyword || x.kind === ts.SyntaxKind.ProtectedKeyword) && !ts.isPrivateIdentifier(m.name))

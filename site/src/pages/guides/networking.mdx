@@ -16,11 +16,11 @@ A service that fetches URLs from its users must not connect to its own internal 
 import * as Dns from '@portable/dns'
 import * as Ip from '@portable/ip'
 
-const resolver = Dns.createResolver()
+const resolver = Dns.create()
 
 async function safeFetch(url: string, init: RequestInit = {}) {
   const { hostname } = new URL(url)
-  const addresses = Ip.validate(hostname)
+  const addresses = Ip.canParse(hostname)
     ? [hostname]
     : await resolver.resolve4(hostname, {
         signal: init.signal ?? undefined,

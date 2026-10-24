@@ -20,7 +20,6 @@ export default {
     const body = response
       .body!.pipeThrough(new Csv.DecoderStream({ header: true }))
       .pipeThrough(new Jsonl.EncoderStream())
-      .pipeThrough(new TextEncoderStream())
     return new Response(body, {
       headers: { 'content-type': 'application/jsonl' },
     })
