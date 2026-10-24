@@ -11,7 +11,7 @@ import {
   type Domain,
   type Network,
 } from './normalize.js'
-import { request, type Fetch } from './request.js'
+import { request, type Context, type Fetch } from './request.js'
 import { hostToAscii } from '@portable/idna/internal'
 
 type Shared = {
@@ -24,6 +24,8 @@ type Shared = {
   fetch?: Fetch | undefined
   /** Cancels the lookup. It rejects with `signal.reason`, as `fetch` does. */
   signal?: AbortSignal | undefined
+  /** The time to check the cached bootstrap files' age against. */
+  now?: Date | undefined
 }
 
 export declare namespace domain {
@@ -83,17 +85,18 @@ function toAscii(name: string): string {
  * ```
  */
 export async function domain(name: string, options: domain.Options = {}): Promise<Domain> {
-  const { fetch = defaultFetch, signal, follow = true } = options
+  const { fetch = defaultFetch, signal, now, follow = true } = options
+  const context = { fetch, signal, now } satisfies Context
   const ascii = toAscii(name)
-  const base = await Bootstrap.domain(ascii, fetch, signal)
+  const base = await Bootstrap.domain(ascii, context)
   if (!base) throw new UnsupportedError(`IANA lists no RDAP server for ${ascii}`)
   const url = new URL(`domain/${ascii}`, base).href
-  const { json } = await request(url, fetch, signal)
+  const { json } = await request(url, context)
   const result = toDomain(json, ascii)
   const related = follow ? relatedLink(json, url) : undefined
   if (!related) return result
   try {
-    return withReferral(result, related, (await request(related, fetch, signal)).json)
+    return withReferral(result, related, (await request(related, context)).json)
   } catch (error) {
     signal?.throwIfAborted()
     return { ...result, referral: { url: related, error } }
@@ -118,14 +121,15 @@ export async function domain(name: string, options: domain.Options = {}): Promis
  * ```
  */
 export async function ip(address: string, options: ip.Options = {}): Promise<Network> {
-  const { fetch = defaultFetch, signal } = options
+  const { fetch = defaultFetch, signal, now } = options
+  const context = { fetch, signal, now } satisfies Context
   if (typeof address !== 'string') throw new TypeError('The address must be a string')
   const prefix = Address.parse(address)
   if (!prefix) throw new InvalidInputError(`Not an IP address or prefix: ${address}`)
   const query = Address.format(prefix)
-  const base = await Bootstrap.ip(prefix, fetch, signal)
+  const base = await Bootstrap.ip(prefix, context)
   if (!base) throw new UnsupportedError(`IANA lists no RDAP server for ${query}`)
-  return toNetwork((await request(new URL(`ip/${query}`, base).href, fetch, signal)).json)
+  return toNetwork((await request(new URL(`ip/${query}`, base).href, context)).json)
 }
 
 /**
@@ -144,10 +148,11 @@ export async function ip(address: string, options: ip.Options = {}): Promise<Net
  * ```
  */
 export async function asn(number: number, options: asn.Options = {}): Promise<Autnum> {
-  const { fetch = defaultFetch, signal } = options
+  const { fetch = defaultFetch, signal, now } = options
+  const context = { fetch, signal, now } satisfies Context
   if (!Number.isInteger(number) || number < 0 || number > 0xffffffff)
     throw new InvalidInputError(`Not an AS number: ${number}`)
-  const base = await Bootstrap.asn(number, fetch, signal)
+  const base = await Bootstrap.asn(number, context)
   if (!base) throw new UnsupportedError(`IANA lists no RDAP server for AS${number}`)
-  return toAutnum((await request(new URL(`autnum/${number}`, base).href, fetch, signal)).json)
+  return toAutnum((await request(new URL(`autnum/${number}`, base).href, context)).json)
 }

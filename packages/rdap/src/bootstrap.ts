@@ -1,6 +1,6 @@
 import * as Address from './address.js'
 import { ResponseError } from './errors.js'
-import { type Fetch, type Json, request } from './request.js'
+import { type Context, type Fetch, type Json, request } from './request.js'
 
 const base = 'https://data.iana.org/rdap/'
 const ttl = 24 * 60 * 60 * 1000
@@ -57,17 +57,18 @@ function index({ json, response }: Json, url: string): Index {
   return result
 }
 
-function load(kind: Kind, fetch: Fetch, signal: AbortSignal | undefined): Promise<Index> {
+function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
+  const time = now?.getTime() ?? Date.now()
   if (signal?.aborted) return Promise.reject(signal.reason)
   let entries = caches.get(fetch)
   if (!entries) caches.set(fetch, (entries = new Map()))
   let entry = entries.get(kind)
-  if (!entry || entry.expires <= Date.now()) {
+  if (!entry || entry.expires <= time) {
     const controller = new AbortController()
     const url = `${base}${kind}.json`
     const created = {
-      expires: Date.now() + ttl,
-      index: request(url, fetch, controller.signal).then((result) => index(result, url)),
+      expires: time + ttl,
+      index: request(url, { fetch, signal: controller.signal, now }).then((result) => index(result, url)),
       waiters: 0,
       controller,
     } satisfies Entry
@@ -104,10 +105,9 @@ function wait(entry: Entry, signal: AbortSignal | undefined): Promise<Index> {
 
 export async function domain(
   name: string,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
+  context: Context,
 ): Promise<string | undefined> {
-  const { names } = await load('dns', fetch, signal)
+  const { names } = await load('dns', context)
   for (let suffix = name; ;) {
     const url = names.get(suffix)
     if (url) return url
@@ -119,10 +119,9 @@ export async function domain(
 
 export async function ip(
   prefix: Address.Prefix,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
+  context: Context,
 ): Promise<string | undefined> {
-  const { ranges } = await load(prefix.address.version === 4 ? 'ipv4' : 'ipv6', fetch, signal)
+  const { ranges } = await load(prefix.address.version === 4 ? 'ipv4' : 'ipv6', context)
   let best: (typeof ranges)[number] | undefined
   for (const range of ranges)
     if (
@@ -135,9 +134,8 @@ export async function ip(
 
 export async function asn(
   number: number,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
+  context: Context,
 ): Promise<string | undefined> {
-  const { numbers } = await load('asn', fetch, signal)
+  const { numbers } = await load('asn', context)
   return numbers.find(({ start, end }) => number >= start && number <= end)?.url
 }

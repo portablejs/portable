@@ -6,15 +6,17 @@ const accept = 'application/rdap+json, application/json'
 
 export type Json = { json: Record<string, unknown>; response: Response }
 
-export async function request(
-  url: string,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
-): Promise<Json> {
+export type Context = {
+  fetch: Fetch
+  signal: AbortSignal | undefined
+  now: Date | undefined
+}
+
+export async function request(url: string, { fetch, signal }: Context): Promise<Json> {
   const response = await fetch(new Request(url, { headers: { accept }, ...(signal && { signal }) }))
   if (response.status === 404) {
     await response.body?.cancel()
-    throw new NotFoundError({ url })
+    throw new NotFoundError({ response, url })
   }
   if (!response.ok) {
     const json: unknown = await response.json().catch(() => undefined)

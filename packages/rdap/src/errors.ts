@@ -32,7 +32,8 @@ export class UnsupportedError extends Errors.UnsupportedError {
 
 /**
  * Thrown when the RDAP server answers 404 Not Found: the domain isn't registered, or no network
- * or AS number record covers the query.
+ * or AS number record covers the query. `response` holds the 404 response, with its body
+ * cancelled.
  *
  * @example
  * ```ts
@@ -49,14 +50,14 @@ export class UnsupportedError extends Errors.UnsupportedError {
  * }
  * ```
  */
-export class NotFoundError extends Errors.BaseError {
+export class NotFoundError extends Errors.ResponseError {
   static override readonly kind: string = 'Rdap.NotFoundError'
   /** The URL that answered 404. */
   readonly url: string
 
-  constructor(options: ErrorOptions & { url: string }) {
-    const { url, ...rest } = options
-    super(`${url} answered 404 Not Found`, rest)
+  constructor(options: Errors.ResponseError.Options & { url: string }) {
+    const { url, message = `${url} answered 404 Not Found`, ...rest } = options
+    super({ message, ...rest })
     this.url = url
   }
 }
