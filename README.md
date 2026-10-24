@@ -2,7 +2,7 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
-#### Examples
+### Examples
 
 Stream an OpenAI transcript to a file:
 
@@ -49,7 +49,7 @@ Most npm packages for streams, encodings, email and crypto were written for Node
 - **Benchmarked.** Each package README has a table that compares its speed, bundle size and dependency count with those libraries.
 - **Consistent API.** You import a package as a namespace (`import * as Base64`), call `encode` and `decode` or `parse` and `format`, pipe through a `DecoderStream` or `EncoderStream`, and pass a `signal` to anything that can be cancelled.
 
-## Packages
+### Packages
 
 <table>
 <tbody>
