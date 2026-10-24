@@ -12,7 +12,7 @@ npm install @portable/errors
 import * as Errors from '@portable/errors'
 
 try {
-  const body = await Streams.toBytes(request.body.pipeThrough(Streams.limitBytes(1_000_000)))
+  const body = await Streams.toBytes(request.body!.pipeThrough(Streams.limitBytes(1_000_000)))
   const image = await Compress.decode(body, { maxBytes: 10_000_000 })
 } catch (error) {
   if (Errors.is(error, 'MaxBytes')) {
@@ -70,10 +70,3 @@ export class MaxBytesError extends Errors.MaxBytesError {
 - `instanceof` and `is` give the same answer when an app has two copies of a package.
 - `Errors.is(error, 'MaxBytes')` matches an exceeded size limit from streams, compress, exif or any other package.
 - `ResponseError` keeps the whole `Response`, so a caller can read `Retry-After` and other headers.
-
-## Migrating
-
-| Before | After |
-| --- | --- |
-| `class XError extends Error { override name = 'Pkg.XError' }` | `class XError extends Errors.InvalidInputError { static override readonly kind: string = 'Pkg.XError' }` |
-| `error instanceof Compress.MaxBytesError \|\| error instanceof Streams.MaxBytesError` | `Errors.is(error, 'MaxBytes')` |

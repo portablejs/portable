@@ -104,6 +104,8 @@ export default defineConfig({
       '**/CHANGELOG.md',
       '.agents/**',
       '**/fixtures/**',
+      // site/scripts/snippets.mjs formats the code blocks in these pages to 72 columns.
+      'site/src/pages/**/*.mdx',
     ],
   },
   lint: {
@@ -214,11 +216,12 @@ export default defineConfig({
           'vite.config.ts',
           'tools/lint/src/publicApi.test.ts',
           'tools/lint/src/forAwait.test.ts',
+          'tools/lint/src/examples.test.ts',
         ],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
-        files: ['vite.config.ts', 'tools/lint/src/plugin.ts'],
+        files: ['vite.config.ts', 'site/vocs.config.ts', 'tools/lint/src/plugin.ts'],
         rules: { 'import/no-default-export': 'off' },
       },
       {
@@ -247,7 +250,13 @@ export default defineConfig({
         },
       },
       {
-        files: ['packages/*/scripts/**', 'scripts/**', 'tools/workers/src/run.ts'],
+        files: [
+          'packages/*/scripts/**',
+          'scripts/**',
+          'site/scripts/**',
+          'site/vocs.config.ts',
+          'tools/workers/src/run.ts',
+        ],
         rules: {
           'no-restricted-imports': 'off',
           'no-restricted-globals': 'off',

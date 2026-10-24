@@ -1,0 +1,119 @@
+---
+description: Check the kind of an error from any package with Errors.is.
+---
+
+# Errors
+
+Every package throws a subclass of one of the classes in [`errors`](/packages/errors), so a single check works on errors from any package:
+
+| Class | Thrown when |
+| --- | --- |
+| `InvalidInputError` | The data that the function reads, decodes, or verifies is malformed. |
+| `TruncatedError` | The input ended before a value was complete. |
+| `UnsupportedError` | The input is valid, but the package doesn't handle it. |
+| `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. |
+| `ResponseError` | A server answered with a status or body that the package can't use. |
+
+For a missing argument or one with the wrong type, a function throws the built-in `TypeError`. For a value it doesn't accept, it throws `RangeError`. Those errors mean the calling code has a bug, so don't catch them.
+
+## Check the kind with `Errors.is`
+
+`Errors.is(error, kind)` checks an error's kind and narrows its type, so you can read its fields. The kind is the class name without `Error`: `'InvalidInput'`, `'Truncated'`, `'Unsupported'`, `'MaxBytes'`, `'MaxLength'`, or `'Response'`.
+
+This Worker decompresses an upload. `Streams.limitBytes` and `Compress.decode` each throw their own `MaxBytesError`, and one check handles both:
+
+```ts
+import * as Compress from '@portable/compress'
+import * as Errors from '@portable/errors'
+import * as Streams from '@portable/streams'
+
+export default {
+  async fetch(request: Request) {
+    try {
+      const body = await Streams.toBytes(
+        request.body!.pipeThrough(Streams.limitBytes(1_000_000)),
+      )
+      const data = await Compress.decode(body, {
+        maxBytes: 10_000_000,
+      })
+      return Response.json({ bytes: data.length })
+    } catch (error) {
+      if (Errors.is(error, 'MaxBytes')) {
+        return new Response(`Over ${error.maxBytes} bytes`, {
+          status: 413,
+        })
+      }
+      if (
+        Errors.is(error, 'InvalidInput') ||
+        Errors.is(error, 'Truncated')
+      ) {
+        return new Response('Bad gzip data', { status: 400 })
+      }
+      throw error
+    }
+  },
+}
+```
+
+To match one package's error and nothing else, use `instanceof` with that package's class, such as `error instanceof Compress.MaxBytesError`. Each error's `name` starts with its package's namespace, such as `'Compress.MaxBytesError'`, so a log shows which package threw the error.
+
+## Read the server's response
+
+A `ResponseError` keeps the whole `Response` in `response`, so you can read the response headers. `status` is the HTTP status:
+
+```ts
+import * as Errors from '@portable/errors'
+import * as Rdap from '@portable/rdap'
+
+try {
+  await Rdap.domain('example.com')
+} catch (error) {
+  if (Errors.is(error, 'Response') && error.status === 429) {
+    const seconds = Number(error.response.headers.get('retry-after'))
+    console.log(`Rate limited, retry in ${seconds} seconds`)
+  } else {
+    throw error
+  }
+}
+```
+
+`body` holds the response body if the package read it, as parsed JSON or as text.
+
+## Find the original error
+
+When a package catches a platform error and throws its own instead, it passes the original as `cause`. For example, `Compress.decode` throws an `InvalidInputError` when `DecompressionStream` rejects malformed data, and `cause` holds the stream's error, which is a `TypeError` in Node:
+
+```ts
+import * as Compress from '@portable/compress'
+import * as Errors from '@portable/errors'
+
+try {
+  await Compress.decode(body)
+} catch (error) {
+  if (Errors.is(error, 'InvalidInput')) {
+    console.log(error.cause)
+  }
+}
+```
+
+## Match errors across two copies of a package
+
+An app can end up with two copies of a package, for example when the app needs version 2 and one of its dependencies needs version 1. With most libraries, `instanceof` then fails for an error that the other copy threw, because each copy defines its own class. `@portable/*` packages depend on each other at exact versions, so two copies are more common with them than with most libraries.
+
+Each error stores its kind, and the kinds of its parent classes, under `Symbol.for('portable.error')`, which is the same symbol in every copy. `Errors.is` reads that property, and the classes define `Symbol.hasInstance` to read it too, so `Errors.is` and `instanceof` both work whichever copy threw the error.
+
+## Throw your own errors
+
+Extend the same classes so that one check handles your errors and Portable's. Set `kind` to the name you want in logs:
+
+```ts
+import * as Errors from '@portable/errors'
+
+class UploadTooLargeError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'MyApp.UploadTooLargeError'
+}
+
+const error = new UploadTooLargeError({ maxBytes: 1_000_000 })
+error.name // 'MyApp.UploadTooLargeError'
+Errors.is(error, 'MaxBytes') // true
+```

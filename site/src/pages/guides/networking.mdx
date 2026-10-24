@@ -1,0 +1,42 @@
+---
+description: Look up DNS records over HTTPS, encode DNS messages, and check IP addresses.
+---
+
+# DNS and networking
+
+Workers and browsers have no `node:dns` and can't send UDP, so `dns` looks up records over HTTPS and returns the same results and error codes as `node:dns/promises`.
+
+- [`dns`](/packages/dns) looks up records with DNS-over-HTTPS.
+- [`dns-packet`](/packages/dns-packet) encodes and decodes DNS messages in wire format.
+- [`ip`](/packages/ip) parses, compares, and classifies IPv4 and IPv6 addresses and CIDR blocks.
+- [`rdap`](/packages/rdap) looks up who holds a domain, an IP address, or an AS number.
+- [`idna`](/packages/idna) converts Unicode domain names to the ASCII form DNS uses.
+
+## Refuse to fetch internal addresses
+
+A service that fetches URLs from its users must not connect to its own internal network. Resolve the host and check every address before you connect:
+
+```ts
+import * as Dns from '@portable/dns'
+import * as Ip from '@portable/ip'
+
+const resolver = Dns.create()
+
+async function safeFetch(url: string, init: RequestInit = {}) {
+  // URL keeps the brackets around an IPv6 host, such as [::1].
+  const hostname = new URL(url).hostname.replace(/^\[|\]$/g, '')
+  const addresses = Ip.canParse(hostname)
+    ? [hostname]
+    : await resolver.resolve4(hostname, {
+        signal: init.signal ?? undefined,
+      })
+  for (const address of addresses) {
+    if (Ip.range(Ip.unmap(address)) !== 'unicast') {
+      throw new Error(`Refusing to fetch ${address}`)
+    }
+  }
+  return fetch(url, init)
+}
+```
+
+This checks A records. Check AAAA records the same way with `resolver.resolve6`. The check doesn't cover redirects or a second DNS answer, so pass `redirect: 'manual'` and check each `Location`, and connect to the address you checked where your runtime allows it.

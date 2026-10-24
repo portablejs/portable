@@ -52,6 +52,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * import * as DnsPacket from '@portable/dns-packet'
  *
  * try {
+ *   // @ts-expect-error The types require `data`, because NSID has no built-in encoder.
  *   DnsPacket.encode({ additionals: [{ type: 'OPT', name: '.', options: [{ code: 'NSID' }] }] })
  * } catch (error) {
  *   if (error instanceof DnsPacket.UnsupportedError) {

@@ -100,6 +100,15 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 - Header values are decoded as UTF-8 and the raw bytes are kept in the `headers` chunk. mailsplit returns Latin-1 strings, which turns UTF-8 addresses into mojibake (mailsplit #21).
 - A part with no `Content-Type` is `text/plain`, as RFC 2045 says. mailsplit guesses a type from the file name.
 - Chunks are plain objects. To change a header, enqueue new bytes for the `headers` chunk, for example from `MimeHeaders.fold`. There is no headers object to keep in sync.
+- mailsplit splits embedded messages unless `ignoreEmbedded` is set. `DecoderStream` splits them only with `embedded: true`.
+- mailsplit's `maxHeadSize` defaults to 1 MiB and counts each line as at least 64 bytes. `maxHeaderBytes` counts bytes and defaults to no limit, so pass `maxHeaderBytes: 1024 * 1024` to keep mailsplit's limit.
+- mailsplit's `maxChildNodes` defaults to 1000, and `maxParts` defaults to no limit, so pass `maxParts: 1000` to keep mailsplit's limit.
+- mailsplit's limit errors have the `code` `'EMAXLEN'`. For an exceeded limit, `DecoderStream` throws `MaxHeaderBytesError`, `MaxBoundaryLineBytesError` or `MaxPartsError`.
+- A part has no `charset`, `filename` or `disposition` field as mailsplit's nodes do. Read them with `MimeHeaders.parseValue` from the `Content-Type` or `Content-Disposition` field.
+- mailsplit's `headers.mbox` and `headers.http` have no equivalent. The mbox `From ` line or HTTP status line stays at the start of the root `headers` chunk, and `part.headers` skips it.
+- `part.headers` skips a first line that starts with whitespace and a line with no valid field name. A bare CR doesn't end a line.
+- `encoding` drops every comment, including an unclosed one, so `base64 (x` is `base64`. mailsplit keeps the text when a comment isn't closed.
+- An empty part between two delimiters is reported as a part. mailsplit reports nothing for it.
 
 <!-- bench:start -->
 | | @portable/mime-stream | mailsplit | `TransformStream` copy |
@@ -119,35 +128,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| mailsplit | @portable/mime-stream |
-| --- | --- |
-| `stream.pipe(new Splitter())` | `stream.pipeThrough(new DecoderStream())` |
-| `.pipe(new Joiner())` | `.pipeThrough(new EncoderStream())` |
-| `{ ignoreEmbedded: true }` | the default |
-| `{ defaultInlineEmbedded: true }` | `{ embedded: true }` |
-| `{ maxHeadSize }` | `{ maxHeaderBytes }`, counted in bytes. mailsplit counts each line as at least 64 bytes. mailsplit defaults to 1 MiB and we default to no limit, so pass `maxHeaderBytes: 1024 * 1024` to keep its limit. |
-| `{ maxChildNodes }` | `{ maxParts }`. mailsplit defaults to 1000 and we default to no limit, so pass `maxParts: 1000` to keep its limit. |
-| `err.code === 'EMAXLEN'` | `instanceof MaxHeaderBytesError`, `MaxBoundaryLineBytesError` or `MaxPartsError` |
-| `data.type === 'node'` | `chunk.type === 'headers'` |
-| `data.type === 'body'` | `chunk.type === 'body'` |
-| `data.type === 'data'` | `'preamble'`, `'delimiter'` or `'epilogue'` |
-| `data.value` | `chunk.bytes` |
-| `node.getHeaders()` | `chunk.bytes` of the `headers` chunk |
-| `node.headers.get(key)`, `getFirst(key)` | `chunk.part.headers.filter(...)`, `find(...)` |
-| `node.headers.add`, `update`, `remove` | Enqueue new header bytes in place of the chunk. |
-| `node.contentType`, `node.encoding`, `node.multipart` | `part.contentType`, `part.encoding`, `part.boundary` |
-| `node.charset`, `node.filename`, `node.disposition` | `MimeHeaders.parseValue` on the `Content-Type` or `Content-Disposition` field |
-| `node.parentNode`, `node.root` | `part.parent`, `part.parent === undefined` |
-| `node.getDecoder()`, `getEncoder()` | Pipe body chunks' bytes through `@portable/base64` or `@portable/quoted-printable`. |
-| `Rewriter`, `Streamer` | A `TransformStream` that acts on the chunks of the parts you want, as in the example above. |
-| `headers.mbox`, `headers.http` | The first line of the root `headers` chunk. It isn't a header field, so `part.headers` skips it. |
-
-Other differences from mailsplit:
-
-- A delimiter line may be followed by spaces or tabs, and a part that has headers and no body passes through `DecoderStream` and `EncoderStream` unchanged.
-- `part.headers` skips a first line that starts with whitespace and a line with no valid field name, such as an mbox `From ` line. A bare CR doesn't end a line.
-- `encoding` drops every comment, including an unclosed one: `base64 (x` is `base64`. mailsplit keeps the text when a comment isn't closed.
-- A part made of headers only, or of nothing, between two delimiters is reported as a part. mailsplit reports nothing for it.

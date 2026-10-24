@@ -1,0 +1,61 @@
+---
+description: Collect, transform, split, and decompress Web Streams, with size limits.
+---
+
+# Streams
+
+Packages that read or write large data use Web Streams: the `ReadableStream`, `WritableStream`, and `TransformStream` classes that `fetch` uses. You can pipe a `fetch` body through these transforms, and a transform that emits bytes, such as `Compress.DecoderStream`, can be a `Response` body.
+
+- [`streams`](/packages/streams) collects a stream into bytes, text, or JSON with a size limit. It also has transforms such as `map`, `filter`, and `batch`.
+- [`lines`](/packages/lines) splits bytes or text into lines.
+- [`compress`](/packages/compress) compresses and decompresses gzip and deflate with the platform's `CompressionStream` and `DecompressionStream`, and limits how much a decompression may produce.
+
+## Read a request body with a limit
+
+`request.json()` reads the whole body before you can check its size. `Streams.toJson` stops reading and cancels the body when it exceeds `maxBytes`:
+
+```ts
+import * as Streams from '@portable/streams'
+
+export default {
+  async fetch(request: Request) {
+    try {
+      const body = await Streams.toJson(request.body!, {
+        maxBytes: 1_000_000,
+        signal: request.signal,
+      })
+      return Response.json({ received: body })
+    } catch (error) {
+      if (error instanceof Streams.MaxBytesError) {
+        return new Response(null, { status: 413 })
+      }
+      throw error
+    }
+  },
+}
+```
+
+## Count lines in a gzipped log
+
+```ts
+import * as Compress from '@portable/compress'
+import * as Lines from '@portable/lines'
+
+const response = await fetch('https://example.com/access.log.gz')
+const lines = response
+  .body!.pipeThrough(
+    new Compress.DecoderStream({ maxBytes: 1_000_000_000 }),
+  )
+  .pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))
+
+let count = 0
+await lines.pipeTo(
+  new WritableStream({
+    write() {
+      count++
+    },
+  }),
+)
+```
+
+With `maxBytes`, the decoder fails with `MaxBytesError` once the output passes 1 GB, so a small file that decompresses to many gigabytes can't exhaust memory.

@@ -101,36 +101,17 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Other differences to check when you switch:
 
-| dns-packet | @portable/dns-packet |
-| --- | --- |
-| `packet.encode(p)` | `DnsPacket.encode(p, { compress: true })` |
-| `packet.decode(buf)` | `DnsPacket.decode(bytes)` |
-| `packet.streamEncode(p)` | `DnsPacket.encode(p, { framing: 'tcp', compress: true })` |
-| `packet.streamDecode(buf)` | `DnsPacket.decode(bytes, { framing: 'tcp' })` |
-| `packet.encode(p, buf, offset)`, `encode.bytes`, `encodingLength` | Not available. `encode` returns a new `Uint8Array` of the exact size. |
-| `flags: packet.RECURSION_DESIRED \| packet.AUTHENTIC_DATA` | `flags: { rd: true, ad: true }` |
-| `flag_qr`, `flag_aa`, `flag_tc`, `flag_rd`, `flag_ra`, `flag_ad`, `flag_cd` | `type`, `flags.aa`, `flags.tc`, `flags.rd`, `flags.ra`, `flags.ad`, `flags.cd` |
-| `packet.DNSSEC_OK` on an OPT record's `flags` | `dnssecOk: true` |
-| OPT `ednsVersion`, `flag_do` | `version`, `dnssecOk` |
-| `UNKNOWN_<n>` types and classes | `TYPE<n>` and `CLASS<n>` |
-| `class: 'UNKNOWN_32769'` on an mDNS question | `qu: true` and `class: 'IN'` |
-| TXT `data: 'text'` | `data: ['text']`. TXT data is always an array. |
-| TXT decodes to `Buffer[]` | TXT decodes to `Uint8Array[]` |
-| CAA `issuerCritical` | `flags: 128`. `flags` is the whole byte. |
-| SSHFP `hash` | `fingerprintType` |
-| NSEC and NSEC3 `rrtypes` | `types` |
-| NSEC3 `nextDomain` | `nextHashedOwner` |
-| `Buffer` fields | `Uint8Array` fields |
-| `packet.rcodes`, `packet.opcodes`, `packet.types`, `packet.classes`, `packet.optioncodes` | Not exported. Packets use names such as `'NXDOMAIN'` and unnamed values use `RCODE<n>`, `OPCODE<n>` and `OPTION<n>`. |
-
-Other differences from dns-packet:
-
-- Compression is off unless you pass `compress: true`, and inside RDATA it applies only to the names of NS, CNAME, PTR, MX and SOA records, as RFC 3597 requires.
-- Names are checked: empty labels, labels over 63 bytes and names over 255 bytes throw instead of being written corrupted. `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so it encodes to the same bytes.
-- Decoding checks that each record's data fills its RDLENGTH exactly and that EDNS options have the right length for their fields.
-- IPv6 addresses decode in RFC 5952 form, and invalid addresses throw on encode.
+- dns-packet compresses names by default. `encode` compresses only with `compress: true`, and inside RDATA only the names of NS, CNAME, PTR, MX and SOA records, as RFC 3597 requires.
+- dns-packet's `encode(packet, buffer, offset)`, `encode.bytes` and `encodingLength` have no equivalent. `encode` returns a new `Uint8Array` of the exact size.
+- dns-packet writes unnamed types and classes as `UNKNOWN_<n>`. This package writes them as `TYPE<n>` and `CLASS<n>`.
+- dns-packet reads the mDNS unicast-response bit as `class: 'UNKNOWN_32769'`. This package reads it as `qu: true` with `class: 'IN'`.
+- dns-packet accepts a string as TXT `data`. TXT `data` here is always an array, such as `['text']`.
+- dns-packet's CAA `issuerCritical` has no equivalent. `flags` holds the whole byte, so the critical flag is `flags: 128`.
+- dns-packet exports `rcodes`, `opcodes`, `types`, `classes` and `optioncodes`. This package exports none of them: packets use names such as `'NXDOMAIN'`, and unnamed values are written `RCODE<n>`, `OPCODE<n>` and `OPTION<n>`.
+- dns-packet encodes an unknown type, class, opcode, rcode or option name as 0. `encode` throws for it.
+- `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so the label encodes back to the same bytes.
+- `decode` checks that each EDNS option has the right length for its fields.
+- IPv6 addresses decode in RFC 5952 form, and `encode` throws for an invalid address.
 - `encode` clears the bits of a CLIENT_SUBNET address past the source prefix, as RFC 7871 requires.
-- Unknown type, class, opcode, rcode and option names throw instead of encoding as 0.
-- `encode` doesn't modify the packet it's given.

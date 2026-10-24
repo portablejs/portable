@@ -94,21 +94,9 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
-
-| ecdsa-sig-formatter | @portable/web-crypto |
-| --- | --- |
-| `derToJose(der, 'ES256')` | `Base64.encode(WebCrypto.derToRawEcdsa(der), { alphabet: 'base64url', omitPadding: true })` |
-| `derToJose(der, 'ES384')` | `WebCrypto.derToRawEcdsa(der, { namedCurve: 'P-384' })`, then base64url |
-| `derToJose(der, 'ES512')` | `WebCrypto.derToRawEcdsa(der, { namedCurve: 'P-521' })`, then base64url |
-| `joseToDer(jose, alg)` | `WebCrypto.rawToDerEcdsa(Base64.decode(jose, { alphabet: 'base64url' }))` |
-
-The functions here take and return bytes. Use [@portable/base64](../base64) for the base64url text JWS uses.
-
-`derToRawEcdsa` rejects input that `derToJose` accepts:
-
-- a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE;
-- an INTEGER with a leading zero it does not need, an empty INTEGER, or a negative INTEGER;
-- an INTEGER one byte longer than the curve allows, if its top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
-
-Strict DER means a signature has one encoding, so a verifier that deduplicates signatures or uses them as identifiers can't be given a second form of the same signature.
+- ecdsa-sig-formatter's `derToJose` and `joseToDer` take and return base64url text. `derToRawEcdsa` and `rawToDerEcdsa` take and return bytes, so encode and decode the base64url text JWS uses with [@portable/base64](../base64).
+- ecdsa-sig-formatter takes the JWS `alg`, such as `'ES384'`. `derToRawEcdsa` takes `namedCurve` instead, and it defaults to `'P-256'`, so pass `'P-384'` or `'P-521'` for ES384 or ES512 signatures.
+- `derToRawEcdsa` throws `WebCrypto.InvalidInputError` for a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE. ecdsa-sig-formatter's `derToJose` accepts it.
+- `derToRawEcdsa` also rejects an INTEGER with a leading zero it does not need, an empty INTEGER or a negative INTEGER, which `derToJose` accepts.
+- `derToRawEcdsa` rejects an INTEGER one byte longer than the curve allows, if its top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
+- Strict DER gives each signature one encoding, so a verifier that deduplicates signatures or uses them as identifiers can't be given a second form of the same signature.

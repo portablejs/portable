@@ -129,6 +129,16 @@ They run in browsers too, but they are three packages with three APIs, and they 
 - **`map` stops in-flight work.** After the first error, or when `signal` aborts, the `signal` passed to each running call aborts. p-map gives the mapper no signal, so after the first error the other calls run to the end unless the caller wires up its own `AbortController`.
 - **The rate limit is a sliding window** measured with `performance.now()`. p-queue's default fixed windows let twice `intervalCap` tasks start around a boundary, and its use of `Date.now()` stalls the queue if the clock goes back.
 - **Tasks run in the async context of their `add` call**, as in p-limit and p-queue, so `AsyncLocalStorage` values carry over in Node.
+- p-limit's `limit(fn, a, b)` passes the extra arguments to `fn`. The function from `Queue.limit` takes only a task, so write `limit(() => fn(a, b))`.
+- p-queue's `autoStart: false` has no equivalent. Call `pause()` after `create` and `resume()` to start.
+- p-queue's `timeout` option has no equivalent. Pass `signal: AbortSignal.timeout(ms)` to `add`, or use `Timers.retry` with `timeout`.
+- p-queue's `addAll`, `on('error')`, `onEmpty()`, `onSizeLessThan()` and `setPriority()` have no equivalent. `test/PARITY.md` lists what to use instead.
+- p-map's `pMapSkip`, `pMapIterable`, `pMapSettled` and `pMapKeyed` have no equivalent. Filter the results of `map` in place of `pMapSkip`.
+- `map` passes `{ index, signal }` as the second argument to `fn`, where p-map passes a bare index.
+- `map` doesn't await promise items. p-map awaits each item before calling the mapper.
+- `map` doesn't call `return()` on an iterator whose `next()` threw, as `for...of` doesn't. p-map does.
+- Invalid arguments throw at once. p-queue and p-map reject the returned promise.
+- p-throttle's strict mode spaces saturated calls `interval / limit` apart. The queue starts a call as soon as the window has room.
 
 <!-- bench:start -->
 | | @portable/queue | p-limit | p-queue | p-map | `Promise.all`, no limit |
@@ -150,34 +160,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| p-limit / p-queue / p-map / p-throttle | @portable/queue |
-| --- | --- |
-| `pLimit(4)` | `Queue.limit(4)` |
-| `limit(fn, a, b)` | `limit(() => fn(a, b))` |
-| `limit.activeCount`, `limit.pendingCount` | `queue.pending`, `queue.size` with `Queue.create` |
-| `limit.clearQueue()` | `queue.clear()` (always rejects with `AbortError`) |
-| `limit.map(items, fn)` | `Queue.map(items, fn, { concurrency })` |
-| `limitFunction(fn, { concurrency })` | `const limit = Queue.limit(n); (...args) => limit(() => fn(...args))` |
-| `new PQueue({ concurrency })` | `Queue.create({ concurrency })` |
-| `queue.add(({ signal }) => ..., { priority, signal })` | the same |
-| `queue.addAll(tasks)` | `Promise.all(tasks.map((task) => queue.add(task)))` |
-| `queue.onIdle()` | `queue.idle()` |
-| `queue.start()`, `autoStart: false` | `queue.resume()`, `queue.pause()` after `create` |
-| `{ interval, intervalCap, strict: true }` | `{ interval, intervalCap }` |
-| `{ timeout }` | `{ signal: AbortSignal.timeout(ms) }`, or `Timers.retry` with `timeout` |
-| `queue.on('error')`, `onEmpty()`, `onSizeLessThan()`, `setPriority()` | none, see `test/PARITY.md` |
-| `pMap(items, (item, index) => ..., { concurrency, stopOnError, signal })` | `Queue.map(items, (item, { index, signal }) => ..., { concurrency, stopOnError, signal })` |
-| `pMapSkip` | filter the results |
-| `pMapIterable`, `pMapSettled`, `pMapKeyed` | none |
-| `pThrottle({ limit, interval })(fn)` | `const queue = Queue.create({ intervalCap: limit, interval }); (...args) => queue.add(() => fn(...args))` |
-
-Behavior that differs:
-
-- `map` passes `{ index, signal }` as the second argument, not a bare index.
-- `map` doesn't await promise items. p-map awaits each item before calling the mapper.
-- `map` doesn't call `return()` on an iterator whose `next()` threw, as `for...of` doesn't. p-map does.
-- Invalid arguments throw at once. p-queue and p-map reject the returned promise.
-- p-throttle's strict mode spaces saturated calls `interval / limit` apart. The queue starts a call as soon as the window has room.

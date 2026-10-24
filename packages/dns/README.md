@@ -138,31 +138,13 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Other differences to check when you switch from `node:dns/promises`:
 
-| node:dns/promises | @portable/dns |
-| --- | --- |
-| `import dns from 'node:dns/promises'` | `const dns = Dns.create()` |
-| `new Resolver({ timeout })`, `resolver.setServers(servers)` | `Dns.create({ timeout, endpoints })` |
-| `resolver.cancel()` | Pass `{ signal }` to each call and abort it. |
-| `resolve4(name, { ttl: true })` | `(await resolver.query(name, 'A')).answers` has each record's `ttl`. |
-| `resolve(name, type)` | The `resolve*` method for that type, or `query(name, type)`. |
-| `resolveAny`, `resolveTlsa`, `resolveCert` | `query(name, type)`. Most public resolvers refuse ANY (RFC 8482). |
-| `lookup`, `lookupService` | Not available. They read the hosts file and call `getaddrinfo`, which DNS-over-HTTPS can't. |
-
-| tangerine / dohjs | @portable/dns |
-| --- | --- |
-| `new Tangerine({ timeout, servers })` | `Dns.create({ timeout, endpoints })` |
-| `new Tangerine(options, got)` | `Dns.create({ fetch })` |
-| `tangerine.resolve(name, 'A', { dnssecSecure: true })` | `(await resolver.query(name, 'A')).flags.ad` |
-| `new DohResolver(url).query(name, type)` | `Dns.create({ endpoints: [url] }).query(name, type)` |
-
-These results differ from `node:dns/promises` on purpose:
-
-- TXT strings are decoded as UTF-8. Node decodes them as Latin-1, so `héllo` comes back as `hÃ©llo`.
-- Only records in the CNAME chain of the question are returned. Node returns every record of the type in the answer section, including records for unrelated names.
-- A NOERROR answer that holds only a CNAME is `ENODATA`. Node returns `[]`.
-- A response code Node has no error for, such as YXDOMAIN, is `EBADRESP`. Node reports `ENODATA`.
-- SOA `refresh`, `retry` and `expire` above 2^31 stay positive. Node returns them as negative numbers.
-- An IPv4-compatible IPv6 address is written `::bd60:1`, as RFC 5952 recommends. Node writes `::189.96.0.1`.
-- A truncated response is an error. Node retries it over TCP, which DNS-over-HTTPS doesn't have.
+- Node's `resolver.cancel()` has no equivalent. Pass `{ signal }` to each call and abort it.
+- Node's `ttl: true` option has no equivalent. The records in `(await resolver.query(name, 'A')).answers` each have a `ttl`.
+- Node's `resolve(name, type)`, `resolveAny`, `resolveTlsa` and `resolveCert` have no equivalent. Call `query(name, type)`. Most public resolvers refuse ANY (RFC 8482).
+- Node's `lookup` and `lookupService` have no equivalent, because they read the hosts file and call `getaddrinfo`, which DNS-over-HTTPS can't do.
+- Node returns `[]` for a NOERROR answer that holds only a CNAME. This package rejects with `ENODATA`.
+- Node reports a response code it has no error for, such as YXDOMAIN, as `ENODATA`. This package reports it as `EBADRESP`.
+- Node writes an IPv4-compatible IPv6 address as `::189.96.0.1`. This package writes `::bd60:1`, as RFC 5952 recommends.
+- Node retries a truncated response over TCP. DNS-over-HTTPS has no TCP fallback, so this package rejects with `EBADRESP`.

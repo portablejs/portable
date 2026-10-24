@@ -121,33 +121,15 @@ It also avoids these traps, each with a test in `test/issues.conformance.ts`:
 - `true` and `false` are written as `true` and `false`, and a `Date` as ISO 8601. csv-stringify writes `1`, an empty field and milliseconds.
 - With CRLF line breaks, a field that holds a lone LF is quoted. csv-stringify with `record_delimiter: 'windows'` leaves it bare, so readers split the row there.
 
-## Migrating
+Other differences to check when you switch:
 
-| csv-parse / csv-stringify / papaparse / fast-csv | @portable/csv |
-| --- | --- |
-| `parse(text)` (`csv-parse/sync`) | `Csv.decode(text)` |
-| `parse(text, { columns: true })` | `Csv.decode(text, { header: true })` |
-| `parse(text, { columns: ['a', 'b'] })` | `Csv.decode(text, { header: ['a', 'b'] })` |
-| `parse({ delimiter: '\t', relax_column_count: true })` | `new Csv.DecoderStream({ delimiter: '\t', relaxColumnCount: true })` |
-| `parse({ bom: true, skip_empty_lines: true })` | `new Csv.DecoderStream()` |
-| `parse({ max_record_size: n })` | `new Csv.DecoderStream({ maxLength: n })` |
-| `parse({ quote: false })` | `new Csv.DecoderStream({ quote: false })` |
-| `stringify(rows)` (`csv-stringify/sync`) | `Csv.encode(rows, { newline: '\n' })` |
-| `stringify(rows, { header: true, columns: ['a', 'b'] })` | `Csv.encode(rows, { header: ['a', 'b'] })` |
-| `stringify({ bom: true, escape_formulas: true })` | `new Csv.EncoderStream({ bom: true, escapeFormulas: true })` |
-| `Papa.parse(text, { skipEmptyLines: true })` | `Csv.decode(text)` |
-| `Papa.parse(text, { header: true })` | `Csv.decode(text, { header: true, relaxColumnCount: true })` |
-| `Papa.parse(file, { step })` | `file.stream().pipeThrough(new Csv.DecoderStream())`, read row by row |
-| `Papa.unparse(rows)` | `Csv.encode(rows)`, which also ends the last row with `\r\n` |
-| `Papa.unparse(rows, { escapeFormulae: true })` | `Csv.encode(rows, { escapeFormulas: true })` |
-| fast-csv `parse({ headers: true })` | `new Csv.DecoderStream({ header: true })` |
-| fast-csv `format({ headers: true })` | `new Csv.EncoderStream({ header: true })` |
-
-Options with no equivalent, and what to do instead:
-
-- **Type conversion** (`cast`, `dynamicTyping`, `transform`): map the rows, for example with `Streams.map` from `@portable/streams`.
-- **Delimiter guessing** (papaparse's default): pass `delimiter`.
-- **Comments, trimming, `from`/`to`, `preview`**: filter or map rows, or cancel the reader to stop early.
-- **Multi-character delimiters and escape characters other than `""`**: not supported.
-- **Forced quoting** (`quoted`, `quotes`): not supported. Fields are quoted only when needed.
-- **Nested column paths** (csv-stringify `columns: ['a.b']`): flatten rows first.
+- csv-stringify ends rows with `\n` by default, and `encode` and `EncoderStream` end them with `\r\n`. Pass `newline: '\n'` to keep csv-stringify's output.
+- papaparse's `unparse` doesn't end the last row with a line break. `encode` ends every row with `newline`.
+- papaparse reads empty lines as rows unless `skipEmptyLines` is set. `decode` skips them by default.
+- papaparse with `header: true` accepts rows whose field count differs from the header's. `decode` throws `InvalidInputError` for them unless you pass `relaxColumnCount: true`.
+- csv-parse's `cast`, papaparse's `dynamicTyping` and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from `@portable/streams`.
+- papaparse guesses the delimiter by default. Here the delimiter is `,` unless you pass `delimiter`.
+- Comments, trimming, csv-parse's `from` and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or cancel the reader to stop early.
+- Delimiters longer than one character and escape characters other than `""` are not supported.
+- csv-stringify's `quoted` and papaparse's `quotes` force quoting, which is not supported. Fields are quoted only when they need it.
+- csv-stringify reads nested column paths such as `columns: ['a.b']`. Flatten the rows before you pass them to `encode`.

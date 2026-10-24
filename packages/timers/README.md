@@ -230,6 +230,16 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
+- p-retry's and async-retry's `retries` count the retries after the first call, and `attempts` counts every call, so `retries: 5` becomes `attempts: 6`.
+- Throwing p-retry's `AbortError` doesn't stop `retry`. Return `false` from `retryIf` for that error instead.
+- p-retry's `onFailedAttempt` runs after every failure. `onRetry` runs before each retry, so it isn't called after the last failure. Catch the rejection to log that one.
+- With `signal: AbortSignal.timeout(ms)` in place of p-retry's `maxRetryTime`, the call rejects with a `TimeoutError` instead of the last error.
+- p-retry waits the full backoff unless `randomize` is set, and async-retry's `randomize` defaults to `true` and waits 1 to 2 times the backoff. `retry` jitters by default and waits 0 to 1 times the backoff. Pass `jitter: false` in `delay` to wait the full backoff.
+- p-wait-for keeps checking while the condition returns `false`. `poll` stops at the first value other than `undefined`, so a check that returns `false` ends the poll. Return `undefined` to keep polling.
+- p-wait-for's `before: false` has no equivalent. Call `await Timers.sleep(interval)` before `poll` instead.
+- p-wait-for checks every 20 ms by default. `poll` waits 1000 ms, because it is mostly used against servers.
+- delay's `clearDelay(promise)` has no equivalent. Abort the `signal` instead, and the promise rejects rather than resolving early.
+
 ## Why use this over lodash.debounce, lodash.throttle, throttle-debounce and p-debounce
 
 `debounce` and `throttle` follow lodash's timing: the oracle tests compare the time and arguments of every invocation with lodash 4.18 on random call, `flush` and `cancel` schedules. They differ in what a call returns and in how they end.
@@ -239,40 +249,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - Time is read from `performance.now()`. lodash reads `Date.now()`, so `throttle` invokes again at once when the system clock jumps forward.
 - lodash.debounce 4.0.8, the standalone package, leaves a timer behind in a tight loop when `maxWait` is below `ms`, and invokes at other times than lodash 4.18. The oracle tests show the difference.
 - A burst of 1000 calls runs at 13.1k bursts per second on Node, against 15.4k for lodash.debounce, 4.2k for throttle-debounce and 2.5k for p-debounce. `throttle` runs at 11.9k, against 14.8k for lodash.throttle and 3.5k for throttle-debounce.
-
-## Migrating
-
-| Upstream | @portable/timers |
-| --- | --- |
-| `delay(ms)` | `Timers.sleep(ms)` |
-| `delay(ms, { value })` | `Timers.sleep(ms).then(() => value)` |
-| `delay(ms, { signal })` | `Timers.sleep(ms, { signal })` |
-| `rangeDelay(min, max)` | `Timers.sleep(min + Math.random() * (max - min))` |
-| `clearDelay(promise)` | Abort the `signal`. The promise rejects instead of resolving early. |
-| `pRetry(fn, { retries: 5 })` | `Timers.retry(fn, { attempts: 6 })`. `retries` counts retries after the first call, and `attempts` counts every call. |
-| `pRetry(fn, { minTimeout, maxTimeout, factor, randomize: false })` | `Timers.retry(fn, { delay: { initial: minTimeout, max: maxTimeout, factor, jitter: false } })` |
-| `throw new AbortError(error)` | Return `false` from `retryIf` for that error. |
-| `shouldRetry: ({ error }) => ...` | `retryIf: (error) => ...` |
-| `onFailedAttempt: ({ error, attemptNumber }) => log(...)` | `onRetry: (error, { attempt }) => log(...)`, which runs before each retry. To log the last failure too, catch the rejection. |
-| `maxRetryTime: ms` | `signal: AbortSignal.timeout(ms)`. The call rejects with a `TimeoutError` instead of the last error. |
-| `makeRetriable(fn, options)` | `(...args) => Timers.retry(() => fn(...args), options)` |
-| `asyncRetry(async (bail, attempt) => ..., { retries })` | `Timers.retry(async ({ attempt }) => ..., { attempts: retries + 1 })`. async-retry's `randomize` defaults to `true` and waits 1 to 2 times the backoff, and the default here waits 0 to 1 times. |
-| `bail(error)` | Throw `error` and return `false` from `retryIf` for it. |
-| `onRetry: (error, attempt) => ...` | `onRetry: (error, { attempt }) => ...` |
-| `pWaitFor(condition, { interval })` | `Timers.poll(async () => (await condition()) || undefined, { delay: interval })`. A check that returns `false` ends the poll, so turn `false` into `undefined`. |
-| `pWaitFor(() => pWaitFor.resolveWith(value))` | `Timers.poll(() => value)` |
-| `pWaitFor(condition, { before: false })` | `await Timers.sleep(interval)` first. |
-| `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { signal: AbortSignal.timeout(milliseconds) }).catch((error) => ...)` |
-| `_.debounce(fn, wait, options)`, `lodashDebounce(fn, wait, options)` | `Timers.debounce(fn, wait, options)`. Calls return a promise of the invocation's result. |
-| `_.throttle(fn, wait, options)`, `lodashThrottle(fn, wait, options)` | `Timers.throttle(fn, wait, options)` |
-| `debounced.cancel()`, `debounced.flush()` | The same. Calls dropped by `cancel` reject with an `AbortError`, and `flush` returns a promise. |
-| `throttle(delay, fn, { noTrailing: true })` from throttle-debounce | `Timers.throttle(fn, delay, { trailing: false })` |
-| `throttle(delay, fn, { noLeading: true })` from throttle-debounce | `Timers.throttle(fn, delay, { leading: false })`. Setting both `leading` and `trailing` to `false` is a `RangeError`, because the function would never run. |
-| `debounce(delay, fn, { atBegin: true })` from throttle-debounce | `Timers.debounce(fn, delay, { leading: true, trailing: false })` |
-| `throttled.cancel()` from throttle-debounce | Abort the `signal`. throttle-debounce's `cancel` disables the function permanently. |
-| `throttled.cancel({ upcomingOnly: true })` from throttle-debounce | `throttled.cancel()` |
-| `pDebounce(fn, wait, { before: true })` | `Timers.debounce(fn, wait, { leading: true, trailing: false })` |
-| `pDebounce(fn, wait, { signal })` | `Timers.debounce(fn, wait, { signal })` |
-| `pDebounce.promise(fn)` | No equivalent. It limits concurrency rather than time. |
-
-p-wait-for checks every 20 ms by default. `poll` waits 1000 ms, because it is mostly used against servers.
+- `cancel()` and `flush()` work as in lodash, except that calls dropped by `cancel` reject with an `AbortError` and `flush` returns a promise.
+- p-debounce's `pDebounce.promise(fn)` has no equivalent, because it limits concurrency rather than time.
+- throttle-debounce takes the delay first, as in `throttle(delay, fn)`. `Timers.throttle` and `Timers.debounce` take the function first: `Timers.throttle(fn, delay)`.
+- Setting both `leading` and `trailing` to `false` throws a `RangeError`, because the function would never run.
+- throttle-debounce's `cancel()` disables the function permanently. `cancel()` here drops only the waiting invocation, as throttle-debounce's `cancel({ upcomingOnly: true })` does. Abort the `signal` to disable the function.

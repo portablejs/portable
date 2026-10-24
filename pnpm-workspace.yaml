@@ -2,6 +2,7 @@ packages:
   - packages/*
   - packages/*/test
   - tools/*
+  - site
 
 catalog:
   '@changesets/changelog-github': ^1.0.1
@@ -26,12 +27,22 @@ minimumReleaseAgeExclude:
   - vite-plus
   - zile
 trustPolicy: no-downgrade
+# vocs depends on semver 6 through @babel/core, and semver 6.3.1 was published without provenance,
+# so `trustPolicy: no-downgrade` would reject it.
+trustPolicyExclude:
+  - semver@6.3.1
 
 linkWorkspacePackages: true
 autoInstallPeers: false
 
-# workerd ships its binary in an optional dependency, so its postinstall only checks for it.
+# None of these install scripts is needed. workerd and esbuild ship their binaries in optional
+# dependencies, so their postinstalls only check that the binary is there. es5-ext's postinstall
+# only prints a message. vue-demi's postinstall picks Vue 2 or 3 for the API playground in vocs,
+# which the site doesn't use.
 allowBuilds:
+  es5-ext: false
+  esbuild: false
+  vue-demi: false
   workerd: false
 
 # miniflare pins undici and sharp, oxfmt under zile pins tinypool, and mailauth and smtp-server pin

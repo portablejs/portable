@@ -97,6 +97,14 @@ It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server c
 - VAPID keys must be a matching pair, and a `mailto:` subject with a space is rejected. Push services reject both, and web-push sends them anyway.
 - Only `https:` endpoints are accepted, so a subscription posted by a client can't point your server at an internal `http:` address.
 - `signal` cancels the encryption and the request. web-push has only a socket idle `timeout`.
+- web-push's `contentEncoding: 'aesgcm'` isn't supported. Every current browser accepts aes128gcm.
+- web-push's `gcmAPIKey` option and `setGCMAPIKey` aren't supported. GCM shut down in 2019, and FCM takes VAPID.
+- web-push rejects with a `WebPushError` that has `statusCode`, `headers` and `body`. `send` rejects with a `ResponseError` that has `status`, `response.headers` and `body`.
+- web-push's `headers` option has no equivalent in `send`. Set the headers on the `Request` from `toRequest`, then `fetch` it.
+- web-push's `proxy` and `agent` options have no equivalent. Pass a `fetch` option that uses them.
+- An empty string payload is encrypted and sent. web-push sends no body for `''`, so the service worker's `event.data` is `null`.
+- `send` sends no `Urgency` header unless you pass `urgency`. web-push always sends `Urgency: normal`, which push services treat the same as no header.
+- The VAPID token is reused for up to an hour per push service. web-push signs a new one for every message.
 
 ### Performance
 
@@ -122,33 +130,3 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 <!-- bench:end -->
 
 On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
-
-## Migrating
-
-| web-push | @portable/web-push |
-| --- | --- |
-| `webpush.setVapidDetails(subject, publicKey, privateKey)` | Pass `vapid: { subject, publicKey, privateKey }` to each call. |
-| `await webpush.sendNotification(subscription, payload, options)` | `await WebPush.send({ subscription, payload, vapid, ...options })` |
-| `options.TTL` | `ttl` |
-| `options.urgency`, `options.topic` | `urgency`, `topic` |
-| `options.vapidDetails` | `vapid` |
-| `options.timeout` | `signal: AbortSignal.timeout(ms)` |
-| `options.proxy`, `options.agent` | A `fetch` option that uses them. |
-| `options.headers` | Set them on the `Request` from `toRequest`, then `fetch` it. |
-| `options.contentEncoding: 'aesgcm'` | Not supported. Every current browser accepts aes128gcm. |
-| `options.gcmAPIKey`, `setGCMAPIKey` | Not supported. GCM shut down in 2019, and FCM takes VAPID. |
-| `catch (e) { if (e.statusCode === 410 \|\| e.statusCode === 404) … }` | `if ((await WebPush.send(…)).kind === 'gone') …` |
-| `WebPushError` with `statusCode`, `headers`, `body` | `ResponseError` with `status`, `response.headers`, `body` |
-| `webpush.generateVAPIDKeys()` | `await WebPush.generateVapidKeys()` |
-| `webpush.generateRequestDetails(…)` | `await WebPush.toRequest(…)`, which returns a `Request`. |
-| `webpush.encrypt(p256dh, auth, payload, 'aes128gcm').cipherText` | `await WebPush.encrypt({ subscription: { keys: { p256dh, auth } }, payload })` |
-| `webpush.getVapidHeaders(…)` | `(await WebPush.toRequest({ subscription, vapid })).headers.get('authorization')` |
-| `web-push generate-vapid-keys` (CLI) | `node -e "import('@portable/web-push').then(async (w) => console.log(await w.generateVapidKeys()))"` |
-
-These behaviors differ from web-push:
-
-- `send` resolves with `{ kind: 'gone' }` for a 404 or 410 instead of rejecting.
-- An empty string payload is encrypted and sent. web-push sends no body for `''`, so the service worker's `event.data` is `null`.
-- `send` sends no `Urgency` header unless you pass `urgency`. web-push always sends `Urgency: normal`, which push services treat the same as no header.
-- `send` and `toRequest` reject payloads over 3993 bytes, `http:` endpoints, `auth` keys longer than 16 bytes, `mailto:` subjects with spaces, and a `ttl` that isn't a non-negative integer. web-push accepts them.
-- The VAPID token is reused for up to an hour per push service. web-push signs a new one for every message.

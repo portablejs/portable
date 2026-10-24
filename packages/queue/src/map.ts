@@ -33,6 +33,7 @@ export declare namespace map {
  * ```ts
  * import * as Queue from '@portable/queue'
  *
+ * const urls = ['https://example.com/a', 'https://example.com/b']
  * const pages = await Queue.map(
  *   urls,
  *   async (url, { signal }) => (await fetch(url, { signal })).text(),

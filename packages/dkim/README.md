@@ -146,37 +146,14 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating from mailauth
+Differences to check when you switch:
 
-| mailauth | @portable/dkim |
-| --- | --- |
-| `dkimVerify(message, { resolver })` | `Dkim.verify(message, { resolver })` |
-| `resolver: dns.promises.resolve` (the default) | `resolver: dns` from `node:dns/promises`. A resolver is an object with `resolveTxt`, not one `(name, type)` function. |
-| `curTime` | `now` |
-| `minBitLength` | `minKeyBits` |
-| `strict: true`, `rejectRsaSha1: true` | The only behavior. |
-| `result.results` | The array itself. |
-| `result.status.result` | `result.result`. Key record problems are `permerror`, where mailauth gives `neutral`. |
-| `result.status.comment` | `result.reason` |
-| `result.signingDomain`, `result.selector`, `result.algo` | `result.domain`, `result.selector`, `result.algorithm` |
-| `result.status.testing` | `result.testing` |
-| `result.canonBodyLengthLimit`, `result.status.underSized` | `result.bodyLength`, `result.unsignedBodyBytes` |
-| `result.status.aligned`, `result.headerFrom` | Not computed. Alignment is DMARC's job (`@portable/dmarc`). |
-| `result.info`, `result.mimeStructureStart` | Not built. |
-| `dkimSign(message, { signatureData: [{ signingDomain, selector, privateKey }] })` | `Dkim.sign(message, { domain, selector, privateKey })`, once per signature. |
-| `signTime`, `expires` | `now`, `expiresAt` |
-| `headerList` | `headers`, an array |
-| `algorithm` | Follows the key type. |
-| `maxBodyLength` | Not supported. `l=` lets anyone append to the body. |
-| `signatures`, `errors`, `warnings` | `sign` resolves to the field and throws on errors. |
-
-## Migrating from nodemailer
-
-| nodemailer | @portable/dkim |
-| --- | --- |
-| `dkim: { domainName, keySelector, privateKey }` | `Dkim.sign(message, { domain: domainName, selector: keySelector, privateKey })`, then prepend the field. |
-| `headerFieldNames: 'from:to:subject'` | `headers: ['From', 'To', 'Subject']` |
-| `skipFields` | Leave the names out of `headers`. |
-| `hashAlgo` | Not supported. DKIM uses SHA-256 (RFC 8301). |
-| `cacheDir`, `cacheTreshold` | Not needed. By default `sign` buffers the canonicalized body in memory for one `crypto.subtle.digest` call. With an incremental `hasher`, it hashes the body chunk by chunk. `sign` writes nothing to disk, so storing the message is up to the caller. |
-| `keys: [...]` | Call `sign` once per key and prepend each field. |
+- mailauth's `resolver` is one `(name, type)` function. `verify` takes an object with a `resolveTxt` method, such as `node:dns/promises`.
+- mailauth reports problems with the key record as `neutral`, and `verify` reports them as `permerror`.
+- mailauth's `status.aligned` and `headerFrom` have no equivalent, because alignment is DMARC's job (`@portable/dmarc`). Neither have `info` and `mimeStructureStart`.
+- mailauth's `dkimSign` and nodemailer's `keys` sign with several keys in one call. Call `sign` once per key and prepend each field.
+- mailauth's `dkimSign` reports problems in `errors` and `warnings`. `sign` throws instead.
+- mailauth's `maxBodyLength` has no equivalent, because `l=` lets anyone append to the body.
+- nodemailer's `skipFields` has no equivalent. Leave the names out of `headers` instead.
+- nodemailer's `hashAlgo` has no equivalent. DKIM uses SHA-256 (RFC 8301).
+- nodemailer's `cacheDir` and `cacheTreshold` have no equivalent. `sign` writes nothing to disk, and it keeps the canonicalized body in memory unless you pass an incremental `hasher`.

@@ -63,6 +63,7 @@ Sources are streams, async iterables or iterables. An error in one source errors
 An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
 
 ```ts
+const upload = (await request.formData()).get('file') as File
 const [forExif, forStorage, forResize] = Streams.tee(upload.stream(), 3, {
   highWaterMark: 1_000_000,
   unit: 'bytes',
@@ -158,34 +159,12 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
-
-| Before | @portable/streams |
-| --- | --- |
-| `await getStream(stream)` | `await toText(stream)` |
-| `await getStreamAsBuffer(stream)`, `getStreamAsArrayBuffer(stream)` | `await toBytes(stream)` (use `.buffer` for an `ArrayBuffer`) |
-| `await getStreamAsArray(stream)`, `await toArray(stream)` (stream-to-array) | `await toArray(stream)` |
-| `getStream(stream, { maxBuffer })` | `toText(stream, { maxBytes })` |
-| `catch (error) { if (error instanceof MaxBufferError) ... }` | `if (error instanceof MaxBytesError) ...` |
-| `stream.pipe(concat((data) => ...))`, `stream.pipe(new BufferListStream((err, data) => ...))` | `const data = await toBytes(stream)` |
-| `concat({ encoding: 'string' }, cb)` | `await toText(stream)` |
-| `concat({ encoding: 'objects' }, cb)` | `await toArray(stream)` |
-| `await getRawBody(stream, { limit: '1mb', encoding: 'utf-8' })` | `await toText(stream, { maxBytes: 1_000_000 })` |
-| `merge2(a, b, c)` | `concat([a, b, c])` |
-| `merge2([a, b])`, `merge(a, b)` (merge-stream) | `merge([a, b])` |
-| `merge2(a, [b, c])` | `concat([a, merge([b, c])])` |
-| `through2.obj((chunk, enc, cb) => cb(null, f(chunk)))` | `map(f)` |
-| `through2.obj(function (chunk, enc, cb) { if (keep(chunk)) this.push(chunk); cb() })` | `filter(keep)` |
-| `through2.obj(transformFn, flushFn)` with state in `this` | `transform(async function* (source) { ... })` with state in local variables and the flush after the loop |
-| `Readable.from(iterable)` | `fromIterable(iterable)` |
-
-Behavior that differs:
-
-- `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`. `toArray` has no limit.
-- Errors carry no `bufferedData`. A collector that fails has already cancelled its source and dropped what it read.
+- `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`, and `toArray` has no limit.
+- raw-body's `limit` accepts a string such as `'1mb'`. `maxBytes` takes a number of bytes, such as `1_000_000`.
+- get-stream's `MaxBufferError` carries the data read so far in `bufferedData`. A collector that fails has already cancelled its source and dropped what it read, so its errors carry no data.
 - Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView` and other typed arrays, and concat-stream accepted numbers.
-- Arrays and other iterables are valid sources, where get-stream rejected them.
-- Errors in any source always propagate through `concat` and `merge`. merge2 needed `pipeError: true`.
-- There is no `.add()` or `{ end: false }`: pass every source when calling `concat` or `merge`.
+- Arrays and other iterables are valid sources. get-stream rejected them.
+- merge2 called with several arguments, as in `merge2(a, b, c)`, reads the sources one after another, which is `concat`. `merge` reads them at the same time.
+- merge2's `.add()` and the `{ end: false }` option have no equivalent, so pass every source when calling `concat` or `merge`.
 - `map` passes on `undefined` like any other value. through2 dropped it. Use `filter` to drop chunks.
-- A `transform` generator starts when the output is first read, not when the first chunk is written.
+- A `transform` generator starts when the output is first read. A through2 transform starts when the first chunk is written.

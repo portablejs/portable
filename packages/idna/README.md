@@ -59,6 +59,15 @@ punycode only converts the Punycode encoding of each label. It doesn't map upper
 - `toUnicode` on 10 hostnames was 6.6× as fast as tr46 and as fast as punycode, which does no mapping or validation. `toAscii` was 5.9× as fast as tr46 and as fast as punycode. `new URL()` is about 1.4× faster than `toAscii` in Node, where it runs in C++.
 - `toAscii` and `toUnicode` take O(n log n) time on long labels. punycode and tr46 take about 15 s to encode a 40,000-character label, as Python's idna did before CVE-2024-3651.
 - Both functions throw errors instead of returning them. tr46's `toUnicode` returns `{ domain, error }`, and code that reads only `domain` displays `xn--google-` as `google`.
+- tr46's `toASCII` returns `null` for an invalid domain, where `toAscii` throws `InvalidInputError`.
+- Without `strict`, `toAscii` lowercases ASCII input without decoding it, as the URL Standard now specifies, so `toAscii('xn--b.com')` returns `'xn--b.com'` where tr46 returns `null`. `toUnicode` still throws for it.
+- tr46's `toASCII` returns `'a b'` for `'a b'`, but `toAscii` throws for a space and the other characters that URL forbids in a host.
+- tr46's `useSTD3ASCIIRules`, `checkHyphens` and `verifyDNSLength` are one option here: `strict: true` turns on all three.
+- tr46's `checkBidi` and `checkJoiners` have no equivalent, because both checks always run, as in the URL Standard.
+- tr46's `transitionalProcessing` isn't supported, because UTS #46 deprecated it and browsers dropped it, so `faß.de` becomes `xn--fa-hia.de`, not `fass.de`.
+- tr46's `ignoreInvalidPunycode` isn't supported, because the URL Standard doesn't use it.
+- punycode's `encode` and `decode` have no equivalent, because raw Punycode isn't exported. `Idna.toAscii(label)` and `Idna.toUnicode('xn--' + label)` convert one label and also validate it.
+- punycode's `toASCII` converts the domain of an email address and leaves the local part as it is, but `toAscii` throws for `@`. Split the address at the last `@` and convert only the domain.
 
 ### Where `URL` isn't exact
 
@@ -88,25 +97,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| punycode / tr46 | @portable/idna |
-| --- | --- |
-| `punycode.toUnicode(domain)` | `Idna.toUnicode(domain)` |
-| `punycode.toASCII(domain)` | `Idna.toAscii(domain)` |
-| `punycode.toASCII(email)` | `local + '@' + Idna.toAscii(domain)`, after splitting at the last `@` |
-| `punycode.encode(label)`, `punycode.decode(label)` | `Idna.toAscii(label)` and `Idna.toUnicode('xn--' + label)`, which also validate. Raw Punycode isn't exported. |
-| `punycode.ucs2.decode(text)` | `Array.from(text, (char) => char.codePointAt(0))` |
-| `punycode.ucs2.encode(codePoints)` | `String.fromCodePoint(...codePoints)` |
-| `tr46.toUnicode(domain, options).domain` | `Idna.toUnicode(domain)`, which throws where tr46 sets `error` |
-| `tr46.toASCII(domain, options)` | `Idna.toAscii(domain)`, which throws where tr46 returns `null` |
-| `useSTD3ASCIIRules`, `checkHyphens`, `verifyDNSLength` | `strict: true` turns on all three |
-| `checkBidi`, `checkJoiners` | Always on, as in the URL Standard |
-| `transitionalProcessing` | Not supported. UTS #46 deprecated it, and browsers dropped it. `faß.de` becomes `xn--fa-hia.de`, not `fass.de`. |
-| `ignoreInvalidPunycode` | Not supported. The URL Standard doesn't use it. |
-
-Differences from tr46 with the URL Standard's flags:
-
-- ASCII input to `toAscii` is lowercased without decoding, as the URL Standard now specifies, so `toAscii('xn--b.com')` returns `'xn--b.com'` where tr46 returns `null`. `toUnicode` still throws for it.
-- `toAscii` throws for an empty result and for characters URL forbids in a host. tr46 returns `'a b'` for `'a b'`.

@@ -45,6 +45,8 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 - `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.
 - A multi-byte character or a CRLF split across two chunks is read as one character or one line break.
 - Empty lines are kept by default, as in split2. byline drops them unless you pass `keepEmptyLines`, and `skipEmpty: true` drops them here.
+- split2 takes a mapper function, such as `split2(JSON.parse)`. `Lines.DecoderStream` has no mapper, so pipe its output through another `TransformStream`.
+- byline splits on every Unicode line break by default. Pass `separator: /\r\n|[\n\v\f\r\x85\u2028\u2029]/` for the same result.
 
 <!-- bench:start -->
 | | @portable/lines | split2 | byline | `node:readline` |
@@ -63,21 +65,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| split2 / byline | @portable/lines |
-| --- | --- |
-| `stream.pipe(split2())` | `stream.pipeThrough(new Lines.DecoderStream())` |
-| `split2('~')`, `split2(/~/)` | `new Lines.DecoderStream({ separator: '~' })` |
-| `split2(JSON.parse)` | `.pipeThrough(new Lines.DecoderStream()).pipeThrough(new TransformStream({ transform: (line, c) => c.enqueue(JSON.parse(line)) }))` |
-| `split2({ maxLength, skipOverflow: true })` | `new Lines.DecoderStream({ maxLength, overflow: 'skip' })` |
-| `byline(stream)` | `stream.pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))` |
-| `byline(stream, { keepEmptyLines: true })` | `stream.pipeThrough(new Lines.DecoderStream())` |
-
-Two behaviors differ from split2:
-
-- `maxLength` applies to every line. split2 only checks the unfinished line at the end of each chunk, so whether a long line is caught depends on how the input was chunked.
-- There is no mapper argument. Pipe through another `TransformStream` instead.
-
-byline splits on every Unicode line break by default. Pass `separator: /\r\n|[\n\v\f\r\x85  ]/` for the same result.
