@@ -2,6 +2,10 @@
 
 Small npm packages that run unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
+```sh
+npm install @portable/sse @portable/jsonl @portable/streams
+```
+
 ```ts
 import * as Jsonl from '@portable/jsonl'
 import * as Sse from '@portable/sse'
@@ -19,10 +23,7 @@ const [live, saved] = response
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .tee()
 
-const saving = saved
-  .pipeThrough(new Jsonl.EncoderStream())
-  .pipeThrough(new TextEncoderStream())
-  .pipeTo(transcript) // write to a file
+const saving = saved.pipeThrough(new Jsonl.EncoderStream()).pipeTo(transcript) // write to a file
 const reader = live.getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.value.choices[0].delta.content ?? '')
 await saving
@@ -32,15 +33,13 @@ This code runs unchanged in a browser, Deno, Bun and Node, with no polyfills, bu
 
 Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: `fetch`, Web Streams, `Uint8Array`, `TextEncoder` and `crypto.subtle`.
 
-- **Only web APIs.** Lint rejects `node:*` imports, `Buffer`, `process` and DOM globals in package code. The tests run in Node 24 and 26, in Chromium, Firefox and WebKit, and again inside a Web Worker.
+- **Only web APIs.** Lint rejects `node:*` imports, `Buffer`, `process` and DOM globals in package code. The tests run in Node 24 and 26, Bun, Deno, Chromium, Firefox and WebKit, and inside a Web Worker, and every package is loaded and checked in workerd, the Cloudflare Workers runtime.
 - **No outside dependencies.** A package depends only on other `@portable/*` packages. Crypto uses WebCrypto by default, and you can pass a function from `@noble/hashes` or another library instead.
 - **Tested against the npm libraries for the same job.** Each package's `PARITY.md` maps every test of those libraries to our test for the same case, or says why the case doesn't apply. Oracle tests compare our output with theirs.
 - **Benchmarked.** Each package README has a table that compares its speed, bundle size and dependency count with those libraries.
 - **One API shape.** You import a package as a namespace (`import * as Base64`), call `encode` and `decode` or `parse` and `format`, pipe through a `DecoderStream` or `EncoderStream`, and pass a `signal` to anything that can be cancelled.
 
 ## Packages
-
-Nothing is published to npm yet. `pnpm readme` runs the benchmarks, measures bundle sizes, and rewrites the tables in each package README with the new numbers.
 
 ### Streams and bytes
 
@@ -49,6 +48,7 @@ Nothing is published to npm yet. `pnpm readme` runs the benchmarks, measures bun
 | [`@portable/streams`](packages/streams) | Collects, combines and transforms web streams and iterables. |
 | [`@portable/lines`](packages/lines) | Splits a stream of bytes or text into lines. |
 | [`@portable/bytes`](packages/bytes) | Hex encoding, concatenation and constant-time comparison of `Uint8Array`s. |
+| [`@portable/errors`](packages/errors) | The error classes every package throws. `Errors.is` and `instanceof` match them even when an app has two copies of a package. |
 | [`@portable/compress`](packages/compress) | gzip and deflate on the platform's `CompressionStream`, a decompression stream with an output limit, and CRC-32. |
 
 ### Encodings
@@ -80,13 +80,13 @@ Nothing is published to npm yet. `pnpm readme` runs the benchmarks, measures bun
 | [`@portable/spf`](packages/spf) | Checks whether a client may send mail for a domain, using SPF. |
 | [`@portable/dmarc`](packages/dmarc) | Checks a message against the DMARC policy of its From domain. |
 | [`@portable/arc`](packages/arc) | Seals and verifies ARC sets. |
-| [`@portable/mail-auth`](packages/mail-auth) | Checks a received message's SPF, DKIM, DMARC and ARC in one call and writes the Authentication-Results header. |
+| [`@portable/mail-auth`](packages/mail-auth) | Checks a received message's SPF, DKIM, DMARC and ARC in one call, writes the Authentication-Results header, and ARC-seals it. |
 
 ### DNS and networking
 
 | Package | What it does |
 | --- | --- |
-| [`@portable/dns`](packages/dns) | DNS lookups over DNS-over-HTTPS, with the results and errors of `node:dns/promises`. |
+| [`@portable/dns`](packages/dns) | Looks up DNS records over DNS-over-HTTPS, behind a resolver interface that `node:dns/promises` also fits. |
 | [`@portable/dns-packet`](packages/dns-packet) | Encodes and decodes DNS messages in wire format. |
 | [`@portable/ip`](packages/ip) | Parses, formats, compares and classifies IPv4 and IPv6 addresses and CIDR blocks. |
 | [`@portable/rdap`](packages/rdap) | Looks up who holds a domain name, an IP address or an AS number over RDAP. |
@@ -95,7 +95,7 @@ Nothing is published to npm yet. `pnpm readme` runs the benchmarks, measures bun
 
 | Package | What it does |
 | --- | --- |
-| [`@portable/crypto`](packages/crypto) | Bytes-in, bytes-out helpers over `crypto.subtle`, such as HKDF, Ed25519 keys from seeds and ECDSA signature conversion. |
+| [`@portable/web-crypto`](packages/web-crypto) | Bytes-in, bytes-out helpers over `crypto.subtle`: digests, HMAC, HKDF, Ed25519 and X25519 keys from seeds, and ECDSA signature conversion. |
 | [`@portable/password`](packages/password) | Hashes and verifies passwords with PBKDF2 on WebCrypto. |
 | [`@portable/webhooks`](packages/webhooks) | Verifies and signs webhooks from Standard Webhooks senders, Stripe, GitHub, Slack and other HMAC-SHA256 senders. |
 | [`@portable/oauth1`](packages/oauth1) | Signs OAuth 1.0a requests. |
@@ -105,9 +105,9 @@ Nothing is published to npm yet. `pnpm readme` runs the benchmarks, measures bun
 
 | Package | What it does |
 | --- | --- |
-| [`@portable/websocket`](packages/websocket) | A WebSocket that reconnects, read and written as streams. |
+| [`@portable/websockets`](packages/websockets) | A WebSocket that reconnects, with a readable stream of incoming messages and a writable stream for outgoing ones. |
 | [`@portable/sse`](packages/sse) | Reads, writes and reconnects server-sent event streams. |
-| [`@portable/rpc`](packages/rpc) | Typed JSON-RPC 2.0 calls between workers, windows, servers and browsers. |
+| [`@portable/rpc`](packages/rpc) | Typed JSON-RPC 2.0 calls over a `MessagePort`, a window, a WebSocket or HTTP, with streaming results. |
 | [`@portable/web-push`](packages/web-push) | Sends Web Push notifications with payload encryption and VAPID. |
 
 ### Images
@@ -126,18 +126,9 @@ Nothing is published to npm yet. `pnpm readme` runs the benchmarks, measures bun
 | [`@portable/timers`](packages/timers) | Sleep, retry, poll, debounce and throttle, all cancellable with an `AbortSignal`. |
 | [`@portable/rate-limit`](packages/rate-limit) | Rate limiting per key with GCRA, in memory, Workers KV, a Durable Object or Redis over HTTP. |
 
-Later candidates, such as XML signatures and SAML or an xlsx writer, are listed at the end of [docs/packages.md](docs/packages.md).
+## Contributing
 
-## Development
-
-```sh
-pnpm install
-pnpm check        # format, lint and type-check
-pnpm test         # Node and browser tests
-pnpm bench        # benchmarks
-```
-
-Development needs Node 24 and pnpm 11. [docs/packages.md](docs/packages.md) says what each package does and why it exists, and [docs/architecture.md](docs/architecture.md) says how the repo is built and tested. [AGENTS.md](AGENTS.md#commands) lists every command and the rules that contributors and agents follow.
+See [docs/architecture.md](docs/architecture.md) for how the repo is built and tested, and [AGENTS.md](AGENTS.md) for the commands and the rules contributors follow.
 
 ## License
 
