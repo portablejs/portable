@@ -8,6 +8,13 @@ export declare namespace connect {
     delay?: Timers.Delay | undefined
     /** Sends each request. Pass a wrapper to change a request before it is sent. @default globalThis.fetch */
     fetch?: ((request: Request) => Promise<Response>) | undefined
+    /**
+     * How long to wait, in ms, for the response headers and then for each chunk of the body. If
+     * no data arrives in that time, `connect` aborts the request and handles the attempt as a
+     * failed connection with a `TimeoutError` `DOMException`, so by default it reconnects.
+     * Keep-alive comment lines from the server also restart the wait. @default Infinity
+     */
+    idleTimeout?: number | undefined
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
     maxLength?: number | undefined
     /**
@@ -65,10 +72,14 @@ export function connect(
   const {
     delay = { initial: 1000, max: 30_000 },
     fetch = globalThis.fetch,
+    idleTimeout = Infinity,
     maxLength,
     reconnectIf = reconnectByDefault,
     signal,
   } = options
+  if (!(idleTimeout > 0)) {
+    throw new RangeError(`idleTimeout must be a positive number, got ${idleTimeout}.`)
+  }
   const next = Timers.backoff(delay)
   const base = request instanceof Request ? request.clone() : new Request(request)
   const aborter = new AbortController()
@@ -82,7 +93,11 @@ export function connect(
     enqueued = true
   }, maxLength)
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
+  let current: AbortController | undefined
   let attempt = 0
+
+  const idle = <value>(promise: Promise<value>): Promise<value> =>
+    withTimeout(promise, idleTimeout, (error) => current?.abort(error))
 
   const open = async (): Promise<ReadableStreamDefaultReader<Uint8Array> | undefined> => {
     const headers = new Headers(base.headers)
@@ -95,7 +110,12 @@ export function connect(
     } else if (id !== undefined) {
       headers.set('last-event-id', toByteString(id))
     }
-    const response = await fetch(new Request(base.clone(), { headers, signal: combined }))
+    current = new AbortController()
+    const response = await idle(
+      fetch(
+        new Request(base.clone(), { headers, signal: AbortSignal.any([combined, current.signal]) }),
+      ),
+    )
     if (response.status === 204) {
       await response.body?.cancel()
       return undefined
@@ -129,7 +149,7 @@ export function connect(
               return controller.close()
             }
           }
-          const { done, value } = await reader.read()
+          const { done, value } = await idle(reader.read())
           if (!done) {
             enqueued = false
             parser.push(value)
@@ -148,6 +168,7 @@ export function connect(
           await reader?.cancel(error).catch(() => {})
         }
         reader = undefined
+        current = undefined
         parser.end()
         attempt++
         if (!(await reconnectIf(error, { attempt }))) {
@@ -167,6 +188,34 @@ export function connect(
       await reader?.cancel(reason).catch(() => {})
     },
   })
+}
+
+const maxTimeout = 2 ** 31 - 1
+
+async function withTimeout<value>(
+  promise: Promise<value>,
+  ms: number,
+  onTimeout: (error: DOMException) => void,
+): Promise<value> {
+  if (ms === Infinity) {
+    return promise
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => {
+        const error = new DOMException(`No data within ${ms} ms.`, 'TimeoutError')
+        onTimeout(error)
+        reject(error)
+      },
+      Math.min(ms, maxTimeout),
+    )
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 function reconnectByDefault(error: unknown): boolean {

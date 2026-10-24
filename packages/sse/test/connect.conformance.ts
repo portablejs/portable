@@ -436,6 +436,77 @@ describe('when to stop', () => {
   })
 })
 
+describe('idleTimeout', () => {
+  test('reconnects when the body sends nothing for idleTimeout ms', async () => {
+    const mock = mockFetch([
+      { chunks: ['id: 1\ndata: a\n\n'], end: 'hang' },
+      { chunks: ['data: b\n\n'] },
+    ])
+    const reconnectIf = vi.fn<(error: unknown, retry: { attempt: number }) => boolean>(() => true)
+    const events = await take(
+      Sse.connect(url, { fetch: mock.fetch, delay: 0, idleTimeout: 30, reconnectIf }),
+      2,
+    )
+    expect(datas(events)).toEqual(['a', 'b'])
+    expect(mock.requests[0]!.request.signal.aborted).toBe(true)
+    expect(mock.requests[1]!.request.headers.get('last-event-id')).toBe('1')
+    expect(reconnectIf).toHaveBeenCalledWith(expect.objectContaining({ name: 'TimeoutError' }), {
+      attempt: 1,
+    })
+  })
+
+  test('reconnects when fetch does not respond within idleTimeout ms', async () => {
+    const mock = mockFetch([{ chunks: ['data: b\n\n'] }])
+    let first = true
+    const fetch = (request: Request) => {
+      if (first) {
+        first = false
+        return new Promise<Response>((_, reject) => {
+          request.signal.addEventListener('abort', () => reject(request.signal.reason))
+        })
+      }
+      return mock.fetch(request)
+    }
+    const events = await take(Sse.connect(url, { fetch, delay: 0, idleTimeout: 30 }), 1)
+    expect(datas(events)).toEqual(['b'])
+  })
+
+  test('comment lines keep the connection open', async () => {
+    const chunks = [': ping\n', ': ping\n', ': ping\n', ': ping\n', 'data: a\n\n']
+    const mock = mockFetch([{ chunks }])
+    const slow = async (request: Request) => {
+      const response = await mock.fetch(request)
+      const body = response.body!.pipeThrough(
+        new TransformStream({
+          async transform(chunk, controller) {
+            await new Promise((resolve) => setTimeout(resolve, 20))
+            controller.enqueue(chunk)
+          },
+        }),
+      )
+      return new Response(body, { headers: response.headers })
+    }
+    const events = await take(Sse.connect(url, { fetch: slow, idleTimeout: 60 }), 1)
+    expect(datas(events)).toEqual(['a'])
+    expect(mock.requests).toHaveLength(1)
+  })
+
+  test('a timeout fails the stream when reconnectIf returns false', async () => {
+    const mock = mockFetch([{ chunks: [], end: 'hang' }])
+    await expect(
+      Streams.toArray(
+        Sse.connect(url, { fetch: mock.fetch, idleTimeout: 20, reconnectIf: () => false }),
+      ),
+    ).rejects.toMatchObject({ name: 'TimeoutError' })
+  })
+
+  test('throws a RangeError for an idleTimeout that is not positive', () => {
+    for (const idleTimeout of [0, -1, Number.NaN]) {
+      expect(() => Sse.connect(url, { idleTimeout })).toThrow(RangeError)
+    }
+  })
+})
+
 describe('cancelling', () => {
   test('cancelling the stream aborts the response in flight', async () => {
     const mock = mockFetch([{ chunks: ['data: a\n\n'], end: 'hang' }])
