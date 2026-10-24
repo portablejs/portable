@@ -25,9 +25,11 @@ async function safeFetch(url: string, init: RequestInit = {}) {
     : await resolver.resolve4(hostname, {
         signal: init.signal ?? undefined,
       })
-  for (const address of addresses)
-    if (Ip.range(Ip.unmap(address)) !== 'unicast')
+  for (const address of addresses) {
+    if (Ip.range(Ip.unmap(address)) !== 'unicast') {
       throw new Error(`Refusing to fetch ${address}`)
+    }
+  }
   return fetch(url, init)
 }
 ```

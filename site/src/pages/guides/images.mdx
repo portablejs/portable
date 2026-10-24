@@ -19,8 +19,9 @@ export default {
       maxBytes: 20_000_000,
     })
     const { type, width, height } = ImageSize.parse(bytes)
-    if (width > 8000 || height > 8000)
+    if (width > 8000 || height > 8000) {
       return new Response('Too large', { status: 413 })
+    }
     await env.BUCKET.put(crypto.randomUUID(), Exif.strip(bytes), {
       httpMetadata: { contentType: `image/${type}` },
     })

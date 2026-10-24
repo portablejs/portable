@@ -27,8 +27,9 @@ export default {
       })
       return Response.json({ received: body })
     } catch (error) {
-      if (error instanceof Streams.MaxBytesError)
+      if (error instanceof Streams.MaxBytesError) {
         return new Response('Body too large', { status: 413 })
+      }
       throw error
     }
   },

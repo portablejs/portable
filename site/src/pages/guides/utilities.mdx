@@ -16,6 +16,7 @@ import * as Bytes from '@portable/bytes'
 const expected = new Uint8Array(
   await crypto.subtle.sign('HMAC', key, payload),
 )
-if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature)))
+if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
   throw new Error('Bad signature')
+}
 ```

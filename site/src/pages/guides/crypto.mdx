@@ -22,11 +22,12 @@ export default {
     const result = await limiter.take(
       request.headers.get('cf-connecting-ip') ?? 'unknown',
     )
-    if (!result.allowed)
+    if (!result.allowed) {
       return new Response(null, {
         status: 429,
         headers: RateLimit.headers(result),
       })
+    }
     try {
       const { body } = await Webhooks.verify(request, {
         scheme: Webhooks.github,
@@ -35,8 +36,9 @@ export default {
       await handle(JSON.parse(body))
       return new Response(null, { status: 204 })
     } catch (error) {
-      if (error instanceof Webhooks.VerificationError)
+      if (error instanceof Webhooks.VerificationError) {
         return new Response(null, { status: 401 })
+      }
       throw error
     }
   },
