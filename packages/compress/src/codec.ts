@@ -1,6 +1,6 @@
 import { toBufferSource } from '@portable/bytes/internal'
 import { concat } from './bytes.js'
-import { MaxBytesError, classify } from './errors.js'
+import { MaxBytesError, TruncatedError, classify } from './errors.js'
 
 /** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
 export type Format = 'gzip' | 'deflate' | 'deflate-raw'
@@ -97,26 +97,60 @@ export async function decode(
   }
 
   // DecompressionStream rejects anything after the first gzip member. Each member starts with
-  // the bytes 1f 8b 08, so try every such position as the end of the current member.
+  // 1f 8b 08, so if another member follows, the current member ends where one of those sequences
+  // starts. Decoding a prefix that ends before the member's end fails with TruncatedError, and
+  // decoding one that runs past it fails with InvalidInputError, so memberEnd binary searches the
+  // positions. Trying each position in turn would take quadratic time when the member's data
+  // contains 1f 8b 08 many times.
   chunks.length = 0
   length = 0
-  let offset = 0
-  members: for (;;) {
-    for (let end = nextMember(data, offset + 18); end > 0; end = nextMember(data, end + 1)) {
+  const memberEnd = async (offset: number): Promise<number> => {
+    const ends: number[] = []
+    const end = (index: number): number => {
+      while (ends.length <= index) {
+        const next = nextMember(data, ends.length === 0 ? offset + 18 : ends.at(-1)! + 1)
+        if (next === -1) return -1
+        ends.push(next)
+      }
+      return ends[index]!
+    }
+    const attempt = async (end: number): Promise<'before' | 'at' | 'after'> => {
       const before = chunks.length
       try {
         await decodeAll(data.subarray(offset, end))
-        offset = end
-        continue members
+        return 'at'
       } catch (error) {
         if (error instanceof MaxBytesError || signal?.aborted) throw error
         for (const chunk of chunks.splice(before)) length -= chunk.byteLength
+        return error instanceof TruncatedError ? 'before' : 'after'
       }
     }
-    if (offset === 0) throw firstError
-    await decodeAll(data.subarray(offset))
-    break
+    let low = 0
+    let high = -1
+    for (let index = 0; high === -1; index = index * 2 + 1) {
+      const position = end(index)
+      if (position === -1) high = ends.length
+      else {
+        const result = await attempt(position)
+        if (result === 'at') return position
+        if (result === 'before') low = index + 1
+        else high = index
+      }
+    }
+    while (low < high) {
+      const index = (low + high) >>> 1
+      const result = await attempt(ends[index]!)
+      if (result === 'at') return ends[index]!
+      if (result === 'before') low = index + 1
+      else high = index
+    }
+    return -1
   }
+
+  let offset = 0
+  for (let end = await memberEnd(0); end !== -1; end = await memberEnd(offset)) offset = end
+  if (offset === 0) throw firstError
+  await decodeAll(data.subarray(offset))
   return concat(chunks, length)
 }
 

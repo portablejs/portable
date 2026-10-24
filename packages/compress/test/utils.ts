@@ -88,3 +88,32 @@ export function difference(actual: Uint8Array, expected: Uint8Array): string | u
 
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 export const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
+
+/**
+ * Builds a gzip member that keeps `data` in stored (uncompressed) deflate blocks, so the bytes of
+ * `data` appear unchanged inside the member.
+ */
+export function storedGzip(data: Uint8Array): Uint8Array {
+  const bytes = [0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, 0, 0xff]
+  for (let offset = 0; ; offset += 0xffff) {
+    const block = data.subarray(offset, offset + 0xffff)
+    const final = offset + 0xffff >= data.length
+    const size = block.length
+    bytes.push(final ? 1 : 0, size & 0xff, size >> 8, ~size & 0xff, (~size >> 8) & 0xff, ...block)
+    if (final) break
+  }
+  const crc = Compress.crc32(data)
+  for (const value of [crc, data.length])
+    bytes.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, value >>> 24)
+  return new Uint8Array(bytes)
+}
+
+/**
+ * Returns `size` bytes that repeat 1f 8b 08, the first three bytes of a gzip member header,
+ * followed by zeros if `size` isn't a multiple of 3.
+ */
+export function gzipMarkers(size: number): Uint8Array {
+  const bytes = new Uint8Array(size)
+  for (let i = 0; i + 3 <= size; i += 3) bytes.set([0x1f, 0x8b, 0x08], i)
+  return bytes
+}

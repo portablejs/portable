@@ -9,6 +9,6 @@
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
     "mailauth": "^7.3.0",
-    "nodemailer": "^10.1.0"
+    "nodemailer": "^10.2.1"
   }
 }

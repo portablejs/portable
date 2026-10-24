@@ -2,6 +2,18 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## Multi-member gzip decoding searches for each member's end
+
+- **Options:** try each `1f 8b 08` position in turn as the end of the current member; parse the deflate blocks to find where a member ends; binary search the positions, using whether `DecompressionStream` throws `TruncatedError` or `InvalidInputError` for a prefix of the input.
+- **Trade-offs:** trying each position decodes the member once per position. A member whose stored blocks repeat `1f 8b 08` made a 240 KB input take 53 s in Node. Finding the end by parsing deflate means writing a Huffman decoder beside the platform one. In Node, Bun, Deno and all three browsers, decoding a prefix that ends inside the member fails with `TruncatedError`, and decoding one that runs past the member's end fails with `InvalidInputError`. Every position before the end gives the first error and every position after it gives the second, so `decode` can binary search the positions.
+- **Chosen:** `Compress.decode` tries the 1st, 2nd, 4th and 8th position, doubling the index each time until a prefix runs past the member's end, then binary searches between the last two positions it tried. A valid file still needs one decode per member, and the crafted input above takes less than half a second. If a runtime reported the two errors the other way round, the search would miss the end and `decode` would throw, never return wrong output.
+
+## Transitive dev dependencies with advisories are overridden
+
+- **Options:** wait for miniflare, zile, mailauth and smtp-server to release with newer dependencies; add `overrides` in `pnpm-workspace.yaml`.
+- **Trade-offs:** those packages pin exact versions of undici, sharp, tinypool and nodemailer that have advisories, and they release on their own schedule. Only tests and tooling use them, but `pnpm audit` reported 30 advisories, and a new advisory would be easy to miss among them. An override can break the package that pinned the version, so the tests, the workerd checks and the build have to pass after each one.
+- **Chosen:** override each to its next patched release in the same major. Remove an override once the package that pinned the version depends on a patched one. The `ip` and `private-ip` advisories remain, because neither package has a fixed release. Neither can be dropped: ip's oracle tests compare against `ip` on purpose, and `private-ip` is a dependency of tangerine, which dns's tests use.
+
 ## Public API conventions are checked by a test, not a lint rule
 
 - **Options:** lint rules for `@example` JSDoc, `is`/`has`/`can` names and positional booleans on every exported function; the same rules with a disable comment on each internal helper; a test that reads each package's entry points with the TypeScript checker.

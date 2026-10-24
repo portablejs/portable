@@ -1,6 +1,17 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Compress from '@portable/compress'
-import { decode, difference, encode, fixture, formats, hex, randomBytes, samples } from './utils.js'
+import {
+  decode,
+  difference,
+  encode,
+  fixture,
+  formats,
+  gzipMarkers,
+  hex,
+  randomBytes,
+  samples,
+  storedGzip,
+} from './utils.js'
 
 describe('round trips', () => {
   for (const format of formats) {
@@ -115,6 +126,21 @@ describe('gzip members', () => {
     ])
     await expect(Compress.decode(joined, { maxBytes: 5 })).rejects.toThrow(Compress.MaxBytesError)
     expect(decode(await Compress.decode(joined, { maxBytes: 6 }))).toBe('foobar')
+  })
+
+  test('a member whose bytes repeat the gzip header', async () => {
+    const data = gzipMarkers(3000)
+    const first = storedGzip(data)
+    const joined = new Uint8Array([
+      ...first,
+      ...storedGzip(data),
+      ...(await Compress.encode('end')),
+    ])
+    const expected = new Uint8Array([...data, ...data, ...encode('end')])
+    expect(difference(await Compress.decode(joined), expected)).toBe(undefined)
+    await expect(
+      Compress.decode(new Uint8Array([...first, 0, 0, 0, 0, 0, 0, 0, 0])),
+    ).rejects.toThrow(Compress.InvalidInputError)
   })
 
   test('a truncated second member', async () => {

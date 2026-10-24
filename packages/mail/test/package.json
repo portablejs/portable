@@ -12,7 +12,7 @@
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
-    "nodemailer": "^10.1.2",
+    "nodemailer": "^10.2.1",
     "postal-mime": "^4.0.7"
   }
 }
