@@ -1,3 +1,7 @@
+---
+description: The rules every Portable package follows for names, streams, options, cancellation, and errors.
+---
+
 # Conventions
 
 All packages follow the same rules for names, streams, options, cancellation, and errors. These are the rules.

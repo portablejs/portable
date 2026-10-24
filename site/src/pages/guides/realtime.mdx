@@ -1,3 +1,7 @@
+---
+description: Read and write WebSockets that reconnect, server-sent events, and typed RPC as streams, and send Web Push notifications.
+---
+
 # Realtime
 
 A long-lived connection can drop and has to reconnect. A slow reader also must not force the sender to buffer without limit. These packages give you each connection as a `ReadableStream` and a `WritableStream`. Backpressure and cancellation then work as they do for a `fetch` body.

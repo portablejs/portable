@@ -1,3 +1,7 @@
+---
+description: Run timers, retries, and queues that stop when their AbortSignal aborts, and limit requests per key.
+---
+
 # Concurrency and timing
 
 Every timer, retry, and queue in these packages takes an `AbortSignal`. When a request is cancelled, its signal stops the sleeps, retries, and queued tasks that the request started. Without the signal, they would keep running after the response is sent.

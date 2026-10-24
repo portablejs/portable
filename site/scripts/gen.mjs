@@ -57,6 +57,9 @@ const take = (name) => {
 groups.find((g) => g.title === 'Streams and bytes').title = 'Streams'
 groups.push({ title: 'Utilities', items: [take('bytes'), take('errors'), take('random')] })
 
+const descriptions = new Map(
+  groups.flatMap((group) => group.items).map((item) => [item.name, item.description]),
+)
 const out = 'src/pages/packages'
 rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
@@ -92,10 +95,18 @@ for (const name of seen) {
           `<a href={import.meta.env.BASE_URL + 'packages/${name}${path}'}${text === current ? ' aria-current="page"' : ''}>${text}</a>`,
       )
       .join('')}</nav>`
-  writeFileSync(join(out, name, 'index.mdx'), md.replace(/^(# .+\n)/, `$1\n${tabs('Guide')}\n`))
+  // Vocs writes `description` to the page's meta description tag, and og.mjs reads that tag for the OG
+  // image text.
+  const frontmatter = (description) =>
+    `---\ndescription: ${JSON.stringify(description.replace(/`/g, ''))}\n---\n\n`
+  writeFileSync(
+    join(out, name, 'index.mdx'),
+    frontmatter(descriptions.get(name)) + md.replace(/^(# .+\n)/, `$1\n${tabs('Guide')}\n`),
+  )
   writeFileSync(
     join(out, name, 'api.mdx'),
-    toMdx(await formatSnippets(api(name))).replace(/^(# .+\n)/, `$1\n${tabs('API')}\n`),
+    frontmatter(`Every export of @portable/${name}, with its parameters, options, and types.`) +
+      toMdx(await formatSnippets(api(name))).replace(/^(# .+\n)/, `$1\n${tabs('API')}\n`),
   )
 }
 

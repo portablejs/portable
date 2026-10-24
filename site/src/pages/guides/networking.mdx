@@ -1,3 +1,7 @@
+---
+description: Look up DNS records over HTTPS, encode DNS messages, and check IP addresses.
+---
+
 # DNS and networking
 
 Workers and browsers have no `node:dns` and can't send UDP. These packages look up DNS records over HTTPS and return the same results as `node:dns/promises`. They also encode the DNS wire format and parse and compare IP addresses, for SSRF checks and allowlists.

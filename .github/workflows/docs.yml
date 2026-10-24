@@ -31,6 +31,7 @@ jobs:
       - run: pnpm --filter @portable/site build
         env:
           DOCS_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          DOCS_SITE_URL: ${{ steps.pages.outputs.base_url }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/dist/public
