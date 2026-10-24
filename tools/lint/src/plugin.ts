@@ -4,17 +4,10 @@ import type { RuleTester } from 'oxlint/plugins-dev'
 // so the rules live here instead of in their own modules.
 
 type Rule = Parameters<RuleTester['run']>[1]
+type ClassNode = Parameters<
+  NonNullable<ReturnType<NonNullable<Rule['create']>>['ClassDeclaration']>
+>[0]
 
-/**
- * Reports `const name: Type = value`. The annotation widens the constant to `Type`, while
- * `const name = value satisfies Type` checks the value against `Type` and keeps the narrower type
- * that TypeScript infers. It allows an annotation when the wider type is the point: `unique
- * symbol`, a type with an index signature such as `Record<string, number>`, whose keys a lookup
- * reads with any string, an object that the code later writes properties to or that refers to
- * itself, and an exported constant, whose annotation is its public type. It also allows one on an
- * empty collection, such as `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]`
- * infers `never[]` and the first `push` fails to type-check.
- */
 type Node = { type: string; parent?: Node | null | undefined; [key: string]: unknown }
 
 const isNode = (value: unknown): value is Node =>
@@ -66,6 +59,16 @@ function writesMember(identifier: unknown): boolean {
   return parent?.type === 'UnaryExpression' && parent['operator'] === 'delete'
 }
 
+/**
+ * Reports `const name: Type = value`. The annotation widens the constant to `Type`, while
+ * `const name = value satisfies Type` checks the value against `Type` and keeps the narrower type
+ * that TypeScript infers. It allows an annotation when the wider type is the point: `unique
+ * symbol`, a type with an index signature such as `Record<string, number>`, whose keys a lookup
+ * reads with any string, an object that the code later writes properties to or that refers to
+ * itself, and an exported constant, whose annotation is its public type. It also allows one on an
+ * empty collection, such as `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]`
+ * infers `never[]` and the first `push` fails to type-check.
+ */
 const preferSatisfies = {
   meta: {
     type: 'suggestion',
@@ -191,17 +194,20 @@ const importExtension = {
 
 /**
  * Reports an error class without `static override readonly kind`. `BaseError` copies `kind` to
- * `name`, and `Errors.is` compares it, so a class without its own kind matches its parent's.
+ * `name`, and `Errors.is` compares it, so a class without its own kind matches its parent's. A
+ * class that extends another package's error must set a kind of the form `'Package.ClassName'`.
+ * The classes in `@portable/errors`, which extend `Error` or `BaseError`, keep their short kinds.
  */
 const errorKind = {
   meta: {
     type: 'problem',
     messages: {
       errorKind: "Give an error class `static override readonly kind = 'Package.ClassName'`.",
+      kindFormat: "Name the kind `'Package.{{name}}'`, after the namespace and the class.",
     },
   },
-  create: (context) => ({
-    ClassDeclaration: (node) => {
+  create: (context) => {
+    const check = (node: ClassNode) => {
       const name = node.id?.name
       if (!name?.endsWith('Error') || node.superClass == null) return
       const kind = node.body.body.find(
@@ -211,11 +217,19 @@ const errorKind = {
           member.key.type === 'Identifier' &&
           member.key.name === 'kind',
       )
-      const base = node.superClass.type === 'Identifier' && node.superClass.name === 'Error'
-      if (kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override)) return
-      context.report({ node: node.id ?? node, messageId: 'errorKind' })
-    },
-  }),
+      const superClass = node.superClass
+      const base = superClass.type === 'Identifier' && superClass.name === 'Error'
+      if (!(kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override)))
+        return context.report({ node: node.id ?? node, messageId: 'errorKind' })
+      if (superClass.type === 'Identifier' && ['Error', 'BaseError'].includes(superClass.name))
+        return
+      const value = kind.value
+      if (value?.type !== 'Literal' || typeof value.value !== 'string') return
+      if (!new RegExp(`^[A-Z]\\w*\\.${name}$`).test(value.value))
+        context.report({ node: value, messageId: 'kindFormat', data: { name } })
+    }
+    return { ClassDeclaration: check, ClassExpression: check }
+  },
 } satisfies Rule
 
 /**
@@ -229,6 +243,26 @@ const noEnum = {
   },
   create: (context) => ({
     TSEnumDeclaration: (node) => context.report({ node: node.id, messageId: 'noEnum' }),
+  }),
+} satisfies Rule
+
+/**
+ * Reports `for await`. Some browsers the packages support can't iterate a `ReadableStream` with
+ * it, and the rule can't see the type of the value being iterated, so every `for await` in
+ * package code needs a disable comment that says the value isn't a stream.
+ */
+const noForAwait = {
+  meta: {
+    type: 'problem',
+    messages: {
+      noForAwait:
+        'Read a ReadableStream with getReader(). For another async iterable, disable this rule on the line.',
+    },
+  },
+  create: (context) => ({
+    ForOfStatement: (node) => {
+      if (node.await) context.report({ node, messageId: 'noForAwait' })
+    },
   }),
 } satisfies Rule
 
@@ -260,6 +294,7 @@ const plugin = {
     'error-kind': errorKind,
     'import-extension': importExtension,
     'no-enum': noEnum,
+    'no-for-await': noForAwait,
     'no-private-symbol': noPrivateSymbol,
     'optional-undefined': optionalUndefined,
     'prefer-satisfies': preferSatisfies,

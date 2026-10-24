@@ -9,8 +9,16 @@ import { expect, test } from 'vite-plus/test'
 
 const root = join(import.meta.dirname, '../../..')
 const booleanNames = /^(is|has|can)[A-Z]/
-// Standard names for functions that return a boolean, from the platform or from common use.
-const allowedBooleanNames = new Set(['contains', 'equal', 'is', 'needsRehash', 'timingSafeEqual'])
+// Standard names for functions that return a boolean, from the platform or from common use, such
+// as `crypto.subtle.verify`.
+const allowedBooleanNames = new Set([
+  'contains',
+  'equal',
+  'is',
+  'needsRehash',
+  'timingSafeEqual',
+  'verify',
+])
 
 type Entry = { name: string; subpath: string; file: string }
 
@@ -73,10 +81,11 @@ function check(): string[] {
       if (!isValue && !(symbol.flags & ts.SymbolFlags.Type)) continue
       if (!docs) problems.push(`${name}: no JSDoc`)
       else if (isValue && !tags.includes('example')) problems.push(`${name}: no @example`)
-      if (!(symbol.flags & ts.SymbolFlags.Function)) continue
+      if (!(symbol.flags & (ts.SymbolFlags.Function | ts.SymbolFlags.Variable))) continue
       const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0]
       if (!declaration) continue
       const type = checker.getTypeOfSymbolAtLocation(symbol, declaration)
+      if (type.getConstructSignatures().length > 0) continue
       for (const signature of type.getCallSignatures()) {
         for (const parameter of signature.getParameters()) {
           const parameterType = checker.getTypeOfSymbolAtLocation(parameter, declaration)
@@ -88,12 +97,15 @@ function check(): string[] {
           )
             problems.push(`${name}: positional boolean parameter \`${parameter.name}\``)
         }
-        const returns = signature.getReturnType()
+        const returns =
+          checker.getAwaitedType(signature.getReturnType()) ?? signature.getReturnType()
         const predicate = checker.getTypePredicateOfSignature(signature)
+        const returnParts = (returns.isUnion() ? returns.types : [returns]).filter(
+          (part) => !(part.flags & (ts.TypeFlags.Undefined | ts.TypeFlags.Void)),
+        )
         const returnsBoolean =
-          (returns.flags & ts.TypeFlags.Boolean) !== 0 ||
-          (returns.isUnion() &&
-            returns.types.every((part) => part.flags & ts.TypeFlags.BooleanLiteral))
+          returnParts.length > 0 &&
+          returnParts.every((part) => part.flags & ts.TypeFlags.BooleanLike)
         if (
           (returnsBoolean || predicate) &&
           !booleanNames.test(exported.name) &&

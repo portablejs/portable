@@ -46,6 +46,7 @@ tester.run('error-kind', plugin.rules['error-kind'], {
   valid: [
     "class MaxBytesError extends Errors.BaseError { static override readonly kind = 'A.MaxBytesError' }",
     "class BaseError extends Error { static readonly kind: string = 'BaseError' }",
+    "class InvalidInputError extends BaseError { static override readonly kind = 'InvalidInput' }",
     'class Parser {}',
   ],
   invalid: [
@@ -61,12 +62,34 @@ tester.run('error-kind', plugin.rules['error-kind'], {
       code: "class TempError extends Error { override name = 'Dmarc.TempError' }",
       errors: [{ messageId: 'errorKind' }],
     },
+    {
+      code: "class QueryError extends Errors.BaseError { static override readonly kind = 'QueryError' }",
+      errors: [{ messageId: 'kindFormat' }],
+    },
+    {
+      code: "class QueryError extends Errors.BaseError { static override readonly kind = 'Dns.Query' }",
+      errors: [{ messageId: 'kindFormat' }],
+    },
+    {
+      code: 'const QueryError = class QueryError extends Errors.BaseError {}',
+      errors: [{ messageId: 'errorKind' }],
+    },
   ],
 })
 
 tester.run('no-enum', plugin.rules['no-enum'], {
   valid: ["type Mode = 'read' | 'write'"],
   invalid: [{ code: 'enum Mode { Read, Write }', errors: [{ messageId: 'noEnum' }] }],
+})
+
+tester.run('no-for-await', plugin.rules['no-for-await'], {
+  valid: ['for (const chunk of chunks) use(chunk)'],
+  invalid: [
+    {
+      code: 'async function f() { for await (const chunk of stream) use(chunk) }',
+      errors: [{ messageId: 'noForAwait' }],
+    },
+  ],
 })
 
 tester.run('no-private-symbol', plugin.rules['no-private-symbol'], {
