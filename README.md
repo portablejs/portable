@@ -34,8 +34,8 @@ import * as ImageSize from '@portable/image-size'
 
 const file: File = ... // from a file input or a drop
 
-const photo = await new Response(file.stream().pipeThrough(new Exif.StripStream())).blob()
-const { width, height } = await ImageSize.parseStream(photo.stream())
+const photo = Exif.strip(new Uint8Array(await file.arrayBuffer()))
+const { width, height } = ImageSize.parse(photo)
 await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo })
 ```
 
