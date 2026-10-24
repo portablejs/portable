@@ -1,6 +1,6 @@
 import * as Base64 from '@portable/base64'
 import { fromBinary, toBinary } from './internal/bytes.js'
-import type { Hasher } from '@portable/web-crypto'
+import type { Hash, Hasher } from '@portable/web-crypto'
 import { bodyHashKey, type BodyHash, hashBody } from './internal/digest.js'
 import { InvalidInputError } from './errors.js'
 import { type Canonicalization, parseFields, signedData } from './internal/header.js'
@@ -56,7 +56,7 @@ export declare namespace sign {
     /** The expiry (`x=`). It must be after `now`. */
     expiresAt?: Date | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
-    hasher?: (() => Hasher) | undefined
+    hasher?: ((hash: Hash) => Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }

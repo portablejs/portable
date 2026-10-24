@@ -1,4 +1,5 @@
-import { createHash, createHmac } from 'node:crypto'
+import { createHmac } from 'node:crypto'
+import { hmac } from '@noble/hashes/hmac.js'
 import { sha1 } from '@noble/hashes/legacy.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { OAuth as NodeOAuth } from 'oauth'
@@ -25,16 +26,16 @@ const nodeOAuth = new NodeOAuth(
   null,
   'HMAC-SHA1',
 )
-const nodeDigest = ((algorithm, data) =>
-  createHash(algorithm === 'SHA-1' ? 'sha1' : 'sha256')
+const nodeHmac = ((algorithm, key, data) =>
+  createHmac(algorithm === 'SHA-1' ? 'sha1' : 'sha256', key)
     .update(data)
-    .digest()) satisfies OAuth1.Digest
-const nobleDigest = ((algorithm, data) =>
-  algorithm === 'SHA-1' ? sha1(data) : sha256(data)) satisfies OAuth1.Digest
+    .digest()) satisfies OAuth1.Hmac
+const nobleHmac = ((algorithm, key, data) =>
+  hmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data)) satisfies OAuth1.Hmac
 
-// oauth-1.0a is given node:crypto's HMAC, and Node's crypto.subtle.digest is 4 to 8 times slower
-// than a JavaScript hash, so the assertions compare it with `digest` set to @noble/hashes. The
-// WebCrypto default is measured for reference.
+// oauth-1.0a is given node:crypto's HMAC, and Node's WebCrypto HMAC is several times slower than
+// a JavaScript one, so the assertions compare it with `hmac` set to @noble/hashes. The WebCrypto
+// default is measured for reference.
 
 test('Authorization header for a GET request within 25% of oauth-1.0a', async ({ bench }) => {
   const result = await bench.compare(
@@ -42,7 +43,7 @@ test('Authorization header for a GET request within 25% of oauth-1.0a', async ({
       await OAuth1.authorization(new Request(url), twitter)
     }),
     bench('@portable/oauth1 with @noble/hashes', async () => {
-      await OAuth1.authorization(new Request(url), { ...twitter, digest: nobleDigest })
+      await OAuth1.authorization(new Request(url), { ...twitter, hmac: nobleHmac })
     }),
     bench('oauth-1.0a', () => {
       oauth1a.toHeader(oauth1a.authorize({ url, method: 'GET' }, twitter.token))
@@ -58,7 +59,7 @@ test('Authorization header for a GET request within 25% of oauth-1.0a', async ({
 })
 
 // sign() reads the body and builds a second Request, which costs about 10 µs in undici. Hashing is
-// not the gap: a node:crypto digest measures the same as @noble/hashes.
+// not the gap: a node:crypto HMAC measures the same as @noble/hashes.
 test('signed form POST within 50% of oauth-1.0a', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/oauth1', async () => {
@@ -70,7 +71,7 @@ test('signed form POST within 50% of oauth-1.0a', async ({ bench }) => {
     bench('@portable/oauth1 with @noble/hashes', async () => {
       await OAuth1.sign(
         new Request(updateUrl, { method: 'POST', body: new URLSearchParams({ status }) }),
-        { ...twitter, digest: nobleDigest },
+        { ...twitter, hmac: nobleHmac },
       )
     }),
     bench('oauth-1.0a', () => {
@@ -83,12 +84,12 @@ test('signed form POST within 50% of oauth-1.0a', async ({ bench }) => {
         headers: { ...header },
       })
     }),
-    bench('@portable/oauth1 with node:crypto digest', async () => {
+    bench('@portable/oauth1 with node:crypto hmac', async () => {
       await OAuth1.sign(
         new Request(updateUrl, { method: 'POST', body: new URLSearchParams({ status }) }),
         {
           ...twitter,
-          digest: nodeDigest,
+          hmac: nodeHmac,
         },
       )
     }),

@@ -1,7 +1,7 @@
 import * as Bytes from '@portable/bytes'
 import type * as Dns from '@portable/dns'
 import { toBinary } from './internal/bytes.js'
-import type { Hasher } from '@portable/web-crypto'
+import type { Hash, Hasher } from '@portable/web-crypto'
 import { bodyHashKey, hashBody } from './internal/digest.js'
 import { parseFields } from './internal/header.js'
 import { type Message, splitMessage } from './internal/message.js'
@@ -71,7 +71,7 @@ export declare namespace verify {
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
-    hasher?: (() => Hasher) | undefined
+    hasher?: ((hash: Hash) => Hasher) | undefined
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }

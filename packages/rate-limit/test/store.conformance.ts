@@ -139,6 +139,22 @@ describe('memoryStore', () => {
     expect(store.set('a', 5, { expected: undefined, ttl: 100 })).toBe(true)
   })
 
+  test('expires keys by the now option instead of the clock', () => {
+    const store = RateLimit.memoryStore()
+    const start = new Date('2030-01-01T00:00:00Z')
+    store.set('a', 1, { expected: undefined, ttl: 100, now: start })
+    expect(store.get('a', { now: new Date(start.getTime() + 99) })).toBe(1)
+    expect(store.get('a', { now: new Date(start.getTime() + 100) })).toBeUndefined()
+  })
+
+  test('follows the now that take passes to it', async () => {
+    const limiter = RateLimit.create({ limit: 1, period: 1000, store: RateLimit.memoryStore() })
+    const start = new Date('2030-01-01T00:00:00Z')
+    expect((await limiter.take('a', { now: start })).allowed).toBe(true)
+    expect((await limiter.take('a', { now: start })).allowed).toBe(false)
+    expect((await limiter.take('a', { now: new Date(start.getTime() + 1000) })).allowed).toBe(true)
+  })
+
   test('keeps live keys while sweeping expired ones', () => {
     const store = RateLimit.memoryStore()
     for (let i = 0; i < 1000; i++) store.set(`old${i}`, i, { expected: undefined, ttl: 10 })

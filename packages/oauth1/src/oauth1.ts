@@ -1,7 +1,7 @@
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import * as WebCrypto from '@portable/web-crypto'
-import { hmac, rsaSha1 } from './crypto.js'
+import { rsaSha1 } from './crypto.js'
 import { UnsupportedError } from './errors.js'
 import { race, readBody } from './race.js'
 import {
@@ -46,9 +46,11 @@ export type Credentials =
 export declare namespace authorization {
   type Options = Credentials & {
     /**
-     * Hashes for HMAC and `oauth_body_hash`. `@noble/hashes` is sync and 4 to 8 times faster on Node.
-     * @default WebCrypto.digest
+     * Computes the HMAC for HMAC-SHA1 and HMAC-SHA256. `@noble/hashes` is sync and several times
+     * faster on Node. @default WebCrypto.hmac
      */
+    hmac?: WebCrypto.Hmac | undefined
+    /** Hashes the body for `oauth_body_hash`. @default WebCrypto.digest */
     digest?: WebCrypto.Digest | undefined
     /** Omit it to sign with client credentials only, as when requesting temporary credentials. */
     token?: Token | undefined
@@ -202,7 +204,7 @@ async function protocolParameters(
   const signatureMethod = options.signatureMethod ?? 'HMAC-SHA1'
   if (!methods.has(signatureMethod))
     throw new UnsupportedError(`Unsupported signature method: ${String(signatureMethod)}`)
-  const { callback, digest = WebCrypto.digest, token, verifier } = options
+  const { callback, digest = WebCrypto.digest, hmac = WebCrypto.hmac, token, verifier } = options
   const hash = (signatureMethod === 'HMAC-SHA256' ? 'SHA-256' : 'SHA-1') satisfies WebCrypto.Hash
 
   const oauth = [
@@ -240,7 +242,7 @@ async function protocolParameters(
     signature =
       signatureMethod === 'PLAINTEXT'
         ? key
-        : Base64.encode(await hmac(digest, hash, utf8.encode(key), base))
+        : Base64.encode(await hmac(hash, utf8.encode(key), base))
   }
   oauth.push(['oauth_signature', percentEncode(signature)])
   return sortPairs(oauth)

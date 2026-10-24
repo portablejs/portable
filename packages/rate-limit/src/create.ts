@@ -87,7 +87,7 @@ export function create(options: create.Options): Limiter {
         throw new RangeError(`\`cost\` must be a finite number, got ${cost}.`)
       for (;;) {
         signal?.throwIfAborted()
-        const read = store.get(key, { signal })
+        const read = store.get(key, { now: new Date(time), signal })
         const stored = typeof read === 'object' ? await read : read
         const now = time
         const base = stored === undefined ? now : Math.max(stored, now)
@@ -114,7 +114,12 @@ export function create(options: create.Options): Limiter {
         if (arrival === base) return result
         signal?.throwIfAborted()
         const ttl = Math.max(1, Math.ceil(arrival - now))
-        const written = store.set(key, arrival, { expected: stored, ttl, signal })
+        const written = store.set(key, arrival, {
+          expected: stored,
+          ttl,
+          now: new Date(time),
+          signal,
+        })
         if (typeof written === 'object' ? await written : written) return result
       }
     },

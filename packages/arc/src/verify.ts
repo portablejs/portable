@@ -99,7 +99,7 @@ export declare namespace verify {
     /** RSA keys shorter than this fail the chain (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined
     /** Creates the body hash, as in `Dkim.verify`. @default buffers the body for `crypto.subtle.digest` */
-    hasher?: (() => Dkim.Hasher) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }

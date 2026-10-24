@@ -45,7 +45,8 @@ The signature covers what the server will see, because it is computed from the `
 | `nonce`, `now` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `now` is a `Date`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 | `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
-| `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for HMAC and `oauth_body_hash`. |
+| `hmac` | `crypto.subtle` HMAC | `(algorithm: 'SHA-1' \| 'SHA-256', key, data) => Uint8Array \| Promise<Uint8Array>`, used for HMAC-SHA1 and HMAC-SHA256. |
+| `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for `oauth_body_hash`. |
 
 `sign` and `authorization` reject with a `RangeError` for an RSA key that can't be used, and with `UnsupportedError` for another signature method.
 
@@ -60,17 +61,19 @@ await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, priva
 
 ## Crypto
 
-HMAC is built on `digest`, which hashes with `crypto.subtle.digest` by default, so the package has no dependency for it. RSA-SHA1 uses `crypto.subtle.sign`.
+HMAC uses `crypto.subtle` HMAC and `oauth_body_hash` uses `crypto.subtle.digest` by default, so the package has no dependency for them. RSA-SHA1 uses `crypto.subtle.sign`.
 
-On Node, `crypto.subtle.digest` is 4 to 8 times slower than `@noble/hashes`. To sign many requests on Node, install `@noble/hashes` and pass it as `digest`:
+On Node, WebCrypto HMAC is several times slower than `@noble/hashes`. To sign many requests on Node, install `@noble/hashes` and pass it as `hmac`, and as `digest` if you use `bodyHash`:
 
 ```ts
+import { hmac as nobleHmac } from '@noble/hashes/hmac.js'
 import { sha1 } from '@noble/hashes/legacy.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import * as OAuth1 from '@portable/oauth1'
 
-const digest: OAuth1.Digest = (algorithm, data) => (algorithm === 'SHA-1' ? sha1(data) : sha256(data))
-await OAuth1.sign(request, { consumer, token, digest })
+const hmac: OAuth1.Hmac = (algorithm, key, data) =>
+  nobleHmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data)
+await OAuth1.sign(request, { consumer, token, hmac })
 ```
 
 ## Types
@@ -80,6 +83,7 @@ await OAuth1.sign(request, { consumer, token, digest })
 | `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
 | `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
 | `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
+| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
 | `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
 
 ## Why use this over oauth-1.0a and node-oauth
@@ -113,7 +117,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, `crypto.subtle.digest` is several times slower than a JavaScript hash, so pass `@noble/hashes` as `digest` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
+On Node, WebCrypto HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
 
 ## Migrating
 

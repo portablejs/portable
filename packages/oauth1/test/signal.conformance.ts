@@ -43,16 +43,16 @@ describe('signal', () => {
     },
   )
 
-  test('aborting while the digest runs rejects with the reason', async () => {
+  test('aborting while the hmac runs rejects with the reason', async () => {
     const controller = new AbortController()
     const reason = new Error('stop')
-    const digest = () => {
+    const hmac = () => {
       controller.abort(reason)
       return new Promise<Uint8Array>(() => {})
     }
     const request = new Request('https://api.example.com/items')
     await expect(
-      OAuth1.authorization(request, { consumer, digest, signal: controller.signal }),
+      OAuth1.authorization(request, { consumer, hmac, signal: controller.signal }),
     ).rejects.toBe(reason)
   })
 

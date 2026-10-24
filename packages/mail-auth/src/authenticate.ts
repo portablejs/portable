@@ -93,7 +93,7 @@ export declare namespace authenticate {
      * Creates the body hashes, as in `Dkim.verify`.
      * @default buffers the body for `crypto.subtle.digest`
      */
-    hasher?: (() => Dkim.Hasher) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
     /**
      * Finds organizational domains from a public suffix list, as in `Dmarc.check`.
      * @default the DNS tree walk

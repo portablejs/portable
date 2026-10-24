@@ -1,4 +1,4 @@
-export type { Digest } from '@portable/web-crypto'
+export type { Digest, Hmac } from '@portable/web-crypto'
 export { UnsupportedError } from '../errors.js'
 export {
   authorization,

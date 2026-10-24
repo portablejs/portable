@@ -61,7 +61,7 @@ export declare namespace seal {
     /** The signature time (`t=`). @default new Date() */
     now?: Date | undefined
     /** Creates the body hash, as in `Dkim.sign`. @default buffers the body for `crypto.subtle.digest` */
-    hasher?: (() => Dkim.Hasher) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }

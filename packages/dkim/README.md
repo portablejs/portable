@@ -99,7 +99,7 @@ RSA and Ed25519 signing and verification use WebCrypto (`crypto.subtle`), which 
 
 The body hash is different. `crypto.subtle.digest` can't hash incrementally, so by default the canonicalized body is collected and hashed with one call. MTAs usually limit a message to 25 to 50 MB, so the buffer is no larger than what a mail server already holds. A signer has to buffer the message anyway, because the DKIM-Signature field goes before the body and contains the body hash, so only verification would gain from streaming. If WebCrypto adds streaming digests, the default can switch to one without an API change.
 
-To verify in constant memory, pass `hasher`, a function that returns an incremental SHA-256 hash with `update(bytes)` and `digest()`. `sha256.create()` from `@noble/hashes` returns one:
+To verify in constant memory, pass `hasher`, a function that takes the hash name and returns an incremental hash with `update(bytes)` and `digest()`. DKIM calls it with `'SHA-256'`, and `sha256.create()` from `@noble/hashes` returns one:
 
 ```ts
 import { sha256 } from '@noble/hashes/sha2.js'
@@ -113,7 +113,8 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() })
 | --- | --- |
 | `Dkim.Message` | What `sign` and `verify` read: a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. |
 | `Dkim.Resolver` | `Pick<Dns.Resolver, 'resolveTxt'>`, the lookup `verify` needs. |
-| `Dkim.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function that returns one. Re-exported from `@portable/web-crypto`. |
+| `Dkim.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Dkim.Hash) => Dkim.Hasher`. Re-exported from `@portable/web-crypto`. |
+| `Dkim.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/web-crypto`. |
 
 ## Why use this over mailauth and nodemailer
 

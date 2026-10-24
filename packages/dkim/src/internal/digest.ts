@@ -2,7 +2,7 @@ import { type Canonicalizer, createCanonicalizer, type Sink } from './body.js'
 import * as Bytes from '@portable/bytes'
 import type { Canonicalization } from './header.js'
 import type { Body } from './message.js'
-import type { Hasher } from '@portable/web-crypto'
+import type { Hash, Hasher } from '@portable/web-crypto'
 
 /** `crypto.subtle.digest` takes its whole input at once, so this collects the chunks. */
 function webCryptoHash(): Hasher {
@@ -35,7 +35,7 @@ type Pass = { canonicalizer: Canonicalizer; sinks: Sink[]; total: number }
 export async function hashBody(
   body: Body,
   requests: readonly BodyHash[],
-  createHash: () => Hasher = webCryptoHash,
+  createHash: (hash: Hash) => Hasher = webCryptoHash,
 ): Promise<Map<string, BodyDigest>> {
   const passes = new Map<Canonicalization, Pass>()
   const hashes = new Map<string, { pass: Pass; hash: Hasher }>()
@@ -56,7 +56,7 @@ export async function hashBody(
       pass = created
       passes.set(request.canonicalization, pass)
     }
-    const hash = createHash()
+    const hash = createHash('SHA-256')
     hashes.set(key, { pass, hash })
     const { length = Infinity } = request
     let hashed = 0

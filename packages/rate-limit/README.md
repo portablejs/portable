@@ -77,16 +77,19 @@ RateLimit.headers(result)
 
 ```ts
 type Store = {
-  get(key: string, options: { signal?: AbortSignal }): number | undefined | Promise<number | undefined>
+  get(
+    key: string,
+    options: { now?: Date; signal?: AbortSignal },
+  ): number | undefined | Promise<number | undefined>
   set(
     key: string,
     value: number,
-    options: { expected: number | undefined; ttl: number; signal?: AbortSignal },
+    options: { expected: number | undefined; ttl: number; now?: Date; signal?: AbortSignal },
   ): boolean | Promise<boolean>
 }
 ```
 
-`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
+`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
 
 Several limiters can share a store. Give each one its own key prefix, such as `login:${ip}`, unless they should share the allowance.
 
