@@ -4,10 +4,15 @@
 # Previews are anonymous here.now sites, which expire 24 hours after they are created. The site's slug and claim
 # token are kept in the Actions cache, which only this pull request's runs can read, so later pushes update the same
 # site until it is about to expire.
+#
+# Actions minutes are billed, so the job runs only on pull requests with the `preview` label. Adding the label
+# publishes a preview, and each later push updates it. On other pull requests the job is skipped, which uses no
+# minutes.
 name: Docs preview
 
 on:
   pull_request:
+    types: [labeled, synchronize]
 
 permissions:
   contents: read
@@ -20,7 +25,9 @@ concurrency:
 jobs:
   preview:
     # Pull requests from forks get a read-only token, so they can't create deployments.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'preview')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
