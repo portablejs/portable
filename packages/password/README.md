@@ -9,14 +9,14 @@ npm install @portable/password
 ```
 
 ```ts
-import * as Password from '@portable/password'
+import * as Password from '@portable/password';
 
-const stored = await Password.hash(password)
+const stored = await Password.hash(password);
 // '$pbkdf2-sha256$i=600000$jL2uY0lkKl3m0WbJ8a7SmA$7m0N...'
 
 if (await Password.verify(password, stored)) {
   if (Password.needsRehash(stored)) {
-    await saveHash(user, await Password.hash(password))
+    await saveHash(user, await Password.hash(password));
   }
 }
 ```
@@ -65,9 +65,9 @@ Workers rejects PBKDF2 with more than 100,000 iterations: `deriveBits` throws a 
 On Workers, hash with `iterations: 100_000` and check with the same value:
 
 ```ts
-const options = { iterations: 100_000 }
-const stored = await Password.hash(password, options)
-Password.needsRehash(stored, options) // false
+const options = { iterations: 100_000 };
+const stored = await Password.hash(password, options);
+Password.needsRehash(stored, options); // false
 ```
 
 100,000 iterations is a sixth of OWASP's recommendation, so a stolen hash costs an attacker six times less to crack. If that's not enough, hash passwords in a service that can run 600,000 iterations or Argon2id, and keep the Worker for the rest. A hash written elsewhere with more than 100,000 iterations can't be verified on Workers at all.
@@ -94,16 +94,16 @@ WebCrypto has PBKDF2 and no other password hash, so this package can't verify bc
 ```ts
 async function check(user: User, password: string): Promise<boolean> {
   try {
-    return await Password.verify(password, user.hash)
+    return await Password.verify(password, user.hash);
   } catch (error) {
     if (!(error instanceof Password.UnsupportedError)) {
-      throw error
+      throw error;
     }
     if (!(await verifyLegacy(password, user.hash))) {
-      return false
+      return false;
     }
-    await saveHash(user, await Password.hash(password))
-    return true
+    await saveHash(user, await Password.hash(password));
+    return true;
   }
 }
 ```

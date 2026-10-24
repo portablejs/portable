@@ -1,19 +1,19 @@
-import { InvalidInputError } from './errors.js'
-import { assertUint8Array } from './internal/uint8Array.js'
+import { InvalidInputError } from './errors.js';
+import { assertUint8Array } from './internal/uint8Array.js';
 
 /**
  * Encodes bytes as lowercase hex. Uses `Uint8Array.prototype.toHex` where the runtime has it.
  *
  * @example
  * ```ts
- * import * as Bytes from '@portable/bytes'
+ * import * as Bytes from '@portable/bytes';
  *
- * Bytes.toHex(new Uint8Array([0, 15, 16, 255])) // '000f10ff'
+ * Bytes.toHex(new Uint8Array([0, 15, 16, 255])); // '000f10ff'
  * ```
  */
 export function toHex(bytes: Uint8Array): string {
-  assertUint8Array(bytes)
-  return nativeToHex ? nativeToHex.call(bytes) : toHexFallback(bytes)
+  assertUint8Array(bytes);
+  return nativeToHex ? nativeToHex.call(bytes) : toHexFallback(bytes);
 }
 
 /**
@@ -22,95 +22,95 @@ export function toHex(bytes: Uint8Array): string {
  *
  * @example
  * ```ts
- * import * as Bytes from '@portable/bytes'
+ * import * as Bytes from '@portable/bytes';
  *
- * Bytes.fromHex('000f10FF') // Uint8Array [0, 15, 16, 255]
+ * Bytes.fromHex('000f10FF'); // Uint8Array [0, 15, 16, 255]
  * ```
  *
  * @throws {InvalidInputError} When the input has an odd length or a character that isn't a hex
  * digit.
  */
 export function fromHex(text: string | Uint8Array): Uint8Array<ArrayBuffer> {
-  const hex = typeof text === 'string' ? text : latin1(assertUint8Array(text))
+  const hex = typeof text === 'string' ? text : latin1(assertUint8Array(text));
   if (nativeFromHex) {
     try {
-      return nativeFromHex.call(Uint8Array, hex)
+      return nativeFromHex.call(Uint8Array, hex);
     } catch (error) {
       if (!(error instanceof SyntaxError)) {
-        throw error
+        throw error;
       }
       // The native SyntaxError doesn't say where the problem is. The fallback throws on exactly the
       // same input, with the position.
-      fromHexFallback(hex)
-      throw new InvalidInputError(error.message, { cause: error })
+      fromHexFallback(hex);
+      throw new InvalidInputError(error.message, { cause: error });
     }
   }
-  return fromHexFallback(hex)
+  return fromHexFallback(hex);
 }
 
-type NativeToHex = (this: Uint8Array) => string
-const nativeToHex = Reflect.get(Uint8Array.prototype, 'toHex') satisfies NativeToHex | undefined
+type NativeToHex = (this: Uint8Array) => string;
+const nativeToHex = Reflect.get(Uint8Array.prototype, 'toHex') satisfies NativeToHex | undefined;
 
-type NativeFromHex = (text: string) => Uint8Array<ArrayBuffer>
-const nativeFromHex = Reflect.get(Uint8Array, 'fromHex') satisfies NativeFromHex | undefined
+type NativeFromHex = (text: string) => Uint8Array<ArrayBuffer>;
+const nativeFromHex = Reflect.get(Uint8Array, 'fromHex') satisfies NativeFromHex | undefined;
 
-const digits = '0123456789abcdef'
-const pairs = Array.from({ length: 256 }, (_, byte) => digits[byte >> 4]! + digits[byte & 15]!)
-const high = Uint8Array.from(pairs, (pair) => pair.charCodeAt(0))
-const low = Uint8Array.from(pairs, (pair) => pair.charCodeAt(1))
-const ascii = new TextDecoder()
+const digits = '0123456789abcdef';
+const pairs = Array.from({ length: 256 }, (_, byte) => digits[byte >> 4]! + digits[byte & 15]!);
+const high = Uint8Array.from(pairs, (pair) => pair.charCodeAt(0));
+const low = Uint8Array.from(pairs, (pair) => pair.charCodeAt(1));
+const ascii = new TextDecoder();
 
 export function toHexFallback(bytes: Uint8Array): string {
   // Appending to a string is faster for short input, and writing ASCII bytes and decoding them
   // once is faster for long input.
   if (bytes.length <= 128) {
-    let hex = ''
+    let hex = '';
     for (let i = 0; i < bytes.length; i++) {
-      hex += pairs[bytes[i]!]
+      hex += pairs[bytes[i]!];
     }
-    return hex
+    return hex;
   }
-  const out = new Uint8Array(bytes.length * 2)
+  const out = new Uint8Array(bytes.length * 2);
   for (let i = 0, j = 0; i < bytes.length; i++, j += 2) {
-    const byte = bytes[i]!
-    out[j] = high[byte]!
-    out[j + 1] = low[byte]!
+    const byte = bytes[i]!;
+    out[j] = high[byte]!;
+    out[j + 1] = low[byte]!;
   }
-  return ascii.decode(out)
+  return ascii.decode(out);
 }
 
 const values = /* @__PURE__ */ (() => {
-  const table = new Int8Array(128).fill(-1)
+  const table = new Int8Array(128).fill(-1);
   for (let i = 0; i < 16; i++) {
-    table[digits.charCodeAt(i)] = i
-    table[digits.toUpperCase().charCodeAt(i)] = i
+    table[digits.charCodeAt(i)] = i;
+    table[digits.toUpperCase().charCodeAt(i)] = i;
   }
-  return table
-})()
+  return table;
+})();
 
 export function fromHexFallback(hex: string): Uint8Array<ArrayBuffer> {
   if (hex.length % 2 !== 0) {
-    throw new InvalidInputError(`Hex input has an odd length of ${hex.length}.`)
+    throw new InvalidInputError(`Hex input has an odd length of ${hex.length}.`);
   }
-  const bytes = new Uint8Array(hex.length / 2)
+  const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0, j = 0; i < bytes.length; i++, j += 2) {
-    const a = hex.charCodeAt(j)
-    const b = hex.charCodeAt(j + 1)
-    const h = a < 128 ? values[a]! : -1
-    const l = b < 128 ? values[b]! : -1
+    const a = hex.charCodeAt(j);
+    const b = hex.charCodeAt(j + 1);
+    const h = a < 128 ? values[a]! : -1;
+    const l = b < 128 ? values[b]! : -1;
     if ((h | l) < 0) {
-      const at = h < 0 ? j : j + 1
-      throw new InvalidInputError(`Invalid hex character ${JSON.stringify(hex[at])} at ${at}.`)
+      const at = h < 0 ? j : j + 1;
+      throw new InvalidInputError(`Invalid hex character ${JSON.stringify(hex[at])} at ${at}.`);
     }
-    bytes[i] = (h << 4) | l
+    bytes[i] = (h << 4) | l;
   }
-  return bytes
+  return bytes;
 }
 
 function latin1(bytes: Uint8Array): string {
-  let text = ''
+  let text = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
-    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   }
-  return text
+  return text;
 }

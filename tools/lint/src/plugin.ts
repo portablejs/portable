@@ -1,92 +1,92 @@
-import type { RuleTester } from 'oxlint/plugins-dev'
+import type { RuleTester } from 'oxlint/plugins-dev';
 
 // oxlint loads this file with Node, which can't resolve a relative `.js` import to a `.ts` file,
 // so the rules live here instead of in their own modules.
 
-type Rule = Parameters<RuleTester['run']>[1]
+type Rule = Parameters<RuleTester['run']>[1];
 type ClassNode = Parameters<
   NonNullable<ReturnType<NonNullable<Rule['create']>>['ClassDeclaration']>
->[0]
+>[0];
 
-type Node = { type: string; parent?: Node | null | undefined; [key: string]: unknown }
+type Node = { type: string; parent?: Node | null | undefined; [key: string]: unknown };
 
 const isNode = (value: unknown): value is Node =>
-  typeof value === 'object' && value !== null && 'type' in value
+  typeof value === 'object' && value !== null && 'type' in value;
 
 // `unknown`, `unique symbol`, `Record<…>` alone or in `Partial` or `Readonly`, a mapped type, or a
 // type literal with an index signature.
 function isWide(type: unknown): boolean {
   if (!isNode(type)) {
-    return false
+    return false;
   }
   if (type.type === 'TSUnknownKeyword') {
-    return true
+    return true;
   }
   if (type.type === 'TSTypeOperator') {
-    return type['operator'] === 'unique'
+    return type['operator'] === 'unique';
   }
   if (type.type === 'TSMappedType') {
-    return true
+    return true;
   }
   if (type.type === 'TSTypeLiteral') {
-    return (type['members'] as Node[]).some((member) => member.type === 'TSIndexSignature')
+    return (type['members'] as Node[]).some((member) => member.type === 'TSIndexSignature');
   }
   if (type.type !== 'TSTypeReference') {
-    return false
+    return false;
   }
-  const name = type['typeName'] as Node
+  const name = type['typeName'] as Node;
   if (name.type !== 'Identifier') {
-    return false
+    return false;
   }
   if (name['name'] === 'Record') {
-    return true
+    return true;
   }
-  const [argument] = ((type['typeArguments'] as Node | null)?.['params'] ?? []) as Node[]
-  return ['Partial', 'Readonly'].includes(name['name'] as string) && !!argument && isWide(argument)
+  const [argument] = ((type['typeArguments'] as Node | null)?.['params'] ?? []) as Node[];
+  return ['Partial', 'Readonly'].includes(name['name'] as string) && !!argument && isWide(argument);
 }
 
 // `[]`, `new Map()` or `new Set()`, or an array or object literal holding only those.
 function isEmpty(node: unknown): boolean {
   if (!isNode(node)) {
-    return false
+    return false;
   }
   if (node.type === 'ArrayExpression') {
-    return (node['elements'] as unknown[]).every(isEmpty)
+    return (node['elements'] as unknown[]).every(isEmpty);
   }
   if (node.type === 'ObjectExpression') {
     return (node['properties'] as Node[]).every(
       (property) => property.type === 'Property' && isEmpty(property['value']),
-    )
+    );
   }
   if (node.type !== 'NewExpression') {
-    return false
+    return false;
   }
-  const callee = node['callee'] as Node
+  const callee = node['callee'] as Node;
   return (
     callee.type === 'Identifier' &&
     ['Map', 'Set'].includes(callee['name'] as string) &&
     (node['arguments'] as unknown[]).length === 0 &&
     node['typeArguments'] == null
-  )
+  );
 }
 
 // `name.key = …`, `name[key] = …`, `name.key++` or `delete name.key`.
 function writesMember(identifier: unknown): boolean {
   if (!isNode(identifier)) {
-    return false
+    return false;
   }
-  const member = identifier.parent
+  const member = identifier.parent;
   if (member?.type !== 'MemberExpression' || member['object'] !== identifier) {
-    return false
+    return false;
   }
-  const parent = member.parent
+  const parent = member.parent;
   if (parent?.type === 'AssignmentExpression') {
-    return parent['left'] === member
+    return parent['left'] === member;
   }
   if (parent?.type === 'UpdateExpression') {
-    return true
+    return true;
   }
-  return parent?.type === 'UnaryExpression' && parent['operator'] === 'delete'
+  return parent?.type === 'UnaryExpression' && parent['operator'] === 'delete';
 }
 
 /**
@@ -111,46 +111,46 @@ const preferSatisfies = {
   create: (context) => ({
     VariableDeclarator: (node) => {
       if (node.parent.type !== 'VariableDeclaration' || node.parent.kind !== 'const') {
-        return
+        return;
       }
       if (node.parent.parent?.type === 'ExportNamedDeclaration') {
-        return
+        return;
       }
       if (node.init === null) {
-        return
+        return;
       }
       if (!('typeAnnotation' in node.id) || node.id.typeAnnotation == null) {
-        return
+        return;
       }
       if (isWide(node.id.typeAnnotation.typeAnnotation)) {
-        return
+        return;
       }
       if (isEmpty(node.init)) {
-        return
+        return;
       }
       // `const view: Type = value` reads an existing value through a wider type.
       if (node.init.type === 'Identifier' || node.init.type === 'MemberExpression') {
-        return
+        return;
       }
-      const [variable] = context.sourceCode.getDeclaredVariables(node)
+      const [variable] = context.sourceCode.getDeclaredVariables(node);
       if (variable?.references.some((reference) => writesMember(reference.identifier))) {
-        return
+        return;
       }
       // An initializer that refers to the constant itself needs the annotation to infer a type.
-      const [start, end] = node.init.range
+      const [start, end] = node.init.range;
       if (
         variable?.references.some(
           ({ identifier: { range } }) => range[0] >= start && range[1] <= end,
         )
       ) {
-        return
+        return;
       }
-      context.report({ node: node.id, messageId: 'preferSatisfies' })
+      context.report({ node: node.id, messageId: 'preferSatisfies' });
     },
   }),
-} satisfies Rule
+} satisfies Rule;
 
-const isReported = (name: string) => name.length === 1 || /^[A-Z]/.test(name)
+const isReported = (name: string) => name.length === 1 || /^[A-Z]/.test(name);
 
 /**
  * Reports a type parameter or a mapped-type key with a capitalized or one-letter name. A lowercase
@@ -167,16 +167,16 @@ const typeParameterName = {
   create: (context) => ({
     TSTypeParameter: (node) => {
       if (isReported(node.name.name)) {
-        context.report({ node: node.name, messageId: 'typeParameterName' })
+        context.report({ node: node.name, messageId: 'typeParameterName' });
       }
     },
     TSMappedType: (node) => {
       if (isReported(node.key.name)) {
-        context.report({ node: node.key, messageId: 'typeParameterName' })
+        context.report({ node: node.key, messageId: 'typeParameterName' });
       }
     },
   }),
-} satisfies Rule
+} satisfies Rule;
 
 /**
  * Reports an optional property whose type leaves out `undefined`, such as `foo?: string`. With
@@ -192,33 +192,33 @@ const optionalUndefined = {
   create: (context) => ({
     TSPropertySignature: (node) => {
       if (!node.optional || node.typeAnnotation == null) {
-        return
+        return;
       }
-      const type = node.typeAnnotation.typeAnnotation as unknown as Node
+      const type = node.typeAnnotation.typeAnnotation as unknown as Node;
       if (allowsUndefined(type)) {
-        return
+        return;
       }
-      const text = context.sourceCode.getText(type as never)
+      const text = context.sourceCode.getText(type as never);
       const wrap =
         type.type === 'TSFunctionType' ||
         type.type === 'TSConstructorType' ||
-        type.type === 'TSConditionalType'
+        type.type === 'TSConditionalType';
       context.report({
         node: node.key,
         messageId: 'optionalUndefined',
         fix: (fixer) =>
           fixer.replaceText(type as never, `${wrap ? `(${text})` : text} | undefined`),
-      })
+      });
     },
   }),
-} satisfies Rule
+} satisfies Rule;
 
 // `undefined`, `unknown`, `any`, or a union that holds one of them.
 function allowsUndefined(type: Node): boolean {
   if (['TSUndefinedKeyword', 'TSUnknownKeyword', 'TSAnyKeyword'].includes(type.type)) {
-    return true
+    return true;
   }
-  return type.type === 'TSUnionType' && (type['types'] as Node[]).some(allowsUndefined)
+  return type.type === 'TSUnionType' && (type['types'] as Node[]).some(allowsUndefined);
 }
 
 /**
@@ -232,27 +232,27 @@ const importExtension = {
   },
   create: (context) => {
     const check = (node: { source?: unknown }) => {
-      const source = node.source as Node | null | undefined
+      const source = node.source as Node | null | undefined;
       if (!isNode(source) || typeof source['value'] !== 'string') {
-        return
+        return;
       }
-      const path = source['value']
+      const path = source['value'];
       if (!path.startsWith('./') && !path.startsWith('../')) {
-        return
+        return;
       }
       if (/\.(js|json)$/.test(path) || path.includes('?')) {
-        return
+        return;
       }
-      context.report({ node: source as never, messageId: 'importExtension' })
-    }
+      context.report({ node: source as never, messageId: 'importExtension' });
+    };
     return {
       ImportDeclaration: check,
       ExportAllDeclaration: check,
       ExportNamedDeclaration: check,
       ImportExpression: check,
-    }
+    };
   },
-} satisfies Rule
+} satisfies Rule;
 
 /**
  * Reports an error class without `static override readonly kind`. `BaseError` copies `kind` to
@@ -270,9 +270,9 @@ const errorKind = {
   },
   create: (context) => {
     const check = (node: ClassNode) => {
-      const name = node.id?.name
+      const name = node.id?.name;
       if (!name?.endsWith('Error') || node.superClass == null) {
-        return
+        return;
       }
       const kind = node.body.body.find(
         (member) =>
@@ -280,26 +280,26 @@ const errorKind = {
           member.static &&
           member.key.type === 'Identifier' &&
           member.key.name === 'kind',
-      )
-      const superClass = node.superClass
-      const base = superClass.type === 'Identifier' && superClass.name === 'Error'
+      );
+      const superClass = node.superClass;
+      const base = superClass.type === 'Identifier' && superClass.name === 'Error';
       if (!(kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override))) {
-        return context.report({ node: node.id ?? node, messageId: 'errorKind' })
+        return context.report({ node: node.id ?? node, messageId: 'errorKind' });
       }
       if (superClass.type === 'Identifier' && ['Error', 'BaseError'].includes(superClass.name)) {
-        return
+        return;
       }
-      const value = kind.value
+      const value = kind.value;
       if (value?.type !== 'Literal' || typeof value.value !== 'string') {
-        return
+        return;
       }
       if (!new RegExp(`^[A-Z]\\w*\\.${name}$`).test(value.value)) {
-        context.report({ node: value, messageId: 'kindFormat', data: { name } })
+        context.report({ node: value, messageId: 'kindFormat', data: { name } });
       }
-    }
-    return { ClassDeclaration: check, ClassExpression: check }
+    };
+    return { ClassDeclaration: check, ClassExpression: check };
   },
-} satisfies Rule
+} satisfies Rule;
 
 /**
  * Reports an `enum`. A union of string literals types the same values, needs no runtime object,
@@ -313,7 +313,7 @@ const noEnum = {
   create: (context) => ({
     TSEnumDeclaration: (node) => context.report({ node: node.id, messageId: 'noEnum' }),
   }),
-} satisfies Rule
+} satisfies Rule;
 
 /**
  * Reports `Symbol()`. A second copy of the package creates a different symbol, so a mark it
@@ -328,11 +328,11 @@ const noPrivateSymbol = {
   create: (context) => ({
     CallExpression: (node) => {
       if (node.callee.type === 'Identifier' && node.callee.name === 'Symbol') {
-        context.report({ node, messageId: 'noPrivateSymbol' })
+        context.report({ node, messageId: 'noPrivateSymbol' });
       }
     },
   }),
-} satisfies Rule
+} satisfies Rule;
 
 /**
  * The oxlint rules that only this repo has, under the `portable` prefix. `vite.config.ts` loads
@@ -349,6 +349,6 @@ const plugin = {
     'prefer-satisfies': preferSatisfies,
     'type-parameter-name': typeParameterName,
   },
-}
+};
 
-export default plugin
+export default plugin;

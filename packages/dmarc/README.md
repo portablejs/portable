@@ -9,19 +9,19 @@ npm install @portable/dmarc @portable/spf @portable/dns
 ```
 
 ```ts
-import * as Dmarc from '@portable/dmarc'
-import * as Dns from '@portable/dns'
-import * as Spf from '@portable/spf'
+import * as Dmarc from '@portable/dmarc';
+import * as Dns from '@portable/dns';
+import * as Spf from '@portable/spf';
 
-const resolver = Dns.create()
-const spf = await Spf.check({ ip, sender, helo }, { resolver })
+const resolver = Dns.create();
+const spf = await Spf.check({ ip, sender, helo }, { resolver });
 const dmarc = await Dmarc.check(
   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'example.com' }] },
   { resolver, signal: AbortSignal.timeout(10_000) },
-)
+);
 
 if (dmarc.disposition === 'reject') {
-  reject('550 5.7.1 Rejected by the DMARC policy of example.com')
+  reject('550 5.7.1 Rejected by the DMARC policy of example.com');
 }
 ```
 
@@ -74,9 +74,9 @@ The check walks only in two cases: to find the policy when the From domain has n
 Pass `organizationalDomain` to use a public suffix list instead:
 
 ```ts
-import { getDomain } from 'tldts'
+import { getDomain } from 'tldts';
 
-await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDomain })
+await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDomain });
 ```
 
 ## Types

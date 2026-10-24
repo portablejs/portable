@@ -9,24 +9,24 @@ npm install @portable/mime-headers
 ```
 
 ```ts
-import * as MimeHeaders from '@portable/mime-headers'
+import * as MimeHeaders from '@portable/mime-headers';
 
-MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords('Tere õhtust, Mari'))
+MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords('Tere õhtust, Mari'));
 // 'Subject: Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'
-MimeHeaders.decodeWords('Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari') // 'Tere õhtust, Mari'
+MimeHeaders.decodeWords('Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'); // 'Tere õhtust, Mari'
 
-MimeHeaders.parseValue('attachment; filename*=UTF-8\'\'%C3%B5.pdf')
+MimeHeaders.parseValue('attachment; filename*=UTF-8\'\'%C3%B5.pdf');
 // { value: 'attachment', params: { filename: 'õ.pdf' } }
-MimeHeaders.formatValue({ value: 'attachment', params: { filename: 'õ.pdf' } })
+MimeHeaders.formatValue({ value: 'attachment', params: { filename: 'õ.pdf' } });
 // "attachment; filename*0*=utf-8''%C3%B5.pdf"
 
-MimeHeaders.parseAddresses('Mari Maasikas <mari@example.com>, Team: a@example.com;')
+MimeHeaders.parseAddresses('Mari Maasikas <mari@example.com>, Team: a@example.com;');
 // [{ name: 'Mari Maasikas', address: 'mari@example.com' },
 //  { name: 'Team', group: [{ name: '', address: 'a@example.com' }] }]
-MimeHeaders.formatAddresses([{ name: 'Maasikas, Mari', address: 'mari@example.com' }])
+MimeHeaders.formatAddresses([{ name: 'Maasikas, Mari', address: 'mari@example.com' }]);
 // '"Maasikas, Mari" <mari@example.com>'
 
-MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\r\nbody')
+MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\r\nbody');
 // [{ name: 'Subject', value: 'Tere õhtust' }, { name: 'To', value: 'mari@example.com' }]
 ```
 

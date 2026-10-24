@@ -9,15 +9,15 @@ npm install @portable/png
 ```
 
 ```ts
-import * as Png from '@portable/png'
+import * as Png from '@portable/png';
 
-const response = await fetch('https://example.com/photo.png')
-const { width, height, data } = await Png.decode(await response.bytes())
+const response = await fetch('https://example.com/photo.png');
+const { width, height, data } = await Png.decode(await response.bytes());
 
 for (let i = 0; i < data.length; i += 4) {
-  data[i] = 255 - data[i]!
+  data[i] = 255 - data[i]!;
 } // invert red
-const bytes = await Png.encode({ width, height, data })
+const bytes = await Png.encode({ width, height, data });
 ```
 
 `decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8 and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied.
@@ -27,11 +27,11 @@ const bytes = await Png.encode({ width, height, data })
 `decode` and `encode` return promises, because `CompressionStream` and `DecompressionStream` are the only zlib that every runtime has, and they are async. `decodeSync` and `encodeSync` do the same work synchronously with a zlib function you pass:
 
 ```ts
-import * as Png from '@portable/png'
-import { unzlibSync, zlibSync } from 'fflate'
+import * as Png from '@portable/png';
+import { unzlibSync, zlibSync } from 'fflate';
 
-const image = Png.decodeSync(bytes, { inflate: unzlibSync })
-const png = Png.encodeSync(image, { deflate: (raw) => zlibSync(raw, { level: 9 }) })
+const image = Png.decodeSync(bytes, { inflate: unzlibSync });
+const png = Png.encodeSync(image, { deflate: (raw) => zlibSync(raw, { level: 9 }) });
 ```
 
 In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. Both functions use the zlib format (RFC 1950), not raw deflate.

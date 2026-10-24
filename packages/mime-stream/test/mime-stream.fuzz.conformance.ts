@@ -1,14 +1,14 @@
-import { cuts, fc, fuzz, mutated, outcomeAsync, split } from '@portable/fuzz'
-import * as MimeStream from '@portable/mime-stream'
-import { fromIterable, toBytes } from '@portable/streams'
-import { expect, test } from 'vite-plus/test'
-import { binary, decode, fixture, latin1 } from './utils.js'
+import { cuts, fc, fuzz, mutated, outcomeAsync, split } from '@portable/fuzz';
+import * as MimeStream from '@portable/mime-stream';
+import { fromIterable, toBytes } from '@portable/streams';
+import { expect, test } from 'vite-plus/test';
+import { binary, decode, fixture, latin1 } from './utils.js';
 
 const errors = [
   MimeStream.MaxBoundaryLineBytesError,
   MimeStream.MaxHeaderBytesError,
   MimeStream.MaxPartsError,
-]
+];
 
 const message = binary(
   [
@@ -43,7 +43,7 @@ const message = binary(
     'epilogue',
     '',
   ].join('\r\n'),
-)
+);
 
 const mimeLike = fc
   .array(
@@ -61,7 +61,7 @@ const mimeLike = fc
     ),
     { maxLength: 30 },
   )
-  .map((pieces) => binary(pieces.join('')))
+  .map((pieces) => binary(pieces.join('')));
 
 /**
  * Joins adjacent chunks of the same type and part. Where the input is split changes where chunks
@@ -69,27 +69,27 @@ const mimeLike = fc
  */
 function structure(chunks: readonly MimeStream.Chunk[]) {
   const joined: {
-    type: string
-    contentType: string
-    boundary?: string | undefined
-    text: string
-  }[] = []
-  const parts: MimeStream.Part[] = []
+    type: string;
+    contentType: string;
+    boundary?: string | undefined;
+    text: string;
+  }[] = [];
+  const parts: MimeStream.Part[] = [];
   for (const chunk of chunks) {
-    const last = joined.at(-1)
+    const last = joined.at(-1);
     if (last && parts.at(-1) === chunk.part && last.type === chunk.type) {
-      last.text += latin1(chunk.bytes)
+      last.text += latin1(chunk.bytes);
     } else {
-      parts.push(chunk.part)
+      parts.push(chunk.part);
       joined.push({
         type: chunk.type,
         contentType: chunk.part.contentType,
         ...(chunk.part.boundary === undefined ? {} : { boundary: chunk.part.boundary }),
         text: latin1(chunk.bytes),
-      })
+      });
     }
   }
-  return joined
+  return joined;
 }
 
 const options = fc.record(
@@ -100,7 +100,7 @@ const options = fc.record(
     maxParts: fc.integer({ min: 1, max: 10 }),
   },
   { requiredKeys: [] },
-)
+);
 
 async function check(
   bytes: Uint8Array,
@@ -108,31 +108,31 @@ async function check(
   options: MimeStream.DecoderStream.Options,
 ) {
   const read = async (input: Uint8Array | Uint8Array[]) => {
-    const result = await outcomeAsync(errors, () => decode(input, options))
+    const result = await outcomeAsync(errors, () => decode(input, options));
     if (!('value' in result)) {
-      return result
+      return result;
     }
-    const joined = latin1(new Uint8Array(result.value.flatMap((chunk) => [...chunk.bytes])))
-    return { joined, structure: structure(result.value) }
-  }
-  const whole = await read(bytes)
-  expect(await read(split(bytes, at))).toEqual(whole)
-  expect('joined' in whole ? whole.joined : latin1(bytes)).toBe(latin1(bytes))
+    const joined = latin1(new Uint8Array(result.value.flatMap((chunk) => [...chunk.bytes])));
+    return { joined, structure: structure(result.value) };
+  };
+  const whole = await read(bytes);
+  expect(await read(split(bytes, at))).toEqual(whole);
+  expect('joined' in whole ? whole.joined : latin1(bytes)).toBe(latin1(bytes));
 }
 
 test('gives the same chunks however the input is split, and the chunks join back to it', async () => {
-  await fuzz(fc.asyncProperty(fc.oneof(mimeLike, mutated(message)), cuts, options, check))
-})
+  await fuzz(fc.asyncProperty(fc.oneof(mimeLike, mutated(message)), cuts, options, check));
+});
 
 test('a mutated real message decodes only to chunks or documented errors', async () => {
-  const torture = await fixture('mimetorture.eml')
+  const torture = await fixture('mimetorture.eml');
   await fuzz(
     fc.asyncProperty(mutated(torture, { within: 4000 }), cuts, (bytes, at) =>
       check(bytes, at, { embedded: true }),
     ),
     { scale: 0.2 },
-  )
-})
+  );
+});
 
 test('EncoderStream writes the bytes DecoderStream read', async () => {
   await fuzz(
@@ -141,18 +141,18 @@ test('EncoderStream writes the bytes DecoderStream read', async () => {
         fromIterable(split(bytes, at))
           .pipeThrough(new MimeStream.DecoderStream({ embedded: true }))
           .pipeThrough(new MimeStream.EncoderStream()),
-      )
-      expect(latin1(output)).toBe(latin1(bytes))
+      );
+      expect(latin1(output)).toBe(latin1(bytes));
     }),
-  )
-})
+  );
+});
 
 test('splitHeaders gives back every byte', async () => {
   await fuzz(
     fc.asyncProperty(fc.oneof(mimeLike, mutated(message)), cuts, async (bytes, at) => {
-      const { headers, body } = await MimeStream.splitHeaders(fromIterable(split(bytes, at)))
-      const rest = await toBytes(body)
-      expect(latin1(headers) + latin1(rest)).toBe(latin1(bytes))
+      const { headers, body } = await MimeStream.splitHeaders(fromIterable(split(bytes, at)));
+      const rest = await toBytes(body);
+      expect(latin1(headers) + latin1(rest)).toBe(latin1(bytes));
     }),
-  )
-})
+  );
+});

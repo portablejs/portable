@@ -1,6 +1,6 @@
-import { assertUint8Array } from '@portable/bytes/internal'
-import type { Charset } from './Charset.js'
-import { createState, run, type Unmappable } from './internal/run.js'
+import { assertUint8Array } from '@portable/bytes/internal';
+import type { Charset } from './Charset.js';
+import { createState, run, type Unmappable } from './internal/run.js';
 
 export declare namespace encode {
   type Options = {
@@ -9,15 +9,15 @@ export declare namespace encode {
      * charsets have none.
      * @default false
      */
-    bom?: boolean | undefined
+    bom?: boolean | undefined;
     /**
      * What to write for a character the charset can't represent:
      * `'replace'` writes `?`, `'html'` writes an HTML numeric character reference such as `&#26085;`,
      * `'error'` throws `UnsupportedError`, and a function returns the text to write instead.
      * @default 'replace'
      */
-    unmappable?: Unmappable | undefined
-  }
+    unmappable?: Unmappable | undefined;
+  };
 }
 
 /**
@@ -27,11 +27,11 @@ export declare namespace encode {
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
- * import { windows1251 } from '@portable/charset/single-byte'
+ * import * as Charset from '@portable/charset';
+ * import { windows1251 } from '@portable/charset/single-byte';
  *
- * Charset.encode('Привет', windows1251) // Uint8Array [0xcf, 0xf0, 0xe8, 0xe2, 0xe5, 0xf2]
- * Charset.encode('日本', windows1251, { unmappable: 'html' }) // the bytes of '&#26085;&#26412;'
+ * Charset.encode('Привет', windows1251); // Uint8Array [0xcf, 0xf0, 0xe8, 0xe2, 0xe5, 0xf2]
+ * Charset.encode('日本', windows1251, { unmappable: 'html' }); // the bytes of '&#26085;&#26412;'
  * ```
  */
 export function encode(
@@ -39,6 +39,6 @@ export function encode(
   charset: Charset,
   options: encode.Options = {},
 ): Uint8Array<ArrayBuffer> {
-  const input = typeof text === 'string' ? text : new TextDecoder().decode(assertUint8Array(text))
-  return run(createState(charset, options), input, true)
+  const input = typeof text === 'string' ? text : new TextDecoder().decode(assertUint8Array(text));
+  return run(createState(charset, options), input, true);
 }

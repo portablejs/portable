@@ -1,8 +1,8 @@
-import * as Errors from '@portable/errors'
-import type { ErrorObject } from './types.js'
+import * as Errors from '@portable/errors';
+import type { ErrorObject } from './types.js';
 
 export declare namespace RemoteError {
-  type Options = ErrorObject & ErrorOptions
+  type Options = ErrorObject & ErrorOptions;
 }
 
 /**
@@ -12,35 +12,35 @@ export declare namespace RemoteError {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
+ * import * as Rpc from '@portable/rpc';
  *
  * const api = {
  *   user(id: string) {
- *     throw new Rpc.RemoteError({ code: 404, message: 'No such user', data: { id } })
+ *     throw new Rpc.RemoteError({ code: 404, message: 'No such user', data: { id } });
  *   },
- * }
+ * };
  *
  * try {
- *   await remote.user('x')
+ *   await remote.user('x');
  * } catch (error) {
  *   if (error instanceof Rpc.RemoteError && error.code === 404) {
- *     return null
+ *     return null;
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class RemoteError extends Errors.BaseError {
-  static override readonly kind: string = 'Rpc.RemoteError'
+  static override readonly kind: string = 'Rpc.RemoteError';
   /** The JSON-RPC error code, such as `-32601` for an unknown method. */
-  readonly code: number
+  readonly code: number;
   /** The error's `data` member, if it had one. */
-  readonly data: unknown
+  readonly data: unknown;
   constructor(options: RemoteError.Options) {
-    const { code, message, data, ...rest } = options
-    super(message, rest)
-    this.code = code
-    this.data = data
+    const { code, message, data, ...rest } = options;
+    super(message, rest);
+    this.code = code;
+    this.data = data;
   }
 }
 
@@ -50,18 +50,18 @@ export class RemoteError extends Errors.BaseError {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
+ * import * as Rpc from '@portable/rpc';
  *
  * try {
- *   await remote.save(doc)
+ *   await remote.save(doc);
  * } catch (error) {
  *   if (error instanceof Rpc.TransportError) {
- *     return retryLater(doc)
+ *     return retryLater(doc);
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class TransportError extends Errors.BaseError {
-  static override readonly kind: string = 'Rpc.TransportError'
+  static override readonly kind: string = 'Rpc.TransportError';
 }

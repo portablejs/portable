@@ -9,10 +9,10 @@ npm install @portable/image-size
 ```
 
 ```ts
-import * as ImageSize from '@portable/image-size'
+import * as ImageSize from '@portable/image-size';
 
-const response = await fetch('https://example.com/photo.jpg')
-const { width, height, type } = await ImageSize.parseStream(response.body!)
+const response = await fetch('https://example.com/photo.jpg');
+const { width, height, type } = await ImageSize.parseStream(response.body!);
 // { width: 1600, height: 1200, type: 'jpg', orientation: 1 }
 ```
 

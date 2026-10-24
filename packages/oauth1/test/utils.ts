@@ -1,9 +1,9 @@
-import { expect } from 'vite-plus/test'
-import * as OAuth1 from '@portable/oauth1'
+import { expect } from 'vite-plus/test';
+import * as OAuth1 from '@portable/oauth1';
 
-export { default as pkcs1 } from './fixtures/rsa-pkcs1.pem?raw'
-export { default as pkcs8 } from './fixtures/rsa-pkcs8.pem?raw'
-export { default as publicKey } from './fixtures/rsa-public.pem?raw'
+export { default as pkcs1 } from './fixtures/rsa-pkcs1.pem?raw';
+export { default as pkcs8 } from './fixtures/rsa-pkcs8.pem?raw';
+export { default as publicKey } from './fixtures/rsa-public.pem?raw';
 
 export const twitter = {
   consumer: {
@@ -16,7 +16,7 @@ export const twitter = {
   },
   nonce: 'kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg',
   now: new Date(1318622958_000),
-} as const
+} as const;
 
 export function form(
   body: string,
@@ -26,24 +26,24 @@ export function form(
     method: init.method ?? 'POST',
     body,
     headers: { 'content-type': 'application/x-www-form-urlencoded', ...init.headers },
-  }
+  };
 }
 
 /** The parameters of an `Authorization: OAuth …` header, decoded. */
 export function parseHeader(header: string): Record<string, string> {
-  expect(header.startsWith('OAuth ')).toBe(true)
-  const params: Record<string, string> = {}
+  expect(header.startsWith('OAuth ')).toBe(true);
+  const params: Record<string, string> = {};
   for (const [, name, value] of header.matchAll(/([\w]+)="((?:[^"\\]|\\.)*)"/g)) {
-    params[name!] = name === 'realm' ? value!.replace(/\\(.)/g, '$1') : decodeURIComponent(value!)
+    params[name!] = name === 'realm' ? value!.replace(/\\(.)/g, '$1') : decodeURIComponent(value!);
   }
-  return params
+  return params;
 }
 
 export async function signature(
   request: Request,
   options: OAuth1.authorization.Options,
 ): Promise<string> {
-  return parseHeader(await OAuth1.authorization(request, options)).oauth_signature!
+  return parseHeader(await OAuth1.authorization(request, options)).oauth_signature!;
 }
 
 /**
@@ -51,19 +51,19 @@ export async function signature(
  * written out by hand. Both only hold characters that `encodeURIComponent` encodes as RFC 5849 does.
  */
 export function baseString(method: string, uri: string, parameters: string): string {
-  return `${method}&${encodeURIComponent(uri)}&${encodeURIComponent(parameters)}`
+  return `${method}&${encodeURIComponent(uri)}&${encodeURIComponent(parameters)}`;
 }
 
 /** HMAC by WebCrypto, which shares no code with the package. */
 export async function hmac(hash: 'SHA-1' | 'SHA-256', key: string, data: string): Promise<string> {
-  const utf8 = new TextEncoder()
+  const utf8 = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
     utf8.encode(key),
     { name: 'HMAC', hash },
     false,
     ['sign'],
-  )
-  const bytes = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, utf8.encode(data)))
-  return btoa(String.fromCharCode(...bytes))
+  );
+  const bytes = new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, utf8.encode(data)));
+  return btoa(String.fromCharCode(...bytes));
 }

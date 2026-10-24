@@ -1,9 +1,9 @@
-import { attempt, byteForms, rejectedByteForms, streamOf, toByteForm } from '@portable/fuzz'
-import { describe, expect, test } from 'vite-plus/test'
-import { compose } from './utils.js'
+import { attempt, byteForms, rejectedByteForms, streamOf, toByteForm } from '@portable/fuzz';
+import { describe, expect, test } from 'vite-plus/test';
+import { compose } from './utils.js';
 
-const text = new TextEncoder().encode('Tere, wörld!\nSecond line\n')
-const pdf = Uint8Array.from({ length: 200 }, (_, i) => i)
+const text = new TextEncoder().encode('Tere, wörld!\nSecond line\n');
+const pdf = Uint8Array.from({ length: 200 }, (_, i) => i);
 
 describe('byte inputs', () => {
   for (const form of byteForms) {
@@ -11,13 +11,13 @@ describe('byte inputs', () => {
       const expected = await compose({
         text,
         attachments: [{ content: pdf, filename: 'a.pdf' }],
-      })
+      });
       expect(
         await compose({
           text: toByteForm(text, form),
           attachments: [{ content: toByteForm(pdf, form), filename: 'a.pdf' }],
         }),
-      ).toBe(expected)
+      ).toBe(expected);
       expect(
         await compose({
           text: streamOf([
@@ -39,20 +39,20 @@ describe('byte inputs', () => {
           text: streamOf([text]),
           attachments: [{ content: streamOf([pdf]), filename: 'a.pdf' }],
         }),
-      )
-    })
+      );
+    });
   }
-})
+});
 
 describe('rejected byte inputs', () => {
   for (const [name, value] of Object.entries(rejectedByteForms)) {
     test(`throws a TypeError for ${name}`, async () => {
-      const v = value as never
-      await expect(attempt(() => compose({ text: v }))).rejects.toThrow(TypeError)
+      const v = value as never;
+      await expect(attempt(() => compose({ text: v }))).rejects.toThrow(TypeError);
       await expect(
         attempt(() => compose({ attachments: [{ content: v, filename: 'a.pdf' }] })),
-      ).rejects.toThrow(TypeError)
-      await expect(attempt(() => compose({ text: streamOf([v]) }))).rejects.toThrow(TypeError)
-    })
+      ).rejects.toThrow(TypeError);
+      await expect(attempt(() => compose({ text: streamOf([v]) }))).rejects.toThrow(TypeError);
+    });
   }
-})
+});

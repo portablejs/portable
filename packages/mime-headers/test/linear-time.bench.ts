@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vite-plus/test'
+import { describe, expect, test } from 'vite-plus/test';
 import {
   decodeWords,
   encodeWord,
@@ -10,8 +10,8 @@ import {
   parseHeaders,
   parseValue,
   unfold,
-} from '@portable/mime-headers'
-import { pick, random } from './utils.js'
+} from '@portable/mime-headers';
+import { pick, random } from './utils.js';
 
 // Ported from the linear-time tests in nodemailer 10.1.7 test/addressparser/addressparser-test.ts
 // and libmime 5.5.1 test/fuzz-test.ts. Each test times an adversarial input at two sizes eight
@@ -19,17 +19,17 @@ import { pick, random } from './utils.js'
 // times. The best of seven runs is compared, so a garbage collection doesn't fail a test, and a
 // failing test is retried, since other processes on a busy machine skew the timings.
 
-const scale = 8
-const maxRatio = 24
+const scale = 8;
+const maxRatio = 24;
 
 function bestOf(run: () => unknown): number {
-  let best = Infinity
+  let best = Infinity;
   for (let i = 0; i < 7; i++) {
-    const start = performance.now()
-    run()
-    best = Math.min(best, performance.now() - start)
+    const start = performance.now();
+    run();
+    best = Math.min(best, performance.now() - start);
   }
-  return best
+  return best;
 }
 
 function slowdown(
@@ -37,30 +37,30 @@ function slowdown(
   make: (size: number) => string,
   run: (input: string) => unknown,
 ): number {
-  const small = make(size)
-  const large = make(size * scale)
-  run(small)
+  const small = make(size);
+  const large = make(size * scale);
+  run(small);
   return (
     bestOf(() => run(large)) /
     Math.max(
       bestOf(() => run(small)),
       0.01,
     )
-  )
+  );
 }
 
 const strict = (input: string) => {
   try {
-    return parseAddresses(input, { strict: true })
+    return parseAddresses(input, { strict: true });
   } catch (error) {
     if (!(error instanceof InvalidInputError)) {
-      throw error
+      throw error;
     }
-    return []
+    return [];
   }
-}
+};
 
-const repeat = (unit: string) => (size: number) => unit.repeat(Math.ceil(size / unit.length))
+const repeat = (unit: string) => (size: number) => unit.repeat(Math.ceil(size / unit.length));
 
 describe('linear time', { timeout: 120_000, retry: 3 }, () => {
   const addressInputs = [
@@ -96,15 +96,15 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['many comments beside the "@"', (size) => '<a' + repeat('(x)')(size) + '@b.com>'],
     ['many group openers', (size) => repeat('g: ')(size) + 'a@b.com'],
     ['many "@"', repeat('@')],
-  ] satisfies [string, (size: number) => string][]
+  ] satisfies [string, (size: number) => string][];
   for (const [label, make] of addressInputs) {
     test(`parseAddresses() of ${label}`, () => {
-      expect(slowdown(16 * 1024, make, (input) => parseAddresses(input))).toBeLessThan(maxRatio)
-      expect(slowdown(16 * 1024, make, strict)).toBeLessThan(maxRatio)
-    })
+      expect(slowdown(16 * 1024, make, (input) => parseAddresses(input))).toBeLessThan(maxRatio);
+      expect(slowdown(16 * 1024, make, strict)).toBeLessThan(maxRatio);
+    });
   }
 
-  const next = random(112)
+  const next = random(112);
   const pieces = [
     '=?',
     '?=',
@@ -134,9 +134,9 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     'õ',
     'a',
     '\\',
-  ]
-  const chunk = Array.from({ length: 240 }, () => pick(next, pieces)).join('')
-  const hostile = repeat(chunk)
+  ];
+  const chunk = Array.from({ length: 240 }, () => pick(next, pieces)).join('');
+  const hostile = repeat(chunk);
 
   const textInputs = [
     ['decodeWords()', decodeWords],
@@ -149,40 +149,40 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['formatValue()', (input) => formatValue({ value: 'x', params: { f: input } })],
     ['fold()', (input) => fold(input)],
     ['parseAddresses()', (input) => parseAddresses(input)],
-  ] satisfies [string, (input: string) => unknown][]
+  ] satisfies [string, (input: string) => unknown][];
   for (const [label, run] of textInputs) {
     test(`${label} of hostile text`, () => {
-      expect(slowdown(16 * 1024, hostile, run)).toBeLessThan(maxRatio)
-    })
+      expect(slowdown(16 * 1024, hostile, run)).toBeLessThan(maxRatio);
+    });
   }
 
   test('decodeWords() of many adjacent words', () => {
-    expect(slowdown(16 * 1024, repeat('=?utf-8?q?=C3?= '), decodeWords)).toBeLessThan(maxRatio)
-  })
+    expect(slowdown(16 * 1024, repeat('=?utf-8?q?=C3?= '), decodeWords)).toBeLessThan(maxRatio);
+  });
 
   test('parseValue() of many sections', () => {
     const make = (size: number) =>
-      'x' + Array.from({ length: size / 16 }, (_, i) => `; f*${i}*=%C3%B5`).join('')
-    expect(slowdown(16 * 1024, make, parseValue)).toBeLessThan(maxRatio)
-  })
+      'x' + Array.from({ length: size / 16 }, (_, i) => `; f*${i}*=%C3%B5`).join('');
+    expect(slowdown(16 * 1024, make, parseValue)).toBeLessThan(maxRatio);
+  });
 
   test('fold() of a line without whitespace and of a whitespace run', () => {
-    expect(slowdown(16 * 1024, repeat('a'), (input) => fold(input))).toBeLessThan(maxRatio)
+    expect(slowdown(16 * 1024, repeat('a'), (input) => fold(input))).toBeLessThan(maxRatio);
     expect(
       slowdown(
         16 * 1024,
         (size) => 'a' + ' '.repeat(size) + 'b',
         (input) => fold(input),
       ),
-    ).toBeLessThan(maxRatio)
-  })
+    ).toBeLessThan(maxRatio);
+  });
 
   test('parseHeaders() of many continuation lines and of a whitespace run', () => {
     expect(
       slowdown(16 * 1024, (size) => 'A: ' + repeat('x\r\n ')(size), parseHeaders),
-    ).toBeLessThan(maxRatio)
+    ).toBeLessThan(maxRatio);
     expect(slowdown(16 * 1024, (size) => 'A:' + ' '.repeat(size) + 'x', parseHeaders)).toBeLessThan(
       maxRatio,
-    )
-  })
-})
+    );
+  });
+});

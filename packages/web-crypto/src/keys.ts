@@ -1,9 +1,9 @@
-import { assertUint8Array } from '@portable/bytes/internal'
-import { InvalidInputError } from './errors.js'
-import { run } from './internal.js'
+import { assertUint8Array } from '@portable/bytes/internal';
+import { InvalidInputError } from './errors.js';
+import { run } from './internal.js';
 
 /** A curve whose private key is a 32-byte seed. */
-export type SeedAlgorithm = 'Ed25519' | 'X25519'
+export type SeedAlgorithm = 'Ed25519' | 'X25519';
 
 const pkcs8Prefix: Record<SeedAlgorithm, readonly number[]> = {
   Ed25519: [
@@ -12,20 +12,20 @@ const pkcs8Prefix: Record<SeedAlgorithm, readonly number[]> = {
   X25519: [
     0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x04, 0x22, 0x04, 0x20,
   ],
-}
+};
 
 const privateUsages: Record<SeedAlgorithm, KeyUsage[]> = {
   Ed25519: ['sign'],
   X25519: ['deriveBits', 'deriveKey'],
-}
+};
 
 export declare namespace importSeed {
   type Options = {
     /** Whether the private key can be exported. The public key always can. @default false */
-    extractable?: boolean | undefined
+    extractable?: boolean | undefined;
     /** Rejects with `signal.reason` once aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -34,11 +34,11 @@ export declare namespace importSeed {
  *
  * @example
  * ```ts
- * import * as WebCrypto from '@portable/web-crypto'
+ * import * as WebCrypto from '@portable/web-crypto';
  *
- * const seed = crypto.getRandomValues(new Uint8Array(32))
- * const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed)
- * const signature = await crypto.subtle.sign('Ed25519', privateKey, data)
+ * const seed = crypto.getRandomValues(new Uint8Array(32));
+ * const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed);
+ * const signature = await crypto.subtle.sign('Ed25519', privateKey, data);
  * ```
  */
 export function importSeed(
@@ -46,37 +46,37 @@ export function importSeed(
   seed: Uint8Array,
   options: importSeed.Options = {},
 ): Promise<CryptoKeyPair> {
-  const { extractable = false, signal } = options
+  const { extractable = false, signal } = options;
   return run(signal, async () => {
     if (assertUint8Array(seed).length !== 32) {
-      throw new InvalidInputError(`An ${algorithm} seed is 32 bytes, not ${seed.length}`)
+      throw new InvalidInputError(`An ${algorithm} seed is 32 bytes, not ${seed.length}`);
     }
-    const pkcs8 = new Uint8Array(48)
-    pkcs8.set(pkcs8Prefix[algorithm])
-    pkcs8.set(seed, 16)
-    const usages = privateUsages[algorithm]
-    const exportable = await crypto.subtle.importKey('pkcs8', pkcs8, algorithm, true, usages)
-    const publicKey = await publicKeyOf(exportable)
+    const pkcs8 = new Uint8Array(48);
+    pkcs8.set(pkcs8Prefix[algorithm]);
+    pkcs8.set(seed, 16);
+    const usages = privateUsages[algorithm];
+    const exportable = await crypto.subtle.importKey('pkcs8', pkcs8, algorithm, true, usages);
+    const publicKey = await publicKeyOf(exportable);
     const privateKey = extractable
       ? exportable
-      : await crypto.subtle.importKey('pkcs8', pkcs8, algorithm, false, usages)
-    return { privateKey, publicKey }
-  })
+      : await crypto.subtle.importKey('pkcs8', pkcs8, algorithm, false, usages);
+    return { privateKey, publicKey };
+  });
 }
 
 const publicUsage: Partial<Record<KeyUsage, KeyUsage>> = {
   decrypt: 'encrypt',
   sign: 'verify',
   unwrapKey: 'wrapKey',
-}
+};
 
-const publicMembers = ['alg', 'crv', 'e', 'kty', 'n', 'x', 'y'] as const
+const publicMembers = ['alg', 'crv', 'e', 'kty', 'n', 'x', 'y'] as const;
 
 export declare namespace publicKeyOf {
   type Options = {
     /** Rejects with `signal.reason` once aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -85,10 +85,10 @@ export declare namespace publicKeyOf {
  *
  * @example
  * ```ts
- * import * as WebCrypto from '@portable/web-crypto'
+ * import * as WebCrypto from '@portable/web-crypto';
  *
- * const privateKey = await crypto.subtle.importKey('pkcs8', der, 'Ed25519', true, ['sign'])
- * const publicKey = await WebCrypto.publicKeyOf(privateKey)
+ * const privateKey = await crypto.subtle.importKey('pkcs8', der, 'Ed25519', true, ['sign']);
+ * const publicKey = await WebCrypto.publicKeyOf(privateKey);
  * ```
  */
 export function publicKeyOf(
@@ -97,19 +97,19 @@ export function publicKeyOf(
 ): Promise<CryptoKey> {
   return run(options.signal, async () => {
     if (privateKey.type !== 'private') {
-      throw new InvalidInputError(`A ${privateKey.type} key has no public key`)
+      throw new InvalidInputError(`A ${privateKey.type} key has no public key`);
     }
     if (!privateKey.extractable) {
-      throw new InvalidInputError('The private key must be extractable to read its public key')
+      throw new InvalidInputError('The private key must be extractable to read its public key');
     }
-    const jwk = await crypto.subtle.exportKey('jwk', privateKey)
-    const publicJwk: JsonWebKey = {}
+    const jwk = await crypto.subtle.exportKey('jwk', privateKey);
+    const publicJwk: JsonWebKey = {};
     for (const name of publicMembers) {
       if (jwk[name] !== undefined) {
-        publicJwk[name] = jwk[name]
+        publicJwk[name] = jwk[name];
       }
     }
-    const usages = privateKey.usages.flatMap((usage) => publicUsage[usage] ?? [])
-    return crypto.subtle.importKey('jwk', publicJwk, privateKey.algorithm, true, usages)
-  })
+    const usages = privateKey.usages.flatMap((usage) => publicUsage[usage] ?? []);
+    return crypto.subtle.importKey('jwk', publicJwk, privateKey.algorithm, true, usages);
+  });
 }

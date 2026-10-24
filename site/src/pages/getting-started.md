@@ -19,23 +19,23 @@ npm install @portable/streams
 Import a package as a namespace. Export names are short, such as `toJson`, because the namespace shows the package. This Cloudflare Worker reads a JSON request body, and if the body passes 1 MB, it stops reading and answers 413:
 
 ```ts
-import * as Streams from '@portable/streams'
+import * as Streams from '@portable/streams';
 
 export default {
   async fetch(request: Request) {
     try {
       const body = await Streams.toJson(request.body!, {
         maxBytes: 1_000_000,
-      })
-      return Response.json({ received: body })
+      });
+      return Response.json({ received: body });
     } catch (error) {
       if (error instanceof Streams.MaxBytesError) {
-        return new Response('Body too large', { status: 413 })
+        return new Response('Body too large', { status: 413 });
       }
-      throw error
+      throw error;
     }
   },
-}
+};
 ```
 
 All packages follow the same [conventions](/conventions) for names, options, errors, and cancellation.

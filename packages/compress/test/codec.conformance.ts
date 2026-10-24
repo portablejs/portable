@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vite-plus/test'
-import * as Compress from '@portable/compress'
+import { describe, expect, test } from 'vite-plus/test';
+import * as Compress from '@portable/compress';
 import {
   decode,
   difference,
@@ -11,256 +11,256 @@ import {
   randomBytes,
   samples,
   storedGzip,
-} from './utils.js'
+} from './utils.js';
 
 describe('round trips', () => {
   for (const format of formats) {
     for (const name of samples) {
       test(`${format}: ${name}`, async () => {
-        const data = await fixture(name)
-        const compressed = await Compress.encode(data, { format })
-        expect(difference(await Compress.decode(compressed, { format }), data)).toBe(undefined)
-      })
+        const data = await fixture(name);
+        const compressed = await Compress.encode(data, { format });
+        expect(difference(await Compress.decode(compressed, { format }), data)).toBe(undefined);
+      });
     }
   }
 
   test('defaults to gzip', async () => {
-    const compressed = await Compress.encode('hello')
-    expect([...compressed.subarray(0, 2)]).toEqual([0x1f, 0x8b])
-    expect(decode(await Compress.decode(compressed))).toBe('hello')
-    expect(decode(await Compress.decode(compressed, { format: 'gzip' }))).toBe('hello')
-  })
+    const compressed = await Compress.encode('hello');
+    expect([...compressed.subarray(0, 2)]).toEqual([0x1f, 0x8b]);
+    expect(decode(await Compress.decode(compressed))).toBe('hello');
+    expect(decode(await Compress.decode(compressed, { format: 'gzip' }))).toBe('hello');
+  });
 
   test('empty input', async () => {
     for (const format of formats) {
-      const compressed = await Compress.encode(new Uint8Array(0), { format })
+      const compressed = await Compress.encode(new Uint8Array(0), { format });
       expect(difference(await Compress.decode(compressed, { format }), new Uint8Array(0))).toBe(
         undefined,
-      )
+      );
     }
-  })
+  });
 
   test('encodes a string as UTF-8', async () => {
-    const text = await fixture('lorem_utf_100k.txt')
-    const fromString = await Compress.encode(decode(text))
-    expect(difference(await Compress.decode(fromString), text)).toBe(undefined)
-  })
+    const text = await fixture('lorem_utf_100k.txt');
+    const fromString = await Compress.encode(decode(text));
+    expect(difference(await Compress.decode(fromString), text)).toBe(undefined);
+  });
 
   test('text with every UTF-8 length survives', async () => {
-    const text = '🎵a♪5\u{e800}\u{10ffff}\u{fffff}'
-    expect(decode(await Compress.decode(await Compress.encode(text)))).toBe(text)
-  })
+    const text = '🎵a♪5\u{e800}\u{10ffff}\u{fffff}';
+    expect(decode(await Compress.decode(await Compress.encode(text)))).toBe(text);
+  });
 
   test('reads a view with a byte offset', async () => {
-    const compressed = await Compress.encode('offset')
-    const padded = new Uint8Array(compressed.length + 7)
-    padded.set(compressed, 3)
-    expect(decode(await Compress.decode(padded.subarray(3, 3 + compressed.length)))).toBe('offset')
-  })
+    const compressed = await Compress.encode('offset');
+    const padded = new Uint8Array(compressed.length + 7);
+    padded.set(compressed, 3);
+    expect(decode(await Compress.decode(padded.subarray(3, 3 + compressed.length)))).toBe('offset');
+  });
 
   test('incompressible data larger than 128 KiB', async () => {
-    const data = randomBytes(300_000, 1)
+    const data = randomBytes(300_000, 1);
     for (const format of formats) {
       expect(
         difference(
           await Compress.decode(await Compress.encode(data, { format }), { format }),
           data,
         ),
-      ).toBe(undefined)
+      ).toBe(undefined);
     }
-  })
+  });
 
   test('pako issue #78 sample', async () => {
-    const data = await fixture('issue_78.bin')
-    expect(difference(await Compress.decode(await Compress.encode(data)), data)).toBe(undefined)
-  })
-})
+    const data = await fixture('issue_78.bin');
+    expect(difference(await Compress.decode(await Compress.encode(data)), data)).toBe(undefined);
+  });
+});
 
 describe('decoding existing data', () => {
   for (const name of ['KW_Rocketry_1', 'shapefile', 'sheet2', 'sheet3', 'sheet4']) {
     test(`raw deflate sample ${name}`, async () => {
       const data = await Compress.decode(await fixture(`raw-${name}.deflate-raw`), {
         format: 'deflate-raw',
-      })
-      expect(data.length).toBeGreaterThan(0)
-      const again = await Compress.encode(data, { format: 'deflate-raw' })
+      });
+      expect(data.length).toBeGreaterThan(0);
+      const again = await Compress.encode(data, { format: 'deflate-raw' });
       expect(difference(await Compress.decode(again, { format: 'deflate-raw' }), data)).toBe(
         undefined,
-      )
-    })
+      );
+    });
   }
-})
+});
 
 describe('gzip members', () => {
   test('joins every member, as gunzip does', async () => {
     const joined = new Uint8Array([
       ...(await Compress.encode('foo')),
       ...(await Compress.encode('bar')),
-    ])
-    expect(decode(await Compress.decode(joined))).toBe('foobar')
-  })
+    ]);
+    expect(decode(await Compress.decode(joined))).toBe('foobar');
+  });
 
   test('joins many members, including empty ones', async () => {
-    const parts = ['a', '', 'bc', '', '', 'def']
-    const members = await Promise.all(parts.map((part) => Compress.encode(part)))
-    const joined = new Uint8Array(members.flatMap((member) => [...member]))
-    expect(decode(await Compress.decode(joined))).toBe(parts.join(''))
-  })
+    const parts = ['a', '', 'bc', '', '', 'def'];
+    const members = await Promise.all(parts.map((part) => Compress.encode(part)));
+    const joined = new Uint8Array(members.flatMap((member) => [...member]));
+    expect(decode(await Compress.decode(joined))).toBe(parts.join(''));
+  });
 
   test('the multi-member file from pako', async () => {
-    const text = decode(await Compress.decode(await fixture('gzip-joined.gz')))
-    expect(text).toHaveLength(48)
-    expect(text.startsWith('0\n1\n2\n')).toBe(true)
-  })
+    const text = decode(await Compress.decode(await fixture('gzip-joined.gz')));
+    expect(text).toHaveLength(48);
+    expect(text.startsWith('0\n1\n2\n')).toBe(true);
+  });
 
   test('a BGZF file', async () => {
-    const text = decode(await Compress.decode(await fixture('gzip-joined-bgzip.gz')))
-    expect(text).toHaveLength(65569)
-    expect(text.startsWith('##genome-build b37\n')).toBe(true)
-  })
+    const text = decode(await Compress.decode(await fixture('gzip-joined-bgzip.gz')));
+    expect(text).toHaveLength(65569);
+    expect(text.startsWith('##genome-build b37\n')).toBe(true);
+  });
 
   test('maxBytes counts every member', async () => {
     const joined = new Uint8Array([
       ...(await Compress.encode('foo')),
       ...(await Compress.encode('bar')),
-    ])
-    await expect(Compress.decode(joined, { maxBytes: 5 })).rejects.toThrow(Compress.MaxBytesError)
-    expect(decode(await Compress.decode(joined, { maxBytes: 6 }))).toBe('foobar')
-  })
+    ]);
+    await expect(Compress.decode(joined, { maxBytes: 5 })).rejects.toThrow(Compress.MaxBytesError);
+    expect(decode(await Compress.decode(joined, { maxBytes: 6 }))).toBe('foobar');
+  });
 
   test('a member whose bytes repeat the gzip header', async () => {
-    const data = gzipMarkers(3000)
-    const first = storedGzip(data)
+    const data = gzipMarkers(3000);
+    const first = storedGzip(data);
     const joined = new Uint8Array([
       ...first,
       ...storedGzip(data),
       ...(await Compress.encode('end')),
-    ])
-    const expected = new Uint8Array([...data, ...data, ...encode('end')])
-    expect(difference(await Compress.decode(joined), expected)).toBe(undefined)
+    ]);
+    const expected = new Uint8Array([...data, ...data, ...encode('end')]);
+    expect(difference(await Compress.decode(joined), expected)).toBe(undefined);
     await expect(
       Compress.decode(new Uint8Array([...first, 0, 0, 0, 0, 0, 0, 0, 0])),
-    ).rejects.toThrow(Compress.InvalidInputError)
-  })
+    ).rejects.toThrow(Compress.InvalidInputError);
+  });
 
   test('a truncated second member', async () => {
-    const second = await Compress.encode('bar')
-    const joined = new Uint8Array([...(await Compress.encode('foo')), ...second.subarray(0, 12)])
-    await expect(Compress.decode(joined)).rejects.toThrow(Compress.TruncatedError)
-  })
-})
+    const second = await Compress.encode('bar');
+    const joined = new Uint8Array([...(await Compress.encode('foo')), ...second.subarray(0, 12)]);
+    await expect(Compress.decode(joined)).rejects.toThrow(Compress.TruncatedError);
+  });
+});
 
 describe('data after the end', () => {
   test('rejects zero padding after a gzip member', async () => {
-    const padded = new Uint8Array([...(await Compress.encode('padded')), 0, 0, 0, 0, 0, 0, 0, 0])
-    await expect(Compress.decode(padded)).rejects.toThrow(Compress.InvalidInputError)
-  })
+    const padded = new Uint8Array([...(await Compress.encode('padded')), 0, 0, 0, 0, 0, 0, 0, 0]);
+    await expect(Compress.decode(padded)).rejects.toThrow(Compress.InvalidInputError);
+  });
 
   test('rejects a second zlib stream', async () => {
-    const data = hex('78 9c 73 74 74 4 0 1 89 0 c4 78 9c 73 72 72 2 0 1 8f 0 c7')
+    const data = hex('78 9c 73 74 74 4 0 1 89 0 c4 78 9c 73 72 72 2 0 1 8f 0 c7');
     await expect(Compress.decode(data, { format: 'deflate' })).rejects.toThrow(
       Compress.InvalidInputError,
-    )
+    );
     await expect(Compress.decode(data.subarray(0, 11), { format: 'deflate' })).resolves.toEqual(
       encode('AAA'),
-    )
-  })
+    );
+  });
 
   test('rejects bytes after a raw deflate stream', async () => {
-    const data = new Uint8Array([...(await Compress.encode('raw', { format: 'deflate-raw' })), 1])
+    const data = new Uint8Array([...(await Compress.encode('raw', { format: 'deflate-raw' })), 1]);
     await expect(Compress.decode(data, { format: 'deflate-raw' })).rejects.toThrow(
       Compress.InvalidInputError,
-    )
-  })
-})
+    );
+  });
+});
 
 describe('truncated input', () => {
   for (const format of formats) {
     test(`${format} cut before its end`, async () => {
-      const full = await Compress.encode('some longer payload to truncate', { format })
+      const full = await Compress.encode('some longer payload to truncate', { format });
       await expect(Compress.decode(full.subarray(0, full.length - 5), { format })).rejects.toThrow(
         Compress.TruncatedError,
-      )
+      );
       expect(decode(await Compress.decode(full, { format }))).toBe(
         'some longer payload to truncate',
-      )
-    })
+      );
+    });
   }
 
   test('empty input', async () => {
-    await expect(Compress.decode(new Uint8Array(0))).rejects.toThrow(Compress.TruncatedError)
-  })
+    await expect(Compress.decode(new Uint8Array(0))).rejects.toThrow(Compress.TruncatedError);
+  });
 
   test('a raw stream ended by a sync flush has no final block', async () => {
-    const flushed = hex('ca 48 cd c9 c9 57 28 cf 2f ca 49 51 c8 40 b0 1 0 0 0 ff ff')
-    const error = await Compress.decode(flushed, { format: 'deflate-raw' }).catch((e) => e)
-    expect(error).toBeInstanceOf(Compress.TruncatedError)
-    expect(error.name).toBe('Compress.TruncatedError')
-    expect(error.cause).toBeInstanceOf(Error)
-  })
-})
+    const flushed = hex('ca 48 cd c9 c9 57 28 cf 2f ca 49 51 c8 40 b0 1 0 0 0 ff ff');
+    const error = await Compress.decode(flushed, { format: 'deflate-raw' }).catch((e) => e);
+    expect(error).toBeInstanceOf(Compress.TruncatedError);
+    expect(error.name).toBe('Compress.TruncatedError');
+    expect(error.cause).toBeInstanceOf(Error);
+  });
+});
 
 describe('corrupt input', () => {
   test('a changed gzip CRC-32', async () => {
-    const data = await Compress.encode('checksum')
-    data[data.length - 8]! ^= 1
-    await expect(Compress.decode(data)).rejects.toThrow(Compress.InvalidInputError)
-  })
+    const data = await Compress.encode('checksum');
+    data[data.length - 8]! ^= 1;
+    await expect(Compress.decode(data)).rejects.toThrow(Compress.InvalidInputError);
+  });
 
   test('a gzip length field that disagrees with the data', async () => {
-    const data = await Compress.encode('length')
-    data[data.length - 4]! += 1
-    await expect(Compress.decode(data)).rejects.toThrow(Compress.InvalidInputError)
-    data[data.length - 4]! -= 2
-    await expect(Compress.decode(data)).rejects.toThrow(Compress.InvalidInputError)
-  })
+    const data = await Compress.encode('length');
+    data[data.length - 4]! += 1;
+    await expect(Compress.decode(data)).rejects.toThrow(Compress.InvalidInputError);
+    data[data.length - 4]! -= 2;
+    await expect(Compress.decode(data)).rejects.toThrow(Compress.InvalidInputError);
+  });
 
   test('a changed zlib Adler-32', async () => {
-    const data = await Compress.encode('checksum', { format: 'deflate' })
-    data[data.length - 1]! ^= 1
+    const data = await Compress.encode('checksum', { format: 'deflate' });
+    data[data.length - 1]! ^= 1;
     await expect(Compress.decode(data, { format: 'deflate' })).rejects.toThrow(
       Compress.InvalidInputError,
-    )
-  })
+    );
+  });
 
   test('the wrong format', async () => {
-    const gzip = await Compress.encode('format')
+    const gzip = await Compress.encode('format');
     await expect(Compress.decode(gzip, { format: 'deflate' })).rejects.toThrow(
       Compress.InvalidInputError,
-    )
-    const zlib = await Compress.encode('format', { format: 'deflate' })
-    await expect(Compress.decode(zlib)).rejects.toThrow(Compress.InvalidInputError)
-  })
+    );
+    const zlib = await Compress.encode('format', { format: 'deflate' });
+    await expect(Compress.decode(zlib)).rejects.toThrow(Compress.InvalidInputError);
+  });
 
   test('the error names its class', async () => {
-    const error = await Compress.decode(encode('not gzip at all')).catch((e) => e)
-    expect(error).toBeInstanceOf(Compress.InvalidInputError)
-    expect(error.name).toBe('Compress.InvalidInputError')
-  })
-})
+    const error = await Compress.decode(encode('not gzip at all')).catch((e) => e);
+    expect(error).toBeInstanceOf(Compress.InvalidInputError);
+    expect(error.name).toBe('Compress.InvalidInputError');
+  });
+});
 
 describe('maxBytes', () => {
   test('rejects output past the limit', async () => {
-    const compressed = await Compress.encode(new Uint8Array(1_000_000))
-    const error = await Compress.decode(compressed, { maxBytes: 999_999 }).catch((e) => e)
-    expect(error).toBeInstanceOf(Compress.MaxBytesError)
-    expect(error.name).toBe('Compress.MaxBytesError')
-    expect(error.maxBytes).toBe(999_999)
-  })
+    const compressed = await Compress.encode(new Uint8Array(1_000_000));
+    const error = await Compress.decode(compressed, { maxBytes: 999_999 }).catch((e) => e);
+    expect(error).toBeInstanceOf(Compress.MaxBytesError);
+    expect(error.name).toBe('Compress.MaxBytesError');
+    expect(error.maxBytes).toBe(999_999);
+  });
 
   test('accepts output exactly at the limit', async () => {
-    const compressed = await Compress.encode(new Uint8Array(1_000_000))
-    expect((await Compress.decode(compressed, { maxBytes: 1_000_000 })).length).toBe(1_000_000)
-  })
+    const compressed = await Compress.encode(new Uint8Array(1_000_000));
+    expect((await Compress.decode(compressed, { maxBytes: 1_000_000 })).length).toBe(1_000_000);
+  });
 
   test('stops a zip bomb early', async () => {
-    const bomb = await Compress.encode(new Uint8Array(20_000_000))
-    expect(bomb.length).toBeLessThan(50_000)
+    const bomb = await Compress.encode(new Uint8Array(20_000_000));
+    expect(bomb.length).toBeLessThan(50_000);
     await expect(Compress.decode(bomb, { maxBytes: 1_000_000 })).rejects.toThrow(
       Compress.MaxBytesError,
-    )
-  })
-})
+    );
+  });
+});
 
 // zlib's infcover.c cases, as pako ports them in test/zlib/inflate_cover.test.mjs. pako feeds
 // the bytes without finishing the stream, so an incomplete stream passes there and is
@@ -346,7 +346,7 @@ const cover = [
     'invalid',
   ],
   ['copy direct from output', '63 0 3 0 0 0 0 0', 'deflate-raw', 'invalid'],
-] satisfies readonly [name: string, bytes: string, format: Compress.Format, result: string][]
+] satisfies readonly [name: string, bytes: string, format: Compress.Format, result: string][];
 
 describe('zlib inflate coverage', () => {
   for (const [name, bytes, format, result] of cover) {
@@ -359,8 +359,8 @@ describe('zlib inflate coverage', () => {
             : error instanceof Compress.TruncatedError
               ? 'truncated'
               : error,
-      )
-      expect(outcome).toBe(result)
-    })
+      );
+      expect(outcome).toBe(result);
+    });
   }
-})
+});

@@ -23,36 +23,36 @@ For a missing argument or one with the wrong type, a function throws the built-i
 This Worker decompresses an upload. `Streams.limitBytes` and `Compress.decode` each throw their own `MaxBytesError`, and one check handles both:
 
 ```ts
-import * as Compress from '@portable/compress'
-import * as Errors from '@portable/errors'
-import * as Streams from '@portable/streams'
+import * as Compress from '@portable/compress';
+import * as Errors from '@portable/errors';
+import * as Streams from '@portable/streams';
 
 export default {
   async fetch(request: Request) {
     try {
       const body = await Streams.toBytes(
         request.body!.pipeThrough(Streams.limitBytes(1_000_000)),
-      )
+      );
       const data = await Compress.decode(body, {
         maxBytes: 10_000_000,
-      })
-      return Response.json({ bytes: data.length })
+      });
+      return Response.json({ bytes: data.length });
     } catch (error) {
       if (Errors.is(error, 'MaxBytes')) {
         return new Response(`Over ${error.maxBytes} bytes`, {
           status: 413,
-        })
+        });
       }
       if (
         Errors.is(error, 'InvalidInput') ||
         Errors.is(error, 'Truncated')
       ) {
-        return new Response('Bad gzip data', { status: 400 })
+        return new Response('Bad gzip data', { status: 400 });
       }
-      throw error
+      throw error;
     }
   },
-}
+};
 ```
 
 To match one package's error and nothing else, use `instanceof` with that package's class, such as `error instanceof Compress.MaxBytesError`. Each error's `name` starts with its package's namespace, such as `'Compress.MaxBytesError'`, so a log shows which package threw the error.
@@ -62,17 +62,17 @@ To match one package's error and nothing else, use `instanceof` with that packag
 A `ResponseError` keeps the whole `Response` in `response`, so you can read the response headers. `status` is the HTTP status:
 
 ```ts
-import * as Errors from '@portable/errors'
-import * as Rdap from '@portable/rdap'
+import * as Errors from '@portable/errors';
+import * as Rdap from '@portable/rdap';
 
 try {
-  await Rdap.domain('example.com')
+  await Rdap.domain('example.com');
 } catch (error) {
   if (Errors.is(error, 'Response') && error.status === 429) {
-    const seconds = Number(error.response.headers.get('retry-after'))
-    console.log(`Rate limited, retry in ${seconds} seconds`)
+    const seconds = Number(error.response.headers.get('retry-after'));
+    console.log(`Rate limited, retry in ${seconds} seconds`);
   } else {
-    throw error
+    throw error;
   }
 }
 ```
@@ -84,14 +84,14 @@ try {
 When a package catches a platform error and throws its own instead, it passes the original as `cause`. For example, `Compress.decode` throws an `InvalidInputError` when `DecompressionStream` rejects malformed data, and `cause` holds the stream's error, which is a `TypeError` in Node:
 
 ```ts
-import * as Compress from '@portable/compress'
-import * as Errors from '@portable/errors'
+import * as Compress from '@portable/compress';
+import * as Errors from '@portable/errors';
 
 try {
-  await Compress.decode(body)
+  await Compress.decode(body);
 } catch (error) {
   if (Errors.is(error, 'InvalidInput')) {
-    console.log(error.cause)
+    console.log(error.cause);
   }
 }
 ```
@@ -107,13 +107,13 @@ Each error stores its kind, and the kinds of its parent classes, under `Symbol.f
 Extend the same classes so that one check handles your errors and Portable's. Set `kind` to the name you want in logs:
 
 ```ts
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 
 class UploadTooLargeError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'MyApp.UploadTooLargeError'
+  static override readonly kind: string = 'MyApp.UploadTooLargeError';
 }
 
-const error = new UploadTooLargeError({ maxBytes: 1_000_000 })
-error.name // 'MyApp.UploadTooLargeError'
-Errors.is(error, 'MaxBytes') // true
+const error = new UploadTooLargeError({ maxBytes: 1_000_000 });
+error.name; // 'MyApp.UploadTooLargeError'
+Errors.is(error, 'MaxBytes'); // true
 ```

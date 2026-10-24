@@ -1,7 +1,7 @@
-import * as MimeHeaders from '@portable/mime-headers'
-import { fc, fuzz, mutated, outcome } from '@portable/fuzz'
-import { describe, expect, test } from 'vite-plus/test'
-import { utf8, wellFormed } from './utils.js'
+import * as MimeHeaders from '@portable/mime-headers';
+import { fc, fuzz, mutated, outcome } from '@portable/fuzz';
+import { describe, expect, test } from 'vite-plus/test';
+import { utf8, wellFormed } from './utils.js';
 
 const headerLike = fc.string({
   unit: fc.oneof(
@@ -28,7 +28,7 @@ const headerLike = fc.string({
     { weight: 1, arbitrary: fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }) },
   ),
   maxLength: 80,
-})
+});
 
 const input = fc.oneof(
   headerLike,
@@ -40,37 +40,37 @@ const input = fc.oneof(
         'Subject: =?UTF-8?B?SsO1Z2V2YQ==?=\r\n folded\r\n\r\nbody',
     ),
   ),
-)
+);
 
 describe('parsers', () => {
   test('parseAddresses, parseValue, parseHeaders, unfold and decodeWords never throw', () => {
     fuzz(
       fc.property(input, (input) => {
-        MimeHeaders.parseAddresses(input)
-        MimeHeaders.parseMailboxes(input)
-        MimeHeaders.parseValue(input)
-        MimeHeaders.parseHeaders(input)
-        MimeHeaders.unfold(input)
-        MimeHeaders.decodeWords(input)
+        MimeHeaders.parseAddresses(input);
+        MimeHeaders.parseMailboxes(input);
+        MimeHeaders.parseValue(input);
+        MimeHeaders.parseHeaders(input);
+        MimeHeaders.unfold(input);
+        MimeHeaders.decodeWords(input);
       }),
-    )
-  })
+    );
+  });
 
   test('strict parseAddresses throws only InvalidInputError, and agrees with the lenient parse', () => {
     fuzz(
       fc.property(input, (input) => {
         const strict = outcome([MimeHeaders.InvalidInputError], () =>
           MimeHeaders.parseAddresses(input, { strict: true }),
-        )
-        const lenient = MimeHeaders.parseAddresses(input)
-        expect(strict).toEqual('value' in strict ? { value: lenient } : strict)
+        );
+        const lenient = MimeHeaders.parseAddresses(input);
+        expect(strict).toEqual('value' in strict ? { value: lenient } : strict);
       }),
-    )
-  })
-})
+    );
+  });
+});
 
-const text = fc.string({ unit: 'grapheme', maxLength: 40 })
-const atom = fc.stringMatching(/^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]{1,10}$/)
+const text = fc.string({ unit: 'grapheme', maxLength: 40 });
+const atom = fc.stringMatching(/^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]{1,10}$/);
 const address = fc
   .tuple(
     fc.oneof(
@@ -79,18 +79,18 @@ const address = fc
     ),
     fc.constantFrom('example.com', 'mail.example.org', '[192.0.2.1]', 'bücher.example'),
   )
-  .map(([local, domain]) => `${local}@${domain}`)
-const mailbox = fc.record({ name: text, address })
+  .map(([local, domain]) => `${local}@${domain}`);
+const mailbox = fc.record({ name: text, address });
 
 /** A name as it reads back: lone surrogates replaced, whitespace runs collapsed and trimmed. */
-const normal = (name: string) => wellFormed(name).replace(/\s+/g, ' ').trim()
+const normal = (name: string) => wellFormed(name).replace(/\s+/g, ' ').trim();
 const normalEntry = (entry: MimeHeaders.Address): MimeHeaders.Address =>
   'group' in entry
     ? {
         name: normal(entry.name),
         group: entry.group.map((member) => normalEntry(member) as MimeHeaders.Mailbox),
       }
-    : { name: normal(entry.name), address: entry.address }
+    : { name: normal(entry.name), address: entry.address };
 
 describe('round trips', () => {
   test('parseAddresses reads back what formatAddresses wrote', () => {
@@ -105,13 +105,13 @@ describe('round trips', () => {
           const formatted = MimeHeaders.formatAddresses(
             list,
             encoding ? { wordEncoding: encoding } : {},
-          )
-          const parsed = MimeHeaders.parseAddresses(formatted, { strict: true })
-          expect(parsed.map(normalEntry)).toEqual(list.map(normalEntry))
+          );
+          const parsed = MimeHeaders.parseAddresses(formatted, { strict: true });
+          expect(parsed.map(normalEntry)).toEqual(list.map(normalEntry));
         },
       ),
-    )
-  })
+    );
+  });
 
   test('parseValue reads back what formatValue wrote', () => {
     fuzz(
@@ -122,13 +122,13 @@ describe('round trips', () => {
           fc.string({ unit: 'grapheme' }),
         ),
         (value, params) => {
-          const formatted = MimeHeaders.formatValue({ value, params })
-          expect(formatted).toMatch(/^[ -~]*$/)
-          expect(MimeHeaders.parseValue(formatted)).toEqual({ value, params })
+          const formatted = MimeHeaders.formatValue({ value, params });
+          expect(formatted).toMatch(/^[ -~]*$/);
+          expect(MimeHeaders.parseValue(formatted)).toEqual({ value, params });
         },
       ),
-    )
-  })
+    );
+  });
 
   test('decodeWords reads back what encodeWords and encodeWord wrote', () => {
     fuzz(
@@ -136,17 +136,17 @@ describe('round trips', () => {
         text,
         fc.constantFrom<MimeHeaders.WordEncoding | undefined>(undefined, 'Q', 'B'),
         (text, encoding) => {
-          const options = encoding ? { wordEncoding: encoding } : {}
+          const options = encoding ? { wordEncoding: encoding } : {};
           expect(MimeHeaders.decodeWords(MimeHeaders.encodeWords(text, options))).toBe(
             wellFormed(text),
-          )
+          );
           expect(MimeHeaders.decodeWords(MimeHeaders.encodeWord(text, options))).toBe(
             wellFormed(text),
-          )
+          );
         },
       ),
-    )
-  })
+    );
+  });
 
   test('unfold removes exactly the line breaks fold inserts', () => {
     fuzz(
@@ -154,11 +154,11 @@ describe('round trips', () => {
         fc.string({ unit: fc.constantFrom('a', 'õ', ' ', '\t', '日'), maxLength: 200 }),
         fc.integer({ min: 5, max: 100 }),
         (text, lineLength) => {
-          const folded = MimeHeaders.fold(text, { lineLength })
-          expect(folded.replaceAll('\r\n', '')).toBe(text)
-          expect(MimeHeaders.unfold(folded)).toBe(text)
+          const folded = MimeHeaders.fold(text, { lineLength });
+          expect(folded.replaceAll('\r\n', '')).toBe(text);
+          expect(MimeHeaders.unfold(folded)).toBe(text);
         },
       ),
-    )
-  })
-})
+    );
+  });
+});

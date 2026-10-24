@@ -15,7 +15,7 @@ Packages that read or write large data use Web Streams: the `ReadableStream`, `W
 `request.json()` reads the whole body before you can check its size. `Streams.toJson` stops reading and cancels the body when it exceeds `maxBytes`:
 
 ```ts
-import * as Streams from '@portable/streams'
+import * as Streams from '@portable/streams';
 
 export default {
   async fetch(request: Request) {
@@ -23,39 +23,39 @@ export default {
       const body = await Streams.toJson(request.body!, {
         maxBytes: 1_000_000,
         signal: request.signal,
-      })
-      return Response.json({ received: body })
+      });
+      return Response.json({ received: body });
     } catch (error) {
       if (error instanceof Streams.MaxBytesError) {
-        return new Response(null, { status: 413 })
+        return new Response(null, { status: 413 });
       }
-      throw error
+      throw error;
     }
   },
-}
+};
 ```
 
 ## Count lines in a gzipped log
 
 ```ts
-import * as Compress from '@portable/compress'
-import * as Lines from '@portable/lines'
+import * as Compress from '@portable/compress';
+import * as Lines from '@portable/lines';
 
-const response = await fetch('https://example.com/access.log.gz')
+const response = await fetch('https://example.com/access.log.gz');
 const lines = response
   .body!.pipeThrough(
     new Compress.DecoderStream({ maxBytes: 1_000_000_000 }),
   )
-  .pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))
+  .pipeThrough(new Lines.DecoderStream({ skipEmpty: true }));
 
-let count = 0
+let count = 0;
 await lines.pipeTo(
   new WritableStream({
     write() {
-      count++
+      count++;
     },
   }),
-)
+);
 ```
 
 With `maxBytes`, the decoder fails with `MaxBytesError` once the output passes 1 GB, so a small file that decompresses to many gigabytes can't exhaust memory.

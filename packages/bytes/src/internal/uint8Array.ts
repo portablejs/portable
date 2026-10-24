@@ -7,7 +7,7 @@ export function isUint8Array(value: unknown): value is Uint8Array {
   return (
     value instanceof Uint8Array ||
     (ArrayBuffer.isView(value) && Object.prototype.toString.call(value) === '[object Uint8Array]')
-  )
+  );
 }
 
 /**
@@ -17,17 +17,17 @@ export function isUint8Array(value: unknown): value is Uint8Array {
  */
 export function assertUint8Array(value: unknown): Uint8Array {
   if (isUint8Array(value)) {
-    return value
+    return value;
   }
-  throw new TypeError(`Expected a Uint8Array, got ${describe(value)}.`)
+  throw new TypeError(`Expected a Uint8Array, got ${describe(value)}.`);
 }
 
 function describe(value: unknown): string {
   if (value === null) {
-    return 'null'
+    return 'null';
   }
   if (typeof value !== 'object') {
-    return typeof value
+    return typeof value;
   }
-  return Object.prototype.toString.call(value).slice(8, -1)
+  return Object.prototype.toString.call(value).slice(8, -1);
 }

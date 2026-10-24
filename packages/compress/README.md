@@ -9,13 +9,13 @@ npm install @portable/compress
 ```
 
 ```ts
-import * as Compress from '@portable/compress'
+import * as Compress from '@portable/compress';
 
-const gzipped = await Compress.encode('hello world')
-const bytes = await Compress.decode(gzipped, { maxBytes: 10_000_000 })
+const gzipped = await Compress.encode('hello world');
+const bytes = await Compress.decode(gzipped, { maxBytes: 10_000_000 });
 
-const response = await fetch('https://example.com/export.ndjson.gz')
-const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }))
+const response = await fetch('https://example.com/export.ndjson.gz');
+const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }));
 ```
 
 ## API

@@ -9,12 +9,12 @@ npm install @portable/lines
 ```
 
 ```ts
-import * as Lines from '@portable/lines'
+import * as Lines from '@portable/lines';
 
-const response = await fetch('https://example.com/access.log')
-const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader()
+const response = await fetch('https://example.com/access.log');
+const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader();
 for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value)
+  console.log(r.value);
 }
 ```
 

@@ -9,18 +9,18 @@ npm install @portable/bytes
 ```
 
 ```ts
-import * as Bytes from '@portable/bytes'
+import * as Bytes from '@portable/bytes';
 
-Bytes.toHex(new Uint8Array([0, 15, 255])) // '000fff'
-Bytes.fromHex('000FFF') // Uint8Array [0, 15, 255]
+Bytes.toHex(new Uint8Array([0, 15, 255])); // '000fff'
+Bytes.fromHex('000FFF'); // Uint8Array [0, 15, 255]
 
-Bytes.concat([header, body]) // a new Uint8Array
+Bytes.concat([header, body]); // a new Uint8Array
 
-Bytes.equal(a, b)
+Bytes.equal(a, b);
 
-const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload))
+const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload));
 if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
-  throw new Error('Bad signature')
+  throw new Error('Bad signature');
 }
 ```
 
@@ -48,8 +48,8 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 Every `@portable/*` function that takes bytes accepts a `Uint8Array` or a Node `Buffer`, which is a subclass of `Uint8Array`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView` or another typed array. Given a buffer or a view, a function can't tell which of its bytes you meant: `view.buffer` also holds the bytes outside the view, and an `Int16Array` has two bytes per element in the platform's byte order. Convert the value to a `Uint8Array` yourself, so your code shows which bytes the function reads:
 
 ```ts
-new Uint8Array(arrayBuffer)
-new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
+new Uint8Array(arrayBuffer);
+new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 ```
 
 A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk, or the function may read some bytes before the write and some after.

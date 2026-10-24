@@ -1,33 +1,33 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown when a header block grows past `maxHeaderBytes`. The count includes the empty line that
  * ends the block. It extends `Errors.MaxBytesError`, so its `maxBytes` holds the same limit.
  *
  * @example
  * ```ts
- * import * as MimeStream from '@portable/mime-stream'
+ * import * as MimeStream from '@portable/mime-stream';
  *
  * try {
- *   await MimeStream.splitHeaders(response.body!, { maxHeaderBytes: 64 * 1024 })
+ *   await MimeStream.splitHeaders(response.body!, { maxHeaderBytes: 64 * 1024 });
  * } catch (error) {
  *   if (error instanceof MimeStream.MaxHeaderBytesError) {
- *     console.log(error.maxHeaderBytes)
+ *     console.log(error.maxHeaderBytes);
  *   }
  * }
  * ```
  */
 export class MaxHeaderBytesError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'MimeStream.MaxHeaderBytesError'
+  static override readonly kind: string = 'MimeStream.MaxHeaderBytesError';
   /** The limit that was exceeded, the same as `maxBytes`. */
-  readonly maxHeaderBytes: number
+  readonly maxHeaderBytes: number;
   constructor(options: ErrorOptions & { maxHeaderBytes: number }) {
-    const { maxHeaderBytes, ...rest } = options
+    const { maxHeaderBytes, ...rest } = options;
     super({
       maxBytes: maxHeaderBytes,
       message: `Header block exceeded maxHeaderBytes of ${maxHeaderBytes}.`,
       ...rest,
-    })
-    this.maxHeaderBytes = maxHeaderBytes
+    });
+    this.maxHeaderBytes = maxHeaderBytes;
   }
 }
 
@@ -37,24 +37,24 @@ export class MaxHeaderBytesError extends Errors.MaxBytesError {
  *
  * @example
  * ```ts
- * import * as MimeStream from '@portable/mime-stream'
+ * import * as MimeStream from '@portable/mime-stream';
  *
- * const stream = body.pipeThrough(new MimeStream.DecoderStream({ maxBoundaryLineBytes: 200 }))
+ * const stream = body.pipeThrough(new MimeStream.DecoderStream({ maxBoundaryLineBytes: 200 }));
  * // A read rejects with MimeStream.MaxBoundaryLineBytesError on '--boundary' plus 200 spaces.
  * ```
  */
 export class MaxBoundaryLineBytesError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'MimeStream.MaxBoundaryLineBytesError'
+  static override readonly kind: string = 'MimeStream.MaxBoundaryLineBytesError';
   /** The limit that was exceeded, the same as `maxBytes`. */
-  readonly maxBoundaryLineBytes: number
+  readonly maxBoundaryLineBytes: number;
   constructor(options: ErrorOptions & { maxBoundaryLineBytes: number }) {
-    const { maxBoundaryLineBytes, ...rest } = options
+    const { maxBoundaryLineBytes, ...rest } = options;
     super({
       maxBytes: maxBoundaryLineBytes,
       message: `Boundary line exceeded maxBoundaryLineBytes of ${maxBoundaryLineBytes}.`,
       ...rest,
-    })
-    this.maxBoundaryLineBytes = maxBoundaryLineBytes
+    });
+    this.maxBoundaryLineBytes = maxBoundaryLineBytes;
   }
 }
 
@@ -63,19 +63,19 @@ export class MaxBoundaryLineBytesError extends Errors.MaxBytesError {
  *
  * @example
  * ```ts
- * import * as MimeStream from '@portable/mime-stream'
+ * import * as MimeStream from '@portable/mime-stream';
  *
- * const stream = body.pipeThrough(new MimeStream.DecoderStream({ maxParts: 100 }))
+ * const stream = body.pipeThrough(new MimeStream.DecoderStream({ maxParts: 100 }));
  * // A read rejects with MimeStream.MaxPartsError on the 101st part.
  * ```
  */
 export class MaxPartsError extends Errors.BaseError {
-  static override readonly kind: string = 'MimeStream.MaxPartsError'
+  static override readonly kind: string = 'MimeStream.MaxPartsError';
   /** The limit that was exceeded. */
-  readonly maxParts: number
+  readonly maxParts: number;
   constructor(options: ErrorOptions & { maxParts: number }) {
-    const { maxParts, ...rest } = options
-    super(`Message exceeded maxParts of ${maxParts}.`, rest)
-    this.maxParts = maxParts
+    const { maxParts, ...rest } = options;
+    super(`Message exceeded maxParts of ${maxParts}.`, rest);
+    this.maxParts = maxParts;
   }
 }

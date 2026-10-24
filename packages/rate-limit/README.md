@@ -9,20 +9,20 @@ npm install @portable/rate-limit
 ```
 
 ```ts
-import * as RateLimit from '@portable/rate-limit'
+import * as RateLimit from '@portable/rate-limit';
 
-const limiter = RateLimit.create({ limit: 100, period: 60_000 })
+const limiter = RateLimit.create({ limit: 100, period: 60_000 });
 
 export default {
   async fetch(request: Request) {
-    const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
-    const result = await limiter.take(ip, { signal: request.signal })
+    const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+    const result = await limiter.take(ip, { signal: request.signal });
     if (!result.allowed) {
-      return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+      return new Response(null, { status: 429, headers: RateLimit.headers(result) });
     }
-    return new Response('ok', { headers: RateLimit.headers(result) })
+    return new Response('ok', { headers: RateLimit.headers(result) });
   },
-}
+};
 ```
 
 A limiter allows `limit` requests per `period` for each key. Allowance comes back continuously, one request every `period / limit` milliseconds, and a key that has been quiet can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
@@ -69,7 +69,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 ### `headers`
 
 ```ts
-RateLimit.headers(result)
+RateLimit.headers(result);
 // { 'RateLimit-Policy': '"default";q=100;w=60', RateLimit: '"default";r=0;t=3', 'Retry-After': '3' }
 ```
 
@@ -82,13 +82,13 @@ type Store = {
   get(
     key: string,
     options: { now?: Date; signal?: AbortSignal },
-  ): number | undefined | Promise<number | undefined>
+  ): number | undefined | Promise<number | undefined>;
   set(
     key: string,
     value: number,
     options: { expected: number | undefined; ttl: number; now?: Date; signal?: AbortSignal },
-  ): boolean | Promise<boolean>
-}
+  ): boolean | Promise<boolean>;
+};
 ```
 
 `get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
@@ -104,8 +104,8 @@ Several limiters can share a store. Give each one its own key prefix, such as `l
 A Durable Object runs one request at a time, and SQLite-backed storage is synchronous, so a read and a write in one `take` can't interleave with another request. Put the limiter inside the object and address one object per key:
 
 ```ts
-import { DurableObject } from 'cloudflare:workers'
-import * as RateLimit from '@portable/rate-limit'
+import { DurableObject } from 'cloudflare:workers';
+import * as RateLimit from '@portable/rate-limit';
 
 export class Limiter extends DurableObject {
   limiter = RateLimit.create({
@@ -115,16 +115,16 @@ export class Limiter extends DurableObject {
       get: (key) => this.ctx.storage.kv.get<number>(key),
       set: (key, value) => (this.ctx.storage.kv.put(key, value), true),
     },
-  })
+  });
 
   take(key: string, cost?: number) {
-    return this.limiter.take(key, { cost })
+    return this.limiter.take(key, { cost });
   }
 }
 
 // In the Worker:
-const stub = env.LIMITER.get(env.LIMITER.idFromName(ip))
-const result = await stub.take(ip)
+const stub = env.LIMITER.get(env.LIMITER.idFromName(ip));
+const result = await stub.take(ip);
 ```
 
 The object stores one number and ignores `ttl`.
@@ -134,12 +134,12 @@ The object stores one number and ignores `ttl`.
 A Lua script runs the compare-and-set on the server, so every Worker sees the same count. A `take` makes two requests, or more when it loses a race.
 
 ```ts
-import * as RateLimit from '@portable/rate-limit'
+import * as RateLimit from '@portable/rate-limit';
 
 const compareAndSet = `
 if (redis.call('GET', KEYS[1]) or '') ~= ARGV[1] then return 0 end
 redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
-return 1`
+return 1`;
 
 function upstash(url: string, token: string): RateLimit.Store {
   async function command(args: (string | number)[], signal?: AbortSignal) {
@@ -148,30 +148,30 @@ function upstash(url: string, token: string): RateLimit.Store {
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(args),
       signal: signal ?? null,
-    })
-    const { result, error } = (await response.json()) as { result: unknown; error?: string }
+    });
+    const { result, error } = (await response.json()) as { result: unknown; error?: string };
     if (error) {
-      throw new Error(error)
+      throw new Error(error);
     }
-    return result
+    return result;
   }
   return {
     async get(key, { signal }) {
-      const value = await command(['GET', key], signal)
-      return value === null ? undefined : Number(value)
+      const value = await command(['GET', key], signal);
+      return value === null ? undefined : Number(value);
     },
     async set(key, value, { expected, ttl, signal }) {
-      const args = ['EVAL', compareAndSet, 1, key, expected === undefined ? '' : String(expected), String(value), ttl]
-      return (await command(args, signal)) === 1
+      const args = ['EVAL', compareAndSet, 1, key, expected === undefined ? '' : String(expected), String(value), ttl];
+      return (await command(args, signal)) === 1;
     },
-  }
+  };
 }
 
 const limiter = RateLimit.create({
   limit: 100,
   period: 60_000,
   store: upstash(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN),
-})
+});
 ```
 
 `String(Number(text))` returns the same text for any number `String` wrote, so the script's string comparison matches the value `get` returned.
@@ -183,14 +183,14 @@ KV is eventually consistent and has no compare-and-set, so this store always wri
 ```ts
 const store: RateLimit.Store = {
   async get(key) {
-    const value = await env.RATE_LIMIT.get(key)
-    return value === null ? undefined : Number(value)
+    const value = await env.RATE_LIMIT.get(key);
+    return value === null ? undefined : Number(value);
   },
   async set(key, value, { ttl }) {
-    await env.RATE_LIMIT.put(key, String(value), { expirationTtl: Math.max(60, Math.ceil(ttl / 1000)) })
-    return true
+    await env.RATE_LIMIT.put(key, String(value), { expirationTtl: Math.max(60, Math.ceil(ttl / 1000)) });
+    return true;
   },
-}
+};
 ```
 
 ## Types

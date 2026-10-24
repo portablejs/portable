@@ -9,17 +9,17 @@ npm install @portable/base64
 ```
 
 ```ts
-import * as Base64 from '@portable/base64'
+import * as Base64 from '@portable/base64';
 
-Base64.encode('hello') // 'aGVsbG8='
-Base64.encode(bytes, { alphabet: 'base64url', omitPadding: true })
-Base64.encode(attachment, { lineLength: 76 }) // MIME body, CRLF between lines
+Base64.encode('hello'); // 'aGVsbG8='
+Base64.encode(bytes, { alphabet: 'base64url', omitPadding: true });
+Base64.encode(attachment, { lineLength: 76 }); // MIME body, CRLF between lines
 
-new TextDecoder().decode(Base64.decode('aGVsbG8=')) // 'hello'
-Base64.decode(mimeBody, { mode: 'mime' })
+new TextDecoder().decode(Base64.decode('aGVsbG8=')); // 'hello'
+Base64.decode(mimeBody, { mode: 'mime' });
 
-const response = await fetch('https://example.com/logo.png')
-const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))
+const response = await fetch('https://example.com/logo.png');
+const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }));
 ```
 
 `encode` and `decode` call `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them (current Chromium, Firefox and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.

@@ -1,5 +1,5 @@
-import { defineConfig } from 'vocs/config'
-import groups from './src/packages.json' with { type: 'json' }
+import { defineConfig } from 'vocs/config';
+import groups from './src/packages.json' with { type: 'json' };
 
 const guides = [
   ['streams', 'Streams'],
@@ -13,10 +13,10 @@ const guides = [
   ['images', 'Images'],
   ['concurrency', 'Concurrency and timing'],
   ['utilities', 'Utilities'],
-]
+];
 
 // GitHub Pages serves the site from /portable, and previews serve it from the root.
-const basePath = process.env.DOCS_BASE_PATH ?? ''
+const basePath = process.env.DOCS_BASE_PATH ?? '';
 
 export default defineConfig({
   title: 'Portable',
@@ -51,4 +51,4 @@ export default defineConfig({
         .map((name) => ({ text: name, link: `/packages/${name}` })),
     },
   ],
-})
+});

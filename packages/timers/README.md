@@ -9,25 +9,25 @@ npm install @portable/timers
 ```
 
 ```ts
-import * as Timers from '@portable/timers'
+import * as Timers from '@portable/timers';
 
-await Timers.sleep(1000)
+await Timers.sleep(1000);
 
 const response = await Timers.retry(({ signal }) => fetch(url, { signal }), {
   attempts: 5,
   timeout: 10_000,
-})
+});
 
 const order = await Timers.poll(
   async () => {
-    const order = await getOrder(id)
-    return order.status === 'paid' ? order : undefined
+    const order = await getOrder(id);
+    return order.status === 'paid' ? order : undefined;
   },
   { delay: 2000, signal: AbortSignal.timeout(120_000) },
-)
+);
 
-const save = Timers.debounce((text: string) => fetch('/draft', { method: 'PUT', body: text }), 500)
-const saved = await save(editor.value)
+const save = Timers.debounce((text: string) => fetch('/draft', { method: 'PUT', body: text }), 500);
+const saved = await save(editor.value);
 ```
 
 ## `sleep(ms, options)`
@@ -35,9 +35,9 @@ const saved = await save(editor.value)
 Resolves after `ms` milliseconds. It uses `scheduler.wait` where the runtime has it, as Cloudflare Workers does, and `setTimeout` otherwise.
 
 ```ts
-await Timers.sleep(500)
-await Timers.sleep(60_000, { signal }) // rejects with signal.reason when aborted
-await Timers.sleep(Infinity, { signal }) // waits until aborted
+await Timers.sleep(500);
+await Timers.sleep(60_000, { signal }); // rejects with signal.reason when aborted
+await Timers.sleep(Infinity, { signal }); // waits until aborted
 ```
 
 | Option | Description |
@@ -62,17 +62,17 @@ Calls `fn` until it returns without throwing and resolves with its value. When t
 ```ts
 class HttpError extends Error {
   constructor(readonly response: Response) {
-    super(`HTTP ${response.status}`)
+    super(`HTTP ${response.status}`);
   }
 }
 
 const response = await Timers.retry(
   async ({ signal }) => {
-    const response = await fetch(url, { signal })
+    const response = await fetch(url, { signal });
     if (!response.ok) {
-      throw new HttpError(response)
+      throw new HttpError(response);
     }
-    return response
+    return response;
   },
   {
     attempts: 5,
@@ -80,7 +80,7 @@ const response = await Timers.retry(
     signal: AbortSignal.timeout(60_000), // a limit on the whole call
     retryIf: (error) => !(error instanceof HttpError) || error.response.status >= 500 || error.response.status === 429,
   },
-)
+);
 ```
 
 ### Wait as long as the server asks
@@ -89,31 +89,31 @@ A `delay` function receives the error, so it can return the server's `Retry-Afte
 
 ```ts
 function retryAfter(response: Response): number | undefined {
-  const value = response.headers.get('retry-after')
+  const value = response.headers.get('retry-after');
   if (value === null) {
-    return undefined
+    return undefined;
   }
-  const seconds = Number(value)
-  const ms = Number.isNaN(seconds) ? Date.parse(value) - Date.now() : seconds * 1000
-  return Number.isNaN(ms) ? undefined : ms
+  const seconds = Number(value);
+  const ms = Number.isNaN(seconds) ? Date.parse(value) - Date.now() : seconds * 1000;
+  return Number.isNaN(ms) ? undefined : ms;
 }
 
 const response = await Timers.retry(
   async ({ signal }) => {
-    const response = await fetch(url, { signal })
+    const response = await fetch(url, { signal });
     if (response.status === 429 || response.status === 503) {
-      throw new HttpError(response)
+      throw new HttpError(response);
     }
-    return response
+    return response;
   },
   {
     attempts: 5,
     delay: ({ attempt, error }) => {
-      const wait = error instanceof HttpError ? retryAfter(error.response) : undefined
-      return wait ?? Math.random() * Math.min(10_000, 200 * 2 ** (attempt - 1))
+      const wait = error instanceof HttpError ? retryAfter(error.response) : undefined;
+      return wait ?? Math.random() * Math.min(10_000, 200 * 2 ** (attempt - 1));
     },
   },
-)
+);
 ```
 
 A date in the past gives a negative wait, which retries at once.
@@ -137,14 +137,14 @@ Each call returns a promise of the result of the invocation it was merged into, 
 
 ```ts
 const save = Timers.debounce(async (text: string) => {
-  const response = await fetch('/draft', { method: 'PUT', body: text })
-  return response.ok
-}, 500)
+  const response = await fetch('/draft', { method: 'PUT', body: text });
+  return response.ok;
+}, 500);
 
-editor.addEventListener('input', () => save(editor.value))
-window.addEventListener('beforeunload', () => save.flush())
+editor.addEventListener('input', () => save(editor.value));
+window.addEventListener('beforeunload', () => save.flush());
 
-const ok = await save(editor.value) // true once the save that includes this text finishes
+const ok = await save(editor.value); // true once the save that includes this text finishes
 ```
 
 | Option | `debounce` default | `throttle` default | Description |
@@ -177,9 +177,9 @@ The returned function also has:
 `Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, so other code can call it to wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
 
 ```ts
-const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false })
-next({ attempt: 1 }) // 1000
-next({ attempt: 3 }) // 4000
+const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false });
+next({ attempt: 1 }); // 1000
+next({ attempt: 3 }); // 4000
 ```
 
 `retry` with a wait of 0 starts the next attempt without a timer. `poll` always sets a timer before the next check, even for a wait of 0, so a check that returns `undefined` immediately can't keep other timers from running, and a timeout signal can still fire.

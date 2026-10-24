@@ -1,68 +1,68 @@
 export const delay = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms))
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 export type Deferred<value> = {
-  promise: Promise<value>
-  resolve: (value: value) => void
-  reject: (reason: unknown) => void
-}
+  promise: Promise<value>;
+  resolve: (value: value) => void;
+  reject: (reason: unknown) => void;
+};
 
 export function deferred<value = void>(): Deferred<value> {
-  let resolve!: (value: value) => void
-  let reject!: (reason: unknown) => void
+  let resolve!: (value: value) => void;
+  let reject!: (reason: unknown) => void;
   const promise = new Promise<value>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  return { promise, resolve, reject }
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }
 
-export const flush = (): Promise<void> => delay(0)
+export const flush = (): Promise<void> => delay(0);
 
 export function concurrencyProbe() {
-  let running = 0
+  let running = 0;
   const probe = {
     max: 0,
     get running() {
-      return running
+      return running;
     },
     async run<value>(ms: number, value?: value): Promise<value | undefined> {
-      running++
-      probe.max = Math.max(probe.max, running)
-      await delay(ms)
-      running--
-      return value
+      running++;
+      probe.max = Math.max(probe.max, running);
+      await delay(ms);
+      running--;
+      return value;
     },
-  }
-  return probe
+  };
+  return probe;
 }
 
 export function countingSignal(controller = new AbortController()) {
-  const { signal } = controller
-  let listeners = 0
-  const add = signal.addEventListener.bind(signal)
-  const remove = signal.removeEventListener.bind(signal)
+  const { signal } = controller;
+  let listeners = 0;
+  const add = signal.addEventListener.bind(signal);
+  const remove = signal.removeEventListener.bind(signal);
   signal.addEventListener = ((...args: Parameters<typeof add>) => {
-    listeners++
-    add(...args)
-  }) as typeof add
+    listeners++;
+    add(...args);
+  }) as typeof add;
   signal.removeEventListener = ((...args: Parameters<typeof remove>) => {
-    listeners--
-    remove(...args)
-  }) as typeof remove
+    listeners--;
+    remove(...args);
+  }) as typeof remove;
   return {
     controller,
     signal,
     get listeners() {
-      return listeners
+      return listeners;
     },
-  }
+  };
 }
 
 export function seededRandom(seed: number): () => number {
-  let state = seed
+  let state = seed;
   return () => {
-    state = (state * 1103515245 + 12345) % 2 ** 31
-    return state / 2 ** 31
-  }
+    state = (state * 1103515245 + 12345) % 2 ** 31;
+    return state / 2 ** 31;
+  };
 }

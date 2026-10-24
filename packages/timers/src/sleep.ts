@@ -1,14 +1,16 @@
-const maxTimeout = 2 ** 31 - 1
+const maxTimeout = 2 ** 31 - 1;
 
 type Scheduler = {
-  wait?: ((ms: number, options?: { signal?: AbortSignal | undefined }) => Promise<void>) | undefined
-}
+  wait?:
+    | ((ms: number, options?: { signal?: AbortSignal | undefined }) => Promise<void>)
+    | undefined;
+};
 
 export declare namespace sleep {
   type Options = {
     /** Rejects the returned promise with `signal.reason` and clears the timer when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -18,67 +20,67 @@ export declare namespace sleep {
  *
  * @example
  * ```ts
- * import * as Timers from '@portable/timers'
+ * import * as Timers from '@portable/timers';
  *
- * await Timers.sleep(1000)
- * await Timers.sleep(5000, { signal: AbortSignal.timeout(1000) }) // rejects with a TimeoutError
+ * await Timers.sleep(1000);
+ * await Timers.sleep(5000, { signal: AbortSignal.timeout(1000) }); // rejects with a TimeoutError
  * ```
  */
 export async function sleep(ms: number, options: sleep.Options = {}): Promise<void> {
-  const { signal } = options
+  const { signal } = options;
   if (Number.isNaN(ms)) {
-    throw new RangeError('Expected `ms` to be a number, got NaN.')
+    throw new RangeError('Expected `ms` to be a number, got NaN.');
   }
-  signal?.throwIfAborted()
-  let remaining = Math.max(0, ms)
+  signal?.throwIfAborted();
+  let remaining = Math.max(0, ms);
   for (;;) {
-    const step = Math.min(remaining, maxTimeout)
-    await wait(step, signal)
-    remaining -= step
+    const step = Math.min(remaining, maxTimeout);
+    await wait(step, signal);
+    remaining -= step;
     if (remaining <= 0) {
-      return
+      return;
     }
   }
 }
 
 function wait(ms: number, signal: AbortSignal | undefined): Promise<void> {
-  const { scheduler } = globalThis as { scheduler?: Scheduler | undefined }
+  const { scheduler } = globalThis as { scheduler?: Scheduler | undefined };
   if (typeof scheduler?.wait === 'function') {
     if (!signal) {
-      return scheduler.wait(ms)
+      return scheduler.wait(ms);
     }
-    return abortable(scheduler.wait(ms, { signal }), signal)
+    return abortable(scheduler.wait(ms, { signal }), signal);
   }
   return new Promise((resolve, reject) => {
     const onAbort = () => {
-      clearTimeout(id)
-      reject(signal!.reason)
-    }
+      clearTimeout(id);
+      reject(signal!.reason);
+    };
     const id = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort)
-      resolve()
-    }, ms)
-    signal?.addEventListener('abort', onAbort, { once: true })
-  })
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 export function abortable<value>(promise: PromiseLike<value>, signal: AbortSignal): Promise<value> {
   return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason)
+    const onAbort = () => reject(signal.reason);
     promise.then(
       (value) => {
-        signal.removeEventListener('abort', onAbort)
-        resolve(value)
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
       },
       (error: unknown) => {
-        signal.removeEventListener('abort', onAbort)
-        reject(error)
+        signal.removeEventListener('abort', onAbort);
+        reject(error);
       },
-    )
+    );
     if (signal.aborted) {
-      onAbort()
+      onAbort();
     } else {
-      signal.addEventListener('abort', onAbort, { once: true })
+      signal.addEventListener('abort', onAbort, { once: true });
     }
-  })
+  });
 }

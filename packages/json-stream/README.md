@@ -9,14 +9,14 @@ npm install @portable/json-stream
 ```
 
 ```ts
-import * as JsonStream from '@portable/json-stream'
+import * as JsonStream from '@portable/json-stream';
 
-const response = await fetch('https://example.com/_all_docs')
+const response = await fetch('https://example.com/_all_docs');
 const reader = response
   .body!.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'] }))
-  .getReader()
+  .getReader();
 for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.value)
+  console.log(r.value.value);
 }
 ```
 
@@ -37,8 +37,8 @@ The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedErro
 Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
 
 ```ts
-const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() })
-return new Response(body, { headers: { 'content-type': 'application/json' } })
+const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() });
+return new Response(body, { headers: { 'content-type': 'application/json' } });
 ```
 
 | Option | Default | Description |

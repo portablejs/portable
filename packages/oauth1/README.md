@@ -9,18 +9,18 @@ npm install @portable/oauth1
 ```
 
 ```ts
-import * as OAuth1 from '@portable/oauth1'
+import * as OAuth1 from '@portable/oauth1';
 
 const request = new Request('https://api.example.com/1.1/statuses/update.json', {
   method: 'POST',
   body: new URLSearchParams({ status: 'Hello Ladies + Gentlemen, a signed OAuth request!' }),
-})
+});
 const response = await fetch(
   await OAuth1.sign(request, {
     consumer: { key: 'xvz1evFS4wEEPTGEFPHBog', secret: 'kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw' },
     token: { key: '370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb', secret: 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE' },
   }),
-)
+);
 ```
 
 `OAuth1.sign(request, options)` returns a new `Request` with an `Authorization: OAuth …` header. Like `new Request(request)`, it uses up the body of the request you pass in. `OAuth1.authorization(request, options)` returns only the header value and leaves the request unchanged, for HTTP clients that don't take a `Request`. Both are async.
@@ -55,8 +55,8 @@ The signature covers what the server will see, because it is computed from the `
 `privateKey` is a `CryptoKey` for `RSASSA-PKCS1-v1_5` with SHA-1, or a PEM string. Both `-----BEGIN PRIVATE KEY-----` (PKCS #8) and `-----BEGIN RSA PRIVATE KEY-----` (PKCS #1, as OpenSSL writes it) are accepted. A PEM string is imported with `crypto.subtle` on every call, so import a `CryptoKey` once when you sign often:
 
 ```ts
-const privateKey = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, false, ['sign'])
-await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, privateKey }, token })
+const privateKey = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, false, ['sign']);
+await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, privateKey }, token });
 ```
 
 ## Crypto
@@ -66,14 +66,14 @@ HMAC uses `crypto.subtle` HMAC and `oauth_body_hash` uses `crypto.subtle.digest`
 On Node, WebCrypto HMAC is several times slower than `@noble/hashes`. To sign many requests on Node, install `@noble/hashes` and pass it as `hmac`, and as `digest` if you use `bodyHash`:
 
 ```ts
-import { hmac as nobleHmac } from '@noble/hashes/hmac.js'
-import { sha1 } from '@noble/hashes/legacy.js'
-import { sha256 } from '@noble/hashes/sha2.js'
-import * as OAuth1 from '@portable/oauth1'
+import { hmac as nobleHmac } from '@noble/hashes/hmac.js';
+import { sha1 } from '@noble/hashes/legacy.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import * as OAuth1 from '@portable/oauth1';
 
 const hmac: OAuth1.Hmac = (algorithm, key, data) =>
-  nobleHmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data)
-await OAuth1.sign(request, { consumer, token, hmac })
+  nobleHmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data);
+await OAuth1.sign(request, { consumer, token, hmac });
 ```
 
 ## Types

@@ -11,19 +11,19 @@ npm install @portable/web-push
 Generate a VAPID key pair once. Store the private key as a secret, and give the public key to browsers as `applicationServerKey`:
 
 ```ts
-import * as WebPush from '@portable/web-push'
+import * as WebPush from '@portable/web-push';
 
-const { publicKey, privateKey } = await WebPush.generateVapidKeys()
+const { publicKey, privateKey } = await WebPush.generateVapidKeys();
 ```
 
 In the browser, subscribe and send `subscription.toJSON()` to your server. On the server, send to it:
 
 ```ts
-import * as WebPush from '@portable/web-push'
+import * as WebPush from '@portable/web-push';
 
 export default {
   async fetch(request: Request, env: Env) {
-    const subscription: WebPush.Subscription = await env.DB.getSubscription(/* … */)
+    const subscription: WebPush.Subscription = await env.DB.getSubscription(/* … */);
     const result = await WebPush.send({
       subscription,
       payload: JSON.stringify({ title: 'New message' }),
@@ -33,13 +33,13 @@ export default {
         privateKey: env.VAPID_PRIVATE_KEY,
       },
       ttl: 3600,
-    })
+    });
     if (result.kind === 'gone') {
-      await env.DB.deleteSubscription(subscription.endpoint)
+      await env.DB.deleteSubscription(subscription.endpoint);
     }
-    return new Response(null, { status: 204 })
+    return new Response(null, { status: 204 });
   },
-}
+};
 ```
 
 Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscriptions keep working.

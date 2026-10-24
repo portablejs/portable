@@ -1,8 +1,8 @@
-import { isUint8Array } from '@portable/bytes/internal'
-import type { Charset } from './Charset.js'
-import type { encode } from './encode.js'
-import { createState, run } from './internal/run.js'
-import * as Streams from '@portable/streams'
+import { isUint8Array } from '@portable/bytes/internal';
+import type { Charset } from './Charset.js';
+import type { encode } from './encode.js';
+import { createState, run } from './internal/run.js';
+import * as Streams from '@portable/streams';
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
@@ -10,8 +10,8 @@ export declare namespace EncoderStream {
      * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
      * cancel the source.
      */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -22,45 +22,45 @@ export declare namespace EncoderStream {
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
- * import { shiftJis } from '@portable/charset/shift_jis'
+ * import * as Charset from '@portable/charset';
+ * import { shiftJis } from '@portable/charset/shift_jis';
  *
- * const response = await fetch('https://example.com/report.csv')
- * const shiftJisBytes = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis))
+ * const response = await fetch('https://example.com/report.csv');
+ * const shiftJisBytes = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis));
  * ```
  */
 export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
   constructor(charset: Charset, options: EncoderStream.Options = {}) {
-    const state = createState(charset, options)
-    let decoder: TextDecoder | undefined
+    const state = createState(charset, options);
+    let decoder: TextDecoder | undefined;
     const text = (chunk: string | Uint8Array) => {
       if (isUint8Array(chunk)) {
-        decoder ??= new TextDecoder()
-        return decoder.decode(chunk, { stream: true })
+        decoder ??= new TextDecoder();
+        return decoder.decode(chunk, { stream: true });
       }
       if (typeof chunk !== 'string') {
-        throw new TypeError('EncoderStream accepts only strings and Uint8Arrays.')
+        throw new TypeError('EncoderStream accepts only strings and Uint8Arrays.');
       }
-      return decoder ? decoder.decode() + chunk : chunk
-    }
+      return decoder ? decoder.decode() + chunk : chunk;
+    };
     super(
       Streams.abortable(
         {
           transform(chunk, controller) {
-            const bytes = run(state, text(chunk), false)
+            const bytes = run(state, text(chunk), false);
             if (bytes.length > 0) {
-              controller.enqueue(bytes)
+              controller.enqueue(bytes);
             }
           },
           flush(controller) {
-            const bytes = run(state, decoder ? decoder.decode() : '', true)
+            const bytes = run(state, decoder ? decoder.decode() : '', true);
             if (bytes.length > 0) {
-              controller.enqueue(bytes)
+              controller.enqueue(bytes);
             }
           },
         },
         options,
       ),
-    )
+    );
   }
 }

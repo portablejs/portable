@@ -1,11 +1,11 @@
 /** One header field as binary text: `raw` is the field without its final CRLF. */
-export type Field = { readonly name: string; readonly raw: string }
+export type Field = { readonly name: string; readonly raw: string };
 
-export type Canonicalization = 'simple' | 'relaxed'
+export type Canonicalization = 'simple' | 'relaxed';
 
-const fieldStart = /^[\x21-\x39\x3b-\x7e]+[ \t]*:/
-const nameOnly = /^[\x21-\x39\x3b-\x7e]+[ \t]*$/
-const colonFirst = /^[ \t]*:/
+const fieldStart = /^[\x21-\x39\x3b-\x7e]+[ \t]*:/;
+const nameOnly = /^[\x21-\x39\x3b-\x7e]+[ \t]*$/;
+const colonFirst = /^[ \t]*:/;
 
 /**
  * Splits a header section (binary text, CRLF line ends) into fields. Any line that doesn't start a
@@ -14,53 +14,53 @@ const colonFirst = /^[ \t]*:/
  * show as part of the field above, so the signature covers the text those readers show.
  */
 export function parseFields(header: string): Field[] {
-  const lines = header.split('\r\n')
+  const lines = header.split('\r\n');
   if (lines.at(-1) === '') {
-    lines.pop()
+    lines.pop();
   }
-  const rows: string[][] = []
+  const rows: string[][] = [];
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!
-    const next = lines[i + 1]
+    const line = lines[i]!;
+    const next = lines[i + 1];
     const starts =
       rows.length === 0 ||
       fieldStart.test(line) ||
-      (next !== undefined && nameOnly.test(line) && colonFirst.test(next))
+      (next !== undefined && nameOnly.test(line) && colonFirst.test(next));
     if (starts) {
-      rows.push([line])
+      rows.push([line]);
     } else {
-      rows.at(-1)!.push(line)
+      rows.at(-1)!.push(line);
     }
   }
   return rows.map((row) => {
-    const raw = row.join('\r\n')
-    return { name: fieldName(raw), raw }
-  })
+    const raw = row.join('\r\n');
+    return { name: fieldName(raw), raw };
+  });
 }
 
 function fieldName(raw: string): string {
-  const colon = raw.indexOf(':')
+  const colon = raw.indexOf(':');
   if (colon < 0) {
-    return ''
+    return '';
   }
-  return lowerAscii(trimWsp(raw.slice(0, colon).replaceAll('\r\n', '')))
+  return lowerAscii(trimWsp(raw.slice(0, colon).replaceAll('\r\n', '')));
 }
 
 export const lowerAscii = (text: string): string =>
-  text.replace(/[A-Z]+/g, (letters) => letters.toLowerCase())
+  text.replace(/[A-Z]+/g, (letters) => letters.toLowerCase());
 
-const isWsp = (code: number) => code === 0x20 || code === 0x09
+const isWsp = (code: number) => code === 0x20 || code === 0x09;
 
 export function trimWsp(text: string): string {
-  let start = 0
-  let end = text.length
+  let start = 0;
+  let end = text.length;
   while (start < end && isWsp(text.charCodeAt(start))) {
-    start++
+    start++;
   }
   while (end > start && isWsp(text.charCodeAt(end - 1))) {
-    end--
+    end--;
   }
-  return text.slice(start, end)
+  return text.slice(start, end);
 }
 
 /**
@@ -69,12 +69,12 @@ export function trimWsp(text: string): string {
  */
 export function canonicalizeField(raw: string, canonicalization: Canonicalization): string {
   if (canonicalization === 'simple') {
-    return raw
+    return raw;
   }
-  const line = raw.replaceAll('\r\n', '').replace(/[ \t]+/g, ' ')
-  const colon = line.indexOf(':')
-  const name = colon < 0 ? '' : lowerAscii(trimWsp(line.slice(0, colon)))
-  return name + ':' + trimWsp(line.slice(colon + 1))
+  const line = raw.replaceAll('\r\n', '').replace(/[ \t]+/g, ' ');
+  const colon = line.indexOf(':');
+  const name = colon < 0 ? '' : lowerAscii(trimWsp(line.slice(0, colon)));
+  return name + ':' + trimWsp(line.slice(colon + 1));
 }
 
 /**
@@ -87,20 +87,20 @@ export function selectFields(
   names: readonly string[],
   skip?: Field,
 ): Field[] {
-  const taken = new Set<Field>(skip ? [skip] : [])
-  const selected: Field[] = []
+  const taken = new Set<Field>(skip ? [skip] : []);
+  const selected: Field[] = [];
   for (const name of names) {
     for (let i = fields.length - 1; i >= 0; i--) {
-      const field = fields[i]!
+      const field = fields[i]!;
       if (field.name !== name || taken.has(field)) {
-        continue
+        continue;
       }
-      taken.add(field)
-      selected.push(field)
-      break
+      taken.add(field);
+      selected.push(field);
+      break;
     }
   }
-  return selected
+  return selected;
 }
 
 /**
@@ -112,26 +112,26 @@ export function signedData(
   signature: string,
   canonicalization: Canonicalization,
 ): string {
-  let data = ''
+  let data = '';
   for (const field of selected) {
-    data += canonicalizeField(field.raw, canonicalization) + '\r\n'
+    data += canonicalizeField(field.raw, canonicalization) + '\r\n';
   }
-  return data + canonicalizeField(removeSignatureValue(signature), canonicalization)
+  return data + canonicalizeField(removeSignatureValue(signature), canonicalization);
 }
 
 function removeSignatureValue(raw: string): string {
-  const colon = raw.indexOf(':')
-  const specs = raw.slice(colon + 1).split(';')
+  const colon = raw.indexOf(':');
+  const specs = raw.slice(colon + 1).split(';');
   for (let i = specs.length - 1; i >= 0; i--) {
-    const spec = specs[i]!
-    const equals = spec.indexOf('=')
+    const spec = specs[i]!;
+    const equals = spec.indexOf('=');
     if (equals < 0 || stripFws(spec.slice(0, equals)) !== 'b') {
-      continue
+      continue;
     }
-    specs[i] = spec.slice(0, equals + 1)
-    break
+    specs[i] = spec.slice(0, equals + 1);
+    break;
   }
-  return raw.slice(0, colon + 1) + specs.join(';')
+  return raw.slice(0, colon + 1) + specs.join(';');
 }
 
-export const stripFws = (text: string): string => text.replace(/[ \t\r\n]+/g, '')
+export const stripFws = (text: string): string => text.replace(/[ \t\r\n]+/g, '');

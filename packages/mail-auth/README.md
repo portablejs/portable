@@ -9,8 +9,8 @@ npm install @portable/mail-auth @portable/dns
 ```
 
 ```ts
-import * as Dns from '@portable/dns'
-import * as MailAuth from '@portable/mail-auth'
+import * as Dns from '@portable/dns';
+import * as MailAuth from '@portable/mail-auth';
 
 const result = await MailAuth.authenticate(message, {
   resolver: Dns.create(),
@@ -19,12 +19,12 @@ const result = await MailAuth.authenticate(message, {
   helo: 'mail.example.com',
   sender: 'alice@example.com',
   signal: AbortSignal.timeout(10_000),
-})
+});
 
 if (result.dmarc?.disposition === 'reject') {
-  reject('550 5.7.1 Rejected by DMARC policy')
+  reject('550 5.7.1 Rejected by DMARC policy');
 }
-const delivered = result.headers + message
+const delivered = result.headers + message;
 ```
 
 A forwarder, such as a mailing list, passes `seal` as well, and `result.headers` then starts with a new ARC set that records these results:
@@ -37,8 +37,8 @@ const result = await MailAuth.authenticate(message, {
   helo,
   sender,
   seal: { domain: 'lists.example.org', selector: 'arc', privateKey: env.ARC_PRIVATE_KEY },
-})
-const forwarded = result.headers + message
+});
+const forwarded = result.headers + message;
 ```
 
 A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. `authenticate` reads a stream into memory once, because DKIM, ARC and the seal each read the message. Pipe the stream through `Streams.limitBytes` from `@portable/streams` to cap its size. Bare LF line ends are read as CRLF.

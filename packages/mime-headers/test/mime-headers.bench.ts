@@ -1,11 +1,11 @@
-import { Buffer } from 'node:buffer'
-import emailAddresses from 'email-addresses'
-import libmime from 'libmime'
-import addressparser from 'nodemailer/lib/addressparser'
-import { describe, expect, test } from 'vite-plus/test'
-import * as Exports from '@portable/mime-headers'
-import type { Mailbox, Value } from '@portable/mime-headers'
-import { pick, random } from './utils.js'
+import { Buffer } from 'node:buffer';
+import emailAddresses from 'email-addresses';
+import libmime from 'libmime';
+import addressparser from 'nodemailer/lib/addressparser';
+import { describe, expect, test } from 'vite-plus/test';
+import * as Exports from '@portable/mime-headers';
+import type { Mailbox, Value } from '@portable/mime-headers';
+import { pick, random } from './utils.js';
 
 // Vitest's module runner reads each imported binding through a getter on every call, and the
 // upstream libraries, loaded by Node, have no such getter. Copying the exports once measures only
@@ -21,9 +21,9 @@ const {
   parseHeaders,
   parseMailboxes,
   parseValue,
-} = { ...Exports }
+} = { ...Exports };
 
-const next = random(42)
+const next = random(42);
 const vocabulary = [
   'the',
   'quick',
@@ -38,17 +38,17 @@ const vocabulary = [
   'vu,',
   '日本語',
   '😀',
-]
+];
 const sentence = (count: number) =>
-  Array.from({ length: count }, () => pick(next, vocabulary)).join(' ')
+  Array.from({ length: count }, () => pick(next, vocabulary)).join(' ');
 
-const subjects = Array.from({ length: 200 }, () => sentence(12))
-const qSubjects = subjects.map((subject) => encodeWords(subject))
+const subjects = Array.from({ length: 200 }, () => sentence(12));
+const qSubjects = subjects.map((subject) => encodeWords(subject));
 const bWords = subjects.map((subject) =>
   encodeWord(subject, { wordEncoding: 'B', wordLength: false }),
-)
-const bPayloads = bWords.map((word) => word.slice('=?UTF-8?B?'.length, -2))
-const longHeader = 'Subject: ' + sentence(2000).replace(/[^\x20-\x7e]/g, 'x')
+);
+const bPayloads = bWords.map((word) => word.slice('=?UTF-8?B?'.length, -2));
+const longHeader = 'Subject: ' + sentence(2000).replace(/[^\x20-\x7e]/g, 'x');
 
 const values = Array.from({ length: 200 }, (_, i): Value => ({
   value: i % 2 ? 'attachment' : 'text/plain',
@@ -56,244 +56,244 @@ const values = Array.from({ length: 200 }, (_, i): Value => ({
     i % 2
       ? { filename: sentence(8) + '.pdf', size: String(i * 1024) }
       : { charset: 'utf-8', format: 'flowed' },
-}))
-const builtValues = values.map((value) => formatValue(value))
+}));
+const builtValues = values.map((value) => formatValue(value));
 
 const mailboxes = Array.from({ length: 500 }, (_, i) => ({
   name: i % 3 ? `User ${i}` : '',
   address: `user.${i}@example.com`,
-})) satisfies Mailbox[]
-const addressList = formatAddresses(mailboxes)
+})) satisfies Mailbox[];
+const addressList = formatAddresses(mailboxes);
 
 const headerBlock = Array.from({ length: 200 }, (_, i) =>
   fold(`X-Header-${i}: ${sentence(20).replace(/[^\x20-\x7e]/g, 'x')}`),
-).join('\r\n')
+).join('\r\n');
 
-const decoder = new TextDecoder()
-const encoder = new TextEncoder()
+const decoder = new TextDecoder();
+const encoder = new TextEncoder();
 
-let sink = ''
+let sink = '';
 
 describe('encoded words', () => {
   test('decodeWords of 200 Q-encoded subjects', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const subject of qSubjects) {
-          decodeWords(subject)
+          decodeWords(subject);
         }
       }),
       bench('libmime 5.4.9', () => {
         for (const subject of qSubjects) {
-          libmime.decodeWords(subject)
+          libmime.decodeWords(subject);
         }
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
+  });
 
   test('decodeWords of 200 B words', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const word of bWords) {
-          decodeWords(word)
+          decodeWords(word);
         }
       }),
       bench('libmime 5.4.9', () => {
         for (const word of bWords) {
-          libmime.decodeWords(word)
+          libmime.decodeWords(word);
         }
       }),
       bench('Buffer and TextDecoder', () => {
         for (const payload of bPayloads) {
-          decoder.decode(Buffer.from(payload, 'base64'))
+          decoder.decode(Buffer.from(payload, 'base64'));
         }
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
+  });
 
   test('encodeWords of 200 subjects', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const subject of subjects) {
-          encodeWords(subject)
+          encodeWords(subject);
         }
       }),
       bench('libmime 5.4.9', () => {
         for (const subject of subjects) {
-          libmime.encodeWords(subject, 'Q', 75)
+          libmime.encodeWords(subject, 'Q', 75);
         }
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
+  });
 
   test('encodeWord in B of 200 subjects', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const subject of subjects) {
-          encodeWord(subject, { wordEncoding: 'B', wordLength: false })
+          encodeWord(subject, { wordEncoding: 'B', wordLength: false });
         }
       }),
       bench('libmime 5.4.9', () => {
         for (const subject of subjects) {
-          libmime.encodeWord(subject, 'B')
+          libmime.encodeWord(subject, 'B');
         }
       }),
       bench('TextEncoder and Buffer', () => {
         for (const subject of subjects) {
-          sink = `=?UTF-8?B?${Buffer.from(encoder.encode(subject)).toString('base64')}?=`
+          sink = `=?UTF-8?B?${Buffer.from(encoder.encode(subject)).toString('base64')}?=`;
         }
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-    expect(sink).toBe(encodeWord(subjects.at(-1)!, { wordEncoding: 'B', wordLength: false }))
-  })
-})
+    expect(sink).toBe(encodeWord(subjects.at(-1)!, { wordEncoding: 'B', wordLength: false }));
+  });
+});
 
 describe('folding', () => {
   test('fold of a 2000-word header', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
-        fold(longHeader)
+        fold(longHeader);
       }),
       bench('libmime 5.4.9', () => {
-        libmime.foldLines(longHeader, 76)
+        libmime.foldLines(longHeader, 76);
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
+  });
 
   test('parseHeaders of 200 folded headers', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
-        parseHeaders(headerBlock)
+        parseHeaders(headerBlock);
       }),
       bench('libmime 5.4.9', () => {
-        libmime.decodeHeaders(headerBlock)
+        libmime.decodeHeaders(headerBlock);
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
-})
+  });
+});
 
 describe('header values', () => {
   test('parseValue of 200 values', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const value of builtValues) {
-          parseValue(value)
+          parseValue(value);
         }
       }),
       bench('libmime 5.4.9', () => {
         for (const value of builtValues) {
-          libmime.parseHeaderValue(value)
+          libmime.parseHeaderValue(value);
         }
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
+  });
 
   test('formatValue of 200 values', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const value of values) {
-          formatValue(value)
+          formatValue(value);
         }
       }),
       bench('libmime 5.4.9', () => {
         for (const value of values) {
-          libmime.buildHeaderValue(value)
+          libmime.buildHeaderValue(value);
         }
       }),
-    )
+    );
     for (const upstream of ['libmime 5.4.9'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
-})
+  });
+});
 
 describe('addresses', () => {
   test('parseAddresses of 500 addresses', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
-        parseAddresses(addressList)
+        parseAddresses(addressList);
       }),
       bench('addressparser (nodemailer 10.1.2)', () => {
-        addressparser(addressList)
+        addressparser(addressList);
       }),
       bench('email-addresses 5.0.0', () => {
-        emailAddresses.parseAddressList(addressList)
+        emailAddresses.parseAddressList(addressList);
       }),
-    )
+    );
     for (const upstream of [
       'addressparser (nodemailer 10.1.2)',
       'email-addresses 5.0.0',
     ] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
+  });
 
   test('parseMailboxes of 500 addresses', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
-        parseMailboxes(addressList)
+        parseMailboxes(addressList);
       }),
       bench('addressparser (nodemailer 10.1.2)', () => {
-        addressparser(addressList, { flatten: true })
+        addressparser(addressList, { flatten: true });
       }),
-    )
+    );
     expect(result.get('addressparser (nodemailer 10.1.2)')).not.toBeFasterThan(
       result.get('@portable/mime-headers'),
       { delta: 0.25 },
-    )
-  })
+    );
+  });
 
   test('parseAddresses in strict mode of 500 addresses', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
-        parseAddresses(addressList, { strict: true })
+        parseAddresses(addressList, { strict: true });
       }),
       bench('email-addresses 5.0.0', () => {
-        emailAddresses.parseAddressList(addressList)
+        emailAddresses.parseAddressList(addressList);
       }),
-    )
+    );
     for (const upstream of ['email-addresses 5.0.0'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
         delta: 0.25,
-      })
+      });
     }
-  })
-})
+  });
+});

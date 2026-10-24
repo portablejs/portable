@@ -9,13 +9,13 @@ npm install @portable/idna
 ```
 
 ```ts
-import * as Idna from '@portable/idna'
+import * as Idna from '@portable/idna';
 
-const { hostname } = new URL('https://bücher.example/')
-hostname // 'xn--bcher-kva.example'
-Idna.toUnicode(hostname) // 'bücher.example'
+const { hostname } = new URL('https://bücher.example/');
+hostname; // 'xn--bcher-kva.example'
+Idna.toUnicode(hostname); // 'bücher.example'
 
-Idna.toAscii('Bücher.example') // 'xn--bcher-kva.example'
+Idna.toAscii('Bücher.example'); // 'xn--bcher-kva.example'
 ```
 
 `URL` converts hostnames to ASCII, but the platform has no function that converts them back to Unicode. `toUnicode` is that function. `toAscii` gives the same result as `URL` without parsing a URL, and in every runtime.
@@ -31,9 +31,9 @@ It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn
 ```ts
 function displayHost(hostname: string): string {
   try {
-    return Idna.toUnicode(hostname)
+    return Idna.toUnicode(hostname);
   } catch {
-    return hostname
+    return hostname;
   }
 }
 ```

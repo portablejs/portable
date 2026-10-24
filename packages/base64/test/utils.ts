@@ -1,44 +1,44 @@
-import { DecoderStream, EncoderStream, decode, encode } from '@portable/base64'
+import { DecoderStream, EncoderStream, decode, encode } from '@portable/base64';
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
 export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
-  let i = 0
+  let i = 0;
   return new ReadableStream({
     pull(controller) {
       if (i < chunks.length) {
-        controller.enqueue(chunks[i++]!)
+        controller.enqueue(chunks[i++]!);
       } else {
-        controller.close()
+        controller.close();
       }
     },
-  })
+  });
 }
 
 export async function collect<chunk>(
   stream: ReadableStream<chunk>,
   onChunk?: (count: number) => Promise<void>,
 ): Promise<chunk[]> {
-  const reader = stream.getReader()
-  const chunks: chunk[] = []
+  const reader = stream.getReader();
+  const chunks: chunk[] = [];
   for (;;) {
-    const { done, value } = await reader.read()
+    const { done, value } = await reader.read();
     if (done) {
-      return chunks
+      return chunks;
     }
-    chunks.push(value)
-    await onChunk?.(chunks.length)
+    chunks.push(value);
+    await onChunk?.(chunks.length);
   }
 }
 
 export function concat(chunks: readonly Uint8Array[]): Uint8Array {
-  const out = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0))
-  let offset = 0
+  const out = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0));
+  let offset = 0;
   for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.length
+    out.set(chunk, offset);
+    offset += chunk.length;
   }
-  return out
+  return out;
 }
 
 export async function encodeStream(
@@ -51,14 +51,14 @@ export async function encodeStream(
         .pipeThrough(new EncoderStream(options))
         .pipeThrough(new TextDecoderStream()),
     )
-  ).join('')
+  ).join('');
 }
 
 export async function decodeStream(
   chunks: readonly (Uint8Array | string)[],
   options?: decode.Options,
 ): Promise<Uint8Array> {
-  return concat(await collect(fromChunks(chunks).pipeThrough(new DecoderStream(options))))
+  return concat(await collect(fromChunks(chunks).pipeThrough(new DecoderStream(options))));
 }
 
 /**
@@ -68,51 +68,51 @@ export function chunked<value extends Uint8Array | string>(
   input: value,
   sizes: number | readonly number[],
 ): value[] {
-  const list = typeof sizes === 'number' ? [sizes] : sizes
-  const chunks: value[] = []
+  const list = typeof sizes === 'number' ? [sizes] : sizes;
+  const chunks: value[] = [];
   for (let pos = 0, i = 0; pos < input.length; i++) {
-    const size = list[i % list.length]!
-    chunks.push(input.slice(pos, pos + size) as value)
-    pos += size
+    const size = list[i % list.length]!;
+    chunks.push(input.slice(pos, pos + size) as value);
+    pos += size;
   }
-  return chunks
+  return chunks;
 }
 
 export function random(seed: number): () => number {
-  let state = seed
+  let state = seed;
   return () => {
-    state = (state * 1103515245 + 12345) % 2 ** 31
-    return state / 2 ** 31
-  }
+    state = (state * 1103515245 + 12345) % 2 ** 31;
+    return state / 2 ** 31;
+  };
 }
 
 export function randomBytes(length: number, seed: number): Uint8Array {
-  const next = random(seed)
-  return Uint8Array.from({ length }, () => Math.floor(next() * 256))
+  const next = random(seed);
+  return Uint8Array.from({ length }, () => Math.floor(next() * 256));
 }
 
 export function randomChunkSizes(seed: number, max = 300): number[] {
-  const next = random(seed)
-  return Array.from({ length: 1 + Math.floor(next() * 8) }, () => 1 + Math.floor(next() * max))
+  const next = random(seed);
+  return Array.from({ length: 1 + Math.floor(next() * 8) }, () => 1 + Math.floor(next() * max));
 }
 
-export const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
-export const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
+export const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text);
+export const text = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
 export const latin1 = (text: string): Uint8Array =>
-  Uint8Array.from(text, (char) => char.charCodeAt(0))
+  Uint8Array.from(text, (char) => char.charCodeAt(0));
 
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /** RFC 4648 encoder, bit by bit, ported from libbase64's property tests. */
 export function referenceEncode(data: Uint8Array): string {
-  let out = ''
+  let out = '';
   for (let i = 0; i < data.length; i += 3) {
-    const n = (data[i]! << 16) | ((data[i + 1] ?? 0) << 8) | (data[i + 2] ?? 0)
-    const chars = [(n >> 18) & 63, (n >> 12) & 63, (n >> 6) & 63, n & 63].map((c) => ALPHABET[c])
-    const used = Math.min(data.length - i, 3) + 1
-    out += chars.slice(0, used).join('') + '='.repeat(4 - used)
+    const n = (data[i]! << 16) | ((data[i + 1] ?? 0) << 8) | (data[i + 2] ?? 0);
+    const chars = [(n >> 18) & 63, (n >> 12) & 63, (n >> 6) & 63, n & 63].map((c) => ALPHABET[c]);
+    const used = Math.min(data.length - i, 3) + 1;
+    out += chars.slice(0, used).join('') + '='.repeat(4 - used);
   }
-  return out
+  return out;
 }
 
 /**
@@ -120,37 +120,37 @@ export function referenceEncode(data: Uint8Array): string {
  * both alphabets are skipped, and every `=` ends a segment that is decoded on its own.
  */
 export function referenceDecode(str: string): Uint8Array {
-  const out: number[] = []
+  const out: number[] = [];
   for (const segment of str.split('=')) {
-    let bits = 0
-    let count = 0
+    let bits = 0;
+    let count = 0;
     for (const char of segment) {
-      let value = ALPHABET.indexOf(char)
+      let value = ALPHABET.indexOf(char);
       if (char === '-') {
-        value = 62
+        value = 62;
       } else if (char === '_') {
-        value = 63
+        value = 63;
       }
       if (value < 0) {
-        continue
+        continue;
       }
-      bits = ((bits << 6) | value) & 0xffffff
-      count += 6
+      bits = ((bits << 6) | value) & 0xffffff;
+      count += 6;
       if (count >= 8) {
-        count -= 8
-        out.push((bits >> count) & 0xff)
+        count -= 8;
+        out.push((bits >> count) & 0xff);
       }
     }
   }
-  return Uint8Array.from(out)
+  return Uint8Array.from(out);
 }
 
 export function referenceWrap(str: string, lineLength: number, newline = '\r\n'): string {
-  const lines: string[] = []
+  const lines: string[] = [];
   for (let pos = 0; pos < str.length; pos += lineLength) {
-    lines.push(str.slice(pos, pos + lineLength))
+    lines.push(str.slice(pos, pos + lineLength));
   }
-  return lines.join(newline)
+  return lines.join(newline);
 }
 
 /**
@@ -158,20 +158,20 @@ export function referenceWrap(str: string, lineLength: number, newline = '\r\n')
  * 8-bit and non-Latin-1 characters mixed in. Ported from libbase64's `encodedLike` arbitrary.
  */
 export function encodedLike(seed: number, maxLength = 2000): string {
-  const next = random(seed)
+  const next = random(seed);
   const pick = (options: string | readonly string[]) =>
-    options[Math.floor(next() * options.length)]!
-  const parts: string[] = []
-  const length = Math.floor(next() * maxLength)
+    options[Math.floor(next() * options.length)]!;
+  const parts: string[] = [];
+  const length = Math.floor(next() * maxLength);
   for (let i = 0; i < length; i++) {
-    const kind = next() * 13
+    const kind = next() * 13;
     if (kind < 10) {
-      parts.push(pick(ALPHABET + '-_'))
+      parts.push(pick(ALPHABET + '-_'));
     } else if (kind < 12) {
-      parts.push(pick(['=', '==', '\r\n', ' ', '\t']))
+      parts.push(pick(['=', '==', '\r\n', ' ', '\t']));
     } else {
-      parts.push(String.fromCharCode(Math.floor(next() * (next() < 0.9 ? 256 : 0x10000))))
+      parts.push(String.fromCharCode(Math.floor(next() * (next() < 0.9 ? 256 : 0x10000))));
     }
   }
-  return parts.join('')
+  return parts.join('');
 }

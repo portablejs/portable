@@ -15,20 +15,20 @@ Each package has a `DecoderStream` that gives the same output however the input 
 ## Convert a CSV export to JSON Lines
 
 ```ts
-import * as Csv from '@portable/csv'
-import * as Jsonl from '@portable/jsonl'
+import * as Csv from '@portable/csv';
+import * as Jsonl from '@portable/jsonl';
 
 export default {
   async fetch() {
-    const response = await fetch('https://example.com/users.csv')
+    const response = await fetch('https://example.com/users.csv');
     const body = response
       .body!.pipeThrough(new Csv.DecoderStream({ header: true }))
-      .pipeThrough(new Jsonl.EncoderStream())
+      .pipeThrough(new Jsonl.EncoderStream());
     return new Response(body, {
       headers: { 'content-type': 'application/jsonl' },
-    })
+    });
   },
-}
+};
 ```
 
 The Worker converts each row as it arrives, so its memory use doesn't grow with the size of the file.

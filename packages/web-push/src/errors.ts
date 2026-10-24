@@ -1,4 +1,4 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown when a subscription can't be used: its endpoint isn't an `https:` URL, `p256dh` isn't a P-256
  * public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that
@@ -6,21 +6,21 @@ import * as Errors from '@portable/errors'
  *
  * @example
  * ```ts
- * import * as WebPush from '@portable/web-push'
+ * import * as WebPush from '@portable/web-push';
  *
  * try {
- *   await WebPush.send({ subscription, payload: 'hello', vapid })
+ *   await WebPush.send({ subscription, payload: 'hello', vapid });
  * } catch (error) {
  *   if (error instanceof WebPush.InvalidInputError) {
- *     await deleteSubscription(subscription)
+ *     await deleteSubscription(subscription);
  *   } else {
- *     throw error
+ *     throw error;
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'WebPush.InvalidInputError'
+  static override readonly kind: string = 'WebPush.InvalidInputError';
 }
 
 /**
@@ -29,29 +29,29 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as WebPush from '@portable/web-push'
+ * import * as WebPush from '@portable/web-push';
  *
  * try {
- *   await WebPush.send({ subscription, payload: 'hello', vapid })
+ *   await WebPush.send({ subscription, payload: 'hello', vapid });
  * } catch (error) {
  *   if (error instanceof WebPush.ResponseError && error.status === 429) {
- *     retryAfter(error.response.headers.get('retry-after'))
+ *     retryAfter(error.response.headers.get('retry-after'));
  *   } else {
- *     throw error
+ *     throw error;
  *   }
  * }
  * ```
  */
 export class ResponseError extends Errors.ResponseError {
-  static override readonly kind: string = 'WebPush.ResponseError'
+  static override readonly kind: string = 'WebPush.ResponseError';
   /** The response body as text. Push services usually explain the error in it. */
-  declare readonly body: string
+  declare readonly body: string;
 
   constructor(options: Errors.ResponseError.Options & { body: string }) {
-    const { response, body } = options
+    const { response, body } = options;
     super({
       message: `Push service responded with ${response.status}${body ? `: ${body.slice(0, 200)}` : ''}`,
       ...options,
-    })
+    });
   }
 }

@@ -1,14 +1,14 @@
-import { type Debounced, debounce } from './debounce.js'
+import { type Debounced, debounce } from './debounce.js';
 
 export declare namespace throttle {
   type Options = {
     /** Invoke on the first call of a burst. @default true */
-    leading?: boolean | undefined
+    leading?: boolean | undefined;
     /** Invoke once more at the end of each `ms` window that had calls, with the last call's arguments. @default true */
-    trailing?: boolean | undefined
+    trailing?: boolean | undefined;
     /** Cancels the waiting invocation, as `cancel()` does but rejecting with `signal.reason`, and disables the function. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -17,10 +17,10 @@ export declare namespace throttle {
  *
  * @example
  * ```ts
- * import * as Timers from '@portable/timers'
+ * import * as Timers from '@portable/timers';
  *
- * const report = Timers.throttle(() => fetch('/position', { method: 'POST', body: String(scrollY) }), 1000)
- * addEventListener('scroll', () => report())
+ * const report = Timers.throttle(() => fetch('/position', { method: 'POST', body: String(scrollY) }), 1000);
+ * addEventListener('scroll', () => report());
  * ```
  */
 export function throttle<args extends unknown[], result, self = unknown>(
@@ -28,6 +28,6 @@ export function throttle<args extends unknown[], result, self = unknown>(
   ms: number,
   options: throttle.Options = {},
 ): Debounced<args, result, self> {
-  const { leading = true, trailing = true, signal } = options
-  return debounce(fn, ms, { leading, trailing, maxWait: ms, signal })
+  const { leading = true, trailing = true, signal } = options;
+  return debounce(fn, ms, { leading, trailing, maxWait: ms, signal });
 }

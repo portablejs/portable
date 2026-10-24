@@ -9,18 +9,18 @@ npm install @portable/random
 ```
 
 ```ts
-import * as Random from '@portable/random'
+import * as Random from '@portable/random';
 
-Random.int(1, 6) // 1 to 6, both included
-Random.float() // from 0 up to but not including 1
-Random.string(21) // 'Uakgb_J5m9g-0JDMbcJqL'
-Random.string(6, { alphabet: '0123456789' }) // '407519'
-Random.shuffle(['A', 'K', 'Q', 'J']) // a new array
-Random.pick(['red', 'green', 'blue'])
-Random.bytes(32) // Uint8Array
+Random.int(1, 6); // 1 to 6, both included
+Random.float(); // from 0 up to but not including 1
+Random.string(21); // 'Uakgb_J5m9g-0JDMbcJqL'
+Random.string(6, { alphabet: '0123456789' }); // '407519'
+Random.shuffle(['A', 'K', 'Q', 'J']); // a new array
+Random.pick(['red', 'green', 'blue']);
+Random.bytes(32); // Uint8Array
 
-const random = Random.seeded(42)
-random.int(1, 6) // the same number on every run, in every runtime
+const random = Random.seeded(42);
+random.int(1, 6); // the same number on every run, in every runtime
 ```
 
 ## API

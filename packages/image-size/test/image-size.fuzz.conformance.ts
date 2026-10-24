@@ -1,16 +1,16 @@
-import * as ImageSize from '@portable/image-size'
-import { cuts, fc, fuzz, mutated, outcome, outcomeAsync, split } from '@portable/fuzz'
-import { fromIterable } from '@portable/streams'
-import { beforeAll, expect, test } from 'vite-plus/test'
-import { encode, fixture, fixtures } from './utils.js'
+import * as ImageSize from '@portable/image-size';
+import { cuts, fc, fuzz, mutated, outcome, outcomeAsync, split } from '@portable/fuzz';
+import { fromIterable } from '@portable/streams';
+import { beforeAll, expect, test } from 'vite-plus/test';
+import { encode, fixture, fixtures } from './utils.js';
 
-const errors = [ImageSize.InvalidInputError, ImageSize.TruncatedError, ImageSize.UnsupportedError]
-const files: Uint8Array[] = []
+const errors = [ImageSize.InvalidInputError, ImageSize.TruncatedError, ImageSize.UnsupportedError];
+const files: Uint8Array[] = [];
 beforeAll(async () => {
   for (const path of fixtures) {
-    files.push(await fixture(path))
+    files.push(await fixture(path));
   }
-}, 60_000)
+}, 60_000);
 
 // The start of each format's header, so that format's parser reads the random bytes after it.
 const magic = [
@@ -34,7 +34,7 @@ const magic = [
   [0xab, 0x4b, 0x54, 0x58, 0x20, 0x31, 0x31, 0xbb],
   [...encode('P6\n')],
   [...encode('<svg ')],
-]
+];
 
 const input = fc.oneof(
   fc.nat().chain((i) => mutated(files[i % files.length]!)),
@@ -42,26 +42,26 @@ const input = fc.oneof(
     .tuple(fc.constantFrom(...magic), fc.uint8Array({ maxLength: 200 }))
     .map(([head, tail]) => Uint8Array.from([...head, ...tail])),
   fc.uint8Array({ maxLength: 64 }),
-)
+);
 
 test('parse returns a size or throws a documented error for any input', () => {
   fuzz(
     fc.property(input, (bytes) => {
-      const result = outcome(errors, () => ImageSize.parse(bytes))
-      const { width, height } = 'value' in result ? result.value : { width: 0, height: 0 }
-      expect([width, height].every((n) => Number.isFinite(n) && n >= 0)).toBe(true)
+      const result = outcome(errors, () => ImageSize.parse(bytes));
+      const { width, height } = 'value' in result ? result.value : { width: 0, height: 0 };
+      expect([width, height].every((n) => Number.isFinite(n) && n >= 0)).toBe(true);
     }),
     { scale: 5 },
-  )
-})
+  );
+});
 
 test('parseStream returns what parse returns, however the bytes are chunked', async () => {
   await fuzz(
     fc.asyncProperty(input, cuts, async (bytes, at) => {
       expect(
         await outcomeAsync(errors, () => ImageSize.parseStream(fromIterable(split(bytes, at)))),
-      ).toEqual(outcome(errors, () => ImageSize.parse(bytes)))
+      ).toEqual(outcome(errors, () => ImageSize.parse(bytes)));
     }),
     { scale: 2 },
-  )
-})
+  );
+});

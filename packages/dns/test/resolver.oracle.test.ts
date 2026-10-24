@@ -1,37 +1,37 @@
-import * as DnsPacket from '@portable/dns-packet'
-import dgram from 'node:dgram'
-import dnsPromises from 'node:dns/promises'
-import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
-import { create, type Resolver } from '@portable/dns'
-import { doh, record, recorded, respond, utf8 } from './utils.js'
+import * as DnsPacket from '@portable/dns-packet';
+import dgram from 'node:dgram';
+import dnsPromises from 'node:dns/promises';
+import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test';
+import { create, type Resolver } from '@portable/dns';
+import { doh, record, recorded, respond, utf8 } from './utils.js';
 
-type Handler = (query: DnsPacket.DecodedPacket) => DnsPacket.Packet | Uint8Array
+type Handler = (query: DnsPacket.DecodedPacket) => DnsPacket.Packet | Uint8Array;
 
-let handler: Handler = () => ({})
-const server = dgram.createSocket('udp4')
-const node = new dnsPromises.Resolver({ timeout: 1000, tries: 1 })
+let handler: Handler = () => ({});
+const server = dgram.createSocket('udp4');
+const node = new dnsPromises.Resolver({ timeout: 1000, tries: 1 });
 
 beforeAll(async () => {
   server.on('message', (message, remote) => {
-    const query = DnsPacket.decode(message)
-    const reply = handler(query)
+    const query = DnsPacket.decode(message);
+    const reply = handler(query);
     server.send(
       reply instanceof Uint8Array ? withId(reply, query.id) : respond(query, reply),
       remote.port,
       remote.address,
-    )
-  })
-  await new Promise<void>((resolve) => server.bind(0, '127.0.0.1', resolve))
-  node.setServers([`127.0.0.1:${server.address().port}`])
-})
+    );
+  });
+  await new Promise<void>((resolve) => server.bind(0, '127.0.0.1', resolve));
+  node.setServers([`127.0.0.1:${server.address().port}`]);
+});
 
-afterAll(() => server.close())
+afterAll(() => server.close());
 
 function withId(bytes: Uint8Array, id: number): Uint8Array {
-  const copy = new Uint8Array(bytes)
-  copy[0] = id >> 8
-  copy[1] = id & 0xff
-  return copy
+  const copy = new Uint8Array(bytes);
+  copy[0] = id >> 8;
+  copy[1] = id & 0xff;
+  return copy;
 }
 
 const ours = create({
@@ -43,50 +43,50 @@ const ours = create({
         ),
         (c) => c.charCodeAt(0),
       ),
-    )
-    const reply = handler(query)
-    return reply instanceof Uint8Array ? new Uint8Array(withId(reply, query.id)) : reply
+    );
+    const reply = handler(query);
+    return reply instanceof Uint8Array ? new Uint8Array(withId(reply, query.id)) : reply;
   }).fetch,
   endpoints: ['https://doh.test/dns-query'],
-})
+});
 
-type Method = Exclude<keyof Resolver, 'reverse'>
+type Method = Exclude<keyof Resolver, 'reverse'>;
 
 /** Node adds `type` to MX, SRV and CAA results, and the `Resolver` shapes leave it out. */
 function withoutType(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return value.map(withoutType)
+    return value.map(withoutType);
   }
   if (value && typeof value === 'object' && 'type' in value) {
-    const { type: _, ...rest } = value as Record<string, unknown>
-    return rest
+    const { type: _, ...rest } = value as Record<string, unknown>;
+    return rest;
   }
-  return value
+  return value;
 }
 
 async function outcome(run: () => Promise<unknown>): Promise<unknown> {
   try {
-    return { value: withoutType(await run()) }
+    return { value: withoutType(await run()) };
   } catch (error) {
-    const { code, syscall, hostname, message } = error as Record<string, unknown>
-    return { error: { code, syscall, hostname, message } }
+    const { code, syscall, hostname, message } = error as Record<string, unknown>;
+    return { error: { code, syscall, hostname, message } };
   }
 }
 
 async function compare(method: Method | 'reverse', name: string, reply: Handler) {
-  handler = reply
-  const expected = await outcome(() => (node[method] as (name: string) => Promise<unknown>)(name))
-  const actual = await outcome(() => ours[method](name))
-  expect(actual).toEqual(expected)
-  return actual
+  handler = reply;
+  const expected = await outcome(() => (node[method] as (name: string) => Promise<unknown>)(name));
+  const actual = await outcome(() => ours[method](name));
+  expect(actual).toEqual(expected);
+  return actual;
 }
 
 function random(seed: number): () => number {
-  let state = seed
+  let state = seed;
   return () => {
-    state = (state * 1103515245 + 12345) % 2 ** 31
-    return state / 2 ** 31
-  }
+    state = (state * 1103515245 + 12345) % 2 ** 31;
+    return state / 2 ** 31;
+  };
 }
 
 const generators: Record<Method, { type: string; data: (next: () => number) => unknown }> = {
@@ -154,19 +154,19 @@ const generators: Record<Method, { type: string; data: (next: () => number) => u
       replacement: n() < 0.5 ? '.' : hostName(n),
     }),
   },
-}
+};
 
 function hostName(next: () => number): string {
   const labels = Array.from({ length: 1 + Math.floor(next() * 3) }, () =>
     Array.from({ length: 1 + Math.floor(next() * 12) }, () =>
       'abcdefghijklmnopqrstuvwxyz0123456789-'.charAt(Math.floor(next() * 36)),
     ).join(''),
-  )
-  return `${labels.join('.')}.example`
+  );
+  return `${labels.join('.')}.example`;
 }
 
 const randomCase = (name: string, next: () => number) =>
-  name.replace(/[a-z]/g, (c) => (next() < 0.5 ? c.toUpperCase() : c))
+  name.replace(/[a-z]/g, (c) => (next() < 0.5 ? c.toUpperCase() : c));
 
 describe('random answers give the same results as node:dns/promises', () => {
   for (const [method, { type, data }] of Object.entries(generators) as [
@@ -174,58 +174,58 @@ describe('random answers give the same results as node:dns/promises', () => {
     (typeof generators)[Method],
   ][]) {
     test(`${method}`, async () => {
-      expect.hasAssertions()
-      const next = random(method.length * 7919)
+      expect.hasAssertions();
+      const next = random(method.length * 7919);
       for (let i = 0; i < 25; i++) {
-        const name = hostName(next)
+        const name = hostName(next);
         const count =
-          method === 'resolveSoa' || method === 'resolveCname' ? 1 : 1 + Math.floor(next() * 5)
-        const chain = method !== 'resolveCname' && next() < 0.3 ? hostName(next) : undefined
-        const owner = chain ?? name
+          method === 'resolveSoa' || method === 'resolveCname' ? 1 : 1 + Math.floor(next() * 5);
+        const chain = method !== 'resolveCname' && next() < 0.3 ? hostName(next) : undefined;
+        const owner = chain ?? name;
         const answers = [
           ...(chain ? [record(randomCase(name, next), 'CNAME', chain)] : []),
           ...Array.from({ length: count }, () =>
             record(randomCase(owner, next), type, data(next), Math.floor(next() * 2 ** 31)),
           ),
-        ]
-        await compare(method, name, () => ({ answers }))
+        ];
+        await compare(method, name, () => ({ answers }));
       }
-    })
+    });
   }
-})
+});
 
 describe('response codes give the same errors as node:dns/promises', () => {
-  const rcodes = ['NXDOMAIN', 'SERVFAIL', 'REFUSED', 'NOTIMP', 'FORMERR'] as const
+  const rcodes = ['NXDOMAIN', 'SERVFAIL', 'REFUSED', 'NOTIMP', 'FORMERR'] as const;
   for (const method of Object.keys(generators) as Method[]) {
     test(`${method}`, async () => {
-      expect.hasAssertions()
+      expect.hasAssertions();
       for (const rcode of rcodes) {
-        await compare(method, 'missing.example.org', () => ({ rcode }))
+        await compare(method, 'missing.example.org', () => ({ rcode }));
       }
-      await compare(method, 'empty.example.org', () => ({}))
-      await compare(method, 'garbage.example.org', () => Uint8Array.of(1, 2, 3))
-    })
+      await compare(method, 'empty.example.org', () => ({}));
+      await compare(method, 'garbage.example.org', () => Uint8Array.of(1, 2, 3));
+    });
   }
 
   test('reverse', async () => {
     const ptr = ((query) => ({
       answers: [record(query.questions[0]!.name, 'PTR', 'host.example')],
-    })) satisfies Handler
+    })) satisfies Handler;
     for (const ip of ['192.0.2.255', '10.0.0.1', '2001:db8::1', '::ffff:192.0.2.4', 'fe80::1']) {
-      await compare('reverse', ip, ptr)
+      await compare('reverse', ip, ptr);
     }
     for (const ip of ['1.2.3', 'bogus ip', '1.2.3.256', ':::1', '01.2.3.4', '::1.2.3.04']) {
-      expect(await compare('reverse', ip, ptr)).toMatchObject({ error: { code: 'EINVAL' } })
+      expect(await compare('reverse', ip, ptr)).toMatchObject({ error: { code: 'EINVAL' } });
     }
-    await compare('reverse', '192.0.2.1', () => ({ rcode: 'NXDOMAIN' }))
-    await compare('reverse', '192.0.2.1', () => ({}))
-  })
-})
+    await compare('reverse', '192.0.2.1', () => ({ rcode: 'NXDOMAIN' }));
+    await compare('reverse', '192.0.2.1', () => ({}));
+  });
+});
 
 describe('names give the same results as node:dns/promises', () => {
   const answerAll = ((query) => ({
     answers: [record(query.questions[0]!.name, 'A', '192.0.2.1')],
-  })) satisfies Handler
+  })) satisfies Handler;
   test.each([
     'example.org.',
     '',
@@ -263,10 +263,10 @@ describe('names give the same results as node:dns/promises', () => {
     'with space.org',
     'evil.example?x',
   ])('%j', async (name) => {
-    expect.hasAssertions()
-    await compare('resolve4', name, answerAll)
-  })
-})
+    expect.hasAssertions();
+    await compare('resolve4', name, answerAll);
+  });
+});
 
 describe('recorded responses give the same results as node:dns/promises', () => {
   const methods: Record<string, Method> = {
@@ -281,22 +281,22 @@ describe('recorded responses give the same results as node:dns/promises', () => 
     SOA: 'resolveSoa',
     CAA: 'resolveCaa',
     NAPTR: 'resolveNaptr',
-  }
+  };
   test.each([...recorded.keys()])('%s', async (key) => {
-    expect.hasAssertions()
-    const [name, type] = key.split(' ') as [string, string]
-    await compare(methods[type]!, name, () => recorded.get(key)!)
-  })
-})
+    expect.hasAssertions();
+    const [name, type] = key.split(' ') as [string, string];
+    await compare(methods[type]!, name, () => recorded.get(key)!);
+  });
+});
 
 describe('deliberate differences from node:dns/promises', () => {
-  const N = 'example.org'
+  const N = 'example.org';
 
   test('TXT is decoded as UTF-8, where Node decodes Latin-1', async () => {
-    handler = () => ({ answers: [record(N, 'TXT', [utf8('héllo')])] })
-    expect(await node.resolveTxt(N)).toEqual([['hÃ©llo']])
-    expect(await ours.resolveTxt(N)).toEqual([['héllo']])
-  })
+    handler = () => ({ answers: [record(N, 'TXT', [utf8('héllo')])] });
+    expect(await node.resolveTxt(N)).toEqual([['hÃ©llo']]);
+    expect(await ours.resolveTxt(N)).toEqual([['héllo']]);
+  });
 
   test('records owned by names outside the CNAME chain are left out', async () => {
     handler = () => ({
@@ -305,22 +305,22 @@ describe('deliberate differences from node:dns/promises', () => {
         record('b.example', 'A', '192.0.2.1'),
         record('unrelated.example', 'A', '192.0.2.66'),
       ],
-    })
-    expect(await node.resolve4(N)).toEqual(['192.0.2.1', '192.0.2.66'])
-    expect(await ours.resolve4(N)).toEqual(['192.0.2.1'])
-    handler = () => ({ answers: [record('unrelated.example', 'TXT', ['injected'])] })
-    expect(await node.resolveTxt(N)).toEqual([['injected']])
-    await expect(ours.resolveTxt(N)).rejects.toMatchObject({ code: 'ENODATA' })
-  })
+    });
+    expect(await node.resolve4(N)).toEqual(['192.0.2.1', '192.0.2.66']);
+    expect(await ours.resolve4(N)).toEqual(['192.0.2.1']);
+    handler = () => ({ answers: [record('unrelated.example', 'TXT', ['injected'])] });
+    expect(await node.resolveTxt(N)).toEqual([['injected']]);
+    await expect(ours.resolveTxt(N)).rejects.toMatchObject({ code: 'ENODATA' });
+  });
 
   test('a CNAME without records of the requested type is ENODATA, where Node returns []', async () => {
-    handler = () => ({ answers: [record(N, 'CNAME', 'no-txt.example')] })
-    expect(await node.resolveTxt(N)).toEqual([])
-    await expect(ours.resolveTxt(N)).rejects.toMatchObject({ code: 'ENODATA' })
-  })
+    handler = () => ({ answers: [record(N, 'CNAME', 'no-txt.example')] });
+    expect(await node.resolveTxt(N)).toEqual([]);
+    await expect(ours.resolveTxt(N)).rejects.toMatchObject({ code: 'ENODATA' });
+  });
 
   test('SOA refresh, retry and expire above 2^31 stay positive, where Node wraps them to negative numbers', async () => {
-    const big = 2 ** 31 + 1
+    const big = 2 ** 31 + 1;
     const soa = {
       mname: 'a',
       rname: 'b',
@@ -329,32 +329,32 @@ describe('deliberate differences from node:dns/promises', () => {
       retry: big,
       expire: big,
       minimum: 1,
-    }
-    handler = () => ({ answers: [record(N, 'SOA', soa)] })
+    };
+    handler = () => ({ answers: [record(N, 'SOA', soa)] });
     expect(await node.resolveSoa(N)).toMatchObject({
       refresh: big - 2 ** 32,
       retry: big - 2 ** 32,
       expire: big - 2 ** 32,
-    })
-    expect(await ours.resolveSoa(N)).toMatchObject({ refresh: big, retry: big, expire: big })
-  })
+    });
+    expect(await ours.resolveSoa(N)).toMatchObject({ refresh: big, retry: big, expire: big });
+  });
 
   test('IPv6 addresses are formatted as RFC 5952 recommends, where Node writes ::/96 with a dotted quad', async () => {
-    handler = () => ({ answers: [record(N, 'AAAA', '::bd60:1')] })
-    expect(await node.resolve6(N)).toEqual(['::189.96.0.1'])
-    expect(await ours.resolve6(N)).toEqual(['::bd60:1'])
-  })
+    handler = () => ({ answers: [record(N, 'AAAA', '::bd60:1')] });
+    expect(await node.resolve6(N)).toEqual(['::189.96.0.1']);
+    expect(await ours.resolve6(N)).toEqual(['::bd60:1']);
+  });
 
   test('a response code Node has no error for is EBADRESP, where Node says ENODATA', async () => {
-    handler = () => ({ rcode: 'YXDOMAIN' })
-    await expect(node.resolve4(N)).rejects.toMatchObject({ code: 'ENODATA' })
-    await expect(ours.resolve4(N)).rejects.toMatchObject({ code: 'EBADRESP' })
-  })
-})
+    handler = () => ({ rcode: 'YXDOMAIN' });
+    await expect(node.resolve4(N)).rejects.toMatchObject({ code: 'ENODATA' });
+    await expect(ours.resolve4(N)).rejects.toMatchObject({ code: 'EBADRESP' });
+  });
+});
 
 test('node:dns/promises and its Resolver fit the Resolver type', () => {
-  const fromModule = dnsPromises satisfies Resolver
-  const fromClass = new dnsPromises.Resolver() satisfies Resolver
-  expect(typeof fromModule.resolveTxt).toBe('function')
-  expect(typeof fromClass.reverse).toBe('function')
-})
+  const fromModule = dnsPromises satisfies Resolver;
+  const fromClass = new dnsPromises.Resolver() satisfies Resolver;
+  expect(typeof fromModule.resolveTxt).toBe('function');
+  expect(typeof fromClass.reverse).toBe('function');
+});

@@ -1,6 +1,6 @@
-import { TruncatedError } from './errors.js'
+import { TruncatedError } from './errors.js';
 
-let lax: Promise<boolean> | undefined
+let lax: Promise<boolean> | undefined;
 
 /**
  * Resolves to true if the runtime's `DecompressionStream('deflate')` closes without an error when
@@ -17,23 +17,23 @@ export function needsTrailerCheck(): Promise<boolean> {
     .then(
       () => true,
       () => false,
-    )
-  return lax
+    );
+  return lax;
 }
 
 export function adler32(data: Uint8Array, previous: number = 1): number {
-  let a = previous & 0xffff
-  let b = previous >>> 16
+  let a = previous & 0xffff;
+  let b = previous >>> 16;
   for (let i = 0; i < data.length;) {
-    const end = Math.min(i + 5552, data.length)
+    const end = Math.min(i + 5552, data.length);
     for (; i < end; i++) {
-      a += data[i]!
-      b += a
+      a += data[i]!;
+      b += a;
     }
-    a %= 65521
-    b %= 65521
+    a %= 65521;
+    b %= 65521;
   }
-  return ((b << 16) | a) >>> 0
+  return ((b << 16) | a) >>> 0;
 }
 
 /**
@@ -49,8 +49,8 @@ export function assertTrailer(tail: Uint8Array, checksum: number): void {
           (tail[tail.length - 3]! << 16) |
           (tail[tail.length - 2]! << 8) |
           tail[tail.length - 1]!) >>>
-        0
+        0;
   if (stored !== checksum) {
-    throw new TruncatedError()
+    throw new TruncatedError();
   }
 }

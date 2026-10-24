@@ -9,12 +9,12 @@ npm install @portable/charset
 ```
 
 ```ts
-import * as Charset from '@portable/charset'
-import { shiftJis } from '@portable/charset/shift_jis'
+import * as Charset from '@portable/charset';
+import { shiftJis } from '@portable/charset/shift_jis';
 
-Charset.encode('こんにちは', shiftJis) // Uint8Array [0x82, 0xb1, 0x82, 0xf1, ...]
+Charset.encode('こんにちは', shiftJis); // Uint8Array [0x82, 0xb1, 0x82, 0xf1, ...]
 
-const csv = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis))
+const csv = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis));
 ```
 
 Every charset and label follows the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/), so the bytes decode back to the same text with `TextDecoder` in any browser.
@@ -42,10 +42,10 @@ The three Japanese charsets share one table, so all three together are about 13 
 When the charset comes from a header or a form, `load` resolves the label and imports only that family:
 
 ```ts
-import * as Charset from '@portable/charset'
+import * as Charset from '@portable/charset';
 
-const charset = await Charset.load('windows-31j') // the Shift_JIS charset
-const bytes = Charset.encode(text, charset)
+const charset = await Charset.load('windows-31j'); // the Shift_JIS charset
+const bytes = Charset.encode(text, charset);
 ```
 
 `load` throws `UnsupportedError` for an unknown label. Pass `{ signal }` to stop waiting for the import, which rejects with `signal.reason`. `normalizeLabel(label)` returns the label's WHATWG name, such as `'Shift_JIS'`, or `undefined` if the label is unknown or its charset has no encoder, so a caller can use it to check a label before calling `load`. The name's type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. A charset's `encode(text)` method encodes with the default options, so a charset can be passed where `@portable/mime-headers` and `@portable/mail` take a `CharsetEncoder`. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.

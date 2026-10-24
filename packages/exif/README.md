@@ -9,16 +9,16 @@ npm install @portable/exif
 ```
 
 ```ts
-import * as Exif from '@portable/exif'
+import * as Exif from '@portable/exif';
 
-const response = await fetch('https://example.com/photo.jpg', { headers: { range: 'bytes=0-65535' } })
-const exif = Exif.parse(new Uint8Array(await response.arrayBuffer()))
+const response = await fetch('https://example.com/photo.jpg', { headers: { range: 'bytes=0-65535' } });
+const exif = Exif.parse(new Uint8Array(await response.arrayBuffer()));
 
-exif.ifd0.Make // 'Apple'
-exif.exif.DateTimeOriginal // '2019:10:20 18:34:30'
-exif.latitude // 38.046641666666666
-exif.imageSize // { width: 4032, height: 3024 }
-exif.thumbnail?.bytes // Uint8Array of the embedded JPEG thumbnail
+exif.ifd0.Make; // 'Apple'
+exif.exif.DateTimeOriginal; // '2019:10:20 18:34:30'
+exif.latitude; // 38.046641666666666
+exif.imageSize; // { width: 4032, height: 3024 }
+exif.thumbnail?.bytes; // Uint8Array of the embedded JPEG thumbnail
 ```
 
 The input can be a whole file or only its start. In a JPEG the EXIF data is in the first 64 KB. Tags whose values lie past the end of the input are left out, and `thumbnail.bytes` is `undefined` if the thumbnail lies past the end.
@@ -66,8 +66,8 @@ A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its va
 Reads a `ReadableStream<Uint8Array>`, such as a `fetch` body or `File.stream()`, until it has the metadata, then cancels the stream. Returns a promise of the same object `parse` returns for the whole file, so you get the EXIF of a large photo without downloading all of it.
 
 ```ts
-const response = await fetch('https://example.com/photo.jpg')
-const exif = await Exif.parseStream(response.body!)
+const response = await fetch('https://example.com/photo.jpg');
+const exif = await Exif.parseStream(response.body!);
 ```
 
 How far it reads depends on where the format stores the metadata:
@@ -92,11 +92,11 @@ Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesErro
 Remove the EXIF and XMP metadata from a JPEG, PNG or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
 
 ```ts
-const [stored, inspected] = request.body!.tee()
+const [stored, inspected] = request.body!.tee();
 const [, exif] = await Promise.all([
   bucket.put(key, stored.pipeThrough(new Exif.StripStream())),
   Exif.parseStream(inspected),
-])
+]);
 ```
 
 What is removed:
@@ -130,8 +130,8 @@ Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 860
 Without an offset the date is read as UTC, so `getUTCHours()` and the other `getUTC*` methods return the time the camera recorded.
 
 ```ts
-const { exif } = Exif.parse(bytes)
-const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) })
+const { exif } = Exif.parse(bytes);
+const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) });
 ```
 
 ## Types

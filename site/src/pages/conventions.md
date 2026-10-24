@@ -25,7 +25,7 @@ Each verb has one meaning in every package:
 A streaming transform is a `TransformStream` subclass, named like `TextDecoderStream`. A `DecoderStream` reads bytes or text into values. An `EncoderStream` writes values as bytes or text.
 
 ```ts
-response.body!.pipeThrough(new Jsonl.DecoderStream())
+response.body!.pipeThrough(new Jsonl.DecoderStream());
 ```
 
 ## Bytes and text

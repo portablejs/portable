@@ -11,12 +11,12 @@ npm install @portable/sse
 Read events from any response, such as a streaming LLM API:
 
 ```ts
-import * as Sse from '@portable/sse'
+import * as Sse from '@portable/sse';
 
-const response = await fetch('https://api.example.com/v1/chat', { method: 'POST', headers, body })
-const reader = response.body!.pipeThrough(new Sse.DecoderStream()).getReader()
+const response = await fetch('https://api.example.com/v1/chat', { method: 'POST', headers, body });
+const reader = response.body!.pipeThrough(new Sse.DecoderStream()).getReader();
 for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.data)
+  console.log(r.value.data);
 }
 ```
 
@@ -25,14 +25,14 @@ Keep a stream open the way `EventSource` does, with your own method, headers and
 ```ts
 const events = Sse.connect(new Request('https://example.com/feed', { headers: { authorization } }), {
   signal: controller.signal,
-})
+});
 ```
 
 Write events from a server:
 
 ```ts
-const body = messages.pipeThrough(new Sse.EncoderStream())
-return new Response(body, { headers: { 'content-type': 'text/event-stream' } })
+const body = messages.pipeThrough(new Sse.EncoderStream());
+return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
 ```
 
 ## API
@@ -92,7 +92,7 @@ By default `connect` reconnects after every error except `ResponseError` and `Ma
 ```ts
 Sse.connect(request, {
   reconnectIf: (error) => !(error instanceof Sse.ResponseError) || error.response.status >= 500,
-})
+});
 ```
 
 ## Types

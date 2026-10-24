@@ -1,17 +1,17 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown when the domain name, IP address or AS number can't be looked up as given, such as
  * `example..com`, `999.1.1.1` or `-1`. No request is sent.
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
- * await Rdap.ip('not an address').catch((error) => error instanceof Rdap.InvalidInputError) // true
+ * await Rdap.ip('not an address').catch((error) => error instanceof Rdap.InvalidInputError); // true
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'Rdap.InvalidInputError'
+  static override readonly kind: string = 'Rdap.InvalidInputError';
 }
 
 /**
@@ -21,13 +21,13 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
- * await Rdap.ip('10.0.0.1').catch((error) => error instanceof Rdap.UnsupportedError) // true
+ * await Rdap.ip('10.0.0.1').catch((error) => error instanceof Rdap.UnsupportedError); // true
  * ```
  */
 export class UnsupportedError extends Errors.UnsupportedError {
-  static override readonly kind: string = 'Rdap.UnsupportedError'
+  static override readonly kind: string = 'Rdap.UnsupportedError';
 }
 
 /**
@@ -37,30 +37,30 @@ export class UnsupportedError extends Errors.UnsupportedError {
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
  * async function isRegistered(name: string) {
  *   try {
- *     await Rdap.domain(name, { follow: false })
- *     return true
+ *     await Rdap.domain(name, { follow: false });
+ *     return true;
  *   } catch (error) {
  *     if (error instanceof Rdap.NotFoundError) {
- *       return false
+ *       return false;
  *     }
- *     throw error
+ *     throw error;
  *   }
  * }
  * ```
  */
 export class NotFoundError extends Errors.ResponseError {
-  static override readonly kind: string = 'Rdap.NotFoundError'
+  static override readonly kind: string = 'Rdap.NotFoundError';
   /** The URL that answered 404. */
-  readonly url: string
+  readonly url: string;
 
   constructor(options: Errors.ResponseError.Options & { url: string }) {
-    const { url, message = `${url} answered 404 Not Found`, ...rest } = options
-    super({ message, ...rest })
-    this.url = url
+    const { url, message = `${url} answered 404 Not Found`, ...rest } = options;
+    super({ message, ...rest });
+    this.url = url;
   }
 }
 
@@ -71,27 +71,27 @@ export class NotFoundError extends Errors.ResponseError {
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
  * try {
- *   await Rdap.domain('example.com')
+ *   await Rdap.domain('example.com');
  * } catch (error) {
  *   if (error instanceof Rdap.ResponseError && error.status === 429) {
- *     console.log('rate limited')
+ *     console.log('rate limited');
  *   }
  * }
  * ```
  */
 export class ResponseError extends Errors.ResponseError {
-  static override readonly kind: string = 'Rdap.ResponseError'
+  static override readonly kind: string = 'Rdap.ResponseError';
   /** The URL that sent the response. */
-  readonly url: string
+  readonly url: string;
   /** The parsed JSON body, such as an RDAP error object with `errorCode` and `title`, when there was one. */
-  declare readonly body: unknown
+  declare readonly body: unknown;
 
   constructor(options: Errors.ResponseError.Options & { url: string }) {
-    const { url, ...rest } = options
-    super(rest)
-    this.url = url
+    const { url, ...rest } = options;
+    super(rest);
+    this.url = url;
   }
 }

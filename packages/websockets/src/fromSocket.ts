@@ -14,21 +14,21 @@ import {
   isNormalClose,
   messageSize,
   toMessage,
-} from './Socket.js'
-import { CloseError, MaxBufferedError } from './errors.js'
+} from './Socket.js';
+import { CloseError, MaxBufferedError } from './errors.js';
 
 export declare namespace fromSocket {
   type Options = {
     /** Closes the socket with code 1000 and fails both streams with `signal.reason`. */
-    signal?: AbortSignal | undefined
+    signal?: AbortSignal | undefined;
     /** Writes wait while the socket's `bufferedAmount` is above this many bytes. @default 1048576 */
-    highWaterMark?: number | undefined
+    highWaterMark?: number | undefined;
     /**
      * Most bytes (characters for text) of received messages to hold while the reader is behind. Past it,
      * both streams fail with `MaxBufferedError` and the socket closes. @default Infinity
      */
-    maxBuffered?: number | undefined
-  }
+    maxBuffered?: number | undefined;
+  };
 }
 
 /**
@@ -40,131 +40,131 @@ export declare namespace fromSocket {
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websockets'
+ * import * as WebSockets from '@portable/websockets';
  *
  * export default {
  *   fetch(request: Request) {
- *     const [client, server] = Object.values(new WebSocketPair())
- *     server.accept()
- *     const { readable, writable } = WebSockets.fromSocket(server)
- *     readable.pipeTo(writable) // echo
- *     return new Response(null, { status: 101, webSocket: client })
+ *     const [client, server] = Object.values(new WebSocketPair());
+ *     server.accept();
+ *     const { readable, writable } = WebSockets.fromSocket(server);
+ *     readable.pipeTo(writable); // echo
+ *     return new Response(null, { status: 101, webSocket: client });
  *   },
- * }
+ * };
  * ```
  */
 export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Duplex {
-  const { signal, highWaterMark = 1 << 20, maxBuffered = Infinity } = options
-  assertSize('highWaterMark', highWaterMark)
-  assertSize('maxBuffered', maxBuffered, 1)
-  socket.binaryType = 'arraybuffer'
+  const { signal, highWaterMark = 1 << 20, maxBuffered = Infinity } = options;
+  assertSize('highWaterMark', highWaterMark);
+  assertSize('maxBuffered', maxBuffered, 1);
+  socket.binaryType = 'arraybuffer';
 
-  let readableController!: ReadableStreamDefaultController<Message>
-  let writableController!: WritableStreamDefaultController
-  let done = false
-  let failure: unknown
+  let readableController!: ReadableStreamDefaultController<Message>;
+  let writableController!: WritableStreamDefaultController;
+  let done = false;
+  let failure: unknown;
 
   const opened = new Promise<void>((resolve, reject) => {
     if (socket.readyState !== CONNECTING) {
-      return resolve()
+      return resolve();
     }
-    socket.addEventListener('open', () => resolve())
-    socket.addEventListener('close', () => reject(closedError()))
-  })
-  opened.catch(() => {})
+    socket.addEventListener('open', () => resolve());
+    socket.addEventListener('close', () => reject(closedError()));
+  });
+  opened.catch(() => {});
 
   const finish = (error: unknown, closeReadable: boolean) => {
     if (done) {
-      return
+      return;
     }
-    done = true
-    failure = error
-    socket.removeEventListener('message', onMessage)
-    socket.removeEventListener('close', onClose)
-    signal?.removeEventListener('abort', onAbort)
+    done = true;
+    failure = error;
+    socket.removeEventListener('message', onMessage);
+    socket.removeEventListener('close', onClose);
+    signal?.removeEventListener('abort', onAbort);
     try {
       if (closeReadable) {
-        readableController.close()
+        readableController.close();
       } else {
-        readableController.error(error)
+        readableController.error(error);
       }
     } catch {}
-    writableController.error(error)
-  }
+    writableController.error(error);
+  };
 
   const shutdown = (error: unknown) => {
-    finish(error, false)
-    socket.close(1000)
-  }
+    finish(error, false);
+    socket.close(1000);
+  };
 
   const onMessage = (event: SocketEvent) => {
-    let message: Message
+    let message: Message;
     try {
-      message = toMessage(event.data)
+      message = toMessage(event.data);
     } catch (error) {
-      return shutdown(error)
+      return shutdown(error);
     }
-    readableController.enqueue(message)
+    readableController.enqueue(message);
     if (readableController.desiredSize! < 0) {
-      shutdown(new MaxBufferedError({ maxBuffered }))
+      shutdown(new MaxBufferedError({ maxBuffered }));
     }
-  }
+  };
 
   const onClose = (event: SocketEvent) => {
-    const code = event.code ?? 1005
-    finish(new CloseError({ code, reason: event.reason ?? '' }), isNormalClose(code))
-  }
+    const code = event.code ?? 1005;
+    finish(new CloseError({ code, reason: event.reason ?? '' }), isNormalClose(code));
+  };
 
-  const onAbort = () => shutdown(signal!.reason)
+  const onAbort = () => shutdown(signal!.reason);
 
-  socket.addEventListener('message', onMessage)
-  socket.addEventListener('close', onClose)
-  socket.addEventListener('error', () => {})
-  signal?.addEventListener('abort', onAbort)
+  socket.addEventListener('message', onMessage);
+  socket.addEventListener('close', onClose);
+  socket.addEventListener('error', () => {});
+  signal?.addEventListener('abort', onAbort);
 
   const readable = new ReadableStream<Message>(
     {
       start(controller) {
-        readableController = controller
+        readableController = controller;
       },
       cancel(reason) {
-        shutdown(reason ?? cancelledError())
+        shutdown(reason ?? cancelledError());
       },
     },
     { highWaterMark: queueLimit(maxBuffered), size: messageSize },
-  )
+  );
 
   const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({
     start(controller) {
-      writableController = controller
+      writableController = controller;
     },
     write(chunk) {
-      assertOutgoing(chunk)
+      assertOutgoing(chunk);
       if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark) {
-        return socket.send(chunk)
+        return socket.send(chunk);
       }
       return opened
         .then(() => drained(socket, highWaterMark))
         .then(() => {
           if (done) {
-            throw failure
+            throw failure;
           }
           if (socket.readyState !== OPEN) {
-            throw closedError()
+            throw closedError();
           }
-          socket.send(chunk)
-        })
+          socket.send(chunk);
+        });
     },
     close() {
-      socket.close(1000)
+      socket.close(1000);
     },
     abort(reason) {
-      shutdown(reason)
+      shutdown(reason);
     },
-  })
+  });
 
   if (signal?.aborted) {
-    onAbort()
+    onAbort();
   }
-  return { readable, writable }
+  return { readable, writable };
 }

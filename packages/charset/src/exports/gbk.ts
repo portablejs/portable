@@ -1,1 +1,1 @@
-export * from '../gbk.js'
+export * from '../gbk.js';

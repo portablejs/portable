@@ -2,7 +2,7 @@
 // package.
 declare module 'JSONStream' {
   const JSONStream: {
-    parse(path?: string | readonly unknown[]): NodeJS.ReadWriteStream
-  }
-  export default JSONStream
+    parse(path?: string | readonly unknown[]): NodeJS.ReadWriteStream;
+  };
+  export default JSONStream;
 }

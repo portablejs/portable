@@ -9,20 +9,20 @@ npm install @portable/streams
 ```
 
 ```ts
-import * as Streams from '@portable/streams'
+import * as Streams from '@portable/streams';
 
 async function* rows() {
-  yield 'a'
-  yield 'b'
+  yield 'a';
+  yield 'b';
 }
 
 const upper = Streams.transform(async function* (source: AsyncIterable<string>) {
   for await (const chunk of source) {
-    yield chunk.toUpperCase()
+    yield chunk.toUpperCase();
   }
-})
+});
 
-await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)) // 'AB'
+await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 ```
 
 ## Collect
@@ -40,7 +40,7 @@ Each collector reads a `ReadableStream`, an async iterable (such as a Node `Read
 `toBytes`, `toBlob`, `toText` and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
 
 ```ts
-const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
+const body = await Streams.toJson(request.body!, { maxBytes: 100_000 });
 ```
 
 ## Combine
@@ -63,16 +63,16 @@ Sources are streams, async iterables or iterables. An error in one source errors
 An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
 
 ```ts
-const upload = (await request.formData()).get('file') as File
+const upload = (await request.formData()).get('file') as File;
 const [forExif, forStorage, forResize] = Streams.tee(upload.stream(), 3, {
   highWaterMark: 1_000_000,
   unit: 'bytes',
-})
+});
 await Promise.all([
   Exif.parseStream(forExif), // cancels forExif once it has the metadata
   bucket.put(key, forStorage),
   bucket.put(`${key}.thumb`, resize(forResize)),
-])
+]);
 ```
 
 ## Bridge streams and iterables
@@ -89,16 +89,16 @@ Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` the
 
 ```ts
 const lines = Streams.transform(async function* (source: AsyncIterable<string>) {
-  let rest = ''
+  let rest = '';
   for await (const chunk of source) {
-    const parts = (rest + chunk).split('\n')
-    rest = parts.pop()!
-    yield* parts
+    const parts = (rest + chunk).split('\n');
+    rest = parts.pop()!;
+    yield* parts;
   }
   if (rest) {
-    yield rest
+    yield rest;
   }
-})
+});
 ```
 
 ## Cancel your own TransformStream
@@ -113,7 +113,7 @@ class UpperCaseStream extends TransformStream<string, string> {
         { transform: (chunk, controller) => controller.enqueue(chunk.toUpperCase()) },
         options,
       ),
-    )
+    );
   }
 }
 ```
