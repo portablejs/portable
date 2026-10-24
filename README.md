@@ -22,7 +22,7 @@ const [live, saved] = response
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .tee()
 
-const transcript = ... // file writable stream
+const transcript: WritableStream = ... // a file
 const saving = saved.pipeThrough(new Jsonl.EncoderStream()).pipeTo(transcript)
 const reader = live.getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.value.choices[0].delta.content ?? '')
