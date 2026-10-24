@@ -7,33 +7,31 @@ import * as Jsonl from '@portable/jsonl'
 import * as Sse from '@portable/sse'
 import * as Streams from '@portable/streams'
 
-// Stream a model's reply from an OpenAI-compatible API to the client as JSON Lines.
-export async function chat(request: Request): Promise<Response> {
-  const upstream = await fetch('https://api.example.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ ...(await request.json()), stream: true }),
-    signal: request.signal,
-  })
-  const body = upstream
-    .body!.pipeThrough(new Sse.DecoderStream({ signal: request.signal }))
-    .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
-    .pipeThrough(Streams.map((event) => JSON.parse(event.data).choices[0].delta))
-    .pipeThrough(new Jsonl.EncoderStream())
-    .pipeThrough(new TextEncoderStream())
-  return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
-}
+// Print a model's reply as it streams in, and save every chunk to a JSON Lines transcript.
+const response = await fetch('https://api.example.com/v1/chat/completions', {
+  method: 'POST',
+  headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+  body: JSON.stringify({ model, messages, stream: true }),
+})
+const [live, saved] = response
+  .body!.pipeThrough(new Sse.DecoderStream())
+  .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
+  .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
+  .tee()
+
+const saving = saved.pipeThrough(new Jsonl.EncoderStream()).pipeThrough(new TextEncoderStream()).pipeTo(transcript)
+const reader = live.getReader()
+for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.value.choices[0].delta.content ?? '')
+await saving
 ```
 
-The client reads the reply with the same package:
+This code runs unchanged in a browser, Deno, Bun and Node, with no polyfills, bundler aliases or `nodejs_compat` flag. Only `transcript` depends on the runtime. It is any `WritableStream<Uint8Array>`:
 
-```ts
-const response = await fetch('/chat', { method: 'POST', body: JSON.stringify({ messages }) })
-const reader = response.body!.pipeThrough(new Jsonl.DecoderStream()).getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) render(r.value)
-```
-
-`chat` runs unchanged in a Cloudflare Worker, Deno, Bun, Node and a service worker, and the client code runs in any browser. Neither needs polyfills, bundler aliases or the `nodejs_compat` flag. If the runtime aborts `request.signal`, as Workers, Deno and Bun do when the client disconnects, the stream fails and the upstream `fetch` is cancelled.
+| Runtime | `transcript` |
+| --- | --- |
+| Browser | `await (await (await navigator.storage.getDirectory()).getFileHandle('chat.jsonl', { create: true })).createWritable()` |
+| Deno | `(await Deno.open('chat.jsonl', { create: true, append: true })).writable` |
+| Node | `Writable.toWeb(fs.createWriteStream('chat.jsonl', { flags: 'a' }))` |
 
 Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: `fetch`, Web Streams, `Uint8Array`, `TextEncoder` and `crypto.subtle`.
 
