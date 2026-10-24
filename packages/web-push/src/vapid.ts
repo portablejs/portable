@@ -53,14 +53,15 @@ export async function generateVapidKeys(
  * Returns the `Authorization` header value for a push to `audience`, the endpoint's origin. A
  * token is reused for an hour, because Apple rejects a sender that signs new tokens more often.
  */
-export function authorization(audience: string, vapid: Vapid): Promise<string> {
+export function authorization(audience: string, vapid: Vapid, date: Date): Promise<string> {
   if (!vapid) throw new TypeError('vapid is required')
   const { subject, publicKey, privateKey } = vapid
   checkSubject(subject)
-  const now = Math.floor(Date.now() / 1000)
+  const now = Math.floor(date.getTime() / 1000)
+  if (!Number.isFinite(now)) throw new RangeError('`now` must be a valid Date.')
   const id = `${audience} ${subject} ${publicKey} ${privateKey}`
   const cached = tokens.get(id)
-  if (cached && now - cached.issued < 60 * 60) return cached.header
+  if (cached && now >= cached.issued && now - cached.issued < 60 * 60) return cached.header
   const header = sign(audience, vapid, now + 12 * 60 * 60)
   header.catch(() => tokens.delete(id))
   tokens.delete(id)
@@ -80,7 +81,7 @@ async function sign(audience: string, vapid: Vapid, exp: number): Promise<string
 function checkSubject(subject: unknown): asserts subject is string {
   if (typeof subject !== 'string') throw new TypeError('vapid.subject must be a string')
   if (/\s/.test(subject)) throw new RangeError('vapid.subject must not contain spaces')
-  const url = URL.parse(subject)
+  const url = parseUrl(subject)
   if (url?.protocol !== 'mailto:' && url?.protocol !== 'https:')
     throw new RangeError(`vapid.subject must be a mailto: or https: URL, not ${subject}`)
 }
@@ -144,3 +145,12 @@ const ecdsaSha256 = { name: 'ECDSA', hash: 'SHA-256' }
 const jwtHeader = base64url(utf8.encode('{"typ":"JWT","alg":"ES256"}'))
 const keys = new Map<string, Promise<CryptoKey>>()
 const tokens = new Map<string, { issued: number; header: Promise<string> }>()
+
+/** `URL.parse`, which Safari 17 lacks. */
+export function parseUrl(text: string): URL | null {
+  try {
+    return new URL(text)
+  } catch {
+    return null
+  }
+}

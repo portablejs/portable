@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Charset from '@portable/charset'
 import { windows1251 } from '@portable/charset/single-byte'
 
-const names: readonly Charset.Name[] = [
+const names = [
   'UTF-8',
   'IBM866',
   'ISO-8859-2',
@@ -42,7 +42,7 @@ const names: readonly Charset.Name[] = [
   'UTF-16BE',
   'UTF-16LE',
   'x-user-defined',
-]
+] satisfies readonly Charset.Name[]
 
 describe('normalizeLabel', () => {
   test('maps WHATWG labels to their encoding name', () => {

@@ -2,7 +2,7 @@ import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
-import { encode, reasonOf, request } from './utils.js'
+import { encode, codeOf, request } from './utils.js'
 
 const schemes = Object.entries({
   standard: Webhooks.standard,
@@ -11,7 +11,7 @@ const schemes = Object.entries({
   slack: Webhooks.slack,
 })
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw'
-const nobleHmac: Webhooks.Hmac = (key, data) => hmac(sha256, key, data)
+const nobleHmac = ((_hash, key, data) => hmac(sha256, key, data)) satisfies Webhooks.Hmac
 
 describe('every scheme', () => {
   for (const [name, scheme] of schemes) {
@@ -21,7 +21,7 @@ describe('every scheme', () => {
       await Webhooks.verify(request(body, headers), { scheme, secret })
       await Webhooks.verify({ headers, body }, { scheme, secret })
       expect(
-        await reasonOf(
+        await codeOf(
           Webhooks.verify({ headers, body: new TextDecoder().decode(body) }, { scheme, secret }),
         ),
       ).toBe('signature')
@@ -32,9 +32,9 @@ describe('every scheme', () => {
       const id = 'msg_1'
       const secrets = [secret, new Uint8Array(65).fill(7), new Uint8Array(300).fill(9)]
       for (const key of secrets) {
-        const headers = await Webhooks.sign('{}', { scheme, secret: key, timestamp, id })
+        const headers = await Webhooks.sign('{}', { scheme, secret: key, now: timestamp, id })
         expect(
-          await Webhooks.sign('{}', { scheme, secret: key, timestamp, id, hmac: nobleHmac }),
+          await Webhooks.sign('{}', { scheme, secret: key, now: timestamp, id, hmac: nobleHmac }),
         ).toEqual(headers)
         const result = await Webhooks.verify(
           { headers, body: '{}' },
@@ -51,16 +51,14 @@ describe('every scheme', () => {
         (await Webhooks.verify({ headers, body: '{}' }, { scheme, secret: rotating })).body,
       ).toBe('{}')
       expect(
-        await reasonOf(
-          Webhooks.verify({ headers, body: '{}' }, { scheme, secret: ['whsec_b2xk'] }),
-        ),
+        await codeOf(Webhooks.verify({ headers, body: '{}' }, { scheme, secret: ['whsec_b2xk'] })),
       ).toBe('signature')
     })
 
     test(`${name}: rejects a body changed after signing`, async () => {
       const headers = await Webhooks.sign('{"amount":1}', { scheme, secret })
       expect(
-        await reasonOf(Webhooks.verify({ headers, body: '{"amount":2}' }, { scheme, secret })),
+        await codeOf(Webhooks.verify({ headers, body: '{"amount":2}' }, { scheme, secret })),
       ).toBe('signature')
     })
   }
@@ -74,6 +72,25 @@ describe('verify', () => {
     expect(input.bodyUsed).toBe(true)
   })
 
+  test('rejects a Request body longer than maxBytes and accepts one at the limit', async () => {
+    const body = '{"a":1}'
+    const headers = await Webhooks.sign(body, { scheme: Webhooks.github, secret })
+    const options = { scheme: Webhooks.github, secret }
+    const error = await Webhooks.verify(request(body, headers), { ...options, maxBytes: 6 }).catch(
+      (error: unknown) => error,
+    )
+    expect(error).toBeInstanceOf(Webhooks.MaxBytesError)
+    expect(error).toMatchObject({ maxBytes: 6 })
+    const result = await Webhooks.verify(request(body, headers), { ...options, maxBytes: 7 })
+    expect(result.body).toBe(body)
+  })
+
+  test('rejects a negative maxBytes', async () => {
+    await expect(
+      Webhooks.verify({ headers: {}, body: '' }, { secret, maxBytes: -1 }),
+    ).rejects.toThrow(RangeError)
+  })
+
   test('accepts a Headers object', async () => {
     const headers = new Headers(await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret }))
     expect(
@@ -83,7 +100,8 @@ describe('verify', () => {
 
   test('takes a synchronous or an asynchronous hmac', async () => {
     const headers = await Webhooks.sign('{}', { scheme: Webhooks.github, secret })
-    const asyncHmac: Webhooks.Hmac = async (key, data) => nobleHmac(key, data)
+    const asyncHmac = (async (hash, key, data) =>
+      nobleHmac(hash, key, data)) satisfies Webhooks.Hmac
     for (const fn of [nobleHmac, asyncHmac]) {
       const result = await Webhooks.verify(
         { headers, body: '{}' },
@@ -129,16 +147,16 @@ describe('verify', () => {
     const now = new Date(1_700_000_000_000)
     for (const offset of [-300, 300]) {
       const timestamp = new Date(now.getTime() + offset * 1000)
-      const headers = await Webhooks.sign('{}', { scheme: Webhooks.slack, secret, timestamp })
+      const headers = await Webhooks.sign('{}', { scheme: Webhooks.slack, secret, now: timestamp })
       await Webhooks.verify({ headers, body: '{}' }, { scheme: Webhooks.slack, secret, now })
       const late = new Date(timestamp.getTime() + Math.sign(offset) * 1000)
       const lateHeaders = await Webhooks.sign('{}', {
         scheme: Webhooks.slack,
         secret,
-        timestamp: late,
+        now: late,
       })
       expect(
-        await reasonOf(
+        await codeOf(
           Webhooks.verify(
             { headers: lateHeaders, body: '{}' },
             { scheme: Webhooks.slack, secret, now },
@@ -151,11 +169,11 @@ describe('verify', () => {
   test('accepts only the same second when tolerance is 0', async () => {
     const now = new Date(1_700_000_000_500)
     const options = { scheme: Webhooks.stripe, secret, tolerance: 0, now } as const
-    const same = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, timestamp: now })
+    const same = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, now })
     expect((await Webhooks.verify({ headers: same, body: '{}' }, options)).body).toBe('{}')
     const timestamp = new Date(now.getTime() - 1000)
-    const before = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, timestamp })
-    expect(await reasonOf(Webhooks.verify({ headers: before, body: '{}' }, options))).toBe(
+    const before = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, now: timestamp })
+    expect(await codeOf(Webhooks.verify({ headers: before, body: '{}' }, options))).toBe(
       'timestamp',
     )
   })
@@ -164,10 +182,10 @@ describe('verify', () => {
     const headers = await Webhooks.sign('{}', {
       scheme: Webhooks.stripe,
       secret,
-      timestamp: new Date(0),
+      now: new Date(0),
     })
     expect(
-      await reasonOf(
+      await codeOf(
         Webhooks.verify({ headers, body: '{"x":1}' }, { scheme: Webhooks.stripe, secret }),
       ),
     ).toBe('signature')
@@ -179,7 +197,7 @@ describe('verify', () => {
     for (const length of [4, 8, 20, 40]) {
       const truncated = { ...headers, 'webhook-signature': full.slice(0, 3 + length) }
       expect(
-        await reasonOf(
+        await codeOf(
           Webhooks.verify(
             { headers: truncated, body: '{}' },
             { scheme: Webhooks.standard, secret },
@@ -196,7 +214,7 @@ describe('verify', () => {
       const options = { scheme: Webhooks.github, secret: each } as const
       expect((await Webhooks.verify({ headers, body: '{}' }, options)).body).toBe('{}')
       const other = { scheme: Webhooks.github, secret: secrets[(i + 1) % secrets.length]! } as const
-      expect(await reasonOf(Webhooks.verify({ headers, body: '{}' }, other))).toBe('signature')
+      expect(await codeOf(Webhooks.verify({ headers, body: '{}' }, other))).toBe('signature')
     }
   })
 
@@ -216,14 +234,20 @@ describe('a scheme written by the caller', () => {
 
   // Acme sends `acme-timestamp: <seconds>` and `acme-signature: <hex>`, the HMAC-SHA256 of
   // `{timestamp}.{body}`.
-  const acme: Webhooks.Scheme = {
+  const acme = {
     parse(headers) {
       const signature = headers.get('acme-signature')
       const timestamp = headers.get('acme-timestamp')
       if (!signature || !timestamp)
-        throw new Webhooks.VerificationError('missing-header', 'Missing Acme headers')
+        throw new Webhooks.VerificationError({
+          code: 'missing-header',
+          message: 'Missing Acme headers',
+        })
       if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp))
-        throw new Webhooks.VerificationError('malformed-header', 'Malformed Acme headers')
+        throw new Webhooks.VerificationError({
+          code: 'malformed-header',
+          message: 'Malformed Acme headers',
+        })
       return {
         signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
         timestamp: new Date(Number(timestamp) * 1000),
@@ -235,20 +259,18 @@ describe('a scheme written by the caller', () => {
       'acme-timestamp': seconds(timestamp),
       'acme-signature': toHex(signature),
     }),
-  }
+  } satisfies Webhooks.Scheme
 
   test('signs and verifies with the shared checks', async () => {
     const timestamp = new Date(1_700_000_000_000)
-    const headers = await Webhooks.sign('{"a":1}', { scheme: acme, secret, timestamp })
+    const headers = await Webhooks.sign('{"a":1}', { scheme: acme, secret, now: timestamp })
     expect(Object.keys(headers)).toEqual(['acme-timestamp', 'acme-signature'])
     const options = { scheme: acme, secret, now: timestamp }
     expect((await Webhooks.verify({ headers, body: '{"a":1}' }, options)).body).toBe('{"a":1}')
-    expect(await reasonOf(Webhooks.verify({ headers, body: '{"a":2}' }, options))).toBe('signature')
+    expect(await codeOf(Webhooks.verify({ headers, body: '{"a":2}' }, options))).toBe('signature')
     expect(
-      await reasonOf(Webhooks.verify({ headers, body: '{"a":1}' }, { scheme: acme, secret })),
+      await codeOf(Webhooks.verify({ headers, body: '{"a":1}' }, { scheme: acme, secret })),
     ).toBe('timestamp')
-    expect(await reasonOf(Webhooks.verify({ headers: {}, body: '' }, options))).toBe(
-      'missing-header',
-    )
+    expect(await codeOf(Webhooks.verify({ headers: {}, body: '' }, options))).toBe('missing-header')
   })
 })

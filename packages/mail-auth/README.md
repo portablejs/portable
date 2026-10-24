@@ -13,7 +13,7 @@ import * as Dns from '@portable/dns'
 import * as MailAuth from '@portable/mail-auth'
 
 const result = await MailAuth.authenticate(message, {
-  resolver: Dns.createResolver(),
+  resolver: Dns.create(),
   authservId: 'mx.example.net',
   ip: '192.0.2.1',
   helo: 'mail.example.com',
@@ -45,15 +45,15 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the DNS lookups: `Dns.createResolver()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveCname`. |
+| `resolver` | required | Answers the DNS lookups: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveCname`. |
 | `authservId` | required | The authserv-id that starts Authentication-Results, usually this server's host name in A-label form (RFC 8601 section 2.5). It must be an RFC 2045 token, so a value such as `mx.example; dkim=pass` throws a `RangeError`. |
 | `ip` | required | The SMTP client's IPv4 or IPv6 address. |
 | `helo` | none | The HELO or EHLO name. |
 | `sender` | none | The MAIL FROM address. Empty or missing for a bounce, which makes SPF check the HELO name. |
-| `seal` | none | `{ domain, selector, privateKey, headers?, signedAt? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
+| `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
 | `now` | `new Date()` | The time to check DKIM and ARC signature expiry against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
-| `hash` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
+| `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](../dmarc/README.md#options). |
 | `signal` | none | Stops reading the message and every DNS lookup. The promise rejects with `signal.reason`. |
 

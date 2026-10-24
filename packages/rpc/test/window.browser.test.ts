@@ -9,7 +9,10 @@ import {
   type ParentApi,
 } from './fixtures/methods.js'
 
-type WorkerConfig = Config & { mode?: 'self' | 'broadcast' | 'ports'; broadcast?: string }
+type WorkerConfig = Config & {
+  mode?: 'self' | 'broadcast' | 'ports' | undefined
+  broadcast?: string | undefined
+}
 
 const otherHost = location.hostname === '127.0.0.1' ? 'localhost' : '127.0.0.1'
 const otherOrigin = `${location.protocol}//${otherHost}:${location.port}`
@@ -52,8 +55,36 @@ function inlineModule(url: string): Promise<string> {
   return module
 }
 
-const opaqueChild = async (config: Config) =>
-  `data:text/html,${encodeURIComponent(inlineChild(config, await inlineModule(startUrl)))}`
+/**
+ * Adds data URLs of the module at `url` and every module it imports to `graph`, keyed by their
+ * URLs, for an import map. This doesn't use `inlineModule`, because it copies a module into every
+ * module that imports it, and a page built that way was longer than Chromium's 2 MB limit for
+ * data URLs.
+ */
+async function moduleGraph(url: string, graph: Record<string, string> = {}) {
+  if (url in graph) return graph
+  graph[url] = ''
+  let code = await (await fetch(url)).text()
+  const specifiers = new Set(
+    [...code.matchAll(/(?:from|import)\s*"([^"]+)"/g)].map((match) => match[1]!),
+  )
+  for (const specifier of specifiers) {
+    const resolved = new URL(specifier, url).href
+    code = code.replaceAll(`"${specifier}"`, JSON.stringify(resolved))
+    await moduleGraph(resolved, graph)
+  }
+  graph[url] = `data:text/javascript,${encodeURIComponent(code)}`
+  return graph
+}
+
+async function opaqueChild(config: Config): Promise<string> {
+  const imports = JSON.stringify({ imports: await moduleGraph(startUrl) })
+  const html = inlineChild(config).replace(
+    '<!doctype html>',
+    `<!doctype html><script type="importmap">${imports}</script>`,
+  )
+  return `data:text/html,${encodeURIComponent(html)}`
+}
 
 function iframe(set: (iframe: HTMLIFrameElement) => void): HTMLIFrameElement {
   const element = globalThis.document.createElement('iframe')
@@ -89,15 +120,15 @@ function connect(
   target: Window,
   options: {
     origin: string
-    channel?: string
-    codec?: Config['codec']
-    signal?: AbortSignal
+    channel?: string | undefined
+    codec?: Config['codec'] | undefined
+    signal?: AbortSignal | undefined
   },
 ): Rpc.Remote<Methods> {
   const { origin, channel = '', codec, signal = closer().signal } = options
   return Rpc.connect<Methods>(Rpc.window(target, { origin, channel, signal }), {
     codec: codecOf({ codec }),
-    serve: parentApi(channel),
+    methods: parentApi(channel),
     signal,
   })
 }
@@ -123,11 +154,11 @@ async function untilAnswered(remote: Rpc.Remote<Methods>): Promise<number> {
   }
 }
 
-communicationContract('a cross-origin iframe', async ({ codec, serve, signal }) => {
+communicationContract('a cross-origin iframe', async ({ codec, methods, signal }) => {
   const element = child({ codec, origin: location.origin }, otherOrigin)
   return Rpc.connect<Methods>(Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
 })
@@ -146,23 +177,23 @@ async function portChild(config: Config = {}): Promise<MessagePort> {
 
 communicationContract(
   'a cross-origin iframe over a transferred MessagePort',
-  async ({ codec, serve, signal }) =>
+  async ({ codec, methods, signal }) =>
     Rpc.connect<Methods>(Rpc.port(await portChild({ codec }), { signal }), {
       codec: codecOf({ codec }),
-      serve,
+      methods,
       signal,
     }),
 )
 
-communicationContract('a module Worker', async ({ codec, serve, signal }) => {
+communicationContract('a module Worker', async ({ codec, methods, signal }) => {
   return Rpc.connect<Methods>(Rpc.port(worker({ codec }), { signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
 })
 
-communicationContract('a Worker over BroadcastChannel', async ({ codec, serve, signal }) => {
+communicationContract('a Worker over BroadcastChannel', async ({ codec, methods, signal }) => {
   const name = `rpc-${crypto.randomUUID()}`
   const created = worker({ codec, mode: 'broadcast', broadcast: name })
   await new Promise((resolve) => created.addEventListener('message', resolve, { once: true }))
@@ -170,7 +201,7 @@ communicationContract('a Worker over BroadcastChannel', async ({ codec, serve, s
   onTestFinished(() => channel.close())
   const remote = Rpc.connect<Methods>(Rpc.port(channel, { signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
   await untilAnswered(remote)
@@ -368,7 +399,7 @@ describe('channels', () => {
       const { port1, port2 } = new MessageChannel()
       created.postMessage({ channel }, [port2])
       return Rpc.connect<Methods>(Rpc.port(port1, { signal }), {
-        serve: parentApi(channel),
+        methods: parentApi(channel),
         signal,
       })
     })
@@ -391,10 +422,10 @@ describe('a bridge on the main thread', () => {
   function bridge(): Rpc.Remote<Methods> {
     const signal = closer().signal
     const toWorker = Rpc.connect<Methods>(Rpc.port(worker(), { signal }), {
-      serve: parentApi(),
+      methods: parentApi(),
       signal,
     })
-    const api: BridgeApi = {
+    const api = {
       ...parentApi(),
       worker: {
         multiply: (a, b) => toWorker.multiply(a, b),
@@ -402,12 +433,12 @@ describe('a bridge on the main thread', () => {
         forever: () => toWorker.forever(),
         wasCancelled: () => toWorker.wasCancelled(),
       },
-    }
+    } satisfies BridgeApi
     const element = child({ origin: location.origin }, otherOrigin)
     return Rpc.connect<Methods>(
       Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }),
       {
-        serve: api,
+        methods: api,
         signal,
       },
     )
@@ -490,7 +521,7 @@ describe('reconnecting', () => {
     const signal = closer().signal
     const remote = Rpc.connect<Methods>(
       Rpc.window(element.contentWindow!, { origin: location.origin, signal }),
-      { serve: { ...parentApi(), add: (a: number, b: number) => (calls++, a + b) }, signal },
+      { methods: { ...parentApi(), add: (a: number, b: number) => (calls++, a + b) }, signal },
     )
     for (let i = 0; i < 2; i++) {
       const reloaded = loaded(element)
@@ -635,7 +666,7 @@ describe('targets', () => {
     })
     const signal = closer().signal
     const remote = Rpc.connect<Methods>(Rpc.port(shared.port, { signal }), {
-      serve: parentApi(),
+      methods: parentApi(),
       signal,
     })
     await expect(remote.multiply(3, 2)).resolves.toBe(6)
@@ -652,7 +683,7 @@ describe('targets', () => {
     sw.postMessage(null, [port2])
     const signal = closer().signal
     const remote = Rpc.connect<Methods>(Rpc.port(port1, { signal }), {
-      serve: parentApi(),
+      methods: parentApi(),
       signal,
     })
     await expect(remote.multiply(3, 2)).resolves.toBe(6)

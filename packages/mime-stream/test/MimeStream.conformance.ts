@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import { describe, expect, test } from 'vite-plus/test'
 import * as MimeStream from '@portable/mime-stream'
 import { fromIterable, toArray, toBytes } from '@portable/streams'
@@ -22,7 +23,7 @@ function randomMessage(seed: number): string {
     state = (state * 1103515245 + 12345) % 2 ** 31
     return Math.floor((state / 2 ** 31) * n)
   }
-  const pick = <T>(items: readonly T[]): T => items[random(items.length)]!
+  const pick = <value>(items: readonly value[]): value => items[random(items.length)]!
   const words = ['hello', '--', '-', '\r', 'x'.repeat(80), '=?utf-8?Q?=C3=B5?=', 'õ', '--b1', '']
   let boundaries = 0
   const text = (eol: string) => {
@@ -122,6 +123,15 @@ describe('DecoderStream', () => {
     const chunks = await decode(chunked(binary(message), 1000), { maxBoundaryLineBytes: 100 })
     expect(bodies(chunks)).toEqual([line])
     expect(chunks.filter((chunk) => chunk.type === 'body').length).toBeGreaterThan(10)
+  })
+
+  test('has no size limits by default', async () => {
+    const header = `X-Long: ${'a'.repeat(2 * 1024 * 1024)}\r\n`
+    const parts = Array.from({ length: 1500 }, () => '--B\r\n\r\nx\r\n').join('')
+    const message = `Content-Type: multipart/mixed; boundary=B\r\n${header}\r\n${parts}--B${' '.repeat(2000)}--`
+    const chunks = await decode(message)
+    expect(chunks[0]!.part.headers).toHaveLength(2)
+    expect(bodies(chunks)).toHaveLength(1500)
   })
 
   test('tells a boundary from a longer boundary that starts with it', async () => {
@@ -282,6 +292,8 @@ describe('splitHeaders', () => {
       (e: unknown) => e,
     )
     expect(error).toBeInstanceOf(MimeStream.MaxHeaderBytesError)
+    expect(Errors.is(error, 'MaxBytes')).toBe(true)
+    expect(error).toMatchObject({ maxBytes: 1000, maxHeaderBytes: 1000 })
     expect(cancelled).toBe(true)
     const exact = 'Subject: a\r\n\r\n'
     const { headers } = await MimeStream.splitHeaders(fromIterable([binary(exact)]), {

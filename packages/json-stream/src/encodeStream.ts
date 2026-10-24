@@ -36,7 +36,7 @@ const chunkSize = 16384
 const maxQuotedKeys = 1024
 
 /**
- * Writes `value` as JSON text to a `ReadableStream`, resolving async values as it reaches
+ * Writes `value` as UTF-8 JSON text to a `ReadableStream`, resolving async values as it reaches
  * them. The output is the text `JSON.stringify` would produce for the resolved tree, so any
  * JSON parser can read it.
  *
@@ -60,15 +60,13 @@ const maxQuotedKeys = 1024
  *   user: getUser(id), // a promise
  *   posts: db.posts.cursor(), // an async iterable
  * })
- * return new Response(body.pipeThrough(new TextEncoderStream()), {
- *   headers: { 'content-type': 'application/json' },
- * })
+ * return new Response(body, { headers: { 'content-type': 'application/json' } })
  * ```
  */
 export function encodeStream(
   value: unknown,
   options: encodeStream.Options = {},
-): ReadableStream<string> {
+): ReadableStream<Uint8Array<ArrayBuffer>> {
   const { replacer, signal, space } = options
   const replace = typeof replacer === 'function' ? replacer : undefined
   const allowed = Array.isArray(replacer) ? [...new Set(replacer.map(String))] : undefined
@@ -91,14 +89,15 @@ export function encodeStream(
     return json
   }
   let out = ''
+  const utf8 = new TextEncoder()
   let started = false
   let done = false
   let cancelled = false
-  let controller!: ReadableStreamDefaultController<string>
+  let controller!: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>>
 
   const flush = () => {
     if (out === '' || cancelled) return
-    controller.enqueue(out)
+    controller.enqueue(utf8.encode(out))
     out = ''
   }
 
@@ -285,7 +284,7 @@ export function encodeStream(
   }
   const release = () => signal?.removeEventListener('abort', onAbort)
 
-  return new ReadableStream<string>({
+  return new ReadableStream<Uint8Array<ArrayBuffer>>({
     start(c) {
       controller = c
       if (signal?.aborted) onAbort()

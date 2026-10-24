@@ -23,8 +23,8 @@ async function lines(path: string): Promise<string[][]> {
 async function property(path: string, value: (name: string) => number): Promise<Uint8Array> {
   const result = new Uint8Array(size)
   for (const [field, name] of await lines(path)) {
-    const [start, end = start] = field!.split('..').map((hex) => parseInt(hex, 16))
-    result.fill(value(name!), start, end! + 1)
+    const [start, end = start] = field.split('..').map((hex) => parseInt(hex, 16))
+    result.fill(value(name), start, end + 1)
   }
   return result
 }
@@ -58,11 +58,11 @@ const strings: string[] = []
 const stringIndex = new Map<string, number>()
 
 for (const [field, status, mapping = ''] of await lines('idna/IdnaMappingTable.txt')) {
-  const [start, end = start] = field!.split('..').map((hex) => parseInt(hex, 16))
-  for (let cp = start!; cp <= end!; cp++) {
+  const [start, end = start] = field.split('..').map((hex) => parseInt(hex, 16))
+  for (let cp = start; cp <= end; cp++) {
     if (status === 'valid' || status === 'deviation') {
       kinds[cp] = valid
-      props[cp] = bidi[cp]! | (joining[cp]! << 4) | (mark[cp]! << 7) | (virama[cp]! << 8)
+      props[cp] = bidi[cp] | (joining[cp] << 4) | (mark[cp] << 7) | (virama[cp] << 8)
     } else if (status === 'mapped' || status === 'ignored') {
       const target = mapping === '' ? [] : mapping.split(' ').map((hex) => parseInt(hex, 16))
       if (target.length === 1) {
@@ -106,10 +106,10 @@ const values: number[] = []
 let previousTarget = 0
 let previousIndex = -1
 for (let start = 0; start < size;) {
-  const kind = kinds[start]!
+  const kind = kinds[start]
   const same = (cp: number) => {
     if (kinds[cp] !== kind) return false
-    if (kind === mappedToCodePoint) return targets[cp] === targets[cp - 1]! + 1
+    if (kind === mappedToCodePoint) return targets[cp] === targets[cp - 1] + 1
     if (kind === mappedToString) return targets[cp] === targets[start]
     return true
   }
@@ -117,10 +117,10 @@ for (let start = 0; start < size;) {
   while (end < size && same(end)) end++
   lengths.push(end - start - 1)
   if (kind === mappedToCodePoint) {
-    values.push(kind | (zigzag(targets[start]! - previousTarget) << 2))
+    values.push(kind | (zigzag(targets[start] - previousTarget) << 2))
     previousTarget = targets[end - 1]!
   } else if (kind === mappedToString) {
-    values.push(kind | (zigzag(targets[start]! - previousIndex - 1) << 2))
+    values.push(kind | (zigzag(targets[start] - previousIndex - 1) << 2))
     previousIndex = targets[start]!
   } else values.push(kind)
   start = end

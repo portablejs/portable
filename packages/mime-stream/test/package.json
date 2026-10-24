@@ -3,10 +3,13 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/errors": "workspace:*",
+    "@portable/fuzz": "workspace:*",
     "@portable/mime-headers": "workspace:*",
     "@portable/mime-stream": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
-    "@zone-eu/mailsplit": "^5.4.23"
+    "@zone-eu/mailsplit": "^5.4.23",
+    "fast-check": "^4.10.2"
   }
 }

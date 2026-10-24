@@ -1,4 +1,5 @@
 import * as Base64 from '@portable/base64'
+import * as Dns from '@portable/dns'
 import type { Resolver, Result } from '../verify.js'
 import { binaryToText, fromBinary, toBinary } from './bytes.js'
 import { type BodyHash, sha256 } from './digest.js'
@@ -12,7 +13,7 @@ import {
 } from './header.js'
 import { importPublicKey, type KeyType } from './keys.js'
 import {
-  fitsDns,
+  canFitDns,
   isDomainName,
   isLocalPart,
   isSameOrSubdomain,
@@ -21,7 +22,7 @@ import {
 } from './names.js'
 import { parseTags } from './tags.js'
 
-export type Outcome = { result: Result.Code; reason: string }
+export type Outcome = { result: Result.Code; reason: string; cause?: unknown }
 
 export type Signature = {
   field: Field
@@ -56,7 +57,6 @@ const canonicalizationAlgorithm = '[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?'
 const canonicalizationSyntax = new RegExp(
   `^${canonicalizationAlgorithm}(?:/${canonicalizationAlgorithm})?$`,
 )
-const noKeyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
 
 /**
  * Reads a DKIM-Signature field, or with `kind` `'arc'` an ARC-Message-Signature (RFC 8617 section
@@ -110,7 +110,13 @@ export function prepare(field: Field, now: Date, kind: 'dkim' | 'arc' = 'dkim'):
       (length !== undefined && !/^\d{1,76}$/.test(length))
     )
       return neutral('signature syntax error')
-    if (!domain || !isDomainName(domain) || !selector || !isSelector(selector) || !fitsDns(keyName))
+    if (
+      !domain ||
+      !isDomainName(domain) ||
+      !selector ||
+      !isSelector(selector) ||
+      !canFitDns(keyName)
+    )
       return neutral('signature syntax error')
     const query = tags.get('q')
     if (
@@ -242,12 +248,12 @@ export async function fetchKey(
     records = await abortable(resolver.resolveTxt(name), signal)
   } catch (error) {
     if (signal?.aborted) throw signal.reason
+    if (Dns.isNotFound(error)) return { result: 'permerror', reason: 'no key' }
     const code = (error as { code?: unknown } | null)?.code
-    if (typeof code === 'string' && noKeyCodes.has(code))
-      return { result: 'permerror', reason: 'no key' }
     return {
       result: 'temperror',
       reason: `key lookup failed${typeof code === 'string' ? `: ${code}` : ''}`,
+      cause: error,
     }
   }
   const text = records[0]?.join('')
@@ -281,7 +287,10 @@ function parseKeyRecord(text: string): KeyRecord {
   return { data: der, type, hashes: list('h'), flags: list('t') ?? [] }
 }
 
-export function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+export function abortable<value>(
+  promise: Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return promise
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {

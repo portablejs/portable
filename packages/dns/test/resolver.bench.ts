@@ -3,7 +3,7 @@ import dgram from 'node:dgram'
 import dnsPromises from 'node:dns/promises'
 import TangerineModule from 'tangerine'
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test'
-import { createResolver } from '@portable/dns'
+import { create } from '@portable/dns'
 import { recorded } from './utils.js'
 
 const cases = [
@@ -32,8 +32,8 @@ const queryOf = (url: string) =>
     (c) => c.charCodeAt(0),
   )
 
-const ours = createResolver({
-  fetch: async (url) => new Response(answer(queryOf(url))),
+const ours = create({
+  fetch: async (request) => new Response(answer(queryOf(request.url))),
 })
 
 // tangerine's index.d.ts declares a default export, but index.js sets module.exports.

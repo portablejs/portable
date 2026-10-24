@@ -90,7 +90,7 @@ describe('the signature field', () => {
 
   test('writes t= and x=', async () => {
     const { tags, out } = await signed({
-      signedAt: new Date('2026-01-01T00:00:00Z'),
+      now: new Date('2026-01-01T00:00:00Z'),
       expiresAt: new Date('2026-01-02T00:00:00Z'),
     })
     expect(tags.t).toBe('1767225600')
@@ -101,7 +101,7 @@ describe('the signature field', () => {
   })
 
   test('gives the same field whatever the chunking of the message', async () => {
-    const options = base({ signedAt: new Date(1e12) })
+    const options = base({ now: new Date(1e12) })
     const expected = await Dkim.sign(MSG, options)
     for (const seed of [1, 2, 3, 4]) {
       const chunks = randomChunks(encode(MSG), seed, 8)
@@ -110,9 +110,10 @@ describe('the signature field', () => {
     expect(await Dkim.sign(encode(MSG), options)).toBe(expected)
   })
 
-  test('uses the hash option for the body hash', async () => {
+  test('uses the hasher option for the body hash', async () => {
     const seen: Uint8Array[] = []
-    const hash = (): Dkim.Hash => ({
+    const hashes: Dkim.Hash[] = []
+    const hasher = (hash: Dkim.Hash): Dkim.Hasher => ({
       update: (data) => seen.push(data.slice()),
       digest: async () => {
         const all = new Uint8Array(seen.reduce((n, c) => n + c.length, 0))
@@ -121,10 +122,16 @@ describe('the signature field', () => {
           all.set(c, at)
           at += c.length
         }
-        return new Uint8Array(await crypto.subtle.digest('SHA-256', all))
+        return new Uint8Array(await crypto.subtle.digest(hash, all))
       },
     })
-    const { out } = await signed({ hash })
+    const { out } = await signed({
+      hasher: (hash) => {
+        hashes.push(hash)
+        return hasher(hash)
+      },
+    })
+    expect(hashes).toEqual(['SHA-256'])
     expect(seen.map(binary).join('')).toBe('Hello world\r\n')
     expect(await results(out)).toEqual(['pass'])
   })
@@ -171,7 +178,7 @@ describe('private keys', () => {
       selector: 'brisbane',
       privateKey: `-----BEGIN PRIVATE KEY-----\n${pkcs8}\n-----END PRIVATE KEY-----`,
       headers: ['from', 'to', 'subject', 'date', 'message-id', 'from', 'subject', 'date'],
-      signedAt: new Date(1528637909000),
+      now: new Date(1528637909000),
     })
     expect(tagsOf(field).bh).toBe('2jUSOH9NhtVGCQWNr9BrIAPreKQjO6Sn7XIkfJVOzv8=')
     const zone = JSON.parse(await fixtureText('rfc8463-dns.json')) as Record<
@@ -246,21 +253,18 @@ describe('options', () => {
       'a..b@example.com',
       'no-at-sign',
     ].map((identity) => [`the identity ${identity}`, { identity }] as const),
-    [
-      'an expiry equal to the signing time',
-      { signedAt: new Date(1e12), expiresAt: new Date(1e12) },
-    ],
+    ['an expiry equal to the signing time', { now: new Date(1e12), expiresAt: new Date(1e12) }],
     [
       'an expiry before the signing time',
-      { signedAt: new Date(1e12), expiresAt: new Date(1e12 - 1000) },
+      { now: new Date(1e12), expiresAt: new Date(1e12 - 1000) },
     ],
     [
       'an expiry less than a second after',
-      { signedAt: new Date(1e12), expiresAt: new Date(1e12 + 500) },
+      { now: new Date(1e12), expiresAt: new Date(1e12 + 500) },
     ],
-    ['a signing time before 1970', { signedAt: new Date('1960-01-01T00:00:00Z') }],
-    ['an invalid Date', { signedAt: new Date(Number.NaN) }],
-    ['a signing time with more than 12 digits', { signedAt: new Date(1e15) }],
+    ['a signing time before 1970', { now: new Date('1960-01-01T00:00:00Z') }],
+    ['an invalid Date', { now: new Date(Number.NaN) }],
+    ['a signing time with more than 12 digits', { now: new Date(1e15) }],
   ] as const) {
     test(`refuses ${title} with a RangeError`, async () => {
       await expect(Dkim.sign(MSG, base(options as Partial<Dkim.sign.Options>))).rejects.toThrow(
@@ -272,7 +276,7 @@ describe('options', () => {
   for (const [title, options] of [
     ['a missing d=', { domain: undefined }],
     ['a missing s=', { selector: undefined }],
-    ['a signing time that is not a Date', { signedAt: 1e12 }],
+    ['a signing time that is not a Date', { now: 1e12 }],
     ['a header list that is not an array', { headers: 'From:Subject' }],
   ] as const) {
     test(`refuses ${title} with a TypeError`, async () => {
@@ -442,7 +446,7 @@ describe('messages', () => {
 
   // nodemailer's "DKIM signatures verified by mailauth" cases: raw messages signed here and
   // verified by an independent implementation.
-  const cases: [string, string | Uint8Array][] = [
+  const cases = [
     ['a body without a final line break', 'From: a@example.com\r\nSubject: x\r\n\r\nabc'],
     [
       'a body with trailing whitespace only lines',
@@ -473,7 +477,7 @@ describe('messages', () => {
       'duplicate header fields',
       'Subject: first\r\nFrom: a@example.com\r\nSubject: second\r\n\r\nbody\r\n',
     ],
-  ]
+  ] satisfies [string, string | Uint8Array][]
   for (const [title, message] of cases) {
     test(`signs a message with ${title}`, async () => {
       for (const canonicalization of ['relaxed/relaxed', 'simple/simple'] as const) {

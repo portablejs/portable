@@ -4,8 +4,8 @@ const maxTimeout = 2 ** 31 - 1
  * A debounced or throttled function. Calls that arrive while an invocation is waiting share it,
  * and each one returns a promise of that invocation's result.
  */
-export type Debounced<Args extends unknown[], Result, This = unknown> = {
-  (this: This, ...args: Args): Promise<Awaited<Result>>
+export type Debounced<args extends unknown[], result, self = unknown> = {
+  (this: self, ...args: args): Promise<Awaited<result>>
   /**
    * Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`.
    * Later calls work as usual.
@@ -15,7 +15,7 @@ export type Debounced<Args extends unknown[], Result, This = unknown> = {
    * Runs the waiting invocation now and resolves with its result. Resolves with `undefined` when
    * nothing is waiting.
    */
-  flush(): Promise<Awaited<Result> | undefined>
+  flush(): Promise<Awaited<result> | undefined>
   /** `true` while the function waits out `ms` after a call. */
   readonly pending: boolean
 }
@@ -46,11 +46,11 @@ export declare namespace debounce {
  * const response = await save(editor.value) // the response of the save that this call shares
  * ```
  */
-export function debounce<Args extends unknown[], Result, This = unknown>(
-  fn: (this: This, ...args: Args) => Result,
+export function debounce<args extends unknown[], result, self = unknown>(
+  fn: (this: self, ...args: args) => result,
   ms: number,
   options: debounce.Options = {},
-): Debounced<Args, Result, This> {
+): Debounced<args, result, self> {
   const { leading = false, trailing = true, maxWait, signal } = options
   if (!leading && !trailing)
     throw new RangeError('Expected `leading`, `trailing` or both to be true.')
@@ -59,7 +59,7 @@ export function debounce<Args extends unknown[], Result, This = unknown>(
   const max = maxing ? Math.max(checkWait('maxWait', maxWait), wait) : 0
 
   let batch: Batch | undefined
-  let lastCall: { args: Args; self: This } | undefined
+  let lastCall: { args: args; self: self } | undefined
   let lastCallTime: number | undefined
   let lastInvokeTime = 0
   let result: unknown
@@ -131,7 +131,7 @@ export function debounce<Args extends unknown[], Result, This = unknown>(
     batch = undefined
   }
 
-  function debounced(this: This, ...args: Args): Promise<unknown> {
+  function debounced(this: self, ...args: args): Promise<unknown> {
     if (signal?.aborted) return Promise.reject(signal.reason)
     batch ??= deferred()
     const { promise } = batch
@@ -164,7 +164,7 @@ export function debounce<Args extends unknown[], Result, This = unknown>(
       },
     },
     pending: { get: () => timer !== undefined },
-  }) as unknown as Debounced<Args, Result, This>
+  }) as unknown as Debounced<args, result, self>
 }
 
 type Batch = {

@@ -239,7 +239,7 @@ describe('maxBytes', () => {
 // zlib's infcover.c cases, as pako ports them in test/zlib/inflate_cover.test.mjs. pako feeds
 // the bytes without finishing the stream, so an incomplete stream passes there and is
 // truncated here.
-const cover: readonly [name: string, bytes: string, format: Compress.Format, result: string][] = [
+const cover = [
   ['bad gzip method', '1f 8b 0 0', 'gzip', 'invalid'],
   ['bad gzip flags', '1f 8b 8 80', 'gzip', 'invalid'],
   ['bad zlib method', '77 85', 'deflate', 'invalid'],
@@ -320,7 +320,7 @@ const cover: readonly [name: string, bytes: string, format: Compress.Format, res
     'invalid',
   ],
   ['copy direct from output', '63 0 3 0 0 0 0 0', 'deflate-raw', 'invalid'],
-]
+] satisfies readonly [name: string, bytes: string, format: Compress.Format, result: string][]
 
 describe('zlib inflate coverage', () => {
   for (const [name, bytes, format, result] of cover) {

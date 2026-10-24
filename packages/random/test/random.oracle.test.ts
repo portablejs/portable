@@ -7,7 +7,7 @@ import seedrandom from 'seedrandom'
 import { describe, expect, test } from 'vite-plus/test'
 import * as Random from '@portable/random'
 
-const draws = <T>(count: number, draw: () => T): Set<T> =>
+const draws = <value>(count: number, draw: () => value): Set<value> =>
   new Set(Array.from({ length: count }, draw))
 const characters = (text: string) => new Set(Array.from(text))
 const sorted = (values: Set<number>) => [...values].sort((a, b) => a - b)
@@ -35,7 +35,7 @@ describe('matches the upstream libraries where they agree on a contract', () => 
 
   test('string with an alphabet gives the same characters as nanoid customAlphabet', () => {
     for (const alphabet of ['abc', '0123456789abcdef', 'абвгд', 'aaab'])
-      expect(characters(Random.string(4000, alphabet))).toEqual(
+      expect(characters(Random.string(4000, { alphabet }))).toEqual(
         characters(customAlphabet(alphabet, 4000)()),
       )
   })
@@ -54,7 +54,7 @@ describe('matches the upstream libraries where they agree on a contract', () => 
   for (const [type, alphabet] of Object.entries(types)) {
     test(`string with the ${type} alphabet gives crypto-random-string's ${type} characters`, () => {
       const length = alphabet.length * 640
-      expect(characters(Random.string(length, alphabet))).toEqual(
+      expect(characters(Random.string(length, { alphabet }))).toEqual(
         characters(cryptoRandomString({ length, type: type as keyof typeof types })),
       )
     })
@@ -97,7 +97,7 @@ describe('known upstream issues', () => {
   test('nanoid customAlphabet splits emoji into lone surrogates', () => {
     const loneSurrogate = /\p{Cs}/u
     expect(customAlphabet('😀🎉', 100)()).toMatch(loneSurrogate)
-    const ours = Random.string(100, '😀🎉')
+    const ours = Random.string(100, { alphabet: '😀🎉' })
     expect(ours).not.toMatch(loneSurrogate)
     expect(Array.from(ours)).toHaveLength(100)
   })
@@ -107,7 +107,7 @@ describe('known upstream issues', () => {
     expect(() => cryptoRandomString({ length: 1, characters: alphabet.join('') })).toThrow(
       /at most 65536 characters/,
     )
-    expect(alphabet).toContain(Random.string(1, alphabet.join('')))
+    expect(alphabet).toContain(Random.string(1, { alphabet: alphabet.join('') }))
   })
 
   test('seedrandom gives the same sequence for seeds that repeat a pattern; seeded does not', () => {

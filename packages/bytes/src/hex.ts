@@ -45,10 +45,10 @@ export function fromHex(text: string | Uint8Array): Uint8Array<ArrayBuffer> {
 }
 
 type NativeToHex = (this: Uint8Array) => string
-const nativeToHex: NativeToHex | undefined = Reflect.get(Uint8Array.prototype, 'toHex')
+const nativeToHex = Reflect.get(Uint8Array.prototype, 'toHex') satisfies NativeToHex | undefined
 
 type NativeFromHex = (text: string) => Uint8Array<ArrayBuffer>
-const nativeFromHex: NativeFromHex | undefined = Reflect.get(Uint8Array, 'fromHex')
+const nativeFromHex = Reflect.get(Uint8Array, 'fromHex') satisfies NativeFromHex | undefined
 
 const digits = '0123456789abcdef'
 const pairs = Array.from({ length: 256 }, (_, byte) => digits[byte >> 4]! + digits[byte & 15]!)
@@ -73,11 +73,14 @@ export function toHexFallback(bytes: Uint8Array): string {
   return ascii.decode(out)
 }
 
-const values = new Int8Array(128).fill(-1)
-for (let i = 0; i < 16; i++) {
-  values[digits.charCodeAt(i)] = i
-  values[digits.toUpperCase().charCodeAt(i)] = i
-}
+const values = /* @__PURE__ */ (() => {
+  const table = new Int8Array(128).fill(-1)
+  for (let i = 0; i < 16; i++) {
+    table[digits.charCodeAt(i)] = i
+    table[digits.toUpperCase().charCodeAt(i)] = i
+  }
+  return table
+})()
 
 export function fromHexFallback(hex: string): Uint8Array<ArrayBuffer> {
   if (hex.length % 2 !== 0)

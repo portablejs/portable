@@ -24,7 +24,7 @@ function recorder() {
   }
 }
 
-async function settle<T>(promise: Promise<T>): Promise<T> {
+async function settle<value>(promise: Promise<value>): Promise<value> {
   await vi.runAllTimersAsync()
   return promise
 }

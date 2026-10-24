@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
-import { reasonOf, request } from './utils.js'
+import { codeOf, request } from './utils.js'
 
 const scheme = Webhooks.slack
 const secret = 'secret'
@@ -23,7 +23,7 @@ const verify = (headers: Record<string, string>, options: Partial<Webhooks.verif
 describe('slack', () => {
   test('signs the documented example', async () => {
     expect(
-      await Webhooks.sign(example.body, { scheme, secret: example.secret, timestamp: example.now }),
+      await Webhooks.sign(example.body, { scheme, secret: example.secret, now: example.now }),
     ).toEqual(example.headers)
   })
 
@@ -46,53 +46,51 @@ describe('slack', () => {
     const headers = await Webhooks.sign(payload, {
       scheme,
       secret,
-      timestamp: new Date(Date.now() - 600_000),
+      now: new Date(Date.now() - 600_000),
     })
-    expect(await reasonOf(verify(headers))).toBe('timestamp')
+    expect(await codeOf(verify(headers))).toBe('timestamp')
   })
 
   test('rejects a timestamp in the future beyond the tolerance', async () => {
     const headers = await Webhooks.sign(payload, {
       scheme,
       secret,
-      timestamp: new Date(Date.now() + 600_000),
+      now: new Date(Date.now() + 600_000),
     })
-    expect(await reasonOf(verify(headers))).toBe('timestamp')
+    expect(await codeOf(verify(headers))).toBe('timestamp')
   })
 
   test('rejects an invalid signature', async () => {
     const headers = await Webhooks.sign(payload, { scheme, secret })
-    expect(
-      await reasonOf(verify({ ...headers, 'x-slack-signature': 'v0=invalid-signature' })),
-    ).toBe('malformed-header')
-    expect(
-      await reasonOf(verify({ ...headers, 'x-slack-signature': `v0=${'0'.repeat(64)}` })),
-    ).toBe('signature')
+    expect(await codeOf(verify({ ...headers, 'x-slack-signature': 'v0=invalid-signature' }))).toBe(
+      'malformed-header',
+    )
+    expect(await codeOf(verify({ ...headers, 'x-slack-signature': `v0=${'0'.repeat(64)}` }))).toBe(
+      'signature',
+    )
   })
 
   test('rejects an unknown signature version', async () => {
     const headers = await Webhooks.sign(payload, { scheme, secret })
     const signature = headers['x-slack-signature']!.replace('v0=', 'v1=')
-    expect(await reasonOf(verify({ ...headers, 'x-slack-signature': signature }))).toBe(
+    expect(await codeOf(verify({ ...headers, 'x-slack-signature': signature }))).toBe(
       'malformed-header',
     )
   })
 
   test('rejects missing headers', async () => {
     const headers = await Webhooks.sign(payload, { scheme, secret })
-    expect(await reasonOf(verify({ 'x-slack-signature': headers['x-slack-signature']! }))).toBe(
+    expect(await codeOf(verify({ 'x-slack-signature': headers['x-slack-signature']! }))).toBe(
       'missing-header',
     )
     expect(
-      await reasonOf(
-        verify({ 'x-slack-request-timestamp': headers['x-slack-request-timestamp']! }),
-      ),
+      await codeOf(verify({ 'x-slack-request-timestamp': headers['x-slack-request-timestamp']! })),
     ).toBe('missing-header')
   })
 
   test('rejects a timestamp that is not an integer', async () => {
     const headers = await Webhooks.sign(payload, { scheme, secret })
-    expect(await reasonOf(verify({ ...headers, 'x-slack-request-timestamp': 'NaN' }))).toBe(
+    expect(await codeOf(verify({ ...headers, 'x-slack-request-timestamp': 'NaN' }))).toBe(
       'malformed-header',
     )
   })

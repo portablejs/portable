@@ -6,12 +6,12 @@ import { expect, test } from 'vite-plus/test'
 import { encode, fixtureText, key, signed, type Zone, zoneResolver } from './utils.js'
 
 const rsa = await key('rsa')
-const zone: Zone = {
+const zone = {
   'test._domainkey.example.com': { TXT: [rsa.record] },
   'example.com': { TXT: ['v=spf1 ip4:192.0.2.0/24 include:_spf.example.com -all'] },
   '_spf.example.com': { TXT: ['v=spf1 ip4:198.51.100.0/24 -all'] },
   '_dmarc.example.com': { TXT: ['v=DMARC1; p=reject'] },
-}
+} satisfies Zone
 const resolver = zoneResolver(zone)
 const upstreamResolver = async (name: string, type: string) => {
   if (type !== 'TXT') throw Object.assign(new Error(type), { code: 'ENODATA' })
@@ -60,7 +60,7 @@ test('authenticates a 250 KB message with a DKIM signature and an ARC set within
     bench('mailauth', async () => {
       const result = await upstreamAuthenticate(Buffer.from(largeSealed), {
         ...envelope,
-        resolver: upstreamResolver as never,
+        resolver: upstreamResolver,
         mta: 'mx.example.net',
         strict: true,
         disableBimi: true,
@@ -92,7 +92,7 @@ test('authenticates and seals a short message within 25% of mailauth', async ({ 
     bench('mailauth', async () => {
       await upstreamAuthenticate(Buffer.from(small), {
         ...envelope,
-        resolver: upstreamResolver as never,
+        resolver: upstreamResolver,
         mta: 'mx.example.net',
         strict: true,
         disableBimi: true,

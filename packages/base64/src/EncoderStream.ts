@@ -13,9 +13,9 @@ export declare namespace EncoderStream {
 }
 
 /**
- * A `TransformStream` that encodes bytes, or strings as UTF-8, to base64 text. The output is the
- * same as `encode` of all the input at once, however the input is chunked: lines break at the
- * same places, and no output chunk ends with a line ending.
+ * A `TransformStream` that encodes bytes, or strings as UTF-8, to base64 text as ASCII bytes. The
+ * output is the same as `encode` of all the input at once, however the input is chunked: lines
+ * break at the same places, and no output chunk ends with a line ending.
  *
  * @example
  * ```ts
@@ -25,11 +25,11 @@ export declare namespace EncoderStream {
  * const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))
  * ```
  */
-export class EncoderStream extends TransformStream<Uint8Array | string, string> {
+export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
     const {
       alphabet = 'base64',
-      lineEnding = '\r\n',
+      newline = '\r\n',
       lineLength = false,
       omitPadding = false,
     } = options
@@ -60,7 +60,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
     const encodeLines = (bytes: Uint8Array, final: boolean): string => {
       if (bytes.length === 0) return ''
       const pad = final && omitPadding
-      const text = toBase64(bytes, { alphabet, omitPadding: pad, lineLength, lineEnding }, column)
+      const text = toBase64(bytes, { alphabet, omitPadding: pad, lineLength, newline }, column)
       if (lineLength !== false) {
         const rest = bytes.length % 3
         const length = ((bytes.length - rest) / 3) * 4 + (rest === 0 ? 0 : pad ? rest + 1 : 4)
@@ -88,11 +88,11 @@ export class EncoderStream extends TransformStream<Uint8Array | string, string> 
             const whole = bytes.length - (bytes.length % 3)
             carry = bytes.slice(whole)
             text += encodeLines(bytes.subarray(0, whole), false)
-            if (text !== '') controller.enqueue(text)
+            if (text !== '') controller.enqueue(utf8.encode(text))
           },
           flush(controller) {
             const text = encodeLines(Bytes.concat([carry, utf8.encode(highSurrogate)]), true)
-            if (text !== '') controller.enqueue(text)
+            if (text !== '') controller.enqueue(utf8.encode(text))
           },
         },
         options.signal,

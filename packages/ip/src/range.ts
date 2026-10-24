@@ -1,5 +1,5 @@
 import { type Address, from } from './address.js'
-import { matches, parseCidr } from './cidr.js'
+import { isInNetwork, parseCidr } from './cidr.js'
 
 /**
  * The special-purpose block an address belongs to, named after its entry in the IANA IPv4 and IPv6
@@ -116,6 +116,6 @@ const ipv6 = table([
 export function range(address: Address | string): Range {
   const { version, bytes } = from(address)
   for (const [network, prefix, name] of version === 4 ? ipv4 : ipv6)
-    if (matches(bytes, network, prefix)) return name
+    if (isInNetwork(bytes, network, prefix)) return name
   return version === 4 ? 'unicast' : 'reserved'
 }

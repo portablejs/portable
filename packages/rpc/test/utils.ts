@@ -4,7 +4,10 @@ import { onTestFinished } from 'vite-plus/test'
 /** Serves `api` on one end of a `MessageChannel` and connects to it from the other end. */
 export function pair<api extends object>(
   api: api,
-  options: { serve?: Rpc.connect.Options; connect?: Rpc.connect.Options } = {},
+  options: {
+    provide?: Rpc.provide.Options | undefined
+    connect?: Rpc.connect.Options | undefined
+  } = {},
 ): Rpc.Remote<api> {
   const { port1, port2 } = new MessageChannel()
   const controller = new AbortController()
@@ -13,7 +16,7 @@ export function pair<api extends object>(
     port1.close()
     port2.close()
   })
-  Rpc.serve(api, Rpc.port(port1), { signal: controller.signal, ...options.serve })
+  Rpc.provide(Rpc.port(port1), api, { signal: controller.signal, ...options.provide })
   return Rpc.connect<api>(Rpc.port(port2), { signal: controller.signal, ...options.connect })
 }
 
@@ -21,7 +24,7 @@ export function pair<api extends object>(
  * Serves `api` over a transport the test writes raw JSON text into. `send` resolves with every
  * message the server wrote within a few turns of the event loop.
  */
-export function raw(api: object, options: Rpc.serve.Options = {}) {
+export function raw(api: object, options: Rpc.provide.Options = {}) {
   const written: unknown[] = []
   let input!: ReadableStreamDefaultController<unknown>
   const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
@@ -30,7 +33,7 @@ export function raw(api: object, options: Rpc.serve.Options = {}) {
   })
   const controller = new AbortController()
   onTestFinished(() => controller.abort())
-  Rpc.serve(api, { readable, writable }, { signal: controller.signal, ...options })
+  Rpc.provide({ readable, writable }, api, { signal: controller.signal, ...options })
   return {
     written,
     async send(text: string): Promise<unknown[]> {
@@ -49,8 +52,7 @@ export const settle = (): Promise<void> => new Promise((resolve) => setTimeout(r
 export function fetcher(api: object) {
   const handle = Rpc.handler(api)
   const requests: Request[] = []
-  const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const request = new Request(input, init)
+  const fetch = async (request: Request) => {
     requests.push(request.clone())
     return handle(request)
   }

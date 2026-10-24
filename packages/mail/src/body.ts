@@ -19,7 +19,7 @@ export type Content = string | Uint8Array | Blob | ReadableStream<Uint8Array>
  *
  * @example
  * ```ts
- * Mail.encode({ attachments: [{ content: 'a,b\n', contentType: 'text/csv', transferEncoding: '7bit' }] })
+ * Mail.encodeStream({ attachments: [{ content: 'a,b\n', contentType: 'text/csv', transferEncoding: '7bit' }] })
  * ```
  */
 export type TransferEncoding = 'base64' | 'quoted-printable' | '7bit' | '8bit'
@@ -124,7 +124,7 @@ export type Body = {
   readonly text: boolean
 }
 
-export function encodeSync(content: string | Uint8Array, body: Body): string | Uint8Array {
+export function encodeBody(content: string | Uint8Array, body: Body): string | Uint8Array {
   switch (body.encoding) {
     case 'base64':
       return Base64.encode(content, { lineLength: 76 })
@@ -138,10 +138,10 @@ export function encodeSync(content: string | Uint8Array, body: Body): string | U
   }
 }
 
-export function encodeStream(
+export function encodeBodyStream(
   source: ReadableStream<Uint8Array>,
   body: Body,
-): ReadableStream<Uint8Array | string> {
+): ReadableStream<Uint8Array> {
   switch (body.encoding) {
     case 'base64':
       return source.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))

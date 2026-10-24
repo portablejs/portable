@@ -295,7 +295,7 @@ describe('eventsource-parser', () => {
     const line = `${MULTIBYTE_LINES.join(' ')} ${MULTIBYTE_EMOJIS.join(' ')}`
     const chunk = utf8(`data: ${line}\n`)
     const count = Math.ceil((10 * 1024 * 1024) / chunk.length)
-    const chunks: Uint8Array[] = [utf8(': hello\n\n')]
+    const chunks = [utf8(': hello\n\n')] satisfies Uint8Array[]
     for (let i = 0; i < count; i++) chunks.push(chunk)
     chunks.push(utf8('\n: END-OF-STREAM\n\nevent: done\ndata: ok\n\n'))
     const events = await decodeChunks(chunks)

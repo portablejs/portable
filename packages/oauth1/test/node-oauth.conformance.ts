@@ -5,11 +5,11 @@ import { baseString, form, hmac, parseHeader, signature } from './utils.js'
 const somehost = {
   consumer: { key: 'consumerkey', secret: 'consumersecret' },
   nonce: 'ybHPeOEkAUJ3k2wJT9Xb43MjtSgTvKqp',
-  timestamp: new Date(1272399856_000),
+  now: new Date(1272399856_000),
 }
 const oauthParams =
   'oauth_consumer_key=k&oauth_nonce=n&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1&oauth_version=1.0'
-const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', timestamp: new Date(1_000) }
+const options = { consumer: { key: 'k', secret: 's' }, nonce: 'n', now: new Date(1_000) }
 
 describe('cases from the node-oauth test suite', () => {
   test('HMAC-SHA1 encodes the consumer secret in the signing key', async () => {
@@ -33,7 +33,7 @@ describe('cases from the node-oauth test suite', () => {
           consumer: { key: 'dpf43f3p2l4k3l03', secret: 'ascas2312dxc1sdsdk!' },
           token: { key: 'nnch734d00sl2jdk', secret: 'xyz4992k83j47x0b' },
           nonce: 'kllo9940pd9333jh',
-          timestamp: new Date(1191242096_000),
+          now: new Date(1191242096_000),
         },
       )
       const base = baseString(

@@ -47,7 +47,7 @@ export function parseRecord(terms: readonly string[]): Policy {
 
 function parseDirective(text: string): Directive {
   const [, sign = '', name = '', rest = ''] = mechanism.exec(text) ?? []
-  const qualifier: Qualifier = sign === '-' || sign === '~' || sign === '?' ? sign : '+'
+  const qualifier = (sign === '-' || sign === '~' || sign === '?' ? sign : '+') satisfies Qualifier
   const kind = name.toLowerCase()
   switch (kind) {
     case 'all':

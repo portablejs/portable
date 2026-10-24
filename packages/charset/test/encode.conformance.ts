@@ -12,6 +12,23 @@ const latin1Text = 'Hello123!£Å÷×çþÿ¿®'
 const sample = '<?xml version="1.0" encoding="UTF-8"?>\n<俄语>данные</俄语>'
 const utf8 = (text: string) => new TextEncoder().encode(text)
 
+describe('Charset', () => {
+  test.each([shiftJis, iso2022Jp, windows1251, utf16le, big5, gb18030, Charset.utf8])(
+    'encode method of $name matches Charset.encode',
+    (charset) => {
+      expect(hex(charset.encode(sample))).toBe(hex(Charset.encode(sample, charset)))
+    },
+  )
+
+  test('exposes only its name and encode in the type, so callers cannot construct one or read its tables', () => {
+    expect(shiftJis.name).toBe('Shift_JIS')
+    // @ts-expect-error
+    void shiftJis.maxBytes
+    // @ts-expect-error
+    expect(() => Charset.encode('a', { name: 'Shift_JIS' })).toThrow(TypeError)
+  })
+})
+
 describe('encode', () => {
   test('returns a Uint8Array', () => {
     expect(Charset.encode('Hello123!', windows1252)).toBeInstanceOf(Uint8Array)
@@ -189,9 +206,7 @@ describe('EncoderStream', () => {
   })
 
   test('errors on chunks that are neither strings nor Uint8Arrays', async () => {
-    const stream = fromChunks<unknown>([42]).pipeThrough(
-      new Charset.EncoderStream(windows1251) as unknown as TransformStream<unknown, Uint8Array>,
-    )
+    const stream = fromChunks<unknown>([42]).pipeThrough(new Charset.EncoderStream(windows1251))
     await expect(collect(stream)).rejects.toThrow(TypeError)
   })
 

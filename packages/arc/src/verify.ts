@@ -7,7 +7,7 @@ import {
   decodeBase64,
   type Field,
   fetchKey,
-  fitsDns,
+  canFitDns,
   fromBinary,
   hashBody,
   isDomainName,
@@ -43,7 +43,7 @@ import {
  * import * as Arc from '@portable/arc'
  * import * as Dns from '@portable/dns'
  *
- * const resolver: Arc.Resolver = Dns.createResolver()
+ * const resolver: Arc.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Dkim.Resolver
@@ -66,6 +66,8 @@ export type Result = {
   instance: number
   /** Why the result is `fail`, such as `i=2 as signature did not verify`. */
   reason?: string | undefined
+  /** The resolver's error when a key lookup failed. */
+  cause?: unknown
   /** The ARC sets from the oldest (`i=1`) to the newest. Empty unless the result is `pass`. */
   sets: readonly Result.Set[]
 }
@@ -90,14 +92,14 @@ export declare namespace Result {
 
 export declare namespace verify {
   type Options = {
-    /** Looks up the keys. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /** The time to check the ARC-Message-Signature's `x=` against. @default new Date() */
     now?: Date | undefined
     /** RSA keys shorter than this fail the chain (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined
     /** Creates the body hash, as in `Dkim.verify`. @default buffers the body for `crypto.subtle.digest` */
-    hash?: (() => Dkim.Hash) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -131,19 +133,25 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
  * import * as Arc from '@portable/arc'
  * import * as Dns from '@portable/dns'
  *
- * const arc = await Arc.verify(message, { resolver: Dns.createResolver() })
+ * const arc = await Arc.verify(message, { resolver: Dns.create() })
  * console.log(`arc=${arc.result}${arc.reason ? ` (${arc.reason})` : ''}`)
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hash, signal } = options
+  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
   if (typeof resolver?.resolveTxt !== 'function')
     throw new TypeError('options.resolver must have a resolveTxt method.')
   signal?.throwIfAborted()
   const { header, body } = await splitMessage(message)
   const fields = parseFields(toBinary(header))
   const { instance } = newest(fields)
-  const failed = (reason: string): Result => ({ result: 'fail', instance, reason, sets: [] })
+  const failed = (reason: string, cause?: unknown): Result => ({
+    result: 'fail',
+    instance,
+    reason,
+    ...(cause !== undefined && { cause }),
+    sets: [],
+  })
   const stop = async (result: Result): Promise<Result> => {
     await body.cancel()
     return result
@@ -180,7 +188,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   }
   const cancel = () => void body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
-  const digests = await hashBody(body, [signature.body], hash).finally(() =>
+  const digests = await hashBody(body, [signature.body], hasher).finally(() =>
     signal?.removeEventListener('abort', cancel),
   )
   signal?.throwIfAborted()
@@ -192,7 +200,8 @@ export async function verify(message: Message, options: verify.Options): Promise
   if (!Bytes.equal(digest.digest, signature.bodyHash))
     return failed(`i=${last.instance} ams body hash did not verify`)
   const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
-  if (outcome.result !== 'pass') return failed(`i=${last.instance} ams ${outcome.reason}`)
+  if (outcome.result !== 'pass')
+    return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause)
 
   for (let i = seals.length - 1; i >= 0; i--) {
     const seal = seals[i]!
@@ -202,7 +211,8 @@ export async function verify(message: Message, options: verify.Options): Promise
     const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'))
     const record = await keys.get(seal.keyName)!
     const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits)
-    if (outcome.result !== 'pass') return failed(`i=${seal.set.instance} as ${outcome.reason}`)
+    if (outcome.result !== 'pass')
+      return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause)
   }
 
   return {
@@ -233,7 +243,7 @@ function prepareSeal(set: ArcSet): Seal | string {
   if (!domain || !isDomainName(domain)) return `${at} has an invalid d=`
   const selector = toALabel(binaryToText(tags.get('s')!))
   const keyName = `${selector}._domainkey.${domain}`
-  if (!selector || !isSelector(selector) || !fitsDns(keyName)) return `${at} has an invalid s=`
+  if (!selector || !isSelector(selector) || !canFitDns(keyName)) return `${at} has an invalid s=`
   const value = decodeBase64(tags.get('b')!)
   if (!value) return `${at} syntax error`
   return { set, type, value, domain, selector, keyName }

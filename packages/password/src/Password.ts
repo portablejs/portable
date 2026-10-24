@@ -213,7 +213,7 @@ function toBytes(password: string | Uint8Array, maxBytes: number): Uint8Array<Ar
     typeof password === 'string'
       ? encoder.encode(password.normalize('NFC'))
       : new Uint8Array(password)
-  if (bytes.length > maxBytes) throw new MaxBytesError(maxBytes)
+  if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
   return bytes
 }
 
@@ -271,7 +271,10 @@ async function deriveWithHmac(
   return out
 }
 
-function abortable<T>(start: () => Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+function abortable<value>(
+  start: () => Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return start()
   signal.throwIfAborted()
   return new Promise((resolve, reject) => {

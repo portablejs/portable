@@ -2,7 +2,7 @@ import { decode, encode, DecoderStream, EncoderStream } from '@portable/quoted-p
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
-export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
+export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   let i = 0
   return new ReadableStream({
     pull(controller) {
@@ -12,9 +12,9 @@ export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
   })
 }
 
-export async function collect<T>(stream: ReadableStream<T>): Promise<T[]> {
+export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks: T[] = []
+  const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -26,7 +26,13 @@ export async function encodeStream(
   chunks: readonly (Uint8Array | string)[],
   options?: encode.Options,
 ): Promise<string> {
-  return (await collect(fromChunks(chunks).pipeThrough(new EncoderStream(options)))).join('')
+  return (
+    await collect(
+      fromChunks(chunks)
+        .pipeThrough(new EncoderStream(options))
+        .pipeThrough(new TextDecoderStream()),
+    )
+  ).join('')
 }
 
 export async function decodeStream(chunks: readonly (Uint8Array | string)[]): Promise<Uint8Array> {

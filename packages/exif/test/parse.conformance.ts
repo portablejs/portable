@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Exif from '@portable/exif'
+import { fromIterable } from '@portable/streams'
 import { ascii, buildTiff, concat, entry, exifPrefix, fixture, jpeg } from './utils.js'
 
 const bytesOfLength = (length: number) =>
@@ -83,6 +84,15 @@ describe('exif-parser', () => {
     expect(thumbnail?.length).toBe(18032)
     expect(thumbnail?.bytes).toEqual(bytes.subarray(12240, 12240 + 18032))
     expect(Exif.parse(thumbnail!.bytes!).imageSize).toBeDefined()
+  })
+
+  test('gives no thumbnail bytes when the thumbnail extends past the APP1 segment', async () => {
+    const ifd0 = [entry(0x0112, 3, [1])]
+    const size = buildTiff({ ifd0, ifd1: [entry(0x0201, 4, [8]), entry(0x0202, 4, [1])] }).length
+    const tiff = buildTiff({ ifd0, ifd1: [entry(0x0201, 4, [8]), entry(0x0202, 4, [size])] })
+    const bytes = jpeg(tiff)
+    for (const result of [Exif.parse(bytes), await Exif.parseStream(fromIterable([bytes]))])
+      expect(result.thumbnail).toEqual({ offset: 20, length: size, bytes: undefined })
   })
 })
 

@@ -38,54 +38,57 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/errors": "workspace:*"
+  },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     },
     "./single-byte": {
-      "src": "./src/single-byte.ts",
-      "types": "./dist/single-byte.d.ts",
-      "default": "./dist/single-byte.js"
+      "src": "./src/exports/single-byte.ts",
+      "types": "./dist/exports/single-byte.d.ts",
+      "default": "./dist/exports/single-byte.js"
     },
     "./shift_jis": {
-      "src": "./src/shift_jis.ts",
-      "types": "./dist/shift_jis.d.ts",
-      "default": "./dist/shift_jis.js"
+      "src": "./src/exports/shift_jis.ts",
+      "types": "./dist/exports/shift_jis.d.ts",
+      "default": "./dist/exports/shift_jis.js"
     },
     "./euc-jp": {
-      "src": "./src/euc-jp.ts",
-      "types": "./dist/euc-jp.d.ts",
-      "default": "./dist/euc-jp.js"
+      "src": "./src/exports/euc-jp.ts",
+      "types": "./dist/exports/euc-jp.d.ts",
+      "default": "./dist/exports/euc-jp.js"
     },
     "./iso-2022-jp": {
-      "src": "./src/iso-2022-jp.ts",
-      "types": "./dist/iso-2022-jp.d.ts",
-      "default": "./dist/iso-2022-jp.js"
+      "src": "./src/exports/iso-2022-jp.ts",
+      "types": "./dist/exports/iso-2022-jp.d.ts",
+      "default": "./dist/exports/iso-2022-jp.js"
     },
     "./gbk": {
-      "src": "./src/gbk.ts",
-      "types": "./dist/gbk.d.ts",
-      "default": "./dist/gbk.js"
+      "src": "./src/exports/gbk.ts",
+      "types": "./dist/exports/gbk.d.ts",
+      "default": "./dist/exports/gbk.js"
     },
     "./big5": {
-      "src": "./src/big5.ts",
-      "types": "./dist/big5.d.ts",
-      "default": "./dist/big5.js"
+      "src": "./src/exports/big5.ts",
+      "types": "./dist/exports/big5.d.ts",
+      "default": "./dist/exports/big5.js"
     },
     "./euc-kr": {
-      "src": "./src/euc-kr.ts",
-      "types": "./dist/euc-kr.d.ts",
-      "default": "./dist/euc-kr.js"
+      "src": "./src/exports/euc-kr.ts",
+      "types": "./dist/exports/euc-kr.d.ts",
+      "default": "./dist/exports/euc-kr.js"
     },
     "./utf-16": {
-      "src": "./src/utf-16.ts",
-      "types": "./dist/utf-16.d.ts",
-      "default": "./dist/utf-16.js"
+      "src": "./src/exports/utf-16.ts",
+      "types": "./dist/exports/utf-16.d.ts",
+      "default": "./dist/exports/utf-16.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

@@ -3,10 +3,10 @@
  * the writable side makes `pipeThrough` cancel the source. The listener is removed when the
  * stream ends or is cancelled.
  */
-export function abortable<I, O>(
-  transformer: Cancellable<I, O>,
+export function abortable<input, output>(
+  transformer: Cancellable<input, output>,
   signal: AbortSignal | undefined,
-): Cancellable<I, O> {
+): Cancellable<input, output> {
   if (!signal) return transformer
   let onAbort = () => {}
   const done = () => signal.removeEventListener('abort', onAbort)
@@ -31,6 +31,6 @@ export function abortable<I, O>(
 
 // TypeScript's DOM types don't have Transformer.cancel yet. Runtimes that don't support it never
 // call `cancel`.
-type Cancellable<I, O> = Transformer<I, O> & {
+type Cancellable<input, output> = Transformer<input, output> & {
   cancel?: ((reason: unknown) => void | PromiseLike<void>) | undefined
 }

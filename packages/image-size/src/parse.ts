@@ -66,7 +66,7 @@ export type Type =
 export type Image = { width: number; height: number; type?: string | undefined }
 
 /** Detection order, the same as image-size's. */
-const formats: readonly Format[] = [
+const formats = [
   bmp,
   cur,
   dds,
@@ -87,7 +87,7 @@ const formats: readonly Format[] = [
   tga,
   tiff,
   webp,
-]
+] satisfies readonly Format[]
 
 const byFirstByte = new Map<number, Format>([
   [0x00, heif],
@@ -212,7 +212,7 @@ export async function parseStream(
         try {
           return parse(buffer.subarray(0, maxBytes))
         } catch (error) {
-          throw error instanceof TruncatedError ? new MaxBytesError(maxBytes) : error
+          throw error instanceof TruncatedError ? new MaxBytesError({ maxBytes }) : error
         }
       }
       if (length < needed) continue

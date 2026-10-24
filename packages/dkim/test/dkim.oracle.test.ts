@@ -53,7 +53,8 @@ const concat = (...parts: (string | Uint8Array)[]): Uint8Array =>
 /** Messages built from random header and body pieces, as binary text. */
 function generated(seed: number): string {
   const random = prng(seed)
-  const pick = <T>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!
+  const pick = <value>(items: readonly value[]): value =>
+    items[Math.floor(random() * items.length)]!
   const values = [
     'a',
     'b c',
@@ -190,7 +191,7 @@ describe('signatures made by nodemailer verify here', () => {
 describe('agrees with mailauth strict mode on changed messages', () => {
   // Each change is applied to a message signed by mailauth. Where the two verifiers disagree on
   // pass or fail, one of them is wrong.
-  const changes: [string, (text: string, random: () => number) => string][] = [
+  const changes = [
     ['add a space to a header value', (t) => t.replace('\r\nFrom: ', '\r\nFrom:  ')],
     ['fold a header', (t) => t.replace(/\r\nSubject: ?/i, '\r\nSubject:\r\n ')],
     ['upper-case a header name', (t) => t.replace('\r\nFrom:', '\r\nFROM:')],
@@ -222,7 +223,7 @@ describe('agrees with mailauth strict mode on changed messages', () => {
       'smuggle a line after From',
       (t) => t.replace(/\r\nFrom:([^\r]*)\r\n/, '\r\nFrom:$1\r\n\xc2\xa0, evil@attacker.test\r\n'),
     ],
-  ]
+  ] satisfies [string, (text: string, random: () => number) => string][]
 
   for (const [title, change] of changes) {
     test(`${title}`, async () => {

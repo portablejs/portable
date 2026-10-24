@@ -41,11 +41,11 @@ afterAll(() => {
   }
 })
 
-const identity: Rpc.Codec = { encode: (message) => message, decode: (data) => data }
+const identity = { encode: (message) => message, decode: (data) => data } satisfies Rpc.Codec
 
 function ours(codec?: Rpc.Codec) {
   const { port1, port2 } = channel()
-  Rpc.serve(api, Rpc.port(port1), codec ? { codec } : {})
+  Rpc.provide(Rpc.port(port1), api, codec ? { codec } : {})
   return Rpc.connect<Api>(Rpc.port(port2), codec ? { codec } : {})
 }
 const remote = ours()
@@ -84,14 +84,14 @@ let comlinkReceived: (value: ReturnType<typeof item>) => void = () => {}
 const comlinkCallback = Comlink.proxy((value: ReturnType<typeof item>) => comlinkReceived(value))
 const comlink = (() => {
   const { port1, port2 } = channel()
-  const served: ComlinkApi = {
+  const served = {
     add: api.add,
     echo: api.echo,
     log: api.log,
     items(n, callback) {
       for (let i = 0; i < n; i++) callback(item(i))
     },
-  }
+  } satisfies ComlinkApi
   Comlink.expose(served, port1)
   return Comlink.wrap<ComlinkApi>(port2)
 })()
@@ -215,7 +215,7 @@ test('a stream of 1000 items within 25% of birpc and comlink callbacks', async (
 
 const url = 'https://rpc.test/'
 const handle = Rpc.handler(api)
-const http = Rpc.http<Api>(url, { fetch: async (input, init) => handle(new Request(input, init)) })
+const http = Rpc.http<Api>(url, { fetch: handle })
 
 const jsonRpcServer = new JSONRPCServer()
 for (const name of ['add', 'echo', 'log'] as const) {
@@ -226,7 +226,7 @@ const handleJsonRpc = async (request: Request) => {
   const response = await jsonRpcServer.receiveJSON(await request.text())
   return response === null ? new Response(null, { status: 204 }) : Response.json(response)
 }
-const jsonRpcClient: JSONRPCClient = new JSONRPCClient(async (payload) => {
+const jsonRpcClient = new JSONRPCClient(async (payload) => {
   const response = await handleJsonRpc(
     new Request(url, {
       method: 'POST',
@@ -235,7 +235,7 @@ const jsonRpcClient: JSONRPCClient = new JSONRPCClient(async (payload) => {
     }),
   )
   if (response.status === 200) jsonRpcClient.receive(await response.json())
-})
+}) satisfies JSONRPCClient
 
 test('Rpc.http and Rpc.handler with an in-process fetch within 25% of json-rpc-2.0', async ({
   bench,

@@ -25,15 +25,15 @@ export declare namespace once {
  * const refresh = Queue.once(() => fetchToken(), { cache: false })
  * ```
  */
-export function once<T>(
-  fn: () => T | PromiseLike<T>,
+export function once<value>(
+  fn: () => value | PromiseLike<value>,
   options: once.Options = {},
-): () => Promise<T> {
+): () => Promise<value> {
   const { cache = true } = options
-  let current: Promise<T> | undefined
+  let current: Promise<value> | undefined
   return () => {
     if (current) return current
-    const promise = new Promise<T>((resolve) => resolve(fn()))
+    const promise = new Promise<value>((resolve) => resolve(fn()))
     current = promise
     const reset = () => {
       if (current === promise) current = undefined

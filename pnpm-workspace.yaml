@@ -29,3 +29,7 @@ trustPolicy: no-downgrade
 
 linkWorkspacePackages: true
 autoInstallPeers: false
+
+# workerd ships its binary in an optional dependency, so its postinstall only checks for it.
+allowBuilds:
+  workerd: false

@@ -6,15 +6,18 @@ export const boundary = '--_NmP-test-Part_'
 
 export const fixed = { messageId: '<zzzzzz>', date: 'Sat, 21 Jun 2014 10:52:44 +0000' }
 
-export function compose(message: Mail.Message, options: Mail.encode.Options = {}): Promise<string> {
-  return Streams.toText(Mail.encode({ ...fixed, ...message }, { boundary, ...options }))
+export function compose(
+  message: Mail.Message,
+  options: Mail.encodeStream.Options = {},
+): Promise<string> {
+  return Streams.toText(Mail.encodeStream({ ...fixed, ...message }, { boundary, ...options }))
 }
 
 export function composeBytes(
   message: Mail.Message,
-  options: Mail.encode.Options = {},
+  options: Mail.encodeStream.Options = {},
 ): Promise<Uint8Array> {
-  return Streams.toBytes(Mail.encode({ ...fixed, ...message }, { boundary, ...options }))
+  return Streams.toBytes(Mail.encodeStream({ ...fixed, ...message }, { boundary, ...options }))
 }
 
 /** The header block of a message or part, before the first empty line. */

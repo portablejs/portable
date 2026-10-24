@@ -13,8 +13,8 @@ export declare namespace EncoderStream {
 }
 
 /**
- * A `TransformStream` that encodes each row as one line of CSV text, as `Csv.encode` does. Pipe it
- * through `TextEncoderStream` for bytes.
+ * A `TransformStream` that encodes each row as one line of CSV text, as `Csv.encode` does, and
+ * emits it as UTF-8 bytes.
  *
  * @example
  * ```ts
@@ -23,22 +23,22 @@ export declare namespace EncoderStream {
  *
  * const body = Streams.fromIterable(users)
  *   .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }))
- *   .pipeThrough(new TextEncoderStream())
  * return new Response(body, { headers: { 'content-type': 'text/csv' } })
  * ```
  */
-export class EncoderStream extends TransformStream<encode.Row, string> {
+export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
-    const encoder: Encoder = createEncoder(options)
+    const encoder = createEncoder(options) satisfies Encoder
+    const utf8 = new TextEncoder()
     super(
       abortable(
         {
           transform(row, controller) {
-            controller.enqueue(encoder.row(row))
+            controller.enqueue(utf8.encode(encoder.row(row)))
           },
           flush(controller) {
             const rest = encoder.end()
-            if (rest) controller.enqueue(rest)
+            if (rest) controller.enqueue(utf8.encode(rest))
           },
         },
         options.signal,

@@ -2,7 +2,7 @@ import * as DnsPacket from '@portable/dns-packet'
 import dgram from 'node:dgram'
 import dnsPromises from 'node:dns/promises'
 import { afterAll, beforeAll, describe, expect, test } from 'vite-plus/test'
-import { createResolver, type Resolver } from '@portable/dns'
+import { create, type Resolver } from '@portable/dns'
 import { doh, record, recorded, respond, utf8 } from './utils.js'
 
 type Handler = (query: DnsPacket.DecodedPacket) => DnsPacket.Packet | Uint8Array
@@ -34,7 +34,7 @@ function withId(bytes: Uint8Array, id: number): Uint8Array {
   return copy
 }
 
-const ours = createResolver({
+const ours = create({
   fetch: doh((_, request) => {
     const query = DnsPacket.decode(
       Uint8Array.from(
@@ -203,9 +203,9 @@ describe('response codes give the same errors as node:dns/promises', () => {
     })
 
   test('reverse', async () => {
-    const ptr: Handler = (query) => ({
+    const ptr = ((query) => ({
       answers: [record(query.questions[0]!.name, 'PTR', 'host.example')],
-    })
+    })) satisfies Handler
     for (const ip of ['192.0.2.255', '10.0.0.1', '2001:db8::1', '::ffff:192.0.2.4', 'fe80::1'])
       await compare('reverse', ip, ptr)
     for (const ip of ['1.2.3', 'bogus ip', '1.2.3.256', ':::1', '01.2.3.4', '::1.2.3.04'])
@@ -216,9 +216,9 @@ describe('response codes give the same errors as node:dns/promises', () => {
 })
 
 describe('names give the same results as node:dns/promises', () => {
-  const answerAll: Handler = (query) => ({
+  const answerAll = ((query) => ({
     answers: [record(query.questions[0]!.name, 'A', '192.0.2.1')],
-  })
+  })) satisfies Handler
   test.each([
     'example.org.',
     '',
@@ -346,8 +346,8 @@ describe('deliberate differences from node:dns/promises', () => {
 })
 
 test('node:dns/promises and its Resolver fit the Resolver type', () => {
-  const fromModule: Resolver = dnsPromises
-  const fromClass: Resolver = new dnsPromises.Resolver()
+  const fromModule = dnsPromises satisfies Resolver
+  const fromClass = new dnsPromises.Resolver() satisfies Resolver
   expect(typeof fromModule.resolveTxt).toBe('function')
   expect(typeof fromClass.reverse).toBe('function')
 })

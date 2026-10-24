@@ -2,7 +2,7 @@ import { DecoderStream, EncoderStream, decode, encode } from '@portable/base64'
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
-export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
+export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   let i = 0
   return new ReadableStream({
     pull(controller) {
@@ -12,12 +12,12 @@ export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
   })
 }
 
-export async function collect<T>(
-  stream: ReadableStream<T>,
+export async function collect<chunk>(
+  stream: ReadableStream<chunk>,
   onChunk?: (count: number) => Promise<void>,
-): Promise<T[]> {
+): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks: T[] = []
+  const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -40,7 +40,13 @@ export async function encodeStream(
   chunks: readonly (Uint8Array | string)[],
   options?: encode.Options,
 ): Promise<string> {
-  return (await collect(fromChunks(chunks).pipeThrough(new EncoderStream(options)))).join('')
+  return (
+    await collect(
+      fromChunks(chunks)
+        .pipeThrough(new EncoderStream(options))
+        .pipeThrough(new TextDecoderStream()),
+    )
+  ).join('')
 }
 
 export async function decodeStream(
@@ -53,15 +59,15 @@ export async function decodeStream(
 /**
  * Splits `input` into pieces of the given sizes, used in turn. A size of 0 makes an empty chunk.
  */
-export function chunked<T extends Uint8Array | string>(
-  input: T,
+export function chunked<value extends Uint8Array | string>(
+  input: value,
   sizes: number | readonly number[],
-): T[] {
+): value[] {
   const list = typeof sizes === 'number' ? [sizes] : sizes
-  const chunks: T[] = []
+  const chunks: value[] = []
   for (let pos = 0, i = 0; pos < input.length; i++) {
     const size = list[i % list.length]!
-    chunks.push(input.slice(pos, pos + size) as T)
+    chunks.push(input.slice(pos, pos + size) as value)
     pos += size
   }
   return chunks
@@ -129,11 +135,11 @@ export function referenceDecode(str: string): Uint8Array {
   return Uint8Array.from(out)
 }
 
-export function referenceWrap(str: string, lineLength: number, lineEnding = '\r\n'): string {
+export function referenceWrap(str: string, lineLength: number, newline = '\r\n'): string {
   const lines: string[] = []
   for (let pos = 0; pos < str.length; pos += lineLength)
     lines.push(str.slice(pos, pos + lineLength))
-  return lines.join(lineEnding)
+  return lines.join(newline)
 }
 
 /**

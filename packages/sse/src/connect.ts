@@ -1,5 +1,6 @@
 import * as Timers from '@portable/timers'
-import { createParser, type Event, MaxLengthError } from './decode.js'
+import { createParser, type Event } from './decode.js'
+import { MaxLengthError, ResponseError } from './errors.js'
 
 export declare namespace connect {
   type Options = {
@@ -10,11 +11,15 @@ export declare namespace connect {
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
     maxLength?: number | undefined
     /**
-     * Decides whether to reconnect after a connection ends. `error` is `undefined` when the
-     * response ended normally. Return `false` to close the stream, or to fail it with `error`.
+     * Called after a connection ends, with the error and `{ attempt }`, where `attempt` is the
+     * number of reconnects since the last accepted response. `error` is `undefined` when the
+     * response ended normally. Return `false` to stop reconnecting: the stream then closes if
+     * `error` is `undefined`, and errors with `error` otherwise.
      * @default (error) => !(error instanceof Sse.ResponseError || error instanceof Sse.MaxLengthError)
      */
-    reconnectIf?: ((error: unknown, attempt: number) => boolean | PromiseLike<boolean>) | undefined
+    reconnectIf?:
+      | ((error: unknown, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
+      | undefined
     /** Stops the stream, the request in flight and any wait, and fails the stream with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -26,7 +31,8 @@ export declare namespace connect {
  * have any method, headers and body, and the events are a `ReadableStream` that can be piped and
  * cancelled. Cancelling it aborts the request in flight.
  *
- * Each attempt sends a clone of `request`, so a request body is sent again on every reconnect.
+ * Each attempt sends a clone of `request`, so a request body is sent again on every reconnect,
+ * and a `fetch` wrapper can change the headers of each attempt.
  * A 204 response closes the stream. Any other status than 200, or a content type other than
  * `text/event-stream`, fails it with `ResponseError`.
  *
@@ -36,10 +42,17 @@ export declare namespace connect {
  *
  * const request = new Request('https://example.com/events', {
  *   method: 'POST',
- *   headers: { authorization: `Bearer ${token}` },
  *   body: JSON.stringify({ topic: 'prices' }),
  * })
- * const reader = Sse.connect(request, { signal: AbortSignal.timeout(60_000) }).getReader()
+ * const events = Sse.connect(request, {
+ *   // Each reconnect gets a fresh token.
+ *   fetch: async (request) => {
+ *     request.headers.set('authorization', `Bearer ${await getToken()}`)
+ *     return fetch(request)
+ *   },
+ *   signal: AbortSignal.timeout(60_000),
+ * })
+ * const reader = events.getReader()
  * for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.data)
  * ```
  */
@@ -81,10 +94,13 @@ export function connect(
       return undefined
     }
     if (response.status !== 200)
-      throw new ResponseError(response, `Expected status 200, got ${response.status}.`)
+      throw new ResponseError({ response, message: `Expected status 200, got ${response.status}.` })
     const type = response.headers.get('content-type')
     if (!isEventStream(type))
-      throw new ResponseError(response, `Expected content type text/event-stream, got ${type}.`)
+      throw new ResponseError({
+        response,
+        message: `Expected content type text/event-stream, got ${type}.`,
+      })
     attempt = 0
     parser.restart()
     return (response.body ?? new ReadableStream({ start: (c) => c.close() })).getReader()
@@ -117,12 +133,12 @@ export function connect(
         reader = undefined
         parser.end()
         attempt++
-        if (!(await reconnectIf(error, attempt))) {
+        if (!(await reconnectIf(error, { attempt }))) {
           if (error === undefined) return controller.close()
           throw error
         }
         if (error instanceof ResponseError) await error.response.body?.cancel()
-        await Timers.sleep(parser.retry ?? next(attempt, error), { signal: combined })
+        await Timers.sleep(parser.retry ?? next({ attempt, error }), { signal: combined })
       }
     },
     async cancel(reason) {
@@ -130,31 +146,6 @@ export function connect(
       await reader?.cancel(reason).catch(() => {})
     },
   })
-}
-
-/**
- * Thrown by `connect` for a response that isn't an event stream.
- *
- * @example
- * ```ts
- * import * as Sse from '@portable/sse'
- *
- * const reader = Sse.connect('https://example.com/events').getReader()
- * try {
- *   await reader.read()
- * } catch (error) {
- *   if (error instanceof Sse.ResponseError) console.log(error.response.status)
- * }
- * ```
- */
-export class ResponseError extends Error {
-  override name = 'Sse.ResponseError'
-  /** The rejected response. Its body is not read, so read or cancel it when you're done. */
-  readonly response: Response
-  constructor(response: Response, message: string) {
-    super(message)
-    this.response = response
-  }
 }
 
 function reconnectByDefault(error: unknown): boolean {

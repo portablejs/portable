@@ -342,12 +342,8 @@ describe('papaparse', () => {
 })
 
 describe('EncoderStream', () => {
-  test('encodes rows into text that TextEncoderStream turns into bytes', async () => {
-    const bytes = await toArray(
-      fromIterable([['a', 'é']])
-        .pipeThrough(new Csv.EncoderStream())
-        .pipeThrough(new TextEncoderStream()),
-    )
+  test('encodes rows as UTF-8 bytes', async () => {
+    const bytes = await toArray(fromIterable([['a', 'é']]).pipeThrough(new Csv.EncoderStream()))
     expect(new TextDecoder().decode(bytes[0])).toBe('a,é\r\n')
   })
 
@@ -355,6 +351,9 @@ describe('EncoderStream', () => {
     const chunks = await toArray(
       fromIterable(objects).pipeThrough(new Csv.EncoderStream({ header: true })),
     )
-    expect(chunks).toEqual(['Col1,Col2,Col3\r\na,b,c\r\n', 'd,e,f\r\n'])
+    expect(chunks.map((chunk) => new TextDecoder().decode(chunk))).toEqual([
+      'Col1,Col2,Col3\r\na,b,c\r\n',
+      'd,e,f\r\n',
+    ])
   })
 })

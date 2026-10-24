@@ -2,13 +2,13 @@ import * as Smtp from '@portable/smtp'
 import { describe, expect, test } from 'vite-plus/test'
 import { failure, fakeServer, type Script } from './utils.js'
 
-const starttls: Script = {
+const starttls = {
   EHLO: (_, connection) =>
     connection.secure
       ? '250-test\r\n250-PIPELINING\r\n250 AUTH PLAIN LOGIN\r\n'
       : '250-test\r\n250-STARTTLS\r\n250 SIZE 1000\r\n',
   STARTTLS: '220 2.0.0 Ready to start TLS\r\n',
-}
+} satisfies Script
 
 const connect = (script: Script, options: Partial<Smtp.connect.Options> = {}) => {
   const server = fakeServer(script)

@@ -1,0 +1,53 @@
+{
+  "name": "@portable/web-crypto",
+  "description": "Compute digests, HMAC and HKDF, derive Ed25519 and X25519 keys from seeds, and convert ECDSA signature formats over WebCrypto, with bytes in and out, in any JavaScript runtime.",
+  "scripts": {
+    "build": "zile",
+    "dev": "zile dev"
+  },
+  "[!start-pkg]": "",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/portablejs/portable.git",
+    "directory": "packages/web-crypto"
+  },
+  "keywords": [
+    "crypto",
+    "webcrypto",
+    "subtle",
+    "hmac",
+    "hkdf",
+    "sha256",
+    "ed25519",
+    "x25519",
+    "ecdsa",
+    "der",
+    "jose",
+    "ecdsa-sig-formatter"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "dependencies": {
+    "@portable/bytes": "workspace:*",
+    "@portable/errors": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
+    }
+  },
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
+}

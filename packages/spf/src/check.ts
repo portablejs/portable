@@ -1,9 +1,10 @@
-import type * as Dns from '@portable/dns'
+import * as Dns from '@portable/dns'
 import { Failure, permerror, temperror } from './errors.js'
 import * as Ip from '@portable/ip'
-import { dotted, inNetwork, parseIp } from './ip.js'
-import { expand, isTopLabel, parseMacroString, type Token, uses, type Values } from './macro.js'
+import { dotted, isInNetwork, parseIp } from './ip.js'
+import { expand, isTopLabel, parseMacroString, type Token, hasMacro, type Values } from './macro.js'
 import { type Directive, parseRecord, type Qualifier } from './record.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 /**
  * The DNS lookups SPF needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or a
@@ -16,7 +17,7 @@ import { type Directive, parseRecord, type Qualifier } from './record.js'
  * import * as Dns from '@portable/dns'
  * import * as Spf from '@portable/spf'
  *
- * const resolver: Spf.Resolver = Dns.createResolver()
+ * const resolver: Spf.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Pick<
@@ -50,6 +51,8 @@ export type Result = {
   explanation?: string | undefined
   /** Why the result is `none`, `temperror` or `permerror`. */
   reason?: string | undefined
+  /** The resolver's error behind a `temperror`. */
+  cause?: unknown
   /** DNS-querying terms evaluated. More than 10 gives `permerror`. */
   lookups: number
   /** Lookups that found no records. More than 2 gives `permerror`. */
@@ -74,10 +77,12 @@ export declare namespace check {
   }
 
   type Options = {
-    /** Answers the DNS lookups. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined
+    /** The time for `%{t}` in explanations. @default new Date() */
+    now?: Date | undefined
     /** Rejects with `signal.reason` and cancels the pending lookups when aborted. */
     signal?: AbortSignal | undefined
   }
@@ -90,7 +95,7 @@ type Answers = { A: string[]; AAAA: string[]; MX: Dns.MxRecord[]; TXT: string[][
 type Context = {
   resolver: Resolver
   signal: AbortSignal | undefined
-  cache: { [K in keyof Answers]: Map<string, Promise<Answers[K]>> }
+  cache: { [key in keyof Answers]: Map<string, Promise<Answers[key]>> }
   client: Ip.Address
   values: Values
   asciiLocal: boolean
@@ -107,21 +112,19 @@ const results: Record<Qualifier, Result.Code> = {
   '?': 'neutral',
 }
 
-type Lookup<T> = (
+type Lookup<value> = (
   resolver: Resolver,
   name: string,
-  options: Dns.createResolver.CallOptions,
-) => Promise<T>
+  options: Dns.Resolver.CallOptions,
+) => Promise<value>
 
-const methods: { [K in keyof Answers]: Lookup<Answers[K]> } = {
+const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
   A: (resolver, name, options) => resolver.resolve4(name, options),
   AAAA: (resolver, name, options) => resolver.resolve6(name, options),
   MX: (resolver, name, options) => resolver.resolveMx(name, options),
   TXT: (resolver, name, options) => resolver.resolveTxt(name, options),
   PTR: (resolver, name, options) => resolver.resolvePtr(name, options),
 }
-
-const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
 
 /**
  * Checks whether an SMTP client may send mail for a domain, as RFC 7208's `check_host()` does. It
@@ -138,7 +141,7 @@ const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  *
  * const spf = await Spf.check(
  *   { ip: '192.0.2.10', sender: 'alice@example.com', helo: 'mail.example.com' },
- *   { resolver: Dns.createResolver(), signal: AbortSignal.timeout(20_000) },
+ *   { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
  * )
  * spf.result // 'pass', 'fail', 'softfail', 'neutral', 'none', 'temperror' or 'permerror'
  * ```
@@ -166,7 +169,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     }
   }
 
-  const ctx: Context = {
+  const ctx = {
     resolver: options.resolver,
     signal: options.signal,
     cache: { A: new Map(), AAAA: new Map(), MX: new Map(), TXT: new Map(), PTR: new Map() },
@@ -182,19 +185,23 @@ export async function check(input: check.Input, options: check.Options): Promise
       h: helo,
       c: Ip.format(client),
       r: options.receiver ?? 'unknown',
-      t: String(Math.floor(Date.now() / 1000)),
+      t: String(Math.floor((options.now ?? new Date()).getTime() / 1000)),
     },
     asciiLocal: /^\p{ASCII}*$/u.test(local),
     lookups: 0,
     voidLookups: 0,
-  }
+  } satisfies Context
 
   let outcome: Outcome
   try {
     outcome = await evaluate(ctx, domain, false)
   } catch (error) {
     if (!(error instanceof Failure)) throw error
-    outcome = { result: error.result, reason: error.message }
+    outcome = {
+      result: error.result,
+      reason: error.message,
+      ...(error.cause !== undefined && { cause: error.cause }),
+    }
   }
   return { ...base, ...outcome, lookups: ctx.lookups, voidLookups: ctx.voidLookups }
 }
@@ -242,7 +249,7 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
       return true
     case 'ip4':
     case 'ip6':
-      return inNetwork(client, directive.network, directive.prefix)
+      return isInNetwork(client, directive.network, directive.prefix)
     case 'include': {
       countLookup(ctx)
       const target = await expandTarget(ctx, directive.domain, values, true)
@@ -267,7 +274,7 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
         : { name: values.d }
       if (!('name' in target)) return false
       const prefix = client.version === 4 ? directive.cidr4 : directive.cidr6
-      const inRange = (ip: Ip.Address) => inNetwork(client, ip, prefix)
+      const inRange = (ip: Ip.Address) => isInNetwork(client, ip, prefix)
       if (directive.kind === 'a')
         return (await addresses(ctx, target.name, family(ctx), true)).some(inRange)
       return mxMatches(ctx, target.name, inRange)
@@ -331,7 +338,8 @@ async function expandTarget(
   values: Values,
   counted: boolean,
 ): Promise<Target> {
-  if (!ctx.asciiLocal && (uses(tokens, 'l') || uses(tokens, 's'))) return { skip: 'local-part' }
+  if (!ctx.asciiLocal && (hasMacro(tokens, 'l') || hasMacro(tokens, 's')))
+    return { skip: 'local-part' }
   let name = expand(tokens, await withPtr(ctx, tokens, values, counted)).replace(/\.$/, '')
   while (name.length > 253 && name.includes('.')) name = name.slice(name.indexOf('.') + 1)
   return isValidName(name) ? { name } : { skip: 'invalid' }
@@ -343,7 +351,7 @@ async function withPtr(
   values: Values,
   counted: boolean,
 ): Promise<Values> {
-  if (!uses(tokens, 'p')) return values
+  if (!hasMacro(tokens, 'p')) return values
   if (counted) countLookup(ctx)
   const names = await validate(ctx, (await reverseNames(ctx)) ?? [])
   const domain = values.d.toLowerCase()
@@ -395,12 +403,12 @@ async function addresses(
   })
 }
 
-async function query<K extends keyof Answers>(
+async function query<key extends keyof Answers>(
   ctx: Context,
-  type: K,
+  type: key,
   name: string,
-): Promise<Answers[K]> {
-  const cache: Map<string, Promise<Answers[K]>> = ctx.cache[type]
+): Promise<Answers[key]> {
+  const cache = ctx.cache[type] satisfies Map<string, Promise<Answers[key]>>
   const key = name.toLowerCase()
   let answer = cache.get(key)
   if (!answer) {
@@ -415,14 +423,18 @@ async function query<K extends keyof Answers>(
     if (error instanceof Failure) throw error
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
-    if (typeof code === 'string' && emptyCodes.has(code)) return []
+    if (Dns.isNotFound(error)) return []
     throw temperror(
       `${type} lookup of ${name} failed: ${typeof code === 'string' ? code : String(error)}`,
+      error,
     )
   }
 }
 
-function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+function abortable<value>(
+  promise: Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return promise
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {
@@ -464,9 +476,5 @@ function isValidName(name: string): boolean {
 
 function toAscii(domain: string): string {
   if (/^\p{ASCII}*$/u.test(domain)) return domain
-  try {
-    return new URL(`http://${domain}/`).hostname
-  } catch {
-    return domain
-  }
+  return hostToAscii(domain) ?? domain
 }

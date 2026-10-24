@@ -1,4 +1,5 @@
-import { concat, toBufferSource } from './bytes.js'
+import { toBufferSource } from '@portable/bytes/internal'
+import { concat } from './bytes.js'
 import type { Format } from './codec.js'
 import { MaxBytesError, classify } from './errors.js'
 
@@ -128,7 +129,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           }
           length += result.value.byteLength
           if (length > maxBytes) {
-            const error = fail(new MaxBytesError(maxBytes))
+            const error = fail(new MaxBytesError({ maxBytes }))
             await reader.cancel(error).catch(() => {})
             throw error
           }

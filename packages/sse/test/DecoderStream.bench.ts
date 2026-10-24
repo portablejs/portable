@@ -48,7 +48,7 @@ function source(
   })
 }
 
-async function drain<T>(stream: ReadableStream<T>): Promise<number> {
+async function drain<chunk>(stream: ReadableStream<chunk>): Promise<number> {
   const reader = stream.getReader()
   let count = 0
   while (!(await reader.read()).done) count++

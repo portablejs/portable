@@ -10,13 +10,15 @@ export function request(body: string | Uint8Array, headers: HeadersInit): Reques
   })
 }
 
-/** The `reason` of the `VerificationError` that `promise` rejects with. */
-export async function reasonOf(promise: Promise<unknown>): Promise<Webhooks.Reason | 'resolved'> {
+/** The `code` of the `VerificationError` that `promise` rejects with. */
+export async function codeOf(
+  promise: Promise<unknown>,
+): Promise<Webhooks.VerificationError.Code | 'resolved'> {
   try {
     await promise
     return 'resolved'
   } catch (error) {
-    if (error instanceof Webhooks.VerificationError) return error.reason
+    if (error instanceof Webhooks.VerificationError) return error.code
     throw error
   }
 }

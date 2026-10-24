@@ -30,11 +30,11 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | shouldConsumeRetry then onFailedAttempt then shouldRetry order | skipped | Only `retryIf` and a `delay` function are called, so there is no callback order to keep. |
 | handles async shouldRetry with maxRetryTime | `retry > retryIf > can be async, and the next attempt waits for it` | |
 | onFailedAttempt provides correct error details | `retry > retryIf > receives each error and the number of the attempt that threw it` | |
-| onFailedAttempt is called even when shouldRetry returns false | skipped | No `onFailedAttempt`. |
+| onFailedAttempt is called even when shouldRetry returns false | `onRetry > is not called when retryIf stops the retries` | Deliberate difference: `onRetry` runs only before a retry. |
 | onFailedAttempt can return a promise to add a delay | `retry > retryIf > can be async, and the next attempt waits for it` | |
 | onFailedAttempt can throw to abort retries | `retry > retryIf > rejects with the error it throws` | |
-| retry context object is immutable | skipped | `retryIf` gets the error and a number, not a context object. |
-| onFailedAttempt can be undefined | skipped | No `onFailedAttempt`. |
+| retry context object is immutable | skipped | `retryIf` gets the error and a new `{ attempt }` object on each call, so there is no shared context to mutate. |
+| onFailedAttempt can be undefined | `retry` tests without `onRetry` | |
 | shouldRetry can be undefined | `retry > retryIf > can be undefined` | |
 | factor affects exponential backoff | `retry > delay > grows by factor without jitter`, `oracle > retry matches p-retry` | |
 | timeouts are incremental with factor | `retry > delay > shrinks with a factor below 1` | |
@@ -47,7 +47,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | maxTimeout lower than minTimeout caps delay | `retry > delay > is capped by max when max is below initial` | |
 | randomize affects retry delays | `retry > delay > jitter picks a random wait between 0 and the cap` | Full jitter waits 0 to 1 times the cap, and p-retry's `randomize` waits 1 to 2 times. |
 | maxRetryTime limits total retry duration | `retry > signal > limits total time with a caller signal` | |
-| onFailedAttempt time counts toward maxRetryTime | skipped | No `onFailedAttempt` or `maxRetryTime`. |
+| onFailedAttempt time counts toward maxRetryTime | skipped | No `maxRetryTime`. Pass `signal: AbortSignal.timeout(ms)` for a limit on the whole call. |
 | signal already aborted when entering delay phase cancels immediately | `retry > signal > rejects with signal.reason when aborted inside fn, without waiting` | |
 | signal abort during delay cancels promptly | `retry > signal > rejects with signal.reason when aborted during the delay, and clears the timer` | |
 | aborts immediately if signal is already aborted (commented out upstream) | `retry > signal > does not call fn when the signal is already aborted` | |
@@ -94,7 +94,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | bail error | `retry > retryIf > stops further calls to fn once it returns false` | The `err.bail` flag becomes a `retryIf` check. |
 | with non-async functions | `retry > attempts > retries a sync fn that throws` | |
 | return non-async | `retry > attempts > returns a value from a sync fn` | |
-| with number of retries | `retry > retryIf > receives each error and the number of the attempt that threw it` | `onRetry` becomes `retryIf`. |
+| with number of retries | `onRetry > receives each error, the attempt that threw it and the wait, only before a retry` | |
 
 ## delay
 

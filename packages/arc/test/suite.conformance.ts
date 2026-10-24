@@ -31,10 +31,10 @@ const rfcResults: Record<string, Arc.Result.Code> = {
 
 describe('ARC validation suite', () => {
   for (const file of validationSuite) {
-    const resolver = suiteResolver(file['txt-records'] as Records)
+    const resolver = suiteResolver(file['txt-records'])
     describe(`${file.description}`, () => {
       for (const [name, data] of Object.entries(
-        file.tests as Record<string, { message?: string; cv?: string }>,
+        file.tests as Record<string, { message?: string | undefined; cv?: string | undefined }>,
       )) {
         test(`${name}`, async () => {
           const result = await Arc.verify(crlf(data.message ?? ''), { resolver })
@@ -51,9 +51,9 @@ type SignCase = {
   t: number
   'sig-headers': string
   'srv-id': string
-  AS?: string
-  AMS?: string
-  AAR?: string
+  AS?: string | undefined
+  AMS?: string | undefined
+  AAR?: string | undefined
 }
 
 const bodyHashTag = (value: string): string =>
@@ -64,7 +64,7 @@ const tagValue = (value: string, tag: string): string | undefined =>
 
 describe('ARC signing suite', () => {
   for (const file of signSuite) {
-    const resolver = suiteResolver(file['txt-records'] as Records)
+    const resolver = suiteResolver(file['txt-records'])
     describe(`${file.description}`, () => {
       for (const [name, data] of Object.entries(file.tests as Record<string, SignCase>)) {
         test(`${name}`, async () => {
@@ -74,7 +74,7 @@ describe('ARC signing suite', () => {
             domain: file.domain,
             selector: file.sel,
             privateKey: file.privatekey,
-            signedAt: new Date(data.t * 1000),
+            now: new Date(data.t * 1000),
             headers: data['sig-headers'].split(':'),
             authResults: `${data['srv-id']}; arc=${arc.result}`,
             chainValidation: arc.result,

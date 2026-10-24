@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
+import * as MimeHeaders from '@portable/mime-headers'
 import {
   decodeWords,
   encodeWord,
@@ -7,6 +8,7 @@ import {
   formatAddresses,
   formatValue,
   parseAddresses,
+  parseMailboxes,
   parseHeaders,
   parseValue,
   unfold,
@@ -42,11 +44,11 @@ describe('encoded words', () => {
       const input = randomText(next, 80)
       for (const encoding of ['Q', 'B'] as const) {
         const maxLength = pick(next, [false, 13, 20, 30, 52, 75] as const)
-        const encoded = encodeWord(input, { encoding, maxLength })
+        const encoded = encodeWord(input, { wordEncoding: encoding, wordLength: maxLength })
         const ok =
           encodedWords.test(encoded) &&
           decodeWords(encoded) === input &&
-          encodeWord(utf8(input), { encoding, maxLength }) === encoded &&
+          encodeWord(utf8(input), { wordEncoding: encoding, wordLength: maxLength }) === encoded &&
           (maxLength === false ||
             input === '' ||
             encoded.split(' ').every((word) => {
@@ -69,8 +71,8 @@ describe('encoded words', () => {
       const input = randomText(next, 10) + loneSurrogate(next) + randomText(next, 10)
       for (const encoding of ['Q', 'B'] as const) {
         const encoded = encodeWord(input, {
-          encoding,
-          maxLength: pick(next, [false, 20, 40] as const),
+          wordEncoding: encoding,
+          wordLength: pick(next, [false, 20, 40] as const),
         })
         if (decodeWords(encoded) !== wellFormed(input)) failures.push({ input, encoded })
       }
@@ -83,8 +85,8 @@ describe('encoded words', () => {
     each(3, (next) => {
       const input = words(next, 10, ['ascii', 'specials', 'latin', 'cjk', 'astral', 'controls'])
       const encoded = encodeWords(input, {
-        encoding: pick(next, ['Q', 'B'] as const),
-        maxLength: pick(next, [false, 40] as const),
+        wordEncoding: pick(next, ['Q', 'B'] as const),
+        wordLength: pick(next, [false, 40] as const),
       })
       const plain = /^[ -~\t]*$/.test(input) && !/=\?|\?=/.test(input)
       if (
@@ -98,10 +100,10 @@ describe('encoded words', () => {
   })
 
   test('words in another charset decode the way TextDecoder decodes them', () => {
-    const latin1: CharsetEncoder = {
+    const latin1 = {
       name: 'ISO-8859-1',
       encode: (text) => Uint8Array.from(text, (c) => c.charCodeAt(0)),
-    }
+    } satisfies CharsetEncoder
     const decoder = new TextDecoder('iso-8859-1')
     const failures: unknown[] = []
     each(4, (next) => {
@@ -111,7 +113,7 @@ describe('encoded words', () => {
       const bytes = latin1.encode(input)
       const base64 = btoa(String.fromCharCode(...bytes))
       for (const encoding of ['Q', 'B'] as const) {
-        const encoded = encodeWord(input, { charset: latin1, encoding })
+        const encoded = encodeWord(input, { charset: latin1, wordEncoding: encoding })
         if (decodeWords(encoded) !== input) failures.push({ input, encoded })
       }
       if (decodeWords(`=?iso-8859-1*en?B?${base64}?=`) !== decoder.decode(bytes))
@@ -266,14 +268,14 @@ describe('addresses', () => {
   test('parseAddresses gives back what formatAddresses formatted', () => {
     const failures: unknown[] = []
     each(11, (next) => {
-      const list: Address[] = Array.from({ length: Math.floor(next() * 4) + 1 }, () =>
+      const list = Array.from({ length: Math.floor(next() * 4) + 1 }, () =>
         next() < 0.2
           ? {
               name: randomText(next, 10, ['ascii', 'latin']) || 'g',
               group: [mailbox(next), mailbox(next)],
             }
           : mailbox(next),
-      )
+      ) satisfies Address[]
       const formatted = formatAddresses(list)
       const normal = (entry: Mailbox) => ({
         name: entry.name.trim().replace(/\s+/g, ' '),
@@ -326,9 +328,42 @@ describe('addresses', () => {
           (entry) => typeof entry.name === 'string' && typeof entry.address === 'string',
         ),
       ).toBe(true)
-      expect(parseAddresses(input, { flatten: true }).every((entry) => !('group' in entry))).toBe(
-        true,
-      )
+      expect(parseMailboxes(input).every((entry) => !('group' in entry))).toBe(true)
     })
+  })
+})
+
+describe('parseHeaders maxLength', () => {
+  const block = 'Subject: Hello\r\nTo: a@example.com'
+
+  test('accepts a block exactly maxLength long and counts no body', () => {
+    const message = `${block}\r\n\r\n${'x'.repeat(1000)}`
+    expect(MimeHeaders.parseHeaders(message, { maxLength: block.length })).toEqual([
+      { name: 'Subject', value: 'Hello' },
+      { name: 'To', value: 'a@example.com' },
+    ])
+  })
+
+  test('throws MaxLengthError for a block one code unit longer', () => {
+    let error: unknown
+    try {
+      MimeHeaders.parseHeaders(`${block}\r\n\r\nbody`, { maxLength: block.length - 1 })
+    } catch (caught) {
+      error = caught
+    }
+    expect(error).toBeInstanceOf(MimeHeaders.MaxLengthError)
+    expect((error as MimeHeaders.MaxLengthError).maxLength).toBe(block.length - 1)
+  })
+
+  test('counts a long folded field', () => {
+    const folded = `Subject: ${'a'.repeat(50)}\r\n ${'b'.repeat(50)}`
+    expect(() => MimeHeaders.parseHeaders(folded, { maxLength: 80 })).toThrow(
+      MimeHeaders.MaxLengthError,
+    )
+  })
+
+  test('rejects a negative or NaN maxLength', () => {
+    expect(() => MimeHeaders.parseHeaders(block, { maxLength: -1 })).toThrow(RangeError)
+    expect(() => MimeHeaders.parseHeaders(block, { maxLength: Number.NaN })).toThrow(RangeError)
   })
 })

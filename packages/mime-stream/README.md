@@ -43,8 +43,8 @@ const { headers, body } = await MimeStream.splitHeaders(message)
 | `new DecoderStream(options?)` | `TransformStream<Uint8Array, Chunk>`. Splits a message into chunks. Nothing is decoded: bodies are still base64 or quoted-printable. |
 | `new EncoderStream(options?)` | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes a `Uint8Array`, or a string, which it writes as UTF-8. |
 | `splitHeaders(stream, options?)` | Resolves to `{ headers, body }`: the root header block as a `Uint8Array` and the rest as a `ReadableStream<Uint8Array>`. If the input ends before an empty line, all of it is the header block. |
-| `MaxHeaderBytesError` | Thrown when a header block is longer than `maxHeaderBytes`. Stores `maxHeaderBytes`. |
-| `MaxBoundaryLineBytesError` | Thrown when a boundary line is longer than `maxBoundaryLineBytes`. Stores `maxBoundaryLineBytes`. |
+| `MaxHeaderBytesError` | Thrown when a header block is longer than `maxHeaderBytes`. Stores `maxHeaderBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
+| `MaxBoundaryLineBytesError` | Thrown when a boundary line is longer than `maxBoundaryLineBytes`. Stores `maxBoundaryLineBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
 | `MaxPartsError` | Thrown when a message has more than `maxParts` parts. Stores `maxParts`. |
 
 A `Chunk` is `{ type, part, bytes }`. Joining every chunk's `bytes` in order gives back the input.
@@ -71,13 +71,22 @@ Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line
 
 ## Options
 
+The size limits default to `Infinity`. Set `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts` when you read mail from outside your program, because without them a message can make the decoder buffer a header block or boundary line of any size, or report any number of parts. `maxHeaderBytes: 1024 * 1024`, `maxBoundaryLineBytes: 1000` and `maxParts: 1000` are enough for real mail.
+
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `embedded` | `DecoderStream` | `false` | Split the message inside a `message/rfc822` or `message/global` part into parts too, unless it is base64 or quoted-printable. Its root part's `parent` is the `message/rfc822` part. |
-| `maxHeaderBytes` | `DecoderStream`, `splitHeaders` | `1048576` | Longest header block of a part, counted with the empty line that ends it. |
-| `maxBoundaryLineBytes` | `DecoderStream` | `1000` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory. |
-| `maxParts` | `DecoderStream` | `1000` | Most parts in a message, the root and embedded messages included. |
+| `maxHeaderBytes` | `DecoderStream`, `splitHeaders` | `Infinity` | Longest header block of a part, counted with the empty line that ends it. |
+| `maxBoundaryLineBytes` | `DecoderStream` | `Infinity` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory. |
+| `maxParts` | `DecoderStream` | `Infinity` | Most parts in a message, the root and embedded messages included. |
 | `signal` | all | | When it aborts, the streams fail with `signal.reason` and cancel their source. `splitHeaders` rejects with it while it reads the header block, and fails `body` with it after. |
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `MimeStream.Chunk` | A run of bytes from the message, with its `type` and the `part` it belongs to. |
+| `MimeStream.Part` | One part of the message: the root, a part of a multipart, or the message inside a `message/rfc822` part. |
 
 ## Why use this over mailsplit
 
@@ -117,8 +126,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `.pipe(new Joiner())` | `.pipeThrough(new EncoderStream())` |
 | `{ ignoreEmbedded: true }` | the default |
 | `{ defaultInlineEmbedded: true }` | `{ embedded: true }` |
-| `{ maxHeadSize }` | `{ maxHeaderBytes }`, counted in bytes. mailsplit counts each line as at least 64 bytes. |
-| `{ maxChildNodes }` | `{ maxParts }` |
+| `{ maxHeadSize }` | `{ maxHeaderBytes }`, counted in bytes. mailsplit counts each line as at least 64 bytes. mailsplit defaults to 1 MiB and we default to no limit, so pass `maxHeaderBytes: 1024 * 1024` to keep its limit. |
+| `{ maxChildNodes }` | `{ maxParts }`. mailsplit defaults to 1000 and we default to no limit, so pass `maxParts: 1000` to keep its limit. |
 | `err.code === 'EMAXLEN'` | `instanceof MaxHeaderBytesError`, `MaxBoundaryLineBytesError` or `MaxPartsError` |
 | `data.type === 'node'` | `chunk.type === 'headers'` |
 | `data.type === 'body'` | `chunk.type === 'body'` |

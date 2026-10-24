@@ -1,7 +1,15 @@
 import { abortable } from './abortable.js'
-import { MaxBytesError, byteLength } from './bytes.js'
+import { byteLength } from './bytes.js'
+import { MaxBytesError } from './errors.js'
 import { fromIterable } from './iterable.js'
 import { type Source, assertSource, isReadableStream } from './source.js'
+
+export declare namespace concat {
+  type Options = {
+    /** Errors the output with `signal.reason` and cancels every source when aborted. */
+    signal?: AbortSignal | undefined
+  }
+}
 
 /**
  * Joins sources end to end: every chunk of the first source, then every chunk of the next.
@@ -12,21 +20,25 @@ import { type Source, assertSource, isReadableStream } from './source.js'
  * ```ts
  * import * as Streams from '@portable/streams'
  *
- * const body = Streams.concat([header], file.stream(), [footer])
+ * const body = Streams.concat([[header], file.stream(), [footer]])
  * ```
  */
-export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
+export function concat<chunk>(
+  sources: readonly Source<chunk>[],
+  options: concat.Options = {},
+): ReadableStream<chunk> {
+  if (!Array.isArray(sources as unknown)) throw new TypeError('concat takes an array of sources.')
   const streams = sources.map(toStream)
   let index = 0
-  let reader: ReadableStreamDefaultReader<T> | undefined
+  let reader: ReadableStreamDefaultReader<chunk> | undefined
   const cancelRest = (reason: unknown) =>
     Promise.all(streams.slice(index + 1).map((stream) => stream.cancel(reason).catch(() => {})))
-  return new ReadableStream<T>(
+  const output = new ReadableStream<chunk>(
     {
       async pull(controller) {
         for (; index < streams.length; index++) {
           reader ??= streams[index]!.getReader()
-          let result: ReadableStreamReadResult<T>
+          let result: ReadableStreamReadResult<chunk>
           try {
             result = await reader.read()
           } catch (error) {
@@ -48,6 +60,14 @@ export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     },
     { highWaterMark: 0 },
   )
+  return withSignal(output, options.signal)
+}
+
+export declare namespace merge {
+  type Options = {
+    /** Errors the output with `signal.reason` and cancels every source when aborted. */
+    signal?: AbortSignal | undefined
+  }
 }
 
 /**
@@ -59,10 +79,14 @@ export function concat<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
  * ```ts
  * import * as Streams from '@portable/streams'
  *
- * const events = Streams.merge(serverA.body!, serverB.body!)
+ * const events = Streams.merge([serverA.body!, serverB.body!], { signal })
  * ```
  */
-export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
+export function merge<chunk>(
+  sources: readonly Source<chunk>[],
+  options: merge.Options = {},
+): ReadableStream<chunk> {
+  if (!Array.isArray(sources as unknown)) throw new TypeError('merge takes an array of sources.')
   const readers = new Set(sources.map((source) => toStream(source).getReader()))
   const idle = new Set(readers)
   let wake: (() => void) | undefined
@@ -71,8 +95,8 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     Promise.all([...readers].map((reader) => reader.cancel(reason).catch(() => {})))
 
   const read = (
-    reader: ReadableStreamDefaultReader<T>,
-    controller: ReadableStreamDefaultController<T>,
+    reader: ReadableStreamDefaultReader<chunk>,
+    controller: ReadableStreamDefaultController<chunk>,
   ) => {
     idle.delete(reader)
     reader.read().then(
@@ -101,7 +125,7 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     )
   }
 
-  return new ReadableStream<T>(
+  const output = new ReadableStream<chunk>(
     {
       start(controller) {
         if (readers.size === 0) {
@@ -122,6 +146,16 @@ export function merge<T>(...sources: readonly Source<T>[]): ReadableStream<T> {
     },
     { highWaterMark: 0 },
   )
+  return withSignal(output, options.signal)
+}
+
+function withSignal<chunk>(
+  stream: ReadableStream<chunk>,
+  signal: AbortSignal | undefined,
+): ReadableStream<chunk> {
+  return signal
+    ? stream.pipeThrough(new TransformStream<chunk, chunk>(abortable({}, signal)))
+    : stream
 }
 
 export declare namespace limitBytes {
@@ -143,17 +177,17 @@ export declare namespace limitBytes {
  * await request.body!.pipeThrough(Streams.limitBytes(1_000_000)).pipeTo(upload)
  * ```
  */
-export function limitBytes<T extends Uint8Array | string>(
+export function limitBytes<chunk extends Uint8Array | string>(
   maxBytes: number,
   options: limitBytes.Options = {},
-): TransformStream<T, T> {
+): TransformStream<chunk, chunk> {
   let length = 0
-  return new TransformStream<T, T>(
+  return new TransformStream<chunk, chunk>(
     abortable(
       {
         transform(chunk, controller) {
           length += byteLength(chunk)
-          if (length > maxBytes) throw new MaxBytesError(maxBytes)
+          if (length > maxBytes) throw new MaxBytesError({ maxBytes })
           controller.enqueue(chunk)
         },
       },
@@ -162,7 +196,7 @@ export function limitBytes<T extends Uint8Array | string>(
   )
 }
 
-export function toStream<T>(source: Source<T>): ReadableStream<T> {
+export function toStream<chunk>(source: Source<chunk>): ReadableStream<chunk> {
   assertSource(source)
   return isReadableStream(source) ? source : fromIterable(source)
 }

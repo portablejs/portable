@@ -1,6 +1,6 @@
 # @portable/compress
 
-One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32. Built on the platform's `CompressionStream` and `DecompressionStream`, so it runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+ and ships no compression code of its own.
+One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32, built on the platform's `CompressionStream` and `DecompressionStream`, so it ships no compression code of its own. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces the one-shot use of [pako](https://www.npmjs.com/package/pako) and [fflate](https://www.npmjs.com/package/fflate), and `node:zlib`'s `gzipSync`, `gunzipSync`, `deflateSync`, `inflateSync` and `crc32`.
 
@@ -45,6 +45,12 @@ There is no compression level option and no dictionary, because `CompressionStre
 | `MaxBytesError` | The output grew past `maxBytes`. Its `maxBytes` property holds the limit. |
 
 The platform reports every failure as a `TypeError`. The error's `cause` holds it.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Compress.Format` | `'gzip'`, `'deflate'` (zlib) or `'deflate-raw'`. |
 
 ## Why use this over pako, fflate and node:zlib
 

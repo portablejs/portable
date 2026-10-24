@@ -1,9 +1,10 @@
 import type { Charset, Encoder } from './Charset.js'
+import { define } from './define.js'
 import { byteTable, unpackIndex } from './internal/tables.js'
 import { big5 as index, big5Start } from './tables/big5.js'
 
 // These code points appear twice in index Big5, and the encoder uses the last pointer.
-const useLast = [0x2550, 0x255e, 0x2561, 0x256a, 0x5341, 0x5345]
+const useLast = new Set([0x2550, 0x255e, 0x2561, 0x256a, 0x5341, 0x5345])
 
 let tables: { bmp: Uint16Array; astral: Map<number, number> } | undefined
 
@@ -19,7 +20,7 @@ function encoder(): Encoder {
     unpackIndex(index, big5Start, (pointer, codePoint) => {
       if (codePoint >= 0x10000) {
         if (!astral.has(codePoint)) astral.set(codePoint, code(pointer))
-      } else if (bmp[codePoint] === 0 || useLast.includes(codePoint)) {
+      } else if (bmp[codePoint] === 0 || useLast.has(codePoint)) {
         bmp[codePoint] = code(pointer)
       }
     })
@@ -50,4 +51,8 @@ function encoder(): Encoder {
  * Charset.encode('中文', big5) // Uint8Array [0xa4, 0xa4, 0xa4, 0xe5]
  * ```
  */
-export const big5: Charset = { name: 'Big5', maxBytes: 2, encoder }
+export const big5: Charset = /* @__PURE__ */ define({
+  name: 'Big5',
+  maxBytes: 2,
+  encoder,
+})

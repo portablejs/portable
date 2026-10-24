@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      fuzz:
+        description: Also run the fuzz tests with 10,000 runs per property
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -66,3 +71,70 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - run: pnpm vp test run --project "browser (${{ matrix.browser }})"
+
+  # The conformance tests again, inside Bun and Deno. Vitest runs on the runtime itself, so every
+  # test file runs there too. These jobs don't block yet: docs/papercuts.md lists the
+  # DecompressionStream and BroadcastChannel differences they report.
+  test-runtime:
+    name: Test (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          check-latest: true
+      - run: pnpm install --frozen-lockfile
+      - if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: pnpm test:${{ matrix.runtime }}
+
+  # The fuzz tests with 10,000 runs per property instead of 100 (`pnpm fuzz`), only when a manual
+  # run sets the fuzz input, because the repo pays for each minute. Each run uses a new seed, so a
+  # failure here can be new without any change to the code, and the job doesn't block. A failing
+  # property prints its seed and path, which FUZZ_SEED and FUZZ_PATH replay.
+  fuzz:
+    name: Fuzz
+    if: inputs.fuzz
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          check-latest: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm fuzz
+
+  # Every package bundled into one Worker and run in workerd through Miniflare. See
+  # tools/workers/src/run.ts.
+  test-workers:
+    name: Test (workerd)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          check-latest: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:workers

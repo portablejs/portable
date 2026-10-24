@@ -19,6 +19,8 @@ function makePlan(seed: number, length: number, { priorities = false, failures =
   }))
 }
 
+type Settled = { value?: unknown; error?: string | string[] | undefined }
+
 async function observe(
   schedule: (task: (item: Plan[number]) => Promise<number>) => Promise<unknown>,
 ) {
@@ -36,7 +38,7 @@ async function observe(
     if (item.fails) throw new Error(`task ${item.id}`)
     return item.id * 10
   }
-  const settled: Promise<{ value?: unknown; error?: string | string[] }> = schedule(task).then(
+  const settled = schedule(task).then<Settled, Settled>(
     (value) => ({ value }),
     (error: unknown) => ({
       error:

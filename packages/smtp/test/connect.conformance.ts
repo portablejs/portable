@@ -62,9 +62,9 @@ describe('connecting', () => {
   })
 
   test('reports a connect function that throws', async () => {
-    const connect: Smtp.Connect = () => {
+    const connect = (() => {
       throw new Error('Port out of range')
-    }
+    }) satisfies Smtp.Connect
     const error = await failure(Smtp.connect({ connect, host: 'mx.example.com', port: 999999999 }))
     expect(error.code).toBe('ECONNECTION')
     expect(error.message).toContain('999999999')

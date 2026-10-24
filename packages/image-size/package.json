@@ -1,6 +1,6 @@
 {
   "name": "@portable/image-size",
-  "description": "Image type and dimensions from header bytes or a stream, in any JavaScript runtime.",
+  "description": "Read an image's type and dimensions from its header bytes or a stream, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -36,16 +36,17 @@
     "src"
   ],
   "dependencies": {
-    "@portable/bytes": "workspace:*"
+    "@portable/bytes": "workspace:*",
+    "@portable/errors": "workspace:*"
   },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

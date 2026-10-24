@@ -2,25 +2,10 @@ import { type Canonicalizer, createCanonicalizer, type Sink } from './body.js'
 import * as Bytes from '@portable/bytes'
 import type { Canonicalization } from './header.js'
 import type { Body } from './message.js'
-
-/**
- * An incremental SHA-256, the shape of `@noble/hashes`' `sha256.create()`.
- *
- * @example
- * ```ts
- * import { sha256 } from '@noble/hashes/sha2.js'
- * import * as Dkim from '@portable/dkim'
- *
- * const hash: () => Dkim.Hash = () => sha256.create()
- * ```
- */
-export type Hash = {
-  update(data: Uint8Array): unknown
-  digest(): Uint8Array | Promise<Uint8Array>
-}
+import type { Hash, Hasher } from '@portable/web-crypto'
 
 /** `crypto.subtle.digest` takes its whole input at once, so this collects the chunks. */
-function webCryptoHash(): Hash {
+function webCryptoHash(): Hasher {
   const chunks: Uint8Array[] = []
   return {
     update(data) {
@@ -50,10 +35,10 @@ type Pass = { canonicalizer: Canonicalizer; sinks: Sink[]; total: number }
 export async function hashBody(
   body: Body,
   requests: readonly BodyHash[],
-  createHash: () => Hash = webCryptoHash,
+  createHash: (hash: Hash) => Hasher = webCryptoHash,
 ): Promise<Map<string, BodyDigest>> {
   const passes = new Map<Canonicalization, Pass>()
-  const hashes = new Map<string, { pass: Pass; hash: Hash }>()
+  const hashes = new Map<string, { pass: Pass; hash: Hasher }>()
   for (const request of requests) {
     const key = bodyHashKey(request)
     if (hashes.has(key)) continue
@@ -71,7 +56,7 @@ export async function hashBody(
       pass = created
       passes.set(request.canonicalization, pass)
     }
-    const hash = createHash()
+    const hash = createHash('SHA-256')
     hashes.set(key, { pass, hash })
     const { length = Infinity } = request
     let hashed = 0

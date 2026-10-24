@@ -10,21 +10,21 @@ import { type Column, type Row, type Table, tables } from './readme-tables.ts'
 type BenchTask = { name: string; throughput: { mean: number } }
 type BenchReport = {
   testResults: {
-    assertionResults: { fullName: string; benchmarks?: { tasks: BenchTask[] }[] }[]
+    assertionResults: { fullName: string; benchmarks?: { tasks: BenchTask[] }[] | undefined }[]
   }[]
 }
 type Machine = { node: string; cpu: string; cores: number }
 type PackageJson = {
   name: string
-  version?: string
-  types?: string
-  typings?: string
+  version?: string | undefined
+  types?: string | undefined
+  typings?: string | undefined
   exports?: unknown
-  dependencies?: Record<string, string>
+  dependencies?: Record<string, string> | undefined
 }
 
-const readJson = <T>(path: string): T | undefined =>
-  existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as T) : undefined
+const readJson = <value>(path: string): value | undefined =>
+  existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as value) : undefined
 
 const machine = readJson<Machine>('.bench/machine.json')
 const sizes = readJson<Record<string, Record<string, Size>>>('.bench/sizes.json') ?? {}
@@ -87,7 +87,10 @@ const packageJson = (dir: string) => readJson<PackageJson>(join(dir, 'package.js
 /** Every package installed with the column's imports, not counting the first one itself. */
 function dependencyCount(testDir: string, column: Column): number | undefined {
   const seen = new Set<string>()
-  const queue: [string, string][] = column.imports!.map(({ from }) => [testDir, packageName(from)])
+  const queue = column.imports!.map(({ from }) => [testDir, packageName(from)]) satisfies [
+    string,
+    string,
+  ][]
   while (queue.length) {
     const [from, name] = queue.shift()!
     const dir = findPackage(from, name)
@@ -101,7 +104,7 @@ function dependencyCount(testDir: string, column: Column): number | undefined {
 }
 
 function typesOf(testDir: string, column: Column): string {
-  const name = packageName(column.imports![0]!.from)
+  const name = packageName(column.imports![0].from)
   const dir = findPackage(testDir, name)
   if (!dir) return '–'
   const json = packageJson(dir)
@@ -117,7 +120,7 @@ function typesOf(testDir: string, column: Column): string {
 }
 
 function versionOf(testDir: string, column: Column): string {
-  const name = packageName(column.imports![0]!.from)
+  const name = packageName(column.imports![0].from)
   if (name.startsWith('@portable/')) return '–'
   const dir = findPackage(testDir, name)
   return dir ? (packageJson(dir).version ?? '–') : '–'
@@ -130,7 +133,7 @@ function statsTable(name: string, table: Table): string {
   const measured = sizes[name] ?? {}
   const cell = (column: Column, library: () => string, platform: Record<'node' | 'web', string>) =>
     column.imports ? library() : platform[column.platform ?? 'web']
-  const rows: [string, (column: Column) => string][] = [
+  const rows = [
     [
       'Minified and gzipped',
       (column) =>
@@ -175,7 +178,7 @@ function statsTable(name: string, table: Table): string {
       'Version compared',
       (column) => cell(column, () => versionOf(testDir, column), { node: '–', web: '–' }),
     ],
-  ]
+  ] satisfies [string, (column: Column) => string][]
   return [
     `| | ${table.columns.map(header).join(' | ')} |`,
     `| --- |${' --- |'.repeat(table.columns.length)}`,

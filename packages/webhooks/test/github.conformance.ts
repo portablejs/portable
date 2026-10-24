@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
-import { reasonOf, request } from './utils.js'
+import { codeOf, request } from './utils.js'
 
 const scheme = Webhooks.github
 const secret = 'mysecret'
@@ -37,20 +37,20 @@ describe('github', () => {
   })
 
   test('rejects a missing signature', async () => {
-    expect(
-      await reasonOf(Webhooks.verify({ headers: {}, body: payload }, { scheme, secret })),
-    ).toBe('missing-header')
+    expect(await codeOf(Webhooks.verify({ headers: {}, body: payload }, { scheme, secret }))).toBe(
+      'missing-header',
+    )
   })
 
   test('rejects a signature that is not sha256=<hex>', async () => {
-    expect(await reasonOf(verify('foo'))).toBe('malformed-header')
-    expect(await reasonOf(verify('sha256=zz'))).toBe('malformed-header')
-    expect(await reasonOf(verify(signature.slice(7)))).toBe('malformed-header')
-    expect(await reasonOf(verify(signature.slice(0, -2)))).toBe('malformed-header')
+    expect(await codeOf(verify('foo'))).toBe('malformed-header')
+    expect(await codeOf(verify('sha256=zz'))).toBe('malformed-header')
+    expect(await codeOf(verify(signature.slice(7)))).toBe('malformed-header')
+    expect(await codeOf(verify(signature.slice(0, -2)))).toBe('malformed-header')
   })
 
   test('rejects an incorrect secret', async () => {
-    expect(await reasonOf(verify(signature, { secret: 'foo' }))).toBe('signature')
+    expect(await codeOf(verify(signature, { secret: 'foo' }))).toBe('signature')
   })
 
   test('verifies a payload with escape sequences and multi-byte characters (octokit/webhooks.js#71)', async () => {
@@ -62,7 +62,7 @@ describe('github', () => {
     const upper = lower.replaceAll('\\u001b', '\\u001B')
     const signed = 'sha256=afecc3caa27548bb90d51a50384cb2868b9a3327b4ad6a01c9bd4ed0f8b0b12c'
     expect((await verify(signed, options, upper)).body).toBe(upper)
-    expect(await reasonOf(verify(signed, options, lower))).toBe('signature')
+    expect(await codeOf(verify(signed, options, lower))).toBe('signature')
     const escaped = 'sha256=6f8326efbacfbd04e870cea25b5652e635be8c9807f2fd5348ef60753c9e96ed'
     const body = JSON.stringify({ foo: '\\u001b' })
     expect((await verify(escaped, options, body)).body).toBe(body)
@@ -75,7 +75,7 @@ describe('github', () => {
   test('accepts the payload if any of several secrets matches', async () => {
     expect((await verify(signature, { secret: [secret, 'foo'] })).body).toBe(payload)
     expect((await verify(signature, { secret: ['foo', secret] })).body).toBe(payload)
-    expect(await reasonOf(verify(signature, { secret: ['foo', 'bar'] }))).toBe('signature')
+    expect(await codeOf(verify(signature, { secret: ['foo', 'bar'] }))).toBe('signature')
   })
 
   test('ignores the timestamp options', async () => {

@@ -409,13 +409,13 @@ mailauth queries A and AAAA together and uses the other family to decide whether
 | Should keep a syntax error before the matching term a permerror in both modes | `Syntax validation (RFC 7208 4.6) > gives permerror for "v=spf1 ip4:192.0.2.1 ip4:192.0.2.300 -all", even after the matching term` | |
 | Macro syntax errors: the reason for `%{z}` and `50%` | `Syntax validation (RFC 7208 4.6)` rows for those records | Our `reason` wording differs. |
 | Modifiers (4 tests) | `Modifiers (RFC 7208 6)`, one test each | Plus redirect beside `all`, and a redirect target without a record. |
-| Trailing dots (8 tests) | `Trailing dots (RFC 7208 7.3)`, one test each | The null MX test also covers an exchange of `''`, as `Dns.createResolver` and Node return it. |
+| Trailing dots (8 tests) | `Trailing dots (RFC 7208 7.3)`, one test each | The null MX test also covers an exchange of `''`, as `Dns.create` and Node return it. |
 | Fully qualified identities (5 tests) | `Fully qualified identities (RFC 7208 4.3)`, one test each | We don't build a Received-SPF header, so its half of the first test does not apply. |
 | PTR DNS errors (4 tests) | `PTR DNS errors (RFC 7208 5.5)`, one test each | |
 | Internationalized sender (4 tests) | `Internationalized sender (RFC 8616 4)`, one test each | We follow strict mode. The default mode's "warnings" do not apply. |
 | Should truncate names over 253 characters from the left | `Long names (RFC 7208 7.3) > truncates names over 253 characters from the left` | |
 | Should not query a name with a label over 63 characters in strict mode | `Invalid names after macro expansion (RFC 7208 4.8) > does not query a name with a label over 63 characters` | |
-| Should give permerror for an EBADNAME resolver error in the default mode | `Invalid names after macro expansion (RFC 7208 4.8) > does not match a term whose name the resolver rejects as EBADNAME` | Different on purpose: an invalid name doesn't match, as strict mode does for names it rejects itself. `Dns.createResolver` rejects names that are valid for SPF, such as `%{L}`'s `%2B`, so permerror would fail working records. |
+| Should give permerror for an EBADNAME resolver error in the default mode | `Invalid names after macro expansion (RFC 7208 4.8) > does not match a term whose name the resolver rejects as EBADNAME` | Different on purpose. When the resolver rejects a name, the term doesn't match, which is also what strict mode does when it rejects a name itself. `Dns.create` rejects names that are valid for SPF, such as `%{L}`'s `%2B`, so permerror would fail working records. |
 | Uppercase macros (4 tests) | `Uppercase macros (RFC 7208 7.3)`, one test each | "Should keep the lenient transformer handling by default" is covered by the permerror rows for `%{d0}`, `%{d2x}` and `%{dr2}`. |
 | Should split the sender at the last "@" | `Quoted local-part with "@" (RFC 5321 4.1.2) > splits the sender at the last "@"` | |
 | Client IP address: IPv4-mapped (3), not mapped (3), IPv4-compatible network | `Client IP address (RFC 7208 4.1, 5)`, one test each | Plus `%{c}` formatting. |
@@ -452,8 +452,8 @@ From mailauth's issue tracker and from reading its source. Each has a test in `c
 | [#154](https://github.com/postalsys/mailauth/issues/154): a `%{p}` lookup counted as a void lookup. | It counts toward the 10 lookups only. |
 | [#155](https://github.com/postalsys/mailauth/issues/155): the explanation was checked for US-ASCII before expansion. | It is checked after expansion. |
 | [#157](https://github.com/postalsys/mailauth/issues/157), [#158](https://github.com/postalsys/mailauth/issues/158): limit options and error text. | No limit options. Every error has a `reason` (`Spf.check > reports why the result is none, temperror or permerror`). |
-| [#87](https://github.com/postalsys/mailauth/issues/87): a Workers resolver returned TXT records with quotes. | Not ours to fix: the resolver must return each record's strings, as `Dns.createResolver` does. The test shows the strings are joined with nothing between them. |
-| [#49](https://github.com/postalsys/mailauth/issues/49): a UDP-only resolver dropped records from truncated answers. | Not ours to fix. `Dns.createResolver` uses DNS-over-HTTPS, which has no truncation. No test. |
+| [#87](https://github.com/postalsys/mailauth/issues/87): a Workers resolver returned TXT records with quotes. | Not ours to fix: the resolver must return each record's strings, as `Dns.create` does. The test shows the strings are joined with nothing between them. |
+| [#49](https://github.com/postalsys/mailauth/issues/49): a UDP-only resolver dropped records from truncated answers. | Not ours to fix. `Dns.create` uses DNS-over-HTTPS, which has no truncation. No test. |
 | mailauth returns temperror for a missing or invalid client IP. | We throw a `TypeError`, because the caller passed something that isn't an address (`Spf.check > throws a TypeError for an ip that is not an IP address`). |
 | mailauth treats a resolver's empty array as a non-void answer. | An empty array is an empty answer, so it counts as void, as `ENODATA` does (`known upstream issues > counts an empty array from the resolver as a void lookup`). |
 | mailauth's `EBADNAME` gives permerror in the default mode. | A name the resolver rejects doesn't match (`Invalid names after macro expansion`). |

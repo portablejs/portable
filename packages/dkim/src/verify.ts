@@ -1,7 +1,8 @@
 import * as Bytes from '@portable/bytes'
 import type * as Dns from '@portable/dns'
 import { toBinary } from './internal/bytes.js'
-import { bodyHashKey, type Hash, hashBody } from './internal/digest.js'
+import type { Hash, Hasher } from '@portable/web-crypto'
+import { bodyHashKey, hashBody } from './internal/digest.js'
 import { parseFields } from './internal/header.js'
 import { type Message, splitMessage } from './internal/message.js'
 import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.js'
@@ -16,7 +17,7 @@ import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.j
  * import * as Dns from '@portable/dns'
  * import * as Dkim from '@portable/dkim'
  *
- * const resolver: Dkim.Resolver = Dns.createResolver()
+ * const resolver: Dkim.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt'>
@@ -47,6 +48,8 @@ export type Result = {
   signature: string
   /** Why the result is not `pass`, such as `body hash did not verify` or `no key`. */
   reason?: string | undefined
+  /** The resolver's error behind a `temperror`. */
+  cause?: unknown
   /** The key record has `t=y`: the domain is testing DKIM, so treat a pass as unsigned mail. */
   testing: boolean
   /** The `l=` value: only this many bytes of the canonicalized body are signed. */
@@ -61,14 +64,14 @@ export declare namespace Result {
 
 export declare namespace verify {
   type Options = {
-    /** Looks up the keys. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /** The time to check `x=` against. @default new Date() */
     now?: Date | undefined
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
-    hash?: (() => Hash) | undefined
+    hasher?: ((hash: Hash) => Hasher) | undefined
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -90,14 +93,14 @@ export declare namespace verify {
  * import * as Dkim from '@portable/dkim'
  *
  * const results = await Dkim.verify(request.body!, {
- *   resolver: Dns.createResolver(),
+ *   resolver: Dns.create(),
  *   signal: AbortSignal.timeout(10_000),
  * })
  * for (const r of results) console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result[]> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hash, signal } = options
+  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
   if (typeof resolver?.resolveTxt !== 'function')
     throw new TypeError('options.resolver must have a resolveTxt method.')
   signal?.throwIfAborted()
@@ -124,7 +127,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   const digests = await hashBody(
     body,
     pending.map((signature) => signature.body),
-    hash,
+    hasher,
   ).finally(() => signal?.removeEventListener('abort', stop))
   signal?.throwIfAborted()
 
@@ -146,6 +149,7 @@ export async function verify(message: Message, options: verify.Options): Promise
             : await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
       result.result = outcome.result
       if (outcome.reason) result.reason = outcome.reason
+      if ('cause' in outcome) result.cause = outcome.cause
       return result
     }),
   )

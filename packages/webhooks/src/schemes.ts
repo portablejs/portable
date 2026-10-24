@@ -104,13 +104,15 @@ export const stripe: Scheme = {
     for (const item of required(headers, 'stripe-signature').split(',')) {
       const [key, value = ''] = item.split('=').map((part) => part.trim())
       if (key === 't') {
-        if (timestamp) throw new VerificationError('malformed-header', 'Two timestamps')
+        if (timestamp)
+          throw new VerificationError({ code: 'malformed-header', message: 'Two timestamps' })
         timestamp = seconds(value, 'stripe-signature')
       }
       const signature = key === 'v1' ? fromHex(value) : undefined
       if (signature) signatures.push(signature)
     }
-    if (!timestamp) throw new VerificationError('malformed-header', 'No timestamp')
+    if (!timestamp)
+      throw new VerificationError({ code: 'malformed-header', message: 'No timestamp' })
     return { signatures, timestamp }
   },
   payload: ({ timestamp, body }) => prefixed(`${unix(timestamp!)}.`, body),
@@ -135,7 +137,8 @@ export const github: Scheme = {
   parse(headers) {
     const header = required(headers, 'x-hub-signature-256')
     const signature = header.startsWith('sha256=') ? fromHex(header.slice(7)) : undefined
-    if (!signature) throw new VerificationError('malformed-header', 'Expected sha256=<hex>')
+    if (!signature)
+      throw new VerificationError({ code: 'malformed-header', message: 'Expected sha256=<hex>' })
     return { signatures: [signature], id: headers.get('x-github-delivery') ?? undefined }
   },
   payload: ({ body }) => body,
@@ -162,7 +165,8 @@ export const slack: Scheme = {
     const header = required(headers, 'x-slack-signature')
     const timestamp = required(headers, 'x-slack-request-timestamp')
     const signature = header.startsWith('v0=') ? fromHex(header.slice(3)) : undefined
-    if (!signature) throw new VerificationError('malformed-header', 'Expected v0=<hex>')
+    if (!signature)
+      throw new VerificationError({ code: 'malformed-header', message: 'Expected v0=<hex>' })
     return { signatures: [signature], timestamp: seconds(timestamp, 'x-slack-request-timestamp') }
   },
   payload: ({ timestamp, body }) => prefixed(`v0:${unix(timestamp!)}:`, body),

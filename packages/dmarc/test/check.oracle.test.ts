@@ -52,7 +52,7 @@ const records = [
 ]
 
 function scenario(next: () => number) {
-  const pick = <T>(list: readonly T[]): T => list[Math.floor(next() * list.length)]!
+  const pick = <value>(list: readonly value[]): value => list[Math.floor(next() * list.length)]!
   const root = pick(roots)
   const under = (base: string) => {
     const prefix = pick(prefixes)
@@ -126,7 +126,7 @@ describe('matches mailauth strict mode', () => {
 })
 
 describe('matches mailauth on From domains it normalizes', () => {
-  const zone: Zone = { '_dmarc.xn--bcher-kva.example': { TXT: ['v=DMARC1; p=reject'] } }
+  const zone = { '_dmarc.xn--bcher-kva.example': { TXT: ['v=DMARC1; p=reject'] } } satisfies Zone
   for (const from of [
     'Bücher.example',
     'mail.BÜCHER.example.',
@@ -145,10 +145,10 @@ describe('matches mailauth on From domains it normalizes', () => {
 
 describe('the organizationalDomain option with tldts matches the tree walk', () => {
   test('when every organizational domain publishes a record', async () => {
-    const zone: Zone = {
+    const zone = {
       '_dmarc.example.com': { TXT: ['v=DMARC1; p=reject; sp=quarantine'] },
       '_dmarc.example.co.uk': { TXT: ['v=DMARC1; p=quarantine'] },
-    }
+    } satisfies Zone
     const next = random(7489)
     const names = ['example.com', 'mail.example.com', 'a.b.example.com', 'example.co.uk']
     for (let i = 0; i < 50; i++) {

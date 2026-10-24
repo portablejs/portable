@@ -1,3 +1,4 @@
+import { hmac as nobleHmac } from '@noble/hashes/hmac.js'
 import { sha1 } from '@noble/hashes/legacy.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
@@ -59,7 +60,7 @@ describe('sign()', () => {
     const signed = await OAuth1.sign(new Request('https://example.com/a'), {
       consumer: { key: 'k', secret: 's' },
       nonce: 'n',
-      timestamp: new Date(1_000),
+      now: new Date(1_000),
       placement: 'query',
     })
     expect(signed.url).toMatch(
@@ -87,7 +88,7 @@ describe('RSA-SHA1', () => {
     signatureMethod: 'RSA-SHA1',
     token: { key: 'nnch734d00sl2jdk', secret: 'ignored' },
     nonce: 'kllo9940pd9333jh',
-    timestamp: new Date(1191242096_000),
+    now: new Date(1191242096_000),
   } as const
   // From node-oauth's tests. RSASSA-PKCS1-v1_5 signatures are deterministic.
   const expected =
@@ -194,21 +195,26 @@ describe('HMAC', () => {
         signatureMethod: 'HMAC-SHA256',
         consumer: { key: 'k', secret },
         nonce: 'n',
-        timestamp: new Date(1_000),
+        now: new Date(1_000),
       }),
     ).toBe(expected)
   })
 })
 
-describe('digest option', () => {
-  const nobleDigest: OAuth1.Digest = (algorithm, data) =>
-    algorithm === 'SHA-1' ? sha1(data) : sha256(data)
-  const asyncDigest: OAuth1.Digest = async (algorithm, data) => nobleDigest(algorithm, data)
+describe('hmac and digest options', () => {
+  const syncHmac = ((algorithm, key, data) =>
+    nobleHmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data)) satisfies OAuth1.Hmac
+  const asyncHmac = (async (algorithm, key, data) =>
+    syncHmac(algorithm, key, data)) satisfies OAuth1.Hmac
+  const nobleDigest = ((algorithm, data) =>
+    algorithm === 'SHA-1' ? sha1(data) : sha256(data)) satisfies OAuth1.Digest
+  const asyncDigest = (async (algorithm, data) =>
+    nobleDigest(algorithm, data)) satisfies OAuth1.Digest
   const longSecret = { key: twitter.consumer.key, secret: 'k'.repeat(100) }
 
   for (const signatureMethod of ['HMAC-SHA1', 'HMAC-SHA256'] as const)
     for (const consumer of [twitter.consumer, longSecret])
-      test(`a sync or an async @noble/hashes digest signs ${signatureMethod} as the default does, with a ${consumer.secret.length}-character secret`, async () => {
+      test(`a sync or an async @noble/hashes hmac and digest sign ${signatureMethod} as the defaults do, with a ${consumer.secret.length}-character secret`, async () => {
         const options = { ...twitter, consumer, signatureMethod, bodyHash: true }
         const json = () =>
           new Request(tweetUrl, {
@@ -217,24 +223,34 @@ describe('digest option', () => {
             headers: { 'content-type': 'application/json' },
           })
         const expected = await OAuth1.authorization(json(), options)
-        for (const digest of [nobleDigest, asyncDigest]) {
-          expect(await OAuth1.authorization(json(), { ...options, digest })).toBe(expected)
-          const signed = await OAuth1.sign(json(), { ...options, digest })
+        for (const [hmac, digest] of [
+          [syncHmac, nobleDigest],
+          [asyncHmac, asyncDigest],
+        ] as const) {
+          expect(await OAuth1.authorization(json(), { ...options, hmac, digest })).toBe(expected)
+          const signed = await OAuth1.sign(json(), { ...options, hmac, digest })
           expect(signed.headers.get('authorization')).toBe(expected)
         }
       })
 
-  test('uses a digest passed in', async () => {
+  test('uses the hmac for the signature and the digest for the body hash', async () => {
     const calls: string[] = []
-    const digest: OAuth1.Digest = (algorithm, data) => {
-      calls.push(algorithm)
+    const hmac = ((algorithm, key, data) => {
+      calls.push(`hmac ${algorithm}`)
+      return syncHmac(algorithm, key, data)
+    }) satisfies OAuth1.Hmac
+    const digest = ((algorithm, data) => {
+      calls.push(`digest ${algorithm}`)
       return nobleDigest(algorithm, data)
-    }
-    await OAuth1.authorization(new Request(tweetUrl), {
+    }) satisfies OAuth1.Digest
+    const request = new Request(tweetUrl, { method: 'POST', body: '{}' })
+    await OAuth1.authorization(request, {
       ...twitter,
       signatureMethod: 'HMAC-SHA256',
+      bodyHash: true,
+      hmac,
       digest,
     })
-    expect(calls).toContain('SHA-256')
+    expect(calls).toEqual(['digest SHA-256', 'hmac SHA-256'])
   })
 })

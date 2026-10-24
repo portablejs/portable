@@ -188,9 +188,9 @@ export const tables: Record<string, Table> = {
       { label: 'CRC-32 of 1 MB', test: 'crc32 of 1 MB', tasks: { 'node:zlib': 'node:zlib crc32' } },
     ],
   },
-  crypto: {
+  'web-crypto': {
     columns: [
-      ours('crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'derToRawEcdsa']),
+      ours('web-crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'derToRawEcdsa']),
       lib('ecdsa-sig-formatter'),
       lib('@noble/hashes', [
         { from: '@noble/hashes/sha2.js', use: ['sha256'] },
@@ -453,7 +453,7 @@ export const tables: Record<string, Table> = {
   },
   mail: {
     columns: [
-      ours('mail', ['encode', 'envelope']),
+      ours('mail', ['encodeStream', 'envelope']),
       {
         name: 'nodemailer 10.1.2',
         header: 'nodemailer',
@@ -975,9 +975,9 @@ export const tables: Record<string, Table> = {
       },
     ],
   },
-  websocket: {
+  websockets: {
     columns: [
-      ours('websocket', ['connect']),
+      ours('websockets', ['connect']),
       lib('reconnecting-websocket'),
       lib('partysocket', [{ from: 'partysocket/ws' }]),
       lib('websocket-ts', [{ from: 'websocket-ts', use: ['Websocket'] }]),
@@ -989,7 +989,7 @@ export const tables: Record<string, Table> = {
       {
         label: 'Echo 1,000 messages on the server',
         test: 'through fromSocket',
-        tasks: { '@portable/websocket': 'fromSocket' },
+        tasks: { '@portable/websockets': 'fromSocket' },
       },
     ],
   },

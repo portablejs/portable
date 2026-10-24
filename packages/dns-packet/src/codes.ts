@@ -98,17 +98,17 @@ export type OptionCode =
   | 'DEVICEID'
   | `OPTION${number}`
 
-export type Table<Name extends string> = {
-  name(value: number): Name
+export type Table<name extends string> = {
+  name(value: number): name
   value(name: string): number
 }
 
-function table<Name extends string>(
+function table<name extends string>(
   what: string,
   prefix: string,
   max: number,
   values: Record<string, number>,
-): Table<Name> {
+): Table<name> {
   const byValue = new Map<number, string>()
   const byName = new Map<string, number>()
   for (const [name, value] of Object.entries(values)) {
@@ -116,7 +116,7 @@ function table<Name extends string>(
     byName.set(name, value)
   }
   return {
-    name: (value) => (byValue.get(value) ?? `${prefix}${value}`) as Name,
+    name: (value) => (byValue.get(value) ?? `${prefix}${value}`) as name,
     value(name) {
       const known = byName.get(name) ?? byName.get(String(name).toUpperCase())
       if (known !== undefined) return known

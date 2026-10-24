@@ -73,10 +73,7 @@ describe('debounce matches lodash 4.18 debounce', () => {
           for (const seed of [1, 2, 3]) {
             const ops = schedule(seed * 7 + wait, Math.max(wait, 4), withControls)
             const a = await run((fn) => ours(Timers.debounce(fn, wait, options)), ops)
-            const b = await run(
-              (fn) => lodashDebounce(fn, wait, options) as unknown as Wrapped,
-              ops,
-            )
+            const b = await run((fn) => lodashDebounce(fn, wait, options), ops)
             expect(a).toEqual(b)
           }
         })
@@ -93,10 +90,7 @@ describe('throttle matches lodash 4.18 throttle', () => {
           for (const seed of [1, 2, 3]) {
             const ops = schedule(seed * 13 + wait, Math.max(wait, 4), withControls)
             const a = await run((fn) => ours(Timers.throttle(fn, wait, options)), ops)
-            const b = await run(
-              (fn) => lodashThrottle(fn, wait, options) as unknown as Wrapped,
-              ops,
-            )
+            const b = await run((fn) => lodashThrottle(fn, wait, options), ops)
             expect(a).toEqual(b)
           }
         })
@@ -127,14 +121,8 @@ describe('lodash.debounce and lodash.throttle 4.x', () => {
     let differences = 0
     for (const seed of [1, 2, 3]) {
       const ops = schedule(seed * 7 + 100, 100, false)
-      const fixed = await run(
-        (fn) => lodashDebounce(fn, 100, { maxWait: 10 }) as unknown as Wrapped,
-        ops,
-      )
-      const legacy = await run(
-        (fn) => legacyDebounce(fn, 100, { maxWait: 10 }) as unknown as Wrapped,
-        ops,
-      )
+      const fixed = await run((fn) => lodashDebounce(fn, 100, { maxWait: 10 }), ops)
+      const legacy = await run((fn) => legacyDebounce(fn, 100, { maxWait: 10 }), ops)
       expect(await run((fn) => ours(Timers.debounce(fn, 100, { maxWait: 10 })), ops)).toEqual(fixed)
       if (JSON.stringify(legacy) !== JSON.stringify(fixed)) differences++
     }

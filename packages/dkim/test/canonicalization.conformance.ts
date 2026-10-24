@@ -221,7 +221,7 @@ describe('line endings', () => {
       domain: 'example.com',
       selector: 's',
       privateKey: edPem,
-      signedAt: new Date(0),
+      now: new Date(0),
     })
     for (const size of [1, 2, 3, 5])
       expect(
@@ -229,7 +229,7 @@ describe('line endings', () => {
           domain: 'example.com',
           selector: 's',
           privateKey: edPem,
-          signedAt: new Date(0),
+          now: new Date(0),
         }),
       ).toBe(expected)
   })

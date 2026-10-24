@@ -101,7 +101,11 @@ function isPolicy(value: string | undefined): value is Policy {
   return value === 'none' || value === 'quarantine' || value === 'reject'
 }
 
-function pick<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T): T {
+function pick<value extends string>(
+  value: string | undefined,
+  allowed: readonly value[],
+  fallback: value,
+): value {
   return allowed.find((option) => option === value) ?? fallback
 }
 

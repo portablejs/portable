@@ -21,7 +21,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| test-dns.js: `setServers` with holes, invalid addresses and ports, `getServers` | `endpoints > rejects an empty endpoint list, a bad URL and a bad timeout` | Endpoints are URLs passed to `createResolver`. There is no `setServers`. |
+| test-dns.js: `setServers` with holes, invalid addresses and ports, `getServers` | `endpoints > rejects an empty endpoint list, a bad URL and a bad timeout` | Endpoints are URLs passed to `create`. There is no `setServers`. |
 | test-dns.js: `resolve` with a bad `rrtype` or no name | `requests > rejects a name that is not a string with a TypeError` | There is no `resolve(name, type)`. TypeScript checks the type passed to `query`. |
 | test-dns.js: `lookup` and `lookupService` argument checks | Not applicable | No `lookup` or `lookupService`: they use the hosts file and `getaddrinfo`. |
 | test-dns.js: `resolveMx('foo.onion')` is ENOTFOUND | `requests > answers ENOTFOUND for .onion names without a request (RFC 7686)` | Also checks `syscall`, `hostname` and `message`. |
@@ -39,13 +39,13 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | test-dns-resolver-max-timeout.js | `timeouts and cancellation` | There is no backoff between tries, so no `maxTimeout`. |
 | test-dns-channel-cancel.js, test-dns-channel-cancel-promise.js, test-dns-cancel-reverse-lookup.js | `timeouts and cancellation > aborting the signal rejects with its reason ...` | An `AbortSignal` per call replaces `resolver.cancel()`, and the rejection is `signal.reason`, not ECANCELLED. |
 | test-dns-multi-channel.js | `endpoints > two resolvers keep their own endpoints and fetch` | |
-| test-dns-setserver-when-querying.js | Not applicable | Endpoints can't change after `createResolver`. |
+| test-dns-setserver-when-querying.js | Not applicable | Endpoints can't change after `create`. |
 | test-dns-get-server.js, test-dns-setservers-type-check.js, test-dns-setlocaladdress.js | Not applicable | No `getServers`, `setServers` or `setLocalAddress`. Endpoint URLs are checked by `new URL`. |
 | test-dns-default-order-*.js, test-dns-set-default-order.js | Not applicable | Result order only applies to `lookup`. |
 | test-dns-lookup*.js, test-dns-lookupService*.js, test-dns-negative-zero.js | Not applicable | `lookup` and `lookupService`. |
 | test-dns-memory-error.js | Not applicable | An internal libuv error code. |
 | test-dns-perf_hooks.js | Not applicable | Node's performance timeline. |
-| test-dns-promises-exists.js | `a plain object of functions fits the Resolver type, as createResolver does` | |
+| test-dns-promises-exists.js | `a plain object of functions fits the Resolver type, as create does` | |
 
 ## Node `test/internet`
 
@@ -74,7 +74,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | `before`: detect a DNS blackhole | Not applicable | The default suite makes no network requests. |
-| exports, instance | `a plain object of functions fits the Resolver type, as createResolver does` | |
+| exports, instance | `a plain object of functions fits the Resolver type, as create does` | |
 | parallelResolution must be boolean, resolve4 parallel resolution | Not applicable | Endpoints are tried one at a time. |
 | resolve4 uses serial server resolution by default | `endpoints > tries the next endpoint after a failure and stops at the first answer` | |
 | cancel | `timeouts and cancellation` | |

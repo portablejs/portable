@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { MaxBytesError, toArray, toBytes, toJson, toText } from '@portable/streams'
+import { MaxBytesError, toArray, toBlob, toBytes, toJson, toText } from '@portable/streams'
 import { chunked, decode, delay, encode, fromChunks } from './utils.js'
 
 // Firefox has no `Request.prototype.body` and sends a ReadableStream request body as text.
@@ -616,5 +616,36 @@ describe('bl', () => {
 
   test('String appendage', async () => {
     expect(decode(await toBytes(['abcd', 'efg', 'hi', 'j']))).toBe('abcdefghij')
+  })
+})
+
+describe('toBlob', () => {
+  test('joins byte and string chunks into a Blob with the given type', async () => {
+    const blob = await toBlob(fromChunks([encode('uni'), 'corn', encode('\n')]), {
+      type: 'application/octet-stream',
+    })
+    expect(blob.type).toBe('application/octet-stream')
+    expect(await blob.text()).toBe(fixtureString)
+  })
+
+  test('reads an async iterable', async () => {
+    async function* chunks() {
+      yield encode('uni')
+      yield 'corn\n'
+    }
+    expect(await (await toBlob(chunks())).text()).toBe(fixtureString)
+  })
+
+  test('rejects with MaxBytesError past maxBytes', async () => {
+    await expect(toBlob([fixtureBytes, 'x'], { maxBytes: fixtureBytes.length })).rejects.toThrow(
+      MaxBytesError,
+    )
+    expect((await toBlob([fixtureBytes], { maxBytes: fixtureBytes.length })).size).toBe(
+      fixtureBytes.length,
+    )
+  })
+
+  test('rejects with a TypeError for a chunk that is not bytes or text', async () => {
+    await expect(toBlob([1 as unknown as string])).rejects.toThrow(TypeError)
   })
 })

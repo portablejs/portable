@@ -1,6 +1,6 @@
 {
   "name": "@portable/mime-headers",
-  "description": "Email header values: encoded-words, folding, parameters and address lists, in any JavaScript runtime.",
+  "description": "Encode, parse and format email header values: encoded-words, folding, parameters and address lists, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -37,16 +37,17 @@
   ],
   "dependencies": {
     "@portable/base64": "workspace:*",
-    "@portable/bytes": "workspace:*"
+    "@portable/bytes": "workspace:*",
+    "@portable/errors": "workspace:*"
   },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

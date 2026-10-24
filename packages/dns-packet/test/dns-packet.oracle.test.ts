@@ -147,7 +147,7 @@ function canonical(packet: DecodedPacket): unknown {
   }
 }
 
-const corpus: Packet[] = [
+const corpus = [
   { id: 1, flags: { rd: true }, questions: [{ type: 'A', name: 'example.com' }] },
   {
     id: 0xbeef,
@@ -297,7 +297,7 @@ const corpus: Packet[] = [
       { type: 'TXT', name: 'chaos.example', class: 'CH', data: ['chaos'] },
     ],
   },
-]
+] satisfies Packet[]
 
 describe('dns-packet decodes our output to the same packet', () => {
   corpus.forEach((packet, i) => {

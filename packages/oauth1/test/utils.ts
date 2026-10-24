@@ -15,12 +15,12 @@ export const twitter = {
     secret: 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE',
   },
   nonce: 'kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg',
-  timestamp: new Date(1318622958_000),
+  now: new Date(1318622958_000),
 } as const
 
 export function form(
   body: string,
-  init: { method?: string; headers?: Record<string, string> } = {},
+  init: { method?: string | undefined; headers?: Record<string, string> | undefined } = {},
 ): RequestInit {
   return {
     method: init.method ?? 'POST',

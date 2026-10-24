@@ -92,7 +92,8 @@ describe('calls', () => {
 
   test('a remote can be awaited without making a call', async () => {
     const remote = pair(alice)
-    const awaited: unknown = await (remote as unknown)
+    // oxlint-disable-next-line typescript/await-thenable -- a remote must not look like a thenable
+    const awaited: unknown = await remote
     expect(awaited).toBe(remote)
   })
 })
@@ -255,11 +256,11 @@ describe('both directions', () => {
     const controller = new AbortController()
     const bobApi = bob()
     const toBob = Rpc.connect<typeof bobApi>(Rpc.port(port1), {
-      serve: alice,
+      methods: alice,
       signal: controller.signal,
     })
     const toAlice = Rpc.connect<typeof alice>(Rpc.port(port2), {
-      serve: bobApi,
+      methods: bobApi,
       signal: controller.signal,
     })
     expect(await toAlice.hello('Bob')).toBe('Hello Bob, my name is Alice')
@@ -273,11 +274,11 @@ describe('both directions', () => {
     const controller = new AbortController()
     const main = { progress: vi.fn<(percent: number) => void>() }
     const worker = Rpc.connect<{ ready(): string }>(Rpc.port(port2), {
-      serve: main,
+      methods: main,
       signal: controller.signal,
     })
     const toMain = Rpc.connect<typeof main>(Rpc.port(port1), {
-      serve: {
+      methods: {
         async ready() {
           await toMain.progress(50)
           await toMain.progress(100)
@@ -303,7 +304,7 @@ describe('codecs', () => {
     }
     const remote = pair(
       { add: (a: number, b: number) => a + b },
-      { serve: { codec: bytes }, connect: { codec: bytes } },
+      { provide: { codec: bytes }, connect: { codec: bytes } },
     )
     expect(await remote.add(1, 2)).toBe(3)
   })
@@ -312,7 +313,7 @@ describe('codecs', () => {
     const identity = { encode: (m: Rpc.Message) => m, decode: (m: unknown) => m }
     const remote = pair(
       { inspect: (d: Date, b: Uint8Array) => ({ year: d.getUTCFullYear(), bytes: b }) },
-      { serve: { codec: identity }, connect: { codec: identity } },
+      { provide: { codec: identity }, connect: { codec: identity } },
     )
     const result = await remote.inspect(new Date('2020-01-01T00:00:00Z'), new Uint8Array([1, 2]))
     expect(result).toEqual({ year: 2020, bytes: new Uint8Array([1, 2]) })
@@ -393,9 +394,9 @@ describe('cancellation', () => {
     const { port1, port2 } = new MessageChannel()
     const server = new AbortController()
     let methodSignal: AbortSignal | undefined
-    Rpc.serve(
-      { slow: Rpc.withContext(({ signal }) => ((methodSignal = signal), new Promise(() => {}))) },
+    Rpc.provide(
       Rpc.port(port1),
+      { slow: Rpc.withContext(({ signal }) => ((methodSignal = signal), new Promise(() => {}))) },
       { signal: server.signal },
     )
     const client = new AbortController()
@@ -428,6 +429,31 @@ describe('cancellation', () => {
     const call = remote.hello('Bob')
     fail()
     await expect(call).rejects.toMatchObject({ name: 'Rpc.TransportError', cause: failure })
+  })
+
+  test('a method wrapped by another copy of the package still gets the context', async () => {
+    let methodSignal: AbortSignal | undefined
+    const method = (context: { signal: AbortSignal }) => {
+      methodSignal = context.signal
+      return 'ok'
+    }
+    const wrapped = Object.defineProperty(() => 'wrapper', Symbol.for('portable.rpc.context'), {
+      value: method,
+    })
+    const remote = pair({ wrapped })
+    expect(await remote.wrapped()).toBe('ok')
+    expect(methodSignal).toBeInstanceOf(AbortSignal)
+  })
+
+  test('Rpc.call accepts a method of a remote from another copy of the package', async () => {
+    const client = {
+      request: async (method: string, params: unknown) => [method, params],
+      notify: async () => {},
+    }
+    const method = Object.defineProperty(async () => {}, Symbol.for('portable.rpc.target'), {
+      value: { client, method: 'add' },
+    })
+    expect(await Rpc.call(method, [1, 2])).toEqual(['add', [1, 2]])
   })
 
   test('a withContext method called locally gets a signal that is not aborted', () => {

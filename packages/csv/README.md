@@ -27,7 +27,6 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 
 const body = Streams.fromIterable(users)
   .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }))
-  .pipeThrough(new TextEncoderStream())
 return new Response(body, { headers: { 'content-type': 'text/csv' } })
 ```
 
@@ -66,7 +65,7 @@ A bad option, such as a two-character delimiter, throws `RangeError`.
 
 ## Encoding
 
-`Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, string>` that emits one chunk per row, the first one with the header row. Pipe it through `TextEncoderStream` for bytes.
+`Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
 
 A row is an array of values or an object keyed by column name. Strings are written as they are, numbers, booleans and bigints with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Anything else throws `InvalidInputError`, as does an array row after object rows.
 

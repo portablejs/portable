@@ -5,7 +5,7 @@ export type Context = {
 }
 
 /** A function the queue calls when a slot is free. It can return a value or a promise. */
-export type Task<T> = (context: Context) => T | PromiseLike<T>
+export type Task<value> = (context: Context) => value | PromiseLike<value>
 
 /** A queue made by `create`. */
 export type Queue = {
@@ -14,7 +14,7 @@ export type Queue = {
    * `options.signal` or the queue's `signal` aborts, and with an `AbortError` `DOMException` when
    * `clear()` removes the task before it starts.
    */
-  add: <T>(task: Task<T>, options?: Queue.AddOptions) => Promise<T>
+  add: <value>(task: Task<value>, options?: Queue.AddOptions) => Promise<value>
   /** Resolves when no task is waiting or running. It never rejects. */
   idle: () => Promise<void>
   /** Stops starting tasks. Running tasks continue. */
@@ -73,7 +73,12 @@ type Entry = {
 
 type State = 'waiting' | 'running' | 'settled'
 
-const neverAborted = new AbortController().signal
+let never: AbortSignal | undefined
+
+// Workers refuses to create an AbortController at the top level of a module.
+function neverAborted(): AbortSignal {
+  return (never ??= new AbortController().signal)
+}
 const noop = () => {}
 const maxDelay = 2 ** 31 - 1
 
@@ -220,7 +225,7 @@ export function create(options: create.Options = {}): Queue {
     pending++
     entry.state = 'running'
     const { signal } = entry.context
-    watch(entry, signal === neverAborted ? undefined : signal)
+    watch(entry, signal === never ? undefined : signal)
     entry.begin()
   }
 
@@ -277,7 +282,7 @@ export function create(options: create.Options = {}): Queue {
   }
 
   return {
-    add<T>(task: Task<T>, addOptions: Queue.AddOptions = {}): Promise<T> {
+    add<value>(task: Task<value>, addOptions: Queue.AddOptions = {}): Promise<value> {
       const { priority = 0, signal } = addOptions
       if (typeof priority !== 'number') throw new TypeError('Expected `priority` to be a number.')
       if (Number.isNaN(priority))
@@ -295,7 +300,7 @@ export function create(options: create.Options = {}): Queue {
         begin: noop,
         promise: undefined!,
       }
-      const promise = new Promise<T>((resolve, reject) => {
+      const promise = new Promise<value>((resolve, reject) => {
         entry.resolve = resolve as (value: unknown) => void
         entry.reject = reject
       })
@@ -365,7 +370,7 @@ export function checkLimit(name: string, value: number): number {
 
 function combine(a: AbortSignal | undefined, b: AbortSignal | undefined): AbortSignal {
   if (a && b) return AbortSignal.any([a, b])
-  return a ?? b ?? neverAborted
+  return a ?? b ?? neverAborted()
 }
 
 export function isThenable(value: unknown): value is PromiseLike<unknown> {

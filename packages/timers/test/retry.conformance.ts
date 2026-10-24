@@ -172,7 +172,7 @@ describe('retryIf', () => {
         },
         {
           attempts: 3,
-          retryIf: (error, attempt) => {
+          retryIf: (error, { attempt }) => {
             seen.push([(error as Error).message, attempt])
             return true
           },
@@ -338,7 +338,7 @@ describe('delay', () => {
     const seen: unknown[][] = []
     const delays = await retryDelays({
       attempts: 4,
-      delay: (attempt, error) => {
+      delay: ({ attempt, error }) => {
         seen.push([attempt, (error as Error).message])
         return attempt * 1000
       },
@@ -369,7 +369,7 @@ describe('delay', () => {
           return 'ok'
         },
         {
-          delay: (_attempt, error) =>
+          delay: ({ error }) =>
             Number((error as HttpError).response.headers.get('retry-after')) * 1000,
         },
       ),
@@ -625,5 +625,69 @@ describe('timers', () => {
     controller.abort()
     await expect(retrying).rejects.toMatchObject({ name: 'AbortError' })
     expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
+describe('onRetry', () => {
+  test('receives each error, the attempt that threw it and the wait, only before a retry', async () => {
+    const seen: unknown[][] = []
+    const result = await settle(
+      Timers.retry(
+        ({ attempt }) => {
+          throw new Error(`attempt ${attempt}`)
+        },
+        {
+          attempts: 3,
+          delay: ({ attempt }) => attempt * 2,
+          onRetry: (error, { attempt, delay }) => {
+            seen.push([(error as Error).message, attempt, delay])
+          },
+        },
+      ),
+    )
+    expect(result).toMatchObject({ rejected: true })
+    expect(seen).toEqual([
+      ['attempt 1', 1, 2],
+      ['attempt 2', 2, 4],
+    ])
+  })
+
+  test('is not called when retryIf stops the retries', async () => {
+    let called = false
+    await settle(
+      Timers.retry(
+        () => {
+          throw fixtureError
+        },
+        { retryIf: () => false, onRetry: () => void (called = true) },
+      ),
+    )
+    expect(called).toBe(false)
+  })
+
+  test('rejects with the error it throws, and the next attempt waits for its promise', async () => {
+    const stop = new Error('stop')
+    let calls = 0
+    let waited = false
+    const result = await settle(
+      Timers.retry(
+        () => {
+          calls++
+          throw fixtureError
+        },
+        {
+          attempts: 5,
+          delay: 0,
+          onRetry: async (_, { attempt }) => {
+            await new Promise((resolve) => setTimeout(resolve, 1))
+            waited = true
+            if (attempt === 2) throw stop
+          },
+        },
+      ),
+    )
+    expect(result).toEqual({ error: stop, rejected: true })
+    expect(calls).toBe(2)
+    expect(waited).toBe(true)
   })
 })

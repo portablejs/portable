@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vite-plus/test'
 import * as Rdap from '@portable/rdap'
-import { rejection, server, services } from './utils.js'
+import { recorded, rejection, server, services } from './utils.js'
 
 const iana = 'https://data.iana.org/rdap/dns.json'
 
@@ -234,6 +234,7 @@ describe('names', () => {
     expect((error as Rdap.NotFoundError).url).toBe(
       'https://rdap.verisign.com/com/v1/domain/nonexistent-domain.com',
     )
+    expect((error as Rdap.NotFoundError).status).toBe(404)
   })
 
   test('throws a TypeError for a name that is not a string', async () => {
@@ -506,6 +507,19 @@ describe('bootstrap cache', () => {
     expect(urls.filter((url) => url === iana)).toHaveLength(2)
   })
 
+  test('checks the cache age against the now option', async () => {
+    const { fetch, urls } = server()
+    const start = new Date('2030-01-01T00:00:00Z')
+    await Rdap.domain('sidn.nl', { fetch, now: start })
+    await Rdap.domain('sidn.nl', {
+      fetch,
+      now: new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1),
+    })
+    expect(urls.filter((url) => url === iana)).toHaveLength(1)
+    await Rdap.domain('sidn.nl', { fetch, now: new Date(start.getTime() + 24 * 60 * 60 * 1000) })
+    expect(urls.filter((url) => url === iana)).toHaveLength(2)
+  })
+
   test('keeps a separate cache for each fetch function', async () => {
     const one = server()
     const two = server()
@@ -517,8 +531,10 @@ describe('bootstrap cache', () => {
   test('does not cache a failed bootstrap request', async () => {
     let fail = true
     const { fetch: inner, urls } = server()
-    const fetch = (url: string, init: RequestInit) =>
-      fail && url === iana ? Promise.resolve(new Response(null, { status: 500 })) : inner(url, init)
+    const fetch = (request: Request) =>
+      fail && request.url === iana
+        ? Promise.resolve(new Response(null, { status: 500 }))
+        : inner(request)
     const error = await rejection(Rdap.domain('sidn.nl', { fetch }))
     expect(error).toBeInstanceOf(Rdap.ResponseError)
     expect(error).toMatchObject({ status: 500, url: iana })
@@ -586,9 +602,9 @@ describe('cancellation', () => {
   test('aborting one of two lookups waiting for a bootstrap file leaves the other running', async () => {
     let release = () => {}
     const { fetch: inner, requests } = server()
-    const fetch = async (url: string, init: RequestInit) => {
-      if (url === iana) await new Promise<void>((resolve) => (release = resolve))
-      return inner(url, init)
+    const fetch = async (request: Request) => {
+      if (request.url === iana) await new Promise<void>((resolve) => (release = resolve))
+      return inner(request)
     }
     const controller = new AbortController()
     const first = Rdap.domain('sidn.nl', { fetch, signal: controller.signal })
@@ -604,6 +620,18 @@ describe('cancellation', () => {
 test('error names are namespaced by the package', () => {
   expect(new Rdap.InvalidInputError('x').name).toBe('Rdap.InvalidInputError')
   expect(new Rdap.UnsupportedError('x').name).toBe('Rdap.UnsupportedError')
-  expect(new Rdap.NotFoundError('https://x/').name).toBe('Rdap.NotFoundError')
-  expect(new Rdap.ResponseError('x', 500, 'https://x/').name).toBe('Rdap.ResponseError')
+  expect(
+    new Rdap.NotFoundError({ response: new Response(null, { status: 404 }), url: 'https://x/' })
+      .name,
+  ).toBe('Rdap.NotFoundError')
+  expect(
+    new Rdap.ResponseError({ response: new Response(null, { status: 500 }), url: 'https://x/' })
+      .name,
+  ).toBe('Rdap.ResponseError')
+})
+
+test('an empty ldhName gives the name that was looked up', async () => {
+  const registry = 'https://rdap.verisign.com/com/v1/domain/google.com'
+  const { fetch } = server({ [registry]: { ...recorded[registry], ldhName: '' } })
+  expect((await Rdap.domain('google.com', { fetch, follow: false })).name).toBe('google.com')
 })

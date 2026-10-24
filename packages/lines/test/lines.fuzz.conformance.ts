@@ -8,14 +8,10 @@ const text = fc.string({
   maxLength: 60,
 })
 
-const separators: readonly (Lines.Separator | undefined)[] = [
-  undefined,
-  '\n',
-  '\r\n',
-  '||',
-  /;|\|/,
-  unicodeLineBreak,
-]
+const separators = [undefined, '\n', '\r\n', '||', /;|\|/, unicodeLineBreak] satisfies readonly (
+  | Lines.Separator
+  | undefined
+)[]
 const separator = fc.constantFrom(...separators)
 
 function expected(input: string, options: Lines.DecoderStream.Options): string[] {

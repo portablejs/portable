@@ -1,6 +1,6 @@
 import * as Address from './address.js'
 import { ResponseError } from './errors.js'
-import { request, type Fetch } from './request.js'
+import { type Context, type Fetch, type Json, request } from './request.js'
 
 const base = 'https://data.iana.org/rdap/'
 const ttl = 24 * 60 * 60 * 1000
@@ -9,9 +9,13 @@ type Kind = 'dns' | 'ipv4' | 'ipv6' | 'asn'
 
 type Index = {
   names: Map<string, string>
-  ranges: { prefix: Address.Prefix; url: string }[]
-  numbers: { start: number; end: number; url: string }[]
+  ranges: Range[]
+  numbers: NumberRange[]
 }
+
+type Range = { prefix: Address.Prefix; url: string }
+
+type NumberRange = { start: number; end: number; url: string }
 
 type Entry = {
   expires: number
@@ -26,10 +30,10 @@ function isStrings(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
 }
 
-function index(json: Record<string, unknown>, url: string): Index {
+function index({ json, response }: Json, url: string): Index {
   const result: Index = { names: new Map(), ranges: [], numbers: [] }
   if (!Array.isArray(json.services))
-    throw new ResponseError(`${url} has no services array`, 200, url, json)
+    throw new ResponseError({ message: `${url} has no services array`, response, url, body: json })
   for (const service of json.services) {
     if (!Array.isArray(service) || !isStrings(service[0]) || !isStrings(service[1])) continue
     const urls = service[1]
@@ -53,20 +57,23 @@ function index(json: Record<string, unknown>, url: string): Index {
   return result
 }
 
-function load(kind: Kind, fetch: Fetch, signal: AbortSignal | undefined): Promise<Index> {
+function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
+  const time = now?.getTime() ?? Date.now()
   if (signal?.aborted) return Promise.reject(signal.reason)
   let entries = caches.get(fetch)
   if (!entries) caches.set(fetch, (entries = new Map()))
   let entry = entries.get(kind)
-  if (!entry || entry.expires <= Date.now()) {
+  if (!entry || entry.expires <= time) {
     const controller = new AbortController()
     const url = `${base}${kind}.json`
-    const created: Entry = {
-      expires: Date.now() + ttl,
-      index: request(url, fetch, controller.signal).then((json) => index(json, url)),
+    const created = {
+      expires: time + ttl,
+      index: request(url, { fetch, signal: controller.signal, now }).then((result) =>
+        index(result, url),
+      ),
       waiters: 0,
       controller,
-    }
+    } satisfies Entry
     const cache = entries
     created.index.catch(() => {
       if (cache.get(kind) === created) cache.delete(kind)
@@ -98,12 +105,8 @@ function wait(entry: Entry, signal: AbortSignal | undefined): Promise<Index> {
   })
 }
 
-export async function domain(
-  name: string,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
-): Promise<string | undefined> {
-  const { names } = await load('dns', fetch, signal)
+export async function domain(name: string, context: Context): Promise<string | undefined> {
+  const { names } = await load('dns', context)
   for (let suffix = name; ;) {
     const url = names.get(suffix)
     if (url) return url
@@ -113,27 +116,19 @@ export async function domain(
   }
 }
 
-export async function ip(
-  prefix: Address.Prefix,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
-): Promise<string | undefined> {
-  const { ranges } = await load(prefix.version === 4 ? 'ipv4' : 'ipv6', fetch, signal)
+export async function ip(prefix: Address.Prefix, context: Context): Promise<string | undefined> {
+  const { ranges } = await load(prefix.address.version === 4 ? 'ipv4' : 'ipv6', context)
   let best: (typeof ranges)[number] | undefined
   for (const range of ranges)
     if (
-      (!best || range.prefix.length > best.prefix.length) &&
+      (!best || range.prefix.prefix > best.prefix.prefix) &&
       Address.contains(range.prefix, prefix)
     )
       best = range
   return best?.url
 }
 
-export async function asn(
-  number: number,
-  fetch: Fetch,
-  signal: AbortSignal | undefined,
-): Promise<string | undefined> {
-  const { numbers } = await load('asn', fetch, signal)
+export async function asn(number: number, context: Context): Promise<string | undefined> {
+  const { numbers } = await load('asn', context)
   return numbers.find(({ start, end }) => number >= start && number <= end)?.url
 }

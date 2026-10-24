@@ -3,12 +3,13 @@ import type { Params } from './types.js'
 
 type Target = { client: Pick<Client, 'request' | 'notify'>; method: string }
 
-const targets = new WeakMap<object, Target>()
+const targetKey = Symbol.for('portable.rpc.target')
 
 export function remote(client: Target['client'], method = ''): any {
   const children = new Map<string, unknown>()
   const proxy = new Proxy(function () {}, {
     get(_, key) {
+      if (key === targetKey) return { client, method }
       if (typeof key !== 'string' || key === 'then') return undefined
       let child = children.get(key)
       if (!child) children.set(key, (child = remote(client, method ? `${method}.${key}` : key)))
@@ -18,12 +19,14 @@ export function remote(client: Target['client'], method = ''): any {
       return client.request(method, args)
     },
   })
-  targets.set(proxy, { client, method })
   return proxy
 }
 
 function target(method: unknown): Target {
-  const found = typeof method === 'function' ? targets.get(method) : undefined
+  const found =
+    typeof method === 'function'
+      ? (method as { [targetKey]?: Target | undefined })[targetKey]
+      : undefined
   if (!found) throw new TypeError('Expected a method of a remote from connect or http.')
   return found
 }

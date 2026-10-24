@@ -19,12 +19,12 @@ export declare namespace map {
  * const records = body.pipeThrough(new Lines.DecoderStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
  * ```
  */
-export function map<I, O>(
-  fn: (chunk: I, index: number) => O | PromiseLike<O>,
+export function map<input, output>(
+  fn: (chunk: input, index: number) => output | PromiseLike<output>,
   options: map.Options = {},
-): TransformStream<I, O> {
+): TransformStream<input, output> {
   let index = 0
-  return new TransformStream<I, O>(
+  return new TransformStream<input, output>(
     abortable(
       {
         transform(chunk, controller) {
@@ -56,20 +56,20 @@ export declare namespace filter {
  * lines.pipeThrough(Streams.filter((line) => line !== ''))
  * ```
  */
-export function filter<T, S extends T>(
-  fn: (chunk: T, index: number) => chunk is S,
+export function filter<chunk, state extends chunk>(
+  fn: (chunk: chunk, index: number) => chunk is state,
   options?: filter.Options,
-): TransformStream<T, S>
-export function filter<T>(
-  fn: (chunk: T, index: number) => boolean | PromiseLike<boolean>,
+): TransformStream<chunk, state>
+export function filter<chunk>(
+  fn: (chunk: chunk, index: number) => boolean | PromiseLike<boolean>,
   options?: filter.Options,
-): TransformStream<T, T>
-export function filter<T>(
-  fn: (chunk: T, index: number) => boolean | PromiseLike<boolean>,
+): TransformStream<chunk, chunk>
+export function filter<chunk>(
+  fn: (chunk: chunk, index: number) => boolean | PromiseLike<boolean>,
   options: filter.Options = {},
-): TransformStream<T, T> {
+): TransformStream<chunk, chunk> {
   let index = 0
-  return new TransformStream<T, T>(
+  return new TransformStream<chunk, chunk>(
     abortable(
       {
         transform(chunk, controller) {
@@ -107,12 +107,12 @@ export declare namespace tap {
  * body.pipeThrough(Streams.tap((chunk) => { received += chunk.byteLength }))
  * ```
  */
-export function tap<T>(
-  fn: (chunk: T, index: number) => void | PromiseLike<void>,
+export function tap<chunk>(
+  fn: (chunk: chunk, index: number) => void | PromiseLike<void>,
   options: tap.Options = {},
-): TransformStream<T, T> {
+): TransformStream<chunk, chunk> {
   let index = 0
-  return new TransformStream<T, T>(
+  return new TransformStream<chunk, chunk>(
     abortable(
       {
         transform(chunk, controller) {
@@ -144,11 +144,14 @@ export declare namespace batch {
  * await rows.pipeThrough(Streams.batch(500)).pipeTo(new WritableStream({ write: insertMany }))
  * ```
  */
-export function batch<T>(size: number, options: batch.Options = {}): TransformStream<T, T[]> {
+export function batch<chunk>(
+  size: number,
+  options: batch.Options = {},
+): TransformStream<chunk, chunk[]> {
   if (!Number.isInteger(size) || size < 1)
     throw new RangeError(`batch size must be a positive integer, got ${size}.`)
-  let items: T[] = []
-  return new TransformStream<T, T[]>(
+  let items: chunk[] = []
+  return new TransformStream<chunk, chunk[]>(
     abortable(
       {
         transform(chunk, controller) {

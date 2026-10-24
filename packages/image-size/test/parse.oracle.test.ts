@@ -11,7 +11,7 @@ const upstreamBugs: Record<string, ImageSize.Size> = {
 
 function viaUpstream(bytes: Uint8Array): unknown {
   // image-size also returns TIFF's `compression` tag, which isn't part of its documented result.
-  const { compression: _, ...size } = upstream(bytes) as { compression?: number }
+  const { compression: _, ...size } = upstream(bytes) as { compression?: number | undefined }
   return size
 }
 

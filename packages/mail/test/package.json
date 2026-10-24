@@ -5,10 +5,13 @@
   "devDependencies": {
     "@portable/base64": "workspace:*",
     "@portable/charset": "workspace:*",
+    "@portable/fuzz": "workspace:*",
     "@portable/mail": "workspace:*",
+    "@portable/mime-headers": "workspace:*",
     "@portable/quoted-printable": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "nodemailer": "^10.1.2",
     "postal-mime": "^4.0.7"
   }

@@ -12,8 +12,10 @@ import {
 } from '@portable/streams'
 import { collect, decode, delay, encode, fromChunks } from './utils.js'
 
-const through = <I, O>(chunks: readonly I[], pair: ReadableWritablePair<O, I>) =>
-  collect(fromChunks(chunks).pipeThrough(pair))
+const through = <input, output>(
+  chunks: readonly input[],
+  pair: ReadableWritablePair<output, input>,
+) => collect(fromChunks(chunks).pipeThrough(pair))
 
 const double = () =>
   transform(async function* (source: AsyncIterable<string>) {

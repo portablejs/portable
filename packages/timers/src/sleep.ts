@@ -1,7 +1,7 @@
 const maxTimeout = 2 ** 31 - 1
 
 type Scheduler = {
-  wait?: (ms: number, options?: { signal?: AbortSignal }) => Promise<void>
+  wait?: ((ms: number, options?: { signal?: AbortSignal | undefined }) => Promise<void>) | undefined
 }
 
 export declare namespace sleep {
@@ -56,7 +56,7 @@ function wait(ms: number, signal: AbortSignal | undefined): Promise<void> {
   })
 }
 
-export function abortable<T>(promise: PromiseLike<T>, signal: AbortSignal): Promise<T> {
+export function abortable<value>(promise: PromiseLike<value>, signal: AbortSignal): Promise<value> {
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(signal.reason)
     promise.then(

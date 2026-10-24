@@ -53,17 +53,17 @@ describe('matches node:net isIP', () => {
   test('on valid addresses in every spelling', () => {
     for (const address of addresses)
       for (const text of spellings(address))
-        expect([text, Ip.validate(text)]).toEqual([text, isIP(text) !== 0])
+        expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
   })
 
   test('on random text', () => {
     for (const text of garbage.filter((text) => !/%.*:/.test(text)))
-      expect([text, Ip.validate(text)]).toEqual([text, isIP(text) !== 0])
+      expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
   })
 
   test('except that a zone may not contain a colon', () => {
     expect(isIP('fe80::1%a:b')).toBe(6)
-    expect(Ip.validate('fe80::1%a:b')).toBe(false)
+    expect(Ip.canParse('fe80::1%a:b')).toBe(false)
   })
 
   test('on known edge cases', () => {
@@ -84,7 +84,7 @@ describe('matches node:net isIP', () => {
       '::ffff:255.255.255.255',
       '::ffff:256.0.0.0',
     ]
-    for (const text of cases) expect([text, Ip.validate(text)]).toEqual([text, isIP(text) !== 0])
+    for (const text of cases) expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
   })
 })
 

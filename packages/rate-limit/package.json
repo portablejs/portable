@@ -1,6 +1,6 @@
 {
   "name": "@portable/rate-limit",
-  "description": "GCRA rate limiting with a pluggable store, in any JavaScript runtime.",
+  "description": "Rate-limit requests with GCRA and a pluggable store, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -33,12 +33,12 @@
   ],
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

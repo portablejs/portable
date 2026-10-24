@@ -1,4 +1,4 @@
-import type * as Dns from '@portable/dns'
+import * as Dns from '@portable/dns'
 import type * as Spf from '@portable/spf'
 import { canExist, parseDomain } from './domain.js'
 import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './record.js'
@@ -15,7 +15,7 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
  * import * as Dns from '@portable/dns'
  * import * as Dmarc from '@portable/dmarc'
  *
- * const resolver: Dmarc.Resolver = Dns.createResolver()
+ * const resolver: Dmarc.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>
@@ -54,6 +54,11 @@ export type Result = {
   dkim: readonly Alignment[]
   /** Why the result is `none`, `temperror` or `permerror`. */
   reason?: string | undefined
+  /**
+   * The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one
+   * lookup failed.
+   */
+  cause?: unknown
 }
 
 export declare namespace Result {
@@ -96,7 +101,7 @@ export declare namespace check {
   }
 
   type Options = {
-    /** Answers the DNS lookups. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /**
      * Returns the organizational domain of a domain from a public suffix list, as tldts'
@@ -120,11 +125,18 @@ type Found = Parsed & { domain: string }
 
 type Walk = { found: Found[]; error?: TempError | undefined }
 
+// oxlint-disable-next-line portable/error-kind -- never leaves this module, and its message becomes the verdict's reason
 class TempError extends Error {
   override name = 'Dmarc.TempError'
 }
 
-const emptyCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
+function failure(errors: readonly TempError[]): { reason: string; cause?: unknown } {
+  const reason = errors.map((error) => error.message).join('; ')
+  const causes = errors.flatMap((error) => (error.cause === undefined ? [] : [error.cause]))
+  if (causes.length === 0) return { reason }
+  return { reason, cause: causes.length === 1 ? causes[0] : new AggregateError(causes, reason) }
+}
+
 const maxWalkLabels = 7
 const maxAlignmentWalks = 10
 
@@ -140,7 +152,7 @@ const maxAlignmentWalks = 10
  * import * as Dns from '@portable/dns'
  * import * as Spf from '@portable/spf'
  *
- * const resolver = Dns.createResolver()
+ * const resolver = Dns.create()
  * const spf = await Spf.check({ ip, sender, helo }, { resolver })
  * const dmarc = await Dmarc.check(
  *   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'mail.example.com' }] },
@@ -166,12 +178,12 @@ export async function check(input: check.Input, options: check.Options): Promise
     return { ...base, result: 'none', reason: 'The From domain is an address literal' }
   }
 
-  const ctx: Context = {
+  const ctx = {
     resolver: options.resolver,
     signal: options.signal,
     records: new Map(),
     walks: new Map(),
-  }
+  } satisfies Context
   const psl = options.organizationalDomain
   const orgDomain = psl
     ? async (name: string) => identifier(psl(name) ?? name)
@@ -186,7 +198,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     found = psl ? await discoverByList(ctx, author.name, psl) : await discover(ctx, author.name)
   } catch (error) {
     if (!(error instanceof TempError)) throw error
-    return { ...base, result: 'temperror', reason: error.message }
+    return { ...base, result: 'temperror', ...failure([error]) }
   }
   if (!found) return { ...base, result: 'none', reason: 'No DMARC record' }
   const { record } = found
@@ -270,11 +282,11 @@ export async function check(input: check.Input, options: check.Options): Promise
     record,
     ...(spf && { spf }),
     dkim,
-    ...(result === 'temperror' && { reason: errors[0]!.message }),
+    ...(result === 'temperror' && failure(errors)),
   }
 }
 
-const strength: { [P in Policy]: number } = { none: 0, quarantine: 1, reject: 2 }
+const strength: { [params in Policy]: number } = { none: 0, quarantine: 1, reject: 2 }
 
 function identifier(value: string): string {
   const parsed = parseDomain(value)
@@ -372,23 +384,28 @@ async function exists(ctx: Context, domain: string): Promise<boolean> {
   return 'value' in cname && cname.value.length > 0
 }
 
-async function query<T>(
+async function query<value>(
   ctx: Context,
   what: string,
-  run: () => Promise<T>,
-): Promise<{ value: T } | { empty: string }> {
+  run: () => Promise<value>,
+): Promise<{ value: value } | { empty: string }> {
   try {
     return { value: await abortable(Promise.resolve().then(run), ctx.signal) }
   } catch (error) {
     if (error instanceof TempError || ctx.signal?.aborted) throw error
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
-    if (typeof code === 'string' && emptyCodes.has(code)) return { empty: code }
-    throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`)
+    if (Dns.isNotFound(error)) return { empty: code as string }
+    throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`, {
+      cause: error,
+    })
   }
 }
 
-function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+function abortable<value>(
+  promise: Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return promise
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {

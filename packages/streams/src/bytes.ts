@@ -1,28 +1,3 @@
-/**
- * Thrown when a stream has more bytes than `maxBytes` allows.
- *
- * @example
- * ```ts
- * import * as Streams from '@portable/streams'
- *
- * const response = await fetch('https://example.com/upload')
- * try {
- *   await Streams.toBytes(response.body!, { maxBytes: 1_000_000 })
- * } catch (error) {
- *   if (error instanceof Streams.MaxBytesError) console.log(`larger than ${error.maxBytes} bytes`)
- * }
- * ```
- */
-export class MaxBytesError extends Error {
-  override name = 'Streams.MaxBytesError'
-  /** The limit that was exceeded. */
-  readonly maxBytes: number
-  constructor(maxBytes: number) {
-    super(`Stream exceeded maxBytes of ${maxBytes}.`)
-    this.maxBytes = maxBytes
-  }
-}
-
 const encoder = new TextEncoder()
 
 export function toUint8Array(chunk: unknown): Uint8Array {

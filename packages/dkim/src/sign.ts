@@ -1,12 +1,13 @@
 import * as Base64 from '@portable/base64'
 import { fromBinary, toBinary } from './internal/bytes.js'
-import { bodyHashKey, type BodyHash, type Hash, hashBody } from './internal/digest.js'
+import type { Hash, Hasher } from '@portable/web-crypto'
+import { bodyHashKey, type BodyHash, hashBody } from './internal/digest.js'
 import { InvalidInputError } from './errors.js'
 import { type Canonicalization, parseFields, signedData } from './internal/header.js'
 import { importPrivateKey, keyType } from './internal/keys.js'
 import { type Message, splitMessage } from './internal/message.js'
 import {
-  fitsDns,
+  canFitDns,
   isDomainName,
   isLocalPart,
   isSameOrSubdomain,
@@ -51,11 +52,11 @@ export declare namespace sign {
     /** The agent or user identifier (`i=`), such as `user@example.com` or `@mail.example.com`. */
     identity?: string | undefined
     /** The signature time (`t=`). @default new Date() */
-    signedAt?: Date | undefined
-    /** The expiry (`x=`). It must be after `signedAt`. */
+    now?: Date | undefined
+    /** The expiry (`x=`). It must be after `now`. */
     expiresAt?: Date | undefined
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
-    hash?: (() => Hash) | undefined
+    hasher?: ((hash: Hash) => Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -92,24 +93,24 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const {
     headers = defaultHeaders,
     canonicalization = 'relaxed/relaxed',
-    signedAt = new Date(),
+    now = new Date(),
     expiresAt,
-    hash,
+    hasher,
     signal,
   } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
-  if (!fitsDns(`${selector}._domainkey.${domain}`))
+  if (!canFitDns(`${selector}._domainkey.${domain}`))
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
   if (!canonicalizations.has(canonicalization))
     throw new RangeError(`canonicalization must be one of ${[...canonicalizations].join(', ')}.`)
   const names = checkHeaders(headers)
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain)
-  const timestamp = seconds('signedAt', signedAt)
+  const timestamp = seconds('now', now)
   const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', expiresAt)
   if (expiration !== undefined && expiration <= timestamp)
-    throw new RangeError('expiresAt must be at least a second after signedAt.')
+    throw new RangeError('expiresAt must be at least a second after now.')
   signal?.throwIfAborted()
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
@@ -127,10 +128,10 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     await split.body.cancel()
     throw new InvalidInputError('The message has no From field to sign.')
   }
-  const request: BodyHash = { canonicalization: bodyCanonicalization }
+  const request = { canonicalization: bodyCanonicalization } satisfies BodyHash
   const cancel = () => void split.body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
-  const digests = await hashBody(split.body, [request], hash).finally(() =>
+  const digests = await hashBody(split.body, [request], hasher).finally(() =>
     signal?.removeEventListener('abort', cancel),
   )
   signal?.throwIfAborted()

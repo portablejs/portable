@@ -1,6 +1,6 @@
 {
   "name": "@portable/dns",
-  "description": "DNS lookups over DNS-over-HTTPS, behind a resolver interface that node:dns/promises also fits, in any JavaScript runtime.",
+  "description": "Look up DNS records over DNS-over-HTTPS, behind a resolver interface that node:dns/promises also fits, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -32,17 +32,20 @@
     "src"
   ],
   "dependencies": {
+    "@portable/base64": "workspace:*",
     "@portable/dns-packet": "workspace:*",
+    "@portable/errors": "workspace:*",
+    "@portable/idna": "workspace:*",
     "@portable/ip": "workspace:*"
   },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

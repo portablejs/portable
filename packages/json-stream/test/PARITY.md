@@ -75,7 +75,7 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | simple, simple reader read | P `@worker-tools/json-stream > emits each element read one at a time` | The default path there is `$.*` and ours is `$`, so the test passes `$[*]`. |
 | read all | P `@worker-tools/json-stream > emits every value with $..*, children before parents` | |
 | promise value I–IV, read only until first value (eager, lazy, lazy II), lazy promise map, lazy promise map x2, two streams, two generators, boxy selector, from file/fetch, promise/streams/iterations throws without data source, stream remains open when only promises left | skipped | `JSONParseNexus` passes one input to several lazy consumers. Use one `DecoderStream` with several `paths` and route matches by `path`. |
-| json-fetch.test.ts (9 tests) | E `@worker-tools/json-stream > produces a Response body any JSON parser can read`, P `@worker-tools/json-stream > reads a body built by encodeStream` | `JSONStreamRequest`/`JSONStreamResponse` are `new Response(encodeStream(value).pipeThrough(new TextEncoderStream()))`. "GET with body throws" tests `Request`, not JSON. |
+| json-fetch.test.ts (9 tests) | E `@worker-tools/json-stream > produces a Response body any JSON parser can read`, P `@worker-tools/json-stream > reads a body built by encodeStream` | `JSONStreamRequest`/`JSONStreamResponse` are `new Response(encodeStream(value))`. "GET with body throws" tests `Request`, not JSON. |
 | json-path.test.ts exists | skipped | Export check. |
 | json-path `*` | P `stream-json > picks values at a given depth` | |
 | json-path `..`, `.. with follow-up` | P `@worker-tools/json-stream > matches .. at any depth and only at the named key` | |

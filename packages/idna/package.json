@@ -33,14 +33,22 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/errors": "workspace:*"
+  },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
+    },
+    "./internal": {
+      "src": "./src/exports/internal.ts",
+      "types": "./dist/exports/internal.d.ts",
+      "default": "./dist/exports/internal.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

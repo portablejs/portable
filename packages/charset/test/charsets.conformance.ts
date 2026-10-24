@@ -19,7 +19,7 @@ type Case = {
 }
 
 // From iconv-lite's cyrillic, greek and turkish tests. The bytes are written as Latin-1 text.
-const singleByteCases: Case[] = [
+const singleByteCases = [
   {
     name: 'windows-1251',
     labels: ['win1251', 'Windows-1251', 'windows1251', 'CP1251', '1251'],
@@ -126,7 +126,7 @@ const singleByteCases: Case[] = [
     },
     unmappable: '',
   },
-]
+] satisfies Case[]
 
 describe('single-byte charsets', () => {
   for (const { name, labels, strings, unmappable } of singleByteCases) {

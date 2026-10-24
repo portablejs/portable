@@ -1,6 +1,6 @@
 {
   "name": "@portable/bytes",
-  "description": "Hex, concatenation and comparison for Uint8Array, in any JavaScript runtime.",
+  "description": "Convert Uint8Array to and from hex, and concatenate and compare byte arrays, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -32,14 +32,22 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/errors": "workspace:*"
+  },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
+    },
+    "./internal": {
+      "src": "./src/exports/internal.ts",
+      "types": "./dist/exports/internal.d.ts",
+      "default": "./dist/exports/internal.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

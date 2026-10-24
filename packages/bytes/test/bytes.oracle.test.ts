@@ -10,7 +10,7 @@ import * as Bytes from '@portable/bytes'
 import { fromHexFallback, toHexFallback } from '../src/hex.js'
 import { atOffset, randomBytes } from './utils.js'
 
-const fail = <T>(fn: () => T): T | 'error' => {
+const fail = <value>(fn: () => value): value | 'error' => {
   try {
     return fn()
   } catch {

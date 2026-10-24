@@ -69,8 +69,8 @@ describe('encode', () => {
     expect(encode('abc', { omitPadding: true })).toBe('YWJj')
   })
 
-  test('joins lines with lineEnding', () => {
-    expect(encode('abcdef', { lineLength: 4, lineEnding: '\n' })).toBe('YWJj\nZGVm')
+  test('joins lines with newline', () => {
+    expect(encode('abcdef', { lineLength: 4, newline: '\n' })).toBe('YWJj\nZGVm')
   })
 
   test('adds no line ending when the output fills the last line exactly', () => {
@@ -83,6 +83,12 @@ describe('encode', () => {
 })
 
 describe('decode', () => {
+  test('returns bytes that crypto.subtle and Blob accept as a BufferSource', async () => {
+    const digest = await crypto.subtle.digest('SHA-256', decode('YQ=='))
+    expect(digest.byteLength).toBe(32)
+    expect(new Blob([decode('YQ==')]).size).toBe(1)
+  })
+
   test("skips ASCII whitespace anywhere in 'loose' mode", () => {
     expect(text(decode(' Y\tW\nJ\fj\rZA = = '))).toBe('abcd')
   })
@@ -139,22 +145,22 @@ describe('EncoderStream', () => {
     expect(await encodeStream(chunked(data, [1, 7, 64]), options)).toBe(encode(data, options))
   })
 
-  test('joins lines with lineEnding across chunks', async () => {
+  test('joins lines with newline across chunks', async () => {
     const data = randomBytes(500, 4)
-    const options = { lineLength: 10, lineEnding: '\n' } as const
+    const options = { lineLength: 10, newline: '\n' } as const
     expect(await encodeStream(chunked(data, 1), options)).toBe(encode(data, options))
   })
 
   test('wraps large chunks at any line length and line ending', async () => {
     const data = randomBytes(5000, 6)
     for (const lineLength of [1, 4, 7, 76, 1000])
-      for (const lineEnding of ['\r\n', '\n', '<>', ' é '])
+      for (const newline of ['\r\n', '\n', '<>', ' é '])
         for (const omitPadding of [false, true]) {
-          const options = { lineLength, lineEnding, omitPadding }
+          const options = { lineLength, newline, omitPadding }
           const expected = referenceWrap(
             referenceEncode(data).replace(/=+$/, omitPadding ? '' : '$&'),
             lineLength,
-            lineEnding,
+            newline,
           )
           expect(await encodeStream(chunked(data, [700, 1001, 650]), options)).toBe(expected)
           expect(encode(data, options)).toBe(expected)
@@ -215,13 +221,13 @@ describe('DecoderStream', () => {
 })
 
 type Native = {
-  toBase64?: (this: Uint8Array, options: object) => string
-  fromBase64?: (text: string, options: object) => Uint8Array
+  toBase64?: ((this: Uint8Array, options: object) => string) | undefined
+  fromBase64?: ((text: string, options: object) => Uint8Array) | undefined
 }
-const native: Native = {
+const native = {
   toBase64: Reflect.get(Uint8Array.prototype, 'toBase64'),
   fromBase64: Reflect.get(Uint8Array, 'fromBase64'),
-}
+} satisfies Native
 
 describe.runIf(native.toBase64 && native.fromBase64)('fallback matches the native API', () => {
   test('encodes like Uint8Array.prototype.toBase64', () => {

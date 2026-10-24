@@ -6,8 +6,8 @@ import {
   type Content,
   type TransferEncoding,
   chooseTextEncoding,
-  encodeStream,
-  encodeSync,
+  encodeBody,
+  encodeBodyStream,
   isContent,
 } from './body.js'
 import { InvalidInputError } from './errors.js'
@@ -83,7 +83,7 @@ export type Message = {
   readonly sender?: Addresses | undefined
   readonly to?: Addresses | undefined
   readonly cc?: Addresses | undefined
-  /** Read by `envelope`. `encode` leaves the header out unless `keepBcc` is set. */
+  /** Read by `envelope`. `encodeStream` leaves the header out unless `keepBcc` is set. */
   readonly bcc?: Addresses | undefined
   readonly replyTo?: Addresses | undefined
   readonly inReplyTo?: string | undefined
@@ -91,7 +91,7 @@ export type Message = {
   readonly subject?: string | undefined
   /** `Message-ID`, with or without angle brackets. @default a random id at the `From` domain */
   readonly messageId?: string | undefined
-  /** @default the time `encode` is called */
+  /** @default the time `encodeStream` is called */
   readonly date?: Date | string | undefined
   /** Plain text body. */
   readonly text?: Content | undefined
@@ -106,7 +106,7 @@ export type Message = {
   readonly headers?: HeaderFields | undefined
 }
 
-export declare namespace encode {
+export declare namespace encodeStream {
   type Options = {
     /**
      * Start of every multipart boundary. Each boundary is this prefix followed by the number of
@@ -126,6 +126,8 @@ export declare namespace encode {
      * @default false
      */
     keepBcc?: boolean | undefined
+    /** Errors the result with `signal.reason` and cancels every content stream not yet read. */
+    signal?: AbortSignal | undefined
   }
 }
 
@@ -167,7 +169,7 @@ type Context = {
  * `cid` go into `multipart/related` beside the HTML, and other attachments into
  * `multipart/mixed`. Blob and stream content is read as the result is read.
  *
- * `encode` throws on mistakes in the message before it reads any content. A content stream that
+ * `encodeStream` throws on mistakes in the message before it reads any content. A content stream that
  * fails errors the result, and cancelling the result cancels every content stream not yet read to
  * the end.
  *
@@ -175,7 +177,7 @@ type Context = {
  * ```ts
  * import * as Mail from '@portable/mail'
  *
- * const raw = Mail.encode({
+ * const raw = Mail.encodeStream({
  *   from: 'Mari <mari@example.com>',
  *   to: 'jaan@example.com',
  *   subject: 'Tere',
@@ -194,15 +196,18 @@ type Context = {
  * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
  * stream is locked or given twice.
  */
-export function encode(message: Message, options: encode.Options = {}): ReadableStream<Uint8Array> {
-  const context: Context = {
+export function encodeStream(
+  message: Message,
+  options: encodeStream.Options = {},
+): ReadableStream<Uint8Array> {
+  const context = {
     charset: options.charset,
     prefix: checkBoundary(options.boundary ?? `=_${randomHex(8)}_`),
     streams: new Set(),
     id: 0,
     reader: undefined,
     cancelled: false,
-  }
+  } satisfies Context
   let root: Node
   let fields: string[]
   try {
@@ -220,7 +225,7 @@ export function encode(message: Message, options: encode.Options = {}): Readable
     'MIME-Version: 1.0',
     root.contentType,
   ].join('\r\n')
-  return output(write(root, head, context), context)
+  return output(write(root, head, context), context, options.signal)
 }
 
 const reserved = new Set([
@@ -263,7 +268,7 @@ function text(value: string, charset: MimeHeaders.CharsetEncoder | undefined): s
   // oxlint-disable-next-line no-control-regex
   const control = /[\x00-\x08\x0b-\x1f\x7f]/.test(line)
   if (!control && MimeHeaders.encodeWords(line) === line) return line
-  return MimeHeaders.encodeWord(line, { charset, encoding: wordEncoding(line), maxLength: 52 })
+  return MimeHeaders.encodeWord(line, { charset, wordEncoding: wordEncoding(line), wordLength: 52 })
 }
 
 // oxlint-disable-next-line no-control-regex
@@ -376,7 +381,7 @@ function contentType(value: string, drop?: string): MimeHeaders.Value {
 /** The `name` parameter, for clients that ignore `filename`, as an encoded word if needed. */
 function nameParam(filename: string, charset: MimeHeaders.CharsetEncoder | undefined): string {
   if (/[^\x20-\x7e]|"|=\?/.test(filename))
-    return `"${MimeHeaders.encodeWord(filename, { charset, encoding: wordEncoding(filename), maxLength: 52 })}"`
+    return `"${MimeHeaders.encodeWord(filename, { charset, wordEncoding: wordEncoding(filename), wordLength: 52 })}"`
   return /[\s'\\;:/=(),<>@[\]?]|^-/.test(filename)
     ? `"${filename.replace(/["\\]/g, '\\$&')}"`
     : filename
@@ -390,8 +395,8 @@ function leaf(
   extra: {
     headers?: HeaderFields | undefined
     cid?: string | undefined
-    disposition?: string
-    computed?: boolean
+    disposition?: string | undefined
+    computed?: boolean | undefined
   },
 ): Leaf {
   context.id++
@@ -575,7 +580,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
     const content = current.content
     if (content === undefined || content === '') return
     if (typeof content === 'string' || content instanceof Uint8Array) {
-      const encoded = encodeSync(content, current.body)
+      const encoded = encodeBody(content, current.body)
       if (typeof encoded === 'string') {
         pending += encoded
         if (encoded.length > 0) last = encoded.charCodeAt(encoded.length - 1)
@@ -592,7 +597,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
       context.streams.delete(content)
       source = content
     } else source = content.stream()
-    const reader = encodeStream(source, current.body).getReader()
+    const reader = encodeBodyStream(source, current.body).getReader()
     context.reader = reader
     try {
       if (pending !== '') yield encoder.encode(pending)
@@ -601,19 +606,9 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
         const { done, value } = await reader.read()
         if (context.cancelled) throw new Error('cancelled')
         if (done) return
-        if (typeof value === 'string') {
-          if (value.length === 0) continue
-          pending += value
-          last = value.charCodeAt(value.length - 1)
-          if (pending.length < 65536) continue
-          yield encoder.encode(pending)
-          pending = ''
-        } else if (value.length > 0) {
-          if (pending !== '') yield encoder.encode(pending)
-          pending = ''
-          yield value
-          last = value[value.length - 1]!
-        }
+        if (value.length === 0) continue
+        yield value
+        last = value[value.length - 1]!
       }
     } finally {
       context.reader = undefined
@@ -626,29 +621,51 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
   if (pending !== '') yield encoder.encode(pending)
 }
 
-function output(chunks: AsyncGenerator<Uint8Array>, context: Context): ReadableStream<Uint8Array> {
+function output(
+  chunks: AsyncGenerator<Uint8Array>,
+  context: Context,
+  signal: AbortSignal | undefined,
+): ReadableStream<Uint8Array> {
   const release = (reason: unknown) =>
     Promise.all([...context.streams].map((stream) => stream.cancel(reason).catch(() => {})))
+  const stop = (reason: unknown) => {
+    context.cancelled = true
+    signal?.removeEventListener('abort', onAbort)
+    return Promise.all([
+      context.reader?.cancel(reason).catch(() => {}),
+      release(reason),
+      chunks.return(undefined).catch(() => {}),
+    ])
+  }
+  let onAbort = () => {}
   return new ReadableStream({
+    start(controller) {
+      if (!signal) return
+      onAbort = () => {
+        controller.error(signal.reason)
+        void stop(signal.reason)
+      }
+      if (signal.aborted) onAbort()
+      else signal.addEventListener('abort', onAbort, { once: true })
+    },
     async pull(controller) {
       let result: IteratorResult<Uint8Array>
       try {
         result = await chunks.next()
       } catch (error) {
         if (context.cancelled) return
+        signal?.removeEventListener('abort', onAbort)
         await release(error)
         throw error
       }
-      if (result.done) controller.close()
-      else controller.enqueue(result.value)
+      if (context.cancelled) return
+      if (result.done) {
+        signal?.removeEventListener('abort', onAbort)
+        controller.close()
+      } else controller.enqueue(result.value)
     },
     async cancel(reason) {
-      context.cancelled = true
-      await Promise.all([
-        context.reader?.cancel(reason).catch(() => {}),
-        release(reason),
-        chunks.return(undefined).catch(() => {}),
-      ])
+      await stop(reason)
     },
   })
 }

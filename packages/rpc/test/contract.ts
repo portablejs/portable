@@ -6,14 +6,14 @@ export declare namespace communicationContract {
   type Options = {
     codec?: 'json' | 'identity' | undefined
     /** The API the test page serves back to the remote. */
-    serve: ParentApi
+    methods: ParentApi
     signal: AbortSignal
   }
   /** Starts the remote side, serving `fixtures/methods.ts`, and connects to it. */
   type Setup = (options: Options) => Promise<Rpc.Remote<Methods>>
 }
 
-const parentApi: ParentApi = { add: (a, b) => a + b, getChannel: () => '' }
+const parentApi = { add: (a, b) => a + b, getChannel: () => '' } satisfies ParentApi
 
 const waitFor = async (check: () => Promise<boolean>) => {
   for (let i = 0; i < 100 && !(await check()); i++)
@@ -23,10 +23,10 @@ const waitFor = async (check: () => Promise<boolean>) => {
 
 /** The penpal communication and method call lifecycle contracts, for one kind of remote. */
 export function communicationContract(name: string, setup: communicationContract.Setup): void {
-  async function connect(options: { codec?: 'json' | 'identity' } = {}) {
+  async function connect(options: { codec?: 'json' | 'identity' | undefined } = {}) {
     const controller = new AbortController()
     onTestFinished(() => controller.abort())
-    const remote = await setup({ ...options, serve: parentApi, signal: controller.signal })
+    const remote = await setup({ ...options, methods: parentApi, signal: controller.signal })
     return { remote, controller }
   }
 

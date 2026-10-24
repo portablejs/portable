@@ -3,7 +3,7 @@ import { spf } from 'mailauth/lib/spf/index.js'
 import { expect, test } from 'vite-plus/test'
 import { mailauthResolver, type Zone, zoneResolver } from './utils.js'
 
-const zone: Zone = {
+const zone = {
   'example.test': {
     TXT: ['v=spf1 include:_spf.provider.test include:_spf.esp.test mx a:relay.example.test ~all'],
     MX: [{ priority: 10, exchange: 'mx.example.test' }],
@@ -23,7 +23,7 @@ const zone: Zone = {
   },
   '_spf.esp.test': { TXT: ['v=spf1 exists:%{ir}._ip.%{d}.esp.test ip4:198.51.100.0/24 -all'] },
   '7.100.51.198._ip._spf.esp.test.esp.test': { A: ['127.0.0.2'] },
-}
+} satisfies Zone
 
 const input = { ip: '198.51.100.7', sender: 'user@example.test', helo: 'mail.example.test' }
 

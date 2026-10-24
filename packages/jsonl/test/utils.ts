@@ -7,9 +7,9 @@ export const lineSeparator: string = String.fromCharCode(0x2028)
 export const encodeUtf8 = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 /** Splits text or bytes into chunks of `size`, the way a network read might. */
-export function chunked<T extends string | Uint8Array>(input: T, size: number): T[] {
-  const chunks: T[] = []
-  for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as T)
+export function chunked<value extends string | Uint8Array>(input: value, size: number): value[] {
+  const chunks: value[] = []
+  for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as value)
   return chunks
 }
 
@@ -57,13 +57,17 @@ export function decode(
 }
 
 export async function encode(values: readonly unknown[]): Promise<string> {
-  return (await toArray(fromIterable(values).pipeThrough(new EncoderStream()))).join('')
+  return (
+    await toArray(
+      fromIterable(values).pipeThrough(new EncoderStream()).pipeThrough(new TextDecoderStream()),
+    )
+  ).join('')
 }
 
 /** A stream that yields `values` one per pull, then closes. */
-export function streamOf<T>(values: readonly T[]): ReadableStream<T> {
+export function streamOf<chunk>(values: readonly chunk[]): ReadableStream<chunk> {
   let i = 0
-  return new ReadableStream<T>({
+  return new ReadableStream<chunk>({
     pull(controller) {
       if (i < values.length) controller.enqueue(values[i++]!)
       else controller.close()

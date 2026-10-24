@@ -49,14 +49,14 @@ function randomValue(seed: number, depth = 0): unknown {
 }
 
 describe('DecoderStream matches JSONStream', () => {
-  const cases: [string, string, string, string | unknown[]][] = [
+  const cases = [
     ['all_npm rows', allNpm, '$.rows[*]', 'rows.*'],
     ['all_npm revs at any depth', allNpm, '$.rows..rev', 'rows..rev'],
     ['all_npm keys', allNpm, '$.rows[*].key', ['rows', true, 'key']],
     ['depth values', depth, '$.docs..value', ['docs', { recurse: true }, 'value']],
     ['header_footer rows', headerFooter, '$.rows[*]', ['rows', /\d+/]],
     ['header_footer foo', headerFooter, '$.foo.bar', 'foo.bar'],
-  ]
+  ] satisfies [string, string, string, string | unknown[]][]
   for (const [name, text, path, upstreamPath] of cases) {
     for (const seed of [1, 2, 3]) {
       test(`${name}, random chunking ${seed}`, async () => {

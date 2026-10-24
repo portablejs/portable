@@ -6,7 +6,7 @@ const distinct = (values: Iterable<unknown>) => new Set(values).size
 
 describe('int', () => {
   test('returns an integer within the range, both ends included', () => {
-    const ranges: [number, number][] = [
+    const ranges = [
       [0, 1],
       [0, 2],
       [0, 10],
@@ -18,7 +18,7 @@ describe('int', () => {
       [-(2 ** 52), 2 ** 52 - 1],
       [0, Number.MAX_SAFE_INTEGER],
       [-Number.MAX_SAFE_INTEGER, 0],
-    ]
+    ] satisfies [number, number][]
     for (const [min, max] of ranges) {
       for (let i = 0; i < 200; i++) {
         const value = Random.int(min, max)
@@ -124,7 +124,7 @@ const alphabets = {
 
 // Every character of an alphabet of size n shows up in 640n draws, except with probability below 1e-256.
 const charactersUsed = (alphabet: string) =>
-  distinct(Random.string(Array.from(alphabet).length * 640, alphabet))
+  distinct(Random.string(Array.from(alphabet).length * 640, { alphabet }))
 
 describe('string', () => {
   test('defaults to 64 URL-safe characters', () => {
@@ -145,24 +145,26 @@ describe('string', () => {
 
   for (const [name, { alphabet, pattern }] of Object.entries(alphabets)) {
     test(`uses only and every character of the ${name} alphabet`, () => {
-      expect(Random.string(0, alphabet)).toBe('')
-      expect(Random.string(10, alphabet)).toHaveLength(10)
-      expect(Random.string(100, alphabet)).toMatch(pattern)
+      expect(Random.string(0, { alphabet })).toBe('')
+      expect(Random.string(10, { alphabet })).toHaveLength(10)
+      expect(Random.string(100, { alphabet })).toMatch(pattern)
       expect(charactersUsed(alphabet)).toBe(alphabet.length)
     })
   }
 
   test('excludes the space from printable ASCII', () => {
-    expect(Random.string(10000, alphabets['ascii-printable'].alphabet)).not.toContain(' ')
+    expect(Random.string(10000, { alphabet: alphabets['ascii-printable'].alphabet })).not.toContain(
+      ' ',
+    )
   })
 
   test('repeats a one-character alphabet', () => {
-    expect(Random.string(10, 'a')).toBe('aaaaaaaaaa')
-    expect(Random.string(5, 'a')).toBe('aaaaa')
+    expect(Random.string(10, { alphabet: 'a' })).toBe('aaaaaaaaaa')
+    expect(Random.string(5, { alphabet: 'a' })).toBe('aaaaa')
   })
 
   test('picks whole characters outside the Basic Multilingual Plane', () => {
-    const id = Random.string(100, '😀🎉')
+    const id = Random.string(100, { alphabet: '😀🎉' })
     expect(Array.from(id)).toHaveLength(100)
     expect(id).toMatch(/^[🎉😀]*$/u)
     expect(charactersUsed('😀🎉')).toBe(2)
@@ -170,7 +172,7 @@ describe('string', () => {
 
   test('picks multi-byte characters', () => {
     for (let i = 0; i < 100; i++) {
-      const id = Random.string(10, 'абвгд')
+      const id = Random.string(10, { alphabet: 'абвгд' })
       expect(id).toHaveLength(10)
       expect(id).toMatch(/^[абвгд]*$/)
     }
@@ -179,7 +181,7 @@ describe('string', () => {
   test('picks from alphabets bigger than 256 and 65536 characters', () => {
     for (const size of [32768, 32769, 40000, 65535, 65536, 70000]) {
       const alphabet = Array.from({ length: size }, (_, i) => String.fromCodePoint(i + 0x10000))
-      const id = Array.from(Random.string(40000, alphabet.join('')))
+      const id = Array.from(Random.string(40000, { alphabet: alphabet.join('') }))
       expect(id).toHaveLength(40000)
       expect(id.every((character) => character.codePointAt(0)! >= 0x10000)).toBe(true)
       expect(id.filter((character) => character === alphabet[0]).length).toBeLessThan(50)
@@ -191,14 +193,14 @@ describe('string', () => {
     const alphabet = Array.from({ length: size }, (_, i) => String.fromCodePoint(i + 0x10000)).join(
       '',
     )
-    const id = Array.from(Random.string(100000, alphabet))
+    const id = Array.from(Random.string(100000, { alphabet }))
     const firstThird = id.filter((c) => c.codePointAt(0)! - 0x10000 < size / 3).length
     expect(Math.abs(firstThird / id.length - 1 / 3)).toBeLessThan(0.01)
   })
 
   test('has no runs left by unfilled entropy in long strings', () => {
     for (const { alphabet } of Object.values(alphabets))
-      expect(Random.string(300000, alphabet)).not.toMatch(/(.)\1{63}/)
+      expect(Random.string(300000, { alphabet })).not.toMatch(/(.)\1{63}/)
   })
 
   test('returns a different string on each call', () => {
@@ -220,8 +222,8 @@ describe('string', () => {
   })
 
   test('throws a RangeError for an empty alphabet', () => {
-    expect(() => Random.string(0, '')).toThrow(RangeError)
-    expect(() => Random.string(10, '')).toThrow(RangeError)
+    expect(() => Random.string(0, { alphabet: '' })).toThrow(RangeError)
+    expect(() => Random.string(10, { alphabet: '' })).toThrow(RangeError)
   })
 
   test('recovers when crypto.getRandomValues throws', () => {
@@ -313,7 +315,7 @@ describe('seeded', () => {
         random.int(0, Number.MAX_SAFE_INTEGER),
         random.float(),
         random.string(21),
-        random.string(8, '0123456789'),
+        random.string(8, { alphabet: '0123456789' }),
         random.shuffle([1, 2, 3, 4, 5, 6, 7, 8]),
         random.pick(['a', 'b', 'c', 'd', 'e']),
         Array.from(random.bytes(7)),
@@ -348,7 +350,7 @@ describe('seeded', () => {
       random.int(-(2 ** 40), 2 ** 40),
       random.float(),
       random.string(21),
-      random.string(6, '0123456789'),
+      random.string(6, { alphabet: '0123456789' }),
       random.shuffle(['a', 'b', 'c', 'd', 'e']),
       random.pick([10, 20, 30]),
       Array.from(random.bytes(6)),
@@ -384,11 +386,11 @@ describe('seeded', () => {
     const random = Random.seeded(1)
     expect(() => random.int(2, 1)).toThrow(RangeError)
     expect(() => random.string(-1)).toThrow(RangeError)
-    expect(() => random.string(1, '')).toThrow(RangeError)
+    expect(() => random.string(1, { alphabet: '' })).toThrow(RangeError)
     expect(() => random.pick([])).toThrow(RangeError)
     expect(() => random.bytes(1.5)).toThrow(RangeError)
     expect(random.string(0)).toBe('')
-    expect(random.string(5, 'a')).toBe('aaaaa')
+    expect(random.string(5, { alphabet: 'a' })).toBe('aaaaa')
     expect(random.int(3, 3)).toBe(3)
   })
 

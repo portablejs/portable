@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `fromHex` for input of odd length or with a character that isn't a hex digit.
  *
@@ -12,6 +13,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Bytes.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Bytes.InvalidInputError'
 }

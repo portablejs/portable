@@ -1,4 +1,5 @@
 import { errorOnAbort } from './signal.js'
+import { MaxLengthError } from './errors.js'
 
 /** An event read from a stream, as `EventSource` would dispatch it. */
 export type Event = {
@@ -93,30 +94,6 @@ export function decode(input: Uint8Array | string, options: decode.Options = {})
   return events
 }
 
-/**
- * Thrown when a line or an event's `data` grows past `maxLength`.
- *
- * @example
- * ```ts
- * import * as Sse from '@portable/sse'
- *
- * try {
- *   Sse.decode(`data: ${'x'.repeat(2000)}\n\n`, { maxLength: 1000 })
- * } catch (error) {
- *   if (error instanceof Sse.MaxLengthError) console.log(`longer than ${error.maxLength}`)
- * }
- * ```
- */
-export class MaxLengthError extends Error {
-  override name = 'Sse.MaxLengthError'
-  /** The limit that was exceeded. */
-  readonly maxLength: number
-  constructor(maxLength: number) {
-    super(`Event stream line or data exceeded maxLength of ${maxLength}.`)
-    this.maxLength = maxLength
-  }
-}
-
 export type Parser = {
   push(chunk: Uint8Array | string): void
   /** Discards an unfinished line or event, as at the end of a stream. */
@@ -162,12 +139,12 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
       data = value
       hasData = true
     }
-    if (data.length > maxLength) throw new MaxLengthError(maxLength)
+    if (data.length > maxLength) throw new MaxLengthError({ maxLength })
   }
 
   const line = (text: string, start: number, end: number) => {
     if (start === end) return dispatch()
-    if (end - start > maxLength) throw new MaxLengthError(maxLength)
+    if (end - start > maxLength) throw new MaxLengthError({ maxLength })
     const first = text.charCodeAt(start)
     if (first === COLON) return
     if (
@@ -244,7 +221,7 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
     const rest = from === 0 ? text : text.slice(from)
     pending.push(rest)
     pendingLength += rest.length
-    if (pendingLength > maxLength) throw new MaxLengthError(maxLength)
+    if (pendingLength > maxLength) throw new MaxLengthError({ maxLength })
   }
 
   return {

@@ -75,7 +75,7 @@ function wire(served: object) {
   })
   const controller = new AbortController()
   onTestFinished(() => controller.abort())
-  Rpc.serve(served, { readable, writable }, { signal: controller.signal })
+  Rpc.provide({ readable, writable }, served, { signal: controller.signal })
   return async (text: string): Promise<string[]> => {
     const start = written.length
     input.enqueue(text)
@@ -122,7 +122,7 @@ const request = (method: string, params?: unknown, id: unknown = 1) =>
 const notification = (method: string, params?: unknown) =>
   JSON.stringify({ jsonrpc: '2.0', method, params })
 
-const jsonValues: readonly [string, unknown][] = [
+const jsonValues = [
   ['null', null],
   ['true', true],
   ['false', false],
@@ -135,10 +135,10 @@ const jsonValues: readonly [string, unknown][] = [
   ['a nested array', [1, [2, [null, 'x']]]],
   ['an empty object', {}],
   ['a nested object', { a: { b: [true, { c: 'd' }] }, 'key with space': 1 }],
-]
+] satisfies readonly [string, unknown][]
 
 describe('server sends the same bytes as JSONRPCServer', () => {
-  const cases: readonly [string, string][] = [
+  const cases = [
     ['positional params', request('add', [1, 2])],
     ['params by name', request('subtract', { minuend: 42, subtrahend: 23 })],
     ['no params', request('nothing')],
@@ -181,7 +181,7 @@ describe('server sends the same bytes as JSONRPCServer', () => {
       `a result of ${name}`,
       request('echo', [value]),
     ]),
-  ]
+  ] satisfies readonly [string, string][]
   for (const [name, text] of cases) {
     test(`${name}`, async () => {
       expect(await ours(wire(api), text)).toEqual(sends(await viaUpstream(text)))
@@ -199,12 +199,7 @@ describe('server sends the same bytes as JSONRPCServer', () => {
 describe('server follows the spec where JSONRPCServer does not', () => {
   const answer = (body: string, id = '1') => `{"jsonrpc":"2.0","id":${id},${body}}`
   const invalid = answer('"error":{"code":-32600,"message":"Invalid Request"}', 'null')
-  const cases: readonly {
-    name: string
-    text: string
-    upstream: string | undefined
-    ours: string | undefined
-  }[] = [
+  const cases = [
     {
       name: 'a batch of one request answers an array',
       text: `[${request('add', [1, 2])}]`,
@@ -319,7 +314,12 @@ describe('server follows the spec where JSONRPCServer does not', () => {
       upstream: undefined,
       ours: undefined,
     },
-  ]
+  ] satisfies readonly {
+    name: string
+    text: string
+    upstream: string | undefined
+    ours: string | undefined
+  }[]
   for (const { name, text, upstream: expectedUpstream, ours: expected } of cases) {
     test(`${name}`, async () => {
       expect(await viaUpstream(text)).toBe(expectedUpstream)
@@ -406,7 +406,7 @@ function randomMessages(seed: number): string {
       case 5:
         return { jsonrpc: '2.0', id: id(), method: pick(['missing', 'toString', 'math.sub']) }
       case 6: {
-        const params: unknown[] = [int(1000), string()]
+        const params = Array.of<unknown>(int(1000), string())
         if (next() < 0.5) params.push(pick([0, false, 'd', { a: [1] }]))
         return { jsonrpc: '2.0', id: id(), method: 'fail', params }
       }
@@ -521,8 +521,8 @@ describe('client sends the same bytes as JSONRPCClient', () => {
   test('a batch over HTTP', async () => {
     const bodies: string[] = []
     const remote = Rpc.http<Api>('https://rpc.test/', {
-      fetch: async (input, init) => {
-        bodies.push(await new Request(input, init).text())
+      fetch: async (request) => {
+        bodies.push(await request.text())
         return new Response(null, { status: 204 })
       },
     })
@@ -564,8 +564,8 @@ function toUpstream() {
 function httpToUpstream() {
   const bodies: string[] = []
   const remote = Rpc.http<Api>('https://rpc.test/', {
-    fetch: async (input, init) => {
-      const body = await new Request(input, init).text()
+    fetch: async (request) => {
+      const body = await request.text()
       bodies.push(body)
       const response = await upstream.receiveJSON(body)
       return response === null ? new Response(null, { status: 204 }) : Response.json(response)
@@ -667,25 +667,25 @@ describe('JSONRPCClient against our server', () => {
   function overTransport() {
     let input!: ReadableStreamDefaultController<unknown>
     const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
-    const client: JSONRPCClient = new JSONRPCClient((payload) => {
+    const client = new JSONRPCClient((payload) => {
       input.enqueue(JSON.stringify(payload))
-    })
+    }) satisfies JSONRPCClient
     const writable = new WritableStream<unknown>({
       write: (text) => client.receive(JSON.parse(text as string)),
     })
     const controller = new AbortController()
     onTestFinished(() => controller.abort())
-    Rpc.serve(api, { readable, writable }, { signal: controller.signal })
+    Rpc.provide({ readable, writable }, api, { signal: controller.signal })
     return client
   }
 
   function overHttp() {
-    const client: JSONRPCClient = new JSONRPCClient(async (payload) => {
+    const client = new JSONRPCClient(async (payload) => {
       const response = await handle(
         new Request('https://rpc.test/', { method: 'POST', body: JSON.stringify(payload) }),
       )
       if (response.status === 200) client.receive(await response.json())
-    })
+    }) satisfies JSONRPCClient
     return client
   }
 
@@ -768,8 +768,8 @@ describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
   for (let seed = 0; seed < 40; seed++) {
     test(`seed ${seed}`, async () => {
       const remote = Rpc.http<typeof streaming>('https://rpc.test/', {
-        fetch: async (input, init) => {
-          const response = await handleStreaming(new Request(input, init))
+        fetch: async (request) => {
+          const response = await handleStreaming(request)
           expect(response.headers.get('content-type')).toMatch(/^application\/x-ndjson/)
           const chunks = randomChunks(await response.bytes(), seed)
           const body = new ReadableStream<Uint8Array>({

@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown for text that isn't an IP address or CIDR block in the strict notation `parse` and
  * `parseCidr` accept, and by `fromBytes` for a length other than 4 or 16.
@@ -13,6 +14,6 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Ip.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Ip.InvalidInputError'
 }

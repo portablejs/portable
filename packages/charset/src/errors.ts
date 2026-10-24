@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown by `load` when it doesn't know the label or can't encode its charset, and by `encode`
  * and `EncoderStream` when `unmappable` is `'error'` and the text has a character the charset
@@ -15,6 +16,6 @@
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'Charset.UnsupportedError'
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'Charset.UnsupportedError'
 }

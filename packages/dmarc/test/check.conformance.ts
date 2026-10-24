@@ -72,7 +72,11 @@ describe('Dmarc.check', () => {
     })
     expect(
       await check({ '_dmarc.example.com': { TXT: 'ETIMEOUT' } }, { from: 'example.com' }),
-    ).toMatchObject({ result: 'temperror', reason: expect.stringContaining('ETIMEOUT') })
+    ).toMatchObject({
+      result: 'temperror',
+      reason: expect.stringContaining('ETIMEOUT'),
+      cause: expect.objectContaining({ code: 'ETIMEOUT' }),
+    })
     expect(await check({}, { from: 'bad domain.test' })).toMatchObject({
       result: 'permerror',
       reason: expect.any(String),
@@ -158,7 +162,7 @@ describe('dmarc-verify-test.js', () => {
     })
 
     test('temperror on a DNS failure', async () => {
-      const zone: Zone = { '_dmarc.example.com': { TXT: 'ETIMEOUT' } }
+      const zone = { '_dmarc.example.com': { TXT: 'ETIMEOUT' } } satisfies Zone
       const result = await check(zone, { from: 'example.com' })
       expect(result.result).toBe('temperror')
       expect(result.reason).toContain('ETIMEOUT')
@@ -179,7 +183,9 @@ describe('dmarc-verify-test.js', () => {
     })
 
     test('joins the strings of a split TXT record', async () => {
-      const zone: Zone = { '_dmarc.example.com': { TXT: [['v=DMARC1; p=rej', 'ect; pct=100']] } }
+      const zone = {
+        '_dmarc.example.com': { TXT: [['v=DMARC1; p=rej', 'ect; pct=100']] },
+      } satisfies Zone
       const result = await check(zone, { from: 'example.com', dkim: [pass('example.com')] })
       expect(result).toMatchObject({ result: 'pass', policy: 'reject' })
       expect(result.record?.text).toBe('v=DMARC1; p=reject; pct=100')
@@ -313,6 +319,11 @@ describe('dmarc-verify-test.js', () => {
         'v=DMARC1; p=reject; pct=100',
       )
     })
+
+    test('record.text drops trailing whitespace', async () => {
+      const zone = withRecord('v=DMARC1; p=none; ')
+      expect((await check(zone, { from: 'example.com' })).record?.text).toBe('v=DMARC1; p=none;')
+    })
   })
 
   describe('Reported identifiers', () => {
@@ -348,19 +359,39 @@ describe('dmarc-verify-test.js', () => {
 
 describe('dmarc-fixes-test.js', () => {
   test('F4: an identifier with no common parent fails when the author walk fails', async () => {
-    const zone: Zone = { ...reject, '_dmarc.com': { TXT: 'ESERVFAIL' } }
+    const zone = { ...reject, '_dmarc.com': { TXT: 'ESERVFAIL' } } satisfies Zone
     const result = await check(zone, { from: 'example.com', spf: pass('other.net') })
     expect(result.result).toBe('fail')
     expect(result.reason).toBeUndefined()
   })
 
   test('F4: an identifier that could align gives temperror when the author walk fails', async () => {
-    const zone: Zone = { ...reject, '_dmarc.com': { TXT: 'ESERVFAIL' } }
+    const zone = { ...reject, '_dmarc.com': { TXT: 'ESERVFAIL' } } satisfies Zone
     for (const domain of ['sub.example.com', 'other.com']) {
       const result = await check(zone, { from: 'example.com', spf: pass(domain) })
       expect(result).toMatchObject({ result: 'temperror', disposition: 'none' })
       expect(result.reason).toContain('_dmarc.com')
     }
+  })
+
+  test('keeps every failed lookup behind a temperror in an AggregateError', async () => {
+    const zone = {
+      ...reject,
+      '_dmarc.sub.example.com': { TXT: 'ESERVFAIL' },
+      '_dmarc.other.example.com': { TXT: 'ETIMEOUT' },
+    } satisfies Zone
+    const result = await check(zone, {
+      from: 'example.com',
+      dkim: [pass('sub.example.com'), pass('other.example.com')],
+    })
+    expect(result.result).toBe('temperror')
+    expect(result.cause).toBeInstanceOf(AggregateError)
+    expect((result.cause as AggregateError).errors).toMatchObject([
+      { code: 'ESERVFAIL' },
+      { code: 'ETIMEOUT' },
+    ])
+    expect(result.reason).toContain('ESERVFAIL')
+    expect(result.reason).toContain('ETIMEOUT')
   })
 
   test('F5: an identifier past the limit of 10 tree walks gives temperror, not fail', async () => {
@@ -455,13 +486,13 @@ describe('get-dmarc-record-test.js', () => {
 
     test('no record for ENOTFOUND, ENODATA, EBADNAME or an empty answer', async () => {
       for (const TXT of ['ENOTFOUND', 'ENODATA', 'EBADNAME', []]) {
-        const zone: Zone = { '_dmarc.example.com': { TXT }, '_dmarc.com': { TXT } }
+        const zone = { '_dmarc.example.com': { TXT }, '_dmarc.com': { TXT } } satisfies Zone
         expect((await check(zone, { from: 'example.com' })).result).toBe('none')
       }
     })
 
     test('temperror for a DNS server error', async () => {
-      const zone: Zone = { '_dmarc.example.com': { TXT: 'ETIMEOUT' } }
+      const zone = { '_dmarc.example.com': { TXT: 'ETIMEOUT' } } satisfies Zone
       expect((await check(zone, { from: 'example.com' })).result).toBe('temperror')
     })
   })
@@ -551,16 +582,16 @@ describe('get-dmarc-record-test.js', () => {
     })
 
     test('discards several DMARC records', async () => {
-      const zone: Zone = {
+      const zone = {
         '_dmarc.example.com': { TXT: ['v=DMARC1; p=reject', 'v=DMARC1; p=none'] },
-      }
+      } satisfies Zone
       expect((await check(zone, { from: 'example.com' })).result).toBe('none')
     })
 
     test('picks the DMARC record among other TXT records', async () => {
-      const zone: Zone = {
+      const zone = {
         '_dmarc.example.com': { TXT: ['some-other-txt-record', 'v=DMARC1; p=reject', 'another'] },
-      }
+      } satisfies Zone
       expect((await check(zone, { from: 'example.com' })).policy).toBe('reject')
     })
   })
@@ -604,10 +635,10 @@ describe('get-dmarc-record-test.js', () => {
 describe('rfc9989-compliance-test.js', () => {
   describe('Currently compliant', () => {
     test('discards a set of several records at the From domain and keeps walking', async () => {
-      const zone: Zone = {
+      const zone = {
         '_dmarc.mail.example.com': { TXT: ['v=DMARC1; p=reject', 'v=DMARC1; p=quarantine'] },
         ...withRecord('v=DMARC1; p=none; sp=quarantine'),
-      }
+      } satisfies Zone
       expect(await check(zone, { from: 'mail.example.com' })).toMatchObject({
         result: 'fail',
         policyDomain: 'example.com',
@@ -616,10 +647,10 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('continues past TXT records that are not DMARC records', async () => {
-      const zone: Zone = {
+      const zone = {
         '_dmarc.mail.example.com': { TXT: ['some other txt record', 'and another one'] },
         ...withRecord('v=DMARC1; p=quarantine'),
-      }
+      } satisfies Zone
       const result = await check(zone, { from: 'mail.example.com', dkim: [pass('example.com')] })
       expect(result).toMatchObject({ result: 'pass', policy: 'quarantine' })
     })
@@ -775,10 +806,10 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('a set of several records above the From domain is discarded', async () => {
-      const zone: Zone = {
+      const zone = {
         '_dmarc.b.example.com': { TXT: ['v=DMARC1; p=reject; psd=n', 'v=DMARC1; p=none'] },
         ...withRecord('v=DMARC1; p=quarantine'),
-      }
+      } satisfies Zone
       expect(await check(zone, { from: 'a.b.example.com' })).toMatchObject({
         policyDomain: 'example.com',
         policy: 'quarantine',
@@ -822,10 +853,10 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('EBADNAME is no record', async () => {
-      const zone: Zone = {
+      const zone = {
         '_dmarc.mail.example.com': { TXT: 'EBADNAME' },
         ...withRecord('v=DMARC1; p=quarantine'),
-      }
+      } satisfies Zone
       expect(await check(zone, { from: 'mail.example.com' })).toMatchObject({
         result: 'fail',
         policy: 'quarantine',
@@ -846,14 +877,14 @@ describe('rfc9989-compliance-test.js', () => {
 
     describe('DNS failures', () => {
       test('temperror when the policy cannot be discovered', async () => {
-        const zone: Zone = { '_dmarc.example.com': { TXT: 'ESERVFAIL' } }
+        const zone = { '_dmarc.example.com': { TXT: 'ESERVFAIL' } } satisfies Zone
         const result = await check(zone, { from: 'mail.example.com', dkim: [pass('example.com')] })
         expect(result).toMatchObject({ result: 'temperror', domain: 'mail.example.com' })
         expect(result.policy).toBeUndefined()
       })
 
       test('the From domain record applies when the walk above it fails', async () => {
-        const zone: Zone = { ...reject, '_dmarc.com': { TXT: 'ESERVFAIL' } }
+        const zone = { ...reject, '_dmarc.com': { TXT: 'ESERVFAIL' } } satisfies Zone
         const passed = await check(zone, { from: 'example.com', dkim: [pass('example.com')] })
         expect(passed).toMatchObject({ result: 'pass', policy: 'reject' })
         const unknown = await check(zone, { from: 'example.com', dkim: [pass('mail.example.com')] })
@@ -867,13 +898,13 @@ describe('rfc9989-compliance-test.js', () => {
       })
 
       test('temperror when an identifier walk fails and nothing else aligns', async () => {
-        const zone: Zone = { ...reject, '_dmarc.mail.example.com': { TXT: 'ESERVFAIL' } }
+        const zone = { ...reject, '_dmarc.mail.example.com': { TXT: 'ESERVFAIL' } } satisfies Zone
         const result = await check(zone, { from: 'example.com', dkim: [pass('mail.example.com')] })
         expect(result).toMatchObject({ result: 'temperror', policy: 'reject' })
       })
 
       test('pass when an identifier walk fails but another identifier aligns', async () => {
-        const zone: Zone = { ...reject, '_dmarc.mail.example.com': { TXT: 'ESERVFAIL' } }
+        const zone = { ...reject, '_dmarc.mail.example.com': { TXT: 'ESERVFAIL' } } satisfies Zone
         const result = await check(zone, {
           from: 'example.com',
           spf: pass('bounces.example.com'),
@@ -883,10 +914,10 @@ describe('rfc9989-compliance-test.js', () => {
       })
 
       test('strict alignment does not walk, so it fails instead of temperror', async () => {
-        const zone: Zone = {
+        const zone = {
           ...withRecord('v=DMARC1; p=reject; adkim=s'),
           '_dmarc.mail.example.com': { TXT: 'ESERVFAIL' },
-        }
+        } satisfies Zone
         const result = await check(zone, { from: 'example.com', dkim: [pass('mail.example.com')] })
         expect(result.result).toBe('fail')
       })
@@ -1201,6 +1232,13 @@ describe('author-domain-test.js and from-header-test.js', () => {
       const log: Query[] = []
       expect((await check({}, { from: from! }, { log })).domain).toBe(domain)
       expect(log[0]).toBe(`TXT _dmarc.${domain}`)
+    }
+  })
+
+  test('maps fullwidth letters and the ideographic full stop as SPF and URL do', async () => {
+    for (const from of ['ＥＸＡＭＰＬＥ.com', 'example。com']) {
+      const result = await check(reject, { from })
+      expect(result).toMatchObject({ domain: 'example.com', policy: 'reject' })
     }
   })
 

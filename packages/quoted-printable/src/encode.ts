@@ -37,8 +37,8 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 }
 
 /**
- * A `TransformStream` that encodes bytes or text as quoted-printable. Its output is the same as
- * `encode()` of the whole input, however the input is split into chunks.
+ * A `TransformStream` that encodes bytes or text as quoted-printable, emitted as ASCII bytes. Its
+ * output is the same as `encode()` of the whole input, however the input is split into chunks.
  *
  * @example
  * ```ts
@@ -47,20 +47,21 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
  * const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream())
  * ```
  */
-export class EncoderStream extends TransformStream<Uint8Array | string, string> {
+export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
     const encoder = createEncoder(options)
     const utf8 = createUtf8Encoder()
+    const ascii = new TextEncoder()
     super(
       abortable(
         {
           transform(chunk, controller) {
             const output = encoder.write(utf8.write(chunk), false)
-            if (output !== '') controller.enqueue(output)
+            if (output !== '') controller.enqueue(ascii.encode(output))
           },
           flush(controller) {
             const output = encoder.write(utf8.flush(), true)
-            if (output !== '') controller.enqueue(output)
+            if (output !== '') controller.enqueue(ascii.encode(output))
           },
         },
         options.signal,
@@ -87,22 +88,31 @@ const OUTPUT_CHUNK = 64 * 1024
 const ESCAPE = 0
 const LITERAL = 1
 const DEPENDS_ON_NEIGHBOURS = 2
-const kind = new Uint8Array(256)
-for (let i = 0x20; i <= 0x7e; i++) kind[i] = LITERAL
-for (const b of [SPACE, TAB, HYPHEN, CR, LF]) kind[b] = DEPENDS_ON_NEIGHBOURS
-kind[EQUALS] = ESCAPE
+const kind = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(256)
+  for (let i = 0x20; i <= 0x7e; i++) table[i] = LITERAL
+  for (const b of [SPACE, TAB, HYPHEN, CR, LF]) table[b] = DEPENDS_ON_NEIGHBOURS
+  table[EQUALS] = ESCAPE
+  return table
+})()
 
 const hexDigits = new TextEncoder().encode('0123456789ABCDEF')
 
-const hexValue = new Int8Array(256).fill(-1)
-for (let i = 0; i < 16; i++) {
-  hexValue[hexDigits[i]!] = i
-  hexValue[hexDigits[i]! | 0x20] = i
-}
+const hexValue = /* @__PURE__ */ (() => {
+  const table = new Int8Array(256).fill(-1)
+  for (let i = 0; i < 16; i++) {
+    table[hexDigits[i]!] = i
+    table[hexDigits[i]! | 0x20] = i
+  }
+  return table
+})()
 
 // libqp prefers to break a line after one of these characters.
-const breakAfter = new Uint8Array(256)
-for (const c of ' \t.,!?') breakAfter[c.charCodeAt(0)] = 1
+const breakAfter = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(256)
+  for (const c of ' \t.,!?') table[c.charCodeAt(0)] = 1
+  return table
+})()
 
 const outputDecoder = new TextDecoder()
 
@@ -114,10 +124,7 @@ type Encoder = { write: (bytes: Uint8Array, final: boolean) => string }
 // The unfinished line stays at the end of `out` until it is complete.
 function createEncoder(options: encode.Options): Encoder {
   const { binary = false, lineLength: lineLengthOption = 76 } = options
-  if (
-    lineLengthOption !== false &&
-    (!Number.isInteger(lineLengthOption) || (lineLengthOption as number) < 4)
-  )
+  if (lineLengthOption !== false && (!Number.isInteger(lineLengthOption) || lineLengthOption < 4))
     throw new RangeError(
       `lineLength must be false or an integer of at least 4, got ${String(lineLengthOption)}.`,
     )

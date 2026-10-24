@@ -1,6 +1,7 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when a header block grows past `maxHeaderBytes`. The count includes the empty line that
- * ends the block.
+ * ends the block. It extends `Errors.MaxBytesError`, so its `maxBytes` holds the same limit.
  *
  * @example
  * ```ts
@@ -13,12 +14,17 @@
  * }
  * ```
  */
-export class MaxHeaderBytesError extends Error {
-  override name = 'MimeStream.MaxHeaderBytesError'
-  /** The limit that was exceeded. */
+export class MaxHeaderBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'MimeStream.MaxHeaderBytesError'
+  /** The limit that was exceeded, the same as `maxBytes`. */
   readonly maxHeaderBytes: number
-  constructor(maxHeaderBytes: number) {
-    super(`Header block exceeded maxHeaderBytes of ${maxHeaderBytes}.`)
+  constructor(options: ErrorOptions & { maxHeaderBytes: number }) {
+    const { maxHeaderBytes, ...rest } = options
+    super({
+      maxBytes: maxHeaderBytes,
+      message: `Header block exceeded maxHeaderBytes of ${maxHeaderBytes}.`,
+      ...rest,
+    })
     this.maxHeaderBytes = maxHeaderBytes
   }
 }
@@ -35,12 +41,17 @@ export class MaxHeaderBytesError extends Error {
  * // A read rejects with MimeStream.MaxBoundaryLineBytesError on '--boundary' plus 200 spaces.
  * ```
  */
-export class MaxBoundaryLineBytesError extends Error {
-  override name = 'MimeStream.MaxBoundaryLineBytesError'
-  /** The limit that was exceeded. */
+export class MaxBoundaryLineBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'MimeStream.MaxBoundaryLineBytesError'
+  /** The limit that was exceeded, the same as `maxBytes`. */
   readonly maxBoundaryLineBytes: number
-  constructor(maxBoundaryLineBytes: number) {
-    super(`Boundary line exceeded maxBoundaryLineBytes of ${maxBoundaryLineBytes}.`)
+  constructor(options: ErrorOptions & { maxBoundaryLineBytes: number }) {
+    const { maxBoundaryLineBytes, ...rest } = options
+    super({
+      maxBytes: maxBoundaryLineBytes,
+      message: `Boundary line exceeded maxBoundaryLineBytes of ${maxBoundaryLineBytes}.`,
+      ...rest,
+    })
     this.maxBoundaryLineBytes = maxBoundaryLineBytes
   }
 }
@@ -56,12 +67,13 @@ export class MaxBoundaryLineBytesError extends Error {
  * // A read rejects with MimeStream.MaxPartsError on the 101st part.
  * ```
  */
-export class MaxPartsError extends Error {
-  override name = 'MimeStream.MaxPartsError'
+export class MaxPartsError extends Errors.BaseError {
+  static override readonly kind: string = 'MimeStream.MaxPartsError'
   /** The limit that was exceeded. */
   readonly maxParts: number
-  constructor(maxParts: number) {
-    super(`Message exceeded maxParts of ${maxParts}.`)
+  constructor(options: ErrorOptions & { maxParts: number }) {
+    const { maxParts, ...rest } = options
+    super(`Message exceeded maxParts of ${maxParts}.`, rest)
     this.maxParts = maxParts
   }
 }

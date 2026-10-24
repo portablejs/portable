@@ -14,7 +14,7 @@ A forwarder, such as a mailing list, validates the chain that arrived and seals 
 import * as Arc from '@portable/arc'
 import * as Dns from '@portable/dns'
 
-const resolver = Dns.createResolver()
+const resolver = Dns.create()
 const arc = await Arc.verify(message, { resolver, signal: AbortSignal.timeout(10_000) })
 
 const fields = await Arc.seal(message, {
@@ -49,10 +49,10 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) deliver()
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Looks up the keys: `Dns.createResolver()`, `node:dns/promises`, or any object with `resolveTxt`. |
+| `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
-| `hash` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
+| `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
 
 The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, as every ARC failure is permanent (RFC 8617 section 5.2).
@@ -69,8 +69,8 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `signedAt` | `new Date()` | The time (`t=`) of both signatures. |
-| `hash` | WebCrypto | Creates the body hash. |
+| `now` | `new Date()` | The time (`t=`) of both signatures. |
+| `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
 With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed is sealed with `i=1` and `cv=fail`.
@@ -130,6 +130,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `seal.i` | Not supported. The instance always follows the highest on the message. |
 | `seal.algorithm` | Follows the key type. |
 | `seal.headerList` | `headers`, an array. |
-| `seal.signTime` | `signedAt` |
+| `seal.signTime` | `now` |
 | `seal.bodyHash`, `seal.headers` (sealing without the message) | Not supported. Pass the message. |
 | `cv: 'PASS'` | Lower case only: `'none'`, `'pass'` or `'fail'`, as `Arc.verify` returns them. |

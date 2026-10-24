@@ -1,5 +1,6 @@
 import * as Bytes from '@portable/bytes'
-import { MaxBytesError, byteLength, toUint8Array } from './bytes.js'
+import { byteLength, toUint8Array } from './bytes.js'
+import { MaxBytesError } from './errors.js'
 import { type Source, forEach } from './source.js'
 
 export declare namespace toBytes {
@@ -35,12 +36,52 @@ export async function toBytes(
     (chunk) => {
       const bytes = toUint8Array(chunk)
       length += bytes.byteLength
-      if (length > maxBytes) throw new MaxBytesError(maxBytes)
+      if (length > maxBytes) throw new MaxBytesError({ maxBytes })
       chunks.push(bytes)
     },
     signal,
   )
   return Bytes.concat(chunks)
+}
+
+export declare namespace toBlob {
+  type Options = toBytes.Options & {
+    /** The `Blob`'s `type`, such as `'image/png'`. @default '' */
+    type?: string | undefined
+  }
+}
+
+/**
+ * Reads a stream or iterable to the end and returns its bytes in a `Blob`. String chunks are
+ * encoded as UTF-8. Unlike `new Response(stream).blob()`, it takes a `maxBytes` limit and a
+ * `signal`, and reads async iterables.
+ *
+ * @example
+ * ```ts
+ * import * as Streams from '@portable/streams'
+ *
+ * const response = await fetch('https://example.com/image.png')
+ * const blob = await Streams.toBlob(response.body!, { maxBytes: 10_000_000, type: 'image/png' })
+ * ```
+ */
+export async function toBlob(
+  source: Source<Uint8Array | string>,
+  options: toBlob.Options = {},
+): Promise<Blob> {
+  const { maxBytes = Infinity, signal, type = '' } = options
+  const chunks: BlobPart[] = []
+  let length = 0
+  await forEach(
+    source,
+    (chunk) => {
+      const bytes = toUint8Array(chunk)
+      length += bytes.byteLength
+      if (length > maxBytes) throw new MaxBytesError({ maxBytes })
+      chunks.push(bytes as Uint8Array<ArrayBuffer>)
+    },
+    signal,
+  )
+  return new Blob(chunks, { type })
 }
 
 export declare namespace toText {
@@ -80,7 +121,7 @@ export async function toText(
     source,
     (chunk) => {
       length += byteLength(chunk)
-      if (length > maxBytes) throw new MaxBytesError(maxBytes)
+      if (length > maxBytes) throw new MaxBytesError({ maxBytes })
       if (typeof chunk === 'string') {
         if (decoding) text += decoder.decode()
         decoding = false
@@ -96,6 +137,10 @@ export async function toText(
   return text
 }
 
+export declare namespace toJson {
+  type Options = toText.Options
+}
+
 /**
  * Reads a stream or iterable to the end and parses it as JSON.
  *
@@ -108,7 +153,7 @@ export async function toText(
  */
 export async function toJson(
   source: Source<Uint8Array | string>,
-  options: toText.Options = {},
+  options: toJson.Options = {},
 ): Promise<unknown> {
   return JSON.parse(await toText(source, options))
 }
@@ -131,8 +176,11 @@ export declare namespace toArray {
  * const lines = await Streams.toArray(response.body!.pipeThrough(new Lines.DecoderStream()))
  * ```
  */
-export async function toArray<T>(source: Source<T>, options: toArray.Options = {}): Promise<T[]> {
-  const chunks: T[] = []
+export async function toArray<value>(
+  source: Source<value>,
+  options: toArray.Options = {},
+): Promise<value[]> {
+  const chunks: value[] = []
   await forEach(
     source,
     (chunk) => {

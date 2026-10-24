@@ -8,12 +8,15 @@ export function required(headers: Headers, ...names: readonly string[]): string 
     const value = headers.get(name)
     if (value) return value
   }
-  throw new VerificationError('missing-header', `Missing ${names[0]} header`)
+  throw new VerificationError({ code: 'missing-header', message: `Missing ${names[0]} header` })
 }
 
 export function seconds(value: string, header: string): Date {
   if (!/^\d{1,15}$/.test(value))
-    throw new VerificationError('malformed-header', `${header} is not a Unix timestamp`)
+    throw new VerificationError({
+      code: 'malformed-header',
+      message: `${header} is not a Unix timestamp`,
+    })
   return new Date(Number(value) * 1000)
 }
 

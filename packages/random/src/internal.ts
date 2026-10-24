@@ -94,7 +94,7 @@ export function string(next: Next, fill: Fill, length: number, alphabet: Alphabe
   return decoder.decode(out)
 }
 
-export function shuffle<T>(next: Next, array: readonly T[]): T[] {
+export function shuffle<value>(next: Next, array: readonly value[]): value[] {
   const result = array.slice()
   for (let i = result.length - 1; i > 0; i--) {
     const j = below(next, i + 1)
@@ -105,7 +105,7 @@ export function shuffle<T>(next: Next, array: readonly T[]): T[] {
   return result
 }
 
-export function pick<T>(next: Next, array: readonly T[]): T {
+export function pick<value>(next: Next, array: readonly value[]): value {
   if (array.length === 0) throw new RangeError('Cannot pick from an empty array.')
   return array[below(next, array.length)]!
 }

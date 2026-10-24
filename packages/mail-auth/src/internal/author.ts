@@ -23,7 +23,7 @@ export function author(message: Uint8Array): Author {
   if (fields.length > 1) return { skip: 'multiple-from-fields' }
   let mailboxes: MimeHeaders.Mailbox[]
   try {
-    mailboxes = MimeHeaders.parseAddresses(fields[0]!.value, { flatten: true, strict: true })
+    mailboxes = MimeHeaders.parseMailboxes(fields[0]!.value, { strict: true })
   } catch (error) {
     if (error instanceof MimeHeaders.InvalidInputError) return { skip: 'invalid-author-domain' }
     throw error

@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import * as Jsonl from '@portable/jsonl'
 import { createClient } from './client.js'
 import { RemoteError, TransportError } from './errors.js'
@@ -8,7 +9,7 @@ import type { Id, Message, Remote } from './types.js'
 const ndjson = 'application/x-ndjson'
 
 /**
- * Serves `api` over HTTP. The returned function answers a POST of a JSON-RPC request or batch. The
+ * Answers calls to `methods` over HTTP. The returned function answers a POST of a JSON-RPC request or batch. The
  * response is JSON, or, when a method returns a stream, newline-delimited messages that carry the
  * stream's values as they are produced. Methods wrapped with `withContext` get the `Request`, and
  * their `signal` aborts when the client disconnects.
@@ -21,7 +22,7 @@ const ndjson = 'application/x-ndjson'
  * export default { fetch: (request: Request) => rpc(request) }
  * ```
  */
-export function handler(api: object): (request: Request) => Promise<Response> {
+export function handler(methods: object): (request: Request) => Promise<Response> {
   return async (request) => {
     if (request.method !== 'POST') {
       return new Response(null, { status: 405, headers: { allow: 'POST' } })
@@ -50,7 +51,7 @@ export function handler(api: object): (request: Request) => Promise<Response> {
       return writer.write(message)
     }
 
-    const server = createServer(api, send, { flow: false, request })
+    const server = createServer(methods, send, { flow: false, request })
     const onAbort = () => server.close(request.signal.reason)
     request.signal.addEventListener('abort', onAbort)
     await server.handle(message)
@@ -74,7 +75,7 @@ export function handler(api: object): (request: Request) => Promise<Response> {
         void writer.write(single).catch(noop)
     }
     if (streams.size === 0) void writer.close().catch(noop)
-    return new Response(encoder.readable.pipeThrough(new TextEncoderStream()), {
+    return new Response(encoder.readable, {
       headers: { 'content-type': ndjson },
     })
   }
@@ -83,7 +84,7 @@ export function handler(api: object): (request: Request) => Promise<Response> {
 export declare namespace http {
   type Options = {
     /** The `fetch` to send requests with, such as one that adds an `authorization` header. @default globalThis.fetch */
-    fetch?: typeof globalThis.fetch | undefined
+    fetch?: ((request: Request) => Promise<Response>) | undefined
     /** Aborts every request and rejects waiting calls with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -110,7 +111,7 @@ type Batch = {
  * ```
  */
 export function http<api>(url: string | URL, options: http.Options = {}): Remote<api> {
-  const { fetch = globalThis.fetch, signal } = options
+  const { fetch = (request: Request) => globalThis.fetch(request), signal } = options
   const batches = new Map<Id, Batch>()
   let queued: Batch | undefined
 
@@ -124,8 +125,9 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
         messages: [],
         pending: new Set(),
         controller: new AbortController(),
-        sent: Promise.resolve().then(() => post(batch)),
+        sent: Promise.resolve(),
       }
+      batch.sent = batch.sent.then(() => post(batch))
       queued = batch
     }
     queued.messages.push(text)
@@ -146,7 +148,10 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
   }
   const receive = (batch: Batch, message: unknown) => {
     if (message === null || typeof message !== 'object') return
-    const { id, error: remoteError } = message as { id?: Id; error?: RemoteError.Options }
+    const { id, error: remoteError } = message as {
+      id?: Id | undefined
+      error?: RemoteError.Options | undefined
+    }
     if ('method' in message || id === undefined)
       return client.receive(message as Record<string, unknown>)
     if (id === null && remoteError) {
@@ -161,14 +166,19 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
     queued = undefined
     const { messages, controller, pending } = batch
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
-        body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
-        signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
-      })
+      const response = await fetch(
+        new Request(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
+          body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
+          signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+        }),
+      )
       if (!response.ok) {
-        throw new TransportError(`The server answered ${response.status}.`, { cause: response })
+        await response.body?.cancel().catch(() => {})
+        throw new TransportError(`The server answered ${response.status}.`, {
+          cause: new Errors.ResponseError({ response }),
+        })
       }
       if (response.body && response.headers.get('content-type')?.startsWith(ndjson)) {
         const reader = response.body.pipeThrough(new Jsonl.DecoderStream()).getReader()

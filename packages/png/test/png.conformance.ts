@@ -80,7 +80,7 @@ describe('pngjs png-parse-spec', () => {
   test('reads an image that uses every filter type', async () => {
     const png = await Png.decode(fixture('pngjs/paeth.png'))
     expect([png.width, png.height, png.data.length]).toEqual([512, 512, 512 * 512 * 4])
-    const expected: [number, number, number][] = [
+    const expected = [
       [0, 0, 0xff000000],
       [1, 0, 0xff000000],
       [0, 1, 0xff000000],
@@ -111,7 +111,7 @@ describe('pngjs png-parse-spec', () => {
       [156, 168, 0x02314400],
       [157, 168, 0x02323f00],
       [158, 168, 0x03313900],
-    ]
+    ] satisfies [number, number, number][]
     for (const [x, y, value] of expected) expect(pixel(png, x, y)).toBe(value)
   })
 
@@ -331,7 +331,7 @@ describe('encode', () => {
 
   test('chooses only from the filters it is given', async () => {
     const random = { width: 31, height: 9, data: randomBytes(31 * 9 * 4, 42) }
-    const allowed: Png.FilterType[] = [1, 3]
+    const allowed = [1, 3] satisfies Png.FilterType[]
     const raw = unzlibSync(idat(await Png.encode(random, { filter: allowed })))
     for (let row = 0; row < random.height; row++) expect(allowed).toContain(raw[row * (31 * 4 + 1)])
   })

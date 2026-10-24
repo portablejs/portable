@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Streams from '@portable/streams'
 
-function endless<T>(chunk: T) {
+function endless<chunk>(chunk: chunk) {
   const source = { cancelled: undefined as unknown }
-  const stream = new ReadableStream<T>({
+  const stream = new ReadableStream<chunk>({
     pull: (controller) => controller.enqueue(chunk),
     cancel: (reason) => {
       source.cancelled = reason
@@ -12,9 +12,9 @@ function endless<T>(chunk: T) {
   return { stream, source }
 }
 
-function stalled<T>(chunk: T) {
+function stalled<chunk>(chunk: chunk) {
   const source = { cancelled: undefined as unknown, pulls: 0 }
-  const stream = new ReadableStream<T>(
+  const stream = new ReadableStream<chunk>(
     {
       pull(controller) {
         source.pulls++
@@ -31,9 +31,9 @@ function stalled<T>(chunk: T) {
   return { stream, source }
 }
 
-async function abortMidway<T>(
-  chunk: T,
-  transform: (signal: AbortSignal) => ReadableWritablePair<unknown, T>,
+async function abortMidway<value>(
+  chunk: value,
+  transform: (signal: AbortSignal) => ReadableWritablePair<unknown, value>,
 ): Promise<boolean> {
   const controller = new AbortController()
   const { stream, source } = endless(chunk)

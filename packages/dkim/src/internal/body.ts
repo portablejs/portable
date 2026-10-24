@@ -12,8 +12,11 @@ export type Canonicalizer = { write(chunk: Uint8Array): void; end(): void }
 
 const crlf = new Uint8Array([CR, LF])
 
-const whitespace = new Uint8Array(256)
-for (const byte of [CR, LF, SP, TAB]) whitespace[byte] = 1
+const whitespace = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(256)
+  for (const byte of [CR, LF, SP, TAB]) table[byte] = 1
+  return table
+})()
 
 /**
  * RFC 6376 sections 3.4.3 and 3.4.4, for a body whose line ends are CRLF. A CR without a following

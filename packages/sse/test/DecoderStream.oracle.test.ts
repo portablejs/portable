@@ -30,7 +30,8 @@ function viaEventsourceParser(chunks: readonly Uint8Array[]): Sse.Event[] {
 
 function randomStream(seed: number): string {
   const random = seededRandom(seed)
-  const pick = <T>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!
+  const pick = <value>(items: readonly value[]): value =>
+    items[Math.floor(random() * items.length)]!
   const breaks = ['\n', '\r', '\r\n']
   const values = [
     '',

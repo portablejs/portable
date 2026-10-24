@@ -65,7 +65,7 @@ describe('streaming', () => {
         controller.close()
       },
     })
-    const reader = Mail.encode(
+    const reader = Mail.encodeStream(
       { ...fixed, text: 'first', attachments: [{ content }] },
       { boundary },
     ).getReader()
@@ -95,7 +95,7 @@ describe('streaming', () => {
       },
     })
     const other = tracked([new Uint8Array([1])])
-    const output = Mail.encode({
+    const output = Mail.encodeStream({
       attachments: [{ content: failing }, { content: other.stream }],
     })
     await expect(Streams.toBytes(output)).rejects.toBe(failure)
@@ -105,7 +105,7 @@ describe('streaming', () => {
   test('cancelling the output cancels every content stream', async () => {
     const reading = tracked(chunked(randomBytes(100_000, 3), 1000))
     const unread = tracked([new Uint8Array([1])])
-    const reader = Mail.encode({
+    const reader = Mail.encodeStream({
       attachments: [{ content: reading.stream }, { content: unread.stream }],
     }).getReader()
     const decoder = new TextDecoder()
@@ -120,16 +120,62 @@ describe('streaming', () => {
 
   test('cancelling before the first read cancels every content stream', async () => {
     const content = tracked([new Uint8Array([1])])
-    await Mail.encode({ text: content.stream }).cancel('stop')
+    await Mail.encodeStream({ text: content.stream }).cancel('stop')
     expect(content.state.cancelled).toBe('stop')
+  })
+
+  test('aborting the signal errors the output and cancels every content stream', async () => {
+    const reading = tracked(chunked(randomBytes(100_000, 3), 1000))
+    const unread = tracked([new Uint8Array([1])])
+    const controller = new AbortController()
+    const reader = Mail.encodeStream(
+      { attachments: [{ content: reading.stream }, { content: unread.stream }] },
+      { signal: controller.signal },
+    ).getReader()
+    const decoder = new TextDecoder()
+    let text = ''
+    while (!text.includes('base64')) text += decoder.decode((await reader.read()).value)
+    await reader.read()
+    const reason = new Error('stop')
+    controller.abort(reason)
+    await expect(reader.read()).rejects.toBe(reason)
+    await expect.poll(() => reading.state.cancelled).toBe(reason)
+    expect(unread.state.cancelled).toBe(reason)
+  })
+
+  test('an aborted signal errors the output before the first read', async () => {
+    const content = tracked([new Uint8Array([1])])
+    const reason = new Error('stop')
+    const output = Mail.encodeStream(
+      { text: content.stream },
+      { signal: AbortSignal.abort(reason) },
+    )
+    await expect(Streams.toBytes(output)).rejects.toBe(reason)
+    expect(content.state.cancelled).toBe(reason)
+  })
+
+  test('a signal that is never aborted changes nothing', async () => {
+    const message = {
+      from: 'a@example.com',
+      text: 'tere',
+      messageId: 'id@example.com',
+      date: new Date(0),
+    }
+    const options = { boundary: '=_b_' }
+    const signal = new AbortController().signal
+    expect(await new Response(Mail.encodeStream(message, { ...options, signal })).text()).toBe(
+      await new Response(Mail.encodeStream(message, options)).text(),
+    )
   })
 
   test('a locked stream or one given twice throws', () => {
     const locked = new ReadableStream<Uint8Array>()
     locked.getReader()
-    expect(() => Mail.encode({ text: locked })).toThrow(TypeError)
+    expect(() => Mail.encodeStream({ text: locked })).toThrow(TypeError)
     const twice = new ReadableStream<Uint8Array>()
-    expect(() => Mail.encode({ text: twice, attachments: [{ content: twice }] })).toThrow(TypeError)
+    expect(() => Mail.encodeStream({ text: twice, attachments: [{ content: twice }] })).toThrow(
+      TypeError,
+    )
   })
 
   test('the output can be encoded again from the same Blob', async () => {

@@ -11,9 +11,9 @@ import {
 import { latin1 } from './utils.js'
 
 // Ported from libmime 5.5.1 test/libmime-test.ts. libmime's encodeWord(text, 'Q', n) is
-// encodeWord(text, { maxLength: n }) here, foldLines(text, n) is fold(text, { lineLength: n }),
+// encodeWord(text, { wordLength: n }) here, foldLines(text, n) is fold(text, { lineLength: n }),
 // parseHeaderValue is parseValue, buildHeaderValue is formatValue, and decodeHeaders is
-// parseHeaders. libmime's maxLength 0 means no limit, which is `maxLength: false` here.
+// parseHeaders. libmime's maxLength 0 means no limit, which is `wordLength: false` here.
 
 describe('encodeWord()', () => {
   test('encodes quoted-printable', () => {
@@ -21,20 +21,20 @@ describe('encodeWord()', () => {
   })
 
   test('encodes base64', () => {
-    expect(encodeWord('See on õhin test', { encoding: 'B' })).toBe(
+    expect(encodeWord('See on õhin test', { wordEncoding: 'B' })).toBe(
       '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?=',
     )
   })
 
-  test('splits quoted-printable at maxLength', () => {
-    expect(encodeWord('See on õhin test natin natin natin', { maxLength: 30 })).toBe(
+  test('splits quoted-printable at wordLength', () => {
+    expect(encodeWord('See on õhin test natin natin natin', { wordLength: 30 })).toBe(
       '=?UTF-8?Q?See_on_=C3=B5hin_t?= =?UTF-8?Q?est_natin_natin_na?= =?UTF-8?Q?tin?=',
     )
   })
 
   test('keeps surrogate pairs together when splitting base64', () => {
     const input = 'Hello 😊😊😊😊😊😊 world'
-    const encoded = encodeWord(input, { encoding: 'B', maxLength: 25 })
+    const encoded = encodeWord(input, { wordEncoding: 'B', wordLength: 25 })
     expect(encoded).toContain('?= =?')
     expect(decodeWords(encoded)).toBe(input)
   })
@@ -42,27 +42,27 @@ describe('encodeWord()', () => {
   test('encodes bytes as the UTF-8 text they hold, the same as the string', () => {
     const input = 'ÕÄÖÜ'.repeat(10)
     const bytes = new TextEncoder().encode(input)
-    const encoded = encodeWord(bytes, { encoding: 'B', maxLength: 30 })
+    const encoded = encodeWord(bytes, { wordEncoding: 'B', wordLength: 30 })
     expect(encoded.split(' ').length).toBeGreaterThan(1)
     expect(decodeWords(encoded)).toBe(input)
-    expect(encoded).toBe(encodeWord(input, { encoding: 'B', maxLength: 30 }))
+    expect(encoded).toBe(encodeWord(input, { wordEncoding: 'B', wordLength: 30 }))
   })
 
   test('keeps astral characters outside the emoji block whole', () => {
     const input = '\u{20000}'.repeat(10) + ' \u{1F600}'
     for (const maxLength of [13, 16, 19, 32]) {
-      const encoded = encodeWord(input, { encoding: 'B', maxLength })
+      const encoded = encodeWord(input, { wordEncoding: 'B', wordLength: maxLength })
       expect(decodeWords(encoded)).toBe(input)
     }
   })
 
   test('replaces an unpaired surrogate without swallowing the next character', () => {
-    const encoded = encodeWord('a\ud800\u{1F600}b', { encoding: 'B', maxLength: 16 })
+    const encoded = encodeWord('a\ud800\u{1F600}b', { wordEncoding: 'B', wordLength: 16 })
     expect(decodeWords(encoded)).toBe('a�\u{1F600}b')
   })
 
-  test('writes a single word with maxLength false', () => {
-    expect(encodeWord('õ'.repeat(40), { maxLength: false }).split(' ')).toHaveLength(1)
+  test('writes a single word with wordLength false', () => {
+    expect(encodeWord('õ'.repeat(40), { wordLength: false }).split(' ')).toHaveLength(1)
   })
 })
 
@@ -72,19 +72,19 @@ describe('encodeWords()', () => {
   })
 
   test('encodes the ASCII range between non-ASCII words', () => {
-    expect(encodeWords('метель" вьюга', { maxLength: 52 })).toBe(
+    expect(encodeWords('метель" вьюга', { wordLength: 52 })).toBe(
       '=?UTF-8?Q?=D0=BC=D0=B5=D1=82=D0=B5=D0=BB=D1=8C=22_?= =?UTF-8?Q?=D0=B2=D1=8C=D1=8E=D0=B3=D0=B0?=',
     )
-    expect(encodeWords("метель'вьюга", { maxLength: 52 })).toBe(
+    expect(encodeWords("метель'вьюга", { wordLength: 52 })).toBe(
       '=?UTF-8?Q?=D0=BC=D0=B5=D1=82=D0=B5=D0=BB=D1=8C=27?= =?UTF-8?Q?=D0=B2=D1=8C=D1=8E=D0=B3=D0=B0?=',
     )
-    expect(encodeWords('Verão você vai adorar!', { maxLength: 52 })).toBe(
+    expect(encodeWords('Verão você vai adorar!', { wordLength: 52 })).toBe(
       '=?UTF-8?Q?Ver=C3=A3o_voc=C3=AA?= vai adorar!',
     )
   })
 
   test('encodes using base64', () => {
-    expect(encodeWords('Tere õhin', { encoding: 'B' })).toBe('Tere =?UTF-8?B?w7VoaW4=?=')
+    expect(encodeWords('Tere õhin', { wordEncoding: 'B' })).toBe('Tere =?UTF-8?B?w7VoaW4=?=')
   })
 
   test('takes bytes as UTF-8', () => {
@@ -102,18 +102,18 @@ describe('encodeWords()', () => {
     expect(encodeWords('õ\u00a0b')).toBe('=?UTF-8?Q?=C3=B5=C2=A0b?=')
   })
 
-  test('splits QP at maxLength', () => {
+  test('splits QP at wordLength', () => {
     const input = 'Jõgeva Jõgeva Jõgeva mugeva Jõgeva Jõgeva Jõgeva Jõgeva Jõgeva'
-    const encoded = encodeWords(input, { maxLength: 16 })
+    const encoded = encodeWords(input, { wordLength: 16 })
     expect(encoded).toBe(
       '=?UTF-8?Q?J=C3=B5geva_?= =?UTF-8?Q?J=C3=B5geva_?= =?UTF-8?Q?J=C3=B5geva_?= =?UTF-8?Q?mugeva_J?= =?UTF-8?Q?=C3=B5geva_J?= =?UTF-8?Q?=C3=B5geva_J?= =?UTF-8?Q?=C3=B5geva_J?= =?UTF-8?Q?=C3=B5geva_J?= =?UTF-8?Q?=C3=B5geva?=',
     )
     expect(decodeWords(encoded)).toBe(input)
   })
 
-  test('splits base64 at maxLength', () => {
+  test('splits base64 at wordLength', () => {
     const input = 'õõõõõ õõõõõ õõõõõ mugeva õõõõõ õõõõõ õõõõõ õõõõõ Jõgeva'
-    const encoded = encodeWords(input, { encoding: 'B', maxLength: 30 })
+    const encoded = encodeWords(input, { wordEncoding: 'B', wordLength: 30 })
     expect(encoded).toBe(
       '=?UTF-8?B?w7XDtcO1w7XDtSA=?= =?UTF-8?B?w7XDtcO1w7XDtSA=?= =?UTF-8?B?w7XDtcO1w7XDtSBt?= =?UTF-8?B?dWdldmEgw7XDtcO1?= =?UTF-8?B?w7XDtSDDtcO1w7U=?= =?UTF-8?B?w7XDtSDDtcO1w7U=?= =?UTF-8?B?w7XDtSDDtcO1w7U=?= =?UTF-8?B?w7XDtSBKw7VnZXZh?=',
     )
@@ -405,14 +405,14 @@ describe('parseValue()', () => {
   })
 
   test('stores a __proto__ parameter as an own property', () => {
-    const cases: [string, string][] = [
+    const cases = [
       ['text/plain; __proto__; x=1', ''],
       ['text/plain; __proto__=plain; x=1', 'plain'],
       ['text/plain; __proto__=plain', 'plain'],
       ['text/plain; x=1; __proto__', ''],
       ["text/plain; __proto__*0*=utf-8''polluted", 'polluted'],
       ['text/plain; __proto__*0=abc', 'abc'],
-    ]
+    ] satisfies [string, string][]
     for (const [input, value] of cases) {
       const { params } = parseValue(input)
       expect(Object.getPrototypeOf(params)).toBe(Object.prototype)
@@ -709,7 +709,7 @@ describe('fold()', () => {
   test('folds a long header line', () => {
     const line = encodeWords(
       'Subject: Testin command line kirja õkva kakva mõni tõnis kõllas põllas tõllas rõllas jušla kušla tušla musla',
-      { maxLength: 52 },
+      { wordLength: 52 },
     )
     expect(fold(line)).toBe(
       'Subject: Testin command line kirja\r\n' +

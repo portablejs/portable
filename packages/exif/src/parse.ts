@@ -76,7 +76,7 @@ export function toMetadata(found: Found, data: Uint8Array, offset: number): Meta
       offset: start,
       length,
       bytes:
-        start >= offset && end <= offset + data.length
+        start >= offset && end <= offset + data.length && end <= tiff.limit
           ? data.subarray(start - offset, end - offset)
           : undefined,
     }

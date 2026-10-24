@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown for a `signatureMethod` other than `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'` and
  * `'PLAINTEXT'`.
@@ -13,6 +14,6 @@
  * }
  * ```
  */
-export class UnsupportedError extends Error {
-  override name = 'OAuth1.UnsupportedError'
+export class UnsupportedError extends Errors.UnsupportedError {
+  static override readonly kind: string = 'OAuth1.UnsupportedError'
 }

@@ -1,4 +1,5 @@
-import { CommandError, type Rejection } from './CommandError.js'
+import * as Base64 from '@portable/base64'
+import { CommandError, type Rejection } from './errors.js'
 import { DataStream, encodeData } from './DataStream.js'
 import { createReader, type Reader, type Reply } from './reader.js'
 import type { Connect, Socket } from './Socket.js'
@@ -127,7 +128,7 @@ function createSession(first: Socket): Session {
   }
   watch(socket)
 
-  const session: Session = {
+  const session = {
     get closed() {
       return closed
     },
@@ -140,11 +141,17 @@ function createSession(first: Socket): Session {
       await session.writeBytes(encoder.encode(text), command)
     },
     async writeBytes(bytes, command) {
-      if (closed) throw new CommandError('ECONNECTION', 'Connection is closed', { command })
+      if (closed)
+        throw new CommandError({ code: 'ECONNECTION', message: 'Connection is closed', command })
       try {
         await writer.write(bytes)
       } catch (cause) {
-        throw new CommandError('ECONNECTION', 'Connection closed unexpectedly', { command, cause })
+        throw new CommandError({
+          code: 'ECONNECTION',
+          message: 'Connection closed unexpectedly',
+          command,
+          cause,
+        })
       }
     },
     async pipe(stream) {
@@ -153,7 +160,12 @@ function createSession(first: Socket): Session {
         await stream.pipeThrough(new DataStream()).pipeTo(socket.writable, { preventClose: true })
       } catch (cause) {
         session.destroy()
-        throw new CommandError('EMESSAGE', 'Could not send the message', { command: 'DATA', cause })
+        throw new CommandError({
+          code: 'EMESSAGE',
+          message: 'Could not send the message',
+          command: 'DATA',
+          cause,
+        })
       }
       writer = socket.writable.getWriter()
     },
@@ -167,7 +179,12 @@ function createSession(first: Socket): Session {
         await socket.opened
       } catch (cause) {
         session.destroy()
-        throw new CommandError('ETLS', 'TLS handshake failed', { command: 'STARTTLS', cause })
+        throw new CommandError({
+          code: 'ETLS',
+          message: 'TLS handshake failed',
+          command: 'STARTTLS',
+          cause,
+        })
       }
       reader = createReader(socket.readable)
       writer = socket.writable.getWriter()
@@ -180,15 +197,15 @@ function createSession(first: Socket): Session {
         Promise.resolve(socket.close()).catch(() => {})
       } catch {}
     },
-  }
+  } satisfies Session
   return session
 }
 
-async function guard<T>(
+async function guard<value>(
   session: Session,
   signal: AbortSignal | undefined,
-  run: () => Promise<T>,
-): Promise<T> {
+  run: () => Promise<value>,
+): Promise<value> {
   if (!signal) return run()
   signal.throwIfAborted()
   let onAbort = () => {}
@@ -207,12 +224,6 @@ async function guard<T>(
   } finally {
     signal.removeEventListener('abort', onAbort)
   }
-}
-
-function base64(text: string): string {
-  let binary = ''
-  for (const byte of encoder.encode(text)) binary += String.fromCharCode(byte)
-  return btoa(binary)
 }
 
 function xtext(text: string): string {
@@ -287,7 +298,9 @@ export async function connect(options: connect.Options): Promise<Client> {
   try {
     socket = open({ hostname: host, port }, { secureTransport: secure, allowHalfOpen: false })
   } catch (cause) {
-    throw new CommandError('ECONNECTION', `Could not connect to ${host}:${port}`, {
+    throw new CommandError({
+      code: 'ECONNECTION',
+      message: `Could not connect to ${host}:${port}`,
       command: 'CONNECT',
       cause,
     })
@@ -302,14 +315,19 @@ export async function connect(options: connect.Options): Promise<Client> {
     const reply = await session.read(verb)
     if (reply.code === 250) return reply.lines.slice(1)
     if (reply.code === 421) {
-      throw new CommandError('ECONNECTION', 'Server is closing the connection', {
+      throw new CommandError({
+        code: 'ECONNECTION',
+        message: 'Server is closing the connection',
         command: verb,
         reply,
       })
     }
-    if (lmtp) throw new CommandError('EPROTOCOL', 'LHLO refused', { command: verb, reply })
+    if (lmtp)
+      throw new CommandError({ code: 'EPROTOCOL', message: 'LHLO refused', command: verb, reply })
     if (secure === 'starttls' && !tls) {
-      throw new CommandError('ETLS', 'EHLO refused, and HELO cannot start TLS', {
+      throw new CommandError({
+        code: 'ETLS',
+        message: 'EHLO refused, and HELO cannot start TLS',
         command: verb,
         reply,
       })
@@ -317,7 +335,9 @@ export async function connect(options: connect.Options): Promise<Client> {
     await session.write(`HELO ${name}\r\n`, 'HELO')
     const helo = await session.read('HELO')
     if (helo.code !== 250) {
-      throw new CommandError(helo.code === 421 ? 'ECONNECTION' : 'EPROTOCOL', 'HELO refused', {
+      throw new CommandError({
+        code: helo.code === 421 ? 'ECONNECTION' : 'EPROTOCOL',
+        message: 'HELO refused',
         command: 'HELO',
         reply: helo,
       })
@@ -327,23 +347,22 @@ export async function connect(options: connect.Options): Promise<Client> {
 
   const login = async (credentials: Auth) => {
     if (!tls && !allowInsecureAuth) {
-      throw new CommandError(
-        'EAUTH',
-        'Refusing to send credentials over an unencrypted connection. Use `secure`, or set `allowInsecureAuth`',
-        { command: 'AUTH' },
-      )
+      throw new CommandError({
+        code: 'EAUTH',
+        message:
+          'Refusing to send credentials over an unencrypted connection. Use `secure`, or set `allowInsecureAuth`',
+        command: 'AUTH',
+      })
     }
     const offered = authMethods(extensions)
     const expect = (reply: Reply, code: number, command: string) => {
       if (reply.code !== code) {
-        throw new CommandError(
-          reply.code === 421 ? 'ECONNECTION' : 'EAUTH',
-          'Authentication failed',
-          {
-            command,
-            reply,
-          },
-        )
+        throw new CommandError({
+          code: reply.code === 421 ? 'ECONNECTION' : 'EAUTH',
+          message: 'Authentication failed',
+          command,
+          reply,
+        })
       }
     }
     const step = async (line: string, command: string) => {
@@ -353,7 +372,7 @@ export async function connect(options: connect.Options): Promise<Client> {
 
     if ('accessToken' in credentials) {
       const command = 'AUTH XOAUTH2'
-      const token = base64(
+      const token = Base64.encode(
         `user=${credentials.user}\x01auth=Bearer ${credentials.accessToken}\x01\x01`,
       )
       let reply = await step(`${command} ${token}`, command)
@@ -365,22 +384,22 @@ export async function connect(options: connect.Options): Promise<Client> {
       credentials.method ??
       (offered.includes('LOGIN') && !offered.includes('PLAIN') ? 'LOGIN' : 'PLAIN')
     if (!credentials.method && offered.length > 0 && !offered.includes(method)) {
-      throw new CommandError(
-        'EAUTH',
-        `No supported authentication method. The server offers ${offered.join(', ')}`,
-        { command: 'AUTH' },
-      )
+      throw new CommandError({
+        code: 'EAUTH',
+        message: `No supported authentication method. The server offers ${offered.join(', ')}`,
+        command: 'AUTH',
+      })
     }
     const command = `AUTH ${method}`
     if (method === 'PLAIN') {
-      const response = base64(`\0${credentials.user}\0${credentials.pass}`)
+      const response = Base64.encode(`\0${credentials.user}\0${credentials.pass}`)
       let reply = await step(`${command} ${response}`, command)
       if (reply.code === 334) reply = await step(response, command)
       return expect(reply, 235, command)
     }
     expect(await step(command, command), 334, command)
-    expect(await step(base64(credentials.user), command), 334, command)
-    expect(await step(base64(credentials.pass), command), 235, command)
+    expect(await step(Base64.encode(credentials.user), command), 334, command)
+    expect(await step(Base64.encode(credentials.pass), command), 235, command)
   }
 
   try {
@@ -388,28 +407,37 @@ export async function connect(options: connect.Options): Promise<Client> {
       try {
         await socket.opened
       } catch (cause) {
-        throw new CommandError('ECONNECTION', `Could not connect to ${host}:${port}`, {
+        throw new CommandError({
+          code: 'ECONNECTION',
+          message: `Could not connect to ${host}:${port}`,
           command: 'CONNECT',
           cause,
         })
       }
       const greeting = await session.read('CONNECT')
       if (greeting.code !== 220) {
-        throw new CommandError(
-          greeting.code === 421 ? 'ECONNECTION' : 'EPROTOCOL',
-          'Invalid greeting',
-          { command: 'CONNECT', reply: greeting },
-        )
+        throw new CommandError({
+          code: greeting.code === 421 ? 'ECONNECTION' : 'EPROTOCOL',
+          message: 'Invalid greeting',
+          command: 'CONNECT',
+          reply: greeting,
+        })
       }
       extensions = await hello()
       if (secure === 'starttls') {
         if (!extensions.some((line) => keyword(line) === 'STARTTLS')) {
-          throw new CommandError('ETLS', 'Server does not offer STARTTLS', { command: 'STARTTLS' })
+          throw new CommandError({
+            code: 'ETLS',
+            message: 'Server does not offer STARTTLS',
+            command: 'STARTTLS',
+          })
         }
         await session.write('STARTTLS\r\n', 'STARTTLS')
         const reply = await session.read('STARTTLS')
         if (reply.code !== 220) {
-          throw new CommandError(reply.code === 421 ? 'ECONNECTION' : 'ETLS', 'STARTTLS refused', {
+          throw new CommandError({
+            code: reply.code === 421 ? 'ECONNECTION' : 'ETLS',
+            message: 'STARTTLS refused',
             command: 'STARTTLS',
             reply,
           })
@@ -435,7 +463,7 @@ function createClient(
   const { tls, extensions, lmtp } = state
   const has = (name: string) => extensions.some((line) => keyword(line) === name)
   let queue: Promise<unknown> = Promise.resolve()
-  const enqueue = <T>(run: () => Promise<T>): Promise<T> => {
+  const enqueue = <value>(run: () => Promise<value>): Promise<value> => {
     const next = queue.then(run)
     queue = next.catch(() => {})
     return next
@@ -456,16 +484,20 @@ function createClient(
   const transaction = async (mail: Mail): Promise<Result> => {
     const recipients = typeof mail.to === 'string' ? [mail.to] : [...mail.to]
     if (recipients.length === 0) {
-      throw new CommandError('EENVELOPE', 'No recipients', { command: 'RCPT TO' })
+      throw new CommandError({ code: 'EENVELOPE', message: 'No recipients', command: 'RCPT TO' })
     }
     if (invalidAddress.test(mail.from)) {
-      throw new CommandError('EENVELOPE', `Invalid sender ${JSON.stringify(mail.from)}`, {
+      throw new CommandError({
+        code: 'EENVELOPE',
+        message: `Invalid sender ${JSON.stringify(mail.from)}`,
         command: 'MAIL FROM',
       })
     }
     for (const recipient of recipients) {
       if (!recipient || invalidAddress.test(recipient)) {
-        throw new CommandError('EENVELOPE', `Invalid recipient ${JSON.stringify(recipient)}`, {
+        throw new CommandError({
+          code: 'EENVELOPE',
+          message: `Invalid recipient ${JSON.stringify(recipient)}`,
           command: 'RCPT TO',
         })
       }
@@ -475,16 +507,20 @@ function createClient(
     }
     const utf8 = nonAscii.test(mail.from) || recipients.some((to) => nonAscii.test(to))
     if (utf8 && !has('SMTPUTF8')) {
-      throw new CommandError('EENVELOPE', 'Server does not support SMTPUTF8 addresses', {
+      throw new CommandError({
+        code: 'EENVELOPE',
+        message: 'Server does not support SMTPUTF8 addresses',
         command: 'MAIL FROM',
       })
     }
     if (mail.requireTls && !(tls && has('REQUIRETLS'))) {
-      throw new CommandError(
-        'EENVELOPE',
-        tls ? 'Server does not support REQUIRETLS' : 'REQUIRETLS needs an encrypted connection',
-        { command: 'MAIL FROM' },
-      )
+      throw new CommandError({
+        code: 'EENVELOPE',
+        message: tls
+          ? 'Server does not support REQUIRETLS'
+          : 'REQUIRETLS needs an encrypted connection',
+        command: 'MAIL FROM',
+      })
     }
     const { message } = mail
     const data =
@@ -496,13 +532,11 @@ function createClient(
     const size = data ? data.length : mail.size
     const limit = sizeLimit(extensions)
     if (limit > 0 && size !== undefined && size > limit) {
-      throw new CommandError(
-        'EMESSAGE',
-        `Message size ${size} exceeds the server limit of ${limit}`,
-        {
-          command: 'MAIL FROM',
-        },
-      )
+      throw new CommandError({
+        code: 'EMESSAGE',
+        message: `Message size ${size} exceeds the server limit of ${limit}`,
+        command: 'MAIL FROM',
+      })
     }
 
     const params: string[] = []
@@ -528,7 +562,9 @@ function createClient(
     const sender = await session.read('MAIL FROM')
     const senderAccepted = sender.code === 250
     if (sender.code === 421 || (!senderAccepted && !pipelining)) {
-      throw new CommandError(sender.code === 421 ? 'ECONNECTION' : 'EENVELOPE', 'Sender refused', {
+      throw new CommandError({
+        code: sender.code === 421 ? 'ECONNECTION' : 'EENVELOPE',
+        message: 'Sender refused',
         command: 'MAIL FROM',
         reply: sender,
       })
@@ -540,7 +576,9 @@ function createClient(
       if (!pipelining) await session.write(rcptCommands[i]!, 'RCPT TO')
       const reply = await session.read('RCPT TO')
       if (reply.code === 421) {
-        throw new CommandError('ECONNECTION', 'Server is closing the connection', {
+        throw new CommandError({
+          code: 'ECONNECTION',
+          message: 'Server is closing the connection',
           command: 'RCPT TO',
           reply,
         })
@@ -560,14 +598,18 @@ function createClient(
     if (pipelining) {
       dataReply = await session.read('DATA')
       if (dataReply.code === 421) {
-        throw new CommandError('ECONNECTION', 'Server is closing the connection', {
+        throw new CommandError({
+          code: 'ECONNECTION',
+          message: 'Server is closing the connection',
           command: 'DATA',
           reply: dataReply,
         })
       }
       if (!senderAccepted) {
         if (dataReply.code === 354) session.destroy()
-        throw new CommandError('EENVELOPE', 'Sender refused', {
+        throw new CommandError({
+          code: 'EENVELOPE',
+          message: 'Sender refused',
           command: 'MAIL FROM',
           reply: sender,
         })
@@ -581,7 +623,9 @@ function createClient(
       }
       await reset()
       const first = rejected.find((r) => r.responseCode < 500) ?? rejected[0]!
-      throw new CommandError('EENVELOPE', 'Every recipient was refused', {
+      throw new CommandError({
+        code: 'EENVELOPE',
+        message: 'Every recipient was refused',
         command: 'RCPT TO',
         reply: {
           code: first.responseCode,
@@ -599,11 +643,12 @@ function createClient(
     }
     if (dataReply!.code !== 354) {
       if (dataReply!.code !== 421) await reset()
-      throw new CommandError(
-        dataReply!.code === 421 ? 'ECONNECTION' : 'EENVELOPE',
-        'DATA refused',
-        { command: 'DATA', reply: dataReply },
-      )
+      throw new CommandError({
+        code: dataReply!.code === 421 ? 'ECONNECTION' : 'EENVELOPE',
+        message: 'DATA refused',
+        command: 'DATA',
+        reply: dataReply,
+      })
     }
 
     sending = true
@@ -613,7 +658,9 @@ function createClient(
     if (!lmtp) {
       const reply = await session.read('DATA')
       if (reply.code !== 250) {
-        throw new CommandError(reply.code === 421 ? 'ECONNECTION' : 'EMESSAGE', 'Message refused', {
+        throw new CommandError({
+          code: reply.code === 421 ? 'ECONNECTION' : 'EMESSAGE',
+          message: 'Message refused',
           command: 'DATA',
           reply,
         })
@@ -638,7 +685,9 @@ function createClient(
       }
     }
     if (delivered.length === 0) {
-      throw new CommandError('EMESSAGE', 'Message refused for every recipient', {
+      throw new CommandError({
+        code: 'EMESSAGE',
+        message: 'Message refused for every recipient',
         command: 'DATA',
         rejected,
       })
@@ -654,7 +703,11 @@ function createClient(
         sending = false
         try {
           if (session.closed) {
-            throw new CommandError('ECONNECTION', 'Connection is closed', { command: 'MAIL FROM' })
+            throw new CommandError({
+              code: 'ECONNECTION',
+              message: 'Connection is closed',
+              command: 'MAIL FROM',
+            })
           }
           return await guard(session, options.signal, () => transaction(mail))
         } catch (error) {
@@ -680,6 +733,11 @@ function createClient(
   }
 }
 
+export declare namespace send {
+  /** The same options as `connect`. */
+  type Options = connect.Options
+}
+
 /**
  * Connects, sends one message and closes the connection.
  *
@@ -694,7 +752,7 @@ function createClient(
  * )
  * ```
  */
-export async function send(mail: Mail, options: connect.Options): Promise<Result> {
+export async function send(mail: Mail, options: send.Options): Promise<Result> {
   let client: Client
   try {
     client = await connect(options)

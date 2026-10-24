@@ -41,12 +41,14 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `decodeWords(text)` | a header value | the value with its encoded words decoded |
 | `fold(line, options?)` | a header line | the line with CRLF and whitespace where it is too long |
 | `unfold(text)` | folded text | the text with every CRLF before whitespace removed |
-| `parseHeaders(text)` | a header block | `Header[]`, `{ name, value }` in order, unfolded |
+| `parseHeaders(text, options?)` | a header block | `Header[]`, `{ name, value }` in order, unfolded |
 | `parseValue(text)` | a value such as `text/plain; charset=utf-8` | `Value`, `{ value, params }` |
 | `formatValue(value)` | `Value` | the header value |
 | `parseAddresses(text, options?)` | an address list | `Address[]`, each a `Mailbox` `{ name, address }` or a `Group` `{ name, group }` |
+| `parseMailboxes(text, options?)` | an address list | `Mailbox[]`, with the members of each group in place of the group |
 | `formatAddresses(addresses, options?)` | `Address[]` | the address list |
-| `InvalidInputError` | | thrown by `parseAddresses` in strict mode and by `formatValue` and `formatAddresses` |
+| `InvalidInputError` | | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses` |
+| `MaxLengthError` | | thrown by `parseHeaders` when the header block is longer than `maxLength`. The error stores the limit in `maxLength`. |
 
 `decodeWords` joins encoded words that only whitespace separates, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
@@ -58,18 +60,18 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
-| `encoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | `'Q'` keeps ASCII readable, `'B'` is base64. |
-| `maxLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. `false` writes one word. |
-| `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. `@portable/charset` provides the encoders. |
+| `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | `'Q'` keeps ASCII readable, `'B'` is base64. |
+| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. With `false`, the text is written as one encoded word whatever its length. |
+| `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
-| `strict` | `parseAddresses` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
-| `flatten` | `parseAddresses` | `false` | Return the members of groups in place of the groups. |
+| `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
+| `maxLength` | `parseHeaders` | `Infinity` | Longest header block in UTF-16 code units. `parseHeaders` throws `MaxLengthError` for a longer block. The body doesn't count toward the limit. |
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `MimeHeaders.Encoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
+| `MimeHeaders.WordEncoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
 
 ## Why use this over libmime, addressparser and email-addresses
 
@@ -114,8 +116,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 | libmime / addressparser / email-addresses | @portable/mime-headers |
 | --- | --- |
-| `libmime.encodeWord(text, 'Q', n)` | `encodeWord(text, { maxLength: n })` (`maxLength: false` for libmime's 0) |
-| `libmime.encodeWords(text, 'B', n)` | `encodeWords(text, { encoding: 'B', maxLength: n })` |
+| `libmime.encodeWord(text, 'Q', n)` | `encodeWord(text, { wordLength: n })` (`wordLength: false` for libmime's 0) |
+| `libmime.encodeWords(text, 'B', n)` | `encodeWords(text, { wordEncoding: 'B', wordLength: n })` |
 | `libmime.encodeWords(buffer, 'Q', 0, 'iso-8859-1')` | `encodeWords(new TextDecoder('iso-8859-1').decode(bytes))` |
 | `libmime.decodeWords(text)` | `decodeWords(text)` |
 | `libmime.foldLines(text, n)` | `fold(text, { lineLength: n })` |
@@ -125,7 +127,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `libmime.buildHeaderValue({ value, params })` | `formatValue({ value, params })` |
 | `libmime.encodeFlowed`, `decodeFlowed`, `detectMimeType`, `charset.*` | Not in this package. |
 | `addressparser(text)` | `parseAddresses(text)` |
-| `addressparser(text, { flatten: true })` | `parseAddresses(text, { flatten: true })` |
+| `addressparser(text, { flatten: true })` | `parseMailboxes(text)` |
 | `emailAddresses.parseOneAddress(text)` | `parseAddresses(text, { strict: true })`, then check for one entry |
 | `emailAddresses.parseAddressList(text)` | `parseAddresses(text, { strict: true })`, which throws where email-addresses returns `null` |
 | `result.local`, `result.domain` | Split `address` at its last `@`. |

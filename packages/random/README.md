@@ -14,7 +14,7 @@ import * as Random from '@portable/random'
 Random.int(1, 6) // 1 to 6, both included
 Random.float() // from 0 up to but not including 1
 Random.string(21) // 'Uakgb_J5m9g-0JDMbcJqL'
-Random.string(6, '0123456789') // '407519'
+Random.string(6, { alphabet: '0123456789' }) // '407519'
 Random.shuffle(['A', 'K', 'Q', 'J']) // a new array
 Random.pick(['red', 'green', 'blue'])
 Random.bytes(32) // Uint8Array
@@ -29,7 +29,7 @@ random.int(1, 6) // the same number on every run, in every runtime
 | --- | --- |
 | `int(min, max)` | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can hold up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`. |
 | `float()` | A number from 0 up to but not including 1, made from 53 random bits. |
-| `string(length, alphabet?)` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21 characters hold 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
+| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21 characters hold 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
 | `shuffle(array)` | A shuffled copy of `array`. Every order is equally likely. |
 | `pick(array)` | A random element of `array`. |
 | `bytes(length)` | A new `Uint8Array` of random bytes, with no 65,536-byte limit. |
@@ -50,6 +50,12 @@ Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound
 The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend. Its 32-bit outputs, which `seeded(seed).bytes(n)` returns least significant byte first, match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`, and a negative seed is read as its 64-bit two's complement. The generator uses 32-bit integer arithmetic only, so a seed gives the same values in every runtime. The values for a seed change only in a major version.
 
 xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 2^128 orders. That is fewer than the 35! orders of a 35-element array. `Random.shuffle` doesn't have that limit.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Random.Seeded` | The functions of `@portable/random`, drawing from a seeded generator, as `Random.seeded` returns them. |
 
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom and lodash
 
@@ -99,14 +105,14 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `randomInteger(max)` | `Random.int(0, max)` |
 | `_.random(min, max)` | `Random.int(min, max)` |
 | `_.random(min, max, true)` | `min + Random.float() * (max - min)` |
-| `cryptoRandomString({ length, characters })` | `Random.string(length, characters)` |
-| `cryptoRandomString({ length, type: 'hex' })` | `Random.string(length, '0123456789abcdef')` |
-| `cryptoRandomString({ length, type: 'numeric' })` | `Random.string(length, '0123456789')` |
-| `cryptoRandomString({ length, type: 'alphanumeric' })` | `Random.string(length, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')` |
-| `cryptoRandomString({ length, type: 'url-safe' })` | `Random.string(length, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~')` |
-| `cryptoRandomString({ length, type: 'distinguishable' })` | `Random.string(length, 'CDEHKMPRTUWXY012458')` |
+| `cryptoRandomString({ length, characters })` | `Random.string(length, { alphabet: characters })` |
+| `cryptoRandomString({ length, type: 'hex' })` | `Random.string(length, { alphabet: '0123456789abcdef' })` |
+| `cryptoRandomString({ length, type: 'numeric' })` | `Random.string(length, { alphabet: '0123456789' })` |
+| `cryptoRandomString({ length, type: 'alphanumeric' })` | `Random.string(length, { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' })` |
+| `cryptoRandomString({ length, type: 'url-safe' })` | `Random.string(length, { alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~' })` |
+| `cryptoRandomString({ length, type: 'distinguishable' })` | `Random.string(length, { alphabet: 'CDEHKMPRTUWXY012458' })` |
 | `nanoid()` | `Random.string(21)` |
-| `customAlphabet(alphabet, size)()` | `Random.string(size, alphabet)` |
+| `customAlphabet(alphabet, size)()` | `Random.string(size, { alphabet })` |
 | nanoid's `random(n)` | `Random.bytes(n)` |
 | `_.shuffle(array)` | `Random.shuffle(array)` |
 | `_.sample(array)` | `Random.pick(array)`, which throws for an empty array |

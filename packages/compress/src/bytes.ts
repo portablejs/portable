@@ -1,10 +1,4 @@
-export function toBufferSource(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
-  return ownsArrayBuffer(bytes) ? bytes : bytes.slice()
-}
-
-function ownsArrayBuffer(bytes: Uint8Array): bytes is Uint8Array<ArrayBuffer> {
-  return bytes.buffer instanceof ArrayBuffer
-}
+import { toBufferSource } from '@portable/bytes/internal'
 
 export function concat(chunks: readonly Uint8Array[], length: number): Uint8Array<ArrayBuffer> {
   if (chunks.length === 1 && chunks[0]!.byteLength === length) return toBufferSource(chunks[0]!)

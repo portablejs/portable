@@ -1,6 +1,6 @@
 {
   "name": "@portable/rpc",
-  "description": "Typed JSON-RPC 2.0 over MessagePort, windows, WebSocket and HTTP, with streaming results, in any JavaScript runtime.",
+  "description": "Call typed JSON-RPC 2.0 methods over MessagePort, windows, WebSocket and HTTP, with streaming results, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -35,16 +35,17 @@
     "src"
   ],
   "dependencies": {
+    "@portable/errors": "workspace:*",
     "@portable/jsonl": "workspace:*"
   },
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

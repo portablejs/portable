@@ -27,7 +27,7 @@ describe('authorization', () => {
             signatureMethod: 'PLAINTEXT',
             consumer,
             token,
-            timestamp: new Date(1318622958_000),
+            now: new Date(1318622958_000),
             ...extra,
           })
           expect(parseHeader(header)).toEqual({
@@ -58,15 +58,15 @@ describe('authorization', () => {
           signatureMethod: 'HMAC-SHA1' as const,
           consumer: { key: 'consumer', secret },
           nonce: 'nonce',
-          timestamp: new Date(1_000),
+          now: new Date(1_000),
         }
-        const protocol: [string, string][] = [
+        const protocol = [
           ['oauth_consumer_key', 'consumer'],
           ['oauth_nonce', 'nonce'],
           ['oauth_signature_method', 'HMAC-SHA1'],
           ['oauth_timestamp', '1'],
           ['oauth_version', '1.0'],
-        ]
+        ] satisfies [string, string][]
         const parameters = [...protocol, ...query, ...body]
           .map(([name, value]) => [rfc3986(name), rfc3986(value)] as const)
           .sort(([a, x], [b, y]) => (a < b ? -1 : a > b ? 1 : x < y ? -1 : x > y ? 1 : 0))
@@ -91,7 +91,7 @@ describe('authorization', () => {
         const options = {
           consumer: { key: 'k', secret: 's' },
           nonce: 'n',
-          timestamp: new Date(1_000),
+          now: new Date(1_000),
         }
         const header = parseHeader(await OAuth1.authorization(make(), options))
         const signed = await OAuth1.sign(make(), { ...options, placement: 'query' })

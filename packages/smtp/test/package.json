@@ -3,9 +3,13 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/dkim": "workspace:*",
+    "@portable/fuzz": "workspace:*",
+    "@portable/mail": "workspace:*",
     "@portable/smtp": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "nodemailer": "^10.1.2",
     "smtp-server": "^3.19.23"
   }

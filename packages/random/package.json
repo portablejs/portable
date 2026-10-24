@@ -1,6 +1,6 @@
 {
   "name": "@portable/random",
-  "description": "Unbiased random integers, strings and shuffles from crypto.getRandomValues, plus a seeded generator for tests, in any JavaScript runtime.",
+  "description": "Generate unbiased random integers, strings and shuffles from crypto.getRandomValues, with a seeded generator for tests, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -35,12 +35,12 @@
   ],
   "exports": {
     ".": {
-      "src": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "src": "./src/exports/index.ts",
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./dist/exports/index.js",
+  "module": "./dist/exports/index.js",
+  "types": "./dist/exports/index.d.ts"
 }

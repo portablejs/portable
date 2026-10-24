@@ -285,13 +285,15 @@ describe('message structure', () => {
   test.each(['X\r\nX-Evil: injected', 'a\tb', 'a"b', 'x'.repeat(61)])(
     'the boundary %j throws a RangeError because RFC 2046 does not allow it',
     (prefix) => {
-      expect(() => Mail.encode({ text: 'a', html: 'b' }, { boundary: prefix })).toThrow(RangeError)
+      expect(() => Mail.encodeStream({ text: 'a', html: 'b' }, { boundary: prefix })).toThrow(
+        RangeError,
+      )
     },
   )
 
   test('the default boundary is random and holds "=_", which base64 and quoted-printable never write', async () => {
-    const first = await Streams.toText(Mail.encode({ text: 'a', html: 'b' }))
-    const second = await Streams.toText(Mail.encode({ text: 'a', html: 'b' }))
+    const first = await Streams.toText(Mail.encodeStream({ text: 'a', html: 'b' }))
+    const second = await Streams.toText(Mail.encodeStream({ text: 'a', html: 'b' }))
     const boundaryOf = (raw: string) => /boundary="([^"]+)"/.exec(raw)![1]!
     expect(boundaryOf(first)).toMatch(/^=_[0-9a-f]{16}_1$/)
     expect(boundaryOf(first)).not.toBe(boundaryOf(second))

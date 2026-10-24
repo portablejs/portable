@@ -1,4 +1,5 @@
-import { concat, toBufferSource } from './bytes.js'
+import { toBufferSource } from '@portable/bytes/internal'
+import { concat } from './bytes.js'
 import { MaxBytesError, classify } from './errors.js'
 
 /** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
@@ -80,7 +81,7 @@ export async function decode(
       new DecompressionStream(format),
       (chunk) => {
         length += chunk.byteLength
-        if (length > maxBytes) throw new MaxBytesError(maxBytes)
+        if (length > maxBytes) throw new MaxBytesError({ maxBytes })
         chunks.push(chunk)
       },
       signal,

@@ -41,7 +41,7 @@ export declare namespace window {
  * )
  *
  * // In the iframe
- * Rpc.serve(api, Rpc.window(window.parent, { origin: 'https://parent.example.com' }))
+ * Rpc.provide(Rpc.window(window.parent, { origin: 'https://parent.example.com' }), api)
  * ```
  */
 export function window(target: window.Target, options: window.Options): Transport {

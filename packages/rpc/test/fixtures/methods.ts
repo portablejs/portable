@@ -138,6 +138,6 @@ export type Methods = ReturnType<typeof createMethods>
 export function servePort(target: Rpc.port.Target, config: Config = {}, channel = ''): void {
   const parent: Rpc.Remote<ParentApi> = Rpc.connect<ParentApi>(Rpc.port(target), {
     codec: codecOf(config),
-    serve: createMethods({ parent: () => parent, channel }),
+    methods: createMethods({ parent: () => parent, channel }),
   })
 }

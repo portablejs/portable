@@ -1,6 +1,9 @@
+import * as Base64 from '@portable/base64'
 import * as DnsPacket from '@portable/dns-packet'
+import * as Errors from '@portable/errors'
 import * as Ip from '@portable/ip'
 import { QueryError } from './errors.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 /** A mail exchange, as `resolveMx` returns it. */
 export type MxRecord = { exchange: string; priority: number }
@@ -45,8 +48,8 @@ export type NaptrRecord = {
 
 /**
  * The lookups that SPF, DMARC and DKIM need, with the method names and result shapes of
- * `node:dns/promises`. The object `createResolver` returns fits it, and so do `node:dns/promises`
- * itself, `new Resolver()` from it, and a plain object of functions in tests.
+ * `node:dns/promises`. `create` returns one, and `node:dns/promises`, a `new Resolver()` from it
+ * and a plain object of functions in a test also match the type.
  *
  * @example
  * ```ts
@@ -57,25 +60,53 @@ export type NaptrRecord = {
  *   return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
  * }
  *
- * await dmarcRecord(Dns.createResolver(), 'example.com')
+ * await dmarcRecord(Dns.create(), 'example.com')
  * ```
  */
 export type Resolver = {
-  resolve4(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolve6(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolveCname(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolveMx(name: string, options?: createResolver.CallOptions): Promise<MxRecord[]>
-  resolveNs(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolvePtr(name: string, options?: createResolver.CallOptions): Promise<string[]>
-  resolveTxt(name: string, options?: createResolver.CallOptions): Promise<string[][]>
-  resolveSrv(name: string, options?: createResolver.CallOptions): Promise<SrvRecord[]>
-  resolveSoa(name: string, options?: createResolver.CallOptions): Promise<SoaRecord>
-  resolveCaa(name: string, options?: createResolver.CallOptions): Promise<CaaRecord[]>
-  resolveNaptr(name: string, options?: createResolver.CallOptions): Promise<NaptrRecord[]>
-  reverse(ip: string, options?: createResolver.CallOptions): Promise<string[]>
+  /** IPv4 addresses (A records). */
+  resolve4(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  /** IPv6 addresses (AAAA records), formatted as RFC 5952 recommends. */
+  resolve6(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  /** The CNAME targets of `name` itself. */
+  resolveCname(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolveMx(name: string, options?: Resolver.CallOptions): Promise<MxRecord[]>
+  resolveNs(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolvePtr(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
+  resolveTxt(name: string, options?: Resolver.CallOptions): Promise<string[][]>
+  resolveSrv(name: string, options?: Resolver.CallOptions): Promise<SrvRecord[]>
+  /** The first SOA record. */
+  resolveSoa(name: string, options?: Resolver.CallOptions): Promise<SoaRecord>
+  resolveCaa(name: string, options?: Resolver.CallOptions): Promise<CaaRecord[]>
+  resolveNaptr(name: string, options?: Resolver.CallOptions): Promise<NaptrRecord[]>
+  /** Host names for an IPv4 or IPv6 address, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. */
+  reverse(ip: string, options?: Resolver.CallOptions): Promise<string[]>
 }
 
-export declare namespace createResolver {
+export declare namespace Resolver {
+  type CallOptions = {
+    /** Cancels the lookup, which then rejects with `signal.reason`, as `fetch` does. */
+    signal?: AbortSignal | undefined
+  }
+}
+
+/** The resolver that `create` returns: every `Resolver` lookup, and `query` for any record type. */
+export type DohResolver = Resolver & {
+  /**
+   * Sends one question of any type and returns the whole decoded response, with TTLs, the
+   * authority section and the AD flag. It resolves when the response code is NOERROR or
+   * NXDOMAIN, so `answers` can be empty. For any other response code, and when the request
+   * fails, it rejects with `QueryError`, as the other methods do.
+   */
+  query(
+    name: string,
+    type: DnsPacket.RecordType,
+    options?: Resolver.CallOptions,
+  ): Promise<DnsPacket.DecodedPacket>
+}
+
+export declare namespace create {
   type Options = {
     /**
      * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The next one is tried when a request
@@ -84,49 +115,12 @@ export declare namespace createResolver {
      */
     endpoints?: readonly (string | URL)[] | undefined
     /**
-     * Sends each request, called as `fetch(url, { headers, signal })`. Pass one to add headers,
-     * route through a proxy, or mock in tests.
+     * Sends each request. Pass one to add headers, route through a proxy, or mock in tests.
      * @default globalThis.fetch
      */
-    fetch?: ((url: string, init: RequestInit) => Promise<Response>) | undefined
+    fetch?: ((request: Request) => Promise<Response>) | undefined
     /** Milliseconds to wait for each endpoint, including reading the response body. @default 5000 */
     timeout?: number | undefined
-  }
-
-  type CallOptions = {
-    /** Cancels the lookup, which then rejects with `signal.reason`, as `fetch` does. */
-    signal?: AbortSignal | undefined
-  }
-
-  type ReturnType = {
-    /** IPv4 addresses (A records). */
-    resolve4(name: string, options?: CallOptions): Promise<string[]>
-    /** IPv6 addresses (AAAA records), formatted as RFC 5952 recommends. */
-    resolve6(name: string, options?: CallOptions): Promise<string[]>
-    /** The CNAME targets of `name` itself. */
-    resolveCname(name: string, options?: CallOptions): Promise<string[]>
-    resolveMx(name: string, options?: CallOptions): Promise<MxRecord[]>
-    resolveNs(name: string, options?: CallOptions): Promise<string[]>
-    resolvePtr(name: string, options?: CallOptions): Promise<string[]>
-    /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
-    resolveTxt(name: string, options?: CallOptions): Promise<string[][]>
-    resolveSrv(name: string, options?: CallOptions): Promise<SrvRecord[]>
-    /** The first SOA record. */
-    resolveSoa(name: string, options?: CallOptions): Promise<SoaRecord>
-    resolveCaa(name: string, options?: CallOptions): Promise<CaaRecord[]>
-    resolveNaptr(name: string, options?: CallOptions): Promise<NaptrRecord[]>
-    /** Host names for an IPv4 or IPv6 address, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. */
-    reverse(ip: string, options?: CallOptions): Promise<string[]>
-    /**
-     * Sends one question of any type and returns the whole decoded response, with TTLs, the
-     * authority section and the AD flag. It resolves for NOERROR and NXDOMAIN, so `answers` can be
-     * empty, and rejects with `QueryError` like the other methods for everything else.
-     */
-    query(
-      name: string,
-      type: DnsPacket.RecordType,
-      options?: CallOptions,
-    ): Promise<DnsPacket.DecodedPacket>
   }
 }
 
@@ -149,12 +143,6 @@ const host = (name: string) => (name === '.' ? '' : name)
 
 const syscallFor = (type: string) => `query${type[0]}${type.slice(1).toLowerCase()}`
 
-const base64url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replace(/=+$/, '')
-
 const hostName = /^(?:(?:[\w*/-]|\\.)+(?:\.(?:[\w*/-]|\\.)+)*\.?|\.?)$/
 
 const nonAscii = /[\u{80}-\u{10ffff}]/gu
@@ -162,45 +150,40 @@ const nonAscii = /[\u{80}-\u{10ffff}]/gu
 function toQueryName(name: string, syscall: string): string {
   if (typeof name !== 'string') throw new TypeError('The name must be a string.')
   const masked = name.replace(nonAscii, 'a')
-  if (!hostName.test(masked)) throw new QueryError('EBADNAME', syscall, name)
+  if (!hostName.test(masked)) throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
   if (masked === name) return name
-  if (/[/\\]/.test(name)) throw new QueryError('EBADNAME', syscall, name)
-  let ascii: string
-  try {
-    ascii = new URL(`http://${name}/`).hostname
-  } catch (cause) {
-    throw new QueryError('EBADNAME', syscall, name, { cause })
-  }
-  if (!hostName.test(ascii)) throw new QueryError('EBADNAME', syscall, name)
+  const ascii = hostToAscii(name)
+  if (ascii === undefined || !hostName.test(ascii))
+    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
   return ascii
 }
 
 function reverseName(ip: string): string | undefined {
-  if (!Ip.validate(ip)) return undefined
+  if (!Ip.canParse(ip)) return undefined
   const address = Ip.parse(ip)
   if (address.version === 6 && address.zone !== undefined) return undefined
   return Ip.reverseName(address)
 }
 
-type DataOf<T extends string> =
-  Extract<DnsPacket.DecodedResourceRecord, { type: T }> extends {
-    data: infer D
+type DataOf<value extends string> =
+  Extract<DnsPacket.DecodedResourceRecord, { type: value }> extends {
+    data: infer data
   }
-    ? D
+    ? data
     : never
 
-function recordsFor<T extends string>(
+function recordsFor<value extends string>(
   packet: DnsPacket.DecodedPacket,
   name: string,
-  type: T,
-): DataOf<T>[] {
-  const found: DataOf<T>[] = []
+  type: value,
+): DataOf<value>[] {
+  const found: DataOf<value>[] = []
   let owner = canonical(name)
   for (let hops = 0; hops <= packet.answers.length; hops++) {
     let target: string | undefined
     for (const record of packet.answers) {
       if (canonical(record.name) !== owner) continue
-      if (record.type === type) found.push((record as unknown as { data: DataOf<T> }).data)
+      if (record.type === type) found.push((record as unknown as { data: DataOf<value> }).data)
       else if (record.type === 'CNAME') target = record.data
     }
     if (found.length > 0 || target === undefined) break
@@ -219,12 +202,12 @@ function recordsFor<T extends string>(
  * ```ts
  * import * as Dns from '@portable/dns'
  *
- * const resolver = Dns.createResolver({ timeout: 2000 })
+ * const resolver = Dns.create({ timeout: 2000 })
  * const records = await resolver.resolveTxt('example.com')
  * const spf = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=spf1'))
  * ```
  */
-export function createResolver(options: createResolver.Options = {}): createResolver.ReturnType {
+export function create(options: create.Options = {}): DohResolver {
   const endpoints = (options.endpoints ?? defaultEndpoints).map((endpoint) => {
     const url = new URL(endpoint)
     url.hash = ''
@@ -235,7 +218,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
   const timeout = options.timeout ?? 5000
   if (!(timeout > 0 && timeout <= 2 ** 31 - 1))
     throw new RangeError('`timeout` must be a number of milliseconds above 0.')
-  const send = options.fetch ?? ((url: string, init: RequestInit) => fetch(url, init))
+  const send = options.fetch ?? ((request: Request) => fetch(request))
 
   async function attempt(
     endpoint: string,
@@ -250,23 +233,33 @@ export function createResolver(options: createResolver.Options = {}): createReso
     const timer = setTimeout(() => deadline.abort(), timeout)
     let bytes: Uint8Array
     try {
-      const response = await send(endpoint + query, {
-        headers,
-        signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
-      })
-      if (!response.ok)
-        return new QueryError('EBADRESP', syscall, hostname, {
-          cause: new Error(`${new URL(endpoint).origin} answered HTTP ${response.status}.`),
+      const response = await send(
+        new Request(endpoint + query, {
+          headers,
+          signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
+        }),
+      )
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {})
+        return new QueryError({
+          code: 'EBADRESP',
+          syscall,
+          hostname,
+          cause: new Errors.ResponseError({
+            response,
+            message: `${new URL(endpoint).origin} answered HTTP ${response.status}.`,
+          }),
         })
+      }
       bytes = new Uint8Array(await response.arrayBuffer())
     } catch (cause) {
       signal?.throwIfAborted()
-      return new QueryError(
-        deadline.signal.aborted ? 'ETIMEOUT' : 'ECONNREFUSED',
+      return new QueryError({
+        code: deadline.signal.aborted ? 'ETIMEOUT' : 'ECONNREFUSED',
         syscall,
         hostname,
-        { cause },
-      )
+        cause,
+      })
     } finally {
       clearTimeout(timer)
     }
@@ -274,7 +267,7 @@ export function createResolver(options: createResolver.Options = {}): createReso
     try {
       packet = DnsPacket.decode(bytes)
     } catch (cause) {
-      return new QueryError('EBADRESP', syscall, hostname, { cause })
+      return new QueryError({ code: 'EBADRESP', syscall, hostname, cause })
     }
     const echoed = packet.questions[0]
     if (
@@ -283,15 +276,24 @@ export function createResolver(options: createResolver.Options = {}): createReso
       echoed?.type !== question.type ||
       canonical(echoed.name) !== canonical(question.name)
     )
-      return new QueryError('EBADRESP', syscall, hostname, {
+      return new QueryError({
+        code: 'EBADRESP',
+        syscall,
+        hostname,
         cause: new Error('The response is for a different question.'),
       })
     if (packet.flags.tc)
-      return new QueryError('EBADRESP', syscall, hostname, {
+      return new QueryError({
+        code: 'EBADRESP',
+        syscall,
+        hostname,
         cause: new Error('The response is truncated.'),
       })
     if (packet.rcode === 'NOERROR' || packet.rcode === 'NXDOMAIN') return packet
-    return new QueryError(failures[packet.rcode] ?? 'EBADRESP', syscall, hostname, {
+    return new QueryError({
+      code: failures[packet.rcode] ?? 'EBADRESP',
+      syscall,
+      hostname,
       cause: new Error(`The server answered ${packet.rcode}.`),
     })
   }
@@ -304,14 +306,16 @@ export function createResolver(options: createResolver.Options = {}): createReso
     signal: AbortSignal | undefined,
   ): Promise<DnsPacket.DecodedPacket> {
     signal?.throwIfAborted()
-    if (/(?:^|\.)onion\.?$/i.test(name)) throw new QueryError('ENOTFOUND', syscall, hostname)
+    if (/(?:^|\.)onion\.?$/i.test(name))
+      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
     let query: string
     try {
-      query = base64url(
+      query = Base64.encode(
         DnsPacket.encode({ flags: { rd: true, ad: true }, questions: [{ name, type }] }),
+        { alphabet: 'base64url', omitPadding: true },
       )
     } catch (cause) {
-      throw new QueryError('EBADNAME', syscall, hostname, { cause })
+      throw new QueryError({ code: 'EBADNAME', syscall, hostname, cause })
     }
     let error: QueryError | undefined
     for (const endpoint of endpoints) {
@@ -322,25 +326,25 @@ export function createResolver(options: createResolver.Options = {}): createReso
     throw error
   }
 
-  async function lookup<T extends DnsPacket.RecordType>(
+  async function lookup<value extends DnsPacket.RecordType>(
     hostname: string,
     name: string,
-    type: T,
+    type: value,
     syscall: string,
     signal: AbortSignal | undefined,
-  ): Promise<DataOf<T>[]> {
+  ): Promise<DataOf<value>[]> {
     const packet = await exchange(hostname, name, type, syscall, signal)
-    if (packet.rcode === 'NXDOMAIN') throw new QueryError('ENOTFOUND', syscall, hostname)
+    if (packet.rcode === 'NXDOMAIN') throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
     const records = recordsFor(packet, name, type)
-    if (records.length === 0) throw new QueryError('ENODATA', syscall, hostname)
+    if (records.length === 0) throw new QueryError({ code: 'ENODATA', syscall, hostname })
     return records
   }
 
-  async function resolve<T extends DnsPacket.RecordType>(
+  async function resolve<value extends DnsPacket.RecordType>(
     name: string,
-    type: T,
-    options: createResolver.CallOptions = {},
-  ): Promise<DataOf<T>[]> {
+    type: value,
+    options: Resolver.CallOptions = {},
+  ): Promise<DataOf<value>[]> {
     const syscall = syscallFor(type)
     return lookup(name, toQueryName(name, syscall), type, syscall, options.signal)
   }
@@ -397,10 +401,12 @@ export function createResolver(options: createResolver.Options = {}): createReso
     },
     async reverse(ip, options = {}) {
       const name = reverseName(ip)
-      if (name === undefined) throw new QueryError('EINVAL', 'getHostByAddr', ip)
+      if (name === undefined)
+        throw new QueryError({ code: 'EINVAL', syscall: 'getHostByAddr', hostname: ip })
       const packet = await exchange(ip, name, 'PTR', 'getHostByAddr', options.signal)
       const records = recordsFor(packet, name, 'PTR')
-      if (records.length === 0) throw new QueryError('ENOTFOUND', 'getHostByAddr', ip)
+      if (records.length === 0)
+        throw new QueryError({ code: 'ENOTFOUND', syscall: 'getHostByAddr', hostname: ip })
       return records.map(host)
     },
     async query(name, type, options = {}) {

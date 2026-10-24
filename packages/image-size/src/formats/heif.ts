@@ -4,7 +4,7 @@ import type { Format } from './format.js'
 
 type Brand = 'avif' | 'avis' | 'heic' | 'heix' | 'hevc' | 'hevx' | 'mif1' | 'msf1'
 
-const brands: ReadonlySet<string> = new Set<Brand>([
+const brands = new Set<string>([
   'avif',
   'avis',
   'heic',
@@ -13,7 +13,7 @@ const brands: ReadonlySet<string> = new Set<Brand>([
   'hevx',
   'mif1',
   'msf1',
-])
+] satisfies Brand[])
 
 const isBrand = (value: string): value is Brand => brands.has(value)
 

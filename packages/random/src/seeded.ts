@@ -7,11 +7,11 @@ export type Seeded = {
   /** Same as `Random.float`. */
   readonly float: () => number
   /** Same as `Random.string`. */
-  readonly string: (length: number, alphabet?: string) => string
+  readonly string: (length: number, options?: { alphabet?: string | undefined }) => string
   /** Same as `Random.shuffle`. */
-  readonly shuffle: <T>(array: readonly T[]) => T[]
+  readonly shuffle: <value>(array: readonly value[]) => value[]
   /** Same as `Random.pick`. */
-  readonly pick: <T>(array: readonly T[]) => T
+  readonly pick: <value>(array: readonly value[]) => value
   /** Same as `Random.bytes`. Each group of four bytes is one 32-bit output, least significant byte first. */
   readonly bytes: (length: number) => Uint8Array<ArrayBuffer>
 }
@@ -58,7 +58,7 @@ export function seeded(seed: number): Seeded {
   return {
     int: (min, max) => internal.int(next, min, max),
     float: () => ((next() >>> 11) * 4294967296 + next()) / 9007199254740992,
-    string(length, alphabet = internal.urlAlphabet) {
+    string(length, { alphabet = internal.urlAlphabet } = {}) {
       internal.checkLength(length)
       return internal.string(next, fill, length, internal.alphabet(alphabet))
     },

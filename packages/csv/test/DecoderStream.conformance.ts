@@ -67,7 +67,12 @@ describe('DecoderStream', () => {
 
   test('types rows as objects when header is set', async () => {
     const [row] = await decodeStream(['name\nAda\n'], { header: true })
-    const name: string | undefined = row?.name
+    const name = row?.name satisfies string | undefined
     expect(name).toBe('Ada')
   })
+})
+
+test('a row over maxLength with text after a closing quote throws MaxLengthError however it is chunked', async () => {
+  expect(() => Csv.decode('""a', { maxLength: 0 })).toThrow(Csv.MaxLengthError)
+  await expect(decodeStream(['"', '"a'], { maxLength: 0 })).rejects.toThrow(Csv.MaxLengthError)
 })

@@ -15,7 +15,7 @@ import { abortable } from './abortable.js'
  * new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')) // 'tere jõgeva'
  * ```
  */
-export function decode(input: string | Uint8Array): Uint8Array {
+export function decode(input: string | Uint8Array): Uint8Array<ArrayBuffer> {
   const bytes = typeof input === 'string' ? encodeUtf8(input) : input
   return createDecoder().write(bytes, true)
 }
@@ -38,7 +38,7 @@ export declare namespace DecoderStream {
  * const text = body.pipeThrough(new QuotedPrintable.DecoderStream()).pipeThrough(new TextDecoderStream())
  * ```
  */
-export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array> {
+export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
   constructor(options: DecoderStream.Options = {}) {
     const decoder = createDecoder()
     const utf8 = createUtf8Encoder()
@@ -66,11 +66,14 @@ const TAB = 0x09
 const CR = 0x0d
 const LF = 0x0a
 
-const hexValue = new Int8Array(256).fill(-1)
-for (let i = 0; i < 10; i++) hexValue[0x30 + i] = i
-for (let i = 0; i < 6; i++) hexValue[0x41 + i] = hexValue[0x61 + i] = 10 + i
+const hexValue = /* @__PURE__ */ (() => {
+  const table = new Int8Array(256).fill(-1)
+  for (let i = 0; i < 10; i++) table[0x30 + i] = i
+  for (let i = 0; i < 6; i++) table[0x41 + i] = table[0x61 + i] = 10 + i
+  return table
+})()
 
-type Decoder = { write: (bytes: Uint8Array, final: boolean) => Uint8Array }
+type Decoder = { write: (bytes: Uint8Array, final: boolean) => Uint8Array<ArrayBuffer> }
 
 // The decoder makes three passes in one. Each holds back the bytes whose meaning depends on what
 // follows: whitespace runs (dropped before a line break or at the end), "=" and "=\r" (a soft line

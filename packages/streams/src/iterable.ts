@@ -1,7 +1,7 @@
-type NativeFrom = <T>(
-  iterable: Iterable<T | PromiseLike<T>> | AsyncIterable<T>,
-) => ReadableStream<T>
-type NativeValues<T> = (options: { preventCancel: boolean }) => AsyncIterableIterator<T>
+type NativeFrom = <chunk>(
+  iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
+) => ReadableStream<chunk>
+type NativeValues<chunk> = (options: { preventCancel: boolean }) => AsyncIterableIterator<chunk>
 
 /**
  * Creates a `ReadableStream` from an iterable or async iterable, such as an array or a
@@ -20,10 +20,10 @@ type NativeValues<T> = (options: { preventCancel: boolean }) => AsyncIterableIte
  * return new Response(Streams.fromIterable(countdown()).pipeThrough(new TextEncoderStream()))
  * ```
  */
-export function fromIterable<T>(
-  iterable: Iterable<T | PromiseLike<T>> | AsyncIterable<T>,
-): ReadableStream<T> {
-  const native: { from?: NativeFrom; prototype: unknown } = ReadableStream
+export function fromIterable<chunk>(
+  iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
+): ReadableStream<chunk> {
+  const native: { from?: NativeFrom | undefined; prototype: unknown } = ReadableStream
   if (typeof native.from === 'function') return native.from(iterable)
   return pull(asyncIterator(iterable))
 }
@@ -50,12 +50,12 @@ export declare namespace toAsyncIterable {
  * }
  * ```
  */
-export function toAsyncIterable<T>(
-  stream: ReadableStream<T>,
+export function toAsyncIterable<chunk>(
+  stream: ReadableStream<chunk>,
   options: toAsyncIterable.Options = {},
-): AsyncIterableIterator<T> {
+): AsyncIterableIterator<chunk> {
   const { preventCancel = false } = options
-  const native: { values?: NativeValues<T> } = stream
+  const native: { values?: NativeValues<chunk> | undefined } = stream
   if (typeof native.values === 'function') return native.values({ preventCancel })
   return iterate(stream.getReader(), preventCancel)
 }
@@ -81,11 +81,11 @@ export function toAsyncIterable<T>(
  * numbers.pipeThrough(sum)
  * ```
  */
-export function transform<I, O>(
-  fn: (source: AsyncIterable<I>) => AsyncIterable<O>,
+export function transform<input, output>(
+  fn: (source: AsyncIterable<input>) => AsyncIterable<output>,
   options: transform.Options = {},
-): ReadableWritablePair<O, I> {
-  const input = new TransformStream<I, I>()
+): ReadableWritablePair<output, input> {
+  const input = new TransformStream<input, input>()
   const reader = input.readable.getReader()
   const output = asyncIterator(fn(iterate(reader, true)))
   const stop = (reason: unknown) =>
@@ -103,24 +103,24 @@ export declare namespace transform {
   }
 }
 
-function asyncIterator<T>(
-  iterable: Iterable<T | PromiseLike<T>> | AsyncIterable<T>,
-): AsyncIterator<T> {
+function asyncIterator<chunk>(
+  iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
+): AsyncIterator<chunk> {
   if (Symbol.asyncIterator in iterable) return iterable[Symbol.asyncIterator]()
   return (async function* () {
     yield* iterable
   })()
 }
 
-function pull<T>(
-  iterator: AsyncIterator<T>,
+function pull<chunk>(
+  iterator: AsyncIterator<chunk>,
   stop?: (reason: unknown) => Promise<void>,
   signal?: AbortSignal,
-): ReadableStream<T> {
+): ReadableStream<chunk> {
   let aborted = false
   let abort = () => {}
   const release = () => signal?.removeEventListener('abort', abort)
-  return new ReadableStream<T>(
+  return new ReadableStream<chunk>(
     {
       start(controller) {
         if (!signal) return
@@ -134,7 +134,7 @@ function pull<T>(
         signal.addEventListener('abort', abort, { once: true })
       },
       async pull(controller) {
-        let result: IteratorResult<T>
+        let result: IteratorResult<chunk>
         try {
           result = await iterator.next()
         } catch (error) {
@@ -159,14 +159,14 @@ function pull<T>(
   )
 }
 
-async function* iterate<T>(
-  reader: ReadableStreamDefaultReader<T>,
+async function* iterate<chunk>(
+  reader: ReadableStreamDefaultReader<chunk>,
   preventCancel: boolean,
-): AsyncGenerator<T, undefined> {
+): AsyncGenerator<chunk, undefined> {
   let finished = false
   try {
     for (;;) {
-      let result: ReadableStreamReadResult<T>
+      let result: ReadableStreamReadResult<chunk>
       try {
         result = await reader.read()
       } catch (error) {

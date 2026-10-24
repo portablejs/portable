@@ -3,7 +3,7 @@ import { cuts, fc, fuzz, outcome, outcomeAsync, split } from '@portable/fuzz'
 import { beforeAll, describe, expect, test } from 'vite-plus/test'
 import { encodeStream } from './utils.js'
 
-const names: readonly Charset.Name[] = [
+const names = [
   'UTF-8',
   'IBM866',
   'ISO-8859-2',
@@ -24,7 +24,7 @@ const names: readonly Charset.Name[] = [
   'EUC-KR',
   'UTF-16BE',
   'UTF-16LE',
-]
+] satisfies readonly Charset.Name[]
 const charsets: Charset.Charset[] = []
 beforeAll(async () => {
   for (const name of names) charsets.push(await Charset.load(name))

@@ -1,7 +1,8 @@
+import * as Errors from '@portable/errors'
 import type { ErrorObject } from './types.js'
 
 export declare namespace RemoteError {
-  type Options = ErrorObject
+  type Options = ErrorObject & ErrorOptions
 }
 
 /**
@@ -27,22 +28,23 @@ export declare namespace RemoteError {
  * }
  * ```
  */
-export class RemoteError extends Error {
-  override name = 'Rpc.RemoteError'
+export class RemoteError extends Errors.BaseError {
+  static override readonly kind: string = 'Rpc.RemoteError'
   /** The JSON-RPC error code, such as `-32601` for an unknown method. */
   readonly code: number
   /** The error's `data` member, if it had one. */
   readonly data: unknown
-  constructor(error: RemoteError.Options) {
-    super(error.message)
-    this.code = error.code
-    this.data = error.data
+  constructor(options: RemoteError.Options) {
+    const { code, message, data, ...rest } = options
+    super(message, rest)
+    this.code = code
+    this.data = data
   }
 }
 
 /**
  * The error that waiting calls reject with when the transport closes or fails, or when an HTTP
- * request fails. `cause` holds the underlying error or the failed `Response`.
+ * request fails. `cause` holds the underlying error, which is an `Errors.ResponseError` for a failed HTTP response.
  *
  * @example
  * ```ts
@@ -56,6 +58,6 @@ export class RemoteError extends Error {
  * }
  * ```
  */
-export class TransportError extends Error {
-  override name = 'Rpc.TransportError'
+export class TransportError extends Errors.BaseError {
+  static override readonly kind: string = 'Rpc.TransportError'
 }

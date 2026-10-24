@@ -65,8 +65,9 @@ An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` ho
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `fetch` | `globalThis.fetch` | Called as `fetch(url, { headers, signal })`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
+| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
 | `signal` | | Cancels the lookup, including a bootstrap request no other lookup is waiting for. It rejects with `signal.reason`. |
+| `now` | the current time | The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. |
 | `follow` | `true` | `Rdap.domain` only. Fetches the registrar's response when the registry links to it. |
 
 For a timeout, pass `signal: AbortSignal.timeout(5000)`.
@@ -87,8 +88,8 @@ The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use 
 | --- | --- |
 | `InvalidInputError` | The name, address or number is malformed. No request is sent. |
 | `UnsupportedError` | IANA lists no RDAP server for it, as for `.de` domains or `10.0.0.1`. |
-| `NotFoundError` | The server answered 404. `url` holds the URL. |
-| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url` and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
+| `NotFoundError` | The server answered 404. `url` holds the URL and `response` the response. It extends `Errors.ResponseError` but not `Rdap.ResponseError`. |
+| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url`, the whole `response` and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
 
 When `fetch` rejects, such as on a network failure, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
 

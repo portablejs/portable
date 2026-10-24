@@ -7,6 +7,7 @@ import {
   formatValue,
   InvalidInputError,
   parseAddresses,
+  parseMailboxes,
   parseHeaders,
   parseValue,
 } from '@portable/mime-headers'
@@ -24,7 +25,7 @@ describe('addresses', () => {
 
   test('deeply nested groups do not overflow the stack (nodemailer b61b9c0)', () => {
     const input = 'g:'.repeat(5000) + 'a@b.com' + ';'.repeat(5000)
-    expect(parseAddresses(input, { flatten: true })).toEqual([{ name: '', address: 'a@b.com' }])
+    expect(parseMailboxes(input)).toEqual([{ name: '', address: 'a@b.com' }])
   })
 
   test('operators inside a domain literal are part of it (nodemailer #1829)', () => {
@@ -77,7 +78,7 @@ describe('encoded words', () => {
 
   test('B words keep every astral character whole (libmime 5.5.0)', () => {
     const input = '\u{20000}\u{1F600}\u{10000}'.repeat(10)
-    const words = encodeWord(input, { encoding: 'B', maxLength: 20 }).split(' ')
+    const words = encodeWord(input, { wordEncoding: 'B', wordLength: 20 }).split(' ')
     expect(words.every((word) => !decodeWords(word).includes('�'))).toBe(true)
     expect(decodeWords(words.join(' '))).toBe(input)
   })

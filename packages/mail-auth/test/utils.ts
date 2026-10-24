@@ -33,11 +33,11 @@ const normalize = (name: string): string => name.toLowerCase().replace(/\.$/, ''
 /** Fails like `node:dns`, as mailauth's tests expect: ENOTFOUND for a missing name, ENODATA for a missing type. */
 export function zoneResolver(zone: Zone, log: string[] = []): MailAuth.Resolver {
   const names = new Map(Object.entries(zone).map(([name, records]) => [normalize(name), records]))
-  async function answer<T>(
+  async function answer<value>(
     type: string,
     name: string,
-    pick: (records: Records) => readonly T[] | string | undefined,
-  ): Promise<T[]> {
+    pick: (records: Records) => readonly value[] | string | undefined,
+  ): Promise<value[]> {
     log.push(`${type} ${name}`)
     let key = normalize(name)
     for (let hops = 0; ; hops++) {
@@ -88,7 +88,7 @@ export async function key(name: 'rsa' | 'ed25519'): Promise<Key> {
 export const buildMessage = ({
   from = 'sender@example.com',
   to = 'rcpt@example.net',
-}: { from?: string; to?: string } = {}): string =>
+}: { from?: string | undefined; to?: string | undefined } = {}): string =>
   [
     `From: ${from}`,
     `To: ${to}`,
@@ -105,7 +105,7 @@ export async function signed(message: string, domain: string, selector = 'test')
     domain,
     selector,
     privateKey: (await key('rsa')).privateKey,
-    signedAt: new Date('2024-01-01T00:00:00Z'),
+    now: new Date('2024-01-01T00:00:00Z'),
   })
   return signature + message
 }

@@ -3,10 +3,12 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/sse": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
     "eventsource": "^5.1.3",
-    "eventsource-parser": "^4.1.2"
+    "eventsource-parser": "^4.1.2",
+    "fast-check": "^4.10.2"
   }
 }

@@ -30,7 +30,7 @@ const mailauthResolver = (records: Records) => {
 /** mailauth's strict-mode ARC result. */
 async function upstream(message: Uint8Array, records: Records): Promise<string> {
   const result = await authenticate(Buffer.from(message), {
-    resolver: mailauthResolver(records) as never,
+    resolver: mailauthResolver(records),
     strict: true,
     disableDmarc: true,
     disableBimi: true,
@@ -49,16 +49,17 @@ async function ours(message: Uint8Array, records: Records, seed: number): Promis
   return result.result
 }
 
-const records: Records = {
+const records = {
   's._domainkey.one.example': 'k1',
   's._domainkey.two.example': 'k2',
   'ed._domainkey.one.example': 'ed1',
-}
+} satisfies Records
 
 /** Messages built from random header and body pieces. */
 function generated(seed: number): string {
   const random = prng(seed)
-  const pick = <T>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!
+  const pick = <value>(items: readonly value[]): value =>
+    items[Math.floor(random() * items.length)]!
   const values = ['a', 'b c', ' x\t y ', 'folded\r\n continued', 'ünïcode', 'end ']
   const fields = [
     `From: ${pick(['Alice <alice@example.com>', 'bob@example.net', '"A, B" <ab@example.org>'])}`,
@@ -76,7 +77,7 @@ function generated(seed: number): string {
   )
 }
 
-const changes: [string, (message: string) => string][] = [
+const changes = [
   ['nothing', (m) => m],
   ['a body line added', (m) => `${m}added\r\n`],
   ['trailing empty lines added', (m) => `${m}\r\n\r\n`],
@@ -97,27 +98,27 @@ const changes: [string, (message: string) => string][] = [
     'the sets swapped',
     (m) => m.replaceAll('i=1;', 'i=9;').replaceAll('i=2;', 'i=1;').replaceAll('i=9;', 'i=2;'),
   ],
-]
+] satisfies [string, (message: string) => string][]
 
 describe('mailauth agrees with verify', () => {
   test('on every message of the ValiMail suite', async () => {
     let compared = 0
     for (const file of validationSuite) {
       const suiteRecords = file['txt-records'] as Records
-      const resolver: Arc.Resolver = {
+      const resolver = {
         async resolveTxt(name) {
           const record = suiteRecords[name.toLowerCase()]
           if (record === undefined) throw Object.assign(new Error(name), { code: 'ENOTFOUND' })
           return [[record]]
         },
-      }
+      } satisfies Arc.Resolver
       const upstreamResolver = async (name: string) => resolver.resolveTxt(name)
       for (const [name, data] of Object.entries(
-        file.tests as Record<string, { message?: string }>,
+        file.tests as Record<string, { message?: string | undefined }>,
       )) {
         const message = encode((data.message ?? '').replace(/\r?\n/g, '\r\n'))
         const theirs = await authenticate(Buffer.from(message), {
-          resolver: upstreamResolver as never,
+          resolver: upstreamResolver,
           strict: true,
           disableDmarc: true,
           disableBimi: true,

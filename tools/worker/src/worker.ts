@@ -45,7 +45,7 @@ addEventListener('message', ({ data }: MessageEvent<Request>) => {
 })
 
 async function run(data: Request): Promise<Response> {
-  const config: SerializedConfig = {
+  const config = {
     ...data.config,
     // `-t` matches the page's test names, which start with the file path, so the worker runs them all.
     testNamePattern: undefined,
@@ -55,7 +55,7 @@ async function run(data: Request): Promise<Response> {
       updateSnapshot: 'none',
       snapshotEnvironment,
     },
-  }
+  } satisfies SerializedConfig
   const rpc = new Proxy({}, { get: () => async () => {} })
   const state: Record<string, unknown> = {
     ctx: {
@@ -102,8 +102,11 @@ async function run(data: Request): Promise<Response> {
       start(test.fullName, 'timeout' in test ? test.timeout : config.testTimeout)
       return super.onBeforeRunTask(test)
     }
-    override trace = <T>(_: string, attributes: object | (() => T), cb?: () => T): T =>
-      (cb ?? (attributes as () => T))()
+    override trace = <value>(
+      _: string,
+      attributes: object | (() => value),
+      cb?: () => value,
+    ): value => (cb ?? (attributes as () => value))()
   }
   const runner = new WorkerRunner(config)
   const files =

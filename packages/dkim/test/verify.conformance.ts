@@ -48,18 +48,18 @@ beforeAll(async () => {
 })
 
 type Std = {
-  algorithm?: string
-  c?: string
-  h?: string
-  names?: string
-  d?: string
-  s?: string
-  rawTags?: string
-  key?: () => CryptoKey
-  headers?: readonly string[]
-  body?: string
-  suffix?: string
-  length?: number
+  algorithm?: string | undefined
+  c?: string | undefined
+  h?: string | undefined
+  names?: string | undefined
+  d?: string | undefined
+  s?: string | undefined
+  rawTags?: string | undefined
+  key?: (() => CryptoKey) | undefined
+  headers?: readonly string[] | undefined
+  body?: string | undefined
+  suffix?: string | undefined
+  length?: number | undefined
 }
 
 /**
@@ -104,19 +104,19 @@ type Case = {
   title: string
   message: () => Promise<string>
   records: () => Parameters<typeof resolverFrom>[0]
-  now?: Date
+  now?: Date | undefined
   result: Dkim.Result.Code
-  reason?: string
+  reason?: string | undefined
   /** The verifier makes no DNS query. */
-  noDns?: boolean
-  testing?: boolean
+  noDns?: boolean | undefined
+  testing?: boolean | undefined
 }
 
 const key = (record: () => string) => () => ({ [KEY]: [record()] })
 
 // The cases of mailauth's test/dkim/verify-rfc-compliance-test.js, with the results of its
 // strict mode, except where PARITY.md lists a difference.
-const cases: Case[] = [
+const cases = [
   {
     title: 'a valid rsa-sha256 signature',
     message: () => std(),
@@ -646,7 +646,7 @@ const cases: Case[] = [
     reason: 'signature syntax error',
     noDns: true,
   },
-]
+] satisfies Case[]
 
 let edSpki: string
 let smallRec: string
@@ -672,6 +672,13 @@ describe('RFC compliance cases', () => {
 })
 
 describe('the result object', () => {
+  test('keeps the resolver error behind a temperror as cause', async () => {
+    const error = dnsError('ESERVFAIL', KEY)
+    const { result } = await run(await std(), { [KEY]: error })
+    expect(result.result).toBe('temperror')
+    expect(result.cause).toBe(error)
+  })
+
   test('reports the domain, selector, algorithm, identity and signature', async () => {
     const message = await std(' i=joe@sub.example.com;')
     const { result } = await run(message, { [KEY]: [rsaRec] })
@@ -900,7 +907,7 @@ describe('input', () => {
 
   test('rejects with the reason when the signal aborts a key lookup', async () => {
     const controller = new AbortController()
-    const resolver: Dkim.Resolver = { resolveTxt: () => new Promise(() => {}) }
+    const resolver = { resolveTxt: () => new Promise(() => {}) } satisfies Dkim.Resolver
     const pending = Dkim.verify(await std(), { resolver, signal: controller.signal })
     const reason = new Error('stop')
     setTimeout(() => controller.abort(reason), 10)
@@ -939,9 +946,9 @@ describe('input', () => {
     )
   })
 
-  test('uses the hash option for the body hash', async () => {
+  test('uses the hasher option for the body hash', async () => {
     let updates = 0
-    const hash = (): Dkim.Hash => {
+    const hasher = (): Dkim.Hasher => {
       const chunks: Uint8Array[] = []
       return {
         update(data) {
@@ -961,7 +968,7 @@ describe('input', () => {
     }
     const results = await Dkim.verify(await std(), {
       resolver: resolverFrom({ [KEY]: [rsaRec] }),
-      hash,
+      hasher,
     })
     expect(results[0]!.result).toBe('pass')
     expect(updates).toBeGreaterThan(0)

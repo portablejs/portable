@@ -6,7 +6,7 @@ import getStream, { getStreamAsArray, getStreamAsArrayBuffer } from 'get-stream'
 import getRawBody from 'raw-body'
 import streamToArray from 'stream-to-array'
 import { expect, test } from 'vite-plus/test'
-import { toArray, toBytes, toText } from '@portable/streams'
+import { toArray, toBlob, toBytes, toText } from '@portable/streams'
 import { chunked, encode, fromChunks } from './utils.js'
 
 const chunks = chunked(encode('unicorn ☃ 好\n'.repeat(400_000)), 65536)
@@ -36,6 +36,20 @@ test('collects 6.8 MB into bytes within 25% of get-stream', async ({ bench }) =>
     }),
   )
   expect(result.get('get-stream')).not.toBeFasterThan(result.get('@portable/streams'), {
+    delta: 0.25,
+  })
+})
+
+test('collects 6.8 MB into a Blob within 25% of Response.blob()', async ({ bench }) => {
+  const result = await bench.compare(
+    bench('@portable/streams', async () => {
+      await toBlob(fromChunks(chunks))
+    }),
+    bench('Response.blob()', async () => {
+      await new Response(fromChunks(chunks)).blob()
+    }),
+  )
+  expect(result.get('Response.blob()')).not.toBeFasterThan(result.get('@portable/streams'), {
     delta: 0.25,
   })
 })

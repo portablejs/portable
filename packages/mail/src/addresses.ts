@@ -1,5 +1,6 @@
 import * as MimeHeaders from '@portable/mime-headers'
 import { InvalidInputError } from './errors.js'
+import { hostToAscii } from '@portable/idna/internal'
 
 /**
  * One mailbox. Without a `name`, only the address is written.
@@ -26,17 +27,10 @@ export type Mailbox = {
  */
 export type Addresses = string | Mailbox | readonly (string | Mailbox)[]
 
-/**
- * The SMTP envelope of a message: the `MAIL FROM` address and every `RCPT TO` address.
- *
- * @example
- * ```ts
- * const { from, to }: Mail.Envelope = Mail.envelope(message)
- * ```
- */
+/** The SMTP envelope of a message: the `MAIL FROM` address and every `RCPT TO` address. */
 export type Envelope = {
   /** The first `From` address, or the first `Sender` address when there is no `From`. */
-  from: string | undefined
+  from: string
   /**
    * Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups.
    */
@@ -46,8 +40,9 @@ export type Envelope = {
 type Entry = MimeHeaders.Mailbox | MimeHeaders.Group
 
 export function parse(input: Addresses): Entry[] {
-  const items: readonly (string | Mailbox)[] =
+  const items = (
     typeof input === 'string' || 'address' in input ? [input] : input
+  ) satisfies readonly (string | Mailbox)[]
   const entries: Entry[] = []
   for (const item of items) {
     if (typeof item === 'string') {
@@ -85,22 +80,8 @@ function normalizeAddress(address: string): string {
   if (at < 0) return address
   const local = address.slice(0, at)
   let domain = address.slice(at + 1).toLowerCase()
-  if (nonAscii.test(domain) && !nonAscii.test(local)) domain = toAscii(domain)
+  if (nonAscii.test(domain) && !nonAscii.test(local)) domain = hostToAscii(domain) || domain
   return local + '@' + domain
-}
-
-/**
- * The URL host parser applies UTS #46, as browsers and `node:url` do. It also cuts a host at `/`,
- * `?` or `#` and percent-decodes it, so `toAscii` checks for those characters first and returns
- * the domain unchanged if it finds one.
- */
-function toAscii(domain: string): string {
-  if (/[\s/\\?#%@:[\]]/.test(domain)) return domain
-  try {
-    return new URL(`http://${domain}/`).hostname || domain
-  } catch {
-    return domain
-  }
 }
 
 export function format(
@@ -111,14 +92,14 @@ export function format(
     .map((entry) =>
       MimeHeaders.formatAddresses([entry], {
         charset,
-        encoding: wordEncoding(entry.name),
+        wordEncoding: wordEncoding(entry.name),
       }),
     )
     .join(', ')
 }
 
 /** Q keeps mostly Latin text readable, and B is shorter for everything else. */
-export function wordEncoding(text: string): MimeHeaders.Encoding {
+export function wordEncoding(text: string): MimeHeaders.WordEncoding {
   let latin = 0
   let other = 0
   for (let i = 0; i < text.length; i++) {
@@ -137,8 +118,9 @@ export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {
 
 /**
  * Returns the SMTP envelope for a message, the addresses a transport passes to `MAIL FROM` and
- * `RCPT TO`. `Bcc` recipients are included, although `encode` leaves the `Bcc` header out.
- * Addresses are normalized as in the message headers, and each recipient is listed once.
+ * `RCPT TO`. `Bcc` recipients are included, although `encodeStream` leaves the `Bcc` header out.
+ * Addresses are normalized as in the message headers, and each recipient is listed once. The
+ * result can be spread into `Smtp.send`.
  *
  * @example
  * ```ts
@@ -152,7 +134,8 @@ export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {
  * // { from: 'mari@example.com', to: ['a@example.com', 'b@example.com', 'c@example.com'] }
  * ```
  *
- * @throws {InvalidInputError} When an address isn't one addr-spec.
+ * @throws {InvalidInputError} When an address isn't one addr-spec, or the message has neither a
+ * `From` nor a `Sender` address.
  */
 export function envelope(message: {
   readonly from?: Addresses | undefined
@@ -162,8 +145,10 @@ export function envelope(message: {
   readonly bcc?: Addresses | undefined
 }): Envelope {
   const from = mailboxes(message.from)[0] ?? mailboxes(message.sender)[0]
+  if (from === undefined)
+    throw new InvalidInputError('The message has no From or Sender address for MAIL FROM.')
   const to = new Set<string>()
   for (const input of [message.to, message.cc, message.bcc])
     for (const mailbox of mailboxes(input)) to.add(mailbox.address)
-  return { from: from?.address, to: [...to] }
+  return { from: from.address, to: [...to] }
 }

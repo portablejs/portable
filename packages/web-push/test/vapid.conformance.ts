@@ -3,22 +3,25 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as WebPush from '@portable/web-push'
 import { fromBase64url, pushService, verifyVapid } from './utils.js'
 
-const keys: WebPush.VapidKeys = {
+const keys = {
   publicKey:
     'BDktD8eWXxRBejqiC_F3OwkHxonimzIBkPa7L4XflJtOnPoBLJQ7lLbCmxlLNywNTp-MF30-cKWa3k9WEkLcZEE',
   privateKey: 'sfgZehuVVExoyNAnj7Benvwt4H2RyaHyafL_A_FzTn0',
-}
-const vapid: WebPush.Vapid = { subject: 'mailto:ops@example.com', ...keys }
+} satisfies WebPush.VapidKeys
+const vapid = { subject: 'mailto:ops@example.com', ...keys } satisfies WebPush.Vapid
 
 let endpoints = 0
 /** A new endpoint origin for each call, so no test gets a token another test cached. */
 const freshEndpoint = () => `https://push${++endpoints}.example.net/p/abc`
 
 async function authorizationFor(
-  options: Partial<WebPush.Vapid> & { endpoint?: string } = {},
+  options: Partial<WebPush.Vapid> & { endpoint?: string | undefined } = {},
 ): Promise<string | null> {
   const { endpoint = freshEndpoint(), ...rest } = options
-  const request = await WebPush.toRequest({ endpoint }, undefined, { vapid: { ...vapid, ...rest } })
+  const request = await WebPush.toRequest({
+    subscription: { endpoint },
+    vapid: { ...vapid, ...rest },
+  })
   return request.headers.get('authorization')
 }
 
@@ -78,6 +81,17 @@ describe('VAPID Authorization header', () => {
     expect(jwt.publicKey).toBe(keys.publicKey)
     expect(jwt.claims.exp).toBeGreaterThan(before)
     expect(jwt.claims.exp).toBeLessThanOrEqual(before + 24 * 60 * 60 + 1)
+  })
+
+  test('counts the expiry from the now option', async () => {
+    const now = new Date(1_700_000_000_000)
+    const request = await WebPush.toRequest({
+      subscription: { endpoint: freshEndpoint() },
+      vapid,
+      now,
+    })
+    const jwt = await verifyVapid(request.headers.get('authorization'))
+    expect(jwt.claims.exp).toBe(1_700_000_000 + 12 * 60 * 60)
   })
 
   test('keeps a non-default port in the audience', async () => {
@@ -156,13 +170,15 @@ describe('VAPID Authorization header', () => {
 
   test('rejects a missing vapid option', async () => {
     await expect(
-      WebPush.toRequest({ endpoint: freshEndpoint() }, undefined, {} as WebPush.toRequest.Options),
+      WebPush.toRequest({
+        subscription: { endpoint: freshEndpoint() },
+      } as WebPush.toRequest.Options),
     ).rejects.toThrow(TypeError)
   })
 
   test('send passes the header to the push service', async () => {
     const service = pushService()
-    await WebPush.send({ endpoint: freshEndpoint() }, undefined, { vapid, fetch: service.fetch })
+    await WebPush.send({ subscription: { endpoint: freshEndpoint() }, vapid, fetch: service.fetch })
     const jwt = await verifyVapid(service.requests[0]!.headers.get('authorization'))
     expect(jwt.publicKey).toBe(keys.publicKey)
   })

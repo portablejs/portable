@@ -46,7 +46,13 @@ export function randomBytes(length: number, seed: number): Uint8Array {
 
 /** Builds a PNG file from an IHDR and an already compressed IDAT payload. */
 export function buildPng(
-  header: { width: number; height: number; depth: number; colorType: number; interlace?: number },
+  header: {
+    width: number
+    height: number
+    depth: number
+    colorType: number
+    interlace?: number | undefined
+  },
   compressed: Uint8Array,
 ): Uint8Array {
   const ihdr = new Uint8Array(13)

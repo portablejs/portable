@@ -4,6 +4,7 @@ import {
   encodeStream,
   InvalidInputError,
   DecoderStream,
+  MaxLengthError,
   TruncatedError,
 } from '@portable/json-stream'
 import allNpm from './fixtures/all_npm.json?raw'
@@ -161,9 +162,7 @@ describe('JSONStream', () => {
       ['AOREC', 'reoubaor', { ouec: 62642 }, [[[], {}, 53]]],
     ]
     const parsed = await toArray(
-      encodeStream(fromIterable(values))
-        .pipeThrough(new TextEncoderStream())
-        .pipeThrough(new DecoderStream({ paths: ['$[*]'] })),
+      encodeStream(fromIterable(values)).pipeThrough(new DecoderStream({ paths: ['$[*]'] })),
     )
     expect(parsed.map((match) => match.value)).toEqual(values)
   })
@@ -329,7 +328,7 @@ describe('stream-json', () => {
   test('creates "__proto__" as an own property, as JSON.parse does', async () => {
     const [value] = (await parseValues(['{"__proto__":{"polluted":true}}'])) as [object]
     expect(Object.hasOwn(value, '__proto__')).toBe(true)
-    expect(({} as { polluted?: boolean }).polluted).toBeUndefined()
+    expect(({} as { polluted?: boolean | undefined }).polluted).toBeUndefined()
   })
 })
 
@@ -382,9 +381,7 @@ describe('@worker-tools/json-stream', () => {
       yield 2
       yield 3
     }
-    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items() }).pipeThrough(
-      new TextEncoderStream(),
-    )
+    const body = encodeStream({ a: 3, b: Promise.resolve(4), c: items() })
     expect(await toArray(body.pipeThrough(new DecoderStream({ paths: ['$.c[*]'] })))).toEqual([
       { path: ['c', 0], value: 1 },
       { path: ['c', 1], value: 2 },
@@ -549,5 +546,50 @@ describe('known upstream issues', () => {
     await expect(parse(['{"skip":[1 2],"keep":1}'], { paths: ['$.keep'] })).rejects.toThrow(
       InvalidInputError,
     )
+  })
+})
+
+describe('maxLength', () => {
+  test('accepts a matched value of exactly maxLength, in one chunk or many', async () => {
+    const input = '{"rows":[{"a":1},{"bb":22}]}'
+    for (const chunks of [[input], chunked(input, 1)])
+      expect(await parseValues(chunks, { paths: ['$.rows[*]'], maxLength: 9 })).toEqual([
+        { a: 1 },
+        { bb: 22 },
+      ])
+  })
+
+  test('fails with MaxLengthError on a longer matched value', async () => {
+    const input = '{"rows":[{"a":1},{"bbb":333}]}'
+    for (const chunks of [[input], chunked(input, 1)]) {
+      const error = await parse(chunks, { paths: ['$.rows[*]'], maxLength: 9 }).catch(
+        (error: unknown) => error,
+      )
+      expect(error).toBeInstanceOf(MaxLengthError)
+      expect(error).toMatchObject({ name: 'JsonStream.MaxLengthError', maxLength: 9 })
+    }
+  })
+
+  test('does not count values outside paths', async () => {
+    const input = `{"skip":"${'x'.repeat(10_000)}","keep":1}`
+    expect(await parseValues(chunked(input, 100), { paths: ['$.keep'], maxLength: 1 })).toEqual([1])
+  })
+
+  test('fails before an endless matched string is buffered', async () => {
+    let pulled = 0
+    const endless = new ReadableStream<string>({
+      pull(controller) {
+        controller.enqueue(pulled++ === 0 ? '["' : 'x'.repeat(100))
+      },
+    })
+    await expect(
+      toArray(endless.pipeThrough(new DecoderStream({ paths: ['$[*]'], maxLength: 1000 }))),
+    ).rejects.toBeInstanceOf(MaxLengthError)
+    expect(pulled).toBeLessThan(20)
+  })
+
+  test('rejects a negative or NaN maxLength with a RangeError', () => {
+    expect(() => new DecoderStream({ maxLength: -1 })).toThrow(RangeError)
+    expect(() => new DecoderStream({ maxLength: Number.NaN })).toThrow(RangeError)
   })
 })

@@ -45,5 +45,5 @@ export function randomText(
   return text
 }
 
-export const pick = <T>(next: () => number, items: readonly T[]): T =>
+export const pick = <value>(next: () => number, items: readonly value[]): value =>
   items[Math.floor(next() * items.length)]!

@@ -27,7 +27,7 @@ type Case = { message: string; zone: Zone; ip: string; sender: string; helo: str
 type Upstream = {
   headers: string
   dmarc: false | { status: { result: string } }
-  dmarcSkipReason?: string
+  dmarcSkipReason?: string | undefined
   spf: { status: { result: string } }
   arc: false | { status: { result: string } }
   dkim: { results: { status: { result: string } }[] }
@@ -108,7 +108,8 @@ const froms = [
 
 async function makeCase(seed: number): Promise<Case> {
   const random = prng(seed)
-  const pick = <T>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!
+  const pick = <value>(items: readonly value[]): value =>
+    items[Math.floor(random() * items.length)]!
   const from = pick(froms)
   let message = buildMessage({ from: from || 'x@example.com' })
   if (from === '') message = message.replace(/^From: .*\r\n/m, '')
@@ -135,7 +136,7 @@ async function makeCase(seed: number): Promise<Case> {
           algorithm: 'rsa-sha1',
         },
       ],
-    } as never)
+    })
     message = signatures + message
   }
   if (signing === 'broken') message = message.replace('body', 'changed')
@@ -206,7 +207,7 @@ describe('mailauth strict mode agrees with authenticate', () => {
 describe('mailauth and authenticate interoperate', () => {
   test('mailauth passes the ARC sets authenticate seals, and the other way around', async () => {
     const { privateKey, record } = await key('rsa')
-    const zone: Zone = { 'test._domainkey.example.com': { TXT: [record] } }
+    const zone = { 'test._domainkey.example.com': { TXT: [record] } } satisfies Zone
     let message = buildMessage()
     const results: string[] = []
     for (let hop = 1; hop <= 4; hop++) {

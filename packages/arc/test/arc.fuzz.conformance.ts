@@ -15,7 +15,7 @@ const sealOnce = async (message: Uint8Array, domain: string, authResults: string
     privateKey: (await keyPair('k1')).privateKey,
     authResults,
     chainValidation: arc.result,
-    signedAt: new Date('2024-01-01T00:00:00Z'),
+    now: new Date('2024-01-01T00:00:00Z'),
   })
   return new Uint8Array([...encode(fields), ...message])
 }

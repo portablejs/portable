@@ -38,7 +38,7 @@ export type FakeServer = {
   closed: number
 }
 
-const defaults: Script = {
+const defaults: Record<string, Handler> = {
   greeting: '220 test ESMTP\r\n',
   EHLO: '250 test\r\n',
   HELO: '250 test\r\n',
@@ -59,9 +59,9 @@ const decoder = new TextDecoder()
 
 export type FakeOptions = {
   /** Make `opened` reject, as a refused connection does. */
-  refuse?: boolean
+  refuse?: boolean | undefined
   /** Make `opened` of the TLS socket reject, as a failed handshake does. */
-  failTls?: boolean
+  failTls?: boolean | undefined
 }
 
 /** A scripted SMTP server behind a fake `connect`, so tests run in every runtime. */
@@ -82,13 +82,13 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
     let body: string[] = []
     let current: { controller: ReadableStreamDefaultController<Uint8Array>; done: boolean }
 
-    const connection: Connection = {
+    const connection = {
       secure: socketOptions.secureTransport === 'on',
       write(reply) {
         if (current.done) return
         current.controller.enqueue(typeof reply === 'string' ? encoder.encode(reply) : reply)
       },
-      end(reply) {
+      end(reply?: string) {
         if (reply) connection.write(reply)
         if (current.done) return
         current.done = true
@@ -99,7 +99,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
         current.done = true
         current.controller.error(new Error('Connection reset'))
       },
-    }
+    } satisfies Connection
 
     const answer = (key: string, line: string): string | false | void => {
       const handler = script[key] ?? defaults[key] ?? script.DEFAULT ?? defaults.DEFAULT!

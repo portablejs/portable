@@ -4,7 +4,7 @@ declare module 'libbase64' {
   export function decode(input: string): Uint8Array
   export function wrap(input: string, lineLength?: number): string
   export class Encoder extends Transform {
-    constructor(options?: { lineLength?: number | false })
+    constructor(options?: { lineLength?: number | false | undefined })
   }
   export class Decoder extends Transform {}
 }

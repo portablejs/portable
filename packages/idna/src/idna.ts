@@ -1,5 +1,6 @@
 import * as Table from './internal/lookup.js'
 import * as Punycode from './internal/punycode.js'
+import { InvalidInputError } from './errors.js'
 
 export declare namespace toAscii {
   type Options = {
@@ -86,24 +87,6 @@ export function toUnicode(domain: string, options: toUnicode.Options = {}): stri
   const { strict = false } = options
   if (!strict && isAscii(domain) && !punycodeLabel.test(domain)) return domain.toLowerCase()
   return process(domain, strict).join('.')
-}
-
-/**
- * Thrown when a domain name breaks the rules of UTS #46.
- *
- * @example
- * ```ts
- * import * as Idna from '@portable/idna'
- *
- * try {
- *   Idna.toUnicode('www.xn--b.com')
- * } catch (error) {
- *   if (error instanceof Idna.InvalidInputError) console.log(error.message)
- * }
- * ```
- */
-export class InvalidInputError extends Error {
-  override name = 'Idna.InvalidInputError'
 }
 
 const nonAscii = /[^\0-\x7f]/

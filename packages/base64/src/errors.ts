@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown in `'loose'` and `'strict'` mode for a character outside the alphabet, misplaced padding,
  * or, in `'strict'` mode, non-zero bits before the padding.
@@ -13,8 +14,8 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'Base64.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'Base64.InvalidInputError'
 }
 
 /**
@@ -33,6 +34,6 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'Base64.TruncatedError'
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'Base64.TruncatedError'
 }

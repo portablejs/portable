@@ -17,7 +17,7 @@ const options = async (extra: Partial<Arc.seal.Options> = {}): Promise<Arc.seal.
   selector: 's',
   privateKey: (await keyPair('k1')).pem,
   authResults: 'mx.one.example; spf=pass smtp.mailfrom=example.com',
-  signedAt: new Date('2024-01-01T00:00:00Z'),
+  now: new Date('2024-01-01T00:00:00Z'),
   ...extra,
 })
 
@@ -205,7 +205,7 @@ describe('chainValidation (RFC 8617 section 5.1)', () => {
     const m1 = (await seal(baseMessage)) + baseMessage
     return (await seal(m1, { chainValidation: 'pass' })) + m1
   }
-  const failures: [string, (message: string) => string][] = [
+  const failures = [
     [
       'a missing ARC-Authentication-Results',
       (m) => m.replace(field('ARC-Authentication-Results: i=1;'), ''),
@@ -213,7 +213,7 @@ describe('chainValidation (RFC 8617 section 5.1)', () => {
     ['a missing ARC-Seal of the newest set', (m) => m.replace(field('ARC-Seal: i=2;'), '')],
     ['a duplicate ARC field', (m) => m.match(field('ARC-Authentication-Results: i=1;'))![0] + m],
     ['a signature that does not verify', (m) => m.replace(/Hello world\r\n$/, 'changed\r\n')],
-  ]
+  ] satisfies [string, (message: string) => string][]
   for (const [title, change] of failures) {
     test(`seals a chain with ${title} with cv=fail as i=3`, async () => {
       const message = change(await validChain())
@@ -263,7 +263,7 @@ describe('the ARC-Message-Signature header list (RFC 8617 section 4.1.2)', () =>
 })
 
 describe('authResults', () => {
-  const invalid: [string, unknown][] = [
+  const invalid = [
     ['a CRLF that starts a new header field', 'mx.example; spf=pass\r\nX-Injected: yes'],
     ['an empty line that ends the header block', 'mx.example; spf=pass\r\n\r\nInjected body'],
     ['a bare LF', 'mx.example; spf=pass\nX-Injected: yes'],
@@ -274,7 +274,7 @@ describe('authResults', () => {
     ['a missing value', undefined],
     ['an empty value', ''],
     ['a whitespace only value', ' \t '],
-  ]
+  ] satisfies [string, unknown][]
   for (const [title, value] of invalid) {
     test(`refuses ${title}`, async () => {
       await expect(seal(baseMessage, { authResults: value as string })).rejects.toThrow(
@@ -318,7 +318,7 @@ describe('options', () => {
     )
     await expect(seal(baseMessage, { domain: 'one.example; x=y' })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { selector: '-s' })).rejects.toThrow(RangeError)
-    await expect(seal(baseMessage, { signedAt: new Date(Number.NaN) })).rejects.toThrow(RangeError)
+    await expect(seal(baseMessage, { now: new Date(Number.NaN) })).rejects.toThrow(RangeError)
     await expect(seal(baseMessage, { privateKey: 'not a key' })).rejects.toThrow(RangeError)
   })
 

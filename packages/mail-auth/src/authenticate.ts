@@ -15,7 +15,7 @@ import { checkAuthservId, formatResults } from './internal/results.js'
  * import * as Dns from '@portable/dns'
  * import * as MailAuth from '@portable/mail-auth'
  *
- * const resolver: MailAuth.Resolver = Dns.createResolver()
+ * const resolver: MailAuth.Resolver = Dns.create()
  * ```
  */
 export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver
@@ -67,7 +67,7 @@ export declare namespace Result {
 
 export declare namespace authenticate {
   type Options = {
-    /** Answers the DNS lookups. `Dns.createResolver()` and `node:dns/promises` both fit. */
+    /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /**
      * The authserv-id of Authentication-Results (RFC 8601 section 2.5), usually this server's host
@@ -93,18 +93,18 @@ export declare namespace authenticate {
      * Creates the body hashes, as in `Dkim.verify`.
      * @default buffers the body for `crypto.subtle.digest`
      */
-    hash?: (() => Dkim.Hash) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
     /**
      * Finds organizational domains from a public suffix list, as in `Dmarc.check`.
      * @default the DNS tree walk
      */
-    organizationalDomain?: Dmarc.check.Options['organizationalDomain']
+    organizationalDomain?: Dmarc.check.Options['organizationalDomain'] | undefined
     /** Stops reading the message and every lookup, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
 
   /** The `Arc.seal` options that `authenticate` doesn't fill in itself. */
-  type Seal = Pick<Arc.seal.Options, 'domain' | 'selector' | 'privateKey' | 'headers' | 'signedAt'>
+  type Seal = Pick<Arc.seal.Options, 'domain' | 'selector' | 'privateKey' | 'headers' | 'now'>
 }
 
 /**
@@ -122,7 +122,7 @@ export declare namespace authenticate {
  * import * as MailAuth from '@portable/mail-auth'
  *
  * const result = await MailAuth.authenticate(message, {
- *   resolver: Dns.createResolver(),
+ *   resolver: Dns.create(),
  *   authservId: 'mx.example.net',
  *   ip: '192.0.2.1',
  *   helo: 'mail.example.com',
@@ -137,7 +137,7 @@ export async function authenticate(
   message: Dkim.Message,
   options: authenticate.Options,
 ): Promise<Result> {
-  const { resolver, ip, helo, sender, seal, now, minKeyBits, hash, signal } = options
+  const { resolver, ip, helo, sender, seal, now, minKeyBits, hasher, signal } = options
   const authservId = checkAuthservId(options.authservId)
   signal?.throwIfAborted()
   const bytes =
@@ -146,7 +146,7 @@ export async function authenticate(
       : message instanceof Uint8Array
         ? message
         : await Streams.toBytes(message, { signal })
-  const verifyOptions = { resolver, now, minKeyBits, hash, signal }
+  const verifyOptions = { resolver, now, minKeyBits, hasher, signal }
   const [spf, dkim, arc] = await Promise.all([
     Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal }),
     Dkim.verify(bytes, verifyOptions),
@@ -175,7 +175,7 @@ export async function authenticate(
         ...seal,
         authResults,
         chainValidation: arc.result,
-        hash,
+        hasher,
         signal,
       })
       result.headers = fields + result.headers

@@ -15,7 +15,10 @@ declare module 'libmime' {
     foldLines: (str: string, lineLength?: number, afterSpace?: boolean) => string
     decodeHeaders: (headers: string) => Record<string, string[]>
     parseHeaderValue: (str: string) => { value: string; params: Record<string, string> }
-    buildHeaderValue: (structured: { value: string; params?: Record<string, string> }) => string
+    buildHeaderValue: (structured: {
+      value: string
+      params?: Record<string, string> | undefined
+    }) => string
   }
   const libmime: Libmime
   export default libmime

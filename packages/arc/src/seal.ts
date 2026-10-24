@@ -7,7 +7,7 @@ import {
   checkName,
   defaultHeaders,
   type Field,
-  fitsDns,
+  canFitDns,
   fold,
   fromBinary,
   hashBody,
@@ -59,9 +59,9 @@ export declare namespace seal {
      */
     headers?: readonly string[] | undefined
     /** The signature time (`t=`). @default new Date() */
-    signedAt?: Date | undefined
+    now?: Date | undefined
     /** Creates the body hash, as in `Dkim.sign`. @default buffers the body for `crypto.subtle.digest` */
-    hash?: (() => Dkim.Hash) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
     /** Stops reading the message, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -102,17 +102,17 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders]
  * ```
  */
 export async function seal(message: Message, options: seal.Options): Promise<string> {
-  const { headers = arcDefaultHeaders, signedAt = new Date(), hash, signal } = options
+  const { headers = arcDefaultHeaders, now = new Date(), hasher, signal } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
-  if (!fitsDns(`${selector}._domainkey.${domain}`))
+  if (!canFitDns(`${selector}._domainkey.${domain}`))
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
   const authResults = checkAuthResults(options.authResults)
   const { chainValidation } = options
   if (chainValidation !== undefined && !statuses.has(chainValidation))
     throw new RangeError('options.chainValidation must be none, pass or fail.')
   const names = checkHeaders(headers).filter((name) => !unsigned.has(lowerAscii(name)))
-  const timestamp = seconds('signedAt', signedAt)
+  const timestamp = seconds('now', now)
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
   if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024)
@@ -167,8 +167,8 @@ export async function seal(message: Message, options: seal.Options): Promise<str
 
   const cancel = () => void split.body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
-  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hash).finally(() =>
-    signal?.removeEventListener('abort', cancel),
+  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hasher).finally(
+    () => signal?.removeEventListener('abort', cancel),
   )
   signal?.throwIfAborted()
   const bodyHash = Base64.encode([...digests.values()][0]!.digest)

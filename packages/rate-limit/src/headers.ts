@@ -4,6 +4,8 @@ export declare namespace headers {
   type Options = {
     /** The quota policy name in both fields. @default 'default' */
     name?: string | undefined
+    /** The time `resetAt` is counted from. @default new Date() */
+    now?: Date | undefined
   }
 }
 
@@ -23,12 +25,12 @@ export declare namespace headers {
  * ```
  */
 export function headers(result: Result, options: headers.Options = {}): Record<string, string> {
-  const { name = 'default' } = options
+  const { name = 'default', now = new Date() } = options
   if (!/^[\x20-\x7e]*$/.test(name))
     throw new RangeError(`\`name\` must be printable ASCII, got ${JSON.stringify(name)}.`)
   const item = `"${name.replaceAll(/["\\]/g, '\\$&')}"`
   const retry = !result.allowed && Number.isFinite(result.retryAfter)
-  const window = retry ? result.retryAfter : result.resetAt - Date.now()
+  const window = retry ? result.retryAfter : result.resetAt.getTime() - now.getTime()
   const fields: Record<string, string> = {
     'RateLimit-Policy': `${item};q=${result.limit};w=${seconds(result.period)}`,
     RateLimit: `${item};r=${result.remaining};t=${seconds(window)}`,

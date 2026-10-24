@@ -47,7 +47,8 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object. |
 | `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`. |
 | `Scheme` | The type of a scheme object, for writing one for another sender. |
-| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `reason` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` holds the limit. |
 
 `verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret or a Standard Webhooks secret that isn't base64 throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
@@ -59,11 +60,11 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | --- | --- | --- |
 | `scheme` | `Webhooks.standard` | `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github`, `Webhooks.slack`, or a scheme you write. |
 | `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one. |
-| `tolerance` | `300` | `verify` only. Largest difference between the signed timestamp and `now`, in seconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
-| `now` | `new Date()` | `verify` only. The time to compare the signed timestamp with. |
-| `timestamp` | `new Date()` | `sign` only. The time to sign. |
+| `tolerance` | `300_000` | `verify` only. Largest difference between the signed timestamp and `now`, in milliseconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
+| `maxBytes` | `Infinity` | `verify` only. The longest `Request` body to read, in bytes. A longer body throws `MaxBytesError` and is cancelled. Set it when `verify` reads requests from the internet. |
+| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
-| `hmac` | `crypto.subtle` | A function `(key, data) => Uint8Array \| Promise<Uint8Array>` that computes HMAC-SHA256. |
+| `hmac` | `crypto.subtle` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 
 ### Schemes
@@ -96,9 +97,9 @@ const acme: Webhooks.Scheme = {
     const signature = headers.get('acme-signature')
     const timestamp = headers.get('acme-timestamp')
     if (!signature || !timestamp)
-      throw new Webhooks.VerificationError('missing-header', 'Missing Acme headers')
+      throw new Webhooks.VerificationError({ code: 'missing-header', message: 'Missing Acme headers' })
     if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp))
-      throw new Webhooks.VerificationError('malformed-header', 'Malformed Acme headers')
+      throw new Webhooks.VerificationError({ code: 'malformed-header', message: 'Malformed Acme headers' })
     return {
       signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
       timestamp: new Date(Number(timestamp) * 1000),
@@ -131,7 +132,7 @@ import * as Webhooks from '@portable/webhooks'
 const { body } = await Webhooks.verify(request, {
   scheme: Webhooks.github,
   secret,
-  hmac: (key, data) => hmac(sha256, key, data),
+  hmac: (_hash, key, data) => hmac(sha256, key, data),
 })
 ```
 
@@ -139,8 +140,8 @@ const { body } = await Webhooks.verify(request, {
 
 | Type | Description |
 | --- | --- |
-| `Webhooks.Hmac` | The `hmac` option: `(key, data) => Uint8Array \| Promise<Uint8Array>`. See [Crypto](#crypto). |
-| `Webhooks.Reason` | `VerificationError.reason`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
+| `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
 ## Why use this over the provider libraries
 
@@ -182,9 +183,9 @@ On Node, WebCrypto's HMAC is several times slower than a JavaScript one, so pass
 | --- | --- |
 | `new Webhook(secret).verify(payload, headers)` (standardwebhooks) | `JSON.parse((await Webhooks.verify({ headers, body: payload }, { secret })).body)` |
 | `new Webhook(secret).verify(payload, headers)` (svix) | `await Webhooks.verify({ headers, body: payload }, { secret })` |
-| `new Webhook(secret).sign(id, date, payload)` | `(await Webhooks.sign(payload, { secret, id, timestamp: date }))['webhook-signature']` |
+| `new Webhook(secret).sign(id, date, payload)` | `(await Webhooks.sign(payload, { secret, id, now: date }))['webhook-signature']` |
 | `new Webhook(bytes, { format: 'raw' })` | `secret: bytes` |
-| `stripe.webhooks.constructEvent(body, signature, secret, tolerance)` | `JSON.parse((await Webhooks.verify(request, { scheme: Webhooks.stripe, secret, tolerance })).body)` |
+| `stripe.webhooks.constructEvent(body, signature, secret, tolerance)` | `JSON.parse((await Webhooks.verify(request, { scheme: Webhooks.stripe, secret, tolerance: tolerance * 1000 })).body)` |
 | `constructEvent(…, tolerance = 0)` | `tolerance: Infinity` |
 | `constructEvent(…, receivedAt)` | `now: new Date(receivedAt)` |
 | `stripe.webhooks.generateTestHeaderString({ payload, secret, timestamp })` | `(await Webhooks.sign(payload, { scheme: Webhooks.stripe, secret, timestamp: new Date(timestamp * 1000) }))['stripe-signature']` |

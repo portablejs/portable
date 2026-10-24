@@ -32,16 +32,16 @@ export function seededRandom(seed: number): () => number {
   }
 }
 
-export function randomChunks<T extends Uint8Array | string>(
-  input: T,
+export function randomChunks<value extends Uint8Array | string>(
+  input: value,
   seed: number,
   maxSize = 64,
-): T[] {
+): value[] {
   const random = seededRandom(seed)
-  const chunks: T[] = []
+  const chunks: value[] = []
   for (let i = 0; i < input.length;) {
     const size = 1 + Math.floor(random() * maxSize)
-    chunks.push(input.slice(i, i + size) as T)
+    chunks.push(input.slice(i, i + size) as value)
     i += size
   }
   return chunks
@@ -49,14 +49,14 @@ export function randomChunks<T extends Uint8Array | string>(
 
 export type Body = {
   /** Chunks to send, each as text or bytes. */
-  chunks?: readonly (string | Uint8Array)[]
+  chunks?: readonly (string | Uint8Array)[] | undefined
   /** What happens after the last chunk: the body ends, fails with this error, or never ends. */
-  end?: 'close' | 'hang' | Error
+  end?: 'close' | 'hang' | Error | undefined
 }
 
 export type Reply = Body & {
-  status?: number
-  contentType?: string | null
+  status?: number | undefined
+  contentType?: string | null | undefined
 }
 
 export type MockFetch = {

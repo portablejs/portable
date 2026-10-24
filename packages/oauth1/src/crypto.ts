@@ -1,50 +1,5 @@
 import * as Base64 from '@portable/base64'
 
-/** A hash algorithm, named as WebCrypto names it. */
-export type HashAlgorithm = 'SHA-1' | 'SHA-256'
-
-/**
- * Hashes bytes, sync or async. The default is `crypto.subtle.digest`. `@noble/hashes` is sync and
- * 4 to 8 times faster on Node.
- *
- * @example
- * ```ts
- * import { sha1 } from '@noble/hashes/legacy.js'
- * import { sha256 } from '@noble/hashes/sha2.js'
- * import type * as OAuth1 from '@portable/oauth1'
- *
- * const digest: OAuth1.Digest = (algorithm, data) =>
- *   algorithm === 'SHA-1' ? sha1(data) : sha256(data)
- * ```
- */
-export type Digest = (
-  algorithm: HashAlgorithm,
-  data: Uint8Array<ArrayBuffer>,
-) => Uint8Array | Promise<Uint8Array>
-
-export const subtleDigest: Digest = async (algorithm, data) =>
-  new Uint8Array(await crypto.subtle.digest(algorithm, data))
-
-const blockSize = 64
-
-/** Computes an RFC 2104 HMAC with the caller's `digest`. SHA-1 and SHA-256 use 64-byte blocks. */
-export async function hmac(
-  digest: Digest,
-  algorithm: HashAlgorithm,
-  secret: Uint8Array<ArrayBuffer>,
-  data: Uint8Array,
-): Promise<Uint8Array> {
-  const key = secret.length > blockSize ? await digest(algorithm, secret) : secret
-  const inner = new Uint8Array(blockSize + data.length)
-  for (let i = 0; i < blockSize; i++) inner[i] = (key[i] ?? 0) ^ 0x36
-  inner.set(data, blockSize)
-  const innerHash = await digest(algorithm, inner)
-  const outer = new Uint8Array(blockSize + innerHash.length)
-  for (let i = 0; i < blockSize; i++) outer[i] = (key[i] ?? 0) ^ 0x5c
-  outer.set(innerHash, blockSize)
-  return digest(algorithm, outer)
-}
-
 const algorithm = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }
 const pem = /-----BEGIN (RSA )?PRIVATE KEY-----([^-]*)-----END \1?PRIVATE KEY-----/
 

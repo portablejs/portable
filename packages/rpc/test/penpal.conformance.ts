@@ -42,20 +42,24 @@ async function received(port: MessagePort, send: () => void): Promise<unknown[]>
   return messages
 }
 
-communicationContract('a MessagePort', async ({ codec, serve, signal }) => {
+communicationContract('a MessagePort', async ({ codec, methods, signal }) => {
   const { port1, port2 } = channel()
   servePort(port1, { codec })
   return Rpc.connect<Methods>(Rpc.port(port2, { signal }), {
     codec: codecOf({ codec }),
-    serve,
+    methods,
     signal,
   })
 })
 
-communicationContract('a BroadcastChannel', async ({ codec, serve, signal }) => {
+communicationContract('a BroadcastChannel', async ({ codec, methods, signal }) => {
   const [a, b] = broadcastChannels()
   servePort(a, { codec })
-  return Rpc.connect<Methods>(Rpc.port(b, { signal }), { codec: codecOf({ codec }), serve, signal })
+  return Rpc.connect<Methods>(Rpc.port(b, { signal }), {
+    codec: codecOf({ codec }),
+    methods,
+    signal,
+  })
 })
 
 describe('connecting', () => {
@@ -88,7 +92,7 @@ describe('connecting', () => {
     const signal = closer().signal
     const remotes = ['A', 'B'].map((name) => {
       const { port1, port2 } = channel()
-      Rpc.serve(createMethods({ channel: name }), Rpc.port(port1), { signal })
+      Rpc.provide(Rpc.port(port1), createMethods({ channel: name }), { signal })
       return Rpc.connect<Methods>(Rpc.port(port2), { signal })
     })
     expect(await Promise.all(remotes.map((remote) => remote.getChannel()))).toEqual(['A', 'B'])
@@ -153,7 +157,7 @@ describe('serving methods', () => {
   function serveOn(api: object) {
     const { port1, port2 } = channel()
     const controller = closer()
-    Rpc.serve(api, Rpc.port(port1), { signal: controller.signal })
+    Rpc.provide(Rpc.port(port1), api, { signal: controller.signal })
     return { port: port2, controller }
   }
 
@@ -223,7 +227,7 @@ describe('serving methods', () => {
     const { port1 } = channel()
     const added: unknown[] = []
     const removed: unknown[] = []
-    const target: Rpc.port.Target = {
+    const target = {
       postMessage: (message) => port1.postMessage(message),
       addEventListener(type, listener) {
         added.push(listener)
@@ -233,9 +237,9 @@ describe('serving methods', () => {
         removed.push(listener)
         port1.removeEventListener(type, listener)
       },
-    }
+    } satisfies Rpc.port.Target
     const controller = new AbortController()
-    Rpc.serve(createMethods(), Rpc.port(target), { signal: controller.signal })
+    Rpc.provide(Rpc.port(target), createMethods(), { signal: controller.signal })
     expect(added).toHaveLength(1)
     controller.abort()
     expect(removed).toEqual(added)

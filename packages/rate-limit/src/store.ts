@@ -9,8 +9,10 @@ export type Store = {
 }
 
 export declare namespace Store {
-  type MaybePromise<T> = T | Promise<T>
+  type MaybePromise<value> = value | Promise<value>
   type GetOptions = {
+    /** The limiter's `now`, for a store that expires keys itself. */
+    now?: Date | undefined
     signal?: AbortSignal | undefined
   }
   type SetOptions = {
@@ -18,6 +20,8 @@ export declare namespace Store {
     expected: number | undefined
     /** Milliseconds after which the key may be deleted. A whole number of at least 1. */
     ttl: number
+    /** The limiter's `now`, for a store that expires keys itself. */
+    now?: Date | undefined
     signal?: AbortSignal | undefined
   }
 }
@@ -42,19 +46,20 @@ export function memoryStore(): {
   const entries = new Map<string, { value: number; expiresAt: number }>()
   let sweepAt = 1024
 
-  const get = (key: string): number | undefined => {
+  const get = (key: string, options: Store.GetOptions = {}): number | undefined => {
     const entry = entries.get(key)
     if (entry === undefined) return undefined
-    if (entry.expiresAt > Date.now()) return entry.value
+    if (entry.expiresAt > (options.now?.getTime() ?? Date.now())) return entry.value
     entries.delete(key)
     return undefined
   }
 
   return {
     get,
-    set(key: string, value: number, { expected, ttl }: Store.SetOptions) {
-      if (get(key) !== expected) return false
-      const now = Date.now()
+    set(key: string, value: number, options: Store.SetOptions) {
+      const { expected, ttl } = options
+      if (get(key, options) !== expected) return false
+      const now = options.now?.getTime() ?? Date.now()
       entries.set(key, { value, expiresAt: now + ttl })
       if (entries.size >= sweepAt) {
         for (const [key, entry] of entries) if (entry.expiresAt <= now) entries.delete(key)

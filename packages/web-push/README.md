@@ -24,7 +24,9 @@ import * as WebPush from '@portable/web-push'
 export default {
   async fetch(request: Request, env: Env) {
     const subscription: WebPush.Subscription = await env.DB.getSubscription(/* … */)
-    const result = await WebPush.send(subscription, JSON.stringify({ title: 'New message' }), {
+    const result = await WebPush.send({
+      subscription,
+      payload: JSON.stringify({ title: 'New message' }),
       vapid: {
         subject: 'mailto:ops@example.com',
         publicKey: env.VAPID_PUBLIC_KEY,
@@ -44,15 +46,15 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 
 | Export | Does |
 | --- | --- |
-| `send(subscription, payload, options)` | Encrypts `payload`, signs the request with VAPID, POSTs it to the subscription's endpoint, and returns `{ kind: 'sent', status }` or, for a 404 or 410, `{ kind: 'gone', status }`. |
-| `toRequest(subscription, payload, options)` | Returns the `Request` that `send` would pass to `fetch`, to send it yourself or put it on a queue. |
-| `encrypt(subscription, payload, options?)` | Returns the aes128gcm body for `payload`: an 86-byte header, then one AES-GCM record. |
+| `send({ subscription, payload, vapid, ... })` | Encrypts `payload`, signs the request with VAPID, POSTs it to the subscription's endpoint, and returns `{ kind: 'sent', status }` or, for a 404 or 410, `{ kind: 'gone', status }`. |
+| `toRequest({ subscription, payload, vapid, ... })` | Returns the `Request` that `send` would pass to `fetch`, to send it yourself or put it on a queue. |
+| `encrypt({ subscription, payload, ... })` | Returns the aes128gcm body for `payload`: an 86-byte header, then one AES-GCM record. |
 | `generateVapidKeys(options?)` | Returns a new `{ publicKey, privateKey }` pair as base64url strings. |
 | `maxPayloadBytes` | `3993`, the largest payload in bytes. |
-| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, `headers` and the response `body` as text. |
+| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, the whole `response` and its `body` as text. |
 | `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
 
-`payload` is a string, sent as UTF-8, or a `Uint8Array`. Pass `undefined` to send a push with no data, which also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
+`payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
 
 `subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
 
@@ -62,10 +64,13 @@ A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `subscription` | required | The browser's subscription, as above. |
+| `payload` | none | The message. `encrypt` requires it. |
 | `vapid` | required | `{ subject, publicKey, privateKey }`. `subject` is a `mailto:` or `https:` URL the push service can contact you at. The keys are base64url strings from `generateVapidKeys`. |
 | `ttl` | `2419200` (four weeks) | Seconds the push service keeps the message for an offline browser. `0` means deliver now or drop it. |
 | `urgency` | not sent | `'very-low'`, `'low'`, `'normal'` or `'high'`. Push services may hold back low-urgency messages to save battery. |
 | `topic` | not sent | Up to 32 base64url characters. A new message with the same topic replaces an undelivered one. |
+| `now` | `new Date()` | The VAPID token expires 12 hours after this time. |
 | `fetch` | `globalThis.fetch` | `send` only. Called with the `Request`. Pass one to add retries, logging or a proxy. |
 | `signal` | none | Cancels the encryption and the `fetch`. Rejects with `signal.reason`. |
 | `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Only for test vectors: reusing either for two messages weakens the encryption. |
@@ -121,7 +126,7 @@ On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 ti
 | web-push | @portable/web-push |
 | --- | --- |
 | `webpush.setVapidDetails(subject, publicKey, privateKey)` | Pass `vapid: { subject, publicKey, privateKey }` to each call. |
-| `await webpush.sendNotification(subscription, payload, options)` | `await WebPush.send(subscription, payload, { vapid, ...options })` |
+| `await webpush.sendNotification(subscription, payload, options)` | `await WebPush.send({ subscription, payload, vapid, ...options })` |
 | `options.TTL` | `ttl` |
 | `options.urgency`, `options.topic` | `urgency`, `topic` |
 | `options.vapidDetails` | `vapid` |
@@ -131,11 +136,11 @@ On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 ti
 | `options.contentEncoding: 'aesgcm'` | Not supported. Every current browser accepts aes128gcm. |
 | `options.gcmAPIKey`, `setGCMAPIKey` | Not supported. GCM shut down in 2019, and FCM takes VAPID. |
 | `catch (e) { if (e.statusCode === 410 \|\| e.statusCode === 404) … }` | `if ((await WebPush.send(…)).kind === 'gone') …` |
-| `WebPushError` with `statusCode`, `headers`, `body` | `ResponseError` with `status`, `headers` (a `Headers`), `body` |
+| `WebPushError` with `statusCode`, `headers`, `body` | `ResponseError` with `status`, `response.headers`, `body` |
 | `webpush.generateVAPIDKeys()` | `await WebPush.generateVapidKeys()` |
 | `webpush.generateRequestDetails(…)` | `await WebPush.toRequest(…)`, which returns a `Request`. |
-| `webpush.encrypt(p256dh, auth, payload, 'aes128gcm').cipherText` | `await WebPush.encrypt({ keys: { p256dh, auth } }, payload)` |
-| `webpush.getVapidHeaders(…)` | `(await WebPush.toRequest(subscription, undefined, { vapid })).headers.get('authorization')` |
+| `webpush.encrypt(p256dh, auth, payload, 'aes128gcm').cipherText` | `await WebPush.encrypt({ subscription: { keys: { p256dh, auth } }, payload })` |
+| `webpush.getVapidHeaders(…)` | `(await WebPush.toRequest({ subscription, vapid })).headers.get('authorization')` |
 | `web-push generate-vapid-keys` (CLI) | `node -e "import('@portable/web-push').then(async (w) => console.log(await w.generateVapidKeys()))"` |
 
 These behaviors differ from web-push:

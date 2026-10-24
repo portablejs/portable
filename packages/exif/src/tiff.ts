@@ -28,6 +28,8 @@ export type Tiff = {
   thumbnailLength: number | undefined
   /** End of the bytes, relative to the input, that the IFDs and thumbnail reference. */
   end: number
+  /** End of the TIFF block, relative to the input, such as the end of a JPEG's APP1 segment. */
+  limit: number
 }
 
 const typeSizes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4]
@@ -53,7 +55,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
   if (order !== 0x4949 && order !== 0x4d4d)
     throw new InvalidInputError('Invalid TIFF header: no byte order mark.')
   const length = end - start
-  const r: Reader = {
+  const r = {
     bytes,
     view: new DataView(bytes.buffer, bytes.byteOffset + start, length),
     start,
@@ -62,7 +64,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     next: 0,
     pointers: new Map(),
     end: 8,
-  }
+  } satisfies Reader
   if (r.view.getUint16(2, r.le) !== 42)
     throw new InvalidInputError('Invalid TIFF header: magic number is not 42.')
   const ifd0Offset = r.view.getUint32(4, r.le)
@@ -87,6 +89,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     thumbnailOffset: hasThumbnail ? start + thumbnailOffset : undefined,
     thumbnailLength: hasThumbnail ? thumbnailLength : undefined,
     end: start + r.end,
+    limit: end,
   }
 }
 

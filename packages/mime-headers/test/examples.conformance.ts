@@ -6,7 +6,7 @@ import * as MimeHeaders from '@portable/mime-headers'
 describe('JSDoc examples', () => {
   test('encodeWord', () => {
     expect(MimeHeaders.encodeWord('See on õhin test')).toBe('=?UTF-8?Q?See_on_=C3=B5hin_test?=')
-    expect(MimeHeaders.encodeWord('See on õhin test', { encoding: 'B' })).toBe(
+    expect(MimeHeaders.encodeWord('See on õhin test', { wordEncoding: 'B' })).toBe(
       '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?=',
     )
   })

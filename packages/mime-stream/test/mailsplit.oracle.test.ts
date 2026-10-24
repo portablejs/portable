@@ -58,7 +58,7 @@ function generate(seed: number): string {
     state = (state * 1103515245 + 12345) % 2 ** 31
     return Math.floor((state / 2 ** 31) * n)
   }
-  const pick = <T>(items: readonly T[]): T => items[random(items.length)]!
+  const pick = <value>(items: readonly value[]): value => items[random(items.length)]!
   let count = 0
   const line = () =>
     pick(['hello world', '--', '-x', 'AAECAwQFBg==', 'x'.repeat(100), '--b1xy', 'õäöü', ''])

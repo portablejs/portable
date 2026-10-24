@@ -1,6 +1,6 @@
 import { memoryStore, type Store } from './store.js'
 
-/** The outcome of `take`. Times are milliseconds. */
+/** The outcome of `take`. Durations are milliseconds. */
 export type Result = {
   /** Whether the request fits in the limit. A denied request consumes nothing. */
   allowed: boolean
@@ -10,8 +10,8 @@ export type Result = {
   period: number
   /** How many more requests of cost 1 would be allowed right now. */
   remaining: number
-  /** Unix time in milliseconds at which `remaining` is back to `burst`. */
-  resetAt: number
+  /** When `remaining` is back to `burst`. */
+  resetAt: Date
   /** How long to wait before the same request would be allowed. `0` when allowed, `Infinity` when `cost` exceeds `burst`. */
   retryAfter: number
 }
@@ -26,6 +26,8 @@ export declare namespace Limiter {
   type TakeOptions = {
     /** How much of the allowance this request uses. `0` reads the state without changing it, and a negative cost gives allowance back. @default 1 */
     cost?: number | undefined
+    /** The time of the request. @default new Date() */
+    now?: Date | undefined
     signal?: AbortSignal | undefined
   }
 }
@@ -79,13 +81,15 @@ export function create(options: create.Options): Limiter {
   return {
     async take(key, options = {}) {
       const { cost = 1, signal } = options
+      const time = options.now?.getTime() ?? Date.now()
+      if (!Number.isFinite(time)) throw new RangeError('`now` must be a valid Date.')
       if (!Number.isFinite(cost))
         throw new RangeError(`\`cost\` must be a finite number, got ${cost}.`)
       for (;;) {
         signal?.throwIfAborted()
-        const read = store.get(key, { signal })
+        const read = store.get(key, { now: new Date(time), signal })
         const stored = typeof read === 'object' ? await read : read
-        const now = Date.now()
+        const now = time
         const base = stored === undefined ? now : Math.max(stored, now)
         const remaining = Math.max(0, Math.floor((now + tolerance - base) / interval))
         const arrival = Math.max(now, base + cost * interval)
@@ -96,7 +100,7 @@ export function create(options: create.Options): Limiter {
             limit,
             period,
             remaining,
-            resetAt: Math.ceil(base),
+            resetAt: new Date(Math.ceil(base)),
             retryAfter: cost > burst ? Infinity : Math.ceil(wait),
           }
         const result = {
@@ -104,13 +108,18 @@ export function create(options: create.Options): Limiter {
           limit,
           period,
           remaining: Math.floor((now + tolerance - arrival) / interval),
-          resetAt: Math.ceil(arrival),
+          resetAt: new Date(Math.ceil(arrival)),
           retryAfter: 0,
         }
         if (arrival === base) return result
         signal?.throwIfAborted()
         const ttl = Math.max(1, Math.ceil(arrival - now))
-        const written = store.set(key, arrival, { expected: stored, ttl, signal })
+        const written = store.set(key, arrival, {
+          expected: stored,
+          ttl,
+          now: new Date(time),
+          signal,
+        })
         if (typeof written === 'object' ? await written : written) return result
       }
     },

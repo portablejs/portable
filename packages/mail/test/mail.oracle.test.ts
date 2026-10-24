@@ -6,9 +6,9 @@ import MailComposer from 'nodemailer/lib/mail-composer'
 import { describe, expect, test } from 'vite-plus/test'
 import { boundary, fixed } from './utils.js'
 
-// Compares Mail.encode with nodemailer 10.1.2's MailComposer on generated messages. nodemailer's
+// Compares Mail.encodeStream with nodemailer 10.1.2's MailComposer on generated messages. nodemailer's
 // boundary is `--_NmP-<baseBoundary>-Part_<n>`, so baseBoundary 'test' gives the boundary these
-// tests pass to Mail.encode. The generator avoids the differences listed in PARITY.md.
+// tests pass to Mail.encodeStream. The generator avoids the differences listed in PARITY.md.
 // libqp may break a quoted-printable line that already fits, so quoted-printable bodies are
 // compared by the bytes they decode to. nodemailer never writes a Buffer text body as 7bit, so a
 // Uint8Array text body here is passed to nodemailer as the string it holds.
@@ -42,7 +42,8 @@ const random = (seed: number) => () => {
   return seed / 2 ** 31
 }
 type Next = () => number
-const pick = <T>(next: Next, items: readonly T[]): T => items[Math.floor(next() * items.length)]!
+const pick = <value>(next: Next, items: readonly value[]): value =>
+  items[Math.floor(next() * items.length)]!
 
 const words: Record<string, readonly string[]> = {
   ascii: ['tere', 'hello', 'world', 'mail', 'test', 'a.b', 'x-y', 'Mari', 'Ants'],
@@ -166,13 +167,13 @@ function message(next: Next) {
 }
 
 async function upstream(data: Record<string, unknown>): Promise<string> {
-  const buffer = await new MailComposer(data as never).compile().build()
+  const buffer = await new MailComposer(data).compile().build()
   return buffer.toString('utf8')
 }
 
-const ours = (message: Mail.Message) => Streams.toText(Mail.encode(message, { boundary }))
+const ours = (message: Mail.Message) => Streams.toText(Mail.encodeStream(message, { boundary }))
 
-describe('Mail.encode matches nodemailer MailComposer', () => {
+describe('Mail.encodeStream matches nodemailer MailComposer', () => {
   test('on 300 generated messages with randomly chunked streams', async () => {
     const next = random(42)
     let identical = 0

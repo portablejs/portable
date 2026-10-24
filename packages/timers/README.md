@@ -23,7 +23,7 @@ const order = await Timers.poll(
     const order = await getOrder(id)
     return order.status === 'paid' ? order : undefined
   },
-  { delay: 2000, timeout: 120_000 },
+  { delay: 2000, signal: AbortSignal.timeout(120_000) },
 )
 
 const save = Timers.debounce((text: string) => fetch('/draft', { method: 'PUT', body: text }), 500)
@@ -54,7 +54,8 @@ Calls `fn` until it returns without throwing and resolves with its value. When t
 | --- | --- | --- |
 | `attempts` | `3` | Total number of calls, including the first. `Infinity` retries until success or abort. |
 | `delay` | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays). |
-| `retryIf` | retry every error | `(error, attempt) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
+| `retryIf` | retry every error | `(error, { attempt }) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
+| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number and the wait in ms. Use it for logging. If it returns a promise, the next attempt waits for it, and if it throws, `retry` rejects with that error. |
 | `timeout` | `Infinity` | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error. |
 | `signal` | | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running. |
 
@@ -101,7 +102,7 @@ const response = await Timers.retry(
   },
   {
     attempts: 5,
-    delay: (attempt, error) => {
+    delay: ({ attempt, error }) => {
       const wait = error instanceof HttpError ? retryAfter(error.response) : undefined
       return wait ?? Math.random() * Math.min(10_000, 200 * 2 ** (attempt - 1))
     },
@@ -118,10 +119,9 @@ Calls `fn` until it returns a value other than `undefined`, and resolves with th
 | Option | Default | Description |
 | --- | --- | --- |
 | `delay` | `1000` | Wait after each check that returns `undefined`. See [Delays](#delays). |
-| `timeout` | `Infinity` | Time limit for the whole poll, in ms. When it passes, the poll rejects with a `TimeoutError` `DOMException`, and the running check's `signal` aborts. |
-| `signal` | | Stops polling. The call rejects with `signal.reason`, also while a check is running. |
+| `signal` | | Stops polling. Aborting rejects the call with `signal.reason`, even while a check is running, and aborts the `signal` passed to that check. |
 
-`timeout` limits each attempt in `retry`, and the whole call in `poll`. A poll of a slow endpoint needs a deadline for the whole wait, while a retry needs to give up on one hung request and try again. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)`.
+A poll of a slow endpoint needs a deadline for the whole wait, so pass `signal: AbortSignal.timeout(ms)`, which rejects with a `TimeoutError` `DOMException`. `retry` has a `timeout` option because it limits each attempt separately, which a signal for the whole call can't do. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)` there too.
 
 ## `debounce(fn, ms, options)` and `throttle(fn, ms, options)`
 
@@ -166,17 +166,17 @@ The returned function also has:
 | --- | --- |
 | `2000` | A fixed 2000 ms. |
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
-| `(attempt, error) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
+| `({ attempt, error }) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
-`Timers.backoff(delay)` checks a `Delay` and returns the function `retry` and `poll` use to compute each wait, so other code can wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websocket` and `@portable/sse` reconnect with it.
+`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, so other code can call it to wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
 
 ```ts
 const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false })
-next(1) // 1000
-next(3) // 4000
+next({ attempt: 1 }) // 1000
+next({ attempt: 3 }) // 4000
 ```
 
-`retry` with a wait of 0 starts the next attempt without a timer. `poll` always waits for a timer turn, even with 0, so a check that returns `undefined` at once can't block timers, and the `timeout` can still fire.
+`retry` with a wait of 0 starts the next attempt without a timer. `poll` always sets a timer before the next check, even for a wait of 0, so a check that returns `undefined` immediately can't keep other timers from running, and a timeout signal can still fire.
 
 ## Types
 
@@ -184,8 +184,10 @@ next(3) // 4000
 | --- | --- |
 | `Timers.Delay` | The `delay` option. See [Delays](#delays). |
 | `Timers.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff. |
+| `Timers.Attempt` | `{ attempt, error? }`, what a `delay` function receives. |
 | `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
 | `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
+| `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 
@@ -194,7 +196,7 @@ These libraries cover one job each, with four sets of option names. `retry` and 
 - Ten attempts with no delay take 10 µs on Node, against 17 µs with p-retry. With a `signal` they take 17 µs, against 19 µs.
 - An abort settles the call at once, also while an attempt is running. p-retry waits for the running attempt to settle first.
 - `timeout` gives each attempt a deadline through its `signal`. None of the four libraries limits a single attempt.
-- Every timer and abort listener is removed when a call settles. p-wait-for's `timeout` uses `AbortSignal.timeout`, whose timer keeps running after the poll succeeds.
+- `retry` and `poll` remove every timer and abort listener they create when the call settles.
 - Errors pass through unchanged. p-retry wraps a thrown string in a `TypeError` and never retries a `TypeError` unless its message matches a list of known network errors. That list misses errors such as Chrome's failed dynamic `import()` (p-retry #85).
 - When `retryIf` returns `false`, `fn` is never called again. async-retry's `bail()` rejects the promise, but if `fn` then throws, attempts continue in the background (async-retry #69).
 - Waits longer than about 24.8 days work. p-retry and p-wait-for pass them to `setTimeout`, which fires after 1 ms instead.
@@ -245,16 +247,16 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `pRetry(fn, { minTimeout, maxTimeout, factor, randomize: false })` | `Timers.retry(fn, { delay: { initial: minTimeout, max: maxTimeout, factor, jitter: false } })` |
 | `throw new AbortError(error)` | Return `false` from `retryIf` for that error. |
 | `shouldRetry: ({ error }) => ...` | `retryIf: (error) => ...` |
-| `onFailedAttempt: ({ error, attemptNumber }) => log(...)` | Log in `retryIf`, which runs before each retry, or catch inside `fn`. |
+| `onFailedAttempt: ({ error, attemptNumber }) => log(...)` | `onRetry: (error, { attempt }) => log(...)`, which runs before each retry. To log the last failure too, catch the rejection. |
 | `maxRetryTime: ms` | `signal: AbortSignal.timeout(ms)`. The call rejects with a `TimeoutError` instead of the last error. |
 | `makeRetriable(fn, options)` | `(...args) => Timers.retry(() => fn(...args), options)` |
 | `asyncRetry(async (bail, attempt) => ..., { retries })` | `Timers.retry(async ({ attempt }) => ..., { attempts: retries + 1 })`. async-retry's `randomize` defaults to `true` and waits 1 to 2 times the backoff, and the default here waits 0 to 1 times. |
 | `bail(error)` | Throw `error` and return `false` from `retryIf` for it. |
-| `onRetry: (error, attempt) => ...` | `retryIf: (error, attempt) => (..., true)` |
+| `onRetry: (error, attempt) => ...` | `onRetry: (error, { attempt }) => ...` |
 | `pWaitFor(condition, { interval })` | `Timers.poll(async () => (await condition()) || undefined, { delay: interval })`. A check that returns `false` ends the poll, so turn `false` into `undefined`. |
 | `pWaitFor(() => pWaitFor.resolveWith(value))` | `Timers.poll(() => value)` |
 | `pWaitFor(condition, { before: false })` | `await Timers.sleep(interval)` first. |
-| `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { timeout: milliseconds }).catch((error) => ...)` |
+| `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { signal: AbortSignal.timeout(milliseconds) }).catch((error) => ...)` |
 | `_.debounce(fn, wait, options)`, `lodashDebounce(fn, wait, options)` | `Timers.debounce(fn, wait, options)`. Calls return a promise of the invocation's result. |
 | `_.throttle(fn, wait, options)`, `lodashThrottle(fn, wait, options)` | `Timers.throttle(fn, wait, options)` |
 | `debounced.cancel()`, `debounced.flush()` | The same. Calls dropped by `cancel` reject with an `AbortError`, and `flush` returns a promise. |

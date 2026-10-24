@@ -19,18 +19,30 @@ export type Name = Exclude<CharsetName, 'replacement'>
 export type Charset = {
   /** The WHATWG Encoding Standard name. */
   readonly name: Name
-  /** @internal Most bytes one UTF-16 code unit can encode to. */
+  /**
+   * Encodes text with the default options, as `Charset.encode(text, charset)` does. This method
+   * makes each charset a `CharsetEncoder`, so it can be passed as it is where
+   * `@portable/mime-headers` and `@portable/mail` take one.
+   */
+  readonly encode: (text: string) => Uint8Array<ArrayBuffer>
+  readonly [definition]: true
+}
+
+declare const definition: unique symbol
+
+/** The fields of a `Charset` that `encode` reads. Only `name` is in the public type. */
+export type Definition = {
+  readonly name: Name
+  /** The most bytes that encoding one UTF-16 code unit produces. */
   readonly maxBytes: number
-  /** @internal Byte order mark written when `bom` is set. */
+  /** Byte order mark written when `bom` is set. */
   readonly bom?: readonly number[] | undefined
-  /** @internal Creates the state for one `encode` call or one stream. */
+  /** Creates the state for one `encode` call or one stream. */
   readonly encoder: () => Encoder
 }
 
-/** @internal */
 export type Output = { bytes: Uint8Array<ArrayBuffer>; length: number }
 
-/** @internal */
 export type Encoder = {
   /**
    * Maps each UTF-16 code unit to its bytes: `0x100 | byte` for one byte, `leading << 8 | trailing`

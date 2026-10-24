@@ -23,7 +23,7 @@ const message: Mail.Message = {
   ],
 }
 
-const raw = Mail.encode(message) // ReadableStream<Uint8Array>
+const raw = Mail.encodeStream(message) // ReadableStream<Uint8Array>
 const { from, to } = Mail.envelope(message) // for MAIL FROM and RCPT TO
 
 await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' })
@@ -35,8 +35,8 @@ The report is read from the network while the caller reads the message, so a lar
 
 | Export | Description |
 | --- | --- |
-| `encode(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. Throws `InvalidInputError` or `TypeError` before anything is read if the message can't be written. |
-| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. |
+| `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content. |
+| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
 | `InvalidInputError` | Thrown for an address, header name, content type or file name that can't be written. |
 | `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope` | Types. |
 
@@ -45,7 +45,7 @@ The report is read from the network while the caller reads the message, so a lar
 | Field | Type | Description |
 | --- | --- | --- |
 | `from`, `sender`, `to`, `cc`, `replyTo` | `Addresses` | An address list as text (`'Mari <mari@example.com>, b@example.com'`), a `{ name?, address }`, or a list of either. Groups are allowed in text. |
-| `bcc` | `Addresses` | Read by `envelope`. `encode` writes the header only with `keepBcc`. |
+| `bcc` | `Addresses` | Read by `envelope`. `encodeStream` writes the header only with `keepBcc`. |
 | `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
 | `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain. |
 | `references` | `string \| string[]` | Message IDs separated by whitespace. |
@@ -66,29 +66,71 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 | Option | Default | Description |
 | --- | --- | --- |
 | `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each one appends its number, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
-| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. `@portable/charset` provides them. |
+| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
+| `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
 
 Set `boundary`, `messageId` and `date` to get the same bytes on every run, for example in tests.
 
 ```ts
-import * as Charset from '@portable/charset'
 import { iso2022Jp } from '@portable/charset/iso-2022-jp'
 
-Mail.encode(
+Mail.encodeStream(
   { from: 'テスト <a@example.com>', subject: 'こんにちは', text: 'こんにちは' },
-  { charset: { name: 'ISO-2022-JP', encode: (text) => Charset.encode(text, iso2022Jp) } },
+  { charset: iso2022Jp },
 )
 ```
+
+### Signing and sending
+
+`@portable/dkim` signs the bytes `encodeStream` produces and `@portable/smtp` sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
+
+```ts
+import * as Bytes from '@portable/bytes'
+import * as Dkim from '@portable/dkim'
+import * as Mail from '@portable/mail'
+import * as Smtp from '@portable/smtp'
+import * as Streams from '@portable/streams'
+import { connect } from 'cloudflare:sockets'
+
+const signal = AbortSignal.timeout(30_000)
+const raw = await Streams.toBytes(Mail.encodeStream(message, { signal }))
+const field = await Dkim.sign(raw, {
+  domain: 'example.com',
+  selector: 'mail',
+  privateKey: env.DKIM_PRIVATE_KEY,
+  signal,
+})
+await Smtp.send(
+  { ...Mail.envelope(message), message: Bytes.concat([new TextEncoder().encode(field), raw]) },
+  { connect, host: 'smtp.example.com', auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD }, signal },
+)
+```
+
+Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, which sends each chunk as soon as it reads it.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Mail.Message` | A message to encode. Every field is optional. |
+| `Mail.Addresses` | An address list as text, a `Mailbox`, or a list of either. |
+| `Mail.Mailbox` | `{ name?, address }`. |
+| `Mail.Content` | Text, bytes, a `Blob` or a byte stream, for a body or an attachment. |
+| `Mail.Attachment` | A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`. |
+| `Mail.Part` | An alternative body, such as a calendar invitation. |
+| `Mail.HeaderFields` | Extra header fields by name, with a list for repeated fields. |
+| `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'` or `'base64'`. |
+| `Mail.Envelope` | `{ from, to }`, what `envelope` returns. |
 
 ## Why use this over nodemailer
 
 nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.
 
-- In the benchmarks on Node 24, `encode` was 2.5× faster than `MailComposer` on 100 text and HTML messages and 1.2× faster on a 4 MB attachment read from a stream. With a 1 MB attachment in memory the difference was within the noise. There is no native API that composes MIME to compare with.
+- In the benchmarks on Node 24, `encodeStream` was 2.5× faster than `MailComposer` on 100 text and HTML messages and 1.2× faster on a 4 MB attachment read from a stream. With a 1 MB attachment in memory the difference was within the noise. There is no native API that composes MIME to compare with.
 - Line breaks in `7bit` and `8bit` bodies are written as CRLF. Without its `newline` option, nodemailer writes a bare LF as is, which is how SMTP smuggling starts.
 - An invalid address, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
-- `encode` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
+- `encodeStream` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
 - Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so a reader sees the subject the sender wrote. Quotes in a subject stay readable, but nodemailer 10.1.7 encodes them.
 - A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.
 - `Message` has no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
@@ -118,9 +160,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 | nodemailer | @portable/mail |
 | --- | --- |
-| `new MailComposer(mail).compile().build()` | `await new Response(Mail.encode(message)).bytes()` |
-| `compile().createReadStream()` | `Mail.encode(message)` |
-| `compile().getEnvelope()` | `Mail.envelope(message)` |
+| `new MailComposer(mail).compile().build()` | `await new Response(Mail.encodeStream(message)).bytes()` |
+| `compile().createReadStream()` | `Mail.encodeStream(message)` |
+| `compile().getEnvelope()` | `Mail.envelope(message)`, which throws for a message without a sender where nodemailer returns `from: false`. |
 | `from`, `to`, `cc`, `bcc`, `replyTo`, `sender`, `inReplyTo`, `references`, `subject`, `messageId`, `date`, `text`, `html`, `amp`, `alternatives`, `attachments`, `headers` | The same names. |
 | attachment `content: Buffer \| string \| Readable` | `content: Uint8Array \| string \| Blob \| ReadableStream`. In Node, `Readable.toWeb(stream)`. |
 | attachment or alternative `path`, `href` | `content: (await fetch(url)).body` or `content: await fs.openAsBlob(path)` with `filename`. |

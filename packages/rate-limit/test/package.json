@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@portable/fuzz": "workspace:*",
     "@portable/rate-limit": "workspace:*",
     "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2",
     "limiter": "^4.1.0",
     "rate-limiter-flexible": "^11.2.3"
   }

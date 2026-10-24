@@ -6,7 +6,7 @@ const record = String.fromCharCode(30)
 
 type Case = readonly [name: string, input: string, expected: unknown, options?: Csv.decode.Options]
 
-const coreParser: readonly Case[] = [
+const coreParser = [
   ['One row', 'A,b,c', [['A', 'b', 'c']]],
   [
     'Two rows',
@@ -170,9 +170,9 @@ const coreParser: readonly Case[] = [
     [['a'], ['b'], [''], [''], ['c'], ['d'], ['e']],
     { skipEmpty: false },
   ],
-]
+] satisfies readonly Case[]
 
-const parse: readonly Case[] = [
+const parse = [
   [
     'Two rows, just \\r',
     'A,b,c\rd,E,f',
@@ -560,7 +560,7 @@ const parse: readonly Case[] = [
       ['d', 'e', 'f'],
     ],
   ],
-]
+] satisfies readonly Case[]
 
 describe('papaparse', () => {
   describe('Core Parser Tests', () => {

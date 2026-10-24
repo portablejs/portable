@@ -4,7 +4,7 @@ import idnaTestV2 from './fixtures/IdnaTestV2.json' with { type: 'json' }
 import toascii from './fixtures/toascii.json' with { type: 'json' }
 import { attempt } from './utils.js'
 
-type WptCase = { input: string; output: string | null; comment?: string }
+type WptCase = { input: string; output: string | null; comment?: string | undefined }
 const cases = (fixture: readonly unknown[]) =>
   fixture.filter((entry): entry is WptCase => typeof entry === 'object')
 

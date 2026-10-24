@@ -48,7 +48,7 @@ const charset = await Charset.load('windows-31j') // the Shift_JIS charset
 const bytes = Charset.encode(text, charset)
 ```
 
-`load` throws `UnsupportedError` for an unknown label. `normalizeLabel(label)` returns the label's WHATWG name, such as `'Shift_JIS'`, or `undefined` if the label is unknown or its charset has no encoder, so it can also check a label before calling `load`. The name's type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
+`load` throws `UnsupportedError` for an unknown label. Pass `{ signal }` to stop waiting for the import, which rejects with `signal.reason`. `normalizeLabel(label)` returns the label's WHATWG name, such as `'Shift_JIS'`, or `undefined` if the label is unknown or its charset has no encoder, so a caller can use it to check a label before calling `load`. The name's type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. A charset's `encode(text)` method encodes with the default options, so a charset can be passed where `@portable/mime-headers` and `@portable/mail` take a `CharsetEncoder`. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
 
 Bundlers split `load` into one chunk per family. With every family reachable, the entry chunk is 3.2 kB and each family loads on demand.
 
@@ -69,6 +69,13 @@ Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encod
 ## Decoding
 
 `TextDecoder` decodes every charset here. In browsers it follows the WHATWG standard exactly. Node's `TextDecoder` uses ICU, which differs from WHATWG for Big5, EUC-KR, ISO-2022-JP and Shift_JIS on rarely used code points, and some edge runtimes ship `TextDecoder` with UTF-8 and UTF-16 only. Check the runtime you deploy to if you decode legacy charsets there.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Charset.Charset` | A charset that `encode` and `EncoderStream` write, with its `name` and an `encode(text)` method. |
+| `Charset.Name` | The WHATWG name of a charset this package encodes, such as `'Shift_JIS'`. |
 
 ## Why use this over iconv-lite
 

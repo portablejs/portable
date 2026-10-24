@@ -1,4 +1,4 @@
-import { crc32 } from './crc32.js'
+import { crc32 } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { type FilterType, filterRows } from './filter.js'
 import * as zlib from './zlib.js'
@@ -52,7 +52,10 @@ export declare namespace encodeSync {
  * return new Response(bytes, { headers: { 'content-type': 'image/png' } })
  * ```
  */
-export async function encode(image: RgbaImage, options: encode.Options = {}): Promise<Uint8Array> {
+export async function encode(
+  image: RgbaImage,
+  options: encode.Options = {},
+): Promise<Uint8Array<ArrayBuffer>> {
   const { signal } = options
   signal?.throwIfAborted()
   const colorType = options.colorType ?? 6
@@ -73,7 +76,7 @@ export async function encode(image: RgbaImage, options: encode.Options = {}): Pr
  * const bytes = Png.encodeSync({ width, height, data }, { deflate: (raw) => zlibSync(raw, { level: 9 }) })
  * ```
  */
-export function encodeSync(image: RgbaImage, options: encodeSync.Options): Uint8Array {
+export function encodeSync(image: RgbaImage, options: encodeSync.Options): Uint8Array<ArrayBuffer> {
   const colorType = options.colorType ?? 6
   return assemble(image, colorType, options.deflate(filtered(image, colorType, options)))
 }
@@ -134,14 +137,18 @@ function pack(
   return out
 }
 
-function assemble(image: RgbaImage, colorType: number, compressed: Uint8Array): Uint8Array {
+function assemble(
+  image: RgbaImage,
+  colorType: number,
+  compressed: Uint8Array,
+): Uint8Array<ArrayBuffer> {
   const header = new Uint8Array(13)
   const view = new DataView(header.buffer)
   view.setUint32(0, image.width)
   view.setUint32(4, image.height)
   header[8] = 8
   header[9] = colorType
-  const chunks: [number, Uint8Array][] = [[0x49484452, header]]
+  const chunks = Array.of<[number, Uint8Array]>([0x49484452, header])
   if (image.gamma) {
     const gamma = new Uint8Array(4)
     new DataView(gamma.buffer).setUint32(0, Math.floor(image.gamma * 100000))
@@ -157,7 +164,10 @@ function assemble(image: RgbaImage, colorType: number, compressed: Uint8Array): 
     outView.setUint32(offset, data.length)
     outView.setUint32(offset + 4, type)
     out.set(data, offset + 8)
-    outView.setUint32(offset + 8 + data.length, crc32(out, offset + 4, offset + 8 + data.length))
+    outView.setUint32(
+      offset + 8 + data.length,
+      crc32(out.subarray(offset + 4, offset + 8 + data.length)),
+    )
     offset += data.length + 12
   }
   return out

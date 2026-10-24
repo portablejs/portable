@@ -13,13 +13,21 @@ portable/
 │  ├─ test/                tests, benchmarks, fixtures and PARITY.md: a private package
 │  ├─ package.json
 │  └─ README.md
-├─ docs/                   this file, packages.md, decisions.md
+├─ tools/
+│  ├─ fuzz/                fuzz(), which runs fast-check properties for the fuzz tests
+│  ├─ lint/                the portable oxlint plugin and the public API test
+│  ├─ worker/              runs the conformance tests in a browser Web Worker
+│  └─ workers/             bundles every package into one Worker for workerd
+├─ scripts/                bench, bundle size and README table scripts
+├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
+├─ .github/workflows/      CI (verify.yml)
 ├─ .vite-hooks/            git hooks
 ├─ AGENTS.md               rules for agents and contributors (CLAUDE.md imports it)
 ├─ vite.config.ts          format, lint, staged-file and test config
 ├─ tsconfig.base.json
+├─ tsconfig.test.json      type-checks every package's test/ directory
 └─ pnpm-workspace.yaml
 ```
 
@@ -70,8 +78,8 @@ Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so ev
 | `AbortSignal.timeout` | dkim, dmarc, dns, mail-auth, rpc, smtp, spf, sse, timers | 96.1% | 103 | 100 | 16 |
 | `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
 | `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
-| WebCrypto X25519 | crypto | 90.5% | 133 | 130 | 17 |
-| WebCrypto Ed25519 | arc, crypto, dkim | 89.8% | 137 | 129 | 17 |
+| WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
+| WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
 
 Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
 
@@ -79,15 +87,19 @@ A package can use an API newer than this baseline if it checks whether the runti
 
 ## Building
 
-[zile](https://github.com/wevm/zile) builds each package with `tsc` into `dist/`, one ESM file and one declaration file per source file, with no bundling. A package's `package.json` lists its entry points as source files:
+[zile](https://github.com/wevm/zile) builds each package with `tsc` into `dist/`, one ESM file and one declaration file per source file, with no bundling. A package's `package.json` lists each entry point with its source file and its built files:
 
 ```json
 "exports": {
-  ".": "./src/index.ts"
+  ".": {
+    "src": "./src/exports/index.ts",
+    "types": "./dist/exports/index.d.ts",
+    "default": "./dist/exports/index.js"
+  }
 }
 ```
 
-zile reads `exports`, builds those files, and rewrites each entry to `{ "src", "types", "default" }` paths in the published `package.json`. Only the fields after the `"[!start-pkg]"` key are published, so scripts and dev dependencies stay in the repo. Inside the workspace, `customConditions: ["src"]` points TypeScript at source, so nothing needs a build before tests or type checks.
+zile reads `exports` and builds the `src` files into the `types` and `default` paths. Only the fields after the `"[!start-pkg]"` key are published, so scripts and dev dependencies stay in the repo. Inside the workspace, `customConditions: ["src"]` points TypeScript at source, so nothing needs a build before tests or type checks.
 
 If zile causes problems, removing it takes two steps: commit the `package.json` that `zile publish:prepare` writes, and change the build script to `tsc`.
 
@@ -107,7 +119,7 @@ If zile causes problems, removing it takes two steps: commit the `package.json` 
 
 The `browser` project uses Vitest browser mode with Playwright and runs Chromium, Firefox and WebKit. Browser mode runs every test file on the page's main thread, so the project also runs `tools/worker/src/conformance.browser.test.ts`, which runs every `*.conformance.ts` file again inside a dedicated module worker. Vitest has no option for this, so `tools/worker/src/worker.ts` sets up the worker state that Vitest's browser tester sets up on the page and runs each file with Vitest's own runner, `expect` and `vi`. One worker collects the test names of every file, and the page declares one test for each, so a failure in the worker is reported as a failed page test with the worker's error. Each file then runs in a fresh worker. An error outside a test, such as an unhandled rejection or a failed hook, fails the file's suite. `-t` filters these tests by their page names, which start with the file path, such as `-t "packages/lines/"`. A worker that sends nothing for 60 s, or for twice the timeout of the test it started if that is longer, fails its file. In WebKit the file first runs once more in a new worker, because WebKit's `ReadableStreamDefaultReader.releaseLock()` can deadlock the thread it runs on (see [papercuts.md](papercuts.md)).
 
-We plan a Workers project but haven't set it up, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Until then, the lint rules above are the only check against Node APIs in Workers.
+The conformance tests don't run in Workers yet, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Instead, `pnpm test:workers` runs `tools/workers/src/run.ts`, which bundles every entry point of every package into one Worker and runs it in workerd through Miniflare. Loading the bundle fails if a module creates an `AbortController`, sets a timer or generates random values at the top level, because workerd refuses those outside a handler. The Worker's `fetch` handler then runs the checks in `tools/workers/src/checks.ts`. Each check calls one package with input that makes it use its platform APIs, such as `CompressionStream`, `crypto.subtle`, `MessageChannel` and `WebSocketPair`. Miniflare runs workerd without the limits of a deployed Worker, such as the 100,000-iteration cap on PBKDF2.
 
 Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream. Chromium 141 has neither, which made the first browser run of `@portable/lines` fail.
 
@@ -147,13 +159,15 @@ Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `
 
 ## CI
 
-`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs six jobs in parallel: one runs `vp check` and `tsc -b`, two run the Node tests on Node 24 and on Node 26, and three run the browser tests, one each in Chromium, Firefox and WebKit. Each job has a time limit, so a stalled test run fails within 15 minutes instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. CI doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `tsc -b` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs don't fail the run yet, because of the runtime bugs listed in docs/papercuts.md. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. That job doesn't fail the run either, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. CI doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
 
 The tests that compare the base64 and hex fallbacks with the native API run only where the runtime has `Uint8Array.toBase64` and `fromHex`. Node 26 has them and Node 24 doesn't, so CI tests both versions. CI doesn't test Node 22, because `engines` requires Node 24 and because Node 22's `DecompressionStream` ignores bytes after the end of a compressed stream, which makes `Compress.decode` accept trailing data.
 
 ## Releases
 
 [Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with `@changesets/changelog-github`. The config is copied from ox.
+
+Nothing is published yet, so each package has one changeset, `.changeset/<package>-initial.md`, which describes the package for the first release. A change before then edits that file instead of adding a changeset. A new package adds its own `-initial.md`.
 
 1. `pnpm changeset` records which packages changed and how.
 2. `pnpm changeset:version` bumps versions and writes changelogs.
@@ -165,14 +179,15 @@ We don't publish to JSR. Deno, Bun and Workers all install from npm, and because
 
 ## Crypto
 
-A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. Both `@noble/hashes` and WebCrypto fit the option's type, sync or async:
+A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. `@portable/web-crypto` defines the three option types once, and both `@noble/hashes` and WebCrypto fit them, because each type allows a sync or an async result:
 
 ```ts
-type Hmac = (key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
-type Digest = (algorithm: 'SHA-1' | 'SHA-256', data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
+type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promise<Uint8Array> }
 ```
 
-`@portable/webhooks` takes `hmac` and `@portable/oauth1` takes `digest`. Neither imports a crypto library or lists one as a dependency, and neither has a `/core` entry: a WebCrypto default imports nothing, so the option alone lets a caller choose.
+Each package takes only the one it needs, under an option with the type's name: `@portable/oauth1` takes `hmac` and `digest`, `@portable/webhooks` takes `hmac`, and `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take `hasher`, a function that takes the hash name and returns a `Hasher`. They re-export the type, so a caller doesn't need to install `@portable/web-crypto`. None of them imports a crypto library or lists one as a dependency, and none has a `/core` entry, because the WebCrypto default imports no library, and a caller who wants another implementation passes it in the option.
 
 WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC is about 7× slower than noble's. We expect Node's WebCrypto to get faster. Until then, a README shows the noble version of the option for a caller who verifies or signs many messages on Node, or who needs a sync result.
 
@@ -183,6 +198,6 @@ Other libraries made this choice in different ways. `@octokit/webhooks-methods` 
 ## Planned
 
 - `environments/`, from viem: small apps that install the packed packages and run them in Node, Bun, Deno, Workers, a Vite build, and `tsc` under each `module` setting. They catch packaging mistakes such as a wrong `exports` map, which source-level tests miss.
-- A Workers test project, once a Vitest 5 pool for workerd exists or we run one ourselves.
+- A Workers test project that runs the conformance tests, once a Vitest 5 pool for workerd exists.
 - `size-limit` budgets per entry point, as ox has.
 - `publint` and `@arethetypeswrong/cli` on each packed package before publishing.

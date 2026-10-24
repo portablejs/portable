@@ -2,19 +2,6 @@ import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { checkLength, decodeCharset, hexDigit, toText } from './internal/text.js'
 
-/**
- * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
- * is called once per encoded word, so it must return bytes that decode on their own: a stateful
- * charset such as ISO-2022-JP has to end in its initial state.
- *
- * @example
- * ```ts
- * import * as Charset from '@portable/charset'
- * import { iso2022Jp } from '@portable/charset/iso-2022-jp'
- *
- * const charset = { name: 'ISO-2022-JP', encode: (text: string) => Charset.encode(text, iso2022Jp) }
- * ```
- */
 const utf8Encoder = new TextEncoder()
 let scratch = new Uint8Array(1024)
 
@@ -26,8 +13,11 @@ export function encodeUtf8Scratch(text: string): Uint8Array {
 }
 
 /**
- * Encodes text in a charset other than UTF-8 for encoded-words. `@portable/charset` provides
- * encoders.
+ * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
+ * is called once per encoded word, so the bytes from each call must decode on their own. For a
+ * stateful charset such as ISO-2022-JP, each call's output has to return to the initial state
+ * before it ends. Every charset from
+ * `@portable/charset` is a `CharsetEncoder`.
  */
 export type CharsetEncoder = {
   /** The name written into each encoded word. */
@@ -38,20 +28,20 @@ export type CharsetEncoder = {
 /**
  * `'Q'` keeps ASCII letters and digits readable. `'B'` is base64 and shorter for non-Latin text.
  */
-export type Encoding = 'Q' | 'B'
+export type WordEncoding = 'Q' | 'B'
 
 export declare namespace encodeWord {
   type Options = {
     /** Charset of the encoded bytes. @default UTF-8 */
     charset?: CharsetEncoder | undefined
     /** @default 'Q' */
-    encoding?: Encoding | undefined
+    wordEncoding?: WordEncoding | undefined
     /**
      * Longest encoded word, `=?` and `?=` included. Longer text is split into several words that
      * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
      * longer when the limit is too small for it. `false` writes one word. @default 75
      */
-    maxLength?: number | false | undefined
+    wordLength?: number | false | undefined
   }
 }
 
@@ -64,39 +54,42 @@ export declare namespace encodeWord {
  * import * as MimeHeaders from '@portable/mime-headers'
  *
  * MimeHeaders.encodeWord('See on õhin test') // '=?UTF-8?Q?See_on_=C3=B5hin_test?='
- * MimeHeaders.encodeWord('See on õhin test', { encoding: 'B' }) // '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?='
+ * MimeHeaders.encodeWord('See on õhin test', { wordEncoding: 'B' }) // '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?='
  * ```
  */
 export function encodeWord(input: string | Uint8Array, options: encodeWord.Options = {}): string {
-  const { charset, encoding = 'Q', maxLength = 75 } = options
+  const { charset, wordEncoding: encoding = 'Q', wordLength = 75 } = options
   if (encoding !== 'Q' && encoding !== 'B')
-    throw new RangeError(`Unknown encoding ${String(encoding)}.`)
-  if (maxLength !== false) checkLength('maxLength', maxLength)
+    throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`)
+  if (wordLength !== false) checkLength('wordLength', wordLength)
   const prefix = charset
     ? `=?${charset.name}?${encoding}?`
     : encoding === 'Q'
       ? '=?UTF-8?Q?'
       : '=?UTF-8?B?'
   const budget =
-    maxLength === false
+    wordLength === false
       ? Infinity
-      : Math.max(maxLength - prefix.length - 2, encoding === 'Q' ? 12 : 4)
+      : Math.max(wordLength - prefix.length - 2, encoding === 'Q' ? 12 : 4)
   const text = typeof input === 'string' ? input : toText(input)
   const bytes = charset ? undefined : encodeUtf8Scratch(text)
   if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget)
-    return prefix + encodeB(bytes) + '?='
+    return prefix + Base64.encode(bytes) + '?='
   const fits =
     encoding === 'Q'
       ? (length: number) => length <= budget
       : (length: number) => Math.ceil(length / 3) * 4 <= budget
   if (!bytes)
     return splitCharset(text, charset!, encoding, fits)
-      .map((chunk) => prefix + (encoding === 'Q' ? encodeQ(chunk) : encodeB(chunk)) + '?=')
+      .map((chunk) => prefix + (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) + '?=')
       .join(' ')
   let result = ''
   for (const chunk of splitUtf8(bytes, encoding, fits))
     result +=
-      (result ? ' ' : '') + prefix + (encoding === 'Q' ? encodeQ(chunk) : encodeB(chunk)) + '?='
+      (result ? ' ' : '') +
+      prefix +
+      (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) +
+      '?='
   return result
 }
 
@@ -197,7 +190,7 @@ const withoutLanguage = (charset: string): string => {
 
 function splitUtf8(
   bytes: Uint8Array,
-  encoding: Encoding,
+  encoding: WordEncoding,
   fits: (length: number) => boolean,
 ): Uint8Array[] {
   const chunks: Uint8Array[] = []
@@ -222,7 +215,7 @@ function splitUtf8(
 function splitCharset(
   text: string,
   charset: CharsetEncoder,
-  encoding: Encoding,
+  encoding: WordEncoding,
   fits: (length: number) => boolean,
 ): Uint8Array[] {
   const characters = Array.from(text)
@@ -242,19 +235,13 @@ function splitCharset(
   return chunks
 }
 
-/**
- * Spreading bytes into arguments hits the engine's argument limit, so `encodeB` uses
- * `Base64.encode` instead of `btoa` for long input.
- */
-const encodeB = (bytes: Uint8Array): string =>
-  bytes.length > 4096
-    ? Base64.encode(bytes)
-    : btoa(String.fromCharCode.apply(null, bytes as unknown as number[]))
-
 /** RFC 2047 section 5 (3): the characters a Q word may keep as is anywhere, even in a phrase. */
-const qSafe = new Uint8Array(128)
-for (const character of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!*+-/ ')
-  qSafe[character.charCodeAt(0)] = 1
+const qSafe = /* @__PURE__ */ (() => {
+  const table = new Uint8Array(128)
+  for (const character of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!*+-/ ')
+    table[character.charCodeAt(0)] = 1
+  return table
+})()
 
 const qLength = (byte: number): number => (byte < 0x80 && qSafe[byte] ? 1 : 3)
 

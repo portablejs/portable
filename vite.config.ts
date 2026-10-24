@@ -56,7 +56,7 @@ function watchdog(idle = 240_000): Plugin {
       process.exit(1)
     }, idle)
   }
-  const reporter: Reporter = {
+  const reporter = {
     onTestModuleStart(module) {
       if (!module.project.config.browser.enabled) return
       running++
@@ -72,7 +72,7 @@ function watchdog(idle = 240_000): Plugin {
     onHookStart: arm,
     onHookEnd: arm,
     onTestRunEnd: () => clearTimeout(timer),
-  }
+  } satisfies Reporter
   return {
     name: 'portable:watchdog',
     configureVitest(context) {
@@ -99,11 +99,68 @@ export default defineConfig({
     ],
   },
   lint: {
-    plugins: ['eslint', 'typescript', 'unicorn', 'vitest'],
+    plugins: ['eslint', 'typescript', 'unicorn', 'vitest', 'import', 'jsdoc', 'oxc'],
+    categories: { suspicious: 'error', perf: 'error' },
+    jsPlugins: ['./tools/lint/src/plugin.ts'],
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
       'no-console': 'error',
+      'portable/error-kind': 'error',
+      'portable/import-extension': 'error',
+      'portable/no-enum': 'error',
+      'portable/no-private-symbol': 'error',
+      'portable/optional-undefined': 'error',
+      'portable/prefer-satisfies': 'error',
+      'portable/type-parameter-name': 'error',
+      // Turned off from the suspicious and perf categories. Streams and retries await in a loop on
+      // purpose, and the other rules report a style the code uses everywhere.
+      'eslint/no-await-in-loop': 'off',
+      'eslint/no-shadow': 'off',
+      'eslint/no-underscore-dangle': 'off',
+      'unicorn/consistent-function-scoping': 'off',
+      'typescript/no-unsafe-type-assertion': 'off',
+      // toSorted and toReversed are ES2023, newer than package code targets.
+      'unicorn/no-array-sort': 'off',
+      'unicorn/no-array-reverse': 'off',
+      // Default imports of CommonJS libraries in oracle tests and benchmarks.
+      'import/no-named-as-default': 'off',
+      'import/no-named-as-default-member': 'off',
+      // A loop condition that a callback changes, early `return` in a void function, MessagePort's
+      // postMessage without an origin, and String() on input typed string but unchecked at run time.
+      'eslint/no-unmodified-loop-condition': 'off',
+      'typescript/consistent-return': 'off',
+      'unicorn/require-post-message-target-origin': 'off',
+      'typescript/no-unnecessary-type-conversion': 'off',
+      // JSON encoding tells boxed primitives (new Number(1)) apart with instanceof.
+      'unicorn/no-instanceof-builtins': 'off',
+      // Its fix turns a test title `${name}` into `name`, which vitest/valid-title then rejects.
+      'typescript/no-unnecessary-template-expression': 'off',
+      'import/no-cycle': 'error',
+      'import/no-self-import': 'error',
+      'import/no-duplicates': 'error',
+      'import/no-default-export': 'error',
+      'typescript/consistent-type-definitions': ['error', 'type'],
+      'typescript/array-type': ['error', { default: 'array' }],
+      'typescript/no-unnecessary-type-assertion': 'error',
+      'unicorn/no-abusive-eslint-disable': 'error',
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/empty-tags': 'error',
+      'jsdoc/no-defaults': 'error',
+      'jsdoc/require-param-name': 'error',
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'ReadableStream',
+          property: 'from',
+          message: 'Some supported browsers lack ReadableStream.from. Use Streams.fromIterable.',
+        },
+        {
+          object: 'URL',
+          property: 'parse',
+          message: 'Safari 17 lacks URL.parse. Call new URL in a try block.',
+        },
+      ],
       // `fuzz` from @portable/fuzz asserts a property, like `expect`.
       'vitest/expect-expect': ['warn', { assertFunctionNames: ['expect', 'expect*', 'fuzz'] }],
       'no-irregular-whitespace': [
@@ -115,6 +172,10 @@ export default defineConfig({
         {
           patterns: [
             { group: ['node:*'], message: 'portable packages use web-standard APIs only.' },
+            {
+              group: ['**/exports/*'],
+              message: 'Import the source module. A file in src/exports is only a package entry.',
+            },
           ],
           paths: nodeBuiltins.map((name) => ({
             name,
@@ -137,8 +198,34 @@ export default defineConfig({
     },
     overrides: [
       {
-        files: ['**/*.oracle.test.ts', '**/*.bench.ts', 'vite.config.ts'],
+        files: [
+          '**/*.oracle.test.ts',
+          '**/*.bench.ts',
+          'vite.config.ts',
+          'tools/lint/src/publicApi.test.ts',
+          'tools/lint/src/forAwait.test.ts',
+        ],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
+      },
+      {
+        files: ['vite.config.ts', 'tools/lint/src/plugin.ts'],
+        rules: { 'import/no-default-export': 'off' },
+      },
+      {
+        // Tests build fakes and measure constructors, so these patterns are deliberate there.
+        files: ['packages/*/test/**', 'tools/*/src/**'],
+        rules: {
+          'eslint/no-new': 'off',
+          'eslint/no-extend-native': 'off',
+          'oxc/no-map-spread': 'off',
+          'typescript/no-extraneous-class': 'off',
+          'unicorn/no-array-fill-with-reference-type': 'off',
+          'unicorn/prefer-add-event-listener': 'off',
+          'jsdoc/require-yields': 'off',
+          // These rules check the API a package publishes, not test helpers and fixtures.
+          'portable/error-kind': 'off',
+          'portable/no-private-symbol': 'off',
+        },
       },
       {
         // The worker harness declares one test for each test it collects from the worker.
@@ -150,11 +237,15 @@ export default defineConfig({
         },
       },
       {
-        files: ['packages/*/scripts/**', 'scripts/**'],
+        files: ['packages/*/scripts/**', 'scripts/**', 'tools/workers/src/run.ts'],
         rules: {
           'no-restricted-imports': 'off',
           'no-restricted-globals': 'off',
           'no-console': 'off',
+          // Node runs these files directly, so their imports name the `.ts` file.
+          'portable/import-extension': 'off',
+          // readJson<value>() types a parsed file for its caller.
+          'typescript/no-unnecessary-type-parameters': 'off',
         },
       },
     ],
@@ -189,6 +280,7 @@ export default defineConfig({
           },
           include: [
             'packages/*/{test,src}/**/*.test.ts',
+            'tools/lint/src/*.test.ts',
             'packages/*/{test,src}/**/*.conformance.ts',
             '!packages/*/{test,src}/**/*.browser.test.ts',
           ],

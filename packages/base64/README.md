@@ -30,7 +30,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | --- | --- |
 | `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
 | `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
-| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, string>`. Same output as `encode` of the whole input, however it is chunked. |
+| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input. |
 | `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding and groups of four characters can be split across chunks anywhere. |
 | `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
 | `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |
@@ -44,7 +44,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `alphabet` | `'base64'` | `'base64'` uses `+` and `/`. `'base64url'` uses `-` and `_` (RFC 4648 §5). |
 | `omitPadding` | `false` | Leave out the trailing `=`. |
 | `lineLength` | `false` | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending. |
-| `lineEnding` | `'\r\n'` | Inserted between lines. |
+| `newline` | `'\r\n'` | Inserted between lines. |
 | `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ### Decode options
@@ -66,6 +66,13 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 `'loose'` and `'strict'` match `Uint8Array.fromBase64` with `lastChunkHandling` set to the same name. `'strict'` also rejects non-zero bits before the padding (`'YR=='`). Both throw `TruncatedError` for one leftover character (`'YWJjZ'`) or a single `=` where two are needed (`'YQ='`).
 
 `'mime'` follows RFC 2045 §6.8, which tells decoders to ignore characters outside the alphabet, and libbase64, which decodes each `=`-terminated segment on its own. It reads both alphabets and never throws, so use it for mail bodies and other input you don't control.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Base64.Alphabet` | `'base64'` or `'base64url'` (RFC 4648). |
+| `Base64.Mode` | `'loose'`, `'strict'` or `'mime'`, how `decode` treats input that isn't canonical base64. |
 
 ## Why use this over base64-js, js-base64 and libbase64
 

@@ -1,4 +1,5 @@
 import type { Charset, Encoder } from './Charset.js'
+import { define } from './define.js'
 import { byteTable, codeTable } from './internal/tables.js'
 import { jis0208 } from './tables/jis0208.js'
 
@@ -36,4 +37,8 @@ function encoder(): Encoder {
  * Charset.encode('日本', eucJp) // Uint8Array [0xc6, 0xfc, 0xcb, 0xdc]
  * ```
  */
-export const eucJp: Charset = { name: 'EUC-JP', maxBytes: 2, encoder }
+export const eucJp: Charset = /* @__PURE__ */ define({
+  name: 'EUC-JP',
+  maxBytes: 2,
+  encoder,
+})

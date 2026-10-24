@@ -3,7 +3,11 @@ import { MaxHeaderBytesError } from './errors.js'
 
 export declare namespace splitHeaders {
   type Options = {
-    /** Longest header block, counted with the empty line that ends it. @default 1048576 */
+    /**
+     * Longest header block, counted with the empty line that ends it. Set it, for example to
+     * 1 MiB, when the input is untrusted.
+     * @default Infinity
+     */
     maxHeaderBytes?: number | undefined
     /**
      * Rejects with `signal.reason` while the header block is read, and later errors `body` with
@@ -13,7 +17,7 @@ export declare namespace splitHeaders {
   }
   type ReturnType = {
     /** The header block as received, with the empty line that ends it. */
-    headers: Uint8Array
+    headers: Uint8Array<ArrayBuffer>
     /** Every byte after the header block, unchanged. */
     body: ReadableStream<Uint8Array>
   }
@@ -36,7 +40,7 @@ export async function splitHeaders(
   stream: ReadableStream<Uint8Array>,
   options: splitHeaders.Options = {},
 ): Promise<splitHeaders.ReturnType> {
-  const { maxHeaderBytes = 1024 * 1024, signal } = options
+  const { maxHeaderBytes = Infinity, signal } = options
   signal?.throwIfAborted()
   const reader = stream.getReader()
   let output: ReadableStreamDefaultController<Uint8Array> | undefined
@@ -71,12 +75,12 @@ export async function splitHeaders(
           if (lineLength === 0) lineStartsWithCr = byte === 0x0d
           lineLength++
         }
-        if (length + i + 1 > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
+        if (length + i + 1 > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
       }
       pieces.push(value)
       length += value.length
     }
-    if (length > maxHeaderBytes) throw new MaxHeaderBytesError(maxHeaderBytes)
+    if (length > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
   } catch (error) {
     stop()
     await reader.cancel(error).catch(() => {})

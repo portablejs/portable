@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 /**
  * Thrown when the input isn't valid JSON. The message gives the offset of the first bad
  * character.
@@ -15,8 +16,8 @@
  * }
  * ```
  */
-export class InvalidInputError extends Error {
-  override name = 'JsonStream.InvalidInputError'
+export class InvalidInputError extends Errors.InvalidInputError {
+  static override readonly kind: string = 'JsonStream.InvalidInputError'
 }
 
 /**
@@ -34,9 +35,35 @@ export class InvalidInputError extends Error {
  * }
  * ```
  */
-export class TruncatedError extends Error {
-  override name = 'JsonStream.TruncatedError'
-  constructor() {
-    super('JSON input ended inside a value.')
+export class TruncatedError extends Errors.TruncatedError {
+  static override readonly kind: string = 'JsonStream.TruncatedError'
+  constructor(message: string = 'JSON input ended inside a value.', options?: ErrorOptions) {
+    super(message, options)
+  }
+}
+
+/**
+ * Thrown when a value at one of the `paths` grows past `maxLength`.
+ *
+ * @example
+ * ```ts
+ * import * as JsonStream from '@portable/json-stream'
+ * import * as Streams from '@portable/streams'
+ *
+ * const matches = body.pipeThrough(
+ *   new JsonStream.DecoderStream({ paths: ['$.rows[*]'], maxLength: 100_000 }),
+ * )
+ * try {
+ *   await Streams.toArray(matches)
+ * } catch (error) {
+ *   if (error instanceof JsonStream.MaxLengthError) return new Response(null, { status: 413 })
+ *   throw error
+ * }
+ * ```
+ */
+export class MaxLengthError extends Errors.MaxLengthError {
+  static override readonly kind: string = 'JsonStream.MaxLengthError'
+  constructor(options: Errors.MaxLengthError.Options) {
+    super({ message: `A value exceeded maxLength of ${options.maxLength}.`, ...options })
   }
 }

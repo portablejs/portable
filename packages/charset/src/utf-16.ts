@@ -1,4 +1,5 @@
 import type { Charset, Encoder } from './Charset.js'
+import { define } from './define.js'
 
 function utf16(littleEndian: boolean): Encoder {
   const [low, high] = littleEndian ? [0, 1] : [1, 0]
@@ -33,12 +34,12 @@ function utf16(littleEndian: boolean): Encoder {
  * Charset.encode('a€', utf16le) // Uint8Array [0x61, 0x00, 0xac, 0x20]
  * ```
  */
-export const utf16le: Charset = {
+export const utf16le: Charset = /* @__PURE__ */ define({
   name: 'UTF-16LE',
   maxBytes: 2,
   bom: [0xff, 0xfe],
   encoder: () => utf16(true),
-}
+})
 
 /**
  * UTF-16 big-endian.
@@ -51,9 +52,9 @@ export const utf16le: Charset = {
  * Charset.encode('a€', utf16be) // Uint8Array [0x00, 0x61, 0x20, 0xac]
  * ```
  */
-export const utf16be: Charset = {
+export const utf16be: Charset = /* @__PURE__ */ define({
   name: 'UTF-16BE',
   maxBytes: 2,
   bom: [0xfe, 0xff],
   encoder: () => utf16(false),
-}
+})

@@ -79,10 +79,10 @@ Each attempt sends a clone of `request`, so a POST body is sent again on every r
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `(attempt, error) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from `@portable/timers`, and an invalid one throws a `RangeError`. |
+| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `({ attempt, error }) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from `@portable/timers`, and an invalid one throws a `RangeError`. |
 | `fetch` | `globalThis.fetch` | Sends each `Request`. A wrapper can change the request first, such as setting a fresh token. |
 | `maxLength` | `Infinity` | As in `DecoderStream`. |
-| `reconnectIf` | see below | `(error, attempt) => boolean`, called after each connection ends. `error` is `undefined` when the response ended normally. Return `false` to close the stream, or to fail it with `error`. |
+| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends. `error` is `undefined` when the response ended normally. Return `false` to stop reconnecting: the stream then closes if `error` is `undefined`, and errors with `error` otherwise. |
 | `signal` | | Fails the stream with `signal.reason`. |
 
 By default `connect` reconnects after every error except `ResponseError` and `MaxLengthError`, and after a response that ends normally. For a request you don't want repeated, such as an LLM completion, pass `reconnectIf: () => false`. To also retry a 5xx response:
@@ -92,6 +92,13 @@ Sse.connect(request, {
   reconnectIf: (error) => !(error instanceof Sse.ResponseError) || error.response.status >= 500,
 })
 ```
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Sse.Event` | An event read from a stream, as `EventSource` would dispatch it. |
+| `Sse.Message` | A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. |
 
 ## Why use this over eventsource-parser, eventsource and fetch-event-source
 
@@ -148,7 +155,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `es.addEventListener('update', fn)` | Read the stream and check `event.event === 'update'`. |
 | `fetchEventSource(url, { method, headers, body, onmessage, signal })` | `Sse.connect(new Request(url, { method, headers, body }), { signal, reconnectIf: () => false })` |
 | fetch-event-source `onopen(response)` | `fetch: async (request) => { const response = await fetch(request); check(response); return response }` |
-| fetch-event-source `onerror(err)` returning an interval or throwing | `delay: (attempt, error) => ms` and `reconnectIf` |
+| fetch-event-source `onerror(err)` returning an interval or throwing | `delay: ({ attempt, error }) => ms` and `reconnectIf` |
 | better-sse `session.push(data, event, id)` | `writer.write({ data: JSON.stringify(data), event, id })` into an `EncoderStream` |
 | better-sse keep-alive | `writer.write({ comment: '' })` on an interval |
 | hono `stream.writeSSE({ data, event, id, retry })` | `writer.write({ data, event, id, retry })` into an `EncoderStream` |

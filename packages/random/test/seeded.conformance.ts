@@ -76,7 +76,7 @@ describe('reference vectors', () => {
 
   // `Xoshiro128StarStar::seed_from_u64(seed)` and eight `next_u32()` calls, run with rand_xoshiro
   // 0.8.1 from github.com/rust-random/rngs. A negative seed is its 64-bit two's complement.
-  const rust: readonly [number, readonly number[]][] = [
+  const rust = [
     [
       0,
       [
@@ -116,7 +116,7 @@ describe('reference vectors', () => {
       -1,
       [477689756, 2493998634, 555695776, 607808419, 61340979, 301466976, 2478485284, 2565876330],
     ],
-  ]
+  ] satisfies readonly [number, readonly number[]][]
   for (const [seed, expected] of rust) {
     test(`seeded(${seed}) matches rand_xoshiro's seed_from_u64`, () => {
       expect(words(Random.seeded(seed).bytes(32))).toEqual(expected)

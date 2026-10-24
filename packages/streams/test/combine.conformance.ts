@@ -29,7 +29,7 @@ describe('merge2', () => {
     const read1 = pushable<number>()
     const read2 = pushable<number>()
     const through3 = new TransformStream<number, number>()
-    const merged = concat(read1.stream, read2.stream, through3.readable)
+    const merged = concat([read1.stream, read2.stream, through3.readable])
 
     read1.push(1)
     later(100, () => {
@@ -53,7 +53,7 @@ describe('merge2', () => {
 
   test('merge2 - error handling', async () => {
     const ts = new TransformStream()
-    const merged = concat(ts.readable)
+    const merged = concat([ts.readable])
     const expected = new Error('error')
     later(100, () => void ts.writable.abort(expected))
     await expect(collect(merged)).rejects.toBe(expected)
@@ -67,7 +67,7 @@ describe('merge2', () => {
       void writer.write(2)
       void writer.close()
     })
-    expect(await collect(concat(ts.readable))).toEqual([1, 2])
+    expect(await collect(concat([ts.readable]))).toEqual([1, 2])
   })
 
   test('merge2(read1, [read2, through3], through4, [through5, read6])', async () => {
@@ -94,12 +94,12 @@ describe('merge2', () => {
       read6.end()
     })
 
-    const merged = concat(
+    const merged = concat([
       read1.stream,
-      merge(read2.stream, through3.stream),
+      merge([read2.stream, through3.stream]),
       through4.stream,
-      merge(through5.stream, read6.stream),
-    )
+      merge([through5.stream, read6.stream]),
+    ])
     expect(await collect(merged)).toEqual([1, 3, 2, 4, 5, 6])
   })
 
@@ -122,7 +122,7 @@ describe('merge2', () => {
       through3.push('6')
       through3.end()
     })
-    expect(await toText(concat(read1.stream, read2.stream, through3.stream))).toBe('123456')
+    expect(await toText(concat([read1.stream, read2.stream, through3.stream]))).toBe('123456')
   })
 
   test('merge2(merge2(through4, [through5, read6]), read1, [read2, through3])', async () => {
@@ -149,8 +149,8 @@ describe('merge2', () => {
       read6.end()
     })
 
-    const inner = concat(through4.stream, merge(through5.stream, read6.stream))
-    const merged = concat(inner, read1.stream, merge(read2.stream, through3.stream))
+    const inner = concat([through4.stream, merge([through5.stream, read6.stream])])
+    const merged = concat([inner, read1.stream, merge([read2.stream, through3.stream])])
     expect(await collect(merged)).toEqual([4, 5, 6, 1, 3, 2])
   })
 })
@@ -158,7 +158,7 @@ describe('merge2', () => {
 describe('merge-stream', () => {
   test('smoke', async () => {
     const sources = Array.from({ length: 74 }, (_, i) => range(i - 36))
-    const values = await toArray(merge(...sources))
+    const values = await toArray(merge(sources))
     expect(values.reduce((sum, n) => sum + n, 0)).toBe(666)
   })
 
@@ -170,7 +170,7 @@ describe('merge-stream', () => {
         yield i
       }
     }
-    const reader = merge(counting(), counting()).getReader()
+    const reader = merge([counting(), counting()]).getReader()
     await reader.read()
     await delay(20)
     expect(produced).toBeLessThanOrEqual(2)
@@ -178,7 +178,7 @@ describe('merge-stream', () => {
   })
 
   test('array', async () => {
-    expect(await toArray(merge(range(100), range(-100)))).toHaveLength(200)
+    expect(await toArray(merge([range(100), range(-100)]))).toHaveLength(200)
   })
 
   test('propagates errors', async () => {
@@ -197,7 +197,7 @@ describe('merge-stream', () => {
     const error = new Error('TEST: INTERNAL STREAM ERROR')
     failing.push(1)
     later(50, () => failing.error(error))
-    const reader = merge(failing.stream, fineStream).getReader()
+    const reader = merge([failing.stream, fineStream]).getReader()
     let thrown: unknown
     try {
       for (;;) if ((await reader.read()).done) break
@@ -216,11 +216,11 @@ describe('concat', () => {
       yield 'c'
       yield 'd'
     }
-    expect(await toText(concat(fromChunks(['a']), ['b'], gen(), new Set(['e'])))).toBe('abcde')
+    expect(await toText(concat([fromChunks(['a']), ['b'], gen(), new Set(['e'])]))).toBe('abcde')
   })
 
   test('with no sources is empty', async () => {
-    expect(await collect(concat())).toEqual([])
+    expect(await collect(concat([]))).toEqual([])
   })
 
   test('starts reading a source only after the previous one ended', async () => {
@@ -236,7 +236,7 @@ describe('concat', () => {
       { highWaterMark: 0 },
     )
     const first = pushable<number>()
-    const reader = concat(first.stream, second).getReader()
+    const reader = concat([first.stream, second]).getReader()
     first.push(1)
     expect(await reader.read()).toEqual({ done: false, value: 1 })
     await delay(10)
@@ -249,7 +249,7 @@ describe('concat', () => {
     const reasons: unknown[] = []
     const source = () =>
       new ReadableStream({ pull: (c) => c.enqueue(1), cancel: (r) => void reasons.push(r) })
-    const reader = concat(source(), source(), source()).getReader()
+    const reader = concat([source(), source(), source()]).getReader()
     await reader.read()
     await reader.cancel('stop')
     expect(reasons).toEqual(['stop', 'stop', 'stop'])
@@ -260,7 +260,7 @@ describe('concat', () => {
     let cancelled: unknown
     const failing = new ReadableStream({ start: (c) => c.error(error) })
     const rest = new ReadableStream({ cancel: (r) => void (cancelled = r) })
-    await expect(collect(concat(['a'], failing, rest))).rejects.toBe(error)
+    await expect(collect(concat([['a'], failing, rest]))).rejects.toBe(error)
     expect(cancelled).toBe(error)
   })
 
@@ -273,7 +273,7 @@ describe('concat', () => {
         finalized = true
       }
     }
-    const reader = concat(gen()).getReader()
+    const reader = concat([gen()]).getReader()
     await reader.read()
     await reader.cancel()
     expect(finalized).toBe(true)
@@ -282,13 +282,13 @@ describe('concat', () => {
 
 describe('merge', () => {
   test('with no sources is empty', async () => {
-    expect(await collect(merge())).toEqual([])
+    expect(await collect(merge([]))).toEqual([])
   })
 
   test('passes chunks on in the order they arrive', async () => {
     const a = pushable<string>()
     const b = pushable<string>()
-    const result = collect(merge(a.stream, b.stream))
+    const result = collect(merge([a.stream, b.stream]))
     b.push('b1')
     await delay(5)
     a.push('a1')
@@ -304,7 +304,7 @@ describe('merge', () => {
     const reasons: unknown[] = []
     const source = () =>
       new ReadableStream({ pull: (c) => c.enqueue(1), cancel: (r) => void reasons.push(r) })
-    const reader = merge(source(), fromIterable([1, 2]), source()).getReader()
+    const reader = merge([source(), fromIterable([1, 2]), source()]).getReader()
     await reader.read()
     await reader.cancel('stop')
     expect(reasons).toEqual(['stop', 'stop'])
@@ -339,5 +339,40 @@ describe('limitBytes', () => {
       MaxBytesError,
     )
     expect(await toText(fromChunks(['€']).pipeThrough(limitBytes(3)))).toBe('€')
+  })
+})
+
+describe.each([
+  ['concat', concat],
+  ['merge', merge],
+] as const)('%s with a signal', (_, combine) => {
+  test('errors the output with the reason and cancels every source', async () => {
+    const reasons: unknown[] = []
+    const source = () =>
+      new ReadableStream<number>({ cancel: (reason) => void reasons.push(reason) })
+    const controller = new AbortController()
+    const reader = combine([source(), source()], { signal: controller.signal }).getReader()
+    const read = reader.read()
+    const reason = new Error('stop')
+    controller.abort(reason)
+    await expect(read).rejects.toBe(reason)
+    await expect.poll(() => reasons).toEqual([reason, reason])
+  })
+
+  test('errors at once for an aborted signal', async () => {
+    const reason = new Error('already')
+    await expect(toArray(combine([[1]], { signal: AbortSignal.abort(reason) }))).rejects.toBe(
+      reason,
+    )
+  })
+
+  test('passes every chunk through when the signal never aborts', async () => {
+    const { signal } = new AbortController()
+    expect(await toArray(combine([[1], [2]], { signal }))).toEqual([1, 2])
+  })
+
+  test('throws a TypeError for sources that are not an array', () => {
+    // @ts-expect-error
+    expect(() => combine(fromIterable([1]))).toThrow(TypeError)
   })
 })

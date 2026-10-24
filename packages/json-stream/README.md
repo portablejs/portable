@@ -25,19 +25,18 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 | Option | Default | Description |
 | --- | --- | --- |
 | `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]` and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
+| `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the input ends inside a value.
+The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The error stores the limit in `maxLength`.
 
 ## `encodeStream`
 
-Returns a `ReadableStream<string>` with the JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
+Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
 
 ```ts
 const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() })
-return new Response(body.pipeThrough(new TextEncoderStream()), {
-  headers: { 'content-type': 'application/json' },
-})
+return new Response(body, { headers: { 'content-type': 'application/json' } })
 ```
 
 | Option | Default | Description |
