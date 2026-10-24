@@ -83,7 +83,7 @@ A method that throws `Rpc.RemoteError` sends its `code`, `message` and `data`. A
 throw new Rpc.RemoteError({ code: 404, message: 'No such user', data: { id } })
 ```
 
-When the transport closes or fails, or an HTTP request fails, waiting calls reject with `Rpc.TransportError`, whose `cause` holds the underlying error or the failed `Response`. An unknown method rejects with code `-32601`. Names that start with `rpc.` and names inherited from `Object.prototype`, such as `constructor`, are never called.
+When the transport closes or fails, or an HTTP request fails, waiting calls reject with `Rpc.TransportError`, whose `cause` holds the underlying error. For a failed HTTP response, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`. An unknown method rejects with code `-32601`. Names that start with `rpc.` and names inherited from `Object.prototype`, such as `constructor`, are never called.
 
 ### Streams
 

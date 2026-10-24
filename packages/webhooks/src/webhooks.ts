@@ -34,6 +34,11 @@ export declare namespace verify {
     tolerance?: number | undefined
     /** The time to compare the signed timestamp with. @default new Date() */
     now?: Date | undefined
+    /**
+     * The longest body `verify` reads from a `Request`, in bytes. A longer body throws
+     * `MaxBytesError`. @default Infinity
+     */
+    maxBytes?: number | undefined
     /** Rejects with `signal.reason` when aborted. */
     signal?: AbortSignal | undefined
   }
@@ -83,11 +88,13 @@ export async function verify(
     hmac = hmacSha256,
     tolerance = 300_000,
     now = new Date(),
+    maxBytes = Infinity,
     signal,
   } = options
   signal?.throwIfAborted()
   checkScheme(scheme)
   if (!(tolerance >= 0)) throw new RangeError('tolerance must be a non-negative number')
+  if (!(maxBytes >= 0)) throw new RangeError('maxBytes must be a non-negative number')
   const secrets =
     typeof options.secret === 'string' || options.secret instanceof Uint8Array
       ? [options.secret]
@@ -108,7 +115,7 @@ export async function verify(
   let body: Uint8Array
   let text: string | undefined
   if (typeof input.body === 'string') body = utf8.encode((text = input.body))
-  else if (input instanceof Request) body = await readBody(input, signal)
+  else if (input instanceof Request) body = await readBody(input, maxBytes, signal)
   else if (input.body instanceof Uint8Array) body = input.body
   else throw new TypeError('body must be the raw request body as a string or Uint8Array')
 

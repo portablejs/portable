@@ -155,6 +155,11 @@ export default defineConfig({
           property: 'from',
           message: 'Some supported browsers lack ReadableStream.from. Use Streams.fromIterable.',
         },
+        {
+          object: 'URL',
+          property: 'parse',
+          message: 'Safari 17 lacks URL.parse. Call new URL in a try block.',
+        },
       ],
       // `fuzz` from @portable/fuzz asserts a property, like `expect`.
       'vitest/expect-expect': ['warn', { assertFunctionNames: ['expect', 'expect*', 'fuzz'] }],

@@ -37,3 +37,22 @@ export declare namespace VerificationError {
    */
   type Code = 'missing-header' | 'malformed-header' | 'signature' | 'timestamp'
 }
+
+/**
+ * Thrown by `verify` when the request body is longer than `maxBytes`. Respond with a 413 status.
+ *
+ * @example
+ * ```ts
+ * import * as Webhooks from '@portable/webhooks'
+ *
+ * try {
+ *   await Webhooks.verify(request, { scheme: Webhooks.github, secret, maxBytes: 1_000_000 })
+ * } catch (error) {
+ *   if (error instanceof Webhooks.MaxBytesError) return new Response(null, { status: 413 })
+ *   throw error
+ * }
+ * ```
+ */
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'Webhooks.MaxBytesError'
+}

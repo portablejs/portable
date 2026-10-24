@@ -173,7 +173,7 @@ describe('http', () => {
     })
     const error = await remote.add(1, 2).catch((e: unknown) => e)
     expect(error).toBeInstanceOf(Rpc.TransportError)
-    expect((error as Rpc.TransportError).cause).toMatchObject({ status: 503 })
+    expect((error as Rpc.TransportError).cause).toMatchObject({ response: { status: 503 } })
   })
 
   test('rejects with the fetch error when the request fails', async () => {

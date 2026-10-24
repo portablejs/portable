@@ -70,7 +70,7 @@ The next endpoint is tried after a network error, a timeout, an HTTP error statu
 
 ## Errors
 
-Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch` or the response, `cause` holds the original error.
+Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch`, `cause` holds the original error. When the DoH server answered with an error status, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`.
 
 | `code` | Meaning |
 | --- | --- |

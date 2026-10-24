@@ -72,6 +72,25 @@ describe('verify', () => {
     expect(input.bodyUsed).toBe(true)
   })
 
+  test('rejects a Request body longer than maxBytes and accepts one at the limit', async () => {
+    const body = '{"a":1}'
+    const headers = await Webhooks.sign(body, { scheme: Webhooks.github, secret })
+    const options = { scheme: Webhooks.github, secret }
+    const error = await Webhooks.verify(request(body, headers), { ...options, maxBytes: 6 }).catch(
+      (error: unknown) => error,
+    )
+    expect(error).toBeInstanceOf(Webhooks.MaxBytesError)
+    expect(error).toMatchObject({ maxBytes: 6 })
+    const result = await Webhooks.verify(request(body, headers), { ...options, maxBytes: 7 })
+    expect(result.body).toBe(body)
+  })
+
+  test('rejects a negative maxBytes', async () => {
+    await expect(
+      Webhooks.verify({ headers: {}, body: '' }, { secret, maxBytes: -1 }),
+    ).rejects.toThrow(RangeError)
+  })
+
   test('accepts a Headers object', async () => {
     const headers = new Headers(await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret }))
     expect(

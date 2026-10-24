@@ -1,6 +1,6 @@
 import { encrypt, type Subscription } from './encrypt.js'
 import { InvalidInputError, ResponseError } from './errors.js'
-import { authorization, type Vapid } from './vapid.js'
+import { authorization, parseUrl, type Vapid } from './vapid.js'
 
 /** How soon the push service should deliver the message (RFC 8030 §5.3). */
 export type Urgency = 'very-low' | 'low' | 'normal' | 'high'
@@ -56,7 +56,7 @@ export declare namespace toRequest {
  */
 export async function toRequest(options: toRequest.Options): Promise<Request> {
   const { subscription, payload, ttl = 2419200, urgency, topic, signal } = options
-  const endpoint = typeof subscription?.endpoint === 'string' && URL.parse(subscription.endpoint)
+  const endpoint = typeof subscription?.endpoint === 'string' && parseUrl(subscription.endpoint)
   if (!endpoint || endpoint.protocol !== 'https:')
     throw new InvalidInputError('The subscription endpoint must be an https: URL')
   if (!Number.isSafeInteger(ttl) || ttl < 0)

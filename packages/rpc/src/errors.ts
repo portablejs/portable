@@ -44,7 +44,7 @@ export class RemoteError extends Errors.BaseError {
 
 /**
  * The error that waiting calls reject with when the transport closes or fails, or when an HTTP
- * request fails. `cause` holds the underlying error or the failed `Response`.
+ * request fails. `cause` holds the underlying error, which is an `Errors.ResponseError` for a failed HTTP response.
  *
  * @example
  * ```ts

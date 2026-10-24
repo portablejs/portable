@@ -1,5 +1,6 @@
 import * as Base64 from '@portable/base64'
 import * as DnsPacket from '@portable/dns-packet'
+import * as Errors from '@portable/errors'
 import * as Ip from '@portable/ip'
 import { QueryError } from './errors.js'
 import { hostToAscii } from '@portable/idna/internal'
@@ -234,13 +235,18 @@ export function create(options: create.Options = {}): create.ReturnType {
           signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
         }),
       )
-      if (!response.ok)
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {})
         return new QueryError({
           code: 'EBADRESP',
           syscall,
           hostname,
-          cause: new Error(`${new URL(endpoint).origin} answered HTTP ${response.status}.`),
+          cause: new Errors.ResponseError({
+            response,
+            message: `${new URL(endpoint).origin} answered HTTP ${response.status}.`,
+          }),
         })
+      }
       bytes = new Uint8Array(await response.arrayBuffer())
     } catch (cause) {
       signal?.throwIfAborted()

@@ -1,3 +1,5 @@
+import * as Bytes from '@portable/bytes'
+
 /** Settles as `work` does, or rejects with `signal.reason` as soon as `signal` aborts. */
 export function race<value>(
   work: value | PromiseLike<value>,
@@ -27,21 +29,13 @@ export async function readBody(
   signal.addEventListener('abort', onAbort, { once: true })
   try {
     const chunks: Uint8Array[] = []
-    let length = 0
     for (;;) {
       const { done, value } = await reader.read()
       signal.throwIfAborted()
       if (done) break
       chunks.push(value)
-      length += value.length
     }
-    const out = new Uint8Array(length)
-    let offset = 0
-    for (const chunk of chunks) {
-      out.set(chunk, offset)
-      offset += chunk.length
-    }
-    return out
+    return Bytes.concat(chunks)
   } finally {
     signal.removeEventListener('abort', onAbort)
   }

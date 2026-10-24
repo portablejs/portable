@@ -1,3 +1,4 @@
+import * as Errors from '@portable/errors'
 import * as Jsonl from '@portable/jsonl'
 import { createClient } from './client.js'
 import { RemoteError, TransportError } from './errors.js'
@@ -174,7 +175,10 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
         }),
       )
       if (!response.ok) {
-        throw new TransportError(`The server answered ${response.status}.`, { cause: response })
+        await response.body?.cancel().catch(() => {})
+        throw new TransportError(`The server answered ${response.status}.`, {
+          cause: new Errors.ResponseError({ response }),
+        })
       }
       if (response.body && response.headers.get('content-type')?.startsWith(ndjson)) {
         const reader = response.body.pipeThrough(new Jsonl.DecoderStream()).getReader()
