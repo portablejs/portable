@@ -1,6 +1,6 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo-light.svg" alt="" style="height: 1cap"></picture>&nbsp; Portable
 
-Small npm packages that run unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Web-standard building blocks for any JavaScript runtime.
 
 ```sh
 npm install @portable/sse @portable/jsonl @portable/streams
@@ -29,7 +29,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.valu
 await saving
 ```
 
-This code runs unchanged in a browser, Deno, Bun and Node, with no polyfills, bundler aliases or `nodejs_compat` flag.
+This code runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+, with no polyfills, bundler aliases or `nodejs_compat` flag.
 
 Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: `fetch`, Web Streams, `Uint8Array`, `TextEncoder` and `crypto.subtle`.
 
