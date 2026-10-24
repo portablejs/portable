@@ -1,4 +1,5 @@
-import type { Charset, Definition, Encoder } from './Charset.js'
+import type { Charset, Encoder } from './Charset.js'
+import { define } from './define.js'
 import { byteTable, unpackIndex } from './internal/tables.js'
 import { big5 as index, big5Start } from './tables/big5.js'
 
@@ -50,8 +51,8 @@ function encoder(): Encoder {
  * Charset.encode('中文', big5) // Uint8Array [0xa4, 0xa4, 0xa4, 0xe5]
  * ```
  */
-export const big5 = {
+export const big5: Charset = /* @__PURE__ */ define({
   name: 'Big5',
   maxBytes: 2,
   encoder,
-} satisfies Definition as unknown as Charset
+})

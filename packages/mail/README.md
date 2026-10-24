@@ -66,19 +66,18 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 | Option | Default | Description |
 | --- | --- | --- |
 | `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each one appends its number, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
-| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. `@portable/charset` provides them. |
+| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
 | `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
 
 Set `boundary`, `messageId` and `date` to get the same bytes on every run, for example in tests.
 
 ```ts
-import * as Charset from '@portable/charset'
 import { iso2022Jp } from '@portable/charset/iso-2022-jp'
 
 Mail.encodeStream(
   { from: 'テスト <a@example.com>', subject: 'こんにちは', text: 'こんにちは' },
-  { charset: { name: 'ISO-2022-JP', encode: (text) => Charset.encode(text, iso2022Jp) } },
+  { charset: iso2022Jp },
 )
 ```
 

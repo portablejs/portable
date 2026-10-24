@@ -252,17 +252,24 @@ describe('message headers', () => {
   )
 
   test('a charset writes encoded words and string bodies in that charset', async () => {
-    const charset = {
-      name: 'ISO-2022-JP',
-      encode: (text: string) => Charset.encode(text, iso2022Jp),
-    }
     const raw = await compose(
       { from: 'テスト <a@example.com>', subject: 'こんにちは', text: 'こんにちは' },
-      { charset },
+      { charset: iso2022Jp },
     )
     expect(field(raw, 'Subject')).toBe('=?ISO-2022-JP?B?GyRCJDMkcyRLJEEkTxsoQg==?=')
     expect(field(raw, 'From')).toBe('=?ISO-2022-JP?B?GyRCJUYlOSVIGyhC?= <a@example.com>')
     expect(field(raw, 'Content-Type')).toBe('text/plain; charset=ISO-2022-JP')
     expect(bodyOf(raw)).toBe('GyRCJDMkcyRLJEEkTxsoQg==\r\n')
+  })
+
+  test('a CharsetEncoder object works the same as a charset', async () => {
+    const message = { from: 'テスト <a@example.com>', subject: 'こんにちは', text: 'こんにちは' }
+    const encoder = {
+      name: 'ISO-2022-JP',
+      encode: (text: string) => Charset.encode(text, iso2022Jp),
+    }
+    expect(await compose(message, { charset: encoder })).toBe(
+      await compose(message, { charset: iso2022Jp }),
+    )
   })
 })

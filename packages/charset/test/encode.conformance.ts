@@ -13,7 +13,14 @@ const sample = '<?xml version="1.0" encoding="UTF-8"?>\n<俄语>данные</�
 const utf8 = (text: string) => new TextEncoder().encode(text)
 
 describe('Charset', () => {
-  test('exposes only its name in the type, so callers cannot construct one or read its tables', () => {
+  test.each([shiftJis, iso2022Jp, windows1251, utf16le, big5, gb18030, Charset.utf8])(
+    'encode method of $name matches Charset.encode',
+    (charset) => {
+      expect(hex(charset.encode(sample))).toBe(hex(Charset.encode(sample, charset)))
+    },
+  )
+
+  test('exposes only its name and encode in the type, so callers cannot construct one or read its tables', () => {
     expect(shiftJis.name).toBe('Shift_JIS')
     // @ts-expect-error
     void shiftJis.maxBytes

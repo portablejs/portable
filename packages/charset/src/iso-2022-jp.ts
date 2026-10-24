@@ -1,4 +1,5 @@
-import type { Charset, Definition, Encoder, Output } from './Charset.js'
+import type { Charset, Encoder, Output } from './Charset.js'
+import { define } from './define.js'
 import { codeTable, unpackIndex } from './internal/tables.js'
 import { jis0208 } from './tables/jis0208.js'
 import { katakana } from './tables/iso-2022-jp-katakana.js'
@@ -96,8 +97,8 @@ function encoder(): Encoder {
  * Charset.encode('a日', iso2022Jp) // Uint8Array [0x61, 0x1b, 0x24, 0x42, 0x46, 0x7c, 0x1b, 0x28, 0x42]
  * ```
  */
-export const iso2022Jp = {
+export const iso2022Jp: Charset = /* @__PURE__ */ define({
   name: 'ISO-2022-JP',
   maxBytes: 5,
   encoder,
-} satisfies Definition as unknown as Charset
+})

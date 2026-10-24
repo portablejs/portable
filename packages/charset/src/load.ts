@@ -77,8 +77,6 @@ export async function load(label: string, options: load.Options = {}): Promise<C
   return new Promise<Charset>((resolve, reject) => {
     const abort = () => reject(signal.reason)
     signal.addEventListener('abort', abort, { once: true })
-    charset
-      .then(resolve, reject)
-      .finally(() => signal.removeEventListener('abort', abort))
+    charset.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort))
   })
 }

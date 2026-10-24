@@ -2,19 +2,6 @@ import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { checkLength, decodeCharset, hexDigit, toText } from './internal/text.js'
 
-/**
- * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
- * is called once per encoded word, so it must return bytes that decode on their own: a stateful
- * charset such as ISO-2022-JP has to end in its initial state.
- *
- * @example
- * ```ts
- * import * as Charset from '@portable/charset'
- * import { iso2022Jp } from '@portable/charset/iso-2022-jp'
- *
- * const charset = { name: 'ISO-2022-JP', encode: (text: string) => Charset.encode(text, iso2022Jp) }
- * ```
- */
 const utf8Encoder = new TextEncoder()
 let scratch = new Uint8Array(1024)
 
@@ -26,8 +13,10 @@ export function encodeUtf8Scratch(text: string): Uint8Array {
 }
 
 /**
- * Encodes text in a charset other than UTF-8 for encoded-words. `@portable/charset` provides
- * encoders.
+ * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
+ * is called once per encoded word, so it must return bytes that decode on their own: a stateful
+ * charset such as ISO-2022-JP has to end in its initial state. Every charset from
+ * `@portable/charset` is a `CharsetEncoder`.
  */
 export type CharsetEncoder = {
   /** The name written into each encoded word. */

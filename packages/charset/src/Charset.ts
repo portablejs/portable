@@ -19,6 +19,12 @@ export type Name = Exclude<CharsetName, 'replacement'>
 export type Charset = {
   /** The WHATWG Encoding Standard name. */
   readonly name: Name
+  /**
+   * Encodes text with the default options, as `Charset.encode(text, charset)` does. With it, a
+   * charset can be passed where `@portable/mime-headers` and `@portable/mail` take a
+   * `CharsetEncoder`.
+   */
+  readonly encode: (text: string) => Uint8Array<ArrayBuffer>
   readonly [definition]: true
 }
 
