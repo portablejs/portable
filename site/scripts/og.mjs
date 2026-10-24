@@ -87,9 +87,7 @@ function image({ title, description }) {
         },
         scoped
           ? [h('span', { key: 'scope', style: { color: accent } }, scoped[1]), scoped[2]]
-          : title === 'Portable'
-            ? [title, h('span', { key: 'dot', style: { color: accent } }, '.')]
-            : title,
+          : [title, h('span', { key: 'dot', style: { color: accent } }, '.')],
       ),
       description &&
         h('div', { style: { fontSize: 32, lineHeight: 1.4, color: '#a3a3a3' } }, description),
