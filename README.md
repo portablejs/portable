@@ -35,6 +35,7 @@ Strip photo metadata (GPS, camera, dates) before uploading:
 import * as Exif from '@portable/exif'
 import * as ImageSize from '@portable/image-size'
 
+const file: File = ... // from a file input or a drop
 const photo = await new Response(file.stream().pipeThrough(new Exif.StripStream())).blob()
 const { width, height } = await ImageSize.parseStream(photo.stream())
 await fetch('/upload', { method: 'POST', body: photo, headers: { 'x-size': `${width}x${height}` } })
