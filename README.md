@@ -4,10 +4,6 @@ Web-standard building blocks for any JavaScript runtime.
 
 #### Examples
 
-```sh
-npm install @portable/sse @portable/jsonl @portable/streams @portable/exif @portable/image-size
-```
-
 ```ts
 import * as Jsonl from '@portable/jsonl'
 import * as Sse from '@portable/sse'
