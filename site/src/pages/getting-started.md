@@ -4,7 +4,7 @@ description: Install a Portable package and run the same code in browsers, Cloud
 
 # Getting started
 
-Portable is a set of small npm packages built only on web-standard APIs: Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, and `crypto.subtle`. The same code runs in browsers, Cloudflare Workers, Bun, and Node 24 or later. You don't need polyfills or the `nodejs_compat` flag.
+Portable is a set of small npm packages built only on web-standard APIs: Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, and `crypto.subtle`. The same code runs in browsers, Cloudflare Workers, Bun, and Node 24+. You don't need polyfills or the `nodejs_compat` flag.
 
 ## Install a package
 
