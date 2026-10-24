@@ -1,4 +1,5 @@
 import * as Bytes from '@portable/bytes'
+import { toBufferSource } from '@portable/bytes/internal'
 import { byteLength, toUint8Array } from './bytes.js'
 import { MaxBytesError } from './errors.js'
 import { type Source, forEach } from './source.js'
@@ -77,7 +78,7 @@ export async function toBlob(
       const bytes = toUint8Array(chunk)
       length += bytes.byteLength
       if (length > maxBytes) throw new MaxBytesError({ maxBytes })
-      chunks.push(bytes as Uint8Array<ArrayBuffer>)
+      chunks.push(toBufferSource(bytes))
     },
     signal,
   )
