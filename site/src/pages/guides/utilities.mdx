@@ -3,7 +3,7 @@
 These packages work with byte arrays, errors, and random values.
 
 - [`bytes`](/packages/bytes) converts `Uint8Array`s to and from hex and compares them in constant time.
-- [`errors`](/packages/errors) holds the error classes every package throws. `Errors.is` checks an error's kind even when an app has two copies of a package.
+- [`errors`](/packages/errors) holds the error classes every package throws. `Errors.is` checks an error's kind even when an app has two copies of a package. The [errors guide](/guides/errors) shows how to catch these errors and check their kind.
 - [`random`](/packages/random) gives unbiased random integers, strings, and shuffles from `crypto.getRandomValues`, and a seeded generator for tests.
 
 ## Check a signature in constant time

@@ -3,6 +3,7 @@ import groups from './src/packages.json' with { type: 'json' }
 
 const guides = [
   ['streams', 'Streams'],
+  ['errors', 'Errors'],
   ['encodings', 'Encodings'],
   ['data-formats', 'Text and data formats'],
   ['email', 'Email'],
