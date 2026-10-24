@@ -29,7 +29,9 @@ export function map<input, output>(
       {
         transform(chunk, controller) {
           const result = fn(chunk, index++)
-          if (!isPromiseLike(result)) return controller.enqueue(result)
+          if (!isPromiseLike(result)) {
+            return controller.enqueue(result)
+          }
           return Promise.resolve(result).then((value) => controller.enqueue(value))
         },
       },
@@ -75,11 +77,15 @@ export function filter<chunk>(
         transform(chunk, controller) {
           const keep = fn(chunk, index++)
           if (!isPromiseLike(keep)) {
-            if (keep) controller.enqueue(chunk)
+            if (keep) {
+              controller.enqueue(chunk)
+            }
             return
           }
           return Promise.resolve(keep).then((value) => {
-            if (value) controller.enqueue(chunk)
+            if (value) {
+              controller.enqueue(chunk)
+            }
           })
         },
       },
@@ -117,7 +123,9 @@ export function tap<chunk>(
       {
         transform(chunk, controller) {
           const result = fn(chunk, index++)
-          if (!isPromiseLike(result)) return controller.enqueue(chunk)
+          if (!isPromiseLike(result)) {
+            return controller.enqueue(chunk)
+          }
           return Promise.resolve(result).then(() => controller.enqueue(chunk))
         },
       },
@@ -148,20 +156,25 @@ export function batch<chunk>(
   size: number,
   options: batch.Options = {},
 ): TransformStream<chunk, chunk[]> {
-  if (!Number.isInteger(size) || size < 1)
+  if (!Number.isInteger(size) || size < 1) {
     throw new RangeError(`batch size must be a positive integer, got ${size}.`)
+  }
   let items: chunk[] = []
   return new TransformStream<chunk, chunk[]>(
     abortable(
       {
         transform(chunk, controller) {
           items.push(chunk)
-          if (items.length < size) return
+          if (items.length < size) {
+            return
+          }
           controller.enqueue(items)
           items = []
         },
         flush(controller) {
-          if (items.length > 0) controller.enqueue(items)
+          if (items.length > 0) {
+            controller.enqueue(items)
+          }
         },
       },
       options,

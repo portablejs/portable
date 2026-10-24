@@ -23,16 +23,24 @@ const tr46Flags = { checkBidi: true, checkJoiners: true }
 test('toUnicode on 10 hostnames within 25% of tr46', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/idna', () => {
-      for (const domain of ascii) Idna.toUnicode(domain)
+      for (const domain of ascii) {
+        Idna.toUnicode(domain)
+      }
     }),
     bench('tr46', () => {
-      for (const domain of ascii) tr46.toUnicode(domain, tr46Flags)
+      for (const domain of ascii) {
+        tr46.toUnicode(domain, tr46Flags)
+      }
     }),
     bench('punycode', () => {
-      for (const domain of ascii) punycode.toUnicode(domain)
+      for (const domain of ascii) {
+        punycode.toUnicode(domain)
+      }
     }),
     bench('node:url domainToUnicode', () => {
-      for (const domain of ascii) domainToUnicode(domain)
+      for (const domain of ascii) {
+        domainToUnicode(domain)
+      }
     }),
   )
   expect(result.get('tr46')).not.toBeFasterThan(result.get('@portable/idna'), { delta: 0.25 })
@@ -42,19 +50,29 @@ test('toUnicode on 10 hostnames within 25% of tr46', async ({ bench }) => {
 test('toAscii on 10 domains within 25% of tr46', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/idna', () => {
-      for (const domain of unicode) Idna.toAscii(domain)
+      for (const domain of unicode) {
+        Idna.toAscii(domain)
+      }
     }),
     bench('tr46', () => {
-      for (const domain of unicode) tr46.toASCII(domain, tr46Flags)
+      for (const domain of unicode) {
+        tr46.toASCII(domain, tr46Flags)
+      }
     }),
     bench('punycode', () => {
-      for (const domain of unicode) punycode.toASCII(domain)
+      for (const domain of unicode) {
+        punycode.toASCII(domain)
+      }
     }),
     bench('node:url domainToASCII', () => {
-      for (const domain of unicode) domainToASCII(domain)
+      for (const domain of unicode) {
+        domainToASCII(domain)
+      }
     }),
     bench('new URL().hostname', () => {
-      for (const domain of unicode) hostnames.push(new URL(`http://${domain}/`).hostname)
+      for (const domain of unicode) {
+        hostnames.push(new URL(`http://${domain}/`).hostname)
+      }
       hostnames.length = 0
     }),
   )

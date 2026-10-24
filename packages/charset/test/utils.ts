@@ -7,8 +7,11 @@ export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chun
   let i = 0
   return new ReadableStream({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
@@ -18,7 +21,9 @@ export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chu
   const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) return chunks
+    if (done) {
+      return chunks
+    }
     chunks.push(value)
   }
 }

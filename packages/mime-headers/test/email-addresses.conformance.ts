@@ -188,7 +188,9 @@ describe('is_email', () => {
     try {
       parsed = strict(address).length === 1
     } catch (error) {
-      if (!(error instanceof InvalidInputError)) throw error
+      if (!(error instanceof InvalidInputError)) {
+        throw error
+      }
       parsed = false
     }
     expect(parsed).toBe(expected)

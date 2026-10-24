@@ -35,9 +35,13 @@ function entries(): Entry[] {
     } catch {
       continue
     }
-    if (json.private) continue
+    if (json.private) {
+      continue
+    }
     for (const [subpath, target] of Object.entries(json.exports ?? {})) {
-      if (subpath.includes('internal')) continue
+      if (subpath.includes('internal')) {
+        continue
+      }
       result.push({ name: json.name, subpath, file: join(root, 'packages', dir, target.src) })
     }
   }
@@ -78,14 +82,25 @@ function check(): string[] {
       const isValue = (symbol.flags & ts.SymbolFlags.Value) !== 0
       const docs = ts.displayPartsToString(symbol.getDocumentationComment(checker)).trim()
       const tags = symbol.getJsDocTags(checker).map((tag) => tag.name)
-      if (!isValue && !(symbol.flags & ts.SymbolFlags.Type)) continue
-      if (!docs) problems.push(`${name}: no JSDoc`)
-      else if (isValue && !tags.includes('example')) problems.push(`${name}: no @example`)
-      if (!(symbol.flags & (ts.SymbolFlags.Function | ts.SymbolFlags.Variable))) continue
+      if (!isValue && !(symbol.flags & ts.SymbolFlags.Type)) {
+        continue
+      }
+      if (!docs) {
+        problems.push(`${name}: no JSDoc`)
+      } else if (isValue && !tags.includes('example')) {
+        problems.push(`${name}: no @example`)
+      }
+      if (!(symbol.flags & (ts.SymbolFlags.Function | ts.SymbolFlags.Variable))) {
+        continue
+      }
       const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0]
-      if (!declaration) continue
+      if (!declaration) {
+        continue
+      }
       const type = checker.getTypeOfSymbolAtLocation(symbol, declaration)
-      if (type.getConstructSignatures().length > 0) continue
+      if (type.getConstructSignatures().length > 0) {
+        continue
+      }
       for (const signature of type.getCallSignatures()) {
         for (const parameter of signature.getParameters()) {
           const parameterType = checker.getTypeOfSymbolAtLocation(parameter, declaration)
@@ -94,8 +109,9 @@ function check(): string[] {
           if (
             nonUndefined.length > 0 &&
             nonUndefined.every((part) => part.flags & ts.TypeFlags.BooleanLike)
-          )
+          ) {
             problems.push(`${name}: positional boolean parameter \`${parameter.name}\``)
+          }
         }
         const returns =
           checker.getAwaitedType(signature.getReturnType()) ?? signature.getReturnType()
@@ -110,8 +126,9 @@ function check(): string[] {
           (returnsBoolean || predicate) &&
           !booleanNames.test(exported.name) &&
           !allowedBooleanNames.has(exported.name)
-        )
+        ) {
           problems.push(`${name}: returns a boolean but doesn't start with is, has or can`)
+        }
       }
     }
   }

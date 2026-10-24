@@ -79,7 +79,9 @@ describe('csv-parse', () => {
 
   test('gives the same rows for any split of the input', async () => {
     let text = ''
-    for (let i = 0; i < 10; i++) text += `Test ${i},${i},""""\n`
+    for (let i = 0; i < 10; i++) {
+      text += `Test ${i},${i},""""\n`
+    }
     const expected = Array.from({ length: 10 }, (_, i) => [`Test ${i}`, `${i}`, '"'])
     expect(await decodeAll(text)).toEqual(expected)
     expect(await decodeStream(chunked(text, 250))).toEqual(expected)
@@ -353,8 +355,9 @@ describe('csv-parse', () => {
     })
 
     test('rejects a delimiter that is empty, longer than one character, a line break or the quote', () => {
-      for (const delimiter of ['', '!#', '\n', '\r', '"'])
+      for (const delimiter of ['', '!#', '\n', '\r', '"']) {
         expect(() => Csv.decode('a', { delimiter })).toThrow(RangeError)
+      }
       expect(() => Csv.decode('a', { quote: '' })).toThrow(RangeError)
     })
   })

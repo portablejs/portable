@@ -51,6 +51,8 @@ export declare namespace encode {
 export function encode(rows: readonly encode.Row[], options: encode.Options = {}): string {
   const encoder = createEncoder(options)
   let text = ''
-  for (const row of rows) text += encoder.row(row)
+  for (const row of rows) {
+    text += encoder.row(row)
+  }
   return text + encoder.end()
 }

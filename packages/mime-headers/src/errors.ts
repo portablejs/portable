@@ -11,7 +11,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   MimeHeaders.parseAddresses('not an address', { strict: true })
  * } catch (error) {
- *   if (error instanceof MimeHeaders.InvalidInputError) console.log(error.message)
+ *   if (error instanceof MimeHeaders.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -29,7 +31,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   MimeHeaders.parseHeaders(message, { maxLength: 64 * 1024 })
  * } catch (error) {
- *   if (error instanceof MimeHeaders.MaxLengthError) console.log(error.maxLength)
+ *   if (error instanceof MimeHeaders.MaxLengthError) {
+ *     console.log(error.maxLength)
+ *   }
  * }
  * ```
  */

@@ -4,7 +4,9 @@ export const utf8 = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder()
 
 export function fromHex(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < bytes.length; i++) bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  }
   return bytes
 }
 
@@ -34,7 +36,9 @@ export function parsePhc(stored: string): {
   hash: Uint8Array
 } {
   const match = /^\$pbkdf2-sha256\$i=(\d+)\$([\w+/]+)\$([\w+/]+)$/.exec(stored)
-  if (!match) throw new Error(`Not a PHC string from Password.hash: ${stored}`)
+  if (!match) {
+    throw new Error(`Not a PHC string from Password.hash: ${stored}`)
+  }
   return {
     iterations: Number(match[1]),
     salt: Base64.decode(match[2]!),

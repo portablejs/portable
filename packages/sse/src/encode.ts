@@ -35,25 +35,39 @@ const lineBreak = /\r\n|\r|\n/
 export function encode(message: Message): string {
   const { comment, event, data, id, retry } = message
   let text = ''
-  if (comment !== undefined)
-    for (const line of comment.split(lineBreak)) text += line === '' ? ':\n' : `: ${line}\n`
-  if (event === undefined && data === undefined && id === undefined && retry === undefined)
+  if (comment !== undefined) {
+    for (const line of comment.split(lineBreak)) {
+      text += line === '' ? ':\n' : `: ${line}\n`
+    }
+  }
+  if (event === undefined && data === undefined && id === undefined && retry === undefined) {
     return text
+  }
   if (event !== undefined) {
-    if (/[\r\n]/.test(event)) throw new InvalidInputError('`event` must not contain CR or LF.')
+    if (/[\r\n]/.test(event)) {
+      throw new InvalidInputError('`event` must not contain CR or LF.')
+    }
     text += `event: ${event}\n`
   }
   if (data !== undefined) {
-    if (data.indexOf('\n') === -1 && data.indexOf('\r') === -1) text += `data: ${data}\n`
-    else for (const line of data.split(lineBreak)) text += `data: ${line}\n`
+    if (data.indexOf('\n') === -1 && data.indexOf('\r') === -1) {
+      text += `data: ${data}\n`
+    } else {
+      for (const line of data.split(lineBreak)) {
+        text += `data: ${line}\n`
+      }
+    }
   }
   if (id !== undefined) {
-    if (/[\r\n\0]/.test(id)) throw new InvalidInputError('`id` must not contain CR, LF or NUL.')
+    if (/[\r\n\0]/.test(id)) {
+      throw new InvalidInputError('`id` must not contain CR, LF or NUL.')
+    }
     text += `id: ${id}\n`
   }
   if (retry !== undefined) {
-    if (!Number.isSafeInteger(retry) || retry < 0)
+    if (!Number.isSafeInteger(retry) || retry < 0) {
       throw new InvalidInputError('`retry` must be a non-negative integer.')
+    }
     text += `retry: ${retry}\n`
   }
   return text + '\n'
@@ -86,7 +100,9 @@ export class EncoderStream extends TransformStream<Message, Uint8Array<ArrayBuff
         {
           transform(message, controller) {
             const text = encode(message)
-            if (text !== '') controller.enqueue(encoder.encode(text))
+            if (text !== '') {
+              controller.enqueue(encoder.encode(text))
+            }
           },
         },
         options,

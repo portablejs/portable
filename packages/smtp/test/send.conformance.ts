@@ -16,8 +16,11 @@ function tracked(chunks: readonly string[]) {
   let i = 0
   const stream = new ReadableStream<Uint8Array>({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(encode(chunks[i++]!))
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(encode(chunks[i++]!))
+      } else {
+        controller.close()
+      }
     },
     cancel(reason) {
       cancelled = reason ?? true
@@ -336,8 +339,11 @@ describe('DATA', () => {
     let sent = false
     const stream = new ReadableStream<Uint8Array>({
       pull(controller) {
-        if (sent) controller.error(new Error('Disk read failed'))
-        else controller.enqueue(encode('Subject: test\r\n\r\n'))
+        if (sent) {
+          controller.error(new Error('Disk read failed'))
+        } else {
+          controller.enqueue(encode('Subject: test\r\n\r\n'))
+        }
         sent = true
       },
     })

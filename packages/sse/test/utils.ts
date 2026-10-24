@@ -20,7 +20,9 @@ export const utf8 = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder()
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 
@@ -80,19 +82,27 @@ export function mockFetch(replies: readonly (Reply | Error)[]): MockFetch {
     requests: [],
     cancelled: 0,
     calls(count) {
-      if (mock.requests.length >= count) return Promise.resolve()
+      if (mock.requests.length >= count) {
+        return Promise.resolve()
+      }
       return new Promise((resolve) => waiting.push({ count, resolve }))
     },
     async fetch(request) {
       const body = await request.text()
       mock.requests.push({ request, body })
-      for (const w of waiting.filter((w) => w.count <= mock.requests.length)) w.resolve()
+      for (const w of waiting.filter((w) => w.count <= mock.requests.length)) {
+        w.resolve()
+      }
       request.signal.throwIfAborted()
       const reply = replies[mock.requests.length - 1] ?? { end: 'hang' }
-      if (reply instanceof Error) throw reply
+      if (reply instanceof Error) {
+        throw reply
+      }
       const { status = 200, contentType = 'text/event-stream' } = reply
       const headers = new Headers()
-      if (contentType !== null) headers.set('content-type', contentType)
+      if (contentType !== null) {
+        headers.set('content-type', contentType)
+      }
       const nullBody = status === 204 || status === 205 || status === 304
       return new Response(nullBody ? null : bodyStream(reply, request.signal, mock), {
         status,
@@ -110,7 +120,9 @@ function bodyStream(body: Body, signal: AbortSignal, mock: MockFetch): ReadableS
   return new ReadableStream<Uint8Array>({
     start(controller) {
       signal.addEventListener('abort', () => {
-        if (finished) return
+        if (finished) {
+          return
+        }
         finished = true
         mock.cancelled++
         controller.error(signal.reason)
@@ -118,17 +130,27 @@ function bodyStream(body: Body, signal: AbortSignal, mock: MockFetch): ReadableS
     },
     async pull(controller) {
       await new Promise((resolve) => setTimeout(resolve, 0))
-      if (finished) return
+      if (finished) {
+        return
+      }
       const chunk = chunks[i++]
-      if (chunk !== undefined)
+      if (chunk !== undefined) {
         return controller.enqueue(typeof chunk === 'string' ? utf8(chunk) : chunk)
-      if (end === 'hang') return new Promise(() => {})
+      }
+      if (end === 'hang') {
+        return new Promise(() => {})
+      }
       finished = true
-      if (end === 'close') controller.close()
-      else controller.error(end)
+      if (end === 'close') {
+        controller.close()
+      } else {
+        controller.error(end)
+      }
     },
     cancel() {
-      if (finished) return
+      if (finished) {
+        return
+      }
       finished = true
       mock.cancelled++
     },

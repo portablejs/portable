@@ -14,11 +14,14 @@ const tagName = (section: number, id: number) =>
 function ours(bytes: Uint8Array): Map<string, unknown> {
   const result = Exif.parse(bytes)
   const tags = new Map<string, unknown>()
-  for (const ifd of ['ifd0', 'ifd1', 'gps', 'exif', 'interop'] as const)
+  for (const ifd of ['ifd0', 'ifd1', 'gps', 'exif', 'interop'] as const) {
     for (const [name, value] of Object.entries(result[ifd])) {
       const key = `${sections[ifd]}:${name}`
-      if (!tags.has(key)) tags.set(key, value instanceof Uint8Array ? Array.from(value) : value)
+      if (!tags.has(key)) {
+        tags.set(key, value instanceof Uint8Array ? Array.from(value) : value)
+      }
     }
+  }
   return tags
 }
 
@@ -31,10 +34,13 @@ function theirs(bytes: Uint8Array): Map<string, unknown> {
     .enableSimpleValues(false)
   for (const { section, type, value } of parser.parse().tags) {
     const key = `${section}:${tagName(section, type)}`
-    if (tags.has(key) || value === undefined) continue
+    if (tags.has(key) || value === undefined) {
+      continue
+    }
     let normalized: unknown = value
-    if (Buffer.isBuffer(value)) normalized = Array.from(value)
-    else if (Array.isArray(value)) {
+    if (Buffer.isBuffer(value)) {
+      normalized = Array.from(value)
+    } else if (Array.isArray(value)) {
       const values = value.map((v: unknown) => (Array.isArray(v) ? v[0] / v[1] : v))
       normalized = values.length === 1 ? values[0] : values
     }
@@ -50,7 +56,9 @@ const tiffs = names.filter((name) => name.endsWith('.exif') || name.endsWith('.t
 
 async function input(name: string): Promise<Uint8Array> {
   const bytes = await fixture(name)
-  if (name.endsWith('.jpg')) return bytes
+  if (name.endsWith('.jpg')) {
+    return bytes
+  }
   return jpeg(bytes[0] === 0x45 ? bytes.subarray(6) : bytes)
 }
 

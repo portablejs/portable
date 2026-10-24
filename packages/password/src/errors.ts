@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Password.verify(password, '$2b$12$...')
  * } catch (error) {
- *   if (error instanceof Password.InvalidInputError) console.log('not a PBKDF2 hash')
+ *   if (error instanceof Password.InvalidInputError) {
+ *     console.log('not a PBKDF2 hash')
+ *   }
  * }
  * ```
  */
@@ -28,7 +30,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await Password.hash('x'.repeat(5000))
  * } catch (error) {
- *   if (error instanceof Password.MaxBytesError) console.log(`limit is ${error.maxBytes} bytes`)
+ *   if (error instanceof Password.MaxBytesError) {
+ *     console.log(`limit is ${error.maxBytes} bytes`)
+ *   }
  * }
  * ```
  */
@@ -51,7 +55,9 @@ export class MaxBytesError extends Errors.MaxBytesError {
  * try {
  *   return await Password.verify(password, stored)
  * } catch (error) {
- *   if (error instanceof Password.UnsupportedError) return verifyLegacy(password, stored)
+ *   if (error instanceof Password.UnsupportedError) {
+ *     return verifyLegacy(password, stored)
+ *   }
  *   throw error
  * }
  * ```

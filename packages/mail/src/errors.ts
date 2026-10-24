@@ -11,7 +11,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Mail.encodeStream({ to: 'not an address', text: 'Hello' })
  * } catch (error) {
- *   if (error instanceof Mail.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Mail.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

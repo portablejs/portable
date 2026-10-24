@@ -20,7 +20,9 @@ const collected = await run('collect', files)
 
 test('collects the files in a dedicated worker', () => {
   expect(collected.scope).toBe('[object DedicatedWorkerGlobalScope]')
-  if (collected.unhandledErrors.length > 0) throw toError(collected.unhandledErrors)
+  if (collected.unhandledErrors.length > 0) {
+    throw toError(collected.unhandledErrors)
+  }
 })
 
 for (const [index, file] of collected.files.entries()) {
@@ -33,11 +35,15 @@ for (const [index, file] of collected.files.entries()) {
         unhandledErrors,
       } = await run('run', [files[index]!])
       errors.push(...(ran?.errors ?? []), ...unhandledErrors)
-      for (const task of flatten(ran?.tasks ?? [])) results.set(task.id, task)
+      for (const task of flatten(ran?.tasks ?? [])) {
+        results.set(task.id, task)
+      }
     }, 600_000)
     // An error outside a test, such as a failed hook, fails the file's suite.
     afterAll(() => {
-      if (errors.length > 0) throw toError(errors)
+      if (errors.length > 0) {
+        throw toError(errors)
+      }
     })
     if (file.errors.length > 0) {
       test('collects in the worker', () => {
@@ -59,8 +65,12 @@ function declare(tasks: readonly Task[], results: ReadonlyMap<string, Task>) {
     const options = { skip: task.mode === 'skip', todo: task.mode === 'todo' }
     test(task.name, options, ({ skip }) => {
       const result = results.get(task.id)
-      if (result?.state === 'fail') throw toError(result.errors)
-      if (result?.state !== 'pass') skip(`skipped in the worker (${result?.state ?? 'not run'})`)
+      if (result?.state === 'fail') {
+        throw toError(result.errors)
+      }
+      if (result?.state !== 'pass') {
+        skip(`skipped in the worker (${result?.state ?? 'not run'})`)
+      }
     })
   }
 }
@@ -80,7 +90,9 @@ async function run(mode: Request['mode'], files: readonly string[]): Promise<Don
   try {
     return await attempt(mode, files)
   } catch (error) {
-    if (!(error instanceof StallError) || server.browser !== 'webkit') throw error
+    if (!(error instanceof StallError) || server.browser !== 'webkit') {
+      throw error
+    }
     // oxlint-disable-next-line no-console
     console.warn(`${error.message}. Running it again in a new worker.`)
     return attempt(mode, files)
@@ -107,9 +119,13 @@ function attempt(mode: Request['mode'], files: readonly string[]): Promise<Done>
       )
     }
     worker.addEventListener('message', ({ data }: MessageEvent<Response>) => {
-      if (data.type === 'done') resolve(data)
-      else if (data.type === 'error') reject(new Error(`The worker failed: ${data.message}`))
-      else wait(data.name, data.timeout)
+      if (data.type === 'done') {
+        resolve(data)
+      } else if (data.type === 'error') {
+        reject(new Error(`The worker failed: ${data.message}`))
+      } else {
+        wait(data.name, data.timeout)
+      }
     })
     worker.addEventListener('error', (event) =>
       reject(new Error(`Worker failed: ${event.message}`)),
@@ -130,6 +146,8 @@ function toError(errors: readonly TestError[]): Error {
     .join('\n\n')
   const error = new Error(message)
   error.name = errors[0]?.name ?? 'Error'
-  if (errors[0]?.stack) error.stack = errors[0].stack
+  if (errors[0]?.stack) {
+    error.stack = errors[0].stack
+  }
   return error
 }

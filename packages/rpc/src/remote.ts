@@ -9,10 +9,16 @@ export function remote(client: Target['client'], method = ''): any {
   const children = new Map<string, unknown>()
   const proxy = new Proxy(function () {}, {
     get(_, key) {
-      if (key === targetKey) return { client, method }
-      if (typeof key !== 'string' || key === 'then') return undefined
+      if (key === targetKey) {
+        return { client, method }
+      }
+      if (typeof key !== 'string' || key === 'then') {
+        return undefined
+      }
       let child = children.get(key)
-      if (!child) children.set(key, (child = remote(client, method ? `${method}.${key}` : key)))
+      if (!child) {
+        children.set(key, (child = remote(client, method ? `${method}.${key}` : key)))
+      }
       return child
     },
     apply(_, __, args) {
@@ -27,7 +33,9 @@ function target(method: unknown): Target {
     typeof method === 'function'
       ? (method as { [targetKey]?: Target | undefined })[targetKey]
       : undefined
-  if (!found) throw new TypeError('Expected a method of a remote from connect or http.')
+  if (!found) {
+    throw new TypeError('Expected a method of a remote from connect or http.')
+  }
   return found
 }
 

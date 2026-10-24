@@ -10,7 +10,9 @@ function tasks(delays: readonly number[]) {
   const make = (i: number) => async () => {
     running++
     most = Math.max(most, running)
-    for (let tick = 0; tick < delays[i]!; tick++) await Promise.resolve()
+    for (let tick = 0; tick < delays[i]!; tick++) {
+      await Promise.resolve()
+    }
     running--
     order.push(i)
     return i

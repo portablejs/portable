@@ -52,8 +52,9 @@ export function debounce<args extends unknown[], result, self = unknown>(
   options: debounce.Options = {},
 ): Debounced<args, result, self> {
   const { leading = false, trailing = true, maxWait, signal } = options
-  if (!leading && !trailing)
+  if (!leading && !trailing) {
     throw new RangeError('Expected `leading`, `trailing` or both to be true.')
+  }
   const wait = normalizeWait('ms', ms)
   const maxing = maxWait !== undefined
   const max = maxing ? Math.max(normalizeWait('maxWait', maxWait), wait) : 0
@@ -89,7 +90,9 @@ export function debounce<args extends unknown[], result, self = unknown>(
   }
 
   function startTimer(ms: number): void {
-    if (timer === undefined) signal?.addEventListener('abort', onAbort, { once: true })
+    if (timer === undefined) {
+      signal?.addEventListener('abort', onAbort, { once: true })
+    }
     timer = setTimeout(timerExpired, ms)
   }
 
@@ -100,26 +103,33 @@ export function debounce<args extends unknown[], result, self = unknown>(
   }
 
   function shouldInvoke(time: number): boolean {
-    if (lastCallTime === undefined) return true
+    if (lastCallTime === undefined) {
+      return true
+    }
     const sinceCall = time - lastCallTime
     return sinceCall >= wait || sinceCall < 0 || (maxing && time - lastInvokeTime >= max)
   }
 
   function timerExpired(): void {
     const time = performance.now()
-    if (shouldInvoke(time)) return trailingEdge()
+    if (shouldInvoke(time)) {
+      return trailingEdge()
+    }
     const waiting = wait - (time - lastCallTime!)
     startTimer(maxing ? Math.min(waiting, max - (time - lastInvokeTime)) : waiting)
   }
 
   function trailingEdge(): void {
     stopTimer()
-    if (trailing && lastCall) invoke(performance.now())
-    else {
+    if (trailing && lastCall) {
+      invoke(performance.now())
+    } else {
       lastCall = undefined
       settle()
     }
-    if (timer === undefined) result = undefined
+    if (timer === undefined) {
+      result = undefined
+    }
   }
 
   function cancel(reason: unknown = new DOMException('The call was cancelled.', 'AbortError')) {
@@ -132,7 +142,9 @@ export function debounce<args extends unknown[], result, self = unknown>(
   }
 
   function debounced(this: self, ...args: args): Promise<unknown> {
-    if (signal?.aborted) return Promise.reject(signal.reason)
+    if (signal?.aborted) {
+      return Promise.reject(signal.reason)
+    }
     batch ??= deferred()
     const { promise } = batch
     const time = performance.now()
@@ -142,13 +154,19 @@ export function debounce<args extends unknown[], result, self = unknown>(
     if (invoking && timer === undefined) {
       lastInvokeTime = time
       startTimer(wait)
-      if (leading) invoke(time)
+      if (leading) {
+        invoke(time)
+      }
     } else if (invoking && maxing) {
       clearTimeout(timer)
       startTimer(wait)
       invoke(time)
-    } else if (timer === undefined) startTimer(wait)
-    if (!trailing) settle()
+    } else if (timer === undefined) {
+      startTimer(wait)
+    }
+    if (!trailing) {
+      settle()
+    }
     return promise
   }
 
@@ -156,7 +174,9 @@ export function debounce<args extends unknown[], result, self = unknown>(
     cancel: { value: () => cancel() },
     flush: {
       value: () => {
-        if (timer === undefined) return Promise.resolve(undefined)
+        if (timer === undefined) {
+          return Promise.resolve(undefined)
+        }
         batch ??= deferred()
         const { promise } = batch
         trailingEdge()
@@ -184,7 +204,8 @@ function deferred(): Batch {
 }
 
 function normalizeWait(name: string, ms: number): number {
-  if (!(ms <= maxTimeout))
+  if (!(ms <= maxTimeout)) {
     throw new RangeError(`Expected \`${name}\` to be a number up to ${maxTimeout}.`)
+  }
   return Math.max(0, ms)
 }

@@ -53,7 +53,9 @@ export declare namespace connect {
  *   signal: AbortSignal.timeout(60_000),
  * })
  * const reader = events.getReader()
- * for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.data)
+ * for (let r = await reader.read(); !r.done; r = await reader.read()) {
+ *   console.log(r.value.data)
+ * }
  * ```
  */
 export function connect(
@@ -84,23 +86,30 @@ export function connect(
 
   const open = async (): Promise<ReadableStreamDefaultReader<Uint8Array> | undefined> => {
     const headers = new Headers(base.headers)
-    if (!headers.has('accept')) headers.set('accept', 'text/event-stream')
+    if (!headers.has('accept')) {
+      headers.set('accept', 'text/event-stream')
+    }
     const id = parser.id
-    if (id === '') headers.delete('last-event-id')
-    else if (id !== undefined) headers.set('last-event-id', toByteString(id))
+    if (id === '') {
+      headers.delete('last-event-id')
+    } else if (id !== undefined) {
+      headers.set('last-event-id', toByteString(id))
+    }
     const response = await fetch(new Request(base.clone(), { headers, signal: combined }))
     if (response.status === 204) {
       await response.body?.cancel()
       return undefined
     }
-    if (response.status !== 200)
+    if (response.status !== 200) {
       throw new ResponseError({ response, message: `Expected status 200, got ${response.status}.` })
+    }
     const type = response.headers.get('content-type')
-    if (!isEventStream(type))
+    if (!isEventStream(type)) {
       throw new ResponseError({
         response,
         message: `Expected content type text/event-stream, got ${type}.`,
       })
+    }
     attempt = 0
     parser.restart()
     return (response.body ?? new ReadableStream({ start: (c) => c.close() })).getReader()
@@ -116,28 +125,40 @@ export function connect(
         try {
           if (!reader) {
             reader = await open()
-            if (!reader) return controller.close()
+            if (!reader) {
+              return controller.close()
+            }
           }
           const { done, value } = await reader.read()
           if (!done) {
             enqueued = false
             parser.push(value)
-            if (enqueued) return
+            if (enqueued) {
+              return
+            }
             continue
           }
         } catch (e) {
           error = e
         }
-        if (combined.aborted) throw combined.reason
-        if (error !== undefined) await reader?.cancel(error).catch(() => {})
+        if (combined.aborted) {
+          throw combined.reason
+        }
+        if (error !== undefined) {
+          await reader?.cancel(error).catch(() => {})
+        }
         reader = undefined
         parser.end()
         attempt++
         if (!(await reconnectIf(error, { attempt }))) {
-          if (error === undefined) return controller.close()
+          if (error === undefined) {
+            return controller.close()
+          }
           throw error
         }
-        if (error instanceof ResponseError) await error.response.body?.cancel()
+        if (error instanceof ResponseError) {
+          await error.response.body?.cancel()
+        }
         await Timers.sleep(parser.retry ?? next({ attempt, error }), { signal: combined })
       }
     },
@@ -155,7 +176,9 @@ function reconnectByDefault(error: unknown): boolean {
 const httpWhitespace = /^[\t\n\r ]+|[\t\n\r ]+$/g
 
 function isEventStream(contentType: string | null): boolean {
-  if (contentType === null) return false
+  if (contentType === null) {
+    return false
+  }
   const semicolon = contentType.indexOf(';')
   const essence = semicolon === -1 ? contentType : contentType.slice(0, semicolon)
   return essence.replace(httpWhitespace, '').toLowerCase() === 'text/event-stream'
@@ -163,8 +186,12 @@ function isEventStream(contentType: string | null): boolean {
 
 // HTTP header values are byte strings, so a non-ASCII ID is sent as its UTF-8 bytes.
 function toByteString(text: string): string {
-  if (!/[^\0-\x7f]/.test(text)) return text
+  if (!/[^\0-\x7f]/.test(text)) {
+    return text
+  }
   let bytes = ''
-  for (const byte of new TextEncoder().encode(text)) bytes += String.fromCharCode(byte)
+  for (const byte of new TextEncoder().encode(text)) {
+    bytes += String.fromCharCode(byte)
+  }
   return bytes
 }

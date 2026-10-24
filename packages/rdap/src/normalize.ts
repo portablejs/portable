@@ -98,7 +98,9 @@ function number(value: unknown): number | undefined {
 }
 
 function text(value: unknown): string | undefined {
-  if (Array.isArray(value)) return text(value[0])
+  if (Array.isArray(value)) {
+    return text(value[0])
+  }
   return typeof value === 'string' ? value.trim() || undefined : undefined
 }
 
@@ -107,21 +109,27 @@ function hostname(value: unknown): string | undefined {
 }
 
 function date(value: unknown): Date | undefined {
-  if (typeof value !== 'string') return undefined
+  if (typeof value !== 'string') {
+    return undefined
+  }
   const zoned = /T[\d:.]+$/.test(value) ? `${value}Z` : value
   const time = Date.parse(zoned)
   return Number.isNaN(time) ? undefined : new Date(time)
 }
 
 function isFax(params: unknown): boolean {
-  if (!isObject(params)) return false
+  if (!isObject(params)) {
+    return false
+  }
   const type = params.type
   return Array.isArray(type) ? type.includes('fax') : type === 'fax'
 }
 
 function address(params: unknown, value: unknown): string | undefined {
   const label = isObject(params) ? text(params.label) : undefined
-  if (label) return label
+  if (label) {
+    return label
+  }
   const parts = list(value)
     .flat()
     .map((part) => (typeof part === 'string' ? part.trim() : ''))
@@ -142,7 +150,9 @@ function entity(json: Json): Entity {
     address: undefined,
   }
   for (const property of list(list(json.vcardArray)[1])) {
-    if (!Array.isArray(property) || typeof property[0] !== 'string') continue
+    if (!Array.isArray(property) || typeof property[0] !== 'string') {
+      continue
+    }
     const [, params, , value] = property
     switch (property[0].toLowerCase()) {
       case 'fn':
@@ -155,7 +165,9 @@ function entity(json: Json): Entity {
         result.email ??= text(value)
         break
       case 'tel':
-        if (!isFax(params)) result.phone ??= text(value)?.replace(/^tel:/i, '')
+        if (!isFax(params)) {
+          result.phone ??= text(value)?.replace(/^tel:/i, '')
+        }
         break
       case 'adr':
         result.address ??= address(params, value)
@@ -166,22 +178,29 @@ function entity(json: Json): Entity {
 }
 
 function entities(value: unknown, out: Entity[] = []): Entity[] {
-  for (const item of list(value))
+  for (const item of list(value)) {
     if (isObject(item)) {
       out.push(entity(item))
       entities(item.entities, out)
     }
+  }
   return out
 }
 
 function events(value: unknown): Events {
   const result: Events = { registration: undefined, expiration: undefined, lastChanged: undefined }
   for (const event of list(value)) {
-    if (!isObject(event) || typeof event.eventAction !== 'string') continue
+    if (!isObject(event) || typeof event.eventAction !== 'string') {
+      continue
+    }
     const action = event.eventAction.toLowerCase()
-    if (action === 'registration') result.registration ??= date(event.eventDate)
-    else if (action === 'expiration') result.expiration ??= date(event.eventDate)
-    else if (action === 'last changed') result.lastChanged ??= date(event.eventDate)
+    if (action === 'registration') {
+      result.registration ??= date(event.eventDate)
+    } else if (action === 'expiration') {
+      result.expiration ??= date(event.eventDate)
+    } else if (action === 'last changed') {
+      result.lastChanged ??= date(event.eventDate)
+    }
   }
   return result
 }
@@ -220,7 +239,9 @@ export function toNetwork(json: Json): Network {
     startAddress: string(json.startAddress),
     endAddress: string(json.endAddress),
     cidrs: list(json.cidr0_cidrs).flatMap((cidr) => {
-      if (!isObject(cidr)) return []
+      if (!isObject(cidr)) {
+        return []
+      }
       const prefix = string(cidr.v4prefix) ?? string(cidr.v6prefix)
       const length = number(cidr.length)
       return prefix && length !== undefined ? [`${prefix}/${length}`] : []
@@ -244,17 +265,24 @@ export function toAutnum(json: Json): Autnum {
 
 export function relatedLink(json: Json, self: string): string | undefined {
   for (const link of list(json.links)) {
-    if (!isObject(link) || link.rel !== 'related' || typeof link.href !== 'string') continue
-    if (typeof link.type === 'string' && !/^application\/(?:rdap\+)?json\b/i.test(link.type))
+    if (!isObject(link) || link.rel !== 'related' || typeof link.href !== 'string') {
       continue
+    }
+    if (typeof link.type === 'string' && !/^application\/(?:rdap\+)?json\b/i.test(link.type)) {
+      continue
+    }
     let url: URL
     try {
       url = new URL(link.href)
     } catch {
       continue
     }
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') continue
-    if (!/\/domain\/[^/]+$/i.test(url.pathname) || url.href === new URL(self).href) continue
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+      continue
+    }
+    if (!/\/domain\/[^/]+$/i.test(url.pathname) || url.href === new URL(self).href) {
+      continue
+    }
     return url.href
   }
   return undefined

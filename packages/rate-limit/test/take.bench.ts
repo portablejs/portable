@@ -11,10 +11,18 @@ test('take on 1000 keys within 25% of rate-limiter-flexible', async ({ bench }) 
   const flexible = new RateLimiterMemory({ points: 1_000_000, duration: 1 })
   const result = await bench.compare(
     bench('@portable/rate-limit', async () => {
-      for (let r = 0; r < rounds; r++) for (const key of keys) await ours.take(key)
+      for (let r = 0; r < rounds; r++) {
+        for (const key of keys) {
+          await ours.take(key)
+        }
+      }
     }),
     bench('rate-limiter-flexible', async () => {
-      for (let r = 0; r < rounds; r++) for (const key of keys) await flexible.consume(key)
+      for (let r = 0; r < rounds; r++) {
+        for (const key of keys) {
+          await flexible.consume(key)
+        }
+      }
     }),
   )
   expect(result.get('rate-limiter-flexible')).not.toBeFasterThan(
@@ -30,10 +38,14 @@ test('take denied on one key within 25% of rate-limiter-flexible', async ({ benc
   await flexible.consume('key')
   const result = await bench.compare(
     bench('@portable/rate-limit', async () => {
-      for (let i = 0; i < 1000; i++) await ours.take('key')
+      for (let i = 0; i < 1000; i++) {
+        await ours.take('key')
+      }
     }),
     bench('rate-limiter-flexible', async () => {
-      for (let i = 0; i < 1000; i++) await flexible.consume('key').catch(() => {})
+      for (let i = 0; i < 1000; i++) {
+        await flexible.consume('key').catch(() => {})
+      }
     }),
   )
   expect(result.get('rate-limiter-flexible')).not.toBeFasterThan(
@@ -47,10 +59,14 @@ test('take on one key, compared with limiter', async ({ bench }) => {
   const limiter = new RateLimiter({ tokensPerInterval: 1_000_000, interval: 1000 })
   const result = await bench.compare(
     bench('@portable/rate-limit', async () => {
-      for (let i = 0; i < 1000; i++) await ours.take('key')
+      for (let i = 0; i < 1000; i++) {
+        await ours.take('key')
+      }
     }),
     bench('limiter', () => {
-      for (let i = 0; i < 1000; i++) limiter.tryRemoveTokens(1)
+      for (let i = 0; i < 1000; i++) {
+        limiter.tryRemoveTokens(1)
+      }
     }),
   )
   expect(result.get('@portable/rate-limit')).toBeDefined()

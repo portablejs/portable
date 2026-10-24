@@ -11,8 +11,11 @@ import * as Errors from '@portable/errors'
  * try {
  *   await WebPush.send({ subscription, payload: 'hello', vapid })
  * } catch (error) {
- *   if (error instanceof WebPush.InvalidInputError) await deleteSubscription(subscription)
- *   else throw error
+ *   if (error instanceof WebPush.InvalidInputError) {
+ *     await deleteSubscription(subscription)
+ *   } else {
+ *     throw error
+ *   }
  * }
  * ```
  */
@@ -31,9 +34,11 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await WebPush.send({ subscription, payload: 'hello', vapid })
  * } catch (error) {
- *   if (error instanceof WebPush.ResponseError && error.status === 429)
+ *   if (error instanceof WebPush.ResponseError && error.status === 429) {
  *     retryAfter(error.headers.get('retry-after'))
- *   else throw error
+ *   } else {
+ *     throw error
+ *   }
  * }
  * ```
  */

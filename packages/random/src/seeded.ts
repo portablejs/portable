@@ -35,8 +35,9 @@ export type Seeded = {
  * ```
  */
 export function seeded(seed: number): Seeded {
-  if (!Number.isSafeInteger(seed))
+  if (!Number.isSafeInteger(seed)) {
     throw new RangeError(`Expected a safe integer seed, got ${seed}.`)
+  }
   const split = splitmix64(BigInt.asUintN(64, BigInt(seed)))
   const a = split()
   const b = split()

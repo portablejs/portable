@@ -13,7 +13,9 @@ function withoutColorChunks(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
   for (let at = 8; at + 8 <= bytes.length;) {
     const end = at + 12 + view.getUint32(at)
     const type = String.fromCharCode(...bytes.subarray(at + 4, at + 8))
-    if (!colorChunks.has(type)) kept.push(bytes.subarray(at, end))
+    if (!colorChunks.has(type)) {
+      kept.push(bytes.subarray(at, end))
+    }
     at = end
   }
   return new Uint8Array(kept.flatMap((chunk) => [...chunk]))
@@ -38,8 +40,9 @@ function largestDifference(actual: Uint8Array, expected: Uint8ClampedArray): num
   for (let i = 0; i < actual.length; i += 4) {
     const alpha = expected[i + 3]!
     const channels = alpha === 255 ? 4 : 1
-    for (let c = 4 - channels; c < 4; c++)
+    for (let c = 4 - channels; c < 4; c++) {
       largest = Math.max(largest, Math.abs(actual[i + c]! - expected[i + c]!))
+    }
   }
   return largest
 }
@@ -60,7 +63,9 @@ describe('decodes PngSuite like the browser does', () => {
 
 test('the browser decodes our output to the input pixels', async () => {
   const data = randomBytes(40 * 30 * 4, 9)
-  for (let i = 3; i < data.length; i += 4) data[i] = 255
+  for (let i = 3; i < data.length; i += 4) {
+    data[i] = 255
+  }
   const browser = await viaBrowser(await Png.encode({ width: 40, height: 30, data }))
   expect(largestDifference(data, browser)).toBe(0)
 })

@@ -51,14 +51,18 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
         }
         return utf8.encode(text)
       }
-      if (highSurrogate === '') return toBytes(chunk)
+      if (highSurrogate === '') {
+        return toBytes(chunk)
+      }
       const pending = utf8.encode(highSurrogate)
       highSurrogate = ''
       return Bytes.concat([pending, toBytes(chunk)])
     }
 
     const encodeLines = (bytes: Uint8Array, final: boolean): string => {
-      if (bytes.length === 0) return ''
+      if (bytes.length === 0) {
+        return ''
+      }
       const pad = final && omitPadding
       const text = toBase64(bytes, { alphabet, omitPadding: pad, lineLength, newline }, column)
       if (lineLength !== false) {
@@ -88,11 +92,15 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
             const whole = bytes.length - (bytes.length % 3)
             carry = bytes.slice(whole)
             text += encodeLines(bytes.subarray(0, whole), false)
-            if (text !== '') controller.enqueue(utf8.encode(text))
+            if (text !== '') {
+              controller.enqueue(utf8.encode(text))
+            }
           },
           flush(controller) {
             const text = encodeLines(Bytes.concat([carry, utf8.encode(highSurrogate)]), true)
-            if (text !== '') controller.enqueue(utf8.encode(text))
+            if (text !== '') {
+              controller.enqueue(utf8.encode(text))
+            }
           },
         },
         options,

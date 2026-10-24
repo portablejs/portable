@@ -61,7 +61,9 @@ export function createClient(send: Send, flow: boolean): Client {
         ? { jsonrpc: '2.0' as const, id, method }
         : { jsonrpc: '2.0' as const, id, method, params }
       const sent = send(message)
-      if (sent instanceof Promise) sent.catch((e: unknown) => fail(id, e))
+      if (sent instanceof Promise) {
+        sent.catch((e: unknown) => fail(id, e))
+      }
     } catch (e) {
       fail(id, e)
     }
@@ -69,28 +71,41 @@ export function createClient(send: Send, flow: boolean): Client {
   }
 
   async function notify(method: string, params: Params | undefined, signal?: AbortSignal) {
-    if (closed) throw closed.reason
+    if (closed) {
+      throw closed.reason
+    }
     signal?.throwIfAborted()
     await send(isEmpty(params) ? { jsonrpc: '2.0', method } : { jsonrpc: '2.0', method, params })
   }
 
   function settle(id: Id): Call | undefined {
     const call = calls.get(id)
-    if (!call) return
+    if (!call) {
+      return
+    }
     calls.delete(id)
-    if (call.onAbort) call.signal!.removeEventListener('abort', call.onAbort)
+    if (call.onAbort) {
+      call.signal!.removeEventListener('abort', call.onAbort)
+    }
     return call
   }
 
   function fail(id: Id, reason: unknown) {
     const call = settle(id)
-    if (!call) return
-    if (call.stream) call.stream.error(reason)
-    else call.reject(reason)
+    if (!call) {
+      return
+    }
+    if (call.stream) {
+      call.stream.error(reason)
+    } else {
+      call.reject(reason)
+    }
   }
 
   function abort(id: Id, reason: unknown) {
-    if (!calls.has(id)) return
+    if (!calls.has(id)) {
+      return
+    }
     fail(id, reason)
     void Promise.resolve(send({ jsonrpc: '2.0', method: '$/cancel', params: { id } })).catch(noop)
   }
@@ -99,22 +114,33 @@ export function createClient(send: Send, flow: boolean): Client {
     if (typeof message.method === 'string') {
       const params = message.params as { id?: Id | undefined; value?: unknown } | undefined
       const call = params ? calls.get(params.id ?? null) : undefined
-      if (!call) return
-      if (message.method === '$/stream' && !call.stream) start(params!.id!, call)
-      else if (message.method === '$/stream/next' && call.stream) {
+      if (!call) {
+        return
+      }
+      if (message.method === '$/stream' && !call.stream) {
+        start(params!.id!, call)
+      } else if (message.method === '$/stream/next' && call.stream) {
         call.outstanding--
         call.stream.enqueue(params!.value)
       }
       return
     }
     const call = settle(message.id as Id)
-    if (!call) return
+    if (!call) {
+      return
+    }
     if ('error' in message) {
       const error = new RemoteError(errorObject(message.error))
-      if (call.stream) call.stream.error(error)
-      else call.reject(error)
-    } else if (call.stream) call.stream.close()
-    else call.resolve(message.result)
+      if (call.stream) {
+        call.stream.error(error)
+      } else {
+        call.reject(error)
+      }
+    } else if (call.stream) {
+      call.stream.close()
+    } else {
+      call.resolve(message.result)
+    }
   }
 
   function start(id: Id, call: Call) {
@@ -124,9 +150,13 @@ export function createClient(send: Send, flow: boolean): Client {
           call.stream = controller
         },
         pull(controller) {
-          if (!flow) return
+          if (!flow) {
+            return
+          }
           const credit = controller.desiredSize! - call.outstanding
-          if (credit < streamWindow / 4 || calls.get(id) !== call) return
+          if (credit < streamWindow / 4 || calls.get(id) !== call) {
+            return
+          }
           call.outstanding += credit
           void Promise.resolve(
             send({ jsonrpc: '2.0', method: '$/stream/credit', params: { id, credit } }),
@@ -143,7 +173,9 @@ export function createClient(send: Send, flow: boolean): Client {
 
   function close(reason: unknown) {
     closed ??= { reason }
-    for (const id of calls.keys()) fail(id, reason)
+    for (const id of calls.keys()) {
+      fail(id, reason)
+    }
   }
 
   return { request, notify, receive, fail, close }
@@ -159,17 +191,23 @@ function iterator(promise: Promise<unknown>): AsyncIterator<unknown> {
     async next() {
       if (!reader) {
         const stream = await promise
-        if (!(stream instanceof ReadableStream)) throw new TypeError('The result is not a stream.')
+        if (!(stream instanceof ReadableStream)) {
+          throw new TypeError('The result is not a stream.')
+        }
         reader = stream.getReader()
       }
       return reader.read() as Promise<IteratorResult<unknown>>
     },
     async return(value?: unknown) {
-      if (reader) await reader.cancel()
-      else
+      if (reader) {
+        await reader.cancel()
+      } else {
         promise.then((s) => {
-          if (s instanceof ReadableStream) void s.cancel()
+          if (s instanceof ReadableStream) {
+            void s.cancel()
+          }
         }, noop)
+      }
       return { done: true, value }
     },
   }

@@ -15,14 +15,20 @@ type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
 /** Every path to a value in `json`, the root included. */
 function paths(json: Json, path: (string | number)[] = []): (string | number)[][] {
   const out = [path]
-  if (Array.isArray(json)) json.forEach((value, i) => out.push(...paths(value, [...path, i])))
-  else if (json && typeof json === 'object')
-    for (const [key, value] of Object.entries(json)) out.push(...paths(value, [...path, key]))
+  if (Array.isArray(json)) {
+    json.forEach((value, i) => out.push(...paths(value, [...path, i])))
+  } else if (json && typeof json === 'object') {
+    for (const [key, value] of Object.entries(json)) {
+      out.push(...paths(value, [...path, key]))
+    }
+  }
   return out
 }
 
 function replace(json: Json, path: readonly (string | number)[], value: Json): Json {
-  if (path.length === 0) return value
+  if (path.length === 0) {
+    return value
+  }
   const [key, ...rest] = path
   const copy = (Array.isArray(json) ? [...json] : { ...(json as object) }) as Record<
     string | number,

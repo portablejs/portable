@@ -15,7 +15,9 @@ import * as Rpc from '@portable/rpc'
 const api = {
   add: (a: number, b: number) => a + b,
   async *watch(id: string) {
-    for (let i = 0; ; i++) yield { id, i }
+    for (let i = 0; ; i++) {
+      yield { id, i }
+    }
   },
 }
 export type Api = typeof api
@@ -31,7 +33,9 @@ import type { Api } from './worker.ts'
 const worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type: 'module' })))
 
 await worker.add(1, 2) // 3
-for await (const event of worker.watch('x')) console.log(event)
+for await (const event of worker.watch('x')) {
+  console.log(event)
+}
 ```
 
 The type of the remote comes from the server's code, so there is no schema or code generation. Every method returns a promise.
@@ -200,7 +204,9 @@ const transport = {
   }),
   writable: new WritableStream({
     async start() {
-      if (socket.readyState === WebSocket.CONNECTING) await new Promise((r) => (socket.onopen = r))
+      if (socket.readyState === WebSocket.CONNECTING) {
+        await new Promise((r) => (socket.onopen = r))
+      }
     },
     write: (message) => socket.send(message as string),
   }),

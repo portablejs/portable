@@ -61,7 +61,9 @@ const defaultDelay = { initial: 200, max: 10_000 } satisfies Delay
  * const response = await Timers.retry(
  *   async ({ signal }) => {
  *     const response = await fetch('https://example.com/api', { signal })
- *     if (!response.ok) throw new Error(`HTTP ${response.status}`)
+ *     if (!response.ok) {
+ *       throw new Error(`HTTP ${response.status}`)
+ *     }
  *     return response
  *   },
  *   { attempts: 5, timeout: 10_000, onRetry: (error, { attempt, delay }) => console.warn(attempt, delay, error) },
@@ -80,8 +82,9 @@ export async function retry<value>(
     timeout = Infinity,
     signal,
   } = options
-  if (!(attempts >= 1) || (attempts !== Infinity && !Number.isInteger(attempts)))
+  if (!(attempts >= 1) || (attempts !== Infinity && !Number.isInteger(attempts))) {
     throw new RangeError('Expected `attempts` to be a positive integer or Infinity.')
+  }
   const next = backoff(delay)
   assertMs('timeout', timeout)
   signal?.throwIfAborted()
@@ -91,15 +94,21 @@ export async function retry<value>(
       return await run(fn, { attempt, signal: signal ?? neverAborted() }, timeout)
     } catch (error) {
       signal?.throwIfAborted()
-      if (attempt >= attempts) throw error
-      if (retryIf && !(await retryIf(error, { attempt }))) throw error
+      if (attempt >= attempts) {
+        throw error
+      }
+      if (retryIf && !(await retryIf(error, { attempt }))) {
+        throw error
+      }
       signal?.throwIfAborted()
       const ms = next({ attempt, error })
       if (onRetry) {
         await onRetry(error, { attempt, delay: Math.max(ms, 0) })
         signal?.throwIfAborted()
       }
-      if (!(ms <= 0)) await sleep(ms, { signal })
+      if (!(ms <= 0)) {
+        await sleep(ms, { signal })
+      }
     }
   }
 }

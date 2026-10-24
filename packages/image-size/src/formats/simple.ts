@@ -57,10 +57,16 @@ const pngSignature = 'PNG\r\n\x1a\n'
 
 export const png: Format = {
   validate(input) {
-    if (!startsWith(input, 1, pngSignature)) return false
+    if (!startsWith(input, 1, pngSignature)) {
+      return false
+    }
     let chunk = ascii(input, 12, 16)
-    if (chunk === 'CgBI') chunk = ascii(input, 28, 32)
-    if (chunk !== 'IHDR') throw new InvalidInputError('Invalid PNG')
+    if (chunk === 'CgBI') {
+      chunk = ascii(input, 28, 32)
+    }
+    if (chunk !== 'IHDR') {
+      throw new InvalidInputError('Invalid PNG')
+    }
     return true
   },
   calculate(input) {

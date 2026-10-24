@@ -12,10 +12,14 @@ const upstreamPackets = buffers.map((buffer) => upstream.decode(buffer))
 test(`decodes ${messages.length} real responses within 25% of dns-packet`, async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/dns-packet', () => {
-      for (const message of messages) decode(message)
+      for (const message of messages) {
+        decode(message)
+      }
     }),
     bench('dns-packet', () => {
-      for (const buffer of buffers) upstream.decode(buffer)
+      for (const buffer of buffers) {
+        upstream.decode(buffer)
+      }
     }),
   )
   expect(result.get('dns-packet')).not.toBeFasterThan(result.get('@portable/dns-packet'), {
@@ -26,13 +30,19 @@ test(`decodes ${messages.length} real responses within 25% of dns-packet`, async
 test(`encodes ${messages.length} real responses within 25% of dns-packet`, async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/dns-packet', () => {
-      for (const packet of packets) encode(packet)
+      for (const packet of packets) {
+        encode(packet)
+      }
     }),
     bench('@portable/dns-packet, compress', () => {
-      for (const packet of packets) encode(packet, { compress: true })
+      for (const packet of packets) {
+        encode(packet, { compress: true })
+      }
     }),
     bench('dns-packet', () => {
-      for (const packet of upstreamPackets) upstream.encode(packet)
+      for (const packet of upstreamPackets) {
+        upstream.encode(packet)
+      }
     }),
   )
   expect(result.get('dns-packet')).not.toBeFasterThan(result.get('@portable/dns-packet'), {

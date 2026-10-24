@@ -102,8 +102,9 @@ describe('addressparser', () => {
   })
 
   test('an "@" inside a quoted string or a comment does not open an address literal', () => {
-    for (const input of ['"x@"[IPv6:::1] <a@b.com>', '(x@)[IPv6:::1] <a@b.com>'])
+    for (const input of ['"x@"[IPv6:::1] <a@b.com>', '(x@)[IPv6:::1] <a@b.com>']) {
       expect(flat(input).map((entry) => entry.address)).toEqual(['a@b.com'])
+    }
   })
 
   test('a group delimiter in a display name does not open an address literal', () => {
@@ -256,8 +257,9 @@ describe('addressparser', () => {
       ['"a;b" <(x)>', 'a;b'],
       ['"a<b>c" <(x)>', 'a<b>c'],
       ['"Display Name" <(no address here)>', 'Display Name'],
-    ] as const)
+    ] as const) {
       expect(parse(input)).toEqual([{ address: '', name }])
+    }
   })
 
   test('a quoted display name with "@" is not made an address either', () => {
@@ -302,8 +304,9 @@ describe('addressparser', () => {
       'user.name@example.com',
       'user_name@example.com',
       'user-name@example.com',
-    ])
+    ]) {
       expect(parse(input)).toEqual([{ address: input, name: '' }])
+    }
   })
 
   test('whitespace and comments around an address', () => {
@@ -428,10 +431,11 @@ describe('nested groups are flattened into the outer one', () => {
   })
 
   test('at any depth', () => {
-    for (const depth of [5, 10, 11, 100, 3000, 10000])
+    for (const depth of [5, 10, 11, 100, 3000, 10000]) {
       expect(parse(deepGroup(depth))).toEqual([
         { name: 'g0', group: [{ address: 'user@example.com', name: '' }] },
       ])
+    }
     expect(parse(deepGroup(100) + ', ' + deepGroup(100))).toHaveLength(2)
     const mixed = parse('normal@example.com, ' + deepGroup(200) + ', another@test.com')
     expect(mixed.map((entry) => entry.name)).toEqual(['', 'g0', ''])
@@ -439,8 +443,9 @@ describe('nested groups are flattened into the outer one', () => {
   })
 
   test('a large list behind many group openers', () => {
-    for (const openers of [10, 1000, 100000])
+    for (const openers of [10, 1000, 100000]) {
       expect(flat('g: '.repeat(openers) + 'a@b.com, '.repeat(80000))).toHaveLength(80000)
+    }
   })
 })
 
@@ -483,8 +488,9 @@ describe('malformed input', () => {
       'user@example.com\t\tother@example.com',
       'user@example.com\nother@example.com',
       'user@example.com\r\nother@example.com',
-    ])
+    ]) {
       expect(parse(input)).toEqual([{ address: 'user@example.com', name: 'other@example.com' }])
+    }
   })
 })
 
@@ -521,8 +527,9 @@ describe('domains', () => {
       'user@mail.server.company.example.com',
       'user@123.456.example.com',
       'user@mail-server.example.com',
-    ])
+    ]) {
       expect(first(input).address).toBe(input)
+    }
   })
 
   test('IP address literals', () => {
@@ -654,8 +661,9 @@ describe('an angle address holding unquoted whitespace', () => {
       'a@b@c.com junk',
       'notanaddress a@b.com',
       'lo@zillowgroup.com lo@zillowgroup.com',
-    ])
+    ]) {
       expect(first(`<${value}>`).address).toBe(first(value).address)
+    }
   })
 
   test('a quoted local part keeps its domain', () => {
@@ -705,8 +713,9 @@ describe('RFC 5322 comments', () => {
       'user@good-corp.com(a)(b)evil.com',
       'user@good-corp.com(a)(b)(c)evil.com',
       'user@good-corp.com(a(b)evil.com',
-    ])
+    ]) {
       expect(first(input).address).toBe('user@good-corp.com')
+    }
   })
 
   test('a comment splitting a list keeps both recipients', () => {
@@ -779,8 +788,9 @@ describe('comments inside an angle address', () => {
       'Name <user@example.com(c)>',
       'Name <user@example.com (c)>',
       'Name <(a@evil.com)user@example.com>',
-    ])
+    ]) {
       expect(parse(input)).toEqual([{ address: 'user@example.com', name: 'Name' }])
+    }
   })
 
   test('brackets holding only a comment read as empty ones', () => {
@@ -790,8 +800,9 @@ describe('comments inside an angle address', () => {
       '"a@b@evil.com"',
       '(a@evil.com, b@evil.com)',
       'Name',
-    ])
+    ]) {
       expect(first(`${name} <(x)>`).address).toBe(first(`${name} <>`).address)
+    }
   })
 
   test('a comment is the name when there is no other', () => {
@@ -828,10 +839,11 @@ describe('comments after a quoted local part', () => {
       '(x)evil.com(y)',
       '(x)evil@evil.com',
       ' junk here',
-    ])
+    ]) {
       expect(first(`"user"@good-corp.com${tail}`).address).toBe(
         first(`user@good-corp.com${tail}`).address,
       )
+    }
   })
 
   test('text after a quoted local part becomes the name', () => {
@@ -871,8 +883,9 @@ describe('comments after a quoted local part', () => {
         '"evil@attacker.com more stuff"@legitimate.com',
       ],
       ['"test\\"quote"@example.com', '"test\\"quote"@example.com'],
-    ] as const)
+    ] as const) {
       expect(parse(input)).toEqual([{ address: expected, name: '' }])
+    }
   })
 
   test('a quoted display name beside an address', () => {
@@ -886,7 +899,7 @@ describe('comments after a quoted local part', () => {
   test('no address holds unquoted whitespace', () => {
     const wellFormed = /^"(?:[^"\\]|\\[\s\S])*"@\S*$/
     const malformed: string[] = []
-    for (const lead of ['', '(c)', 'Name ', '"Name" '])
+    for (const lead of ['', '(c)', 'Name ', '"Name" ']) {
       for (const local of [
         'user',
         '"user"',
@@ -895,7 +908,7 @@ describe('comments after a quoted local part', () => {
         '"a@b.com c"',
         '"a\\"b"',
         '""',
-      ])
+      ]) {
         for (const tail of [
           '',
           '(x)evil.com',
@@ -907,9 +920,14 @@ describe('comments after a quoted local part', () => {
           '(x)',
         ]) {
           const input = `${lead}${local}@good-corp.com${tail}`
-          for (const { address } of flat(input))
-            if (/\s/.test(address) && !wellFormed.test(address)) malformed.push(address)
+          for (const { address } of flat(input)) {
+            if (/\s/.test(address) && !wellFormed.test(address)) {
+              malformed.push(address)
+            }
+          }
         }
+      }
+    }
     expect(malformed).toEqual([])
   })
 
@@ -980,8 +998,9 @@ describe('closers inside an angle address or a group', () => {
       '<a@b.com(x>, c@d.com',
       'G: "a;, c@d.com',
       'G: (a;, c@d.com',
-    ])
+    ]) {
       expect(parse(input)).toHaveLength(1)
+    }
   })
 
   test('the closer outside them still ends the angle address and the group', () => {

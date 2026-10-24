@@ -20,7 +20,9 @@ const dmarc = await Dmarc.check(
   { resolver, signal: AbortSignal.timeout(10_000) },
 )
 
-if (dmarc.disposition === 'reject') reject('550 5.7.1 Rejected by the DMARC policy of example.com')
+if (dmarc.disposition === 'reject') {
+  reject('550 5.7.1 Rejected by the DMARC policy of example.com')
+}
 ```
 
 In Node, `node:dns/promises` works as the resolver.

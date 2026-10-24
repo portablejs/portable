@@ -4,7 +4,9 @@ import { failure, fakeServer, type Script } from './utils.js'
 
 const b64 = (text: string) => {
   let binary = ''
-  for (const byte of new TextEncoder().encode(text)) binary += String.fromCharCode(byte)
+  for (const byte of new TextEncoder().encode(text)) {
+    binary += String.fromCharCode(byte)
+  }
   return btoa(binary)
 }
 
@@ -32,7 +34,9 @@ const loginOnly = {
 function expectNoSecrets(error: Smtp.CommandError, ...secrets: string[]) {
   const { message, command, response } = error
   const text = JSON.stringify({ message, command, response })
-  for (const secret of secrets) expect(text).not.toContain(secret)
+  for (const secret of secrets) {
+    expect(text).not.toContain(secret)
+  }
 }
 
 describe('refusing plaintext', () => {

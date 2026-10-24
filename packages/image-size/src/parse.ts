@@ -110,23 +110,31 @@ function detect(input: Uint8Array, final: boolean): Format {
     try {
       return format.validate(input, final)
     } catch (error) {
-      if (!final || !(error instanceof NeedMore)) throw error
+      if (!final || !(error instanceof NeedMore)) {
+        throw error
+      }
       truncated = true
       return false
     }
   }
   const likely = byFirstByte.get(input[0] ?? -1)
   const format = likely && matches(likely) ? likely : formats.find(matches)
-  if (format) return format
+  if (format) {
+    return format
+  }
   throw truncated ? new TruncatedError() : new UnsupportedError()
 }
 
 function measure(input: Uint8Array, final: boolean): Size {
   const size = detect(input, final).calculate(input, final)
-  if (!size.images || size.images.length < 2) return size
+  if (!size.images || size.images.length < 2) {
+    return size
+  }
   let largest = size.images[0]!
   for (const image of size.images) {
-    if (image.width * image.height > largest.width * largest.height) largest = image
+    if (image.width * image.height > largest.width * largest.height) {
+      largest = image
+    }
   }
   return { ...size, width: largest.width, height: largest.height }
 }
@@ -201,7 +209,9 @@ export async function parseStream(
     for (;;) {
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
-      if (done) return parse(buffer.subarray(0, length))
+      if (done) {
+        return parse(buffer.subarray(0, length))
+      }
       assertUint8Array(value)
       if (length + value.length > buffer.length) {
         const grown = new Uint8Array(Math.max(length + value.length, buffer.length * 2))
@@ -217,11 +227,15 @@ export async function parseStream(
           throw error instanceof TruncatedError ? new MaxBytesError({ maxBytes }) : error
         }
       }
-      if (length < needed) continue
+      if (length < needed) {
+        continue
+      }
       try {
         return measure(buffer.subarray(0, length), false)
       } catch (error) {
-        if (!(error instanceof NeedMore)) throw error
+        if (!(error instanceof NeedMore)) {
+          throw error
+        }
         needed = Math.max(error.end, length + 1)
       }
     }

@@ -65,8 +65,9 @@ test('decodes 5,000 rows from a string within 25% of csv-parse, papaparse and fa
       await drain(FastCsvParse.parseString(text))
     }),
   )
-  for (const name of ['csv-parse', 'papaparse', 'fast-csv'] as const)
+  for (const name of ['csv-parse', 'papaparse', 'fast-csv'] as const) {
     expect(result.get(name)).not.toBeFasterThan(result.get('@portable/csv'), { delta: 0.25 })
+  }
 })
 
 test('decodes a 500 kB stream within 25% of csv-parse, papaparse and fast-csv', async ({
@@ -86,8 +87,9 @@ test('decodes a 500 kB stream within 25% of csv-parse, papaparse and fast-csv', 
       await drain(Readable.from(chunks).pipe(FastCsvParse.parse()))
     }),
   )
-  for (const name of ['csv-parse', 'papaparse', 'fast-csv'] as const)
+  for (const name of ['csv-parse', 'papaparse', 'fast-csv'] as const) {
     expect(result.get(name)).not.toBeFasterThan(result.get('@portable/csv'), { delta: 0.25 })
+  }
 })
 
 test('encodes 5,000 rows to a string within 25% of csv-stringify, papaparse and fast-csv', async ({
@@ -107,8 +109,9 @@ test('encodes 5,000 rows to a string within 25% of csv-stringify, papaparse and 
       await FastCsvFormat.writeToString(rows)
     }),
   )
-  for (const name of ['csv-stringify', 'papaparse', 'fast-csv'] as const)
+  for (const name of ['csv-stringify', 'papaparse', 'fast-csv'] as const) {
     expect(result.get(name)).not.toBeFasterThan(result.get('@portable/csv'), { delta: 0.25 })
+  }
 })
 
 test('encodes a stream of 5,000 rows within 25% of csv-stringify and fast-csv', async ({
@@ -125,6 +128,7 @@ test('encodes a stream of 5,000 rows within 25% of csv-stringify and fast-csv', 
       await drain(Readable.from(rows).pipe(FastCsvFormat.format()))
     }),
   )
-  for (const name of ['csv-stringify', 'fast-csv'] as const)
+  for (const name of ['csv-stringify', 'fast-csv'] as const) {
     expect(result.get(name)).not.toBeFasterThan(result.get('@portable/csv'), { delta: 0.25 })
+  }
 })

@@ -34,10 +34,11 @@ describe('matches the upstream libraries where they agree on a contract', () => 
   })
 
   test('string with an alphabet gives the same characters as nanoid customAlphabet', () => {
-    for (const alphabet of ['abc', '0123456789abcdef', 'абвгд', 'aaab'])
+    for (const alphabet of ['abc', '0123456789abcdef', 'абвгд', 'aaab']) {
       expect(characters(Random.string(4000, { alphabet }))).toEqual(
         characters(customAlphabet(alphabet, 4000)()),
       )
+    }
   })
 
   // The README tells crypto-random-string users which alphabet replaces each `type`.

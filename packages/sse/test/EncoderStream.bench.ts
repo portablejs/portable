@@ -15,8 +15,12 @@ const fixtures = { 'LLM tokens': tokens, 'named events with multi-line data': na
 
 function handWritten(message: Sse.Message): string {
   let text = message.event === undefined ? '' : `event: ${message.event}\n`
-  for (const line of (message.data ?? '').split('\n')) text += `data: ${line}\n`
-  if (message.id !== undefined) text += `id: ${message.id}\n`
+  for (const line of (message.data ?? '').split('\n')) {
+    text += `data: ${line}\n`
+  }
+  if (message.id !== undefined) {
+    text += `id: ${message.id}\n`
+  }
   return `${text}\n`
 }
 
@@ -26,10 +30,14 @@ describe('encodes events', () => {
       expect(messages.map(Sse.encode)).toEqual(messages.map(handWritten))
       await bench.compare(
         bench('@portable/sse', () => {
-          for (const message of messages) Sse.encode(message)
+          for (const message of messages) {
+            Sse.encode(message)
+          }
         }),
         bench('hand-written', () => {
-          for (const message of messages) handWritten(message)
+          for (const message of messages) {
+            handWritten(message)
+          }
         }),
       )
     })

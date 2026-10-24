@@ -27,7 +27,9 @@ export function concat<chunk>(
   sources: readonly Source<chunk>[],
   options: concat.Options = {},
 ): ReadableStream<chunk> {
-  if (!Array.isArray(sources as unknown)) throw new TypeError('concat takes an array of sources.')
+  if (!Array.isArray(sources as unknown)) {
+    throw new TypeError('concat takes an array of sources.')
+  }
   const streams = sources.map(toStream)
   let index = 0
   let reader: ReadableStreamDefaultReader<chunk> | undefined
@@ -45,7 +47,9 @@ export function concat<chunk>(
             await cancelRest(error)
             throw error
           }
-          if (!result.done) return controller.enqueue(result.value)
+          if (!result.done) {
+            return controller.enqueue(result.value)
+          }
           reader.releaseLock()
           reader = undefined
         }
@@ -86,7 +90,9 @@ export function merge<chunk>(
   sources: readonly Source<chunk>[],
   options: merge.Options = {},
 ): ReadableStream<chunk> {
-  if (!Array.isArray(sources as unknown)) throw new TypeError('merge takes an array of sources.')
+  if (!Array.isArray(sources as unknown)) {
+    throw new TypeError('merge takes an array of sources.')
+  }
   const readers = new Set(sources.map((source) => toStream(source).getReader()))
   const idle = new Set(readers)
   let wake: (() => void) | undefined
@@ -101,7 +107,9 @@ export function merge<chunk>(
     idle.delete(reader)
     reader.read().then(
       (result) => {
-        if (finished) return
+        if (finished) {
+          return
+        }
         if (result.done) {
           readers.delete(reader)
           if (readers.size === 0) {
@@ -115,7 +123,9 @@ export function merge<chunk>(
         wake?.()
       },
       (error: unknown) => {
-        if (finished) return
+        if (finished) {
+          return
+        }
         finished = true
         readers.delete(reader)
         controller.error(error)
@@ -134,7 +144,9 @@ export function merge<chunk>(
         }
       },
       pull(controller) {
-        for (const reader of idle) read(reader, controller)
+        for (const reader of idle) {
+          read(reader, controller)
+        }
         return new Promise((resolve) => {
           wake = resolve
         })
@@ -187,7 +199,9 @@ export function limitBytes<chunk extends Uint8Array | string>(
       {
         transform(chunk, controller) {
           length += byteLength(chunk)
-          if (length > maxBytes) throw new MaxBytesError({ maxBytes })
+          if (length > maxBytes) {
+            throw new MaxBytesError({ maxBytes })
+          }
           controller.enqueue(chunk)
         },
       },

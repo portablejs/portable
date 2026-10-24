@@ -44,8 +44,9 @@ function randomRows(seed: number, count: number, width: number, from = pieces): 
   return Array.from({ length: count }, () =>
     Array.from({ length: width }, () => {
       let field = ''
-      for (let n = Math.floor(next() * 4); n > 0; n--)
+      for (let n = Math.floor(next() * 4); n > 0; n--) {
         field += from[Math.floor(next() * from.length)]
+      }
       return field
     }),
   )
@@ -56,7 +57,9 @@ async function viaCsvParse(chunks: readonly Uint8Array[], delimiter = ','): Prom
   const parser = Readable.from(chunks).pipe(
     parseStream({ bom: true, delimiter, relax_quotes: true, skip_empty_lines: true }),
   )
-  for await (const row of parser) rows.push(row as string[])
+  for await (const row of parser) {
+    rows.push(row as string[])
+  }
   return rows
 }
 
@@ -78,11 +81,12 @@ describe('matches csv-parse', () => {
       expect(Csv.decode(text)).toEqual(parseSync(text, options))
     })
 
-    for (const seed of [1, 2, 3])
+    for (const seed of [1, 2, 3]) {
       test(`${name}, random chunking ${seed}`, async () => {
         const chunks = randomChunks(encodeUtf8(text), seed, 32)
         expect(await decodeStream(chunks)).toEqual(await viaCsvParse(chunks))
       })
+    }
   }
 
   test('header', () => {
@@ -96,12 +100,13 @@ describe('matches csv-parse', () => {
     expect(await decodeStream(chunks, { delimiter: '\t' })).toEqual(await viaCsvParse(chunks, '\t'))
   })
 
-  for (const path of fixtures.filter((path) => path.endsWith('.csv')))
+  for (const path of fixtures.filter((path) => path.endsWith('.csv'))) {
     test(`csv-spectrum ${path}`, async () => {
       const text = new TextDecoder().decode(await fixture(path))
       const options = { columns: true, relax_quotes: true }
       expect(Csv.decode(text, { header: true })).toEqual(parseSync(text, options))
     })
+  }
 })
 
 describe('matches papaparse', () => {

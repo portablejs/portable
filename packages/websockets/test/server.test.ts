@@ -6,7 +6,9 @@ import { bytes, errorOf, read, sleep, until } from './utils.js'
 
 const cleanup: (() => unknown)[] = []
 afterEach(async () => {
-  for (const fn of cleanup.splice(0)) await fn()
+  for (const fn of cleanup.splice(0)) {
+    await fn()
+  }
 })
 
 async function start(onConnection?: (socket: ServerSocket) => void) {
@@ -41,7 +43,9 @@ describe('connect against a ws server', () => {
     const { readable, writable } = open(url, {
       async open({ signal }) {
         signals.push(signal)
-        if (signals.length === 2) await sleep(50)
+        if (signals.length === 2) {
+          await sleep(50)
+        }
       },
     })
     const reader = readable.getReader()
@@ -82,7 +86,9 @@ describe('connect against a ws server', () => {
       connections.push(socket)
       socket.on('message', (data) => {
         received.push(text(data))
-        if (text(data) === 'auth') socket.send('ok')
+        if (text(data) === 'auth') {
+          socket.send('ok')
+        }
       })
     })
     const signals: AbortSignal[] = []
@@ -91,7 +97,9 @@ describe('connect against a ws server', () => {
         signals.push(signal)
         send('auth')
         const { value } = await messages.getReader().read()
-        if (value !== 'ok') throw new Error('not authorized')
+        if (value !== 'ok') {
+          throw new Error('not authorized')
+        }
       },
     })
     const writer = writable.getWriter()
@@ -129,7 +137,9 @@ describe('connect against a ws server', () => {
     let connections = 0
     const { url } = await start((socket) => {
       connections++
-      if (connections > 1) socket.on('message', () => socket.send('pong'))
+      if (connections > 1) {
+        socket.on('message', () => socket.send('pong'))
+      }
     })
     open(url, { heartbeat: { ping: 'ping', pong: (m) => m === 'pong', interval: 20 } })
     await until(() => connections === 2)

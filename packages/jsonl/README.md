@@ -13,7 +13,9 @@ import * as Jsonl from '@portable/jsonl'
 
 const response = await fetch('https://example.com/events.ndjson')
 const reader = response.body!.pipeThrough(new Jsonl.DecoderStream()).getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
+for (let r = await reader.read(); !r.done; r = await reader.read()) {
+  console.log(r.value)
+}
 ```
 
 `DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines may end in LF or CRLF, blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly.

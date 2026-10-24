@@ -7,8 +7,12 @@ let scratch = new Uint8Array(1024)
 
 /** Returns a view of a buffer that the next call overwrites. */
 export function encodeUtf8Scratch(text: string): Uint8Array {
-  if (text.length > 16384) return utf8Encoder.encode(text)
-  if (text.length * 3 > scratch.length) scratch = new Uint8Array(text.length * 3)
+  if (text.length > 16384) {
+    return utf8Encoder.encode(text)
+  }
+  if (text.length * 3 > scratch.length) {
+    scratch = new Uint8Array(text.length * 3)
+  }
   return scratch.subarray(0, utf8Encoder.encodeInto(text, scratch).written)
 }
 
@@ -59,9 +63,12 @@ export declare namespace encodeWord {
  */
 export function encodeWord(input: string | Uint8Array, options: encodeWord.Options = {}): string {
   const { charset, wordEncoding: encoding = 'Q', wordLength = 75 } = options
-  if (encoding !== 'Q' && encoding !== 'B')
+  if (encoding !== 'Q' && encoding !== 'B') {
     throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`)
-  if (wordLength !== false) assertLength('wordLength', wordLength)
+  }
+  if (wordLength !== false) {
+    assertLength('wordLength', wordLength)
+  }
   const prefix = charset
     ? `=?${charset.name}?${encoding}?`
     : encoding === 'Q'
@@ -73,23 +80,26 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
       : Math.max(wordLength - prefix.length - 2, encoding === 'Q' ? 12 : 4)
   const text = typeof input === 'string' ? input : toText(input)
   const bytes = charset ? undefined : encodeUtf8Scratch(text)
-  if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget)
+  if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget) {
     return prefix + Base64.encode(bytes) + '?='
+  }
   const fits =
     encoding === 'Q'
       ? (length: number) => length <= budget
       : (length: number) => Math.ceil(length / 3) * 4 <= budget
-  if (!bytes)
+  if (!bytes) {
     return splitCharset(text, charset!, encoding, fits)
       .map((chunk) => prefix + (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) + '?=')
       .join(' ')
+  }
   let result = ''
-  for (const chunk of splitUtf8(bytes, encoding, fits))
+  for (const chunk of splitUtf8(bytes, encoding, fits)) {
     result +=
       (result ? ' ' : '') +
       prefix +
       (encoding === 'Q' ? encodeQ(chunk) : Base64.encode(chunk)) +
       '?='
+  }
   return result
 }
 
@@ -120,7 +130,9 @@ export function encodeWords(input: string | Uint8Array, options: encodeWords.Opt
     const code = i < text.length ? text.charCodeAt(i) : 0x20
     if (code === 0x20 || code === 0x09) {
       if (encodeThisWord) {
-        if (start < 0) start = wordStart
+        if (start < 0) {
+          start = wordStart
+        }
         end = i
       }
       wordStart = i + 1
@@ -133,7 +145,9 @@ export function encodeWords(input: string | Uint8Array, options: encodeWords.Opt
       encodeThisWord = true
     }
   }
-  if (start < 0) return text
+  if (start < 0) {
+    return text
+  }
   return text.slice(0, start) + encodeWord(text.slice(start, end), options) + text.slice(end)
 }
 
@@ -159,8 +173,9 @@ export function decodeWords(input: string | Uint8Array): string {
   let charset = ''
   let pending: Uint8Array[] = []
   const flush = () => {
-    if (pending.length > 0)
+    if (pending.length > 0) {
       result += decodeCharset(pending.length === 1 ? pending[0]! : Bytes.concat(pending), charset)
+    }
     pending = []
   }
   for (let match = word.exec(text); match; match = word.exec(text)) {
@@ -169,7 +184,9 @@ export function decodeWords(input: string | Uint8Array): string {
     if (pending.length === 0 || !/^[ \t\r\n]*$/.test(between)) {
       flush()
       result += between
-    } else if (label.toLowerCase() !== charset.toLowerCase()) flush()
+    } else if (label.toLowerCase() !== charset.toLowerCase()) {
+      flush()
+    }
     charset = label
     pending.push(
       match[2] === 'B' || match[2] === 'b'
@@ -205,10 +222,14 @@ function splitUtf8(
       chunks.push(bytes.subarray(start, i))
       start = i
       length = added
-    } else length += added
+    } else {
+      length += added
+    }
     i += size
   }
-  if (bytes.length > start || chunks.length === 0) chunks.push(bytes.subarray(start))
+  if (bytes.length > start || chunks.length === 0) {
+    chunks.push(bytes.subarray(start))
+  }
   return chunks
 }
 
@@ -229,7 +250,9 @@ function splitCharset(
       chunks.push(current)
       start = i
       current = charset.encode(characters[i]!)
-    } else current = candidate
+    } else {
+      current = candidate
+    }
   }
   chunks.push(current)
   return chunks
@@ -238,8 +261,9 @@ function splitCharset(
 /** RFC 2047 section 5 (3): the characters a Q word may keep as is anywhere, even in a phrase. */
 const qSafe = /* @__PURE__ */ (() => {
   const table = new Uint8Array(128)
-  for (const character of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!*+-/ ')
+  for (const character of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!*+-/ ') {
     table[character.charCodeAt(0)] = 1
+  }
   return table
 })()
 
@@ -247,7 +271,9 @@ const qLength = (byte: number): number => (byte < 0x80 && qSafe[byte] ? 1 : 3)
 
 function qLengthOf(bytes: Uint8Array): number {
   let length = 0
-  for (const byte of bytes) length += qLength(byte)
+  for (const byte of bytes) {
+    length += qLength(byte)
+  }
   return length
 }
 
@@ -256,9 +282,13 @@ const hex = '0123456789ABCDEF'
 function encodeQ(bytes: Uint8Array): string {
   let result = ''
   for (const byte of bytes) {
-    if (byte === 0x20) result += '_'
-    else if (byte < 0x80 && qSafe[byte]) result += String.fromCharCode(byte)
-    else result += '=' + hex[byte >> 4]! + hex[byte & 15]!
+    if (byte === 0x20) {
+      result += '_'
+    } else if (byte < 0x80 && qSafe[byte]) {
+      result += String.fromCharCode(byte)
+    } else {
+      result += '=' + hex[byte >> 4]! + hex[byte & 15]!
+    }
   }
   return result
 }

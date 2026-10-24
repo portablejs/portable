@@ -131,7 +131,9 @@ export declare namespace needsRehash {
  * import * as Password from '@portable/password'
  *
  * if (await Password.verify(password, user.hash)) {
- *   if (Password.needsRehash(user.hash)) await saveHash(user, await Password.hash(password))
+ *   if (Password.needsRehash(user.hash)) {
+ *     await saveHash(user, await Password.hash(password))
+ *   }
  * }
  * ```
  *
@@ -167,24 +169,28 @@ function parse(stored: string): Parsed {
   const fields = stored.split('$')
   const digest = digests.get(fields[1] ?? '')
   if (!digest) {
-    if (otherAlgorithm.test(stored))
+    if (otherAlgorithm.test(stored)) {
       throw new UnsupportedError(
         `Not a PBKDF2 hash: ${stored.slice(0, stored.indexOf('$', 1) + 1)}`,
       )
+    }
     throw new InvalidInputError(
       'Expected a hash in the form $pbkdf2-sha256$i=<iterations>$<salt>$<hash>.',
     )
   }
   const [empty, , params = '', salt = '', checksum = ''] = fields
-  if (fields.length !== 5 || empty !== '')
+  if (fields.length !== 5 || empty !== '') {
     throw new InvalidInputError('Expected 4 fields separated by "$".')
+  }
 
   const phc = phcParams.exec(params)
   const rounds = phc ? phc[1]! : passlibRounds.test(params) ? params : undefined
-  if (rounds === undefined || Number(rounds) > 0xffffffff)
+  if (rounds === undefined || Number(rounds) > 0xffffffff) {
     throw new InvalidInputError(`Invalid iterations "${params}".`)
-  if (!salt64.test(salt) || !hash64.test(checksum))
+  }
+  if (!salt64.test(salt) || !hash64.test(checksum)) {
     throw new InvalidInputError('Salt and hash must be unpadded base64.')
+  }
 
   const parsed = {
     digest,
@@ -192,8 +198,9 @@ function parse(stored: string): Parsed {
     salt: new Uint8Array(decode(salt)),
     hash: decode(checksum),
   }
-  if (phc?.[2] !== undefined && Number(phc[2]) !== parsed.hash.length)
+  if (phc?.[2] !== undefined && Number(phc[2]) !== parsed.hash.length) {
     throw new InvalidInputError(`Hash is ${parsed.hash.length} bytes, but l=${phc[2]}.`)
+  }
   return parsed
 }
 
@@ -208,19 +215,23 @@ function decode(text: string): Uint8Array {
 const encoder = new TextEncoder()
 
 function toBytes(password: string | Uint8Array, maxBytes: number): Uint8Array<ArrayBuffer> {
-  if (!(maxBytes >= 0))
+  if (!(maxBytes >= 0)) {
     throw new RangeError(`maxBytes must be a non-negative number, got ${maxBytes}.`)
+  }
   const bytes =
     typeof password === 'string'
       ? encoder.encode(password.normalize('NFC'))
       : new Uint8Array(assertUint8Array(password))
-  if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
+  if (bytes.length > maxBytes) {
+    throw new MaxBytesError({ maxBytes })
+  }
   return bytes
 }
 
 function assertIterations(iterations: number): void {
-  if (!Number.isInteger(iterations) || iterations < 1 || iterations > 0xffffffff)
+  if (!Number.isInteger(iterations) || iterations < 1 || iterations > 0xffffffff) {
     throw new RangeError(`iterations must be an integer from 1 to 2^32 - 1, got ${iterations}.`)
+  }
 }
 
 async function derive(
@@ -232,8 +243,12 @@ async function derive(
 ): Promise<Uint8Array> {
   // WebKit's PBKDF2 rejects an empty password or salt. HMAC pads its key with zero bytes, so an
   // empty password derives the same bits as a single zero byte.
-  if (password.length === 0) password = new Uint8Array(1)
-  if (salt.length === 0) return deriveWithHmac(password, iterations, digest, length)
+  if (password.length === 0) {
+    password = new Uint8Array(1)
+  }
+  if (salt.length === 0) {
+    return deriveWithHmac(password, iterations, digest, length)
+  }
   const key = await crypto.subtle.importKey('raw', password, 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', hash: digest, salt, iterations },
@@ -264,7 +279,9 @@ async function deriveWithHmac(
     const t = u.slice()
     for (let i = 1; i < iterations; i++) {
       u = new Uint8Array(await crypto.subtle.sign(hmac, key, u))
-      for (let j = 0; j < t.length; j++) t[j]! ^= u[j]!
+      for (let j = 0; j < t.length; j++) {
+        t[j]! ^= u[j]!
+      }
     }
     out.set(t.subarray(0, length - offset), offset)
     offset += t.length
@@ -276,7 +293,9 @@ function abortable<value>(
   start: () => Promise<value>,
   signal: AbortSignal | undefined,
 ): Promise<value> {
-  if (!signal) return start()
+  if (!signal) {
+    return start()
+  }
   signal.throwIfAborted()
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(signal.reason)

@@ -47,7 +47,9 @@ export declare namespace QueryError {
  * try {
  *   await resolver.resolveTxt('_dmarc.example.com')
  * } catch (error) {
- *   if (error instanceof Dns.QueryError && error.code === 'ENODATA') console.log('no DMARC record')
+ *   if (error instanceof Dns.QueryError && error.code === 'ENODATA') {
+ *     console.log('no DMARC record')
+ *   }
  * }
  * ```
  */
@@ -82,7 +84,9 @@ const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  *
  * const resolver = Dns.create()
  * const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
- *   if (Dns.isNotFound(error)) return []
+ *   if (Dns.isNotFound(error)) {
+ *     return []
+ *   }
  *   throw error
  * })
  * ```

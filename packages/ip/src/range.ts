@@ -115,7 +115,10 @@ const ipv6 = table([
  */
 export function range(address: Address | string): Range {
   const { version, bytes } = from(address)
-  for (const [network, prefix, name] of version === 4 ? ipv4 : ipv6)
-    if (isInNetwork(bytes, network, prefix)) return name
+  for (const [network, prefix, name] of version === 4 ? ipv4 : ipv6) {
+    if (isInNetwork(bytes, network, prefix)) {
+      return name
+    }
+  }
   return version === 4 ? 'unicast' : 'reserved'
 }

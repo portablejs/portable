@@ -48,11 +48,15 @@ export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Arr
         {
           transform(chunk, controller) {
             const bytes = run(state, text(chunk), false)
-            if (bytes.length > 0) controller.enqueue(bytes)
+            if (bytes.length > 0) {
+              controller.enqueue(bytes)
+            }
           },
           flush(controller) {
             const bytes = run(state, decoder ? decoder.decode() : '', true)
-            if (bytes.length > 0) controller.enqueue(bytes)
+            if (bytes.length > 0) {
+              controller.enqueue(bytes)
+            }
           },
         },
         options,

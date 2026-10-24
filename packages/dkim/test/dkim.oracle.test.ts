@@ -71,14 +71,21 @@ function generated(seed: number): string {
   let header = `From: ${pick(['a@example.com', 'Joe <joe@example.com>', '"x" <x@example.com>'])}\r\n`
   for (let i = Math.floor(random() * 6); i > 0; i--) {
     let value = pick(values)
-    if (random() < 0.3) value += `\r\n${pick([' ', '\t', '  '])}${pick(values)}`
+    if (random() < 0.3) {
+      value += `\r\n${pick([' ', '\t', '  '])}${pick(values)}`
+    }
     header += `${pick(names)}${pick([':', ': ', ' :', '\t: '])}${value}\r\n`
   }
   let body = ''
-  for (let i = Math.floor(random() * 8); i > 0; i--)
+  for (let i = Math.floor(random() * 8); i > 0; i--) {
     body += pick(lines) + pick(['\r\n', '\r\n', '\n'])
-  if (random() < 0.3) body += pick(lines)
-  if (random() < 0.2) body += '\r\n\r\n\r\n'
+  }
+  if (random() < 0.3) {
+    body += pick(lines)
+  }
+  if (random() < 0.2) {
+    body += '\r\n\r\n\r\n'
+  }
   return `${header}\r\n${body}`
 }
 
@@ -205,7 +212,9 @@ describe('agrees with mailauth strict mode on changed messages', () => {
       'change one body byte',
       (t, random) => {
         const start = t.indexOf('\r\n\r\n') + 4
-        if (start < 4 || start >= t.length) return t
+        if (start < 4 || start >= t.length) {
+          return t
+        }
         const at = start + Math.floor(random() * (t.length - start))
         return t.slice(0, at) + (t[at] === 'x' ? 'y' : 'x') + t.slice(at + 1)
       },
@@ -214,7 +223,9 @@ describe('agrees with mailauth strict mode on changed messages', () => {
       'insert a space in a body line',
       (t, random) => {
         const start = t.indexOf('\r\n\r\n') + 4
-        if (start < 4 || start >= t.length) return t
+        if (start < 4 || start >= t.length) {
+          return t
+        }
         const at = start + Math.floor(random() * (t.length - start))
         return t.slice(0, at) + ' ' + t.slice(at)
       },

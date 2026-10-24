@@ -37,18 +37,25 @@ beforeAll(async () => {
 function expectWellFormed(result: MailAuth.Result) {
   expect(result.headers.endsWith('\r\n')).toBe(true)
   expect(result.headers.slice(0, -2)).not.toMatch(/\r(?!\n)|(?<!\r)\n|\r\n(?![ \t]|[A-Z])/)
-  for (const line of result.headers.split('\r\n'))
+  for (const line of result.headers.split('\r\n')) {
     expect(encode(line).length).toBeLessThanOrEqual(998)
+  }
   let depth = 0
   let quoted = false
   const value = unfold(result.authResults)
   for (let i = 0; i < value.length; i++) {
     const char = value[i]
-    if (char === '\\') i++
-    else if (quoted) quoted = char !== '"'
-    else if (char === '"' && depth === 0) quoted = true
-    else if (char === '(') depth++
-    else if (char === ')') depth--
+    if (char === '\\') {
+      i++
+    } else if (quoted) {
+      quoted = char !== '"'
+    } else if (char === '"' && depth === 0) {
+      quoted = true
+    } else if (char === '(') {
+      depth++
+    } else if (char === ')') {
+      depth--
+    }
     expect(depth).toBeGreaterThanOrEqual(0)
   }
   expect({ depth, quoted }).toEqual({ depth: 0, quoted: false })

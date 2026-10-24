@@ -38,7 +38,9 @@ export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayB
           },
           flush(controller) {
             const rest = encoder.end()
-            if (rest) controller.enqueue(utf8.encode(rest))
+            if (rest) {
+              controller.enqueue(utf8.encode(rest))
+            }
           },
         },
         options,

@@ -61,7 +61,9 @@ export async function splitHeaders(
     read: for (;;) {
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
-      if (done) break
+      if (done) {
+        break
+      }
       assertUint8Array(value)
       for (let i = 0; i < value.length; i++) {
         const byte = value[i]
@@ -74,15 +76,21 @@ export async function splitHeaders(
           }
           lineLength = 0
         } else {
-          if (lineLength === 0) lineStartsWithCr = byte === 0x0d
+          if (lineLength === 0) {
+            lineStartsWithCr = byte === 0x0d
+          }
           lineLength++
         }
-        if (length + i + 1 > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
+        if (length + i + 1 > maxHeaderBytes) {
+          throw new MaxHeaderBytesError({ maxHeaderBytes })
+        }
       }
       pieces.push(value)
       length += value.length
     }
-    if (length > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
+    if (length > maxHeaderBytes) {
+      throw new MaxHeaderBytesError({ maxHeaderBytes })
+    }
   } catch (error) {
     stop()
     await reader.cancel(error).catch(() => {})
@@ -109,7 +117,9 @@ export async function splitHeaders(
       if (done) {
         stop()
         controller.close()
-      } else controller.enqueue(assertUint8Array(value))
+      } else {
+        controller.enqueue(assertUint8Array(value))
+      }
     },
     cancel(reason) {
       stop()

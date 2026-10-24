@@ -23,7 +23,9 @@ function viaEventsourceParser(chunks: readonly Uint8Array[]): Sse.Event[] {
     },
   })
   const decoder = new TextDecoder()
-  for (const chunk of chunks) parser.feed(decoder.decode(chunk, { stream: true }))
+  for (const chunk of chunks) {
+    parser.feed(decoder.decode(chunk, { stream: true }))
+  }
   parser.feed(decoder.decode())
   return events
 }
@@ -48,19 +50,31 @@ function randomStream(seed: number): string {
     '12x',
   ]
   const lines: string[] = []
-  if (random() < 0.3) lines.push(String.fromCharCode(0xfeff))
+  if (random() < 0.3) {
+    lines.push(String.fromCharCode(0xfeff))
+  }
   for (let i = 0; i < 200; i++) {
     const roll = random()
     const value = pick(values)
-    if (roll < 0.35) lines.push(`data:${value}`)
-    else if (roll < 0.45) lines.push('data')
-    else if (roll < 0.55) lines.push(`event:${value}`)
-    else if (roll < 0.62) lines.push(`id:${value}`)
-    else if (roll < 0.65) lines.push('id')
-    else if (roll < 0.7) lines.push(`retry:${value}`)
-    else if (roll < 0.75) lines.push(`:${value}`)
-    else if (roll < 0.78) lines.push(`${pick(['Data', 'foo', 'data ', ' data'])}:${value}`)
-    else lines.push('')
+    if (roll < 0.35) {
+      lines.push(`data:${value}`)
+    } else if (roll < 0.45) {
+      lines.push('data')
+    } else if (roll < 0.55) {
+      lines.push(`event:${value}`)
+    } else if (roll < 0.62) {
+      lines.push(`id:${value}`)
+    } else if (roll < 0.65) {
+      lines.push('id')
+    } else if (roll < 0.7) {
+      lines.push(`retry:${value}`)
+    } else if (roll < 0.75) {
+      lines.push(`:${value}`)
+    } else if (roll < 0.78) {
+      lines.push(`${pick(['Data', 'foo', 'data ', ' data'])}:${value}`)
+    } else {
+      lines.push('')
+    }
   }
   return lines.map((line) => line + pick(breaks)).join('')
 }

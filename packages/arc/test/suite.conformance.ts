@@ -11,7 +11,9 @@ type Records = Record<string, string>
 const suiteResolver = (records: Records): Arc.Resolver => ({
   async resolveTxt(name) {
     const record = records[name.toLowerCase().trim()]
-    if (record === undefined) throw dnsError('ENOTFOUND', name)
+    if (record === undefined) {
+      throw dnsError('ENOTFOUND', name)
+    }
     // The signing suite's YAML splits the key with line breaks, which a TXT record can't contain.
     return [[record.replaceAll('\n', '')]]
   },
@@ -85,7 +87,9 @@ describe('ARC signing suite', () => {
               ? 'sealed'
               : fields instanceof Arc.InvalidInputError && 'refused'
           expect(outcome).toBe(data.AS ? 'sealed' : 'refused')
-          if (typeof fields !== 'string') return
+          if (typeof fields !== 'string') {
+            return
+          }
           const ams = /^ARC-Message-Signature:(.*(?:\r\n[ \t].*)*)/im.exec(fields)![1]!
           const as = /^ARC-Seal:(.*(?:\r\n[ \t].*)*)/im.exec(fields)![1]!
           expect(bodyHashTag(ams)).toBe(bodyHashTag(data.AMS!))

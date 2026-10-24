@@ -34,7 +34,9 @@ test('toAscii and toUnicode throw only InvalidInputError, and their results conv
     fc.property(fc.oneof(domainLike, anyText), fc.boolean(), (domain, strict) => {
       const ascii = outcome(errors, () => Idna.toAscii(domain, { strict }))
       const unicode = outcome(errors, () => Idna.toUnicode(domain, { strict }))
-      if (!('value' in ascii)) return
+      if (!('value' in ascii)) {
+        return
+      }
       expect(ascii.value).toMatch(/^[\0-\x7f]*$/)
       expect(Idna.toAscii(ascii.value, { strict })).toBe(ascii.value)
       const back = 'value' in unicode ? Idna.toAscii(unicode.value, { strict }) : ascii.value

@@ -20,7 +20,9 @@ function parse(raw: string): Tree {
   const head = end < 0 ? raw : raw.slice(0, end)
   const body = end < 0 ? '' : raw.slice(end + 4)
   const id = /boundary="([^"]+)"/.exec(head)?.[1]
-  if (id === undefined) return { head, body, parts: [] }
+  if (id === undefined) {
+    return { head, body, parts: [] }
+  }
   const close = body.lastIndexOf('\r\n--' + id + '--')
   const parts = body
     .slice(0, close)
@@ -81,8 +83,12 @@ function content(next: Next, value: string, streams: boolean): Body {
   const shape = streams
     ? pick(next, ['string', 'bytes', 'stream'])
     : pick(next, ['string', 'bytes'])
-  if (shape === 'string') return { ours: value, theirs: value }
-  if (shape === 'bytes') return { ours: bytes, theirs: value }
+  if (shape === 'string') {
+    return { ours: value, theirs: value }
+  }
+  if (shape === 'bytes') {
+    return { ours: bytes, theirs: value }
+  }
   const parts = chunks(next, bytes)
   return {
     ours: Streams.fromIterable(parts),
@@ -92,7 +98,9 @@ function content(next: Next, value: string, streams: boolean): Body {
 
 function mailbox(next: Next, i: number) {
   const address = `user${i}@${pick(next, ['example.com', 'EXAMPLE.org', 'mail.example.net'])}`
-  if (next() < 0.3) return { ours: address, theirs: address }
+  if (next() < 0.3) {
+    return { ours: address, theirs: address }
+  }
   const name = phrase(next, 1 + Math.floor(next() * 2), pick(next, [['ascii'], ['latin'], ['cjk']]))
   return { ours: { name, address }, theirs: { name, address } }
 }
@@ -101,7 +109,9 @@ function message(next: Next) {
   const ours: Record<string, unknown> = { ...fixed }
   const theirs: Record<string, unknown> = { ...fixed, baseBoundary: 'test' }
   for (const field of ['from', 'sender', 'to', 'cc', 'bcc', 'replyTo']) {
-    if (next() < 0.4) continue
+    if (next() < 0.4) {
+      continue
+    }
     const list = Array.from({ length: field === 'from' ? 1 : 1 + Math.floor(next() * 3) }, (_, i) =>
       mailbox(next, i),
     )
@@ -127,7 +137,9 @@ function message(next: Next) {
     theirs.headers = headers
   }
   for (const field of ['text', 'amp', 'html']) {
-    if (next() < (field === 'amp' ? 0.8 : 0.3)) continue
+    if (next() < (field === 'amp' ? 0.8 : 0.3)) {
+      continue
+    }
     const value = field === 'text' ? text(next) : `<p>${text(next)}</p>`
     const body = content(next, value, true)
     ours[field] = body.ours
@@ -180,7 +192,9 @@ describe('Mail.encodeStream matches nodemailer MailComposer', () => {
     for (let i = 0; i < 300; i++) {
       const generated = message(next)
       const [mine, theirs] = await Promise.all([ours(generated.ours), upstream(generated.theirs)])
-      if (mine === theirs) identical++
+      if (mine === theirs) {
+        identical++
+      }
       expect(normalize(parse(mine))).toEqual(normalize(parse(theirs)))
     }
     expect(identical).toBeGreaterThan(240)

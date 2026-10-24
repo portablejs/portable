@@ -61,8 +61,9 @@ for (const [name, { toHex, fromHex }] of Object.entries(implementations)) {
     })
 
     test('throws on a character that is not a hex digit', () => {
-      for (const input of ['0G', 'G0', '0x00', ' 0', '00 ', '0\n', '+0', '-0', 'éa', '🦄', '0\0'])
+      for (const input of ['0G', 'G0', '0x00', ' 0', '00 ', '0\n', '+0', '-0', 'éa', '🦄', '0\0']) {
         expect(() => fromHex(input)).toThrow(Bytes.InvalidInputError)
+      }
     })
   })
 }
@@ -99,7 +100,9 @@ function mostlyHex(seed: number): string {
   const bytes = randomBytes(1 + (seed % 9), seed)
   const characters = '0123456789abcdefABCDEF'
   let text = Array.from(bytes, (byte) => characters[byte % characters.length]).join('')
-  if (seed % 3 === 0) text += String.fromCharCode(bytes[0]! & 0x7f)
+  if (seed % 3 === 0) {
+    text += String.fromCharCode(bytes[0]! & 0x7f)
+  }
   return text
 }
 

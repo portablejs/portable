@@ -14,7 +14,9 @@ const zone = {
 } satisfies Zone
 const resolver = zoneResolver(zone)
 const upstreamResolver = async (name: string, type: string) => {
-  if (type !== 'TXT') throw Object.assign(new Error(type), { code: 'ENODATA' })
+  if (type !== 'TXT') {
+    throw Object.assign(new Error(type), { code: 'ENODATA' })
+  }
   return resolver.resolveTxt(name)
 }
 const pkcs8 = Uint8Array.from(atob(rsa.privateKey.replace(/-----[^-]+-----|\s/g, '')), (char) =>
@@ -55,7 +57,9 @@ test('authenticates a 250 KB message with a DKIM signature and an ARC set within
         resolver,
         authservId: 'mx.example.net',
       })
-      if (result.dmarc?.result !== 'pass' || result.arc.result !== 'pass') throw new Error('fail')
+      if (result.dmarc?.result !== 'pass' || result.arc.result !== 'pass') {
+        throw new Error('fail')
+      }
     }),
     bench('mailauth', async () => {
       const result = await upstreamAuthenticate(Buffer.from(largeSealed), {
@@ -65,8 +69,9 @@ test('authenticates a 250 KB message with a DKIM signature and an ARC set within
         strict: true,
         disableBimi: true,
       })
-      if ((result.dmarc as { status: { result: string } }).status.result !== 'pass')
+      if ((result.dmarc as { status: { result: string } }).status.result !== 'pass') {
         throw new Error('fail')
+      }
     }),
   )
   expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/mail-auth'), {

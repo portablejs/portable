@@ -74,10 +74,13 @@ describe('add', () => {
     const queue = Queue.create({ concurrency: 1 })
     const order: number[] = []
     const tasks: Promise<void>[] = []
-    for (let i = 0; i < 3000; i++)
+    for (let i = 0; i < 3000; i++) {
       tasks.push(queue.add(() => void order.push(i % 3), { priority: 0 }))
+    }
     await delay(0)
-    for (let i = 0; i < 3; i++) tasks.push(queue.add(() => void order.push(9), { priority: 1 }))
+    for (let i = 0; i < 3; i++) {
+      tasks.push(queue.add(() => void order.push(9), { priority: 1 }))
+    }
     await Promise.all(tasks)
     const firstNine = order.indexOf(9)
     expect(order.slice(firstNine, firstNine + 3)).toEqual([9, 9, 9])
@@ -220,7 +223,9 @@ describe('signal', () => {
     const aborted = [1, 2, 3].map((n) => queue.add(() => n, { signal: controller.signal }))
     const kept = queue.add(() => 'kept')
     controller.abort()
-    for (const task of aborted) await expect(task).rejects.toMatchObject({ name: 'AbortError' })
+    for (const task of aborted) {
+      await expect(task).rejects.toMatchObject({ name: 'AbortError' })
+    }
     expect(await kept).toBe('kept')
     await running
   })
@@ -292,7 +297,9 @@ describe('signal', () => {
     )
     await flush()
     controller.abort()
-    for (const task of tasks) await expect(task).rejects.toMatchObject({ name: 'AbortError' })
+    for (const task of tasks) {
+      await expect(task).rejects.toMatchObject({ name: 'AbortError' })
+    }
   })
 
   test('removes its abort listeners when tasks finish', async () => {
@@ -374,7 +381,9 @@ describe('idle, pause and clear', () => {
   test('idle resolves when every task has settled', async () => {
     const queue = Queue.create({ concurrency: 2 })
     const done: number[] = []
-    for (const ms of [5, 10, 15]) void queue.add(() => delay(ms).then(() => void done.push(ms)))
+    for (const ms of [5, 10, 15]) {
+      void queue.add(() => delay(ms).then(() => void done.push(ms)))
+    }
     await queue.idle()
     expect(done).toEqual([5, 10, 15])
     expect([queue.size, queue.pending]).toEqual([0, 0])

@@ -81,7 +81,9 @@ describe('is', () => {
 
   test("narrows the type to the kind's class", () => {
     const error: unknown = new ExifMaxBytesError({ maxBytes: 8 })
-    if (!Errors.is(error, 'MaxBytes')) throw new Error('expected MaxBytes')
+    if (!Errors.is(error, 'MaxBytes')) {
+      throw new Error('expected MaxBytes')
+    }
     expect(error.maxBytes).toBe(8)
   })
 })

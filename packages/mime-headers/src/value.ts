@@ -42,18 +42,26 @@ export function parseValue(input: string | Uint8Array): Value {
     const collected = buffer.slice(0, end)
     buffer = ''
     end = 0
-    if (value === undefined) value = collected
-    else if (inKey) {
-      if (collected !== '') addParam(params, sections, collected.toLowerCase(), '')
-    } else if (key !== '') addParam(params, sections, key!, collected)
+    if (value === undefined) {
+      value = collected
+    } else if (inKey) {
+      if (collected !== '') {
+        addParam(params, sections, collected.toLowerCase(), '')
+      }
+    } else if (key !== '') {
+      addParam(params, sections, key!, collected)
+    }
   }
 
   for (let i = 0; i < text.length; i++) {
     const character = text[i]!
     if (quoted) {
-      if (character === '"') quoted = false
-      else {
-        if (character === '\\' && i + 1 < text.length) i++
+      if (character === '"') {
+        quoted = false
+      } else {
+        if (character === '\\' && i + 1 < text.length) {
+          i++
+        }
         buffer += text[i]
         end = buffer.length
       }
@@ -74,7 +82,9 @@ export function parseValue(input: string | Uint8Array): Value {
       character === '\r' ||
       character === '\n'
     ) {
-      if (buffer !== '') buffer += character
+      if (buffer !== '') {
+        buffer += character
+      }
     } else {
       buffer += character
       end = buffer.length
@@ -82,7 +92,9 @@ export function parseValue(input: string | Uint8Array): Value {
   }
   commit()
 
-  for (const [name, parts] of sections) params.set(name, joinSections(parts))
+  for (const [name, parts] of sections) {
+    params.set(name, joinSections(parts))
+  }
   return { value: value ?? '', params: Object.fromEntries(params) }
 }
 
@@ -97,20 +109,25 @@ function addParam(
   const extended = name.endsWith('*')
   let base = extended ? name.slice(0, -1) : name
   const numbered = /\*(\d+)$/.exec(base)
-  if (numbered) base = base.slice(0, numbered.index)
+  if (numbered) {
+    base = base.slice(0, numbered.index)
+  }
   if (!extended && !numbered) {
     params.set(name, decodeWords(text))
     return
   }
   let list = sections.get(base)
-  if (!list) sections.set(base, (list = []))
+  if (!list) {
+    sections.set(base, (list = []))
+  }
   list.push({ index: numbered ? Number(numbered[1]) : 0, extended, text })
 }
 
 function joinSections(sections: Section[]): string {
   sections.sort((a, b) => a.index - b.index)
-  if (!sections.some((section) => section.extended))
+  if (!sections.some((section) => section.extended)) {
     return decodeWords(sections.map((section) => section.text).join(''))
+  }
   let charset = 'utf-8'
   const first = sections[0]!
   if (first.extended) {
@@ -127,11 +144,15 @@ function joinSections(sections: Section[]): string {
       percentDecode(section.text, pending)
       continue
     }
-    if (pending.length > 0) result += decodeCharset(Uint8Array.from(pending), charset)
+    if (pending.length > 0) {
+      result += decodeCharset(Uint8Array.from(pending), charset)
+    }
     pending = []
     result += section.text
   }
-  if (pending.length > 0) result += decodeCharset(Uint8Array.from(pending), charset)
+  if (pending.length > 0) {
+    result += decodeCharset(Uint8Array.from(pending), charset)
+  }
   return result
 }
 
@@ -172,13 +193,17 @@ function percentDecode(text: string, out: number[]) {
  * ASCII, or a parameter name isn't an RFC 2231 attribute (a token without `*`, `'` or `%`).
  */
 export function formatValue(input: Value): string {
-  if (/[^\x20-\x7e]/.test(input.value))
+  if (/[^\x20-\x7e]/.test(input.value)) {
     throw new InvalidInputError(`Header value ${JSON.stringify(input.value)} can't be sent as is.`)
+  }
   let result = input.value
   for (const [name, text] of Object.entries(input.params)) {
-    if (!/^[!#$&+\-.0-9A-Z^_`a-z{|}~]+$/.test(name))
+    if (!/^[!#$&+\-.0-9A-Z^_`a-z{|}~]+$/.test(name)) {
       throw new InvalidInputError(`Parameter name ${JSON.stringify(name)} isn't a token.`)
-    for (const part of formatParam(name, text)) result += '; ' + part
+    }
+    for (const part of formatParam(name, text)) {
+      result += '; ' + part
+    }
   }
   return result
 }
@@ -187,10 +212,11 @@ const sectionLength = 50
 
 function formatParam(name: string, text: string): string[] {
   const plain = !/[^\x20-\x7e]/.test(text) && !text.includes('=?')
-  if (plain && text.length < 75)
+  if (plain && text.length < 75) {
     return [
       name + '=' + (text === '' || /[\s'"\\;:/=(),<>@[\]?]|^-/.test(text) ? quote(text) : text),
     ]
+  }
   if (plain) {
     const parts: string[] = []
     for (let i = 0; i * sectionLength < text.length; i++) {
@@ -220,8 +246,12 @@ const quote = (text: string) => '"' + text.replace(/["\\]/g, '\\$&') + '"'
 const hex = '0123456789ABCDEF'
 
 function percentEncode(character: string): string {
-  if (/^[A-Za-z0-9\-_.!~]$/.test(character)) return character
+  if (/^[A-Za-z0-9\-_.!~]$/.test(character)) {
+    return character
+  }
   let result = ''
-  for (const byte of encodeUtf8Scratch(character)) result += '%' + hex[byte >> 4]! + hex[byte & 15]!
+  for (const byte of encodeUtf8Scratch(character)) {
+    result += '%' + hex[byte >> 4]! + hex[byte & 15]!
+  }
   return result
 }

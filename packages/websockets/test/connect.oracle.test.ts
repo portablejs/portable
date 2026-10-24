@@ -11,7 +11,9 @@ const ReconnectingWebSocket =
 
 const cleanup: (() => unknown)[] = []
 afterEach(async () => {
-  for (const fn of cleanup.splice(0)) await fn()
+  for (const fn of cleanup.splice(0)) {
+    await fn()
+  }
 })
 
 function random(seed: number) {
@@ -29,7 +31,9 @@ function messages(seed: number): WebSockets.Message[] {
     const length = Math.floor(next() * 2000)
     if (next() < 0.5) {
       const bytes = new Uint8Array(length)
-      for (let i = 0; i < length; i++) bytes[i] = Math.floor(next() * 256)
+      for (let i = 0; i < length; i++) {
+        bytes[i] = Math.floor(next() * 256)
+      }
       return bytes
     }
     return Array.from({ length }, () => alphabet[Math.floor(next() * alphabet.length)]).join('')
@@ -40,7 +44,9 @@ function viaUpstream(url: string, count: number, sent: WebSockets.Message[] = []
   const socket = new ReconnectingWebSocket(url, [], { minReconnectionDelay: 10 })
   socket.binaryType = 'arraybuffer'
   cleanup.push(() => socket.close())
-  for (const message of sent) socket.send(message)
+  for (const message of sent) {
+    socket.send(message)
+  }
   const received: WebSockets.Message[] = []
   socket.addEventListener('message', (event: MessageEvent) => {
     const data: unknown = event.data
@@ -54,7 +60,9 @@ async function viaOurs(url: string, count: number, sent: WebSockets.Message[] = 
   cleanup.push(() => controller.abort())
   const { readable, writable } = WebSockets.connect(url, { delay: 10, signal: controller.signal })
   const writer = writable.getWriter()
-  for (const message of sent) await writer.write(message)
+  for (const message of sent) {
+    await writer.write(message)
+  }
   return read(readable.getReader(), count)
 }
 
@@ -77,7 +85,9 @@ describe('matches reconnecting-websocket', () => {
         const client = new URL(request.url!, 'ws://x').searchParams.get('client')!
         const n = (counts.get(client) ?? 0) + 1
         counts.set(client, n)
-        for (let i = 0; i < 3; i++) socket.send(`connection ${n} message ${i}`)
+        for (let i = 0; i < 3; i++) {
+          socket.send(`connection ${n} message ${i}`)
+        }
         socket.close(n < 3 ? 4000 : 1001)
       },
     )

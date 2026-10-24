@@ -17,7 +17,9 @@ export default {
   async fetch(request: Request) {
     const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
     const result = await limiter.take(ip, { signal: request.signal })
-    if (!result.allowed) return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+    if (!result.allowed) {
+      return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+    }
     return new Response('ok', { headers: RateLimit.headers(result) })
   },
 }
@@ -148,7 +150,9 @@ function upstash(url: string, token: string): RateLimit.Store {
       signal,
     })
     const { result, error } = (await response.json()) as { result: unknown; error?: string }
-    if (error) throw new Error(error)
+    if (error) {
+      throw new Error(error)
+    }
     return result
   }
   return {

@@ -33,8 +33,9 @@ export function form(
 export function parseHeader(header: string): Record<string, string> {
   expect(header.startsWith('OAuth ')).toBe(true)
   const params: Record<string, string> = {}
-  for (const [, name, value] of header.matchAll(/([\w]+)="((?:[^"\\]|\\.)*)"/g))
+  for (const [, name, value] of header.matchAll(/([\w]+)="((?:[^"\\]|\\.)*)"/g)) {
     params[name!] = name === 'realm' ? value!.replace(/\\(.)/g, '$1') : decodeURIComponent(value!)
+  }
   return params
 }
 

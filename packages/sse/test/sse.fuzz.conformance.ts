@@ -31,9 +31,15 @@ function expected(messages: readonly Sse.Message[]): Sse.Event[] {
   let id: string | undefined
   let retry: number | undefined
   for (const message of messages) {
-    if (message.id !== undefined) id = message.id
-    if (message.retry !== undefined) retry = message.retry
-    if (message.data === undefined) continue
+    if (message.id !== undefined) {
+      id = message.id
+    }
+    if (message.retry !== undefined) {
+      retry = message.retry
+    }
+    if (message.data === undefined) {
+      continue
+    }
     events.push({
       event: message.event || 'message',
       data: message.data.replace(/\r\n|\r/g, '\n'),

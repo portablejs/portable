@@ -24,8 +24,9 @@ function handMerge<chunk>(sources: readonly ReadableStream<chunk>[]): ReadableSt
   void Promise.all(
     sources.map(async (source) => {
       const reader = source.getReader()
-      for (let r = await reader.read(); !r.done; r = await reader.read())
+      for (let r = await reader.read(); !r.done; r = await reader.read()) {
         await writer.write(r.value)
+      }
     }),
   ).then(() => writer.close())
   return readable

@@ -11,9 +11,13 @@ import * as Errors from '@portable/errors'
  * const { readable } = WebSockets.fromSocket(new WebSocket('wss://example.com/feed'))
  * const reader = readable.getReader()
  * try {
- *   for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
+ *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
+ *     console.log(r.value)
+ *   }
  * } catch (error) {
- *   if (error instanceof WebSockets.CloseError) console.log(error.code, error.reason)
+ *   if (error instanceof WebSockets.CloseError) {
+ *     console.log(error.code, error.reason)
+ *   }
  * }
  * ```
  */
@@ -41,9 +45,13 @@ export class CloseError extends Errors.BaseError {
  * const { readable } = WebSockets.connect('wss://example.com/feed', { maxBuffered: 1_000_000 })
  * const reader = readable.getReader()
  * try {
- *   for (let r = await reader.read(); !r.done; r = await reader.read()) await handle(r.value)
+ *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
+ *     await handle(r.value)
+ *   }
  * } catch (error) {
- *   if (error instanceof WebSockets.MaxBufferedError) console.log(`fell ${error.maxBuffered} behind`)
+ *   if (error instanceof WebSockets.MaxBufferedError) {
+ *     console.log(`fell ${error.maxBuffered} behind`)
+ *   }
  * }
  * ```
  */

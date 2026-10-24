@@ -68,15 +68,24 @@ export function server(routes: Readonly<Record<string, Reply>> = {}): Server {
     urls.push(url)
     requests.push(request)
     const reply = url in routes ? routes[url] : (bootstrap[url] ?? recorded[url])
-    if (reply === 'hang')
+    if (reply === 'hang') {
       return new Promise((_, reject) => {
         const signal = request.signal
-        if (signal.aborted) reject(signal.reason)
+        if (signal.aborted) {
+          reject(signal.reason)
+        }
         signal.addEventListener('abort', () => reject(signal.reason))
       })
-    if (reply instanceof Error) throw reply
-    if (reply instanceof Response) return reply
-    if (reply === undefined) return new Response(null, { status: 404 })
+    }
+    if (reply instanceof Error) {
+      throw reply
+    }
+    if (reply instanceof Response) {
+      return reply
+    }
+    if (reply === undefined) {
+      return new Response(null, { status: 404 })
+    }
     return new Response(JSON.stringify(reply), {
       headers: { 'content-type': 'application/rdap+json' },
     })

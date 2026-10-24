@@ -34,7 +34,9 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
       bytes: Uint8Array,
       controller: TransformStreamDefaultController<Uint8Array>,
     ) => {
-      if (bytes.length > 0) controller.enqueue(bytes)
+      if (bytes.length > 0) {
+        controller.enqueue(bytes)
+      }
     }
     super(
       Streams.abortable(

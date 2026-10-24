@@ -19,7 +19,11 @@ const unsupported = fixtures.filter((name) => !supported.includes(name))
 function includes(bytes: Uint8Array, text: string): boolean {
   const needle = ascii(text)
   outer: for (let i = 0; i + needle.length <= bytes.length; i++) {
-    for (let j = 0; j < needle.length; j++) if (bytes[i + j] !== needle[j]) continue outer
+    for (let j = 0; j < needle.length; j++) {
+      if (bytes[i + j] !== needle[j]) {
+        continue outer
+      }
+    }
     return true
   }
   return false
@@ -28,7 +32,9 @@ function includes(bytes: Uint8Array, text: string): boolean {
 /** Walks the JPEG segments to the start-of-scan marker. */
 function indexOfScan(bytes: Uint8Array): number {
   let i = 2
-  while (bytes[i + 1] !== 0xda) i += 2 + ((bytes[i + 2]! << 8) | bytes[i + 3]!)
+  while (bytes[i + 1] !== 0xda) {
+    i += 2 + ((bytes[i + 2]! << 8) | bytes[i + 3]!)
+  }
   return i
 }
 
@@ -41,7 +47,9 @@ async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> 
   const parts: Uint8Array[] = []
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) return concat(...parts)
+    if (done) {
+      return concat(...parts)
+    }
     parts.push(value)
   }
 }
@@ -108,8 +116,14 @@ describe('strip', () => {
 
   test('removes the XMP and Photoshop segments of a JPEG and keeps its scan data and ICC profile', async () => {
     const bytes = await fixture('issue-fast-exif-2.jpg')
-    for (const text of ['Exif\0\0', 'http://ns.adobe.com/xap/1.0/', 'Photoshop 3.0', 'ICC_PROFILE'])
+    for (const text of [
+      'Exif\0\0',
+      'http://ns.adobe.com/xap/1.0/',
+      'Photoshop 3.0',
+      'ICC_PROFILE',
+    ]) {
       expect(includes(bytes, text)).toBe(true)
+    }
     const stripped = Exif.strip(bytes)
     expect(includes(stripped, 'http://ns.adobe.com/xap/1.0/')).toBe(false)
     expect(includes(stripped, 'Photoshop 3.0')).toBe(false)
@@ -185,8 +199,9 @@ describe('strip', () => {
     })
 
     test('StripStream matches strip in random chunks', async () => {
-      for (const seed of [1, 2, 3])
+      for (const seed of [1, 2, 3]) {
         expect(await stripStream(randomChunks(bytes, seed, 64))).toEqual(Exif.strip(bytes))
+      }
     })
   })
 

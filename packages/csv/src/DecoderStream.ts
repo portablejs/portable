@@ -45,7 +45,9 @@ export declare namespace DecoderStream {
  * const response = await fetch('https://example.com/users.csv')
  * const rows = response.body!.pipeThrough(new Csv.DecoderStream({ header: true }))
  * const reader = rows.getReader()
- * for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.email)
+ * for (let r = await reader.read(); !r.done; r = await reader.read()) {
+ *   console.log(r.value.email)
+ * }
  * ```
  */
 export class DecoderStream<

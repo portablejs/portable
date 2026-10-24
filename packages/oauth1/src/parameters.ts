@@ -4,8 +4,9 @@ const utf8 = new TextEncoder()
 const hex = '0123456789ABCDEF'
 const unreserved = /* @__PURE__ */ (() => {
   const table = new Uint8Array(128)
-  for (const c of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~')
+  for (const c of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~') {
     table[c.charCodeAt(0)] = 1
+  }
   return table
 })()
 const plain = /^[A-Za-z0-9._~-]*$/
@@ -15,7 +16,9 @@ const plain = /^[A-Za-z0-9._~-]*$/
  * set as `%XX`.
  */
 export function percentEncode(text: string): string {
-  if (plain.test(text)) return text
+  if (plain.test(text)) {
+    return text
+  }
   try {
     return encodeURIComponent(text).replace(
       /[!'()*]/g,
@@ -32,8 +35,9 @@ function encodeBytes(bytes: Uint8Array, start: number, end: number, form: boolea
   for (let i = start; i < stop; i++) {
     let byte = bytes[i]!
     if (form) {
-      if (byte === 0x2b) byte = 0x20
-      else if (byte === 0x25 && i + 2 < stop && isHex(bytes[i + 1]) && isHex(bytes[i + 2])) {
+      if (byte === 0x2b) {
+        byte = 0x20
+      } else if (byte === 0x25 && i + 2 < stop && isHex(bytes[i + 1]) && isHex(bytes[i + 2])) {
         byte = (hexValue(bytes[i + 1]!) << 4) | hexValue(bytes[i + 2]!)
         i += 2
       }
@@ -67,20 +71,25 @@ function hexValue(byte: number): number {
 export function parseForm(bytes: Uint8Array, pairs: Pair[]): void {
   let start = 0
   for (let i = 0; i <= bytes.length; i++) {
-    if (i < bytes.length && bytes[i] !== 0x26) continue
+    if (i < bytes.length && bytes[i] !== 0x26) {
+      continue
+    }
     if (i > start) {
       const equals = bytes.subarray(start, i).indexOf(0x3d)
       const nameEnd = equals === -1 ? i : start + equals
       const name = encodeBytes(bytes, start, nameEnd, true)
-      if (name !== 'oauth_signature')
+      if (name !== 'oauth_signature') {
         pairs.push([name, equals === -1 ? '' : encodeBytes(bytes, nameEnd + 1, i, true)])
+      }
     }
     start = i + 1
   }
 }
 
 export function parseQuery(search: string, pairs: Pair[]): void {
-  if (search.length > 1) parseForm(utf8.encode(search.slice(1)), pairs)
+  if (search.length > 1) {
+    parseForm(utf8.encode(search.slice(1)), pairs)
+  }
 }
 
 export function sortPairs(pairs: Pair[]): Pair[] {
@@ -89,6 +98,8 @@ export function sortPairs(pairs: Pair[]): Pair[] {
 
 export function joinPairs(pairs: readonly Pair[]): string {
   let out = ''
-  for (const [name, value] of pairs) out += (out === '' ? '' : '&') + name + '=' + value
+  for (const [name, value] of pairs) {
+    out += (out === '' ? '' : '&') + name + '=' + value
+  }
   return out
 }

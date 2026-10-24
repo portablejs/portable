@@ -66,10 +66,11 @@ test('a changed signed message verifies to a result and never throws', async () 
       const whole = await Dkim.verify(bytes, { resolver, now })
       const chunked = await Dkim.verify(stream(split(bytes, at)), { resolver, now })
       expect(chunked).toEqual(whole)
-      for (const result of whole)
+      for (const result of whole) {
         expect(['pass', 'fail', 'neutral', 'policy', 'permerror', 'temperror']).toContain(
           result.result,
         )
+      }
     }),
   )
 })

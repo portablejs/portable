@@ -32,8 +32,9 @@ describe('quoted-printable issues', () => {
 
   test('a soft line break never splits a UTF-8 sequence', () => {
     const encoded = encode(utf8('fooIñtërnâtiônàlizætiøn☃💩bar'))
-    for (const line of encoded.split('=\r\n'))
+    for (const line of encoded.split('=\r\n')) {
       expect(() => new TextDecoder('utf-8', { fatal: true }).decode(decode(line))).not.toThrow()
+    }
   })
 })
 

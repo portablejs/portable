@@ -23,14 +23,20 @@ const length = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join('|')})
 
 function parseLength(text: string | undefined): number | undefined {
   const match = text === undefined ? null : length.exec(text)
-  if (!match) return undefined
+  if (!match) {
+    return undefined
+  }
   return Math.round(Number(match[1]) * (units[match[2] ?? ''] ?? 1))
 }
 
 export const svg: Format = {
   validate(input, final) {
-    if (root.test(utf8(input, 0, 1000))) return true
-    if (!final && input.length < 1000) throw new NeedMore(1000)
+    if (root.test(utf8(input, 0, 1000))) {
+      return true
+    }
+    if (!final && input.length < 1000) {
+      throw new NeedMore(1000)
+    }
     return false
   },
   calculate(input, final) {
@@ -39,11 +45,15 @@ export const svg: Format = {
     if (!final && (!match || text.search(rootStart) < match.index)) {
       throw new NeedMore(input.length + 1)
     }
-    if (!match) throw new InvalidInputError('Invalid SVG')
+    if (!match) {
+      throw new InvalidInputError('Invalid SVG')
+    }
     const tag = match[0]
     const width = parseLength(widthAttribute.exec(tag)?.[2])
     const height = parseLength(heightAttribute.exec(tag)?.[2])
-    if (width && height) return { width, height, type: 'svg' }
+    if (width && height) {
+      return { width, height, type: 'svg' }
+    }
     const bounds =
       viewBoxAttribute
         .exec(tag)?.[2]
@@ -51,11 +61,16 @@ export const svg: Format = {
         .split(/[\s,]+/) ?? []
     const boxWidth = parseLength(bounds[2])
     const boxHeight = parseLength(bounds[3])
-    if (boxWidth === undefined || boxHeight === undefined)
+    if (boxWidth === undefined || boxHeight === undefined) {
       throw new InvalidInputError('Invalid SVG')
+    }
     const ratio = boxWidth / boxHeight
-    if (width) return { width, height: Math.floor(width / ratio), type: 'svg' }
-    if (height) return { width: Math.floor(height * ratio), height, type: 'svg' }
+    if (width) {
+      return { width, height: Math.floor(width / ratio), type: 'svg' }
+    }
+    if (height) {
+      return { width: Math.floor(height * ratio), height, type: 'svg' }
+    }
     return { width: boxWidth, height: boxHeight, type: 'svg' }
   },
 }

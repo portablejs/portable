@@ -42,15 +42,20 @@ export function slowStream(chunks: readonly Uint8Array[]): ReadableStream<Uint8A
   return new ReadableStream({
     async pull(controller) {
       await new Promise((resolve) => setTimeout(resolve, 0))
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 

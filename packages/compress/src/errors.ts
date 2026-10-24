@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Compress.decode(gzipped.subarray(0, 10))
  * } catch (error) {
- *   if (error instanceof Compress.TruncatedError) console.log('download was cut off')
+ *   if (error instanceof Compress.TruncatedError) {
+ *     console.log('download was cut off')
+ *   }
  * }
  * ```
  */
@@ -31,7 +33,9 @@ export class TruncatedError extends Errors.TruncatedError {
  * try {
  *   await Compress.decode(new TextEncoder().encode('not gzip'))
  * } catch (error) {
- *   if (error instanceof Compress.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Compress.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -52,7 +56,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await Compress.decode(upload, { maxBytes: 10_000_000 })
  * } catch (error) {
- *   if (error instanceof Compress.MaxBytesError) console.log(`larger than ${error.maxBytes} bytes`)
+ *   if (error instanceof Compress.MaxBytesError) {
+ *     console.log(`larger than ${error.maxBytes} bytes`)
+ *   }
  * }
  * ```
  */

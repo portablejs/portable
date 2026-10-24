@@ -61,7 +61,9 @@ test('seal refuses an authResults value or writes a set that verifies', async ()
       const sealed = await outcomeAsync([RangeError], () =>
         sealOnce(chain, 'one.example', authResults),
       )
-      if ('error' in sealed) return
+      if ('error' in sealed) {
+        return
+      }
       const result = await Arc.verify(sealed.value, { resolver: resolverFrom(records) })
       expect(result).toMatchObject({ result: 'pass', instance: 3 })
     }),

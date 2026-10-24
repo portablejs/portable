@@ -30,7 +30,9 @@ describe('once', () => {
     let calls = 0
     const load = Queue.once(async () => {
       calls++
-      if (calls === 1) throw new Error('first')
+      if (calls === 1) {
+        throw new Error('first')
+      }
       return 'second'
     })
     const [a, b] = [load(), load()]

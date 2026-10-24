@@ -148,20 +148,31 @@ const hostName = /^(?:(?:[\w*/-]|\\.)+(?:\.(?:[\w*/-]|\\.)+)*\.?|\.?)$/
 const nonAscii = /[\u{80}-\u{10ffff}]/gu
 
 function toQueryName(name: string, syscall: string): string {
-  if (typeof name !== 'string') throw new TypeError('The name must be a string.')
+  if (typeof name !== 'string') {
+    throw new TypeError('The name must be a string.')
+  }
   const masked = name.replace(nonAscii, 'a')
-  if (!hostName.test(masked)) throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
-  if (masked === name) return name
-  const ascii = hostToAscii(name)
-  if (ascii === undefined || !hostName.test(ascii))
+  if (!hostName.test(masked)) {
     throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
+  }
+  if (masked === name) {
+    return name
+  }
+  const ascii = hostToAscii(name)
+  if (ascii === undefined || !hostName.test(ascii)) {
+    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
+  }
   return ascii
 }
 
 function reverseName(ip: string): string | undefined {
-  if (!Ip.canParse(ip)) return undefined
+  if (!Ip.canParse(ip)) {
+    return undefined
+  }
   const address = Ip.parse(ip)
-  if (address.version === 6 && address.zone !== undefined) return undefined
+  if (address.version === 6 && address.zone !== undefined) {
+    return undefined
+  }
   return Ip.reverseName(address)
 }
 
@@ -182,11 +193,18 @@ function recordsFor<value extends string>(
   for (let hops = 0; hops <= packet.answers.length; hops++) {
     let target: string | undefined
     for (const record of packet.answers) {
-      if (canonical(record.name) !== owner) continue
-      if (record.type === type) found.push((record as unknown as { data: DataOf<value> }).data)
-      else if (record.type === 'CNAME') target = record.data
+      if (canonical(record.name) !== owner) {
+        continue
+      }
+      if (record.type === type) {
+        found.push((record as unknown as { data: DataOf<value> }).data)
+      } else if (record.type === 'CNAME') {
+        target = record.data
+      }
     }
-    if (found.length > 0 || target === undefined) break
+    if (found.length > 0 || target === undefined) {
+      break
+    }
     owner = canonical(target)
   }
   return found
@@ -214,10 +232,13 @@ export function create(options: create.Options = {}): DohResolver {
     url.searchParams.delete('dns')
     return `${url.href}${url.search ? '&' : '?'}dns=`
   })
-  if (endpoints.length === 0) throw new RangeError('At least one endpoint is required.')
+  if (endpoints.length === 0) {
+    throw new RangeError('At least one endpoint is required.')
+  }
   const timeout = options.timeout ?? 5000
-  if (!(timeout > 0 && timeout <= 2 ** 31 - 1))
+  if (!(timeout > 0 && timeout <= 2 ** 31 - 1)) {
     throw new RangeError('`timeout` must be a number of milliseconds above 0.')
+  }
   const send = options.fetch ?? ((request: Request) => fetch(request))
 
   async function attempt(
@@ -275,21 +296,25 @@ export function create(options: create.Options = {}): DohResolver {
       packet.questions.length !== 1 ||
       echoed?.type !== question.type ||
       canonical(echoed.name) !== canonical(question.name)
-    )
+    ) {
       return new QueryError({
         code: 'EBADRESP',
         syscall,
         hostname,
         cause: new Error('The response is for a different question.'),
       })
-    if (packet.flags.tc)
+    }
+    if (packet.flags.tc) {
       return new QueryError({
         code: 'EBADRESP',
         syscall,
         hostname,
         cause: new Error('The response is truncated.'),
       })
-    if (packet.rcode === 'NOERROR' || packet.rcode === 'NXDOMAIN') return packet
+    }
+    if (packet.rcode === 'NOERROR' || packet.rcode === 'NXDOMAIN') {
+      return packet
+    }
     return new QueryError({
       code: failures[packet.rcode] ?? 'EBADRESP',
       syscall,
@@ -306,8 +331,9 @@ export function create(options: create.Options = {}): DohResolver {
     signal: AbortSignal | undefined,
   ): Promise<DnsPacket.DecodedPacket> {
     signal?.throwIfAborted()
-    if (/(?:^|\.)onion\.?$/i.test(name))
+    if (/(?:^|\.)onion\.?$/i.test(name)) {
       throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
+    }
     let query: string
     try {
       query = Base64.encode(
@@ -320,7 +346,9 @@ export function create(options: create.Options = {}): DohResolver {
     let error: QueryError | undefined
     for (const endpoint of endpoints) {
       const result = await attempt(endpoint, query, { name, type, syscall, hostname }, signal)
-      if (!(result instanceof QueryError)) return result
+      if (!(result instanceof QueryError)) {
+        return result
+      }
       error = result
     }
     throw error
@@ -334,9 +362,13 @@ export function create(options: create.Options = {}): DohResolver {
     signal: AbortSignal | undefined,
   ): Promise<DataOf<value>[]> {
     const packet = await exchange(hostname, name, type, syscall, signal)
-    if (packet.rcode === 'NXDOMAIN') throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
+    if (packet.rcode === 'NXDOMAIN') {
+      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
+    }
     const records = recordsFor(packet, name, type)
-    if (records.length === 0) throw new QueryError({ code: 'ENODATA', syscall, hostname })
+    if (records.length === 0) {
+      throw new QueryError({ code: 'ENODATA', syscall, hostname })
+    }
     return records
   }
 
@@ -401,12 +433,14 @@ export function create(options: create.Options = {}): DohResolver {
     },
     async reverse(ip, options = {}) {
       const name = reverseName(ip)
-      if (name === undefined)
+      if (name === undefined) {
         throw new QueryError({ code: 'EINVAL', syscall: 'getHostByAddr', hostname: ip })
+      }
       const packet = await exchange(ip, name, 'PTR', 'getHostByAddr', options.signal)
       const records = recordsFor(packet, name, 'PTR')
-      if (records.length === 0)
+      if (records.length === 0) {
         throw new QueryError({ code: 'ENOTFOUND', syscall: 'getHostByAddr', hostname: ip })
+      }
       return records.map(host)
     },
     async query(name, type, options = {}) {

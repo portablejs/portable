@@ -65,7 +65,9 @@ describe('connecting', () => {
     let calls = 0
     WebSockets.connect(
       () => {
-        if (++calls === 2) throw new Error('token fetch failed')
+        if (++calls === 2) {
+          throw new Error('token fetch failed')
+        }
         return url
       },
       { WebSocket: server.WebSocket, delay: 0 },
@@ -256,7 +258,9 @@ describe('open', () => {
         send('login')
         const reader = messages.getReader()
         const { value } = await reader.read()
-        if (value !== 'welcome') throw new Error('rejected')
+        if (value !== 'welcome') {
+          throw new Error('rejected')
+        }
         reader.releaseLock()
       },
     })
@@ -281,7 +285,9 @@ describe('open', () => {
     let calls = 0
     const { server, writable } = setup({
       open() {
-        if (++calls === 1) throw new Error('auth failed')
+        if (++calls === 1) {
+          throw new Error('auth failed')
+        }
       },
     })
     await writable.getWriter().write('queued')
@@ -384,7 +390,9 @@ describe('reconnecting', () => {
     const { server, readable, writable } = setup({
       reconnectIf: async ({ code }) => {
         await Promise.resolve()
-        if (code === 4002) throw stop
+        if (code === 4002) {
+          throw stop
+        }
         return true
       },
     })
@@ -397,7 +405,9 @@ describe('reconnecting', () => {
   test.each([1, 2, 6])('gives up with the last error when attempts is %i', async (attempts) => {
     const { server, readable } = setup({ attempts })
     const reader = readable.getReader()
-    for (let i = 0; i < attempts; i++) (await server.socket(i)).fail()
+    for (let i = 0; i < attempts; i++) {
+      ;(await server.socket(i)).fail()
+    }
     expect(await errorOf(reader.read())).toMatchObject({ code: 1006 })
     await sleep(10)
     expect(server.sockets).toHaveLength(attempts)
@@ -564,7 +574,9 @@ describe('backpressure', () => {
   test('readable queues messages while the reader is behind', async () => {
     const { server, readable } = setup()
     const socket = await server.accept()
-    for (let i = 0; i < 100; i++) socket.receive(`m${i}`)
+    for (let i = 0; i < 100; i++) {
+      socket.receive(`m${i}`)
+    }
     const messages = await read(readable.getReader(), 100)
     expect(messages).toHaveLength(100)
     expect(messages[99]).toBe('m99')
@@ -616,7 +628,9 @@ describe('heartbeat', () => {
     })
     const socket = await server.accept()
     const answer = setInterval(() => {
-      if (socket.sent.at(-1) === 'ping') socket.receive('pong')
+      if (socket.sent.at(-1) === 'ping') {
+        socket.receive('pong')
+      }
     }, 1)
     await sleep(800)
     clearInterval(answer)

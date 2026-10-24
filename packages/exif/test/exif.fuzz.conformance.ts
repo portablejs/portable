@@ -8,7 +8,9 @@ const errors = [Exif.InvalidInputError, Exif.TruncatedError, Exif.UnsupportedErr
 const names = ['tetons.exif', 'IMG_0774.exif', 'png-exif.exif', 'non-ascii.exif', 'starfish.jpg']
 const inputs: Record<string, Uint8Array> = {}
 beforeAll(async () => {
-  for (const name of names) inputs[name] = await fixture(name)
+  for (const name of names) {
+    inputs[name] = await fixture(name)
+  }
 }, 60_000)
 
 describe('parse', () => {

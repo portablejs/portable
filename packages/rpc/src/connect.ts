@@ -48,7 +48,9 @@ export declare namespace connect {
  *
  * const worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type: 'module' })))
  * await worker.add(1, 2)
- * for await (const event of worker.watch('x')) console.log(event)
+ * for await (const event of worker.watch('x')) {
+ *   console.log(event)
+ * }
  * ```
  */
 export function connect<api>(transport: Transport, options: connect.Options = {}): Remote<api> {
@@ -78,9 +80,14 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
     reader?.cancel(signal!.reason).catch(noop)
     writer?.abort(signal!.reason).catch(noop)
   }
-  if (port?.listen) unlisten = port.listen(dispatch, failed)
-  if (signal?.aborted) onAbort()
-  else signal?.addEventListener('abort', onAbort)
+  if (port?.listen) {
+    unlisten = port.listen(dispatch, failed)
+  }
+  if (signal?.aborted) {
+    onAbort()
+  } else {
+    signal?.addEventListener('abort', onAbort)
+  }
 
   function dispatch(data: unknown) {
     let message: unknown
@@ -90,10 +97,15 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
       void Promise.resolve(send(error(null, -32700, 'Parse error'))).catch(noop)
       return
     }
-    if (isResponse(message)) client.receive(message)
-    else if (Array.isArray(message) && message.length > 0 && message.every(isResponse)) {
-      for (const response of message) client.receive(response)
-    } else void server.handle(message).catch(noop)
+    if (isResponse(message)) {
+      client.receive(message)
+    } else if (Array.isArray(message) && message.length > 0 && message.every(isResponse)) {
+      for (const response of message) {
+        client.receive(response)
+      }
+    } else {
+      void server.handle(message).catch(noop)
+    }
   }
 
   if (reader) {
@@ -101,7 +113,9 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
       try {
         for (;;) {
           const { done, value } = await reader.read()
-          if (done) break
+          if (done) {
+            break
+          }
           dispatch(value)
         }
         close(new TransportError('The transport closed.'))
@@ -130,7 +144,9 @@ export declare namespace provide {
  * const api = {
  *   add: (a: number, b: number) => a + b,
  *   async *watch(id: string) {
- *     for (let i = 0; ; i++) yield { id, i }
+ *     for (let i = 0; ; i++) {
+ *       yield { id, i }
+ *     }
  *   },
  * }
  * export type Api = typeof api
@@ -147,8 +163,11 @@ export function provide(
 }
 
 function isResponse(message: unknown): message is Record<string, unknown> {
-  if (message === null || typeof message !== 'object' || Array.isArray(message)) return false
-  if ('method' in message)
+  if (message === null || typeof message !== 'object' || Array.isArray(message)) {
+    return false
+  }
+  if ('method' in message) {
     return message.method === '$/stream' || message.method === '$/stream/next'
+  }
   return 'result' in message || 'error' in message
 }

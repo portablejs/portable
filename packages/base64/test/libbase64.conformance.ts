@@ -43,7 +43,9 @@ const mime = { mode: 'mime' } as const
 describe('libbase64', () => {
   describe('encode', () => {
     test('encodes a string as UTF-8', () => {
-      for (const [input, expected] of encodeFixtures) expect(encode(input)).toBe(expected)
+      for (const [input, expected] of encodeFixtures) {
+        expect(encode(input)).toBe(expected)
+      }
     })
 
     test('encodes bytes', () => {
@@ -58,8 +60,9 @@ describe('libbase64', () => {
 
   describe('decode', () => {
     test('decodes base64, skipping line breaks', () => {
-      for (const [expected, input] of [...encodeFixtures, ...decodeFixtures])
+      for (const [expected, input] of [...encodeFixtures, ...decodeFixtures]) {
         expect(text(decode(input))).toBe(expected)
+      }
     })
 
     test('decodes empty input to no bytes', () => {
@@ -83,14 +86,16 @@ describe('libbase64', () => {
         str.replace(new RegExp('.{' + lineLength + '}', 'g'), '$&\r\n').trim()
       for (const length of [0, 1, 57, 58, 300]) {
         const data = randomBytes(length, length)
-        for (const lineLength of [1, 5, 76])
+        for (const lineLength of [1, 5, 76]) {
           expect(encode(data, { lineLength })).toBe(reference(encode(data), lineLength))
+        }
       }
     })
 
     test('rejects a line length that is not a positive integer', () => {
-      for (const lineLength of [-10, -1, 0, 0.5, 2.5, Infinity, NaN])
+      for (const lineLength of [-10, -1, 0, 0.5, 2.5, Infinity, NaN]) {
         expect(() => encode('tere', { lineLength })).toThrow(RangeError)
+      }
     })
 
     test('wraps empty input to an empty string', () => {
@@ -128,8 +133,9 @@ describe('libbase64', () => {
     test("skips 8-bit bytes in 'mime' mode", async () => {
       const input = concat([utf8('YW'), utf8('é'), utf8('Jj'), new Uint8Array([0xc1, 0xd1, 0xe2])])
       expect(text(decode(input, mime))).toBe('abc')
-      for (const size of [1, 2, 3, input.length])
+      for (const size of [1, 2, 3, input.length]) {
         expect(text(await decodeStream(chunked(input, size), mime))).toBe('abc')
+      }
     })
 
     test("skips whitespace and other characters outside the alphabet in 'mime' mode", async () => {
@@ -146,8 +152,9 @@ describe('libbase64', () => {
       ] as const
       for (const [input, expected, options] of cases) {
         expect(text(decode(input, options))).toBe(expected)
-        for (const size of [1, 2, 3, input.length])
+        for (const size of [1, 2, 3, input.length]) {
           expect(text(await decodeStream(chunked(utf8(input), size), options))).toBe(expected)
+        }
       }
     })
 
@@ -180,8 +187,9 @@ describe('libbase64', () => {
 
     test('stream decodes padded lines with any chunk size', async () => {
       const input = utf8(paddedLines)
-      for (let size = 1; size <= input.length; size++)
+      for (let size = 1; size <= input.length; size++) {
         expect(text(await decodeStream(chunked(input, size), mime))).toBe('abc')
+      }
     })
 
     test('stream decodes padding split across chunks', async () => {
@@ -212,8 +220,9 @@ describe('libbase64', () => {
       const input = parts.map((part) => encode(part)).join('\r\n')
       const expected = concat(parts)
       expect(decode(input, mime)).toEqual(expected)
-      for (const size of [1, 2, 3, 5, 16, input.length])
+      for (const size of [1, 2, 3, 5, 16, input.length]) {
         expect(await decodeStream(chunked(input, size), mime)).toEqual(expected)
+      }
     })
   })
 
@@ -222,8 +231,9 @@ describe('libbase64', () => {
       for (const length of [0, 1, 2, 3, 57, 114, 1140, 1141, 5000]) {
         const data = randomBytes(length, length)
         const expected = encode(data, { lineLength: 76 })
-        for (const sizes of [[1], [3], [57], [1139, 1], [100, 14], [length || 1]])
+        for (const sizes of [[1], [3], [57], [1139, 1], [100, 14], [length || 1]]) {
           expect(await encodeStream(chunked(data, sizes), { lineLength: 76 })).toBe(expected)
+        }
       }
     })
 
@@ -237,8 +247,9 @@ describe('libbase64', () => {
     })
 
     test('rejects a line length that is not a positive integer', () => {
-      for (const lineLength of [2.5, 76.9, 0.5, Infinity, -3])
+      for (const lineLength of [2.5, 76.9, 0.5, Infinity, -3]) {
         expect(() => new EncoderStream({ lineLength })).toThrow(RangeError)
+      }
     })
 
     test('ignores empty chunks', async () => {

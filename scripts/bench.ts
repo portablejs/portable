@@ -41,8 +41,12 @@ for (const name of names.filter(hasBench)) {
     ],
     { stdio: 'inherit', env: { ...process.env, BENCH_DIST: '1' } },
   )
-  if (error) throw error
-  if (status !== 0) failed++
+  if (error) {
+    throw error
+  }
+  if (status !== 0) {
+    failed++
+  }
 }
 if (failed) {
   console.log(`\n${failed} package(s) had failing benchmarks. Their reports were still written.`)

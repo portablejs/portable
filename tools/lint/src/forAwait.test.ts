@@ -33,8 +33,11 @@ function sources(): string[] {
     } catch {
       continue
     }
-    for (const entry of entries)
-      if (entry.endsWith('.ts') && !entry.endsWith('.d.ts')) files.push(join(src, entry))
+    for (const entry of entries) {
+      if (entry.endsWith('.ts') && !entry.endsWith('.d.ts')) {
+        files.push(join(src, entry))
+      }
+    }
   }
   return files
 }
@@ -53,7 +56,9 @@ function check(program: ts.Program, files: readonly string[]): string[] {
   const problems: string[] = []
   for (const file of files) {
     const source = program.getSourceFile(file)
-    if (!source) continue
+    if (!source) {
+      continue
+    }
     const visit = (node: ts.Node): void => {
       if (
         ts.isForOfStatement(node) &&

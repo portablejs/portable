@@ -26,21 +26,27 @@ export declare namespace sleep {
  */
 export async function sleep(ms: number, options: sleep.Options = {}): Promise<void> {
   const { signal } = options
-  if (Number.isNaN(ms)) throw new RangeError('Expected `ms` to be a number, got NaN.')
+  if (Number.isNaN(ms)) {
+    throw new RangeError('Expected `ms` to be a number, got NaN.')
+  }
   signal?.throwIfAborted()
   let remaining = Math.max(0, ms)
   for (;;) {
     const step = Math.min(remaining, maxTimeout)
     await wait(step, signal)
     remaining -= step
-    if (remaining <= 0) return
+    if (remaining <= 0) {
+      return
+    }
   }
 }
 
 function wait(ms: number, signal: AbortSignal | undefined): Promise<void> {
   const { scheduler } = globalThis as { scheduler?: Scheduler | undefined }
   if (typeof scheduler?.wait === 'function') {
-    if (!signal) return scheduler.wait(ms)
+    if (!signal) {
+      return scheduler.wait(ms)
+    }
     return abortable(scheduler.wait(ms, { signal }), signal)
   }
   return new Promise((resolve, reject) => {
@@ -69,7 +75,10 @@ export function abortable<value>(promise: PromiseLike<value>, signal: AbortSigna
         reject(error)
       },
     )
-    if (signal.aborted) onAbort()
-    else signal.addEventListener('abort', onAbort, { once: true })
+    if (signal.aborted) {
+      onAbort()
+    } else {
+      signal.addEventListener('abort', onAbort, { once: true })
+    }
   })
 }

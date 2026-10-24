@@ -32,7 +32,9 @@ function decode(bytes: Uint8Array): string {
     return utf8.decode(bytes)
   } catch {
     let text = ''
-    for (const byte of bytes) text += String.fromCharCode(byte)
+    for (const byte of bytes) {
+      text += String.fromCharCode(byte)
+    }
     return text
   }
 }
@@ -80,13 +82,17 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
           parts = []
           partsLength = 0
         }
-        if (line.length > budget) throw tooLong(command)
+        if (line.length > budget) {
+          throw tooLong(command)
+        }
         return line[line.length - 1] === CR ? line.subarray(0, -1) : line
       }
       if (offset < chunk.length) {
         parts.push(chunk.subarray(offset))
         partsLength += chunk.length - offset
-        if (partsLength > budget) throw tooLong(command)
+        if (partsLength > budget) {
+          throw tooLong(command)
+        }
       }
       chunk = empty
       offset = 0
@@ -96,7 +102,9 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
       } catch (cause) {
         throw closed(command, cause)
       }
-      if (result.done) throw closed(command)
+      if (result.done) {
+        throw closed(command)
+      }
       chunk = result.value
     }
   }
@@ -108,7 +116,9 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
       let budget = maxReplyLength
       for (;;) {
         const bytes = await readLine(command, budget)
-        if (bytes.length === 0) continue
+        if (bytes.length === 0) {
+          continue
+        }
         budget -= bytes.length
         const line = decode(bytes)
         const match = replyLine.exec(line)
@@ -121,7 +131,9 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
         }
         lines.push(match[3] ?? '')
         raw.push(line)
-        if (match[2] !== '-') return toReply(Number(match[1]), lines, raw)
+        if (match[2] !== '-') {
+          return toReply(Number(match[1]), lines, raw)
+        }
       }
     },
     discard() {

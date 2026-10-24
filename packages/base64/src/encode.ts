@@ -38,8 +38,12 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 const utf8 = new TextEncoder()
 
 export function toBytes(input: Uint8Array | string): Uint8Array {
-  if (typeof input === 'string') return utf8.encode(input)
-  if (isUint8Array(input)) return input
+  if (typeof input === 'string') {
+    return utf8.encode(input)
+  }
+  if (isUint8Array(input)) {
+    return input
+  }
   throw new TypeError('Expected a Uint8Array or a string.')
 }
 
@@ -69,8 +73,9 @@ export function toBase64(bytes: Uint8Array, settings: Settings, column: number):
     column % 4 === 0 &&
     newline.length % 2 === 0 &&
     isAscii(newline)
-  )
+  ) {
     return ascii.decode(encodeCodes(bytes, alphabet, omitPadding, lineLength, newline, column))
+  }
   const text = nativeToBase64
     ? nativeToBase64.call(bytes, { alphabet, omitPadding })
     : encodeFallback(bytes, alphabet, omitPadding)
@@ -78,7 +83,11 @@ export function toBase64(bytes: Uint8Array, settings: Settings, column: number):
 }
 
 function isAscii(text: string): boolean {
-  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) > 0x7f) return false
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) > 0x7f) {
+      return false
+    }
+  }
   return true
 }
 
@@ -93,7 +102,9 @@ const littleEndian = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1
 
 function tablesFor(alphabet: Alphabet): Tables {
   const cached = tables[alphabet]
-  if (cached) return cached
+  if (cached) {
+    return cached
+  }
   const chars = characters[alphabet]
   const pairCodes = new Uint16Array(4096)
   const pairStrings: string[] = []
@@ -116,7 +127,9 @@ export function encodeFallback(
   alphabet: Alphabet,
   omitPadding: boolean,
 ): string {
-  if (bytes.length >= smallInput) return ascii.decode(encodeCodes(bytes, alphabet, omitPadding))
+  if (bytes.length >= smallInput) {
+    return ascii.decode(encodeCodes(bytes, alphabet, omitPadding))
+  }
   const { chars, pairStrings } = tablesFor(alphabet)
   const whole = bytes.length - (bytes.length % 3)
   let text = ''
@@ -164,13 +177,16 @@ function encodeCodes(
   const out = new Uint8Array(size + (size & 1))
   const pairs = new Uint16Array(out.buffer, 0, out.length >> 1)
   const endingPairs: number[] = []
-  for (let i = 0; i < newline.length; i += 2)
+  for (let i = 0; i < newline.length; i += 2) {
     endingPairs.push(pair(newline.charCodeAt(i), newline.charCodeAt(i + 1)))
+  }
 
   let p = 0
   for (let i = 0; i < whole; i += 3) {
     if (left === 0) {
-      for (const ending of endingPairs) pairs[p++] = ending
+      for (const ending of endingPairs) {
+        pairs[p++] = ending
+      }
       left = perLine
     }
     const v = (bytes[i]! << 16) | (bytes[i + 1]! << 8) | bytes[i + 2]!
@@ -181,7 +197,9 @@ function encodeCodes(
   }
   let j = p * 2
   if (rest !== 0 && left === 0) {
-    for (let i = 0; i < newline.length; i++) out[j++] = newline.charCodeAt(i)
+    for (let i = 0; i < newline.length; i++) {
+      out[j++] = newline.charCodeAt(i)
+    }
   }
   if (rest === 1) {
     const v = bytes[whole]!
@@ -200,20 +218,26 @@ function encodeCodes(
 /** Breaks `text` into lines, continuing a line that already has `column` characters. */
 function wrap(text: string, lineLength: number, newline: string, column: number): string {
   const first = lineLength - column
-  if (text.length <= first) return text
+  if (text.length <= first) {
+    return text
+  }
   const lines = [text.slice(0, first)]
-  for (let i = first; i < text.length; i += lineLength) lines.push(text.slice(i, i + lineLength))
+  for (let i = first; i < text.length; i += lineLength) {
+    lines.push(text.slice(i, i + lineLength))
+  }
   return lines.join(newline)
 }
 
 export function assertAlphabet(alphabet: unknown): void {
-  if (alphabet !== 'base64' && alphabet !== 'base64url')
+  if (alphabet !== 'base64' && alphabet !== 'base64url') {
     throw new RangeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
+  }
 }
 
 export function assertLineLength(lineLength: unknown): void {
-  if (lineLength !== false && !(Number.isSafeInteger(lineLength) && Number(lineLength) > 0))
+  if (lineLength !== false && !(Number.isSafeInteger(lineLength) && Number(lineLength) > 0)) {
     throw new RangeError(
       `lineLength must be a positive integer or false, got ${String(lineLength)}.`,
     )
+  }
 }

@@ -18,16 +18,24 @@ const inputs = [
 test('parses addresses within 25% of ipaddr.js and node:net isIP', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/ip', () => {
-      for (const text of inputs) Ip.parse(text)
+      for (const text of inputs) {
+        Ip.parse(text)
+      }
     }),
     bench('ipaddr.js', () => {
-      for (const text of inputs) ipaddr.parse(text)
+      for (const text of inputs) {
+        ipaddr.parse(text)
+      }
     }),
     bench('ip', () => {
-      for (const text of inputs) ip.toBuffer(text)
+      for (const text of inputs) {
+        ip.toBuffer(text)
+      }
     }),
     bench('node:net isIP', () => {
-      for (const text of inputs) isIP(text)
+      for (const text of inputs) {
+        isIP(text)
+      }
     }),
   )
   expect(result.get('ipaddr.js')).not.toBeFasterThan(result.get('@portable/ip'), { delta: 0.25 })
@@ -56,12 +64,17 @@ test('checks addresses against a CIDR block within 25% of ipaddr.js and BlockLis
     bench('ipaddr.js', () => {
       for (const text of inputs) {
         const address = ipaddr.parse(text)
-        if (address.kind() === 'ipv4') address.match(ipaddr4)
-        else address.match(ipaddr6)
+        if (address.kind() === 'ipv4') {
+          address.match(ipaddr4)
+        } else {
+          address.match(ipaddr6)
+        }
       }
     }),
     bench('node:net BlockList', () => {
-      for (const text of inputs) list.check(text, text.includes(':') ? 'ipv6' : 'ipv4')
+      for (const text of inputs) {
+        list.check(text, text.includes(':') ? 'ipv6' : 'ipv4')
+      }
     }),
   )
   expect(result.get('ipaddr.js')).not.toBeFasterThan(result.get('@portable/ip'), { delta: 0.25 })
@@ -75,13 +88,19 @@ test('classifies addresses as public or internal within 25% of ipaddr.js and ip'
 }) => {
   const result = await bench.compare(
     bench('@portable/ip', () => {
-      for (const text of inputs) Ip.range(Ip.unmap(text))
+      for (const text of inputs) {
+        Ip.range(Ip.unmap(text))
+      }
     }),
     bench('ipaddr.js', () => {
-      for (const text of inputs) ipaddr.process(text).range()
+      for (const text of inputs) {
+        ipaddr.process(text).range()
+      }
     }),
     bench('ip', () => {
-      for (const text of inputs) ip.isPublic(text)
+      for (const text of inputs) {
+        ip.isPublic(text)
+      }
     }),
   )
   expect(result.get('ipaddr.js')).not.toBeFasterThan(result.get('@portable/ip'), { delta: 0.25 })

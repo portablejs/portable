@@ -15,7 +15,9 @@ import * as Sse from '@portable/sse'
 
 const response = await fetch('https://api.example.com/v1/chat', { method: 'POST', headers, body })
 const reader = response.body!.pipeThrough(new Sse.DecoderStream()).getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.data)
+for (let r = await reader.read(); !r.done; r = await reader.read()) {
+  console.log(r.value.data)
+}
 ```
 
 Keep a stream open the way `EventSource` does, with your own method, headers and body:

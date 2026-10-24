@@ -44,7 +44,9 @@ export class UnsupportedError extends Errors.UnsupportedError {
  *     await Rdap.domain(name, { follow: false })
  *     return true
  *   } catch (error) {
- *     if (error instanceof Rdap.NotFoundError) return false
+ *     if (error instanceof Rdap.NotFoundError) {
+ *       return false
+ *     }
  *     throw error
  *   }
  * }
@@ -74,7 +76,9 @@ export class NotFoundError extends Errors.ResponseError {
  * try {
  *   await Rdap.domain('example.com')
  * } catch (error) {
- *   if (error instanceof Rdap.ResponseError && error.status === 429) console.log('rate limited')
+ *   if (error instanceof Rdap.ResponseError && error.status === 429) {
+ *     console.log('rate limited')
+ *   }
  * }
  * ```
  */

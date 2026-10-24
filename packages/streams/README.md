@@ -17,7 +17,9 @@ async function* rows() {
 }
 
 const upper = Streams.transform(async function* (source: AsyncIterable<string>) {
-  for await (const chunk of source) yield chunk.toUpperCase()
+  for await (const chunk of source) {
+    yield chunk.toUpperCase()
+  }
 })
 
 await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)) // 'AB'
@@ -92,7 +94,9 @@ const lines = Streams.transform(async function* (source: AsyncIterable<string>) 
     rest = parts.pop()!
     yield* parts
   }
-  if (rest) yield rest
+  if (rest) {
+    yield rest
+  }
 })
 ```
 

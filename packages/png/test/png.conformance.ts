@@ -28,24 +28,31 @@ describe('pngjs png-parse-spec', () => {
   test('parses an 8-bit grayscale image', async () => {
     const png = await Png.decode(fixture('pngjs/grayscale.png'))
     expect([png.width, png.height, png.data.length]).toEqual([16, 16, 16 * 16 * 4])
-    for (let y = 0; y < 16; y++)
-      for (let x = 0; x < 16; x++) expect(pixel(png, x, y)).toBe((x ^ y) * 286331136 + 255)
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
+        expect(pixel(png, x, y)).toBe((x ^ y) * 286331136 + 255)
+      }
+    }
   })
 
   test('parses an 8-bit truecolor image', async () => {
     const png = await Png.decode(fixture('pngjs/truecolor.png'))
     expect([png.width, png.height, png.data.length]).toEqual([16, 16, 16 * 16 * 4])
-    for (let y = 0; y < 16; y++)
-      for (let x = 0; x < 16; x++)
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
         expect(pixel(png, x, y)).toBe(x * 285212672 + y * 1114112 + (x ^ y) * 4352 + 255)
+      }
+    }
   })
 
   test('parses an 8-bit truecolor image with alpha', async () => {
     const png = await Png.decode(fixture('pngjs/truecoloralpha.png'))
     expect([png.width, png.height, png.data.length]).toEqual([16, 16, 16 * 16 * 4])
-    for (let y = 0; y < 16; y++)
-      for (let x = 0; x < 16; x++)
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
         expect(pixel(png, x, y)).toBe(x * 285212672 + y * 1114112 + (x ^ y) * 17)
+      }
+    }
   })
 
   test('reads an image with scanline filters', async () => {
@@ -65,16 +72,21 @@ describe('pngjs png-parse-spec', () => {
   test('reads an indexed color image', async () => {
     const png = await Png.decode(fixture('pngjs/indexed.png'))
     expect([png.width, png.height, png.data.length]).toEqual([16, 16, 16 * 16 * 4])
-    for (let y = 0; y < 16; y++)
-      for (let x = 0; x < 16; x++) expect(pixel(png, x, y)).toBe(indexedColor(x, y))
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
+        expect(pixel(png, x, y)).toBe(indexedColor(x, y))
+      }
+    }
   })
 
   test('reads an indexed color image with alpha', async () => {
     const png = await Png.decode(fixture('pngjs/indexedalpha.png'))
     expect([png.width, png.height, png.data.length]).toEqual([16, 16, 16 * 16 * 4])
-    for (let y = 0; y < 16; y++)
-      for (let x = 0; x < 16; x++)
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
         expect(pixel(png, x, y)).toBe(x >= 4 && x < 12 ? 0 : indexedColor(x, y))
+      }
+    }
   })
 
   test('reads an image that uses every filter type', async () => {
@@ -112,7 +124,9 @@ describe('pngjs png-parse-spec', () => {
       [157, 168, 0x02323f00],
       [158, 168, 0x03313900],
     ] satisfies [number, number, number][]
-    for (const [x, y, value] of expected) expect(pixel(png, x, y)).toBe(value)
+    for (const [x, y, value] of expected) {
+      expect(pixel(png, x, y)).toBe(value)
+    }
   })
 
   test('rejects input that is not a PNG', async () => {
@@ -208,8 +222,9 @@ describe('decode', () => {
 
   test('decodes data split across many IDAT chunks', async () => {
     const reference = await Png.decode(fixture('pngsuite/basn2c16.png'))
-    for (const path of ['oi1n2c16', 'oi2n2c16', 'oi4n2c16', 'oi9n2c16'])
+    for (const path of ['oi1n2c16', 'oi2n2c16', 'oi4n2c16', 'oi9n2c16']) {
       expect((await Png.decode(fixture(`pngsuite/${path}.png`))).data).toEqual(reference.data)
+    }
   })
 
   test('scales every bit depth to 8 bits', async () => {
@@ -223,8 +238,11 @@ describe('decode', () => {
   test('makes the tRNS color fully transparent and keeps its value', async () => {
     const png = await Png.decode(fixture('pngsuite/tbrn2c08.png'))
     const transparent = new Set<string>()
-    for (let i = 0; i < png.data.length; i += 4)
-      if (png.data[i + 3] === 0) transparent.add(png.data.subarray(i, i + 3).join())
+    for (let i = 0; i < png.data.length; i += 4) {
+      if (png.data[i + 3] === 0) {
+        transparent.add(png.data.subarray(i, i + 3).join())
+      }
+    }
     expect([...transparent]).toEqual(['255,255,255'])
     const gray = await Png.decode(fixture('pngsuite/tbbn0g04.png'))
     expect(gray.data.some((value, i) => i % 4 === 3 && value === 0)).toBe(true)
@@ -325,7 +343,9 @@ describe('encode', () => {
       const encoded = await Png.encode(random, { filter })
       expect((await Png.decode(encoded)).data).toEqual(random.data)
       const raw = unzlibSync(idat(encoded))
-      for (let row = 0; row < random.height; row++) expect(raw[row * (23 * 4 + 1)]).toBe(filter)
+      for (let row = 0; row < random.height; row++) {
+        expect(raw[row * (23 * 4 + 1)]).toBe(filter)
+      }
     })
   }
 
@@ -333,7 +353,9 @@ describe('encode', () => {
     const random = { width: 31, height: 9, data: randomBytes(31 * 9 * 4, 42) }
     const allowed = [1, 3] satisfies Png.FilterType[]
     const raw = unzlibSync(idat(await Png.encode(random, { filter: allowed })))
-    for (let row = 0; row < random.height; row++) expect(allowed).toContain(raw[row * (31 * 4 + 1)])
+    for (let row = 0; row < random.height; row++) {
+      expect(allowed).toContain(raw[row * (31 * 4 + 1)])
+    }
   })
 
   test('writes grayscale as BT.709 luma, blended onto white', async () => {
@@ -380,7 +402,9 @@ describe('encode', () => {
       ),
     )
     expect(levels[0]!.length).toBeGreaterThan(levels[1]!.length)
-    for (const bytes of levels) expect((await Png.decode(bytes)).data).toEqual(source.data)
+    for (const bytes of levels) {
+      expect((await Png.decode(bytes)).data).toEqual(source.data)
+    }
   })
 
   test('rejects pixel data of the wrong length', async () => {

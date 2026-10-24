@@ -24,7 +24,9 @@ function trackedGenerator(count: number, throwAt = -1) {
   function* generate() {
     try {
       for (let i = 0; i < count; i++) {
-        if (i === throwAt) throw new Error(`source failed at ${i}`)
+        if (i === throwAt) {
+          throw new Error(`source failed at ${i}`)
+        }
         state.pulled++
         yield i
       }
@@ -203,7 +205,9 @@ describe('map', () => {
     gates[0]!.resolve()
     await flush()
     expect(pulled).toBe(3)
-    for (const gate of gates) gate.resolve()
+    for (const gate of gates) {
+      gate.resolve()
+    }
     expect(await result).toHaveLength(6)
   })
 
@@ -220,8 +224,9 @@ describe('map', () => {
   })
 
   test('throws on an invalid concurrency or fn', () => {
-    for (const concurrency of [0, -1, 1.5, Number.NaN])
+    for (const concurrency of [0, -1, 1.5, Number.NaN]) {
       expect(() => Queue.map([], (x) => x, { concurrency })).toThrow(RangeError)
+    }
     expect(() => Queue.map([], undefined as unknown as () => 1)).toThrow(TypeError)
   })
 
@@ -270,7 +275,9 @@ describe('map errors', () => {
       [0, 1, 2],
       async (n, { signal }) => {
         signals.push(signal)
-        if (n === 0) throw error
+        if (n === 0) {
+          throw error
+        }
         await delay(20)
       },
       { concurrency: Infinity },
@@ -287,7 +294,9 @@ describe('map errors', () => {
         iterable,
         async (n) => {
           await delay(1)
-          if (n === 2) throw new Error('mapper')
+          if (n === 2) {
+            throw new Error('mapper')
+          }
         },
         { concurrency: 1 },
       ),
@@ -303,7 +312,9 @@ describe('map errors', () => {
       async (n) => {
         await delay((5 - n) * 3)
         mapped.push(n)
-        if (n % 2 === 1) throw new Error(`fail ${n}`)
+        if (n % 2 === 1) {
+          throw new Error(`fail ${n}`)
+        }
         return n
       },
       { concurrency: 2, stopOnError: false },
@@ -406,7 +417,9 @@ describe('map errors', () => {
     let closed = false
     async function* source() {
       try {
-        for (let i = 0; ; i++) yield i
+        for (let i = 0; ; i++) {
+          yield i
+        }
       } finally {
         closed = true
       }
@@ -415,7 +428,9 @@ describe('map errors', () => {
       Queue.map(
         source(),
         (n) => {
-          if (n === 3) throw new Error('stop')
+          if (n === 3) {
+            throw new Error('stop')
+          }
         },
         { concurrency: 1 },
       ),
@@ -459,11 +474,15 @@ describe('map errors', () => {
 
   test('ends an endless source when the first call throws', async () => {
     function* endless() {
-      for (let i = 0; ; i++) yield i
+      for (let i = 0; ; i++) {
+        yield i
+      }
     }
     await expect(
       Queue.map(endless(), (n) => {
-        if (n === 5) throw new Error('enough')
+        if (n === 5) {
+          throw new Error('enough')
+        }
         return n
       }),
     ).rejects.toThrow('enough')
@@ -526,7 +545,9 @@ describe('map signal', () => {
     const result = Queue.map(
       [0, 1],
       async (n) => {
-        if (n === 0) throw new Error('first')
+        if (n === 0) {
+          throw new Error('first')
+        }
         await delay(20)
       },
       { signal: controller.signal, stopOnError: false },
@@ -558,7 +579,9 @@ describe('map signal', () => {
       Queue.map([1], () => new Promise(() => {}), { signal: controller.signal }),
     )
     controller.abort('all')
-    for (const run of runs) await expect(run).rejects.toBe('all')
+    for (const run of runs) {
+      await expect(run).rejects.toBe('all')
+    }
   })
 })
 

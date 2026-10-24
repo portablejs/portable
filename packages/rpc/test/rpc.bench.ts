@@ -23,7 +23,9 @@ const api = {
   log: (_message: string) => {},
   search: Rpc.withContext((_context, query: string) => query.length),
   async *items(n: number) {
-    for (let i = 0; i < n; i++) yield item(i)
+    for (let i = 0; i < n; i++) {
+      yield item(i)
+    }
   },
 }
 type Api = typeof api
@@ -66,7 +68,9 @@ const birpc = (() => {
       echo: api.echo,
       log: api.log,
       async items(n) {
-        for (let i = 0; i < n; i++) void server.item.asEvent(item(i))
+        for (let i = 0; i < n; i++) {
+          void server.item.asEvent(item(i))
+        }
       },
     },
     { post: (data) => port1.postMessage(data), on: listen(port1) },
@@ -89,7 +93,9 @@ const comlink = (() => {
     echo: api.echo,
     log: api.log,
     items(n, callback) {
-      for (let i = 0; i < n; i++) callback(item(i))
+      for (let i = 0; i < n; i++) {
+        callback(item(i))
+      }
     },
   } satisfies ComlinkApi
   Comlink.expose(served, port1)
@@ -161,11 +167,15 @@ test('100 concurrent calls over a MessageChannel within 25% of birpc, comlink an
 test('100 notifications and a call within 25% of birpc events', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/rpc', async () => {
-      for (const i of concurrent) void Rpc.notify(remote.log, [`message ${i}`])
+      for (const i of concurrent) {
+        void Rpc.notify(remote.log, [`message ${i}`])
+      }
       await remote.add(1, 2)
     }),
     bench('birpc', async () => {
-      for (const i of concurrent) void birpc.log(`message ${i}`)
+      for (const i of concurrent) {
+        void birpc.log(`message ${i}`)
+      }
       await birpc.add(1, 2)
     }),
   )
@@ -181,7 +191,9 @@ function received(n: number, set: (fn: () => void) => void): Promise<void> {
   return new Promise((resolve) => {
     let count = 0
     set(() => {
-      if (++count === n) resolve()
+      if (++count === n) {
+        resolve()
+      }
     })
   })
 }
@@ -190,8 +202,12 @@ test('a stream of 1000 items within 25% of birpc and comlink callbacks', async (
   const result = await bench.compare(
     bench('@portable/rpc', async () => {
       let count = 0
-      for await (const _ of remote.items(streamed)) count++
-      if (count !== streamed) throw new Error(`Received ${count} items.`)
+      for await (const _ of remote.items(streamed)) {
+        count++
+      }
+      if (count !== streamed) {
+        throw new Error(`Received ${count} items.`)
+      }
     }),
     bench('birpc, an event per item', async () => {
       const done = received(streamed, (fn) => (birpcReceived = fn))
@@ -234,7 +250,9 @@ const jsonRpcClient = new JSONRPCClient(async (payload) => {
       body: JSON.stringify(payload),
     }),
   )
-  if (response.status === 200) jsonRpcClient.receive(await response.json())
+  if (response.status === 200) {
+    jsonRpcClient.receive(await response.json())
+  }
 }) satisfies JSONRPCClient
 
 test('Rpc.http and Rpc.handler with an in-process fetch within 25% of json-rpc-2.0', async ({

@@ -29,18 +29,28 @@ export function zoneResolver(zone: Zone, log: Query[] = []): Spf.Resolver {
     pick: (records: Records) => readonly value[] | string | undefined,
   ): Promise<value[]> {
     log.push(`${type} ${name}`)
-    if (name.split('.').some((label) => label.length > 63)) throw dnsError('EBADNAME', name)
+    if (name.split('.').some((label) => label.length > 63)) {
+      throw dnsError('EBADNAME', name)
+    }
     let key = normalize(name)
     for (let hops = 0; ; hops++) {
       const records = names.get(key)
-      if (!records) throw dnsError('ENOTFOUND', name)
+      if (!records) {
+        throw dnsError('ENOTFOUND', name)
+      }
       if (records.CNAME === undefined) {
         const value = pick(records)
-        if (value === undefined) throw dnsError('ENODATA', name)
-        if (typeof value === 'string') throw dnsError(value, name)
+        if (value === undefined) {
+          throw dnsError('ENODATA', name)
+        }
+        if (typeof value === 'string') {
+          throw dnsError(value, name)
+        }
         return [...value]
       }
-      if (hops === 8) throw dnsError('ESERVFAIL', name)
+      if (hops === 8) {
+        throw dnsError('ESERVFAIL', name)
+      }
       key = normalize(records.CNAME)
     }
   }
@@ -162,8 +172,12 @@ function suiteRecords(list: readonly YamlRecord[]): Records {
   ): value[] | string | undefined => {
     const found: value[] = []
     for (const [itemType, value] of ordered) {
-      if (itemType === 'TIMEOUT') return found.length ? found : 'ETIMEOUT'
-      if (itemType === type && value !== 'NONE') found.push(read(value))
+      if (itemType === 'TIMEOUT') {
+        return found.length ? found : 'ETIMEOUT'
+      }
+      if (itemType === type && value !== 'NONE') {
+        found.push(read(value))
+      }
     }
     return found.length ? found : undefined
   }

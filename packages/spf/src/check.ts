@@ -33,7 +33,9 @@ export type Resolver = Pick<
  * import * as Spf from '@portable/spf'
  *
  * const spf: Spf.Result = await Spf.check({ ip, sender, helo }, { resolver })
- * if (spf.result === 'fail') reject(`550 ${spf.explanation ?? 'SPF check failed'}`)
+ * if (spf.result === 'fail') {
+ *   reject(`550 ${spf.explanation ?? 'SPF check failed'}`)
+ * }
  * ```
  */
 export type Result = {
@@ -147,9 +149,13 @@ const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
-  if (typeof input.ip !== 'string') throw new TypeError('Spf.check: ip must be a string')
+  if (typeof input.ip !== 'string') {
+    throw new TypeError('Spf.check: ip must be a string')
+  }
   const address = parseIp(input.ip.trim())
-  if (!address) throw new RangeError(`Spf.check: "${String(input.ip)}" is not an IP address`)
+  if (!address) {
+    throw new RangeError(`Spf.check: "${String(input.ip)}" is not an IP address`)
+  }
   const client = Ip.unmap(address)
   const helo = stripDot(input.helo ?? '')
   const identity = input.sender ? 'mailfrom' : 'helo'
@@ -196,7 +202,9 @@ export async function check(input: check.Input, options: check.Options): Promise
   try {
     outcome = await evaluate(ctx, domain, false)
   } catch (error) {
-    if (!(error instanceof Failure)) throw error
+    if (!(error instanceof Failure)) {
+      throw error
+    }
     outcome = {
       result: error.result,
       reason: error.message,
@@ -210,8 +218,12 @@ async function evaluate(ctx: Context, domain: string, included: boolean): Promis
   const records = (await query(ctx, 'TXT', domain))
     .map((strings) => strings.join(''))
     .filter((text) => /^v=spf1(?: |$)/i.test(text))
-  if (records.length === 0) return { result: 'none', reason: `${domain} has no SPF record` }
-  if (records.length > 1) throw permerror(`${domain} has ${records.length} SPF records`)
+  if (records.length === 0) {
+    return { result: 'none', reason: `${domain} has no SPF record` }
+  }
+  if (records.length > 1) {
+    throw permerror(`${domain} has ${records.length} SPF records`)
+  }
   const record = records[0]!
   if (/[^\x20-\x7e]/.test(record)) {
     throw permerror(`The SPF record of ${domain} has a character outside printable ASCII`)
@@ -220,7 +232,9 @@ async function evaluate(ctx: Context, domain: string, included: boolean): Promis
   const values = { ...ctx.values, d: domain }
 
   for (const directive of policy.directives) {
-    if (!(await matches(ctx, directive, values))) continue
+    if (!(await matches(ctx, directive, values))) {
+      continue
+    }
     const outcome: Outcome = {
       result: results[directive.qualifier],
       mechanism: directive.text,
@@ -228,17 +242,25 @@ async function evaluate(ctx: Context, domain: string, included: boolean): Promis
     }
     if (outcome.result === 'fail' && policy.exp && !included) {
       const explanation = await explain(ctx, policy.exp, values)
-      if (explanation !== undefined) outcome.explanation = explanation
+      if (explanation !== undefined) {
+        outcome.explanation = explanation
+      }
     }
     return outcome
   }
 
-  if (!policy.redirect) return { result: 'neutral', record }
+  if (!policy.redirect) {
+    return { result: 'neutral', record }
+  }
   countLookup(ctx)
   const target = await expandTarget(ctx, policy.redirect, values, true)
-  if (!('name' in target)) throw permerror(`The redirect target of ${domain} is not a domain name`)
+  if (!('name' in target)) {
+    throw permerror(`The redirect target of ${domain} is not a domain name`)
+  }
   const outcome = await evaluate(ctx, target.name, included)
-  if (outcome.result === 'none') throw permerror(`Redirect target ${target.name} has no SPF record`)
+  if (outcome.result === 'none') {
+    throw permerror(`Redirect target ${target.name} has no SPF record`)
+  }
   return outcome
 }
 
@@ -254,11 +276,15 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
       countLookup(ctx)
       const target = await expandTarget(ctx, directive.domain, values, true)
       if (!('name' in target)) {
-        if (target.skip === 'local-part') return false
+        if (target.skip === 'local-part') {
+          return false
+        }
         throw permerror(`The include target in "${directive.text}" is not a domain name`)
       }
       const { result } = await evaluate(ctx, target.name, true)
-      if (result === 'none') throw permerror(`Include target ${target.name} has no SPF record`)
+      if (result === 'none') {
+        throw permerror(`Include target ${target.name} has no SPF record`)
+      }
       return result === 'pass'
     }
     case 'exists': {
@@ -272,21 +298,28 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
       const target = directive.domain
         ? await expandTarget(ctx, directive.domain, values, true)
         : { name: values.d }
-      if (!('name' in target)) return false
+      if (!('name' in target)) {
+        return false
+      }
       const prefix = client.version === 4 ? directive.cidr4 : directive.cidr6
       const inRange = (ip: Ip.Address) => isInNetwork(client, ip, prefix)
-      if (directive.kind === 'a')
+      if (directive.kind === 'a') {
         return (await addresses(ctx, target.name, family(ctx), true)).some(inRange)
+      }
       return mxMatches(ctx, target.name, inRange)
     }
     case 'ptr': {
       countLookup(ctx)
       const names = await reverseNames(ctx)
-      if (names?.length === 0) countVoidLookup(ctx)
+      if (names?.length === 0) {
+        countVoidLookup(ctx)
+      }
       const target = directive.domain
         ? await expandTarget(ctx, directive.domain, values, true)
         : { name: values.d }
-      if (!('name' in target) || !names) return false
+      if (!('name' in target) || !names) {
+        return false
+      }
       const wanted = target.name.toLowerCase()
       return (await validate(ctx, names)).some((name) => isSubdomain(name, wanted))
     }
@@ -299,8 +332,12 @@ async function mxMatches(
   inRange: (ip: Ip.Address) => boolean,
 ): Promise<boolean> {
   const records = await query(ctx, 'MX', name)
-  if (records.length === 0) countVoidLookup(ctx)
-  if (records.length > 10) throw permerror(`${name} has more than 10 MX records`)
+  if (records.length === 0) {
+    countVoidLookup(ctx)
+  }
+  if (records.length > 10) {
+    throw permerror(`${name} has more than 10 MX records`)
+  }
   const hosts = records.map((mx) => stripDot(mx.exchange)).filter((host) => host && host !== '.')
   const answers = await Promise.allSettled(
     hosts.map((host) => addresses(ctx, host, family(ctx), false)),
@@ -309,7 +346,9 @@ async function mxMatches(
     return true
   }
   const failed = answers.find((answer) => answer.status === 'rejected')
-  if (failed) throw failed.reason
+  if (failed) {
+    throw failed.reason
+  }
   return false
 }
 
@@ -320,14 +359,20 @@ async function explain(
 ): Promise<string | undefined> {
   try {
     const target = await expandTarget(ctx, spec, values, false)
-    if (!('name' in target)) return undefined
+    if (!('name' in target)) {
+      return undefined
+    }
     const records = await query(ctx, 'TXT', target.name)
-    if (records.length !== 1) return undefined
+    if (records.length !== 1) {
+      return undefined
+    }
     const tokens = parseMacroString(records[0]!.join(''), true)
     const text = expand(tokens, await withPtr(ctx, tokens, values, false))
     return /^[\x20-\x7e]+$/.test(text) ? text : undefined
   } catch (error) {
-    if (error instanceof Failure) return undefined
+    if (error instanceof Failure) {
+      return undefined
+    }
     throw error
   }
 }
@@ -338,10 +383,13 @@ async function expandTarget(
   values: Values,
   counted: boolean,
 ): Promise<Target> {
-  if (!ctx.asciiLocal && (hasMacro(tokens, 'l') || hasMacro(tokens, 's')))
+  if (!ctx.asciiLocal && (hasMacro(tokens, 'l') || hasMacro(tokens, 's'))) {
     return { skip: 'local-part' }
+  }
   let name = expand(tokens, await withPtr(ctx, tokens, values, counted)).replace(/\.$/, '')
-  while (name.length > 253 && name.includes('.')) name = name.slice(name.indexOf('.') + 1)
+  while (name.length > 253 && name.includes('.')) {
+    name = name.slice(name.indexOf('.') + 1)
+  }
   return isValidName(name) ? { name } : { skip: 'invalid' }
 }
 
@@ -351,8 +399,12 @@ async function withPtr(
   values: Values,
   counted: boolean,
 ): Promise<Values> {
-  if (!hasMacro(tokens, 'p')) return values
-  if (counted) countLookup(ctx)
+  if (!hasMacro(tokens, 'p')) {
+    return values
+  }
+  if (counted) {
+    countLookup(ctx)
+  }
   const names = await validate(ctx, (await reverseNames(ctx)) ?? [])
   const domain = values.d.toLowerCase()
   const p =
@@ -367,7 +419,9 @@ async function reverseNames(ctx: Context): Promise<string[] | undefined> {
   try {
     return await query(ctx, 'PTR', Ip.reverseName(ctx.client))
   } catch (error) {
-    if (error instanceof Failure) return undefined
+    if (error instanceof Failure) {
+      return undefined
+    }
     throw error
   }
 }
@@ -381,7 +435,9 @@ async function validate(ctx: Context, names: readonly string[]): Promise<string[
           ? stripDot(name).toLowerCase()
           : ''
       } catch (error) {
-        if (error instanceof Failure) return ''
+        if (error instanceof Failure) {
+          return ''
+        }
         throw error
       }
     }),
@@ -396,7 +452,9 @@ async function addresses(
   countVoid: boolean,
 ): Promise<Ip.Address[]> {
   const answer = await query(ctx, type, name)
-  if (answer.length === 0 && countVoid) countVoidLookup(ctx)
+  if (answer.length === 0 && countVoid) {
+    countVoidLookup(ctx)
+  }
   return answer.flatMap((text) => {
     const ip = parseIp(text)
     return ip ? [ip] : []
@@ -420,10 +478,14 @@ async function query<key extends keyof Answers>(
     return await abortable(answer, ctx.signal)
   } catch (error) {
     ctx.signal?.throwIfAborted()
-    if (error instanceof Failure) throw error
+    if (error instanceof Failure) {
+      throw error
+    }
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
-    if (Dns.isNotFound(error)) return []
+    if (Dns.isNotFound(error)) {
+      return []
+    }
     throw temperror(
       `${type} lookup of ${name} failed: ${typeof code === 'string' ? code : String(error)}`,
       error,
@@ -435,8 +497,12 @@ function abortable<value>(
   promise: Promise<value>,
   signal: AbortSignal | undefined,
 ): Promise<value> {
-  if (!signal) return promise
-  if (signal.aborted) return Promise.reject(signal.reason)
+  if (!signal) {
+    return promise
+  }
+  if (signal.aborted) {
+    return Promise.reject(signal.reason)
+  }
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })
@@ -445,11 +511,15 @@ function abortable<value>(
 }
 
 function countLookup(ctx: Context): void {
-  if (++ctx.lookups > 10) throw permerror('More than 10 DNS-querying terms')
+  if (++ctx.lookups > 10) {
+    throw permerror('More than 10 DNS-querying terms')
+  }
 }
 
 function countVoidLookup(ctx: Context): void {
-  if (++ctx.voidLookups > 2) throw permerror('More than 2 void lookups')
+  if (++ctx.voidLookups > 2) {
+    throw permerror('More than 2 void lookups')
+  }
 }
 
 function family(ctx: Context): 'A' | 'AAAA' {
@@ -465,7 +535,9 @@ function stripDot(name: string): string {
 }
 
 function isValidName(name: string): boolean {
-  if (name.length > 253) return false
+  if (name.length > 253) {
+    return false
+  }
   const labels = name.split('.')
   return (
     labels.length > 1 &&
@@ -475,6 +547,8 @@ function isValidName(name: string): boolean {
 }
 
 function toAscii(domain: string): string {
-  if (/^\p{ASCII}*$/u.test(domain)) return domain
+  if (/^\p{ASCII}*$/u.test(domain)) {
+    return domain
+  }
   return hostToAscii(domain) ?? domain
 }

@@ -14,7 +14,9 @@ export async function inflate(
     for (;;) {
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
-      if (done) return out.subarray(0, length)
+      if (done) {
+        return out.subarray(0, length)
+      }
       const take = Math.min(value.length, expectedLength - length)
       out.set(take === value.length ? value : value.subarray(0, take), length)
       length += take
@@ -39,7 +41,9 @@ export async function deflate(
     for (;;) {
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
-      if (done) break
+      if (done) {
+        break
+      }
       chunks.push(value)
     }
   } finally {
@@ -52,7 +56,9 @@ function cancelOnAbort(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   signal: AbortSignal | undefined,
 ): () => void {
-  if (!signal) return () => {}
+  if (!signal) {
+    return () => {}
+  }
   signal.throwIfAborted()
   const onAbort = () => reader.cancel(signal.reason).catch(() => {})
   signal.addEventListener('abort', onAbort, { once: true })

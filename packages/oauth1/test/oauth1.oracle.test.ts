@@ -53,20 +53,26 @@ function generate(seed: number): Case {
   const names = new Set<string>()
   const name = () => {
     let n = ''
-    while (n === '' || names.has(n) || n.startsWith('oauth_')) n = r.string(unreserved, 8)
+    while (n === '' || names.has(n) || n.startsWith('oauth_')) {
+      n = r.string(unreserved, 8)
+    }
     names.add(n)
     return n
   }
   const query: Record<string, string | string[]> = {}
-  for (let i = r.int(5); i > 0; i--)
+  for (let i = r.int(5); i > 0; i--) {
     query[name()] =
       r.int(4) === 0
         ? ['v' + r.string(alphanumeric, 5), 'v' + r.string(alphanumeric, 5)]
         : r.string(anything, 12)
+  }
   const method = r.pick(['GET', 'POST', 'PUT', 'DELETE'])
   const data: Record<string, string> = {}
-  if (method === 'POST' || method === 'PUT')
-    for (let i = r.int(5); i > 0; i--) data[name()] = r.string(anything, 20)
+  if (method === 'POST' || method === 'PUT') {
+    for (let i = r.int(5); i > 0; i--) {
+      data[name()] = r.string(anything, 20)
+    }
+  }
   const search = Object.entries(query)
     .flatMap(([k, v]) => (Array.isArray(v) ? v : [v]).map((x) => `${k}=${encodeURIComponent(x)}`))
     .join('&')
@@ -85,7 +91,9 @@ function generate(seed: number): Case {
 }
 
 function hashFunction(signatureMethod: string) {
-  if (signatureMethod === 'PLAINTEXT') return (_: string, key: string) => key
+  if (signatureMethod === 'PLAINTEXT') {
+    return (_: string, key: string) => key
+  }
   const algorithm = signatureMethod === 'HMAC-SHA1' ? 'sha1' : 'sha256'
   return (base: string, key: string) => createHmac(algorithm, key).update(base).digest('base64')
 }
@@ -112,7 +120,9 @@ function viaOAuth1a(c: Case, bodyHash?: string): string {
 
 function toRequest(c: Case, chunkSeed: number): Request {
   const entries = Object.entries(c.data)
-  if (entries.length === 0) return new Request(c.url, { method: c.method })
+  if (entries.length === 0) {
+    return new Request(c.url, { method: c.method })
+  }
   const body = new TextEncoder().encode(
     entries.map(([k, v]) => `${k}=${encodeURIComponent(v).replace(/%20/g, '+')}`).join('&'),
   )
@@ -120,7 +130,9 @@ function toRequest(c: Case, chunkSeed: number): Request {
   let offset = 0
   const stream = new ReadableStream<Uint8Array>({
     pull(controller) {
-      if (offset >= body.length) return controller.close()
+      if (offset >= body.length) {
+        return controller.close()
+      }
       const size = 1 + r.int(16)
       controller.enqueue(body.slice(offset, offset + size))
       offset += size
@@ -157,7 +169,9 @@ describe('matches oauth-1.0a', () => {
     test(`random JSON body with oauth_body_hash ${seed}`, async () => {
       const c = { ...generate(seed), method: 'POST', data: {} }
       const body = JSON.stringify({ text: random(seed).string(anything, 200) })
-      if (c.signatureMethod === 'PLAINTEXT') c.signatureMethod = 'HMAC-SHA1'
+      if (c.signatureMethod === 'PLAINTEXT') {
+        c.signatureMethod = 'HMAC-SHA1'
+      }
       const request = new Request(c.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -174,7 +188,9 @@ describe('matches node-oauth', () => {
   for (let seed = 1; seed <= 100; seed++) {
     test(`random GET request ${seed}`, async () => {
       const c = { ...generate(seed), method: 'GET', data: {}, realm: undefined }
-      if (Object.values(c.query).some(Array.isArray)) return
+      if (Object.values(c.query).some(Array.isArray)) {
+        return
+      }
       const token = c.token?.key ? c.token : undefined
       const oauth = new NodeOAuth(
         null,
@@ -198,7 +214,9 @@ describe('matches node-oauth', () => {
   test('RSA-SHA1', async () => {
     for (let seed = 1; seed <= 20; seed++) {
       const c = { ...generate(seed), method: 'GET', data: {}, realm: undefined }
-      if (Object.values(c.query).some(Array.isArray)) continue
+      if (Object.values(c.query).some(Array.isArray)) {
+        continue
+      }
       const token = c.token?.key ? c.token : undefined
       const oauth = new NodeOAuth(null, null, c.consumer.key, pkcs1, '1.0', null, 'RSA-SHA1')
       oauth._getNonce = () => nonce

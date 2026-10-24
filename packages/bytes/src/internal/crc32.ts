@@ -2,7 +2,9 @@ function makeCrc32(): (bytes: Uint8Array, crc: number) => number {
   const table = new Int32Array(16 * 256)
   for (let n = 0; n < 256; n++) {
     let c = n
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    }
     table[n] = c
   }
   for (let n = 0; n < 256; n++) {
@@ -45,7 +47,9 @@ function makeCrc32(): (bytes: Uint8Array, crc: number) => number {
         t1[b[i++]!]! ^
         t0[b[i++]!]!
     }
-    for (; i < b.length; i++) crc = t0[(crc ^ b[i]!) & 0xff]! ^ (crc >>> 8)
+    for (; i < b.length; i++) {
+      crc = t0[(crc ^ b[i]!) & 0xff]! ^ (crc >>> 8)
+    }
     return crc
   }
 }

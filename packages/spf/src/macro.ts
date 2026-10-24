@@ -24,7 +24,9 @@ export function parseMacroString(text: string, inExplanation: boolean): Token[] 
   const tokens: Token[] = []
   let literal = ''
   const flush = () => {
-    if (literal) tokens.push({ kind: 'literal', text: literal, escape: false })
+    if (literal) {
+      tokens.push({ kind: 'literal', text: literal, escape: false })
+    }
     literal = ''
   }
   for (let i = 0; i < text.length; i++) {
@@ -32,7 +34,9 @@ export function parseMacroString(text: string, inExplanation: boolean): Token[] 
     if (char !== '%') {
       const code = char.charCodeAt(0)
       if (code < 0x21 || code > 0x7e) {
-        if (!(inExplanation && code === 0x20)) throw permerror(`Invalid character in "${text}"`)
+        if (!(inExplanation && code === 0x20)) {
+          throw permerror(`Invalid character in "${text}"`)
+        }
       }
       literal += char
       continue
@@ -46,13 +50,17 @@ export function parseMacroString(text: string, inExplanation: boolean): Token[] 
     }
     const end = text.indexOf('}', i)
     const match = next === '{' && end > 0 ? body.exec(text.slice(i + 2, end)) : null
-    if (!match) throw permerror(`Invalid macro in "${text}"`)
+    if (!match) {
+      throw permerror(`Invalid macro in "${text}"`)
+    }
     const [, letter = '', digits = '', reverse = '', delimiters = ''] = match
     const lower = letter.toLowerCase()
     if (!letters.includes(lower) || (!inExplanation && 'crt'.includes(lower))) {
       throw permerror(`Macro letter "${letter}" is not allowed in "${text}"`)
     }
-    if (digits && Number(digits) === 0) throw permerror(`Macro "%{${match[0]}}" keeps zero parts`)
+    if (digits && Number(digits) === 0) {
+      throw permerror(`Macro "%{${match[0]}}" keeps zero parts`)
+    }
     tokens.push({
       kind: 'macro',
       letter: lower,
@@ -70,8 +78,12 @@ export function parseMacroString(text: string, inExplanation: boolean): Token[] 
 export function parseDomainSpec(text: string): Token[] {
   const tokens = parseMacroString(text, false)
   const last = tokens.at(-1)
-  if (!last) throw permerror('Empty domain-spec')
-  if (last.kind === 'macro' || last.escape) return tokens
+  if (!last) {
+    throw permerror('Empty domain-spec')
+  }
+  if (last.kind === 'macro' || last.escape) {
+    return tokens
+  }
   const labels = last.text.replace(/\.$/, '').split('.')
   if (labels.length < 2 || !isTopLabel(labels.at(-1)!)) {
     throw permerror(`Invalid domain-spec "${text}"`)
@@ -97,8 +109,12 @@ export function expand(tokens: readonly Token[], values: Values): string {
     let parts = values[token.letter as keyof Values].split(
       new RegExp(`[${token.delimiters.replace(/./g, '\\$&')}]`),
     )
-    if (token.reverse) parts.reverse()
-    if (token.digits) parts = parts.slice(-token.digits)
+    if (token.reverse) {
+      parts.reverse()
+    }
+    if (token.digits) {
+      parts = parts.slice(-token.digits)
+    }
     const value = parts.join('.')
     out += token.upper ? urlEscape(value) : value
   }

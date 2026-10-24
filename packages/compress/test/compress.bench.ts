@@ -72,7 +72,9 @@ test(
   { timeout: 300_000 },
   async ({ bench }) => {
     const chunks: Uint8Array<ArrayBuffer>[] = []
-    for (let i = 0; i < gzipped.length; i += 1024) chunks.push(gzipped.subarray(i, i + 1024))
+    for (let i = 0; i < gzipped.length; i += 1024) {
+      chunks.push(gzipped.subarray(i, i + 1024))
+    }
     const result = await bench.compare(
       bench('@portable/compress DecoderStream', async () => {
         await Streams.toBytes(
@@ -86,7 +88,9 @@ test(
       }),
       bench('fflate Gunzip', () => {
         const gunzip = new fflate.Gunzip(() => {})
-        for (const chunk of chunks) gunzip.push(chunk)
+        for (const chunk of chunks) {
+          gunzip.push(chunk)
+        }
         gunzip.push(new Uint8Array(0), true)
       }),
       bench('node:zlib createGunzip', async () => {
@@ -96,7 +100,9 @@ test(
             .on('data', () => {})
             .on('end', resolve)
             .on('error', reject)
-          for (const chunk of chunks) gunzip.write(chunk)
+          for (const chunk of chunks) {
+            gunzip.write(chunk)
+          }
           gunzip.end()
         })
       }),

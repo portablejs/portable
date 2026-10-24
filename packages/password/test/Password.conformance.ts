@@ -30,8 +30,9 @@ describe('hash', () => {
   })
 
   test('rejects iterations outside 1 to 2^32 - 1', async () => {
-    for (const iterations of [0, -1, 1.5, Number.NaN, 2 ** 32, Infinity])
+    for (const iterations of [0, -1, 1.5, Number.NaN, 2 ** 32, Infinity]) {
       await expect(Password.hash('x', { iterations })).rejects.toThrow(RangeError)
+    }
   })
 })
 
@@ -366,10 +367,18 @@ describe('pbkdf2 fixtures', () => {
     i32: number[] | undefined,
     f64: number[] | undefined,
   ): Uint8Array => {
-    if (hex !== undefined) return fromHex(hex)
-    if (u8) return new Uint8Array(u8)
-    if (i32) return new Uint8Array(new Int32Array(i32).buffer)
-    if (f64) return new Uint8Array(new Float64Array(f64).buffer)
+    if (hex !== undefined) {
+      return fromHex(hex)
+    }
+    if (u8) {
+      return new Uint8Array(u8)
+    }
+    if (i32) {
+      return new Uint8Array(new Int32Array(i32).buffer)
+    }
+    if (f64) {
+      return new Uint8Array(new Float64Array(f64).buffer)
+    }
     return utf8(text!)
   }
 

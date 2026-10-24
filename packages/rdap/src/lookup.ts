@@ -52,17 +52,22 @@ const defaultFetch = ((request) => globalThis.fetch(request)) satisfies Fetch
 const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/
 
 function toAscii(name: string): string {
-  if (typeof name !== 'string') throw new TypeError('The domain name must be a string')
+  if (typeof name !== 'string') {
+    throw new TypeError('The domain name must be a string')
+  }
   const host = hostToAscii(name)?.replace(/\.$/, '')
-  if (host === undefined) throw new InvalidInputError(`Not a domain name: ${name}`)
+  if (host === undefined) {
+    throw new InvalidInputError(`Not a domain name: ${name}`)
+  }
   const labels = host.split('.')
   if (
     host.length > 253 ||
     labels.length < 2 ||
     !labels.every((part) => label.test(part)) ||
     /^\d+$/.test(labels.at(-1)!)
-  )
+  ) {
     throw new InvalidInputError(`Not a domain name: ${name}`)
+  }
   return host
 }
 
@@ -89,12 +94,16 @@ export async function domain(name: string, options: domain.Options = {}): Promis
   const context = { fetch, signal, now } satisfies Context
   const ascii = toAscii(name)
   const base = await Bootstrap.domain(ascii, context)
-  if (!base) throw new UnsupportedError(`IANA lists no RDAP server for ${ascii}`)
+  if (!base) {
+    throw new UnsupportedError(`IANA lists no RDAP server for ${ascii}`)
+  }
   const url = new URL(`domain/${ascii}`, base).href
   const { json } = await request(url, context)
   const result = toDomain(json, ascii)
   const related = follow ? relatedLink(json, url) : undefined
-  if (!related) return result
+  if (!related) {
+    return result
+  }
   try {
     return withReferral(result, related, (await request(related, context)).json)
   } catch (error) {
@@ -123,12 +132,18 @@ export async function domain(name: string, options: domain.Options = {}): Promis
 export async function ip(address: string, options: ip.Options = {}): Promise<Network> {
   const { fetch = defaultFetch, signal, now } = options
   const context = { fetch, signal, now } satisfies Context
-  if (typeof address !== 'string') throw new TypeError('The address must be a string')
+  if (typeof address !== 'string') {
+    throw new TypeError('The address must be a string')
+  }
   const prefix = Address.parse(address)
-  if (!prefix) throw new InvalidInputError(`Not an IP address or prefix: ${address}`)
+  if (!prefix) {
+    throw new InvalidInputError(`Not an IP address or prefix: ${address}`)
+  }
   const query = Address.format(prefix)
   const base = await Bootstrap.ip(prefix, context)
-  if (!base) throw new UnsupportedError(`IANA lists no RDAP server for ${query}`)
+  if (!base) {
+    throw new UnsupportedError(`IANA lists no RDAP server for ${query}`)
+  }
   return toNetwork((await request(new URL(`ip/${query}`, base).href, context)).json)
 }
 
@@ -150,9 +165,12 @@ export async function ip(address: string, options: ip.Options = {}): Promise<Net
 export async function asn(number: number, options: asn.Options = {}): Promise<Autnum> {
   const { fetch = defaultFetch, signal, now } = options
   const context = { fetch, signal, now } satisfies Context
-  if (!Number.isInteger(number) || number < 0 || number > 0xffffffff)
+  if (!Number.isInteger(number) || number < 0 || number > 0xffffffff) {
     throw new InvalidInputError(`Not an AS number: ${number}`)
+  }
   const base = await Bootstrap.asn(number, context)
-  if (!base) throw new UnsupportedError(`IANA lists no RDAP server for AS${number}`)
+  if (!base) {
+    throw new UnsupportedError(`IANA lists no RDAP server for AS${number}`)
+  }
   return toAutnum((await request(new URL(`autnum/${number}`, base).href, context)).json)
 }

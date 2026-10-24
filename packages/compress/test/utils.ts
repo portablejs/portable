@@ -10,7 +10,9 @@ export const fixtures: readonly string[] = Object.keys(files)
 
 export async function fixture(name: string): Promise<Uint8Array> {
   const load = files[`./fixtures/${name}`]
-  if (!load) throw new Error(`No fixture ${name}`)
+  if (!load) {
+    throw new Error(`No fixture ${name}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
@@ -32,7 +34,9 @@ export function hex(text: string): Uint8Array {
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 
@@ -50,7 +54,9 @@ export function randomChunks(bytes: Uint8Array, seed: number, maxSize = 64): Uin
 export function randomBytes(length: number, seed: number): Uint8Array {
   const random = seeded(seed)
   const bytes = new Uint8Array(length)
-  for (let i = 0; i < length; i++) bytes[i] = Math.floor(random() * 256)
+  for (let i = 0; i < length; i++) {
+    bytes[i] = Math.floor(random() * 256)
+  }
   return bytes
 }
 
@@ -79,10 +85,14 @@ export function decodeChunks(
  */
 export function difference(actual: Uint8Array, expected: Uint8Array): string | undefined {
   const length = Math.min(actual.length, expected.length)
-  for (let i = 0; i < length; i++)
-    if (actual[i] !== expected[i]) return `byte ${i}: ${actual[i]} instead of ${expected[i]}`
-  if (actual.length !== expected.length)
+  for (let i = 0; i < length; i++) {
+    if (actual[i] !== expected[i]) {
+      return `byte ${i}: ${actual[i]} instead of ${expected[i]}`
+    }
+  }
+  if (actual.length !== expected.length) {
     return `length ${actual.length} instead of ${expected.length}`
+  }
   return undefined
 }
 
@@ -100,11 +110,14 @@ export function storedGzip(data: Uint8Array): Uint8Array {
     const final = offset + 0xffff >= data.length
     const size = block.length
     bytes.push(final ? 1 : 0, size & 0xff, size >> 8, ~size & 0xff, (~size >> 8) & 0xff, ...block)
-    if (final) break
+    if (final) {
+      break
+    }
   }
   const crc = Compress.crc32(data)
-  for (const value of [crc, data.length])
+  for (const value of [crc, data.length]) {
     bytes.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, value >>> 24)
+  }
   return new Uint8Array(bytes)
 }
 
@@ -114,6 +127,8 @@ export function storedGzip(data: Uint8Array): Uint8Array {
  */
 export function gzipMarkers(size: number): Uint8Array {
   const bytes = new Uint8Array(size)
-  for (let i = 0; i + 3 <= size; i += 3) bytes.set([0x1f, 0x8b, 0x08], i)
+  for (let i = 0; i + 3 <= size; i += 3) {
+    bytes.set([0x1f, 0x8b, 0x08], i)
+  }
   return bytes
 }

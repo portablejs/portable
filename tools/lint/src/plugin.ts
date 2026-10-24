@@ -16,29 +16,51 @@ const isNode = (value: unknown): value is Node =>
 // `unknown`, `unique symbol`, `Record<…>` alone or in `Partial` or `Readonly`, a mapped type, or a
 // type literal with an index signature.
 function isWide(type: unknown): boolean {
-  if (!isNode(type)) return false
-  if (type.type === 'TSUnknownKeyword') return true
-  if (type.type === 'TSTypeOperator') return type['operator'] === 'unique'
-  if (type.type === 'TSMappedType') return true
-  if (type.type === 'TSTypeLiteral')
+  if (!isNode(type)) {
+    return false
+  }
+  if (type.type === 'TSUnknownKeyword') {
+    return true
+  }
+  if (type.type === 'TSTypeOperator') {
+    return type['operator'] === 'unique'
+  }
+  if (type.type === 'TSMappedType') {
+    return true
+  }
+  if (type.type === 'TSTypeLiteral') {
     return (type['members'] as Node[]).some((member) => member.type === 'TSIndexSignature')
-  if (type.type !== 'TSTypeReference') return false
+  }
+  if (type.type !== 'TSTypeReference') {
+    return false
+  }
   const name = type['typeName'] as Node
-  if (name.type !== 'Identifier') return false
-  if (name['name'] === 'Record') return true
+  if (name.type !== 'Identifier') {
+    return false
+  }
+  if (name['name'] === 'Record') {
+    return true
+  }
   const [argument] = ((type['typeArguments'] as Node | null)?.['params'] ?? []) as Node[]
   return ['Partial', 'Readonly'].includes(name['name'] as string) && !!argument && isWide(argument)
 }
 
 // `[]`, `new Map()` or `new Set()`, or an array or object literal holding only those.
 function isEmpty(node: unknown): boolean {
-  if (!isNode(node)) return false
-  if (node.type === 'ArrayExpression') return (node['elements'] as unknown[]).every(isEmpty)
-  if (node.type === 'ObjectExpression')
+  if (!isNode(node)) {
+    return false
+  }
+  if (node.type === 'ArrayExpression') {
+    return (node['elements'] as unknown[]).every(isEmpty)
+  }
+  if (node.type === 'ObjectExpression') {
     return (node['properties'] as Node[]).every(
       (property) => property.type === 'Property' && isEmpty(property['value']),
     )
-  if (node.type !== 'NewExpression') return false
+  }
+  if (node.type !== 'NewExpression') {
+    return false
+  }
   const callee = node['callee'] as Node
   return (
     callee.type === 'Identifier' &&
@@ -50,12 +72,20 @@ function isEmpty(node: unknown): boolean {
 
 // `name.key = …`, `name[key] = …`, `name.key++` or `delete name.key`.
 function writesMember(identifier: unknown): boolean {
-  if (!isNode(identifier)) return false
+  if (!isNode(identifier)) {
+    return false
+  }
   const member = identifier.parent
-  if (member?.type !== 'MemberExpression' || member['object'] !== identifier) return false
+  if (member?.type !== 'MemberExpression' || member['object'] !== identifier) {
+    return false
+  }
   const parent = member.parent
-  if (parent?.type === 'AssignmentExpression') return parent['left'] === member
-  if (parent?.type === 'UpdateExpression') return true
+  if (parent?.type === 'AssignmentExpression') {
+    return parent['left'] === member
+  }
+  if (parent?.type === 'UpdateExpression') {
+    return true
+  }
   return parent?.type === 'UnaryExpression' && parent['operator'] === 'delete'
 }
 
@@ -80,24 +110,41 @@ const preferSatisfies = {
   },
   create: (context) => ({
     VariableDeclarator: (node) => {
-      if (node.parent.type !== 'VariableDeclaration' || node.parent.kind !== 'const') return
-      if (node.parent.parent?.type === 'ExportNamedDeclaration') return
-      if (node.init === null) return
-      if (!('typeAnnotation' in node.id) || node.id.typeAnnotation == null) return
-      if (isWide(node.id.typeAnnotation.typeAnnotation)) return
-      if (isEmpty(node.init)) return
+      if (node.parent.type !== 'VariableDeclaration' || node.parent.kind !== 'const') {
+        return
+      }
+      if (node.parent.parent?.type === 'ExportNamedDeclaration') {
+        return
+      }
+      if (node.init === null) {
+        return
+      }
+      if (!('typeAnnotation' in node.id) || node.id.typeAnnotation == null) {
+        return
+      }
+      if (isWide(node.id.typeAnnotation.typeAnnotation)) {
+        return
+      }
+      if (isEmpty(node.init)) {
+        return
+      }
       // `const view: Type = value` reads an existing value through a wider type.
-      if (node.init.type === 'Identifier' || node.init.type === 'MemberExpression') return
+      if (node.init.type === 'Identifier' || node.init.type === 'MemberExpression') {
+        return
+      }
       const [variable] = context.sourceCode.getDeclaredVariables(node)
-      if (variable?.references.some((reference) => writesMember(reference.identifier))) return
+      if (variable?.references.some((reference) => writesMember(reference.identifier))) {
+        return
+      }
       // An initializer that refers to the constant itself needs the annotation to infer a type.
       const [start, end] = node.init.range
       if (
         variable?.references.some(
           ({ identifier: { range } }) => range[0] >= start && range[1] <= end,
         )
-      )
+      ) {
         return
+      }
       context.report({ node: node.id, messageId: 'preferSatisfies' })
     },
   }),
@@ -119,12 +166,14 @@ const typeParameterName = {
   },
   create: (context) => ({
     TSTypeParameter: (node) => {
-      if (isReported(node.name.name))
+      if (isReported(node.name.name)) {
         context.report({ node: node.name, messageId: 'typeParameterName' })
+      }
     },
     TSMappedType: (node) => {
-      if (isReported(node.key.name))
+      if (isReported(node.key.name)) {
         context.report({ node: node.key, messageId: 'typeParameterName' })
+      }
     },
   }),
 } satisfies Rule
@@ -142,9 +191,13 @@ const optionalUndefined = {
   },
   create: (context) => ({
     TSPropertySignature: (node) => {
-      if (!node.optional || node.typeAnnotation == null) return
+      if (!node.optional || node.typeAnnotation == null) {
+        return
+      }
       const type = node.typeAnnotation.typeAnnotation as unknown as Node
-      if (allowsUndefined(type)) return
+      if (allowsUndefined(type)) {
+        return
+      }
       const text = context.sourceCode.getText(type as never)
       const wrap =
         type.type === 'TSFunctionType' ||
@@ -162,7 +215,9 @@ const optionalUndefined = {
 
 // `undefined`, `unknown`, `any`, or a union that holds one of them.
 function allowsUndefined(type: Node): boolean {
-  if (['TSUndefinedKeyword', 'TSUnknownKeyword', 'TSAnyKeyword'].includes(type.type)) return true
+  if (['TSUndefinedKeyword', 'TSUnknownKeyword', 'TSAnyKeyword'].includes(type.type)) {
+    return true
+  }
   return type.type === 'TSUnionType' && (type['types'] as Node[]).some(allowsUndefined)
 }
 
@@ -178,10 +233,16 @@ const importExtension = {
   create: (context) => {
     const check = (node: { source?: unknown }) => {
       const source = node.source as Node | null | undefined
-      if (!isNode(source) || typeof source['value'] !== 'string') return
+      if (!isNode(source) || typeof source['value'] !== 'string') {
+        return
+      }
       const path = source['value']
-      if (!path.startsWith('./') && !path.startsWith('../')) return
-      if (/\.(js|json)$/.test(path) || path.includes('?')) return
+      if (!path.startsWith('./') && !path.startsWith('../')) {
+        return
+      }
+      if (/\.(js|json)$/.test(path) || path.includes('?')) {
+        return
+      }
       context.report({ node: source as never, messageId: 'importExtension' })
     }
     return {
@@ -210,7 +271,9 @@ const errorKind = {
   create: (context) => {
     const check = (node: ClassNode) => {
       const name = node.id?.name
-      if (!name?.endsWith('Error') || node.superClass == null) return
+      if (!name?.endsWith('Error') || node.superClass == null) {
+        return
+      }
       const kind = node.body.body.find(
         (member) =>
           member.type === 'PropertyDefinition' &&
@@ -220,14 +283,19 @@ const errorKind = {
       )
       const superClass = node.superClass
       const base = superClass.type === 'Identifier' && superClass.name === 'Error'
-      if (!(kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override)))
+      if (!(kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override))) {
         return context.report({ node: node.id ?? node, messageId: 'errorKind' })
-      if (superClass.type === 'Identifier' && ['Error', 'BaseError'].includes(superClass.name))
+      }
+      if (superClass.type === 'Identifier' && ['Error', 'BaseError'].includes(superClass.name)) {
         return
+      }
       const value = kind.value
-      if (value?.type !== 'Literal' || typeof value.value !== 'string') return
-      if (!new RegExp(`^[A-Z]\\w*\\.${name}$`).test(value.value))
+      if (value?.type !== 'Literal' || typeof value.value !== 'string') {
+        return
+      }
+      if (!new RegExp(`^[A-Z]\\w*\\.${name}$`).test(value.value)) {
         context.report({ node: value, messageId: 'kindFormat', data: { name } })
+      }
     }
     return { ClassDeclaration: check, ClassExpression: check }
   },
@@ -259,8 +327,9 @@ const noPrivateSymbol = {
   },
   create: (context) => ({
     CallExpression: (node) => {
-      if (node.callee.type === 'Identifier' && node.callee.name === 'Symbol')
+      if (node.callee.type === 'Identifier' && node.callee.name === 'Symbol') {
         context.report({ node, messageId: 'noPrivateSymbol' })
+      }
     },
   }),
 } satisfies Rule

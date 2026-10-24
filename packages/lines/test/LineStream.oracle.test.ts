@@ -6,7 +6,9 @@ import { encode, split } from './utils.js'
 
 async function viaSplit2(chunks: readonly Uint8Array[], ...args: unknown[]): Promise<string[]> {
   const lines: string[] = []
-  for await (const line of Readable.from(chunks).pipe(split2(...(args as [])))) lines.push(line)
+  for await (const line of Readable.from(chunks).pipe(split2(...(args as [])))) {
+    lines.push(line)
+  }
   return lines
 }
 

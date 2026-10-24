@@ -50,10 +50,13 @@ type Reader = {
 }
 
 export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
-  if (end - start < 8) throw new TruncatedError()
+  if (end - start < 8) {
+    throw new TruncatedError()
+  }
   const order = (bytes[start]! << 8) | bytes[start + 1]!
-  if (order !== 0x4949 && order !== 0x4d4d)
+  if (order !== 0x4949 && order !== 0x4d4d) {
     throw new InvalidInputError('Invalid TIFF header: no byte order mark.')
+  }
   const length = end - start
   const r = {
     bytes,
@@ -65,11 +68,13 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     pointers: new Map(),
     end: 8,
   } satisfies Reader
-  if (r.view.getUint16(2, r.le) !== 42)
+  if (r.view.getUint16(2, r.le) !== 42) {
     throw new InvalidInputError('Invalid TIFF header: magic number is not 42.')
+  }
   const ifd0Offset = r.view.getUint32(4, r.le)
-  if (ifd0Offset < 8)
+  if (ifd0Offset < 8) {
     throw new InvalidInputError('Invalid TIFF header: IFD0 offset is inside the header.')
+  }
 
   const ifd0 = readIfd(r, ifd0Offset, tagNames)
   const ifd1 = r.next ? readIfd(r, r.next, tagNames) : {}
@@ -83,7 +88,9 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     typeof thumbnailLength === 'number' &&
     thumbnailOffset > 0 &&
     thumbnailLength > 0
-  if (hasThumbnail) fits(r, thumbnailOffset + thumbnailLength)
+  if (hasThumbnail) {
+    fits(r, thumbnailOffset + thumbnailLength)
+  }
   return {
     ifds: { ifd0, ifd1, exif, gps, interop },
     thumbnailOffset: hasThumbnail ? start + thumbnailOffset : undefined,
@@ -104,42 +111,61 @@ function readIfd(r: Reader, offset: number, names: Names): Tags {
   const { view, le } = r
   const tags: Record<string, TagValue> = {}
   r.next = 0
-  if (!fits(r, offset + 2)) return tags
+  if (!fits(r, offset + 2)) {
+    return tags
+  }
   const entriesEnd = offset + 2 + view.getUint16(offset, le) * 12
   for (let entry = offset + 2; entry < entriesEnd && fits(r, entry + 12); entry += 12) {
     const tag = view.getUint16(entry, le)
     const type = view.getUint16(entry + 2, le)
     const size = typeSizes[type]
-    if (!size) continue
+    if (!size) {
+      continue
+    }
     const count = view.getUint32(entry + 4, le)
     const byteLength = size * count
     const at = byteLength <= 4 ? entry + 8 : view.getUint32(entry + 8, le)
-    if (!fits(r, at + byteLength)) continue
+    if (!fits(r, at + byteLength)) {
+      continue
+    }
     if (tag === exifPointer || tag === gpsPointer || tag === interopPointer) {
-      if (count === 1 && size === 4 && !r.pointers.has(tag))
+      if (count === 1 && size === 4 && !r.pointers.has(tag)) {
         r.pointers.set(tag, view.getUint32(at, le))
+      }
       continue
     }
     const name =
       names[tag] ?? tagNames[tag] ?? `0x${tag.toString(16).toUpperCase().padStart(4, '0')}`
     tags[name] ??= readValue(r, type, count, at)
   }
-  if (fits(r, entriesEnd + 4)) r.next = view.getUint32(entriesEnd, le)
+  if (fits(r, entriesEnd + 4)) {
+    r.next = view.getUint32(entriesEnd, le)
+  }
   return tags
 }
 
 function fits(r: Reader, end: number): boolean {
-  if (end > r.end) r.end = end
+  if (end > r.end) {
+    r.end = end
+  }
   return end <= r.length
 }
 
 function readValue(r: Reader, type: number, count: number, at: number): TagValue {
-  if (type === 2) return readString(r.bytes, r.start + at, r.start + at + count)
-  if (type === 7) return r.bytes.subarray(r.start + at, r.start + at + count)
-  if (count === 1) return readNumber(r.view, r.le, type, at)
+  if (type === 2) {
+    return readString(r.bytes, r.start + at, r.start + at + count)
+  }
+  if (type === 7) {
+    return r.bytes.subarray(r.start + at, r.start + at + count)
+  }
+  if (count === 1) {
+    return readNumber(r.view, r.le, type, at)
+  }
   const values: number[] = []
   const size = typeSizes[type]!
-  for (let i = 0; i < count; i++) values.push(readNumber(r.view, r.le, type, at + i * size))
+  for (let i = 0; i < count; i++) {
+    values.push(readNumber(r.view, r.le, type, at + i * size))
+  }
   return values
 }
 
@@ -173,10 +199,14 @@ function readString(bytes: Uint8Array, start: number, end: number): string {
   let text = ''
   for (let i = start; i < end; i++) {
     const byte = bytes[i]!
-    if (byte === 0) return text
+    if (byte === 0) {
+      return text
+    }
     if (byte > 0x7f) {
       let stop = i
-      while (stop < end && bytes[stop] !== 0) stop++
+      while (stop < end && bytes[stop] !== 0) {
+        stop++
+      }
       return utf8.decode(bytes.subarray(start, stop))
     }
     text += String.fromCharCode(byte)

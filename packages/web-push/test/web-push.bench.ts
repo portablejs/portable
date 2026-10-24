@@ -113,7 +113,9 @@ test('encrypts 64 payloads at once within 25% of direct WebCrypto calls', async 
       await Promise.all(batch.map(webCryptoEncrypt))
     }),
     bench('web-push (node:crypto)', () => {
-      for (const _ of batch) webPush.encrypt(p256dh, auth, payload, 'aes128gcm')
+      for (const _ of batch) {
+        webPush.encrypt(p256dh, auth, payload, 'aes128gcm')
+      }
     }),
   )
   expect(result.get('WebCrypto')).not.toBeFasterThan(result.get('@portable/web-push'), {

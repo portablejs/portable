@@ -6,8 +6,11 @@ export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chun
   let i = 0
   return new ReadableStream({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
@@ -20,7 +23,9 @@ export async function collect<chunk>(
   const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) return chunks
+    if (done) {
+      return chunks
+    }
     chunks.push(value)
     await onChunk?.(chunks.length)
   }
@@ -121,9 +126,14 @@ export function referenceDecode(str: string): Uint8Array {
     let count = 0
     for (const char of segment) {
       let value = ALPHABET.indexOf(char)
-      if (char === '-') value = 62
-      else if (char === '_') value = 63
-      if (value < 0) continue
+      if (char === '-') {
+        value = 62
+      } else if (char === '_') {
+        value = 63
+      }
+      if (value < 0) {
+        continue
+      }
       bits = ((bits << 6) | value) & 0xffffff
       count += 6
       if (count >= 8) {
@@ -137,8 +147,9 @@ export function referenceDecode(str: string): Uint8Array {
 
 export function referenceWrap(str: string, lineLength: number, newline = '\r\n'): string {
   const lines: string[] = []
-  for (let pos = 0; pos < str.length; pos += lineLength)
+  for (let pos = 0; pos < str.length; pos += lineLength) {
     lines.push(str.slice(pos, pos + lineLength))
+  }
   return lines.join(newline)
 }
 
@@ -154,9 +165,13 @@ export function encodedLike(seed: number, maxLength = 2000): string {
   const length = Math.floor(next() * maxLength)
   for (let i = 0; i < length; i++) {
     const kind = next() * 13
-    if (kind < 10) parts.push(pick(ALPHABET + '-_'))
-    else if (kind < 12) parts.push(pick(['=', '==', '\r\n', ' ', '\t']))
-    else parts.push(String.fromCharCode(Math.floor(next() * (next() < 0.9 ? 256 : 0x10000))))
+    if (kind < 10) {
+      parts.push(pick(ALPHABET + '-_'))
+    } else if (kind < 12) {
+      parts.push(pick(['=', '==', '\r\n', ' ', '\t']))
+    } else {
+      parts.push(String.fromCharCode(Math.floor(next() * (next() < 0.9 ? 256 : 0x10000))))
+    }
   }
   return parts.join('')
 }

@@ -33,14 +33,22 @@ export function zoneResolver(zone: Zone, log?: Query[]): Dmarc.Resolver {
     let key = normalize(name)
     for (let hops = 0; ; hops++) {
       const records = names.get(key)
-      if (!records) throw dnsError('ENOTFOUND', name)
+      if (!records) {
+        throw dnsError('ENOTFOUND', name)
+      }
       if (records.CNAME === undefined || type === 'CNAME') {
         const value = pick(records)
-        if (value === undefined) throw dnsError('ENODATA', name)
-        if (typeof value === 'string') throw dnsError(value, name)
+        if (value === undefined) {
+          throw dnsError('ENODATA', name)
+        }
+        if (typeof value === 'string') {
+          throw dnsError(value, name)
+        }
         return [...value]
       }
-      if (hops === 8) throw dnsError('ESERVFAIL', name)
+      if (hops === 8) {
+        throw dnsError('ESERVFAIL', name)
+      }
       key = normalize(records.CNAME)
     }
   }

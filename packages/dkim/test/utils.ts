@@ -6,7 +6,9 @@ const files = import.meta.glob<string>('./fixtures/*', { query: '?url&inline', i
 
 export async function fixture(name: string): Promise<Uint8Array<ArrayBuffer>> {
   const load = files[`./fixtures/${name}`]
-  if (!load) throw new Error(`No fixture ${name}`)
+  if (!load) {
+    throw new Error(`No fixture ${name}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
@@ -18,7 +20,9 @@ export const encode = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder
 /** Text with one character per byte, as the reference signer below handles it. */
 export const binary = (bytes: Uint8Array): string => {
   let text = ''
-  for (const byte of bytes) text += String.fromCharCode(byte)
+  for (const byte of bytes) {
+    text += String.fromCharCode(byte)
+  }
   return text
 }
 
@@ -35,7 +39,9 @@ export const sha256 = async (data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 
@@ -108,8 +114,12 @@ export function resolverFrom(
     async resolveTxt(name) {
       log.push(name)
       const value = Object.hasOwn(records, name) ? records[name] : undefined
-      if (value === undefined) throw dnsError('ENOTFOUND', name)
-      if (value instanceof Error) throw value
+      if (value === undefined) {
+        throw dnsError('ENOTFOUND', name)
+      }
+      if (value instanceof Error) {
+        throw value
+      }
       return value.map((record) => (typeof record === 'string' ? [record] : [...record]))
     },
   }
@@ -137,11 +147,17 @@ export async function importPrivate(
 // tag list, so a test can use any tag layout, including invalid ones. Text is binary text.
 
 export function canonicalBodyRelaxed(body: string): string {
-  if (!body.length) return ''
+  if (!body.length) {
+    return ''
+  }
   const lines = body.split('\r\n')
-  if (lines.at(-1) === '') lines.pop()
+  if (lines.at(-1) === '') {
+    lines.pop()
+  }
   const canonical = lines.map((line) => line.replace(/[ \t]+/g, ' ').replace(/ $/, ''))
-  while (canonical.length && canonical.at(-1) === '') canonical.pop()
+  while (canonical.length && canonical.at(-1) === '') {
+    canonical.pop()
+  }
   return canonical.map((line) => line + '\r\n').join('')
 }
 
@@ -167,9 +183,13 @@ function selectHeaders(headers: readonly string[], names: readonly string[]): st
   const out: string[] = []
   for (const name of names) {
     for (let i = headers.length - 1; i >= 0; i--) {
-      if (used.has(i)) continue
+      if (used.has(i)) {
+        continue
+      }
       const own = headers[i]!.slice(0, headers[i]!.indexOf(':')).trim().toLowerCase()
-      if (own !== name.trim().toLowerCase()) continue
+      if (own !== name.trim().toLowerCase()) {
+        continue
+      }
       used.add(i)
       out.push(headers[i]!)
       break
@@ -200,7 +220,9 @@ export async function referenceSign(options: ReferenceOptions): Promise<string> 
   const [header = 'simple', body = 'simple'] = options.c.split('/')
   let canonical =
     body === 'relaxed' ? canonicalBodyRelaxed(options.body) : canonicalBodySimple(options.body)
-  if (options.length !== undefined) canonical = canonical.slice(0, options.length)
+  if (options.length !== undefined) {
+    canonical = canonical.slice(0, options.length)
+  }
   const sha1 = options.algorithm.endsWith('-sha1')
   const bodyHash = base64(
     new Uint8Array(await crypto.subtle.digest(sha1 ? 'SHA-1' : 'SHA-256', fromBinary(canonical))),
@@ -208,8 +230,9 @@ export async function referenceSign(options: ReferenceOptions): Promise<string> 
   const prefix = options.prefix.replace('%BH%', bodyHash)
   const suffix = options.suffix ?? ''
   let data = ''
-  for (const field of selectHeaders(options.headers, options.names))
+  for (const field of selectHeaders(options.headers, options.names)) {
     data += (header === 'relaxed' ? canonicalHeaderRelaxed(field) : field) + '\r\n'
+  }
   data += header === 'relaxed' ? canonicalHeaderRelaxed(prefix + suffix) : prefix + suffix
   const bytes = fromBinary(data)
   const signature = options.algorithm.startsWith('ed25519')
@@ -224,7 +247,9 @@ export function tagsOf(field: string): Record<string, string> {
   const tags: Record<string, string> = {}
   for (const spec of value.split(';')) {
     const equals = spec.indexOf('=')
-    if (equals < 0) continue
+    if (equals < 0) {
+      continue
+    }
     const name = spec.slice(0, equals).replace(/[ \t\r\n]+/g, '')
     tags[name] = spec
       .slice(equals + 1)
@@ -244,21 +269,31 @@ export async function referenceVerify(message: string, publicKey: CryptoKey): Pr
   const body = end < 0 ? '' : message.slice(end + 4)
   const fields: string[] = []
   for (const line of header.split('\r\n').filter((line, i, all) => i < all.length - 1 || line)) {
-    if (/^[ \t]/.test(line) && fields.length) fields[fields.length - 1] += '\r\n' + line
-    else fields.push(line)
+    if (/^[ \t]/.test(line) && fields.length) {
+      fields[fields.length - 1] += '\r\n' + line
+    } else {
+      fields.push(line)
+    }
   }
   const signature = fields.find((field) => /^dkim-signature[ \t]*:/i.test(field))
-  if (!signature) return false
+  if (!signature) {
+    return false
+  }
   const tags = tagsOf(signature)
   const [hc = 'simple', bc = 'simple'] = (tags.c ?? 'simple/simple').split('/')
   let canonical = bc === 'relaxed' ? canonicalBodyRelaxed(body) : canonicalBodySimple(body)
-  if (tags.l !== undefined) canonical = canonical.slice(0, Number(tags.l))
-  if (base64(await sha256(fromBinary(canonical))) !== tags.bh?.replace(/\s+/g, '')) return false
+  if (tags.l !== undefined) {
+    canonical = canonical.slice(0, Number(tags.l))
+  }
+  if (base64(await sha256(fromBinary(canonical))) !== tags.bh?.replace(/\s+/g, '')) {
+    return false
+  }
   const others = fields.filter((field) => field !== signature)
   const names = (tags.h ?? '').split(':').map((name) => name.trim())
   let data = ''
-  for (const field of selectHeaders(others, names))
+  for (const field of selectHeaders(others, names)) {
     data += (hc === 'relaxed' ? canonicalHeaderRelaxed(field) : field) + '\r\n'
+  }
   const emptied = signature.replace(/(;[ \t\r\n]*b[ \t\r\n]*=)[^;]*$/, '$1')
   data += hc === 'relaxed' ? canonicalHeaderRelaxed(emptied) : emptied
   const value = fromBinary(atob((tags.b ?? '').replace(/\s+/g, '')))

@@ -11,7 +11,9 @@ function singleByte(index: string): Encoder {
   if (!table) {
     const bytes = byteTable()
     unpackIndex(index, 0, (pointer, codePoint) => {
-      if (bytes[codePoint] === 0) bytes[codePoint] = 0x100 | (0x80 + pointer)
+      if (bytes[codePoint] === 0) {
+        bytes[codePoint] = 0x100 | (0x80 + pointer)
+      }
     })
     table = bytes
     cache.set(index, table)
@@ -513,7 +515,9 @@ export const xUserDefined: Charset = /* @__PURE__ */ define({
   encoder: () => ({
     table: asciiTable(),
     write(codePoint, out) {
-      if (codePoint < 0xf780 || codePoint > 0xf7ff) return codePoint
+      if (codePoint < 0xf780 || codePoint > 0xf7ff) {
+        return codePoint
+      }
       out.bytes[out.length++] = codePoint - 0xf700
       return -1
     },

@@ -66,8 +66,9 @@ describe('int', () => {
       [0, Infinity],
       [0, 2 ** 62],
       [-(2 ** 53), 0],
-    ] as const)
+    ] as const) {
       expect(() => Random.int(min, max)).toThrow(RangeError)
+    }
     expect(() => Random.int('1' as unknown as number, 2)).toThrow(RangeError)
   })
 
@@ -199,8 +200,9 @@ describe('string', () => {
   })
 
   test('has no runs left by unfilled entropy in long strings', () => {
-    for (const { alphabet } of Object.values(alphabets))
+    for (const { alphabet } of Object.values(alphabets)) {
       expect(Random.string(300000, { alphabet })).not.toMatch(/(.)\1{63}/)
+    }
   })
 
   test('returns a different string on each call', () => {
@@ -210,8 +212,9 @@ describe('string', () => {
   })
 
   test('throws a RangeError for a length that is not a non-negative integer', () => {
-    for (const length of [Infinity, NaN, -1, -10, 1.5, 2.1])
+    for (const length of [Infinity, NaN, -1, -10, 1.5, 2.1]) {
       expect(() => Random.string(length)).toThrow(RangeError)
+    }
     expect(() => Random.string('10' as unknown as number)).toThrow(RangeError)
     expect(() => Random.string({ valueOf: () => 21 } as unknown as number)).toThrow(RangeError)
   })
@@ -271,7 +274,9 @@ describe('shuffle', () => {
 describe('pick', () => {
   test('returns an element of the array', () => {
     const array = [1, 2, 3]
-    for (let i = 0; i < 100; i++) expect(array).toContain(Random.pick(array))
+    for (let i = 0; i < 100; i++) {
+      expect(array).toContain(Random.pick(array))
+    }
     expect(distinct(Array.from({ length: 300 }, () => Random.pick(array)))).toBe(3)
   })
 
@@ -401,8 +406,9 @@ describe('seeded', () => {
   })
 
   test('throws a RangeError for a seed that is not a safe integer', () => {
-    for (const seed of [1.5, NaN, Infinity, 2 ** 53])
+    for (const seed of [1.5, NaN, Infinity, 2 ** 53]) {
       expect(() => Random.seeded(seed)).toThrow(RangeError)
+    }
     expect(() => Random.seeded('hello.' as unknown as number)).toThrow(RangeError)
   })
 })

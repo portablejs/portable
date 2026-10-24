@@ -15,7 +15,9 @@ const response = await fetch('https://example.com/_all_docs')
 const reader = response
   .body!.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'] }))
   .getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.value)
+for (let r = await reader.read(); !r.done; r = await reader.read()) {
+  console.log(r.value.value)
+}
 ```
 
 ## `DecoderStream`

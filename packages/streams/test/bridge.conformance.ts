@@ -27,7 +27,11 @@ const double = () =>
 
 const evens = () =>
   transform(async function* (source: AsyncIterable<number>) {
-    for await (const n of source) if (n % 2 === 0) yield n
+    for await (const n of source) {
+      if (n % 2 === 0) {
+        yield n
+      }
+    }
   })
 
 describe('through2: web', () => {
@@ -89,7 +93,9 @@ describe('through2: web', () => {
     const source = new ReadableStream<number>(
       {
         pull(controller) {
-          if (pulled === 200) return controller.close()
+          if (pulled === 200) {
+            return controller.close()
+          }
           controller.enqueue(pulled++)
           maxAhead = Math.max(maxAhead, pulled - yielded)
         },
@@ -112,7 +118,9 @@ describe('through2: web', () => {
     let finalized = false
     const ts = transform(async function* (source: AsyncIterable<string>) {
       try {
-        for await (const chunk of source) yield chunk
+        for await (const chunk of source) {
+          yield chunk
+        }
       } finally {
         finalized = true
       }
@@ -138,7 +146,9 @@ describe('through2: web', () => {
     const out: number[] = []
     for (;;) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
       out.push(value)
       expect(produced - out.length).toBeLessThanOrEqual(1)
       await delay(1)
@@ -167,7 +177,9 @@ describe('through2: node', () => {
 
   test('classicFlush and asyncgenWithClassicFlush', async () => {
     const withEnd = transform(async function* (source: AsyncIterable<Uint8Array>) {
-      for await (const chunk of source) yield chunk
+      for await (const chunk of source) {
+        yield chunk
+      }
       yield encode('end')
     })
     const chunks = [encode('aaa'), encode('bb')]
@@ -193,7 +205,9 @@ describe('through2: node', () => {
 
   test('asyncgenOneToOne', async () => {
     const doubled = transform(async function* (source: AsyncIterable<number>) {
-      for await (const n of source) yield n * 2
+      for await (const n of source) {
+        yield n * 2
+      }
     })
     expect(await through([1, 2, 3, 4], doubled)).toEqual([2, 4, 6, 8])
   })
@@ -241,7 +255,9 @@ describe('through2: node', () => {
   test('transformerAsyncgenSupported', async () => {
     const doubled = () =>
       transform(async function* (source: AsyncIterable<number>) {
-        for await (const n of source) yield n * 2
+        for await (const n of source) {
+          yield n * 2
+        }
       })
     const [a, b] = await Promise.all([through([1, 2], doubled()), through([10, 20], doubled())])
     expect(a).toEqual([2, 4])
@@ -250,7 +266,11 @@ describe('through2: node', () => {
 
   test('asyncgenDownstreamBackpressure', async () => {
     const fanOut = transform(async function* (source: AsyncIterable<string>) {
-      for await (const _ of source) for (let i = 0; i < 20; i++) yield i
+      for await (const _ of source) {
+        for (let i = 0; i < 20; i++) {
+          yield i
+        }
+      }
     })
     const output = fromChunks(['start']).pipeThrough(fanOut)
     await delay(50)
@@ -272,7 +292,9 @@ describe('through2: node', () => {
     let upstreamCancelled = false
     const ts = transform(async function* (source: AsyncIterable<string>) {
       try {
-        for await (const chunk of source) yield chunk
+        for await (const chunk of source) {
+          yield chunk
+        }
       } finally {
         finalized = true
       }
@@ -317,7 +339,9 @@ describe('transform', () => {
     const ts = transform(async function* (source: AsyncIterable<number>) {
       try {
         yield 0
-        for await (const n of source) yield n
+        for await (const n of source) {
+          yield n
+        }
       } finally {
         finalized = true
       }
@@ -355,7 +379,9 @@ describe('transform', () => {
         buffer = parts.pop()!
         yield* parts
       }
-      if (buffer) yield buffer
+      if (buffer) {
+        yield buffer
+      }
     })
     expect(await through(['a\nb', 'c\n', 'd'], lines)).toEqual(['a', 'bc', 'd'])
   })
@@ -385,7 +411,9 @@ describe('fromIterable', () => {
   test('pulls one value per read', async () => {
     let produced = 0
     function* counter() {
-      for (;;) yield produced++
+      for (;;) {
+        yield produced++
+      }
     }
     const reader = fromIterable(counter()).getReader()
     await delay(0)
@@ -401,14 +429,18 @@ describe('fromIterable', () => {
     const state = { finally: false, sync: false }
     async function* asyncGen() {
       try {
-        for (;;) yield 1
+        for (;;) {
+          yield 1
+        }
       } finally {
         state.finally = true
       }
     }
     function* syncGen() {
       try {
-        for (;;) yield 1
+        for (;;) {
+          yield 1
+        }
       } finally {
         state.sync = true
       }
@@ -434,7 +466,9 @@ describe('fromIterable', () => {
 describe('toAsyncIterable', () => {
   test('iterates a stream', async () => {
     const chunks: string[] = []
-    for await (const chunk of toAsyncIterable(fromChunks(['a', 'b']))) chunks.push(chunk)
+    for await (const chunk of toAsyncIterable(fromChunks(['a', 'b']))) {
+      chunks.push(chunk)
+    }
     expect(chunks).toEqual(['a', 'b'])
   })
 
@@ -444,7 +478,9 @@ describe('toAsyncIterable', () => {
       pull: (c) => c.enqueue(1),
       cancel: () => void (cancelled = true),
     })
-    for await (const _ of toAsyncIterable(stream)) break
+    for await (const _ of toAsyncIterable(stream)) {
+      break
+    }
     expect(cancelled).toBe(true)
     expect(stream.locked).toBe(false)
   })
@@ -455,7 +491,9 @@ describe('toAsyncIterable', () => {
       pull: (c) => c.enqueue(1),
       cancel: () => void (cancelled = true),
     })
-    for await (const _ of toAsyncIterable(stream, { preventCancel: true })) break
+    for await (const _ of toAsyncIterable(stream, { preventCancel: true })) {
+      break
+    }
     expect(cancelled).toBe(false)
     expect(stream.locked).toBe(false)
     expect((await stream.getReader().read()).value).toBe(1)
@@ -465,7 +503,8 @@ describe('toAsyncIterable', () => {
     const error = new Error('boom')
     const stream = new ReadableStream({ start: (c) => c.error(error) })
     const iterate = async () => {
-      for await (const _ of toAsyncIterable(stream));
+      for await (const _ of toAsyncIterable(stream)) {
+      }
     }
     await expect(iterate()).rejects.toBe(error)
     expect(stream.locked).toBe(false)
@@ -529,8 +568,9 @@ describe('map, filter, tap, batch', () => {
       tap(() => {
         throw error
       }),
-    ])
+    ]) {
       await expect(through(['a'], pair)).rejects.toBe(error)
+    }
   })
 
   test('batch groups chunks and emits the rest at the end', async () => {
@@ -540,6 +580,8 @@ describe('map, filter, tap, batch', () => {
   })
 
   test('batch rejects a size that is not a positive integer', () => {
-    for (const size of [0, -1, 1.5, Number.NaN]) expect(() => batch(size)).toThrow(RangeError)
+    for (const size of [0, -1, 1.5, Number.NaN]) {
+      expect(() => batch(size)).toThrow(RangeError)
+    }
   })
 })

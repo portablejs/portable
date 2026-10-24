@@ -39,11 +39,17 @@ async function outcome(
   try {
     await run()
   } catch (error) {
-    if (error instanceof invalid) return { kind: 'invalid' }
-    if (error instanceof unsupported) return { kind: 'unsupported' }
+    if (error instanceof invalid) {
+      return { kind: 'invalid' }
+    }
+    if (error instanceof unsupported) {
+      return { kind: 'unsupported' }
+    }
   }
   const url = urls.slice(before).findLast((u) => !u.startsWith('https://data.iana.org/'))
-  if (url) seen.add(new URL(url).host)
+  if (url) {
+    seen.add(new URL(url).host)
+  }
   return { kind: 'queried', url }
 }
 
@@ -98,8 +104,12 @@ describe('routing matches node-rdap', () => {
     const label = () => {
       const length = 1 + Math.floor(next() * 20)
       let text = ''
-      for (let i = 0; i < length; i++) text += alphabet[Math.floor(next() * alphabet.length)]
-      if (length > 2 && next() < 0.3) text = `${text.slice(0, 1)}-${text.slice(2)}`
+      for (let i = 0; i < length; i++) {
+        text += alphabet[Math.floor(next() * alphabet.length)]
+      }
+      if (length > 2 && next() < 0.3) {
+        text = `${text.slice(0, 1)}-${text.slice(2)}`
+      }
       return next() < 0.2 ? text.toUpperCase() : text
     }
     for (const tld of tlds) {
@@ -109,11 +119,18 @@ describe('routing matches node-rdap', () => {
         outcome: await theirDomain(name),
       })
     }
-    for (const name of ['example.badger', 'example.eggs', 'example.de', 'google.com', 'bbc.co.uk'])
+    for (const name of [
+      'example.badger',
+      'example.eggs',
+      'example.de',
+      'google.com',
+      'bbc.co.uk',
+    ]) {
       expect({ name, outcome: await ourDomain(name) }).toEqual({
         name,
         outcome: await theirDomain(name),
       })
+    }
   })
 
   test('node-rdap test names: valid and invalid alike', async () => {
@@ -143,11 +160,12 @@ describe('routing matches node-rdap', () => {
       'my_domain.com',
       'my-even_longer-domain.com',
     ]
-    for (const name of names)
+    for (const name of names) {
       expect({ name, outcome: await ourDomain(name) }).toEqual({
         name,
         outcome: await theirDomain(name),
       })
+    }
   })
 
   test('random IPv4 addresses', async () => {
@@ -171,7 +189,9 @@ describe('routing matches node-rdap', () => {
         const [network] = prefixes[Math.floor(next() * prefixes.length)]!.split('/')
         const head = network!.split('::')[0]!.split(':').filter(Boolean)
         words.splice(0, head.length, ...head.map((part) => Number.parseInt(part, 16).toString(16)))
-        if (words.includes('0')) continue
+        if (words.includes('0')) {
+          continue
+        }
       }
       const address = words.join(':')
       expect({ address, outcome: await ourIp(address) }).toEqual({
@@ -184,13 +204,15 @@ describe('routing matches node-rdap', () => {
   test('random AS numbers, and the edges of each bootstrap range', async () => {
     const next = random(4)
     const numbers = [0, 1, 4294967295]
-    for (let i = 0; i < 300; i++)
+    for (let i = 0; i < 300; i++) {
       numbers.push(Math.floor(next() * 2 ** 32), Math.floor(next() * 400_000))
-    for (const number of numbers)
+    }
+    for (const number of numbers) {
       expect({ number, outcome: await ourAsn(number) }).toEqual({
         number,
         outcome: await theirAsn(number),
       })
+    }
   })
 })
 
@@ -201,8 +223,9 @@ test('the random inputs reached every RIR and many registries', () => {
     'rdap.apnic.net',
     'rdap.lacnic.net',
     'rdap.afrinic.net',
-  ])
+  ]) {
     expect(seen).toContain(host)
+  }
   expect(seen.size).toBeGreaterThan(100)
 })
 
@@ -222,7 +245,9 @@ describe('responses match node-rdap', () => {
       [Rdap.asn(15169, f), NodeRdap.autnum(15169)],
       [Rdap.asn(3333, f), NodeRdap.autnum(3333)],
     ] satisfies [Promise<{ raw: unknown }>, Promise<unknown>][]
-    for (const [mine, upstream] of lookups) expect((await mine).raw).toEqual(await upstream)
+    for (const [mine, upstream] of lookups) {
+      expect((await mine).raw).toEqual(await upstream)
+    }
   })
 
   test('an unregistered name is NotFoundError here and RdapRegistryError 404 in node-rdap', async () => {

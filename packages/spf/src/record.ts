@@ -35,9 +35,13 @@ export function parseRecord(terms: readonly string[]): Policy {
       const name = pair[1]!.toLowerCase()
       const value = pair[2]!
       if (name === 'redirect' || name === 'exp') {
-        if (policy[name]) throw permerror(`More than one ${name} modifier`)
+        if (policy[name]) {
+          throw permerror(`More than one ${name} modifier`)
+        }
         policy[name] = parseDomainSpec(value)
-      } else parseMacroString(value, true)
+      } else {
+        parseMacroString(value, true)
+      }
       continue
     }
     policy.directives.push(parseDirective(term))
@@ -51,19 +55,27 @@ function parseDirective(text: string): Directive {
   const kind = name.toLowerCase()
   switch (kind) {
     case 'all':
-      if (rest) break
+      if (rest) {
+        break
+      }
       return { kind, qualifier, text }
     case 'include':
     case 'exists':
-      if (!rest.startsWith(':')) break
+      if (!rest.startsWith(':')) {
+        break
+      }
       return { kind, qualifier, text, domain: parseDomainSpec(rest.slice(1)) }
     case 'ptr':
-      if (rest && !rest.startsWith(':')) break
+      if (rest && !rest.startsWith(':')) {
+        break
+      }
       return { kind, qualifier, text, domain: rest ? parseDomainSpec(rest.slice(1)) : undefined }
     case 'a':
     case 'mx': {
       const match = dualCidr.exec(rest)
-      if (!match) break
+      if (!match) {
+        break
+      }
       return {
         kind,
         qualifier,
@@ -78,7 +90,9 @@ function parseDirective(text: string): Directive {
       const match = network.exec(rest)
       const address = match && parseIp(match[1]!)
       const max = kind === 'ip4' ? 32 : 128
-      if (!address || address.bytes.length * 8 !== max) break
+      if (!address || address.bytes.length * 8 !== max) {
+        break
+      }
       return { kind, qualifier, text, network: address, prefix: cidr(match[2], max) }
     }
     default:
@@ -88,7 +102,9 @@ function parseDirective(text: string): Directive {
 }
 
 function cidr(value: string | undefined, max: number): number {
-  if (value === undefined) return max
+  if (value === undefined) {
+    return max
+  }
   if (!/^(?:0|[1-9]\d{0,2})$/.test(value) || Number(value) > max) {
     throw permerror(`Invalid prefix length "/${value}"`)
   }

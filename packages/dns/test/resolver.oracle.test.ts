@@ -54,7 +54,9 @@ type Method = Exclude<keyof Resolver, 'reverse'>
 
 /** Node adds `type` to MX, SRV and CAA results, and the `Resolver` shapes leave it out. */
 function withoutType(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutType)
+  if (Array.isArray(value)) {
+    return value.map(withoutType)
+  }
   if (value && typeof value === 'object' && 'type' in value) {
     const { type: _, ...rest } = value as Record<string, unknown>
     return rest
@@ -194,22 +196,27 @@ describe('random answers give the same results as node:dns/promises', () => {
 
 describe('response codes give the same errors as node:dns/promises', () => {
   const rcodes = ['NXDOMAIN', 'SERVFAIL', 'REFUSED', 'NOTIMP', 'FORMERR'] as const
-  for (const method of Object.keys(generators) as Method[])
+  for (const method of Object.keys(generators) as Method[]) {
     test(`${method}`, async () => {
       expect.hasAssertions()
-      for (const rcode of rcodes) await compare(method, 'missing.example.org', () => ({ rcode }))
+      for (const rcode of rcodes) {
+        await compare(method, 'missing.example.org', () => ({ rcode }))
+      }
       await compare(method, 'empty.example.org', () => ({}))
       await compare(method, 'garbage.example.org', () => Uint8Array.of(1, 2, 3))
     })
+  }
 
   test('reverse', async () => {
     const ptr = ((query) => ({
       answers: [record(query.questions[0]!.name, 'PTR', 'host.example')],
     })) satisfies Handler
-    for (const ip of ['192.0.2.255', '10.0.0.1', '2001:db8::1', '::ffff:192.0.2.4', 'fe80::1'])
+    for (const ip of ['192.0.2.255', '10.0.0.1', '2001:db8::1', '::ffff:192.0.2.4', 'fe80::1']) {
       await compare('reverse', ip, ptr)
-    for (const ip of ['1.2.3', 'bogus ip', '1.2.3.256', ':::1', '01.2.3.4', '::1.2.3.04'])
+    }
+    for (const ip of ['1.2.3', 'bogus ip', '1.2.3.256', ':::1', '01.2.3.4', '::1.2.3.04']) {
       expect(await compare('reverse', ip, ptr)).toMatchObject({ error: { code: 'EINVAL' } })
+    }
     await compare('reverse', '192.0.2.1', () => ({ rcode: 'NXDOMAIN' }))
     await compare('reverse', '192.0.2.1', () => ({}))
   })

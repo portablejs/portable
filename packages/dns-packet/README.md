@@ -23,7 +23,11 @@ const response = await fetch('https://cloudflare-dns.com/dns-query', {
   body: query,
 })
 const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
-for (const answer of packet.answers) if (answer.type === 'A') console.log(answer.data)
+for (const answer of packet.answers) {
+  if (answer.type === 'A') {
+    console.log(answer.data)
+  }
+}
 ```
 
 Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS and PTR, and an object for the rest. Types without a codec here, such as SVCB and HTTPS, carry their raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.

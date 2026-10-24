@@ -89,7 +89,9 @@ Each method rejects with a `TypeError` for a name that isn't a string.
 
 ```ts
 const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
-  if (Dns.isNotFound(error)) return []
+  if (Dns.isNotFound(error)) {
+    return []
+  }
   throw error
 })
 ```

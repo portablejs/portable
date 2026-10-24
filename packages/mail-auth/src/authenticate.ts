@@ -29,7 +29,9 @@ export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver
  * import * as MailAuth from '@portable/mail-auth'
  *
  * const result: MailAuth.Result = await MailAuth.authenticate(message, options)
- * if (result.dmarc?.disposition === 'reject') reject('550 5.7.1 Rejected by DMARC policy')
+ * if (result.dmarc?.disposition === 'reject') {
+ *   reject('550 5.7.1 Rejected by DMARC policy')
+ * }
  * ```
  */
 export type Result = {
@@ -181,7 +183,9 @@ export async function authenticate(
       })
       result.headers = fields + result.headers
     } catch (error) {
-      if (!(error instanceof Arc.InvalidInputError)) throw error
+      if (!(error instanceof Arc.InvalidInputError)) {
+        throw error
+      }
       result.sealSkipReason = error.message
     }
   }

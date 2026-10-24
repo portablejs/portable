@@ -2,8 +2,12 @@ import { isUint8Array } from '@portable/bytes/internal'
 const utf8Decoder = new TextDecoder()
 
 export function toText(input: string | Uint8Array): string {
-  if (typeof input === 'string') return input
-  if (isUint8Array(input)) return utf8Decoder.decode(input)
+  if (typeof input === 'string') {
+    return input
+  }
+  if (isUint8Array(input)) {
+    return utf8Decoder.decode(input)
+  }
   throw new TypeError('Expected a string or a Uint8Array.')
 }
 
@@ -24,8 +28,9 @@ export function decodeCharset(bytes: Uint8Array, label: string): string {
 }
 
 export function assertLength(name: string, value: number): void {
-  if (!Number.isInteger(value) || value < 1)
+  if (!Number.isInteger(value) || value < 1) {
     throw new RangeError(`${name} must be a positive integer, got ${value}.`)
+  }
 }
 
 export const hexDigit = (code: number): number =>

@@ -500,7 +500,7 @@ describe('raw-body: web streams', () => {
   test('reads an already-read stream as empty', async () => {
     const stream = byteStream(['hello, world!'])
     const reader = stream.getReader()
-    while (!(await reader.read()).done);
+    while (!(await reader.read()).done) {}
     reader.releaseLock()
     expect(await toBytes(stream)).toHaveLength(0)
   })

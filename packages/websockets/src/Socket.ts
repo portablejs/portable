@@ -39,18 +39,26 @@ export function timeout(fn: () => void, ms: number): ReturnType<typeof setTimeou
 }
 
 export function toMessage(data: unknown): Message {
-  if (typeof data === 'string') return data
-  if (data instanceof ArrayBuffer) return new Uint8Array(data)
+  if (typeof data === 'string') {
+    return data
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data)
+  }
   if (ArrayBuffer.isView(data)) {
     const { buffer, byteOffset, byteLength } = data
-    if (buffer instanceof ArrayBuffer) return new Uint8Array(buffer, byteOffset, byteLength)
+    if (buffer instanceof ArrayBuffer) {
+      return new Uint8Array(buffer, byteOffset, byteLength)
+    }
     return new Uint8Array(new Uint8Array(buffer, byteOffset, byteLength))
   }
   throw new TypeError('Expected a string or ArrayBuffer message. Set binaryType to "arraybuffer".')
 }
 
 export function assertOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
-  if (typeof message !== 'string') assertUint8Array(message)
+  if (typeof message !== 'string') {
+    assertUint8Array(message)
+  }
   return message as string | Uint8Array<ArrayBuffer>
 }
 
@@ -69,7 +77,9 @@ export function isNormalClose(code: number): boolean {
 }
 
 export function assertSize(name: string, value: number, min = 0): void {
-  if (!(value >= min)) throw new RangeError(`Expected \`${name}\` to be a number >= ${min}.`)
+  if (!(value >= min)) {
+    throw new RangeError(`Expected \`${name}\` to be a number >= ${min}.`)
+  }
 }
 
 // The Streams spec allows a `highWaterMark` of `Infinity`, but Workers throws a TypeError for it.

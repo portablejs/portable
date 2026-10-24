@@ -14,7 +14,9 @@ const crlf = new Uint8Array([CR, LF])
 
 const whitespace = /* @__PURE__ */ (() => {
   const table = new Uint8Array(256)
-  for (const byte of [CR, LF, SP, TAB]) table[byte] = 1
+  for (const byte of [CR, LF, SP, TAB]) {
+    table[byte] = 1
+  }
   return table
 })()
 
@@ -31,26 +33,36 @@ function simple(sink: Sink): Canonicalizer {
   return {
     write(chunk) {
       let end = chunk.length
-      while (end > 0 && (chunk[end - 1] === CR || chunk[end - 1] === LF)) end--
+      while (end > 0 && (chunk[end - 1] === CR || chunk[end - 1] === LF)) {
+        end--
+      }
       if (end === 0) {
         held.push(chunk)
         return
       }
-      for (const bytes of held) sink(bytes)
+      for (const bytes of held) {
+        sink(bytes)
+      }
       sink(end === chunk.length ? chunk : chunk.subarray(0, end))
       held = end === chunk.length ? [] : [chunk.subarray(end)]
     },
     end() {
       let tail = 0
-      for (const bytes of held) tail += bytes.length
+      for (const bytes of held) {
+        tail += bytes.length
+      }
       const run = new Uint8Array(tail)
       let offset = 0
       for (const bytes of held) {
         run.set(bytes, offset)
         offset += bytes.length
       }
-      while (tail >= 2 && run[tail - 2] === CR && run[tail - 1] === LF) tail -= 2
-      if (tail > 0) sink(run.subarray(0, tail))
+      while (tail >= 2 && run[tail - 2] === CR && run[tail - 1] === LF) {
+        tail -= 2
+      }
+      if (tail > 0) {
+        sink(run.subarray(0, tail))
+      }
       sink(crlf)
     },
   }
@@ -81,13 +93,17 @@ function relaxed(sink: Sink): Canonicalizer {
             out[o++] = CR
             out[o++] = LF
           }
-          if (pendingSpace) out[o++] = SP
+          if (pendingSpace) {
+            out[o++] = SP
+          }
           pendingSpace = false
           out[o++] = CR
         }
-        if (byte === CR) pendingCr = true
-        else if (byte === SP || byte === TAB) pendingSpace = true
-        else if (byte === LF) {
+        if (byte === CR) {
+          pendingCr = true
+        } else if (byte === SP || byte === TAB) {
+          pendingSpace = true
+        } else if (byte === LF) {
           pendingSpace = false
           pendingLines++
         } else {
@@ -95,12 +111,21 @@ function relaxed(sink: Sink): Canonicalizer {
             out[o++] = CR
             out[o++] = LF
           }
-          if (pendingSpace) out[o++] = SP
+          if (pendingSpace) {
+            out[o++] = SP
+          }
           pendingSpace = false
           let end = i + 1
-          while (end < chunk.length && whitespace[chunk[end]!] === 0) end++
-          if (end - i > 16) out.set(chunk.subarray(i, end), o)
-          else for (let j = i; j < end; j++) out[o + j - i] = chunk[j]!
+          while (end < chunk.length && whitespace[chunk[end]!] === 0) {
+            end++
+          }
+          if (end - i > 16) {
+            out.set(chunk.subarray(i, end), o)
+          } else {
+            for (let j = i; j < end; j++) {
+              out[o + j - i] = chunk[j]!
+            }
+          }
           o += end - i
           i = end - 1
         }
@@ -121,12 +146,16 @@ function relaxed(sink: Sink): Canonicalizer {
           out[o++] = CR
           out[o++] = LF
         }
-        if (space) out[o++] = SP
+        if (space) {
+          out[o++] = SP
+        }
         out[o++] = CR
         sink(out.subarray(0, o))
         content = true
       }
-      if (content) sink(crlf)
+      if (content) {
+        sink(crlf)
+      }
     },
   }
 }

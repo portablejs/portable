@@ -118,7 +118,9 @@ describe('publicKeyOf matches node:crypto createPublicKey', () => {
     ) satisfies KeyUsage[]
     const pair = await crypto.subtle.generateKey(algorithm, true, usages)
     const keyPair = 'privateKey' in pair ? pair : undefined
-    if (!keyPair) throw new Error('Expected a key pair')
+    if (!keyPair) {
+      throw new Error('Expected a key pair')
+    }
     const ours = await WebCrypto.publicKeyOf(keyPair.privateKey)
     const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey))
     const node = nodeCrypto

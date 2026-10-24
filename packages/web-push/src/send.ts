@@ -57,18 +57,26 @@ export declare namespace toRequest {
 export async function toRequest(options: toRequest.Options): Promise<Request> {
   const { subscription, payload, ttl = 2419200, urgency, topic, signal } = options
   const endpoint = typeof subscription?.endpoint === 'string' && parseUrl(subscription.endpoint)
-  if (!endpoint || endpoint.protocol !== 'https:')
+  if (!endpoint || endpoint.protocol !== 'https:') {
     throw new InvalidInputError('The subscription endpoint must be an https: URL')
-  if (!Number.isSafeInteger(ttl) || ttl < 0)
+  }
+  if (!Number.isSafeInteger(ttl) || ttl < 0) {
     throw new RangeError('ttl must be a non-negative integer')
-  if (urgency !== undefined && !urgencies.has(urgency))
+  }
+  if (urgency !== undefined && !urgencies.has(urgency)) {
     throw new RangeError(`urgency must be 'very-low', 'low', 'normal' or 'high'`)
-  if (topic !== undefined && !/^[\w-]{1,32}$/.test(topic))
+  }
+  if (topic !== undefined && !/^[\w-]{1,32}$/.test(topic)) {
     throw new RangeError('topic must be 1 to 32 base64url characters')
+  }
 
   const headers = new Headers({ ttl: String(ttl) })
-  if (urgency) headers.set('urgency', urgency)
-  if (topic) headers.set('topic', topic)
+  if (urgency) {
+    headers.set('urgency', urgency)
+  }
+  if (topic) {
+    headers.set('topic', topic)
+  }
   let body: Uint8Array<ArrayBuffer> | undefined
   if (payload !== undefined) {
     body = await encrypt({ subscription, payload, signal })
@@ -116,7 +124,9 @@ export declare namespace send {
  *   ttl: 3600,
  *   urgency: 'high',
  * })
- * if (result.kind === 'gone') await deleteSubscription(subscription.endpoint)
+ * if (result.kind === 'gone') {
+ *   await deleteSubscription(subscription.endpoint)
+ * }
  * ```
  *
  * @throws {ResponseError} When the push service answers with a status other than 2xx, 404 or 410.

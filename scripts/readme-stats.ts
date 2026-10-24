@@ -32,19 +32,25 @@ const sizes = readJson<Record<string, Record<string, Size>>>('.bench/sizes.json'
 const header = (column: Column) => column.header ?? column.name
 
 function opsPerSecond(hz: number): string {
-  if (hz < 100) return hz.toPrecision(3)
+  if (hz < 100) {
+    return hz.toPrecision(3)
+  }
   const step = 10 ** (Math.floor(Math.log10(hz)) - 2)
   return (Math.round(hz / step) * step).toLocaleString('en-US')
 }
 
 function taskFor(row: Row, column: Column): string | null {
-  if (row.tasks && column.name in row.tasks) return row.tasks[column.name]!
+  if (row.tasks && column.name in row.tasks) {
+    return row.tasks[column.name]!
+  }
   return column.name
 }
 
 function benchTable(name: string, table: Table): string | undefined {
   const report = readJson<BenchReport>(`.bench/${name}.json`)
-  if (!report) return undefined
+  if (!report) {
+    return undefined
+  }
   const tests = report.testResults.flatMap((file) => file.assertionResults)
   const lines = [
     `| | ${table.columns.map(header).join(' | ')} |`,
@@ -54,14 +60,18 @@ function benchTable(name: string, table: Table): string | undefined {
     const test = tests.find(({ fullName }) =>
       typeof row.test === 'string' ? fullName.includes(row.test) : row.test.test(fullName),
     )
-    if (!test) console.warn(`${name}: no test matches ${row.test} for "${row.label}"`)
+    if (!test) {
+      console.warn(`${name}: no test matches ${row.test} for "${row.label}"`)
+    }
     const tasks = test?.benchmarks?.flatMap((benchmark) => benchmark.tasks) ?? []
     const cells = table.columns.map((column) => {
       const task = taskFor(row, column)
       const hz = task && tasks.find((candidate) => candidate.name === task)?.throughput.mean
       return hz ? opsPerSecond(hz) : '–'
     })
-    if (test && cells[0] === '–') console.warn(`${name}: "${row.label}" has no result for us`)
+    if (test && cells[0] === '–') {
+      console.warn(`${name}: "${row.label}" has no result for us`)
+    }
     lines.push(`| ${row.label} | ${cells.join(' | ')} |`)
   }
   return lines.join('\n')
@@ -77,8 +87,12 @@ const packageName = (specifier: string) =>
 function findPackage(from: string, name: string): string | undefined {
   for (let dir = from; ; dir = dirname(dir)) {
     const candidate = join(dir, 'node_modules', name)
-    if (existsSync(join(candidate, 'package.json'))) return realpathSync(candidate)
-    if (dirname(dir) === dir) return undefined
+    if (existsSync(join(candidate, 'package.json'))) {
+      return realpathSync(candidate)
+    }
+    if (dirname(dir) === dir) {
+      return undefined
+    }
   }
 }
 
@@ -94,11 +108,16 @@ function dependencyCount(testDir: string, column: Column): number | undefined {
   while (queue.length) {
     const [from, name] = queue.shift()!
     const dir = findPackage(from, name)
-    if (!dir) return undefined
-    if (seen.has(dir)) continue
+    if (!dir) {
+      return undefined
+    }
+    if (seen.has(dir)) {
+      continue
+    }
     seen.add(dir)
-    for (const dependency of Object.keys(packageJson(dir).dependencies ?? {}))
+    for (const dependency of Object.keys(packageJson(dir).dependencies ?? {})) {
       queue.push([dir, dependency])
+    }
   }
   return seen.size - 1
 }
@@ -106,22 +125,27 @@ function dependencyCount(testDir: string, column: Column): number | undefined {
 function typesOf(testDir: string, column: Column): string {
   const name = packageName(column.imports![0].from)
   const dir = findPackage(testDir, name)
-  if (!dir) return '–'
+  if (!dir) {
+    return '–'
+  }
   const json = packageJson(dir)
   if (
     json.types ||
     json.typings ||
     JSON.stringify(json.exports ?? {}).includes('"types"') ||
     existsSync(join(dir, 'index.d.ts'))
-  )
+  ) {
     return 'included'
+  }
   const typesName = `@types/${name.replace(/^@/, '').replace('/', '__')}`
   return findPackage(testDir, typesName) ? `\`${typesName}\`` : 'none'
 }
 
 function versionOf(testDir: string, column: Column): string {
   const name = packageName(column.imports![0].from)
-  if (name.startsWith('@portable/')) return '–'
+  if (name.startsWith('@portable/')) {
+    return '–'
+  }
   const dir = findPackage(testDir, name)
   return dir ? (packageJson(dir).version ?? '–') : '–'
 }
@@ -141,7 +165,9 @@ function statsTable(name: string, table: Table): string {
           column,
           () => {
             const size = measured[column.name]
-            if (!size) return 'not measured'
+            if (!size) {
+              return 'not measured'
+            }
             return 'error' in size ? 'does not bundle' : kB(size.gzip)
           },
           { node: 'built in', web: 'built in' },
@@ -162,7 +188,9 @@ function statsTable(name: string, table: Table): string {
           column,
           () => {
             const size = measured[column.name]
-            if (!size || 'error' in size) return '–'
+            if (!size || 'error' in size) {
+              return '–'
+            }
             return size.builtins.length
               ? size.builtins.map((builtin) => `\`${builtin}\``).join(', ')
               : 'none'
@@ -188,7 +216,9 @@ function statsTable(name: string, table: Table): string {
 
 function block(name: string, table: Table): string | undefined {
   const bench = benchTable(name, table)
-  if (!bench) return undefined
+  if (!bench) {
+    return undefined
+  }
   const runtime = machine
     ? `Node ${machine.node.replace(/^v/, '')}, on ${machine.cpu} (${machine.cores} cores)`
     : 'Node'
@@ -222,9 +252,11 @@ for (const [name, table] of Object.entries(tables)) {
   }
   const replacement = `${start}\n${content}\n${end}`
   let text = readFileSync(path, 'utf8')
-  if (markers.test(text)) text = text.replace(markers, () => replacement)
-  else if (sizeMarkers.test(text)) text = text.replace(sizeMarkers, () => replacement)
-  else {
+  if (markers.test(text)) {
+    text = text.replace(markers, () => replacement)
+  } else if (sizeMarkers.test(text)) {
+    text = text.replace(sizeMarkers, () => replacement)
+  } else {
     const why = text.search(/^## Why/m)
     if (why < 0) {
       console.warn(`${name}: README.md has no "Why use this" section for the tables`)

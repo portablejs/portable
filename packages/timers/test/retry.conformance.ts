@@ -17,7 +17,9 @@ describe('attempts', () => {
     const result = await settle(
       Timers.retry(async ({ attempt }) => {
         seen.push(attempt)
-        if (attempt < 3) throw fixtureError
+        if (attempt < 3) {
+          throw fixtureError
+        }
         return fixture
       }),
     )
@@ -103,7 +105,9 @@ describe('attempts', () => {
   test('resolves with a Response from fetch-like code', async () => {
     const response = await settle(
       Timers.retry(async ({ attempt }) => {
-        if (attempt < 2) throw new TypeError('Failed to fetch')
+        if (attempt < 2) {
+          throw new TypeError('Failed to fetch')
+        }
         return new Response('ok', { status: 200 })
       }),
     )
@@ -362,10 +366,11 @@ describe('delay', () => {
       Timers.retry(
         ({ attempt }) => {
           times.push(Date.now())
-          if (attempt === 1)
+          if (attempt === 1) {
             throw new HttpError(
               new Response(null, { status: 429, headers: { 'retry-after': '7' } }),
             )
+          }
           return 'ok'
         },
         {
@@ -413,7 +418,9 @@ describe('timeout', () => {
       Timers.retry(
         ({ attempt, signal }) =>
           new Promise((resolve, reject) => {
-            if (attempt === 3) return resolve(fixture)
+            if (attempt === 3) {
+              return resolve(fixture)
+            }
             signal.addEventListener('abort', () => {
               reasons.push(signal.reason)
               reject(signal.reason)
@@ -446,7 +453,9 @@ describe('timeout', () => {
       Timers.retry(
         async ({ attempt }) => {
           await Timers.sleep(800)
-          if (attempt < 3) throw fixtureError
+          if (attempt < 3) {
+            throw fixtureError
+          }
           return fixture
         },
         { timeout: 1000, delay: 0 },
@@ -541,7 +550,9 @@ describe('signal', () => {
       Timers.retry(
         ({ attempt }) => {
           calls++
-          if (attempt === 3) controller.abort(fixtureError)
+          if (attempt === 3) {
+            controller.abort(fixtureError)
+          }
           throw new Error('fail')
         },
         { attempts: 5, signal: controller.signal },
@@ -681,7 +692,9 @@ describe('onRetry', () => {
           onRetry: async (_, { attempt }) => {
             await new Promise((resolve) => setTimeout(resolve, 1))
             waited = true
-            if (attempt === 2) throw stop
+            if (attempt === 2) {
+              throw stop
+            }
           },
         },
       ),

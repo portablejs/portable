@@ -38,13 +38,17 @@ export function abortable<input, output>(
   options: abortable.Options = {},
 ): abortable.Transformer<input, output> {
   const { signal } = options
-  if (!signal) return transformer
+  if (!signal) {
+    return transformer
+  }
   let onAbort = () => {}
   const done = () => signal.removeEventListener('abort', onAbort)
   return {
     ...transformer,
     start(controller) {
-      if (signal.aborted) return controller.error(signal.reason)
+      if (signal.aborted) {
+        return controller.error(signal.reason)
+      }
       onAbort = () => controller.error(signal.reason)
       signal.addEventListener('abort', onAbort, { once: true })
       return transformer.start?.(controller)

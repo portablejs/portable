@@ -32,11 +32,15 @@ test('format writes the same text for every way of writing an address, as URL re
     fc.property(ipLike, (text) => {
       const parsed = outcome(errors, () => Ip.parse(text))
       expect(Ip.canParse(text)).toBe('value' in parsed)
-      if (!('value' in parsed)) return
+      if (!('value' in parsed)) {
+        return
+      }
       const address = parsed.value
       const formatted = Ip.format(address)
       expect(Ip.format(formatted)).toBe(formatted)
-      if (address.version === 6 && address.zone) return
+      if (address.version === 6 && address.zone) {
+        return
+      }
       const host = address.version === 4 ? text : `[${text}]`
       const hostname = new URL(`http://${host}/`).hostname.replace(/^\[|\]$/g, '')
       expect(Ip.parse(hostname)).toEqual(address)

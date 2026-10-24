@@ -44,8 +44,11 @@ export declare namespace CommandError {
  * try {
  *   await client.send({ from, to, message })
  * } catch (error) {
- *   if (error instanceof Smtp.CommandError && error.responseCode === 452) retryLater()
- *   else throw error
+ *   if (error instanceof Smtp.CommandError && error.responseCode === 452) {
+ *     retryLater()
+ *   } else {
+ *     throw error
+ *   }
  * }
  * ```
  */

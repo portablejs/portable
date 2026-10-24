@@ -191,7 +191,9 @@ describe('plaintext', () => {
       disabledCommands: ['STARTTLS', 'AUTH'],
       onData(stream) {
         stream.once('data', () => {
-          for (const connection of server.server.connections) connection._socket.destroy()
+          for (const connection of server.server.connections) {
+            connection._socket.destroy()
+          }
         })
       },
     })

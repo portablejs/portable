@@ -85,18 +85,26 @@ const channelsByColorType = { 0: 1, 2: 3, 4: 2, 6: 4 } as const
 
 function filtered(image: RgbaImage, colorType: 0 | 2 | 4 | 6, options: encode.Options) {
   const { width, height, data } = image
-  if (!isUint8Array(data) && Object.prototype.toString.call(data) !== '[object Uint8ClampedArray]')
+  if (
+    !isUint8Array(data) &&
+    Object.prototype.toString.call(data) !== '[object Uint8ClampedArray]'
+  ) {
     throw new TypeError('data must be a Uint8Array or a Uint8ClampedArray.')
-  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1)
+  }
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
     throw new InvalidInputError('width and height must be positive integers.')
-  if (data.length !== width * height * 4)
+  }
+  if (data.length !== width * height * 4) {
     throw new InvalidInputError(`data must have width * height * 4 = ${width * height * 4} bytes.`)
-  if (!(colorType in channelsByColorType))
+  }
+  if (!(colorType in channelsByColorType)) {
     throw new UnsupportedError(`Unsupported color type ${colorType}.`)
+  }
   const { filter = [0, 1, 2, 3, 4], background } = options
   const filters = typeof filter === 'number' ? [filter] : filter
-  if (filters.length === 0 || filters.some((f) => !Number.isInteger(f) || f < 0 || f > 4))
+  if (filters.length === 0 || filters.some((f) => !Number.isInteger(f) || f < 0 || f > 4)) {
     throw new RangeError('filter must be 0 to 4 or a non-empty list of them.')
+  }
 
   const bpp = channelsByColorType[colorType]
   const pixels = pack(data, colorType, background)
@@ -108,7 +116,9 @@ function pack(
   colorType: 0 | 2 | 4 | 6,
   background: encode.Options['background'],
 ): Uint8Array {
-  if (colorType === 6) return new Uint8Array(data.buffer, data.byteOffset, data.length)
+  if (colorType === 6) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.length)
+  }
   const { red = 255, green = 255, blue = 255 } = background ?? {}
   const pixels = data.length / 4
   const out = new Uint8Array(pixels * channelsByColorType[colorType])

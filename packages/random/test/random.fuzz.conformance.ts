@@ -50,11 +50,15 @@ test('shuffle keeps every element, pick returns one of them, and bytes has the l
       fc.integer(),
       (array, seed) => {
         const seeded = Random.seeded(seed)
-        for (const shuffle of [Random.shuffle, seeded.shuffle])
+        for (const shuffle of [Random.shuffle, seeded.shuffle]) {
           expect(shuffle(array).sort((a, b) => a - b)).toEqual([...array].sort((a, b) => a - b))
-        for (const pick of [Random.pick, seeded.pick]) expect(array).toContain(pick(array))
-        for (const bytes of [Random.bytes, seeded.bytes])
+        }
+        for (const pick of [Random.pick, seeded.pick]) {
+          expect(array).toContain(pick(array))
+        }
+        for (const bytes of [Random.bytes, seeded.bytes]) {
           expect(bytes(array.length)).toHaveLength(array.length)
+        }
         const float = seeded.float()
         expect(float >= 0 && float < 1).toBe(true)
       },

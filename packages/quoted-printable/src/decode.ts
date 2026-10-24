@@ -48,11 +48,15 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
         {
           transform(chunk, controller) {
             const output = decoder.write(utf8.write(chunk), false)
-            if (output.length > 0) controller.enqueue(output)
+            if (output.length > 0) {
+              controller.enqueue(output)
+            }
           },
           flush(controller) {
             const output = decoder.write(utf8.flush(), true)
-            if (output.length > 0) controller.enqueue(output)
+            if (output.length > 0) {
+              controller.enqueue(output)
+            }
           },
         },
         options,
@@ -69,8 +73,12 @@ const LF = 0x0a
 
 const hexValue = /* @__PURE__ */ (() => {
   const table = new Int8Array(256).fill(-1)
-  for (let i = 0; i < 10; i++) table[0x30 + i] = i
-  for (let i = 0; i < 6; i++) table[0x41 + i] = table[0x61 + i] = 10 + i
+  for (let i = 0; i < 10; i++) {
+    table[0x30 + i] = i
+  }
+  for (let i = 0; i < 6; i++) {
+    table[0x41 + i] = table[0x61 + i] = 10 + i
+  }
   return table
 })()
 
@@ -114,14 +122,19 @@ function createDecoder(): Decoder {
       out[o++] = escapeDigit
       escape = 0
     }
-    if (b === EQUALS) escape = 1
-    else out[o++] = b
+    if (b === EQUALS) {
+      escape = 1
+    } else {
+      out[o++] = b
+    }
   }
 
   const removeSoftBreaks = (b: number): void => {
     if (softBreak === 1) {
       softBreak = 0
-      if (b === LF) return
+      if (b === LF) {
+        return
+      }
       if (b === CR) {
         softBreak = 2
         return
@@ -129,12 +142,17 @@ function createDecoder(): Decoder {
       decodeEscapes(EQUALS)
     } else if (softBreak === 2) {
       softBreak = 0
-      if (b === LF) return
+      if (b === LF) {
+        return
+      }
       decodeEscapes(EQUALS)
       decodeEscapes(CR)
     }
-    if (b === EQUALS) softBreak = 1
-    else decodeEscapes(b)
+    if (b === EQUALS) {
+      softBreak = 1
+    } else {
+      decodeEscapes(b)
+    }
   }
 
   const removeTrailingWhitespace = (b: number): void => {
@@ -154,7 +172,9 @@ function createDecoder(): Decoder {
           grown.set(out.subarray(0, o))
           out = grown
         }
-        for (let i = 0; i < whitespaceLength; i++) removeSoftBreaks(whitespace[i]!)
+        for (let i = 0; i < whitespaceLength; i++) {
+          removeSoftBreaks(whitespace[i]!)
+        }
       }
       whitespaceLength = 0
       carriedWhitespace = 0
@@ -204,8 +224,12 @@ function createDecoder(): Decoder {
           decodeEscapes(CR)
         }
         softBreak = 0
-        if (escape >= 1) out[o++] = EQUALS
-        if (escape === 2) out[o++] = escapeDigit
+        if (escape >= 1) {
+          out[o++] = EQUALS
+        }
+        if (escape === 2) {
+          out[o++] = escapeDigit
+        }
         escape = 0
       }
       return o === out.length ? out : out.subarray(0, o)

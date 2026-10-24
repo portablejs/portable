@@ -12,7 +12,9 @@ npm install @portable/ip
 import * as Ip from '@portable/ip'
 
 const address = Ip.unmap(request.headers.get('cf-connecting-ip')!)
-if (Ip.range(address) !== 'unicast') throw new Error('Refusing to fetch an internal address.')
+if (Ip.range(address) !== 'unicast') {
+  throw new Error('Refusing to fetch an internal address.')
+}
 
 Ip.format('2001:0DB8:0:0:0:0:0:1') // '2001:db8::1'
 Ip.contains('10.0.0.0/8', '10.1.2.3') // true

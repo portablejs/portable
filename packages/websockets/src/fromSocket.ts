@@ -65,22 +65,29 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
   let failure: unknown
 
   const opened = new Promise<void>((resolve, reject) => {
-    if (socket.readyState !== CONNECTING) return resolve()
+    if (socket.readyState !== CONNECTING) {
+      return resolve()
+    }
     socket.addEventListener('open', () => resolve())
     socket.addEventListener('close', () => reject(closedError()))
   })
   opened.catch(() => {})
 
   const finish = (error: unknown, closeReadable: boolean) => {
-    if (done) return
+    if (done) {
+      return
+    }
     done = true
     failure = error
     socket.removeEventListener('message', onMessage)
     socket.removeEventListener('close', onClose)
     signal?.removeEventListener('abort', onAbort)
     try {
-      if (closeReadable) readableController.close()
-      else readableController.error(error)
+      if (closeReadable) {
+        readableController.close()
+      } else {
+        readableController.error(error)
+      }
     } catch {}
     writableController.error(error)
   }
@@ -98,7 +105,9 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
       return shutdown(error)
     }
     readableController.enqueue(message)
-    if (readableController.desiredSize! < 0) shutdown(new MaxBufferedError({ maxBuffered }))
+    if (readableController.desiredSize! < 0) {
+      shutdown(new MaxBufferedError({ maxBuffered }))
+    }
   }
 
   const onClose = (event: SocketEvent) => {
@@ -131,13 +140,18 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     },
     write(chunk) {
       assertOutgoing(chunk)
-      if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark)
+      if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark) {
         return socket.send(chunk)
+      }
       return opened
         .then(() => drained(socket, highWaterMark))
         .then(() => {
-          if (done) throw failure
-          if (socket.readyState !== OPEN) throw closedError()
+          if (done) {
+            throw failure
+          }
+          if (socket.readyState !== OPEN) {
+            throw closedError()
+          }
           socket.send(chunk)
         })
     },
@@ -149,6 +163,8 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     },
   })
 
-  if (signal?.aborted) onAbort()
+  if (signal?.aborted) {
+    onAbort()
+  }
   return { readable, writable }
 }

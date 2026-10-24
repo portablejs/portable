@@ -32,8 +32,9 @@ export function parseCidr(text: string): Cidr {
     (address.version === 6 && address.zone !== undefined) ||
     prefix < 0 ||
     prefix > address.bytes.length * 8
-  )
+  ) {
     throw new InvalidInputError(`Invalid CIDR block: ${JSON.stringify(text)}.`)
+  }
   const bytes = address.bytes
   const whole = prefix >> 3
   if (whole < bytes.length) {
@@ -78,20 +79,29 @@ export function contains(cidr: Cidr | string, address: Address | string): boolea
   const block = typeof cidr === 'string' ? parseCidr(cidr) : cidr
   const network = block.address.bytes
   const { prefix } = block
-  if (!Number.isInteger(prefix) || prefix < 0 || prefix > network.length * 8)
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > network.length * 8) {
     throw new RangeError(`Invalid prefix length ${prefix} for IPv${block.address.version}.`)
+  }
   let bytes = from(address).bytes
   if (bytes.length !== network.length) {
-    if (network.length === 4 && isMapped(bytes)) bytes = bytes.subarray(12)
-    else if (network.length === 16) bytes = toIpv6({ version: 4, bytes }).bytes
-    else return false
+    if (network.length === 4 && isMapped(bytes)) {
+      bytes = bytes.subarray(12)
+    } else if (network.length === 16) {
+      bytes = toIpv6({ version: 4, bytes }).bytes
+    } else {
+      return false
+    }
   }
   return isInNetwork(bytes, network, prefix)
 }
 
 export function isInNetwork(bytes: Uint8Array, network: Uint8Array, prefix: number): boolean {
   const whole = prefix >> 3
-  for (let i = 0; i < whole; i++) if (bytes[i] !== network[i]) return false
+  for (let i = 0; i < whole; i++) {
+    if (bytes[i] !== network[i]) {
+      return false
+    }
+  }
   const bits = prefix & 7
   return bits === 0 || ((bytes[whole]! ^ network[whole]!) & (0xff00 >> bits) & 0xff) === 0
 }

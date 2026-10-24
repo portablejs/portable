@@ -49,7 +49,9 @@ export function decode(
     try {
       return nativeFromBase64.call(Uint8Array, text, { alphabet, lastChunkHandling: mode })
     } catch (error) {
-      if (!(error instanceof SyntaxError)) throw error
+      if (!(error instanceof SyntaxError)) {
+        throw error
+      }
       // The native SyntaxError doesn't say which kind of problem it found, and the fallback throws
       // on exactly the same input with the right error class.
       decodeChunk(state, text, true)
@@ -71,7 +73,9 @@ const nativeFromBase64 = Reflect.get(Uint8Array, 'fromBase64') satisfies
 
 function table(characters: string): Int8Array {
   const values = new Int8Array(128).fill(-1)
-  for (let i = 0; i < characters.length; i++) values[characters.charCodeAt(i)] = i % 64
+  for (let i = 0; i < characters.length; i++) {
+    values[characters.charCodeAt(i)] = i % 64
+  }
   return values
 }
 
@@ -96,10 +100,12 @@ type State = {
 }
 
 function createState(alphabet: Alphabet, mode: Mode): State {
-  if (alphabet !== 'base64' && alphabet !== 'base64url')
+  if (alphabet !== 'base64' && alphabet !== 'base64url') {
     throw new RangeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
-  if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime')
+  }
+  if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime') {
     throw new RangeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`)
+  }
   return {
     values: mode === 'mime' ? tables.both : tables[alphabet],
     mime: mode === 'mime',
@@ -132,7 +138,9 @@ function decodeChunk(state: State, text: string, final: boolean): Uint8Array<Arr
   let { bits, count, padding } = state
   const length = text.length
   let end = length
-  while (end > 0 && text.charCodeAt(end - 1) === 0x3d) end--
+  while (end > 0 && text.charCodeAt(end - 1) === 0x3d) {
+    end--
+  }
   const out = new Uint8Array(Math.ceil((end + count) / 4) * 3)
   let j = 0
   let i = 0
@@ -144,25 +152,33 @@ function decodeChunk(state: State, text: string, final: boolean): Uint8Array<Arr
         const c1 = text.charCodeAt(i + 1)
         const c2 = text.charCodeAt(i + 2)
         const c3 = text.charCodeAt(i + 3)
-        if ((c0 | c1 | c2 | c3) > 127) break
+        if ((c0 | c1 | c2 | c3) > 127) {
+          break
+        }
         const v0 = values[c0]!
         const v1 = values[c1]!
         const v2 = values[c2]!
         const v3 = values[c3]!
-        if ((v0 | v1 | v2 | v3) < 0) break
+        if ((v0 | v1 | v2 | v3) < 0) {
+          break
+        }
         const v = (v0 << 18) | (v1 << 12) | (v2 << 6) | v3
         out[j] = v >> 16
         out[j + 1] = v >> 8
         out[j + 2] = v
         j += 3
       }
-      if (i >= length) break
+      if (i >= length) {
+        break
+      }
     }
 
     const code = text.charCodeAt(i)
     const value = code < 128 ? values[code]! : -1
     if (value >= 0) {
-      if (padding !== 'none') invalid(state, i, 'Unexpected character after padding')
+      if (padding !== 'none') {
+        invalid(state, i, 'Unexpected character after padding')
+      }
       bits = (bits << 6) | value
       if (++count === 4) {
         out[j] = bits >> 16
@@ -174,16 +190,20 @@ function decodeChunk(state: State, text: string, final: boolean): Uint8Array<Arr
       }
     } else if (code === 0x3d) {
       if (!mime) {
-        if (padding === 'needsSecond') padding = 'done'
-        else if (padding === 'done' || count < 2) invalid(state, i, 'Unexpected padding')
-        else {
-          if (strict && (count === 2 ? bits & 0xf : bits & 0x3) !== 0)
+        if (padding === 'needsSecond') {
+          padding = 'done'
+        } else if (padding === 'done' || count < 2) {
+          invalid(state, i, 'Unexpected padding')
+        } else {
+          if (strict && (count === 2 ? bits & 0xf : bits & 0x3) !== 0) {
             invalid(state, i, 'Non-zero bits before padding')
+          }
           padding = count === 2 ? 'needsSecond' : 'done'
         }
       }
-      if (count === 2) out[j++] = bits >> 4
-      else if (count === 3) {
+      if (count === 2) {
+        out[j++] = bits >> 4
+      } else if (count === 3) {
         out[j++] = bits >> 10
         out[j++] = bits >> 2
       }
@@ -196,14 +216,20 @@ function decodeChunk(state: State, text: string, final: boolean): Uint8Array<Arr
   }
 
   if (final && !mime) {
-    if (padding === 'needsSecond')
+    if (padding === 'needsSecond') {
       throw new TruncatedError('Incomplete padding at the end of the input.')
-    if (count > 0 && strict) throw new TruncatedError('Missing padding at the end of the input.')
-    if (count === 1) throw new TruncatedError('The input ends with a single character of a group.')
+    }
+    if (count > 0 && strict) {
+      throw new TruncatedError('Missing padding at the end of the input.')
+    }
+    if (count === 1) {
+      throw new TruncatedError('The input ends with a single character of a group.')
+    }
   }
   if (final) {
-    if (count === 2) out[j++] = bits >> 4
-    else if (count === 3) {
+    if (count === 2) {
+      out[j++] = bits >> 4
+    } else if (count === 3) {
       out[j++] = bits >> 10
       out[j++] = bits >> 2
     }

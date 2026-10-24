@@ -59,7 +59,9 @@ export async function decrypt(body: Uint8Array, agent: UserAgent): Promise<Uint8
   const idLength = body[20]!
   const serverPublic = body.slice(21, 21 + idLength)
   const records = body.subarray(21 + idLength)
-  if (records.length > recordSize) throw new Error('More than one record')
+  if (records.length > recordSize) {
+    throw new Error('More than one record')
+  }
 
   const serverKey = await subtle.importKey('raw', serverPublic, ecdh, false, [])
   const secret = await subtle.deriveBits(
@@ -76,7 +78,9 @@ export async function decrypt(body: Uint8Array, agent: UserAgent): Promise<Uint8
     await subtle.decrypt({ name: 'AES-GCM', iv: nonce }, key, records.slice()),
   )
   const end = padded.findLastIndex((byte) => byte !== 0)
-  if (padded[end] !== 2) throw new Error('Missing padding delimiter')
+  if (padded[end] !== 2) {
+    throw new Error('Missing padding delimiter')
+  }
   return padded.subarray(0, end)
 }
 
@@ -112,7 +116,9 @@ export type Jwt = {
  */
 export async function verifyVapid(authorization: string | null): Promise<Jwt> {
   const match = /^vapid t=([\w-]+)\.([\w-]+)\.([\w-]+), k=([\w-]+)$/.exec(authorization ?? '')
-  if (!match) throw new Error(`Not a vapid Authorization header: ${authorization}`)
+  if (!match) {
+    throw new Error(`Not a vapid Authorization header: ${authorization}`)
+  }
   const [, header, claims, signature, k] = match as unknown as [
     string,
     string,
@@ -133,7 +139,9 @@ export async function verifyVapid(authorization: string | null): Promise<Jwt> {
     fromBase64url(signature),
     utf8.encode(`${header}.${claims}`),
   )
-  if (!valid) throw new Error('Bad JWT signature')
+  if (!valid) {
+    throw new Error('Bad JWT signature')
+  }
   const json = (part: string) => JSON.parse(new TextDecoder().decode(fromBase64url(part)))
   return { header: json(header), claims: json(claims), publicKey: k }
 }

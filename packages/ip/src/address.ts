@@ -31,7 +31,9 @@ const zoneCharacter = /^[\w.~-]+$/
  */
 export function parse(text: string): Address {
   const address = tryParse(text)
-  if (!address) throw new InvalidInputError(`Invalid IP address: ${JSON.stringify(text)}.`)
+  if (!address) {
+    throw new InvalidInputError(`Invalid IP address: ${JSON.stringify(text)}.`)
+  }
   return address
 }
 
@@ -56,7 +58,9 @@ export declare namespace canParse {
  * ```
  */
 export function canParse(text: unknown, options: canParse.Options = {}): boolean {
-  if (typeof text !== 'string') return false
+  if (typeof text !== 'string') {
+    return false
+  }
   const address = tryParse(text)
   return (
     address !== undefined && (options.version === undefined || address.version === options.version)
@@ -76,8 +80,12 @@ export function canParse(text: unknown, options: canParse.Options = {}): boolean
  */
 export function fromBytes(bytes: Uint8Array): Address {
   assertUint8Array(bytes)
-  if (bytes.length === 4) return { version: 4, bytes: bytes.slice() }
-  if (bytes.length === 16) return { version: 6, bytes: bytes.slice() }
+  if (bytes.length === 4) {
+    return { version: 4, bytes: bytes.slice() }
+  }
+  if (bytes.length === 16) {
+    return { version: 6, bytes: bytes.slice() }
+  }
   throw new InvalidInputError(`An IP address has 4 or 16 bytes, not ${bytes.length}.`)
 }
 
@@ -97,15 +105,21 @@ export function fromBytes(bytes: Uint8Array): Address {
 export function format(address: Address | string): string {
   const value = from(address)
   const { bytes } = value
-  if (value.version === 4) return `${bytes[0]}.${bytes[1]}.${bytes[2]}.${bytes[3]}`
+  if (value.version === 4) {
+    return `${bytes[0]}.${bytes[1]}.${bytes[2]}.${bytes[3]}`
+  }
   const suffix = value.zone === undefined ? '' : `%${value.zone}`
-  if (isMapped(bytes)) return `::ffff:${bytes[12]}.${bytes[13]}.${bytes[14]}.${bytes[15]}${suffix}`
+  if (isMapped(bytes)) {
+    return `::ffff:${bytes[12]}.${bytes[13]}.${bytes[14]}.${bytes[15]}${suffix}`
+  }
 
   let start = -1
   let length = 1
   for (let i = 0; i < 8; i++) {
     let j = i
-    while (j < 8 && bytes[j * 2] === 0 && bytes[j * 2 + 1] === 0) j++
+    while (j < 8 && bytes[j * 2] === 0 && bytes[j * 2 + 1] === 0) {
+      j++
+    }
     if (j - i > length) {
       start = i
       length = j - i
@@ -120,7 +134,9 @@ export function format(address: Address | string): string {
       continue
     }
     text += ((bytes[i * 2]! << 8) | bytes[i * 2 + 1]!).toString(16)
-    if (i < 7) text += ':'
+    if (i < 7) {
+      text += ':'
+    }
   }
   return text + suffix
 }
@@ -142,10 +158,14 @@ export function format(address: Address | string): string {
 export function compare(a: Address | string, b: Address | string): number {
   const x = from(a)
   const y = from(b)
-  if (x.version !== y.version) return x.version - y.version
+  if (x.version !== y.version) {
+    return x.version - y.version
+  }
   for (let i = 0; i < x.bytes.length; i++) {
     const difference = x.bytes[i]! - y.bytes[i]!
-    if (difference !== 0) return difference
+    if (difference !== 0) {
+      return difference
+    }
   }
   const xZone = x.version === 6 ? (x.zone ?? '') : ''
   const yZone = y.version === 6 ? (y.zone ?? '') : ''
@@ -167,8 +187,9 @@ export function compare(a: Address | string, b: Address | string): number {
  */
 export function unmap(address: Address | string): Address {
   const value = from(address)
-  if (value.version === 6 && isMapped(value.bytes))
+  if (value.version === 6 && isMapped(value.bytes)) {
     return { version: 4, bytes: value.bytes.slice(12) }
+  }
   return value
 }
 
@@ -185,7 +206,9 @@ export function unmap(address: Address | string): Address {
  */
 export function toIpv6(address: Address | string): Address {
   const value = from(address)
-  if (value.version === 6) return value
+  if (value.version === 6) {
+    return value
+  }
   const bytes = new Uint8Array(16)
   bytes[10] = 0xff
   bytes[11] = 0xff
@@ -208,10 +231,13 @@ export function toIpv6(address: Address | string): Address {
  */
 export function reverseName(address: Address | string): string {
   const { version, bytes } = from(address)
-  if (version === 4) return `${bytes[3]}.${bytes[2]}.${bytes[1]}.${bytes[0]}.in-addr.arpa`
+  if (version === 4) {
+    return `${bytes[3]}.${bytes[2]}.${bytes[1]}.${bytes[0]}.in-addr.arpa`
+  }
   let name = ''
-  for (let i = 15; i >= 0; i--)
+  for (let i = 15; i >= 0; i--) {
     name += `${(bytes[i]! & 15).toString(16)}.${(bytes[i]! >> 4).toString(16)}.`
+  }
   return `${name}ip6.arpa`
 }
 
@@ -220,8 +246,14 @@ export function from(address: Address | string): Address {
 }
 
 export function isMapped(bytes: Uint8Array): boolean {
-  if (bytes.length !== 16 || bytes[10] !== 0xff || bytes[11] !== 0xff) return false
-  for (let i = 0; i < 10; i++) if (bytes[i] !== 0) return false
+  if (bytes.length !== 16 || bytes[10] !== 0xff || bytes[11] !== 0xff) {
+    return false
+  }
+  for (let i = 0; i < 10; i++) {
+    if (bytes[i] !== 0) {
+      return false
+    }
+  }
   return true
 }
 
@@ -233,8 +265,12 @@ export function tryParse(text: string): Address | undefined {
   const percent = text.indexOf('%')
   const end = percent === -1 ? text.length : percent
   const bytes = new Uint8Array(16)
-  if (!parse6(text, end, bytes)) return undefined
-  if (percent === -1) return { version: 6, bytes }
+  if (!parse6(text, end, bytes)) {
+    return undefined
+  }
+  if (percent === -1) {
+    return { version: 6, bytes }
+  }
   const zone = text.slice(percent + 1)
   return zoneCharacter.test(zone) ? { version: 6, bytes, zone } : undefined
 }
@@ -246,18 +282,28 @@ function parse4(text: string, start: number, end: number, out: Uint8Array, offse
   for (let i = start; i < end; i++) {
     const c = text.charCodeAt(i)
     if (c === dot) {
-      if (digits === 0 || dots === 3) return false
+      if (digits === 0 || dots === 3) {
+        return false
+      }
       out[offset + dots++] = value
       digits = 0
       value = 0
     } else if (c >= 0x30 && c <= 0x39) {
-      if (digits > 0 && value === 0) return false
+      if (digits > 0 && value === 0) {
+        return false
+      }
       value = value * 10 + c - 0x30
-      if (value > 255) return false
+      if (value > 255) {
+        return false
+      }
       digits++
-    } else return false
+    } else {
+      return false
+    }
   }
-  if (digits === 0 || dots !== 3) return false
+  if (digits === 0 || dots !== 3) {
+    return false
+  }
   out[offset + 3] = value
   return true
 }
@@ -267,49 +313,79 @@ function parse6(text: string, end: number, bytes: Uint8Array): boolean {
   let gap = -1
   let i = 0
   if (text.charCodeAt(0) === colon) {
-    if (text.charCodeAt(1) !== colon) return false
+    if (text.charCodeAt(1) !== colon) {
+      return false
+    }
     gap = 0
     i = 2
-    if (i === end) return true
+    if (i === end) {
+      return true
+    }
   }
   for (;;) {
     let value = 0
     let j = i
     for (; j < end; j++) {
       const digit = hex(text.charCodeAt(j))
-      if (digit < 0) break
-      if (j - i === 4) return false
+      if (digit < 0) {
+        break
+      }
+      if (j - i === 4) {
+        return false
+      }
       value = value * 16 + digit
     }
-    if (j === i) return false
+    if (j === i) {
+      return false
+    }
     if (j < end && text.charCodeAt(j) === dot) {
-      if (groups > 6 || !parse4(text, i, end, bytes, groups * 2)) return false
+      if (groups > 6 || !parse4(text, i, end, bytes, groups * 2)) {
+        return false
+      }
       groups += 2
       break
     }
-    if (groups === 8) return false
+    if (groups === 8) {
+      return false
+    }
     bytes[groups * 2] = value >> 8
     bytes[groups * 2 + 1] = value & 0xff
     groups++
-    if (j === end) break
-    if (text.charCodeAt(j) !== colon || ++j === end) return false
+    if (j === end) {
+      break
+    }
+    if (text.charCodeAt(j) !== colon || ++j === end) {
+      return false
+    }
     if (text.charCodeAt(j) === colon) {
-      if (gap >= 0) return false
+      if (gap >= 0) {
+        return false
+      }
       gap = groups
-      if (++j === end) break
+      if (++j === end) {
+        break
+      }
     }
     i = j
   }
-  if (gap < 0) return groups === 8
-  if (groups === 8) return false
+  if (gap < 0) {
+    return groups === 8
+  }
+  if (groups === 8) {
+    return false
+  }
   bytes.copyWithin(16 - (groups - gap) * 2, gap * 2, groups * 2)
   bytes.fill(0, gap * 2, 16 - (groups - gap) * 2)
   return true
 }
 
 function hex(c: number): number {
-  if (c >= 0x30 && c <= 0x39) return c - 0x30
+  if (c >= 0x30 && c <= 0x39) {
+    return c - 0x30
+  }
   const lower = c | 0x20
-  if (lower >= 0x61 && lower <= 0x66) return lower - 0x61 + 10
+  if (lower >= 0x61 && lower <= 0x66) {
+    return lower - 0x61 + 10
+  }
   return -1
 }

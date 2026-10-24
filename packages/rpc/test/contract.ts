@@ -16,8 +16,9 @@ export declare namespace communicationContract {
 const parentApi = { add: (a, b) => a + b, getChannel: () => '' } satisfies ParentApi
 
 const waitFor = async (check: () => Promise<boolean>) => {
-  for (let i = 0; i < 100 && !(await check()); i++)
+  for (let i = 0; i < 100 && !(await check()); i++) {
     await new Promise((resolve) => setTimeout(resolve, 10))
+  }
   return check()
 }
 
@@ -168,7 +169,9 @@ export function communicationContract(name: string, setup: communicationContract
     test("streams an async generator's values", async () => {
       const { remote } = await connect()
       const values: number[] = []
-      for await (const value of remote.count(3)) values.push(value)
+      for await (const value of remote.count(3)) {
+        values.push(value)
+      }
       expect(values).toEqual([0, 1, 2])
     })
 
@@ -176,7 +179,9 @@ export function communicationContract(name: string, setup: communicationContract
       const { remote } = await connect()
       const reader = (await remote.numbers(3)).getReader()
       const values: number[] = []
-      for (let r = await reader.read(); !r.done; r = await reader.read()) values.push(r.value)
+      for (let r = await reader.read(); !r.done; r = await reader.read()) {
+        values.push(r.value)
+      }
       expect(values).toEqual([0, 1, 2])
     })
 
@@ -185,7 +190,9 @@ export function communicationContract(name: string, setup: communicationContract
       const values: number[] = []
       for await (const value of remote.forever()) {
         values.push(value)
-        if (values.length === 2) break
+        if (values.length === 2) {
+          break
+        }
       }
       expect(values).toEqual([0, 1])
       expect(await waitFor(() => remote.wasCancelled())).toBe(true)

@@ -5,7 +5,7 @@ const env = (globalThis as { process?: { env: Record<string, string | undefined>
   .process?.env
 
 describe.skipIf(!env?.DNS_NETWORK)('live DNS-over-HTTPS (set DNS_NETWORK=1)', () => {
-  for (const endpoint of ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query'])
+  for (const endpoint of ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']) {
     describe(`${new URL(endpoint).host}`, () => {
       const resolver = create({ endpoints: [endpoint] })
 
@@ -32,4 +32,5 @@ describe.skipIf(!env?.DNS_NETWORK)('live DNS-over-HTTPS (set DNS_NETWORK=1)', ()
         expect((await resolver.query('cloudflare.com', 'A')).flags.ad).toBe(true)
       })
     })
+  }
 })

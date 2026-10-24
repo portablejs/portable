@@ -6,8 +6,11 @@ export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chun
   let i = 0
   return new ReadableStream({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
@@ -20,7 +23,9 @@ export async function collect<chunk>(
   const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) return chunks
+    if (done) {
+      return chunks
+    }
     chunks.push(value)
     await onChunk?.(chunks.length)
   }
@@ -37,7 +42,9 @@ export const encode = (text: string): Uint8Array => new TextEncoder().encode(tex
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 

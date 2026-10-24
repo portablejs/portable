@@ -17,7 +17,9 @@ const upstreamResolver = (zone: Zone) => {
   }
   return async (name: string, type: string) => {
     const lookup = byType[type]
-    if (!lookup) throw Object.assign(new Error(type), { code: 'ENOTIMP' })
+    if (!lookup) {
+      throw Object.assign(new Error(type), { code: 'ENOTIMP' })
+    }
     return lookup(name)
   }
 }
@@ -112,16 +114,20 @@ async function makeCase(seed: number): Promise<Case> {
     items[Math.floor(random() * items.length)]!
   const from = pick(froms)
   let message = buildMessage({ from: from || 'x@example.com' })
-  if (from === '') message = message.replace(/^From: .*\r\n/m, '')
-  if (from === 'TWO')
+  if (from === '') {
+    message = message.replace(/^From: .*\r\n/m, '')
+  }
+  if (from === 'TWO') {
     message = message.replace(/^From: .*\r\n/m, 'From: a@example.com\r\nFrom: b@example.com\r\n')
+  }
   const zone: Zone = { 'test._domainkey.example.com': { TXT: [(await key('rsa')).record] } }
   const signing =
     from === ''
       ? 'none'
       : pick(['none', 'example.com', 'mail.example.com', 'other.test', 'broken', 'sha1'])
-  if (signing === 'example.com' || signing === 'other.test' || signing === 'broken')
+  if (signing === 'example.com' || signing === 'other.test' || signing === 'broken') {
     message = await signed(message, signing === 'broken' ? 'example.com' : signing)
+  }
   if (signing === 'mail.example.com') {
     message = await signed(message, signing)
     zone['test._domainkey.mail.example.com'] = { TXT: [(await key('rsa')).record] }
@@ -139,7 +145,9 @@ async function makeCase(seed: number): Promise<Case> {
     })
     message = signatures + message
   }
-  if (signing === 'broken') message = message.replace('body', 'changed')
+  if (signing === 'broken') {
+    message = message.replace('body', 'changed')
+  }
   // A changed body fails an rsa-sha1 signature in mailauth and gives policy in Dkim.verify,
   // which checks the algorithm first. Both are failures, so the cases leave the combination out.
   const arc = pick(signing === 'sha1' ? ['none', 'pass'] : ['none', 'none', 'pass', 'fail'])
@@ -152,7 +160,9 @@ async function makeCase(seed: number): Promise<Case> {
         'mx.sealer.test; spf=pass smtp.mailfrom=example.com; dkim=pass header.i=@example.com',
     }).catch(() => '')
     message = fields + message
-    if (arc === 'fail') message = message.replace(/body\r\n$/, 'tampered\r\n')
+    if (arc === 'fail') {
+      message = message.replace(/body\r\n$/, 'tampered\r\n')
+    }
   }
   for (const [name, records] of [
     ['example.com', spfRecords],
@@ -160,7 +170,9 @@ async function makeCase(seed: number): Promise<Case> {
     ['_dmarc.other.test', dmarcRecords],
   ] as const) {
     const record = pick(records)
-    if (record === undefined) continue
+    if (record === undefined) {
+      continue
+    }
     zone[name] = {
       ...zone[name],
       ...(record === 'SERVFAIL' ? { TXT: 'ESERVFAIL' } : { TXT: [record] }),

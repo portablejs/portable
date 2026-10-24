@@ -13,13 +13,17 @@ export const fixtures: readonly string[] = Object.keys(files)
 
 export async function fixture(path: string): Promise<Uint8Array> {
   const load = files[`./fixtures/${path}`]
-  if (!load) throw new Error(`No fixture ${path}`)
+  if (!load) {
+    throw new Error(`No fixture ${path}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 
@@ -54,7 +58,9 @@ export function tracked(chunks: readonly Uint8Array[]): {
     {
       pull(controller) {
         const chunk = chunks[i++]
-        if (!chunk) return controller.close()
+        if (!chunk) {
+          return controller.close()
+        }
         read += chunk.length
         controller.enqueue(chunk)
       },

@@ -3,7 +3,9 @@ const files = import.meta.glob<string>('./fixtures/*', { query: '?url&inline', i
 
 export async function fixture(name: string): Promise<Uint8Array> {
   const load = files[`./fixtures/${name}`]
-  if (!load) throw new Error(`No fixture ${name}`)
+  if (!load) {
+    throw new Error(`No fixture ${name}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
@@ -14,7 +16,9 @@ export const fixtures: readonly string[] = Object.keys(files)
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 
@@ -47,7 +51,9 @@ export function tracked(chunks: readonly Uint8Array[]): {
     {
       pull(controller) {
         const chunk = chunks[i++]
-        if (!chunk) return controller.close()
+        if (!chunk) {
+          return controller.close()
+        }
         read += chunk.length
         controller.enqueue(chunk)
       },
@@ -92,18 +98,30 @@ export function buildTiff(options: {
   const blocks: { entries: Entry[] }[] = []
   const exifEntry = options.exif && { tag: 0x8769, type: 4, values: [0] }
   const gpsEntry = options.gps && { tag: 0x8825, type: 4, values: [0] }
-  if (exifEntry) ifd0.push(exifEntry)
-  if (gpsEntry) ifd0.push(gpsEntry)
+  if (exifEntry) {
+    ifd0.push(exifEntry)
+  }
+  if (gpsEntry) {
+    ifd0.push(gpsEntry)
+  }
   blocks.push({ entries: ifd0 })
-  if (options.ifd1) blocks.push({ entries: [...options.ifd1] })
-  if (options.exif) blocks.push({ entries: [...options.exif] })
-  if (options.gps) blocks.push({ entries: [...options.gps] })
+  if (options.ifd1) {
+    blocks.push({ entries: [...options.ifd1] })
+  }
+  if (options.exif) {
+    blocks.push({ entries: [...options.exif] })
+  }
+  if (options.gps) {
+    blocks.push({ entries: [...options.gps] })
+  }
 
   const ifdSize = (entries: readonly Entry[]) => {
     let data = 0
     for (const e of entries) {
       const n = e.values.length * sizes[e.type]!
-      if (n > 4) data += n + (n & 1)
+      if (n > 4) {
+        data += n + (n & 1)
+      }
     }
     return 2 + entries.length * 12 + 4 + data
   }
@@ -115,11 +133,17 @@ export function buildTiff(options: {
   }
   const ifdIndex = (name: 'exif' | 'gps') => {
     let i = options.ifd1 ? 2 : 1
-    if (name === 'gps' && options.exif) i++
+    if (name === 'gps' && options.exif) {
+      i++
+    }
     return i
   }
-  if (exifEntry) exifEntry.values = [offsets[ifdIndex('exif')]!]
-  if (gpsEntry) gpsEntry.values = [offsets[ifdIndex('gps')]!]
+  if (exifEntry) {
+    exifEntry.values = [offsets[ifdIndex('exif')]!]
+  }
+  if (gpsEntry) {
+    gpsEntry.values = [offsets[ifdIndex('gps')]!]
+  }
 
   const out = new Uint8Array(at)
   const view = new DataView(out.buffer)
@@ -148,12 +172,19 @@ export function buildTiff(options: {
         data += n + (n & 1)
       }
       const write = (v: number, p: number) => {
-        if (size === 1) view.setUint8(p, v)
-        else if (size === 2) view.setUint16(p, v, le)
-        else if (e.type === 11) view.setFloat32(p, v, le)
-        else if (e.type === 12) view.setFloat64(p, v, le)
-        else if (e.type === 9 || e.type === 10) view.setInt32(p, v, le)
-        else view.setUint32(p, v, le)
+        if (size === 1) {
+          view.setUint8(p, v)
+        } else if (size === 2) {
+          view.setUint16(p, v, le)
+        } else if (e.type === 11) {
+          view.setFloat32(p, v, le)
+        } else if (e.type === 12) {
+          view.setFloat64(p, v, le)
+        } else if (e.type === 9 || e.type === 10) {
+          view.setInt32(p, v, le)
+        } else {
+          view.setUint32(p, v, le)
+        }
       }
       const step = e.type === 5 || e.type === 10 ? 4 : size
       Array.from(e.values).forEach((v, k) => write(v, valueAt + k * step))

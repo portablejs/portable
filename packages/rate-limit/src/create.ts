@@ -60,7 +60,9 @@ export declare namespace create {
  *   async fetch(request: Request) {
  *     const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
  *     const result = await limiter.take(ip, { signal: request.signal })
- *     if (!result.allowed) return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+ *     if (!result.allowed) {
+ *       return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+ *     }
  *     return new Response('ok', { headers: RateLimit.headers(result) })
  *   },
  * }
@@ -70,8 +72,9 @@ export function create(options: create.Options): Limiter {
   const { limit, period, burst = limit, store = memoryStore() } = options
   assertPositiveInteger('limit', limit)
   assertPositiveInteger('burst', burst)
-  if (!(period > 0 && Number.isFinite(period)))
+  if (!(period > 0 && Number.isFinite(period))) {
     throw new RangeError(`\`period\` must be a number of milliseconds above 0, got ${period}.`)
+  }
 
   const interval = period / limit
   // Allows for float rounding in sums of an inexact `interval` at Unix-time magnitudes, so that
@@ -82,9 +85,12 @@ export function create(options: create.Options): Limiter {
     async take(key, options = {}) {
       const { cost = 1, signal } = options
       const time = options.now?.getTime() ?? Date.now()
-      if (!Number.isFinite(time)) throw new RangeError('`now` must be a valid Date.')
-      if (!Number.isFinite(cost))
+      if (!Number.isFinite(time)) {
+        throw new RangeError('`now` must be a valid Date.')
+      }
+      if (!Number.isFinite(cost)) {
         throw new RangeError(`\`cost\` must be a finite number, got ${cost}.`)
+      }
       for (;;) {
         signal?.throwIfAborted()
         const read = store.get(key, { now: new Date(time), signal })
@@ -94,7 +100,7 @@ export function create(options: create.Options): Limiter {
         const remaining = Math.max(0, Math.floor((now + tolerance - base) / interval))
         const arrival = Math.max(now, base + cost * interval)
         const wait = arrival - tolerance - now
-        if (wait > 0)
+        if (wait > 0) {
           return {
             allowed: false,
             limit,
@@ -103,6 +109,7 @@ export function create(options: create.Options): Limiter {
             resetAt: new Date(Math.ceil(base)),
             retryAfter: cost > burst ? Infinity : Math.ceil(wait),
           }
+        }
         const result = {
           allowed: true,
           limit,
@@ -111,7 +118,9 @@ export function create(options: create.Options): Limiter {
           resetAt: new Date(Math.ceil(arrival)),
           retryAfter: 0,
         }
-        if (arrival === base) return result
+        if (arrival === base) {
+          return result
+        }
         signal?.throwIfAborted()
         const ttl = Math.max(1, Math.ceil(arrival - now))
         const written = store.set(key, arrival, {
@@ -120,13 +129,16 @@ export function create(options: create.Options): Limiter {
           now: new Date(time),
           signal,
         })
-        if (typeof written === 'object' ? await written : written) return result
+        if (typeof written === 'object' ? await written : written) {
+          return result
+        }
       }
     },
   }
 }
 
 function assertPositiveInteger(name: string, value: number) {
-  if (!(Number.isSafeInteger(value) && value > 0))
+  if (!(Number.isSafeInteger(value) && value > 0)) {
     throw new RangeError(`\`${name}\` must be a positive integer, got ${value}.`)
+  }
 }

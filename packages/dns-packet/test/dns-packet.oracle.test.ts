@@ -76,7 +76,7 @@ function upstreamOption(option: Loose): unknown {
 }
 
 function upstreamRecord(record: Loose): unknown {
-  if (record.type === 'OPT')
+  if (record.type === 'OPT') {
     return {
       type: 'OPT',
       name: record.name,
@@ -86,6 +86,7 @@ function upstreamRecord(record: Loose): unknown {
       dnssecOk: record.flag_do,
       options: record.options.map(upstreamOption),
     }
+  }
   const type = typeName(record.type)
   return {
     type,

@@ -18,7 +18,9 @@ export async function codeOf(
     await promise
     return 'resolved'
   } catch (error) {
-    if (error instanceof Webhooks.VerificationError) return error.code
+    if (error instanceof Webhooks.VerificationError) {
+      return error.code
+    }
     throw error
   }
 }

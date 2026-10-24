@@ -8,8 +8,9 @@ describe('ipaddr.js', () => {
   })
 
   test('rejects bytes that are not 4 or 16 long', () => {
-    for (const length of [0, 1, 3, 5, 15, 17])
+    for (const length of [0, 1, 3, 5, 15, 17]) {
       expect(() => Ip.fromBytes(new Uint8Array(length))).toThrow(Ip.InvalidInputError)
+    }
   })
 
   test('formats IPv4', () => {
@@ -43,8 +44,9 @@ describe('ipaddr.js', () => {
       '192.0000168.100.2',
       '192.168.100.00000002',
       '192.168.100.20000000',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
   })
 
   test('rejects the octal, hex, integer and short IPv4 forms', () => {
@@ -58,8 +60,9 @@ describe('ipaddr.js', () => {
       '127.66051',
       '10.1.1.0xff',
       '1',
-    ])
+    ]) {
       expect(() => Ip.parse(text)).toThrow(Ip.InvalidInputError)
+    }
   })
 
   test('rejects malformed IPv4', () => {
@@ -70,8 +73,9 @@ describe('ipaddr.js', () => {
       '10.048.1.1',
       '4999999999',
       '-1',
-    ])
+    ]) {
       expect(() => Ip.parse(text)).toThrow(Ip.InvalidInputError)
+    }
   })
 
   test('matches IPv4 CIDR blocks given as objects', () => {
@@ -102,8 +106,9 @@ describe('ipaddr.js', () => {
       ['2001:db8::', 64.9],
       ['2001:db8::', 129],
       ['2001:db8::', -1],
-    ] as const)
+    ] as const) {
       expect(() => Ip.contains({ address: Ip.parse(text), prefix }, text)).toThrow(RangeError)
+    }
   })
 
   test('formats a parsed CIDR block with host bits cleared', () => {
@@ -141,8 +146,9 @@ describe('ipaddr.js', () => {
       '2001:db8:F53A::1/64%',
       '2001:db8:F53A::1/64%z/64',
       '2001:db8:F53A::1%z/64',
-    ])
+    ]) {
       expect(() => Ip.parseCidr(text)).toThrow(Ip.InvalidInputError)
+    }
     expect(network('192.168.1.1/24')).toBe('192.168.1.0/24')
     expect(network('0.0.0.0/0')).toBe('0.0.0.0/0')
     expect(network('::/0')).toBe('::/0')
@@ -165,8 +171,9 @@ describe('ipaddr.js', () => {
       '240.1.2.3': 'reserved',
       '8.8.8.8': 'unicast',
     }
-    for (const [address, range] of Object.entries(cases))
+    for (const [address, range] of Object.entries(cases)) {
       expect([address, Ip.range(address)]).toEqual([address, range])
+    }
   })
 
   test('builds an IPv6 address from bytes', () => {
@@ -250,8 +257,9 @@ describe('ipaddr.js', () => {
       '::%z',
       '1:2:3:4:5:6:7::',
       '::1:2:3:4:5:6:7',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, true])
+    }
     for (const text of [
       '200001::1',
       '::ffff:300.168.1.1',
@@ -267,8 +275,9 @@ describe('ipaddr.js', () => {
       '::1:2:3:4:5:6:7:8',
       '::8:8:8:8:8:8:8:8:8',
       '::8:8:8:8:8:8:8:8:8%z',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
     expect(Ip.canParse(undefined)).toBe(false)
   })
 
@@ -294,8 +303,9 @@ describe('ipaddr.js', () => {
       '::ffff:999.1.1.1',
       '1::2::3:1.2.3.4',
       '::some.nonsense',
-    ])
+    ]) {
       expect(() => Ip.parse(text)).toThrow(Ip.InvalidInputError)
+    }
   })
 
   test('matches IPv6 CIDR blocks', () => {
@@ -353,8 +363,9 @@ describe('ipaddr.js', () => {
       '5f00::1': 'segmentRouting',
       '3fff::1': 'documentation',
     }
-    for (const [address, range] of Object.entries(cases))
+    for (const [address, range] of Object.entries(cases)) {
       expect([address, Ip.range(address)]).toEqual([address, range])
+    }
   })
 
   test('unmaps IPv4-mapped addresses', () => {
@@ -402,8 +413,9 @@ describe('ipaddr.js', () => {
       '2001:db9:f500::1/40': '2001:db9:f500::',
       '2001:db8:f53a::1/128': '2001:db8:f53a::1',
     }
-    for (const [cidr, address] of Object.entries(cases))
+    for (const [cidr, address] of Object.entries(cases)) {
       expect([cidr, Ip.format(Ip.parseCidr(cidr).address)]).toEqual([cidr, address])
+    }
   })
 })
 
@@ -424,8 +436,9 @@ describe('ip', () => {
 
   test('converts IPv6 to bytes and back', () => {
     expect(bytes('::1')).toEqual([...Array(15).fill(0), 1])
-    for (const text of ['::1', '1::', 'abcd::dcba'])
+    for (const text of ['::1', '1::', 'abcd::dcba']) {
       expect(Ip.format(Ip.fromBytes(Ip.parse(text).bytes))).toBe(text)
+    }
   })
 
   test('converts IPv6 with an embedded IPv4 address', () => {
@@ -483,8 +496,9 @@ describe('ip', () => {
       '0xGG.0.0.1',
       '',
       '192.168.0.1.100',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
   })
 
   test('classifies private and internal addresses', () => {
@@ -512,8 +526,9 @@ describe('ip', () => {
       '::1': 'loopback',
       'fe80::1': 'linkLocal',
     }
-    for (const [address, range] of Object.entries(cases))
+    for (const [address, range] of Object.entries(cases)) {
       expect([address, Ip.range(address)]).toEqual([address, range])
+    }
     const mapped = {
       '::ffff:10.100.1.42': 'private',
       '::FFFF:172.16.200.1': 'private',
@@ -544,8 +559,9 @@ describe('ip', () => {
       '0x7f.0.1',
       '0x7f.1',
       '2130706433',
-    ])
+    ]) {
       expect(() => Ip.range(text)).toThrow(Ip.InvalidInputError)
+    }
   })
 })
 
@@ -556,8 +572,9 @@ describe('is-ip', () => {
       '1:2:3:4:5:6:7:8',
       '::1',
       '2001:0dc5:72a3:0000:0000:802e:3370:73E4',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, true])
+    }
   })
 
   test('accepts only IPv6 with version 6', () => {
@@ -567,8 +584,9 @@ describe('is-ip', () => {
       '0000:0000:0000:0000:0000:0000:0000:0000',
       '0000:0000:0000:0000:0000:ffff:192.168.100.228',
       '2001:0dc5:72a3:0000:0000:802e:3370:73E4',
-    ])
+    ]) {
       expect([text, Ip.canParse(text, { version: 6 })]).toEqual([text, true])
+    }
     expect(Ip.canParse('2001:0dc5:72a3:0000:0000:802e:3370:73E4XXXXXXXX', { version: 6 })).toBe(
       false,
     )
@@ -592,13 +610,15 @@ describe('is-ip', () => {
 
 describe('known upstream issues', () => {
   test('CVE-2023-42282: a hex or short loopback address is not accepted as public', () => {
-    for (const text of ['0x7f.1', '0x7f.0.0.1', '127.1', '0'])
+    for (const text of ['0x7f.1', '0x7f.0.0.1', '127.1', '0']) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
   })
 
   test('CVE-2024-29415: octal, integer and odd IPv6 spellings of internal addresses', () => {
-    for (const text of ['127.1', '01200034567', '012.1.2.3', '017700000001', '0177.0.0.1'])
+    for (const text of ['127.1', '01200034567', '012.1.2.3', '017700000001', '0177.0.0.1']) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
     expect(Ip.range('000:0:0000::01')).toBe('loopback')
     expect(Ip.range('::fFFf:127.0.0.1')).toBe('ipv4Mapped')
     expect(Ip.range(Ip.unmap('::fFFf:127.0.0.1'))).toBe('loopback')
@@ -655,8 +675,9 @@ describe('parse', () => {
       '1.2.3.256',
       '00.0.0.0',
       '1.2.3.4%z',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
   })
 
   test('accepts every edge of the IPv6 grammar', () => {
@@ -669,8 +690,9 @@ describe('parse', () => {
       '1::1.2.3.4',
       'fe80::1%eth0',
       'fe80::1%en0.1_a~b-c',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, true])
+    }
     for (const text of [
       ':',
       ':::',
@@ -686,8 +708,9 @@ describe('parse', () => {
       'fe80::1%a:b',
       '[::1]',
       'g::',
-    ])
+    ]) {
       expect([text, Ip.canParse(text)]).toEqual([text, false])
+    }
   })
 
   test('copies the bytes passed to fromBytes', () => {
@@ -775,8 +798,9 @@ describe('range', () => {
       '239.255.255.255': 'multicast',
       '255.255.255.254': 'reserved',
     }
-    for (const [address, range] of Object.entries(cases))
+    for (const [address, range] of Object.entries(cases)) {
       expect([address, Ip.range(address)]).toEqual([address, range])
+    }
   })
 
   test('names every IANA special-purpose IPv6 block', () => {
@@ -794,7 +818,8 @@ describe('range', () => {
       'febf::1': 'linkLocal',
       'feff::1': 'deprecatedSiteLocal',
     }
-    for (const [address, range] of Object.entries(cases))
+    for (const [address, range] of Object.entries(cases)) {
       expect([address, Ip.range(address)]).toEqual([address, range])
+    }
   })
 })

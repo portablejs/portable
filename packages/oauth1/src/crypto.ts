@@ -9,10 +9,11 @@ export async function rsaSha1(
 ): Promise<Uint8Array> {
   const key = typeof privateKey === 'string' ? await importPem(privateKey) : privateKey
   const { name, hash } = key.algorithm as Partial<RsaHashedKeyAlgorithm>
-  if (name !== algorithm.name || hash?.name !== algorithm.hash)
+  if (name !== algorithm.name || hash?.name !== algorithm.hash) {
     throw new RangeError(
       `RSA-SHA1 needs an RSASSA-PKCS1-v1_5 key with SHA-1, not ${name} with ${hash?.name}`,
     )
+  }
   try {
     return new Uint8Array(await crypto.subtle.sign(algorithm.name, key, data))
   } catch (cause) {
@@ -24,7 +25,9 @@ export async function rsaSha1(
 
 async function importPem(text: string): Promise<CryptoKey> {
   const match = pem.exec(text)
-  if (!match) throw new RangeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block')
+  if (!match) {
+    throw new RangeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block')
+  }
   let decoded: Uint8Array
   try {
     decoded = Base64.decode(match[2]!)
@@ -65,8 +68,12 @@ function pkcs1ToPkcs8(pkcs1: Uint8Array): Uint8Array<ArrayBuffer> {
 }
 
 function derLength(length: number): number[] {
-  if (length < 0x80) return [length]
+  if (length < 0x80) {
+    return [length]
+  }
   const bytes: number[] = []
-  for (let n = length; n > 0; n >>>= 8) bytes.unshift(n & 0xff)
+  for (let n = length; n > 0; n >>>= 8) {
+    bytes.unshift(n & 0xff)
+  }
   return [0x80 | bytes.length, ...bytes]
 }

@@ -73,7 +73,9 @@ function inlineModule(url: string): Promise<string> {
  * data URLs.
  */
 async function moduleGraph(url: string, graph: Record<string, string> = {}) {
-  if (url in graph) return graph
+  if (url in graph) {
+    return graph
+  }
   graph[url] = ''
   let code = await (await fetch(url)).text()
   const specifiers = new Set(
@@ -160,7 +162,9 @@ async function untilAnswered(remote: Rpc.Remote<Methods>): Promise<number> {
     try {
       return await Rpc.call(remote.multiply, [2, 5], { signal: AbortSignal.timeout(200) })
     } catch (error) {
-      if ((error as Error).name !== 'TimeoutError') throw error
+      if ((error as Error).name !== 'TimeoutError') {
+        throw error
+      }
     }
   }
 }

@@ -13,7 +13,9 @@ async function take(stream: ReadableStream<Sse.Event>, count: number): Promise<S
   const events: Sse.Event[] = []
   while (events.length < count) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      break
+    }
     events.push(value)
   }
   await reader.cancel()

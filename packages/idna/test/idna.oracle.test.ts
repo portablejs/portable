@@ -26,7 +26,9 @@ function randomDomains(count: number, seed: number): string[] {
   }
   return Array.from({ length: count }, () => {
     let domain = ''
-    for (let i = 1 + random(8); i > 0; i--) domain += pieces[random(pieces.length)]
+    for (let i = 1 + random(8); i > 0; i--) {
+      domain += pieces[random(pieces.length)]
+    }
     return domain
   })
 }
@@ -74,9 +76,12 @@ describe('matches tr46 7.0.0', () => {
     const differences = inputs.filter((input) => {
       const expected = tr46.toASCII(input, { checkBidi: true, checkJoiners: true })
       const actual = attempt(() => Idna.toAscii(input))
-      if (isAscii(input)) return actual !== null && actual !== input.toLowerCase()
-      if (expected === '' || (expected !== null && /[\0-\x20#%/:<>?@[\\\]^|\x7f]/.test(expected)))
+      if (isAscii(input)) {
+        return actual !== null && actual !== input.toLowerCase()
+      }
+      if (expected === '' || (expected !== null && /[\0-\x20#%/:<>?@[\\\]^|\x7f]/.test(expected))) {
         return actual !== null
+      }
       return actual !== expected
     })
     expect(differences).toEqual([])
@@ -98,7 +103,9 @@ describe('matches node:url', () => {
     let bidi = 0
     const differences = domains.filter((input) => {
       const actual = attempt(() => Idna.toAscii(input)) ?? ''
-      if (actual === domainToASCII(input)) return false
+      if (actual === domainToASCII(input)) {
+        return false
+      }
       const withoutBidi = tr46.toASCII(input, { checkJoiners: true }) ?? ''
       if (actual === '' && withoutBidi === domainToASCII(input)) {
         bidi++

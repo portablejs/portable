@@ -18,13 +18,17 @@ function unescape(text: string): string {
 
 function column(text: string | undefined): string | undefined {
   const value = text?.trim() ?? ''
-  if (value === '') return undefined
+  if (value === '') {
+    return undefined
+  }
   return value === '""' ? '' : unescape(value)
 }
 
 function status(text: string | undefined): string[] | undefined {
   const value = text?.trim() ?? ''
-  if (value === '') return undefined
+  if (value === '') {
+    return undefined
+  }
   return value
     .slice(1, -1)
     .split(',')
@@ -36,7 +40,9 @@ export const idnaTestCases: readonly IdnaTestCase[] = idnaTestV2
   .split('\n')
   .flatMap((text, index) => {
     const fields = text.replace(/#.*/, '').split(';')
-    if (fields.length < 7) return []
+    if (fields.length < 7) {
+      return []
+    }
     const source = column(fields[0])!
     const toUnicode = column(fields[1]) ?? source
     const toUnicodeStatus = status(fields[2]) ?? []

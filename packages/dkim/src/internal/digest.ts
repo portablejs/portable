@@ -41,7 +41,9 @@ export async function hashBody(
   const hashes = new Map<string, { pass: Pass; hash: Hasher }>()
   for (const request of requests) {
     const key = bodyHashKey(request)
-    if (hashes.has(key)) continue
+    if (hashes.has(key)) {
+      continue
+    }
     let pass = passes.get(request.canonicalization)
     if (!pass) {
       const sinks: Sink[] = []
@@ -50,7 +52,9 @@ export async function hashBody(
         total: 0,
         canonicalizer: createCanonicalizer(request.canonicalization, (bytes) => {
           created.total += bytes.length
-          for (const sink of sinks) sink(bytes)
+          for (const sink of sinks) {
+            sink(bytes)
+          }
         }),
       }
       pass = created
@@ -61,19 +65,27 @@ export async function hashBody(
     const { length = Infinity } = request
     let hashed = 0
     pass.sinks.push((bytes) => {
-      if (hashed >= length) return
+      if (hashed >= length) {
+        return
+      }
       const part = hashed + bytes.length > length ? bytes.subarray(0, length - hashed) : bytes
       hashed += part.length
       hash.update(part)
     })
   }
 
-  for (let chunk = await body.read(); chunk; chunk = await body.read())
-    for (const pass of passes.values()) pass.canonicalizer.write(chunk)
-  for (const pass of passes.values()) pass.canonicalizer.end()
+  for (let chunk = await body.read(); chunk; chunk = await body.read()) {
+    for (const pass of passes.values()) {
+      pass.canonicalizer.write(chunk)
+    }
+  }
+  for (const pass of passes.values()) {
+    pass.canonicalizer.end()
+  }
 
   const digests = new Map<string, BodyDigest>()
-  for (const [key, { pass, hash }] of hashes)
+  for (const [key, { pass, hash }] of hashes) {
     digests.set(key, { digest: await hash.digest(), total: pass.total })
+  }
   return digests
 }

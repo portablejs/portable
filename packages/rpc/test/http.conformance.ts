@@ -9,7 +9,9 @@ const api = {
     throw new Rpc.RemoteError({ code: 1, message: 'nope' })
   },
   async *count(n: number) {
-    for (let i = 0; i < n; i++) yield i
+    for (let i = 0; i < n; i++) {
+      yield i
+    }
   },
 }
 
@@ -121,7 +123,9 @@ describe('http', () => {
   test('iterates a streamed result', async () => {
     const remote = Rpc.http<typeof api>(url, fetcher(api))
     const values: number[] = []
-    for await (const value of remote.count(50)) values.push(value)
+    for await (const value of remote.count(50)) {
+      values.push(value)
+    }
     expect(values).toEqual(Array.from({ length: 50 }, (_, i) => i))
   })
 
@@ -153,7 +157,11 @@ describe('http', () => {
         return handle(request)
       },
     })
-    for await (const value of remote.forever()) if (value === 2) break
+    for await (const value of remote.forever()) {
+      if (value === 2) {
+        break
+      }
+    }
     expect(requestSignal?.aborted).toBe(true)
     await stopped.promise
   })
@@ -192,8 +200,9 @@ describe('http', () => {
         }),
     })
     const results = await Promise.allSettled([remote.add(1, 2), remote.add(3, 4)])
-    for (const result of results)
+    for (const result of results) {
       expect(result).toMatchObject({ status: 'rejected', reason: { code: -32600 } })
+    }
   })
 
   test('rejects a call the response has no result for with TransportError', async () => {

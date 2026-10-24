@@ -33,7 +33,11 @@ test('decodes 20,000 rows within 25% of ndjson and stream-json', async ({ bench 
     }),
     bench('split and JSON.parse after reading everything', async () => {
       const text = await toText(streamOf(lineChunks))
-      for (const line of text.split('\n')) if (line) JSON.parse(line)
+      for (const line of text.split('\n')) {
+        if (line) {
+          JSON.parse(line)
+        }
+      }
     }),
   )
   expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/jsonl'), {
@@ -52,7 +56,9 @@ test('encodes 20,000 rows within 25% of ndjson and stream-json', async ({ bench 
     bench('ndjson', async () => {
       const stringify = ndjson.stringify()
       const done = drain(stringify)
-      for (const value of values) stringify.write(value)
+      for (const value of values) {
+        stringify.write(value)
+      }
       stringify.end()
       await done
     }),
@@ -60,7 +66,9 @@ test('encodes 20,000 rows within 25% of ndjson and stream-json', async ({ bench 
       await drain(Readable.from(values).pipe(jsonlStringer()))
     }),
     bench('JSON.stringify each value', () => {
-      for (const value of values) JSON.stringify(value)
+      for (const value of values) {
+        JSON.stringify(value)
+      }
     }),
   )
   expect(result.get('ndjson')).not.toBeFasterThan(result.get('@portable/jsonl'), {

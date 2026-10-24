@@ -305,10 +305,11 @@ describe('attachments', () => {
   })
 
   test('a content type that is not type/subtype throws', () => {
-    for (const contentType of ['other', 'mult\x01ipart/mixed', 'text/plain\r\nX-Evil: 1'])
+    for (const contentType of ['other', 'mult\x01ipart/mixed', 'text/plain\r\nX-Evil: 1']) {
       expect(() => Mail.encodeStream({ attachments: [{ content: 'x', contentType }] })).toThrow(
         Mail.InvalidInputError,
       )
+    }
   })
 
   test('a multipart content type throws', () => {
@@ -349,7 +350,9 @@ describe('attachments', () => {
 
   test('binary quoted-printable keeps every byte', async () => {
     const bytes = new Uint8Array(4096)
-    for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 7) & 0xff
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = (i * 7) & 0xff
+    }
     const raw = await composeBytes({
       attachments: [{ content: bytes, transferEncoding: 'quoted-printable' }],
     })

@@ -15,21 +15,32 @@ export function unfilter(
     const line = pos + 1
     const filter = raw[pos]
     if (filter === 1 || (filter === 4 && prev < 0)) {
-      for (let i = bpp; i < stride; i++) raw[line + i] = raw[line + i]! + raw[line + i - bpp]!
+      for (let i = bpp; i < stride; i++) {
+        raw[line + i] = raw[line + i]! + raw[line + i - bpp]!
+      }
     } else if (filter === 2) {
-      if (prev >= 0)
-        for (let i = 0; i < stride; i++) raw[line + i] = raw[line + i]! + raw[prev + i]!
+      if (prev >= 0) {
+        for (let i = 0; i < stride; i++) {
+          raw[line + i] = raw[line + i]! + raw[prev + i]!
+        }
+      }
     } else if (filter === 3) {
       if (prev < 0) {
-        for (let i = bpp; i < stride; i++)
+        for (let i = bpp; i < stride; i++) {
           raw[line + i] = raw[line + i]! + (raw[line + i - bpp]! >> 1)
+        }
       } else {
-        for (let i = 0; i < bpp; i++) raw[line + i] = raw[line + i]! + (raw[prev + i]! >> 1)
-        for (let i = bpp; i < stride; i++)
+        for (let i = 0; i < bpp; i++) {
+          raw[line + i] = raw[line + i]! + (raw[prev + i]! >> 1)
+        }
+        for (let i = bpp; i < stride; i++) {
           raw[line + i] = raw[line + i]! + ((raw[line + i - bpp]! + raw[prev + i]!) >> 1)
+        }
       }
     } else if (filter === 4) {
-      for (let i = 0; i < bpp; i++) raw[line + i] = raw[line + i]! + raw[prev + i]!
+      for (let i = 0; i < bpp; i++) {
+        raw[line + i] = raw[line + i]! + raw[prev + i]!
+      }
       for (let i = bpp; i < stride; i++) {
         const a = raw[line + i - bpp]!
         const b = raw[prev + i]!
@@ -60,7 +71,11 @@ export function filterRows(
     let chosen = filters[0]!
     if (filters.length > 1) {
       rowCosts(pixels, line, above, prev, stride, bpp, costs)
-      for (const f of filters) if (costs[f]! < costs[chosen]!) chosen = f
+      for (const f of filters) {
+        if (costs[f]! < costs[chosen]!) {
+          chosen = f
+        }
+      }
     }
     const target = y * (stride + 1)
     out[target] = chosen
@@ -121,19 +136,31 @@ function applyFilter(
   if (filter === 0) {
     out.set(src.subarray(line, line + stride), target)
   } else if (filter === 1) {
-    for (let i = 0; i < head; i++) out[target + i] = src[line + i]!
-    for (let i = bpp; i < stride; i++) out[target + i] = src[line + i]! - src[line + i - bpp]!
+    for (let i = 0; i < head; i++) {
+      out[target + i] = src[line + i]!
+    }
+    for (let i = bpp; i < stride; i++) {
+      out[target + i] = src[line + i]! - src[line + i - bpp]!
+    }
   } else if (filter === 2) {
-    for (let i = 0; i < stride; i++) out[target + i] = src[line + i]! - above[prev + i]!
+    for (let i = 0; i < stride; i++) {
+      out[target + i] = src[line + i]! - above[prev + i]!
+    }
   } else if (filter === 3) {
-    for (let i = 0; i < head; i++) out[target + i] = src[line + i]! - (above[prev + i]! >> 1)
-    for (let i = bpp; i < stride; i++)
+    for (let i = 0; i < head; i++) {
+      out[target + i] = src[line + i]! - (above[prev + i]! >> 1)
+    }
+    for (let i = bpp; i < stride; i++) {
       out[target + i] = src[line + i]! - ((src[line + i - bpp]! + above[prev + i]!) >> 1)
+    }
   } else {
-    for (let i = 0; i < head; i++) out[target + i] = src[line + i]! - above[prev + i]!
-    for (let i = bpp; i < stride; i++)
+    for (let i = 0; i < head; i++) {
+      out[target + i] = src[line + i]! - above[prev + i]!
+    }
+    for (let i = bpp; i < stride; i++) {
       out[target + i] =
         src[line + i]! - paeth(src[line + i - bpp]!, above[prev + i]!, above[prev + i - bpp]!)
+    }
   }
 }
 

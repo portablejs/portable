@@ -1,17 +1,23 @@
 /** Counts how often each key occurs. */
 export function tally<key>(values: Iterable<key>): Map<key, number> {
   const counts = new Map<key, number>()
-  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1)
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1)
+  }
   return counts
 }
 
 /** Pearson's chi-squared statistic for `counts` against equal expected counts over `categories`. */
 export function chiSquared(counts: ReadonlyMap<unknown, number>, categories: number): number {
   let total = 0
-  for (const count of counts.values()) total += count
+  for (const count of counts.values()) {
+    total += count
+  }
   const expected = total / categories
   let statistic = (categories - counts.size) * expected
-  for (const count of counts.values()) statistic += (count - expected) ** 2 / expected
+  for (const count of counts.values()) {
+    statistic += (count - expected) ** 2 / expected
+  }
   return statistic
 }
 
@@ -44,8 +50,12 @@ function normalQuantile(p: number): number {
   const tail = (q: number) =>
     (((((c[0]! * q + c[1]!) * q + c[2]!) * q + c[3]!) * q + c[4]!) * q + c[5]!) /
     ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1)
-  if (p < 0.02425) return tail(Math.sqrt(-2 * Math.log(p)))
-  if (p > 1 - 0.02425) return -tail(Math.sqrt(-2 * Math.log(1 - p)))
+  if (p < 0.02425) {
+    return tail(Math.sqrt(-2 * Math.log(p)))
+  }
+  if (p > 1 - 0.02425) {
+    return -tail(Math.sqrt(-2 * Math.log(1 - p)))
+  }
   const q = p - 0.5
   const r = q * q
   return (

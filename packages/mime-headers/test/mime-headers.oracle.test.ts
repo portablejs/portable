@@ -27,7 +27,9 @@ import { pick, random, randomText } from './utils.js'
 const runs = 300
 const each = (seed: number, run: (next: () => number) => void) => {
   const next = random(seed)
-  for (let i = 0; i < runs; i++) run(next)
+  for (let i = 0; i < runs; i++) {
+    run(next)
+  }
 }
 // libmime 5.4.9 splits an astral character outside the emoji block (U+1F000 to U+1FFFF) between
 // two B words, which turns it into two U+FFFD. 5.5.0 fixed it.
@@ -48,8 +50,9 @@ describe('encoded words', () => {
       const ours = encodeWord(input, { wordEncoding: encoding, wordLength: maxLength || false })
       const theirs = libmime.encodeWord(input, encoding, maxLength)
       const skip = encoding === 'B' && maxLength > 0 && splitsAstral(input)
-      if (libmime.decodeWords(ours) !== input || (!skip && decodeWords(theirs) !== input))
+      if (libmime.decodeWords(ours) !== input || (!skip && decodeWords(theirs) !== input)) {
         failures.push({ input, encoding, maxLength, ours, theirs })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -61,7 +64,9 @@ describe('encoded words', () => {
       const input = randomText(next, 80).trimEnd()
       const encoding = pick(next, ['Q', 'B'] as const)
       const ours = encodeWord(input, { wordEncoding: encoding, wordLength: false })
-      if (ours !== libmime.encodeWord(input, encoding)) failures.push({ input, encoding, ours })
+      if (ours !== libmime.encodeWord(input, encoding)) {
+        failures.push({ input, encoding, ours })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -74,8 +79,9 @@ describe('encoded words', () => {
       const ours = encodeWords(input, { wordEncoding: encoding })
       const theirs = libmime.encodeWords(input, encoding, 75)
       const skip = encoding === 'B' && splitsAstral(input)
-      if (libmime.decodeWords(ours) !== input || (!skip && decodeWords(theirs) !== input))
+      if (libmime.decodeWords(ours) !== input || (!skip && decodeWords(theirs) !== input)) {
         failures.push({ input, encoding, ours, theirs })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -89,7 +95,9 @@ describe('encoded words', () => {
           : randomText(next, 10, ['ascii', 'latin']),
       )
       const input = parts.join(pick(next, [' ', '\r\n ', '']))
-      if (decodeWords(input) !== libmime.decodeWords(input)) failures.push({ input })
+      if (decodeWords(input) !== libmime.decodeWords(input)) {
+        failures.push({ input })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -105,7 +113,9 @@ describe('folding', () => {
       const lineLength = Math.floor(next() * 70) + 10
       // libmime keeps each line shorter than lineLength, and fold allows lineLength itself.
       const ours = fold(input, { lineLength: lineLength - 1 })
-      if (ours !== libmime.foldLines(input, lineLength)) failures.push({ input, lineLength, ours })
+      if (ours !== libmime.foldLines(input, lineLength)) {
+        failures.push({ input, lineLength, ours })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -125,13 +135,16 @@ describe('folding', () => {
         .join('\r\n')
       const theirs = libmime.decodeHeaders(input)
       const ours: Record<string, string[]> = {}
-      for (const { name, value } of parseHeaders(input))
-        (ours[name.toLowerCase()] ??= []).push(value)
+      for (const { name, value } of parseHeaders(input)) {
+        ;(ours[name.toLowerCase()] ??= []).push(value)
+      }
       const collapse = (values: readonly string[] = []) =>
         values.map((value) => value.replace(/\s+/g, ' '))
-      for (const key of Object.keys(theirs))
-        if (JSON.stringify(collapse(ours[key])) !== JSON.stringify(collapse(theirs[key])))
+      for (const key of Object.keys(theirs)) {
+        if (JSON.stringify(collapse(ours[key])) !== JSON.stringify(collapse(theirs[key]))) {
           failures.push({ input, key, ours: ours[key], theirs: theirs[key] })
+        }
+      }
     })
     expect(failures).toEqual([])
   })
@@ -144,7 +157,7 @@ describe('header values', () => {
     ).join('')
   const params = (next: () => number) => {
     const result: Record<string, string> = {}
-    for (let i = Math.floor(next() * 3) + 1; i > 0; i--)
+    for (let i = Math.floor(next() * 3) + 1; i > 0; i--) {
       result[paramName(next)] = randomText(next, 100, [
         'ascii',
         'specials',
@@ -152,6 +165,7 @@ describe('header values', () => {
         'cjk',
         'astral',
       ])
+    }
     return result
   }
 
@@ -160,8 +174,9 @@ describe('header values', () => {
     each(7, (next) => {
       const input = { value: pick(next, ['attachment', 'text/plain']), params: params(next) }
       const theirs = libmime.parseHeaderValue(formatValue(input))
-      if (!isDeepStrictEqual(theirs, { value: input.value, params: input.params }))
+      if (!isDeepStrictEqual(theirs, { value: input.value, params: input.params })) {
         failures.push({ input, built: formatValue(input), theirs })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -172,7 +187,9 @@ describe('header values', () => {
       const input = { value: pick(next, ['attachment', 'text/plain']), params: params(next) }
       const built = libmime.buildHeaderValue(input)
       const ours = parseValue(built)
-      if (!isDeepStrictEqual(ours, input)) failures.push({ input, built, ours })
+      if (!isDeepStrictEqual(ours, input)) {
+        failures.push({ input, built, ours })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -205,7 +222,9 @@ describe('addresses', () => {
         entry.group ? { name: entry.name, group: entry.group.map(decode) } : decode(entry),
       )
       const ours = parseAddresses(input)
-      if (!isDeepStrictEqual(ours, theirs)) failures.push({ input, ours, theirs })
+      if (!isDeepStrictEqual(ours, theirs)) {
+        failures.push({ input, ours, theirs })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -232,8 +251,9 @@ describe('addresses', () => {
             }
           : { name: entry.name, address: entry.address.replace(/^"([^"\\]*)"@/, '$1@') },
       )
-      if (!isDeepStrictEqual(mine, theirs.map(simplify)))
+      if (!isDeepStrictEqual(mine, theirs.map(simplify))) {
         failures.push({ input, mine, theirs: theirs.map(simplify) })
+      }
     })
     expect(failures).toEqual([])
   })

@@ -9,7 +9,9 @@ export const fixtureNames: readonly string[] = Object.keys(files)
 
 export async function fixture(name: string): Promise<Uint8Array> {
   const load = files[`./fixtures/${name}`]
-  if (!load) throw new Error(`No fixture ${name}`)
+  if (!load) {
+    throw new Error(`No fixture ${name}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
@@ -18,8 +20,9 @@ export const encode = (text: string): Uint8Array => new TextEncoder().encode(tex
 /** Reads bytes as Latin-1, so every byte maps to one character and back. */
 export const latin1 = (bytes: Uint8Array): string => {
   let text = ''
-  for (let i = 0; i < bytes.length; i += 8192)
+  for (let i = 0; i < bytes.length; i += 8192) {
     text += String.fromCharCode(...bytes.subarray(i, i + 8192))
+  }
   return text
 }
 
@@ -28,7 +31,9 @@ export const binary = (text: string): Uint8Array =>
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 
@@ -75,9 +80,16 @@ export function summary(chunks: readonly MimeStream.Chunk[]): [string, string][]
   let last: MimeStream.Chunk | undefined
   for (const chunk of chunks) {
     const text = latin1(chunk.bytes)
-    if (last && last.type === chunk.type && last.part === chunk.part && chunk.type !== 'delimiter')
+    if (
+      last &&
+      last.type === chunk.type &&
+      last.part === chunk.part &&
+      chunk.type !== 'delimiter'
+    ) {
       result[result.length - 1]![1] += text
-    else result.push([chunk.type, text])
+    } else {
+      result.push([chunk.type, text])
+    }
     last = chunk
   }
   return result
@@ -92,9 +104,12 @@ export function bodies(chunks: readonly MimeStream.Chunk[]): string[] {
   const parts: MimeStream.Part[] = []
   const text = new Map<MimeStream.Part, string>()
   for (const chunk of chunks) {
-    if (chunk.type === 'headers') parts.push(chunk.part)
-    if (chunk.type === 'body')
+    if (chunk.type === 'headers') {
+      parts.push(chunk.part)
+    }
+    if (chunk.type === 'body') {
       text.set(chunk.part, (text.get(chunk.part) ?? '') + latin1(chunk.bytes))
+    }
   }
   return parts.filter((part) => !part.boundary).map((part) => text.get(part) ?? '')
 }

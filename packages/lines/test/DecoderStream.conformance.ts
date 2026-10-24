@@ -143,7 +143,9 @@ describe('byline', () => {
       new Lines.DecoderStream({ skipEmpty: true }),
     )
     const lines = await collect(stream, async (count) => {
-      if (count % 500 === 0) await new Promise((resolve) => setTimeout(resolve, 0))
+      if (count % 500 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      }
     })
     expect(lines).toEqual(expected)
   })

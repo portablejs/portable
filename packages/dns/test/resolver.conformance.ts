@@ -333,17 +333,19 @@ describe('NXDOMAIN and NODATA', () => {
 
 describe('isNotFound', () => {
   test('is true for the codes that mean there are no records', () => {
-    for (const code of ['ENOTFOUND', 'ENODATA', 'EBADNAME'] as const)
+    for (const code of ['ENOTFOUND', 'ENODATA', 'EBADNAME'] as const) {
       expect(
         isNotFound(new QueryError({ code, syscall: 'queryTxt', hostname: 'example.com' })),
       ).toBe(true)
+    }
   })
 
   test('is false for temporary failures and errors without a code', () => {
-    for (const code of ['ESERVFAIL', 'ETIMEOUT', 'ECONNREFUSED'] as const)
+    for (const code of ['ESERVFAIL', 'ETIMEOUT', 'ECONNREFUSED'] as const) {
       expect(
         isNotFound(new QueryError({ code, syscall: 'queryTxt', hostname: 'example.com' })),
       ).toBe(false)
+    }
     expect(isNotFound(new Error('ENOTFOUND'))).toBe(false)
     expect(isNotFound(undefined)).toBe(false)
   })
@@ -579,9 +581,12 @@ describe('endpoints', () => {
   test('rejects an empty endpoint list, a bad URL and a bad timeout', () => {
     expect(() => create({ endpoints: [] })).toThrow(RangeError)
     expect(() => create({ endpoints: ['not a url'] })).toThrow(TypeError)
-    for (const timeout of [0, -1, Number.NaN, 2 ** 31, Infinity])
+    for (const timeout of [0, -1, Number.NaN, 2 ** 31, Infinity]) {
       expect(() => create({ timeout })).toThrow(RangeError)
-    for (const timeout of [1, 2 ** 31 - 1]) expect(() => create({ timeout })).not.toThrow()
+    }
+    for (const timeout of [1, 2 ** 31 - 1]) {
+      expect(() => create({ timeout })).not.toThrow()
+    }
   })
 })
 
@@ -610,7 +615,9 @@ describe('requests', () => {
     const names = [1, 2, 3].flatMap((prefix) =>
       [62, 63].map((length) => `${'a'.repeat(prefix)}.${'b'.repeat(length)}.example`),
     )
-    for (const name of names) await resolver.resolve4(name)
+    for (const name of names) {
+      await resolver.resolve4(name)
+    }
     const standard = requests.map((request) => {
       const value = new URL(request.url).searchParams.get('dns')!
       expect(value).toMatch(/^[\w-]+$/)
@@ -667,32 +674,35 @@ describe('requests', () => {
       'with space.org',
       'evil.example?x',
     ]
-    for (const name of names)
+    for (const name of names) {
       expect(await failure(resolver.resolve4(name))).toMatchObject({
         code: 'EBADNAME',
         syscall: 'queryA',
         hostname: name,
       })
+    }
     expect(requests).toHaveLength(0)
   })
 
   test('answers ENOTFOUND for .onion names without a request (RFC 7686)', async () => {
     const { resolver, requests } = resolverFor(answering())
-    for (const name of ['foo.onion', 'a.b.ONION', 'foo.onion.'])
+    for (const name of ['foo.onion', 'a.b.ONION', 'foo.onion.']) {
       expect(await failure(resolver.resolveMx(name))).toMatchObject({
         code: 'ENOTFOUND',
         syscall: 'queryMx',
         hostname: name,
         message: `queryMx ENOTFOUND ${name}`,
       })
+    }
     expect(await resolver.resolveMx('onion.example').catch(() => 'sent')).toBe('sent')
     expect(requests).toHaveLength(1)
   })
 
   test('rejects a name that is not a string with a TypeError', async () => {
     const { resolver } = resolverFor(answering())
-    for (const name of [[], undefined, 1])
+    for (const name of [[], undefined, 1]) {
       await expect(resolver.resolveNs(name as unknown as string)).rejects.toBeInstanceOf(TypeError)
+    }
   })
 })
 
@@ -728,8 +738,9 @@ describe('timeouts and cancellation', () => {
         resolver.resolve4(name, { signal: controller.signal }),
       ),
     )
-    for (const result of results)
+    for (const result of results) {
       expect(result).toMatchObject({ status: 'rejected', reason: new Error('stop') })
+    }
     expect(requests.every((request) => request.url.startsWith('https://a.example/'))).toBe(true)
   })
 

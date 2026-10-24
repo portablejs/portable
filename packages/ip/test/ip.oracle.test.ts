@@ -19,9 +19,13 @@ function randomBytes(length: number): Uint8Array {
   for (let i = 0; i < length; i += 2) {
     const zero = next() < 0.4
     bytes[i] = zero ? 0 : int(256)
-    if (i + 1 < length) bytes[i + 1] = zero ? 0 : int(256)
+    if (i + 1 < length) {
+      bytes[i + 1] = zero ? 0 : int(256)
+    }
   }
-  if (length === 16 && next() < 0.15) bytes.fill(0, 0, 10).fill(0xff, 10, 12)
+  if (length === 16 && next() < 0.15) {
+    bytes.fill(0, 0, 10).fill(0xff, 10, 12)
+  }
   return bytes
 }
 
@@ -29,7 +33,9 @@ const addresses = Array.from({ length: 2000 }, (_, i) => Ip.fromBytes(randomByte
 
 function spellings(address: Ip.Address): string[] {
   const parsed = ipaddr.fromByteArray([...address.bytes])
-  if (parsed.kind() === 'ipv4') return [parsed.toString()]
+  if (parsed.kind() === 'ipv4') {
+    return [parsed.toString()]
+  }
   const v6 = parsed as ipaddr.IPv6
   const b = address.bytes
   const fixed = v6.parts.map((part) => part.toString(16).padStart(4, '0')).join(':')
@@ -45,20 +51,25 @@ function spellings(address: Ip.Address): string[] {
 const garbage = Array.from({ length: 5000 }, () => {
   const alphabet = '0123456789abcdefABCDEF:.:%z'
   let text = ''
-  for (let i = int(20); i > 0; i--) text += alphabet[int(alphabet.length)]
+  for (let i = int(20); i > 0; i--) {
+    text += alphabet[int(alphabet.length)]
+  }
   return text
 })
 
 describe('matches node:net isIP', () => {
   test('on valid addresses in every spelling', () => {
-    for (const address of addresses)
-      for (const text of spellings(address))
+    for (const address of addresses) {
+      for (const text of spellings(address)) {
         expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
+      }
+    }
   })
 
   test('on random text', () => {
-    for (const text of garbage.filter((text) => !/%.*:/.test(text)))
+    for (const text of garbage.filter((text) => !/%.*:/.test(text))) {
       expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
+    }
   })
 
   test('except that a zone may not contain a colon', () => {
@@ -84,20 +95,26 @@ describe('matches node:net isIP', () => {
       '::ffff:255.255.255.255',
       '::ffff:256.0.0.0',
     ]
-    for (const text of cases) expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
+    for (const text of cases) {
+      expect([text, Ip.canParse(text)]).toEqual([text, isIP(text) !== 0])
+    }
   })
 })
 
 describe('matches ipaddr.js', () => {
   test('bytes of every spelling', () => {
-    for (const address of addresses)
-      for (const text of spellings(address))
+    for (const address of addresses) {
+      for (const text of spellings(address)) {
         expect([text, [...Ip.parse(text).bytes]]).toEqual([text, ipaddr.parse(text).toByteArray()])
+      }
+    }
   })
 
   test('RFC 5952 text, apart from mixed notation for IPv4-mapped addresses', () => {
     for (const address of addresses) {
-      if (address.version === 4 || Ip.range(address) === 'ipv4Mapped') continue
+      if (address.version === 4 || Ip.range(address) === 'ipv4Mapped') {
+        continue
+      }
       const text = Ip.format(address)
       expect(text).toBe((ipaddr.fromByteArray([...address.bytes]) as ipaddr.IPv6).toRFC5952String())
     }
@@ -106,7 +123,9 @@ describe('matches ipaddr.js', () => {
   test('contains', () => {
     for (const address of addresses) {
       const network = addresses[int(addresses.length)]!
-      if (network.version !== address.version) continue
+      if (network.version !== address.version) {
+        continue
+      }
       const prefix = int(address.version === 4 ? 33 : 129)
       const ours = Ip.contains({ address: network, prefix }, address)
       const theirs = ipaddr
@@ -191,7 +210,9 @@ describe('matches ipaddr.js', () => {
         Ip.format(address),
         expect.arrayContaining([ours]),
       ])
-      if (ours === names[theirs]) compared++
+      if (ours === names[theirs]) {
+        compared++
+      }
     }
     expect(compared).toBeGreaterThan(500)
   })
@@ -200,7 +221,9 @@ describe('matches ipaddr.js', () => {
 describe('matches node:net', () => {
   test('SocketAddress formatting, apart from IPv4-compatible addresses', () => {
     for (const address of addresses) {
-      if (address.version === 4) continue
+      if (address.version === 4) {
+        continue
+      }
       const b = address.bytes
       const compatible = b.subarray(0, 12).every((byte) => byte === 0) && (b[12]! | b[13]!) !== 0
       const node = new SocketAddress({ address: Ip.format(address), family: 'ipv6' }).address

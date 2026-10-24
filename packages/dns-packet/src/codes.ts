@@ -119,10 +119,14 @@ function table<name extends string>(
     name: (value) => (byValue.get(value) ?? `${prefix}${value}`) as name,
     value(name) {
       const known = byName.get(name) ?? byName.get(String(name).toUpperCase())
-      if (known !== undefined) return known
+      if (known !== undefined) {
+        return known
+      }
       const match = new RegExp(`^${prefix}(\\d+)$`, 'i').exec(String(name))
       const value = match ? Number(match[1]) : Number.NaN
-      if (value <= max) return value
+      if (value <= max) {
+        return value
+      }
       throw new InvalidInputError(`Unknown ${what} "${name}".`)
     },
   }

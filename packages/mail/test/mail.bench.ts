@@ -30,10 +30,14 @@ describe('@portable/mail compared with nodemailer MailComposer', () => {
   test('100 text and HTML messages', async ({ bench }) => {
     const result = await bench.compare(
       bench('@portable/mail', async () => {
-        for (let i = 0; i < 100; i++) await Streams.toBytes(encode(small))
+        for (let i = 0; i < 100; i++) {
+          await Streams.toBytes(encode(small))
+        }
       }),
       bench(upstream, async () => {
-        for (let i = 0; i < 100; i++) await build(small)
+        for (let i = 0; i < 100; i++) {
+          await build(small)
+        }
       }),
     )
     expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mail'), { delta: 0.25 })

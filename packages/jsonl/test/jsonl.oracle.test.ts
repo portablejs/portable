@@ -19,7 +19,9 @@ function viaNdjson(chunks: readonly Uint8Array[]): Promise<unknown[]> {
 async function stringifyViaNdjson(values: readonly unknown[]): Promise<string> {
   const stringify = ndjson.stringify()
   const output = collect(stringify)
-  for (const value of values) stringify.write(value)
+  for (const value of values) {
+    stringify.write(value)
+  }
   stringify.end()
   return (await output).join('')
 }

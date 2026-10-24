@@ -43,16 +43,24 @@ export const icns: Format = {
     const fileLength = u32(input, 4, true)
     const images: Image[] = []
     for (let offset = 8; offset < fileLength;) {
-      if (offset >= input.length) throw new NeedMore(offset + 8)
+      if (offset >= input.length) {
+        throw new NeedMore(offset + 8)
+      }
       const length = u32(input, offset + 4, true)
-      if (length < 8) throw new InvalidInputError('Invalid ICNS')
+      if (length < 8) {
+        throw new InvalidInputError('Invalid ICNS')
+      }
       const type = utf8(input, offset, offset + 4)
       const size = iconSizes[type]
-      if (size) images.push({ width: size, height: size, type })
+      if (size) {
+        images.push({ width: size, height: size, type })
+      }
       offset += length
     }
     const [first] = images
-    if (!first) throw new InvalidInputError('Invalid ICNS, no sizes found')
+    if (!first) {
+      throw new InvalidInputError('Invalid ICNS, no sizes found')
+    }
     return images.length === 1
       ? { width: first.width, height: first.height, type: 'icns' }
       : { width: first.width, height: first.height, type: 'icns', images }

@@ -212,8 +212,8 @@ describe('hmac and digest options', () => {
     nobleDigest(algorithm, data)) satisfies OAuth1.Digest
   const longSecret = { key: twitter.consumer.key, secret: 'k'.repeat(100) }
 
-  for (const signatureMethod of ['HMAC-SHA1', 'HMAC-SHA256'] as const)
-    for (const consumer of [twitter.consumer, longSecret])
+  for (const signatureMethod of ['HMAC-SHA1', 'HMAC-SHA256'] as const) {
+    for (const consumer of [twitter.consumer, longSecret]) {
       test(`a sync or an async @noble/hashes hmac and digest sign ${signatureMethod} as the defaults do, with a ${consumer.secret.length}-character secret`, async () => {
         const options = { ...twitter, consumer, signatureMethod, bodyHash: true }
         const json = () =>
@@ -232,6 +232,8 @@ describe('hmac and digest options', () => {
           expect(signed.headers.get('authorization')).toBe(expected)
         }
       })
+    }
+  }
 
   test('uses the hmac for the signature and the digest for the body hash', async () => {
     const calls: string[] = []

@@ -94,49 +94,66 @@ export async function verify(
   } = options
   signal?.throwIfAborted()
   assertScheme(scheme)
-  if (!(tolerance >= 0)) throw new RangeError('tolerance must be a non-negative number')
-  if (!(maxBytes >= 0)) throw new RangeError('maxBytes must be a non-negative number')
+  if (!(tolerance >= 0)) {
+    throw new RangeError('tolerance must be a non-negative number')
+  }
+  if (!(maxBytes >= 0)) {
+    throw new RangeError('maxBytes must be a non-negative number')
+  }
   const secrets =
     typeof options.secret === 'string' || isUint8Array(options.secret)
       ? [options.secret]
       : options.secret
   const keys = secrets.map((secret) => keyOf(scheme, secret))
-  if (keys.length === 0) throw new RangeError('No secret')
+  if (keys.length === 0) {
+    throw new RangeError('No secret')
+  }
 
   const signed = scheme.parse(
     input.headers instanceof Headers ? input.headers : new Headers(input.headers),
   )
   const { id, timestamp } = signed
-  if (timestamp !== undefined && Number.isNaN(timestamp.getTime()))
+  if (timestamp !== undefined && Number.isNaN(timestamp.getTime())) {
     throw new VerificationError({
       code: 'malformed-header',
       message: 'Timestamp is not a valid time',
     })
+  }
 
   let body: Uint8Array
   let text: string | undefined
-  if (typeof input.body === 'string') body = utf8.encode((text = input.body))
-  else if (input instanceof Request) body = await readBody(input, maxBytes, signal)
-  else if (isUint8Array(input.body)) body = input.body
-  else throw new TypeError('body must be the raw request body as a string or Uint8Array')
+  if (typeof input.body === 'string') {
+    body = utf8.encode((text = input.body))
+  } else if (input instanceof Request) {
+    body = await readBody(input, maxBytes, signal)
+  } else if (isUint8Array(input.body)) {
+    body = input.body
+  } else {
+    throw new TypeError('body must be the raw request body as a string or Uint8Array')
+  }
 
   const content = bytes(scheme.payload({ id, timestamp, body }))
   let match = false
   for (const key of keys) {
     const expected = await race(hmac('SHA-256', key, content), signal)
-    for (const signature of signed.signatures)
-      if (Bytes.timingSafeEqual(signature, expected)) match = true
+    for (const signature of signed.signatures) {
+      if (Bytes.timingSafeEqual(signature, expected)) {
+        match = true
+      }
+    }
   }
-  if (!match)
+  if (!match) {
     throw new VerificationError({ code: 'signature', message: 'No signature matches the body' })
+  }
 
   if (timestamp !== undefined) {
     const skew = Math.abs(Math.floor(now.getTime() / 1000) - Math.floor(timestamp.getTime() / 1000))
-    if (skew * 1000 > tolerance)
+    if (skew * 1000 > tolerance) {
       throw new VerificationError({
         code: 'timestamp',
         message: `Timestamp is ${skew} s from now`,
       })
+    }
   }
 
   return { body: text ?? utf8Decoder.decode(body), id, timestamp }
@@ -199,8 +216,9 @@ export async function sign(
 }
 
 function assertScheme(scheme: Scheme): void {
-  if (typeof scheme?.parse !== 'function' || typeof scheme.payload !== 'function')
+  if (typeof scheme?.parse !== 'function' || typeof scheme.payload !== 'function') {
     throw new TypeError('scheme must be a Webhooks.Scheme, such as Webhooks.stripe')
+  }
 }
 
 function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
@@ -210,12 +228,16 @@ function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
       : scheme.key
         ? scheme.key(secret)
         : utf8.encode(secret)
-  if (key.length === 0) throw new RangeError('Secret is empty')
+  if (key.length === 0) {
+    throw new RangeError('Secret is empty')
+  }
   return new Uint8Array(key)
 }
 
 function bytes(content: Uint8Array | string): Uint8Array<ArrayBuffer> {
-  if (typeof content === 'string') return utf8.encode(content)
+  if (typeof content === 'string') {
+    return utf8.encode(content)
+  }
   return toBufferSource(content)
 }
 
@@ -234,12 +256,16 @@ const cryptoKeys = new Map<string, Promise<CryptoKey>>()
 function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   const id = key.length <= 256 ? String.fromCharCode(...key) : undefined
   const cached = id === undefined ? undefined : cryptoKeys.get(id)
-  if (cached) return cached
+  if (cached) {
+    return cached
+  }
   const cryptoKey = crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
     'sign',
   ])
   if (id !== undefined) {
-    if (cryptoKeys.size >= 16) cryptoKeys.clear()
+    if (cryptoKeys.size >= 16) {
+      cryptoKeys.clear()
+    }
     cryptoKeys.set(id, cryptoKey)
   }
   return cryptoKey

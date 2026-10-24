@@ -47,10 +47,14 @@ export function map<chunk, result>(
 ): Promise<result[]> {
   const { signal, stopOnError = true } = options
   const concurrency = assertLimit('concurrency', options.concurrency ?? Infinity)
-  if (typeof fn !== 'function') throw new TypeError('Expected `fn` to be a function.')
+  if (typeof fn !== 'function') {
+    throw new TypeError('Expected `fn` to be a function.')
+  }
 
   return new Promise<result[]>((resolve, reject) => {
-    if (signal?.aborted) return reject(signal.reason)
+    if (signal?.aborted) {
+      return reject(signal.reason)
+    }
 
     const results: result[] = []
     const errors: { index: number; error: unknown }[] = []
@@ -77,7 +81,9 @@ export function map<chunk, result>(
     signal?.addEventListener('abort', onAbort, { once: true })
 
     function fail(error: unknown, close: boolean) {
-      if (settled) return
+      if (settled) {
+        return
+      }
       settled = true
       signal?.removeEventListener('abort', onAbort)
       controller.abort(error)
@@ -85,7 +91,9 @@ export function map<chunk, result>(
         done = true
         try {
           const closing = iterator.return?.()
-          if (isThenable(closing)) closing.then(undefined, () => {})
+          if (isThenable(closing)) {
+            closing.then(undefined, () => {})
+          }
         } catch {}
       }
       reject(error)
@@ -105,13 +113,18 @@ export function map<chunk, result>(
           result.then(
             (item) => {
               pulling = false
-              if (settled) return
+              if (settled) {
+                return
+              }
               if (!isResult(item)) {
                 done = true
                 return fail(new TypeError('Expected `next()` to return an object.'), false)
               }
-              if (item.done) done = true
-              else start(item.value)
+              if (item.done) {
+                done = true
+              } else {
+                start(item.value)
+              }
               next()
             },
             (error: unknown) => {
@@ -133,15 +146,20 @@ export function map<chunk, result>(
           done = true
           return fail(new TypeError('Expected `next()` to return an object.'), false)
         }
-        if (item.done) done = true
-        else start(item.value)
+        if (item.done) {
+          done = true
+        } else {
+          start(item.value)
+        }
       }
       if (done && running === 0 && !pulling && !settled) {
         settled = true
         signal?.removeEventListener('abort', onAbort)
-        if (errors.length > 0)
+        if (errors.length > 0) {
           reject(new AggregateError(sortedErrors(errors), 'Some items failed to map.'))
-        else resolve(results)
+        } else {
+          resolve(results)
+        }
       }
     }
 
@@ -153,11 +171,14 @@ export function map<chunk, result>(
         result = fn(item, { index: i, signal: controller.signal })
       } catch (error) {
         running--
-        if (stopOnError) fail(error, true)
-        else errors.push({ index: i, error })
+        if (stopOnError) {
+          fail(error, true)
+        } else {
+          errors.push({ index: i, error })
+        }
         return
       }
-      if (isThenable(result))
+      if (isThenable(result)) {
         result.then(
           (value) => {
             results[i] = value
@@ -166,12 +187,14 @@ export function map<chunk, result>(
           },
           (error: unknown) => {
             running--
-            if (stopOnError) return fail(error, true)
+            if (stopOnError) {
+              return fail(error, true)
+            }
             errors.push({ index: i, error })
             next()
           },
         )
-      else {
+      } else {
         results[i] = result
         running--
       }

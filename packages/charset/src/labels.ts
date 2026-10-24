@@ -26,7 +26,9 @@ import { labels } from './tables/labels.js'
  */
 export function normalizeLabel(label: string): Name | undefined {
   const trimmed = label.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
-  if (!/^[\x20-\x7e]+$/.test(trimmed)) return undefined
+  if (!/^[\x20-\x7e]+$/.test(trimmed)) {
+    return undefined
+  }
   const key = trimmed.toLowerCase().replace(/:\d{4}$|[^0-9a-z]/g, '')
   const name = Object.hasOwn(labels, key) ? labels[key] : undefined
   return name === 'replacement' ? undefined : name

@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Sse.decode(`data: ${'x'.repeat(2000)}\n\n`, { maxLength: 1000 })
  * } catch (error) {
- *   if (error instanceof Sse.MaxLengthError) console.log(`longer than ${error.maxLength}`)
+ *   if (error instanceof Sse.MaxLengthError) {
+ *     console.log(`longer than ${error.maxLength}`)
+ *   }
  * }
  * ```
  */
@@ -35,7 +37,9 @@ export class MaxLengthError extends Errors.MaxLengthError {
  * try {
  *   await reader.read()
  * } catch (error) {
- *   if (error instanceof Sse.ResponseError) console.log(error.response.status)
+ *   if (error instanceof Sse.ResponseError) {
+ *     console.log(error.response.status)
+ *   }
  * }
  * ```
  */
@@ -53,7 +57,9 @@ export class ResponseError extends Errors.ResponseError {
  * try {
  *   Sse.encode({ event: 'a\nb', data: 'x' })
  * } catch (error) {
- *   if (error instanceof Sse.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Sse.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

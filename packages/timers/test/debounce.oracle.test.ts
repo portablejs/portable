@@ -43,9 +43,13 @@ async function run(make: (fn: (arg: number) => number) => Wrapped, ops: readonly
   })
   for (const op of ops) {
     await vi.advanceTimersByTimeAsync(op.gap)
-    if (op.kind === 'call') Promise.resolve(wrapped(op.arg)).catch(() => {})
-    else if (op.kind === 'flush') Promise.resolve(wrapped.flush()).catch(() => {})
-    else wrapped.cancel()
+    if (op.kind === 'call') {
+      Promise.resolve(wrapped(op.arg)).catch(() => {})
+    } else if (op.kind === 'flush') {
+      Promise.resolve(wrapped.flush()).catch(() => {})
+    } else {
+      wrapped.cancel()
+    }
   }
   await vi.advanceTimersByTimeAsync(10_000)
   return invocations
@@ -124,7 +128,9 @@ describe('lodash.debounce and lodash.throttle 4.x', () => {
       const fixed = await run((fn) => lodashDebounce(fn, 100, { maxWait: 10 }), ops)
       const legacy = await run((fn) => legacyDebounce(fn, 100, { maxWait: 10 }), ops)
       expect(await run((fn) => ours(Timers.debounce(fn, 100, { maxWait: 10 })), ops)).toEqual(fixed)
-      if (JSON.stringify(legacy) !== JSON.stringify(fixed)) differences++
+      if (JSON.stringify(legacy) !== JSON.stringify(fixed)) {
+        differences++
+      }
     }
     expect(differences).toBeGreaterThan(0)
   })

@@ -44,41 +44,53 @@ export function normalizeName(
   value: unknown,
   valid: (name: string) => boolean,
 ): string {
-  if (typeof value !== 'string') throw new TypeError(`options.${option} must be a string.`)
+  if (typeof value !== 'string') {
+    throw new TypeError(`options.${option} must be a string.`)
+  }
   const name = toALabel(value)
-  if (!name || !valid(name))
+  if (!name || !valid(name)) {
     throw new RangeError(`options.${option} is not a valid DNS name: ${value}`)
+  }
   return name
 }
 
 export function assertHeaders(headers: readonly string[]): string[] {
-  if (!Array.isArray(headers))
+  if (!Array.isArray(headers)) {
     throw new TypeError('options.headers must be an array of field names.')
+  }
   const names = headers.map((name: unknown) => {
-    if (typeof name !== 'string' || !headerName.test(name))
+    if (typeof name !== 'string' || !headerName.test(name)) {
       throw new RangeError(`options.headers has an invalid field name: ${String(name)}`)
+    }
     return name
   })
-  if (!names.some((name) => lowerAscii(name) === 'from'))
+  if (!names.some((name) => lowerAscii(name) === 'from')) {
     throw new RangeError('options.headers must include From (RFC 6376 section 5.4).')
+  }
   return names
 }
 
 export function seconds(option: string, date: Date): number {
-  if (!(date instanceof Date)) throw new TypeError(`options.${option} must be a Date.`)
+  if (!(date instanceof Date)) {
+    throw new TypeError(`options.${option} must be a Date.`)
+  }
   const time = Math.floor(date.getTime() / 1000)
-  if (!(time >= 0 && time < 1e12))
+  if (!(time >= 0 && time < 1e12)) {
     throw new RangeError(
       `options.${option} must be between 1970 and the year 33658 (RFC 6376 section 3.5).`,
     )
+  }
   return time
 }
 
 export function selectForSigning(fields: readonly Field[], names: readonly string[]): Field[] {
   const wanted = new Set(names.map(lowerAscii))
   const selected: Field[] = []
-  for (let i = fields.length - 1; i >= 0; i--)
-    if (wanted.has(fields[i]!.name)) selected.push(fields[i]!)
+  for (let i = fields.length - 1; i >= 0; i--) {
+    if (wanted.has(fields[i]!.name)) {
+      selected.push(fields[i]!)
+    }
+  }
   return selected
 }
 
@@ -96,9 +108,13 @@ export function overSigned(names: readonly string[], selected: readonly Field[])
   }
   const extra: string[] = []
   for (const [key, { name, count }] of listed) {
-    if (count < 2) continue
+    if (count < 2) {
+      continue
+    }
     const present = selected.filter((field) => field.name === key).length
-    for (let i = present; i < count; i++) extra.push(name)
+    for (let i = present; i < count; i++) {
+      extra.push(name)
+    }
   }
   return extra
 }

@@ -48,8 +48,9 @@ export function importSeed(
 ): Promise<CryptoKeyPair> {
   const { extractable = false, signal } = options
   return run(signal, async () => {
-    if (assertUint8Array(seed).length !== 32)
+    if (assertUint8Array(seed).length !== 32) {
       throw new InvalidInputError(`An ${algorithm} seed is 32 bytes, not ${seed.length}`)
+    }
     const pkcs8 = new Uint8Array(48)
     pkcs8.set(pkcs8Prefix[algorithm])
     pkcs8.set(seed, 16)
@@ -95,13 +96,19 @@ export function publicKeyOf(
   options: publicKeyOf.Options = {},
 ): Promise<CryptoKey> {
   return run(options.signal, async () => {
-    if (privateKey.type !== 'private')
+    if (privateKey.type !== 'private') {
       throw new InvalidInputError(`A ${privateKey.type} key has no public key`)
-    if (!privateKey.extractable)
+    }
+    if (!privateKey.extractable) {
       throw new InvalidInputError('The private key must be extractable to read its public key')
+    }
     const jwk = await crypto.subtle.exportKey('jwk', privateKey)
     const publicJwk: JsonWebKey = {}
-    for (const name of publicMembers) if (jwk[name] !== undefined) publicJwk[name] = jwk[name]
+    for (const name of publicMembers) {
+      if (jwk[name] !== undefined) {
+        publicJwk[name] = jwk[name]
+      }
+    }
     const usages = privateKey.usages.flatMap((usage) => publicUsage[usage] ?? [])
     return crypto.subtle.importKey('jwk', publicJwk, privateKey.algorithm, true, usages)
   })

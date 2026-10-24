@@ -36,7 +36,9 @@ export function fromHex(text: string | Uint8Array): Uint8Array<ArrayBuffer> {
     try {
       return nativeFromHex.call(Uint8Array, hex)
     } catch (error) {
-      if (!(error instanceof SyntaxError)) throw error
+      if (!(error instanceof SyntaxError)) {
+        throw error
+      }
       // The native SyntaxError doesn't say where the problem is. The fallback throws on exactly the
       // same input, with the position.
       fromHexFallback(hex)
@@ -63,7 +65,9 @@ export function toHexFallback(bytes: Uint8Array): string {
   // once is faster for long input.
   if (bytes.length <= 128) {
     let hex = ''
-    for (let i = 0; i < bytes.length; i++) hex += pairs[bytes[i]!]
+    for (let i = 0; i < bytes.length; i++) {
+      hex += pairs[bytes[i]!]
+    }
     return hex
   }
   const out = new Uint8Array(bytes.length * 2)
@@ -85,8 +89,9 @@ const values = /* @__PURE__ */ (() => {
 })()
 
 export function fromHexFallback(hex: string): Uint8Array<ArrayBuffer> {
-  if (hex.length % 2 !== 0)
+  if (hex.length % 2 !== 0) {
     throw new InvalidInputError(`Hex input has an odd length of ${hex.length}.`)
+  }
   const bytes = new Uint8Array(hex.length / 2)
   for (let i = 0, j = 0; i < bytes.length; i++, j += 2) {
     const a = hex.charCodeAt(j)
@@ -104,7 +109,8 @@ export function fromHexFallback(hex: string): Uint8Array<ArrayBuffer> {
 
 function latin1(bytes: Uint8Array): string {
   let text = ''
-  for (let i = 0; i < bytes.length; i += 0x8000)
+  for (let i = 0; i < bytes.length; i += 0x8000) {
     text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
   return text
 }

@@ -21,7 +21,9 @@ export async function listen(
   const url = `ws://127.0.0.1:${port}`
   const close = () =>
     new Promise<void>((resolve) => {
-      for (const client of server.clients) client.terminate()
+      for (const client of server.clients) {
+        client.terminate()
+      }
       server.close(() => resolve())
     })
   return { server, url, port, close }

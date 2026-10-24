@@ -11,7 +11,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Streams.toArray(body.pipeThrough(new Jsonl.DecoderStream()))
  * } catch (error) {
- *   if (error instanceof Jsonl.InvalidInputError) return new Response('Bad NDJSON', { status: 400 })
+ *   if (error instanceof Jsonl.InvalidInputError) {
+ *     return new Response('Bad NDJSON', { status: 400 })
+ *   }
  *   throw error
  * }
  * ```
@@ -31,7 +33,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await Streams.toArray(body.pipeThrough(new Jsonl.DecoderStream({ maxLength: 1_000_000 })))
  * } catch (error) {
- *   if (error instanceof Jsonl.MaxLengthError) return new Response(null, { status: 413 })
+ *   if (error instanceof Jsonl.MaxLengthError) {
+ *     return new Response(null, { status: 413 })
+ *   }
  *   throw error
  * }
  * ```

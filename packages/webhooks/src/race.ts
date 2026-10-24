@@ -6,9 +6,13 @@ export function race<value>(
   work: value | PromiseLike<value>,
   signal: AbortSignal | undefined,
 ): Promise<value> {
-  if (!signal) return Promise.resolve(work)
+  if (!signal) {
+    return Promise.resolve(work)
+  }
   return new Promise<value>((resolve, reject) => {
-    if (signal.aborted) return reject(signal.reason)
+    if (signal.aborted) {
+      return reject(signal.reason)
+    }
     const onAbort = () => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })
     Promise.resolve(work)
@@ -29,7 +33,9 @@ export async function readBody(
   // Firefox has no `Request.prototype.body`, so a request body there can only be read whole.
   if (!body.body) {
     const bytes = new Uint8Array(await race(body.arrayBuffer(), signal))
-    if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
+    if (bytes.length > maxBytes) {
+      throw new MaxBytesError({ maxBytes })
+    }
     return bytes
   }
   signal?.throwIfAborted()
@@ -42,7 +48,9 @@ export async function readBody(
     for (;;) {
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
-      if (done) break
+      if (done) {
+        break
+      }
       length += value.length
       if (length > maxBytes) {
         await reader.cancel().catch(() => {})

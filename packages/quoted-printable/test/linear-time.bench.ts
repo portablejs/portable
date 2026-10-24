@@ -46,10 +46,11 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['line breaks', repeat('\r\n')],
     ['whitespace lines', repeat(' \t\r\n')],
   ] satisfies [string, (size: number) => string][]
-  for (const [label, make] of decodeInputs)
+  for (const [label, make] of decodeInputs) {
     test(`decode() of ${label}`, async () => {
       expect(await slowdown(64 * 1024, make, decode)).toBeLessThan(maxRatio)
     })
+  }
 
   const encodeInputs = [
     ['a line without spaces', (size) => utf8(repeat('a')(size))],
@@ -62,10 +63,11 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['punctuation', (size) => utf8(repeat('.,!?')(size))],
     ['every byte value', (size) => Uint8Array.from({ length: size }, (_, i) => i % 256)],
   ] satisfies [string, (size: number) => Uint8Array][]
-  for (const [label, make] of encodeInputs)
+  for (const [label, make] of encodeInputs) {
     test(`encode() of ${label}`, async () => {
       expect(await slowdown(64 * 1024, make, (input) => encode(input))).toBeLessThan(maxRatio)
     })
+  }
 
   test('the encoder stream with one-byte chunks', async () => {
     const run = (input: string) => encodeStream(split(utf8(input), 1))

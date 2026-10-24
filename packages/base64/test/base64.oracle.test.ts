@@ -16,7 +16,9 @@ import {
 
 async function viaNodeStream(transform: Transform, chunks: readonly Uint8Array[]): Promise<Buffer> {
   const output: Buffer[] = []
-  for await (const chunk of Readable.from(chunks).pipe(transform)) output.push(chunk as Buffer)
+  for await (const chunk of Readable.from(chunks).pipe(transform)) {
+    output.push(chunk as Buffer)
+  }
   return Buffer.concat(output)
 }
 
@@ -52,10 +54,11 @@ describe('matches libbase64', () => {
   test('encode with MIME line wrapping', () => {
     for (const [seed, length] of lengths.entries()) {
       const data = randomBytes(length, seed)
-      for (const lineLength of [1, 9, 76])
+      for (const lineLength of [1, 9, 76]) {
         expect(encode(data, { lineLength })).toBe(
           libbase64.wrap(libbase64.encode(Buffer.from(data)), lineLength),
         )
+      }
     }
   })
 
@@ -116,7 +119,8 @@ describe('matches base64-js and js-base64', () => {
   })
 
   test('encode of a string as UTF-8', () => {
-    for (const input of ['', 'a', '小飼弾', '𠮷野家', 'ÕÄÖÜ'.repeat(300)])
+    for (const input of ['', 'a', '小飼弾', '𠮷野家', 'ÕÄÖÜ'.repeat(300)]) {
       expect(encode(input)).toBe(jsBase64.encode(input))
+    }
   })
 })

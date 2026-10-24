@@ -64,7 +64,9 @@ function explain(
   ours: string,
   theirs: string,
 ): string | undefined {
-  if (codePoint === 0xfffd && ours === '3f') return 'iconv-lite encodes U+FFFD'
+  if (codePoint === 0xfffd && ours === '3f') {
+    return 'iconv-lite encodes U+FFFD'
+  }
   if (
     name.startsWith('windows-') &&
     codePoint >= 0x80 &&
@@ -73,7 +75,9 @@ function explain(
   ) {
     return 'WHATWG maps the C1 control'
   }
-  if (indexDifferences[name]?.includes(codePoint)) return 'index differs'
+  if (indexDifferences[name]?.includes(codePoint)) {
+    return 'index differs'
+  }
   if (name === 'Big5' && ours === '3f' && parseInt(theirs.slice(0, 2), 16) < 0xa1) {
     return 'HKSCS is decode-only'
   }
@@ -105,18 +109,26 @@ describe.each(Object.entries(iconvNames))('%s matches iconv-lite %s', (name, ico
     const unexplained: string[] = []
     const reasons = new Map<string, number>()
     for (let codePoint = 0; codePoint <= lastCodePoint(name); codePoint++) {
-      if (codePoint >= 0xd800 && codePoint <= 0xdfff) continue
+      if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+        continue
+      }
       const text = String.fromCodePoint(codePoint)
       const ours = hex(Charset.encode(text, charset))
       const theirs = hex(iconv.encode(text, iconvName))
       if (ours === theirs) {
-        if (ours !== '3f' || codePoint === 0x3f) agreed.push(codePoint)
-        else unmappable.push(codePoint)
+        if (ours !== '3f' || codePoint === 0x3f) {
+          agreed.push(codePoint)
+        } else {
+          unmappable.push(codePoint)
+        }
         continue
       }
       const reason = explain(name, codePoint, ours, theirs)
-      if (reason) reasons.set(reason, (reasons.get(reason) ?? 0) + 1)
-      else unexplained.push(`U+${codePoint.toString(16)}: ${ours} vs ${theirs}`)
+      if (reason) {
+        reasons.set(reason, (reasons.get(reason) ?? 0) + 1)
+      } else {
+        unexplained.push(`U+${codePoint.toString(16)}: ${ours} vs ${theirs}`)
+      }
     }
     expect(unexplained).toEqual([])
     expect(agreed.length).toBeGreaterThan(127)

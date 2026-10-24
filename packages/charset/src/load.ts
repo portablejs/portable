@@ -71,9 +71,13 @@ export async function load(label: string, options: load.Options = {}): Promise<C
   const { signal } = options
   signal?.throwIfAborted()
   const name = normalizeLabel(label)
-  if (name === undefined) throw new UnsupportedError(`No encoder for charset "${label}".`)
+  if (name === undefined) {
+    throw new UnsupportedError(`No encoder for charset "${label}".`)
+  }
   const charset = loaders[name]()
-  if (!signal) return charset
+  if (!signal) {
+    return charset
+  }
   return new Promise<Charset>((resolve, reject) => {
     const abort = () => reject(signal.reason)
     signal.addEventListener('abort', abort, { once: true })

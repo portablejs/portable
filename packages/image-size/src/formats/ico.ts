@@ -14,7 +14,9 @@ function icon(kind: 1 | 2, type: 'ico' | 'cur'): Format {
         height: input[7 + i * 16]! || 256,
       })
       const { width, height } = entry(0)
-      if (count === 1) return { width, height, type }
+      if (count === 1) {
+        return { width, height, type }
+      }
       return { width, height, type, images: Array.from({ length: count }, (_, i) => entry(i)) }
     },
   }

@@ -19,7 +19,9 @@ function encoder(): Encoder {
     const astral = new Map<number, number>()
     unpackIndex(index, big5Start, (pointer, codePoint) => {
       if (codePoint >= 0x10000) {
-        if (!astral.has(codePoint)) astral.set(codePoint, code(pointer))
+        if (!astral.has(codePoint)) {
+          astral.set(codePoint, code(pointer))
+        }
       } else if (bmp[codePoint] === 0 || useLast.has(codePoint)) {
         bmp[codePoint] = code(pointer)
       }
@@ -31,7 +33,9 @@ function encoder(): Encoder {
     table: bmp,
     write(codePoint, out) {
       const bytes = astral.get(codePoint)
-      if (bytes === undefined) return codePoint
+      if (bytes === undefined) {
+        return codePoint
+      }
       out.bytes[out.length++] = bytes >> 8
       out.bytes[out.length++] = bytes & 0xff
       return -1

@@ -56,10 +56,12 @@ export function tee<chunk>(
   options: tee.Options = {},
 ): ReadableStream<chunk>[] {
   const { signal, unit = 'chunks', highWaterMark = unit === 'bytes' ? 65536 : 16 } = options
-  if (!Number.isInteger(count) || count < 1)
+  if (!Number.isInteger(count) || count < 1) {
     throw new RangeError(`count must be a positive integer, got ${count}.`)
-  if (!(highWaterMark >= 0))
+  }
+  if (!(highWaterMark >= 0)) {
     throw new RangeError(`highWaterMark must be 0 or more, got ${highWaterMark}.`)
+  }
   const sizeOf = unit === 'bytes' ? byteLength : () => 1
   const reader = toStream(source).getReader()
   const active = new Set<Branch<chunk>>()
@@ -70,7 +72,9 @@ export function tee<chunk>(
     signal?.removeEventListener('abort', abort)
   }
   const fail = (error: unknown) => {
-    for (const branch of active) branch.controller.error(error)
+    for (const branch of active) {
+      branch.controller.error(error)
+    }
     finish()
   }
   const failAndCancel = (error: unknown) => {
@@ -80,19 +84,27 @@ export function tee<chunk>(
   const abort = () => failAndCancel(signal!.reason)
 
   const pump = () => {
-    if (reading) return
+    if (reading) {
+      return
+    }
     let wanted = false
     for (const branch of active) {
-      if (branch.queued >= highWaterMark) return
+      if (branch.queued >= highWaterMark) {
+        return
+      }
       wanted ||= branch.waiting
     }
-    if (!wanted) return
+    if (!wanted) {
+      return
+    }
     reading = true
     reader.read().then((result) => {
       reading = false
       if (result.done) {
         for (const { controller, queue } of active) {
-          for (const chunk of queue) controller.enqueue(chunk)
+          for (const chunk of queue) {
+            controller.enqueue(chunk)
+          }
           controller.close()
         }
         return finish()
@@ -125,8 +137,9 @@ export function tee<chunk>(
           active.add(branch)
         },
         pull(controller) {
-          if (branch.queue.length === 0) branch.waiting = true
-          else {
+          if (branch.queue.length === 0) {
+            branch.waiting = true
+          } else {
             const chunk = branch.queue.shift()!
             branch.queued -= sizeOf(chunk)
             controller.enqueue(chunk)
@@ -134,8 +147,12 @@ export function tee<chunk>(
           pump()
         },
         cancel(reason) {
-          if (!active.delete(branch)) return
-          if (active.size > 0) return pump()
+          if (!active.delete(branch)) {
+            return
+          }
+          if (active.size > 0) {
+            return pump()
+          }
           finish()
           return reader.cancel(reason)
         },
@@ -143,7 +160,10 @@ export function tee<chunk>(
       { highWaterMark: 0 },
     )
   })
-  if (signal?.aborted) abort()
-  else signal?.addEventListener('abort', abort)
+  if (signal?.aborted) {
+    abort()
+  } else {
+    signal?.addEventListener('abort', abort)
+  }
   return branches
 }

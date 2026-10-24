@@ -10,8 +10,9 @@ const cases = (fixture: readonly unknown[]) =>
 
 describe('tr46: ToASCII with useSTD3ASCIIRules', () => {
   test('keeps a-z and 0-9', () => {
-    for (const char of 'abcdefghijklmnopqrstuvwxyz0123456789')
+    for (const char of 'abcdefghijklmnopqrstuvwxyz0123456789') {
       expect(Idna.toAscii(char, { strict: true })).toBe(char)
+    }
   })
 
   test('rejects "-" alone, because strict also checks hyphens', () => {
@@ -21,7 +22,9 @@ describe('tr46: ToASCII with useSTD3ASCIIRules', () => {
   test('rejects every other ASCII character except A-Z', () => {
     for (let code = 0; code < 128; code++) {
       const char = String.fromCharCode(code)
-      if (/[a-zA-Z0-9-]/.test(char)) continue
+      if (/[a-zA-Z0-9-]/.test(char)) {
+        continue
+      }
       expect(() => Idna.toAscii(char, { strict: true }), `U+${code}`).toThrow(
         Idna.InvalidInputError,
       )

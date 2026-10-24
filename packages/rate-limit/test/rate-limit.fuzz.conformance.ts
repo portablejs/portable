@@ -24,7 +24,9 @@ test('allows at most burst plus what the elapsed time earns back', async () => {
       for (const { wait, cost } of requests) {
         time += wait
         const result = await limiter.take('key', { cost, now: new Date(time) })
-        if (result.allowed) used += cost
+        if (result.allowed) {
+          used += cost
+        }
         expect(result.remaining).toBeGreaterThanOrEqual(0)
         expect(result.remaining).toBeLessThanOrEqual(burst)
         expect(result.retryAfter === 0).toBe(result.allowed)
@@ -45,7 +47,9 @@ test('a denied request is allowed once retryAfter has passed', async () => {
       for (const { wait, cost } of requests) {
         time += wait
         const result = await limiter.take('key', { cost, now: new Date(time) })
-        if (result.allowed || !Number.isFinite(result.retryAfter)) continue
+        if (result.allowed || !Number.isFinite(result.retryAfter)) {
+          continue
+        }
         const later = await limiter.take('key', { cost, now: new Date(time + result.retryAfter) })
         expect(later.allowed).toBe(true)
         time += result.retryAfter
@@ -64,7 +68,9 @@ test('headers write the remaining count and whole seconds, and quote any policy 
         const limiter = RateLimit.create(config)
         const now = new Date(1_700_000_000_000)
         let result = await limiter.take('key', { cost: 0, now })
-        for (let i = 0; i < count; i++) result = await limiter.take('key', { now })
+        for (let i = 0; i < count; i++) {
+          result = await limiter.take('key', { now })
+        }
         const fields = RateLimit.headers(result, { name, now })
         const item = /^"((?:[^"\\]|\\.)*)";/
         expect(item.exec(fields.RateLimit!)?.[1]?.replace(/\\(.)/g, '$1')).toBe(name)

@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await OAuth1.authorization(request, { signatureMethod: 'RSA-SHA256' as never, consumer })
  * } catch (error) {
- *   if (error instanceof OAuth1.UnsupportedError) console.log(error.message)
+ *   if (error instanceof OAuth1.UnsupportedError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

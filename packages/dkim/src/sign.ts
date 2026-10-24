@@ -100,22 +100,26 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   } = options
   const domain = normalizeName('domain', options.domain, isDomainName)
   const selector = normalizeName('selector', options.selector, isSelector)
-  if (!canFitDns(`${selector}._domainkey.${domain}`))
+  if (!canFitDns(`${selector}._domainkey.${domain}`)) {
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
-  if (!canonicalizations.has(canonicalization))
+  }
+  if (!canonicalizations.has(canonicalization)) {
     throw new RangeError(`canonicalization must be one of ${[...canonicalizations].join(', ')}.`)
+  }
   const names = assertHeaders(headers)
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain)
   const timestamp = seconds('now', now)
   const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', expiresAt)
-  if (expiration !== undefined && expiration <= timestamp)
+  if (expiration !== undefined && expiration <= timestamp) {
     throw new RangeError('expiresAt must be at least a second after now.')
+  }
   signal?.throwIfAborted()
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
-  if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024)
+  if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024) {
     throw new RangeError('RSA keys shorter than 1024 bits are not allowed (RFC 8301 section 3.2).')
+  }
   const [headerCanonicalization, bodyCanonicalization] = canonicalization.split('/') as [
     Canonicalization,
     Canonicalization,
@@ -161,19 +165,24 @@ export async function sign(message: Message, options: sign.Options): Promise<str
 
 /** Checks `i=` and writes it in dkim-quoted-printable (RFC 6376 section 2.11). */
 function encodeIdentity(identity: string, domain: string): string {
-  if (typeof identity !== 'string') throw new TypeError('options.identity must be a string.')
+  if (typeof identity !== 'string') {
+    throw new TypeError('options.identity must be a string.')
+  }
   const at = identity.lastIndexOf('@')
   const local = identity.slice(0, Math.max(at, 0))
   const host = at < 0 ? undefined : toALabel(identity.slice(at + 1))
-  if (!host || !isDomainName(host) || !isLocalPart(local))
+  if (!host || !isDomainName(host) || !isLocalPart(local)) {
     throw new RangeError(`options.identity is not an address or @domain: ${identity}`)
-  if (!isSameOrSubdomain(host, domain))
+  }
+  if (!isSameOrSubdomain(host, domain)) {
     throw new RangeError('options.identity must be in options.domain or one of its subdomains.')
+  }
   let encoded = ''
-  for (const byte of new TextEncoder().encode(local))
+  for (const byte of new TextEncoder().encode(local)) {
     encoded +=
       byte > 0x20 && byte < 0x7f && byte !== 0x3b && byte !== 0x3d
         ? String.fromCharCode(byte)
         : `=${byte.toString(16).toUpperCase().padStart(2, '0')}`
+  }
   return `${encoded}@${host}`
 }

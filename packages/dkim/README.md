@@ -23,7 +23,9 @@ const results = await Dkim.verify(signed, {
   resolver: Dns.create(),
   signal: AbortSignal.timeout(10_000),
 })
-for (const r of results) console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
+for (const r of results) {
+  console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
+}
 ```
 
 A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF, so a message stored with LF line ends signs and verifies the same as one with CRLF.

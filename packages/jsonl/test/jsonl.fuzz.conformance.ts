@@ -22,11 +22,15 @@ const jsonlLike = fc.string({
 function expected(text: string, invalid: 'error' | 'skip'): unknown[] {
   const out: unknown[] = []
   for (const line of text.split('\n')) {
-    if (line.trim() === '') continue
+    if (line.trim() === '') {
+      continue
+    }
     try {
       out.push(JSON.parse(line))
     } catch (error) {
-      if (invalid === 'error') throw new Jsonl.InvalidInputError('', { cause: error })
+      if (invalid === 'error') {
+        throw new Jsonl.InvalidInputError('', { cause: error })
+      }
     }
   }
   return out

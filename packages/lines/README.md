@@ -13,7 +13,9 @@ import * as Lines from '@portable/lines'
 
 const response = await fetch('https://example.com/access.log')
 const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
+for (let r = await reader.read(); !r.done; r = await reader.read()) {
+  console.log(r.value)
+}
 ```
 
 `Lines.DecoderStream` is a `TransformStream<Uint8Array | string, string>`. Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly, and a CRLF split across chunks counts as one line break.

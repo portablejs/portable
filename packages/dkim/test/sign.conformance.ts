@@ -77,8 +77,12 @@ describe('the signature field', () => {
     })
     const lines = field.slice(0, -2).split('\r\n')
     expect(lines.length).toBeGreaterThan(3)
-    for (const line of lines) expect(line.length).toBeLessThanOrEqual(76)
-    for (const line of lines.slice(1)) expect(line).toMatch(/^ \S/)
+    for (const line of lines) {
+      expect(line.length).toBeLessThanOrEqual(76)
+    }
+    for (const line of lines.slice(1)) {
+      expect(line).toMatch(/^ \S/)
+    }
   })
 
   test('signs with ed25519-sha256 for an Ed25519 key', async () => {
@@ -215,8 +219,9 @@ describe('private keys', () => {
       ecdsa.privateKey,
       sha1.privateKey,
       rsaPublic,
-    ])
+    ]) {
       await expect(Dkim.sign(MSG, base({ privateKey }))).rejects.toThrow(RangeError)
+    }
     await expect(
       Dkim.sign(MSG, base({ privateKey: undefined as unknown as string })),
     ).rejects.toThrow(TypeError)

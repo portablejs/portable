@@ -30,7 +30,9 @@ const privateUse: Record<number, number> = {
 }
 
 function rangesPointer(codePoint: number): number {
-  if (codePoint === 0xe7c7) return 7457
+  if (codePoint === 0xe7c7) {
+    return 7457
+  }
   if (!ranges) {
     const values = unpackInts(gb18030Ranges)
     ranges = { pointers: [], codePoints: [] }
@@ -44,15 +46,20 @@ function rangesPointer(codePoint: number): number {
   let high = codePoints.length - 1
   while (low < high) {
     const middle = (low + high + 1) >> 1
-    if (codePoints[middle]! <= codePoint) low = middle
-    else high = middle - 1
+    if (codePoints[middle]! <= codePoint) {
+      low = middle
+    } else {
+      high = middle - 1
+    }
   }
   return ranges.pointers[low]! + codePoint - codePoints[low]!
 }
 
 function build(): { gb18030: Uint16Array; gbk: Uint16Array } {
   const gb18030 = byteTable()
-  for (const [codePoint, bytes] of Object.entries(privateUse)) gb18030[Number(codePoint)] = bytes
+  for (const [codePoint, bytes] of Object.entries(privateUse)) {
+    gb18030[Number(codePoint)] = bytes
+  }
   codeTable(gb18030, index, (pointer) => {
     const trailing = pointer % 190
     return ((Math.floor(pointer / 190) + 0x81) << 8) | (trailing + (trailing < 0x3f ? 0x40 : 0x41))
@@ -67,7 +74,9 @@ function encoder(isGbk: boolean): Encoder {
   return {
     table: isGbk ? tables.gbk : tables.gb18030,
     write(codePoint, out) {
-      if (isGbk || codePoint === 0xe5e5) return codePoint
+      if (isGbk || codePoint === 0xe5e5) {
+        return codePoint
+      }
       const pointer = rangesPointer(codePoint)
       const { bytes } = out
       bytes[out.length++] = Math.floor(pointer / 12600) + 0x81

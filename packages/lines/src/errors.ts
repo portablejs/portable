@@ -9,9 +9,13 @@ import * as Errors from '@portable/errors'
  *
  * const reader = response.body!.pipeThrough(new Lines.DecoderStream({ maxLength: 10_000 })).getReader()
  * try {
- *   for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
+ *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
+ *     console.log(r.value)
+ *   }
  * } catch (error) {
- *   if (error instanceof Lines.MaxLengthError) console.log(`a line exceeded ${error.maxLength}`)
+ *   if (error instanceof Lines.MaxLengthError) {
+ *     console.log(`a line exceeded ${error.maxLength}`)
+ *   }
  * }
  * ```
  */

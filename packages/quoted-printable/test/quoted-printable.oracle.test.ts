@@ -52,8 +52,9 @@ describe('encode() matches libqp 3.0.1 wrap(encode())', () => {
     const next = random(1)
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 300)
-      for (const lineLength of lineLengths)
+      for (const lineLength of lineLengths) {
         expect(encode(input, { lineLength })).toBe(libqp.wrap(libqp.encode(input), lineLength))
+      }
       expect(encode(input, { lineLength: false })).toBe(libqp.encode(input))
     }
   })
@@ -62,8 +63,9 @@ describe('encode() matches libqp 3.0.1 wrap(encode())', () => {
     const next = random(2)
     for (let run = 0; run < runs; run++) {
       const input = randomText(next, 120)
-      for (const lineLength of lineLengths)
+      for (const lineLength of lineLengths) {
         expect(encode(input, { lineLength })).toBe(libqp.wrap(libqp.encode(input), lineLength))
+      }
     }
   })
 
@@ -72,10 +74,12 @@ describe('encode() matches libqp 3.0.1 wrap(encode())', () => {
     const words = ['the', 'quick', 'brown', 'fox,', 'jõgeva', 'naïve', '€uro', '—', 'end.', '?!']
     for (let run = 0; run < 50; run++) {
       let input = ''
-      for (let i = 0; i < 400; i++)
+      for (let i = 0; i < 400; i++) {
         input += words[Math.floor(next() * words.length)]! + (next() < 0.05 ? '\r\n' : ' ')
-      for (const lineLength of lineLengths)
+      }
+      for (const lineLength of lineLengths) {
         expect(encode(input, { lineLength })).toBe(libqp.wrap(libqp.encode(input), lineLength))
+      }
     }
   })
 

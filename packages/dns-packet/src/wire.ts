@@ -16,7 +16,9 @@ const decoder = new TextDecoder()
 const fatalDecoder = new TextDecoder('utf-8', { fatal: true })
 
 export function need(r: Reader, n: number, end: number): void {
-  if (r.offset + n > end) throw new TruncatedError(`Unexpected end of data at offset ${r.offset}.`)
+  if (r.offset + n > end) {
+    throw new TruncatedError(`Unexpected end of data at offset ${r.offset}.`)
+  }
 }
 
 /**
@@ -27,8 +29,9 @@ export function within<value>(field: string, read: () => value): value {
   try {
     return read()
   } catch (error) {
-    if (error instanceof TruncatedError)
+    if (error instanceof TruncatedError) {
       throw new InvalidInputError(`${field} data is too short.`, { cause: error })
+    }
     throw error
   }
 }
@@ -90,12 +93,16 @@ export function utf8Length(text: string): number {
   let length = 0
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i)
-    if (c < 0x80) length++
-    else if (c < 0x800) length += 2
-    else if (c >= 0xd800 && c <= 0xdbff && (text.charCodeAt(i + 1) & 0xfc00) === 0xdc00) {
+    if (c < 0x80) {
+      length++
+    } else if (c < 0x800) {
+      length += 2
+    } else if (c >= 0xd800 && c <= 0xdbff && (text.charCodeAt(i + 1) & 0xfc00) === 0xdc00) {
       length += 4
       i++
-    } else length += 3
+    } else {
+      length += 3
+    }
   }
   return length
 }
@@ -119,23 +126,30 @@ export function readText(b: Uint8Array, start: number, end: number): string {
   let text = ''
   for (let i = start; i < end; i++) {
     const c = b[i]!
-    if (c >= 0x80) return decoder.decode(b.subarray(start, end))
+    if (c >= 0x80) {
+      return decoder.decode(b.subarray(start, end))
+    }
     text += String.fromCharCode(c)
   }
   return text
 }
 
 export function bytesOf(value: unknown, field: string): Uint8Array {
-  if (isUint8Array(value)) return value
+  if (isUint8Array(value)) {
+    return value
+  }
   throw new InvalidInputError(`${field} must be a Uint8Array.`)
 }
 
 /** Length of a <character-string>: one length byte, then up to 255 bytes. */
 export function stringLength(value: string | Uint8Array, field: string): number {
-  if (typeof value !== 'string' && !isUint8Array(value))
+  if (typeof value !== 'string' && !isUint8Array(value)) {
     throw new InvalidInputError(`${field} must be a string or a Uint8Array.`)
+  }
   const length = typeof value === 'string' ? utf8Length(value) : value.length
-  if (length > 255) throw new InvalidInputError(`${field} is longer than 255 bytes.`)
+  if (length > 255) {
+    throw new InvalidInputError(`${field} is longer than 255 bytes.`)
+  }
   return length + 1
 }
 
@@ -163,8 +177,9 @@ const BACKSLASH = 92
 function nameBounds(name: string): [start: number, end: number] {
   const start = name.charCodeAt(0) === DOT ? 1 : 0
   let end = name.length
-  if (end > start && name.charCodeAt(end - 1) === DOT && name.charCodeAt(end - 2) !== BACKSLASH)
+  if (end > start && name.charCodeAt(end - 1) === DOT && name.charCodeAt(end - 2) !== BACKSLASH) {
     end--
+  }
   return [start, end]
 }
 
@@ -177,7 +192,9 @@ function escapedLabels(name: string, from: number, end: number): Label[] {
   let label: number[] = []
   let text = ''
   const flushText = () => {
-    if (text) label.push(...encoder.encode(text))
+    if (text) {
+      label.push(...encoder.encode(text))
+    }
     text = ''
   }
   for (let i = from; i < end; i++) {
@@ -188,14 +205,19 @@ function escapedLabels(name: string, from: number, end: number): Label[] {
         flushText()
         label.push(Number(digits))
         i += 3
-      } else if (i + 1 < end) text += name[++i]
-      else throw new InvalidInputError(`Name "${name}" ends with a backslash.`)
+      } else if (i + 1 < end) {
+        text += name[++i]
+      } else {
+        throw new InvalidInputError(`Name "${name}" ends with a backslash.`)
+      }
     } else if (c === '.') {
       flushText()
       labels.push({ start, bytes: Uint8Array.from(label) })
       label = []
       start = i + 1
-    } else text += c
+    } else {
+      text += c
+    }
   }
   if (end > from) {
     flushText()
@@ -205,13 +227,19 @@ function escapedLabels(name: string, from: number, end: number): Label[] {
 }
 
 function assertLabel(name: string, size: number): void {
-  if (size === 0) throw new InvalidInputError(`Empty label in "${name}".`)
-  if (size > 63) throw new InvalidInputError(`Label longer than 63 bytes in "${name}".`)
+  if (size === 0) {
+    throw new InvalidInputError(`Empty label in "${name}".`)
+  }
+  if (size > 63) {
+    throw new InvalidInputError(`Label longer than 63 bytes in "${name}".`)
+  }
 }
 
 /** Returns the uncompressed wire length of `name` and checks its labels. */
 export function nameLength(name: string): number {
-  if (typeof name !== 'string') throw new InvalidInputError('A domain name must be a string.')
+  if (typeof name !== 'string') {
+    throw new InvalidInputError('A domain name must be a string.')
+  }
   const [start, end] = nameBounds(name)
   let length = 1
   if (name.includes('\\')) {
@@ -227,19 +255,25 @@ export function nameLength(name: string): number {
         assertLabel(name, size)
         length += size + 1
         size = 0
-      } else if (c < 0x80) size++
-      else if (c < 0x800) size += 2
-      else if (c >= 0xd800 && c <= 0xdbff && (name.charCodeAt(i + 1) & 0xfc00) === 0xdc00) {
+      } else if (c < 0x80) {
+        size++
+      } else if (c < 0x800) {
+        size += 2
+      } else if (c >= 0xd800 && c <= 0xdbff && (name.charCodeAt(i + 1) & 0xfc00) === 0xdc00) {
         size += 4
         i++
-      } else size += 3
+      } else {
+        size += 3
+      }
     }
     if (end > start) {
       assertLabel(name, size)
       length += size + 1
     }
   }
-  if (length > 255) throw new InvalidInputError(`"${name}" is longer than 255 bytes.`)
+  if (length > 255) {
+    throw new InvalidInputError(`"${name}" is longer than 255 bytes.`)
+  }
   return length
 }
 
@@ -251,7 +285,9 @@ function pointTo(w: Writer, names: Map<string, number>, suffix: string): boolean
     return true
   }
   const offset = w.offset - w.start
-  if (offset < 0x4000) names.set(suffix, offset)
+  if (offset < 0x4000) {
+    names.set(suffix, offset)
+  }
   return false
 }
 
@@ -264,7 +300,9 @@ export function putName(w: Writer, name: string, compress: boolean): void {
   const [start, end] = nameBounds(name)
   if (name.includes('\\')) {
     for (const label of escapedLabels(name, start, end)) {
-      if (names && pointTo(w, names, name.slice(label.start, end))) return
+      if (names && pointTo(w, names, name.slice(label.start, end))) {
+        return
+      }
       putU8(w, label.bytes.length)
       putBytes(w, label.bytes)
     }
@@ -273,9 +311,13 @@ export function putName(w: Writer, name: string, compress: boolean): void {
   }
   const b = w.bytes
   for (let label = start; label < end;) {
-    if (names && pointTo(w, names, name.slice(label, end))) return
+    if (names && pointTo(w, names, name.slice(label, end))) {
+      return
+    }
     let dot = name.indexOf('.', label)
-    if (dot === -1 || dot > end) dot = end
+    if (dot === -1 || dot > end) {
+      dot = end
+    }
     let o = w.offset
     const lengthAt = o++
     for (let i = label; i < dot; i++) {
@@ -310,7 +352,9 @@ function readLabel(b: Uint8Array, start: number, end: number): string {
         return escapeLabel(b, start, end)
       }
     }
-    if (c === DOT || c === BACKSLASH) text += '\\'
+    if (c === DOT || c === BACKSLASH) {
+      text += '\\'
+    }
     text += String.fromCharCode(c)
   }
   return text
@@ -320,9 +364,13 @@ function escapeLabel(b: Uint8Array, start: number, end: number): string {
   let text = ''
   for (let i = start; i < end; i++) {
     const c = b[i]!
-    if (c === DOT || c === BACKSLASH) text += `\\${String.fromCharCode(c)}`
-    else if (c > 0x20 && c < 0x7f) text += String.fromCharCode(c)
-    else text += `\\${String(c).padStart(3, '0')}`
+    if (c === DOT || c === BACKSLASH) {
+      text += `\\${String.fromCharCode(c)}`
+    } else if (c > 0x20 && c < 0x7f) {
+      text += String.fromCharCode(c)
+    } else {
+      text += `\\${String(c).padStart(3, '0')}`
+    }
   }
   return text
 }
@@ -340,22 +388,35 @@ export function readName(r: Reader, end: number): string {
   let length = 0
   let name = ''
   for (;;) {
-    if (offset >= limit) throw new TruncatedError('Name runs past the end of the data.')
+    if (offset >= limit) {
+      throw new TruncatedError('Name runs past the end of the data.')
+    }
     const len = b[offset++]!
-    if (len === 0) break
+    if (len === 0) {
+      break
+    }
     if (len < 0x40) {
-      if (offset + len > limit) throw new TruncatedError('Name runs past the end of the data.')
+      if (offset + len > limit) {
+        throw new TruncatedError('Name runs past the end of the data.')
+      }
       length += len + 1
-      if (length > 254) throw new InvalidInputError('Name is longer than 255 bytes.')
+      if (length > 254) {
+        throw new InvalidInputError('Name is longer than 255 bytes.')
+      }
       const label = readLabel(b, offset, offset + len)
       name = name === '' ? label : `${name}.${label}`
       offset += len
     } else if (len >= 0xc0) {
-      if (offset >= limit) throw new TruncatedError('Name runs past the end of the data.')
+      if (offset >= limit) {
+        throw new TruncatedError('Name runs past the end of the data.')
+      }
       const pointer = ((len & 0x3f) << 8) | b[offset++]!
-      if (pointer >= segmentStart)
+      if (pointer >= segmentStart) {
         throw new InvalidInputError(`Compression pointer to ${pointer} does not point backwards.`)
-      if (resume === -1) resume = offset
+      }
+      if (resume === -1) {
+        resume = offset
+      }
       offset = pointer
       segmentStart = pointer
       limit = b.length
@@ -369,10 +430,13 @@ export function readName(r: Reader, end: number): string {
 
 export function putIPv4(w: Writer, ip: string): void {
   const parts = typeof ip === 'string' ? ip.split('.') : []
-  if (parts.length !== 4) throw new InvalidInputError(`Invalid IPv4 address "${ip}".`)
+  if (parts.length !== 4) {
+    throw new InvalidInputError(`Invalid IPv4 address "${ip}".`)
+  }
   for (const part of parts) {
-    if (!/^\d{1,3}$/.test(part) || Number(part) > 255)
+    if (!/^\d{1,3}$/.test(part) || Number(part) > 255) {
       throw new InvalidInputError(`Invalid IPv4 address "${ip}".`)
+    }
     putU8(w, Number(part))
   }
 }
@@ -382,11 +446,17 @@ export function readIPv4(b: Uint8Array, o: number): string {
 }
 
 function parseIPv6(ip: string): number[] | undefined {
-  if (typeof ip !== 'string') return undefined
+  if (typeof ip !== 'string') {
+    return undefined
+  }
   const halves = ip.split('::')
-  if (halves.length > 2) return undefined
+  if (halves.length > 2) {
+    return undefined
+  }
   const groups = (half: string): number[] | undefined => {
-    if (half === '') return []
+    if (half === '') {
+      return []
+    }
     const words: number[] = []
     const parts = half.split(':')
     for (let i = 0; i < parts.length; i++) {
@@ -399,23 +469,34 @@ function parseIPv6(ip: string): number[] | undefined {
           return undefined
         }
         words.push((v4[0]! << 8) | v4[1]!, (v4[2]! << 8) | v4[3]!)
-      } else if (/^[0-9a-f]{1,4}$/i.test(part)) words.push(Number.parseInt(part, 16))
-      else return undefined
+      } else if (/^[0-9a-f]{1,4}$/i.test(part)) {
+        words.push(Number.parseInt(part, 16))
+      } else {
+        return undefined
+      }
     }
     return words
   }
   const head = groups(halves[0]!)
   const tail = halves.length === 2 ? groups(halves[1]!) : []
-  if (!head || !tail) return undefined
+  if (!head || !tail) {
+    return undefined
+  }
   const missing = 8 - head.length - tail.length
-  if (halves.length === 2 ? missing < 1 : missing !== 0) return undefined
+  if (halves.length === 2 ? missing < 1 : missing !== 0) {
+    return undefined
+  }
   return [...head, ...Array<number>(missing).fill(0), ...tail]
 }
 
 export function putIPv6(w: Writer, ip: string): void {
   const words = parseIPv6(ip)
-  if (!words) throw new InvalidInputError(`Invalid IPv6 address "${ip}".`)
-  for (const word of words) putU16(w, word)
+  if (!words) {
+    throw new InvalidInputError(`Invalid IPv6 address "${ip}".`)
+  }
+  for (const word of words) {
+    putU16(w, word)
+  }
 }
 
 /**
@@ -424,7 +505,9 @@ export function putIPv6(w: Writer, ip: string): void {
  */
 export function readIPv6(b: Uint8Array, o: number): string {
   const words: number[] = []
-  for (let i = 0; i < 16; i += 2) words.push((b[o + i]! << 8) | b[o + i + 1]!)
+  for (let i = 0; i < 16; i += 2) {
+    words.push((b[o + i]! << 8) | b[o + i + 1]!)
+  }
   let bestStart = -1
   let bestLength = 1
   for (let i = 0; i < 8;) {
@@ -433,7 +516,9 @@ export function readIPv6(b: Uint8Array, o: number): string {
       continue
     }
     let j = i
-    while (j < 8 && words[j] === 0) j++
+    while (j < 8 && words[j] === 0) {
+      j++
+    }
     if (j - i > bestLength) {
       bestStart = i
       bestLength = j - i
@@ -445,6 +530,8 @@ export function readIPv6(b: Uint8Array, o: number): string {
       .slice(from, to)
       .map((word) => word.toString(16))
       .join(':')
-  if (bestStart === -1) return hex(0, 8)
+  if (bestStart === -1) {
+    return hex(0, 8)
+  }
   return `${hex(0, bestStart)}::${hex(bestStart + bestLength, 8)}`
 }

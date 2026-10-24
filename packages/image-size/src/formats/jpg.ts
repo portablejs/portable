@@ -7,14 +7,22 @@ const isStartOfFrame = (marker: number) =>
 
 function orientation(input: Uint8Array, start: number, end: number): number | undefined {
   const tiff = start + 6
-  if (tiff + 8 > end) return undefined
+  if (tiff + 8 > end) {
+    return undefined
+  }
   const bigEndian = startsWith(input, tiff, 'MM')
-  if (!bigEndian && !startsWith(input, tiff, 'II')) return undefined
+  if (!bigEndian && !startsWith(input, tiff, 'II')) {
+    return undefined
+  }
   const ifd = tiff + u32(input, tiff + 4, bigEndian)
-  if (ifd + 2 > end) return undefined
+  if (ifd + 2 > end) {
+    return undefined
+  }
   const count = u16(input, ifd, bigEndian)
   for (let entry = ifd + 2; entry < ifd + 2 + count * 12 && entry + 12 <= end; entry += 12) {
-    if (u16(input, entry, bigEndian) !== 0x0112) continue
+    if (u16(input, entry, bigEndian) !== 0x0112) {
+      continue
+    }
     const isSingleShort =
       u16(input, entry + 2, bigEndian) === 3 && u32(input, entry + 4, bigEndian) === 1
     return isSingleShort ? u16(input, entry + 8, bigEndian) : undefined
@@ -40,8 +48,9 @@ export const jpg: Format = {
         offset += 2
         continue
       }
-      if (marker === 0xd9 || marker === 0xda)
+      if (marker === 0xd9 || marker === 0xda) {
         throw new InvalidInputError('Invalid JPG, no size found')
+      }
       if (isStartOfFrame(marker)) {
         const width = u16(input, offset + 7, true)
         const height = u16(input, offset + 5, true)

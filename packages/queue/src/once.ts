@@ -32,11 +32,15 @@ export function once<value>(
   const { cache = true } = options
   let current: Promise<value> | undefined
   return () => {
-    if (current) return current
+    if (current) {
+      return current
+    }
     const promise = new Promise<value>((resolve) => resolve(fn()))
     current = promise
     const reset = () => {
-      if (current === promise) current = undefined
+      if (current === promise) {
+        current = undefined
+      }
     }
     promise.then(cache ? undefined : reset, reset)
     return promise

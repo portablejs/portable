@@ -34,11 +34,17 @@ const gb18030Substitutes: Record<number, number> = {
 function decodesAs(name: string, codePoint: number): string {
   if (name === 'Shift_JIS' || name === 'EUC-JP') {
     const substitute = jisSubstitutes[codePoint]
-    if (substitute) return substitute
+    if (substitute) {
+      return substitute
+    }
   }
   if (name === 'ISO-2022-JP') {
-    if (codePoint === 0x2212) return '\uff0d'
-    if (codePoint >= 0xff61 && codePoint <= 0xff9f) return fullwidthKatakana[codePoint - 0xff61]!
+    if (codePoint === 0x2212) {
+      return '\uff0d'
+    }
+    if (codePoint >= 0xff61 && codePoint <= 0xff9f) {
+      return fullwidthKatakana[codePoint - 0xff61]!
+    }
   }
   if (name === 'GBK' || name === 'gb18030') {
     return String.fromCodePoint(gb18030Substitutes[codePoint] ?? codePoint)
@@ -53,10 +59,14 @@ function allCodePoints(name: string): string {
   const units: number[] = []
   const end = astral.has(name) ? 0x10ffff : 0xffff
   for (let codePoint = 0; codePoint <= end; codePoint++) {
-    if (codePoint >= 0xd800 && codePoint <= 0xdfff) continue
-    if (codePoint < 0x10000) units.push(codePoint)
-    else
+    if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+      continue
+    }
+    if (codePoint < 0x10000) {
+      units.push(codePoint)
+    } else {
       units.push(0xd800 + ((codePoint - 0x10000) >> 10), 0xdc00 + ((codePoint - 0x10000) & 0x3ff))
+    }
   }
   let text = ''
   for (let i = 0; i < units.length; i += 0x8000) {
@@ -136,13 +146,19 @@ describe('every encoded code point decodes back with TextDecoder', () => {
     let expected = ''
     for (const char of text) {
       const codePoint = char.codePointAt(0)!
-      if (unmapped.has(codePoint)) continue
-      if (name === 'ISO-2022-JP' && [0x0e, 0x0f, 0x1b].includes(codePoint)) continue
+      if (unmapped.has(codePoint)) {
+        continue
+      }
+      if (name === 'ISO-2022-JP' && [0x0e, 0x0f, 0x1b].includes(codePoint)) {
+        continue
+      }
       expected += decodesAs(name, codePoint)
     }
     const decoded = new TextDecoder(name).decode(bytes)
     let i = 0
-    while (i < expected.length && decoded[i] === expected[i]) i++
+    while (i < expected.length && decoded[i] === expected[i]) {
+      i++
+    }
     expect(escape(decoded.slice(i, i + 4))).toBe(escape(expected.slice(i, i + 4)))
   })
 })

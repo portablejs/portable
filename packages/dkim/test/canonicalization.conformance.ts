@@ -53,7 +53,9 @@ function relaxedReference(body: string): string {
   const canonical = (line: string) => line.replace(/[ \t]+/g, ' ').replace(/ $/, '')
   const out = lines.map((line) => canonical(line.replace(/\r$/, '')))
   out.push(canonical(last))
-  while (out.length && out.at(-1) === '') out.pop()
+  while (out.length && out.at(-1) === '') {
+    out.pop()
+  }
   return out.length ? out.join('\r\n') + '\r\n' : ''
 }
 
@@ -140,7 +142,9 @@ describe('relaxed body canonicalization (RFC 6376 section 3.4.4)', () => {
     const alphabet = ['a', 'b', ' ', ' ', '\t', '\r\n', '\r\n', '\n', '\r']
     for (let i = 0; i < 300; i++) {
       let body = ''
-      for (let j = pick(24); j > 0; j--) body += alphabet[pick(alphabet.length)]
+      for (let j = pick(24); j > 0; j--) {
+        body += alphabet[pick(alphabet.length)]
+      }
       const expected = await hashOf(relaxedReference(body))
       expect({ body, hash: await bodyHash(body, 'relaxed', 1 + pick(5)) }).toEqual({
         body,
@@ -192,7 +196,9 @@ describe('simple body canonicalization (RFC 6376 section 3.4.3)', () => {
   test('gives the same hash whatever the chunk boundaries are', async () => {
     for (const body of ['abc\r', 'a\r\n\r', 'abc\r\r\n', 'x\r\ny\r\r\n\r\n', 'a\rb\r\nc']) {
       const expected = await hashOf(simpleReference(body))
-      for (const size of [1, 2, 3]) expect(await bodyHash(body, 'simple', size)).toBe(expected)
+      for (const size of [1, 2, 3]) {
+        expect(await bodyHash(body, 'simple', size)).toBe(expected)
+      }
     }
   })
 })
@@ -211,7 +217,9 @@ describe('line endings', () => {
   ]) {
     test(`reads ${JSON.stringify(body)} as ${JSON.stringify(expected)}`, async () => {
       const hash = await hashOf(expected!.replace(/(\r\n)*$/, '') + '\r\n')
-      for (const size of [undefined, 1, 2]) expect(await bodyHash(body!, 'simple', size)).toBe(hash)
+      for (const size of [undefined, 1, 2]) {
+        expect(await bodyHash(body!, 'simple', size)).toBe(hash)
+      }
     })
   }
 
@@ -223,7 +231,7 @@ describe('line endings', () => {
       privateKey: edPem,
       now: new Date(0),
     })
-    for (const size of [1, 2, 3, 5])
+    for (const size of [1, 2, 3, 5]) {
       expect(
         await Dkim.sign(stream(chunked(message, size)), {
           domain: 'example.com',
@@ -232,6 +240,7 @@ describe('line endings', () => {
           now: new Date(0),
         }),
       ).toBe(expected)
+    }
   })
 })
 
@@ -323,7 +332,9 @@ describe('adversarial input', () => {
 
   test('hashes a 10 MB line', async () => {
     const line = new Uint8Array(10 * 1024 * 1024).fill(0x61)
-    for (let i = 0; i < line.length; i += 7) line[i] = 0x20
+    for (let i = 0; i < line.length; i += 7) {
+      line[i] = 0x20
+    }
     const head = fromBinary('From: a@example.com\r\n\r\n')
     const field = await Dkim.sign(stream([head, line]), {
       domain: 'example.com',

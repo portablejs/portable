@@ -49,7 +49,9 @@ describe('eventsource-parser', () => {
 
   test('ignores heartbeat comments between events', async () => {
     const chunks: string[] = []
-    for (let i = 0; i < 5; i++) chunks.push(': ♥\n', `data: ${String.fromCharCode(65 + i)}\n\n`)
+    for (let i = 0; i < 5; i++) {
+      chunks.push(': ♥\n', `data: ${String.fromCharCode(65 + i)}\n\n`)
+    }
     expect(datas(await decodeChunks(chunks))).toEqual(['A', 'B', 'C', 'D', 'E'])
   })
 
@@ -77,8 +79,11 @@ describe('eventsource-parser', () => {
     MULTIBYTE_LINES.forEach((text, i) => {
       const line = `${text} ${MULTIBYTE_EMOJIS.slice(perLine * i, perLine * (i + 1)).join(' ')}`
       chunks.push(`id: ${i}\n`)
-      if (i % 2 === 0) chunks.push(`data:${line.slice(0, 5)}\n`, `data:${line.slice(5)}\n\n`)
-      else chunks.push(`data:${line}\n\n`)
+      if (i % 2 === 0) {
+        chunks.push(`data:${line.slice(0, 5)}\n`, `data:${line.slice(5)}\n\n`)
+      } else {
+        chunks.push(`data:${line}\n\n`)
+      }
       const data = i % 2 === 0 ? `${line.slice(0, 5)}\n${line.slice(5)}` : line
       expected.push({ event: 'message', data, id: String(i), retry: undefined })
     })
@@ -296,7 +301,9 @@ describe('eventsource-parser', () => {
     const chunk = utf8(`data: ${line}\n`)
     const count = Math.ceil((10 * 1024 * 1024) / chunk.length)
     const chunks = [utf8(': hello\n\n')] satisfies Uint8Array[]
-    for (let i = 0; i < count; i++) chunks.push(chunk)
+    for (let i = 0; i < count; i++) {
+      chunks.push(chunk)
+    }
     chunks.push(utf8('\n: END-OF-STREAM\n\nevent: done\ndata: ok\n\n'))
     const events = await decodeChunks(chunks)
     expect(events).toHaveLength(2)

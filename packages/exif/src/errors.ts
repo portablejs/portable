@@ -9,7 +9,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Exif.parse(new Uint8Array([0x49, 0x49, 0x2a, 0x00]))
  * } catch (error) {
- *   if (error instanceof Exif.TruncatedError) console.log(error.message)
+ *   if (error instanceof Exif.TruncatedError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -30,7 +32,9 @@ export class TruncatedError extends Errors.TruncatedError {
  * try {
  *   Exif.parse(photo)
  * } catch (error) {
- *   if (error instanceof Exif.InvalidInputError) console.log('corrupt EXIF data')
+ *   if (error instanceof Exif.InvalidInputError) {
+ *     console.log('corrupt EXIF data')
+ *   }
  * }
  * ```
  */
@@ -49,7 +53,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   Exif.parse(new TextEncoder().encode('GIF89a'))
  * } catch (error) {
- *   if (error instanceof Exif.UnsupportedError) console.log(error.message)
+ *   if (error instanceof Exif.UnsupportedError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -74,7 +80,9 @@ export class UnsupportedError extends Errors.UnsupportedError {
  * try {
  *   await Exif.parseStream(response.body!, { maxBytes: 1_000_000 })
  * } catch (error) {
- *   if (error instanceof Exif.MaxBytesError) console.log(`needs more than ${error.maxBytes} bytes`)
+ *   if (error instanceof Exif.MaxBytesError) {
+ *     console.log(`needs more than ${error.maxBytes} bytes`)
+ *   }
  * }
  * ```
  */

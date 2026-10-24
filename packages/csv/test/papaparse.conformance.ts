@@ -564,10 +564,11 @@ const parse = [
 
 describe('papaparse', () => {
   describe('Core Parser Tests', () => {
-    for (const [name, input, expected, options] of coreParser)
+    for (const [name, input, expected, options] of coreParser) {
       test(`${name}`, async () => {
         expect(await decodeAll(input, options)).toEqual(expected)
       })
+    }
 
     test('Quoted field has no closing quote', async () => {
       expect(await decodeError('a,"b,c\nd,e,f')).toBeInstanceOf(Csv.TruncatedError)
@@ -590,16 +591,18 @@ describe('papaparse', () => {
     })
 
     test('Duplicated header names', async () => {
-      for (const text of ['A,A,A,A\n1,2,3,4', 'c,c,c,c_1\n1,2,3,4', '__proto__,__proto__\n1,2'])
+      for (const text of ['A,A,A,A\n1,2,3,4', 'c,c,c,c_1\n1,2,3,4', '__proto__,__proto__\n1,2']) {
         expect(await decodeError(text, { header: true })).toBeInstanceOf(Csv.InvalidInputError)
+      }
     })
   })
 
   describe('Parse Tests', () => {
-    for (const [name, input, expected, options] of parse)
+    for (const [name, input, expected, options] of parse) {
       test(`${name}`, async () => {
         expect(await decodeAll(input, options)).toEqual(expected)
       })
+    }
 
     test('Row with too few fields', async () => {
       expect(await decodeError('A,B,C\r\na,b', { header: true })).toBeInstanceOf(

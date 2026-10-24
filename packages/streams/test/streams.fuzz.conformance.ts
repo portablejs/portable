@@ -28,7 +28,9 @@ test('map, filter, tap and batch match the array methods', async () => {
       )
       const expected = items.map((item) => item * 2).filter((item) => item % 3 !== 0)
       const batches: number[][] = []
-      for (let i = 0; i < expected.length; i += size) batches.push(expected.slice(i, i + size))
+      for (let i = 0; i < expected.length; i += size) {
+        batches.push(expected.slice(i, i + size))
+      }
       expect(output).toEqual(batches)
       expect(seen).toEqual(items)
     }),
@@ -88,10 +90,11 @@ test('concat keeps the order of its sources, merge keeps the order within each',
         ),
       )
       expect(merged).toHaveLength(lists.flat().length)
-      for (const [source, list] of lists.entries())
+      for (const [source, list] of lists.entries()) {
         expect(
           merged.filter((entry) => entry.source === source).map((entry) => entry.item),
         ).toEqual(list)
+      }
     }),
   )
 })

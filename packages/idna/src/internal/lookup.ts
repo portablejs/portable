@@ -23,8 +23,12 @@ export const joiningT = 3
 export const joiningR = 4
 
 function digit(code: number): number {
-  if (code >= 97) return code - 71
-  if (code >= 65) return code === 95 ? 63 : code - 65
+  if (code >= 97) {
+    return code - 71
+  }
+  if (code >= 65) {
+    return code === 95 ? 63 : code - 65
+  }
   return code === 45 ? 62 : code + 4
 }
 
@@ -94,11 +98,15 @@ function decode(): Table {
     const end = start + lengths[i]! + 1
     const kind = kinds[i]! & 3
     if (kind === valid) {
-      while ((propertyStarts[p + 1] ?? size) <= start) p++
+      while ((propertyStarts[p + 1] ?? size) <= start) {
+        p++
+      }
       for (let at = start; at < end; at = propertyStarts[++p]!) {
         starts.push(at)
         values.push(valid | (properties[p * 2 + 1]! << 2))
-        if ((propertyStarts[p + 1] ?? size) >= end) break
+        if ((propertyStarts[p + 1] ?? size) >= end) {
+          break
+        }
       }
     } else if (kind === mappedToCodePoint) {
       const first = previousTarget + unzigzag(kinds[i]! >> 2)
@@ -117,7 +125,9 @@ function decode(): Table {
   }
   const blocks = new Int32Array((size >> 8) + 1)
   for (let block = 0, run = 0; block < blocks.length; block++) {
-    while (run + 1 < starts.length && starts[run + 1]! <= block << 8) run++
+    while (run + 1 < starts.length && starts[run + 1]! <= block << 8) {
+      run++
+    }
     blocks[block] = run
   }
   return { starts: Int32Array.from(starts), blocks, values: Int32Array.from(values), strings }
@@ -130,14 +140,19 @@ export function lookup(codePoint: number): number {
   let high = blocks[(codePoint >> 8) + 1]!
   while (low < high) {
     const middle = (low + high + 1) >> 1
-    if (starts[middle]! <= codePoint) low = middle
-    else high = middle - 1
+    if (starts[middle]! <= codePoint) {
+      low = middle
+    } else {
+      high = middle - 1
+    }
   }
   return values[low]!
 }
 
 /** The mapping of a code point whose entry is `mappedToCodePoint` or `mappedToString`. */
 export function mapping(codePoint: number, entry: number): string {
-  if ((entry & 3) === mappedToCodePoint) return String.fromCodePoint(codePoint + (entry >> 2))
+  if ((entry & 3) === mappedToCodePoint) {
+    return String.fromCodePoint(codePoint + (entry >> 2))
+  }
   return decoded!.strings[entry >> 2]!
 }

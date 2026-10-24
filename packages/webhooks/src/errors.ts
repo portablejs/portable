@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Webhooks.verify(request, { scheme: Webhooks.github, secret })
  * } catch (error) {
- *   if (error instanceof Webhooks.VerificationError) return new Response(error.code, { status: 400 })
+ *   if (error instanceof Webhooks.VerificationError) {
+ *     return new Response(error.code, { status: 400 })
+ *   }
  *   throw error
  * }
  * ```
@@ -48,7 +50,9 @@ export declare namespace VerificationError {
  * try {
  *   await Webhooks.verify(request, { scheme: Webhooks.github, secret, maxBytes: 1_000_000 })
  * } catch (error) {
- *   if (error instanceof Webhooks.MaxBytesError) return new Response(null, { status: 413 })
+ *   if (error instanceof Webhooks.MaxBytesError) {
+ *     return new Response(null, { status: 413 })
+ *   }
  *   throw error
  * }
  * ```

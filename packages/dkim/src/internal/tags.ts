@@ -11,14 +11,20 @@ const tagValue =
 export function parseTags(text: string): { tags: Map<string, string>; valid: boolean } {
   const tags = new Map<string, string>()
   const specs = text.split(';')
-  if (specs.length > 1 && trimFws(specs.at(-1)!) === '') specs.pop()
+  if (specs.length > 1 && trimFws(specs.at(-1)!) === '') {
+    specs.pop()
+  }
   let valid = true
   for (const spec of specs) {
     const equals = spec.indexOf('=')
     const name = trimFws(equals < 0 ? spec : spec.slice(0, equals))
     const value = equals < 0 ? '' : trimFws(spec.slice(equals + 1))
-    if (equals < 0 || !tagName.test(name) || !tagValue.test(value) || tags.has(name)) valid = false
-    if (equals >= 0) tags.set(name, value)
+    if (equals < 0 || !tagName.test(name) || !tagValue.test(value) || tags.has(name)) {
+      valid = false
+    }
+    if (equals >= 0) {
+      tags.set(name, value)
+    }
   }
   return { tags, valid }
 }
@@ -28,7 +34,11 @@ const isFws = (code: number) => code === 0x20 || code === 0x09 || code === 0x0d 
 export function trimFws(text: string): string {
   let start = 0
   let end = text.length
-  while (start < end && isFws(text.charCodeAt(start))) start++
-  while (end > start && isFws(text.charCodeAt(end - 1))) end--
+  while (start < end && isFws(text.charCodeAt(start))) {
+    start++
+  }
+  while (end > start && isFws(text.charCodeAt(end - 1))) {
+    end--
+  }
   return text.slice(start, end)
 }

@@ -54,18 +54,26 @@ export async function generateVapidKeys(
  * token is reused for an hour, because Apple rejects a sender that signs new tokens more often.
  */
 export function authorization(audience: string, vapid: Vapid, date: Date): Promise<string> {
-  if (!vapid) throw new TypeError('vapid is required')
+  if (!vapid) {
+    throw new TypeError('vapid is required')
+  }
   const { subject, publicKey, privateKey } = vapid
   assertSubject(subject)
   const now = Math.floor(date.getTime() / 1000)
-  if (!Number.isFinite(now)) throw new RangeError('`now` must be a valid Date.')
+  if (!Number.isFinite(now)) {
+    throw new RangeError('`now` must be a valid Date.')
+  }
   const id = `${audience} ${subject} ${publicKey} ${privateKey}`
   const cached = tokens.get(id)
-  if (cached && now >= cached.issued && now - cached.issued < 60 * 60) return cached.header
+  if (cached && now >= cached.issued && now - cached.issued < 60 * 60) {
+    return cached.header
+  }
   const header = sign(audience, vapid, now + 12 * 60 * 60)
   header.catch(() => tokens.delete(id))
   tokens.delete(id)
-  if (tokens.size >= 64) tokens.delete(tokens.keys().next().value!)
+  if (tokens.size >= 64) {
+    tokens.delete(tokens.keys().next().value!)
+  }
   tokens.set(id, { issued: now, header })
   return header
 }
@@ -79,28 +87,39 @@ async function sign(audience: string, vapid: Vapid, exp: number): Promise<string
 }
 
 function assertSubject(subject: unknown): asserts subject is string {
-  if (typeof subject !== 'string') throw new TypeError('vapid.subject must be a string')
-  if (/\s/.test(subject)) throw new RangeError('vapid.subject must not contain spaces')
+  if (typeof subject !== 'string') {
+    throw new TypeError('vapid.subject must be a string')
+  }
+  if (/\s/.test(subject)) {
+    throw new RangeError('vapid.subject must not contain spaces')
+  }
   const url = parseUrl(subject)
-  if (url?.protocol !== 'mailto:' && url?.protocol !== 'https:')
+  if (url?.protocol !== 'mailto:' && url?.protocol !== 'https:') {
     throw new RangeError(`vapid.subject must be a mailto: or https: URL, not ${subject}`)
+  }
 }
 
 function signingKey(vapid: Vapid): Promise<CryptoKey> {
   const { publicKey, privateKey } = vapid
   const id = `${publicKey} ${privateKey}`
   let key = keys.get(id)
-  if (key) return key
+  if (key) {
+    return key
+  }
   key = importSigningKey(publicKey, privateKey)
   key.catch(() => keys.delete(id))
-  if (keys.size >= 16) keys.delete(keys.keys().next().value!)
+  if (keys.size >= 16) {
+    keys.delete(keys.keys().next().value!)
+  }
   keys.set(id, key)
   return key
 }
 
 async function importSigningKey(publicKey: unknown, privateKey: unknown): Promise<CryptoKey> {
   const point = readVapidKey(publicKey, 'publicKey', 65)
-  if (point[0] !== 4) throw new RangeError('vapid.publicKey must be an uncompressed P-256 key')
+  if (point[0] !== 4) {
+    throw new RangeError('vapid.publicKey must be an uncompressed P-256 key')
+  }
   const d = readVapidKey(privateKey, 'privateKey', 32)
   const jwk = {
     kty: 'EC',
@@ -123,16 +142,23 @@ async function importSigningKey(publicKey: unknown, privateKey: unknown): Promis
   } catch (cause) {
     throw new RangeError('vapid.publicKey and vapid.privateKey are not a P-256 key pair', { cause })
   }
-  if (!matches)
+  if (!matches) {
     throw new RangeError('vapid.publicKey and vapid.privateKey are not a P-256 key pair')
+  }
   return key
 }
 
 function readVapidKey(key: unknown, name: string, length: number): Uint8Array {
-  if (typeof key !== 'string') throw new TypeError(`vapid.${name} must be a string`)
-  if (!/^[\w-]+$/.test(key)) throw new RangeError(`vapid.${name} must be base64url without padding`)
+  if (typeof key !== 'string') {
+    throw new TypeError(`vapid.${name} must be a string`)
+  }
+  if (!/^[\w-]+$/.test(key)) {
+    throw new RangeError(`vapid.${name} must be base64url without padding`)
+  }
   const bytes = Base64.decode(key, { alphabet: 'base64url' })
-  if (bytes.length !== length) throw new RangeError(`vapid.${name} must be ${length} bytes`)
+  if (bytes.length !== length) {
+    throw new RangeError(`vapid.${name} must be ${length} bytes`)
+  }
   return bytes
 }
 

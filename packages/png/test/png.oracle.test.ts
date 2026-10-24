@@ -29,13 +29,19 @@ function viaPngjs(bytes: Uint8Array) {
 // ignores the color of fully transparent pixels.
 function visible(data: Uint8Array): Buffer {
   const out = Buffer.from(data)
-  for (let i = 0; i < out.length; i += 4) if (out[i + 3] === 0) out.fill(0, i, i + 3)
+  for (let i = 0; i < out.length; i += 4) {
+    if (out[i + 3] === 0) {
+      out.fill(0, i, i + 3)
+    }
+  }
   return out
 }
 
 function gray(data: Uint8Array): Uint8Array {
   const out = data.slice()
-  for (let i = 0; i < out.length; i += 4) out[i + 1] = out[i + 2] = out[i]!
+  for (let i = 0; i < out.length; i += 4) {
+    out[i + 1] = out[i + 2] = out[i]!
+  }
   return out
 }
 
@@ -53,7 +59,9 @@ test('rejects the fixtures pngjs rejects', async () => {
       ...files.filter((file) => file.name.startsWith('x')).map((file) => file.name),
     ].sort(),
   )
-  for (const { bytes } of rejected) await expect(Png.decode(bytes)).rejects.toBeInstanceOf(Error)
+  for (const { bytes } of rejected) {
+    await expect(Png.decode(bytes)).rejects.toBeInstanceOf(Error)
+  }
 })
 
 describe('decodes every fixture to the same pixels as pngjs', () => {

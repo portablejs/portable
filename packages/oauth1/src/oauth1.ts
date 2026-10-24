@@ -174,7 +174,9 @@ export async function sign(request: Request, options: sign.Options): Promise<Req
       referrerPolicy: request.referrerPolicy,
       signal: request.signal,
     }
-    if (request.mode !== 'navigate') init.mode = request.mode
+    if (request.mode !== 'navigate') {
+      init.mode = request.mode
+    }
     return new Request(url, init)
   }
 
@@ -186,7 +188,9 @@ export async function sign(request: Request, options: sign.Options): Promise<Req
 // Firefox has no `Request.prototype.body`, so there only the method shows whether a request can
 // have a body.
 function hasBody(request: Request): boolean {
-  if (request.body !== undefined) return request.body !== null
+  if (request.body !== undefined) {
+    return request.body !== null
+  }
   return request.method !== 'GET' && request.method !== 'HEAD'
 }
 
@@ -202,8 +206,9 @@ async function protocolParameters(
   options: authorization.Options,
 ): Promise<Pair[]> {
   const signatureMethod = options.signatureMethod ?? 'HMAC-SHA1'
-  if (!methods.has(signatureMethod))
+  if (!methods.has(signatureMethod)) {
     throw new UnsupportedError(`Unsupported signature method: ${String(signatureMethod)}`)
+  }
   const { callback, digest = WebCrypto.digest, hmac = WebCrypto.hmac, token, verifier } = options
   const hash = (signatureMethod === 'HMAC-SHA256' ? 'SHA-256' : 'SHA-1') satisfies WebCrypto.Hash
 
@@ -214,9 +219,15 @@ async function protocolParameters(
     ['oauth_timestamp', String(Math.floor((options.now ?? new Date()).getTime() / 1000))],
     ['oauth_version', '1.0'],
   ] satisfies Pair[]
-  if (token !== undefined) oauth.push(['oauth_token', percentEncode(token.key)])
-  if (callback !== undefined) oauth.push(['oauth_callback', percentEncode(callback)])
-  if (verifier !== undefined) oauth.push(['oauth_verifier', percentEncode(verifier)])
+  if (token !== undefined) {
+    oauth.push(['oauth_token', percentEncode(token.key)])
+  }
+  if (callback !== undefined) {
+    oauth.push(['oauth_callback', percentEncode(callback)])
+  }
+  if (verifier !== undefined) {
+    oauth.push(['oauth_verifier', percentEncode(verifier)])
+  }
   if (options.bodyHash && !form) {
     const bodyHash = await digest(hash, body ?? new Uint8Array())
     oauth.push(['oauth_body_hash', percentEncode(Base64.encode(bodyHash))])
@@ -225,7 +236,9 @@ async function protocolParameters(
   const all = oauth.slice()
   const url = new URL(request.url)
   parseQuery(url.search, all)
-  if (form && body !== undefined) parseForm(body, all)
+  if (form && body !== undefined) {
+    parseForm(body, all)
+  }
   const base = utf8.encode(
     request.method.toUpperCase() +
       '&' +
@@ -250,9 +263,12 @@ async function protocolParameters(
 
 function header(pairs: readonly Pair[], realm: string | undefined): string {
   let out = 'OAuth '
-  if (realm !== undefined) out += `realm="${realm.replace(/["\\]/g, '\\$&')}", `
-  for (let i = 0; i < pairs.length; i++)
+  if (realm !== undefined) {
+    out += `realm="${realm.replace(/["\\]/g, '\\$&')}", `
+  }
+  for (let i = 0; i < pairs.length; i++) {
     out += (i ? ', ' : '') + pairs[i]![0] + '="' + pairs[i]![1] + '"'
+  }
   return out
 }
 

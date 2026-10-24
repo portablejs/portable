@@ -52,8 +52,9 @@ describe('seal', () => {
 
   test('keeps every line within 76 characters', async () => {
     const fields = await seal(baseMessage)
-    for (const line of fields.split('\r\n').slice(0, -2))
+    for (const line of fields.split('\r\n').slice(0, -2)) {
       expect(line.length).toBeLessThanOrEqual(76)
+    }
   })
 
   test('extends a valid chain with cv=pass as the next instance', async () => {
@@ -119,10 +120,11 @@ describe('chainValidation (RFC 8617 section 5.1)', () => {
   })
 
   test('must be none, pass or fail, in lower case', async () => {
-    for (const value of ['maybe', 'PASS'])
+    for (const value of ['maybe', 'PASS']) {
       await expect(
         seal(baseMessage, { chainValidation: value as Arc.Result.Code }),
       ).rejects.toThrow(RangeError)
+    }
   })
 
   test('must be none for a message without ARC fields and only for one', async () => {
@@ -155,8 +157,9 @@ describe('chainValidation (RFC 8617 section 5.1)', () => {
       s: 's',
       keyName: 'k1',
     })
-    for (const chainValidation of ['fail', 'pass'] as const)
+    for (const chainValidation of ['fail', 'pass'] as const) {
       await expect(seal(f.message, { chainValidation })).rejects.toThrow(Arc.InvalidInputError)
+    }
   })
 
   test('seals a broken chain with cv=fail as the next instance, covering only the new set', async () => {
@@ -296,8 +299,9 @@ describe('authResults', () => {
 
   test('checks a large value without running out of stack', async () => {
     const large = 'mx.example; dkim=pass ' + 'x'.repeat(10 * 1024 * 1024)
-    for (const value of [large + '\nX-Injected: yes', large + '\r\n \r\n x', '\r' + large])
+    for (const value of [large + '\nX-Injected: yes', large + '\r\n \r\n x', '\r' + large]) {
       await expect(seal(baseMessage, { authResults: value })).rejects.toThrow(RangeError)
+    }
     expect(await seal(baseMessage, { authResults: large + '\r\n\tspf=none' })).toMatch(/^ARC-Seal/)
   })
 
