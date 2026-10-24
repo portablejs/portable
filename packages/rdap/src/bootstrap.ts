@@ -68,7 +68,9 @@ function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
     const url = `${base}${kind}.json`
     const created = {
       expires: time + ttl,
-      index: request(url, { fetch, signal: controller.signal, now }).then((result) => index(result, url)),
+      index: request(url, { fetch, signal: controller.signal, now }).then((result) =>
+        index(result, url),
+      ),
       waiters: 0,
       controller,
     } satisfies Entry
@@ -103,10 +105,7 @@ function wait(entry: Entry, signal: AbortSignal | undefined): Promise<Index> {
   })
 }
 
-export async function domain(
-  name: string,
-  context: Context,
-): Promise<string | undefined> {
+export async function domain(name: string, context: Context): Promise<string | undefined> {
   const { names } = await load('dns', context)
   for (let suffix = name; ;) {
     const url = names.get(suffix)
@@ -117,10 +116,7 @@ export async function domain(
   }
 }
 
-export async function ip(
-  prefix: Address.Prefix,
-  context: Context,
-): Promise<string | undefined> {
+export async function ip(prefix: Address.Prefix, context: Context): Promise<string | undefined> {
   const { ranges } = await load(prefix.address.version === 4 ? 'ipv4' : 'ipv6', context)
   let best: (typeof ranges)[number] | undefined
   for (const range of ranges)
@@ -132,10 +128,7 @@ export async function ip(
   return best?.url
 }
 
-export async function asn(
-  number: number,
-  context: Context,
-): Promise<string | undefined> {
+export async function asn(number: number, context: Context): Promise<string | undefined> {
   const { numbers } = await load('asn', context)
   return numbers.find(({ start, end }) => number >= start && number <= end)?.url
 }

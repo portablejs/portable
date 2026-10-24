@@ -39,10 +39,14 @@ export declare namespace connect {
      */
     open?: ((context: Context) => void | PromiseLike<void>) | undefined
     /**
-     * Decides whether `connect` reconnects after a close the client didn't start. By default, codes
-     * 1000, 1002, 1003, 1007, 1008, 1009 and 1010 are final and every other code reconnects.
+     * Decides whether `connect` reconnects after a close the client didn't start, with the close
+     * and `{ attempt }`, the number of failures in a row including this one. By default, codes
+     * 1000, 1002, 1003, 1007, 1008, 1009 and 1010 are final and every other code reconnects. If it
+     * throws, both streams fail with that error.
      */
-    reconnectIf?: ((event: Close) => boolean) | undefined
+    reconnectIf?:
+      | ((close: Close, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
+      | undefined
     /** Writes to hold while disconnected. Further writes wait. @default 1000 */
     maxQueued?: number | undefined
     /** Writes wait while the socket's `bufferedAmount` is above this many bytes. @default 1048576 */
@@ -347,9 +351,18 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       if (stop.signal.aborted) return
       if (closing && queue.length === 0) return finish(undefined, true)
       if (outcome.ready) failures = 0
-      if (outcome.kind === 'close' && !reconnectIf(outcome.close)) {
-        const { code, reason } = outcome.close
-        return finish(new CloseError({ code, reason }), isNormalClose(code))
+      if (outcome.kind === 'close') {
+        let reconnect: boolean
+        try {
+          reconnect = await reconnectIf(outcome.close, { attempt: failures + 1 })
+        } catch (error) {
+          return finish(error, false)
+        }
+        if (stop.signal.aborted) return
+        if (!reconnect) {
+          const { code, reason } = outcome.close
+          return finish(new CloseError({ code, reason }), isNormalClose(code))
+        }
       }
       const error =
         outcome.kind === 'error'
@@ -357,7 +370,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
           : new CloseError({ code: outcome.close.code, reason: outcome.close.reason })
       if (outcome.kind === 'error' && outcome.final) return finish(error, false)
       if (++failures >= attempts) return finish(error, false)
-      await Timers.sleep(next(failures, error), { signal: stop.signal }).catch(() => {})
+      await Timers.sleep(next({ attempt: failures, error }), { signal: stop.signal }).catch(
+        () => {},
+      )
     }
   }
 

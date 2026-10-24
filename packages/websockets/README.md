@@ -57,10 +57,10 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `protocols` | | Subprotocols, as for `new WebSocket(url, protocols)`. |
 | `signal` | | Closes the socket with code 1000 and fails both streams with `signal.reason`. |
 | `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes. If `open` throws, the socket closes and `connect` tries again after `delay`. |
-| `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `(attempt, error) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from `@portable/timers`. |
+| `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from `@portable/timers`. |
 | `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` gives up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
-| `reconnectIf` | see below | `({ code, reason }) => boolean`. Called when the server closes the connection or it drops. `false` makes the close final. |
+| `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when the server closes the connection or it drops, with the failures in a row including this one. `false` makes the close final, and a rejection fails both streams with its error. |
 | `maxQueued` | `1000` | Writes to hold while disconnected. Further writes wait, so `writer.ready` and `writer.write()` stay pending. |
 | `highWaterMark` | `1048576` | Writes wait while the socket's `bufferedAmount` is above this many bytes. |
 | `maxBuffered` | `Infinity` | Bytes of received messages (characters for text) to hold while the reader is behind. Past it, both streams fail with `MaxBufferedError` and the socket closes. |
@@ -160,8 +160,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `binaryType = 'arraybuffer'` | Always. Binary messages arrive as `Uint8Array`. |
 | `new PartySocket({ host, room })` | `connect(\`wss://${host}/parties/main/${room}\`)` |
 | websocket-ts `ExponentialBackoff(base, maxExponent)` | `delay: { initial: base, max: base * 2 ** maxExponent, jitter: false }` |
-| websocket-ts `ConstantBackoff(ms)` / `LinearBackoff(initial, increment, max)` | `delay: ms` / `delay: (n) => Math.min(max, initial + (n - 1) * increment)` |
-| websocket-ts `withInstantReconnect(true)` | `delay: (n) => (n === 1 ? 0 : 1000)` |
+| websocket-ts `ConstantBackoff(ms)` / `LinearBackoff(initial, increment, max)` | `delay: ms` / `delay: ({ attempt }) => Math.min(max, initial + (attempt - 1) * increment)` |
+| websocket-ts `withInstantReconnect(true)` | `delay: ({ attempt }) => (attempt === 1 ? 0 : 1000)` |
 | websocket-ts `RingQueue(n)` | No equivalent: writes wait at `maxQueued` instead of dropping the oldest. |
 
 These behave differently on purpose:

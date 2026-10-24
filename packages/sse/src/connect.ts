@@ -11,11 +11,14 @@ export declare namespace connect {
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
     maxLength?: number | undefined
     /**
-     * Decides whether to reconnect after a connection ends. `error` is `undefined` when the
+     * Decides whether to reconnect after a connection ends, with the error and `{ attempt }`, the
+     * number of reconnects since the last accepted response. `error` is `undefined` when the
      * response ended normally. Return `false` to close the stream, or to fail it with `error`.
      * @default (error) => !(error instanceof Sse.ResponseError || error instanceof Sse.MaxLengthError)
      */
-    reconnectIf?: ((error: unknown, attempt: number) => boolean | PromiseLike<boolean>) | undefined
+    reconnectIf?:
+      | ((error: unknown, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
+      | undefined
     /** Stops the stream, the request in flight and any wait, and fails the stream with `signal.reason`. */
     signal?: AbortSignal | undefined
   }
@@ -129,12 +132,12 @@ export function connect(
         reader = undefined
         parser.end()
         attempt++
-        if (!(await reconnectIf(error, attempt))) {
+        if (!(await reconnectIf(error, { attempt }))) {
           if (error === undefined) return controller.close()
           throw error
         }
         if (error instanceof ResponseError) await error.response.body?.cancel()
-        await Timers.sleep(parser.retry ?? next(attempt, error), { signal: combined })
+        await Timers.sleep(parser.retry ?? next({ attempt, error }), { signal: combined })
       }
     },
     async cancel(reason) {

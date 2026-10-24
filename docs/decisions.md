@@ -581,3 +581,7 @@ Agents that couldn't edit this file reported these. Each package's README and PA
 - **sse** splits lines inline instead of using lines, to keep one `TransformStream`. `connect` reconnects after a clean end, and a `retry` field from the server replaces `delay`.
 - **websockets and sse** take `Timers.Delay` and compute waits with `Timers.backoff`.
 - **idna** ships its own Unicode 18 tables instead of calling `URL`, because Node and Chromium both differ from UTS #46.
+
+## Retry callbacks take an `{ attempt }` object
+
+`retryIf`, `onRetry`, the reconnecting clients' `reconnectIf` and a `delay` function all receive the attempt number in an object: `retryIf(error, { attempt })`, `onRetry(error, { attempt, delay })`, `reconnectIf(close, { attempt })` and `delay({ attempt, error })`. Before, `retryIf` and the sse `reconnectIf` took the number as a positional, `onRetry` took an object, websockets' `reconnectIf` took no number, and a `delay` function took `error` as an optional positional because `poll` has no error to pass. An object lets a callback get a new field later without breaking callers. Every `reconnectIf` can now return a promise, as `retryIf` could.

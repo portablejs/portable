@@ -511,7 +511,10 @@ describe('bootstrap cache', () => {
     const { fetch, urls } = server()
     const start = new Date('2030-01-01T00:00:00Z')
     await Rdap.domain('sidn.nl', { fetch, now: start })
-    await Rdap.domain('sidn.nl', { fetch, now: new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1) })
+    await Rdap.domain('sidn.nl', {
+      fetch,
+      now: new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1),
+    })
     expect(urls.filter((url) => url === iana)).toHaveLength(1)
     await Rdap.domain('sidn.nl', { fetch, now: new Date(start.getTime() + 24 * 60 * 60 * 1000) })
     expect(urls.filter((url) => url === iana)).toHaveLength(2)
@@ -617,7 +620,10 @@ describe('cancellation', () => {
 test('error names are namespaced by the package', () => {
   expect(new Rdap.InvalidInputError('x').name).toBe('Rdap.InvalidInputError')
   expect(new Rdap.UnsupportedError('x').name).toBe('Rdap.UnsupportedError')
-  expect(new Rdap.NotFoundError({ response: new Response(null, { status: 404 }), url: 'https://x/' }).name).toBe('Rdap.NotFoundError')
+  expect(
+    new Rdap.NotFoundError({ response: new Response(null, { status: 404 }), url: 'https://x/' })
+      .name,
+  ).toBe('Rdap.NotFoundError')
   expect(
     new Rdap.ResponseError({ response: new Response(null, { status: 500 }), url: 'https://x/' })
       .name,

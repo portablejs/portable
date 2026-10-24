@@ -2,9 +2,18 @@ import { sleep } from './sleep.js'
 
 /**
  * How long to wait before the next attempt: a fixed number of milliseconds, exponential backoff, or a
- * function of the attempt that just finished (and, in `retry`, the error it threw).
+ * function that takes the number of the attempt that just finished and, in `retry`, the error it
+ * threw.
  */
-export type Delay = number | Backoff | ((attempt: number, error?: unknown) => number)
+export type Delay = number | Backoff | ((attempt: Attempt) => number)
+
+/** What a `delay` function receives. */
+export type Attempt = {
+  /** The number of the attempt that just finished, starting at 1. */
+  attempt: number
+  /** The error that ended the attempt. `poll` passes none. */
+  error?: unknown
+}
 
 /**
  * Exponential backoff. Attempt `n` waits up to `min(max, initial * factor ** (n - 1))` ms. With
@@ -38,21 +47,21 @@ export function neverAborted(): AbortSignal {
 
 /**
  * Checks `delay` and returns a function that takes the attempt number, starting at 1, and the
- * error that ended that attempt, and returns the wait in ms before the next attempt. `retry` and `poll` use it, and so
- * do the reconnecting clients in `@portable/websockets` and `@portable/sse`.
+ * error that ended that attempt, and returns the wait in ms before the next attempt. `retry` and
+ * `poll` use it, and so do the reconnecting clients in `@portable/websockets` and `@portable/sse`.
  *
  * @example
  * ```ts
  * import * as Timers from '@portable/timers'
  *
  * const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false })
- * next(1) // 1000
- * next(3) // 4000
+ * next({ attempt: 1 }) // 1000
+ * next({ attempt: 3 }) // 4000
  * ```
  *
  * @throws {RangeError} When a wait, `initial` or `max` is negative, or `factor` isn't a positive finite number.
  */
-export function backoff(delay: Delay): (attempt: number, error?: unknown) => number {
+export function backoff(delay: Delay): (attempt: Attempt) => number {
   if (typeof delay === 'function') return delay
   if (typeof delay === 'number') {
     checkMs('delay', delay)
@@ -63,7 +72,7 @@ export function backoff(delay: Delay): (attempt: number, error?: unknown) => num
   checkMs('delay.max', max)
   if (!(factor > 0) || factor === Infinity)
     throw new RangeError('Expected `delay.factor` to be a positive finite number.')
-  return (attempt) => {
+  return ({ attempt }) => {
     const cap = Math.min(max, initial * factor ** (attempt - 1))
     return jitter ? Math.random() * cap : cap
   }

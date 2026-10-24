@@ -299,7 +299,7 @@ describe('delay', () => {
       { chunks: ['data: c\n\n'] },
     ])
     const calls: [number, unknown][] = []
-    const delay = (attempt: number, error?: unknown) => {
+    const delay = ({ attempt, error }: { attempt: number; error?: unknown }) => {
       calls.push([attempt, error])
       return 0
     }
@@ -415,12 +415,12 @@ describe('when to stop', () => {
       { status: 503, chunks: ['busy'], end: 'hang' },
       { chunks: ['data: a\n\n'] },
     ])
-    const reconnectIf = vi.fn<(error: unknown) => boolean>(
+    const reconnectIf = vi.fn<(error: unknown, retry: { attempt: number }) => boolean>(
       (error: unknown) => !(error instanceof Sse.ResponseError) || error.response.status >= 500,
     )
     const events = await take(Sse.connect(url, { fetch: mock.fetch, delay: 0, reconnectIf }), 1)
     expect(datas(events)).toEqual(['a'])
-    expect(reconnectIf).toHaveBeenCalledWith(expect.any(Sse.ResponseError), 1)
+    expect(reconnectIf).toHaveBeenCalledWith(expect.any(Sse.ResponseError), { attempt: 1 })
     expect(mock.cancelled).toBeGreaterThanOrEqual(1)
   })
 

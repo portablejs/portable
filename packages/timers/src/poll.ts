@@ -41,6 +41,6 @@ export async function poll<value>(
     const result = call(fn, { attempt, signal: signal ?? neverAborted() })
     const value = await (signal ? abortable(result, signal) : result)
     if (value !== undefined) return value
-    await sleep(next(attempt), { signal })
+    await sleep(next({ attempt }), { signal })
   }
 }

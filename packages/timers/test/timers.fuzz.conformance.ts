@@ -12,7 +12,7 @@ test('backoff without jitter grows by factor up to max', () => {
   fuzz(
     fc.property(backoff, fc.integer({ min: 1, max: 60 }), (options, attempt) => {
       const next = Timers.backoff({ ...options, jitter: false })
-      expect(next(attempt)).toBe(
+      expect(next({ attempt })).toBe(
         Math.min(options.max, options.initial * options.factor ** (attempt - 1)),
       )
     }),
@@ -22,8 +22,8 @@ test('backoff without jitter grows by factor up to max', () => {
 test('backoff with jitter waits between 0 and the cap', () => {
   fuzz(
     fc.property(backoff, fc.integer({ min: 1, max: 60 }), (options, attempt) => {
-      const cap = Timers.backoff({ ...options, jitter: false })(attempt)
-      const wait = Timers.backoff(options)(attempt)
+      const cap = Timers.backoff({ ...options, jitter: false })({ attempt })
+      const wait = Timers.backoff(options)({ attempt })
       expect(wait).toBeGreaterThanOrEqual(0)
       expect(wait).toBeLessThanOrEqual(cap)
     }),

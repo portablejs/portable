@@ -33,7 +33,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | onFailedAttempt is called even when shouldRetry returns false | `onRetry > is not called when retryIf stops the retries` | Deliberate difference: `onRetry` runs only before a retry. |
 | onFailedAttempt can return a promise to add a delay | `retry > retryIf > can be async, and the next attempt waits for it` | |
 | onFailedAttempt can throw to abort retries | `retry > retryIf > rejects with the error it throws` | |
-| retry context object is immutable | skipped | `retryIf` gets the error and a number, not a context object. |
+| retry context object is immutable | skipped | `retryIf` gets the error and a new `{ attempt }` object on each call, so there is no shared context to mutate. |
 | onFailedAttempt can be undefined | `retry` tests without `onRetry` | |
 | shouldRetry can be undefined | `retry > retryIf > can be undefined` | |
 | factor affects exponential backoff | `retry > delay > grows by factor without jitter`, `oracle > retry matches p-retry` | |

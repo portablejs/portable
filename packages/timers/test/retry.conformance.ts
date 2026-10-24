@@ -172,7 +172,7 @@ describe('retryIf', () => {
         },
         {
           attempts: 3,
-          retryIf: (error, attempt) => {
+          retryIf: (error, { attempt }) => {
             seen.push([(error as Error).message, attempt])
             return true
           },
@@ -338,7 +338,7 @@ describe('delay', () => {
     const seen: unknown[][] = []
     const delays = await retryDelays({
       attempts: 4,
-      delay: (attempt, error) => {
+      delay: ({ attempt, error }) => {
         seen.push([attempt, (error as Error).message])
         return attempt * 1000
       },
@@ -369,7 +369,7 @@ describe('delay', () => {
           return 'ok'
         },
         {
-          delay: (_attempt, error) =>
+          delay: ({ error }) =>
             Number((error as HttpError).response.headers.get('retry-after')) * 1000,
         },
       ),
@@ -638,7 +638,7 @@ describe('onRetry', () => {
         },
         {
           attempts: 3,
-          delay: (attempt) => attempt * 2,
+          delay: ({ attempt }) => attempt * 2,
           onRetry: (error, { attempt, delay }) => {
             seen.push([(error as Error).message, attempt, delay])
           },

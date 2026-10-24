@@ -137,7 +137,7 @@ describe('delay', () => {
     const times: number[] = []
     await settle(
       Timers.poll(() => (times.push(Date.now()) === 4 ? true : undefined), {
-        delay: (attempt) => attempt * 10,
+        delay: ({ attempt }) => attempt * 10,
       }),
     )
     expect(gaps(times)).toEqual([10, 20, 30])

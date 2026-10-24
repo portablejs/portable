@@ -16,15 +16,18 @@ export declare namespace retry {
     /** Wait before each retry. @default { initial: 200, max: 10_000 } */
     delay?: Delay | undefined
     /**
-     * Called before each retry with the error and the number of the attempt that threw it. Return
-     * `false` to stop and throw that error. It isn't called after the last attempt.
+     * Called before each retry with the error and `{ attempt }`, the number of the attempt that
+     * threw it. Return `false` to stop and throw that error. It isn't called after the last attempt.
      * @default () => true
      */
-    retryIf?: ((error: unknown, attempt: number) => boolean | PromiseLike<boolean>) | undefined
+    retryIf?:
+      | ((error: unknown, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
+      | undefined
     /**
-     * Called after `retryIf` decides to retry and before the wait, with the error, the number of the
-     * attempt that threw it, and the wait in ms. Use it to log retries. If `onRetry` returns a
-     * promise, the next attempt waits for it. If `onRetry` throws, `retry` rejects with that error.
+     * Called after `retryIf` decides to retry and before the wait, with the error and
+     * `{ attempt, delay }`: the number of the attempt that threw it, and the wait in ms. Use it to
+     * log retries. If `onRetry` returns a promise, the next attempt waits for it. If `onRetry`
+     * throws, `retry` rejects with that error.
      */
     onRetry?: ((error: unknown, retry: retry.Retry) => void | PromiseLike<void>) | undefined
     /**
@@ -89,9 +92,9 @@ export async function retry<value>(
     } catch (error) {
       signal?.throwIfAborted()
       if (attempt >= attempts) throw error
-      if (retryIf && !(await retryIf(error, attempt))) throw error
+      if (retryIf && !(await retryIf(error, { attempt }))) throw error
       signal?.throwIfAborted()
-      const ms = next(attempt, error)
+      const ms = next({ attempt, error })
       if (onRetry) {
         await onRetry(error, { attempt, delay: Math.max(ms, 0) })
         signal?.throwIfAborted()

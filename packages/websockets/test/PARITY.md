@@ -129,7 +129,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | Getter/setter: Protocols (3 tests) | `connect > connecting > passes the URL and protocols to the WebSocket class` | |
 | Getter/setter: Buffer (2 tests) | skipped | No pluggable buffer. `maxQueued` bounds the queue. |
 | Getter/setter: MaxRetries (2 tests) | `connect > reconnecting > gives up with the last error when attempts is %i` | |
-| Getter/setter: InstantReconnect (2 tests) | `connect > reconnecting > passes the failure count and error to a delay function` | `delay: (n) => (n === 1 ? 0 : 1000)` gives an instant first retry. |
+| Getter/setter: InstantReconnect (2 tests) | `connect > reconnecting > passes the failure count and error to a delay function` | `delay: ({ attempt }) => (attempt === 1 ? 0 : 1000)` gives an instant first retry. |
 | Getter/setter: Backoff (2 tests) | `connect > reconnecting > waits the backoff cap when jitter is off` | |
 | Getter/setter: Listeners | skipped | No listeners. |
 | Getter/setter: ClosedByUser (3 tests) | `connect > closing > writable.close() sends queued writes, then closes with 1000 for good`, `connect > reconnecting > reconnects after a dropped connection` | A close by the caller is final, and one by the server is not. |

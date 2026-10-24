@@ -54,7 +54,7 @@ Calls `fn` until it returns without throwing and resolves with its value. When t
 | --- | --- | --- |
 | `attempts` | `3` | Total number of calls, including the first. `Infinity` retries until success or abort. |
 | `delay` | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays). |
-| `retryIf` | retry every error | `(error, attempt) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
+| `retryIf` | retry every error | `(error, { attempt }) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
 | `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number and the wait in ms. Use it for logging. If it returns a promise, the next attempt waits for it, and if it throws, `retry` rejects with that error. |
 | `timeout` | `Infinity` | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error. |
 | `signal` | | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running. |
@@ -102,7 +102,7 @@ const response = await Timers.retry(
   },
   {
     attempts: 5,
-    delay: (attempt, error) => {
+    delay: ({ attempt, error }) => {
       const wait = error instanceof HttpError ? retryAfter(error.response) : undefined
       return wait ?? Math.random() * Math.min(10_000, 200 * 2 ** (attempt - 1))
     },
@@ -166,14 +166,14 @@ The returned function also has:
 | --- | --- |
 | `2000` | A fixed 2000 ms. |
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
-| `(attempt, error) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
+| `({ attempt, error }) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
 `Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, so other code can call it to wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
 
 ```ts
 const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false })
-next(1) // 1000
-next(3) // 4000
+next({ attempt: 1 }) // 1000
+next({ attempt: 3 }) // 4000
 ```
 
 `retry` with a wait of 0 starts the next attempt without a timer. `poll` always sets a timer before the next check, even for a wait of 0, so a check that returns `undefined` immediately can't keep other timers from running, and a timeout signal can still fire.
@@ -184,6 +184,7 @@ next(3) // 4000
 | --- | --- |
 | `Timers.Delay` | The `delay` option. See [Delays](#delays). |
 | `Timers.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff. |
+| `Timers.Attempt` | `{ attempt, error? }`, what a `delay` function receives. |
 | `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
 | `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
 | `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |

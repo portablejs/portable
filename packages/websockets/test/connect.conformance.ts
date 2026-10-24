@@ -363,17 +363,35 @@ describe('reconnecting', () => {
   })
 
   test('reconnectIf decides which closes are final', async () => {
-    const seen: number[] = []
+    const seen: [number, number][] = []
     const { server, readable } = setup({
-      reconnectIf: ({ code }) => {
-        seen.push(code)
+      reconnectIf: ({ code }, { attempt }) => {
+        seen.push([code, attempt])
         return code !== 4001
       },
     })
     ;(await server.accept(0)).drop(1000)
     ;(await server.accept(1)).drop(4001, 'unauthorized')
     expect(await errorOf(readable.getReader().read())).toMatchObject({ code: 4001 })
-    expect(seen).toEqual([1000, 4001])
+    expect(seen).toEqual([
+      [1000, 1],
+      [4001, 1],
+    ])
+  })
+
+  test('reconnectIf can be async, and a rejection fails both streams', async () => {
+    const stop = new Error('stop')
+    const { server, readable, writable } = setup({
+      reconnectIf: async ({ code }) => {
+        await Promise.resolve()
+        if (code === 4002) throw stop
+        return true
+      },
+    })
+    ;(await server.accept(0)).drop(4001)
+    ;(await server.accept(1)).drop(4002)
+    expect(await errorOf(readable.getReader().read())).toBe(stop)
+    expect(await errorOf(writable.getWriter().write('x'))).toBe(stop)
   })
 
   test.each([1, 2, 6])('gives up with the last error when attempts is %i', async (attempts) => {
@@ -407,7 +425,7 @@ describe('reconnecting', () => {
   test('passes the failure count and error to a delay function', async () => {
     const calls: [number, unknown][] = []
     const { server } = setup({
-      delay: (attempt, error) => {
+      delay: ({ attempt, error }) => {
         calls.push([attempt, error])
         return 0
       },
