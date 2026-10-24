@@ -155,6 +155,8 @@ The tests that compare the base64 and hex fallbacks with the native API run only
 
 [Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with `@changesets/changelog-github`. The config is copied from ox.
 
+Nothing is published yet, so changes don't get a changeset. Record them from the first release on.
+
 1. `pnpm changeset` records which packages changed and how.
 2. `pnpm changeset:version` bumps versions and writes changelogs.
 3. `pnpm changeset:publish` builds, runs every test project including the browsers, has zile write each published `package.json`, publishes to npm, and restores the source `package.json` files.
