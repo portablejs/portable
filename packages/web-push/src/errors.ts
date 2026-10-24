@@ -9,7 +9,7 @@ import * as Errors from '@portable/errors'
  * import * as WebPush from '@portable/web-push'
  *
  * try {
- *   await WebPush.send(subscription, 'hello', { vapid })
+ *   await WebPush.send({ subscription, payload: 'hello', vapid })
  * } catch (error) {
  *   if (error instanceof WebPush.InvalidInputError) await deleteSubscription(subscription)
  *   else throw error
@@ -29,7 +29,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * import * as WebPush from '@portable/web-push'
  *
  * try {
- *   await WebPush.send(subscription, 'hello', { vapid })
+ *   await WebPush.send({ subscription, payload: 'hello', vapid })
  * } catch (error) {
  *   if (error instanceof WebPush.ResponseError && error.status === 429)
  *     retryAfter(error.headers.get('retry-after'))
