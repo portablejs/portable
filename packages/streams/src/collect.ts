@@ -136,6 +136,10 @@ export async function toText(
   return text
 }
 
+export declare namespace toJson {
+  type Options = toText.Options
+}
+
 /**
  * Reads a stream or iterable to the end and parses it as JSON.
  *
@@ -148,7 +152,7 @@ export async function toText(
  */
 export async function toJson(
   source: Source<Uint8Array | string>,
-  options: toText.Options = {},
+  options: toJson.Options = {},
 ): Promise<unknown> {
   return JSON.parse(await toText(source, options))
 }

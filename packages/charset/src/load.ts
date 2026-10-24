@@ -47,6 +47,13 @@ const loaders: Record<Name, () => Promise<Charset>> = {
   'UTF-16LE': async () => (await import('./utf-16.js')).utf16le,
 }
 
+export declare namespace load {
+  type Options = {
+    /** Rejects with `signal.reason` when aborted. The import itself keeps running. */
+    signal?: AbortSignal | undefined
+  }
+}
+
 /**
  * Loads the charset for a label, for when the charset is only known at runtime, such as from
  * a `Content-Type` header. Each family's tables are imported on first use, so bundlers split
@@ -60,8 +67,18 @@ const loaders: Record<Name, () => Promise<Charset>> = {
  * Charset.encode('日本', await Charset.load('windows-31j')) // Uint8Array [0x93, 0xfa, 0x96, 0x7b]
  * ```
  */
-export async function load(label: string): Promise<Charset> {
+export async function load(label: string, options: load.Options = {}): Promise<Charset> {
+  const { signal } = options
+  signal?.throwIfAborted()
   const name = normalizeLabel(label)
   if (name === undefined) throw new UnsupportedError(`No encoder for charset "${label}".`)
-  return loaders[name]()
+  const charset = loaders[name]()
+  if (!signal) return charset
+  return new Promise<Charset>((resolve, reject) => {
+    const abort = () => reject(signal.reason)
+    signal.addEventListener('abort', abort, { once: true })
+    charset
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener('abort', abort))
+  })
 }
