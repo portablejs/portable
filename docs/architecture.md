@@ -155,7 +155,7 @@ The tests that compare the base64 and hex fallbacks with the native API run only
 
 [Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with `@changesets/changelog-github`. The config is copied from ox.
 
-Nothing is published yet, so changes don't get a changeset. Record them from the first release on.
+Nothing is published yet, so each package has one changeset, `.changeset/<package>-initial.md`, which describes the package for the first release. A change before then edits that file instead of adding a changeset. A new package adds its own `-initial.md`.
 
 1. `pnpm changeset` records which packages changed and how.
 2. `pnpm changeset:version` bumps versions and writes changelogs.

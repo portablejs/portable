@@ -17,7 +17,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm coverage` | Node tests with V8 coverage of `packages/*/src`, written to `coverage/coverage-summary.json`. |
 | `pnpm readme` | Runs `pnpm bench` and `scripts/bundle-size.ts`, then `scripts/readme-stats.ts` rewrites the benchmark and stats tables in each package README. `scripts/readme-tables.ts` lists each table's columns and rows. |
 | `pnpm build` | Builds every package with zile into `dist/`. |
-| `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. Not used until the first release. |
+| `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. Until the first release, edit the package's `.changeset/<package>-initial.md` instead. |
 
 Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files. The pre-push hook type-checks and runs the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `tsc -b`, every test project, the conformance tests on Bun and Deno, and the workerd checks (see [docs/architecture.md](docs/architecture.md#ci)).
 
