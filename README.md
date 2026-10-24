@@ -4,13 +4,14 @@ Web-standard building blocks for any JavaScript runtime.
 
 #### Examples
 
+Stream an OpenAI transcript to a file:
+
 ```ts
 import * as Jsonl from '@portable/jsonl'
 import * as Sse from '@portable/sse'
 import * as Streams from '@portable/streams'
 
-// Print a model's reply as it streams in, and save every chunk to a JSON Lines transcript.
-const response = await fetch('https://api.example.com/v1/chat/completions', {
+const response = await fetch('https://api.openai.com/v1/chat/completions', {
   method: 'POST',
   headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
   body: JSON.stringify({ model, messages, stream: true }),
@@ -27,11 +28,12 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.valu
 await saving
 ```
 
+Strip photo GPS metadata before uploading:
+
 ```ts
 import * as Exif from '@portable/exif'
 import * as ImageSize from '@portable/image-size'
 
-// Remove location and camera data from a photo before it leaves the device.
 const photo = await new Response(file.stream().pipeThrough(new Exif.StripStream())).blob()
 const { width, height } = await ImageSize.parseStream(photo.stream())
 await fetch('/upload', { method: 'POST', body: photo, headers: { 'x-size': `${width}x${height}` } })
