@@ -25,13 +25,13 @@ export function createParser(
     relaxColumnCount = false,
     skipEmpty = true,
   } = options
-  checkCharacter('delimiter', delimiter)
-  if (quote !== false) checkCharacter('quote', quote)
+  assertCharacter('delimiter', delimiter)
+  if (quote !== false) assertCharacter('quote', quote)
   if (delimiter === quote) throw new RangeError('delimiter and quote must differ.')
   const delimiterCode = delimiter.charCodeAt(0)
   const quoteCode = quote === false ? -1 : quote.charCodeAt(0)
 
-  let names = typeof header === 'boolean' ? undefined : checkNames(header)
+  let names = typeof header === 'boolean' ? undefined : assertNames(header)
   let expected = names ? names.length : -1
   let rowCount = 0
   let state = fieldStart
@@ -45,7 +45,7 @@ export function createParser(
     const fields = row
     row = []
     if (header === true && names === undefined) {
-      names = checkNames(fields)
+      names = assertNames(fields)
       expected = fields.length
       return
     }
@@ -168,12 +168,12 @@ function indexOf(text: string, search: string, from: number): number {
   return index === -1 ? text.length : index
 }
 
-function checkCharacter(option: string, value: string): void {
+function assertCharacter(option: string, value: string): void {
   if (value.length !== 1 || value === '\r' || value === '\n')
     throw new RangeError(`${option} must be one character other than CR or LF.`)
 }
 
-function checkNames(names: readonly string[]): readonly string[] {
+function assertNames(names: readonly string[]): readonly string[] {
   const seen = new Set<string>()
   for (const name of names) {
     if (seen.has(name)) throw new InvalidInputError(`Header repeats the name "${name}".`)

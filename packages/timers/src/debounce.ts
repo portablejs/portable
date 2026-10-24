@@ -54,9 +54,9 @@ export function debounce<args extends unknown[], result, self = unknown>(
   const { leading = false, trailing = true, maxWait, signal } = options
   if (!leading && !trailing)
     throw new RangeError('Expected `leading`, `trailing` or both to be true.')
-  const wait = checkWait('ms', ms)
+  const wait = normalizeWait('ms', ms)
   const maxing = maxWait !== undefined
-  const max = maxing ? Math.max(checkWait('maxWait', maxWait), wait) : 0
+  const max = maxing ? Math.max(normalizeWait('maxWait', maxWait), wait) : 0
 
   let batch: Batch | undefined
   let lastCall: { args: args; self: self } | undefined
@@ -183,7 +183,7 @@ function deferred(): Batch {
   return { promise, resolve, reject }
 }
 
-function checkWait(name: string, ms: number): number {
+function normalizeWait(name: string, ms: number): number {
   if (!(ms <= maxTimeout))
     throw new RangeError(`Expected \`${name}\` to be a number up to ${maxTimeout}.`)
   return Math.max(0, ms)

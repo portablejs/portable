@@ -30,8 +30,8 @@ export declare namespace encode {
  */
 export function encode(input: Uint8Array | string, options: encode.Options = {}): string {
   const { alphabet = 'base64', newline = '\r\n', lineLength = false, omitPadding = false } = options
-  checkAlphabet(alphabet)
-  checkLineLength(lineLength)
+  assertAlphabet(alphabet)
+  assertLineLength(lineLength)
   return toBase64(toBytes(input), { alphabet, omitPadding, lineLength, newline }, 0)
 }
 
@@ -206,12 +206,12 @@ function wrap(text: string, lineLength: number, newline: string, column: number)
   return lines.join(newline)
 }
 
-export function checkAlphabet(alphabet: unknown): void {
+export function assertAlphabet(alphabet: unknown): void {
   if (alphabet !== 'base64' && alphabet !== 'base64url')
     throw new RangeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`)
 }
 
-export function checkLineLength(lineLength: unknown): void {
+export function assertLineLength(lineLength: unknown): void {
   if (lineLength !== false && !(Number.isSafeInteger(lineLength) && Number(lineLength) > 0))
     throw new RangeError(
       `lineLength must be a positive integer or false, got ${String(lineLength)}.`,

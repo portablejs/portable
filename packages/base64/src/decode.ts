@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import type { Alphabet } from './encode.js'
 import { InvalidInputError, TruncatedError } from './errors.js'
 
@@ -44,7 +44,7 @@ export function decode(
 ): Uint8Array<ArrayBuffer> {
   const { alphabet = 'base64', mode = 'loose' } = options
   const state = createState(alphabet, mode)
-  const text = typeof input === 'string' ? input : utf8.decode(checkUint8Array(input))
+  const text = typeof input === 'string' ? input : utf8.decode(assertUint8Array(input))
   if (nativeFromBase64 && mode !== 'mime') {
     try {
       return nativeFromBase64.call(Uint8Array, text, { alphabet, lastChunkHandling: mode })

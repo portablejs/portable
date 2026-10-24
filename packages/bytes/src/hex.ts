@@ -1,5 +1,5 @@
 import { InvalidInputError } from './errors.js'
-import { checkUint8Array } from './internal/uint8Array.js'
+import { assertUint8Array } from './internal/uint8Array.js'
 
 /**
  * Encodes bytes as lowercase hex. Uses `Uint8Array.prototype.toHex` where the runtime has it.
@@ -12,7 +12,7 @@ import { checkUint8Array } from './internal/uint8Array.js'
  * ```
  */
 export function toHex(bytes: Uint8Array): string {
-  checkUint8Array(bytes)
+  assertUint8Array(bytes)
   return nativeToHex ? nativeToHex.call(bytes) : toHexFallback(bytes)
 }
 
@@ -31,7 +31,7 @@ export function toHex(bytes: Uint8Array): string {
  * digit.
  */
 export function fromHex(text: string | Uint8Array): Uint8Array<ArrayBuffer> {
-  const hex = typeof text === 'string' ? text : latin1(checkUint8Array(text))
+  const hex = typeof text === 'string' ? text : latin1(assertUint8Array(text))
   if (nativeFromHex) {
     try {
       return nativeFromHex.call(Uint8Array, hex)

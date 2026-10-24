@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 const textEncoder = new TextEncoder()
 
 export const encodeUtf8 = (text: string): Uint8Array => textEncoder.encode(text)
@@ -12,7 +12,7 @@ export function createUtf8Encoder(): {
   return {
     write(chunk) {
       if (typeof chunk !== 'string') {
-        checkUint8Array(chunk)
+        assertUint8Array(chunk)
         if (highSurrogate === '') return chunk
         const pending = encodeUtf8(highSurrogate)
         highSurrogate = ''

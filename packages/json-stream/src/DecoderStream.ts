@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, MaxLengthError, TruncatedError } from './errors.js'
 import { compile, type States } from './path.js'
 import * as Streams from '@portable/streams'
@@ -435,7 +435,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             text =
               typeof chunk === 'string'
                 ? chunk
-                : decoder.decode(checkUint8Array(chunk), { stream: true })
+                : decoder.decode(assertUint8Array(chunk), { stream: true })
             scan()
             hold()
             offset += text.length

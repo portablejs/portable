@@ -15,7 +15,7 @@ const encoder = new TextEncoder()
 
 const byteLength = (text: string): number => encoder.encode(text).length
 
-export function checkAuthservId(value: unknown): string {
+export function assertAuthservId(value: unknown): string {
   if (typeof value !== 'string') throw new TypeError('options.authservId must be a string.')
   if (!token.test(value) || value.length > maxValueBytes)
     throw new RangeError(

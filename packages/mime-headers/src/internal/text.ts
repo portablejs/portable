@@ -23,7 +23,7 @@ export function decodeCharset(bytes: Uint8Array, label: string): string {
   return decoder.decode(bytes)
 }
 
-export function checkLength(name: string, value: number): void {
+export function assertLength(name: string, value: number): void {
   if (!Number.isInteger(value) || value < 1)
     throw new RangeError(`${name} must be a positive integer, got ${value}.`)
 }

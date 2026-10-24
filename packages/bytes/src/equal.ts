@@ -1,4 +1,4 @@
-import { checkUint8Array } from './internal/uint8Array.js'
+import { assertUint8Array } from './internal/uint8Array.js'
 
 /**
  * Whether two byte arrays hold the same bytes. Returns at the first difference, so the time it
@@ -12,8 +12,8 @@ import { checkUint8Array } from './internal/uint8Array.js'
  * ```
  */
 export function equal(a: Uint8Array, b: Uint8Array): boolean {
-  checkUint8Array(a)
-  checkUint8Array(b)
+  assertUint8Array(a)
+  assertUint8Array(b)
   if (a === b) return true
   const length = a.length
   if (length !== b.length) return false
@@ -44,8 +44,8 @@ export function equal(a: Uint8Array, b: Uint8Array): boolean {
  * ```
  */
 export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  checkUint8Array(a)
-  checkUint8Array(b)
+  assertUint8Array(a)
+  assertUint8Array(b)
   const length = a.length
   if (length !== b.length) return false
   let diff = 0

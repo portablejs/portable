@@ -1,7 +1,7 @@
 import {
   backoff,
   call,
-  checkMs,
+  assertMs,
   type Context,
   type Delay,
   neverAborted,
@@ -83,7 +83,7 @@ export async function retry<value>(
   if (!(attempts >= 1) || (attempts !== Infinity && !Number.isInteger(attempts)))
     throw new RangeError('Expected `attempts` to be a positive integer or Infinity.')
   const next = backoff(delay)
-  checkMs('timeout', timeout)
+  assertMs('timeout', timeout)
   signal?.throwIfAborted()
 
   for (let attempt = 1; ; attempt++) {

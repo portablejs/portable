@@ -64,12 +64,12 @@ export function neverAborted(): AbortSignal {
 export function backoff(delay: Delay): (attempt: Attempt) => number {
   if (typeof delay === 'function') return delay
   if (typeof delay === 'number') {
-    checkMs('delay', delay)
+    assertMs('delay', delay)
     return () => delay
   }
   const { initial, max, factor = 2, jitter = true } = delay
-  checkMs('delay.initial', initial)
-  checkMs('delay.max', max)
+  assertMs('delay.initial', initial)
+  assertMs('delay.max', max)
   if (!(factor > 0) || factor === Infinity)
     throw new RangeError('Expected `delay.factor` to be a positive finite number.')
   return ({ attempt }) => {
@@ -78,7 +78,7 @@ export function backoff(delay: Delay): (attempt: Attempt) => number {
   }
 }
 
-export function checkMs(name: string, value: number): void {
+export function assertMs(name: string, value: number): void {
   if (!(value >= 0)) throw new RangeError(`Expected \`${name}\` to be a non-negative number.`)
 }
 

@@ -1,4 +1,4 @@
-import { checkLimit, isThenable } from './create.js'
+import { assertLimit, isThenable } from './create.js'
 
 export declare namespace map {
   type Options = {
@@ -46,7 +46,7 @@ export function map<chunk, result>(
   options: map.Options = {},
 ): Promise<result[]> {
   const { signal, stopOnError = true } = options
-  const concurrency = checkLimit('concurrency', options.concurrency ?? Infinity)
+  const concurrency = assertLimit('concurrency', options.concurrency ?? Infinity)
   if (typeof fn !== 'function') throw new TypeError('Expected `fn` to be a function.')
 
   return new Promise<result[]>((resolve, reject) => {

@@ -204,7 +204,7 @@ function escapedLabels(name: string, from: number, end: number): Label[] {
   return labels
 }
 
-function checkLabel(name: string, size: number): void {
+function assertLabel(name: string, size: number): void {
   if (size === 0) throw new InvalidInputError(`Empty label in "${name}".`)
   if (size > 63) throw new InvalidInputError(`Label longer than 63 bytes in "${name}".`)
 }
@@ -216,7 +216,7 @@ export function nameLength(name: string): number {
   let length = 1
   if (name.includes('\\')) {
     for (const label of escapedLabels(name, start, end)) {
-      checkLabel(name, label.bytes.length)
+      assertLabel(name, label.bytes.length)
       length += label.bytes.length + 1
     }
   } else {
@@ -224,7 +224,7 @@ export function nameLength(name: string): number {
     for (let i = start; i < end; i++) {
       const c = name.charCodeAt(i)
       if (c === DOT) {
-        checkLabel(name, size)
+        assertLabel(name, size)
         length += size + 1
         size = 0
       } else if (c < 0x80) size++
@@ -235,7 +235,7 @@ export function nameLength(name: string): number {
       } else size += 3
     }
     if (end > start) {
-      checkLabel(name, size)
+      assertLabel(name, size)
       length += size + 1
     }
   }

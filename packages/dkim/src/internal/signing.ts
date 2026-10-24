@@ -39,7 +39,7 @@ export const defaultHeaders: readonly string[] = [
   'BIMI-Selector',
 ]
 
-export function checkName(
+export function normalizeName(
   option: string,
   value: unknown,
   valid: (name: string) => boolean,
@@ -51,7 +51,7 @@ export function checkName(
   return name
 }
 
-export function checkHeaders(headers: readonly string[]): string[] {
+export function assertHeaders(headers: readonly string[]): string[] {
   if (!Array.isArray(headers))
     throw new TypeError('options.headers must be an array of field names.')
   const names = headers.map((name: unknown) => {

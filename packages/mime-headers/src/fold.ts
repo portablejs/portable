@@ -1,5 +1,5 @@
 import { MaxLengthError } from './errors.js'
-import { checkLength, toText } from './internal/text.js'
+import { assertLength, toText } from './internal/text.js'
 
 export declare namespace fold {
   type Options = {
@@ -24,7 +24,7 @@ export declare namespace fold {
  */
 export function fold(input: string | Uint8Array, options: fold.Options = {}): string {
   const { lineLength = 76 } = options
-  checkLength('lineLength', lineLength)
+  assertLength('lineLength', lineLength)
   const text = toText(input)
   const lines = text.split(/(\r\n|\r|\n)/)
   let result = ''

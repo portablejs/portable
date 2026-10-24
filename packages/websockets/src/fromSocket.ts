@@ -6,8 +6,8 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
-  checkOutgoing,
-  checkSize,
+  assertOutgoing,
+  assertSize,
   queueLimit,
   closedError,
   drained,
@@ -55,8 +55,8 @@ export declare namespace fromSocket {
  */
 export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Duplex {
   const { signal, highWaterMark = 1 << 20, maxBuffered = Infinity } = options
-  checkSize('highWaterMark', highWaterMark)
-  checkSize('maxBuffered', maxBuffered, 1)
+  assertSize('highWaterMark', highWaterMark)
+  assertSize('maxBuffered', maxBuffered, 1)
   socket.binaryType = 'arraybuffer'
 
   let readableController!: ReadableStreamDefaultController<Message>
@@ -130,7 +130,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
       writableController = controller
     },
     write(chunk) {
-      checkOutgoing(chunk)
+      assertOutgoing(chunk)
       if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark)
         return socket.send(chunk)
       return opened

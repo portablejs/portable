@@ -5,7 +5,7 @@ import * as Dmarc from '@portable/dmarc'
 import * as Spf from '@portable/spf'
 import * as Streams from '@portable/streams'
 import { author, type SkipReason } from './internal/author.js'
-import { checkAuthservId, formatResults } from './internal/results.js'
+import { assertAuthservId, formatResults } from './internal/results.js'
 
 /**
  * The DNS lookups SPF, DKIM, DMARC and ARC need: a `Dns.Resolver` from `@portable/dns`,
@@ -139,7 +139,7 @@ export async function authenticate(
   options: authenticate.Options,
 ): Promise<Result> {
   const { resolver, ip, helo, sender, seal, now, minKeyBits, hasher, signal } = options
-  const authservId = checkAuthservId(options.authservId)
+  const authservId = assertAuthservId(options.authservId)
   signal?.throwIfAborted()
   const bytes =
     typeof message === 'string'

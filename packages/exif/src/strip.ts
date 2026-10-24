@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { checkUint8Array, crc32 } from '@portable/bytes/internal'
+import { assertUint8Array, crc32 } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js'
 import { readTiff } from './tiff.js'
@@ -40,7 +40,7 @@ export declare namespace strip {
 export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
   const parts: Uint8Array[] = []
   const stripper = createStripper(options, (part) => parts.push(part))
-  stripper.push(checkUint8Array(bytes))
+  stripper.push(assertUint8Array(bytes))
   stripper.close()
   return Bytes.concat(parts)
 }
@@ -81,7 +81,7 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
         signal.addEventListener('abort', abort, { once: true })
       },
       transform(chunk) {
-        stripper.push(checkUint8Array(chunk))
+        stripper.push(assertUint8Array(chunk))
       },
       flush() {
         if (abort) signal!.removeEventListener('abort', abort)

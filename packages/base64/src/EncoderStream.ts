@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { checkAlphabet, checkLineLength, encode, toBase64, toBytes } from './encode.js'
+import { assertAlphabet, assertLineLength, encode, toBase64, toBytes } from './encode.js'
 import * as Streams from '@portable/streams'
 
 export declare namespace EncoderStream {
@@ -33,8 +33,8 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
       lineLength = false,
       omitPadding = false,
     } = options
-    checkAlphabet(alphabet)
-    checkLineLength(lineLength)
+    assertAlphabet(alphabet)
+    assertLineLength(lineLength)
     const utf8 = new TextEncoder()
     let carry: Uint8Array = new Uint8Array(0)
     let highSurrogate = ''

@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import * as Bytes from '@portable/bytes'
 import { MaxHeaderBytesError } from './errors.js'
 
@@ -62,7 +62,7 @@ export async function splitHeaders(
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
       if (done) break
-      checkUint8Array(value)
+      assertUint8Array(value)
       for (let i = 0; i < value.length; i++) {
         const byte = value[i]
         if (byte === 0x0a) {
@@ -109,7 +109,7 @@ export async function splitHeaders(
       if (done) {
         stop()
         controller.close()
-      } else controller.enqueue(checkUint8Array(value))
+      } else controller.enqueue(assertUint8Array(value))
     },
     cancel(reason) {
       stop()

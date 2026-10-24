@@ -17,8 +17,8 @@ import {
 import {
   appendValue,
   casedName,
-  checkHeaders,
-  checkName,
+  assertHeaders,
+  normalizeName,
   defaultHeaders,
   fold,
   overSigned,
@@ -98,13 +98,13 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     hasher,
     signal,
   } = options
-  const domain = checkName('domain', options.domain, isDomainName)
-  const selector = checkName('selector', options.selector, isSelector)
+  const domain = normalizeName('domain', options.domain, isDomainName)
+  const selector = normalizeName('selector', options.selector, isSelector)
   if (!canFitDns(`${selector}._domainkey.${domain}`))
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
   if (!canonicalizations.has(canonicalization))
     throw new RangeError(`canonicalization must be one of ${[...canonicalizations].join(', ')}.`)
-  const names = checkHeaders(headers)
+  const names = assertHeaders(headers)
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain)
   const timestamp = seconds('now', now)

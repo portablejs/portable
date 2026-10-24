@@ -203,7 +203,7 @@ export function encodeStream(
 ): ReadableStream<Uint8Array> {
   const context = {
     charset: options.charset,
-    prefix: checkBoundary(options.boundary ?? `=_${randomHex(8)}_`),
+    prefix: assertBoundary(options.boundary ?? `=_${randomHex(8)}_`),
     streams: new Set(),
     id: 0,
     reader: undefined,
@@ -248,7 +248,7 @@ const reserved = new Set([
   'content-id',
 ])
 
-function checkBoundary(prefix: string): string {
+function assertBoundary(prefix: string): string {
   if (!/^[0-9A-Za-z'()+_,\-./:=? ]{0,60}$/.test(prefix))
     throw new RangeError(`boundary ${JSON.stringify(prefix)} isn't up to 60 characters of bchars.`)
   return prefix
