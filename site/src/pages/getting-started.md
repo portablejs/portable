@@ -6,8 +6,6 @@ description: Install a Portable package and run the same code in browsers, Cloud
 
 Portable is a set of small npm packages built only on web-standard APIs: Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, and `crypto.subtle`. The same code runs in browsers, Cloudflare Workers, Bun, and Node 24 or later. You don't need polyfills or the `nodejs_compat` flag.
 
-Each package page lists the npm libraries the package replaces.
-
 ## Install a package
 
 Install only the packages you use. They are ESM-only, and their only runtime dependencies are other `@portable/*` packages.
