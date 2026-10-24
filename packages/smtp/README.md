@@ -267,33 +267,13 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
-
-| nodemailer | @portable/smtp |
-| --- | --- |
-| `nodemailer.createTransport({ host, port, auth })` | `Smtp.connect({ connect, host, port, auth })` |
-| `transport.sendMail({ envelope, raw })` | `client.send({ from, to, message })` or `Smtp.send(mail, options)` |
-| `sendMail({ from, to, subject, html })` | Build the message with `@portable/mail`, then `client.send` |
-| `transport.verify()` | `await (await Smtp.connect(options)).close()` |
-| `secure: true` | `secure: 'on'` (the default for port 465) |
-| `requireTLS: true` | The default. `ignoreTLS: true` is `secure: 'off'`. |
-| `opportunisticTLS: true` | Not available. |
-| `auth: { type: 'OAuth2', user, accessToken }` | `auth: { user, accessToken }`. Token refresh is up to the caller. |
-| `authMethod: 'LOGIN'` | `auth: { user, pass, method: 'LOGIN' }` |
-| `connectionTimeout`, `greetingTimeout`, `socketTimeout` | `signal: AbortSignal.timeout(ms)` on `connect` and `send` |
-| `lmtp: true` | `lmtp: true` |
-| `envelope.dsn`, `dsn: { ret, envid, notify }` | `mail.dsn`. No `orcpt`. |
-| `envelope.requireTLSExtensionEnabled` | `mail.requireTls` |
-| `envelope.use8BitMime` | Declared whenever the server offers 8BITMIME. |
-| `proxy`, `getSocket` | Open the tunnel in your `connect` function. |
-| `pool: true` | Keep a `Client` open and send several messages over it. |
-| `logger`, `debug` | Not available. |
-| CRAM-MD5, custom `auth.type` handlers | Not available. WebCrypto has no MD5. |
-| `info.accepted`, `info.rejected` (strings), `info.response` | `result.accepted`, `result.rejected` (objects with `recipient`, `responseCode`, `enhancedCode`, `response`), `result.response` |
-| `info.messageId`, `info.envelope` | Not returned. The caller already has both. |
-| `err.code`, `err.responseCode`, `err.response`, `err.command` | The same fields on `Smtp.CommandError`, plus `enhancedCode`. A 421 is always `ECONNECTION`. |
-
-Also different on purpose:
-
-- An empty message is sent. nodemailer refuses it.
-- `Smtp.connect` rejects an invalid `name` instead of removing its CR and LF.
+- `Smtp.send` and `client.send` send an empty message. nodemailer refuses it.
+- `Smtp.connect` throws a `RangeError` for a `name` that contains CR or LF. nodemailer removes the CR and LF instead.
+- nodemailer's `opportunisticTLS`, `logger` and `debug` options have no equivalent.
+- nodemailer refreshes an OAuth2 access token itself. `auth: { user, accessToken }` sends the token it is given, so the caller refreshes it.
+- CRAM-MD5 and custom `auth.type` handlers aren't supported, because WebCrypto has no MD5.
+- `mail.dsn` has no equivalent of nodemailer's `orcpt`.
+- nodemailer's `pool: true` has no equivalent. Keep a `Client` open and send several messages over it instead.
+- nodemailer's `proxy` and `getSocket` options have no equivalent. Open the tunnel in the `connect` function instead.
+- nodemailer's `info.rejected` is a list of address strings. `result.rejected` is a list of objects with `recipient`, `responseCode`, `enhancedCode` and `response`.
+- The result has no `messageId` or `envelope`, which nodemailer returns in `info`.

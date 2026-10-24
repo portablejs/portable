@@ -110,6 +110,14 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 - It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a reader that splits the field on semicolons.
 - It authenticates and seals a short message faster: 445 times a second against 303 for mailauth's strict mode in one run in Node, and about the same, 243 against 251, for a 250 KB message with a DKIM signature and an ARC set.
 - It has no dependencies outside `@portable/*`.
+- mailauth's `mta` defaults to `os.hostname()`, and `authservId` has no default, so pass it.
+- mailauth's `resolver` is a function of `(name, type)`. Here `resolver` is an object with `resolveTxt` and the other methods, such as `node:dns/promises`.
+- mailauth's `strict` and `rejectRsaSha1` options have no equivalent, because this package always behaves as if both were set: an rsa-sha1 signature gives DKIM `policy`.
+- mailauth's `headers` include a Received-SPF field, and `result.headers` doesn't.
+- mailauth sets `result.dmarc` to `false` when DMARC wasn't checked, and here `result.dmarc` is `undefined`.
+- mailauth's `trustReceived` isn't supported. Pass the address and HELO name from your SMTP server.
+- mailauth's `disableArc`, `disableDmarc` and `disableBimi` have no equivalent. To run one check, call `Arc.verify`, `Dmarc.check` or `Dkim.verify` directly.
+- mailauth's BIMI check (`result.bimi`), `result.receivedChain` and `dkim2` aren't supported.
 
 <!-- bench:start -->
 | | @portable/mail-auth | mailauth |
@@ -129,25 +137,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| mailauth | @portable/mail-auth |
-| --- | --- |
-| `authenticate(message, { ip, helo, sender, mta, resolver })` | `MailAuth.authenticate(message, { ip, helo, sender, authservId, resolver })`. `authservId` is required, as there is no `os.hostname()`. |
-| `resolver: (name, type) => ...` | An object with `resolveTxt` and the other methods, such as `node:dns/promises`. |
-| `strict: true`, `rejectRsaSha1` | The only behavior. |
-| `minBitLength` | `minKeyBits` |
-| `seal: { signingDomain, selector, privateKey }` | `seal: { domain, selector, privateKey }` |
-| `result.headers` | `result.headers`, without Received-SPF. |
-| `result.spf.status.result` | `result.spf.result` |
-| `result.dkim.results[i].status.result` | `result.dkim[i].result` |
-| `result.dmarc.status.result`, `result.dmarc` is `false` | `result.dmarc?.result`, `result.dmarc` is `undefined` |
-| `result.dmarcSkipReason` | `result.dmarcSkipReason`, with the same values. |
-| `result.arc.status.result` | `result.arc.result` |
-| `result.arc.sealErrors` | `result.sealSkipReason` |
-| `trustReceived` | Not supported. Pass the address and HELO name from your SMTP server. |
-| `disableArc`, `disableDmarc`, `disableBimi` | Not needed: use `Arc.verify`, `Dmarc.check` or `Dkim.verify` directly for one check. BIMI isn't supported. |
-| `result.bimi` | Not supported. |
-| `result.receivedChain` | Not supported. |
-| `dkim2` | Not supported. |

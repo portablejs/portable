@@ -83,6 +83,9 @@ Password.needsRehash(stored, options) // false
 - Passwords are normalized to NFC. passlib and `node:crypto` hash the code units they're given, so the same password typed on two keyboards can fail to verify.
 - A password over 4096 bytes is rejected with `MaxBytesError`, as in passlib, before any hashing.
 - An unknown algorithm name throws `UnsupportedError`. pbkdf2 3.1.2 and earlier, in browsers, returned an all-zero key for algorithm names it didn't recognize, such as `'SHA256'`, so every password gave the same key (CVE-2025-6545).
+- pbkdf2-password and code that calls `node:crypto`'s `pbkdf2` store the salt and hash separately. To verify those hashes, build a PHC string from them with the digest and iterations they were made with, and drop the base64 padding: for pbkdf2-password's defaults (SHA-1, 10,000 iterations) that is `$pbkdf2$i=10000$<salt>$<hash>`. The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` for SHA-256 and `$pbkdf2-sha512$` for SHA-512, and a salt stored as text goes in as the base64 of its UTF-8 bytes. `needsRehash` returns `true` for such a string, so rehash on the next login.
+- Because string passwords are normalized to NFC, a hash made elsewhere from a password in another normalization form verifies only if you pass the original bytes as a `Uint8Array`.
+- passlib's `pbkdf2_sha256` can't read the `i=` form that `hash` writes. `verify` reads passlib's hashes, so moving from passlib works, but a Python service that keeps reading the table has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.
 
 ### Other algorithms
 
@@ -126,31 +129,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| Before | @portable/password |
-| --- | --- |
-| `crypto.pbkdf2Sync(password, salt, 600000, 32, 'sha256')` and storing salt and hash | `await Password.hash(password)` |
-| `crypto.timingSafeEqual(crypto.pbkdf2Sync(password, salt, ...), hash)` | `await Password.verify(password, stored)` |
-| `pbkdf2.pbkdf2(password, salt, iterations, keylen, digest, callback)` | `await Password.hash(password, { iterations })` |
-| `hasher({ password }, (err, pass, salt, hash) => ...)` (pbkdf2-password) | `await Password.hash(password)` |
-| `hasher({ password, salt }, ...)` and comparing `hash` | `await Password.verify(password, stored)` |
-| passlib `pbkdf2_sha256.hash(password)` | `await Password.hash(password)` |
-| passlib `pbkdf2_sha256.verify(password, stored)` | `await Password.verify(password, stored)` |
-| passlib `CryptContext.needs_update(stored)` | `Password.needsRehash(stored)` |
-
-To keep existing hashes, build a PHC string from the salt and hash you stored, with the digest and iterations they were made with. For pbkdf2-password's defaults (SHA-1, 10,000 iterations, base64 salt and hash):
-
-```ts
-const unpad = (b64: string) => b64.replace(/=+$/, '')
-const stored = `$pbkdf2$i=10000$${unpad(user.salt)}$${unpad(user.hash)}`
-await Password.verify(password, stored) // then rehash, since needsRehash(stored) is true
-```
-
-The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` and `$pbkdf2-sha512$`. For a salt you stored as text, rather than as random bytes, put the base64 of its UTF-8 bytes in the string.
-
-Two behaviors differ from these libraries:
-
-- String passwords are normalized to NFC. A hash made elsewhere from a password in another normalization form verifies only if you pass the original bytes as a `Uint8Array`. Most keyboards produce NFC, so this rarely matters.
-- passlib can't read the `i=` form that `hash` writes. `verify` reads passlib's hashes, so moving from passlib works, but a Python service that keeps reading the table has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.

@@ -68,6 +68,11 @@ These libraries each cover part of the job: random-int and lodash use `Math.rand
 - `string` accepts an alphabet of any size. crypto-random-string rejects more than 65,536 characters.
 - `string` throws for a length that is not a non-negative integer. nanoid truncates `2.1` to 2, and a size passed as a string once made it run out of memory ([nanoid#381](https://github.com/ai/nanoid/issues/381)).
 - `seeded` takes integer seeds, and different seeds give different sequences. seedrandom gives `'sf'` and `'sfsf'` the same sequence.
+- random-int's `randomInteger(max)` returns an integer from 0 to `max`. `int` has no one-argument form, so write `int(0, max)`.
+- `_.random(min, max, true)` returns a float in a range. `float` takes no bounds, so write `min + Random.float() * (max - min)`.
+- crypto-random-string's `type` option has no equivalent. Pass its characters as `alphabet`: `'distinguishable'`, for example, is `'CDEHKMPRTUWXY012458'`.
+- `seeded` uses xoshiro128**, so its sequences differ from seedrandom's. A string seed has to become an integer first, for example a hash of it.
+- `seeded` has no state export like seedrandom's `{ state: true }`. Call `seeded` with the same seed again to replay a sequence.
 
 Each benchmark makes 1,000 calls per sample.
 
@@ -96,30 +101,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| Upstream | @portable/random |
-| --- | --- |
-| `randomInteger(min, max)` | `Random.int(min, max)` |
-| `randomInteger(max)` | `Random.int(0, max)` |
-| `_.random(min, max)` | `Random.int(min, max)` |
-| `_.random(min, max, true)` | `min + Random.float() * (max - min)` |
-| `cryptoRandomString({ length, characters })` | `Random.string(length, { alphabet: characters })` |
-| `cryptoRandomString({ length, type: 'hex' })` | `Random.string(length, { alphabet: '0123456789abcdef' })` |
-| `cryptoRandomString({ length, type: 'numeric' })` | `Random.string(length, { alphabet: '0123456789' })` |
-| `cryptoRandomString({ length, type: 'alphanumeric' })` | `Random.string(length, { alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' })` |
-| `cryptoRandomString({ length, type: 'url-safe' })` | `Random.string(length, { alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~' })` |
-| `cryptoRandomString({ length, type: 'distinguishable' })` | `Random.string(length, { alphabet: 'CDEHKMPRTUWXY012458' })` |
-| `nanoid()` | `Random.string(21)` |
-| `customAlphabet(alphabet, size)()` | `Random.string(size, { alphabet })` |
-| nanoid's `random(n)` | `Random.bytes(n)` |
-| `_.shuffle(array)` | `Random.shuffle(array)` |
-| `_.sample(array)` | `Random.pick(array)`, which throws for an empty array |
-| `seedrandom(seed)()` | `Random.seeded(seed).float()`, with an integer seed |
-
-Three behaviors differ on purpose:
-
-- Reversed bounds, fractional bounds and lengths, and strings in place of numbers throw a `RangeError` instead of being swapped, truncated or coerced.
-- `seeded` uses xoshiro128**, so its sequences differ from seedrandom's. A string seed has to become an integer first, for example a hash of it.
-- `seeded` has no state export like seedrandom's `{ state: true }`. Call `seeded` with the same seed again to replay a sequence.

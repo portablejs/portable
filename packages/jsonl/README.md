@@ -47,6 +47,8 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - `EncoderStream` ends every line with `\n`. ndjson uses `os.EOL`, so on Windows it writes `\r\n`.
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
 - A whitespace-only line is skipped, where ndjson reports it as invalid.
+- stream-json's `jsonl/Parser` emits `{ key, value }` objects, and `DecoderStream` emits each value on its own.
+- stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse` yourself.
 
 <!-- bench:start -->
 | | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
@@ -66,23 +68,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| ndjson / stream-json | @portable/jsonl |
-| --- | --- |
-| `stream.pipe(ndjson.parse())` | `stream.pipeThrough(new Jsonl.DecoderStream())` |
-| `ndjson.parse({ strict: false })` | `new Jsonl.DecoderStream({ invalid: 'skip' })` |
-| `ndjson.stringify()` | `new Jsonl.EncoderStream()` |
-| stream-json `jsonl/Parser` | `new Jsonl.DecoderStream()`, which emits each value instead of `{ key, value }` |
-| stream-json `jsonl/Parser({ ignoreErrors: true })` | `new Jsonl.DecoderStream({ invalid: 'skip' })` |
-| stream-json `jsonl/Stringer` | `new Jsonl.EncoderStream()` |
-
-Deliberate differences from ndjson:
-
-- A `null` line is emitted as `null`. In ndjson's Node object stream it ends the stream.
-- A whitespace-only line is skipped. ndjson reports it as invalid.
-- `EncoderStream` always ends lines with `\n`. ndjson uses `os.EOL`, which is `\r\n` on Windows.
-- A circular structure fails the stream. ndjson writes `"[Circular ~]"` in its place.
-
-stream-json's `jsonl/Parser` can also replace a bad line with another value or pass its raw text on. To do that, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse` yourself.

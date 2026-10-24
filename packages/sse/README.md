@@ -140,32 +140,10 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
-
-| Before | @portable/sse |
-| --- | --- |
-| `body.pipeThrough(new TextDecoderStream()).pipeThrough(new EventSourceParserStream())` | `body.pipeThrough(new Sse.DecoderStream())` |
-| `createParser({ onEvent }).feed(text)` | `Sse.decode(text).forEach(onEvent)`, or `DecoderStream` for a stream |
-| `event.event ?? 'message'` | `event.event` |
-| `onId(id)` | `event.id` on every later event |
-| `onRetry(ms)` | `event.retry` on the next event |
-| `onComment`, `onError` | Not available. Comments and invalid lines are ignored, as `EventSource` does. |
-| `maxBufferSize` | `maxLength` |
-| `new EventSource(url)` from `eventsource` | `Sse.connect(url)` |
-| `new EventSource(url, { fetch: (u, init) => fetch(u, { ...init, headers }) })` | `Sse.connect(new Request(url, { headers }))` |
-| `es.close()` | `controller.abort()` with `signal`, or `reader.cancel()` |
-| `es.addEventListener('update', fn)` | Read the stream and check `event.event === 'update'`. |
-| `fetchEventSource(url, { method, headers, body, onmessage, signal })` | `Sse.connect(new Request(url, { method, headers, body }), { signal, reconnectIf: () => false })` |
-| fetch-event-source `onopen(response)` | `fetch: async (request) => { const response = await fetch(request); check(response); return response }` |
-| fetch-event-source `onerror(err)` returning an interval or throwing | `delay: ({ attempt, error }) => ms` and `reconnectIf` |
-| better-sse `session.push(data, event, id)` | `writer.write({ data: JSON.stringify(data), event, id })` into an `EncoderStream` |
-| better-sse keep-alive | `writer.write({ comment: '' })` on an interval |
-| hono `stream.writeSSE({ data, event, id, retry })` | `writer.write({ data, event, id, retry })` into an `EncoderStream` |
-
-Differences to know about:
-
+- eventsource-parser's `onComment` and `onError` callbacks have no equivalent. Comments and invalid lines are ignored, as `EventSource` ignores them.
 - An event without its closing blank line is dropped at the end of a stream, as `EventSource` does. Some servers omit the last blank line, and their last event is lost in both.
-- `connect` reconnects after a response that ends normally, like `EventSource`. fetch-event-source stops there instead. Pass `reconnectIf: () => false` for the same.
-- `connect` doesn't close the stream while a browser tab is hidden, unlike fetch-event-source's default.
+- `connect` reconnects after a response that ends normally, like `EventSource`. fetch-event-source stops there instead. Pass `reconnectIf: () => false` for the same behavior.
+- `connect` doesn't close the stream while a browser tab is hidden. fetch-event-source closes it by default.
 - `connect` doesn't set `cache: 'no-store'`, because Cloudflare Workers needs a compatibility flag for it. Set `cache` on the `Request` if you need it.
-- `data` is a string. Call `JSON.stringify` before writing, where better-sse does it for you.
+- `data` is a string, so call `JSON.stringify` before writing an object. better-sse's `session.push` serializes the data itself.
+- better-sse sends keep-alive comments itself. With `EncoderStream`, write `{ comment: '' }` on an interval.

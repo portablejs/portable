@@ -151,6 +151,10 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - Tags are grouped by IFD, so the thumbnail's `Orientation` is never reported as the image's (exif-parser #30).
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
 - Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
+- exif-parser files Exif IFD tags such as `DateTimeOriginal` under its interop section, and `parse` returns them in `exif`.
+- exif-parser converts `GPSLatitude` and `GPSLongitude` to decimal degrees. `parse` keeps the stored degrees, minutes and seconds in those tags and returns decimal degrees in `latitude` and `longitude`.
+- exif-parser leaves out binary tags unless you call `enableBinaryFields(true)`. `parse` always returns them, as `Uint8Array` views of the input.
+- exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)` and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
 
 <!-- bench:start -->
 | | @portable/exif | exif-parser | exif-reader | exifr |
@@ -170,31 +174,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| exif-parser | @portable/exif |
-| --- | --- |
-| `require('exif-parser').create(buffer).parse()` | `Exif.parse(bytes)` |
-| `result.tags.Make` | `result.ifd0.Make` |
-| `result.tags.DateTimeOriginal` (Unix seconds) | `Exif.parseDate(result.exif.DateTimeOriginal).getTime() / 1000` |
-| `result.tags.GPSLatitude` (decimal degrees) | `result.latitude` |
-| `result.getImageSize()` | `result.imageSize` |
-| `result.hasThumbnail()` | `result.thumbnail !== undefined` |
-| `result.getThumbnailOffset()`, `getThumbnailLength()` | `result.thumbnail.offset`, `result.thumbnail.length` |
-| `result.getThumbnailBuffer()` | `result.thumbnail.bytes` |
-| `result.getThumbnailSize()` | `Exif.parse(result.thumbnail.bytes).imageSize` |
-| `parser.enableBinaryFields(true)` | Always on. Binary tags are `Uint8Array`. |
-| `parser.enableTagNames(false)` | None. Unknown tags are keyed by hex id. |
-| `parser.enableSimpleValues(false)` | None. Values are always simplified, except dates and GPS tags, which keep their stored form. |
-| `parser.enableImageSize(false)`, `enableReturnTags(false)`, `enablePointers(true)` | None. |
-
-Behavior that differs from exif-parser:
-
-- Tags are grouped by IFD instead of merged into one object, so a thumbnail's `Orientation` is never reported as the image's.
-- Exif IFD tags are in `exif`. exif-parser filed them under the interop section.
-- SSHORT and SLONG values are signed. exif-parser read them as unsigned.
-- A missing `GPSLatitudeRef` or `GPSLongitudeRef` leaves the coordinate positive. exif-parser negated it.
-- Dates are strings, not seconds since the epoch read as UTC.
-- TIFF, PNG, WebP, HEIC and AVIF files are read, not only JPEG.
-- For truncated or broken data, `parse` returns the tags it could read instead of throwing a Node `RangeError`. A tag of unknown type is skipped instead of throwing `Invalid format`.

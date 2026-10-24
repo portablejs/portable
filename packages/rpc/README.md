@@ -294,35 +294,8 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 - Cancellation is an `AbortSignal` that reaches the method on the server. birpc and json-rpc-2.0 have timeouts but can't stop the remote work.
 - json-rpc-2.0 answers a batch of one request with a bare object and an all-notification batch with `null`, and treats a non-string method as unknown. `Rpc.provide` follows the specification in each case.
 - Methods are looked up only as own properties or class methods, never `Object.prototype` names, so `constructor` and `__proto__` can't be called remotely.
-
-## Migrating
-
-| Library | @portable/rpc |
-| --- | --- |
-| comlink `Comlink.expose(api, port)` | `Rpc.provide(Rpc.port(port), api)` |
-| comlink `Comlink.wrap<Api>(port)` | `Rpc.connect<Api>(Rpc.port(port))` |
-| comlink `Comlink.proxy(callback)` | `connect(transport, { methods })` on the other side, or return a stream |
-| comlink `Comlink.transfer(value, [buffer])` | Not supported. The identity codec structured-clones without transfer. |
-| penpal `connect({ messenger: new WindowMessenger({ remoteWindow, allowedOrigins: [origin] }), methods })` | `Rpc.connect<Api>(Rpc.window(remoteWindow, { origin }), { methods })` |
-| penpal `timeout: 5000` | `signal: AbortSignal.timeout(5000)` |
-| penpal `connection.destroy()` | Abort the `signal` passed to `connect`. |
-| post-me `ParentHandshake(messenger)` | `Rpc.connect(Rpc.window(...))`. The handshake runs inside the transport. |
-| birpc `createBirpc(functions, { post, on })` | `Rpc.connect<Remote>(transport, { methods: functions })` |
-| birpc `eventNames: ['bump']`, `rpc.bump.asEvent()` | `Rpc.notify(remote.bump, [])` |
-| birpc `$call('name', ...args)` | `Rpc.call(remote.name, args)` |
-| birpc `timeout: 1000` | `Rpc.call(remote.name, args, { signal: AbortSignal.timeout(1000) })` |
-| birpc `$close()` | Abort the `signal` passed to `connect`. |
-| birpc `serialize`/`deserialize` | `codec: { encode, decode }` |
-| json-rpc-2.0 `server.addMethod('echo', fn)` | A method on the `methods` object. |
-| json-rpc-2.0 `server.receive(request)` | `Rpc.provide(transport, api)` or `Rpc.handler(api)(request)` |
-| json-rpc-2.0 `client.request('echo', params)` | `Rpc.call(remote.echo, params)` |
-| json-rpc-2.0 `serverParams` | `Rpc.withContext(({ request }) => ...)` with `Rpc.handler` |
-| json-rpc-2.0 `JSONRPCErrorException(message, code, data)` | `new Rpc.RemoteError({ code, message, data })` |
-| tRPC `router({ add: procedure.query(...) })` | A plain object of functions, served with `Rpc.handler` and called with `Rpc.http<Api>`. |
-
-Behavior that differs:
-
-- Errors a method throws are sent with code `-32603`. json-rpc-2.0 uses `0`, and birpc and penpal send the error's name and stack too.
-- The codec must be able to encode a method's result. With `Rpc.json`, a `Date` arrives as a string and `undefined` as `null`. comlink, penpal, post-me and birpc structured-clone by default. Pass the identity codec over a port for the same behavior.
-- There are no middleware hooks (json-rpc-2.0's `applyMiddleware`, birpc's `onRequest` and `resolver`). Wrap the methods, the `fetch` passed to `Rpc.http`, or the transport instead.
-- `Rpc.window` takes one origin string. penpal also accepts a list of origins and regular expressions.
+- Errors a method throws are sent with code `-32603`. json-rpc-2.0 sends code `0`, and birpc and penpal also send the error's name and stack.
+- The codec must be able to encode a method's result. With `Rpc.json`, a `Date` arrives as a string and `undefined` as `null`. comlink, penpal, post-me and birpc structured-clone by default, so pass the identity codec over a port to get the same behavior.
+- comlink's `Comlink.transfer` has no equivalent. The identity codec structured-clones values without transferring them.
+- There are no middleware hooks like json-rpc-2.0's `applyMiddleware` or birpc's `onRequest` and `resolver`. Wrap the methods, the `fetch` passed to `Rpc.http` or the transport instead.
+- `Rpc.window` takes one origin string. penpal's `allowedOrigins` also accepts a list of origins and regular expressions.

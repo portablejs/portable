@@ -211,6 +211,14 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - rate-limiter-flexible's memory store sets one timer per key to delete it. `memoryStore()` sets none, so a limiter with many keys doesn't hold a timer for each.
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
 - On Node, `take` with the memory store ran within 10% of `RateLimiterMemory.consume` on allowed requests over 1000 keys (0.41 µs against 0.38 µs per call), and 4× faster on denied requests (0.21 µs against 0.90 µs), because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket was 4× faster than an `await`ed `take`.
+- rate-limiter-flexible's `duration` is in seconds, and limiter's `interval` also takes names such as `'second'`. `period` is always in milliseconds, so `duration: 1` becomes `period: 1000`.
+- `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
+- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
+- rate-limiter-flexible's `msBeforeNext` is set for allowed and denied requests. `retryAfter` is `0` for an allowed request, so compute the time until the allowance is full from `resetAt`.
+- rate-limiter-flexible's `reward`, `get` and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0` or with `cost: -burst`.
+- rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first denies.
+- The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
+- Bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
 
 <!-- bench:start -->
 | | @portable/rate-limit | rate-limiter-flexible | limiter |
@@ -232,31 +240,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| Upstream | @portable/rate-limit |
-| --- | --- |
-| `new RateLimiterMemory({ points: 10, duration: 1 })` | `RateLimit.create({ limit: 10, period: 1000 })` |
-| `new RateLimiterRedis({ storeClient, points, duration })` | `RateLimit.create({ limit, period, store })` with a store from [Stores](#stores) |
-| `await limiter.consume(key, points)` in `try`/`catch` | `const result = await limiter.take(key, { cost: points })`, then check `result.allowed` |
-| `res.remainingPoints`, `res.msBeforeNext` | `result.remaining`, and `result.retryAfter` (denied) or `result.resetAt.getTime() - Date.now()` (allowed) |
-| `limiter.reward(key, points)` | `limiter.take(key, { cost: -points })` |
-| `limiter.get(key)` | `limiter.take(key, { cost: 0 })` |
-| `limiter.delete(key)` | `limiter.take(key, { cost: -burst })` |
-| `keyPrefix: 'login'` | Prefix the key: `` limiter.take(`login:${ip}`) `` |
-| `execEvenly: true` | `burst: 1` |
-| `BurstyRateLimiter(limiter, burstLimiter)` | `burst` |
-| `blockDuration` | A second limiter with a long `period`, taken only when the first denies |
-| `new RateLimiter({ tokensPerInterval: 10, interval: 'second' })` (limiter) | `RateLimit.create({ limit: 10, period: 1000 })` |
-| `new TokenBucket({ bucketSize: 20, tokensPerInterval: 1, interval: 100 })` (limiter) | `RateLimit.create({ limit: 1, period: 100, burst: 20 })` |
-| `await limiter.removeTokens(n)` (waits) | `take`, then wait `retryAfter` and take again, such as with `@portable/timers` |
-| `new Bottleneck({ reservoir, reservoirIncreaseAmount, reservoirIncreaseInterval, reservoirIncreaseMaximum })` | `RateLimit.create({ limit: reservoirIncreaseAmount, period: reservoirIncreaseInterval, burst: reservoirIncreaseMaximum })` |
-| `schedule({ weight }, job)` (bottleneck) | `take(key, { cost: weight })` |
-
-Behavior that differs:
-
-- `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
-- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
-- The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
-- Bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.

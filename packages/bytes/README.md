@@ -90,16 +90,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch from uint8array-extras:
 
-| uint8array-extras / node:crypto | @portable/bytes |
-| --- | --- |
-| `uint8ArrayToHex(bytes)` | `Bytes.toHex(bytes)` |
-| `hexToUint8Array(hex)` | `Bytes.fromHex(hex)` |
-| `concatUint8Arrays(arrays)` | `Bytes.concat(arrays)` |
-| `concatUint8Arrays(arrays, totalLength)` | `Bytes.concat(arrays)`. The length is always the sum of the chunks. |
-| `areUint8ArraysEqual(a, b)` | `Bytes.equal(a, b)` |
-| `crypto.timingSafeEqual(a, b)` | `Bytes.timingSafeEqual(a, b)`. Returns `false` instead of throwing for different lengths. |
-| A function given an `ArrayBuffer` | Pass `new Uint8Array(buffer)`. |
-
-For base64 use [`@portable/base64`](../base64), and for random bytes `crypto.getRandomValues(new Uint8Array(n))`. uint8array-extras' string, base64, compare, `indexOf` and `getUintBE` functions have no equivalent here.
+- `concatUint8Arrays` takes an optional `totalLength`. `concat` has no such argument, and its result is always as long as the chunks together.
+- uint8array-extras' string, base64, compare, `indexOf` and `getUintBE` functions have no equivalent here. Use [`@portable/base64`](../base64) for base64.
