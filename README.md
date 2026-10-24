@@ -29,7 +29,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.valu
 await saving
 ```
 
-Strip photo GPS metadata before uploading:
+Strip photo metadata (GPS, camera, dates) before uploading:
 
 ```ts
 import * as Exif from '@portable/exif'
