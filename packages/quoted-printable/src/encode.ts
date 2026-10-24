@@ -58,11 +58,15 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
         {
           transform(chunk, controller) {
             const output = encoder.write(utf8.write(chunk), false)
-            if (output !== '') controller.enqueue(ascii.encode(output))
+            if (output !== '') {
+              controller.enqueue(ascii.encode(output))
+            }
           },
           flush(controller) {
             const output = encoder.write(utf8.flush(), true)
-            if (output !== '') controller.enqueue(ascii.encode(output))
+            if (output !== '') {
+              controller.enqueue(ascii.encode(output))
+            }
           },
         },
         options,
@@ -91,8 +95,12 @@ const LITERAL = 1
 const DEPENDS_ON_NEIGHBOURS = 2
 const kind = /* @__PURE__ */ (() => {
   const table = new Uint8Array(256)
-  for (let i = 0x20; i <= 0x7e; i++) table[i] = LITERAL
-  for (const b of [SPACE, TAB, HYPHEN, CR, LF]) table[b] = DEPENDS_ON_NEIGHBOURS
+  for (let i = 0x20; i <= 0x7e; i++) {
+    table[i] = LITERAL
+  }
+  for (const b of [SPACE, TAB, HYPHEN, CR, LF]) {
+    table[b] = DEPENDS_ON_NEIGHBOURS
+  }
   table[EQUALS] = ESCAPE
   return table
 })()
@@ -111,7 +119,9 @@ const hexValue = /* @__PURE__ */ (() => {
 // libqp prefers to break a line after one of these characters.
 const breakAfter = /* @__PURE__ */ (() => {
   const table = new Uint8Array(256)
-  for (const c of ' \t.,!?') table[c.charCodeAt(0)] = 1
+  for (const c of ' \t.,!?') {
+    table[c.charCodeAt(0)] = 1
+  }
   return table
 })()
 
@@ -125,10 +135,11 @@ type Encoder = { write: (bytes: Uint8Array, final: boolean) => string }
 // The unfinished line stays at the end of `out` until it is complete.
 function createEncoder(options: encode.Options): Encoder {
   const { binary = false, lineLength: lineLengthOption = 76 } = options
-  if (lineLengthOption !== false && (!Number.isInteger(lineLengthOption) || lineLengthOption < 4))
+  if (lineLengthOption !== false && (!Number.isInteger(lineLengthOption) || lineLengthOption < 4)) {
     throw new RangeError(
       `lineLength must be false or an integer of at least 4, got ${String(lineLengthOption)}.`,
     )
+  }
   const wrap = lineLengthOption !== false
   const lineLength = wrap ? lineLengthOption : Infinity
   const margin = wrap ? Math.floor(lineLengthOption / 3) : 0
@@ -145,10 +156,18 @@ function createEncoder(options: encode.Options): Encoder {
   // Whether the line ends at `end` with "=" and from `minDigits` to 2 hex digits.
   const endsInEscape = (end: number, minDigits: number) => {
     for (let digits = minDigits; digits <= 2; digits++) {
-      if (end - digits - 1 < lineStart || out[end - digits - 1] !== EQUALS) continue
+      if (end - digits - 1 < lineStart || out[end - digits - 1] !== EQUALS) {
+        continue
+      }
       let hex = true
-      for (let d = 1; d <= digits; d++) if (hexValue[out[end - d]!]! < 0) hex = false
-      if (hex) return true
+      for (let d = 1; d <= digits; d++) {
+        if (hexValue[out[end - d]!]! < 0) {
+          hex = false
+        }
+      }
+      if (hex) {
+        return true
+      }
     }
     return false
   }
@@ -160,11 +179,17 @@ function createEncoder(options: encode.Options): Encoder {
     while (cut - 3 >= lineStart && out[cut - 3] === EQUALS) {
       const hi = hexValue[out[cut - 2]!]!
       const lo = hexValue[out[cut - 1]!]!
-      if (hi < 0 || lo < 0) break
+      if (hi < 0 || lo < 0) {
+        break
+      }
       const code = (hi << 4) | lo
-      if (code < 0x80) break
+      if (code < 0x80) {
+        break
+      }
       cut -= 3
-      if (code >= 0xc0) break
+      if (code >= 0xc0) {
+        break
+      }
     }
     const s = lineStart
     const start = out[s] === EQUALS && out[s + 1] === 0x32 && out[s + 2] === 0x44 ? s + 3 : s
@@ -175,14 +200,22 @@ function createEncoder(options: encode.Options): Encoder {
     const s = lineStart
     let end = s + lineLength
     let k = end - 1
-    while (k >= end - margin && breakAfter[out[k]!] === 0) k--
-    if (k >= end - margin) end = k + 1
-    else if (endsInEscape(end, 0)) {
-      if (out[end - 1] === EQUALS) end -= 1
-      else if (out[end - 2] === EQUALS && hexValue[out[end - 1]!]! >= 0) end -= 2
+    while (k >= end - margin && breakAfter[out[k]!] === 0) {
+      k--
+    }
+    if (k >= end - margin) {
+      end = k + 1
+    } else if (endsInEscape(end, 0)) {
+      if (out[end - 1] === EQUALS) {
+        end -= 1
+      } else if (out[end - 2] === EQUALS && hexValue[out[end - 1]!]! >= 0) {
+        end -= 2
+      }
       end = trimUtf8Sequence(end)
     }
-    if (end === s + lineLength) end -= endsInEscape(end, 2) ? 3 : 1
+    if (end === s + lineLength) {
+      end -= endsInEscape(end, 2) ? 3 : 1
+    }
 
     out.copyWithin(end + 3, end, o)
     out[end] = EQUALS
@@ -205,19 +238,24 @@ function createEncoder(options: encode.Options): Encoder {
     while (
       o - lineStart - (crMayEndLine && o > lineStart && out[o - 1] === CR ? 1 : 0) >
       lineLength
-    )
+    ) {
       breakLine()
+    }
   }
 
   const encodeByte = (b: number, next: number) => {
     let escape = kind[b] === ESCAPE
     if (kind[b] === DEPENDS_ON_NEIGHBOURS) {
-      if (b === SPACE || b === TAB) escape = next < 0 || next === LF || next === CR
-      else if (b === HYPHEN)
+      if (b === SPACE || b === TAB) {
+        escape = next < 0 || next === LF || next === CR
+      } else if (b === HYPHEN) {
         escape =
           previous < 0 || previous === LF || previous === CR || (afterSoftBreak && o === lineStart)
-      else if (b === CR) escape = binary && next !== LF
-      else escape = binary && previous !== CR
+      } else if (b === CR) {
+        escape = binary && next !== LF
+      } else {
+        escape = binary && previous !== CR
+      }
     }
     previous = b
     if (escape) {
@@ -232,7 +270,9 @@ function createEncoder(options: encode.Options): Encoder {
         return
       }
     }
-    if (o - lineStart > lineLength) fitLine(true)
+    if (o - lineStart > lineLength) {
+      fitLine(true)
+    }
   }
 
   const takeOutput = () => {
@@ -248,7 +288,9 @@ function createEncoder(options: encode.Options): Encoder {
       parts = ''
       const length = bytes.length
       if (held >= 0) {
-        if (length === 0 && !final) return ''
+        if (length === 0 && !final) {
+          return ''
+        }
         encodeByte(held, length > 0 ? bytes[0]! : -1)
         held = -1
       }
@@ -265,9 +307,15 @@ function createEncoder(options: encode.Options): Encoder {
         if (kind[b] === LITERAL) {
           out[o++] = b
           previous = b
-          if (o - lineStart > lineLength) fitLine(false)
-        } else encodeByte(b, i + 1 < length ? bytes[i + 1]! : -1)
-        if (o > OUTPUT_CHUNK) takeOutput()
+          if (o - lineStart > lineLength) {
+            fitLine(false)
+          }
+        } else {
+          encodeByte(b, i + 1 < length ? bytes[i + 1]! : -1)
+        }
+        if (o > OUTPUT_CHUNK) {
+          takeOutput()
+        }
       }
       if (final) {
         fitLine(false)

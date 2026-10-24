@@ -190,7 +190,9 @@ describe('lodash debounce and throttle', () => {
       const { fn, calls } = recorder()
       const object = { funced: make(fn, 32) }
       void object.funced()
-      if (!isDebounce) void object.funced()
+      if (!isDebounce) {
+        void object.funced()
+      }
       await tick(64)
       expect(calls.map((call) => call.self)).toEqual(isDebounce ? [object] : [object, object])
     })
@@ -202,7 +204,9 @@ describe('lodash debounce and throttle', () => {
       const funced = make(function (this: unknown, chr: string) {
         seen.push([this, chr])
         const next = queue.shift()
-        if (next) void funced.call(next[0], next[1])
+        if (next) {
+          void funced.call(next[0], next[1])
+        }
       }, 32) satisfies Timers.Debounced<[string], void>
       const first = queue.shift()!
       void funced.call(first[0], first[1])
@@ -401,7 +405,9 @@ describe('promises', () => {
     let fail = true
     const debounced = Timers.debounce(async (value: number) => {
       await Timers.sleep(10)
-      if (fail) throw error
+      if (fail) {
+        throw error
+      }
       return value
     }, 50)
     const settled = Promise.allSettled(Array.from({ length: 10 }, (_, i) => debounced(i)))
@@ -473,7 +479,9 @@ describe('signal', () => {
     const debounced = Timers.debounce(fn, 100, { signal: controller.signal })
     const waiting = [debounced(1), debounced(2), debounced(3)]
     controller.abort()
-    for (const call of waiting) await expect(call).rejects.toMatchObject({ name: 'AbortError' })
+    for (const call of waiting) {
+      await expect(call).rejects.toMatchObject({ name: 'AbortError' })
+    }
     await tick(200)
     expect(calls).toHaveLength(0)
   })

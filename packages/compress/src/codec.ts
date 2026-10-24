@@ -83,7 +83,9 @@ export async function decode(
       new DecompressionStream(format),
       (chunk) => {
         length += chunk.byteLength
-        if (length > maxBytes) throw new MaxBytesError({ maxBytes })
+        if (length > maxBytes) {
+          throw new MaxBytesError({ maxBytes })
+        }
         chunks.push(chunk)
       },
       signal,
@@ -92,14 +94,17 @@ export async function decode(
   let firstError: unknown
   try {
     await decodeAll(data)
-    if (format === 'deflate' && (await needsTrailerCheck()))
+    if (format === 'deflate' && (await needsTrailerCheck())) {
       assertTrailer(
         data,
         chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
       )
+    }
     return concat(chunks, length)
   } catch (error) {
-    if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) throw error
+    if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) {
+      throw error
+    }
     firstError = error
   }
 
@@ -116,7 +121,9 @@ export async function decode(
     const end = (index: number): number => {
       while (ends.length <= index) {
         const next = nextMember(data, ends.length === 0 ? offset + 18 : ends.at(-1)! + 1)
-        if (next === -1) return -1
+        if (next === -1) {
+          return -1
+        }
         ends.push(next)
       }
       return ends[index]!
@@ -127,8 +134,12 @@ export async function decode(
         await decodeAll(data.subarray(offset, end))
         return 'at'
       } catch (error) {
-        if (error instanceof MaxBytesError || signal?.aborted) throw error
-        for (const chunk of chunks.splice(before)) length -= chunk.byteLength
+        if (error instanceof MaxBytesError || signal?.aborted) {
+          throw error
+        }
+        for (const chunk of chunks.splice(before)) {
+          length -= chunk.byteLength
+        }
         return error instanceof TruncatedError ? 'before' : 'after'
       }
     }
@@ -136,34 +147,52 @@ export async function decode(
     let high = -1
     for (let index = 0; high === -1; index = index * 2 + 1) {
       const position = end(index)
-      if (position === -1) high = ends.length
-      else {
+      if (position === -1) {
+        high = ends.length
+      } else {
         const result = await attempt(position)
-        if (result === 'at') return position
-        if (result === 'before') low = index + 1
-        else high = index
+        if (result === 'at') {
+          return position
+        }
+        if (result === 'before') {
+          low = index + 1
+        } else {
+          high = index
+        }
       }
     }
     while (low < high) {
       const index = (low + high) >>> 1
       const result = await attempt(ends[index]!)
-      if (result === 'at') return ends[index]!
-      if (result === 'before') low = index + 1
-      else high = index
+      if (result === 'at') {
+        return ends[index]!
+      }
+      if (result === 'before') {
+        low = index + 1
+      } else {
+        high = index
+      }
     }
     return -1
   }
 
   let offset = 0
-  for (let end = await memberEnd(0); end !== -1; end = await memberEnd(offset)) offset = end
-  if (offset === 0) throw firstError
+  for (let end = await memberEnd(0); end !== -1; end = await memberEnd(offset)) {
+    offset = end
+  }
+  if (offset === 0) {
+    throw firstError
+  }
   await decodeAll(data.subarray(offset))
   return concat(chunks, length)
 }
 
 function nextMember(data: Uint8Array, from: number): number {
-  for (let i = from; i + 2 < data.length; i++)
-    if (data[i] === 0x1f && data[i + 1] === 0x8b && data[i + 2] === 0x08) return i
+  for (let i = from; i + 2 < data.length; i++) {
+    if (data[i] === 0x1f && data[i + 1] === 0x8b && data[i + 2] === 0x08) {
+      return i
+    }
+  }
   return -1
 }
 
@@ -199,7 +228,9 @@ async function run(
         throw classify(error, closing)
       }
       signal?.throwIfAborted()
-      if (result.done) return
+      if (result.done) {
+        return
+      }
       try {
         onChunk(result.value)
       } catch (error) {

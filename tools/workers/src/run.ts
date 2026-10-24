@@ -66,11 +66,15 @@ const output = (await build({
 })) as Rollup.RollupOutput
 
 const chunks = output.output.filter((file): file is Rollup.OutputChunk => file.type === 'chunk')
-if (chunks.length !== 1) throw new Error(`Expected one chunk, got ${chunks.length}`)
+if (chunks.length !== 1) {
+  throw new Error(`Expected one chunk, got ${chunks.length}`)
+}
 
 // Line numbers in a workerd stack trace refer to the bundle. Set WORKERS_BUNDLE=<path> to save
 // the bundle and look them up.
-if (process.env.WORKERS_BUNDLE) writeFileSync(process.env.WORKERS_BUNDLE, chunks[0]!.code)
+if (process.env.WORKERS_BUNDLE) {
+  writeFileSync(process.env.WORKERS_BUNDLE, chunks[0]!.code)
+}
 const miniflare = new Miniflare({
   modules: true,
   script: chunks[0]!.code,
@@ -81,8 +85,9 @@ try {
   const response = await miniflare.dispatchFetch('https://worker.example/')
   const results = (await response.json()) as Record<string, string>
   for (const [name, result] of Object.entries(results)) {
-    if (result === 'pass') console.log(`✓ ${name}`)
-    else {
+    if (result === 'pass') {
+      console.log(`✓ ${name}`)
+    } else {
       failed++
       console.log(`✗ ${name}\n  ${result.replaceAll('\n', '\n  ')}`)
     }

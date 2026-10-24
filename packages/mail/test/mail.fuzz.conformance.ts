@@ -50,8 +50,9 @@ test('writes CRLF lines of at most 998 bytes, and headers that decode back to th
     fc.asyncProperty(message, async (message) => {
       const raw = await compose(message)
       expect(raw.replace(/\r\n/g, '')).not.toMatch(/[\r\n]/)
-      for (const line of raw.split('\r\n'))
+      for (const line of raw.split('\r\n')) {
         expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(998)
+      }
       expect(MimeHeaders.decodeWords(unfolded(raw, 'Subject') ?? '').trim()).toBe(
         message.subject.replace(/\r\n|\r|\n/g, ' ').trim(),
       )

@@ -56,7 +56,9 @@ describe('normalizeLabel', () => {
   })
 
   test('maps every encoding name to itself', () => {
-    for (const name of names) expect(Charset.normalizeLabel(name)).toBe(name)
+    for (const name of names) {
+      expect(Charset.normalizeLabel(name)).toBe(name)
+    }
   })
 
   test('follows WHATWG where a label means something else in iconv-lite', () => {
@@ -116,7 +118,9 @@ describe('normalizeLabel', () => {
 
 describe('load', () => {
   test('loads every supported encoding by name', async () => {
-    for (const name of names) expect((await Charset.load(name)).name).toBe(name)
+    for (const name of names) {
+      expect((await Charset.load(name)).name).toBe(name)
+    }
   })
 
   test('returns the same charset object as the subpath export', async () => {

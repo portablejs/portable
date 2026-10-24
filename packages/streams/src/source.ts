@@ -15,8 +15,9 @@ export function assertSource(source: unknown): void {
     typeof source === 'object' &&
     source !== null &&
     (Symbol.asyncIterator in source || Symbol.iterator in source || isReadableStream(source))
-  )
+  ) {
     return
+  }
   throw new TypeError('The source must be a ReadableStream, an async iterable or an iterable.')
 }
 
@@ -26,16 +27,22 @@ export async function forEach<value>(
   signal?: AbortSignal,
 ): Promise<void> {
   assertSource(source)
-  if (!isReadableStream(source)) return forEachIterable(source, onChunk, signal)
+  if (!isReadableStream(source)) {
+    return forEachIterable(source, onChunk, signal)
+  }
   const reader = source.getReader()
   const onAbort = () => void reader.cancel(signal!.reason).catch(() => {})
-  if (signal?.aborted) onAbort()
+  if (signal?.aborted) {
+    onAbort()
+  }
   signal?.addEventListener('abort', onAbort, { once: true })
   try {
     for (;;) {
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
-      if (done) return
+      if (done) {
+        return
+      }
       try {
         onChunk(value)
       } catch (error) {
@@ -55,7 +62,9 @@ async function forEachIterable<chunk>(
   signal: AbortSignal | undefined,
 ): Promise<void> {
   if (!signal) {
-    for await (const chunk of source) onChunk(chunk)
+    for await (const chunk of source) {
+      onChunk(chunk)
+    }
     return
   }
   const iterator =
@@ -72,10 +81,14 @@ async function forEachIterable<chunk>(
       signal.throwIfAborted()
       const result = await Promise.race([iterator.next(), aborted])
       done = result.done === true
-      if (!done) onChunk(await Promise.race([result.value, aborted]))
+      if (!done) {
+        onChunk(await Promise.race([result.value, aborted]))
+      }
     }
   } finally {
     signal.removeEventListener('abort', onAbort)
-    if (!done) void Promise.resolve(iterator.return?.()).catch(() => {})
+    if (!done) {
+      void Promise.resolve(iterator.return?.()).catch(() => {})
+    }
   }
 }

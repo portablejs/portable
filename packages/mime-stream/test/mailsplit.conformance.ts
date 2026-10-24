@@ -256,7 +256,9 @@ describe('message-splitter', () => {
 
   test('reads a header block of 100,000 lines', async () => {
     let header = ''
-    for (let i = 0; i < 100000; i++) header += `X-Header-${i}: some-random-value-${i}\r\n`
+    for (let i = 0; i < 100000; i++) {
+      header += `X-Header-${i}: some-random-value-${i}\r\n`
+    }
     header += 'From: sender@example.com\r\nSubject: message with large header\r\n\r\n'
     const chunks = await decode(header + 'Hello world!\r\n', { maxHeaderBytes: Infinity })
     expect(chunks[0]!.part.headers).toHaveLength(100002)
@@ -484,7 +486,9 @@ describe('message-splitter', () => {
 
   test('fails on more than maxParts parts', async () => {
     let message = 'Content-Type: multipart/mixed; boundary=B\r\n\r\n'
-    for (let i = 0; i < 12; i++) message += `--B\r\nContent-Type: text/plain\r\n\r\npart${i}\r\n`
+    for (let i = 0; i < 12; i++) {
+      message += `--B\r\nContent-Type: text/plain\r\n\r\npart${i}\r\n`
+    }
     message += '--B--\r\n'
     const error = await decode(message, { maxParts: 5 }).catch((error: unknown) => error)
     expect(error).toBeInstanceOf(MimeStream.MaxPartsError)
@@ -543,8 +547,9 @@ describe('message-splitter', () => {
       'Content-Type: multipart/mixed; boundary=BB\r\n\r\n--BB\r\nContent-Type: text/plain\r\n\r\n' +
       line +
       '\r\n--BB--\r\n'
-    for (const size of [7, 100, 1024, 65536])
+    for (const size of [7, 100, 1024, 65536]) {
       expect(bodies(await decode(chunked(binary(message), size)))).toEqual([line])
+    }
   })
 
   test('keeps reading parts after a nested embedded message ends', async () => {
@@ -660,8 +665,9 @@ describe('headers', () => {
         .pipeThrough(
           new TransformStream<MimeStream.Chunk, MimeStream.Chunk>({
             transform(chunk, controller) {
-              if (chunk.type === 'headers')
+              if (chunk.type === 'headers') {
                 chunk = { ...chunk, bytes: encode('X-Test: tere\r\n' + latin1(chunk.bytes)) }
+              }
               controller.enqueue(chunk)
             },
           }),

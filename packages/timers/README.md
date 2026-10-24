@@ -69,7 +69,9 @@ class HttpError extends Error {
 const response = await Timers.retry(
   async ({ signal }) => {
     const response = await fetch(url, { signal })
-    if (!response.ok) throw new HttpError(response)
+    if (!response.ok) {
+      throw new HttpError(response)
+    }
     return response
   },
   {
@@ -88,7 +90,9 @@ A `delay` function receives the error, so it can return the server's `Retry-Afte
 ```ts
 function retryAfter(response: Response): number | undefined {
   const value = response.headers.get('retry-after')
-  if (value === null) return undefined
+  if (value === null) {
+    return undefined
+  }
   const seconds = Number(value)
   const ms = Number.isNaN(seconds) ? Date.parse(value) - Date.now() : seconds * 1000
   return Number.isNaN(ms) ? undefined : ms
@@ -97,7 +101,9 @@ function retryAfter(response: Response): number | undefined {
 const response = await Timers.retry(
   async ({ signal }) => {
     const response = await fetch(url, { signal })
-    if (response.status === 429 || response.status === 503) throw new HttpError(response)
+    if (response.status === 429 || response.status === 503) {
+      throw new HttpError(response)
+    }
     return response
   },
   {

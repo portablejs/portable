@@ -68,14 +68,18 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
     const onAbort = () => stop(signal!.reason)
 
     const fail = (error: unknown): unknown => {
-      if (failure) return failure.error
+      if (failure) {
+        return failure.error
+      }
       failure = { error }
       signal?.removeEventListener('abort', onAbort)
       writable?.error(error)
       return error
     }
     const throwIfFailed = () => {
-      if (failure) throw failure.error
+      if (failure) {
+        throw failure.error
+      }
     }
 
     const writeQueue = async () => {
@@ -98,16 +102,21 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
       },
       async write(chunk) {
         throwIfFailed()
-        if (!isUint8Array(chunk)) throw stop(new TypeError('Expected a Uint8Array chunk.'))
-        if (checkTrailer)
+        if (!isUint8Array(chunk)) {
+          throw stop(new TypeError('Expected a Uint8Array chunk.'))
+        }
+        if (checkTrailer) {
           tail =
             chunk.byteLength >= 4
               ? chunk.slice(-4)
               : concat([tail, chunk], tail.byteLength + chunk.byteLength).slice(-4)
+        }
         queue.push(chunk)
         queued += chunk.byteLength
         writing ??= writeQueue()
-        if (queued >= maxQueued) await writing
+        if (queued >= maxQueued) {
+          await writing
+        }
         throwIfFailed()
       },
       async close() {
@@ -147,7 +156,9 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
             signal?.removeEventListener('abort', onAbort)
             return controller.close()
           }
-          if (checking) checksum = adler32(result.value, checksum)
+          if (checking) {
+            checksum = adler32(result.value, checksum)
+          }
           length += result.value.byteLength
           if (length > maxBytes) {
             const error = fail(new MaxBytesError({ maxBytes }))
@@ -164,7 +175,10 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
       { highWaterMark: 0 },
     )
 
-    if (signal?.aborted) onAbort()
-    else signal?.addEventListener('abort', onAbort, { once: true })
+    if (signal?.aborted) {
+      onAbort()
+    } else {
+      signal?.addEventListener('abort', onAbort, { once: true })
+    }
   }
 }

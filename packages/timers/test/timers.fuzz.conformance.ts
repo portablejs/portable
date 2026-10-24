@@ -39,7 +39,9 @@ test('retry makes at most attempts calls and returns the first success', async (
           async ({ attempt }) => {
             calls++
             expect(attempt).toBe(calls)
-            if (attempt <= failures) throw new Error(`failure ${attempt}`)
+            if (attempt <= failures) {
+              throw new Error(`failure ${attempt}`)
+            }
             return attempt
           },
           { attempts, delay: 0 },

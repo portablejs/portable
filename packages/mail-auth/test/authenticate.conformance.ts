@@ -165,8 +165,9 @@ describe('Authentication-Results', () => {
           sender: `${local}@mail.example.com`,
         },
       )
-      for (const line of result.headers.split('\r\n'))
+      for (const line of result.headers.split('\r\n')) {
         expect(encode(line).length, `${line.slice(0, 60)}`).toBeLessThanOrEqual(998)
+      }
       expect(resinfos(result.authResults).map((row) => row.split(' ')[0])).toEqual([
         'dkim=none',
         'spf=none',
@@ -198,8 +199,9 @@ describe('authservId', () => {
       '',
       'mx example',
       'mx.exämple',
-    ])
+    ]) {
       await expect(authenticate(message, {}, { authservId })).rejects.toBeInstanceOf(RangeError)
+    }
   })
 })
 
@@ -409,7 +411,9 @@ describe('input', () => {
     const bytes = encode(input)
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-        for (let i = 0; i < bytes.length; i += 7) controller.enqueue(bytes.subarray(i, i + 7))
+        for (let i = 0; i < bytes.length; i += 7) {
+          controller.enqueue(bytes.subarray(i, i + 7))
+        }
         controller.close()
       },
     })

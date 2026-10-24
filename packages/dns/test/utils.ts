@@ -47,12 +47,17 @@ export function doh(server: Server): {
     requests.push(request)
     const query = decodeQuery(request)
     const reply = server(query.questions[0]!, request)
-    if (reply === 'hang')
+    if (reply === 'hang') {
       return new Promise((_, reject) => {
         request.signal.addEventListener('abort', () => reject(request.signal.reason))
       })
-    if (reply instanceof Error) throw reply
-    if (reply instanceof Response) return reply
+    }
+    if (reply instanceof Error) {
+      throw reply
+    }
+    if (reply instanceof Response) {
+      return reply
+    }
     const body = reply instanceof Uint8Array ? reply : respond(query, reply)
     return new Response(body, { headers: { 'content-type': 'application/dns-message' } })
   }
@@ -78,7 +83,9 @@ export const recorded: ReadonlyMap<string, Uint8Array<ArrayBuffer>> = new Map(
 export function replay(server: 'cloudflare-dns.com' | 'dns.google'): Server {
   return (question) => {
     const bytes = recorded.get(`${question.name} ${question.type} ${server}`)
-    if (!bytes) throw new Error(`No recording for ${question.name} ${question.type}`)
+    if (!bytes) {
+      throw new Error(`No recording for ${question.name} ${question.type}`)
+    }
     return bytes
   }
 }

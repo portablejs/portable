@@ -62,9 +62,13 @@ function encoder(): Encoder {
       return write(codePoint, out)
     }
     let target = codePoint === 0x2212 ? 0xff0d : codePoint
-    if (target >= 0xff61 && target <= 0xff9f) target = halfToFull[target - 0xff61]!
+    if (target >= 0xff61 && target <= 0xff9f) {
+      target = halfToFull[target - 0xff61]!
+    }
     const code = jisCodes[target] ?? 0
-    if (code === 0) return codePoint
+    if (code === 0) {
+      return codePoint
+    }
     if (state !== jis) {
       escape(out, 0x42, 0x24)
       state = jis
@@ -77,7 +81,9 @@ function encoder(): Encoder {
   return {
     write,
     flush(out) {
-      if (state === ascii) return
+      if (state === ascii) {
+        return
+      }
       escape(out, 0x42)
       state = ascii
     },

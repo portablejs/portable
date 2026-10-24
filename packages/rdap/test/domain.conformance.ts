@@ -204,26 +204,29 @@ describe('names', () => {
       `${'a'.repeat(64)}.com`,
       `${'abcdefghi.'.repeat(26)}com`,
     ]
-    for (const name of names)
+    for (const name of names) {
       expect({ input: name, error: await rejection(Rdap.domain(name, { fetch })) }).toEqual({
         input: name,
         error: expect.any(Rdap.InvalidInputError),
       })
+    }
     expect(urls).toEqual([])
   })
 
   test('accepts labels of 63 characters and names up to 253', async () => {
     const { fetch, urls } = server()
     const long = `${'a'.repeat(63)}.${'abcdefghi.'.repeat(18)}com`
-    for (const name of [`${'a'.repeat(63)}.domain.co.uk`, long, 'my-hyphenated-domain.com'])
+    for (const name of [`${'a'.repeat(63)}.domain.co.uk`, long, 'my-hyphenated-domain.com']) {
       expect(await rejection(Rdap.domain(name, { fetch }))).toBeInstanceOf(Rdap.NotFoundError)
+    }
     expect(urls.filter((url) => url !== iana)).toHaveLength(3)
   })
 
   test('rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file', async () => {
     const { fetch, urls } = server()
-    for (const name of ['example.de', 'example.badger', 'example.invalid'])
+    for (const name of ['example.de', 'example.badger', 'example.invalid']) {
       expect(await rejection(Rdap.domain(name, { fetch }))).toBeInstanceOf(Rdap.UnsupportedError)
+    }
     expect(urls).toEqual([iana])
   })
 
@@ -603,7 +606,9 @@ describe('cancellation', () => {
     let release = () => {}
     const { fetch: inner, requests } = server()
     const fetch = async (request: Request) => {
-      if (request.url === iana) await new Promise<void>((resolve) => (release = resolve))
+      if (request.url === iana) {
+        await new Promise<void>((resolve) => (release = resolve))
+      }
       return inner(request)
     }
     const controller = new AbortController()

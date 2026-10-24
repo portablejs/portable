@@ -11,7 +11,9 @@ function hmacKey(password: string | Uint8Array): string {
   const bytes =
     typeof password === 'string' ? new TextEncoder().encode(password.normalize('NFC')) : password
   let end = bytes.length
-  while (end > 0 && bytes[end - 1] === 0) end--
+  while (end > 0 && bytes[end - 1] === 0) {
+    end--
+  }
   return bytes.subarray(0, end).join(',')
 }
 
@@ -51,8 +53,9 @@ test('a changed hash verifies to a boolean or throws a documented error', async 
       async (text) => {
         const verified = await outcomeAsync(errors, () => Password.verify('password', text))
         const rehash = outcome(errors, () => Password.needsRehash(text))
-        for (const result of [verified, rehash])
+        for (const result of [verified, rehash]) {
           expect('value' in result ? typeof result.value : 'error').toMatch(/^(?:boolean|error)$/)
+        }
       },
     ),
   )

@@ -96,13 +96,16 @@ export declare namespace verify {
  *   resolver: Dns.create(),
  *   signal: AbortSignal.timeout(10_000),
  * })
- * for (const r of results) console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
+ * for (const r of results) {
+ *   console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
+ * }
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result[]> {
   const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
-  if (typeof resolver?.resolveTxt !== 'function')
+  if (typeof resolver?.resolveTxt !== 'function') {
     throw new TypeError('options.resolver must have a resolveTxt method.')
+  }
   signal?.throwIfAborted()
   const { header, body } = await splitMessage(message)
   const fields = parseFields(toBinary(header))
@@ -117,7 +120,9 @@ export async function verify(message: Message, options: verify.Options): Promise
 
   const keys = new Map<string, Promise<KeyRecord>>()
   for (const { keyName } of pending) {
-    if (keys.has(keyName)) continue
+    if (keys.has(keyName)) {
+      continue
+    }
     const key = fetchKey(resolver, keyName, signal)
     key.catch(() => {})
     keys.set(keyName, key)
@@ -133,7 +138,9 @@ export async function verify(message: Message, options: verify.Options): Promise
 
   return Promise.all(
     signatures.map(async (signature) => {
-      if (signature.outcome) return signature.result
+      if (signature.outcome) {
+        return signature.result
+      }
       const { result } = signature
       const digest = digests.get(bodyHashKey(signature.body))!
       const { length } = signature.body
@@ -148,8 +155,12 @@ export async function verify(message: Message, options: verify.Options): Promise
             ? { result: 'fail' as const, reason: 'body hash did not verify' }
             : await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
       result.result = outcome.result
-      if (outcome.reason) result.reason = outcome.reason
-      if ('cause' in outcome) result.cause = outcome.cause
+      if (outcome.reason) {
+        result.reason = outcome.reason
+      }
+      if ('cause' in outcome) {
+        result.cause = outcome.cause
+      }
       return result
     }),
   )

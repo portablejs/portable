@@ -30,7 +30,9 @@ export type Keys = {
  * import * as WebPush from '@portable/web-push'
  *
  * const payload = new TextEncoder().encode(JSON.stringify(notification))
- * if (payload.byteLength > WebPush.maxPayloadBytes) throw new Error('notification too large')
+ * if (payload.byteLength > WebPush.maxPayloadBytes) {
+ *   throw new Error('notification too large')
+ * }
  * ```
  */
 export const maxPayloadBytes = 3993
@@ -76,14 +78,17 @@ export async function encrypt(options: encrypt.Options): Promise<Uint8Array<Arra
   signal?.throwIfAborted()
   const { userPublicKey, auth } = readKeys(subscription)
   const plaintext = toBytes(payload)
-  if (plaintext.length > maxPayloadBytes)
+  if (plaintext.length > maxPayloadBytes) {
     throw new InvalidInputError(
       `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
     )
+  }
   const salt = options.salt
     ? new Uint8Array(assertUint8Array(options.salt))
     : crypto.getRandomValues(new Uint8Array(16))
-  if (salt.length !== 16) throw new RangeError('salt must be 16 bytes')
+  if (salt.length !== 16) {
+    throw new RangeError('salt must be 16 bytes')
+  }
 
   const [userKey, keyPair] = await Promise.all([
     // WebKit imports a point that isn't on the curve, and ECDH with it then fails or returns
@@ -132,20 +137,27 @@ export async function encrypt(options: encrypt.Options): Promise<Uint8Array<Arra
 
 function readKeys(subscription: Pick<Subscription, 'keys'>) {
   const keys = subscription.keys
-  if (!keys || keys.p256dh == null || keys.auth == null)
+  if (!keys || keys.p256dh == null || keys.auth == null) {
     throw new InvalidInputError('A payload needs a subscription with p256dh and auth keys')
+  }
   const userPublicKey = readKey(keys.p256dh, 'p256dh')
-  if (userPublicKey.length !== 65 || userPublicKey[0] !== 4)
+  if (userPublicKey.length !== 65 || userPublicKey[0] !== 4) {
     throw new InvalidInputError('p256dh must be an uncompressed P-256 public key of 65 bytes')
+  }
   const auth = readKey(keys.auth, 'auth')
-  if (auth.length !== 16) throw new InvalidInputError('auth must be 16 bytes')
+  if (auth.length !== 16) {
+    throw new InvalidInputError('auth must be 16 bytes')
+  }
   return { userPublicKey, auth }
 }
 
 function readKey(key: unknown, name: string): Uint8Array<ArrayBuffer> {
-  if (typeof key !== 'string' && !isUint8Array(key))
+  if (typeof key !== 'string' && !isUint8Array(key)) {
     throw new InvalidInputError(`${name} must be a base64url string or a Uint8Array`)
-  if (isUint8Array(key)) return new Uint8Array(key)
+  }
+  if (isUint8Array(key)) {
+    return new Uint8Array(key)
+  }
   try {
     return new Uint8Array(
       Base64.decode(key.replaceAll('+', '-').replaceAll('/', '_'), { alphabet: 'base64url' }),
@@ -156,8 +168,12 @@ function readKey(key: unknown, name: string): Uint8Array<ArrayBuffer> {
 }
 
 function toBytes(payload: unknown): Uint8Array {
-  if (typeof payload === 'string') return utf8.encode(payload)
-  if (isUint8Array(payload)) return payload
+  if (typeof payload === 'string') {
+    return utf8.encode(payload)
+  }
+  if (isUint8Array(payload)) {
+    return payload
+  }
   throw new TypeError('payload must be a string or Uint8Array')
 }
 
@@ -186,16 +202,22 @@ const p256 = {
 
 /** Whether `point`, an uncompressed P-256 point, satisfies y² = x³ - 3x + b (mod p). */
 function isOnCurve(point: Uint8Array): boolean {
-  if (point.length !== 65 || point[0] !== 4) return false
+  if (point.length !== 65 || point[0] !== 4) {
+    return false
+  }
   const x = toBigInt(point.subarray(1, 33))
   const y = toBigInt(point.subarray(33))
   const { p, b } = p256
-  if (x >= p || y >= p) return false
+  if (x >= p || y >= p) {
+    return false
+  }
   return (y * y - (x * x * x - 3n * x + b)) % p === 0n
 }
 
 function toBigInt(bytes: Uint8Array): bigint {
   let n = 0n
-  for (const byte of bytes) n = (n << 8n) | BigInt(byte)
+  for (const byte of bytes) {
+    n = (n << 8n) | BigInt(byte)
+  }
   return n
 }

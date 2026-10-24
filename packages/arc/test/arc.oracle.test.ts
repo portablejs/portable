@@ -22,7 +22,9 @@ type Records = Record<string, string>
 const mailauthResolver = (records: Records) => {
   const resolver = resolverFrom(records)
   return async (name: string, type: string) => {
-    if (type !== 'TXT') throw Object.assign(new Error('ENOTFOUND'), { code: 'ENOTFOUND' })
+    if (type !== 'TXT') {
+      throw Object.assign(new Error('ENOTFOUND'), { code: 'ENOTFOUND' })
+    }
     return resolver.resolveTxt(name)
   }
 }
@@ -67,11 +69,17 @@ function generated(seed: number): string {
     `Subject: ${pick(values)}`,
     `Date: Thu, 1 Jan 2024 00:00:0${Math.floor(random() * 10)} +0000`,
   ]
-  if (random() < 0.5) fields.push(`DKIM-Signature: v=1; d=example.com; b=${pick(values)}`)
-  if (random() < 0.5) fields.push(`Received: from ${pick(values)}`)
+  if (random() < 0.5) {
+    fields.push(`DKIM-Signature: v=1; d=example.com; b=${pick(values)}`)
+  }
+  if (random() < 0.5) {
+    fields.push(`Received: from ${pick(values)}`)
+  }
   const lines: string[] = []
   const count = Math.floor(random() * 12)
-  for (let i = 0; i < count; i++) lines.push(pick(['', ' ', 'text', 'two  spaces', 'tab\t', '.']))
+  for (let i = 0; i < count; i++) {
+    lines.push(pick(['', ' ', 'text', 'two  spaces', 'tab\t', '.']))
+  }
   return binary(
     encode(`${fields.join('\r\n')}\r\n\r\n${lines.join('\r\n')}${pick(['', '\r\n', '\r\n\r\n'])}`),
   )
@@ -108,7 +116,9 @@ describe('mailauth agrees with verify', () => {
       const resolver = {
         async resolveTxt(name) {
           const record = suiteRecords[name.toLowerCase()]
-          if (record === undefined) throw Object.assign(new Error(name), { code: 'ENOTFOUND' })
+          if (record === undefined) {
+            throw Object.assign(new Error(name), { code: 'ENOTFOUND' })
+          }
           return [[record]]
         },
       } satisfies Arc.Resolver

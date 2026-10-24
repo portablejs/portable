@@ -6,7 +6,9 @@ const files = import.meta.glob<string>('./fixtures/*', { query: '?url&inline', i
 
 export async function fixture(name: string): Promise<Uint8Array<ArrayBuffer>> {
   const load = files[`./fixtures/${name}`]
-  if (!load) throw new Error(`No fixture ${name}`)
+  if (!load) {
+    throw new Error(`No fixture ${name}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
@@ -18,7 +20,9 @@ export const encode = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder
 /** Text with one character per byte. */
 export const binary = (bytes: Uint8Array): string => {
   let text = ''
-  for (const byte of bytes) text += String.fromCharCode(byte)
+  for (const byte of bytes) {
+    text += String.fromCharCode(byte)
+  }
   return text
 }
 
@@ -72,7 +76,9 @@ export function resolverFrom(
       const value = Object.hasOwn(records, name.toLowerCase())
         ? records[name.toLowerCase()]
         : undefined
-      if (value === undefined) throw dnsError('ENOTFOUND', name)
+      if (value === undefined) {
+        throw dnsError('ENOTFOUND', name)
+      }
       return [[pairs.has(value) ? (await keyPair(value)).record : value]]
     },
   }
@@ -102,7 +108,9 @@ export function keyPair(name: string): Promise<KeyPair> {
   return pair
 }
 
-for (const name of ['k1', 'k2', 'att', 'victim', 'small', 'ed1']) pairs.set(name, createPair(name))
+for (const name of ['k1', 'k2', 'att', 'victim', 'small', 'ed1']) {
+  pairs.set(name, createPair(name))
+}
 
 async function createPair(name: string): Promise<KeyPair> {
   const file = fixtureKeys[name]
@@ -170,14 +178,20 @@ export function relaxedHeader(field: string): string {
 
 export function relaxedBody(body: string): string {
   const lines = body.split('\r\n').map((line) => line.replace(/[ \t]+/g, ' ').replace(/ $/, ''))
-  while (lines.length && lines.at(-1) === '') lines.pop()
+  while (lines.length && lines.at(-1) === '') {
+    lines.pop()
+  }
   return lines.length ? lines.join('\r\n') + '\r\n' : ''
 }
 
 export function simpleBody(body: string): string {
   let result = body
-  while (result.endsWith('\r\n\r\n')) result = result.slice(0, -2)
-  if (result === '') return '\r\n'
+  while (result.endsWith('\r\n\r\n')) {
+    result = result.slice(0, -2)
+  }
+  if (result === '') {
+    return '\r\n'
+  }
   return result.endsWith('\r\n') ? result : result + '\r\n'
 }
 
@@ -185,8 +199,11 @@ function splitReference(message: string): { fields: string[]; body: string } {
   const end = message.indexOf('\r\n\r\n')
   const fields: string[] = []
   for (const line of message.slice(0, end).split('\r\n')) {
-    if (/^[ \t]/.test(line) && fields.length) fields[fields.length - 1] += '\r\n' + line
-    else fields.push(line)
+    if (/^[ \t]/.test(line) && fields.length) {
+      fields[fields.length - 1] += '\r\n' + line
+    } else {
+      fields.push(line)
+    }
   }
   return { fields, body: message.slice(end + 4) }
 }
@@ -244,7 +261,9 @@ export async function makeAms(message: string, options: AmsOptions): Promise<str
     const candidates = fields.filter((f) => fieldName(f) === name.toLowerCase())
     used[name] = (used[name] ?? 0) + 1
     const selected = candidates[candidates.length - used[name]]
-    if (selected) data += (headerCanon === 'relaxed' ? relaxedHeader(selected) : selected) + '\r\n'
+    if (selected) {
+      data += (headerCanon === 'relaxed' ? relaxedHeader(selected) : selected) + '\r\n'
+    }
   }
   data += headerCanon === 'relaxed' ? relaxedHeader(field) : field
   return field + (await signReference(alg, data, options.keyName))
@@ -278,8 +297,9 @@ export async function makeAs(
   const field = foldReference(`ARC-Seal: ${tags}`)
   const scope = options.cv.toLowerCase() === 'fail' || options.ownScope ? [] : previous
   let data = ''
-  for (const set of scope)
+  for (const set of scope) {
     data += `${relaxedHeader(set.aar)}\r\n${relaxedHeader(set.ams)}\r\n${relaxedHeader(set.as)}\r\n`
+  }
   data += `${relaxedHeader(current.aar)}\r\n${relaxedHeader(current.ams)}\r\n${relaxedHeader(field)}`
   return field + (await signReference(alg, data, options.keyName))
 }

@@ -45,8 +45,12 @@ function modelDecode(input: Uint8Array): Uint8Array {
   for (let i = 0; i < input.length; i++) {
     if (isWhitespace(input[i])) {
       let end = i
-      while (isWhitespace(input[end])) end++
-      if (!isBreak(input[end])) stripped.push(...input.subarray(i, end))
+      while (isWhitespace(input[end])) {
+        end++
+      }
+      if (!isBreak(input[end])) {
+        stripped.push(...input.subarray(i, end))
+      }
       i = end - 1
       continue
     }
@@ -55,7 +59,9 @@ function modelDecode(input: Uint8Array): Uint8Array {
   const joined: number[] = []
   for (let i = 0; i < stripped.length; i++) {
     if (stripped[i] === 0x3d) {
-      if (i === stripped.length - 1) continue
+      if (i === stripped.length - 1) {
+        continue
+      }
       if (stripped[i + 1] === 0x0a) {
         i++
         continue
@@ -100,8 +106,9 @@ describe('encode() without line breaks', () => {
 
   test('produces well-formed output', () => {
     const next = random(103)
-    for (let run = 0; run < runs; run++)
+    for (let run = 0; run < runs; run++) {
       expect(problems(encode(randomBytes(next, 300), { lineLength: false }))).toEqual([])
+    }
   })
 
   test('keeps a printable ASCII character literal unless it is "=", a hyphen at a line start or trailing whitespace', () => {
@@ -110,7 +117,9 @@ describe('encode() without line breaks', () => {
     for (let run = 0; run < runs; run++) {
       let input = ''
       const length = Math.floor(next() * 20)
-      for (let i = 0; i < length; i++) input += units[Math.floor(next() * units.length)]!
+      for (let i = 0; i < length; i++) {
+        input += units[Math.floor(next() * units.length)]!
+      }
       const expected = input
         .replaceAll('=', '=3D')
         .replace(/^-/, '=2D')
@@ -168,8 +177,9 @@ describe('encode() with line breaks', () => {
     const next = random(110)
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 300)
-      for (const lineLength of lineLengths)
+      for (const lineLength of lineLengths) {
         expect(decode(encode(input, { lineLength }))).toEqual(input)
+      }
     }
   })
 
@@ -177,9 +187,11 @@ describe('encode() with line breaks', () => {
     const next = random(111)
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 300)
-      for (const lineLength of lineLengths)
-        for (const line of linesOf(encode(input, { lineLength })))
+      for (const lineLength of lineLengths) {
+        for (const line of linesOf(encode(input, { lineLength }))) {
           expect(line.length).toBeLessThanOrEqual(lineLength)
+        }
+      }
     }
   })
 
@@ -187,8 +199,9 @@ describe('encode() with line breaks', () => {
     const next = random(112)
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 300)
-      for (const lineLength of lineLengths)
+      for (const lineLength of lineLengths) {
         expect(problems(encode(input, { lineLength }))).toEqual([])
+      }
     }
   })
 
@@ -198,10 +211,11 @@ describe('encode() with line breaks', () => {
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 300)
       const unwrapped = encode(input, { lineLength: false })
-      for (const lineLength of lineLengths)
+      for (const lineLength of lineLengths) {
         expect(unescapeHyphens(encode(input, { lineLength }).replaceAll('=\r\n', ''))).toBe(
           unescapeHyphens(unwrapped),
         )
+      }
     }
   })
 
@@ -210,8 +224,9 @@ describe('encode() with line breaks', () => {
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 30)
       const unwrapped = encode(input, { lineLength: false })
-      for (const lineLength of lineLengths.filter((length) => length >= unwrapped.length))
+      for (const lineLength of lineLengths.filter((length) => length >= unwrapped.length)) {
         expect(encode(input, { lineLength })).toBe(unwrapped)
+      }
     }
   })
 
@@ -233,9 +248,11 @@ describe('encode() with line breaks', () => {
     const next = random(116)
     for (let run = 0; run < runs; run++) {
       const input = randomBytes(next, 300)
-      for (const lineLength of lineLengths)
-        for (const line of encode(input, { lineLength }).split('=\r\n'))
+      for (const lineLength of lineLengths) {
+        for (const line of encode(input, { lineLength }).split('=\r\n')) {
           expect(line).not.toMatch(/[=][0-9A-F]?$/)
+        }
+      }
     }
   })
 
@@ -243,9 +260,11 @@ describe('encode() with line breaks', () => {
     const next = random(117)
     for (let run = 0; run < runs; run++) {
       const input = randomText(next, 120)
-      for (const lineLength of [16, 20, 40, 76, 100])
-        for (const line of encode(input, { lineLength }).split('=\r\n'))
+      for (const lineLength of [16, 20, 40, 76, 100]) {
+        for (const line of encode(input, { lineLength }).split('=\r\n')) {
           expect(isUtf8(decode(line))).toBe(true)
+        }
+      }
     }
   })
 })

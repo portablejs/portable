@@ -7,7 +7,9 @@ import { encode, fixture, fixtures } from './utils.js'
 const errors = [ImageSize.InvalidInputError, ImageSize.TruncatedError, ImageSize.UnsupportedError]
 const files: Uint8Array[] = []
 beforeAll(async () => {
-  for (const path of fixtures) files.push(await fixture(path))
+  for (const path of fixtures) {
+    files.push(await fixture(path))
+  }
 }, 60_000)
 
 // The start of each format's header, so that format's parser reads the random bytes after it.

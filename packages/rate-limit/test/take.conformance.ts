@@ -13,7 +13,9 @@ describe('take', () => {
   test('counts remaining down to 0', async () => {
     const limiter = RateLimit.create({ limit: 3, period: 1000 })
     const remaining = []
-    for (let i = 0; i < 4; i++) remaining.push((await limiter.take('a')).remaining)
+    for (let i = 0; i < 4; i++) {
+      remaining.push((await limiter.take('a')).remaining)
+    }
     expect(remaining).toEqual([2, 1, 0, 0])
   })
 

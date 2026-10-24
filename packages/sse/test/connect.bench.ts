@@ -39,7 +39,9 @@ test('connect: one response of 2000 events', async ({ bench }) => {
           fetch: (url) => fetch(new Request(url)),
         })
         source.onmessage = () => {
-          if (++count < chunks.length) return
+          if (++count < chunks.length) {
+            return
+          }
           source.close()
           resolve()
         }

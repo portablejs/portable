@@ -33,7 +33,9 @@ function instanceOf(field: Field): number | undefined {
     field.name === 'arc-authentication-results'
       ? resultsInstance.exec(value(field))?.[1]
       : parseTags(value(field)).tags.get('i')
-  if (text === undefined || !/^[0-9]{1,2}$/.test(text)) return undefined
+  if (text === undefined || !/^[0-9]{1,2}$/.test(text)) {
+    return undefined
+  }
   const instance = Number(text)
   return instance >= 1 && instance <= maxInstance ? instance : undefined
 }
@@ -45,24 +47,38 @@ function instanceOf(field: Field): number | undefined {
 export function readChain(fields: readonly Field[]): ArcSet[] | string {
   const byInstance = new Map<number, Partial<Record<string, Field>>>()
   for (const field of fields) {
-    if (!isArcField(field)) continue
+    if (!isArcField(field)) {
+      continue
+    }
     const instance = instanceOf(field)
-    if (instance === undefined) return `invalid ${short[field.name]} instance`
+    if (instance === undefined) {
+      return `invalid ${short[field.name]} instance`
+    }
     const set = byInstance.get(instance) ?? {}
-    if (set[field.name]) return `i=${instance} has more than one ${short[field.name]}`
+    if (set[field.name]) {
+      return `i=${instance} has more than one ${short[field.name]}`
+    }
     set[field.name] = field
     byInstance.set(instance, set)
   }
   const sets: ArcSet[] = []
   for (let instance = 1; instance <= byInstance.size; instance++) {
     const set = byInstance.get(instance)
-    if (!set) return `i=${instance} is missing`
+    if (!set) {
+      return `i=${instance} is missing`
+    }
     const results = set['arc-authentication-results']
     const signature = set['arc-message-signature']
     const seal = set['arc-seal']
-    if (!results) return `i=${instance} has no aar`
-    if (!signature) return `i=${instance} has no ams`
-    if (!seal) return `i=${instance} has no as`
+    if (!results) {
+      return `i=${instance} has no aar`
+    }
+    if (!signature) {
+      return `i=${instance} has no ams`
+    }
+    if (!seal) {
+      return `i=${instance} has no as`
+    }
     sets.push({ instance, results, signature, seal })
   }
   return sets
@@ -77,7 +93,9 @@ export function newest(fields: readonly Field[]): { instance: number; cv: string
   let instance = 0
   let cv: string | undefined
   for (const field of fields) {
-    if (!isArcField(field)) continue
+    if (!isArcField(field)) {
+      continue
+    }
     const text =
       field.name === 'arc-authentication-results'
         ? anyResultsInstance.exec(value(field))?.[1]
@@ -87,7 +105,9 @@ export function newest(fields: readonly Field[]): { instance: number; cv: string
       instance = number
       cv = undefined
     }
-    if (number > 0 && number === instance && field.name === 'arc-seal') cv = chainValidation(field)
+    if (number > 0 && number === instance && field.name === 'arc-seal') {
+      cv = chainValidation(field)
+    }
   }
   return { instance, cv }
 }

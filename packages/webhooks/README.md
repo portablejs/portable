@@ -22,7 +22,9 @@ export default {
       // handle event
       return new Response(null, { status: 204 })
     } catch (error) {
-      if (error instanceof Webhooks.VerificationError) return new Response(null, { status: 400 })
+      if (error instanceof Webhooks.VerificationError) {
+        return new Response(null, { status: 400 })
+      }
       throw error
     }
   },
@@ -96,10 +98,12 @@ const acme: Webhooks.Scheme = {
   parse(headers) {
     const signature = headers.get('acme-signature')
     const timestamp = headers.get('acme-timestamp')
-    if (!signature || !timestamp)
+    if (!signature || !timestamp) {
       throw new Webhooks.VerificationError({ code: 'missing-header', message: 'Missing Acme headers' })
-    if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp))
+    }
+    if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp)) {
       throw new Webhooks.VerificationError({ code: 'malformed-header', message: 'Malformed Acme headers' })
+    }
     return {
       signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
       timestamp: new Date(Number(timestamp) * 1000),

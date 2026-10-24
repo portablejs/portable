@@ -11,8 +11,9 @@ afterEach(() => {
 })
 
 function expectSlidingWindow(starts: readonly number[], cap: number, interval: number) {
-  for (let i = 0; i + cap < starts.length; i++)
+  for (let i = 0; i + cap < starts.length; i++) {
     expect(starts[i + cap]! - starts[i]!).toBeGreaterThanOrEqual(interval)
+  }
 }
 
 function recorder() {
@@ -172,10 +173,12 @@ describe('rate limit', () => {
   })
 
   test('rejects invalid interval and intervalCap values', () => {
-    for (const interval of [-1, Number.NaN, Infinity])
+    for (const interval of [-1, Number.NaN, Infinity]) {
       expect(() => Queue.create({ interval })).toThrow(RangeError)
-    for (const intervalCap of [0, 1.5, -1, Number.NaN])
+    }
+    for (const intervalCap of [0, 1.5, -1, Number.NaN]) {
       expect(() => Queue.create({ interval: 10, intervalCap })).toThrow(RangeError)
+    }
     expect(() => Queue.create({ interval: 0, intervalCap: 5 })).not.toThrow()
     expect(() => Queue.create({ interval: 3e9, intervalCap: Infinity })).not.toThrow()
   })

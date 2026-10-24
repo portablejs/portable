@@ -166,7 +166,9 @@ const flagNames = Object.keys(flagBits) as (keyof typeof flagBits)[]
 function recordLength(record: ResourceRecord): number {
   if (record.type === 'OPT') {
     let length = 11
-    for (const option of record.options ?? none) length += ednsOptionLength(option)
+    for (const option of record.options ?? none) {
+      length += ednsOptionLength(option)
+    }
     return length
   }
   return nameLength(record.name) + 10 + codecFor(record.type).length(record.data)
@@ -174,14 +176,18 @@ function recordLength(record: ResourceRecord): number {
 
 function sectionLength(records: readonly ResourceRecord[]): number {
   let length = 0
-  for (const record of records) length += recordLength(record)
+  for (const record of records) {
+    length += recordLength(record)
+  }
   return length
 }
 
 /** Returns the uncompressed length of `packet`, checking every name and record on the way. */
 function encodingLength(packet: Packet): number {
   let length = 12
-  for (const q of packet.questions ?? none) length += nameLength(q.name) + 4
+  for (const q of packet.questions ?? none) {
+    length += nameLength(q.name) + 4
+  }
   return (
     length +
     sectionLength(packet.answers ?? none) +
@@ -198,7 +204,9 @@ function finishRdata(w: Writer, start: number): void {
 
 function putRecord(w: Writer, record: ResourceRecord): void {
   if (record.type === 'OPT') {
-    if ((record.name ?? '.') !== '.') throw new InvalidInputError('An OPT record name must be ".".')
+    if ((record.name ?? '.') !== '.') {
+      throw new InvalidInputError('An OPT record name must be ".".')
+    }
     putU8(w, 0)
     putU16(w, 41)
     putU16(w, record.udpPayloadSize ?? 4096)
@@ -206,7 +214,9 @@ function putRecord(w: Writer, record: ResourceRecord): void {
     putU8(w, record.version ?? 0)
     putU16(w, record.dnssecOk ? TOP_BIT : 0)
     const start = (w.offset += 2)
-    for (const option of record.options ?? none) putEdnsOption(w, option)
+    for (const option of record.options ?? none) {
+      putEdnsOption(w, option)
+    }
     finishRdata(w, start)
     return
   }
@@ -254,8 +264,9 @@ export declare namespace encode {
 export function encode(packet: Packet, options: encode.Options = {}): Uint8Array<ArrayBuffer> {
   const tcp = options.framing === 'tcp'
   const length = encodingLength(packet) + (tcp ? 2 : 0)
-  if (tcp && length > 0xffff + 2)
+  if (tcp && length > 0xffff + 2) {
     throw new InvalidInputError('A TCP message is limited to 65535 bytes.')
+  }
   const w = {
     bytes: new Uint8Array(length),
     offset: tcp ? 2 : 0,
@@ -268,8 +279,14 @@ export function encode(packet: Packet, options: encode.Options = {}): Uint8Array
   const additionals = packet.additionals ?? none
   let bits =
     (opcodes.value(packet.opcode ?? 'QUERY') << 11) | rcodes.value(packet.rcode ?? 'NOERROR')
-  if (packet.type === 'response') bits |= TOP_BIT
-  for (const flag of flagNames) if (packet.flags?.[flag]) bits |= flagBits[flag]
+  if (packet.type === 'response') {
+    bits |= TOP_BIT
+  }
+  for (const flag of flagNames) {
+    if (packet.flags?.[flag]) {
+      bits |= flagBits[flag]
+    }
+  }
   putU16(w, packet.id ?? 0)
   putU16(w, bits)
   putU16(w, questions.length)
@@ -281,9 +298,15 @@ export function encode(packet: Packet, options: encode.Options = {}): Uint8Array
     putU16(w, types.value(q.type))
     putU16(w, classes.value(q.class ?? 'IN') | (q.qu ? TOP_BIT : 0))
   }
-  for (const record of answers) putRecord(w, record)
-  for (const record of authorities) putRecord(w, record)
-  for (const record of additionals) putRecord(w, record)
+  for (const record of answers) {
+    putRecord(w, record)
+  }
+  for (const record of authorities) {
+    putRecord(w, record)
+  }
+  for (const record of additionals) {
+    putRecord(w, record)
+  }
   if (tcp) {
     const size = w.offset - 2
     w.bytes[0] = size >>> 8
@@ -303,21 +326,27 @@ function readRecord(r: Reader): DecodedResourceRecord {
   const name = readName(r, end)
   const type = types.name(u16(r, end))
   if (type === 'OPT') {
-    if (name !== '.') throw new InvalidInputError('An OPT record name must be ".".')
+    if (name !== '.') {
+      throw new InvalidInputError('An OPT record name must be ".".')
+    }
     const udpPayloadSize = u16(r, end)
     const extendedRcode = u8(r, end)
     const version = u8(r, end)
     const dnssecOk = (u16(r, end) & TOP_BIT) !== 0
     const rdEnd = rdataEnd(r)
     const options: EdnsOption[] = []
-    while (r.offset < rdEnd) options.push(within('OPT', () => readEdnsOption(r, rdEnd)))
+    while (r.offset < rdEnd) {
+      options.push(within('OPT', () => readEdnsOption(r, rdEnd)))
+    }
     return { type, name, udpPayloadSize, extendedRcode, version, dnssecOk, options }
   }
   const klass = u16(r, end)
   const ttl = u32(r, end)
   const rdEnd = rdataEnd(r)
   const data = within(type, () => codecFor(type).read(r, rdEnd))
-  if (r.offset !== rdEnd) throw new InvalidInputError(`${type} record data has trailing bytes.`)
+  if (r.offset !== rdEnd) {
+    throw new InvalidInputError(`${type} record data has trailing bytes.`)
+  }
   return {
     type,
     name,
@@ -351,19 +380,28 @@ export declare namespace decode {
  *   body: query,
  * })
  * const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
- * for (const answer of packet.answers) if (answer.type === 'A') console.log(answer.data)
+ * for (const answer of packet.answers) {
+ *   if (answer.type === 'A') {
+ *     console.log(answer.data)
+ *   }
+ * }
  * ```
  */
 export function decode(bytes: Uint8Array, options: decode.Options = {}): DecodedPacket {
   assertUint8Array(bytes)
   if (options.framing === 'tcp') {
-    if (bytes.length < 2) throw new TruncatedError('The TCP length prefix is 2 bytes.')
+    if (bytes.length < 2) {
+      throw new TruncatedError('The TCP length prefix is 2 bytes.')
+    }
     const length = (bytes[0]! << 8) | bytes[1]!
-    if (bytes.length < length + 2)
+    if (bytes.length < length + 2) {
       throw new TruncatedError(`The message is ${length} bytes, and ${bytes.length - 2} arrived.`)
+    }
     bytes = bytes.subarray(2, 2 + length)
   }
-  if (bytes.length < 12) throw new TruncatedError('A DNS header is 12 bytes.')
+  if (bytes.length < 12) {
+    throw new TruncatedError('A DNS header is 12 bytes.')
+  }
   const r = { bytes, offset: 0 } satisfies Reader
   const end = bytes.length
   const id = u16(r, end)
@@ -378,7 +416,9 @@ export function decode(bytes: Uint8Array, options: decode.Options = {}): Decoded
   }
   const section = (count: number) => {
     const records: DecodedResourceRecord[] = []
-    for (let i = 0; i < count; i++) records.push(readRecord(r))
+    for (let i = 0; i < count; i++) {
+      records.push(readRecord(r))
+    }
     return records
   }
   return {

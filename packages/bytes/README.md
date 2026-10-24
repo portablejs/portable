@@ -19,7 +19,9 @@ Bytes.concat([header, body]) // a new Uint8Array
 Bytes.equal(a, b)
 
 const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload))
-if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) throw new Error('Bad signature')
+if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
+  throw new Error('Bad signature')
+}
 ```
 
 `toHex` and `fromHex` call `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.

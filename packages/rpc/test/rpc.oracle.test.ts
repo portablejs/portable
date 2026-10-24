@@ -49,7 +49,9 @@ function upstreamServer(): JSONRPCServer {
     },
   }
   for (const [name, fn] of Object.entries(methods)) {
-    if (typeof fn !== 'function') continue
+    if (typeof fn !== 'function') {
+      continue
+    }
     server.addMethod(name, (params: unknown) =>
       Array.isArray(params) ? fn(...params) : params === undefined ? fn() : fn(params),
     )
@@ -99,10 +101,13 @@ async function viaHandler(text: string): Promise<string | undefined> {
     }),
   )
   const body = await response.text()
-  if (response.status === 204 && body === '') return undefined
+  if (response.status === 204 && body === '') {
+    return undefined
+  }
   const type = response.headers.get('content-type') ?? ''
-  if (response.status !== 200 || !type.startsWith('application/json'))
+  if (response.status !== 200 || !type.startsWith('application/json')) {
     return `${response.status} ${type} ${body}`
+  }
   return body
 }
 
@@ -407,7 +412,9 @@ function randomMessages(seed: number): string {
         return { jsonrpc: '2.0', id: id(), method: pick(['missing', 'toString', 'math.sub']) }
       case 6: {
         const params = Array.of<unknown>(int(1000), string())
-        if (next() < 0.5) params.push(pick([0, false, 'd', { a: [1] }]))
+        if (next() < 0.5) {
+          params.push(pick([0, false, 'd', { a: [1] }]))
+        }
         return { jsonrpc: '2.0', id: id(), method: 'fail', params }
       }
       case 7:
@@ -420,7 +427,9 @@ function randomMessages(seed: number): string {
         return { jsonrpc: '2.0', id: id(), method: 'echo', params: { value: value(0) } }
     }
   }
-  if (next() < 0.25) return JSON.stringify(message())
+  if (next() < 0.25) {
+    return JSON.stringify(message())
+  }
   return JSON.stringify(Array.from({ length: int(9) }, message))
 }
 
@@ -430,7 +439,9 @@ test('random messages and batches match JSONRPCServer, with one-response batches
     const text = randomMessages(seed)
     let expected = await viaUpstream(text)
     const batch = text.startsWith('[') && text !== '[]'
-    if (batch && expected?.startsWith('{')) expected = `[${expected}]`
+    if (batch && expected?.startsWith('{')) {
+      expected = `[${expected}]`
+    }
     expect({ seed, text, ours: await send(text) }).toEqual({
       seed,
       text,
@@ -457,8 +468,11 @@ function capture() {
 /** Replaces ids with 0, keeping key order, so ids from different counters compare equal. */
 function withoutId(text: string): string {
   const parsed = JSON.parse(text)
-  for (const message of Array.isArray(parsed) ? parsed : [parsed])
-    if ('id' in message) message.id = 0
+  for (const message of Array.isArray(parsed) ? parsed : [parsed]) {
+    if ('id' in message) {
+      message.id = 0
+    }
+  }
   return JSON.stringify(parsed)
 }
 
@@ -479,7 +493,9 @@ describe('client sends the same bytes as JSONRPCClient', () => {
       remote.math.add(1, 2),
       remote.echo('é😀\n'),
     ]
-    for (const call of calls) Promise.resolve(call).catch(noop)
+    for (const call of calls) {
+      Promise.resolve(call).catch(noop)
+    }
     await Rpc.notify(remote.log, ['x'])
     await Rpc.notify((remote as any).log, { level: 'info' })
     await settle()
@@ -492,8 +508,9 @@ describe('client sends the same bytes as JSONRPCClient', () => {
       client.request('nothing', undefined),
       client.request('math.add', [1, 2]),
       client.request('echo', ['é😀\n']),
-    ])
+    ]) {
       Promise.resolve(call).catch(noop)
+    }
     client.notify('log', ['x'])
     client.notify('log', { level: 'info' })
 
@@ -527,7 +544,9 @@ describe('client sends the same bytes as JSONRPCClient', () => {
       },
     })
     const calls = [remote.add(1, 2), remote.echo({ a: [1] }), Rpc.notify(remote.log, ['x'])]
-    for (const call of calls) call.catch(noop)
+    for (const call of calls) {
+      call.catch(noop)
+    }
     await Promise.allSettled(calls)
     await remote.nothing().catch(noop)
 
@@ -552,7 +571,9 @@ function toUpstream() {
   const writable = new WritableStream<unknown>({
     async write(text) {
       const response = await upstream.receiveJSON(text as string)
-      if (response !== null) input.enqueue(JSON.stringify(response))
+      if (response !== null) {
+        input.enqueue(JSON.stringify(response))
+      }
     },
   })
   const controller = new AbortController()
@@ -586,7 +607,9 @@ describe('client against JSONRPCServer', () => {
         expect(await Rpc.call(remote.subtract, [{ minuend: 5, subtrahend: 2 }])).toBe(3)
         expect(await remote.nothing()).toBeNull()
         expect(await remote.math.add(2, 2)).toBe(4)
-        for (const [, value] of jsonValues) expect(await remote.echo(value)).toEqual(value)
+        for (const [, value] of jsonValues) {
+          expect(await remote.echo(value)).toEqual(value)
+        }
       })
 
       test('matches concurrent responses to their calls', async () => {
@@ -684,7 +707,9 @@ describe('JSONRPCClient against our server', () => {
       const response = await handle(
         new Request('https://rpc.test/', { method: 'POST', body: JSON.stringify(payload) }),
       )
-      if (response.status === 200) client.receive(await response.json())
+      if (response.status === 200) {
+        client.receive(await response.json())
+      }
     }) satisfies JSONRPCClient
     return client
   }
@@ -700,8 +725,9 @@ describe('JSONRPCClient against our server', () => {
         expect(await client.request('subtract', { minuend: 5, subtrahend: 2 })).toBe(3)
         expect(await client.request('nothing', undefined)).toBeNull()
         expect(await client.request('math.add', [2, 2])).toBe(4)
-        for (const [, value] of jsonValues)
+        for (const [, value] of jsonValues) {
           expect(await client.request('echo', [value])).toEqual(value)
+        }
       })
 
       test('rejects with JSONRPCErrorException carrying our code and data', async () => {
@@ -757,7 +783,9 @@ function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
 describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
   const streaming = {
     async *count(n: number) {
-      for (let i = 0; i < n; i++) yield { i, text: 'é😀'.repeat(i % 4), nested: [i, { n: i }] }
+      for (let i = 0; i < n; i++) {
+        yield { i, text: 'é😀'.repeat(i % 4), nested: [i, { n: i }] }
+      }
     },
     add: (a: number, b: number) => a + b,
   }
@@ -775,8 +803,11 @@ describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
           const body = new ReadableStream<Uint8Array>({
             pull(controller) {
               const chunk = chunks.shift()
-              if (chunk) controller.enqueue(chunk)
-              else controller.close()
+              if (chunk) {
+                controller.enqueue(chunk)
+              } else {
+                controller.close()
+              }
             },
           })
           return new Response(body, { headers: response.headers })
@@ -784,7 +815,9 @@ describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
       })
       const items: unknown[] = []
       const counted = (async () => {
-        for await (const item of remote.count(25)) items.push(item)
+        for await (const item of remote.count(25)) {
+          items.push(item)
+        }
       })()
       const [, sum] = await Promise.all([counted, remote.add(seed, 1)])
       expect(items).toEqual(expected(25))

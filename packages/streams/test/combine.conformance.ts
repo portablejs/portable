@@ -200,7 +200,11 @@ describe('merge-stream', () => {
     const reader = merge([failing.stream, fineStream]).getReader()
     let thrown: unknown
     try {
-      for (;;) if ((await reader.read()).done) break
+      for (;;) {
+        if ((await reader.read()).done) {
+          break
+        }
+      }
     } catch (e) {
       thrown = e
     }
@@ -268,7 +272,9 @@ describe('concat', () => {
     let finalized = false
     async function* gen() {
       try {
-        for (;;) yield 1
+        for (;;) {
+          yield 1
+        }
       } finally {
         finalized = true
       }
@@ -327,7 +333,9 @@ describe('limitBytes', () => {
     const output: Uint8Array[] = []
     const reader = source.pipeThrough(limitBytes(5)).getReader()
     const error = await (async () => {
-      for (;;) output.push((await reader.read()).value!)
+      for (;;) {
+        output.push((await reader.read()).value!)
+      }
     })().catch((e) => e)
     expect(error).toBeInstanceOf(MaxBytesError)
     expect(output.map((chunk) => chunk.length)).toEqual([1, 2])

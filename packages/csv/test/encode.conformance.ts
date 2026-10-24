@@ -121,8 +121,9 @@ describe('csv-stringify', () => {
     })
 
     test('rejects a delimiter that is empty, longer than one character, a line break or the quote', () => {
-      for (const delimiter of ['', '::', '\n', '"'])
+      for (const delimiter of ['', '::', '\n', '"']) {
         expect(() => Csv.encode([], { delimiter })).toThrow(RangeError)
+      }
     })
   })
 

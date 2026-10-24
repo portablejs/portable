@@ -34,8 +34,9 @@ export async function splitMessage(input: Message): Promise<{ header: Uint8Array
   let length = 0
   for (;;) {
     const chunk = await next()
-    if (!chunk)
+    if (!chunk) {
       return { header: header.subarray(0, length), body: { read: next, cancel: source.cancel } }
+    }
     if (length + chunk.length > header.length) {
       const grown = new Uint8Array(Math.max(header.length * 2, length + chunk.length))
       grown.set(header.subarray(0, length))
@@ -44,14 +45,18 @@ export async function splitMessage(input: Message): Promise<{ header: Uint8Array
     header.set(chunk, length)
     const end = findEmptyLine(header, Math.max(0, length - 3), length + chunk.length)
     length += chunk.length
-    if (end < 0) continue
+    if (end < 0) {
+      continue
+    }
     const rest = header.slice(end + 2, length)
     let pending: Uint8Array | undefined = rest.length > 0 ? rest : undefined
     return {
       header: header.subarray(0, end),
       body: {
         read() {
-          if (!pending) return next()
+          if (!pending) {
+            return next()
+          }
           const chunk = pending
           pending = undefined
           return Promise.resolve(chunk)
@@ -63,15 +68,21 @@ export async function splitMessage(input: Message): Promise<{ header: Uint8Array
 }
 
 function findEmptyLine(bytes: Uint8Array, from: number, to: number): number {
-  if (from === 0 && to >= 2 && bytes[0] === CR && bytes[1] === LF) return 0
+  if (from === 0 && to >= 2 && bytes[0] === CR && bytes[1] === LF) {
+    return 0
+  }
   for (let i = bytes.indexOf(LF, from); i >= 0 && i + 2 < to; i = bytes.indexOf(LF, i + 1)) {
-    if (bytes[i - 1] === CR && bytes[i + 1] === CR && bytes[i + 2] === LF) return i + 1
+    if (bytes[i - 1] === CR && bytes[i + 1] === CR && bytes[i + 2] === LF) {
+      return i + 1
+    }
   }
   return -1
 }
 
 function readChunks(input: Message): Body {
-  if (typeof input === 'string') input = new TextEncoder().encode(input)
+  if (typeof input === 'string') {
+    input = new TextEncoder().encode(input)
+  }
   if (isUint8Array(input)) {
     let chunk: Uint8Array | undefined = input
     return {
@@ -86,14 +97,19 @@ function readChunks(input: Message): Body {
       },
     }
   }
-  if (!(input instanceof ReadableStream))
+  if (!(input instanceof ReadableStream)) {
     throw new TypeError('Expected the message as a ReadableStream, a Uint8Array or a string.')
+  }
   const reader = input.getReader()
   return {
     async read() {
       const { done, value } = await reader.read()
-      if (done) return undefined
-      if (!isUint8Array(value)) throw new TypeError('Expected Uint8Array chunks.')
+      if (done) {
+        return undefined
+      }
+      if (!isUint8Array(value)) {
+        throw new TypeError('Expected Uint8Array chunks.')
+      }
       return value
     },
     cancel: () => reader.cancel(),
@@ -106,11 +122,18 @@ function normalizeLineEnds(
   let previous = 0
   return async () => {
     let chunk = await next()
-    while (chunk?.length === 0) chunk = await next()
-    if (!chunk) return undefined
+    while (chunk?.length === 0) {
+      chunk = await next()
+    }
+    if (!chunk) {
+      return undefined
+    }
     let bare = 0
-    for (let i = chunk.indexOf(LF); i >= 0; i = chunk.indexOf(LF, i + 1))
-      if ((i === 0 ? previous : chunk[i - 1]) !== CR) bare++
+    for (let i = chunk.indexOf(LF); i >= 0; i = chunk.indexOf(LF, i + 1)) {
+      if ((i === 0 ? previous : chunk[i - 1]) !== CR) {
+        bare++
+      }
+    }
     const last = chunk[chunk.length - 1]!
     if (bare === 0) {
       previous = last
@@ -120,7 +143,9 @@ function normalizeLineEnds(
     let o = 0
     let start = 0
     for (let i = chunk.indexOf(LF); i >= 0; i = chunk.indexOf(LF, i + 1)) {
-      if ((i === 0 ? previous : chunk[i - 1]) === CR) continue
+      if ((i === 0 ? previous : chunk[i - 1]) === CR) {
+        continue
+      }
       out.set(chunk.subarray(start, i), o)
       o += i - start
       out[o++] = CR

@@ -48,12 +48,16 @@ const text = (bytes: Uint8Array) => new TextDecoder().decode(bytes)
 function equal(actual: unknown, expected: unknown) {
   const a = JSON.stringify(actual)
   const b = JSON.stringify(expected)
-  if (a !== b) throw new Error(`Expected ${b}, got ${a}`)
+  if (a !== b) {
+    throw new Error(`Expected ${b}, got ${a}`)
+  }
 }
 
 function through(chunks: readonly unknown[], ...transforms: TransformStream[]): Promise<unknown[]> {
   let stream: ReadableStream = Streams.fromIterable(chunks)
-  for (const transform of transforms) stream = stream.pipeThrough(transform)
+  for (const transform of transforms) {
+    stream = stream.pipeThrough(transform)
+  }
   return Streams.toArray(stream)
 }
 
@@ -73,7 +77,9 @@ async function mailResolver() {
   }
   const resolveTxt = async (name: string) => {
     const record = records[name]
-    if (record === undefined) throw Object.assign(new Error(name), { code: 'ENOTFOUND' })
+    if (record === undefined) {
+      throw Object.assign(new Error(name), { code: 'ENOTFOUND' })
+    }
     return [[record]]
   }
   const none = async (name: string): Promise<never> => {
@@ -148,7 +154,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
     } catch {
       threw = true
     }
-    if (!threw && Exif.strip(jpeg).length !== jpeg.length) throw new Error('strip changed a JPEG')
+    if (!threw && Exif.strip(jpeg).length !== jpeg.length) {
+      throw new Error('strip changed a JPEG')
+    }
   },
   idna() {
     equal(Idna.toAscii('Bücher.example'), 'xn--bcher-kva.example')
@@ -191,7 +199,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
         text: 'Hello.',
       }),
     )
-    if (!raw.includes('Subject: tere')) throw new Error(raw)
+    if (!raw.includes('Subject: tere')) {
+      throw new Error(raw)
+    }
   },
   async mailAuth() {
     const { privateKey, resolver } = await mailResolver()
@@ -224,7 +234,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
     const signed = await OAuth1.sign(new Request('https://api.example.com/'), {
       consumer: { key: 'key', secret: 'secret' },
     })
-    if (!signed.headers.get('authorization')?.startsWith('OAuth ')) throw new Error('unsigned')
+    if (!signed.headers.get('authorization')?.startsWith('OAuth ')) {
+      throw new Error('unsigned')
+    }
   },
   async password() {
     const stored = await Password.hash('hunter2', { iterations: 100_000 })
@@ -243,7 +255,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
   },
   random() {
     const n = Random.int(1, 6)
-    if (n < 1 || n > 6) throw new Error(String(n))
+    if (n < 1 || n > 6) {
+      throw new Error(String(n))
+    }
     equal(Random.string(21).length, 21)
   },
   async rateLimit() {
@@ -256,8 +270,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
     const result = await Rdap.domain('example.com', {
       fetch: async (request) => {
         const url = new URL(request.url)
-        if (url.hostname === 'data.iana.org')
+        if (url.hostname === 'data.iana.org') {
           return Response.json({ services: [[['com'], ['https://rdap.example/']]] })
+        }
         return Response.json(json, { headers: { 'content-type': 'application/rdap+json' } })
       },
     })
@@ -272,7 +287,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
     port2.close()
   },
   smtp() {
-    if (typeof Smtp.send !== 'function') throw new Error('Smtp.send is missing')
+    if (typeof Smtp.send !== 'function') {
+      throw new Error('Smtp.send is missing')
+    }
   },
   async spf() {
     const { resolver } = await mailResolver()
@@ -299,7 +316,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
     let calls = 0
     const value = await Timers.retry(
       () => {
-        if (++calls < 3) throw new Error('again')
+        if (++calls < 3) {
+          throw new Error('again')
+        }
         return 'ok'
       },
       { delay: 1 },
@@ -328,9 +347,13 @@ export const checks: Record<string, () => Promise<void> | void> = {
       },
     }
     const body = await WebPush.encrypt({ subscription, payload: 'hello' })
-    if (body.length < 86) throw new Error(`body is ${body.length} bytes`)
+    if (body.length < 86) {
+      throw new Error(`body is ${body.length} bytes`)
+    }
     const vapid = await WebPush.generateVapidKeys()
-    if (typeof vapid.publicKey !== 'string') throw new Error('no VAPID public key')
+    if (typeof vapid.publicKey !== 'string') {
+      throw new Error('no VAPID public key')
+    }
   },
   async webhooks() {
     const body = '{"id":1}'

@@ -36,20 +36,29 @@ function packIndex(entries: Index, start = 0): string {
   let run = 0
   let skip = 0
   const flush = () => {
-    if (run) values.push(run * 4 + 2)
-    if (skip) values.push(skip * 4 + 3)
+    if (run) {
+      values.push(run * 4 + 2)
+    }
+    if (skip) {
+      values.push(skip * 4 + 3)
+    }
     run = skip = 0
   }
   for (let pointer = start; pointer < entries.length; pointer++) {
     const codePoint = entries[pointer] ?? null
     if (codePoint === null) {
-      if (run) flush()
+      if (run) {
+        flush()
+      }
       skip++
       continue
     }
-    if (skip) flush()
-    if (codePoint === previous + 1) run++
-    else {
+    if (skip) {
+      flush()
+    }
+    if (codePoint === previous + 1) {
+      run++
+    } else {
       flush()
       const delta = codePoint - previous
       values.push(delta >= 0 ? delta * 4 : -delta * 4 + 1)
@@ -115,7 +124,9 @@ for (const { name, labels: list } of encodings.flatMap((group) => group.encoding
   for (const label of list) {
     const key = canonicalize(label)
     const existing = labels.get(key)
-    if (existing && existing !== name) throw new Error(`${label} collides with ${existing}`)
+    if (existing && existing !== name) {
+      throw new Error(`${label} collides with ${existing}`)
+    }
     labels.set(key, name)
   }
 }
@@ -145,13 +156,17 @@ iconv.encode('', 'utf8')
 const iconvOnly: string[] = []
 for (const key of Object.keys(iconv.encodings)) {
   let codec = key
-  while (typeof iconv.encodings[codec] === 'string') codec = iconv.encodings[codec] as string
+  while (typeof iconv.encodings[codec] === 'string') {
+    codec = iconv.encodings[codec] as string
+  }
   const name = iconvCodecs[codec] ?? labels.get(codec)
   if (!name) {
     iconvOnly.push(key)
     continue
   }
-  if (!labels.has(key)) labels.set(key, name)
+  if (!labels.has(key)) {
+    labels.set(key, name)
+  }
 }
 
 const sorted = [...labels].sort(([a], [b]) => (a < b ? -1 : 1))

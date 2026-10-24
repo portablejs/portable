@@ -23,7 +23,9 @@ export declare namespace RemoteError {
  * try {
  *   await remote.user('x')
  * } catch (error) {
- *   if (error instanceof Rpc.RemoteError && error.code === 404) return null
+ *   if (error instanceof Rpc.RemoteError && error.code === 404) {
+ *     return null
+ *   }
  *   throw error
  * }
  * ```
@@ -53,7 +55,9 @@ export class RemoteError extends Errors.BaseError {
  * try {
  *   await remote.save(doc)
  * } catch (error) {
- *   if (error instanceof Rpc.TransportError) return retryLater(doc)
+ *   if (error instanceof Rpc.TransportError) {
+ *     return retryLater(doc)
+ *   }
  *   throw error
  * }
  * ```

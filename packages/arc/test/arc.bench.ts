@@ -21,7 +21,9 @@ const large = encode(head + body.repeat(Math.ceil(250_000 / body.length)))
 
 const chunked = (bytes: Uint8Array): Uint8Array[] => {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += 65536) chunks.push(bytes.subarray(i, i + 65536))
+  for (let i = 0; i < bytes.length; i += 65536) {
+    chunks.push(bytes.subarray(i, i + 65536))
+  }
   return chunks
 }
 
@@ -52,7 +54,9 @@ test('verifies a 250 KB message with two ARC sets within 25% of mailauth', async
   const result = await bench.compare(
     bench('@portable/arc', async () => {
       const { result } = await Arc.verify(stream(twiceChunks), { resolver })
-      if (result !== 'pass') throw new Error(result)
+      if (result !== 'pass') {
+        throw new Error(result)
+      }
     }),
     bench('mailauth', async () => {
       const verified = await dkimVerify(Buffer.from(twice), {
@@ -63,7 +67,9 @@ test('verifies a 250 KB message with two ARC sets within 25% of mailauth', async
         resolver: mailauthResolver,
         strict: true,
       })
-      if (status.result !== 'pass') throw new Error(status.result)
+      if (status.result !== 'pass') {
+        throw new Error(status.result)
+      }
     }),
   )
   expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/arc'), { delta: 0.25 })

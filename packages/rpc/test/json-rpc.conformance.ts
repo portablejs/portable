@@ -90,7 +90,9 @@ describe('server', () => {
 
   test('does not slow down with many methods', async () => {
     const api: Record<string, () => number> = {}
-    for (let i = 0; i < 20000; i++) api[`method${i}`] = () => i
+    for (let i = 0; i < 20000; i++) {
+      api[`method${i}`] = () => i
+    }
     const remote = pair(api) as any
     expect(await remote.method19999()).toBe(19999)
   })

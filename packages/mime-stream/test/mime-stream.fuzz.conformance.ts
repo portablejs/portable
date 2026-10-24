@@ -77,9 +77,9 @@ function structure(chunks: readonly MimeStream.Chunk[]) {
   const parts: MimeStream.Part[] = []
   for (const chunk of chunks) {
     const last = joined.at(-1)
-    if (last && parts.at(-1) === chunk.part && last.type === chunk.type)
+    if (last && parts.at(-1) === chunk.part && last.type === chunk.type) {
       last.text += latin1(chunk.bytes)
-    else {
+    } else {
       parts.push(chunk.part)
       joined.push({
         type: chunk.type,
@@ -109,7 +109,9 @@ async function check(
 ) {
   const read = async (input: Uint8Array | Uint8Array[]) => {
     const result = await outcomeAsync(errors, () => decode(input, options))
-    if (!('value' in result)) return result
+    if (!('value' in result)) {
+      return result
+    }
     const joined = latin1(new Uint8Array(result.value.flatMap((chunk) => [...chunk.bytes])))
     return { joined, structure: structure(result.value) }
   }

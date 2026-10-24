@@ -50,5 +50,7 @@ export function assertTrailer(tail: Uint8Array, checksum: number): void {
           (tail[tail.length - 2]! << 8) |
           tail[tail.length - 1]!) >>>
         0
-  if (stored !== checksum) throw new TruncatedError()
+  if (stored !== checksum) {
+    throw new TruncatedError()
+  }
 }

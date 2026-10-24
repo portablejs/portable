@@ -3,7 +3,9 @@ import { assertUint8Array, toBufferSource as copyShared } from '@portable/bytes/
 const encoder = new TextEncoder()
 
 export function toBufferSource(data: string | Uint8Array): Uint8Array<ArrayBuffer> {
-  if (typeof data === 'string') return encoder.encode(data)
+  if (typeof data === 'string') {
+    return encoder.encode(data)
+  }
   return copyShared(assertUint8Array(data))
 }
 

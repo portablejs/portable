@@ -84,7 +84,9 @@ export function encodeStream(
     let json = quoted.get(key)
     if (json === undefined) {
       json = JSON.stringify(key)
-      if (quoted.size < maxQuotedKeys) quoted.set(key, json)
+      if (quoted.size < maxQuotedKeys) {
+        quoted.set(key, json)
+      }
     }
     return json
   }
@@ -96,7 +98,9 @@ export function encodeStream(
   let controller!: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>>
 
   const flush = () => {
-    if (out === '' || cancelled) return
+    if (out === '' || cancelled) {
+      return
+    }
     controller.enqueue(utf8.encode(out))
     out = ''
   }
@@ -109,14 +113,17 @@ export function encodeStream(
     skipReplacer: boolean,
   ): unknown => {
     replaced = false
-    if (isAsync(raw)) return raw
+    if (isAsync(raw)) {
+      return raw
+    }
     let v = raw
     if (
       v !== null &&
       (typeof v === 'object' || typeof v === 'bigint') &&
       typeof (v as { toJSON?: unknown }).toJSON === 'function'
-    )
+    ) {
       v = (v as { toJSON(key: string): unknown }).toJSON(String(key))
+    }
     if (replace && !skipReplacer) {
       v = replace.call(holder, String(key), v)
       replaced = true
@@ -133,8 +140,9 @@ export function encodeStream(
     let v = pending
     let skipReplacer = alreadyReplaced
     while (isAsync(v)) {
-      if (typeof v === 'function') v = (v as () => unknown)()
-      else {
+      if (typeof v === 'function') {
+        v = (v as () => unknown)()
+      } else {
         flush()
         v = await v
       }
@@ -168,8 +176,11 @@ export function encodeStream(
       write(object.valueOf(), indent)
       return
     }
-    for (const frame of stack)
-      if (frame.value === object) throw new TypeError('Converting circular structure to JSON')
+    for (const frame of stack) {
+      if (frame.value === object) {
+        throw new TypeError('Converting circular structure to JSON')
+      }
+    }
     const frame: Frame = {
       kind: OBJECT,
       value: object,
@@ -204,37 +215,60 @@ export function encodeStream(
 
   const close = (frame: Frame) => {
     stack.pop()
-    if (gap && frame.count > 0) out += '\n' + frame.indent
+    if (gap && frame.count > 0) {
+      out += '\n' + frame.indent
+    }
     out += frame.kind === OBJECT ? '}' : ']'
-    if (stack.length === 0) done = true
+    if (stack.length === 0) {
+      done = true
+    }
   }
 
   const element = (frame: Frame, item: unknown): void | Promise<void> => {
     const key = frame.index++
-    if (frame.count++ > 0) out += ','
-    if (gap) out += '\n' + frame.indent + gap
+    if (frame.count++ > 0) {
+      out += ','
+    }
+    if (gap) {
+      out += '\n' + frame.indent + gap
+    }
     const writeElement = (resolved: unknown) => {
-      if (isOmitted(resolved)) out += 'null'
-      else write(resolved, frame.indent + gap)
+      if (isOmitted(resolved)) {
+        out += 'null'
+      } else {
+        write(resolved, frame.indent + gap)
+      }
     }
     const v = prepare(frame.value, key, item, false)
-    if (isAsync(v)) return resolve(frame.value, key, v, replaced).then(writeElement)
+    if (isAsync(v)) {
+      return resolve(frame.value, key, v, replaced).then(writeElement)
+    }
     writeElement(v)
   }
 
   const property = (frame: Frame): void | Promise<void> => {
     const key = frame.keys[frame.index++]!
     const holder = frame.value as Record<string, unknown>
-    if (allowed && !Object.hasOwn(holder, key)) return
+    if (allowed && !Object.hasOwn(holder, key)) {
+      return
+    }
     const writeProperty = (resolved: unknown) => {
-      if (isOmitted(resolved)) return
-      if (frame.count++ > 0) out += ','
-      if (gap) out += '\n' + frame.indent + gap
+      if (isOmitted(resolved)) {
+        return
+      }
+      if (frame.count++ > 0) {
+        out += ','
+      }
+      if (gap) {
+        out += '\n' + frame.indent + gap
+      }
       out += quote(key) + colon
       write(resolved, frame.indent + gap)
     }
     const v = prepare(holder, key, holder[key], false)
-    if (isAsync(v)) return resolve(holder, key, v, replaced).then(writeProperty)
+    if (isAsync(v)) {
+      return resolve(holder, key, v, replaced).then(writeProperty)
+    }
     writeProperty(v)
   }
 
@@ -243,28 +277,42 @@ export function encodeStream(
       started = true
       const holder = { '': value }
       const writeRoot = (resolved: unknown) => {
-        if (!isOmitted(resolved)) write(resolved, '')
-        if (stack.length === 0) done = true
+        if (!isOmitted(resolved)) {
+          write(resolved, '')
+        }
+        if (stack.length === 0) {
+          done = true
+        }
       }
       const v = prepare(holder, '', value, false)
-      if (isAsync(v)) return resolve(holder, '', v, replaced).then(writeRoot)
+      if (isAsync(v)) {
+        return resolve(holder, '', v, replaced).then(writeRoot)
+      }
       return writeRoot(v)
     }
 
     const frame = stack[stack.length - 1]!
     if (frame.kind === OBJECT) {
-      if (frame.index >= frame.keys.length) return close(frame)
+      if (frame.index >= frame.keys.length) {
+        return close(frame)
+      }
       return property(frame)
     }
     if (frame.kind === ARRAY) {
       const array = frame.value as readonly unknown[]
-      if (frame.index >= array.length) return close(frame)
+      if (frame.index >= array.length) {
+        return close(frame)
+      }
       return element(frame, array[frame.index])
     }
     flush()
     return frame.next!().then((result) => {
-      if (cancelled) return
-      if (result.done) return close(frame)
+      if (cancelled) {
+        return
+      }
+      if (result.done) {
+        return close(frame)
+      }
       return element(frame, result.value)
     })
   }
@@ -277,7 +325,9 @@ export function encodeStream(
   }
 
   const onAbort = () => {
-    if (cancelled) return
+    if (cancelled) {
+      return
+    }
     cancelled = true
     controller.error(signal!.reason)
     void stopAll(signal!.reason)
@@ -287,21 +337,28 @@ export function encodeStream(
   return new ReadableStream<Uint8Array<ArrayBuffer>>({
     start(c) {
       controller = c
-      if (signal?.aborted) onAbort()
-      else signal?.addEventListener('abort', onAbort, { once: true })
+      if (signal?.aborted) {
+        onAbort()
+      } else {
+        signal?.addEventListener('abort', onAbort, { once: true })
+      }
     },
     async pull() {
       try {
         while (!done && !cancelled && out.length < chunkSize) {
           const pending = step()
-          if (pending) await pending
+          if (pending) {
+            await pending
+          }
         }
       } catch (error) {
         release()
         await stopAll(error)
         throw error
       }
-      if (cancelled) return
+      if (cancelled) {
+        return
+      }
       flush()
       if (done) {
         release()

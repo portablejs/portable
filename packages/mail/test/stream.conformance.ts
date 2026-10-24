@@ -20,8 +20,11 @@ function tracked(chunks: readonly Uint8Array[]) {
   const stream = new ReadableStream<Uint8Array>({
     pull(controller) {
       state.pulls++
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
     cancel(reason) {
       state.cancelled = reason ?? 'cancelled'
@@ -71,11 +74,14 @@ describe('streaming', () => {
     ).getReader()
     const decoder = new TextDecoder()
     let head = ''
-    while (!head.includes('first')) head += decoder.decode((await reader.read()).value)
+    while (!head.includes('first')) {
+      head += decoder.decode((await reader.read()).value)
+    }
     release()
     let rest = ''
-    for (let result = await reader.read(); !result.done; result = await reader.read())
+    for (let result = await reader.read(); !result.done; result = await reader.read()) {
       rest += decoder.decode(result.value)
+    }
     expect(rest).toContain('AQID')
   })
 
@@ -110,7 +116,9 @@ describe('streaming', () => {
     }).getReader()
     const decoder = new TextDecoder()
     let text = ''
-    while (!text.includes('base64')) text += decoder.decode((await reader.read()).value)
+    while (!text.includes('base64')) {
+      text += decoder.decode((await reader.read()).value)
+    }
     await reader.read()
     await reader.cancel('stop')
     expect(reading.state.cancelled).toBe('stop')
@@ -134,7 +142,9 @@ describe('streaming', () => {
     ).getReader()
     const decoder = new TextDecoder()
     let text = ''
-    while (!text.includes('base64')) text += decoder.decode((await reader.read()).value)
+    while (!text.includes('base64')) {
+      text += decoder.decode((await reader.read()).value)
+    }
     await reader.read()
     const reason = new Error('stop')
     controller.abort(reason)

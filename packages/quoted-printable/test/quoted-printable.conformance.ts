@@ -28,7 +28,9 @@ describe('encode()', () => {
     const encoded = encode(input)
     const lines = encoded.split('=\r\n')
     expect(lines.length).toBeGreaterThan(15)
-    for (const line of lines) expect(line.length).toBeLessThanOrEqual(75)
+    for (const line of lines) {
+      expect(line.length).toBeLessThanOrEqual(75)
+    }
     expect(lines[0]).toBe(
       'Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy ',
     )

@@ -97,7 +97,9 @@ import { fromIterable, transform, toText } from '@portable/streams'
 async function* rows() { yield 'a'; yield 'b' }
 
 const upper = transform(async function* (source) {
-  for await (const chunk of source) yield chunk.toUpperCase()
+  for await (const chunk of source) {
+    yield chunk.toUpperCase()
+  }
 })
 
 await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'

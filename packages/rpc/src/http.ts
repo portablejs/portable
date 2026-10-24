@@ -47,7 +47,9 @@ export function handler(methods: object): (request: Request) => Promise<Response
           return writer.write(message).then(() => writer!.close())
         }
       }
-      if (!writer) return void buffered.push(message)
+      if (!writer) {
+        return void buffered.push(message)
+      }
       return writer.write(message)
     }
 
@@ -71,10 +73,13 @@ export function handler(methods: object): (request: Request) => Promise<Response
       },
     )
     for (const message of buffered) {
-      for (const single of Array.isArray(message) ? message : [message])
+      for (const single of Array.isArray(message) ? message : [message]) {
         void writer.write(single).catch(noop)
+      }
     }
-    if (streams.size === 0) void writer.close().catch(noop)
+    if (streams.size === 0) {
+      void writer.close().catch(noop)
+    }
     return new Response(encoder.readable, {
       headers: { 'content-type': ndjson },
     })
@@ -141,24 +146,35 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
 
   const cancel = (id: Id) => {
     const batch = batches.get(id)
-    if (!batch) return
+    if (!batch) {
+      return
+    }
     batches.delete(id)
     batch.pending.delete(id)
-    if (batch.pending.size === 0) batch.controller.abort()
+    if (batch.pending.size === 0) {
+      batch.controller.abort()
+    }
   }
   const receive = (batch: Batch, message: unknown) => {
-    if (message === null || typeof message !== 'object') return
+    if (message === null || typeof message !== 'object') {
+      return
+    }
     const { id, error: remoteError } = message as {
       id?: Id | undefined
       error?: RemoteError.Options | undefined
     }
-    if ('method' in message || id === undefined)
+    if ('method' in message || id === undefined) {
       return client.receive(message as Record<string, unknown>)
+    }
     if (id === null && remoteError) {
-      for (const pending of batch.pending) client.fail(pending, new RemoteError(remoteError))
+      for (const pending of batch.pending) {
+        client.fail(pending, new RemoteError(remoteError))
+      }
       return
     }
-    if (batch.pending.delete(id)) batches.delete(id)
+    if (batch.pending.delete(id)) {
+      batches.delete(id)
+    }
     client.receive(message as Record<string, unknown>)
   }
 
@@ -182,25 +198,38 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
       }
       if (response.body && response.headers.get('content-type')?.startsWith(ndjson)) {
         const reader = response.body.pipeThrough(new Jsonl.DecoderStream()).getReader()
-        for (let r = await reader.read(); !r.done; r = await reader.read()) receive(batch, r.value)
+        for (let r = await reader.read(); !r.done; r = await reader.read()) {
+          receive(batch, r.value)
+        }
       } else if (response.status !== 204) {
         const body: unknown = await response.json()
-        for (const message of Array.isArray(body) ? body : [body]) receive(batch, message)
+        for (const message of Array.isArray(body) ? body : [body]) {
+          receive(batch, message)
+        }
       }
       for (const id of pending) {
         client.fail(id, new TransportError('The response has no result for this call.'))
       }
     } catch (e) {
       const reason = signal?.aborted ? signal.reason : e
-      for (const id of pending) client.fail(id, reason)
-      if (!controller.signal.aborted || signal?.aborted) throw reason
+      for (const id of pending) {
+        client.fail(id, reason)
+      }
+      if (!controller.signal.aborted || signal?.aborted) {
+        throw reason
+      }
     } finally {
-      for (const id of pending) batches.delete(id)
+      for (const id of pending) {
+        batches.delete(id)
+      }
     }
   }
 
-  if (signal?.aborted) client.close(signal.reason)
-  else signal?.addEventListener('abort', () => client.close(signal.reason), { once: true })
+  if (signal?.aborted) {
+    client.close(signal.reason)
+  } else {
+    signal?.addEventListener('abort', () => client.close(signal.reason), { once: true })
+  }
   return remote(client)
 }
 

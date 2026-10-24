@@ -10,7 +10,9 @@ function counting(options: { onCancel?: ((reason: unknown) => void) | undefined 
       {
         pull(controller) {
           controller.enqueue(++source.pulls)
-          if (source.pulls === 50) controller.close()
+          if (source.pulls === 50) {
+            controller.close()
+          }
         },
         cancel: (reason) => options.onCancel?.(reason),
       },
@@ -26,7 +28,9 @@ function drain<chunk>(stream: ReadableStream<chunk>): chunk[] {
   void (async () => {
     for (;;) {
       const { done, value } = await reader.read()
-      if (done) return
+      if (done) {
+        return
+      }
       received.push(value)
     }
   })().catch(() => {})
@@ -67,7 +71,9 @@ describe('tee', () => {
     const [a, b, c] = tee(
       new ReadableStream<number>({
         start(controller) {
-          for (let i = 0; i < 5; i++) controller.enqueue(i)
+          for (let i = 0; i < 5; i++) {
+            controller.enqueue(i)
+          }
           controller.close()
         },
         cancel: () => void (cancelled = true),
@@ -167,7 +173,9 @@ describe('tee', () => {
       {
         pull(c) {
           c.enqueue(++pulls % 2 ? new Uint8Array(4) : '€€')
-          if (pulls === 50) c.close()
+          if (pulls === 50) {
+            c.close()
+          }
         },
       },
       { highWaterMark: 0 },

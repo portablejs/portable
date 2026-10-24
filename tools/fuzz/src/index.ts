@@ -34,8 +34,12 @@ export function fuzz<types>(
   options: fuzz.Options = {},
 ): void | Promise<void> {
   const parameters: fc.Parameters<types> = { numRuns: Math.ceil(runs * (options.scale ?? 1)) }
-  if (env.FUZZ_SEED) parameters.seed = Number(env.FUZZ_SEED)
-  if (env.FUZZ_PATH) parameters.path = env.FUZZ_PATH
+  if (env.FUZZ_SEED) {
+    parameters.seed = Number(env.FUZZ_SEED)
+  }
+  if (env.FUZZ_PATH) {
+    parameters.path = env.FUZZ_PATH
+  }
   return fc.assert(property as fc.IProperty<types>, parameters)
 }
 
@@ -85,7 +89,9 @@ export async function outcomeAsync<value>(
 
 function documented(errors: readonly ErrorClass[], error: unknown): ErrorClass {
   const type = errors.find((type) => error instanceof type)
-  if (!type) throw error
+  if (!type) {
+    throw error
+  }
   return type
 }
 
@@ -122,14 +128,18 @@ export function mutated(
       for (const { op, at, byte } of edits) {
         const index = at % (Math.min(within, bytes.length) + 1)
         if (op === 'set') {
-          if (bytes.length > 0) bytes[Math.min(index, bytes.length - 1)] = byte
+          if (bytes.length > 0) {
+            bytes[Math.min(index, bytes.length - 1)] = byte
+          }
         } else if (op === 'insert' || index < bytes.length) {
           const next = new Uint8Array(bytes.length + (op === 'insert' ? 1 : -1))
           next.set(bytes.subarray(0, index))
           if (op === 'insert') {
             next[index] = byte
             next.set(bytes.subarray(index), index + 1)
-          } else next.set(bytes.subarray(index + 1), index)
+          } else {
+            next.set(bytes.subarray(index + 1), index)
+          }
           bytes = next
         }
       }
@@ -241,7 +251,9 @@ export function attempt(run: () => unknown): Promise<unknown> {
 export function streamOf<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   return new ReadableStream({
     start(controller) {
-      for (const chunk of chunks) controller.enqueue(chunk)
+      for (const chunk of chunks) {
+        controller.enqueue(chunk)
+      }
       controller.close()
     },
   })
@@ -256,8 +268,9 @@ export function streamOf<chunk>(chunks: readonly chunk[]): ReadableStream<chunk>
 export async function readAll<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const chunks: chunk[] = []
   const reader = stream.getReader()
-  for (let next = await reader.read(); !next.done; next = await reader.read())
+  for (let next = await reader.read(); !next.done; next = await reader.read()) {
     chunks.push(next.value)
+  }
   return chunks
 }
 

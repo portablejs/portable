@@ -27,9 +27,12 @@ async function viaMailsplit(chunks: readonly Uint8Array[], embedded: boolean): P
   )) {
     if (data.type === 'node') {
       types.push(data.contentType || '')
-      if (!data.multipart) nodes.push(data)
-    } else if (data.type === 'body')
+      if (!data.multipart) {
+        nodes.push(data)
+      }
+    } else if (data.type === 'body') {
       text.set(data.node, (text.get(data.node) ?? '') + data.value.toString('latin1'))
+    }
   }
   return { types, bodies: nodes.map((node) => text.get(node) ?? '') }
 }
@@ -38,8 +41,9 @@ async function joinedByMailsplit(chunks: readonly Uint8Array[]): Promise<string>
   const parts: Buffer[] = []
   for await (const part of Readable.from(chunks.map((chunk) => Buffer.from(chunk)))
     .pipe(new Splitter())
-    .pipe(new Joiner()))
+    .pipe(new Joiner())) {
     parts.push(part)
+  }
   return Buffer.concat(parts).toString('latin1')
 }
 
@@ -64,7 +68,9 @@ function generate(seed: number): string {
     pick(['hello world', '--', '-x', 'AAECAwQFBg==', 'x'.repeat(100), '--b1xy', 'õäöü', ''])
   const body = (eol: string) => {
     let text = 'start'
-    for (let i = random(6); i > 0; i--) text += eol + line()
+    for (let i = random(6); i > 0; i--) {
+      text += eol + line()
+    }
     return text + pick(['', eol])
   }
   const part = (depth: number): string => {
@@ -74,11 +80,14 @@ function generate(seed: number): string {
       const boundary = `b${++count}${pick(['', 'x', '=_p'])}`
       let text = `Content-Type: multipart/${pick(['mixed', 'related'])};${eol} boundary="${boundary}"${eol}${eol}`
       text += pick(['', `preamble${eol}`])
-      for (let i = 1 + random(3); i > 0; i--) text += `--${boundary}${eol}${part(depth + 1)}${eol}`
+      for (let i = 1 + random(3); i > 0; i--) {
+        text += `--${boundary}${eol}${part(depth + 1)}${eol}`
+      }
       return text + `--${boundary}--${eol}` + pick(['', `epilogue${eol}`])
     }
-    if (kind === 2)
+    if (kind === 2) {
       return `Content-Type: message/rfc822${eol}Content-Disposition: inline${eol}${eol}${part(depth + 1)}`
+    }
     return `Content-Type: text/plain${eol}Subject: ${seed}${eol}${eol}${body(eol)}`
   }
   return part(0)
@@ -86,8 +95,12 @@ function generate(seed: number): string {
 
 const inputs = async () => {
   const result: [string, Uint8Array][] = []
-  for (const name of fixtureNames) result.push([name, await fixture(name)])
-  for (let seed = 1; seed <= 60; seed++) result.push([`generated ${seed}`, binary(generate(seed))])
+  for (const name of fixtureNames) {
+    result.push([name, await fixture(name)])
+  }
+  for (let seed = 1; seed <= 60; seed++) {
+    result.push([`generated ${seed}`, binary(generate(seed))])
+  }
   return result
 }
 

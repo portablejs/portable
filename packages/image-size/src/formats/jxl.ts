@@ -14,7 +14,9 @@ function sizeHeader(codestream: Uint8Array, end: number): Size {
   const bits = (count: number): number => {
     let result = 0
     for (let read = 0; read < count;) {
-      if (byte >= codestream.length) throw new NeedMore(end)
+      if (byte >= codestream.length) {
+        throw new NeedMore(end)
+      }
       const take = Math.min(count - read, 8 - bit)
       result |= ((codestream[byte]! >> bit) & ((1 << take) - 1)) << read
       read += take
@@ -53,11 +55,17 @@ function codestream(input: Uint8Array): Uint8Array[] {
     const name = ascii(input, offset + 4, offset + 8)
     if (name === 'jxlc' || name === 'jxlp') {
       const start = offset + header + (name === 'jxlp' ? 4 : 0)
-      if (end < start) throw new InvalidInputError('Invalid JXL')
+      if (end < start) {
+        throw new InvalidInputError('Invalid JXL')
+      }
       parts.push(input.subarray(start, Math.min(end, input.length)))
-      if (name === 'jxlc') break
+      if (name === 'jxlc') {
+        break
+      }
     }
-    if (size === 0) break
+    if (size === 0) {
+      break
+    }
     offset = end
   }
   return parts
@@ -65,13 +73,17 @@ function codestream(input: Uint8Array): Uint8Array[] {
 
 export const jxl: Format = {
   validate(input) {
-    if (!startsWith(input, 4, 'JXL ')) return false
+    if (!startsWith(input, 4, 'JXL ')) {
+      return false
+    }
     const ftyp = findBox(input, 'ftyp', 0, Infinity)
     return ftyp !== undefined && ascii(input, ftyp.offset + 8, ftyp.offset + 12) === 'jxl '
   },
   calculate(input, final) {
     const parts = codestream(input)
-    if (parts.length === 0 && final) throw new InvalidInputError('Invalid JXL')
+    if (parts.length === 0 && final) {
+      throw new InvalidInputError('Invalid JXL')
+    }
     return {
       ...sizeHeader(parts.length === 1 ? parts[0]! : Bytes.concat(parts), input.length + 1),
       type: 'jxl',

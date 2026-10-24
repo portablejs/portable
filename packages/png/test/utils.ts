@@ -18,7 +18,9 @@ export const fixtures: ReadonlyMap<string, Uint8Array> = new Map(
 
 export function fixture(path: string): Uint8Array {
   const bytes = fixtures.get(path)
-  if (!bytes) throw new Error(`No fixture ${path}`)
+  if (!bytes) {
+    throw new Error(`No fixture ${path}`)
+  }
   return bytes
 }
 
@@ -92,7 +94,9 @@ export function adam7Scanlines(image: {
   ]
   const bytes: number[] = []
   for (const [x0, y0, dx, dy] of passes as [number, number, number, number][]) {
-    if (x0 >= image.width || y0 >= image.height) continue
+    if (x0 >= image.width || y0 >= image.height) {
+      continue
+    }
     for (let y = y0; y < image.height; y += dy) {
       bytes.push(0)
       for (let x = x0; x < image.width; x += dx) {
@@ -108,8 +112,9 @@ export function idat(png: Uint8Array): Uint8Array {
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength)
   for (let offset = 8; offset < png.length;) {
     const length = view.getUint32(offset)
-    if (view.getUint32(offset + 4) === 0x49444154)
+    if (view.getUint32(offset + 4) === 0x49444154) {
       return png.subarray(offset + 8, offset + 8 + length)
+    }
     offset += length + 12
   }
   throw new Error('No IDAT')
@@ -124,7 +129,9 @@ export function encodeChunk(type: string, data: Uint8Array): Uint8Array {
   let crc = -1
   for (const byte of out.subarray(4, 8 + data.length)) {
     crc ^= byte
-    for (let k = 0; k < 8; k++) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1
+    for (let k = 0; k < 8; k++) {
+      crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1
+    }
   }
   view.setUint32(8 + data.length, ~crc >>> 0)
   return out

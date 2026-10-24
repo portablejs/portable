@@ -9,7 +9,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Png.decode(bytes.subarray(0, 100))
  * } catch (error) {
- *   if (error instanceof Png.TruncatedError) console.log('incomplete download')
+ *   if (error instanceof Png.TruncatedError) {
+ *     console.log('incomplete download')
+ *   }
  * }
  * ```
  */
@@ -28,7 +30,9 @@ export class TruncatedError extends Errors.TruncatedError {
  * try {
  *   await Png.decode(new TextEncoder().encode('not a png'))
  * } catch (error) {
- *   if (error instanceof Png.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Png.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -47,7 +51,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await Png.decode(bytes)
  * } catch (error) {
- *   if (error instanceof Png.UnsupportedError) console.log(error.message)
+ *   if (error instanceof Png.UnsupportedError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

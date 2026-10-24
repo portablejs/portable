@@ -39,9 +39,12 @@ export class EncoderStream extends TransformStream<EncoderStream.Input, Uint8Arr
           transform(chunk, controller) {
             const value = isUint8Array(chunk) || typeof chunk === 'string' ? chunk : chunk.bytes
             const bytes = typeof value === 'string' ? encoder.encode(value) : value
-            if (!isUint8Array(bytes))
+            if (!isUint8Array(bytes)) {
               throw new TypeError('Expected a Uint8Array, a string or an object with bytes.')
-            if (bytes.length > 0) controller.enqueue(bytes)
+            }
+            if (bytes.length > 0) {
+              controller.enqueue(bytes)
+            }
           },
         },
         options,

@@ -12,7 +12,9 @@ async function loop(): Promise<number> {
     try {
       return await flaky(attempt)
     } catch (error) {
-      if (attempt >= attempts) throw error
+      if (attempt >= attempts) {
+        throw error
+      }
     }
   }
 }

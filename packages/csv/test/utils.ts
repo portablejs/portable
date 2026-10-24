@@ -12,7 +12,9 @@ export const fixtures: readonly string[] = Object.keys(files)
 
 export async function fixture(path: string): Promise<Uint8Array> {
   const load = files[`./fixtures/${path}`]
-  if (!load) throw new Error(`No fixture ${path}`)
+  if (!load) {
+    throw new Error(`No fixture ${path}`)
+  }
   return new Uint8Array(await (await fetch(await load())).arrayBuffer())
 }
 
@@ -46,7 +48,9 @@ export function randomChunks<value extends string | Uint8Array>(
 
 export function chunked<value extends string | Uint8Array>(input: value, size: number): value[] {
   const chunks: value[] = []
-  for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as value)
+  for (let i = 0; i < input.length; i += size) {
+    chunks.push(input.slice(i, i + size) as value)
+  }
   return chunks
 }
 
@@ -89,10 +93,11 @@ export async function decodeAll<const header extends Csv.DecoderStream.Header = 
   ]
   for (const run of runs) {
     const rows = await run
-    if (JSON.stringify(rows) !== JSON.stringify(expected))
+    if (JSON.stringify(rows) !== JSON.stringify(expected)) {
       throw new Error(
         `Stream gave ${JSON.stringify(rows)}, decode gave ${JSON.stringify(expected)}`,
       )
+    }
   }
   return expected
 }
@@ -105,16 +110,21 @@ export async function decodeError(
   try {
     Csv.decode(text, options)
   } catch (error) {
-    if (error instanceof Error) expected = error
+    if (error instanceof Error) {
+      expected = error
+    }
   }
-  if (!expected) throw new Error('decode did not throw an Error')
+  if (!expected) {
+    throw new Error('decode did not throw an Error')
+  }
   for (const chunks of [[text], chunked(text, 1), randomChunks(encodeUtf8(text), 3)]) {
     const error = await decodeStream(chunks, options).then(
       () => undefined,
       (error: unknown) => error,
     )
-    if (!(error instanceof Error) || error.constructor !== expected.constructor)
+    if (!(error instanceof Error) || error.constructor !== expected.constructor) {
       throw new Error(`Stream gave ${String(error)}, decode threw ${expected.name}`)
+    }
   }
   return expected
 }

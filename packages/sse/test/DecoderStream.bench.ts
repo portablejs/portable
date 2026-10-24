@@ -42,8 +42,11 @@ function source(
   let i = 0
   return new ReadableStream<Uint8Array<ArrayBuffer>>({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
@@ -51,7 +54,9 @@ function source(
 async function drain<chunk>(stream: ReadableStream<chunk>): Promise<number> {
   const reader = stream.getReader()
   let count = 0
-  while (!(await reader.read()).done) count++
+  while (!(await reader.read()).done) {
+    count++
+  }
   return count
 }
 
@@ -71,10 +76,15 @@ class HandWrittenStream extends TransformStream<Uint8Array, { event: string; dat
           let event = 'message'
           const data: string[] = []
           for (const line of block.split('\n')) {
-            if (line.startsWith('data:')) data.push(line.slice(line[5] === ' ' ? 6 : 5))
-            else if (line.startsWith('event:')) event = line.slice(line[6] === ' ' ? 7 : 6)
+            if (line.startsWith('data:')) {
+              data.push(line.slice(line[5] === ' ' ? 6 : 5))
+            } else if (line.startsWith('event:')) {
+              event = line.slice(line[6] === ' ' ? 7 : 6)
+            }
           }
-          if (data.length > 0) controller.enqueue({ event, data: data.join('\n') })
+          if (data.length > 0) {
+            controller.enqueue({ event, data: data.join('\n') })
+          }
         }
       },
     })

@@ -130,8 +130,9 @@ const depthsByColorType: Record<number, readonly number[]> = {
 const channelsByColorType = [1, 0, 3, 1, 2, 0, 4] as const
 
 function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
-  if (bytes.length < 8 || signature.some((byte, i) => bytes[i] !== byte))
+  if (bytes.length < 8 || signature.some((byte, i) => bytes[i] !== byte)) {
     throw new InvalidInputError('Invalid PNG signature.')
+  }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   let header: Omit<Parsed, 'gamma' | 'palette' | 'transparent' | 'idat'> | undefined
   let gamma: number | undefined
@@ -140,22 +141,35 @@ function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
   const idat: Uint8Array[] = []
 
   for (let offset = 8; ;) {
-    if (offset + 12 > bytes.length) throw new TruncatedError('Unexpected end of file before IEND.')
+    if (offset + 12 > bytes.length) {
+      throw new TruncatedError('Unexpected end of file before IEND.')
+    }
     const length = view.getUint32(offset)
     const type = view.getUint32(offset + 4)
     const start = offset + 8
     const end = start + length
-    if (end + 4 > bytes.length) throw new TruncatedError('Unexpected end of file inside a chunk.')
+    if (end + 4 > bytes.length) {
+      throw new TruncatedError('Unexpected end of file inside a chunk.')
+    }
     const name = String.fromCharCode(...bytes.subarray(offset + 4, start))
-    if (!/^[A-Za-z]{4}$/.test(name)) throw new InvalidInputError('Invalid chunk type.')
-    if (checkCrc && crc32(bytes.subarray(offset + 4, end)) !== view.getUint32(end))
+    if (!/^[A-Za-z]{4}$/.test(name)) {
+      throw new InvalidInputError('Invalid chunk type.')
+    }
+    if (checkCrc && crc32(bytes.subarray(offset + 4, end)) !== view.getUint32(end)) {
       throw new InvalidInputError(`CRC mismatch in ${name} chunk.`)
-    if (!header && type !== IHDR) throw new InvalidInputError('IHDR must be the first chunk.')
+    }
+    if (!header && type !== IHDR) {
+      throw new InvalidInputError('IHDR must be the first chunk.')
+    }
     offset = end + 4
 
     if (type === IHDR) {
-      if (header) throw new InvalidInputError('More than one IHDR chunk.')
-      if (length !== 13) throw new InvalidInputError('IHDR chunk has the wrong length.')
+      if (header) {
+        throw new InvalidInputError('More than one IHDR chunk.')
+      }
+      if (length !== 13) {
+        throw new InvalidInputError('IHDR chunk has the wrong length.')
+      }
       header = readHeader(view, start)
     } else if (type === IDAT) {
       idat.push(bytes.subarray(start, end))
@@ -175,25 +189,40 @@ function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
       header!.alpha = true
       const { colorType } = header!
       if (colorType === 3) {
-        if (!palette) throw new InvalidInputError('tRNS chunk must come after PLTE.')
-        if (length > palette.length / 4)
+        if (!palette) {
+          throw new InvalidInputError('tRNS chunk must come after PLTE.')
+        }
+        if (length > palette.length / 4) {
           throw new InvalidInputError('tRNS chunk has more entries than the palette.')
-        for (let i = 0; i < length; i++) palette[i * 4 + 3] = bytes[start + i]!
+        }
+        for (let i = 0; i < length; i++) {
+          palette[i * 4 + 3] = bytes[start + i]!
+        }
       } else if (colorType === 0 || colorType === 2) {
         const samples = colorType === 0 ? 1 : 3
-        if (length < samples * 2) throw new InvalidInputError('tRNS chunk is too short.')
+        if (length < samples * 2) {
+          throw new InvalidInputError('tRNS chunk is too short.')
+        }
         transparent = []
-        for (let i = 0; i < samples; i++) transparent.push(view.getUint16(start + i * 2))
+        for (let i = 0; i < samples; i++) {
+          transparent.push(view.getUint16(start + i * 2))
+        }
       }
     } else if (type === gAMA) {
-      if (length >= 4) gamma = view.getUint32(start) / 100000
+      if (length >= 4) {
+        gamma = view.getUint32(start) / 100000
+      }
     } else if (!(bytes[start - 4]! & 0x20)) {
       throw new UnsupportedError(`Unsupported critical chunk ${name}.`)
     }
   }
 
-  if (idat.length === 0) throw new InvalidInputError('No IDAT chunk.')
-  if (header!.colorType === 3 && !palette) throw new InvalidInputError('No PLTE chunk.')
+  if (idat.length === 0) {
+    throw new InvalidInputError('No IDAT chunk.')
+  }
+  if (header!.colorType === 3 && !palette) {
+    throw new InvalidInputError('No PLTE chunk.')
+  }
   return {
     ...header!,
     gamma,
@@ -208,14 +237,25 @@ function readHeader(view: DataView, start: number) {
   const height = view.getUint32(start + 4)
   const depth = view.getUint8(start + 8)
   const colorType = view.getUint8(start + 9)
-  if (width === 0 || height === 0) throw new InvalidInputError('Image has no pixels.')
-  if (!depthsByColorType[colorType]) throw new InvalidInputError(`Invalid color type ${colorType}.`)
-  if (!depthsByColorType[colorType].includes(depth))
+  if (width === 0 || height === 0) {
+    throw new InvalidInputError('Image has no pixels.')
+  }
+  if (!depthsByColorType[colorType]) {
+    throw new InvalidInputError(`Invalid color type ${colorType}.`)
+  }
+  if (!depthsByColorType[colorType].includes(depth)) {
     throw new InvalidInputError(`Invalid bit depth ${depth} for color type ${colorType}.`)
-  if (view.getUint8(start + 10) !== 0) throw new UnsupportedError('Unsupported compression method.')
-  if (view.getUint8(start + 11) !== 0) throw new UnsupportedError('Unsupported filter method.')
+  }
+  if (view.getUint8(start + 10) !== 0) {
+    throw new UnsupportedError('Unsupported compression method.')
+  }
+  if (view.getUint8(start + 11) !== 0) {
+    throw new UnsupportedError('Unsupported filter method.')
+  }
   const interlace = view.getUint8(start + 12)
-  if (interlace > 1) throw new UnsupportedError('Unsupported interlace method.')
+  if (interlace > 1) {
+    throw new UnsupportedError('Unsupported interlace method.')
+  }
   return {
     width,
     height,
@@ -239,7 +279,9 @@ const adam7 = [
 ] as const
 
 function passes(png: Parsed): Pass[] {
-  if (!png.interlace) return [{ x: 0, y: 0, dx: 1, dy: 1, width: png.width, height: png.height }]
+  if (!png.interlace) {
+    return [{ x: 0, y: 0, dx: 1, dy: 1, width: png.width, height: png.height }]
+  }
   return adam7
     .map(([x, y, dx, dy]) => ({
       x,
@@ -263,13 +305,16 @@ function rawSize(png: Parsed): number {
   )
   // Deflate expands at most 1032:1, so `rawSize` rejects a header that claims more pixels than
   // the data can hold instead of allocating for it.
-  if (size > png.idat.length * 1032 + 1024)
+  if (size > png.idat.length * 1032 + 1024) {
     throw new TruncatedError('Image data is too short for the image size in IHDR.')
+  }
   return size
 }
 
 function finish(png: Parsed, inflated: Uint8Array, size: number): Decoded {
-  if (inflated.length < size) throw new TruncatedError('Image data is shorter than the image.')
+  if (inflated.length < size) {
+    throw new TruncatedError('Image data is shorter than the image.')
+  }
   // A Uint8Array subclass, such as Node's Buffer from zlib.inflateSync, makes the loops below
   // polymorphic and several times slower.
   const raw = new Uint8Array(inflated.buffer, inflated.byteOffset, inflated.length)
@@ -309,14 +354,16 @@ function expand(
     const n = pass.width
 
     if (colorType === 6 && depth === 8) {
-      if (step === 4) out.set(raw.subarray(line, line + stride), o)
-      else
+      if (step === 4) {
+        out.set(raw.subarray(line, line + stride), o)
+      } else {
         for (let x = 0, i = line; x < n; x++, i += 4, o += step) {
           out[o] = raw[i]!
           out[o + 1] = raw[i + 1]!
           out[o + 2] = raw[i + 2]!
           out[o + 3] = raw[i + 3]!
         }
+      }
     } else if (colorType === 6) {
       for (let x = 0, i = line; x < n; x++, i += 8, o += step) {
         out[o] = scale16(raw, i)
@@ -375,7 +422,9 @@ function expand(
         const index = lowDepth
           ? (raw[line + (bit >> 3)]! >> (8 - depth - (bit & 7))) & mask
           : raw[line + x]!
-        if (index >= entries) throw new InvalidInputError(`Palette index ${index} is out of range.`)
+        if (index >= entries) {
+          throw new InvalidInputError(`Palette index ${index} is out of range.`)
+        }
         const p = index * 4
         out[o] = palette![p]!
         out[o + 1] = palette![p + 1]!

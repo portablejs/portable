@@ -10,10 +10,13 @@ export type Prefix = Ip.Cidr
 export function parse(text: string): Prefix | undefined {
   let cidr: Ip.Cidr
   try {
-    if (text.includes('/')) cidr = Ip.parseCidr(text)
-    else {
+    if (text.includes('/')) {
+      cidr = Ip.parseCidr(text)
+    } else {
       const address = Ip.parse(text)
-      if (address.version === 6 && address.zone !== undefined) return undefined
+      if (address.version === 6 && address.zone !== undefined) {
+        return undefined
+      }
       cidr = { address, prefix: address.bytes.length * 8 }
     }
   } catch {
@@ -22,7 +25,9 @@ export function parse(text: string): Prefix | undefined {
   const { address, prefix } = cidr
   if (address.version === 6 && prefix >= 96) {
     const unmapped = Ip.unmap(address)
-    if (unmapped.version === 4) return { address: unmapped, prefix: prefix - 96 }
+    if (unmapped.version === 4) {
+      return { address: unmapped, prefix: prefix - 96 }
+    }
   }
   return cidr
 }

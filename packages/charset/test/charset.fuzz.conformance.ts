@@ -27,7 +27,9 @@ const names = [
 ] satisfies readonly Charset.Name[]
 const charsets: Charset.Charset[] = []
 beforeAll(async () => {
-  for (const name of names) charsets.push(await Charset.load(name))
+  for (const name of names) {
+    charsets.push(await Charset.load(name))
+  }
 })
 const charset = fc.nat({ max: names.length - 1 }).map((i) => charsets[i]!)
 

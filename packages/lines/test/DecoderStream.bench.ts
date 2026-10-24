@@ -15,13 +15,19 @@ test('splits 1.7 MB of text into lines within 25% of split2 and byline', async (
       await collect(fromChunks(chunks).pipeThrough(new Lines.DecoderStream()))
     }),
     bench('split2', async () => {
-      for await (const _ of Readable.from(chunks).pipe(split2()));
+      for await (const _ of Readable.from(chunks).pipe(split2())) {
+      }
     }),
     bench('byline', async () => {
-      for await (const _ of Readable.from(chunks).pipe(new LineStream({ keepEmptyLines: true })));
+      for await (const _ of Readable.from(chunks).pipe(new LineStream({ keepEmptyLines: true }))) {
+      }
     }),
     bench('node:readline', async () => {
-      for await (const _ of createInterface({ input: Readable.from(chunks), crlfDelay: Infinity }));
+      for await (const _ of createInterface({
+        input: Readable.from(chunks),
+        crlfDelay: Infinity,
+      })) {
+      }
     }),
   )
   expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), { delta: 0.25 })

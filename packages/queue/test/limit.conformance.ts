@@ -89,13 +89,15 @@ describe('p-limit', () => {
     queue.clear()
     expect(queue.size).toBe(0)
     expect(await running).toBe('done')
-    for (const promise of waiting)
+    for (const promise of waiting) {
       await expect(promise).rejects.toMatchObject({ name: 'AbortError' })
+    }
   })
 
   test('throws on an invalid concurrency', () => {
-    for (const concurrency of [0, -1, 1.2, Number.NaN, -Infinity])
+    for (const concurrency of [0, -1, 1.2, Number.NaN, -Infinity]) {
       expect(() => Queue.limit(concurrency)).toThrow(RangeError)
+    }
     expect(() => Queue.create({ concurrency: 0 })).toThrow(RangeError)
     expect(() => Queue.create({ concurrency: undefined })).not.toThrow()
     expect(() => Queue.limit(Infinity)).not.toThrow()

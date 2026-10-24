@@ -23,7 +23,9 @@ Streams read a `fetch` body and write a `Response` body:
 ```ts
 const response = await fetch('https://example.com/users.csv')
 const reader = response.body!.pipeThrough(new Csv.DecoderStream({ header: true })).getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value.email)
+for (let r = await reader.read(); !r.done; r = await reader.read()) {
+  console.log(r.value.email)
+}
 
 const body = Streams.fromIterable(users)
   .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }))

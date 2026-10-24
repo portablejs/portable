@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Idna.toUnicode('www.xn--b.com')
  * } catch (error) {
- *   if (error instanceof Idna.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Idna.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

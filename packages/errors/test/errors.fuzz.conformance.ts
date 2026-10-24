@@ -14,8 +14,12 @@ const kinds = [
 test('is and instanceof return false without throwing for any value', () => {
   fuzz(
     fc.property(fc.anything(), fc.constantFrom(...kinds), (value, kind) => {
-      if (Errors.is(value, kind)) throw new Error('matched a value without the brand')
-      if (value instanceof Errors.BaseError) throw new Error('instanceof matched')
+      if (Errors.is(value, kind)) {
+        throw new Error('matched a value without the brand')
+      }
+      if (value instanceof Errors.BaseError) {
+        throw new Error('instanceof matched')
+      }
     }),
   )
 })
@@ -26,7 +30,9 @@ test('every kind of error an error carries is matched by is', () => {
       const error = Object.defineProperty(new Error(), Symbol.for('portable.error'), {
         value: [...extra, kind],
       })
-      if (!Errors.is(error, kind)) throw new Error('missed the kind')
+      if (!Errors.is(error, kind)) {
+        throw new Error('missed the kind')
+      }
     }),
   )
 })

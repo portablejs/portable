@@ -18,7 +18,9 @@ export declare namespace headers {
  * import * as RateLimit from '@portable/rate-limit'
  *
  * const result = await limiter.take(ip)
- * if (!result.allowed) return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+ * if (!result.allowed) {
+ *   return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+ * }
  * // RateLimit-Policy: "default";q=100;w=60
  * // RateLimit: "default";r=0;t=1
  * // Retry-After: 1
@@ -26,8 +28,9 @@ export declare namespace headers {
  */
 export function headers(result: Result, options: headers.Options = {}): Record<string, string> {
   const { name = 'default', now = new Date() } = options
-  if (!/^[\x20-\x7e]*$/.test(name))
+  if (!/^[\x20-\x7e]*$/.test(name)) {
     throw new RangeError(`\`name\` must be printable ASCII, got ${JSON.stringify(name)}.`)
+  }
   const item = `"${name.replaceAll(/["\\]/g, '\\$&')}"`
   const retry = !result.allowed && Number.isFinite(result.retryAfter)
   const window = retry ? result.retryAfter : result.resetAt.getTime() - now.getTime()
@@ -35,7 +38,9 @@ export function headers(result: Result, options: headers.Options = {}): Record<s
     'RateLimit-Policy': `${item};q=${result.limit};w=${seconds(result.period)}`,
     RateLimit: `${item};r=${result.remaining};t=${seconds(window)}`,
   }
-  if (retry) fields['Retry-After'] = String(seconds(result.retryAfter))
+  if (retry) {
+    fields['Retry-After'] = String(seconds(result.retryAfter))
+  }
   return fields
 }
 

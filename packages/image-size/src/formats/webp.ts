@@ -10,7 +10,9 @@ export const webp: Format = {
     need(input, 30)
     const flags = input[20]!
     if (chunk === 'VP8X') {
-      if ((flags & 0xc1) !== 0) throw new InvalidInputError('Invalid WebP')
+      if ((flags & 0xc1) !== 0) {
+        throw new InvalidInputError('Invalid WebP')
+      }
       return { width: 1 + u24le(input, 24), height: 1 + u24le(input, 27), type: 'webp' }
     }
     if (chunk === 'VP8 ' && flags !== 0x2f) {

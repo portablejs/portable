@@ -11,7 +11,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   headers = await Arc.seal(message, { domain, selector, privateKey, authResults, chainValidation })
  * } catch (error) {
- *   if (!(error instanceof Arc.InvalidInputError)) throw error
+ *   if (!(error instanceof Arc.InvalidInputError)) {
+ *     throw error
+ *   }
  * }
  * ```
  */

@@ -90,7 +90,9 @@ export declare namespace DecoderStream {
  *
  * const reader = response.body!.pipeThrough(new MimeStream.DecoderStream()).getReader()
  * for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *   if (r.value.type === 'headers') console.log(r.value.part.contentType)
+ *   if (r.value.type === 'headers') {
+ *     console.log(r.value.part.contentType)
+ *   }
  * }
  * ```
  */
@@ -157,7 +159,9 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   let sectionStart = 0
 
   function startPart(owner: Part) {
-    if (++partCount > maxParts) throw new MaxPartsError({ maxParts })
+    if (++partCount > maxParts) {
+      throw new MaxPartsError({ maxParts })
+    }
     parent = owner
     inHeader = true
     headLength = 0
@@ -171,29 +175,43 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   }
 
   function finishHeaders(bytes: Uint8Array) {
-    if (bytes.length > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
-    if (head.length > 64 * 1024) head = new Uint8Array(1024)
+    if (bytes.length > maxHeaderBytes) {
+      throw new MaxHeaderBytesError({ maxHeaderBytes })
+    }
+    if (head.length > 64 * 1024) {
+      head = new Uint8Array(1024)
+    }
     const headers = readHeaders(bytes)
     let contentType: string | undefined
     let transferEncoding: string | undefined
     for (const { name, value } of headers) {
       const key = name.toLowerCase()
-      if (key === 'content-type') contentType ??= value
-      else if (key === 'content-transfer-encoding') transferEncoding ??= value
+      if (key === 'content-type') {
+        contentType ??= value
+      } else if (key === 'content-transfer-encoding') {
+        transferEncoding ??= value
+      }
     }
     const value = contentType === undefined ? undefined : MimeHeaders.parseValue(contentType)
     let type = value?.value.trim().toLowerCase() ?? ''
-    if (!/^[^/\s]+\/[^/\s]+$/.test(type))
+    if (!/^[^/\s]+\/[^/\s]+$/.test(type)) {
       type = parent?.contentType === 'multipart/digest' ? 'message/rfc822' : 'text/plain'
+    }
     const encoding =
       stripComments(transferEncoding ?? '')
         .trim()
         .toLowerCase() || '7bit'
     const part: Part = { headers, contentType: type, encoding }
-    if (parent) part.parent = parent
+    if (parent) {
+      part.parent = parent
+    }
     const boundary = type.startsWith('multipart/') ? value?.params.boundary : undefined
-    if (boundary) part.boundary = boundary
-    if (!parent) rootDone = true
+    if (boundary) {
+      part.boundary = boundary
+    }
+    if (!parent) {
+      rootDone = true
+    }
     enqueue({ type: 'headers', part, bytes })
 
     if (boundary) {
@@ -203,9 +221,11 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
       embedded &&
       (type === 'message/rfc822' || type === 'message/global') &&
       (encoding === '7bit' || encoding === '8bit' || encoding === 'binary')
-    )
+    ) {
       startPart(part)
-    else enterSection('body', part)
+    } else {
+      enterSection('body', part)
+    }
   }
 
   function applyDelimiter(match: Match, bytes: Uint8Array) {
@@ -231,29 +251,49 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
     const more = final ? undefined : PARTIAL
     let k = i + 2
     for (let j = 0; j < boundary.length; j++, k++) {
-      if (k === end) return more
-      if (b[k] !== boundary[j]) return undefined
+      if (k === end) {
+        return more
+      }
+      if (b[k] !== boundary[j]) {
+        return undefined
+      }
     }
     let close = false
     if (k < end && b[k] === DASH) {
-      if (k + 1 === end) return more
-      if (b[k + 1] !== DASH) return undefined
+      if (k + 1 === end) {
+        return more
+      }
+      if (b[k + 1] !== DASH) {
+        return undefined
+      }
       close = true
       k += 2
     }
     while (k < end && (b[k] === SP || b[k] === TAB)) {
       k++
-      if (k - i > maxBoundaryLineBytes)
+      if (k - i > maxBoundaryLineBytes) {
         throw new MaxBoundaryLineBytesError({ maxBoundaryLineBytes })
+      }
     }
-    if (k === end) return final ? { close, end: k } : PARTIAL
+    if (k === end) {
+      return final ? { close, end: k } : PARTIAL
+    }
     if (b[k] === CR) {
-      if (k + 1 === end) return final ? { close, end: k + 1 } : PARTIAL
-      if (b[k + 1] !== LF) return undefined
+      if (k + 1 === end) {
+        return final ? { close, end: k + 1 } : PARTIAL
+      }
+      if (b[k + 1] !== LF) {
+        return undefined
+      }
       k += 2
-    } else if (b[k] === LF) k++
-    else return undefined
-    if (k - i > maxBoundaryLineBytes) throw new MaxBoundaryLineBytesError({ maxBoundaryLineBytes })
+    } else if (b[k] === LF) {
+      k++
+    } else {
+      return undefined
+    }
+    if (k - i > maxBoundaryLineBytes) {
+      throw new MaxBoundaryLineBytesError({ maxBoundaryLineBytes })
+    }
     return { close, end: k }
   }
 
@@ -263,19 +303,30 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
     end: number,
     final: boolean,
   ): Match | typeof PARTIAL | undefined {
-    if (b[i] !== DASH) return undefined
-    if (i + 1 === end) return final ? undefined : PARTIAL
-    if (b[i + 1] !== DASH) return undefined
+    if (b[i] !== DASH) {
+      return undefined
+    }
+    if (i + 1 === end) {
+      return final ? undefined : PARTIAL
+    }
+    if (b[i + 1] !== DASH) {
+      return undefined
+    }
     let partial = false
     for (let f = frames.length - 1; f >= 0; f--) {
       const frame = frames[f]!
-      if (frame.state === EPILOGUE) continue
+      if (frame.state === EPILOGUE) {
+        continue
+      }
       const result = matchBoundary(b, i, end, frame.boundary, final)
-      if (result === PARTIAL) partial = true
+      if (result === PARTIAL) {
+        partial = true
+      }
       // RFC 2046 needs a delimiter before a close delimiter, so a close delimiter in
       // the preamble is treated as text.
-      else if (result && !(result.close && frame.state === PREAMBLE))
+      else if (result && !(result.close && frame.state === PREAMBLE)) {
         return { frame: f, close: result.close, end: result.end }
+      }
     }
     return partial ? PARTIAL : undefined
   }
@@ -283,14 +334,17 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   const hasBoundary = () => frames.some((frame) => frame.state !== EPILOGUE)
 
   function endingStart(b: Uint8Array, i: number, start: number): number {
-    if (i <= start || i === 0) return i
+    if (i <= start || i === 0) {
+      return i
+    }
     return i >= 2 && i - 2 >= start && b[i - 2] === CR ? i - 2 : i - 1
   }
 
   function append(b: Uint8Array, start: number, end: number) {
     const length = headLength + end - start
-    if (length > maxHeaderBytes + maxBoundaryLineBytes)
+    if (length > maxHeaderBytes + maxBoundaryLineBytes) {
       throw new MaxHeaderBytesError({ maxHeaderBytes })
+    }
     if (length > head.length) {
       const grown = new Uint8Array(Math.max(length, head.length * 2))
       grown.set(head.subarray(0, headLength))
@@ -322,7 +376,9 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
       }
     }
     const headerLength = final ? headLength : endingStart(head, headLength, 0)
-    if (headerLength > maxHeaderBytes) throw new MaxHeaderBytesError({ maxHeaderBytes })
+    if (headerLength > maxHeaderBytes) {
+      throw new MaxHeaderBytesError({ maxHeaderBytes })
+    }
     headLineStart = headLength
     return false
   }
@@ -337,8 +393,9 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
         if (
           headLength - (head[headLength - 1] === CR ? 1 : 0) > maxHeaderBytes &&
           !(hasBoundary() && matchDelimiter(head, headLineStart, headLength, false) === PARTIAL)
-        )
+        ) {
           throw new MaxHeaderBytesError({ maxHeaderBytes })
+        }
         return i
       }
       if (endHeaderLine(false)) {
@@ -351,11 +408,15 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   }
 
   function emit(b: Uint8Array, start: number, end: number) {
-    if (end > start) enqueue({ type: section, part: current!, bytes: b.subarray(start, end) })
+    if (end > start) {
+      enqueue({ type: section, part: current!, bytes: b.subarray(start, end) })
+    }
   }
 
   function hold(b: Uint8Array, from: number, lineStart: boolean) {
-    if (from < b.length) carry = b.subarray(from)
+    if (from < b.length) {
+      carry = b.subarray(from)
+    }
     atLineStart = lineStart
   }
 
@@ -407,15 +468,21 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
 
   function run(b: Uint8Array, final: boolean) {
     let i = 0
-    while (i < b.length) i = inHeader ? readHeader(b, i) : readBody(b, i, final)
+    while (i < b.length) {
+      i = inHeader ? readHeader(b, i) : readBody(b, i, final)
+    }
     const next = b.length - (carry?.length ?? 0)
     sectionStart = sectionStart >= next ? sectionStart - next : -1
   }
 
   return {
     write(chunk: Uint8Array) {
-      if (!isUint8Array(chunk)) throw new TypeError('Expected a Uint8Array chunk.')
-      if (chunk.length === 0) return
+      if (!isUint8Array(chunk)) {
+        throw new TypeError('Expected a Uint8Array chunk.')
+      }
+      if (chunk.length === 0) {
+        return
+      }
       let b = chunk
       if (carry) {
         b = new Uint8Array(carry.length + chunk.length)
@@ -431,9 +498,15 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
         carry = undefined
         run(b, true)
       }
-      if (!inHeader) return
-      if (headLength > headLineStart && endHeaderLine(true)) return
-      if (headLength > 0 || !rootDone) finishHeaders(head.slice(0, headLength))
+      if (!inHeader) {
+        return
+      }
+      if (headLength > headLineStart && endHeaderLine(true)) {
+        return
+      }
+      if (headLength > 0 || !rootDone) {
+        finishHeaders(head.slice(0, headLength))
+      }
     },
   }
 }
@@ -444,22 +517,31 @@ const utf8 = new TextDecoder()
 // with no field before it is skipped, and a line such as mbox's `From ` line isn't a field.
 function readHeaders(bytes: Uint8Array): MimeHeaders.Header[] {
   let text = utf8.decode(bytes)
-  if (text.includes('\r')) text = text.replace(/\r(?!\n)/g, ' ')
-  if (text.startsWith(' ') || text.startsWith('\t'))
+  if (text.includes('\r')) {
+    text = text.replace(/\r(?!\n)/g, ' ')
+  }
+  if (text.startsWith(' ') || text.startsWith('\t')) {
     text = text.replace(/^(?:[ \t][^\n]*(?:\n|$))+/, '')
+  }
   return MimeHeaders.parseHeaders(text).filter((header) =>
     /^[\x21-\x39\x3b-\x7e]+$/.test(header.name),
   )
 }
 
 function stripComments(text: string): string {
-  if (!text.includes('(')) return text
+  if (!text.includes('(')) {
+    return text
+  }
   let result = ''
   let depth = 0
   for (const character of text) {
-    if (character === '(') depth++
-    else if (character === ')' && depth > 0) depth--
-    else if (depth === 0) result += character
+    if (character === '(') {
+      depth++
+    } else if (character === ')' && depth > 0) {
+      depth--
+    } else if (depth === 0) {
+      result += character
+    }
   }
   return result
 }

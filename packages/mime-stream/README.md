@@ -17,9 +17,11 @@ const output = message
   .pipeThrough(
     new TransformStream<MimeStream.Chunk, MimeStream.EncoderStream.Input>({
       transform(chunk, controller) {
-        if (chunk.part.contentType !== 'application/pdf') controller.enqueue(chunk)
-        else if (chunk.type === 'headers')
+        if (chunk.part.contentType !== 'application/pdf') {
+          controller.enqueue(chunk)
+        } else if (chunk.type === 'headers') {
           controller.enqueue('Content-Type: text/plain\r\n\r\nAttachment removed.')
+        }
       },
     }),
   )

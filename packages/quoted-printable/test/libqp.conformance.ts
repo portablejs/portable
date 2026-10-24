@@ -28,7 +28,9 @@ describe('encode()', () => {
 
   test('keeps the printable ASCII range except "=" literal', () => {
     let printable = ''
-    for (let i = 0x21; i <= 0x7e; i++) printable += String.fromCharCode(i)
+    for (let i = 0x21; i <= 0x7e; i++) {
+      printable += String.fromCharCode(i)
+    }
     expect(encode(printable, unwrapped)).toBe(printable.replace('=', '=3D'))
   })
 
@@ -37,8 +39,9 @@ describe('encode()', () => {
     const escaped = [...allBytes].filter(
       (i) => !(i === 0x09 || i === 0x0a || i === 0x0d || (i >= 0x20 && i <= 0x7e && i !== 0x3d)),
     )
-    for (const i of escaped)
+    for (const i of escaped) {
       expect(encoded).toContain('=' + i.toString(16).toUpperCase().padStart(2, '0'))
+    }
     expect(encoded).not.toMatch(/[=][0-9A-F]?[a-f]/)
     expect(decode(encoded)).toEqual(allBytes)
   })
@@ -77,7 +80,9 @@ describe('decode()', () => {
   test('decodes the escape of every byte', () => {
     expect(decode(encode(allBytes))).toEqual(allBytes)
     let lowercase = ''
-    for (let i = 0; i < 256; i++) lowercase += '=' + i.toString(16).padStart(2, '0')
+    for (let i = 0; i < 256; i++) {
+      lowercase += '=' + i.toString(16).padStart(2, '0')
+    }
     expect(decode(lowercase)).toEqual(allBytes)
   })
 
@@ -160,7 +165,9 @@ describe('soft line breaks', () => {
   test('keeps every line within 76 characters by default', () => {
     const input = 'õ'.repeat(200) + ' ' + 'a'.repeat(300)
     const encoded = encode(input)
-    for (const line of encoded.split('\r\n')) expect(line.length).toBeLessThanOrEqual(76)
+    for (const line of encoded.split('\r\n')) {
+      expect(line.length).toBeLessThanOrEqual(76)
+    }
     expect(decodeText(encoded)).toBe(input)
   })
 
@@ -175,9 +182,11 @@ describe('soft line breaks', () => {
 
   test('never splits an escape sequence', () => {
     const input = new Uint8Array(100).fill(0xff)
-    for (let lineLength = 4; lineLength < 20; lineLength++)
-      for (const line of encode(input, { lineLength }).split('=\r\n'))
+    for (let lineLength = 4; lineLength < 20; lineLength++) {
+      for (const line of encode(input, { lineLength }).split('=\r\n')) {
         expect(line).toMatch(/^(?:=FF)*$/)
+      }
+    }
   })
 
   test('never splits a UTF-8 sequence', () => {
@@ -244,8 +253,9 @@ describe('soft line breaks', () => {
   })
 
   test('rejects a line length that is not an integer of at least 4', () => {
-    for (const lineLength of [-5, 0, 1, 3, 7.5, Number.NaN, Infinity])
+    for (const lineLength of [-5, 0, 1, 3, 7.5, Number.NaN, Infinity]) {
       expect(() => encode('a', { lineLength })).toThrow(RangeError)
+    }
     expect(() => encode('a', { lineLength: 4 })).not.toThrow()
   })
 
@@ -253,7 +263,9 @@ describe('soft line breaks', () => {
     const inputs = [encode('tere jõgeva -x'), '-'.repeat(20), 'õõ', 'a'.repeat(30)]
     for (const input of inputs) {
       const encoded = encode(input, { lineLength: 4 })
-      for (const line of encoded.split('\r\n')) expect(line.length).toBeLessThanOrEqual(4)
+      for (const line of encoded.split('\r\n')) {
+        expect(line.length).toBeLessThanOrEqual(4)
+      }
       expect(decodeText(encoded)).toBe(input)
     }
   })
@@ -352,7 +364,9 @@ describe('EncoderStream', () => {
     const input = utf8('õ'.repeat(200))
     const encoded = await encodeStream(split(input, 13))
     expect(encoded).toBe(encode(input))
-    for (const line of encoded.split('\r\n')) expect(line.length).toBeLessThanOrEqual(76)
+    for (const line of encoded.split('\r\n')) {
+      expect(line.length).toBeLessThanOrEqual(76)
+    }
   })
 
   test('wraps lines at a custom length', async () => {
@@ -377,8 +391,9 @@ describe('EncoderStream', () => {
       { lineLength: 5 },
     ]) {
       const expected = encode(input, options)
-      for (let size = 1; size <= input.length; size++)
+      for (let size = 1; size <= input.length; size++) {
         expect(await encodeStream(split(input, size), options)).toBe(expected)
+      }
     }
   })
 
@@ -439,10 +454,11 @@ describe('binary', () => {
 
   test('keeps CRLF pairs split across chunks', async () => {
     const input = utf8('a\r\nb \r\n\r\r\n\n')
-    for (let size = 1; size <= input.length; size++)
+    for (let size = 1; size <= input.length; size++) {
       expect(await encodeStream(split(input, size), { binary: true, lineLength: false })).toBe(
         'a\r\nb=20\r\n=0D\r\n=0A',
       )
+    }
   })
 
   test('round trips arbitrary bytes', async () => {
@@ -473,8 +489,9 @@ describe('DecoderStream', () => {
   test('decodes the same however the input is split', async () => {
     const input = utf8(rfcEncoded + '\r\nab=C3=A9=\r\ncd  \r\n=\nx=4=\r\n1 \t= \r\n=\r=')
     const expected = decode(input)
-    for (let size = 1; size <= input.length; size++)
+    for (let size = 1; size <= input.length; size++) {
       expect(await decodeStream(split(input, size))).toEqual(expected)
+    }
   })
 })
 

@@ -95,7 +95,9 @@ async function both(zone: Zone, input: Dmarc.check.Input) {
     resolver: mailauthResolver(zoneResolver(zone)),
     strict: true,
   })
-  if (!theirs) throw new Error('mailauth found no From domain')
+  if (!theirs) {
+    throw new Error('mailauth found no From domain')
+  }
   return {
     ours: {
       result: ours.result,

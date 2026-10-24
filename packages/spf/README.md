@@ -17,7 +17,9 @@ const spf = await Spf.check(
   { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
 )
 
-if (spf.result === 'fail') reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`)
+if (spf.result === 'fail') {
+  reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`)
+}
 ```
 
 In Node, `node:dns/promises` works as the resolver and uses the system's DNS servers:

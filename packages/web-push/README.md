@@ -34,7 +34,9 @@ export default {
       },
       ttl: 3600,
     })
-    if (result.kind === 'gone') await env.DB.deleteSubscription(subscription.endpoint)
+    if (result.kind === 'gone') {
+      await env.DB.deleteSubscription(subscription.endpoint)
+    }
     return new Response(null, { status: 204 })
   },
 }

@@ -9,7 +9,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   ImageSize.parse(new TextEncoder().encode('hello world'))
  * } catch (error) {
- *   if (error instanceof ImageSize.UnsupportedError) console.log('not an image')
+ *   if (error instanceof ImageSize.UnsupportedError) {
+ *     console.log('not an image')
+ *   }
  * }
  * ```
  */
@@ -31,7 +33,9 @@ export class UnsupportedError extends Errors.UnsupportedError {
  * try {
  *   ImageSize.parse(png)
  * } catch (error) {
- *   if (error instanceof ImageSize.TruncatedError) console.log('need more bytes')
+ *   if (error instanceof ImageSize.TruncatedError) {
+ *     console.log('need more bytes')
+ *   }
  * }
  * ```
  */
@@ -52,7 +56,9 @@ export class TruncatedError extends Errors.TruncatedError {
  * try {
  *   ImageSize.parse(new TextEncoder().encode('<svg width="10"></svg>'))
  * } catch (error) {
- *   if (error instanceof ImageSize.InvalidInputError) console.log(error.message) // 'Invalid SVG'
+ *   if (error instanceof ImageSize.InvalidInputError) {
+ *     console.log(error.message)
+ *   } // 'Invalid SVG'
  * }
  * ```
  */
@@ -71,7 +77,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await ImageSize.parseStream(response.body!, { maxBytes: 64 * 1024 })
  * } catch (error) {
- *   if (error instanceof ImageSize.MaxBytesError) console.log(`no size in ${error.maxBytes} bytes`)
+ *   if (error instanceof ImageSize.MaxBytesError) {
+ *     console.log(`no size in ${error.maxBytes} bytes`)
+ *   }
  * }
  * ```
  */

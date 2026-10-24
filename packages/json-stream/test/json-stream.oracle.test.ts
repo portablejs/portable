@@ -36,13 +36,22 @@ function randomValue(seed: number, depth = 0): unknown {
   }
   const build = (level: number): unknown => {
     const kind = Math.floor(random() * (level > 3 ? 4 : 6))
-    if (kind === 0) return Math.floor(random() * 2 ** 40) / 1000 - 1e6
-    if (kind === 1)
+    if (kind === 0) {
+      return Math.floor(random() * 2 ** 40) / 1000 - 1e6
+    }
+    if (kind === 1) {
       return ['', 'plain', 'esc"aped\\\n\t', 'ü🚀\u0001', '1e5'][Math.floor(random() * 5)]
-    if (kind === 2) return random() < 0.5
-    if (kind === 3) return Math.floor(random() * 1000)
+    }
+    if (kind === 2) {
+      return random() < 0.5
+    }
+    if (kind === 3) {
+      return Math.floor(random() * 1000)
+    }
     const size = Math.floor(random() * 5)
-    if (kind === 4) return Array.from({ length: size }, () => build(level + 1))
+    if (kind === 4) {
+      return Array.from({ length: size }, () => build(level + 1))
+    }
     return Object.fromEntries(Array.from({ length: size }, (_, i) => [`k${i}`, build(level + 1)]))
   }
   return build(depth)

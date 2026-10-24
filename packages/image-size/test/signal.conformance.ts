@@ -10,8 +10,11 @@ describe('signal', () => {
     const stream = new ReadableStream<Uint8Array>({
       pull(c) {
         pulls++
-        if (pulls === 1) c.enqueue(new Uint8Array([0xff, 0xd8]))
-        else if (pulls === 2) controller.abort(reason)
+        if (pulls === 1) {
+          c.enqueue(new Uint8Array([0xff, 0xd8]))
+        } else if (pulls === 2) {
+          controller.abort(reason)
+        }
       },
       cancel: (r) => {
         cancelled = r

@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   DnsPacket.decode(new Uint8Array(4))
  * } catch (error) {
- *   if (error instanceof DnsPacket.TruncatedError) console.log('incomplete message')
+ *   if (error instanceof DnsPacket.TruncatedError) {
+ *     console.log('incomplete message')
+ *   }
  * }
  * ```
  */
@@ -31,7 +33,9 @@ export class TruncatedError extends Errors.TruncatedError {
  * try {
  *   DnsPacket.encode({ answers: [{ type: 'A', name: 'example.com', data: '300.0.0.1' }] })
  * } catch (error) {
- *   if (error instanceof DnsPacket.InvalidInputError) console.log(error.message)
+ *   if (error instanceof DnsPacket.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -50,7 +54,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   DnsPacket.encode({ additionals: [{ type: 'OPT', name: '.', options: [{ code: 'NSID' }] }] })
  * } catch (error) {
- *   if (error instanceof DnsPacket.UnsupportedError) console.log('pass the option as data')
+ *   if (error instanceof DnsPacket.UnsupportedError) {
+ *     console.log('pass the option as data')
+ *   }
  * }
  * ```
  */

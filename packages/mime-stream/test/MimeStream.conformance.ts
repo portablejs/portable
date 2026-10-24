@@ -29,7 +29,9 @@ function randomMessage(seed: number): string {
   const text = (eol: string) => {
     let result = ''
     for (let i = random(5); i > 0; i--) {
-      for (let j = random(6); j > 0; j--) result += pick(words) + pick([' ', '', '\t'])
+      for (let j = random(6); j > 0; j--) {
+        result += pick(words) + pick([' ', '', '\t'])
+      }
       result += eol
     }
     return result
@@ -41,12 +43,17 @@ function randomMessage(seed: number): string {
       const boundary = `b${++boundaries}${pick(['', '-x', '=_part'])}`
       let result = `Content-Type: multipart/${pick(['mixed', 'alternative', 'digest'])}; boundary="${boundary}"${eol}${eol}`
       result += text(eol)
-      for (let i = random(4); i > 0; i--)
+      for (let i = random(4); i > 0; i--) {
         result += `--${boundary}${pick(['', ' ', '\t  '])}${eol}${part(depth + 1)}${eol}`
-      if (random(4) > 0) result += `--${boundary}--${pick(['', ' '])}${eol}${text(eol)}`
+      }
+      if (random(4) > 0) {
+        result += `--${boundary}--${pick(['', ' '])}${eol}${text(eol)}`
+      }
       return result
     }
-    if (kind === 2) return `Content-Type: message/rfc822${eol}${eol}${part(depth + 1)}`
+    if (kind === 2) {
+      return `Content-Type: message/rfc822${eol}${eol}${part(depth + 1)}`
+    }
     return `Subject: ${text('').trim()}${eol}X-Seed: ${seed}${eol}${pick([eol, ''])}${text(eol)}`
   }
   return part(0)
@@ -231,9 +238,11 @@ describe('EncoderStream', () => {
         .pipeThrough(
           new TransformStream<MimeStream.Chunk, MimeStream.EncoderStream.Input>({
             transform(chunk, controller) {
-              if (chunk.part.contentType !== 'image/png') controller.enqueue(chunk)
-              else if (chunk.type === 'headers')
+              if (chunk.part.contentType !== 'image/png') {
+                controller.enqueue(chunk)
+              } else if (chunk.type === 'headers') {
                 controller.enqueue('Content-Type: text/plain\r\n\r\nImage removed.')
+              }
             },
           }),
         )

@@ -34,8 +34,12 @@ describe('concurrent takes', () => {
     const store = {
       async get(key, options) {
         const value = memory.get(key, options)
-        if (++reads === 2) release()
-        if (reads <= 2) await bothRead
+        if (++reads === 2) {
+          release()
+        }
+        if (reads <= 2) {
+          await bothRead
+        }
         return value
       },
       set: (key, value, options) => memory.set(key, value, options),
@@ -157,10 +161,14 @@ describe('memoryStore', () => {
 
   test('keeps live keys while sweeping expired ones', () => {
     const store = RateLimit.memoryStore()
-    for (let i = 0; i < 1000; i++) store.set(`old${i}`, i, { expected: undefined, ttl: 10 })
+    for (let i = 0; i < 1000; i++) {
+      store.set(`old${i}`, i, { expected: undefined, ttl: 10 })
+    }
     store.set('live', 1, { expected: undefined, ttl: 1_000_000 })
     advance(10)
-    for (let i = 0; i < 5000; i++) store.set(`new${i}`, i, { expected: undefined, ttl: 1000 })
+    for (let i = 0; i < 5000; i++) {
+      store.set(`new${i}`, i, { expected: undefined, ttl: 1000 })
+    }
     expect(store.get('live', {})).toBe(1)
     expect(store.get('new4999', {})).toBe(4999)
     expect(store.get('old0', {})).toBeUndefined()

@@ -28,8 +28,11 @@ function source(): ReadableStream<Uint8Array> {
   let i = 0
   return new ReadableStream({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
@@ -44,7 +47,8 @@ test('splits and joins 1.5 MB of mail within 25% of mailsplit', async ({ bench }
       )
     }),
     bench('mailsplit', async () => {
-      for await (const _ of Readable.from(chunks).pipe(new Splitter()).pipe(new Joiner()));
+      for await (const _ of Readable.from(chunks).pipe(new Splitter()).pipe(new Joiner())) {
+      }
     }),
     bench('TransformStream (copy, for reference)', async () => {
       await drain(source().pipeThrough(new TransformStream()))
@@ -64,7 +68,8 @@ test('reads the header block and body of 1.5 MB of mail within 25% of mailsplit'
       await drain(body)
     }),
     bench('mailsplit with ignoreEmbedded', async () => {
-      for await (const _ of Readable.from(chunks).pipe(new Splitter({ ignoreEmbedded: true })));
+      for await (const _ of Readable.from(chunks).pipe(new Splitter({ ignoreEmbedded: true }))) {
+      }
     }),
   )
   expect(result.get('mailsplit with ignoreEmbedded')).not.toBeFasterThan(

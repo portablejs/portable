@@ -44,7 +44,9 @@ function watchdog(idle = 240_000): Plugin {
   let running = 0
   const arm = () => {
     clearTimeout(timer)
-    if (running === 0) return
+    if (running === 0) {
+      return
+    }
     timer = setTimeout(() => {
       const stuck = vitest.state
         .getTestModules()
@@ -58,12 +60,16 @@ function watchdog(idle = 240_000): Plugin {
   }
   const reporter = {
     onTestModuleStart(module) {
-      if (!module.project.config.browser.enabled) return
+      if (!module.project.config.browser.enabled) {
+        return
+      }
       running++
       arm()
     },
     onTestModuleEnd(module) {
-      if (!module.project.config.browser.enabled) return
+      if (!module.project.config.browser.enabled) {
+        return
+      }
       running--
       arm()
     },
@@ -77,7 +83,9 @@ function watchdog(idle = 240_000): Plugin {
     name: 'portable:watchdog',
     configureVitest(context) {
       vitest = context.vitest
-      if (!vitest.config.reporters.includes(reporter)) vitest.config.reporters.push(reporter)
+      if (!vitest.config.reporters.includes(reporter)) {
+        vitest.config.reporters.push(reporter)
+      }
     },
   }
 }
@@ -105,6 +113,8 @@ export default defineConfig({
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
+      // Every if, else and loop body needs braces, so a reader always sees where the body ends.
+      curly: ['error', 'all'],
       'no-console': 'error',
       'portable/error-kind': 'error',
       'portable/import-extension': 'error',

@@ -12,8 +12,9 @@ async function readText(reader: ReadableStreamDefaultReader<Uint8Array>): Promis
 
 async function readRest(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
   let text = ''
-  for (let result = await reader.read(); !result.done; result = await reader.read())
+  for (let result = await reader.read(); !result.done; result = await reader.read()) {
     text += decoder.decode(result.value)
+  }
   return text
 }
 
@@ -21,8 +22,11 @@ function erroring(error: Error): ReadableStream<unknown> {
   let sent = false
   return new ReadableStream({
     pull(controller) {
-      if (sent) controller.error(error)
-      else controller.enqueue(1)
+      if (sent) {
+        controller.error(error)
+      } else {
+        controller.enqueue(1)
+      }
       sent = true
     },
   })
@@ -124,8 +128,11 @@ describe('json-stream-stringify', () => {
     const slow = new ReadableStream<string>({
       async pull(controller) {
         await new Promise((resolve) => setTimeout(resolve, 1))
-        if (i < 3) controller.enqueue('abc'[i++]!)
-        else controller.close()
+        if (i < 3) {
+          controller.enqueue('abc'[i++]!)
+        } else {
+          controller.close()
+        }
       },
     })
     expect(await encodeText(slow)).toBe('["a","b","c"]')
@@ -396,7 +403,9 @@ describe('encodeStream', () => {
     })
     async function* generator() {
       try {
-        for (;;) yield 1
+        for (;;) {
+          yield 1
+        }
       } finally {
         iteratorFinished = true
       }

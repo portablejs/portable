@@ -216,7 +216,9 @@ describe('reading replies', () => {
   test('reads a 30,000-line reply within the test timeout', async () => {
     const lines = 30_000
     let reply = ''
-    for (let i = 0; i < lines; i++) reply += `250-capability line ${i}\r\n`
+    for (let i = 0; i < lines; i++) {
+      reply += `250-capability line ${i}\r\n`
+    }
     const server = fakeServer({ EHLO: `${reply}250 DONE\r\n` })
     const client = await plain(server)
     expect(client.extensions).toHaveLength(lines)
@@ -227,7 +229,9 @@ describe('reading replies', () => {
     for (const size of [reply.length, 500]) {
       const server = fakeServer({
         EHLO: (_, connection) => {
-          for (const chunk of chunked(encode(reply), size)) connection.write(chunk)
+          for (const chunk of chunked(encode(reply), size)) {
+            connection.write(chunk)
+          }
         },
       })
       const error = await failure(plain(server))
@@ -252,7 +256,9 @@ describe('reading replies', () => {
     const server = fakeServer({
       greeting: (_, connection) => {
         const chunk = encode('x'.repeat(16))
-        for (let i = 0; i < 65_600; i++) connection.write(chunk)
+        for (let i = 0; i < 65_600; i++) {
+          connection.write(chunk)
+        }
       },
     })
     const error = await failure(plain(server))

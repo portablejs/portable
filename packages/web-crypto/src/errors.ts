@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   WebCrypto.derToRawEcdsa(new Uint8Array([0x30, 0x00]))
  * } catch (error) {
- *   if (error instanceof WebCrypto.InvalidInputError) console.log(error.message)
+ *   if (error instanceof WebCrypto.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

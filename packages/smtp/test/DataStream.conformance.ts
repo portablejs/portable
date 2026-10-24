@@ -131,7 +131,9 @@ describe('input handling', () => {
     const whole = decoder.decode(encodeData(encode(text)))
     for (let size = 1; size <= text.length; size++) {
       const chunks: string[] = []
-      for (let i = 0; i < text.length; i += size) chunks.push(text.slice(i, i + size))
+      for (let i = 0; i < text.length; i += size) {
+        chunks.push(text.slice(i, i + size))
+      }
       expect(await stream(chunks)).toBe(whole)
     }
   })

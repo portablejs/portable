@@ -33,7 +33,9 @@ async function isRegistered(name: string) {
     await Rdap.domain(name, { follow: false })
     return true
   } catch (error) {
-    if (error instanceof Rdap.NotFoundError) return false
+    if (error instanceof Rdap.NotFoundError) {
+      return false
+    }
     throw error
   }
 }

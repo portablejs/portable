@@ -466,11 +466,15 @@ describe('streams', () => {
   test('iterates the values of an async generator', async () => {
     const remote = pair({
       async *count(n: number) {
-        for (let i = 0; i < n; i++) yield i
+        for (let i = 0; i < n; i++) {
+          yield i
+        }
       },
     })
     const values: number[] = []
-    for await (const value of remote.count(100)) values.push(value)
+    for await (const value of remote.count(100)) {
+      values.push(value)
+    }
     expect(values).toEqual(Array.from({ length: 100 }, (_, i) => i))
   })
 
@@ -499,7 +503,9 @@ describe('streams', () => {
     let produced = 0
     const remote = pair({
       async *numbers() {
-        for (;;) yield produced++
+        for (;;) {
+          yield produced++
+        }
       },
     })
     const reader = (await remote.numbers()).getReader()
@@ -507,7 +513,9 @@ describe('streams', () => {
     await settle()
     expect(produced).toBeGreaterThan(1)
     expect(produced).toBeLessThanOrEqual(257)
-    for (let i = 0; i < 300; i++) await reader.read()
+    for (let i = 0; i < 300; i++) {
+      await reader.read()
+    }
     await settle()
     expect(produced).toBeLessThanOrEqual(301 + 257)
     await reader.cancel()
@@ -518,7 +526,9 @@ describe('streams', () => {
     const remote = pair({
       async *forever() {
         try {
-          for (let i = 0; ; i++) yield i
+          for (let i = 0; ; i++) {
+            yield i
+          }
         } finally {
           stopped.resolve()
         }
@@ -527,7 +537,9 @@ describe('streams', () => {
     const values: number[] = []
     for await (const value of remote.forever()) {
       values.push(value)
-      if (value === 3) break
+      if (value === 3) {
+        break
+      }
     }
     await stopped.promise
     expect(values).toEqual([0, 1, 2, 3])
@@ -542,7 +554,9 @@ describe('streams', () => {
     })
     const values: number[] = []
     const error = await (async () => {
-      for await (const value of remote.failing()) values.push(value)
+      for await (const value of remote.failing()) {
+        values.push(value)
+      }
     })().catch((e: unknown) => e)
     expect(values).toEqual([1])
     expect(error).toMatchObject({ name: 'Rpc.RemoteError', code: 1, message: 'broken' })
@@ -552,7 +566,8 @@ describe('streams', () => {
     const remote = pair({ one: () => 1 }) as any
     await expect(
       (async () => {
-        for await (const _ of remote.one());
+        for await (const _ of remote.one()) {
+        }
       })(),
     ).rejects.toBeInstanceOf(TypeError)
   })

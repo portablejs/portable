@@ -76,7 +76,9 @@ export function startServer(options: Options = {}): Promise<TestServer> {
         server,
         close: () =>
           new Promise((done) => {
-            for (const connection of server.connections) connection._socket.destroy()
+            for (const connection of server.connections) {
+              connection._socket.destroy()
+            }
             server.close(done)
           }),
       })

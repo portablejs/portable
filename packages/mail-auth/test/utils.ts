@@ -6,7 +6,9 @@ const files = import.meta.glob<string>('./fixtures/*', { query: '?url&inline', i
 
 export async function fixtureText(name: string): Promise<string> {
   const load = files[`./fixtures/${name}`]
-  if (!load) throw new Error(`No fixture ${name}`)
+  if (!load) {
+    throw new Error(`No fixture ${name}`)
+  }
   return (await fetch(await load())).text()
 }
 
@@ -42,14 +44,22 @@ export function zoneResolver(zone: Zone, log: string[] = []): MailAuth.Resolver 
     let key = normalize(name)
     for (let hops = 0; ; hops++) {
       const records = names.get(key)
-      if (!records) throw dnsError('ENOTFOUND', name)
+      if (!records) {
+        throw dnsError('ENOTFOUND', name)
+      }
       if (records.CNAME === undefined || type === 'CNAME') {
         const value = pick(records)
-        if (value === undefined) throw dnsError('ENODATA', name)
-        if (typeof value === 'string') throw dnsError(value, name)
+        if (value === undefined) {
+          throw dnsError('ENODATA', name)
+        }
+        if (typeof value === 'string') {
+          throw dnsError(value, name)
+        }
         return [...value]
       }
-      if (hops === 8) throw dnsError('ESERVFAIL', name)
+      if (hops === 8) {
+        throw dnsError('ESERVFAIL', name)
+      }
       key = normalize(records.CNAME)
     }
   }

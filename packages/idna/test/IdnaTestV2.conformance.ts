@@ -11,13 +11,14 @@ function check(
   const mismatches: Mismatch[] = []
   for (const testCase of idnaTestCases) {
     const actual = attempt(() => convert(testCase.source))
-    if (actual !== expected(testCase))
+    if (actual !== expected(testCase)) {
       mismatches.push({
         line: testCase.line,
         source: testCase.source,
         expected: expected(testCase),
         actual,
       })
+    }
   }
   return mismatches
 }

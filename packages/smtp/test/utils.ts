@@ -85,17 +85,25 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
     const connection = {
       secure: socketOptions.secureTransport === 'on',
       write(reply) {
-        if (current.done) return
+        if (current.done) {
+          return
+        }
         current.controller.enqueue(typeof reply === 'string' ? encoder.encode(reply) : reply)
       },
       end(reply?: string) {
-        if (reply) connection.write(reply)
-        if (current.done) return
+        if (reply) {
+          connection.write(reply)
+        }
+        if (current.done) {
+          return
+        }
         current.done = true
         current.controller.close()
       },
       destroy() {
-        if (current.done) return
+        if (current.done) {
+          return
+        }
         current.done = true
         current.controller.error(new Error('Connection reset'))
       },
@@ -104,7 +112,9 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
     const answer = (key: string, line: string): string | false | void => {
       const handler = script[key] ?? defaults[key] ?? script.DEFAULT ?? defaults.DEFAULT!
       const reply = typeof handler === 'function' ? handler(line, connection) : handler
-      if (reply) connection.write(reply)
+      if (reply) {
+        connection.write(reply)
+      }
       return reply
     }
 
@@ -121,14 +131,19 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
             server.messages.push(body.join('\r\n'))
             body = []
             answer('DATA_END', line)
-          } else body.push(line.startsWith('.') ? line.slice(1) : line)
+          } else {
+            body.push(line.startsWith('.') ? line.slice(1) : line)
+          }
           continue
         }
         server.commands.push(line)
         const key = (line.split(/\s/)[0] ?? '').toUpperCase()
         const reply = answer(key, line)
-        if (key === 'DATA' && reply && /(^|\n)3\d\d [^\n]*\r\n$/.test(reply)) inData = true
-        else if (key === 'QUIT') connection.end()
+        if (key === 'DATA' && reply && /(^|\n)3\d\d [^\n]*\r\n$/.test(reply)) {
+          inData = true
+        } else if (key === 'QUIT') {
+          connection.end()
+        }
       }
     }
 
@@ -147,8 +162,12 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
       })
       const writable = new WritableStream<Uint8Array>({
         write(chunk) {
-          if (state.closedByClient || current !== state) throw new Error('Socket is closed')
-          if (state.done) throw new Error('Connection reset')
+          if (state.closedByClient || current !== state) {
+            throw new Error('Socket is closed')
+          }
+          if (state.done) {
+            throw new Error('Connection reset')
+          }
           receive(chunk)
         },
       })
@@ -159,7 +178,9 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
         opened: open,
         closed,
         close() {
-          if (state.closedByClient) return
+          if (state.closedByClient) {
+            return
+          }
           state.closedByClient = true
           server.closed++
           if (!state.done) {
@@ -190,7 +211,9 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
       connection.secure,
       options.refuse ? Promise.reject(new Error('Connection refused')) : Promise.resolve(),
     )
-    if (!options.refuse) queueMicrotask(() => answer('greeting', ''))
+    if (!options.refuse) {
+      queueMicrotask(() => answer('greeting', ''))
+    }
     return socket
   }
 
@@ -201,7 +224,9 @@ export const encode = (text: string): Uint8Array => new TextEncoder().encode(tex
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
   const chunks: Uint8Array[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }
 

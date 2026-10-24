@@ -25,7 +25,9 @@ import { pick, random, randomText, utf8, wellFormed, type Alphabet } from './uti
 const cases = 300
 const each = (seed: number, run: (next: () => number) => void) => {
   const next = random(seed)
-  for (let i = 0; i < cases; i++) run(next)
+  for (let i = 0; i < cases; i++) {
+    run(next)
+  }
 }
 
 const encodedWords = /^=\?UTF-8\?[QB]\?[!-~]*?\?=(?: =\?UTF-8\?[QB]\?[!-~]*?\?=)*$/
@@ -59,7 +61,9 @@ describe('encoded words', () => {
                 !decoded.includes('\ufffd')
               )
             }))
-        if (!ok) failures.push({ input, encoding, maxLength, encoded })
+        if (!ok) {
+          failures.push({ input, encoding, maxLength, encoded })
+        }
       }
     })
     expect(failures).toEqual([])
@@ -74,7 +78,9 @@ describe('encoded words', () => {
           wordEncoding: encoding,
           wordLength: pick(next, [false, 20, 40] as const),
         })
-        if (decodeWords(encoded) !== wellFormed(input)) failures.push({ input, encoded })
+        if (decodeWords(encoded) !== wellFormed(input)) {
+          failures.push({ input, encoded })
+        }
       }
     })
     expect(failures).toEqual([])
@@ -93,8 +99,9 @@ describe('encoded words', () => {
         decodeWords(encoded) !== input ||
         /[\u0080-\uffff]/.test(encoded) ||
         (plain && encoded !== input)
-      )
+      ) {
         failures.push({ input, encoded })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -114,10 +121,13 @@ describe('encoded words', () => {
       const base64 = btoa(String.fromCharCode(...bytes))
       for (const encoding of ['Q', 'B'] as const) {
         const encoded = encodeWord(input, { charset: latin1, wordEncoding: encoding })
-        if (decodeWords(encoded) !== input) failures.push({ input, encoded })
+        if (decodeWords(encoded) !== input) {
+          failures.push({ input, encoded })
+        }
       }
-      if (decodeWords(`=?iso-8859-1*en?B?${base64}?=`) !== decoder.decode(bytes))
+      if (decodeWords(`=?iso-8859-1*en?B?${base64}?=`) !== decoder.decode(bytes)) {
         failures.push({ input })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -129,7 +139,9 @@ describe('encoded words', () => {
         '=?',
         '=',
       )
-      if (decodeWords(input) !== input) failures.push(input)
+      if (decodeWords(input) !== input) {
+        failures.push(input)
+      }
     })
     expect(failures).toEqual([])
   })
@@ -169,7 +181,7 @@ describe('header values', () => {
     const failures: unknown[] = []
     each(7, (next) => {
       const params: Record<string, string> = {}
-      for (let i = Math.floor(next() * 4) + 1; i > 0; i--)
+      for (let i = Math.floor(next() * 4) + 1; i > 0; i--) {
         params[paramName(next)] = randomText(next, 120, [
           'ascii',
           'specials',
@@ -178,6 +190,7 @@ describe('header values', () => {
           'astral',
           'controls',
         ])
+      }
       const value = pick(next, ['attachment', 'inline', 'text/plain', 'multipart/mixed'])
       const built = formatValue({ value, params })
       const parsed = parseValue(built)
@@ -185,8 +198,9 @@ describe('header values', () => {
         !printable.test(built) ||
         parsed.value !== value ||
         JSON.stringify(sorted(parsed.params)) !== JSON.stringify(sorted(params))
-      )
+      ) {
         failures.push({ params, built })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -231,7 +245,9 @@ describe('folding', () => {
         folded
           .split('\r\n')
           .every((line) => line.trimEnd().length <= lineLength || !/\S\s+\S/.test(line.trim()))
-      if (!ok) failures.push({ input, lineLength, folded })
+      if (!ok) {
+        failures.push({ input, lineLength, folded })
+      }
     })
     expect(failures).toEqual([])
   })
@@ -242,7 +258,9 @@ describe('folding', () => {
       const input = Array.from({ length: Math.floor(next() * 40) }, () => pick(next, parts)).join(
         '',
       )
-      for (const header of parseHeaders(input)) expect(header.name).not.toMatch(/[\r\n:]/)
+      for (const header of parseHeaders(input)) {
+        expect(header.name).not.toMatch(/[\r\n:]/)
+      }
     })
   })
 })
@@ -290,8 +308,9 @@ describe('addresses', () => {
       const actual = parsed.map((entry) =>
         'group' in entry ? { name: entry.name, group: entry.group.map(normal) } : normal(entry),
       )
-      if (JSON.stringify(actual) !== JSON.stringify(expected))
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
         failures.push({ list, formatted, actual })
+      }
     })
     expect(failures).toEqual([])
   })

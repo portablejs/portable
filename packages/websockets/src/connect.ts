@@ -129,7 +129,9 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  * })
  * const writer = writable.getWriter()
  * await writer.write('hello')
- * for await (const message of readable) console.log(message)
+ * for await (const message of readable) {
+ *   console.log(message)
+ * }
  * ```
  */
 export function connect(url: connect.Url, options: connect.Options = {}): Duplex {
@@ -147,8 +149,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     heartbeat,
     WebSocket: Impl = globalThis.WebSocket,
   } = options
-  if (typeof Impl !== 'function')
+  if (typeof Impl !== 'function') {
     throw new TypeError('No WebSocket class found. Pass one as the `WebSocket` option.')
+  }
   const next = Timers.backoff(delay)
   assertSize('attempts', attempts, 1)
   assertSize('timeout', timeout, 1)
@@ -174,28 +177,41 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   const notify = () => {
     const waiting = waiters
     waiters = []
-    for (const resolve of waiting) resolve()
+    for (const resolve of waiting) {
+      resolve()
+    }
   }
   const changed = () => new Promise<void>((resolve) => waiters.push(resolve))
 
   const finish = (error: unknown, closeReadable: boolean) => {
-    if (stop.signal.aborted) return
+    if (stop.signal.aborted) {
+      return
+    }
     failure = error
     stop.abort(error)
     signal?.removeEventListener('abort', onAbort)
     try {
-      if (closeReadable) readableController.close()
-      else readableController.error(error)
+      if (closeReadable) {
+        readableController.close()
+      } else {
+        readableController.error(error)
+      }
     } catch {}
-    if (!closing) writableController.error(error)
+    if (!closing) {
+      writableController.error(error)
+    }
     queue.length = 0
     notify()
   }
 
   const push = (message: Message) => {
-    if (stop.signal.aborted) return
+    if (stop.signal.aborted) {
+      return
+    }
     readableController.enqueue(message)
-    if (readableController.desiredSize! < 0) finish(new MaxBufferedError({ maxBuffered }), false)
+    if (readableController.desiredSize! < 0) {
+      finish(new MaxBufferedError({ maxBuffered }), false)
+    }
   }
 
   const onAbort = () => finish(signal!.reason, false)
@@ -204,7 +220,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     let socket: Socket
     try {
       const target = typeof url === 'function' ? await url() : url
-      if (stop.signal.aborted) return { ready: false, kind: 'error', error: failure }
+      if (stop.signal.aborted) {
+        return { ready: false, kind: 'error', error: failure }
+      }
       socket = new Impl(String(target), protocolList)
     } catch (error) {
       return { ready: false, kind: 'error', error, final: typeof url !== 'function' }
@@ -222,7 +240,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     let wakeHandshake: (() => void) | undefined
     const release = () => {
       handshake = false
-      for (const message of inbox) push(message)
+      for (const message of inbox) {
+        push(message)
+      }
       inbox.length = 0
       wakeHandshake?.()
     }
@@ -238,7 +258,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     )
 
     const end = (next: Outcome) => {
-      if (outcome) return
+      if (outcome) {
+        return
+      }
       outcome = next
       socket.removeEventListener('message', onMessage)
       socket.removeEventListener('close', onClose)
@@ -246,7 +268,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       clearTimeout(openTimer)
       clearInterval(pingTimer)
       clearTimeout(pongTimer)
-      if (current === socket) current = undefined
+      if (current === socket) {
+        current = undefined
+      }
       release()
       attempt.abort()
       notify()
@@ -266,7 +290,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       } else if (handshake) {
         inbox.push(message)
         wakeHandshake?.()
-      } else push(message)
+      } else {
+        push(message)
+      }
     }
     const onClose = (event: SocketEvent) =>
       end({ ready, kind: 'close', close: { code: event.code ?? 1005, reason: event.reason ?? '' } })
@@ -278,34 +304,45 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     socket.addEventListener('error', () => {})
     stop.signal.addEventListener('abort', onStop)
     attempt.signal.addEventListener('abort', () => {
-      if (outcome) return
+      if (outcome) {
+        return
+      }
       socket.close(stop.signal.aborted ? 1000 : undefined)
       end({ ready, kind: 'error', error: attempt.signal.reason })
     })
-    if (stop.signal.aborted) onStop()
+    if (stop.signal.aborted) {
+      onStop()
+    }
 
     const opened = await Promise.race([
       new Promise<boolean>((resolve) => socket.addEventListener('open', () => resolve(true))),
       result.then(() => false),
     ])
-    if (!opened) return result
+    if (!opened) {
+      return result
+    }
 
     if (open) {
       const messages = new ReadableStream<Message>(
         {
           async pull(controller) {
-            while (handshake && inbox.length === 0)
+            while (handshake && inbox.length === 0) {
               await new Promise<void>((resolve) => (wakeHandshake = resolve))
-            if (inbox.length > 0) controller.enqueue(inbox.shift()!)
-            else controller.close()
+            }
+            if (inbox.length > 0) {
+              controller.enqueue(inbox.shift()!)
+            } else {
+              controller.close()
+            }
           },
           cancel: release,
         },
         { highWaterMark: 0 },
       )
       const send = (message: string | Uint8Array<ArrayBuffer>) => {
-        if (outcome || socket.readyState !== OPEN)
+        if (outcome || socket.readyState !== OPEN) {
           throw new DOMException('The WebSocket is not open.', 'InvalidStateError')
+        }
         socket.send(assertOutgoing(message))
       }
       const handshakeDone = Promise.resolve().then(() =>
@@ -317,15 +354,21 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       } catch (error) {
         attempt.abort(error)
       }
-      if (outcome) return result
+      if (outcome) {
+        return result
+      }
     }
 
     clearTimeout(openTimer)
     release()
     let sent = 0
-    while (sent < queue.length && socket.readyState === OPEN) socket.send(queue[sent++]!)
+    while (sent < queue.length && socket.readyState === OPEN) {
+      socket.send(queue[sent++]!)
+    }
     queue.splice(0, sent)
-    if (socket.readyState !== OPEN) return result
+    if (socket.readyState !== OPEN) {
+      return result
+    }
     ready = true
     current = socket
     notify()
@@ -333,7 +376,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     if (heartbeat) {
       const { ping, interval, timeout: wait = interval } = heartbeat
       pingTimer = setInterval(() => {
-        if (socket.readyState !== OPEN) return
+        if (socket.readyState !== OPEN) {
+          return
+        }
         socket.send(ping)
         pongTimer ??= startTimer(
           () =>
@@ -350,9 +395,15 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   async function run() {
     for (let failures = 0; !stop.signal.aborted;) {
       const outcome = await session()
-      if (stop.signal.aborted) return
-      if (closing && queue.length === 0) return finish(undefined, true)
-      if (outcome.ready) failures = 0
+      if (stop.signal.aborted) {
+        return
+      }
+      if (closing && queue.length === 0) {
+        return finish(undefined, true)
+      }
+      if (outcome.ready) {
+        failures = 0
+      }
       if (outcome.kind === 'close') {
         let reconnect: boolean
         try {
@@ -360,7 +411,9 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         } catch (error) {
           return finish(error, false)
         }
-        if (stop.signal.aborted) return
+        if (stop.signal.aborted) {
+          return
+        }
         if (!reconnect) {
           const { code, reason } = outcome.close
           return finish(new CloseError({ code, reason }), isNormalClose(code))
@@ -370,8 +423,12 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         outcome.kind === 'error'
           ? outcome.error
           : new CloseError({ code: outcome.close.code, reason: outcome.close.reason })
-      if (outcome.kind === 'error' && outcome.final) return finish(error, false)
-      if (++failures >= attempts) return finish(error, false)
+      if (outcome.kind === 'error' && outcome.final) {
+        return finish(error, false)
+      }
+      if (++failures >= attempts) {
+        return finish(error, false)
+      }
       await Timers.sleep(next({ attempt: failures, error }), { signal: stop.signal }).catch(
         () => {},
       )
@@ -380,10 +437,13 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
 
   const write = (chunk: string | Uint8Array<ArrayBuffer>): Promise<void> | undefined => {
     assertOutgoing(chunk)
-    if (stop.signal.aborted) throw failure
+    if (stop.signal.aborted) {
+      throw failure
+    }
     if (current?.readyState === OPEN && queue.length === 0) {
-      if (current.bufferedAmount > highWaterMark)
+      if (current.bufferedAmount > highWaterMark) {
         return drained(current, highWaterMark).then(() => write(chunk))
+      }
       current.send(chunk)
       return
     }
@@ -414,19 +474,27 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       return write(chunk)
     },
     async close() {
-      while (queue.length > 0 && !stop.signal.aborted) await changed()
-      if (stop.signal.aborted) throw failure
+      while (queue.length > 0 && !stop.signal.aborted) {
+        await changed()
+      }
+      if (stop.signal.aborted) {
+        throw failure
+      }
       closing = true
-      if (current) current.close(1000)
-      else finish(undefined, true)
+      if (current) {
+        current.close(1000)
+      } else {
+        finish(undefined, true)
+      }
     },
     abort(reason) {
       finish(reason, false)
     },
   })
 
-  if (signal?.aborted) finish(signal.reason, false)
-  else {
+  if (signal?.aborted) {
+    finish(signal.reason, false)
+  } else {
     signal?.addEventListener('abort', onAbort)
     void run()
   }

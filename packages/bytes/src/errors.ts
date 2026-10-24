@@ -9,7 +9,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Bytes.fromHex('0g')
  * } catch (error) {
- *   if (error instanceof Bytes.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Bytes.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

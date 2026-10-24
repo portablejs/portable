@@ -28,8 +28,9 @@ export function fold(input: string | Uint8Array, options: fold.Options = {}): st
   const text = toText(input)
   const lines = text.split(/(\r\n|\r|\n)/)
   let result = ''
-  for (let i = 0; i < lines.length; i++)
+  for (let i = 0; i < lines.length; i++) {
     result += i % 2 === 1 ? lines[i]! : foldLine(lines[i]!, lineLength)
+  }
   return result
 }
 
@@ -37,8 +38,12 @@ const isSpace = (code: number) => code === 0x20 || code === 0x09
 
 function trimSpace(text: string, start: number): string {
   let end = text.length
-  while (start < end && isSpace(text.charCodeAt(start))) start++
-  while (end > start && isSpace(text.charCodeAt(end - 1))) end--
+  while (start < end && isSpace(text.charCodeAt(start))) {
+    start++
+  }
+  while (end > start && isSpace(text.charCodeAt(end - 1))) {
+    end--
+  }
   return text.slice(start, end)
 }
 
@@ -47,17 +52,25 @@ const isBreak = (text: string, i: number) =>
 
 function foldLine(line: string, lineLength: number): string {
   let lastWord = line.length - 1
-  while (lastWord >= 0 && isSpace(line.charCodeAt(lastWord))) lastWord--
+  while (lastWord >= 0 && isSpace(line.charCodeAt(lastWord))) {
+    lastWord--
+  }
   let result = ''
   let start = 0
   while (line.length - start > lineLength) {
     let at = start + lineLength
-    while (at > start && !isBreak(line, at)) at--
+    while (at > start && !isBreak(line, at)) {
+      at--
+    }
     if (at === start) {
       at = start + lineLength + 1
-      while (at < line.length && !isBreak(line, at)) at++
+      while (at < line.length && !isBreak(line, at)) {
+        at++
+      }
     }
-    if (at > lastWord) break
+    if (at > lastWord) {
+      break
+    }
     result += line.slice(start, at) + '\r\n'
     start = at
   }
@@ -117,7 +130,9 @@ export function parseHeaders(
   options: parseHeaders.Options = {},
 ): Header[] {
   const { maxLength = Infinity } = options
-  if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
+  if (!(maxLength >= 0)) {
+    throw new RangeError('`maxLength` must be a number >= 0.')
+  }
   const text = toText(input)
   const lineBreak = /\r\n|\r|\n/g
   const fields: string[] = []
@@ -126,19 +141,32 @@ export function parseHeaders(
     const match = lineBreak.exec(text)
     const end = match ? match.index : text.length
     if (end > start) {
-      if (blockStart < 0) blockStart = start
-      if (end - blockStart > maxLength) throw new MaxLengthError({ maxLength })
+      if (blockStart < 0) {
+        blockStart = start
+      }
+      if (end - blockStart > maxLength) {
+        throw new MaxLengthError({ maxLength })
+      }
       const line = text.slice(start, end)
-      if (fields.length > 0 && isSpace(line.charCodeAt(0))) fields[fields.length - 1] += line
-      else fields.push(line)
-    } else if (blockStart >= 0) break
-    if (!match) break
+      if (fields.length > 0 && isSpace(line.charCodeAt(0))) {
+        fields[fields.length - 1] += line
+      } else {
+        fields.push(line)
+      }
+    } else if (blockStart >= 0) {
+      break
+    }
+    if (!match) {
+      break
+    }
     start = lineBreak.lastIndex
   }
   const headers: Header[] = []
   for (const field of fields) {
     const colon = field.indexOf(':')
-    if (colon < 0) continue
+    if (colon < 0) {
+      continue
+    }
     headers.push({
       name: field.slice(0, colon).trim(),
       value: trimSpace(field, colon + 1),

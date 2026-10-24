@@ -5,7 +5,9 @@ import { latin1 } from './utils.js'
 describe('base64-js', () => {
   test('converts big data to base64 and back', () => {
     const big = new Uint8Array(64 * 1024 * 1024)
-    for (let i = 0; i < big.length; i++) big[i] = i % 256
+    for (let i = 0; i < big.length; i++) {
+      big[i] = i % 256
+    }
     const decoded = decode(encode(big))
     expect(decoded.length).toBe(big.length)
     expect(decoded.every((byte, i) => byte === big[i])).toBe(true)
@@ -27,11 +29,15 @@ describe('base64-js', () => {
   ] as const
 
   test('converts known data to a string', () => {
-    for (const [bytes, expected] of data) expect(encode(new Uint8Array(bytes))).toBe(expected)
+    for (const [bytes, expected] of data) {
+      expect(encode(new Uint8Array(bytes))).toBe(expected)
+    }
   })
 
   test('converts known data from a string', () => {
-    for (const [bytes, string] of data) expect(decode(string)).toEqual(new Uint8Array(bytes))
+    for (const [bytes, string] of data) {
+      expect(decode(string)).toEqual(new Uint8Array(bytes))
+    }
   })
 
   test('rejects data after padding, or decodes it in mime mode', () => {

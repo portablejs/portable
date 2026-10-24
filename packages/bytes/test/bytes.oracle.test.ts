@@ -66,7 +66,9 @@ describe('matches uint8array-extras', () => {
       const size = sizes[seed % sizes.length]!
       const a = randomBytes(size, seed)
       const b = atOffset(a, seed % 5)
-      if (seed % 3 === 1 && size > 0) b[seed % size]! ^= 0x80
+      if (seed % 3 === 1 && size > 0) {
+        b[seed % size]! ^= 0x80
+      }
       const c = seed % 3 === 2 ? b.subarray(0, b.length >> 1) : b
       expect(Bytes.equal(a, c)).toBe(areUint8ArraysEqual(a, c))
     }
@@ -79,7 +81,9 @@ describe('matches node:crypto', () => {
       const size = sizes[seed % sizes.length]!
       const a = atOffset(randomBytes(size, seed), seed % 4)
       const b = atOffset(a, (seed >> 2) % 5)
-      if (seed % 2 === 1 && size > 0) b[(seed * 31) % size]! ^= 1 << (seed % 8)
+      if (seed % 2 === 1 && size > 0) {
+        b[(seed * 31) % size]! ^= 1 << (seed % 8)
+      }
       expect(Bytes.timingSafeEqual(a, b)).toBe(nodeTimingSafeEqual(a, b))
     }
   })

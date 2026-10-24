@@ -11,8 +11,12 @@ const localPart =
  * host name. U-labels are converted with the URL parser, which runs IDNA in every runtime.
  */
 export function toALabel(name: string): string | undefined {
-  if (/^[A-Za-z0-9.-]*$/.test(name)) return name.toLowerCase()
-  if (/[^A-Za-z0-9.\-\u0080-\uffff]/.test(name)) return undefined
+  if (/^[A-Za-z0-9.-]*$/.test(name)) {
+    return name.toLowerCase()
+  }
+  if (/[^A-Za-z0-9.\-\u0080-\uffff]/.test(name)) {
+    return undefined
+  }
   return hostToAscii(name)
 }
 

@@ -205,7 +205,9 @@ describe('Wycheproof', () => {
           } catch (error) {
             return error instanceof WebCrypto.InvalidInputError ? 'rejected' : String(error)
           }
-          if (toHex(WebCrypto.rawToDerEcdsa(raw)) !== sig) return 'converted to different DER'
+          if (toHex(WebCrypto.rawToDerEcdsa(raw)) !== sig) {
+            return 'converted to different DER'
+          }
           const algorithm = { name: 'ECDSA', hash }
           return (await crypto.subtle.verify(algorithm, publicKey, raw, fromHex(msg)))
             ? 'verified'
@@ -219,8 +221,9 @@ describe('Wycheproof', () => {
               : flags.some((flag) => encodingFlags.has(flag))
                 ? ['rejected']
                 : ['rejected', 'not verified', 'converted to different DER']
-          if (!expected.includes(actual))
+          if (!expected.includes(actual)) {
             wrong.push(`tcId ${tcId} (${flags.join(', ')}): ${actual}`)
+          }
           checked++
         }
       }

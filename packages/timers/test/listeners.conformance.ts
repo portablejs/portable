@@ -10,11 +10,15 @@ function tracked(): { signal: AbortSignal; count: () => number } {
   const remove = signal.removeEventListener.bind(signal) as EventTarget['removeEventListener']
   Object.assign(signal, {
     addEventListener(type: string, listener: Listener, options?: AddEventListenerOptions) {
-      if (type === 'abort') listeners.add(listener)
+      if (type === 'abort') {
+        listeners.add(listener)
+      }
       add(type, listener, options)
     },
     removeEventListener(type: string, listener: Listener, options?: EventListenerOptions) {
-      if (type === 'abort') listeners.delete(listener)
+      if (type === 'abort') {
+        listeners.delete(listener)
+      }
       remove(type, listener, options)
     },
   })

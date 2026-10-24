@@ -139,8 +139,9 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result> {
   const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
-  if (typeof resolver?.resolveTxt !== 'function')
+  if (typeof resolver?.resolveTxt !== 'function') {
     throw new TypeError('options.resolver must have a resolveTxt method.')
+  }
   signal?.throwIfAborted()
   const { header, body } = await splitMessage(message)
   const fields = parseFields(toBinary(header))
@@ -157,31 +158,45 @@ export async function verify(message: Message, options: verify.Options): Promise
     return result
   }
 
-  if (!fields.some(isArcField)) return stop({ result: 'none', instance: 0, sets: [] })
+  if (!fields.some(isArcField)) {
+    return stop({ result: 'none', instance: 0, sets: [] })
+  }
   const sets = readChain(fields)
-  if (typeof sets === 'string') return stop(failed(sets))
+  if (typeof sets === 'string') {
+    return stop(failed(sets))
+  }
   const last = sets.at(-1)!
-  if (chainValidation(last.seal) === 'fail') return stop(failed(`i=${last.instance} has cv=fail`))
+  if (chainValidation(last.seal) === 'fail') {
+    return stop(failed(`i=${last.instance} has cv=fail`))
+  }
   for (const set of sets) {
     const expected = set.instance === 1 ? 'none' : 'pass'
     const cv = chainValidation(set.seal)
-    if (cv !== expected)
+    if (cv !== expected) {
       return stop(failed(`i=${set.instance} has cv=${cv ?? ''} instead of cv=${expected}`))
+    }
   }
   const seals: Seal[] = []
   for (const set of sets) {
     const seal = prepareSeal(set)
-    if (typeof seal === 'string') return stop(failed(seal))
+    if (typeof seal === 'string') {
+      return stop(failed(seal))
+    }
     seals.push(seal)
   }
   const signature = prepare(last.signature, now, 'arc')
-  if (signature.outcome) return stop(failed(`i=${last.instance} ams ${signature.outcome.reason}`))
-  if (signature.names.includes('arc-seal'))
+  if (signature.outcome) {
+    return stop(failed(`i=${last.instance} ams ${signature.outcome.reason}`))
+  }
+  if (signature.names.includes('arc-seal')) {
     return stop(failed(`i=${last.instance} ams signs ARC-Seal`))
+  }
 
   const keys = new Map<string, Promise<KeyRecord>>()
   for (const keyName of [signature.keyName, ...seals.map((seal) => seal.keyName)]) {
-    if (keys.has(keyName)) continue
+    if (keys.has(keyName)) {
+      continue
+    }
     const key = fetchKey(resolver, keyName, signal)
     key.catch(() => {})
     keys.set(keyName, key)
@@ -195,24 +210,30 @@ export async function verify(message: Message, options: verify.Options): Promise
 
   const digest = digests.get(bodyHashKey(signature.body))!
   const { length } = signature.body
-  if (length !== undefined && length > digest.total)
+  if (length !== undefined && length > digest.total) {
     return failed(`i=${last.instance} ams l= is longer than the body`)
-  if (!Bytes.equal(digest.digest, signature.bodyHash))
+  }
+  if (!Bytes.equal(digest.digest, signature.bodyHash)) {
     return failed(`i=${last.instance} ams body hash did not verify`)
+  }
   const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
-  if (outcome.result !== 'pass')
+  if (outcome.result !== 'pass') {
     return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause)
+  }
 
   for (let i = seals.length - 1; i >= 0; i--) {
     const seal = seals[i]!
     const covered: Field[] = []
-    for (const set of sets.slice(0, i)) covered.push(set.results, set.signature, set.seal)
+    for (const set of sets.slice(0, i)) {
+      covered.push(set.results, set.signature, set.seal)
+    }
     covered.push(seal.set.results, seal.set.signature)
     const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'))
     const record = await keys.get(seal.keyName)!
     const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits)
-    if (outcome.result !== 'pass')
+    if (outcome.result !== 'pass') {
       return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause)
+    }
   }
 
   return {
@@ -231,20 +252,36 @@ export async function verify(message: Message, options: verify.Options): Promise
 function prepareSeal(set: ArcSet): Seal | string {
   const at = `i=${set.instance} as`
   const { tags, valid } = parseTags(set.seal.raw.slice(set.seal.raw.indexOf(':') + 1))
-  if (!valid) return `${at} syntax error`
+  if (!valid) {
+    return `${at} syntax error`
+  }
   const missing = sealTags.find((name) => !tags.has(name))
-  if (missing) return `${at} has no ${missing}=`
+  if (missing) {
+    return `${at} has no ${missing}=`
+  }
   const timestamp = tags.get('t')
-  if (timestamp !== undefined && !/^\d{1,12}$/.test(timestamp)) return `${at} has an invalid t=`
-  if (tags.has('h')) return `${at} has h=`
+  if (timestamp !== undefined && !/^\d{1,12}$/.test(timestamp)) {
+    return `${at} has an invalid t=`
+  }
+  if (tags.has('h')) {
+    return `${at} has h=`
+  }
   const type = sealAlgorithms[stripFws(tags.get('a')!).toLowerCase()]
-  if (!type) return `${at} has an unknown algorithm`
+  if (!type) {
+    return `${at} has an unknown algorithm`
+  }
   const domain = toALabel(binaryToText(tags.get('d')!))
-  if (!domain || !isDomainName(domain)) return `${at} has an invalid d=`
+  if (!domain || !isDomainName(domain)) {
+    return `${at} has an invalid d=`
+  }
   const selector = toALabel(binaryToText(tags.get('s')!))
   const keyName = `${selector}._domainkey.${domain}`
-  if (!selector || !isSelector(selector) || !canFitDns(keyName)) return `${at} has an invalid s=`
+  if (!selector || !isSelector(selector) || !canFitDns(keyName)) {
+    return `${at} has an invalid s=`
+  }
   const value = decodeBase64(tags.get('b')!)
-  if (!value) return `${at} syntax error`
+  if (!value) {
+    return `${at} syntax error`
+  }
   return { set, type, value, domain, selector, keyName }
 }

@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Ip.parse('0x7f.1')
  * } catch (error) {
- *   if (error instanceof Ip.InvalidInputError) console.log('not an IP address')
+ *   if (error instanceof Ip.InvalidInputError) {
+ *     console.log('not an IP address')
+ *   }
  * }
  * ```
  */

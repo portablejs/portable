@@ -39,8 +39,12 @@ async function measure(name: string, imports: readonly Import[]): Promise<Size> 
           name: 'size-entry',
           enforce: 'pre',
           resolveId(source) {
-            if (source === entry) return entry
-            if (!isBuiltin(source)) return null
+            if (source === entry) {
+              return entry
+            }
+            if (!isBuiltin(source)) {
+              return null
+            }
             builtins.add(source.replace(/^node:/, '').split('/')[0])
             return { id: source, external: true }
           },
@@ -54,7 +58,9 @@ async function measure(name: string, imports: readonly Import[]): Promise<Size> 
       .filter((file): file is Rollup.OutputChunk => file.type === 'chunk')
       .map((chunk) => chunk.code)
       .join('\n')
-    if (/\bBuffer\b/.test(bundle) && !builtins.has('buffer')) builtins.add('Buffer')
+    if (/\bBuffer\b/.test(bundle) && !builtins.has('buffer')) {
+      builtins.add('Buffer')
+    }
     return { gzip: gzipSync(bundle).length, builtins: [...builtins].sort() }
   } catch (error) {
     return { error: String((error as Error).message ?? error).split('\n')[0] }
@@ -66,10 +72,15 @@ const sizes: Record<string, Record<string, Size>> = only.length && existsSync('.
   ? JSON.parse(readFileSync('.bench/sizes.json', 'utf8'))
   : {}
 for (const [name, { columns }] of Object.entries(tables)) {
-  if (only.length && !only.includes(name)) continue
+  if (only.length && !only.includes(name)) {
+    continue
+  }
   sizes[name] = {}
-  for (const column of columns)
-    if (column.imports) sizes[name][column.name] = await measure(name, column.imports)
+  for (const column of columns) {
+    if (column.imports) {
+      sizes[name][column.name] = await measure(name, column.imports)
+    }
+  }
   console.log(name)
 }
 

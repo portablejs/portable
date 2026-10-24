@@ -182,7 +182,9 @@ describe('dns-packet cases', () => {
     })
 
     const opcodes = ['QUERY', 'IQUERY', 'STATUS', 'OPCODE3', 'NOTIFY', 'UPDATE', 'DSO']
-    for (let code = 7; code < 16; code++) opcodes.push(`OPCODE${code}`)
+    for (let code = 7; code < 16; code++) {
+      opcodes.push(`OPCODE${code}`)
+    }
     opcodes.forEach((opcode, code) => {
       const encoded = encode(invalid({ opcode }))
       expect((encoded[2]! >> 3) & 0xf).toBe(code)
@@ -357,8 +359,9 @@ describe('dns-packet cases', () => {
       { mbox: 'foo.bar.com', txt: '.' },
       { mbox: '.', txt: 'baz.bar.com' },
       { mbox: '.', txt: '.' },
-    ])
+    ]) {
       expect(roundTripData('RP', data)).toEqual(data)
+    }
   })
 
   test('nsec', () => {
@@ -541,10 +544,12 @@ describe('known upstream issues', () => {
   })
 
   test('invalid IP addresses are rejected instead of encoded as garbage', () => {
-    for (const ip of ['1.2.3', '1.2.3.256', 'a.b.c.d', '', '300.1.1.1'])
+    for (const ip of ['1.2.3', '1.2.3.256', 'a.b.c.d', '', '300.1.1.1']) {
       expect(() => roundTripData('A', ip)).toThrow(InvalidInputError)
-    for (const ip of ['1::2::3', '1:2:3:4:5:6:7:8:9', 'g::1', '::1.2.3', '1:2:3:4:5:6:7'])
+    }
+    for (const ip of ['1::2::3', '1:2:3:4:5:6:7:8:9', 'g::1', '::1.2.3', '1:2:3:4:5:6:7']) {
       expect(() => roundTripData('AAAA', ip)).toThrow(InvalidInputError)
+    }
   })
 
   test('unknown type and class names are rejected instead of encoded as 0', () => {
@@ -749,8 +754,9 @@ describe('decoding malformed input', () => {
   )
 
   test('every truncation throws TruncatedError', () => {
-    for (let length = 0; length < valid.length; length++)
+    for (let length = 0; length < valid.length; length++) {
       expect(() => decode(valid.subarray(0, length))).toThrow(TruncatedError)
+    }
     expect(decode(valid).answers).toHaveLength(3)
   })
 
@@ -784,8 +790,9 @@ describe('decoding malformed input', () => {
 
   test('TCP framing throws TruncatedError until the whole message has arrived', () => {
     const framed = encode({ questions: [{ type: 'A', name: 'example.com' }] }, { framing: 'tcp' })
-    for (let length = 0; length < framed.length; length++)
+    for (let length = 0; length < framed.length; length++) {
       expect(() => decode(framed.subarray(0, length), { framing: 'tcp' })).toThrow(TruncatedError)
+    }
     const next = Uint8Array.from([...framed, 0, 5])
     expect(decode(next, { framing: 'tcp' }).questions).toHaveLength(1)
   })
@@ -793,7 +800,9 @@ describe('decoding malformed input', () => {
 
 describe('decoding corrupted real responses', () => {
   test('decodes every captured response', () => {
-    for (const { hex: text } of responses) expect(decode(hex(text)).questions).toHaveLength(1)
+    for (const { hex: text } of responses) {
+      expect(decode(hex(text)).questions).toHaveLength(1)
+    }
   })
 })
 

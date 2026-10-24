@@ -15,7 +15,9 @@ function refill(): void {
 }
 
 function next(): number {
-  if (index === 0) refill()
+  if (index === 0) {
+    refill()
+  }
   return pool[--index]!
 }
 
@@ -23,13 +25,16 @@ function fill(bytes: Uint8Array<ArrayBuffer>): void {
   const length = bytes.length
   if (length <= 256) {
     const words = (length + 3) >>> 2
-    if (index < words) refill()
+    if (index < words) {
+      refill()
+    }
     index -= words
     bytes.set(poolBytes.subarray(index * 4, index * 4 + length))
     return
   }
-  for (let offset = 0; offset < length; offset += 65536)
+  for (let offset = 0; offset < length; offset += 65536) {
     crypto.getRandomValues(bytes.subarray(offset, offset + 65536))
+  }
 }
 
 const maxTextSize = 32768
@@ -64,7 +69,9 @@ export function int(min: number, max: number): number {
  * ```ts
  * import * as Random from '@portable/random'
  *
- * if (Random.float() < 0.1) console.log('sampled')
+ * if (Random.float() < 0.1) {
+ *   console.log('sampled')
+ * }
  * ```
  */
 export function float(): number {
@@ -101,7 +108,9 @@ export function string(length: number, options: string.Options = {}): string {
   const { alphabet = internal.urlAlphabet } = options
   internal.assertLength(length)
   const parsed = internal.alphabet(alphabet)
-  if (parsed.table === undefined) return internal.string(next, fill, length, parsed)
+  if (parsed.table === undefined) {
+    return internal.string(next, fill, length, parsed)
+  }
   if (alphabet !== textAlphabet) {
     textAlphabet = alphabet
     text = ''

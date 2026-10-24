@@ -15,7 +15,9 @@ const colonFirst = /^[ \t]*:/
  */
 export function parseFields(header: string): Field[] {
   const lines = header.split('\r\n')
-  if (lines.at(-1) === '') lines.pop()
+  if (lines.at(-1) === '') {
+    lines.pop()
+  }
   const rows: string[][] = []
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
@@ -24,8 +26,11 @@ export function parseFields(header: string): Field[] {
       rows.length === 0 ||
       fieldStart.test(line) ||
       (next !== undefined && nameOnly.test(line) && colonFirst.test(next))
-    if (starts) rows.push([line])
-    else rows.at(-1)!.push(line)
+    if (starts) {
+      rows.push([line])
+    } else {
+      rows.at(-1)!.push(line)
+    }
   }
   return rows.map((row) => {
     const raw = row.join('\r\n')
@@ -35,7 +40,9 @@ export function parseFields(header: string): Field[] {
 
 function fieldName(raw: string): string {
   const colon = raw.indexOf(':')
-  if (colon < 0) return ''
+  if (colon < 0) {
+    return ''
+  }
   return lowerAscii(trimWsp(raw.slice(0, colon).replaceAll('\r\n', '')))
 }
 
@@ -47,8 +54,12 @@ const isWsp = (code: number) => code === 0x20 || code === 0x09
 export function trimWsp(text: string): string {
   let start = 0
   let end = text.length
-  while (start < end && isWsp(text.charCodeAt(start))) start++
-  while (end > start && isWsp(text.charCodeAt(end - 1))) end--
+  while (start < end && isWsp(text.charCodeAt(start))) {
+    start++
+  }
+  while (end > start && isWsp(text.charCodeAt(end - 1))) {
+    end--
+  }
   return text.slice(start, end)
 }
 
@@ -57,7 +68,9 @@ export function trimWsp(text: string): string {
  * is removed, including those before the lines `parseFields` joined to a field.
  */
 export function canonicalizeField(raw: string, canonicalization: Canonicalization): string {
-  if (canonicalization === 'simple') return raw
+  if (canonicalization === 'simple') {
+    return raw
+  }
   const line = raw.replaceAll('\r\n', '').replace(/[ \t]+/g, ' ')
   const colon = line.indexOf(':')
   const name = colon < 0 ? '' : lowerAscii(trimWsp(line.slice(0, colon)))
@@ -79,7 +92,9 @@ export function selectFields(
   for (const name of names) {
     for (let i = fields.length - 1; i >= 0; i--) {
       const field = fields[i]!
-      if (field.name !== name || taken.has(field)) continue
+      if (field.name !== name || taken.has(field)) {
+        continue
+      }
       taken.add(field)
       selected.push(field)
       break
@@ -98,7 +113,9 @@ export function signedData(
   canonicalization: Canonicalization,
 ): string {
   let data = ''
-  for (const field of selected) data += canonicalizeField(field.raw, canonicalization) + '\r\n'
+  for (const field of selected) {
+    data += canonicalizeField(field.raw, canonicalization) + '\r\n'
+  }
   return data + canonicalizeField(removeSignatureValue(signature), canonicalization)
 }
 
@@ -108,7 +125,9 @@ function removeSignatureValue(raw: string): string {
   for (let i = specs.length - 1; i >= 0; i--) {
     const spec = specs[i]!
     const equals = spec.indexOf('=')
-    if (equals < 0 || stripFws(spec.slice(0, equals)) !== 'b') continue
+    if (equals < 0 || stripFws(spec.slice(0, equals)) !== 'b') {
+      continue
+    }
     specs[i] = spec.slice(0, equals + 1)
     break
   }

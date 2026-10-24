@@ -8,8 +8,12 @@ const special = /[\s/\\?#%@:[\]]/
  * or if the parser rejects the domain.
  */
 export function hostToAscii(domain: string): string | undefined {
-  if (special.test(domain)) return undefined
-  if (/^[\x21-\x7e]*$/.test(domain)) return domain.toLowerCase()
+  if (special.test(domain)) {
+    return undefined
+  }
+  if (/^[\x21-\x7e]*$/.test(domain)) {
+    return domain.toLowerCase()
+  }
   try {
     return new URL(`http://${domain}/`).hostname
   } catch {

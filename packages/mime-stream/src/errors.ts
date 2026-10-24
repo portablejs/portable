@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await MimeStream.splitHeaders(response.body!, { maxHeaderBytes: 64 * 1024 })
  * } catch (error) {
- *   if (error instanceof MimeStream.MaxHeaderBytesError) console.log(error.maxHeaderBytes)
+ *   if (error instanceof MimeStream.MaxHeaderBytesError) {
+ *     console.log(error.maxHeaderBytes)
+ *   }
  * }
  * ```
  */

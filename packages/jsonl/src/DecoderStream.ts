@@ -43,21 +43,31 @@ export declare namespace DecoderStream {
 export class DecoderStream extends TransformStream<Uint8Array | string, unknown> {
   constructor(options: DecoderStream.Options = {}) {
     const { invalid = 'error', maxLength = Infinity } = options
-    if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
+    if (!(maxLength >= 0)) {
+      throw new RangeError('`maxLength` must be a number >= 0.')
+    }
     const decoder = new TextDecoder()
     let partial = ''
     let lineNumber = 0
 
     const decode = (line: string, controller: TransformStreamDefaultController<unknown>) => {
       lineNumber++
-      if (line.endsWith('\r')) line = line.slice(0, -1)
-      if (line.length > maxLength) throw new MaxLengthError({ maxLength })
-      if (line === '') return
+      if (line.endsWith('\r')) {
+        line = line.slice(0, -1)
+      }
+      if (line.length > maxLength) {
+        throw new MaxLengthError({ maxLength })
+      }
+      if (line === '') {
+        return
+      }
       let value: unknown
       try {
         value = JSON.parse(line)
       } catch (error) {
-        if (invalid === 'skip' || line.trim() === '') return
+        if (invalid === 'skip' || line.trim() === '') {
+          return
+        }
         throw new InvalidInputError(`Invalid JSON on line ${lineNumber}.`, { cause: error })
       }
       controller.enqueue(value)
@@ -73,14 +83,20 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
                 : decoder.decode(assertUint8Array(chunk), { stream: true })
             if (!text.includes('\n')) {
               partial += text
-              if (partial.length > maxLength + 1) throw new MaxLengthError({ maxLength })
+              if (partial.length > maxLength + 1) {
+                throw new MaxLengthError({ maxLength })
+              }
               return
             }
             const lines = text.split('\n')
             lines[0] = partial + lines[0]
             partial = lines.pop()!
-            if (partial.length > maxLength + 1) throw new MaxLengthError({ maxLength })
-            for (const line of lines) decode(line, controller)
+            if (partial.length > maxLength + 1) {
+              throw new MaxLengthError({ maxLength })
+            }
+            for (const line of lines) {
+              decode(line, controller)
+            }
           },
           flush(controller) {
             decode(partial + decoder.decode(), controller)

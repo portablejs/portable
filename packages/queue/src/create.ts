@@ -100,8 +100,9 @@ export function create(options: create.Options = {}): Queue {
   const { interval = 0, intervalCap = Infinity, signal: queueSignal } = options
   let concurrency = assertLimit('concurrency', options.concurrency ?? Infinity)
   assertLimit('intervalCap', intervalCap)
-  if (!(interval >= 0 && interval < Infinity))
+  if (!(interval >= 0 && interval < Infinity)) {
     throw new RangeError('Expected `interval` to be a finite number from 0 up.')
+  }
   const rateLimited = interval > 0 && intervalCap !== Infinity
 
   let waiting: (Entry | undefined)[] = []
@@ -117,10 +118,16 @@ export function create(options: create.Options = {}): Queue {
   queueSignal?.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true })
 
   function watch(entry: Entry, signal: AbortSignal | undefined) {
-    if (entry.watched === signal) return
-    if (entry.watched) unwatch(entry)
+    if (entry.watched === signal) {
+      return
+    }
+    if (entry.watched) {
+      unwatch(entry)
+    }
     entry.watched = signal
-    if (!signal) return
+    if (!signal) {
+      return
+    }
     let watcher = watchers.get(signal)
     if (!watcher) {
       const entries = new Set<Entry>()
@@ -149,9 +156,13 @@ export function create(options: create.Options = {}): Queue {
     const signal = entry.watched!
     entry.watched = undefined
     const watcher = watchers.get(signal)
-    if (!watcher) return
+    if (!watcher) {
+      return
+    }
     watcher.entries.delete(entry)
-    if (watcher.entries.size > 0) return
+    if (watcher.entries.size > 0) {
+      return
+    }
     watchers.delete(signal)
     signal.removeEventListener('abort', watcher.listener)
   }
@@ -166,8 +177,11 @@ export function create(options: create.Options = {}): Queue {
     let high = waiting.length - 1
     while (low < high) {
       const middle = (low + high) >>> 1
-      if (waiting[middle]!.priority >= entry.priority) low = middle + 1
-      else high = middle
+      if (waiting[middle]!.priority >= entry.priority) {
+        low = middle + 1
+      } else {
+        high = middle
+      }
     }
     waiting.splice(low, 0, entry)
   }
@@ -175,7 +189,9 @@ export function create(options: create.Options = {}): Queue {
   function peek(): Entry | undefined {
     while (head < waiting.length) {
       const entry = waiting[head]!
-      if (entry.state === 'waiting') return entry
+      if (entry.state === 'waiting') {
+        return entry
+      }
       waiting[head++] = undefined
     }
     if (head > 0) {
@@ -187,7 +203,9 @@ export function create(options: create.Options = {}): Queue {
 
   function takeStart(): boolean {
     const now = performance.now()
-    while (starts.length > 0 && now - starts[0]! >= interval) starts.shift()
+    while (starts.length > 0 && now - starts[0]! >= interval) {
+      starts.shift()
+    }
     if (starts.length < intervalCap) {
       starts.push(now)
       return true
@@ -205,7 +223,9 @@ export function create(options: create.Options = {}): Queue {
   function drain() {
     while (!paused && pending < concurrency) {
       const entry = peek()
-      if (entry === undefined || (rateLimited && !takeStart())) break
+      if (entry === undefined || (rateLimited && !takeStart())) {
+        break
+      }
       waiting[head++] = undefined
       size--
       if (head >= 1024 && head * 2 >= waiting.length) {
@@ -217,7 +237,9 @@ export function create(options: create.Options = {}): Queue {
     if (size === 0 && pending === 0 && idleWaiters.length > 0) {
       const resolvers = idleWaiters
       idleWaiters = []
-      for (const resolve of resolvers) resolve()
+      for (const resolve of resolvers) {
+        resolve()
+      }
     }
   }
 
@@ -230,28 +252,37 @@ export function create(options: create.Options = {}): Queue {
   }
 
   function run(entry: Entry) {
-    if (entry.state !== 'running') return finish(entry)
+    if (entry.state !== 'running') {
+      return finish(entry)
+    }
     let result: unknown
     try {
       result = entry.task(entry.context)
     } catch (error) {
       return finish(entry, error, true)
     }
-    if (isThenable(result))
+    if (isThenable(result)) {
       result.then(
         (value) => finish(entry, value, false),
         (error: unknown) => finish(entry, error, true),
       )
-    else finish(entry, result, false)
+    } else {
+      finish(entry, result, false)
+    }
   }
 
   function finish(entry: Entry, value?: unknown, failed?: boolean) {
     pending--
-    if (entry.watched) unwatch(entry)
+    if (entry.watched) {
+      unwatch(entry)
+    }
     if (entry.state === 'running') {
       entry.state = 'settled'
-      if (failed) entry.reject(value)
-      else entry.resolve(value)
+      if (failed) {
+        entry.reject(value)
+      } else {
+        entry.resolve(value)
+      }
     }
     drain()
   }
@@ -268,8 +299,12 @@ export function create(options: create.Options = {}): Queue {
     }
     for (let i = from; i < entries.length; i++) {
       const entry = entries[i]!
-      if (entry.state !== 'waiting') continue
-      if (entry.watched) unwatch(entry)
+      if (entry.state !== 'waiting') {
+        continue
+      }
+      if (entry.watched) {
+        unwatch(entry)
+      }
       discard(entry, reason)
     }
     drain()
@@ -284,11 +319,18 @@ export function create(options: create.Options = {}): Queue {
   return {
     add<value>(task: Task<value>, addOptions: Queue.AddOptions = {}): Promise<value> {
       const { priority = 0, signal } = addOptions
-      if (typeof priority !== 'number') throw new TypeError('Expected `priority` to be a number.')
-      if (Number.isNaN(priority))
+      if (typeof priority !== 'number') {
+        throw new TypeError('Expected `priority` to be a number.')
+      }
+      if (Number.isNaN(priority)) {
         throw new RangeError('Expected `priority` to be a number, got NaN.')
-      if (queueSignal?.aborted) return Promise.reject(queueSignal.reason)
-      if (signal?.aborted) return Promise.reject(signal.reason)
+      }
+      if (queueSignal?.aborted) {
+        return Promise.reject(queueSignal.reason)
+      }
+      if (signal?.aborted) {
+        return Promise.reject(signal.reason)
+      }
       const entry: Entry = {
         task,
         priority,
@@ -314,7 +356,9 @@ export function create(options: create.Options = {}): Queue {
       return promise
     },
     idle() {
-      if (size === 0 && pending === 0) return Promise.resolve()
+      if (size === 0 && pending === 0) {
+        return Promise.resolve()
+      }
       return new Promise((resolve) => idleWaiters.push(resolve))
     },
     pause() {
@@ -363,13 +407,16 @@ export function limit(concurrency: number): Queue['add'] {
 }
 
 export function assertLimit(name: string, value: number): number {
-  if (!(value === Infinity || (Number.isInteger(value) && value >= 1)))
+  if (!(value === Infinity || (Number.isInteger(value) && value >= 1))) {
     throw new RangeError(`Expected \`${name}\` to be a positive integer or Infinity, got ${value}.`)
+  }
   return value
 }
 
 function combine(a: AbortSignal | undefined, b: AbortSignal | undefined): AbortSignal {
-  if (a && b) return AbortSignal.any([a, b])
+  if (a && b) {
+    return AbortSignal.any([a, b])
+  }
   return a ?? b ?? neverAborted()
 }
 

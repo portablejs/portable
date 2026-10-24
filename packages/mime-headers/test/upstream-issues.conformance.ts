@@ -58,8 +58,9 @@ describe('addresses', () => {
   })
 
   test('formatAddresses refuses an address that would change the list', () => {
-    for (const address of ['a@b.c, evil@evil.com', 'a@b.c>', '', 'Name <a@b.c>'])
+    for (const address of ['a@b.c, evil@evil.com', 'a@b.c>', '', 'Name <a@b.c>']) {
       expect(() => formatAddresses([{ name: 'x', address }])).toThrow(InvalidInputError)
+    }
   })
 
   test('whitespace inside a domain is dropped (email-addresses)', () => {
@@ -110,8 +111,9 @@ describe('header values', () => {
   })
 
   test('a parameter value that looks like an encoded word is kept as it is (libmime 5.5.1)', () => {
-    for (const value of ['=?utf-8?q?a?=', 'a =?utf-8?b?YQ==?= b'])
+    for (const value of ['=?utf-8?q?a?=', 'a =?utf-8?b?YQ==?= b']) {
       expect(parseValue(formatValue({ value: 'x', params: { f: value } })).params['f']).toBe(value)
+    }
   })
 
   test('control characters and DEL in a parameter value are percent-encoded (libmime 5.5.0)', () => {

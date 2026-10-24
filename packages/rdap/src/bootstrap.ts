@@ -32,26 +32,36 @@ function isStrings(value: unknown): value is string[] {
 
 function index({ json, response }: Json, url: string): Index {
   const result: Index = { names: new Map(), ranges: [], numbers: [] }
-  if (!Array.isArray(json.services))
+  if (!Array.isArray(json.services)) {
     throw new ResponseError({ message: `${url} has no services array`, response, url, body: json })
+  }
   for (const service of json.services) {
-    if (!Array.isArray(service) || !isStrings(service[0]) || !isStrings(service[1])) continue
+    if (!Array.isArray(service) || !isStrings(service[0]) || !isStrings(service[1])) {
+      continue
+    }
     const urls = service[1]
     let server =
       urls.find((u) => u.startsWith('https://')) ?? urls.find((u) => u.startsWith('http://'))
-    if (!server) continue
-    if (!server.endsWith('/')) server += '/'
+    if (!server) {
+      continue
+    }
+    if (!server.endsWith('/')) {
+      server += '/'
+    }
     for (const key of service[0]) {
       const prefix = key.includes('/') ? Address.parse(key) : undefined
       const range = /^(\d+)(?:-(\d+))?$/.exec(key)
-      if (prefix) result.ranges.push({ prefix, url: server })
-      else if (range)
+      if (prefix) {
+        result.ranges.push({ prefix, url: server })
+      } else if (range) {
         result.numbers.push({
           start: Number(range[1]),
           end: Number(range[2] ?? range[1]),
           url: server,
         })
-      else result.names.set(key.toLowerCase(), server)
+      } else {
+        result.names.set(key.toLowerCase(), server)
+      }
     }
   }
   return result
@@ -59,9 +69,13 @@ function index({ json, response }: Json, url: string): Index {
 
 function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
   const time = now?.getTime() ?? Date.now()
-  if (signal?.aborted) return Promise.reject(signal.reason)
+  if (signal?.aborted) {
+    return Promise.reject(signal.reason)
+  }
   let entries = caches.get(fetch)
-  if (!entries) caches.set(fetch, (entries = new Map()))
+  if (!entries) {
+    caches.set(fetch, (entries = new Map()))
+  }
   let entry = entries.get(kind)
   if (!entry || entry.expires <= time) {
     const controller = new AbortController()
@@ -76,7 +90,9 @@ function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
     } satisfies Entry
     const cache = entries
     created.index.catch(() => {
-      if (cache.get(kind) === created) cache.delete(kind)
+      if (cache.get(kind) === created) {
+        cache.delete(kind)
+      }
     })
     entries.set(kind, (entry = created))
   }
@@ -85,11 +101,15 @@ function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
 
 function wait(entry: Entry, signal: AbortSignal | undefined): Promise<Index> {
   entry.waiters++
-  if (!signal) return entry.index
+  if (!signal) {
+    return entry.index
+  }
   return new Promise((resolve, reject) => {
     const abort = () => {
       reject(signal.reason)
-      if (--entry.waiters === 0) entry.controller.abort(signal.reason)
+      if (--entry.waiters === 0) {
+        entry.controller.abort(signal.reason)
+      }
     }
     signal.addEventListener('abort', abort, { once: true })
     entry.index.then(
@@ -109,9 +129,13 @@ export async function domain(name: string, context: Context): Promise<string | u
   const { names } = await load('dns', context)
   for (let suffix = name; ;) {
     const url = names.get(suffix)
-    if (url) return url
+    if (url) {
+      return url
+    }
     const dot = suffix.indexOf('.')
-    if (dot < 0) return undefined
+    if (dot < 0) {
+      return undefined
+    }
     suffix = suffix.slice(dot + 1)
   }
 }
@@ -119,12 +143,14 @@ export async function domain(name: string, context: Context): Promise<string | u
 export async function ip(prefix: Address.Prefix, context: Context): Promise<string | undefined> {
   const { ranges } = await load(prefix.address.version === 4 ? 'ipv4' : 'ipv6', context)
   let best: (typeof ranges)[number] | undefined
-  for (const range of ranges)
+  for (const range of ranges) {
     if (
       (!best || range.prefix.prefix > best.prefix.prefix) &&
       Address.contains(range.prefix, prefix)
-    )
+    ) {
       best = range
+    }
+  }
   return best?.url
 }
 

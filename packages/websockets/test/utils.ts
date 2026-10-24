@@ -22,12 +22,18 @@ export class FakeWebSocket extends EventTarget {
   }
 
   send(data: Data): void {
-    if (this.readyState === 0) throw new DOMException('Still connecting.', 'InvalidStateError')
-    if (this.readyState === 1) this.sent.push(data)
+    if (this.readyState === 0) {
+      throw new DOMException('Still connecting.', 'InvalidStateError')
+    }
+    if (this.readyState === 1) {
+      this.sent.push(data)
+    }
   }
 
   close(code?: number, reason?: string): void {
-    if (this.readyState >= 2) return
+    if (this.readyState >= 2) {
+      return
+    }
     this.closedWith = { code, reason }
     this.readyState = 2
     setTimeout(() => this.finish(code ?? 1005, reason ?? '', true))
@@ -44,7 +50,9 @@ export class FakeWebSocket extends EventTarget {
 
   /** The server closes the connection, or it drops (1006). */
   drop(code = 1006, reason = ''): void {
-    if (code === 1006) this.dispatchEvent(new Event('error'))
+    if (code === 1006) {
+      this.dispatchEvent(new Event('error'))
+    }
     this.finish(code, reason, code !== 1006)
   }
 
@@ -54,7 +62,9 @@ export class FakeWebSocket extends EventTarget {
   }
 
   private finish(code: number, reason: string, wasClean: boolean) {
-    if (this.readyState === 3) return
+    if (this.readyState === 3) {
+      return
+    }
     this.readyState = 3
     this.dispatchEvent(event('close', { code, reason, wasClean }))
   }
@@ -69,7 +79,9 @@ export class FakeServer {
   constructor() {
     const created = (socket: FakeWebSocket) => {
       this.sockets.push(socket)
-      for (const resolve of this.waiting.splice(0)) resolve(socket)
+      for (const resolve of this.waiting.splice(0)) {
+        resolve(socket)
+      }
     }
     this.WebSocket = class extends FakeWebSocket {
       constructor(url: string, protocols?: string | string[]) {
@@ -82,7 +94,9 @@ export class FakeServer {
   /** Waits for the socket at `index`, by default the latest one. */
   socket(index = Math.max(0, this.sockets.length - 1)): Promise<FakeWebSocket> {
     const socket = this.sockets[index]
-    if (socket) return Promise.resolve(socket)
+    if (socket) {
+      return Promise.resolve(socket)
+    }
     return new Promise((resolve) => this.waiting.push(() => resolve(this.socket(index))))
   }
 
@@ -100,7 +114,9 @@ export const sleep = (ms = 0): Promise<void> => new Promise((resolve) => setTime
 export async function until(check: () => boolean, ms = 10_000): Promise<void> {
   const deadline = Date.now() + ms
   while (!check()) {
-    if (Date.now() > deadline) throw new Error('Timed out waiting for a condition.')
+    if (Date.now() > deadline) {
+      throw new Error('Timed out waiting for a condition.')
+    }
     await sleep(1)
   }
 }
@@ -125,7 +141,9 @@ export async function read(
   const messages: WebSockets.Message[] = []
   while (messages.length < count) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      break
+    }
     messages.push(value)
   }
   return messages

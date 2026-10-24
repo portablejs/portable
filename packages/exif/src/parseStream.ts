@@ -64,14 +64,24 @@ export async function parseStream(
     const head = await source.read(0, 12)
     const b0 = head[0]
     const b1 = head[1]
-    if (b0 === 0xff && b1 === 0xd8) return finish(await fromJpeg(source))
-    if ((b0 === 0x49 && b1 === 0x49) || (b0 === 0x4d && b1 === 0x4d))
+    if (b0 === 0xff && b1 === 0xd8) {
+      return finish(await fromJpeg(source))
+    }
+    if ((b0 === 0x49 && b1 === 0x49) || (b0 === 0x4d && b1 === 0x4d)) {
       return await fromTiffStream(source, 0)
-    if (startsWith(head, 0, exifHeader)) return await fromTiffStream(source, 6)
-    if (startsWith(head, 0, pngSignature)) return finish(await fromPng(source))
-    if (startsWith(head, 0, riff) && startsWith(head, 8, webp))
+    }
+    if (startsWith(head, 0, exifHeader)) {
+      return await fromTiffStream(source, 6)
+    }
+    if (startsWith(head, 0, pngSignature)) {
+      return finish(await fromPng(source))
+    }
+    if (startsWith(head, 0, riff) && startsWith(head, 8, webp)) {
       return finish(await fromWebp(source))
-    if (startsWith(head, 4, ftyp)) return finish(await fromHeif(source))
+    }
+    if (startsWith(head, 4, ftyp)) {
+      return finish(await fromHeif(source))
+    }
     throw new UnsupportedError()
   } finally {
     signal?.removeEventListener('abort', abort)
@@ -122,7 +132,9 @@ function createSource(
       const want = offset + Math.max(length, 0)
       while (end < want && !source.done) {
         const held = Math.max(end - start, 0)
-        if (held >= maxBytes) throw new MaxBytesError({ maxBytes })
+        if (held >= maxBytes) {
+          throw new MaxBytesError({ maxBytes })
+        }
         const { done, value } = await reader.read()
         signal?.throwIfAborted()
         if (done) {
@@ -132,7 +144,9 @@ function createSource(
         assertUint8Array(value)
         const chunkStart = end
         end += value.length
-        if (end <= start) continue
+        if (end <= start) {
+          continue
+        }
         const chunk = chunkStart < start ? value.subarray(start - chunkStart) : value
         if (held + chunk.length > buffer.length) {
           const grown = new Uint8Array(Math.max(held + chunk.length, held * 2))
@@ -142,7 +156,9 @@ function createSource(
         buffer.set(chunk, held)
       }
       const available = Math.min(want, end)
-      if (available <= offset) return new Uint8Array(0)
+      if (available <= offset) {
+        return new Uint8Array(0)
+      }
       return buffer.subarray(offset - start, available - start)
     },
   }
@@ -150,9 +166,13 @@ function createSource(
 }
 
 async function embedded(source: Source, start: number, end: number): Promise<Region | undefined> {
-  if (start + 8 > end) return undefined
+  if (start + 8 > end) {
+    return undefined
+  }
   const bytes = (await source.read(start, end - start)).slice()
-  if (bytes.length < 8) return undefined
+  if (bytes.length < 8) {
+    return undefined
+  }
   return { offset: start, bytes }
 }
 
@@ -162,9 +182,13 @@ async function exifPayload(source: Source, start: number, end: number) {
 }
 
 function tiffOf(region: Region | undefined): Tiff | undefined {
-  if (!region) return undefined
+  if (!region) {
+    return undefined
+  }
   const tiff = readTiff(region.bytes, 0, region.bytes.length)
-  if (tiff.thumbnailOffset !== undefined) tiff.thumbnailOffset += region.offset
+  if (tiff.thumbnailOffset !== undefined) {
+    tiff.thumbnailOffset += region.offset
+  }
   tiff.limit += region.offset
   return tiff
 }
@@ -174,7 +198,9 @@ async function fromTiffStream(source: Source, start: number): Promise<Metadata> 
   for (;;) {
     const bytes = await source.read(0, want)
     const found = fromTiff(bytes, start)
-    if (found.tiff!.end <= bytes.length || source.done) return toMetadata(found, bytes, 0)
+    if (found.tiff!.end <= bytes.length || source.done) {
+      return toMetadata(found, bytes, 0)
+    }
     want = found.tiff!.end
   }
 }
@@ -186,17 +212,25 @@ async function fromJpeg(source: Source): Promise<FoundIn> {
   let i = 2
   while (!(tiff && size)) {
     const head = await source.read(i, 4)
-    if (head.length < 4 || head[0] !== 0xff) break
+    if (head.length < 4 || head[0] !== 0xff) {
+      break
+    }
     const marker = head[1]!
     if (marker === 0xff) {
       i++
       continue
     }
     i += 2
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) continue
-    if (marker === 0xd9 || marker === 0xda) break
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) {
+      continue
+    }
+    if (marker === 0xd9 || marker === 0xda) {
+      break
+    }
     const length = u16be(head, 2)
-    if (length < 2) break
+    if (length < 2) {
+      break
+    }
     const start = i + 2
     if (marker === 0xe1 && !tiff) {
       const prefix = await source.read(start, 6)
@@ -213,7 +247,9 @@ async function fromJpeg(source: Source): Promise<FoundIn> {
       marker !== 0xcc
     ) {
       const frame = await source.read(start, 5)
-      if (frame.length === 5) size = { width: u16be(frame, 3), height: u16be(frame, 1) }
+      if (frame.length === 5) {
+        size = { width: u16be(frame, 3), height: u16be(frame, 1) }
+      }
     }
     i += length
   }
@@ -226,16 +262,20 @@ async function fromPng(source: Source): Promise<FoundIn> {
   let size: Size | undefined
   for (let i = 8; !(tiff && size);) {
     const head = await source.read(i, 16)
-    if (head.length < 8) break
+    if (head.length < 8) {
+      break
+    }
     const length = u32be(head, 0)
     const type = u32be(head, 4)
     const start = i + 8
-    if (type === fourcc.IHDR && !size && head.length === 16)
+    if (type === fourcc.IHDR && !size && head.length === 16) {
       size = { width: u32be(head, 8), height: u32be(head, 12) }
-    else if (type === fourcc.eXIf && !tiff) {
+    } else if (type === fourcc.eXIf && !tiff) {
       region = await exifPayload(source, start, start + length)
       tiff = tiffOf(region)
-    } else if (type === fourcc.IEND) break
+    } else if (type === fourcc.IEND) {
+      break
+    }
     i = start + length + 4
   }
   return { tiff, size, region }
@@ -247,18 +287,21 @@ async function fromWebp(source: Source): Promise<FoundIn> {
   let size: Size | undefined
   for (let i = 12; !(tiff && size);) {
     const head = await source.read(i, 18)
-    if (head.length < 8) break
+    if (head.length < 8) {
+      break
+    }
     const type = u32be(head, 0)
     const length = u24le(head, 4) + head[7]! * 0x1000000
     const start = i + 8
     if (!size && head.length === 18) {
-      if (type === fourcc.VP8X) size = { width: u24le(head, 12) + 1, height: u24le(head, 15) + 1 }
-      else if (type === fourcc['VP8 '] && head[11] === 0x9d)
+      if (type === fourcc.VP8X) {
+        size = { width: u24le(head, 12) + 1, height: u24le(head, 15) + 1 }
+      } else if (type === fourcc['VP8 '] && head[11] === 0x9d) {
         size = {
           width: (head[14]! | (head[15]! << 8)) & 0x3fff,
           height: (head[16]! | (head[17]! << 8)) & 0x3fff,
         }
-      else if (type === fourcc.VP8L && head[8] === 0x2f) {
+      } else if (type === fourcc.VP8L && head[8] === 0x2f) {
         const bits = u24le(head, 9) + head[12]! * 0x1000000
         size = { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 }
       }
@@ -276,19 +319,27 @@ async function fromHeif(source: Source): Promise<FoundIn> {
   source.keep = true
   for (let i = 0; ;) {
     const head = await source.read(i, 16)
-    if (head.length < 8) break
+    if (head.length < 8) {
+      break
+    }
     let length = u32be(head, 0)
     const type = u32be(head, 4)
     let header = 8
     if (length === 1) {
-      if (head.length < 16) break
+      if (head.length < 16) {
+        break
+      }
       length = u32be(head, 8) * 0x100000000 + u32be(head, 12)
       header = 16
     } else if (length === 0) {
-      if (type !== fourcc.meta) break
+      if (type !== fourcc.meta) {
+        break
+      }
       length = Infinity
     }
-    if (length < header) break
+    if (length < header) {
+      break
+    }
     if (type !== fourcc.meta) {
       i += length
       continue
@@ -299,8 +350,9 @@ async function fromHeif(source: Source): Promise<FoundIn> {
     let region: Region | undefined
     if (meta.exif) {
       const offset = await source.read(meta.exif.start, 4)
-      if (offset.length === 4)
+      if (offset.length === 4) {
         region = await exifPayload(source, meta.exif.start + 4 + u32be(offset, 0), meta.exif.end)
+      }
     }
     return { tiff: tiffOf(region), size: meta.size, region }
   }

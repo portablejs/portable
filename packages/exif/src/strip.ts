@@ -75,7 +75,9 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
     super({
       start(controller) {
         stripper = createStripper(options, (part) => controller.enqueue(part))
-        if (!signal) return
+        if (!signal) {
+          return
+        }
         signal.throwIfAborted()
         abort = () => controller.error(signal.reason)
         signal.addEventListener('abort', abort, { once: true })
@@ -84,7 +86,9 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
         stripper.push(assertUint8Array(chunk))
       },
       flush() {
-        if (abort) signal!.removeEventListener('abort', abort)
+        if (abort) {
+          signal!.removeEventListener('abort', abort)
+        }
         stripper.close()
       },
     })
@@ -178,11 +182,15 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
         if (pass > 0) {
           emit(buffer.slice(bufferStart, bufferStart + n))
           pass -= n
-        } else skip -= n
+        } else {
+          skip -= n
+        }
         bufferStart += n
       } else if (held >= want || final) {
         bufferStart += step(buffer.subarray(bufferStart, bufferEnd), final)
-      } else return
+      } else {
+        return
+      }
     }
   }
 
@@ -227,14 +235,20 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
       next('jpegMarker', 4)
       return 2
     }
-    if (startsWith(bytes, 0, pngSignature)) next('pngSignature', 8)
-    else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) next('webp', Infinity)
-    else throw new UnsupportedError()
+    if (startsWith(bytes, 0, pngSignature)) {
+      next('pngSignature', 8)
+    } else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) {
+      next('webp', Infinity)
+    } else {
+      throw new UnsupportedError()
+    }
     return 0
   }
 
   function jpegMarker(bytes: Uint8Array, final: boolean): number {
-    if (bytes[0] !== 0xff) throw new InvalidInputError('Invalid JPEG: expected a marker.')
+    if (bytes[0] !== 0xff) {
+      throw new InvalidInputError('Invalid JPEG: expected a marker.')
+    }
     const marker = bytes[1]
     if (marker === undefined || bytes.length < 4) {
       out(bytes)
@@ -253,7 +267,9 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
       return 0
     }
     const length = u16be(bytes, 2)
-    if (length < 2) throw new InvalidInputError('Invalid JPEG: segment length is less than 2.')
+    if (length < 2) {
+      throw new InvalidInputError('Invalid JPEG: segment length is less than 2.')
+    }
     if (marker === 0xe1 || marker === 0xe2 || marker === 0xed) {
       next('jpegSegment', 2 + length)
       return final ? jpegSegment(bytes) : 0
@@ -270,16 +286,22 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
     next('jpegMarker', 4)
     if (marker === 0xe1 && startsWith(payload, 0, exifHeader)) {
       const tiff = orientationTiff(payload.subarray(6))
-      if (tiff)
+      if (tiff) {
         emit(Bytes.concat([new Uint8Array([0xff, 0xe1, 0, tiff.length + 8]), exifPrefix, tiff]))
-    } else if (keepJpegSegment(marker!, payload)) out(bytes)
+      }
+    } else if (keepJpegSegment(marker!, payload)) {
+      out(bytes)
+    }
     return bytes.length
   }
 
   function keepJpegSegment(marker: number, payload: Uint8Array): boolean {
-    if (marker === 0xed) return false
-    if (marker === 0xe1)
+    if (marker === 0xed) {
+      return false
+    }
+    if (marker === 0xe1) {
       return !startsWith(payload, 0, xmp) && !startsWith(payload, 0, xmpExtension)
+    }
     return keepColorProfile || !startsWith(payload, 0, iccProfile)
   }
 
@@ -318,7 +340,9 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
   function pngExif(buffered: Uint8Array): number {
     const bytes = buffered.subarray(0, 12 + u32be(buffered, 0))
     let data = bytes.subarray(8, 8 + u32be(bytes, 0))
-    if (startsWith(data, 0, exifHeader)) data = data.subarray(6)
+    if (startsWith(data, 0, exifHeader)) {
+      data = data.subarray(6)
+    }
     const tiff = orientationTiff(data)
     if (tiff) {
       const chunk = Bytes.concat([bigEndian32(tiff.length), ascii('eXIf'), tiff])
@@ -334,8 +358,9 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
     const nul = payload.indexOf(0)
     const keyword = String.fromCharCode(...payload.subarray(0, nul < 0 ? payload.length : nul))
     next('pngChunk', 8)
-    if (pngMetadataKeywords.has(keyword)) skip = length + 4 - payload.length
-    else {
+    if (pngMetadataKeywords.has(keyword)) {
+      skip = length + 4 - payload.length
+    } else {
       out(bytes.subarray(0, 8 + payload.length))
       pass = length + 4 - payload.length
     }
@@ -360,20 +385,29 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
       i = end
       if (type === 'EXIF') {
         let data = chunk.subarray(8, 8 + length)
-        if (startsWith(data, 0, exifHeader)) data = data.subarray(6)
+        if (startsWith(data, 0, exifHeader)) {
+          data = data.subarray(6)
+        }
         const tiff = orientationTiff(data)
-        if (!tiff) continue
+        if (!tiff) {
+          continue
+        }
         hasExif = true
         parts.push(Bytes.concat([ascii('EXIF'), littleEndian32(tiff.length), tiff]))
-      } else if (type === 'XMP ') continue
-      else if (type === 'ICCP') {
-        if (!keepColorProfile) continue
+      } else if (type === 'XMP ') {
+        continue
+      } else if (type === 'ICCP') {
+        if (!keepColorProfile) {
+          continue
+        }
         hasIcc = true
         parts.push(chunk)
       } else if (type === 'VP8X' && !vp8x) {
         vp8x = chunk.slice()
         parts.push(vp8x)
-      } else parts.push(chunk)
+      } else {
+        parts.push(chunk)
+      }
     }
     if (vp8x && vp8x.length > 8) {
       vp8x[8] = (vp8x[8]! & ~0x2c) | (hasIcc ? 0x20 : 0) | (hasExif ? 0x08 : 0)
@@ -385,14 +419,18 @@ function createStripper(options: strip.Options, emit: (part: Uint8Array) => void
 
   /** Returns a TIFF block holding only the Orientation tag of `data`, if it should be kept. */
   function orientationTiff(data: Uint8Array): Uint8Array | undefined {
-    if (!keepOrientation || orientationWritten) return undefined
+    if (!keepOrientation || orientationWritten) {
+      return undefined
+    }
     let orientation: unknown
     try {
       orientation = readTiff(data, 0, data.length).ifds.ifd0.Orientation
     } catch {
       return undefined
     }
-    if (typeof orientation !== 'number' || orientation < 2 || orientation > 8) return undefined
+    if (typeof orientation !== 'number' || orientation < 2 || orientation > 8) {
+      return undefined
+    }
     orientationWritten = true
     return new Uint8Array([
       0x4d,

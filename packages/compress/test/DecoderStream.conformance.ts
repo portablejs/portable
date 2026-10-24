@@ -17,10 +17,11 @@ describe('DecoderStream', () => {
     test(`${format}: decodes randomly chunked input`, async () => {
       const data = await fixture('lorem_utf_100k.txt')
       const compressed = await Compress.encode(data, { format })
-      for (const seed of [1, 2, 3])
+      for (const seed of [1, 2, 3]) {
         expect(
           difference(await decodeChunks(randomChunks(compressed, seed, 4096), { format }), data),
         ).toBe(undefined)
+      }
     })
   }
 
@@ -82,7 +83,9 @@ describe('DecoderStream', () => {
     void writer.write(flushed)
     const reader = stream.readable.getReader()
     let text = ''
-    while (text.length < 23) text += decode((await reader.read()).value!)
+    while (text.length < 23) {
+      text += decode((await reader.read()).value!)
+    }
     expect(text).toBe('hello world hello world')
     await reader.cancel()
   })
@@ -96,11 +99,13 @@ describe('DecoderStream', () => {
 
   test('deflate cut inside its data or its checksum fails with TruncatedError', async () => {
     const compressed = await Compress.encode(randomBytes(50_000, 8), { format: 'deflate' })
-    for (const cut of [2, 10])
-      for (const size of [3, 1000])
+    for (const cut of [2, 10]) {
+      for (const size of [3, 1000]) {
         await expect(
           decodeChunks(chunked(compressed.subarray(0, -cut), size), { format: 'deflate' }),
         ).rejects.toThrow(Compress.TruncatedError)
+      }
+    }
   })
 
   test('corrupt input fails with InvalidInputError', async () => {
@@ -137,8 +142,11 @@ describe('DecoderStream maxBytes', () => {
     const chunks = chunked(compressed, 1024)
     const source = new ReadableStream<Uint8Array>({
       pull(controller) {
-        if (sent < chunks.length) controller.enqueue(chunks[sent++]!)
-        else controller.close()
+        if (sent < chunks.length) {
+          controller.enqueue(chunks[sent++]!)
+        } else {
+          controller.close()
+        }
       },
       cancel(reason) {
         cancelled = reason

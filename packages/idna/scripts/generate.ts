@@ -10,9 +10,13 @@ const size = 0x110000
 
 async function lines(path: string): Promise<string[][]> {
   const response = await fetch(`${base}/${path}`)
-  if (!response.ok) throw new Error(`${path}: ${response.status}`)
+  if (!response.ok) {
+    throw new Error(`${path}: ${response.status}`)
+  }
   const text = await response.text()
-  if (!text.includes(version)) throw new Error(`${path} is not version ${version}`)
+  if (!text.includes(version)) {
+    throw new Error(`${path} is not version ${version}`)
+  }
   return text
     .split('\n')
     .map((line) => line.replace(/#.*/, '').trim())
@@ -77,7 +81,9 @@ for (const [field, status, mapping = ''] of await lines('idna/IdnaMappingTable.t
         kinds[cp] = mappedToString
         targets[cp] = stringIndex.get(text)!
       }
-    } else if (status !== 'disallowed') throw new Error(`Unknown status ${status}`)
+    } else if (status !== 'disallowed') {
+      throw new Error(`Unknown status ${status}`)
+    }
   }
 }
 
@@ -108,13 +114,21 @@ let previousIndex = -1
 for (let start = 0; start < size;) {
   const kind = kinds[start]
   const same = (cp: number) => {
-    if (kinds[cp] !== kind) return false
-    if (kind === mappedToCodePoint) return targets[cp] === targets[cp - 1] + 1
-    if (kind === mappedToString) return targets[cp] === targets[start]
+    if (kinds[cp] !== kind) {
+      return false
+    }
+    if (kind === mappedToCodePoint) {
+      return targets[cp] === targets[cp - 1] + 1
+    }
+    if (kind === mappedToString) {
+      return targets[cp] === targets[start]
+    }
     return true
   }
   let end = start + 1
-  while (end < size && same(end)) end++
+  while (end < size && same(end)) {
+    end++
+  }
   lengths.push(end - start - 1)
   if (kind === mappedToCodePoint) {
     values.push(kind | (zigzag(targets[start] - previousTarget) << 2))
@@ -122,7 +136,9 @@ for (let start = 0; start < size;) {
   } else if (kind === mappedToString) {
     values.push(kind | (zigzag(targets[start] - previousIndex - 1) << 2))
     previousIndex = targets[start]!
-  } else values.push(kind)
+  } else {
+    values.push(kind)
+  }
   start = end
 }
 
@@ -132,9 +148,12 @@ const propertyRuns: number[] = []
 let current = -1
 let length = 0
 for (let cp = 0; cp < size; cp++) {
-  if (kinds[cp] !== valid || props[cp] === current) length++
-  else {
-    if (current >= 0) propertyRuns.push(length - 1, current)
+  if (kinds[cp] !== valid || props[cp] === current) {
+    length++
+  } else {
+    if (current >= 0) {
+      propertyRuns.push(length - 1, current)
+    }
     current = props[cp]!
     length = 1
   }

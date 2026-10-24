@@ -48,8 +48,12 @@ export function memoryStore(): {
 
   const get = (key: string, options: Store.GetOptions = {}): number | undefined => {
     const entry = entries.get(key)
-    if (entry === undefined) return undefined
-    if (entry.expiresAt > (options.now?.getTime() ?? Date.now())) return entry.value
+    if (entry === undefined) {
+      return undefined
+    }
+    if (entry.expiresAt > (options.now?.getTime() ?? Date.now())) {
+      return entry.value
+    }
     entries.delete(key)
     return undefined
   }
@@ -58,11 +62,17 @@ export function memoryStore(): {
     get,
     set(key: string, value: number, options: Store.SetOptions) {
       const { expected, ttl } = options
-      if (get(key, options) !== expected) return false
+      if (get(key, options) !== expected) {
+        return false
+      }
       const now = options.now?.getTime() ?? Date.now()
       entries.set(key, { value, expiresAt: now + ttl })
       if (entries.size >= sweepAt) {
-        for (const [key, entry] of entries) if (entry.expiresAt <= now) entries.delete(key)
+        for (const [key, entry] of entries) {
+          if (entry.expiresAt <= now) {
+            entries.delete(key)
+          }
+        }
         sweepAt = Math.max(1024, entries.size * 2)
       }
       return true

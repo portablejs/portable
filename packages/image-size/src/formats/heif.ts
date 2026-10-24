@@ -19,7 +19,9 @@ const isBrand = (value: string): value is Brand => brands.has(value)
 
 function brand(input: Uint8Array): Brand | undefined {
   const ftyp = findBox(input, 'ftyp', 0, Infinity)
-  if (!ftyp) return undefined
+  if (!ftyp) {
+    return undefined
+  }
   const value = ascii(input, ftyp.offset + 8, ftyp.offset + 12)
   return isBrand(value) ? value : undefined
 }
@@ -29,7 +31,9 @@ function children(input: Uint8Array, parent: Box, headerSize: number): Box[] {
   const end = parent.offset + parent.size
   for (let offset = parent.offset + headerSize; offset + 8 <= end;) {
     const size = u32(input, offset, true)
-    if (size < 8 || offset + size > end) break
+    if (size < 8 || offset + size > end) {
+      break
+    }
     boxes.push({ name: ascii(input, offset + 4, offset + 8), offset, size })
     offset += size
   }
@@ -38,7 +42,9 @@ function children(input: Uint8Array, parent: Box, headerSize: number): Box[] {
 
 function pitmItem(input: Uint8Array, meta: Box[]): number | undefined {
   const pitm = meta.find((box) => box.name === 'pitm')
-  if (!pitm) return undefined
+  if (!pitm) {
+    return undefined
+  }
   return u8(input, pitm.offset + 8) === 0
     ? u16(input, pitm.offset + 12, true)
     : u32(input, pitm.offset + 12, true)
@@ -58,7 +64,9 @@ function propertiesOf(input: Uint8Array, ipma: Box, item: number): number[] {
       indexes.push(wideIndexes ? u16(input, offset, true) & 0x7fff : u8(input, offset) & 0x7f)
       offset += wideIndexes ? 2 : 1
     }
-    if (id === item) return indexes
+    if (id === item) {
+      return indexes
+    }
   }
   return []
 }
@@ -68,13 +76,17 @@ export const heif: Format = {
   calculate(input) {
     const type = brand(input)
     const meta = findBox(input, 'meta', 0, Infinity)
-    if (!type || !meta) throw new InvalidInputError('Invalid HEIF, no meta box')
+    if (!type || !meta) {
+      throw new InvalidInputError('Invalid HEIF, no meta box')
+    }
     const metaBoxes = children(input, meta, 12)
     const iprp = metaBoxes.find((box) => box.name === 'iprp')
     const iprpBoxes = iprp ? children(input, iprp, 8) : []
     const ipco = iprpBoxes.find((box) => box.name === 'ipco')
     const ipma = iprpBoxes.find((box) => box.name === 'ipma')
-    if (!ipco) throw new InvalidInputError('Invalid HEIF, no ipco box')
+    if (!ipco) {
+      throw new InvalidInputError('Invalid HEIF, no ipco box')
+    }
     const properties = children(input, ipco, 8)
 
     const item = pitmItem(input, metaBoxes)
@@ -100,8 +112,9 @@ export const heif: Format = {
         ;[width, height] = [height, width]
       }
     }
-    if (!width || !height)
+    if (!width || !height) {
       throw new InvalidInputError('Invalid HEIF, no size for the primary image')
+    }
     return { width, height, type }
   },
 }

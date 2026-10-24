@@ -11,7 +11,9 @@ import * as Random from '@portable/random'
 const calls = 1000
 let sink: unknown
 const repeat = (fn: () => unknown) => () => {
-  for (let i = 0; i < calls; i++) sink = fn()
+  for (let i = 0; i < calls; i++) {
+    sink = fn()
+  }
 }
 
 const urlAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
@@ -90,10 +92,11 @@ test('string(21) within 25% of nanoid and crypto-random-string', async ({ bench 
       repeat(() => cryptoRandomString({ length: 21, characters: urlAlphabet })),
     ),
   )
-  for (const upstream of ['nanoid customAlphabet', 'crypto-random-string'] as const)
+  for (const upstream of ['nanoid customAlphabet', 'crypto-random-string'] as const) {
     expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/random'), {
       delta: 0.25,
     })
+  }
 })
 
 test('string(12) from 36 characters within 25% of nanoid and crypto-random-string', async ({
@@ -113,10 +116,11 @@ test('string(12) from 36 characters within 25% of nanoid and crypto-random-strin
       repeat(() => cryptoRandomString({ length: 12, characters: lowercase })),
     ),
   )
-  for (const upstream of ['nanoid customAlphabet', 'crypto-random-string'] as const)
+  for (const upstream of ['nanoid customAlphabet', 'crypto-random-string'] as const) {
     expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/random'), {
       delta: 0.25,
     })
+  }
 })
 
 test('shuffle of 52 elements within 25% of lodash.shuffle', async ({ bench }) => {
@@ -166,8 +170,9 @@ test('bytes(32) within 25% of crypto.getRandomValues and nanoid random', async (
       repeat(() => nanoidRandom(32)),
     ),
   )
-  for (const other of ['crypto.getRandomValues', 'nanoid random'] as const)
+  for (const other of ['crypto.getRandomValues', 'nanoid random'] as const) {
     expect(result.get(other)).not.toBeFasterThan(result.get('@portable/random'), { delta: 0.25 })
+  }
 })
 
 test('seeded float within 25% of seedrandom', async ({ bench }) => {
@@ -181,9 +186,10 @@ test('seeded float within 25% of seedrandom', async ({ bench }) => {
     bench('seedrandom alea', repeat(alea)),
     bench('seedrandom xor4096', repeat(xor4096)),
   )
-  for (const upstream of ['seedrandom', 'seedrandom alea', 'seedrandom xor4096'] as const)
+  for (const upstream of ['seedrandom', 'seedrandom alea', 'seedrandom xor4096'] as const) {
     expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/random seeded'), {
       delta: 0.25,
     })
+  }
   expect(sink).toBeDefined()
 })

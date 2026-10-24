@@ -13,7 +13,9 @@ export function createUtf8Encoder(): {
     write(chunk) {
       if (typeof chunk !== 'string') {
         assertUint8Array(chunk)
-        if (highSurrogate === '') return chunk
+        if (highSurrogate === '') {
+          return chunk
+        }
         const pending = encodeUtf8(highSurrogate)
         highSurrogate = ''
         const joined = new Uint8Array(pending.length + chunk.length)

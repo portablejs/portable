@@ -119,8 +119,9 @@ const address = (size: 4 | 16): Codec<string, string> => ({
   length: () => size,
   write: size === 4 ? putIPv4 : putIPv6,
   read(r, end) {
-    if (end - r.offset !== size)
+    if (end - r.offset !== size) {
       throw new InvalidInputError(`An address record must hold ${size} bytes.`)
+    }
     r.offset += size
     return size === 4 ? readIPv4(r.bytes, end - 4) : readIPv6(r.bytes, end - 16)
   },
@@ -187,17 +188,25 @@ const srv = {
 
 const txt = {
   length(data) {
-    if (!Array.isArray(data)) throw new InvalidInputError('TXT data must be an array.')
+    if (!Array.isArray(data)) {
+      throw new InvalidInputError('TXT data must be an array.')
+    }
     let length = 0
-    for (const item of data) length += stringLength(item, 'A TXT string')
+    for (const item of data) {
+      length += stringLength(item, 'A TXT string')
+    }
     return length
   },
   write(w, data) {
-    for (const item of data) putString(w, item)
+    for (const item of data) {
+      putString(w, item)
+    }
   },
   read(r, end) {
     const strings: Uint8Array[] = []
-    while (r.offset < end) strings.push(bytes(r, u8(r, end), end))
+    while (r.offset < end) {
+      strings.push(bytes(r, u8(r, end), end))
+    }
     return strings
   },
 } satisfies Codec<RecordData['TXT'], DecodedRecordData['TXT']>
@@ -316,7 +325,9 @@ const dnskey = {
   },
   read(r, end) {
     const flags = u16(r, end)
-    if (u8(r, end) !== PROTOCOL_DNSSEC) throw new InvalidInputError('DNSKEY protocol must be 3.')
+    if (u8(r, end) !== PROTOCOL_DNSSEC) {
+      throw new InvalidInputError('DNSKEY protocol must be 3.')
+    }
     return { flags, algorithm: u8(r, end), key: rest(r, end) }
   },
 } satisfies Codec<KeyData, KeyData>
@@ -369,13 +380,19 @@ function typeWindows(list: readonly RecordType[]): Uint8Array[] {
 
 const usedLength = (window: Uint8Array) => {
   let length = 32
-  while (length > 0 && window[length - 1] === 0) length--
+  while (length > 0 && window[length - 1] === 0) {
+    length--
+  }
   return length
 }
 
 function typeBitmapLength(list: readonly RecordType[]): number {
   let length = 0
-  for (const window of typeWindows(list)) if (window) length += 2 + usedLength(window)
+  for (const window of typeWindows(list)) {
+    if (window) {
+      length += 2 + usedLength(window)
+    }
+  }
   return length
 }
 
@@ -383,7 +400,9 @@ function putTypeBitmap(w: Writer, list: readonly RecordType[]): void {
   const windows = typeWindows(list)
   for (let i = 0; i < windows.length; i++) {
     const window = windows[i]
-    if (!window) continue
+    if (!window) {
+      continue
+    }
     const length = usedLength(window)
     putU8(w, i)
     putU8(w, length)
@@ -396,13 +415,17 @@ function readTypeBitmap(r: Reader, end: number): RecordType[] {
   while (r.offset < end) {
     const window = u8(r, end)
     const length = u8(r, end)
-    if (length === 0 || length > 32)
+    if (length === 0 || length > 32) {
       throw new InvalidInputError('A type bitmap window holds 1 to 32 bytes.')
+    }
     need(r, length, end)
     for (let i = 0; i < length; i++) {
       const byte = r.bytes[r.offset + i]!
-      for (let bit = 0; bit < 8; bit++)
-        if (byte & (0x80 >> bit)) list.push(types.name((window << 8) | (i << 3) | bit))
+      for (let bit = 0; bit < 8; bit++) {
+        if (byte & (0x80 >> bit)) {
+          list.push(types.name((window << 8) | (i << 3) | bit))
+        }
+      }
     }
     r.offset += length
   }
@@ -516,8 +539,9 @@ export function ednsOptionLength(option: EdnsOption): number {
       return 4 + option.tags.length * 2
   }
   optionCodes.value(option.code)
-  if (option.data === undefined)
+  if (option.data === undefined) {
     throw new UnsupportedError(`EDNS option ${option.code} has no encoder. Pass its bytes as data.`)
+  }
   return 4 + bytesOf(option.data, 'EDNS option data').length
 }
 
@@ -527,15 +551,21 @@ export function putEdnsOption(w: Writer, option: EdnsOption): void {
     case 'CLIENT_SUBNET': {
       const v6 = isIPv6(option.ip)
       const prefix = option.sourcePrefixLength
-      if (prefix > (v6 ? 128 : 32))
+      if (prefix > (v6 ? 128 : 32)) {
         throw new InvalidInputError(`CLIENT_SUBNET prefix ${prefix} is too long.`)
+      }
       const full = new Uint8Array(16)
       const target = { bytes: full, offset: 0, start: 0, names: undefined }
-      if (v6) putIPv6(target, option.ip)
-      else putIPv4(target, option.ip)
+      if (v6) {
+        putIPv6(target, option.ip)
+      } else {
+        putIPv4(target, option.ip)
+      }
       const length = Math.ceil(prefix / 8)
       const sent = full.slice(0, length)
-      if (prefix % 8) sent[length - 1]! &= 0xff << (8 - (prefix % 8))
+      if (prefix % 8) {
+        sent[length - 1]! &= 0xff << (8 - (prefix % 8))
+      }
       putU16(w, 4 + length)
       putU16(w, v6 ? 2 : 1)
       putU8(w, prefix)
@@ -544,8 +574,9 @@ export function putEdnsOption(w: Writer, option: EdnsOption): void {
       return
     }
     case 'TCP_KEEPALIVE':
-      if (option.timeout === undefined) putU16(w, 0)
-      else {
+      if (option.timeout === undefined) {
+        putU16(w, 0)
+      } else {
         putU16(w, 2)
         putU16(w, option.timeout)
       }
@@ -557,7 +588,9 @@ export function putEdnsOption(w: Writer, option: EdnsOption): void {
       return
     case 'KEY_TAG':
       putU16(w, option.tags.length * 2)
-      for (const tag of option.tags) putU16(w, tag)
+      for (const tag of option.tags) {
+        putU16(w, tag)
+      }
       return
   }
   putU16(w, option.data.length)
@@ -570,7 +603,9 @@ export function readEdnsOption(r: Reader, end: number): EdnsOption {
   need(r, length, end)
   const optionEnd = r.offset + length
   const option = within(code, () => readOptionBody(r, code, optionEnd))
-  if (r.offset !== optionEnd) throw new InvalidInputError(`Malformed EDNS option ${code}.`)
+  if (r.offset !== optionEnd) {
+    throw new InvalidInputError(`Malformed EDNS option ${code}.`)
+  }
   return option
 }
 
@@ -581,16 +616,21 @@ function readOptionBody(r: Reader, code: OptionCode, end: number): EdnsOption {
       const sourcePrefixLength = u8(r, end)
       const scopePrefixLength = u8(r, end)
       const size = family === 1 ? 4 : family === 2 ? 16 : 0
-      if (size === 0 || end - r.offset > size)
+      if (size === 0 || end - r.offset > size) {
         throw new InvalidInputError('Malformed EDNS option CLIENT_SUBNET.')
+      }
       const full = new Uint8Array(size)
       full.set(rest(r, end))
       const ip = size === 4 ? readIPv4(full, 0) : readIPv6(full, 0)
       return { code, ip, sourcePrefixLength, scopePrefixLength }
     }
     case 'TCP_KEEPALIVE':
-      if (end - r.offset === 0) return { code }
-      if (end - r.offset !== 2) throw new InvalidInputError('Malformed EDNS option TCP_KEEPALIVE.')
+      if (end - r.offset === 0) {
+        return { code }
+      }
+      if (end - r.offset !== 2) {
+        throw new InvalidInputError('Malformed EDNS option TCP_KEEPALIVE.')
+      }
       return { code, timeout: u16(r, end) }
     case 'PADDING': {
       const length = end - r.offset
@@ -599,7 +639,9 @@ function readOptionBody(r: Reader, code: OptionCode, end: number): EdnsOption {
     }
     case 'KEY_TAG': {
       const tags: number[] = []
-      while (r.offset < end) tags.push(u16(r, end))
+      while (r.offset < end) {
+        tags.push(u16(r, end))
+      }
       return { code, tags }
     }
   }

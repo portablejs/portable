@@ -29,7 +29,9 @@ function expected(input: string, options: Lines.DecoderStream.Options): string[]
   const { separator = /\r?\n/, skipEmpty = false, maxLength = Infinity } = options
   const lines =
     typeof separator === 'string' ? input.split(separator) : input.split(separator as RegExp)
-  if (lines.at(-1) === '') lines.pop()
+  if (lines.at(-1) === '') {
+    lines.pop()
+  }
   return lines.filter((line) => !(skipEmpty && line === '') && line.length <= maxLength)
 }
 

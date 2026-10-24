@@ -30,7 +30,9 @@ function randomMessage(seed: number, length: number): Uint8Array {
   const pieces = ['a', 'b', '.', '..', '\r', '\n', '\r\n', '\n.', '\r.\r', '.\r\n', 'ö', ' ', '\t']
   const next = random(seed)
   let text = 'Subject: random\r\n\r\n'
-  while (text.length < length) text += pieces[Math.floor(next() * pieces.length)]
+  while (text.length < length) {
+    text += pieces[Math.floor(next() * pieces.length)]
+  }
   return encode(text)
 }
 

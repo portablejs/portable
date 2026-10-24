@@ -28,7 +28,9 @@ export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCn
  * import * as Dmarc from '@portable/dmarc'
  *
  * const dmarc: Dmarc.Result = await Dmarc.check({ from, spf, dkim }, { resolver })
- * if (dmarc.disposition === 'reject') reject('550 5.7.1 Rejected by DMARC policy')
+ * if (dmarc.disposition === 'reject') {
+ *   reject('550 5.7.1 Rejected by DMARC policy')
+ * }
  * ```
  */
 export type Result = {
@@ -133,7 +135,9 @@ class TempError extends Error {
 function failure(errors: readonly TempError[]): { reason: string; cause?: unknown } {
   const reason = errors.map((error) => error.message).join('; ')
   const causes = errors.flatMap((error) => (error.cause === undefined ? [] : [error.cause]))
-  if (causes.length === 0) return { reason }
+  if (causes.length === 0) {
+    return { reason }
+  }
   return { reason, cause: causes.length === 1 ? causes[0] : new AggregateError(causes, reason) }
 }
 
@@ -189,7 +193,9 @@ export async function check(input: check.Input, options: check.Options): Promise
     ? async (name: string) => identifier(psl(name) ?? name)
     : async (name: string) => {
         const { found, error } = await walk(ctx, name)
-        if (error) throw error
+        if (error) {
+          throw error
+        }
         return selectOrgDomain(name, found)
       }
 
@@ -197,10 +203,14 @@ export async function check(input: check.Input, options: check.Options): Promise
   try {
     found = psl ? await discoverByList(ctx, author.name, psl) : await discover(ctx, author.name)
   } catch (error) {
-    if (!(error instanceof TempError)) throw error
+    if (!(error instanceof TempError)) {
+      throw error
+    }
     return { ...base, result: 'temperror', ...failure([error]) }
   }
-  if (!found) return { ...base, result: 'none', reason: 'No DMARC record' }
+  if (!found) {
+    return { ...base, result: 'none', reason: 'No DMARC record' }
+  }
   const { record } = found
   if (!record) {
     return {
@@ -216,29 +226,47 @@ export async function check(input: check.Input, options: check.Options): Promise
     policy = record.sp ?? record.p
     if (record.np && record.np !== policy) {
       try {
-        if (!(await exists(ctx, author.name))) policy = record.np
+        if (!(await exists(ctx, author.name))) {
+          policy = record.np
+        }
       } catch (error) {
-        if (!(error instanceof TempError)) throw error
+        if (!(error instanceof TempError)) {
+          throw error
+        }
         errors.push(error)
-        if (strength[record.np] < strength[policy]) policy = record.np
+        if (strength[record.np] < strength[policy]) {
+          policy = record.np
+        }
       }
     }
   }
-  if (record.t === 'y') policy = policy === 'reject' ? 'quarantine' : 'none'
+  if (record.t === 'y') {
+    policy = policy === 'reject' ? 'quarantine' : 'none'
+  }
 
   const walked = new Set<string>()
   const aligns = async (name: string, strict: boolean): Promise<boolean> => {
-    if (name === author.name) return true
-    if (strict) return false
-    if (psl) return (await orgDomain(name)) === (await orgDomain(author.name))
+    if (name === author.name) {
+      return true
+    }
+    if (strict) {
+      return false
+    }
+    if (psl) {
+      return (await orgDomain(name)) === (await orgDomain(author.name))
+    }
     let authorOrg: string
     try {
       authorOrg = await orgDomain(author.name)
     } catch (error) {
-      if (name.split('.').at(-1) !== author.name.split('.').at(-1)) return false
+      if (name.split('.').at(-1) !== author.name.split('.').at(-1)) {
+        return false
+      }
       throw error
     }
-    if (name !== authorOrg && !name.endsWith(`.${authorOrg}`)) return false
+    if (name !== authorOrg && !name.endsWith(`.${authorOrg}`)) {
+      return false
+    }
     if (!walked.has(name) && walked.size >= maxAlignmentWalks) {
       throw new TempError(
         `Alignment of ${name} not checked: more than ${maxAlignmentWalks} tree walks`,
@@ -252,11 +280,15 @@ export async function check(input: check.Input, options: check.Options): Promise
     alignment: Alignment,
     strict: boolean,
   ): Promise<Alignment> => {
-    if (entry.result !== 'pass' || parseDomain(entry.domain).kind !== 'name') return alignment
+    if (entry.result !== 'pass' || parseDomain(entry.domain).kind !== 'name') {
+      return alignment
+    }
     try {
       return { ...alignment, aligned: await aligns(alignment.domain, strict) }
     } catch (error) {
-      if (!(error instanceof TempError)) throw error
+      if (!(error instanceof TempError)) {
+        throw error
+      }
       errors.push(error)
       return alignment
     }
@@ -295,9 +327,13 @@ function identifier(value: string): string {
 
 async function discover(ctx: Context, domain: string): Promise<Found | undefined> {
   const own = await lookup(ctx, domain)
-  if (own) return { domain, ...own }
+  if (own) {
+    return { domain, ...own }
+  }
   const { found, error } = await walk(ctx, domain)
-  if (error) throw error
+  if (error) {
+    throw error
+  }
   const orgDomain = selectOrgDomain(domain, found)
   const last = found.at(-1)
   return found.find((entry) => entry.domain === orgDomain) ?? (last?.psd === 'y' ? last : undefined)
@@ -309,9 +345,13 @@ async function discoverByList(
   orgDomain: (domain: string) => string | null | undefined,
 ): Promise<Found | undefined> {
   const own = await lookup(ctx, domain)
-  if (own) return { domain, ...own }
+  if (own) {
+    return { domain, ...own }
+  }
   const org = identifier(orgDomain(domain) ?? domain)
-  if (org === domain) return undefined
+  if (org === domain) {
+    return undefined
+  }
   const parent = await lookup(ctx, org)
   return parent && { domain: org, ...parent }
 }
@@ -327,12 +367,16 @@ function walk(ctx: Context, domain: string): Promise<Walk> {
         try {
           parsed = await lookup(ctx, name)
         } catch (error) {
-          if (!(error instanceof TempError)) throw error
+          if (!(error instanceof TempError)) {
+            throw error
+          }
           return { found, error }
         }
         if (parsed) {
           found.push({ domain: name, ...parsed })
-          if (parsed.psd !== 'u') break
+          if (parsed.psd !== 'u') {
+            break
+          }
         }
         labels = labels.length > maxWalkLabels ? labels.slice(-maxWalkLabels) : labels.slice(1)
       }
@@ -345,7 +389,9 @@ function walk(ctx: Context, domain: string): Promise<Walk> {
 
 function selectOrgDomain(domain: string, found: readonly Found[]): string {
   for (const entry of found) {
-    if (entry.psd === 'n') return entry.domain
+    if (entry.psd === 'n') {
+      return entry.domain
+    }
     if (entry.psd === 'y' && entry.domain !== domain) {
       return domain
         .split('.')
@@ -374,10 +420,16 @@ function lookup(ctx: Context, domain: string): Promise<Parsed | undefined> {
 }
 
 async function exists(ctx: Context, domain: string): Promise<boolean> {
-  if (!canExist(domain)) return false
+  if (!canExist(domain)) {
+    return false
+  }
   const a = await query(ctx, `A lookup of ${domain}`, () => ctx.resolver.resolve4(domain))
-  if ('value' in a || a.empty === 'ENODATA') return true
-  if (a.empty === 'EBADNAME') return false
+  if ('value' in a || a.empty === 'ENODATA') {
+    return true
+  }
+  if (a.empty === 'EBADNAME') {
+    return false
+  }
   const cname = await query(ctx, `CNAME lookup of ${domain}`, () =>
     ctx.resolver.resolveCname(domain),
   )
@@ -392,10 +444,14 @@ async function query<value>(
   try {
     return { value: await abortable(Promise.resolve().then(run), ctx.signal) }
   } catch (error) {
-    if (error instanceof TempError || ctx.signal?.aborted) throw error
+    if (error instanceof TempError || ctx.signal?.aborted) {
+      throw error
+    }
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
-    if (Dns.isNotFound(error)) return { empty: code as string }
+    if (Dns.isNotFound(error)) {
+      return { empty: code as string }
+    }
     throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`, {
       cause: error,
     })
@@ -406,8 +462,12 @@ function abortable<value>(
   promise: Promise<value>,
   signal: AbortSignal | undefined,
 ): Promise<value> {
-  if (!signal) return promise
-  if (signal.aborted) return Promise.reject(signal.reason)
+  if (!signal) {
+    return promise
+  }
+  if (signal.aborted) {
+    return Promise.reject(signal.reason)
+  }
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })

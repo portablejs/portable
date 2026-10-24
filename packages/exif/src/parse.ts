@@ -45,13 +45,21 @@ export function parse(bytes: Uint8Array): Metadata {
   const b0 = bytes[0]
   const b1 = bytes[1]
   let found: Found
-  if (b0 === 0xff && b1 === 0xd8) found = fromJpeg(bytes)
-  else if ((b0 === 0x49 && b1 === 0x49) || (b0 === 0x4d && b1 === 0x4d)) found = fromTiff(bytes, 0)
-  else if (startsWith(bytes, 0, exifHeader)) found = fromTiff(bytes, 6)
-  else if (startsWith(bytes, 0, pngSignature)) found = fromPng(bytes)
-  else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) found = fromWebp(bytes)
-  else if (startsWith(bytes, 4, ftyp)) found = fromHeif(bytes)
-  else throw new UnsupportedError()
+  if (b0 === 0xff && b1 === 0xd8) {
+    found = fromJpeg(bytes)
+  } else if ((b0 === 0x49 && b1 === 0x49) || (b0 === 0x4d && b1 === 0x4d)) {
+    found = fromTiff(bytes, 0)
+  } else if (startsWith(bytes, 0, exifHeader)) {
+    found = fromTiff(bytes, 6)
+  } else if (startsWith(bytes, 0, pngSignature)) {
+    found = fromPng(bytes)
+  } else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) {
+    found = fromWebp(bytes)
+  } else if (startsWith(bytes, 4, ftyp)) {
+    found = fromHeif(bytes)
+  } else {
+    throw new UnsupportedError()
+  }
 
   return toMetadata(found, bytes, 0)
 }
@@ -62,8 +70,12 @@ export function toMetadata(found: Found, data: Uint8Array, offset: number): Meta
   const result: Metadata = {
     ...(tiff?.ifds ?? { ifd0: {}, ifd1: {}, exif: {}, gps: {}, interop: {} }),
   }
-  if (size) result.imageSize = size
-  if (!tiff) return result
+  if (size) {
+    result.imageSize = size
+  }
+  if (!tiff) {
+    return result
+  }
 
   const latitude = degrees(result.gps.GPSLatitude, result.gps.GPSLatitudeRef, 'S')
   const longitude = degrees(result.gps.GPSLongitude, result.gps.GPSLongitudeRef, 'W')
@@ -120,8 +132,14 @@ export const fourcc = Object.fromEntries(
 ) as Record<(typeof codes)[number], number>
 
 export function startsWith(bytes: Uint8Array, at: number, prefix: ArrayLike<number>): boolean {
-  if (at + prefix.length > bytes.length) return false
-  for (let i = 0; i < prefix.length; i++) if (bytes[at + i] !== prefix[i]) return false
+  if (at + prefix.length > bytes.length) {
+    return false
+  }
+  for (let i = 0; i < prefix.length; i++) {
+    if (bytes[at + i] !== prefix[i]) {
+      return false
+    }
+  }
   return true
 }
 
@@ -135,7 +153,9 @@ export function fromTiff(bytes: Uint8Array, start: number): Found {
 
 function embedded(bytes: Uint8Array, start: number, end: number): Tiff | undefined {
   end = Math.min(end, bytes.length)
-  if (start + 8 > end) return undefined
+  if (start + 8 > end) {
+    return undefined
+  }
   return readTiff(bytes, start, end)
 }
 
@@ -162,14 +182,20 @@ function fromJpeg(bytes: Uint8Array): Found {
       continue
     }
     i += 2
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) continue
-    if (marker === 0xd9 || marker === 0xda) break
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) {
+      continue
+    }
+    if (marker === 0xd9 || marker === 0xda) {
+      break
+    }
     const length = u16be(bytes, i)
-    if (length < 2) break
+    if (length < 2) {
+      break
+    }
     const start = i + 2
-    if (marker === 0xe1 && !tiff && startsWith(bytes, start, exifHeader))
+    if (marker === 0xe1 && !tiff && startsWith(bytes, start, exifHeader)) {
       tiff = embedded(bytes, start + 6, i + length)
-    else if (
+    } else if (
       !size &&
       marker >= 0xc0 &&
       marker <= 0xcf &&
@@ -177,8 +203,9 @@ function fromJpeg(bytes: Uint8Array): Found {
       marker !== 0xc8 &&
       marker !== 0xcc &&
       start + 5 <= bytes.length
-    )
+    ) {
       size = { width: u16be(bytes, start + 3), height: u16be(bytes, start + 1) }
+    }
     i += length
   }
   return { tiff, size }
@@ -191,12 +218,14 @@ function fromPng(bytes: Uint8Array): Found {
     const length = u32be(bytes, i)
     const type = u32be(bytes, i + 4)
     const start = i + 8
-    if (type === fourcc.IHDR && !size && start + 8 <= bytes.length)
+    if (type === fourcc.IHDR && !size && start + 8 <= bytes.length) {
       size = { width: u32be(bytes, start), height: u32be(bytes, start + 4) }
-    else if (type === fourcc.eXIf && !tiff) {
+    } else if (type === fourcc.eXIf && !tiff) {
       const tiffStart = startsWith(bytes, start, exifHeader) ? start + 6 : start
       tiff = embedded(bytes, tiffStart, start + length)
-    } else if (type === fourcc.IEND) break
+    } else if (type === fourcc.IEND) {
+      break
+    }
     i = start + length + 4
   }
   return { tiff, size }
@@ -210,14 +239,14 @@ function fromWebp(bytes: Uint8Array): Found {
     const length = u24le(bytes, i + 4) + bytes[i + 7]! * 0x1000000
     const start = i + 8
     if (!size && start + 10 <= bytes.length) {
-      if (type === fourcc.VP8X)
+      if (type === fourcc.VP8X) {
         size = { width: u24le(bytes, start + 4) + 1, height: u24le(bytes, start + 7) + 1 }
-      else if (type === fourcc['VP8 '] && bytes[start + 3] === 0x9d)
+      } else if (type === fourcc['VP8 '] && bytes[start + 3] === 0x9d) {
         size = {
           width: (bytes[start + 6]! | (bytes[start + 7]! << 8)) & 0x3fff,
           height: (bytes[start + 8]! | (bytes[start + 9]! << 8)) & 0x3fff,
         }
-      else if (type === fourcc.VP8L && bytes[start] === 0x2f) {
+      } else if (type === fourcc.VP8L && bytes[start] === 0x2f) {
         const bits = u24le(bytes, start + 1) + bytes[start + 4]! * 0x1000000
         size = { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 }
       }
@@ -235,13 +264,17 @@ function fromHeif(bytes: Uint8Array): Found {
   let tiff: Tiff | undefined
   let size: Size | undefined
   for (const box of boxes(bytes, 0, bytes.length)) {
-    if (box.type !== fourcc.meta) continue
+    if (box.type !== fourcc.meta) {
+      continue
+    }
     const meta = readMeta(bytes, box.start + 4, box.end)
     size = meta.size
     const exif = meta.exif
     if (exif && exif.start + 4 <= bytes.length) {
       let start = exif.start + 4 + u32be(bytes, exif.start)
-      if (startsWith(bytes, start, exifHeader)) start += 6
+      if (startsWith(bytes, start, exifHeader)) {
+        start += 6
+      }
       tiff = embedded(bytes, start, exif.end)
     }
     break
@@ -258,11 +291,17 @@ function* boxes(bytes: Uint8Array, start: number, end: number): Generator<Box> {
     const type = u32be(bytes, i + 4)
     let header = 8
     if (length === 1) {
-      if (i + 16 > end) return
+      if (i + 16 > end) {
+        return
+      }
       length = u32be(bytes, i + 8) * 0x100000000 + u32be(bytes, i + 12)
       header = 16
-    } else if (length === 0) length = end - i
-    if (length < header) return
+    } else if (length === 0) {
+      length = end - i
+    }
+    if (length < header) {
+      return
+    }
     yield { type, start: i + header, end: Math.min(i + length, end) }
     i += length
   }
@@ -282,22 +321,32 @@ export function readMeta(
   for (const box of boxes(bytes, start, end)) {
     const version = bytes[box.start]
     const at = box.start + 4
-    if (box.type === fourcc.pitm) primary = version === 0 ? u16be(bytes, at) : u32be(bytes, at)
-    else if (box.type === fourcc.iinf) {
+    if (box.type === fourcc.pitm) {
+      primary = version === 0 ? u16be(bytes, at) : u32be(bytes, at)
+    } else if (box.type === fourcc.iinf) {
       const infeStart = at + (version === 0 ? 2 : 4)
       for (const infe of boxes(bytes, infeStart, box.end)) {
         const infeVersion = bytes[infe.start]!
-        if (infe.type !== fourcc.infe || infeVersion < 2) continue
+        if (infe.type !== fourcc.infe || infeVersion < 2) {
+          continue
+        }
         const idSize = infeVersion === 2 ? 2 : 4
         const id = idSize === 2 ? u16be(bytes, infe.start + 4) : u32be(bytes, infe.start + 4)
-        if (u32be(bytes, infe.start + 6 + idSize) === fourcc.Exif) exifItem = id
+        if (u32be(bytes, infe.start + 6 + idSize) === fourcc.Exif) {
+          exifItem = id
+        }
       }
-    } else if (box.type === fourcc.iloc) readItemLocations(bytes, box, locations)
-    else if (box.type === fourcc.idat) idat = box.start
-    else if (box.type === fourcc.iprp) {
+    } else if (box.type === fourcc.iloc) {
+      readItemLocations(bytes, box, locations)
+    } else if (box.type === fourcc.idat) {
+      idat = box.start
+    } else if (box.type === fourcc.iprp) {
       for (const child of boxes(bytes, box.start, box.end)) {
-        if (child.type === fourcc.ipco) properties.push(...boxes(bytes, child.start, child.end))
-        else if (child.type === fourcc.ipma) readAssociations(bytes, child, associations)
+        if (child.type === fourcc.ipco) {
+          properties.push(...boxes(bytes, child.start, child.end))
+        } else if (child.type === fourcc.ipma) {
+          readAssociations(bytes, child, associations)
+        }
       }
     }
   }
@@ -305,8 +354,9 @@ export function readMeta(
   let size: Size | undefined
   for (const index of associations.get(primary) ?? []) {
     const property = properties[index - 1]
-    if (property?.type === fourcc.ispe && property.start + 12 <= bytes.length)
+    if (property?.type === fourcc.ispe && property.start + 12 <= bytes.length) {
       size = { width: u32be(bytes, property.start + 4), height: u32be(bytes, property.start + 8) }
+    }
   }
   const location = locations.get(exifItem)
   const exif =
@@ -318,9 +368,15 @@ export function readMeta(
 }
 
 function readSized(bytes: Uint8Array, at: number, size: number): number {
-  if (size === 0) return 0
-  if (size === 2) return u16be(bytes, at)
-  if (size === 4) return u32be(bytes, at)
+  if (size === 0) {
+    return 0
+  }
+  if (size === 2) {
+    return u16be(bytes, at)
+  }
+  if (size === 4) {
+    return u32be(bytes, at)
+  }
   return u32be(bytes, at) * 0x100000000 + u32be(bytes, at + 4)
 }
 
@@ -331,7 +387,9 @@ function readItemLocations(
 ) {
   const version = bytes[box.start]!
   let at = box.start + 4
-  if (at + 4 > box.end) return
+  if (at + 4 > box.end) {
+    return
+  }
   const offsetSize = bytes[at]! >> 4
   const lengthSize = bytes[at]! & 15
   const baseOffsetSize = bytes[at + 1]! >> 4
@@ -340,18 +398,24 @@ function readItemLocations(
   const count = readSized(bytes, at + 2, idSize)
   at += 2 + idSize
   for (let item = 0; item < count; item++) {
-    if (at + idSize + 8 > box.end) return
+    if (at + idSize + 8 > box.end) {
+      return
+    }
     const id = readSized(bytes, at, idSize)
     at += idSize
     const method = version === 0 ? 0 : bytes[at + 1]! & 15
-    if (version !== 0) at += 2
+    if (version !== 0) {
+      at += 2
+    }
     at += 2
     const base = readSized(bytes, at, baseOffsetSize)
     at += baseOffsetSize
     const extents = u16be(bytes, at)
     at += 2
     const extentSize = indexSize + offsetSize + lengthSize
-    if (at + extents * extentSize > box.end) return
+    if (at + extents * extentSize > box.end) {
+      return
+    }
     if (extents === 1 && method < 2) {
       const start = base + readSized(bytes, at + indexSize, offsetSize)
       const length = readSized(bytes, at + indexSize + offsetSize, lengthSize)
@@ -365,7 +429,9 @@ function readAssociations(bytes: Uint8Array, box: Box, associations: Map<number,
   const version = bytes[box.start]!
   const wide = (bytes[box.start + 3]! & 1) === 1
   let at = box.start + 4
-  if (at + 4 > box.end) return
+  if (at + 4 > box.end) {
+    return
+  }
   const count = u32be(bytes, at)
   at += 4
   for (let entry = 0; entry < count && at + 3 <= box.end; entry++) {
@@ -383,11 +449,16 @@ function readAssociations(bytes: Uint8Array, box: Box, associations: Map<number,
 
 function degrees(value: unknown, ref: unknown, negative: string): number | undefined {
   let result: number
-  if (typeof value === 'number') result = value
-  else if (Array.isArray(value) && value.length > 0) {
+  if (typeof value === 'number') {
+    result = value
+  } else if (Array.isArray(value) && value.length > 0) {
     const [d = 0, m = 0, s = 0] = value as number[]
     result = d + m / 60 + s / 3600
-  } else return undefined
-  if (!Number.isFinite(result)) return undefined
+  } else {
+    return undefined
+  }
+  if (!Number.isFinite(result)) {
+    return undefined
+  }
   return ref === negative ? -result : result
 }

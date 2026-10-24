@@ -21,22 +21,40 @@ export const tiff: Format = {
     let height = 0
     for (let entry = first; entry < first + count * entrySize; entry += entrySize) {
       const tag = u16(input, entry, bigEndian)
-      if (tag === 0) break
-      if (tag !== 256 && tag !== 257) continue
+      if (tag === 0) {
+        break
+      }
+      if (tag !== 256 && tag !== 257) {
+        continue
+      }
       const type = u16(input, entry + 2, bigEndian)
       const values = big ? u64(input, entry + 4, bigEndian) : u32(input, entry + 4, bigEndian)
       const at = entry + (big ? 12 : 8)
       let value = 0
-      if (values !== 1) continue
-      if (type === 3) value = u16(input, at, bigEndian)
-      else if (type === 4) value = u32(input, at, bigEndian)
-      else if (type === 16 && big) value = u64(input, at, bigEndian)
-      else continue
-      if (tag === 256) width = value
-      else height = value
-      if (width && height) break
+      if (values !== 1) {
+        continue
+      }
+      if (type === 3) {
+        value = u16(input, at, bigEndian)
+      } else if (type === 4) {
+        value = u32(input, at, bigEndian)
+      } else if (type === 16 && big) {
+        value = u64(input, at, bigEndian)
+      } else {
+        continue
+      }
+      if (tag === 256) {
+        width = value
+      } else {
+        height = value
+      }
+      if (width && height) {
+        break
+      }
     }
-    if (!width || !height) throw new InvalidInputError('Invalid TIFF, missing tags')
+    if (!width || !height) {
+      throw new InvalidInputError('Invalid TIFF, missing tags')
+    }
     return { width, height, type: big ? 'bigtiff' : 'tiff' }
   },
 }

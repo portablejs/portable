@@ -105,7 +105,9 @@ describe('js-base64', () => {
 
   describe('large', () => {
     let seed = ''
-    for (let i = 0; i < 256; i++) seed += String.fromCharCode(i)
+    for (let i = 0; i < 256; i++) {
+      seed += String.fromCharCode(i)
+    }
     for (let i = 0, str = seed; i < 16; str += str, i++) {
       test(`${str.length} characters`, () => expect(text(decode(encode(str)))).toBe(str))
     }

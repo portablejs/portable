@@ -32,33 +32,37 @@ describe('decodes what pako compresses', () => {
 
   test('every strategy', async () => {
     const data = (await fixture('lorem_en_100k.txt')).subarray(0, 20_000)
-    for (const strategy of [0, 1, 2, 3, 4])
+    for (const strategy of [0, 1, 2, 3, 4]) {
       expect(difference(await Compress.decode(pako.gzip(data, { strategy })), data)).toBe(undefined)
+    }
   })
 
   test('every window size', async () => {
     const data = (await fixture('lorem_en_100k.txt')).subarray(0, 20_000)
-    for (const windowBits of [9, 10, 11, 12, 13, 14, 15])
+    for (const windowBits of [9, 10, 11, 12, 13, 14, 15]) {
       expect(
         difference(
           await Compress.decode(pako.deflate(data, { windowBits }), { format: 'deflate' }),
           data,
         ),
       ).toBe(undefined)
+    }
   })
 
   test('every memory level', async () => {
     const data = (await fixture('lorem_en_100k.txt')).subarray(0, 20_000)
-    for (const memLevel of [1, 5, 9])
+    for (const memLevel of [1, 5, 9]) {
       expect(difference(await Compress.decode(pako.gzip(data, { memLevel })), data)).toBe(undefined)
+    }
   })
 
   test('randomly chunked through DecoderStream', async () => {
     const data = await fixture('lorem_utf_100k.txt')
-    for (const seed of [1, 2, 3])
+    for (const seed of [1, 2, 3]) {
       expect(difference(await decodeChunks(randomChunks(pako.gzip(data), seed, 2048)), data)).toBe(
         undefined,
       )
+    }
   })
 })
 
@@ -88,10 +92,11 @@ describe('decodes what fflate compresses', () => {
 
   test('randomly chunked through DecoderStream', async () => {
     const data = await fixture('lorem_en_100k.txt')
-    for (const seed of [1, 2, 3])
+    for (const seed of [1, 2, 3]) {
       expect(
         difference(await decodeChunks(randomChunks(fflate.gzipSync(data), seed, 2048)), data),
       ).toBe(undefined)
+    }
   })
 })
 
@@ -172,8 +177,9 @@ describe('crc32 matches node:zlib and crc-32', () => {
   })
 
   test('strings', () => {
-    for (const text of ['', 'hello', 'héllo 🎵', 'x'.repeat(1000)])
+    for (const text of ['', 'hello', 'héllo 🎵', 'x'.repeat(1000)]) {
       expect(Compress.crc32(text)).toBe(zlib.crc32(text))
+    }
   })
 })
 

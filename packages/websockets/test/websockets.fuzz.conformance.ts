@@ -21,11 +21,14 @@ test('reads received messages in order and writes written ones in order', async 
   await fuzz(
     fc.asyncProperty(fc.array(message, { maxLength: 10 }), async (messages) => {
       const { socket, readable, writable } = open()
-      for (const each of messages)
+      for (const each of messages) {
         socket.receive(typeof each === 'string' ? each : each.slice().buffer)
+      }
       expect(await read(readable.getReader(), messages.length)).toEqual(messages)
       const writer = writable.getWriter()
-      for (const each of messages) await writer.write(each)
+      for (const each of messages) {
+        await writer.write(each)
+      }
       expect(socket.sent).toEqual(messages)
     }),
   )
@@ -38,8 +41,9 @@ test('maxBuffered fails the stream only when unread messages exceed it', async (
       fc.integer({ min: 1, max: 100 }),
       async (messages, maxBuffered) => {
         const { socket, readable } = open({ maxBuffered })
-        for (const each of messages)
+        for (const each of messages) {
           socket.receive(typeof each === 'string' ? each : each.slice().buffer)
+        }
         let total = 0
         const over = messages.some((each) => (total += size(each)) > maxBuffered)
         const result = await outcomeAsync([WebSockets.MaxBufferedError], () =>

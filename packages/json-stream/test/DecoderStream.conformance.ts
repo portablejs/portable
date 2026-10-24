@@ -552,11 +552,12 @@ describe('known upstream issues', () => {
 describe('maxLength', () => {
   test('accepts a matched value of exactly maxLength, in one chunk or many', async () => {
     const input = '{"rows":[{"a":1},{"bb":22}]}'
-    for (const chunks of [[input], chunked(input, 1)])
+    for (const chunks of [[input], chunked(input, 1)]) {
       expect(await parseValues(chunks, { paths: ['$.rows[*]'], maxLength: 9 })).toEqual([
         { a: 1 },
         { bb: 22 },
       ])
+    }
   })
 
   test('fails with MaxLengthError on a longer matched value', async () => {

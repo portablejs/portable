@@ -15,7 +15,9 @@ const stored = await Password.hash(password)
 // '$pbkdf2-sha256$i=600000$jL2uY0lkKl3m0WbJ8a7SmA$7m0N...'
 
 if (await Password.verify(password, stored)) {
-  if (Password.needsRehash(stored)) await saveHash(user, await Password.hash(password))
+  if (Password.needsRehash(stored)) {
+    await saveHash(user, await Password.hash(password))
+  }
 }
 ```
 
@@ -91,8 +93,12 @@ async function check(user: User, password: string): Promise<boolean> {
   try {
     return await Password.verify(password, user.hash)
   } catch (error) {
-    if (!(error instanceof Password.UnsupportedError)) throw error
-    if (!(await verifyLegacy(password, user.hash))) return false
+    if (!(error instanceof Password.UnsupportedError)) {
+      throw error
+    }
+    if (!(await verifyLegacy(password, user.hash))) {
+      return false
+    }
     await saveHash(user, await Password.hash(password))
     return true
   }

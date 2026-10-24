@@ -58,7 +58,7 @@ beforeAll(async () => {
 
 afterAll(() => server.close())
 
-for (const [name, type, method] of cases)
+for (const [name, type, method] of cases) {
   test(`${method}('${name}') from a recorded ${type} response within 25% of tangerine`, async ({
     bench,
   }) => {
@@ -78,3 +78,4 @@ for (const [name, type, method] of cases)
       delta: 0.25,
     })
   })
+}

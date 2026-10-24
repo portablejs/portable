@@ -63,8 +63,9 @@ describe('toUnicode', () => {
       'example.com',
       'نامه\u200Cای.ir',
       '日本語.jp',
-    ])
+    ]) {
       expect(Idna.toUnicode(Idna.toAscii(domain))).toBe(domain)
+    }
   })
 })
 
@@ -76,8 +77,9 @@ describe('toAscii', () => {
       'EXAMPLE.com',
       '☕.example',
       'ＡＢＣ。example',
-    ])
+    ]) {
       expect(Idna.toAscii(domain)).toBe(new URL(`http://${domain}/`).hostname)
+    }
   })
 
   test('lowercases ASCII input without validating it, as URL does', () => {

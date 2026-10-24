@@ -13,7 +13,9 @@ import { assertUint8Array } from './internal/uint8Array.js'
  */
 export function concat(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
   let length = 0
-  for (const chunk of chunks) length += assertUint8Array(chunk).length
+  for (const chunk of chunks) {
+    length += assertUint8Array(chunk).length
+  }
   const bytes = new Uint8Array(length)
   let offset = 0
   for (const chunk of chunks) {

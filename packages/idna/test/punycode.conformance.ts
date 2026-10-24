@@ -180,7 +180,9 @@ describe('punycode.js: toUnicode', () => {
   })
 
   test('does not decode names that do not start with xn--, but lowercases them', () => {
-    for (const { encoded } of strings) expect(Idna.toUnicode(encoded)).toBe(encoded.toLowerCase())
+    for (const { encoded } of strings) {
+      expect(Idna.toUnicode(encoded)).toBe(encoded.toLowerCase())
+    }
   })
 })
 
@@ -203,13 +205,16 @@ describe('punycode.js: toASCII', () => {
   const allowed = strings.filter((entry) => !forbidden.includes(entry))
 
   test('does not convert names that are already ASCII, but lowercases them', () => {
-    for (const { encoded } of allowed) expect(Idna.toAscii(encoded)).toBe(encoded.toLowerCase())
+    for (const { encoded } of allowed) {
+      expect(Idna.toAscii(encoded)).toBe(encoded.toLowerCase())
+    }
   })
 
   test('rejects ASCII names with characters that URL forbids in a host', () => {
     expect(forbidden.length).toBe(2)
-    for (const { encoded } of forbidden)
+    for (const { encoded } of forbidden) {
       expect(() => Idna.toAscii(encoded)).toThrow(Idna.InvalidInputError)
+    }
   })
 
   test.each(['\x2E', '。', '．', '｡'])('supports %s as a separator', (separator) => {

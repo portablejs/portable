@@ -64,20 +64,29 @@ export function createServer(
   async function handle(message: unknown): Promise<void> {
     if (!Array.isArray(message)) {
       const response = await run(message)
-      if (response) await reply(response)
+      if (response) {
+        await reply(response)
+      }
       return
     }
-    if (message.length === 0) return reply(error(null, -32600, 'Invalid Request'))
+    if (message.length === 0) {
+      return reply(error(null, -32600, 'Invalid Request'))
+    }
     const responses = (await Promise.all(message.map(run))).filter((r) => r !== undefined)
-    if (responses.length > 0) await reply(responses)
+    if (responses.length > 0) {
+      await reply(responses)
+    }
   }
 
   async function reply(response: ResponseMessage | ResponseMessage[]): Promise<void> {
     try {
       await send(response)
     } catch (e) {
-      if (Array.isArray(response)) for (const single of response) await reply(single)
-      else if (!('error' in response)) {
+      if (Array.isArray(response)) {
+        for (const single of response) {
+          await reply(single)
+        }
+      } else if (!('error' in response)) {
         await Promise.resolve(
           send({ jsonrpc: '2.0', id: response.id, error: toErrorObject(e) }),
         ).catch(noop)
@@ -86,15 +95,23 @@ export function createServer(
   }
 
   async function run(message: unknown): Promise<ResponseMessage | undefined> {
-    if (!isRequest(message)) return error(null, -32600, 'Invalid Request')
+    if (!isRequest(message)) {
+      return error(null, -32600, 'Invalid Request')
+    }
     const { method, params } = message
     const notification = !('id' in message)
     const id = notification ? null : (message.id as Id)
-    if (notification && method === '$/cancel') return cancel(idOf(params))
-    if (notification && method === '$/stream/credit') return addCredit(params)
+    if (notification && method === '$/cancel') {
+      return cancel(idOf(params))
+    }
+    if (notification && method === '$/stream/credit') {
+      return addCredit(params)
+    }
 
     const target = lookup(api, method)
-    if (!target) return notification ? undefined : error(id, -32601, 'Method not found')
+    if (!target) {
+      return notification ? undefined : error(id, -32601, 'Method not found')
+    }
     const [holder, fn] = target
     const call = {
       controller: new AbortController(),
@@ -103,25 +120,38 @@ export function createServer(
       wake: undefined,
       cancel: undefined,
     } satisfies Call
-    if (!notification) calls.set(id, call)
+    if (!notification) {
+      calls.set(id, call)
+    }
     try {
       const args = params === undefined ? [] : Array.isArray(params) ? params : [params]
       const original = (fn as { [contextKey]?: Function | undefined })[contextKey]
       let result: unknown = original
         ? original.call(holder, { signal: call.controller.signal, request }, ...args)
         : fn.apply(holder, args)
-      if (isThenable(result)) result = await result
+      if (isThenable(result)) {
+        result = await result
+      }
       if (isStream(result)) {
-        if (notification || call.done) open(result).cancel()
-        else void pump(id, call, open(result))
+        if (notification || call.done) {
+          open(result).cancel()
+        } else {
+          void pump(id, call, open(result))
+        }
         return
       }
-      if (call.done) return
+      if (call.done) {
+        return
+      }
       calls.delete(id)
-      if (notification) return
+      if (notification) {
+        return
+      }
       return { jsonrpc: '2.0', id, result: result === undefined ? null : result }
     } catch (e) {
-      if (call.done || notification) return
+      if (call.done || notification) {
+        return
+      }
       calls.delete(id)
       return { jsonrpc: '2.0', id, error: toErrorObject(e) }
     }
@@ -132,19 +162,31 @@ export function createServer(
     try {
       await send({ jsonrpc: '2.0', method: '$/stream', params: { id } })
       for (;;) {
-        while (call.credit <= 0 && !call.done) await new Promise<void>((r) => (call.wake = r))
-        if (call.done) return
+        while (call.credit <= 0 && !call.done) {
+          await new Promise<void>((r) => (call.wake = r))
+        }
+        if (call.done) {
+          return
+        }
         const { done, value } = await source.next()
-        if (call.done) return
-        if (done) break
+        if (call.done) {
+          return
+        }
+        if (done) {
+          break
+        }
         call.credit--
         const sent = send({ jsonrpc: '2.0', method: '$/stream/next', params: { id, value } })
-        if (sent instanceof Promise) await sent
+        if (sent instanceof Promise) {
+          await sent
+        }
       }
       finish(id, call)
       await send({ jsonrpc: '2.0', id, result: null })
     } catch (e) {
-      if (call.done) return
+      if (call.done) {
+        return
+      }
       finish(id, call)
       source.cancel()
       await Promise.resolve(send({ jsonrpc: '2.0', id, error: toErrorObject(e) })).catch(noop)
@@ -165,7 +207,9 @@ export function createServer(
 
   function cancel(id: Id | undefined): undefined {
     const call = id === undefined ? undefined : calls.get(id)
-    if (!call) return
+    if (!call) {
+      return
+    }
     calls.delete(id!)
     stop(call)
     void Promise.resolve(send(error(id!, -32800, 'Request cancelled'))).catch(noop)
@@ -174,13 +218,17 @@ export function createServer(
   function addCredit(params: unknown): undefined {
     const call = calls.get(idOf(params) ?? null)
     const credit = (params as { credit?: unknown }).credit
-    if (!call || typeof credit !== 'number' || !(credit > 0)) return
+    if (!call || typeof credit !== 'number' || !(credit > 0)) {
+      return
+    }
     call.credit += credit
     call.wake?.()
   }
 
   function close(reason?: unknown) {
-    for (const call of calls.values()) stop(call, reason)
+    for (const call of calls.values()) {
+      stop(call, reason)
+    }
     calls.clear()
   }
 
@@ -188,7 +236,9 @@ export function createServer(
 }
 
 function lookup(api: object, method: string): [object, Function] | undefined {
-  if (method.startsWith('rpc.')) return
+  if (method.startsWith('rpc.')) {
+    return
+  }
   let holder: unknown = api
   let value = property(api, method)
   if (value === undefined && method.includes('.')) {
@@ -196,22 +246,30 @@ function lookup(api: object, method: string): [object, Function] | undefined {
     for (const key of method.split('.')) {
       holder = value
       value = property(value, key)
-      if (value === undefined) return
+      if (value === undefined) {
+        return
+      }
     }
   }
   return typeof value === 'function' ? [holder as object, value] : undefined
 }
 
 function property(object: unknown, key: string): unknown {
-  if (object === null || typeof object !== 'object') return
-  if (!Object.hasOwn(object, key) && key in Object.prototype) return
+  if (object === null || typeof object !== 'object') {
+    return
+  }
+  if (!Object.hasOwn(object, key) && key in Object.prototype) {
+    return
+  }
   return (object as Record<string, unknown>)[key]
 }
 
 function isRequest(
   message: unknown,
 ): message is { method: string; params?: unknown; id?: unknown } & object {
-  if (message === null || typeof message !== 'object') return false
+  if (message === null || typeof message !== 'object') {
+    return false
+  }
   const { jsonrpc, method, params, id } = message as Record<string, unknown>
   return (
     jsonrpc === '2.0' &&
@@ -222,7 +280,9 @@ function isRequest(
 }
 
 function idOf(params: unknown): Id | undefined {
-  if (params === null || typeof params !== 'object') return
+  if (params === null || typeof params !== 'object') {
+    return
+  }
   const { id } = params as { id?: unknown }
   return typeof id === 'string' || typeof id === 'number' ? id : undefined
 }

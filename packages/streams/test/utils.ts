@@ -4,8 +4,11 @@ export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chun
   let i = 0
   return new ReadableStream({
     pull(controller) {
-      if (i < chunks.length) controller.enqueue(chunks[i++]!)
-      else controller.close()
+      if (i < chunks.length) {
+        controller.enqueue(chunks[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }
@@ -15,7 +18,9 @@ export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chu
   const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) return chunks
+    if (done) {
+      return chunks
+    }
     chunks.push(value)
   }
 }
@@ -49,6 +54,8 @@ export const decode = (bytes: Uint8Array): string => new TextDecoder().decode(by
 
 export function chunked(bytes: Uint8Array<ArrayBuffer>, size: number): Uint8Array<ArrayBuffer>[] {
   const chunks: Uint8Array<ArrayBuffer>[] = []
-  for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
+  for (let i = 0; i < bytes.length; i += size) {
+    chunks.push(bytes.subarray(i, i + size))
+  }
   return chunks
 }

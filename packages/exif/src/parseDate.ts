@@ -28,7 +28,9 @@ export declare namespace parseDate {
 export function parseDate(value: string, options: parseDate.Options = {}): Date | undefined {
   const { offset } = options
   const match = pattern.exec(value.trim())
-  if (!match) return undefined
+  if (!match) {
+    return undefined
+  }
   const [, year, month, day, hours, minutes, seconds, fraction = '0', zone] = match
   const time = Date.UTC(
     Number(year),
@@ -47,12 +49,14 @@ export function parseDate(value: string, options: parseDate.Options = {}): Date 
     date.getUTCHours() !== Number(hours) ||
     date.getUTCMinutes() !== Number(minutes) ||
     date.getUTCSeconds() !== Number(seconds)
-  )
+  ) {
     return undefined
+  }
   const offsetMatch = offsetPattern.exec(zone ?? offset?.trim() ?? '')
   const [, sign, offsetHours, offsetMinutes] = offsetMatch ?? []
-  if (!offsetMatch || Number(offsetHours) > 23 || Number(offsetMinutes) > 59)
+  if (!offsetMatch || Number(offsetHours) > 23 || Number(offsetMinutes) > 59) {
     return zone && zone !== 'Z' ? undefined : date
+  }
   const shift = (Number(offsetHours) * 60 + Number(offsetMinutes)) * 60_000
   return new Date(sign === '-' ? time + shift : time - shift)
 }

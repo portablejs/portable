@@ -11,7 +11,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Streams.toBytes(response.body!, { maxBytes: 1_000_000 })
  * } catch (error) {
- *   if (error instanceof Streams.MaxBytesError) console.log(`larger than ${error.maxBytes} bytes`)
+ *   if (error instanceof Streams.MaxBytesError) {
+ *     console.log(`larger than ${error.maxBytes} bytes`)
+ *   }
  * }
  * ```
  */

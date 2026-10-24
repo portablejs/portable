@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   Base64.decode('YW*j')
  * } catch (error) {
- *   if (error instanceof Base64.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Base64.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -30,7 +32,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   Base64.decode('YWJjZ')
  * } catch (error) {
- *   if (error instanceof Base64.TruncatedError) console.log('incomplete base64')
+ *   if (error instanceof Base64.TruncatedError) {
+ *     console.log('incomplete base64')
+ *   }
  * }
  * ```
  */

@@ -1,6 +1,10 @@
 function digit(code: number): number {
-  if (code >= 97) return code - 71
-  if (code >= 65) return code === 95 ? 63 : code - 65
+  if (code >= 97) {
+    return code - 71
+  }
+  if (code >= 65) {
+    return code === 95 ? 63 : code - 65
+  }
   return code === 45 ? 62 : code + 4
 }
 
@@ -41,7 +45,9 @@ export function unpackIndex(
         entry(pointer++, codePoint)
         break
       case 2:
-        for (let i = 0; i < size; i++) entry(pointer++, ++codePoint)
+        for (let i = 0; i < size; i++) {
+          entry(pointer++, ++codePoint)
+        }
         break
       default:
         pointer += size
@@ -73,7 +79,9 @@ let ascii: Uint16Array | undefined
 /** A table for `Encoder.table` with ASCII mapped to itself. */
 export function byteTable(): Uint16Array {
   const table = new Uint16Array(0x10000)
-  for (let i = 0; i < 0x80; i++) table[i] = 0x100 | i
+  for (let i = 0; i < 0x80; i++) {
+    table[i] = 0x100 | i
+  }
   return table
 }
 

@@ -10,9 +10,15 @@ const CR_ONLY = 3
 const DOT_ONLY = 4
 
 function insertion(prev: number, byte: number): number {
-  if (prev === CR) return byte === LF ? 0 : byte === DOT ? LF_DOT : LF_ONLY
-  if (byte === LF) return CR_ONLY
-  if (byte === DOT && (prev === LF || prev === START)) return DOT_ONLY
+  if (prev === CR) {
+    return byte === LF ? 0 : byte === DOT ? LF_DOT : LF_ONLY
+  }
+  if (byte === LF) {
+    return CR_ONLY
+  }
+  if (byte === DOT && (prev === LF || prev === START)) {
+    return DOT_ONLY
+  }
   return 0
 }
 
@@ -27,10 +33,14 @@ function stuff(chunk: Uint8Array, prev: number): Uint8Array {
   for (let i = 0; i < chunk.length; i++) {
     const byte = chunk[i]!
     const insert = insertion(before, byte)
-    if (insert !== 0) extra += insert === LF_DOT ? 2 : 1
+    if (insert !== 0) {
+      extra += insert === LF_DOT ? 2 : 1
+    }
     before = byte
   }
-  if (extra === 0) return chunk
+  if (extra === 0) {
+    return chunk
+  }
 
   const out = new Uint8Array(chunk.length + extra)
   let written = 0
@@ -40,15 +50,21 @@ function stuff(chunk: Uint8Array, prev: number): Uint8Array {
     const byte = chunk[i]!
     const insert = insertion(before, byte)
     before = byte
-    if (insert === 0) continue
+    if (insert === 0) {
+      continue
+    }
     out.set(chunk.subarray(copied, i), written)
     written += i - copied
     copied = i
-    if (insert === CR_ONLY) out[written++] = CR
-    else if (insert === DOT_ONLY) out[written++] = DOT
-    else {
+    if (insert === CR_ONLY) {
+      out[written++] = CR
+    } else if (insert === DOT_ONLY) {
+      out[written++] = DOT
+    } else {
       out[written++] = LF
-      if (insert === LF_DOT) out[written++] = DOT
+      if (insert === LF_DOT) {
+        out[written++] = DOT
+      }
     }
   }
   out.set(chunk.subarray(copied), written)
@@ -56,8 +72,12 @@ function stuff(chunk: Uint8Array, prev: number): Uint8Array {
 }
 
 function terminator(last: number): Uint8Array {
-  if (last === LF || last === START) return new Uint8Array([DOT, CR, LF])
-  if (last === CR) return new Uint8Array([LF, DOT, CR, LF])
+  if (last === LF || last === START) {
+    return new Uint8Array([DOT, CR, LF])
+  }
+  if (last === CR) {
+    return new Uint8Array([LF, DOT, CR, LF])
+  }
   return new Uint8Array([CR, LF, DOT, CR, LF])
 }
 
@@ -77,7 +97,9 @@ export class DataStream extends TransformStream<Uint8Array, Uint8Array> {
     let last = START
     super({
       transform(chunk, controller) {
-        if (assertUint8Array(chunk).length === 0) return
+        if (assertUint8Array(chunk).length === 0) {
+          return
+        }
         controller.enqueue(stuff(chunk, last))
         last = chunk[chunk.length - 1]!
       },

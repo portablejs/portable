@@ -39,7 +39,9 @@ export declare namespace DecoderStream {
  * import * as Lines from '@portable/lines'
  *
  * const response = await fetch('https://example.com/log.txt')
- * for await (const line of response.body!.pipeThrough(new Lines.DecoderStream())) console.log(line)
+ * for await (const line of response.body!.pipeThrough(new Lines.DecoderStream())) {
+ *   console.log(line)
+ * }
  * ```
  */
 export class DecoderStream extends TransformStream<Uint8Array | string, string> {
@@ -64,9 +66,13 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     let overflowed = false
 
     const emit = (line: string, controller: TransformStreamDefaultController<string>) => {
-      if (skipEmpty && line === '') return
+      if (skipEmpty && line === '') {
+        return
+      }
       if (line.length > maxLength) {
-        if (overflow === 'error') throw new MaxLengthError({ maxLength })
+        if (overflow === 'error') {
+          throw new MaxLengthError({ maxLength })
+        }
         return
       }
       controller.enqueue(line)
@@ -80,7 +86,9 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
               typeof chunk === 'string'
                 ? chunk
                 : decoder.decode(assertUint8Array(chunk), { stream: true })
-            if (cr) text = '\r' + text
+            if (cr) {
+              text = '\r' + text
+            }
             cr = text.endsWith('\r')
             const lines = splitLines(partial + (cr ? text.slice(0, -1) : text))
             partial = lines.pop()!
@@ -93,10 +101,14 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
               lines.shift()
               overflowed = false
             }
-            for (const line of lines) emit(line, controller)
+            for (const line of lines) {
+              emit(line, controller)
+            }
 
             if (partial.length > maxLength + slack) {
-              if (overflow === 'error') throw new MaxLengthError({ maxLength })
+              if (overflow === 'error') {
+                throw new MaxLengthError({ maxLength })
+              }
               overflowed = true
               partial = tail(partial)
             }
@@ -105,11 +117,17 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
             const lines = splitLines(partial + (cr ? '\r' : '') + decoder.decode())
             const last = lines.pop()!
             if (overflowed) {
-              if (lines.length === 0) return
+              if (lines.length === 0) {
+                return
+              }
               lines.shift()
             }
-            for (const line of lines) emit(line, controller)
-            if (last !== '') emit(last, controller)
+            for (const line of lines) {
+              emit(line, controller)
+            }
+            if (last !== '') {
+              emit(last, controller)
+            }
           },
         },
         options,

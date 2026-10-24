@@ -18,8 +18,11 @@ function stalled<chunk>(chunk: chunk) {
     {
       pull(controller) {
         source.pulls++
-        if (source.pulls === 1) controller.enqueue(chunk)
-        else return new Promise<void>(() => {})
+        if (source.pulls === 1) {
+          controller.enqueue(chunk)
+        } else {
+          return new Promise<void>(() => {})
+        }
         return undefined
       },
       cancel(reason) {

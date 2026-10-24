@@ -91,8 +91,9 @@ describe('exif-parser', () => {
     const size = buildTiff({ ifd0, ifd1: [entry(0x0201, 4, [8]), entry(0x0202, 4, [1])] }).length
     const tiff = buildTiff({ ifd0, ifd1: [entry(0x0201, 4, [8]), entry(0x0202, 4, [size])] })
     const bytes = jpeg(tiff)
-    for (const result of [Exif.parse(bytes), await Exif.parseStream(fromIterable([bytes]))])
+    for (const result of [Exif.parse(bytes), await Exif.parseStream(fromIterable([bytes]))]) {
       expect(result.thumbnail).toEqual({ offset: 20, length: size, bytes: undefined })
+    }
   })
 })
 
@@ -291,8 +292,9 @@ describe('exifr', () => {
   })
 
   test('reads Orientation', async () => {
-    for (const n of [1, 2, 3, 4, 5, 6, 7, 8])
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) {
       expect(Exif.parse(await fixture(`orientation-f${n}t.jpg`)).ifd0.Orientation).toBe(n)
+    }
   })
 
   test('skips 0xFF fill bytes before a JPEG marker', async () => {
@@ -456,8 +458,9 @@ describe('parse', () => {
       webpBody,
     )
     const strip = (result: Exif.Metadata) => ({ ...result, imageSize: undefined })
-    for (const input of [concat(exifPrefix, data), jpeg(data), png, webp])
+    for (const input of [concat(exifPrefix, data), jpeg(data), png, webp]) {
       expect(strip(Exif.parse(input))).toEqual(strip(expected))
+    }
     expect(Exif.parse(png).imageSize).toEqual({ width: 256, height: 2 })
     expect(Exif.parse(webp).imageSize).toEqual({ width: 100, height: 50 })
     expect(Exif.parse(jpeg(data)).imageSize).toEqual({ width: 3, height: 2 })

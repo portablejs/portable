@@ -17,7 +17,8 @@ const chunks = chunked(data, 16384)
 const mimeChunks = chunked(Buffer.from(mime), 16384)
 
 async function drain(transform: Transform, input: readonly Uint8Array[]): Promise<void> {
-  for await (const _ of Readable.from(input).pipe(transform));
+  for await (const _ of Readable.from(input).pipe(transform)) {
+  }
 }
 
 // libbase64 and Buffer encode and decode in C++, which JavaScript can't match on Node. They are

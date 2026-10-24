@@ -39,10 +39,14 @@ const nodemailerSend = (message: string | Readable) =>
 test('sends 10 small messages over one connection within 25% of nodemailer', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/smtp', async () => {
-      for (let i = 0; i < 10; i++) await ours.send({ ...envelope, message: small })
+      for (let i = 0; i < 10; i++) {
+        await ours.send({ ...envelope, message: small })
+      }
     }),
     bench('nodemailer', async () => {
-      for (let i = 0; i < 10; i++) await nodemailerSend(small)
+      for (let i = 0; i < 10; i++) {
+        await nodemailerSend(small)
+      }
     }),
     { iterations: 256 },
   )

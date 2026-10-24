@@ -8,7 +8,9 @@ export class NeedMore extends Error {
 }
 
 export function need(input: Uint8Array, end: number): void {
-  if (end > input.length) throw new NeedMore(end)
+  if (end > input.length) {
+    throw new NeedMore(end)
+  }
 }
 
 export function u8(input: Uint8Array, offset: number): number {
@@ -43,7 +45,9 @@ export function u64(input: Uint8Array, offset: number, bigEndian: boolean): numb
   const high = u32(input, bigEndian ? offset : offset + 4, bigEndian)
   const low = u32(input, bigEndian ? offset + 4 : offset, bigEndian)
   const value = high * 2 ** 32 + low
-  if (!Number.isSafeInteger(value)) throw new InvalidInputError('Value too large')
+  if (!Number.isSafeInteger(value)) {
+    throw new InvalidInputError('Value too large')
+  }
   return value
 }
 
@@ -54,7 +58,9 @@ export function u64(input: Uint8Array, offset: number, bigEndian: boolean): numb
 export function startsWith(input: Uint8Array, offset: number, text: string): boolean {
   const available = Math.min(text.length, input.length - offset)
   for (let i = 0; i < available; i++) {
-    if (input[offset + i] !== text.charCodeAt(i)) return false
+    if (input[offset + i] !== text.charCodeAt(i)) {
+      return false
+    }
   }
   need(input, offset + text.length)
   return true
@@ -88,7 +94,9 @@ export function findBox(
       continue
     }
     need(input, offset + size)
-    if (startsWith(input, offset + 4, name)) return { name, offset, size }
+    if (startsWith(input, offset + 4, name)) {
+      return { name, offset, size }
+    }
     offset += size
   }
   return undefined

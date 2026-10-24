@@ -729,6 +729,8 @@ describe('fold()', () => {
     const input = 'a'.repeat(10) + '\r\n' + 'b '.repeat(50)
     const folded = fold(input, { lineLength: 30 })
     expect(folded.startsWith('a'.repeat(10) + '\r\n')).toBe(true)
-    for (const line of folded.split('\r\n')) expect(line.length).toBeLessThanOrEqual(30)
+    for (const line of folded.split('\r\n')) {
+      expect(line.length).toBeLessThanOrEqual(30)
+    }
   })
 })

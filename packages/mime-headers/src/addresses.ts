@@ -54,7 +54,9 @@ export function parseAddresses(
 ): Address[] {
   const { strict = false } = options
   const { list, error } = parseList(toText(input), strict)
-  if (strict && error) throw new InvalidInputError(error)
+  if (strict && error) {
+    throw new InvalidInputError(error)
+  }
   return list
 }
 
@@ -129,16 +131,21 @@ export function formatAddresses(
 }
 
 function phrase(name: string, options: formatAddresses.Options): string {
-  if (/[^\x20-\x7e]|=\?|\?=/.test(name)) return encodeWord(name, options)
-  if (/^[\w']+(?: [\w']+)*$/.test(name)) return name
+  if (/[^\x20-\x7e]|=\?|\?=/.test(name)) {
+    return encodeWord(name, options)
+  }
+  if (/^[\w']+(?: [\w']+)*$/.test(name)) {
+    return name
+  }
   return quote(name)
 }
 
 function parseSingleAddress(address: string): string {
   const parsed = address === '' ? [] : parseAddresses(address, { strict: true })
   const only = parsed[0]
-  if (parsed.length !== 1 || !only || 'group' in only || only.name !== '' || only.address === '')
+  if (parsed.length !== 1 || !only || 'group' in only || only.name !== '' || only.address === '') {
     throw new InvalidInputError(`${JSON.stringify(address)} is not one address.`)
+  }
   return only.address
 }
 
@@ -179,13 +186,18 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     for (let i = 0; i < text.length;) {
       const code = text.charCodeAt(i)
       if (isSpace(code)) {
-        if (strict) checkSpace(i)
+        if (strict) {
+          checkSpace(i)
+        }
         space = true
         i++
-      } else if (code === 0x22) i = readQuoted(i)
-      else if (code === 0x28) i = readComment(i)
-      else if (code === 0x5b && last === '@') i = readLiteral(i)
-      else if (
+      } else if (code === 0x22) {
+        i = readQuoted(i)
+      } else if (code === 0x28) {
+        i = readComment(i)
+      } else if (code === 0x5b && last === '@') {
+        i = readLiteral(i)
+      } else if (
         code === 0x40 ||
         code === 0x3c ||
         code === 0x3e ||
@@ -195,41 +207,59 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
       ) {
         addToken(text[i] as Kind, text[i]!)
         i++
-      } else i = readAtom(i)
+      } else {
+        i = readAtom(i)
+      }
     }
-    if (open >= 0 && close < 0) invalid('An angle bracket is not closed.')
+    if (open >= 0 && close < 0) {
+      invalid('An angle bracket is not closed.')
+    }
     endEntry()
     if (group) {
       invalid('A group is not closed with ";".')
       endGroup()
     }
-    if (count === 0) invalid('The list holds no address.')
+    if (count === 0) {
+      invalid('The list holds no address.')
+    }
     return mergeNameFragments(list)
   }
 
   function invalid(reason: string) {
-    if (!error) error = reason
+    if (!error) {
+      error = reason
+    }
   }
 
   function checkSpace(i: number) {
     const code = text.charCodeAt(i)
     if (code === 0x0a) {
-      if (text.charCodeAt(i - 1) !== 0x0d) invalid('A line feed is not part of a CRLF.')
+      if (text.charCodeAt(i - 1) !== 0x0d) {
+        invalid('A line feed is not part of a CRLF.')
+      }
     } else if (code === 0x0d) {
-      if (text.charCodeAt(i + 1) !== 0x0a) invalid('A carriage return is not part of a CRLF.')
-      else if (!isWsp(text.charCodeAt(i + 2))) invalid('A CRLF is not followed by whitespace.')
+      if (text.charCodeAt(i + 1) !== 0x0a) {
+        invalid('A carriage return is not part of a CRLF.')
+      } else if (!isWsp(text.charCodeAt(i + 2))) {
+        invalid('A CRLF is not followed by whitespace.')
+      }
     }
   }
 
   function inner(i: number): number {
     const code = text.charCodeAt(i)
     if (code === 0x5c) {
-      if (i + 1 < text.length) return 2
+      if (i + 1 < text.length) {
+        return 2
+      }
       invalid('A backslash ends the input.')
       return 1
     }
-    if (code === 0) invalid('A NUL character is not escaped.')
-    else if (code === 0x0d || code === 0x0a) checkSpace(i)
+    if (code === 0) {
+      invalid('A NUL character is not escaped.')
+    } else if (code === 0x0d || code === 0x0a) {
+      checkSpace(i)
+    }
     return 1
   }
 
@@ -247,8 +277,11 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
         break
       }
       const length = strict ? inner(i) : code === 0x5c && i + 1 < text.length ? 2 : 1
-      if (code === 0x5c && length === 2) value += text[i + 1]
-      else if (code !== 0x0d && code !== 0x0a) value += text[i]
+      if (code === 0x5c && length === 2) {
+        value += text[i + 1]
+      } else if (code !== 0x0d && code !== 0x0a) {
+        value += text[i]
+      }
       i += length
     }
     addToken('quoted', value)
@@ -269,10 +302,15 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
         i++
         break
       }
-      if (code === 0x28) depth++
+      if (code === 0x28) {
+        depth++
+      }
       const length = strict ? inner(i) : code === 0x5c && i + 1 < text.length ? 2 : 1
-      if (code === 0x5c && length === 2) value += text[i + 1]
-      else value += text[i]
+      if (code === 0x5c && length === 2) {
+        value += text[i + 1]
+      } else {
+        value += text[i]
+      }
       i += length
     }
     tokens.push({
@@ -299,9 +337,13 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
         break
       }
       if (strict) {
-        if (code === 0x5b) invalid('A domain literal holds "[".')
+        if (code === 0x5b) {
+          invalid('A domain literal holds "[".')
+        }
         i += inner(i)
-      } else i += code === 0x5c && i + 1 < text.length ? 2 : 1
+      } else {
+        i += code === 0x5c && i + 1 < text.length ? 2 : 1
+      }
     }
     addToken('literal', text.slice(start, i))
     return i
@@ -311,12 +353,15 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     let i = start
     while (i < text.length) {
       const code = text.charCodeAt(i)
-      if (isSpace(code) || '"(@<>:;,'.includes(text[i]!)) break
+      if (isSpace(code) || '"(@<>:;,'.includes(text[i]!)) {
+        break
+      }
       i++
     }
     const value = text.slice(start, i)
-    if (strict && !atext.test(value.replaceAll('.', 'a')))
+    if (strict && !atext.test(value.replaceAll('.', 'a'))) {
       invalid(`${JSON.stringify(value)} holds a character that needs quoting.`)
+    }
     addToken('text', value)
     return i
   }
@@ -329,10 +374,13 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     if (inAngle) {
       if (kind === '<') {
         invalid('An angle bracket opens inside another.')
-        for (let i = open; i < tokens.length; i++) tokens[i]!.role = 'skip'
+        for (let i = open; i < tokens.length; i++) {
+          tokens[i]!.role = 'skip'
+        }
         open = tokens.length
-      } else if (kind === '>') close = tokens.length
-      else if ((kind === ',' && angleHoldsAddress()) || (kind === ';' && group)) {
+      } else if (kind === '>') {
+        close = tokens.length
+      } else if ((kind === ',' && angleHoldsAddress()) || (kind === ';' && group)) {
         invalid('An angle bracket is not closed.')
         close = tokens.length
         separator(kind)
@@ -341,7 +389,9 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
       tokens.push(token)
       return
     }
-    if (kind === ',' || kind === ';') return separator(kind)
+    if (kind === ',' || kind === ';') {
+      return separator(kind)
+    }
     if (kind === ':') {
       if (group) {
         invalid('Groups can not be nested.')
@@ -349,8 +399,11 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
         markAngle()
         const name = buildName(tokens)
         const quoted = tokens.some((token) => token.kind === 'quoted' && token.role === 'name')
-        if (name.text === '' && !quoted) invalid('A group has no name.')
-        else if (strict) checkPhrase(tokens)
+        if (name.text === '' && !quoted) {
+          invalid('A group has no name.')
+        } else if (strict) {
+          checkPhrase(tokens)
+        }
         group = { name: decodeWords(name.text || name.comments), members: [] }
       }
       resetEntry()
@@ -371,17 +424,22 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
   }
 
   function angleHoldsAddress(): boolean {
-    for (let i = open + 2; i < tokens.length; i++)
-      if (tokens[i]!.kind === '@' && tokens[i - 1]!.kind !== ',' && tokens[i - 1]!.kind !== ':')
+    for (let i = open + 2; i < tokens.length; i++) {
+      if (tokens[i]!.kind === '@' && tokens[i - 1]!.kind !== ',' && tokens[i - 1]!.kind !== ':') {
         return true
+      }
+    }
     return false
   }
 
   function separator(kind: ',' | ';') {
     endEntry()
     if (kind === ';') {
-      if (group) endGroup()
-      else invalid('";" separates two addresses outside a group.')
+      if (group) {
+        endGroup()
+      } else {
+        invalid('";" separates two addresses outside a group.')
+      }
     }
   }
 
@@ -395,8 +453,11 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     if (tokens.length > 0) {
       const mailbox = resolve()
       count++
-      if (group) group.members.push(mailbox)
-      else list.push(mailbox)
+      if (group) {
+        group.members.push(mailbox)
+      } else {
+        list.push(mailbox)
+      }
     }
     resetEntry()
   }
@@ -408,9 +469,13 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
   }
 
   function markAngle() {
-    if (open < 0) return
+    if (open < 0) {
+      return
+    }
     const end = close < 0 ? tokens.length : close
-    for (let i = open; i <= end && i < tokens.length; i++) tokens[i]!.role = 'skip'
+    for (let i = open; i <= end && i < tokens.length; i++) {
+      tokens[i]!.role = 'skip'
+    }
   }
 
   function resolve(): Mailbox {
@@ -418,19 +483,26 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     let address = ''
     if (open >= 0) {
       tokens[open]!.role = 'skip'
-      if (end < tokens.length) tokens[end]!.role = 'skip'
+      if (end < tokens.length) {
+        tokens[end]!.role = 'skip'
+      }
       let from = open + 1
-      while (from < end && tokens[from]!.role === 'skip') from++
+      while (from < end && tokens[from]!.role === 'skip') {
+        from++
+      }
       from = skipRoute(tokens, from, close)
       address = takeAddress(from, end)
       if (strict) {
         checkPhrase(tokens.slice(0, open))
         for (let i = from; i < tokens.length; i++) {
           const token = tokens[i]!
-          if (token.kind !== 'comment' && token.role === 'name')
+          if (token.kind !== 'comment' && token.role === 'name') {
             invalid(`${JSON.stringify(token.value)} follows the address.`)
+          }
         }
-        if (!address) invalid('An angle address is empty.')
+        if (!address) {
+          invalid('An angle address is empty.')
+        }
       }
     } else {
       address = takeAddress(0, tokens.length)
@@ -446,10 +518,14 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
         }
       }
       if (strict) {
-        if (!address) invalid('An entry holds no address.')
-        for (const token of tokens)
-          if (token.kind !== 'comment' && token.role === 'name')
+        if (!address) {
+          invalid('An entry holds no address.')
+        }
+        for (const token of tokens) {
+          if (token.kind !== 'comment' && token.role === 'name') {
             invalid(`${JSON.stringify(token.value)} is not part of the address.`)
+          }
+        }
       }
     }
     const name = buildName(tokens)
@@ -464,7 +540,9 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     let end = to
     for (let i = from; i < to; i++) {
       const token = tokens[i]!
-      if (token.role === 'skip') continue
+      if (token.role === 'skip') {
+        continue
+      }
       if (token.kind === 'comment') {
         gap = true
         continue
@@ -486,15 +564,21 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
         }
         start = i
       }
-      if (token.kind === '@') found = true
+      if (token.kind === '@') {
+        found = true
+      }
       previous = token
       gap = false
     }
-    if (!found) return ''
+    if (!found) {
+      return ''
+    }
     const run: Token[] = []
     for (let i = start; i < end; i++) {
       const token = tokens[i]!
-      if (token.kind === 'comment' || token.role === 'skip') continue
+      if (token.kind === 'comment' || token.role === 'skip') {
+        continue
+      }
       token.role = 'address'
       run.push(token)
     }
@@ -513,9 +597,12 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
     const local = run.slice(0, at)
     const domain = run.slice(at + 1)
     if (strict) {
-      if (!isWords(local)) invalid('The local part of an address is malformed.')
-      if (!(domain.length === 1 && domain[0]!.kind === 'literal') && !isWords(domain, true))
+      if (!isWords(local)) {
+        invalid('The local part of an address is malformed.')
+      }
+      if (!(domain.length === 1 && domain[0]!.kind === 'literal') && !isWords(domain, true)) {
         invalid('The domain of an address is malformed.')
+      }
     }
     let localPart = local.map(raw).join('')
     if (local.some((token) => token.kind === 'quoted')) {
@@ -528,12 +615,15 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
   function checkPhrase(tokens: readonly Token[]) {
     let first = true
     for (const token of tokens) {
-      if (token.kind === 'comment' || token.role === 'skip') continue
+      if (token.kind === 'comment' || token.role === 'skip') {
+        continue
+      }
       if (
         (token.kind !== 'text' && token.kind !== 'quoted') ||
         (first && token.kind === 'text' && token.value.startsWith('.'))
-      )
+      ) {
         invalid(`${JSON.stringify(token.value)} can't be part of a display name.`)
+      }
       first = false
     }
   }
@@ -545,12 +635,22 @@ function parseList(text: string, strict: boolean): { list: Address[]; error: str
  * Skips an obsolete source route (RFC 5322 section 4.4), as in `<@relay.example:user@example.com>`.
  */
 function skipRoute(tokens: Token[], from: number, to: number): number {
-  if (tokens[from]?.kind !== '@') return from
+  if (tokens[from]?.kind !== '@') {
+    return from
+  }
   for (let i = from; i < to; i++) {
-    if (tokens[i]!.kind !== ':') continue
+    if (tokens[i]!.kind !== ':') {
+      continue
+    }
     for (let j = i + 1; j < to; j++) {
-      if (tokens[j]!.kind !== '@') continue
-      for (let k = from; k <= i; k++) if (tokens[k]!.kind !== 'comment') tokens[k]!.role = 'skip'
+      if (tokens[j]!.kind !== '@') {
+        continue
+      }
+      for (let k = from; k <= i; k++) {
+        if (tokens[k]!.kind !== 'comment') {
+          tokens[k]!.role = 'skip'
+        }
+      }
       return i + 1
     }
     return from
@@ -563,14 +663,22 @@ function isWords(tokens: readonly Token[], atomsOnly = false): boolean {
   let expectWord = true
   for (const token of tokens) {
     if (token.kind === 'quoted' && !atomsOnly) {
-      if (!expectWord) return false
+      if (!expectWord) {
+        return false
+      }
       expectWord = false
       continue
     }
-    if (token.kind !== 'text') return false
+    if (token.kind !== 'text') {
+      return false
+    }
     for (const part of token.value.split(/(\.)/)) {
-      if (part === '') continue
-      if ((part === '.') === expectWord) return false
+      if (part === '') {
+        continue
+      }
+      if ((part === '.') === expectWord) {
+        return false
+      }
       expectWord = part === '.'
     }
   }
@@ -582,15 +690,23 @@ function buildName(tokens: readonly Token[]): { text: string; comments: string }
   let comments = ''
   let gap = false
   for (const token of tokens) {
-    if (token.space) gap = true
+    if (token.space) {
+      gap = true
+    }
     if (token.kind === 'comment') {
-      if (token.role !== 'skip') comments += (comments ? ' ' : '') + token.value
+      if (token.role !== 'skip') {
+        comments += (comments ? ' ' : '') + token.value
+      }
       gap = true
     } else if (token.role === 'name') {
-      if (text && gap) text += ' '
+      if (text && gap) {
+        text += ' '
+      }
       text += token.value
       gap = false
-    } else if (token.role === 'address') gap = false
+    } else if (token.role === 'address') {
+      gap = false
+    }
   }
   return { text, comments }
 }
@@ -613,9 +729,11 @@ function mergeNameFragments<value extends Address>(list: readonly value[]): valu
       current.name !== '' &&
       next.address !== '' &&
       next.name !== ''
-    )
+    ) {
       merged[merged.length - 1] = { ...next, name: `${current.name}, ${next.name}` }
-    else merged.push(current)
+    } else {
+      merged.push(current)
+    }
   }
   return merged.reverse()
 }

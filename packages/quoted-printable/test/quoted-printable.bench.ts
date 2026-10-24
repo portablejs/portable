@@ -24,8 +24,9 @@ const words = [
   'end.',
 ]
 let prose = ''
-while (prose.length < 512 * 1024)
+while (prose.length < 512 * 1024) {
   prose += words[Math.floor(next() * words.length)]! + (next() < 0.02 ? '\r\n' : ' ')
+}
 
 const text = new TextEncoder().encode(prose)
 const textBuffer = Buffer.from(text)
@@ -63,10 +64,11 @@ describe('encode', () => {
         quotedPrintable.encode(textBinaryString)
       }),
     )
-    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1', 'quoted-printable'] as const)
+    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1', 'quoted-printable'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/quoted-printable'), {
         delta: 0.25,
       })
+    }
   })
 
   test('256 KB of random bytes with line breaks', async ({ bench }) => {
@@ -81,10 +83,11 @@ describe('encode', () => {
         libqp3.wrap(libqp3.encode(binaryBuffer), 76)
       }),
     )
-    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1'] as const)
+    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/quoted-printable'), {
         delta: 0.25,
       })
+    }
   })
 
   test('stream of 512 KB of text in 16 KB chunks', async ({ bench }) => {
@@ -99,10 +102,11 @@ describe('encode', () => {
         await pipeNode(new libqp3.Encoder(), textChunks)
       }),
     )
-    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1'] as const)
+    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/quoted-printable'), {
         delta: 0.25,
       })
+    }
   })
 })
 
@@ -122,10 +126,11 @@ describe('decode', () => {
         quotedPrintable.decode(encodedText)
       }),
     )
-    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1', 'quoted-printable'] as const)
+    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1', 'quoted-printable'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/quoted-printable'), {
         delta: 0.25,
       })
+    }
   })
 
   test('quoted-printable random bytes', async ({ bench }) => {
@@ -143,10 +148,11 @@ describe('decode', () => {
         quotedPrintable.decode(encodedBinary)
       }),
     )
-    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1', 'quoted-printable'] as const)
+    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1', 'quoted-printable'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/quoted-printable'), {
         delta: 0.25,
       })
+    }
   })
 
   test('stream of quoted-printable text in 16 KB chunks', async ({ bench }) => {
@@ -161,9 +167,10 @@ describe('decode', () => {
         await pipeNode(new libqp3.Decoder(), encodedChunks)
       }),
     )
-    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1'] as const)
+    for (const upstream of ['libqp 2.1.3', 'libqp 3.0.1'] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/quoted-printable'), {
         delta: 0.25,
       })
+    }
   })
 })

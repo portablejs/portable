@@ -70,8 +70,9 @@ describe('ip', () => {
 
   test('sends IPv6 as RFC 5952 recommends and an IPv4-mapped address as IPv4', async () => {
     const { fetch, urls } = server()
-    for (const address of ['2001:067C:02E8:0:0:0:0:1', '2001:67c:2e8::0.0.0.1', '::ffff:8.8.8.8'])
+    for (const address of ['2001:067C:02E8:0:0:0:0:1', '2001:67c:2e8::0.0.0.1', '::ffff:8.8.8.8']) {
       await Rdap.ip(address, { fetch })
+    }
     expect(urls.filter((url) => !url.startsWith('https://data.iana.org/'))).toEqual([
       'https://rdap.db.ripe.net/ip/2001:67c:2e8::1',
       'https://rdap.db.ripe.net/ip/2001:67c:2e8::1',
@@ -97,8 +98,9 @@ describe('ip', () => {
         [['8.8.8.128/25'], ['https://narrowest.example/']],
       ),
     })
-    for (const address of ['8.8.8.8', '8.9.0.1', '8.8.8.200', '8.8.8.0/24', '8.8.8.128/26'])
+    for (const address of ['8.8.8.8', '8.9.0.1', '8.8.8.200', '8.8.8.0/24', '8.8.8.128/26']) {
       await rejection(Rdap.ip(address, { fetch }))
+    }
     expect(urls.slice(1)).toEqual([
       'https://narrow.example/ip/8.8.8.8',
       'https://wide.example/ip/8.9.0.1',
@@ -134,21 +136,23 @@ describe('ip', () => {
       '1::2:3:4:5:6:7:8',
       '::1.2.3',
     ]
-    for (const address of addresses)
+    for (const address of addresses) {
       expect({ input: address, error: await rejection(Rdap.ip(address, { fetch })) }).toEqual({
         input: address,
         error: expect.any(Rdap.InvalidInputError),
       })
+    }
     expect(urls).toEqual([])
   })
 
   test('rejects an address no registry serves with UnsupportedError', async () => {
     const { fetch } = server()
-    for (const address of ['127.0.0.1', '10.0.0.1', '::1', 'fe80::1'])
+    for (const address of ['127.0.0.1', '10.0.0.1', '::1', 'fe80::1']) {
       expect({ input: address, error: await rejection(Rdap.ip(address, { fetch })) }).toEqual({
         input: address,
         error: expect.any(Rdap.UnsupportedError),
       })
+    }
   })
 
   test('rejects an address with no record with NotFoundError', async () => {
@@ -186,12 +190,15 @@ describe('asn', () => {
     const { fetch, urls } = server({
       [asn]: services([['1-100'], ['https://a.example/']], [['200'], ['https://b.example']]),
     })
-    for (const number of [1, 100, 200]) await rejection(Rdap.asn(number, { fetch }))
-    for (const number of [0, 101, 199, 201])
+    for (const number of [1, 100, 200]) {
+      await rejection(Rdap.asn(number, { fetch }))
+    }
+    for (const number of [0, 101, 199, 201]) {
       expect({ input: number, error: await rejection(Rdap.asn(number, { fetch })) }).toEqual({
         input: number,
         error: expect.any(Rdap.UnsupportedError),
       })
+    }
     expect(urls.slice(1)).toEqual([
       'https://a.example/autnum/1',
       'https://a.example/autnum/100',
@@ -201,20 +208,22 @@ describe('asn', () => {
 
   test('rejects a reserved number with UnsupportedError', async () => {
     const { fetch } = server()
-    for (const number of [0, 23456, 4294967295])
+    for (const number of [0, 23456, 4294967295]) {
       expect({ input: number, error: await rejection(Rdap.asn(number, { fetch })) }).toEqual({
         input: number,
         error: expect.any(Rdap.UnsupportedError),
       })
+    }
   })
 
   test('rejects what is not an AS number with InvalidInputError, without a request', async () => {
     const { fetch, urls } = server()
-    for (const number of [-1, 1.5, 2 ** 32, Number.NaN, Infinity, '15169' as never])
+    for (const number of [-1, 1.5, 2 ** 32, Number.NaN, Infinity, '15169' as never]) {
       expect({ input: number, error: await rejection(Rdap.asn(number, { fetch })) }).toEqual({
         input: number,
         error: expect.any(Rdap.InvalidInputError),
       })
+    }
     expect(urls).toEqual([])
   })
 })

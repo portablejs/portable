@@ -83,15 +83,25 @@ export function window(target: window.Target, options: window.Options): Transpor
         }
       }
       const hello = () => {
-        if (send('hello')) timer = setTimeout(hello, retryInterval)
+        if (send('hello')) {
+          timer = setTimeout(hello, retryInterval)
+        }
       }
       listener = (event) => {
-        if (event.source !== target || (origin !== '*' && event.origin !== origin)) return
+        if (event.source !== target || (origin !== '*' && event.origin !== origin)) {
+          return
+        }
         const message = event.data as Record<string, unknown> | null
-        if (typeof message !== 'object' || message === null || message.channel !== channel) return
+        if (typeof message !== 'object' || message === null || message.channel !== channel) {
+          return
+        }
         const type = message[key]
-        if (type === 'message') return controller.enqueue(message.data)
-        if (type !== 'hello' && type !== 'ready') return
+        if (type === 'message') {
+          return controller.enqueue(message.data)
+        }
+        if (type !== 'hello' && type !== 'ready') {
+          return
+        }
         if (message.version !== version) {
           return fail(
             new TransportError(
@@ -99,14 +109,20 @@ export function window(target: window.Target, options: window.Options): Transpor
             ),
           )
         }
-        if (type === 'hello' && !send('ready')) return
-        if (connected) return
+        if (type === 'hello' && !send('ready')) {
+          return
+        }
+        if (connected) {
+          return
+        }
         connected = true
         clearTimeout(timer)
         ready.resolve()
       }
       onAbort = () => fail(signal!.reason)
-      if (signal?.aborted) return onAbort()
+      if (signal?.aborted) {
+        return onAbort()
+      }
       signal?.addEventListener('abort', onAbort)
       globalThis.addEventListener('message', listener)
       hello()

@@ -65,7 +65,9 @@ const literals = ['true', 'false', 'null']
 
 const jsonCharacters = /* @__PURE__ */ (() => {
   const table = new Uint8Array(0x80)
-  for (const character of ' \t\n\r,:0123456789+-.eEtruefalsn') table[character.charCodeAt(0)] = 1
+  for (const character of ' \t\n\r,:0123456789+-.eEtruefalsn') {
+    table[character.charCodeAt(0)] = 1
+  }
   return table
 })()
 
@@ -95,7 +97,9 @@ const jsonCharacters = /* @__PURE__ */ (() => {
 export class DecoderStream extends TransformStream<Uint8Array | string, DecoderStream.Match> {
   constructor(options: DecoderStream.Options = {}) {
     const { paths = ['$'], maxLength = Infinity } = options
-    if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
+    if (!(maxLength >= 0)) {
+      throw new RangeError('`maxLength` must be a number >= 0.')
+    }
     const matcher = compile(paths)
     const decoder = new TextDecoder()
 
@@ -136,12 +140,16 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
     }
 
     const slice = (start: number, end: number): string => {
-      if (start >= offset) return text.slice(start - offset, end)
+      if (start >= offset) {
+        return text.slice(start - offset, end)
+      }
       return held.join('').slice(start - heldStart) + text.slice(0, end)
     }
 
     const emit = (start: number, end: number, valueDepth: number) => {
-      if (end + offset - start > maxLength) throw new MaxLengthError({ maxLength })
+      if (end + offset - start > maxLength) {
+        throw new MaxLengthError({ maxLength })
+      }
       let value: unknown
       try {
         value = JSON.parse(slice(start, end))
@@ -151,25 +159,33 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
         })
       }
       controller.enqueue({ path: keys.slice(0, valueDepth), value })
-      if (start === outer) outer = -1
+      if (start === outer) {
+        outer = -1
+      }
     }
 
     const begin = (code: number, i: number): number => {
       let states: States | null
-      if (depth === 0) states = matcher.root
-      else {
+      if (depth === 0) {
+        states = matcher.root
+      } else {
         const parent = frameStates[depth - 1]!
-        if (parent === null) states = null
-        else {
+        if (parent === null) {
+          states = null
+        } else {
           const top = depth - 1
           const key = kinds[top] === ARRAY ? indexes[top]! - 1 : keys[top]!
-          if (kinds[top] === ARRAY) keys[top] = key
+          if (kinds[top] === ARRAY) {
+            keys[top] = key
+          }
           states = matcher.next(parent, key)
         }
       }
       const matched = states !== null && states.matched
       const start = offset + i
-      if (matched && outer < 0) outer = start
+      if (matched && outer < 0) {
+        outer = start
+      }
 
       if ((code === 0x7b || code === 0x5b) && states !== null && matched && !states.live) {
         skipStart = start
@@ -190,11 +206,19 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
         inKey = false
         return STRING
       }
-      if (code === 0x2d) return MINUS
-      if (code === 0x30) return ZERO
-      if (code > 0x30 && code <= 0x39) return INTEGER
+      if (code === 0x2d) {
+        return MINUS
+      }
+      if (code === 0x30) {
+        return ZERO
+      }
+      if (code > 0x30 && code <= 0x39) {
+        return INTEGER
+      }
       const index = code === 0x74 ? 0 : code === 0x66 ? 1 : code === 0x6e ? 2 : -1
-      if (index < 0) invalid(i)
+      if (index < 0) {
+        invalid(i)
+      }
       literal = literals[index]!
       literalIndex = 1
       return LITERAL
@@ -221,8 +245,12 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
               i++
               continue
             }
-            if (state === VALUE_OR_END && c === 0x5d) break
-            if (depth > 0 && kinds[depth - 1] === ARRAY) indexes[depth - 1]!++
+            if (state === VALUE_OR_END && c === 0x5d) {
+              break
+            }
+            if (depth > 0 && kinds[depth - 1] === ARRAY) {
+              indexes[depth - 1]!++
+            }
             state = begin(c, i)
             i++
             continue
@@ -241,12 +269,17 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
               i++
               continue
             }
-            if (state === KEY_OR_END && c === 0x7d) break
+            if (state === KEY_OR_END && c === 0x7d) {
+              break
+            }
             return invalid(i)
           }
           case COLON: {
-            if (c === 0x3a) state = VALUE
-            else if (!(c === 0x20 || c === 0x0a || c === 0x0d || c === 0x09)) return invalid(i)
+            if (c === 0x3a) {
+              state = VALUE
+            } else if (!(c === 0x20 || c === 0x0a || c === 0x0d || c === 0x09)) {
+              return invalid(i)
+            }
             i++
             continue
           }
@@ -272,13 +305,22 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             while (i < n) {
               c = text.charCodeAt(i++)
               if (inString) {
-                if (c === QUOTE) inString = false
-                else if (c === BACKSLASH && i++ === n) skipEscape = true
-              } else if (c === QUOTE) inString = true
-              else if (c === 0x7b || c === 0x5b) d++
-              else if (c === 0x7d || c === 0x5d) {
-                if (--d === 0) break
-              } else if (c >= 0x80 || jsonCharacters[c] === 0) return invalid(i - 1)
+                if (c === QUOTE) {
+                  inString = false
+                } else if (c === BACKSLASH && i++ === n) {
+                  skipEscape = true
+                }
+              } else if (c === QUOTE) {
+                inString = true
+              } else if (c === 0x7b || c === 0x5b) {
+                d++
+              } else if (c === 0x7d || c === 0x5d) {
+                if (--d === 0) {
+                  break
+                }
+              } else if (c >= 0x80 || jsonCharacters[c] === 0) {
+                return invalid(i - 1)
+              }
             }
             skipDepth = d
             skipString = inString
@@ -291,17 +333,23 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
           case STRING: {
             while (i < n) {
               c = text.charCodeAt(i)
-              if (c === QUOTE || c === BACKSLASH || c < 0x20) break
+              if (c === QUOTE || c === BACKSLASH || c < 0x20) {
+                break
+              }
               i++
             }
-            if (i === n) continue
+            if (i === n) {
+              continue
+            }
             if (c === BACKSLASH) {
               escaped = true
               state = ESCAPE
               i++
               continue
             }
-            if (c < 0x20) return invalid(i)
+            if (c < 0x20) {
+              return invalid(i)
+            }
             i++
             if (inKey) {
               if (keyStart >= 0) {
@@ -310,7 +358,9 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
                 keyStart = -1
               }
               state = COLON
-            } else state = endPrimitive(i)
+            } else {
+              state = endPrimitive(i)
+            }
             continue
           }
           case ESCAPE: {
@@ -326,37 +376,54 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
               c === 0x6e ||
               c === 0x72 ||
               c === 0x74
-            )
+            ) {
               state = STRING
-            else return invalid(i)
+            } else {
+              return invalid(i)
+            }
             i++
             continue
           }
           case UNICODE: {
-            if (!((c >= 0x30 && c <= 0x39) || ((c | 0x20) >= 0x61 && (c | 0x20) <= 0x66)))
+            if (!((c >= 0x30 && c <= 0x39) || ((c | 0x20) >= 0x61 && (c | 0x20) <= 0x66))) {
               return invalid(i)
-            if (--unicodeLeft === 0) state = STRING
+            }
+            if (--unicodeLeft === 0) {
+              state = STRING
+            }
             i++
             continue
           }
           case LITERAL: {
-            if (c !== literal.charCodeAt(literalIndex)) return invalid(i)
+            if (c !== literal.charCodeAt(literalIndex)) {
+              return invalid(i)
+            }
             i++
-            if (++literalIndex === literal.length) state = endPrimitive(i)
+            if (++literalIndex === literal.length) {
+              state = endPrimitive(i)
+            }
             continue
           }
           case MINUS: {
-            if (c === 0x30) state = ZERO
-            else if (c > 0x30 && c <= 0x39) state = INTEGER
-            else return invalid(i)
+            if (c === 0x30) {
+              state = ZERO
+            } else if (c > 0x30 && c <= 0x39) {
+              state = INTEGER
+            } else {
+              return invalid(i)
+            }
             i++
             continue
           }
           case INTEGER:
           case FRACTION:
           case EXPONENT: {
-            while (i < n && (c = text.charCodeAt(i)) >= 0x30 && c <= 0x39) i++
-            if (i === n) continue
+            while (i < n && (c = text.charCodeAt(i)) >= 0x30 && c <= 0x39) {
+              i++
+            }
+            if (i === n) {
+              continue
+            }
             if (state === INTEGER && c === 0x2e) {
               state = DOT
               i++
@@ -371,10 +438,13 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             continue
           }
           case ZERO: {
-            if (c === 0x2e) state = DOT
-            else if ((c | 0x20) === 0x65) state = EXPONENT_MARK
-            else if (c >= 0x30 && c <= 0x39) return invalid(i)
-            else {
+            if (c === 0x2e) {
+              state = DOT
+            } else if ((c | 0x20) === 0x65) {
+              state = EXPONENT_MARK
+            } else if (c >= 0x30 && c <= 0x39) {
+              return invalid(i)
+            } else {
               state = endPrimitive(i)
               continue
             }
@@ -382,47 +452,65 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             continue
           }
           case DOT: {
-            if (!(c >= 0x30 && c <= 0x39)) return invalid(i)
+            if (!(c >= 0x30 && c <= 0x39)) {
+              return invalid(i)
+            }
             state = FRACTION
             i++
             continue
           }
           case EXPONENT_MARK: {
-            if (c === 0x2b || c === 0x2d) state = EXPONENT_SIGN
-            else if (c >= 0x30 && c <= 0x39) state = EXPONENT
-            else return invalid(i)
+            if (c === 0x2b || c === 0x2d) {
+              state = EXPONENT_SIGN
+            } else if (c >= 0x30 && c <= 0x39) {
+              state = EXPONENT
+            } else {
+              return invalid(i)
+            }
             i++
             continue
           }
           case EXPONENT_SIGN: {
-            if (!(c >= 0x30 && c <= 0x39)) return invalid(i)
+            if (!(c >= 0x30 && c <= 0x39)) {
+              return invalid(i)
+            }
             state = EXPONENT
             i++
             continue
           }
         }
 
-        if (c !== (kinds[depth - 1] === OBJECT ? 0x7d : 0x5d)) return invalid(i)
+        if (c !== (kinds[depth - 1] === OBJECT ? 0x7d : 0x5d)) {
+          return invalid(i)
+        }
         i++
         depth--
         const start = captures[depth]!
-        if (start >= 0) emit(start, i, depth)
+        if (start >= 0) {
+          emit(start, i, depth)
+        }
         state = depth === 0 ? ROOT : COMMA_OR_END
       }
     }
 
     const hold = () => {
       let start = outer
-      if (inKey && keyStart >= 0 && (start < 0 || keyStart < start)) start = keyStart
+      if (inKey && keyStart >= 0 && (start < 0 || keyStart < start)) {
+        start = keyStart
+      }
       if (start < 0) {
         held = []
         return
       }
-      if (offset + text.length - start > maxLength) throw new MaxLengthError({ maxLength })
+      if (offset + text.length - start > maxLength) {
+        throw new MaxLengthError({ maxLength })
+      }
       if (start >= offset) {
         held = [text.slice(start - offset)]
         heldStart = start
-      } else held.push(text)
+      } else {
+        held.push(text)
+      }
     }
 
     super(
@@ -449,9 +537,13 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             }
             text = ''
             if (state === ZERO || state === INTEGER || state === FRACTION || state === EXPONENT) {
-              if (depth === 0) state = endPrimitive(0)
+              if (depth === 0) {
+                state = endPrimitive(0)
+              }
             }
-            if (state !== ROOT) throw new TruncatedError()
+            if (state !== ROOT) {
+              throw new TruncatedError()
+            }
           },
         },
         options,

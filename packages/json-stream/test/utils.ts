@@ -9,7 +9,9 @@ export const encodeUtf8 = (text: string): Uint8Array => new TextEncoder().encode
 /** Splits text or bytes into chunks of `size`, the way a network read might. */
 export function chunked<value extends string | Uint8Array>(input: value, size: number): value[] {
   const chunks: value[] = []
-  for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as value)
+  for (let i = 0; i < input.length; i += size) {
+    chunks.push(input.slice(i, i + size) as value)
+  }
   return chunks
 }
 
@@ -66,8 +68,11 @@ export function streamOf<chunk>(values: readonly chunk[]): ReadableStream<chunk>
   let i = 0
   return new ReadableStream<chunk>({
     pull(controller) {
-      if (i < values.length) controller.enqueue(values[i++]!)
-      else controller.close()
+      if (i < values.length) {
+        controller.enqueue(values[i++]!)
+      } else {
+        controller.close()
+      }
     },
   })
 }

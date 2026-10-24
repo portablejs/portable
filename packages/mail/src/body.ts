@@ -37,12 +37,17 @@ export function isContent(value: unknown): value is Content {
 /** Plain text allowed in a `7bit` part: no control characters and no line over 76. */
 function isShortAscii(text: string): boolean {
   // oxlint-disable-next-line no-control-regex
-  if (/[\x00-\x08\x0b\x0c\x0e-\x1f\u0080-\uffff]/.test(text)) return false
+  if (/[\x00-\x08\x0b\x0c\x0e-\x1f\u0080-\uffff]/.test(text)) {
+    return false
+  }
   let line = 0
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i)
-    if (code === 0x0a || code === 0x0d) line = 0
-    else if (++line > 76) return false
+    if (code === 0x0a || code === 0x0d) {
+      line = 0
+    } else if (++line > 76) {
+      return false
+    }
   }
   return true
 }
@@ -53,9 +58,11 @@ function textEncoding(text: string): TransferEncoding {
   let other = 0
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i)
-    if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) latin++
-    else if (code >= 0x80 || (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d))
+    if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
+      latin++
+    } else if (code >= 0x80 || (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d)) {
       other++
+    }
   }
   return other < latin ? 'quoted-printable' : 'base64'
 }
@@ -64,7 +71,9 @@ function textEncoding(text: string): TransferEncoding {
  * The encoding for a text part without a `transferEncoding`. A stream can't be scanned up front.
  */
 export function chooseTextEncoding(content: Content): TransferEncoding {
-  if (typeof content !== 'string' && !isUint8Array(content)) return 'quoted-printable'
+  if (typeof content !== 'string' && !isUint8Array(content)) {
+    return 'quoted-printable'
+  }
   const text = typeof content === 'string' ? content : new TextDecoder().decode(content)
   return isShortAscii(text) ? '7bit' : textEncoding(text)
 }
@@ -78,7 +87,9 @@ function toCrlfText(text: string): string {
 function hasBareBreak(bytes: Uint8Array): boolean {
   for (let i = 0; i < bytes.length; i++) {
     const byte = bytes[i]!
-    if (byte === 0x0d ? bytes[i + 1] !== 0x0a : byte === 0x0a && bytes[i - 1] !== 0x0d) return true
+    if (byte === 0x0d ? bytes[i + 1] !== 0x0a : byte === 0x0a && bytes[i - 1] !== 0x0d) {
+      return true
+    }
   }
   return false
 }
@@ -88,7 +99,9 @@ function hasBareBreak(bytes: Uint8Array): boolean {
  * whose CRLF was already written, so an LF that starts this chunk is part of that CRLF.
  */
 function toCrlfBytes(bytes: Uint8Array, afterCr: boolean): Uint8Array {
-  if (!afterCr && !hasBareBreak(bytes)) return bytes
+  if (!afterCr && !hasBareBreak(bytes)) {
+    return bytes
+  }
   const out = new Uint8Array(bytes.length * 2)
   let length = 0
   let previousCr = afterCr
@@ -96,8 +109,9 @@ function toCrlfBytes(bytes: Uint8Array, afterCr: boolean): Uint8Array {
     if (byte === 0x0d) {
       out[length++] = 0x0d
       out[length++] = 0x0a
-    } else if (byte !== 0x0a) out[length++] = byte
-    else if (!previousCr) {
+    } else if (byte !== 0x0a) {
+      out[length++] = byte
+    } else if (!previousCr) {
       out[length++] = 0x0d
       out[length++] = 0x0a
     }
@@ -111,7 +125,9 @@ class CrlfStream extends TransformStream<Uint8Array, Uint8Array> {
     let afterCr = false
     super({
       transform(chunk, controller) {
-        if (chunk.length === 0) return
+        if (chunk.length === 0) {
+          return
+        }
         controller.enqueue(toCrlfBytes(chunk, afterCr))
         afterCr = chunk[chunk.length - 1] === 0x0d
       },
@@ -130,7 +146,9 @@ export function encodeBody(content: string | Uint8Array, body: Body): string | U
     case 'base64':
       return Base64.encode(content, { lineLength: 76 })
     case 'quoted-printable':
-      if (!body.text) return QuotedPrintable.encode(content, { binary: true })
+      if (!body.text) {
+        return QuotedPrintable.encode(content, { binary: true })
+      }
       return QuotedPrintable.encode(
         typeof content === 'string' ? toCrlfText(content) : toCrlfBytes(content, false),
       )

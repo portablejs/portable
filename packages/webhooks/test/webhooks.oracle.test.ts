@@ -126,7 +126,9 @@ const chars = [...'abcdefghijklmnopqrstuvwxyz0123456789 "{}:,\n\t\\'.split(''), 
 function makeCase(scheme: Name, next: () => number): Case {
   const pick = (n: number) => Math.floor(next() * n)
   let text = ''
-  for (let i = 0, n = pick(400); i < n; i++) text += chars[pick(chars.length)]
+  for (let i = 0, n = pick(400); i < n; i++) {
+    text += chars[pick(chars.length)]
+  }
   const body = JSON.stringify({ id: `evt_${pick(1e9)}`, object: 'event', text })
   const key = new Uint8Array(24).map(() => pick(256))
   const secret =
@@ -145,7 +147,9 @@ function chunkedRequest(
   let at = 0
   const stream = new ReadableStream<Uint8Array>({
     pull(controller) {
-      if (at >= bytes.length) return controller.close()
+      if (at >= bytes.length) {
+        return controller.close()
+      }
       const size = 1 + Math.floor(next() * 64)
       controller.enqueue(bytes.slice(at, at + size))
       at += size
@@ -187,12 +191,20 @@ describe('accepts and rejects the same requests as upstream', () => {
         const next = random(tampers.indexOf(tamper) + 7)
         for (let i = 0; i < 20; i++) {
           const c = makeCase(scheme, next)
-          if (tamper === 'old') c.timestamp = new Date(Date.now() - 400_000)
-          if (tamper === 'recent') c.timestamp = new Date(Date.now() - 200_000)
+          if (tamper === 'old') {
+            c.timestamp = new Date(Date.now() - 400_000)
+          }
+          if (tamper === 'recent') {
+            c.timestamp = new Date(Date.now() - 200_000)
+          }
           const headers = { ...(await upstream[scheme].sign(c)) }
           let { body, secret } = c
-          if (tamper === 'body') body = body.replace('evt_', 'evt_x')
-          if (tamper === 'secret') secret = secret.replace('whsec_', 'whsec_AAAA')
+          if (tamper === 'body') {
+            body = body.replace('evt_', 'evt_x')
+          }
+          if (tamper === 'secret') {
+            secret = secret.replace('whsec_', 'whsec_AAAA')
+          }
           if (tamper === 'signature') {
             const [name, value] = Object.entries(headers).find(([n]) => n.includes('signature'))!
             const at = value.length - 6

@@ -44,7 +44,9 @@ A receiver uses `sets` to decide whether to trust what an intermediary recorded.
 
 ```ts
 const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com')
-if (google && /\bdmarc=pass\b/.test(google.authResults)) deliver()
+if (google && /\bdmarc=pass\b/.test(google.authResults)) {
+  deliver()
+}
 ```
 
 | Option | Default | Description |

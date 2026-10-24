@@ -14,7 +14,9 @@ import * as Png from '@portable/png'
 const response = await fetch('https://example.com/photo.png')
 const { width, height, data } = await Png.decode(await response.bytes())
 
-for (let i = 0; i < data.length; i += 4) data[i] = 255 - data[i]! // invert red
+for (let i = 0; i < data.length; i += 4) {
+  data[i] = 255 - data[i]!
+} // invert red
 const bytes = await Png.encode({ width, height, data })
 ```
 

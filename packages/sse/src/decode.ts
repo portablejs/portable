@@ -133,19 +133,28 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
   }
 
   const appendData = (value: string) => {
-    if (hasData) data += '\n' + value
-    else {
+    if (hasData) {
+      data += '\n' + value
+    } else {
       data = value
       hasData = true
     }
-    if (data.length > maxLength) throw new MaxLengthError({ maxLength })
+    if (data.length > maxLength) {
+      throw new MaxLengthError({ maxLength })
+    }
   }
 
   const line = (text: string, start: number, end: number) => {
-    if (start === end) return dispatch()
-    if (end - start > maxLength) throw new MaxLengthError({ maxLength })
+    if (start === end) {
+      return dispatch()
+    }
+    if (end - start > maxLength) {
+      throw new MaxLengthError({ maxLength })
+    }
     const first = text.charCodeAt(start)
-    if (first === COLON) return
+    if (first === COLON) {
+      return
+    }
     if (
       first === 100 &&
       text.charCodeAt(start + 1) === 97 &&
@@ -166,7 +175,9 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
       text.charCodeAt(start + 2) === COLON
     ) {
       const value = text.slice(text.charCodeAt(start + 3) === SPACE ? start + 4 : start + 3, end)
-      if (!value.includes('\0')) idBuffer = value
+      if (!value.includes('\0')) {
+        idBuffer = value
+      }
       return
     }
     const raw = text.slice(start, end)
@@ -182,10 +193,14 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
         appendData(value)
         break
       case 'id':
-        if (!value.includes('\0')) idBuffer = value
+        if (!value.includes('\0')) {
+          idBuffer = value
+        }
         break
       case 'retry':
-        if (isDigits(value)) reconnectionTime = retry = Number(value)
+        if (isDigits(value)) {
+          reconnectionTime = retry = Number(value)
+        }
         break
     }
   }
@@ -202,25 +217,38 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
     let cr = text.indexOf('\r', start)
     let lf = text.indexOf('\n', start)
     for (;;) {
-      if (cr !== -1 && cr < start) cr = text.indexOf('\r', start)
-      if (lf !== -1 && lf < start) lf = text.indexOf('\n', start)
+      if (cr !== -1 && cr < start) {
+        cr = text.indexOf('\r', start)
+      }
+      if (lf !== -1 && lf < start) {
+        lf = text.indexOf('\n', start)
+      }
       const end = cr === -1 ? lf : lf === -1 || cr < lf ? cr : lf
-      if (end === -1) return start
+      if (end === -1) {
+        return start
+      }
       line(text, start, end)
       start = end + 1
       if (end === cr) {
-        if (start === text.length) skipLf = true
-        else if (text.charCodeAt(start) === LF) start++
+        if (start === text.length) {
+          skipLf = true
+        } else if (text.charCodeAt(start) === LF) {
+          start++
+        }
       }
     }
   }
 
   const keep = (text: string, from: number) => {
-    if (from === text.length) return
+    if (from === text.length) {
+      return
+    }
     const rest = from === 0 ? text : text.slice(from)
     pending.push(rest)
     pendingLength += rest.length
-    if (pendingLength > maxLength) throw new MaxLengthError({ maxLength })
+    if (pendingLength > maxLength) {
+      throw new MaxLengthError({ maxLength })
+    }
   }
 
   return {
@@ -234,21 +262,29 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
                 stream: true,
               },
             )
-      if (text === '') return
+      if (text === '') {
+        return
+      }
       if (!started) {
         started = true
-        if (text.charCodeAt(0) === 0xfeff) text = text.slice(1)
+        if (text.charCodeAt(0) === 0xfeff) {
+          text = text.slice(1)
+        }
       }
       let start = 0
       if (skipLf) {
         skipLf = false
-        if (text.charCodeAt(0) === LF) start = 1
+        if (text.charCodeAt(0) === LF) {
+          start = 1
+        }
       }
       if (pending.length > 0) {
         const lf = text.indexOf('\n', start)
         const cr = text.indexOf('\r', start)
         const end = cr === -1 ? lf : lf === -1 || cr < lf ? cr : lf
-        if (end === -1) return keep(text, start)
+        if (end === -1) {
+          return keep(text, start)
+        }
         pending.push(text.slice(start, end))
         const joined = pending.join('')
         pending = []
@@ -256,8 +292,11 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
         line(joined, 0, joined.length)
         start = end + 1
         if (end === cr) {
-          if (start === text.length) skipLf = true
-          else if (text.charCodeAt(start) === LF) start++
+          if (start === text.length) {
+            skipLf = true
+          } else if (text.charCodeAt(start) === LF) {
+            start++
+          }
         }
       }
       keep(text, lines(text, start))
@@ -286,10 +325,14 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
 }
 
 function isDigits(value: string): boolean {
-  if (value === '') return false
+  if (value === '') {
+    return false
+  }
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i)
-    if (code < 48 || code > 57) return false
+    if (code < 48 || code > 57) {
+      return false
+    }
   }
   return true
 }

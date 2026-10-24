@@ -10,12 +10,20 @@ function* tokens(input: Uint8Array, final: boolean): Generator<string> {
   for (;;) {
     while (offset < input.length && (isSpace(input[offset]!) || input[offset] === 0x23)) {
       if (input[offset] === 0x23) {
-        while (offset < input.length && input[offset] !== 0x0a && input[offset] !== 0x0d) offset++
-      } else offset++
+        while (offset < input.length && input[offset] !== 0x0a && input[offset] !== 0x0d) {
+          offset++
+        }
+      } else {
+        offset++
+      }
     }
     const start = offset
-    while (offset < input.length && !isSpace(input[offset]!) && input[offset] !== 0x23) offset++
-    if (offset === input.length && (!final || start === offset)) throw new NeedMore(offset + 1)
+    while (offset < input.length && !isSpace(input[offset]!) && input[offset] !== 0x23) {
+      offset++
+    }
+    if (offset === input.length && (!final || start === offset)) {
+      throw new NeedMore(offset + 1)
+    }
     yield String.fromCharCode(...input.subarray(start, offset))
   }
 }
@@ -27,7 +35,9 @@ function netpbm(input: Uint8Array, final: boolean): Size {
   const header = tokens(input, final)
   const width = dimension(header.next().value)
   const height = dimension(header.next().value)
-  if (!width || !height) throw new InvalidInputError('Invalid PNM')
+  if (!width || !height) {
+    throw new InvalidInputError('Invalid PNM')
+  }
   return { width, height, type: 'pnm' }
 }
 
@@ -36,10 +46,18 @@ function pam(input: Uint8Array, final: boolean): Size {
   let height: number | undefined
   const header = tokens(input, final)
   for (let token = header.next(); !token.done; token = header.next()) {
-    if (token.value === 'ENDHDR') break
-    if (token.value === 'WIDTH') width = dimension(header.next().value)
-    if (token.value === 'HEIGHT') height = dimension(header.next().value)
-    if (width && height) return { width, height, type: 'pnm' }
+    if (token.value === 'ENDHDR') {
+      break
+    }
+    if (token.value === 'WIDTH') {
+      width = dimension(header.next().value)
+    }
+    if (token.value === 'HEIGHT') {
+      height = dimension(header.next().value)
+    }
+    if (width && height) {
+      return { width, height, type: 'pnm' }
+    }
   }
   throw new InvalidInputError('Invalid PAM')
 }

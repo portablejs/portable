@@ -10,7 +10,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Dkim.sign('Subject: hi\r\n\r\nbody\r\n', { domain, selector, privateKey })
  * } catch (error) {
- *   if (error instanceof Dkim.InvalidInputError) console.log(error.message)
+ *   if (error instanceof Dkim.InvalidInputError) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */

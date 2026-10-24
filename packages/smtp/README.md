@@ -31,7 +31,9 @@ To send several messages over one connection, open a client:
 ```ts
 const client = await Smtp.connect({ connect, host: 'smtp.example.com', auth })
 try {
-  for (const mail of outbox) await client.send(mail)
+  for (const mail of outbox) {
+    await client.send(mail)
+  }
 } finally {
   await client.close()
 }
@@ -64,7 +66,9 @@ function wrap(opening: Promise<Deno.Conn>, hostname: string): Smtp.Socket {
           if (length === null) {
             controller.close()
             closed.resolve()
-          } else controller.enqueue(buffer.subarray(0, length))
+          } else {
+            controller.enqueue(buffer.subarray(0, length))
+          }
         },
       },
       { highWaterMark: 0 },
@@ -72,8 +76,9 @@ function wrap(opening: Promise<Deno.Conn>, hostname: string): Smtp.Socket {
     writable: new WritableStream<Uint8Array>({
       async write(chunk) {
         await opened
-        for (let offset = 0; offset < chunk.length; )
+        for (let offset = 0; offset < chunk.length; ) {
           offset += await conn!.write(chunk.subarray(offset))
+        }
       },
     }),
     close() {
@@ -115,7 +120,9 @@ function wrap(socket: net.Socket, ready: string, hostname: string): Smtp.Socket 
       start(controller) {
         socket.on('data', (chunk: Buffer) => {
           controller.enqueue(new Uint8Array(chunk))
-          if ((controller.desiredSize ?? 0) <= 0) socket.pause()
+          if ((controller.desiredSize ?? 0) <= 0) {
+            socket.pause()
+          }
         })
         socket.once('close', () => attached && controller.close())
       },
@@ -125,7 +132,9 @@ function wrap(socket: net.Socket, ready: string, hostname: string): Smtp.Socket 
     writable: new WritableStream<Uint8Array>({
       write: (chunk) =>
         new Promise((resolve, reject) => {
-          if (socket.write(chunk)) return resolve()
+          if (socket.write(chunk)) {
+            return resolve()
+          }
           socket.once('drain', resolve)
           socket.once('close', () => reject(new Error('Socket closed')))
         }),

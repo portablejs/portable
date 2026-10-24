@@ -215,8 +215,9 @@ export function encodeStream(
     fields = messageFields(message, options.keepBcc ?? false, context.charset)
     root = tree(message, context)
   } catch (error) {
-    if (error instanceof MimeHeaders.InvalidInputError)
+    if (error instanceof MimeHeaders.InvalidInputError) {
       throw new InvalidInputError(error.message, { cause: error })
+    }
     throw error
   }
   const head = [
@@ -249,8 +250,9 @@ const reserved = new Set([
 ])
 
 function assertBoundary(prefix: string): string {
-  if (!/^[0-9A-Za-z'()+_,\-./:=? ]{0,60}$/.test(prefix))
+  if (!/^[0-9A-Za-z'()+_,\-./:=? ]{0,60}$/.test(prefix)) {
     throw new RangeError(`boundary ${JSON.stringify(prefix)} isn't up to 60 characters of bchars.`)
+  }
   return prefix
 }
 
@@ -268,7 +270,9 @@ function text(value: string, charset: MimeHeaders.CharsetEncoder | undefined): s
   const line = value.replace(lineBreaks, ' ')
   // oxlint-disable-next-line no-control-regex
   const control = /[\x00-\x08\x0b-\x1f\x7f]/.test(line)
-  if (!control && MimeHeaders.encodeWords(line) === line) return line
+  if (!control && MimeHeaders.encodeWords(line) === line) {
+    return line
+  }
   return MimeHeaders.encodeWord(line, { charset, wordEncoding: wordEncoding(line), wordLength: 52 })
 }
 
@@ -277,8 +281,12 @@ const controls = /[\x00-\x08\x0a-\x1f\x7f]/g
 
 function msgId(value: string): string {
   let id = value.replace(lineBreaks, ' ').replace(controls, '')
-  if (!id.startsWith('<')) id = '<' + id
-  if (!id.endsWith('>')) id += '>'
+  if (!id.startsWith('<')) {
+    id = '<' + id
+  }
+  if (!id.endsWith('>')) {
+    id += '>'
+  }
   return id
 }
 
@@ -295,15 +303,23 @@ function references(value: string | readonly string[]): string {
         const close = line.indexOf('>', i)
         joined += line.slice(i, close + 1).replace(/\s+/g, '')
         i = close
-      } else joined += line[i]
+      } else {
+        joined += line[i]
+      }
     }
-    for (const id of joined.split(/\s+/)) if (id !== '') ids.push(msgId(id))
+    for (const id of joined.split(/\s+/)) {
+      if (id !== '') {
+        ids.push(msgId(id))
+      }
+    }
   }
   return ids.join(' ')
 }
 
 function date(value: Date): string {
-  if (Number.isNaN(value.getTime())) throw new InvalidInputError('date is an invalid Date.')
+  if (Number.isNaN(value.getTime())) {
+    throw new InvalidInputError('date is an invalid Date.')
+  }
   return value.toUTCString().replace('GMT', '+0000')
 }
 
@@ -314,23 +330,36 @@ function messageFields(
 ): string[] {
   const fields = custom(message.headers, charset)
   const addresses = (name: string, input: Addresses | undefined) => {
-    if (input === undefined) return
+    if (input === undefined) {
+      return
+    }
     const entries = parse(input)
-    if (entries.length > 0) fields.push(fold(name, format(entries, charset)))
+    if (entries.length > 0) {
+      fields.push(fold(name, format(entries, charset)))
+    }
   }
   addresses('From', message.from)
   addresses('Sender', message.sender)
   addresses('To', message.to)
   addresses('Cc', message.cc)
-  if (keepBcc) addresses('Bcc', message.bcc)
-  else if (message.bcc !== undefined) parse(message.bcc)
+  if (keepBcc) {
+    addresses('Bcc', message.bcc)
+  } else if (message.bcc !== undefined) {
+    parse(message.bcc)
+  }
   addresses('Reply-To', message.replyTo)
-  if (message.inReplyTo) fields.push(fold('In-Reply-To', msgId(message.inReplyTo)))
+  if (message.inReplyTo) {
+    fields.push(fold('In-Reply-To', msgId(message.inReplyTo)))
+  }
   if (message.references !== undefined) {
     const value = references(message.references)
-    if (value !== '') fields.push(fold('References', value))
+    if (value !== '') {
+      fields.push(fold('References', value))
+    }
   }
-  if (message.subject) fields.push(fold('Subject', text(message.subject, charset)))
+  if (message.subject) {
+    fields.push(fold('Subject', text(message.subject, charset)))
+  }
   const from = message.from === undefined ? [] : parse(message.from)
   const first = from.flatMap((entry) => ('group' in entry ? entry.group : [entry]))[0]
   const domain = first ? first.address.slice(first.address.lastIndexOf('@') + 1) : 'localhost'
@@ -352,14 +381,19 @@ function custom(
   charset: MimeHeaders.CharsetEncoder | undefined,
 ): string[] {
   const fields: string[] = []
-  if (!headers) return fields
+  if (!headers) {
+    return fields
+  }
   for (const [name, value] of Object.entries(headers)) {
-    if (!/^[\x21-\x39\x3b-\x7e]+$/.test(name))
+    if (!/^[\x21-\x39\x3b-\x7e]+$/.test(name)) {
       throw new InvalidInputError(`${JSON.stringify(name)} isn't a header name.`)
-    if (reserved.has(name.toLowerCase()))
+    }
+    if (reserved.has(name.toLowerCase())) {
       throw new InvalidInputError(`Set ${name} with its own option, not in headers.`)
-    for (const entry of typeof value === 'string' ? [value] : value)
+    }
+    for (const entry of typeof value === 'string' ? [value] : value) {
       fields.push(fold(name, text(entry, charset)))
+    }
   }
   return fields
 }
@@ -369,20 +403,29 @@ const messageType = /^message\//i
 
 function contentType(value: string, drop?: string): MimeHeaders.Value {
   const parsed = MimeHeaders.parseValue(value)
-  if (!/^[!#$%&'*+.^_`|~0-9a-z-]+\/[!#$%&'*+.^_`|~0-9a-z-]+$/i.test(parsed.value))
+  if (!/^[!#$%&'*+.^_`|~0-9a-z-]+\/[!#$%&'*+.^_`|~0-9a-z-]+$/i.test(parsed.value)) {
     throw new InvalidInputError(`${JSON.stringify(value)} isn't a content type.`)
-  if (/^multipart\//i.test(parsed.value))
+  }
+  if (/^multipart\//i.test(parsed.value)) {
     throw new InvalidInputError(`A body or attachment can't be ${parsed.value}.`)
-  if (drop === undefined) return parsed
+  }
+  if (drop === undefined) {
+    return parsed
+  }
   const params: Record<string, string> = {}
-  for (const [key, param] of Object.entries(parsed.params)) if (key !== drop) params[key] = param
+  for (const [key, param] of Object.entries(parsed.params)) {
+    if (key !== drop) {
+      params[key] = param
+    }
+  }
   return { value: parsed.value, params }
 }
 
 /** The `name` parameter, for clients that ignore `filename`, as an encoded word if needed. */
 function nameParam(filename: string, charset: MimeHeaders.CharsetEncoder | undefined): string {
-  if (/[^\x20-\x7e]|"|=\?/.test(filename))
+  if (/[^\x20-\x7e]|"|=\?/.test(filename)) {
     return `"${MimeHeaders.encodeWord(filename, { charset, wordEncoding: wordEncoding(filename), wordLength: 52 })}"`
+  }
   return /[\s'\\;:/=(),<>@[\]?]|^-/.test(filename)
     ? `"${filename.replace(/["\\]/g, '\\$&')}"`
     : filename
@@ -401,20 +444,27 @@ function leaf(
   },
 ): Leaf {
   context.id++
-  if (!isContent(content))
+  if (!isContent(content)) {
     throw new TypeError('Content must be a string, Uint8Array, Blob or ReadableStream.')
+  }
   if (content instanceof ReadableStream) {
-    if (content.locked || context.streams.has(content))
+    if (content.locked || context.streams.has(content)) {
       throw new TypeError('A content stream is locked or given twice; it can be read only once.')
+    }
     context.streams.add(content)
   }
   const headers = custom(extra.headers, context.charset)
-  if (extra.cid !== undefined)
+  if (extra.cid !== undefined) {
     // oxlint-disable-next-line no-control-regex
     headers.push(fold('Content-ID', `<${extra.cid.replace(/[<>\x00-\x1f\x7f]/g, '')}>`))
+  }
   const encoding = fold('Content-Transfer-Encoding', body.encoding)
-  if (!extra.computed) headers.push(encoding)
-  if (extra.disposition !== undefined) headers.push(fold('Content-Disposition', extra.disposition))
+  if (!extra.computed) {
+    headers.push(encoding)
+  }
+  if (extra.disposition !== undefined) {
+    headers.push(fold('Content-Disposition', extra.disposition))
+  }
   const computed = extra.computed ? [encoding] : []
   return { contentType: fold('Content-Type', type), headers, computed, content, body }
 }
@@ -458,7 +508,9 @@ function attachment(context: Context, file: Attachment): Leaf {
     (content instanceof Blob && content.type ? content.type : 'application/octet-stream')
   const type = contentType(given, filename === undefined ? undefined : 'name')
   let typeValue = MimeHeaders.formatValue(type)
-  if (filename !== undefined) typeValue += '; name=' + nameParam(filename, context.charset)
+  if (filename !== undefined) {
+    typeValue += '; name=' + nameParam(filename, context.charset)
+  }
   const disposition = MimeHeaders.formatValue({
     value:
       file.disposition ??
@@ -514,7 +566,9 @@ function tree(message: Message, context: Context): Node {
   }
   for (const alternative of message.alternatives ?? []) {
     const make = () => part(context, alternative)
-    if (/^\s*text\/html\s*(;|$)/i.test(alternative.contentType)) html = make
+    if (/^\s*text\/html\s*(;|$)/i.test(alternative.contentType)) {
+      html = make
+    }
     alternatives.push(make)
   }
   const files = message.attachments ?? []
@@ -539,17 +593,26 @@ function tree(message: Message, context: Context): Node {
           )
       : undefined
 
-  if (attached.length > 1 || (alternatives.length > 0 && attached.length === 1))
+  if (attached.length > 1 || (alternatives.length > 0 && attached.length === 1)) {
     return multipart(context, 'multipart/mixed', {}, () => [
       ...(alternativeNode ? [alternativeNode()] : alternatives.map((make) => body(make)())),
       ...attached.map((file) => attachment(context, file)),
     ])
-  if (alternativeNode) return alternativeNode()
-  if (relatedNode) return relatedNode()
+  }
+  if (alternativeNode) {
+    return alternativeNode()
+  }
+  if (relatedNode) {
+    return relatedNode()
+  }
   const only = alternatives[0]
-  if (only) return only()
+  if (only) {
+    return only()
+  }
   const single = attached[0]
-  if (single) return attachment(context, single)
+  if (single) {
+    return attachment(context, single)
+  }
   context.id++
   return {
     contentType: 'Content-Type: text/plain',
@@ -579,12 +642,16 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
       return
     }
     const content = current.content
-    if (content === undefined || content === '') return
+    if (content === undefined || content === '') {
+      return
+    }
     if (typeof content === 'string' || isUint8Array(content)) {
       const encoded = encodeBody(content, current.body)
       if (typeof encoded === 'string') {
         pending += encoded
-        if (encoded.length > 0) last = encoded.charCodeAt(encoded.length - 1)
+        if (encoded.length > 0) {
+          last = encoded.charCodeAt(encoded.length - 1)
+        }
       } else if (encoded.length > 0) {
         yield encoder.encode(pending)
         pending = ''
@@ -597,17 +664,27 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
     if (content instanceof ReadableStream) {
       context.streams.delete(content)
       source = content
-    } else source = content.stream()
+    } else {
+      source = content.stream()
+    }
     const reader = encodeBodyStream(source, current.body).getReader()
     context.reader = reader
     try {
-      if (pending !== '') yield encoder.encode(pending)
+      if (pending !== '') {
+        yield encoder.encode(pending)
+      }
       pending = ''
       for (;;) {
         const { done, value } = await reader.read()
-        if (context.cancelled) throw new Error('cancelled')
-        if (done) return
-        if (value.length === 0) continue
+        if (context.cancelled) {
+          throw new Error('cancelled')
+        }
+        if (done) {
+          return
+        }
+        if (value.length === 0) {
+          continue
+        }
         yield value
         last = value[value.length - 1]!
       }
@@ -618,8 +695,12 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
   }
 
   yield* node(root, head)
-  if (!('children' in root) && last !== 0x0a) pending += '\r\n'
-  if (pending !== '') yield encoder.encode(pending)
+  if (!('children' in root) && last !== 0x0a) {
+    pending += '\r\n'
+  }
+  if (pending !== '') {
+    yield encoder.encode(pending)
+  }
 }
 
 function output(
@@ -641,29 +722,40 @@ function output(
   let onAbort = () => {}
   return new ReadableStream({
     start(controller) {
-      if (!signal) return
+      if (!signal) {
+        return
+      }
       onAbort = () => {
         controller.error(signal.reason)
         void stop(signal.reason)
       }
-      if (signal.aborted) onAbort()
-      else signal.addEventListener('abort', onAbort, { once: true })
+      if (signal.aborted) {
+        onAbort()
+      } else {
+        signal.addEventListener('abort', onAbort, { once: true })
+      }
     },
     async pull(controller) {
       let result: IteratorResult<Uint8Array>
       try {
         result = await chunks.next()
       } catch (error) {
-        if (context.cancelled) return
+        if (context.cancelled) {
+          return
+        }
         signal?.removeEventListener('abort', onAbort)
         await release(error)
         throw error
       }
-      if (context.cancelled) return
+      if (context.cancelled) {
+        return
+      }
       if (result.done) {
         signal?.removeEventListener('abort', onAbort)
         controller.close()
-      } else controller.enqueue(result.value)
+      } else {
+        controller.enqueue(result.value)
+      }
     },
     async cancel(reason) {
       await stop(reason)

@@ -11,8 +11,11 @@ function slowFormRequest() {
   const body = new ReadableStream<Uint8Array>({
     pull(controller) {
       source.pulls++
-      if (source.pulls === 1) controller.enqueue(new TextEncoder().encode('a=1'))
-      else return new Promise<void>(() => {})
+      if (source.pulls === 1) {
+        controller.enqueue(new TextEncoder().encode('a=1'))
+      } else {
+        return new Promise<void>(() => {})
+      }
       return undefined
     },
     cancel(reason) {

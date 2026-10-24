@@ -34,12 +34,16 @@ export function port(target: port.Target, options: port.Options = {}): Transport
   const { signal } = options
   let listening = false
   const listen = (onMessage: (data: unknown) => void, onError: (reason: unknown) => void) => {
-    if (listening) throw new TypeError('The transport is already connected.')
+    if (listening) {
+      throw new TypeError('The transport is already connected.')
+    }
     listening = true
     const listener = (event: MessageEvent) => onMessage(event.data)
     let stopped = false
     const stop = () => {
-      if (stopped) return
+      if (stopped) {
+        return
+      }
       stopped = true
       target.removeEventListener('message', listener)
       signal?.removeEventListener('abort', onAbort)
@@ -48,8 +52,9 @@ export function port(target: port.Target, options: port.Options = {}): Transport
       stop()
       onError(signal!.reason)
     }
-    if (signal?.aborted) onAbort()
-    else {
+    if (signal?.aborted) {
+      onAbort()
+    } else {
       signal?.addEventListener('abort', onAbort)
       target.addEventListener('message', listener)
       target.start?.()
@@ -60,7 +65,9 @@ export function port(target: port.Target, options: port.Options = {}): Transport
   const readable = new ReadableStream<unknown>(
     {
       pull(controller) {
-        if (stop) return
+        if (stop) {
+          return
+        }
         stop = listen(
           (data) => controller.enqueue(data),
           (reason) => controller.error(reason),

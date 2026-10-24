@@ -40,12 +40,13 @@ export async function request(url: string, { fetch, signal }: Context): Promise<
       cause: error,
     })
   }
-  if (typeof json !== 'object' || json === null || Array.isArray(json))
+  if (typeof json !== 'object' || json === null || Array.isArray(json)) {
     throw new ResponseError({
       message: `${url} sent JSON that isn't an object`,
       response,
       url,
       body: json,
     })
+  }
   return { json: json as Record<string, unknown>, response }
 }

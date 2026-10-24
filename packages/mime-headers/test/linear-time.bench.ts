@@ -53,7 +53,9 @@ const strict = (input: string) => {
   try {
     return parseAddresses(input, { strict: true })
   } catch (error) {
-    if (!(error instanceof InvalidInputError)) throw error
+    if (!(error instanceof InvalidInputError)) {
+      throw error
+    }
     return []
   }
 }
@@ -95,11 +97,12 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['many group openers', (size) => repeat('g: ')(size) + 'a@b.com'],
     ['many "@"', repeat('@')],
   ] satisfies [string, (size: number) => string][]
-  for (const [label, make] of addressInputs)
+  for (const [label, make] of addressInputs) {
     test(`parseAddresses() of ${label}`, () => {
       expect(slowdown(16 * 1024, make, (input) => parseAddresses(input))).toBeLessThan(maxRatio)
       expect(slowdown(16 * 1024, make, strict)).toBeLessThan(maxRatio)
     })
+  }
 
   const next = random(112)
   const pieces = [
@@ -147,10 +150,11 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['fold()', (input) => fold(input)],
     ['parseAddresses()', (input) => parseAddresses(input)],
   ] satisfies [string, (input: string) => unknown][]
-  for (const [label, run] of textInputs)
+  for (const [label, run] of textInputs) {
     test(`${label} of hostile text`, () => {
       expect(slowdown(16 * 1024, hostile, run)).toBeLessThan(maxRatio)
     })
+  }
 
   test('decodeWords() of many adjacent words', () => {
     expect(slowdown(16 * 1024, repeat('=?utf-8?q?=C3?= '), decodeWords)).toBeLessThan(maxRatio)

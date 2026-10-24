@@ -21,7 +21,9 @@ const result = await MailAuth.authenticate(message, {
   signal: AbortSignal.timeout(10_000),
 })
 
-if (result.dmarc?.disposition === 'reject') reject('550 5.7.1 Rejected by DMARC policy')
+if (result.dmarc?.disposition === 'reject') {
+  reject('550 5.7.1 Rejected by DMARC policy')
+}
 const delivered = result.headers + message
 ```
 

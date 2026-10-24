@@ -65,11 +65,17 @@ export function parseRecord(text: string): Parsed | undefined {
   const tags = new Map<string, string>()
   for (const [index, fragment] of text.split(';').entries()) {
     const equals = fragment.indexOf('=')
-    if (equals < 0) continue
+    if (equals < 0) {
+      continue
+    }
     const name = fragment.slice(0, equals).trim()
-    if (!name) continue
+    if (!name) {
+      continue
+    }
     const key = index === 0 ? name.toLowerCase() : name
-    if (tags.has(key)) return undefined
+    if (tags.has(key)) {
+      return undefined
+    }
     const value = fragment.slice(equals + 1).trim()
     tags.set(key, caseless.has(key) ? value.toLowerCase() : value)
   }
@@ -80,7 +86,9 @@ export function parseRecord(text: string): Parsed | undefined {
     isPolicy(p) && (sp === undefined || isPolicy(sp)) && (np === undefined || isPolicy(np))
       ? { p, ...(sp && { sp }), ...(np && { np }) }
       : undefined
-  if (!policy && !rua.length) return { psd, record: undefined }
+  if (!policy && !rua.length) {
+    return { psd, record: undefined }
+  }
   return {
     psd,
     record: {
@@ -110,7 +118,9 @@ function pick<value extends string>(
 }
 
 function uris(value: string | undefined): string[] {
-  if (value === undefined) return []
+  if (value === undefined) {
+    return []
+  }
   return value
     .split(',')
     .map((item) => item.trim().replace(reportSize, ''))

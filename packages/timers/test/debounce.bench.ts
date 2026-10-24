@@ -13,23 +13,31 @@ test('a burst of 1000 debounced calls is within 25% of lodash.debounce', async (
   const result = await bench.compare(
     bench('@portable/timers', () => {
       const debounced = Timers.debounce(work, 100)
-      for (let i = 0; i < calls; i++) void debounced(i)
+      for (let i = 0; i < calls; i++) {
+        void debounced(i)
+      }
       void debounced.flush()
     }),
     bench('lodash.debounce', () => {
       const debounced = lodashDebounce(work, 100)
-      for (let i = 0; i < calls; i++) debounced(i)
+      for (let i = 0; i < calls; i++) {
+        debounced(i)
+      }
       debounced.flush()
     }),
     bench('throttle-debounce', () => {
       const debounced = throttleDebounce.debounce(100, work)
-      for (let i = 0; i < calls; i++) debounced(i)
+      for (let i = 0; i < calls; i++) {
+        debounced(i)
+      }
       debounced.cancel()
     }),
     bench('p-debounce', async () => {
       const controller = new AbortController()
       const debounced = pDebounce(work, 100, { signal: controller.signal })
-      for (let i = 0; i < calls; i++) debounced(i).catch(() => {})
+      for (let i = 0; i < calls; i++) {
+        debounced(i).catch(() => {})
+      }
       controller.abort()
     }),
   )
@@ -42,17 +50,23 @@ test('a burst of 1000 throttled calls is within 25% of lodash.throttle', async (
   const result = await bench.compare(
     bench('@portable/timers', () => {
       const throttled = Timers.throttle(work, 100)
-      for (let i = 0; i < calls; i++) void throttled(i)
+      for (let i = 0; i < calls; i++) {
+        void throttled(i)
+      }
       void throttled.flush()
     }),
     bench('lodash.throttle', () => {
       const throttled = lodashThrottle(work, 100)
-      for (let i = 0; i < calls; i++) throttled(i)
+      for (let i = 0; i < calls; i++) {
+        throttled(i)
+      }
       throttled.flush()
     }),
     bench('throttle-debounce', () => {
       const throttled = throttleDebounce.throttle(100, work)
-      for (let i = 0; i < calls; i++) throttled(i)
+      for (let i = 0; i < calls; i++) {
+        throttled(i)
+      }
       throttled.cancel()
     }),
   )

@@ -97,47 +97,74 @@ export function prepare(field: Field, now: Date, kind: 'dkim' | 'arc' = 'dkim'):
 
   const outcome = ((): Outcome | undefined => {
     const neutral = (reason: string): Outcome => ({ result: 'neutral', reason })
-    if (!valid) return neutral('signature syntax error')
-    if (required.some((name) => !tags.has(name)) || (kind === 'dkim' && !tags.has('v')))
+    if (!valid) {
+      return neutral('signature syntax error')
+    }
+    if (required.some((name) => !tags.has(name)) || (kind === 'dkim' && !tags.has('v'))) {
       return neutral('signature missing required tag')
-    if (kind === 'dkim' && tags.get('v') !== '1') return neutral('incompatible version')
-    if (!algorithm) return neutral('unknown algorithm')
-    if (!canonicalizationSyntax.test(canonicalization)) return neutral('signature syntax error')
-    if (!isCanonicalization(header) || !isCanonicalization(body))
+    }
+    if (kind === 'dkim' && tags.get('v') !== '1') {
+      return neutral('incompatible version')
+    }
+    if (!algorithm) {
+      return neutral('unknown algorithm')
+    }
+    if (!canonicalizationSyntax.test(canonicalization)) {
+      return neutral('signature syntax error')
+    }
+    if (!isCanonicalization(header) || !isCanonicalization(body)) {
       return neutral('unknown canonicalization')
+    }
     if (
       [timestamp, expiration].some((tag) => tag !== undefined && !/^\d{1,12}$/.test(tag)) ||
       (length !== undefined && !/^\d{1,76}$/.test(length))
-    )
+    ) {
       return neutral('signature syntax error')
+    }
     if (
       !domain ||
       !isDomainName(domain) ||
       !selector ||
       !isSelector(selector) ||
       !canFitDns(keyName)
-    )
+    ) {
       return neutral('signature syntax error')
+    }
     const query = tags.get('q')
     if (
       query !== undefined &&
       !query.split(':').some((method) => lowerAscii(stripFws(method)) === 'dns/txt')
-    )
+    ) {
       return neutral('unsupported query method')
-    if (identity && !identity.valid) return neutral('signature syntax error')
-    if (identity && !isSameOrSubdomain(identity.domain, domain)) return neutral('domain mismatch')
+    }
+    if (identity && !identity.valid) {
+      return neutral('signature syntax error')
+    }
+    if (identity && !isSameOrSubdomain(identity.domain, domain)) {
+      return neutral('domain mismatch')
+    }
     if (
       timestamp !== undefined &&
       expiration !== undefined &&
       Number(expiration) <= Number(timestamp)
-    )
+    ) {
       return neutral('invalid expiration')
-    if (names.length === 0) return neutral('signature syntax error')
-    if (!names.includes('from')) return neutral('From field not signed')
-    if (!bodyHash || !value) return neutral('signature syntax error')
-    if (!algorithm.supported) return { result: 'policy', reason: 'weak algorithm' }
-    if (expiration !== undefined && Number(expiration) * 1000 < now.getTime())
+    }
+    if (names.length === 0) {
+      return neutral('signature syntax error')
+    }
+    if (!names.includes('from')) {
+      return neutral('From field not signed')
+    }
+    if (!bodyHash || !value) {
+      return neutral('signature syntax error')
+    }
+    if (!algorithm.supported) {
+      return { result: 'policy', reason: 'weak algorithm' }
+    }
+    if (expiration !== undefined && Number(expiration) * 1000 < now.getTime()) {
       return neutral('signature expired')
+    }
     return undefined
   })()
   if (outcome) {
@@ -183,7 +210,9 @@ function parseIdentity(tag: string): { text: string; domain: string; valid: bool
   const at = decoded.lastIndexOf('@')
   const local = decoded.slice(0, Math.max(at, 0))
   const domain = at < 0 ? undefined : toALabel(decoded.slice(at + 1))
-  if (domain === undefined) return { text: decoded, domain: '', valid: false }
+  if (domain === undefined) {
+    return { text: decoded, domain: '', valid: false }
+  }
   return {
     text: `${local}@${domain}`,
     domain,
@@ -197,7 +226,9 @@ export async function check(
   record: KeyRecord,
   minKeyBits: number,
 ): Promise<Outcome> {
-  if ('result' in record) return record
+  if ('result' in record) {
+    return record
+  }
   signature.result.testing = record.flags.includes('y')
   const selected = selectFields(fields, signature.names, signature.field)
   const data = fromBinary(signedData(selected, signature.field.raw, signature.header))
@@ -218,16 +249,26 @@ export async function verifyData(
   minKeyBits: number,
   subdomain = false,
 ): Promise<Outcome> {
-  if ('result' in record) return record
+  if ('result' in record) {
+    return record
+  }
   const { data: keyData, type, hashes, flags } = record
-  if (type !== algorithm) return { result: 'permerror', reason: 'inappropriate key algorithm' }
-  if (hashes && !hashes.includes('sha256'))
+  if (type !== algorithm) {
+    return { result: 'permerror', reason: 'inappropriate key algorithm' }
+  }
+  if (hashes && !hashes.includes('sha256')) {
     return { result: 'permerror', reason: 'inappropriate hash algorithm' }
-  if (subdomain && flags.includes('s')) return { result: 'permerror', reason: 'domain mismatch' }
+  }
+  if (subdomain && flags.includes('s')) {
+    return { result: 'permerror', reason: 'domain mismatch' }
+  }
   const key = await importPublicKey(type, keyData).catch(() => undefined)
-  if (!key) return { result: 'permerror', reason: 'invalid public key' }
-  if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < minKeyBits)
+  if (!key) {
+    return { result: 'permerror', reason: 'invalid public key' }
+  }
+  if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < minKeyBits) {
     return { result: 'policy', reason: 'weak key' }
+  }
   const verified = await (
     type === 'rsa'
       ? crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, value, data)
@@ -247,8 +288,12 @@ export async function fetchKey(
   try {
     records = await abortable(resolver.resolveTxt(name), signal)
   } catch (error) {
-    if (signal?.aborted) throw signal.reason
-    if (Dns.isNotFound(error)) return { result: 'permerror', reason: 'no key' }
+    if (signal?.aborted) {
+      throw signal.reason
+    }
+    if (Dns.isNotFound(error)) {
+      return { result: 'permerror', reason: 'no key' }
+    }
     const code = (error as { code?: unknown } | null)?.code
     return {
       result: 'temperror',
@@ -257,17 +302,22 @@ export async function fetchKey(
     }
   }
   const text = records[0]?.join('')
-  if (text === undefined) return { result: 'permerror', reason: 'no key' }
+  if (text === undefined) {
+    return { result: 'permerror', reason: 'no key' }
+  }
   return parseKeyRecord(text)
 }
 
 function parseKeyRecord(text: string): KeyRecord {
   const permerror = (reason: string): Outcome => ({ result: 'permerror', reason })
   const { tags, valid } = parseTags(toBinary(new TextEncoder().encode(text)))
-  if (!valid) return permerror('key syntax error')
+  if (!valid) {
+    return permerror('key syntax error')
+  }
   const version = tags.get('v')
-  if (version !== undefined && (version !== 'DKIM1' || tags.keys().next().value !== 'v'))
+  if (version !== undefined && (version !== 'DKIM1' || tags.keys().next().value !== 'v')) {
     return permerror('unknown key version')
+  }
   const list = (name: string) => {
     const value = tags.get(name)
     return value === undefined
@@ -275,15 +325,24 @@ function parseKeyRecord(text: string): KeyRecord {
       : value.split(':').map((item) => lowerAscii(stripFws(item)))
   }
   const services = list('s')
-  if (services && !services.includes('email') && !services.includes('*'))
+  if (services && !services.includes('email') && !services.includes('*')) {
     return permerror('key not for email')
+  }
   const type = list('k')?.[0] ?? 'rsa'
-  if (type !== 'rsa' && type !== 'ed25519') return permerror('unknown key type')
+  if (type !== 'rsa' && type !== 'ed25519') {
+    return permerror('unknown key type')
+  }
   const data = tags.get('p')
-  if (data === undefined) return permerror('key syntax error')
-  if (stripFws(data) === '') return permerror('key revoked')
+  if (data === undefined) {
+    return permerror('key syntax error')
+  }
+  if (stripFws(data) === '') {
+    return permerror('key revoked')
+  }
   const der = decodeBase64(data)
-  if (!der) return permerror('invalid public key')
+  if (!der) {
+    return permerror('invalid public key')
+  }
   return { data: der, type, hashes: list('h'), flags: list('t') ?? [] }
 }
 
@@ -291,8 +350,12 @@ export function abortable<value>(
   promise: Promise<value>,
   signal: AbortSignal | undefined,
 ): Promise<value> {
-  if (!signal) return promise
-  if (signal.aborted) return Promise.reject(signal.reason)
+  if (!signal) {
+    return promise
+  }
+  if (signal.aborted) {
+    return Promise.reject(signal.reason)
+  }
   return new Promise((resolve, reject) => {
     const abort = () => reject(signal.reason)
     signal.addEventListener('abort', abort, { once: true })

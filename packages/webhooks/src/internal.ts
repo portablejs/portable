@@ -6,17 +6,20 @@ export const utf8: TextEncoder = new TextEncoder()
 export function required(headers: Headers, ...names: readonly string[]): string {
   for (const name of names) {
     const value = headers.get(name)
-    if (value) return value
+    if (value) {
+      return value
+    }
   }
   throw new VerificationError({ code: 'missing-header', message: `Missing ${names[0]} header` })
 }
 
 export function seconds(value: string, header: string): Date {
-  if (!/^\d{1,15}$/.test(value))
+  if (!/^\d{1,15}$/.test(value)) {
     throw new VerificationError({
       code: 'malformed-header',
       message: `${header} is not a Unix timestamp`,
     })
+  }
   return new Date(Number(value) * 1000)
 }
 

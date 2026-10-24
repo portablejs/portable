@@ -21,7 +21,9 @@ function counter(target: { addEventListener(type: 'message', fn: () => void): vo
     wake?.()
   })
   return async (expected: number) => {
-    while (received < expected) await new Promise<void>((resolve) => (wake = resolve))
+    while (received < expected) {
+      await new Promise<void>((resolve) => (wake = resolve))
+    }
   }
 }
 
@@ -76,23 +78,35 @@ test(`echoes ${count} messages through a local server within 25% of reconnecting
 }) => {
   const result = await bench.compare(
     bench('@portable/websockets', async () => {
-      for (let i = 0; i < count; i++) void writer.write(message)
-      for (let i = 0; i < count; i++) await reader.read()
+      for (let i = 0; i < count; i++) {
+        void writer.write(message)
+      }
+      for (let i = 0; i < count; i++) {
+        await reader.read()
+      }
     }),
     bench('reconnecting-websocket', async () => {
-      for (let i = 0; i < count; i++) upstream.send(message)
+      for (let i = 0; i < count; i++) {
+        upstream.send(message)
+      }
       await upstreamReceived((upstreamTotal += count))
     }),
     bench('partysocket', async () => {
-      for (let i = 0; i < count; i++) party.send(message)
+      for (let i = 0; i < count; i++) {
+        party.send(message)
+      }
       await partyReceived((partyTotal += count))
     }),
     bench('websocket-ts', async () => {
-      for (let i = 0; i < count; i++) websocketTs.send(message)
+      for (let i = 0; i < count; i++) {
+        websocketTs.send(message)
+      }
       await websocketTsReceived((websocketTsTotal += count))
     }),
     bench('WebSocket', async () => {
-      for (let i = 0; i < count; i++) raw.send(message)
+      for (let i = 0; i < count; i++) {
+        raw.send(message)
+      }
       await rawReceived((rawTotal += count))
     }),
   )
@@ -113,11 +127,15 @@ test(`a server echoing ${count} messages through fromSocket is within 25% of ws 
 }) => {
   const result = await bench.compare(
     bench('fromSocket', async () => {
-      for (let i = 0; i < count; i++) viaPipe.send(message)
+      for (let i = 0; i < count; i++) {
+        viaPipe.send(message)
+      }
       await pipeReceived((pipeTotal += count))
     }),
     bench('ws listeners', async () => {
-      for (let i = 0; i < count; i++) raw.send(message)
+      for (let i = 0; i < count; i++) {
+        raw.send(message)
+      }
       await rawReceived((rawTotal += count))
     }),
   )

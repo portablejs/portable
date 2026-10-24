@@ -135,15 +135,18 @@ function createSession(first: Socket): Session {
     },
     async read(command) {
       const reply = await reader.read(command)
-      if (reply.code === 421) session.destroy()
+      if (reply.code === 421) {
+        session.destroy()
+      }
       return reply
     },
     async write(text, command) {
       await session.writeBytes(encoder.encode(text), command)
     },
     async writeBytes(bytes, command) {
-      if (closed)
+      if (closed) {
         throw new CommandError({ code: 'ECONNECTION', message: 'Connection is closed', command })
+      }
       try {
         await writer.write(bytes)
       } catch (cause) {
@@ -191,7 +194,9 @@ function createSession(first: Socket): Session {
       writer = socket.writable.getWriter()
     },
     destroy() {
-      if (closed) return
+      if (closed) {
+        return
+      }
       closed = true
       reader.cancel()
       try {
@@ -207,7 +212,9 @@ async function guard<value>(
   signal: AbortSignal | undefined,
   run: () => Promise<value>,
 ): Promise<value> {
-  if (!signal) return run()
+  if (!signal) {
+    return run()
+  }
   signal.throwIfAborted()
   let onAbort = () => {}
   const aborted = new Promise<never>((_, reject) => {
@@ -220,7 +227,9 @@ async function guard<value>(
   try {
     return await Promise.race([run(), aborted])
   } catch (error) {
-    if (signal.aborted) throw signal.reason
+    if (signal.aborted) {
+      throw signal.reason
+    }
     throw error
   } finally {
     signal.removeEventListener('abort', onAbort)
@@ -245,13 +254,17 @@ function keyword(line: string): string {
 function authMethods(extensions: readonly string[]): string[] {
   const methods: string[] = []
   for (const line of extensions) {
-    if (keyword(line) !== 'AUTH') continue
+    if (keyword(line) !== 'AUTH') {
+      continue
+    }
     for (const method of line
       .slice(5)
       .trim()
       .toUpperCase()
       .split(/[\s=]+/)) {
-      if (method && !methods.includes(method)) methods.push(method)
+      if (method && !methods.includes(method)) {
+        methods.push(method)
+      }
     }
   }
   return methods
@@ -292,7 +305,9 @@ export async function connect(options: connect.Options): Promise<Client> {
     lmtp = false,
     signal,
   } = options
-  if (/[\r\n]/.test(name)) throw new RangeError('`name` must not contain CR or LF')
+  if (/[\r\n]/.test(name)) {
+    throw new RangeError('`name` must not contain CR or LF')
+  }
   signal?.throwIfAborted()
 
   let socket: Socket
@@ -314,7 +329,9 @@ export async function connect(options: connect.Options): Promise<Client> {
     const verb = lmtp ? 'LHLO' : 'EHLO'
     await session.write(`${verb} ${name}\r\n`, verb)
     const reply = await session.read(verb)
-    if (reply.code === 250) return reply.lines.slice(1)
+    if (reply.code === 250) {
+      return reply.lines.slice(1)
+    }
     if (reply.code === 421) {
       throw new CommandError({
         code: 'ECONNECTION',
@@ -323,8 +340,9 @@ export async function connect(options: connect.Options): Promise<Client> {
         reply,
       })
     }
-    if (lmtp)
+    if (lmtp) {
       throw new CommandError({ code: 'EPROTOCOL', message: 'LHLO refused', command: verb, reply })
+    }
     if (secure === 'starttls' && !tls) {
       throw new CommandError({
         code: 'ETLS',
@@ -377,7 +395,9 @@ export async function connect(options: connect.Options): Promise<Client> {
         `user=${credentials.user}\x01auth=Bearer ${credentials.accessToken}\x01\x01`,
       )
       let reply = await step(`${command} ${token}`, command)
-      if (reply.code === 334) reply = await step('', command)
+      if (reply.code === 334) {
+        reply = await step('', command)
+      }
       return expect(reply, 235, command)
     }
 
@@ -395,7 +415,9 @@ export async function connect(options: connect.Options): Promise<Client> {
     if (method === 'PLAIN') {
       const response = Base64.encode(`\0${credentials.user}\0${credentials.pass}`)
       let reply = await step(`${command} ${response}`, command)
-      if (reply.code === 334) reply = await step(response, command)
+      if (reply.code === 334) {
+        reply = await step(response, command)
+      }
       return expect(reply, 235, command)
     }
     expect(await step(command, command), 334, command)
@@ -447,7 +469,9 @@ export async function connect(options: connect.Options): Promise<Client> {
         tls = true
         extensions = await hello()
       }
-      if (auth) await login(auth)
+      if (auth) {
+        await login(auth)
+      }
     })
   } catch (error) {
     session.destroy()
@@ -473,10 +497,14 @@ function createClient(
   let sending = false
 
   const reset = async () => {
-    if (session.closed) return
+    if (session.closed) {
+      return
+    }
     try {
       await session.write('RSET\r\n', 'RSET')
-      if ((await session.read('RSET')).code !== 250) session.destroy()
+      if ((await session.read('RSET')).code !== 250) {
+        session.destroy()
+      }
     } catch {
       session.destroy()
     }
@@ -528,8 +556,9 @@ function createClient(
       typeof message !== 'string' &&
       !isUint8Array(message) &&
       !(message instanceof ReadableStream)
-    )
+    ) {
       throw new TypeError('message must be a string, a Uint8Array or a ReadableStream.')
+    }
     const data =
       typeof message === 'string'
         ? encodeData(encoder.encode(message))
@@ -547,13 +576,25 @@ function createClient(
     }
 
     const params: string[] = []
-    if (utf8) params.push('SMTPUTF8')
-    if (has('8BITMIME')) params.push('BODY=8BITMIME')
-    if (size !== undefined && has('SIZE')) params.push(`SIZE=${size}`)
+    if (utf8) {
+      params.push('SMTPUTF8')
+    }
+    if (has('8BITMIME')) {
+      params.push('BODY=8BITMIME')
+    }
+    if (size !== undefined && has('SIZE')) {
+      params.push(`SIZE=${size}`)
+    }
     const dsn = mail.dsn && has('DSN') ? mail.dsn : undefined
-    if (dsn?.ret) params.push(`RET=${dsn.ret}`)
-    if (dsn?.envid) params.push(`ENVID=${xtext(dsn.envid)}`)
-    if (mail.requireTls) params.push('REQUIRETLS')
+    if (dsn?.ret) {
+      params.push(`RET=${dsn.ret}`)
+    }
+    if (dsn?.envid) {
+      params.push(`ENVID=${xtext(dsn.envid)}`)
+    }
+    if (mail.requireTls) {
+      params.push('REQUIRETLS')
+    }
     const notify =
       dsn?.notify === undefined
         ? ''
@@ -564,7 +605,9 @@ function createClient(
     const rcptCommands = recipients.map((to) => `RCPT TO:<${to}>${notify}\r\n`)
     if (pipelining) {
       await session.write(mailCommand + rcptCommands.join('') + 'DATA\r\n', 'MAIL FROM')
-    } else await session.write(mailCommand, 'MAIL FROM')
+    } else {
+      await session.write(mailCommand, 'MAIL FROM')
+    }
 
     const sender = await session.read('MAIL FROM')
     const senderAccepted = sender.code === 250
@@ -580,7 +623,9 @@ function createClient(
     const accepted: string[] = []
     const rejected: Rejection[] = []
     for (const [i, recipient] of recipients.entries()) {
-      if (!pipelining) await session.write(rcptCommands[i]!, 'RCPT TO')
+      if (!pipelining) {
+        await session.write(rcptCommands[i]!, 'RCPT TO')
+      }
       const reply = await session.read('RCPT TO')
       if (reply.code === 421) {
         throw new CommandError({
@@ -590,8 +635,9 @@ function createClient(
           reply,
         })
       }
-      if (reply.code === 250 || reply.code === 251) accepted.push(recipient)
-      else {
+      if (reply.code === 250 || reply.code === 251) {
+        accepted.push(recipient)
+      } else {
         rejected.push({
           recipient,
           responseCode: reply.code,
@@ -613,7 +659,9 @@ function createClient(
         })
       }
       if (!senderAccepted) {
-        if (dataReply.code === 354) session.destroy()
+        if (dataReply.code === 354) {
+          session.destroy()
+        }
         throw new CommandError({
           code: 'EENVELOPE',
           message: 'Sender refused',
@@ -649,7 +697,9 @@ function createClient(
       dataReply = await session.read('DATA')
     }
     if (dataReply!.code !== 354) {
-      if (dataReply!.code !== 421) await reset()
+      if (dataReply!.code !== 421) {
+        await reset()
+      }
       throw new CommandError({
         code: dataReply!.code === 421 ? 'ECONNECTION' : 'EENVELOPE',
         message: 'DATA refused',
@@ -659,8 +709,11 @@ function createClient(
     }
 
     sending = true
-    if (data) await session.writeBytes(data, 'DATA')
-    else await session.pipe(message as ReadableStream<Uint8Array>)
+    if (data) {
+      await session.writeBytes(data, 'DATA')
+    } else {
+      await session.pipe(message as ReadableStream<Uint8Array>)
+    }
 
     if (!lmtp) {
       const reply = await session.read('DATA')
@@ -727,7 +780,9 @@ function createClient(
     },
     close(options = {}) {
       return enqueue(async () => {
-        if (session.closed) return
+        if (session.closed) {
+          return
+        }
         try {
           await guard(session, options.signal, async () => {
             await session.write('QUIT\r\n', 'QUIT')
@@ -764,7 +819,9 @@ export async function send(mail: Mail, options: send.Options): Promise<Result> {
   try {
     client = await connect(options)
   } catch (error) {
-    if (mail.message instanceof ReadableStream) mail.message.cancel(error).catch(() => {})
+    if (mail.message instanceof ReadableStream) {
+      mail.message.cancel(error).catch(() => {})
+    }
     throw error
   }
   try {

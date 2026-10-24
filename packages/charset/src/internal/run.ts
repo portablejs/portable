@@ -30,7 +30,9 @@ export function createState(input: Charset, options: Options): State {
 let noTable: Uint16Array | undefined
 
 function grow(out: Output, size: number): void {
-  if (size <= out.bytes.length) return
+  if (size <= out.bytes.length) {
+    return
+  }
   const bytes = new Uint8Array(Math.max(size, out.bytes.length * 2))
   bytes.set(out.bytes.subarray(0, out.length))
   out.bytes = bytes
@@ -43,9 +45,15 @@ function unmappableError(codePoint: number, charset: string): UnsupportedError {
 
 function replacement(state: State, codePoint: number): string {
   const { unmappable } = state
-  if (unmappable === 'replace') return '?'
-  if (unmappable === 'html') return `&#${codePoint};`
-  if (unmappable === 'error') throw unmappableError(codePoint, state.charset.name)
+  if (unmappable === 'replace') {
+    return '?'
+  }
+  if (unmappable === 'html') {
+    return `&#${codePoint};`
+  }
+  if (unmappable === 'error') {
+    throw unmappableError(codePoint, state.charset.name)
+  }
   return unmappable(codePoint)
 }
 
@@ -70,7 +78,9 @@ export function run(state: State, input: string, last: boolean): Uint8Array<Arra
 
   if (encoder.string) {
     const bytes = encoder.string(end === text.length ? text : text.slice(0, end))
-    if (bom.length === 0) return bytes
+    if (bom.length === 0) {
+      return bytes
+    }
     const result = new Uint8Array(bom.length + bytes.length)
     result.set(bom)
     result.set(bytes, bom.length)
@@ -96,14 +106,18 @@ export function run(state: State, input: string, last: boolean): Uint8Array<Arra
       bytes[length + i] = value
       mapped &= value
     }
-    if (mapped !== 0) return bytes
+    if (mapped !== 0) {
+      return bytes
+    }
   }
 
   for (let i = 0; i < end; i++) {
     let codePoint = text.charCodeAt(i)
     const value = table[codePoint]!
     if (value !== 0) {
-      if (value > 0x1ff) bytes[length++] = value >> 8
+      if (value > 0x1ff) {
+        bytes[length++] = value >> 8
+      }
       bytes[length++] = value
       continue
     }
@@ -124,15 +138,22 @@ export function run(state: State, input: string, last: boolean): Uint8Array<Arra
       for (const char of substitute) {
         const code = char.codePointAt(0)!
         const value = code < 0x10000 ? table[code]! : 0
-        if (value > 0x1ff) out.bytes[out.length++] = value >> 8
-        if (value !== 0) out.bytes[out.length++] = value
-        else if (write(code, out) >= 0) throw unmappableError(code, charset.name)
+        if (value > 0x1ff) {
+          out.bytes[out.length++] = value >> 8
+        }
+        if (value !== 0) {
+          out.bytes[out.length++] = value
+        } else if (write(code, out) >= 0) {
+          throw unmappableError(code, charset.name)
+        }
       }
       bytes = out.bytes
     }
     length = out.length
   }
   out.length = length
-  if (last) encoder.flush?.(out)
+  if (last) {
+    encoder.flush?.(out)
+  }
   return out.length === out.bytes.length ? out.bytes : out.bytes.slice(0, out.length)
 }

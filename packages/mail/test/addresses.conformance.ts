@@ -62,8 +62,9 @@ describe('address headers', () => {
   })
 
   test('an unquoted special or second @ in the local part throws', () => {
-    for (const address of ['a,b@good.com', 'c;d@good.com', 'a@evil.com@good.com'])
+    for (const address of ['a,b@good.com', 'c;d@good.com', 'a@evil.com@good.com']) {
       expect(() => Mail.envelope({ from, to: { address } })).toThrow(Mail.InvalidInputError)
+    }
   })
 
   test('a domain literal is split off at the @ in front of it', () => {
@@ -94,10 +95,11 @@ describe('address headers', () => {
       [{ address: '"a,b"@good.com' }, { address: '"c;d"@good.com' }],
       'x@example.com, grp: y@example.com, "z, w" <z@example.com>;',
     ] satisfies Mail.Addresses[]
-    for (const input of inputs)
+    for (const input of inputs) {
       expect(Mail.envelope({ from, to: (await to(input))! }).to).toEqual(
         Mail.envelope({ from, to: input }).to,
       )
+    }
   })
 })
 

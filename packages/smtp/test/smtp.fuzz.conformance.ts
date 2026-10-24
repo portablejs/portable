@@ -24,7 +24,9 @@ async function readAll(chunks: readonly Uint8Array[]) {
   const reader = createReader(fromIterable(chunks))
   const replies: unknown[] = []
   const end = await outcomeAsync([Smtp.CommandError], async () => {
-    for (;;) replies.push(await reader.read('NOOP'))
+    for (;;) {
+      replies.push(await reader.read('NOOP'))
+    }
   })
   return { replies, end }
 }

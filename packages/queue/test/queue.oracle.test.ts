@@ -35,7 +35,9 @@ async function observe(
     await new Promise((resolve) => setTimeout(resolve, item.ms))
     running--
     finished.push(item.id)
-    if (item.fails) throw new Error(`task ${item.id}`)
+    if (item.fails) {
+      throw new Error(`task ${item.id}`)
+    }
     return item.id * 10
   }
   const settled = schedule(task).then<Settled, Settled>(
@@ -60,8 +62,8 @@ afterEach(() => {
 })
 
 describe('limit matches p-limit', () => {
-  for (const concurrency of [1, 2, 3, 7])
-    for (const seed of [1, 2, 3])
+  for (const concurrency of [1, 2, 3, 7]) {
+    for (const seed of [1, 2, 3]) {
       test(`concurrency ${concurrency}, plan ${seed}`, async () => {
         const plan = makePlan(seed, 30)
         const ours = await observe((task) => {
@@ -75,6 +77,8 @@ describe('limit matches p-limit', () => {
         expect(ours).toEqual(theirs)
         expect(ours.max).toBe(Math.min(concurrency, plan.length))
       })
+    }
+  }
 
   test('changing the concurrency while tasks run', async () => {
     const plan = makePlan(9, 20)
@@ -126,8 +130,8 @@ describe('limit matches p-limit', () => {
 })
 
 describe('create matches p-queue', () => {
-  for (const concurrency of [1, 2, 4])
-    for (const seed of [1, 2, 3])
+  for (const concurrency of [1, 2, 4]) {
+    for (const seed of [1, 2, 3]) {
       test(`priorities, concurrency ${concurrency}, plan ${seed}`, async () => {
         const plan = makePlan(seed, 30, { priorities: true })
         const schedule =
@@ -142,6 +146,8 @@ describe('create matches p-queue', () => {
         const theirs = await observe(schedule(new PQueue({ concurrency })))
         expect(ours).toEqual(theirs)
       })
+    }
+  }
 
   test('tasks added while others run, with pause and resume', async () => {
     const plan = makePlan(4, 24, { priorities: true })
@@ -156,8 +162,12 @@ describe('create matches p-queue', () => {
       const results: Promise<number>[] = []
       for (const [i, item] of plan.entries()) {
         results.push(queue.add(() => task(item), { priority: item.priority }))
-        if (i === 10) queue.pause()
-        if (i === 15) resume()
+        if (i === 10) {
+          queue.pause()
+        }
+        if (i === 15) {
+          resume()
+        }
         await new Promise((resolve) => setTimeout(resolve, 3))
       }
       return Promise.all(results)
@@ -177,7 +187,7 @@ describe('create matches p-queue', () => {
     [100, 3, Infinity],
     [50, 2, 2],
     [30, 5, 1],
-  ] as const)
+  ] as const) {
     test(`sliding-window rate limit, ${intervalCap} per ${interval} ms, concurrency ${concurrency}`, async () => {
       const plan = makePlan(interval, 25)
       const schedule =
@@ -186,7 +196,9 @@ describe('create matches p-queue', () => {
           const results: Promise<number>[] = []
           for (const item of plan) {
             results.push(queue.add(() => task(item)))
-            if (item.id % 4 === 0) await new Promise((resolve) => setTimeout(resolve, item.ms))
+            if (item.id % 4 === 0) {
+              await new Promise((resolve) => setTimeout(resolve, item.ms))
+            }
           }
           return Promise.all(results)
         }
@@ -196,6 +208,7 @@ describe('create matches p-queue', () => {
       )
       expect(ours).toEqual(theirs)
     })
+  }
 })
 
 // p-throttle's strict mode spaces saturated calls `interval / limit` apart, so it can start a call
@@ -206,7 +219,7 @@ describe('rate limit keeps p-throttle strict mode guarantee', () => {
     [1, 20],
     [3, 100],
     [10, 1000],
-  ] as const)
+  ] as const) {
     test(`${limit} per ${interval} ms`, async () => {
       const plan = makePlan(limit, 40)
       const schedule =
@@ -215,7 +228,9 @@ describe('rate limit keeps p-throttle strict mode guarantee', () => {
           const results: Promise<number>[] = []
           for (const item of plan) {
             results.push(call(() => task(item)))
-            if (item.ms < 10) await new Promise((resolve) => setTimeout(resolve, item.ms * 3))
+            if (item.ms < 10) {
+              await new Promise((resolve) => setTimeout(resolve, item.ms * 3))
+            }
           }
           return Promise.all(results)
         }
@@ -227,24 +242,30 @@ describe('rate limit keeps p-throttle strict mode guarantee', () => {
       expect(ours.value).toEqual(theirs.value)
       const ourTimes = ours.started.map(([, time]) => time)
       const theirTimes = new Map(theirs.started)
-      for (const [id, time] of ours.started) expect(time).toBeLessThanOrEqual(theirTimes.get(id)!)
-      for (let i = 0; i + limit < ourTimes.length; i++)
+      for (const [id, time] of ours.started) {
+        expect(time).toBeLessThanOrEqual(theirTimes.get(id)!)
+      }
+      for (let i = 0; i + limit < ourTimes.length; i++) {
         expect(ourTimes[i + limit]! - ourTimes[i]!).toBeGreaterThanOrEqual(interval)
+      }
     })
+  }
 })
 
 describe('map matches p-map', () => {
-  for (const concurrency of [1, 3, Infinity])
-    for (const seed of [1, 2, 3])
+  for (const concurrency of [1, 3, Infinity]) {
+    for (const seed of [1, 2, 3]) {
       test(`concurrency ${concurrency}, plan ${seed}`, async () => {
         const plan = makePlan(seed, 25)
         const ours = await observe((task) => Queue.map(plan, task, { concurrency }))
         const theirs = await observe((task) => pMap(plan, task, { concurrency }))
         expect(ours).toEqual(theirs)
       })
+    }
+  }
 
-  for (const concurrency of [1, 4])
-    for (const seed of [4, 5, 6])
+  for (const concurrency of [1, 4]) {
+    for (const seed of [4, 5, 6]) {
       test(`errors with stopOnError false, concurrency ${concurrency}, plan ${seed}`, async () => {
         const plan = makePlan(seed, 25, { failures: 0.3 })
         const options = { concurrency, stopOnError: false }
@@ -252,17 +273,21 @@ describe('map matches p-map', () => {
         const theirs = await observe((task) => pMap(plan, task, options))
         expect(ours).toEqual(theirs)
       })
+    }
+  }
 
-  for (const concurrency of [1, 2, 5])
-    for (const seed of [7, 8, 9])
+  for (const concurrency of [1, 2, 5]) {
+    for (const seed of [7, 8, 9]) {
       test(`first error, concurrency ${concurrency}, plan ${seed}`, async () => {
         const plan = makePlan(seed, 25, { failures: 0.15 })
         const ours = await observe((task) => Queue.map(plan, task, { concurrency }))
         const theirs = await observe((task) => pMap(plan, task, { concurrency }))
         expect(ours).toEqual(theirs)
       })
+    }
+  }
 
-  for (const concurrency of [1, 3])
+  for (const concurrency of [1, 3]) {
     test(`async iterable input, concurrency ${concurrency}`, async () => {
       const plan = makePlan(concurrency + 10, 20)
       async function* source() {
@@ -275,4 +300,5 @@ describe('map matches p-map', () => {
       const theirs = await observe((task) => pMap(source(), task, { concurrency }))
       expect(ours).toEqual(theirs)
     })
+  }
 })

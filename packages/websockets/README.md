@@ -16,14 +16,18 @@ const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
     send(JSON.stringify({ token }))
     const reader = messages.getReader()
     const { value } = await reader.read()
-    if (value !== 'ok') throw new Error('Not authorized')
+    if (value !== 'ok') {
+      throw new Error('Not authorized')
+    }
   },
 })
 
 const writer = writable.getWriter()
 await writer.write(JSON.stringify({ subscribe: 'prices' }))
 
-for await (const message of readable) console.log(message)
+for await (const message of readable) {
+  console.log(message)
+}
 ```
 
 The namespace is `WebSockets`, so it doesn't shadow the global `WebSocket`.

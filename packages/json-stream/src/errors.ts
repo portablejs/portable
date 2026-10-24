@@ -11,7 +11,9 @@ import * as Errors from '@portable/errors'
  * try {
  *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()))
  * } catch (error) {
- *   if (error instanceof JsonStream.InvalidInputError) return new Response('Bad JSON', { status: 400 })
+ *   if (error instanceof JsonStream.InvalidInputError) {
+ *     return new Response('Bad JSON', { status: 400 })
+ *   }
  *   throw error
  * }
  * ```
@@ -31,7 +33,9 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * try {
  *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()))
  * } catch (error) {
- *   if (error instanceof JsonStream.TruncatedError) console.log('connection dropped')
+ *   if (error instanceof JsonStream.TruncatedError) {
+ *     console.log('connection dropped')
+ *   }
  * }
  * ```
  */
@@ -56,7 +60,9 @@ export class TruncatedError extends Errors.TruncatedError {
  * try {
  *   await Streams.toArray(matches)
  * } catch (error) {
- *   if (error instanceof JsonStream.MaxLengthError) return new Response(null, { status: 413 })
+ *   if (error instanceof JsonStream.MaxLengthError) {
+ *     return new Response(null, { status: 413 })
+ *   }
  *   throw error
  * }
  * ```

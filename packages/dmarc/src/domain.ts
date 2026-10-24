@@ -8,10 +8,16 @@ export type Domain = { kind: 'name'; name: string } | { kind: 'address' } | { ki
 
 export function parseDomain(value: string): Domain {
   const domain = value.trim().toLowerCase()
-  if (/^\[[^[\]\\]*\]$/.test(domain)) return { kind: 'address' }
-  if (invalidChars.test(domain)) return { kind: 'invalid' }
+  if (/^\[[^[\]\\]*\]$/.test(domain)) {
+    return { kind: 'address' }
+  }
+  if (invalidChars.test(domain)) {
+    return { kind: 'invalid' }
+  }
   const name = hostToAscii(domain)?.replace(/\.$/, '')
-  if (name === undefined || !hostName.test(name)) return { kind: 'invalid' }
+  if (name === undefined || !hostName.test(name)) {
+    return { kind: 'invalid' }
+  }
   return ipv4.test(name) ? { kind: 'address' } : { kind: 'name', name }
 }
 

@@ -46,13 +46,16 @@ export function parse(input: Addresses): Entry[] {
   const entries: Entry[] = []
   for (const item of items) {
     if (typeof item === 'string') {
-      for (const entry of MimeHeaders.parseAddresses(item))
+      for (const entry of MimeHeaders.parseAddresses(item)) {
         entries.push(
           'group' in entry
             ? { name: entry.name, group: entry.group.map(normalizeMailbox) }
             : normalizeMailbox(entry),
         )
-    } else entries.push(normalizeMailbox({ name: item.name ?? '', address: item.address }))
+      }
+    } else {
+      entries.push(normalizeMailbox({ name: item.name ?? '', address: item.address }))
+    }
   }
   return entries
 }
@@ -77,10 +80,14 @@ const nonAscii = /[^\x00-\x7f]/
 
 function normalizeAddress(address: string): string {
   const at = address.endsWith(']') ? address.lastIndexOf('@[') : address.lastIndexOf('@')
-  if (at < 0) return address
+  if (at < 0) {
+    return address
+  }
   const local = address.slice(0, at)
   let domain = address.slice(at + 1).toLowerCase()
-  if (nonAscii.test(domain) && !nonAscii.test(local)) domain = hostToAscii(domain) || domain
+  if (nonAscii.test(domain) && !nonAscii.test(local)) {
+    domain = hostToAscii(domain) || domain
+  }
   return local + '@' + domain
 }
 
@@ -104,15 +111,19 @@ export function wordEncoding(text: string): MimeHeaders.WordEncoding {
   let other = 0
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i)
-    if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) latin++
-    else if (code >= 0x80 || (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d))
+    if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
+      latin++
+    } else if (code >= 0x80 || (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d)) {
       other++
+    }
   }
   return other < latin ? 'Q' : 'B'
 }
 
 export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {
-  if (input === undefined) return []
+  if (input === undefined) {
+    return []
+  }
   return parse(input).flatMap((entry) => ('group' in entry ? entry.group : [entry]))
 }
 
@@ -145,10 +156,14 @@ export function envelope(message: {
   readonly bcc?: Addresses | undefined
 }): Envelope {
   const from = mailboxes(message.from)[0] ?? mailboxes(message.sender)[0]
-  if (from === undefined)
+  if (from === undefined) {
     throw new InvalidInputError('The message has no From or Sender address for MAIL FROM.')
+  }
   const to = new Set<string>()
-  for (const input of [message.to, message.cc, message.bcc])
-    for (const mailbox of mailboxes(input)) to.add(mailbox.address)
+  for (const input of [message.to, message.cc, message.bcc]) {
+    for (const mailbox of mailboxes(input)) {
+      to.add(mailbox.address)
+    }
+  }
   return { from: from.address, to: [...to] }
 }

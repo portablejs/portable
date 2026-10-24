@@ -33,8 +33,11 @@ export class BaseError extends Error {
   constructor(message?: string, options?: ErrorOptions) {
     super(message, options)
     const kinds: string[] = []
-    for (let c: unknown = new.target; typeof c === 'function'; c = Object.getPrototypeOf(c))
-      if (Object.hasOwn(c, 'kind')) kinds.push((c as typeof BaseError).kind)
+    for (let c: unknown = new.target; typeof c === 'function'; c = Object.getPrototypeOf(c)) {
+      if (Object.hasOwn(c, 'kind')) {
+        kinds.push((c as typeof BaseError).kind)
+      }
+    }
     Object.defineProperty(this, brand, { value: kinds })
     Object.defineProperty(this, 'name', { value: kinds[0], writable: true, configurable: true })
   }
@@ -63,7 +66,9 @@ export declare namespace InvalidInputError {
  * try {
  *   Base64.decode('*', { mode: 'strict' })
  * } catch (error) {
- *   if (Errors.is(error, 'InvalidInput')) console.log(error.message)
+ *   if (Errors.is(error, 'InvalidInput')) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -89,7 +94,9 @@ export class InvalidInputError extends BaseError {
  * try {
  *   Base64.decode('YW', { mode: 'strict' })
  * } catch (error) {
- *   if (Errors.is(error, 'Truncated')) console.log(error.message)
+ *   if (Errors.is(error, 'Truncated')) {
+ *     console.log(error.message)
+ *   }
  * }
  * ```
  */
@@ -115,7 +122,9 @@ export class TruncatedError extends BaseError {
  * try {
  *   ImageSize.parse(new Uint8Array(16))
  * } catch (error) {
- *   if (Errors.is(error, 'Unsupported')) console.log('not an image this package reads')
+ *   if (Errors.is(error, 'Unsupported')) {
+ *     console.log('not an image this package reads')
+ *   }
  * }
  * ```
  */
@@ -143,7 +152,9 @@ export declare namespace MaxBytesError {
  * try {
  *   await Streams.toBytes(body.pipeThrough(Streams.limitBytes(1024)))
  * } catch (error) {
- *   if (Errors.is(error, 'MaxBytes')) console.log(`over ${error.maxBytes} bytes`)
+ *   if (Errors.is(error, 'MaxBytes')) {
+ *     console.log(`over ${error.maxBytes} bytes`)
+ *   }
  * }
  * ```
  */
@@ -180,7 +191,9 @@ export declare namespace MaxLengthError {
  * try {
  *   console.log(await Streams.toArray(lines))
  * } catch (error) {
- *   if (Errors.is(error, 'MaxLength')) console.log(`a line was over ${error.maxLength} characters`)
+ *   if (Errors.is(error, 'MaxLength')) {
+ *     console.log(`a line was over ${error.maxLength} characters`)
+ *   }
  * }
  * ```
  */
@@ -218,8 +231,9 @@ export declare namespace ResponseError {
  * try {
  *   await Rdap.domain('example.com')
  * } catch (error) {
- *   if (Errors.is(error, 'Response') && error.status === 429)
+ *   if (Errors.is(error, 'Response') && error.status === 429) {
  *     console.log(error.response.headers.get('retry-after'))
+ *   }
  * }
  * ```
  */
@@ -268,8 +282,11 @@ export type Kinds = {
  * try {
  *   await run()
  * } catch (error) {
- *   if (Errors.is(error, 'MaxBytes')) console.log(error.maxBytes)
- *   else throw error
+ *   if (Errors.is(error, 'MaxBytes')) {
+ *     console.log(error.maxBytes)
+ *   } else {
+ *     throw error
+ *   }
  * }
  * ```
  */

@@ -105,18 +105,21 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   const { headers = arcDefaultHeaders, now = new Date(), hasher, signal } = options
   const domain = normalizeName('domain', options.domain, isDomainName)
   const selector = normalizeName('selector', options.selector, isSelector)
-  if (!canFitDns(`${selector}._domainkey.${domain}`))
+  if (!canFitDns(`${selector}._domainkey.${domain}`)) {
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
+  }
   const authResults = normalizeAuthResults(options.authResults)
   const { chainValidation } = options
-  if (chainValidation !== undefined && !statuses.has(chainValidation))
+  if (chainValidation !== undefined && !statuses.has(chainValidation)) {
     throw new RangeError('options.chainValidation must be none, pass or fail.')
+  }
   const names = assertHeaders(headers).filter((name) => !unsigned.has(lowerAscii(name)))
   const timestamp = seconds('now', now)
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
-  if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024)
+  if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024) {
     throw new RangeError('RSA keys shorter than 1024 bits are not allowed (RFC 8301 section 3.2).')
+  }
   signal?.throwIfAborted()
 
   const split = await splitMessage(message)
@@ -126,24 +129,27 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   }
   const fields = parseFields(toBinary(split.header))
   const top = newest(fields)
-  if (top.cv === 'fail')
+  if (top.cv === 'fail') {
     return refuse(
       new InvalidInputError(
         `The newest ARC-Seal (i=${top.instance}) has cv=fail, so it can't be sealed again.`,
       ),
     )
-  if (top.instance >= maxInstance)
+  }
+  if (top.instance >= maxInstance) {
     return refuse(
       new InvalidInputError(`The message has ${top.instance} ARC sets, the most RFC 8617 allows.`),
     )
+  }
   const instance = top.instance + 1
   const chained = fields.some(isArcField)
   const cv = chainValidation ?? (chained ? undefined : 'none')
-  if (cv === undefined)
+  if (cv === undefined) {
     return refuse(
       new TypeError('options.chainValidation is required for a message that has ARC fields.'),
     )
-  if (chained === (cv === 'none') || (cv === 'pass' && instance === 1))
+  }
+  if (chained === (cv === 'none') || (cv === 'pass' && instance === 1)) {
     return refuse(
       new RangeError(
         cv === 'none'
@@ -151,19 +157,24 @@ export async function seal(message: Message, options: seal.Options): Promise<str
           : `cv=${cv} needs an ARC chain, and the message has ${chained ? 'no valid ARC set' : 'none'}.`,
       ),
     )
+  }
   const covered: Field[] = []
   if (cv === 'pass') {
     const chain = readChain(fields)
-    if (typeof chain === 'string')
+    if (typeof chain === 'string') {
       return refuse(new InvalidInputError(`cv=pass needs an intact ARC chain: ${chain}.`))
-    for (const set of chain) covered.push(set.results, set.signature, set.seal)
+    }
+    for (const set of chain) {
+      covered.push(set.results, set.signature, set.seal)
+    }
   }
   const selected = selectForSigning(
     fields.filter((field) => !isArcField(field) && field.name !== 'authentication-results'),
     names,
   )
-  if (!selected.some((field) => field.name === 'from'))
+  if (!selected.some((field) => field.name === 'from')) {
     return refuse(new InvalidInputError('The message has no From field to sign.'))
+  }
 
   const cancel = () => void split.body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
@@ -224,9 +235,14 @@ const field = (text: string): Field => ({
  * by whitespace and more text.
  */
 function normalizeAuthResults(value: unknown): string {
-  if (typeof value !== 'string') throw new TypeError('options.authResults must be a string.')
-  if (!/\S/.test(value)) throw new RangeError('options.authResults is empty.')
-  if (/\r(?!\n[ \t]+[^ \t\r\n])|(?<!\r)\n/.test(value))
+  if (typeof value !== 'string') {
+    throw new TypeError('options.authResults must be a string.')
+  }
+  if (!/\S/.test(value)) {
+    throw new RangeError('options.authResults is empty.')
+  }
+  if (/\r(?!\n[ \t]+[^ \t\r\n])|(?<!\r)\n/.test(value)) {
     throw new RangeError('options.authResults has a line break that is not folding.')
+  }
   return value.trim()
 }

@@ -62,7 +62,9 @@ export function neverAborted(): AbortSignal {
  * @throws {RangeError} When a wait, `initial` or `max` is negative, or `factor` isn't a positive finite number.
  */
 export function backoff(delay: Delay): (attempt: Attempt) => number {
-  if (typeof delay === 'function') return delay
+  if (typeof delay === 'function') {
+    return delay
+  }
   if (typeof delay === 'number') {
     assertMs('delay', delay)
     return () => delay
@@ -70,8 +72,9 @@ export function backoff(delay: Delay): (attempt: Attempt) => number {
   const { initial, max, factor = 2, jitter = true } = delay
   assertMs('delay.initial', initial)
   assertMs('delay.max', max)
-  if (!(factor > 0) || factor === Infinity)
+  if (!(factor > 0) || factor === Infinity) {
     throw new RangeError('Expected `delay.factor` to be a positive finite number.')
+  }
   return ({ attempt }) => {
     const cap = Math.min(max, initial * factor ** (attempt - 1))
     return jitter ? Math.random() * cap : cap
@@ -79,7 +82,9 @@ export function backoff(delay: Delay): (attempt: Attempt) => number {
 }
 
 export function assertMs(name: string, value: number): void {
-  if (!(value >= 0)) throw new RangeError(`Expected \`${name}\` to be a non-negative number.`)
+  if (!(value >= 0)) {
+    throw new RangeError(`Expected \`${name}\` to be a non-negative number.`)
+  }
 }
 
 export function call<value>(
