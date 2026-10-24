@@ -31,7 +31,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.valu
 await saving
 ```
 
-Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: `fetch`, Web Streams, `Uint8Array`, `TextEncoder` and `crypto.subtle`.
+Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API), [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`TextEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) and [`crypto.subtle`](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto).
 
 - **Only web APIs.** Lint rejects `node:*` imports, `Buffer`, `process` and DOM globals in package code. The tests run in Node 24 and 26, Bun, Deno, Chromium, Firefox and WebKit, and inside a Web Worker, and every package is loaded and checked in workerd, the Cloudflare Workers runtime.
 - **No outside dependencies.** A package depends only on other `@portable/*` packages. Crypto uses WebCrypto by default, and you can pass a function from `@noble/hashes` or another library instead.
