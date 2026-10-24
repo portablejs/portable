@@ -23,8 +23,8 @@ export function Home() {
         <h1>Web-standard building blocks for any JavaScript runtime.</h1>
         <p>
           Small packages built only on Web Streams, <code>Uint8Array</code>, <code>fetch</code>, and{' '}
-          <code>crypto.subtle</code>. The same code runs in browsers, Cloudflare Workers, Bun, and
-          Node 24+.
+          <code>crypto.subtle</code>. The same code runs in browsers, Cloudflare Workers, Deno, Bun,
+          and Node 24+.
         </p>
         <div className="home-cta">
           <a href={`${base}getting-started`}>Get started</a>

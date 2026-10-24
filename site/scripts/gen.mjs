@@ -74,10 +74,6 @@ for (const name of seen) {
   })
   md = md.replace(/<!-- bench:(start|end) -->\n/g, '')
   md = md.replace(
-    'Cloudflare Workers, Deno, Bun and Node 24+',
-    'Cloudflare Workers, Bun and Node 24+',
-  )
-  md = md.replace(
     /`((?:[^`\n\\]|\\.)*?\\`(?:[^`\n\\]|\\.)*?)`(?=[^`]|$)/g,
     (_, inner) => '`` ' + inner.replace(/\\`/g, '`') + ' ``',
   )

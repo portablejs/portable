@@ -1,10 +1,10 @@
 ---
-description: Install a Portable package and run the same code in browsers, Cloudflare Workers, Bun, and Node.
+description: Install a Portable package and run the same code in browsers, Cloudflare Workers, Deno, Bun, and Node 24+.
 ---
 
 # Getting started
 
-Portable is a set of small npm packages built only on web-standard APIs: Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, and `crypto.subtle`. The same code runs in browsers, Cloudflare Workers, Bun, and Node 24+. You don't need polyfills or the `nodejs_compat` flag.
+Portable is a set of small npm packages built only on web-standard APIs: Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, and `crypto.subtle`. The same code runs in browsers, Cloudflare Workers, Deno, Bun, and Node 24+. You don't need polyfills or the `nodejs_compat` flag.
 
 ## Install a package
 
@@ -52,6 +52,6 @@ esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You d
 
 ## Runtimes
 
-The tests run in Node, Bun, workerd, Chromium, Firefox, and WebKit.
+The tests run in Chromium, Firefox, WebKit, workerd, Deno, Bun, and Node.
 
 `@portable/smtp` needs a TCP socket API, so it doesn't run in browsers.
