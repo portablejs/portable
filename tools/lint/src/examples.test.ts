@@ -302,3 +302,32 @@ function wrapInFunction(code: string): string {
 test('TypeScript examples type-check', () => {
   expect(check()).toEqual([])
 }, 120_000)
+
+// oxlint's `curly` rule checks code files, and this applies it to examples, which oxlint doesn't read.
+function bracelessBodies(example: Example): string[] {
+  const source = ts.createSourceFile('example.ts', example.code, ts.ScriptTarget.ES2022, true)
+  const problems: string[] = []
+  const report = (body: ts.Statement) => {
+    if (!ts.isBlock(body)) {
+      const line = example.line + source.getLineAndCharacterOfPosition(body.getStart(source)).line
+      problems.push(`${relative(root, example.file)}:${line} needs braces around the body`)
+    }
+  }
+  const visit = (node: ts.Node) => {
+    if (ts.isIfStatement(node)) {
+      report(node.thenStatement)
+      if (node.elseStatement && !ts.isIfStatement(node.elseStatement)) {
+        report(node.elseStatement)
+      }
+    } else if (ts.isIterationStatement(node, false)) {
+      report(node.statement)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return problems
+}
+
+test('examples put braces around every if, else and loop body', () => {
+  expect(examples(packages()).flatMap(bracelessBodies)).toEqual([])
+})
