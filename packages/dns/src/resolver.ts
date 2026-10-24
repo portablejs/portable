@@ -95,8 +95,9 @@ export declare namespace Resolver {
 export type DohResolver = Resolver & {
   /**
    * Sends one question of any type and returns the whole decoded response, with TTLs, the
-   * authority section and the AD flag. It resolves for NOERROR and NXDOMAIN, so `answers` can be
-   * empty, and rejects with `QueryError` like the other methods for everything else.
+   * authority section and the AD flag. It resolves when the response code is NOERROR or
+   * NXDOMAIN, so `answers` can be empty. For any other response code, and when the request
+   * fails, it rejects with `QueryError`, as the other methods do.
    */
   query(
     name: string,

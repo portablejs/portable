@@ -38,8 +38,9 @@ export declare namespace connect {
      */
     open?: ((context: Context) => void | PromiseLike<void>) | undefined
     /**
-     * Decides whether `connect` reconnects after a close the client didn't start, with the close
-     * and `{ attempt }`, the number of failures in a row including this one. By default, codes
+     * Called when the connection closes without the client calling `close`, with the close and
+     * `{ attempt }`, the number of failures in a row including this one. It returns whether
+     * `connect` reconnects. By default, codes
      * 1000, 1002, 1003, 1007, 1008, 1009 and 1010 are final and every other code reconnects. If it
      * throws, both streams fail with that error.
      */

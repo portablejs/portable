@@ -233,7 +233,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 ## `WebCrypto` keeps the function names from the package plan
 
 - **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as docs/packages.md names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
-- **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. Those names say both forms.
+- **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. Names such as `derToRawEcdsa` give both the input form and the output form.
 - **Chosen:** the names from docs/packages.md. Each async function still takes `signal`, which it checks before and after the `crypto.subtle` call, because WebCrypto has no way to cancel a call.
 
 ## `WebCrypto.hmac` and `WebCrypto.hkdf` take key bytes, not a `CryptoKey`

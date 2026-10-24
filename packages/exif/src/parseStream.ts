@@ -98,8 +98,9 @@ type Source = {
 }
 
 /**
- * `buffer` holds the stream from offset `start` to `end`, the count of bytes pulled so far.
- * While skipping, `start` is past `end`.
+ * `buffer` holds the stream's bytes from offset `start` to `end`, and `end` is the number of bytes
+ * read from the stream so far. When `read` is asked for an offset beyond `end`, it sets `start`
+ * to that offset, so `start` is greater than `end` until the stream catches up.
  */
 function createSource(
   reader: ReadableStreamDefaultReader<Uint8Array>,

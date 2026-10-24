@@ -135,6 +135,8 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | A `DataCloneError` errors the stream for good. | A `DataCloneError` errors the stream permanently. |
 | `encode*`/`decode*` convert encoded-words and back; `parse*`/`format*` read structured values. | `encode*` and `decode*` convert text to encoded-words and back, and `parse*` and `format*` read structured values. |
 | A limit on the whole call is what `AbortSignal.timeout` does. | `AbortSignal.timeout` already limits the whole call. |
+| Rename and retype the APIs the second review found out of line. | Rename the APIs that don't follow the naming and typing rules in AGENTS.md. (A commit title says what changed, not which review found it.) |
+| `encode` must return bytes that decode on their own: a stateful charset has to end in its initial state. | The bytes from each call must decode on their own, so for a stateful charset each call's output has to return to the initial state. |
 | The checks catch what fails only in workerd: the first run found that queue and timers created an `AbortController` at the top level, so neither package nor sse or websockets could load. | The checks catch failures that happen only in workerd. Their first run found that queue and timers created an `AbortController` at the top level, so neither of them could load, and neither could sse or websockets, which depend on timers. |
 
 ### Prose review

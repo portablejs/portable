@@ -24,7 +24,7 @@ type Shared = {
   fetch?: Fetch | undefined
   /** Cancels the lookup. It rejects with `signal.reason`, as `fetch` does. */
   signal?: AbortSignal | undefined
-  /** The time to check the cached bootstrap files' age against. */
+  /** The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. */
   now?: Date | undefined
 }
 

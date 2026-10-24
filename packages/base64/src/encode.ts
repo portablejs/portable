@@ -139,8 +139,8 @@ const pair = (first: number, second: number) =>
 
 /**
  * The base64 text of `bytes` as ASCII codes. With a `lineLength`, which must be a multiple of 4,
- * `newline` (of even length) is written before each group of four characters that starts a new
- * line, continuing a line that already has `column` characters.
+ * the output continues a line that already holds `column` characters, and `newline`, whose length
+ * must be even, is written before each group of four characters that starts a new line.
  */
 function encodeCodes(
   bytes: Uint8Array,

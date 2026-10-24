@@ -125,7 +125,7 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 | `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` fits): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | `base64`, `bytes` | nodemailer's SMTP transport, smtp-connection |
 | `@portable/web-push` | Send Web Push messages with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292) on WebCrypto and `fetch`. | `base64`, `bytes` | web-push |
 | `@portable/rdap` | RDAP lookups for domains, IPs and ASNs with IANA bootstrap and normalized results. | `idna`, `ip` | whoiser, whois-json, node-rdap |
-| `@portable/dns` | DNS lookups where there is no DNS: `resolveTxt`, `resolveMx` and friends over DNS-over-HTTPS, behind a resolver interface `node:dns/promises` also fits. | `base64`, `dns-packet`, `idna`, `ip` | node:dns/promises where it doesn't exist, tangerine, dohjs |
+| `@portable/dns` | DNS lookups in runtimes without a DNS API: `resolveTxt`, `resolveMx` and the other `node:dns/promises` methods over DNS-over-HTTPS, behind a resolver interface that `node:dns/promises` also fits. | `base64`, `dns-packet`, `idna`, `ip` | node:dns/promises where it doesn't exist, tangerine, dohjs |
 | `@portable/dkim` | DKIM sign and verify with RSA and Ed25519 keys on WebCrypto. The body hash uses `crypto.subtle.digest` by default, or an incremental hasher such as noble's `sha256.create()`. DNS goes through an injected resolver. | `base64`, `bytes`, `dns`, `idna`, `web-crypto` | DKIM in mailauth, nodemailer's DKIM signer |
 | `@portable/webhooks` | Verify and sign webhooks: Standard Webhooks plus Stripe, GitHub and Slack schemes, or any HMAC-SHA256 sender, with timing-safe compare and a replay window. | `base64`, `bytes`, `web-crypto` | standardwebhooks, svix's `Webhook`, Stripe's `constructEvent`, @octokit/webhooks-methods, @slack/bolt's request verification |
 | `@portable/oauth1` | OAuth 1.0a request signing (HMAC-SHA1, HMAC-SHA256, RSA-SHA1, PLAINTEXT) producing `Headers` or a signed `Request`. | `base64`, `bytes`, `web-crypto` | oauth-1.0a, oauth |
@@ -176,7 +176,7 @@ These libraries already run in every runtime with no Node dependencies: jose, no
 4. L3: `spf`, `dkim`-based `arc`, `dmarc`, then `mail-auth`.
 5. We build `mime-stream` just before `dkim` needs it.
 
-`lines` was the first package, so it tested the build, test and release setup.
+We built `lines` first and used it to try out the build, test and release setup.
 
 ## Open questions
 

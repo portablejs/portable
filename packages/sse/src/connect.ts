@@ -11,9 +11,10 @@ export declare namespace connect {
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
     maxLength?: number | undefined
     /**
-     * Decides whether to reconnect after a connection ends, with the error and `{ attempt }`, the
+     * Called after a connection ends, with the error and `{ attempt }`, where `attempt` is the
      * number of reconnects since the last accepted response. `error` is `undefined` when the
-     * response ended normally. Return `false` to close the stream, or to fail it with `error`.
+     * response ended normally. Return `false` to stop reconnecting: the stream then closes if
+     * `error` is `undefined`, and errors with `error` otherwise.
      * @default (error) => !(error instanceof Sse.ResponseError || error instanceof Sse.MaxLengthError)
      */
     reconnectIf?:

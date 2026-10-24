@@ -62,10 +62,11 @@ function writesMember(identifier: unknown): boolean {
 /**
  * Reports `const name: Type = value`. The annotation widens the constant to `Type`, while
  * `const name = value satisfies Type` checks the value against `Type` and keeps the narrower type
- * that TypeScript infers. It allows an annotation when the wider type is the point: `unique
- * symbol`, a type with an index signature such as `Record<string, number>`, whose keys a lookup
- * reads with any string, an object that the code later writes properties to or that refers to
- * itself, and an exported constant, whose annotation is its public type. It also allows one on an
+ * that TypeScript infers. It allows an annotation when the wider type is the point: a `unique
+ * symbol`, an exported constant, whose annotation is its public type, and an object that the
+ * code later adds properties to or that refers to itself. It also allows one on a type with an
+ * index signature, such as `Record<string, number>`, because the code looks up keys with any
+ * string, and one on an
  * empty collection, such as `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]`
  * infers `never[]` and the first `push` fails to type-check.
  */
