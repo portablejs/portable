@@ -21,8 +21,8 @@ export type Matcher = {
 const maxCachedKeys = 256
 
 export function compile(paths: readonly string[]): Matcher {
-  const steps = new Array<Step | null>()
-  const starts = new Array<number>()
+  const steps: (Step | null)[] = []
+  const starts: number[] = []
   for (const path of paths) {
     starts.push(steps.length)
     steps.push(...parsePath(path), null)
@@ -49,7 +49,7 @@ export function compile(paths: readonly string[]): Matcher {
   }
 
   const advance = (states: States, key: string | number): States | null => {
-    const ids = new Array<number>()
+    const ids: number[] = []
     const add = (g: number) => {
       if (!ids.includes(g)) ids.push(g)
     }
@@ -88,7 +88,7 @@ function parsePath(path: string): Step[] {
     throw new RangeError(`Invalid JSONPath ${JSON.stringify(path)} at offset ${at}.`)
   }
   if (path[0] !== '$') fail(0)
-  const steps = new Array<Step>()
+  const steps: Step[] = []
   let i = 1
   while (i < path.length) {
     let descendant = false

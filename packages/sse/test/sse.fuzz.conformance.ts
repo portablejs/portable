@@ -27,7 +27,7 @@ const message = fc.record(
 
 /** The events a client dispatches for these messages, following the HTML event stream rules. */
 function expected(messages: readonly Sse.Message[]): Sse.Event[] {
-  const events = new Array<Sse.Event>()
+  const events: Sse.Event[] = []
   let id: string | undefined
   let retry: number | undefined
   for (const message of messages) {

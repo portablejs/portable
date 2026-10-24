@@ -71,7 +71,7 @@ test(
   'gunzip a stream of 1 KiB chunks within 25% of DecompressionStream',
   { timeout: 300_000 },
   async ({ bench }) => {
-    const chunks = new Array<Uint8Array<ArrayBuffer>>()
+    const chunks: Uint8Array<ArrayBuffer>[] = []
     for (let i = 0; i < gzipped.length; i += 1024) chunks.push(gzipped.subarray(i, i + 1024))
     const result = await bench.compare(
       bench('@portable/compress DecoderStream', async () => {

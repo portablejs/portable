@@ -4,7 +4,7 @@ import { WebSocket as WsClient, type WebSocket as ServerSocket } from 'ws'
 import { echo, listen, text } from './server.js'
 import { bytes, errorOf, read, sleep, until } from './utils.js'
 
-const cleanup = new Array<() => unknown>()
+const cleanup: (() => unknown)[] = []
 afterEach(async () => {
   for (const fn of cleanup.splice(0)) await fn()
 })
@@ -32,12 +32,12 @@ describe('connect against a ws server', () => {
   })
 
   test('reconnects after the server terminates the connection and sends queued writes', async () => {
-    const connections = new Array<ServerSocket>()
+    const connections: ServerSocket[] = []
     const { url } = await start((socket) => {
       connections.push(socket)
       echo(socket)
     })
-    const signals = new Array<AbortSignal>()
+    const signals: AbortSignal[] = []
     const { readable, writable } = open(url, {
       async open({ signal }) {
         signals.push(signal)
@@ -58,7 +58,7 @@ describe('connect against a ws server', () => {
 
   test('reconnects after the server restarts on the same port', async () => {
     const first = await listen()
-    const signals = new Array<AbortSignal>()
+    const signals: AbortSignal[] = []
     const { readable, writable } = open(first.url, {
       open: ({ signal }) => void signals.push(signal),
     })
@@ -76,8 +76,8 @@ describe('connect against a ws server', () => {
   })
 
   test('runs open on each connection before queued writes', async () => {
-    const received = new Array<string>()
-    const connections = new Array<ServerSocket>()
+    const received: string[] = []
+    const connections: ServerSocket[] = []
     const { url } = await start((socket) => {
       connections.push(socket)
       socket.on('message', (data) => {
@@ -85,7 +85,7 @@ describe('connect against a ws server', () => {
         if (text(data) === 'auth') socket.send('ok')
       })
     })
-    const signals = new Array<AbortSignal>()
+    const signals: AbortSignal[] = []
     const { writable } = open(url, {
       async open({ send, messages, signal }) {
         signals.push(signal)

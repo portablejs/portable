@@ -48,7 +48,7 @@ describe('eventsource-parser', () => {
   })
 
   test('ignores heartbeat comments between events', async () => {
-    const chunks = new Array<string>()
+    const chunks: string[] = []
     for (let i = 0; i < 5; i++) chunks.push(': ♥\n', `data: ${String.fromCharCode(65 + i)}\n\n`)
     expect(datas(await decodeChunks(chunks))).toEqual(['A', 'B', 'C', 'D', 'E'])
   })
@@ -72,8 +72,8 @@ describe('eventsource-parser', () => {
 
   test('reads multi-byte text', async () => {
     const perLine = Math.ceil(MULTIBYTE_EMOJIS.length / MULTIBYTE_LINES.length)
-    const chunks = new Array<string>()
-    const expected = new Array<Sse.Event>()
+    const chunks: string[] = []
+    const expected: Sse.Event[] = []
     MULTIBYTE_LINES.forEach((text, i) => {
       const line = `${text} ${MULTIBYTE_EMOJIS.slice(perLine * i, perLine * (i + 1)).join(' ')}`
       chunks.push(`id: ${i}\n`)

@@ -463,7 +463,7 @@ describe('dmarc-fixes-test.js', () => {
 
   test('I3: no query for an empty domain', async () => {
     for (const from of ['', '.', ' ']) {
-      const log = new Array<Query>()
+      const log: Query[] = []
       expect((await check({}, { from }, { log })).result).toBe('permerror')
       expect(log).toEqual([])
     }
@@ -473,7 +473,7 @@ describe('dmarc-fixes-test.js', () => {
 describe('get-dmarc-record-test.js', () => {
   describe('DNS resolution', () => {
     test('reads the record at _dmarc.<domain>', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(reject, { from: 'example.com' }, { log })
       expect(result.record?.p).toBe('reject')
       expect(log[0]).toBe('TXT _dmarc.example.com')
@@ -562,7 +562,7 @@ describe('get-dmarc-record-test.js', () => {
     })
 
     test('a single label is queried once, and an address literal not at all', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       for (const from of ['localhost', '192.0.2.1', '[192.0.2.1]', '[IPv6:2001:db8::1]']) {
         expect((await check({}, { from }, { log })).result).toBe('none')
       }
@@ -595,7 +595,7 @@ describe('get-dmarc-record-test.js', () => {
     const np = withRecord('v=DMARC1; p=reject; sp=none; np=quarantine')
 
     test('a dangling CNAME exists', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = { ...np, 'shop.example.com': { CNAME: 'gone.example.net' } }
       expect((await check(zone, { from: 'shop.example.com' }, { log })).policy).toBe('none')
       expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([
@@ -605,7 +605,7 @@ describe('get-dmarc-record-test.js', () => {
     })
 
     test('a name without an A record or a CNAME does not exist', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       expect((await check(np, { from: 'missing.example.com' }, { log })).policy).toBe('quarantine')
       expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([
         'A missing.example.com',
@@ -694,7 +694,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('a long name is shortened to seven labels after the first query', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       await check(
         withRecord('v=DMARC1; p=none'),
         { from: 'a.b.c.d.e.f.g.h.i.j.k.example.com' },
@@ -715,7 +715,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('B.4.1: walks for the author and for each differing identifier once', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = { ...reject, ...withRecord('v=DMARC1; p=reject', 'signing.example.com') }
       await check(
         zone,
@@ -730,7 +730,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('B.4.2: an identifier walk reuses the names the author walk queried', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = { ...reject, ...withRecord('v=DMARC1; p=reject', 'signing.example.com') }
       await check(
         zone,
@@ -750,7 +750,7 @@ describe('rfc9989-compliance-test.js', () => {
         ['a.b.c.d.e.f.example.com', '_dmarc.b.c.d.e.f.example.com'],
         ['x.a.b.c.d.e.f.example.com', '_dmarc.b.c.d.e.f.example.com'],
       ] as const) {
-        const log = new Array<Query>()
+        const log: Query[] = []
         await check({}, { from }, { log })
         expect(dmarcQueries(log)[1]).toBe(second)
         expect(dmarcQueries(log)).toHaveLength(8)
@@ -789,7 +789,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('psd=n on the From domain stops the walk', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = { ...withRecord('v=DMARC1; p=reject; psd=n', 'mail.example.com'), ...reject }
       const result = await check(
         zone,
@@ -812,7 +812,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('identifiers outside the organizational domain are not walked', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(
         reject,
         {
@@ -827,7 +827,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('SPF is walked before DKIM, within the limit of 10 walks', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const dkim = Array.from({ length: 20 }, (_, i) => pass(`s${i}.example.com`))
       const result = await check(
         reject,
@@ -841,7 +841,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('names that cannot exist are not queried', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(reject, { from: `${'a'.repeat(64)}.example.com` }, { log })
       expect(result.policy).toBe('reject')
       expect(dmarcQueries(log)).toEqual(['_dmarc.example.com', '_dmarc.com'])
@@ -937,14 +937,14 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('np does not apply to the organizational domain, which is not queried', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(np, { from: 'example.com' }, { log })
       expect(result).toMatchObject({ policy: 'reject', record: { np: 'quarantine' } })
       expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([])
     })
 
     test('no existence query without np', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=DMARC1; p=reject; sp=none')
       expect((await check(zone, { from: 'sub.example.com' }, { log })).policy).toBe('none')
       expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([])
@@ -967,7 +967,7 @@ describe('rfc9989-compliance-test.js', () => {
     })
 
     test('a name that cannot exist does not exist, without a query', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(np, { from: `${'a'.repeat(64)}.example.com` }, { log })
       expect(result.policy).toBe('quarantine')
       expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([])
@@ -1002,7 +1002,7 @@ describe('rfc9989-compliance-test.js', () => {
 
   describe('#4 psd and public suffix domains', () => {
     test('B.4.3: psd=y stops the walk, and the organizational domain is one label below', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = {
         ...withRecord('v=DMARC1; p=reject; psd=y; rua=mailto:psd@bank.example', 'bank.example'),
         ...withRecord('v=DMARC1; p=quarantine', 'giant.bank.example'),
@@ -1224,7 +1224,7 @@ describe('author-domain-test.js and from-header-test.js', () => {
       ['café.example', 'xn--caf-dma.example'],
     ]
     for (const [from, domain] of cases) {
-      const log = new Array<Query>()
+      const log: Query[] = []
       expect((await check({}, { from: from! }, { log })).domain).toBe(domain)
       expect(log[0]).toBe(`TXT _dmarc.${domain}`)
     }
@@ -1253,7 +1253,7 @@ describe('author-domain-test.js and from-header-test.js', () => {
   test('rejects a domain with a control, format or space character, without a query', async () => {
     const chars = [0x200b, 0xad, 0x2060, 0x200e, 0x202e, 0, 0x1b, 0x7f, 0x85, 0x20, 0x3000]
     for (const char of chars.map((code) => String.fromCharCode(code))) {
-      const log = new Array<Query>()
+      const log: Query[] = []
       expect((await check(reject, { from: `bank${char}.example` }, { log })).result).toBe(
         'permerror',
       )
@@ -1345,7 +1345,7 @@ describe('organizationalDomain option', () => {
   const list = (domain: string) => domain.split('.').slice(-2).join('.')
 
   test('uses the function instead of the tree walk', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const zone = withRecord('v=DMARC1; p=reject', 'mail.example.com')
     const result = await check(
       zone,
@@ -1360,7 +1360,7 @@ describe('organizationalDomain option', () => {
   })
 
   test('falls back to the record of the organizational domain only', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const zone = withRecord('v=DMARC1; p=reject; sp=quarantine')
     const result = await check(
       zone,
@@ -1372,7 +1372,7 @@ describe('organizationalDomain option', () => {
   })
 
   test('a missing result makes the domain its own organizational domain', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const result = await check({}, { from: 'com' }, { log, organizationalDomain: () => null })
     expect(result.result).toBe('none')
     expect(dmarcQueries(log)).toEqual(['_dmarc.com'])
@@ -1381,7 +1381,7 @@ describe('organizationalDomain option', () => {
 
 describe('known upstream issues', () => {
   test('no tree walk above the From domain when every identifier is identical to it', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const result = await check(
       reject,
       { from: 'example.com', spf: pass('example.com'), dkim: [pass('example.com')] },
@@ -1392,7 +1392,7 @@ describe('known upstream issues', () => {
   })
 
   test('no existence query when np is the policy that applies anyway', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const zone = withRecord('v=DMARC1; p=none; sp=reject; np=reject')
     expect((await check(zone, { from: 'sub.example.com' }, { log })).policy).toBe('reject')
     expect(log.filter((query) => !query.startsWith('TXT'))).toEqual([])

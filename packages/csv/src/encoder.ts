@@ -78,7 +78,7 @@ export function createEncoder(options: encode.Options): Encoder {
       const prefix = started ? '' : start(row)
       if (isArray(row)) return prefix + line(row)
       if (!columns) throw new InvalidInputError('Rows must all be arrays or all be objects.')
-      const fields = new Array<encode.Value>()
+      const fields: encode.Value[] = []
       for (const name of columns) fields.push(Object.hasOwn(row, name) ? row[name] : undefined)
       return prefix + line(fields)
     },

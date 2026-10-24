@@ -275,7 +275,7 @@ export function readMeta(
   let exifItem = -1
   let idat = 0
   const locations = new Map<number, { start: number; end: number; idat: boolean }>()
-  const properties = new Array<Box>()
+  const properties: Box[] = []
   const associations = new Map<number, number[]>()
   for (const box of boxes(bytes, start, end)) {
     const version = bytes[box.start]
@@ -370,7 +370,7 @@ function readAssociations(bytes: Uint8Array, box: Box, associations: Map<number,
     const id = version < 1 ? u16be(bytes, at) : u32be(bytes, at)
     at += version < 1 ? 2 : 4
     const n = bytes[at++]!
-    const indices = new Array<number>()
+    const indices: number[] = []
     for (let i = 0; i < n && at < box.end; i++) {
       indices.push(wide ? u16be(bytes, at) & 0x7fff : bytes[at]! & 0x7f)
       at += wide ? 2 : 1

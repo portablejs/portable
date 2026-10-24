@@ -38,7 +38,7 @@ export declare namespace strip {
  * ```
  */
 export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
-  const parts = new Array<Uint8Array>()
+  const parts: Uint8Array[] = []
   const stripper = new Stripper(options, (part) => parts.push(part))
   stripper.push(bytes)
   stripper.close()

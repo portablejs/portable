@@ -10,7 +10,7 @@ const url = 'https://example.com/events'
 
 async function take(stream: ReadableStream<Sse.Event>, count: number): Promise<Sse.Event[]> {
   const reader = stream.getReader()
-  const events = new Array<Sse.Event>()
+  const events: Sse.Event[] = []
   while (events.length < count) {
     const { done, value } = await reader.read()
     if (done) break
@@ -298,7 +298,7 @@ describe('delay', () => {
       { chunks: ['data: b\n\n'] },
       { chunks: ['data: c\n\n'] },
     ])
-    const calls = new Array<[number, unknown]>()
+    const calls: [number, unknown][] = []
     const delay = (attempt: number, error?: unknown) => {
       calls.push([attempt, error])
       return 0

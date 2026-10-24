@@ -55,7 +55,7 @@ describe('Spf.check', () => {
     const zone = {
       'mail.example.test': { TXT: ['v=spf1 exists:%{l}.%{o}.allow.example.test -all'] },
     }
-    const log = new Array<Query>()
+    const log: Query[] = []
     const allowed = { 'postmaster.mail.example.test.allow.example.test': { A: ['127.0.0.2'] } }
     for (const sender of ['', undefined]) {
       expect(await check({ ...zone, ...allowed }, { sender }, { log })).toMatchObject({
@@ -300,7 +300,7 @@ describe('spf-verify-test.js', () => {
   })
 
   test('expands %{d} to the included domain in nested includes', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const zone = {
       'sender.test': { TXT: ['v=spf1 include:mid.test ~all'] },
       'mid.test': { TXT: ['v=spf1 include:policy.test ~all'] },
@@ -335,7 +335,7 @@ describe('spf-verify-test.js', () => {
 
 describe('macro-test.js', () => {
   const expansion = async (macro: string, input: Partial<Spf.check.Input> = {}) => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     await check(withRecord(`v=spf1 exists:${macro}.x.test -all`), input, { log })
     return log[1]?.replace(/^A /, '').replace(/\.x\.test$/, '')
   }
@@ -364,7 +364,7 @@ describe('macro-test.js', () => {
       ['%{d2}.trusted-domains.example.net', 'example.com.trusted-domains.example.net'],
     ] satisfies [string, string][]
     for (const [macro, expected] of cases) {
-      const log = new Array<Query>()
+      const log: Query[] = []
       await check(
         { 'email.example.com': { TXT: [`v=spf1 exists:${macro}.x.test -all`] } },
         { sender, ip: '192.0.2.3' },
@@ -375,7 +375,7 @@ describe('macro-test.js', () => {
   })
 
   test('renders %{i} of an IPv6 client as nibbles', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     await check(
       { 'email.example.com': { TXT: ['v=spf1 exists:%{ir}.%{v}._spf.%{d2} -all'] } },
       { sender, ip: '2001:db8::cb01' },
@@ -387,7 +387,7 @@ describe('macro-test.js', () => {
   })
 
   test('expands %{d} to the domain being evaluated and %{o} to the sender domain', async () => {
-    const log = new Array<Query>()
+    const log: Query[] = []
     const zone = {
       'email.example.com': { TXT: ['v=spf1 include:included.example.net -all'] },
       'included.example.net': {
@@ -421,7 +421,7 @@ describe('macro-test.js', () => {
 
   test('reads every digit of the transformer', async () => {
     const digits = async (macro: string, domain: string) => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       await check(
         { [domain]: { TXT: [`v=spf1 exists:${macro}.x.test -all`] } },
         { sender: `a@${domain}` },
@@ -698,7 +698,7 @@ describe('rfc-compliance-test.js', () => {
         '1.2.0.192.in-addr.arpa': { PTR: ptrNames },
         ...Object.fromEntries(ptrNames.map((name) => [name, { A: ['198.51.100.9'] }])),
       } satisfies Zone
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(zone, { sender: 'user@attacker.test' }, { log })
       expect(result).toMatchObject({ result: 'permerror', lookups: 11 })
       expect(log.length).toBeLessThanOrEqual(1 + 1 + 10)
@@ -746,13 +746,13 @@ describe('rfc-compliance-test.js', () => {
         'partner.test.trusted.example.test': { A: ['127.0.0.2'] },
         'unknown.trusted.example.test': { AAAA: ['2001:db8::1'] },
       } satisfies Zone
-      const log = new Array<Query>()
+      const log: Query[] = []
       expect(await resultOf(zone, { sender: 'user@partner.test' }, { log })).toBe('fail')
       expect(log).toContain('A unknown.trusted.example.test')
     })
 
     test('expands to a validated name, preferring a subdomain of <domain>', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=spf1 exists:%{p}.allow.example.test -all', {
         '1.2.0.192.in-addr.arpa': { PTR: ['mx.other.test', 'mx.example.test'] },
         'mx.other.test': { A: ['192.0.2.1'] },
@@ -832,7 +832,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('ignores redirect when the record has an all term', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=spf1 ?all redirect=_spf.example.test', {
         '_spf.example.test': { TXT: ['v=spf1 -all'] },
       })
@@ -893,7 +893,7 @@ describe('rfc-compliance-test.js', () => {
     const zone = withRecord('v=spf1 exists:%{o}.%{h}.allow.example.test -all')
 
     test('evaluates a MAIL FROM domain with a trailing dot', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(
         zone,
         { sender: 'user@example.test.', helo: 'mail.example.test.' },
@@ -907,7 +907,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('evaluates a HELO name with a trailing dot for a null sender', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const result = await check(zone, { sender: '', helo: 'example.test.' }, { log })
       expect(result).toMatchObject({ result: 'fail', domain: 'example.test', identity: 'helo' })
       expect(log).toEqual(['TXT example.test', 'A example.test.example.test.allow.example.test'])
@@ -915,7 +915,7 @@ describe('rfc-compliance-test.js', () => {
 
     for (const sender of ['user@example.test..', 'user@example..test', 'user@.']) {
       test(`gives none without a lookup for "${sender}"`, async () => {
-        const log = new Array<Query>()
+        const log: Query[] = []
         expect(await resultOf(zone, { sender }, { log })).toBe('none')
         expect(log).toEqual([])
       })
@@ -944,7 +944,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Internationalized sender (RFC 8616 4)', () => {
     test('converts a U-label MAIL FROM domain to A-labels', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = { 'xn--bcher-kva.example': { TXT: ['v=spf1 ip4:192.0.2.1 -all'] } }
       const result = await check(zone, { sender: 'user@bücher.example' }, { log })
       expect(result).toMatchObject({ result: 'pass', domain: 'xn--bcher-kva.example' })
@@ -975,7 +975,7 @@ describe('rfc-compliance-test.js', () => {
   describe('Long names (RFC 7208 7.3)', () => {
     test('truncates names over 253 characters from the left', async () => {
       const local = Array.from({ length: 5 }, (_, i) => String(i).repeat(60)).join('.')
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=spf1 exists:%{l}._spf.example.test -all')
       expect(await resultOf(zone, { sender: `${local}@example.test` }, { log })).toBe('fail')
       expect(log[1]).toBe(
@@ -986,7 +986,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Invalid names after macro expansion (RFC 7208 4.8)', () => {
     test('does not query a name with a label over 63 characters', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=spf1 exists:%{l}.users.example.test -all')
       expect(await resultOf(zone, { sender: `${'a'.repeat(64)}@example.test` }, { log })).toBe(
         'fail',
@@ -1024,7 +1024,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('queries the escaped name', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=spf1 exists:%{L}.users.example.test -all', {
         'foo%2bbar.users.example.test': { A: ['127.0.0.2'] },
       })
@@ -1035,7 +1035,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Quoted local-part with "@" (RFC 5321 4.1.2)', () => {
     test('splits the sender at the last "@"', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord('v=spf1 exists:%{o}.chk.example.test -all', {
         'example.test.chk.example.test': { A: ['127.0.0.2'] },
       })
@@ -1162,7 +1162,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('sends a repeated query once but counts it every time', async () => {
-      const log = new Array<Query>()
+      const log: Query[] = []
       const zone = withRecord(
         'v=spf1 a:gone.example.test a:gone.example.test a:gone.example.test -all',
         {

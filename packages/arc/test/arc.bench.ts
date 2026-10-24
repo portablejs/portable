@@ -20,7 +20,7 @@ const body = text.slice(head.length)
 const large = encode(head + body.repeat(Math.ceil(250_000 / body.length)))
 
 const chunked = (bytes: Uint8Array): Uint8Array[] => {
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length; i += 65536) chunks.push(bytes.subarray(i, i + 65536))
   return chunks
 }

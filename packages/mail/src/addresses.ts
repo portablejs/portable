@@ -50,7 +50,7 @@ export function parse(input: Addresses): Entry[] {
   const items = (
     typeof input === 'string' || 'address' in input ? [input] : input
   ) satisfies readonly (string | Mailbox)[]
-  const entries = new Array<Entry>()
+  const entries: Entry[] = []
   for (const item of items) {
     if (typeof item === 'string') {
       for (const entry of MimeHeaders.parseAddresses(item))

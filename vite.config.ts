@@ -136,6 +136,7 @@ export default defineConfig({
       'import/no-duplicates': 'error',
       'import/no-default-export': 'error',
       'typescript/consistent-type-definitions': ['error', 'type'],
+      'typescript/array-type': ['error', { default: 'array' }],
       'typescript/no-unnecessary-type-assertion': 'error',
       'unicorn/no-abusive-eslint-disable': 'error',
       'jsdoc/check-tag-names': 'error',

@@ -21,7 +21,7 @@ export type TestServer = {
  * these defaults.
  */
 export function startServer(options: Options = {}): Promise<TestServer> {
-  const received = new Array<Received>()
+  const received: Received[] = []
   const server = new SMTPServer({
     logger: false,
     disabledCommands: ['STARTTLS'],
@@ -45,7 +45,7 @@ export function startServer(options: Options = {}): Promise<TestServer> {
       done()
     },
     onData(stream, session, done) {
-      const chunks = new Array<Uint8Array>()
+      const chunks: Uint8Array[] = []
       stream.on('data', (chunk: Uint8Array) => chunks.push(chunk))
       stream.on('end', () => {
         const data = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0))

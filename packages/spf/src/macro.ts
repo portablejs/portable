@@ -21,7 +21,7 @@ const letters = 'slodiphvcrt'
 const unreserved = /[A-Za-z\d\-._~]/
 
 export function parseMacroString(text: string, inExplanation: boolean): Token[] {
-  const tokens = new Array<Token>()
+  const tokens: Token[] = []
   let literal = ''
   const flush = () => {
     if (literal) tokens.push({ kind: 'literal', text: literal, escape: false })

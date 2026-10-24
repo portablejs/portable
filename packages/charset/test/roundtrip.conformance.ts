@@ -50,7 +50,7 @@ const escape = (text: string) =>
   Array.from(text, (char) => `U+${char.codePointAt(0)!.toString(16)}`).join(' ')
 
 function allCodePoints(name: string): string {
-  const units = new Array<number>()
+  const units: number[] = []
   const end = astral.has(name) ? 0x10ffff : 0xffff
   for (let codePoint = 0; codePoint <= end; codePoint++) {
     if (codePoint >= 0xd800 && codePoint <= 0xdfff) continue

@@ -22,7 +22,7 @@ export async function settle<value>(
 }
 
 export async function retryDelays(options: Timers.retry.Options): Promise<number[]> {
-  const times = new Array<number>()
+  const times: number[] = []
   await settle(
     Timers.retry(() => {
       times.push(Date.now())

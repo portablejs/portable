@@ -122,7 +122,7 @@ export async function read(
   reader: ReadableStreamDefaultReader<WebSockets.Message>,
   count = 1,
 ): Promise<WebSockets.Message[]> {
-  const messages = new Array<WebSockets.Message>()
+  const messages: WebSockets.Message[] = []
   while (messages.length < count) {
     const { done, value } = await reader.read()
     if (done) break

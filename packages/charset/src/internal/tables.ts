@@ -6,7 +6,7 @@ function digit(code: number): number {
 
 /** Decodes the base64url varints written by `packInts` in scripts/generate.ts. */
 export function unpackInts(text: string): number[] {
-  const values = new Array<number>()
+  const values: number[] = []
   for (let i = 0; i < text.length;) {
     let value = 0
     let scale = 1

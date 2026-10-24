@@ -80,7 +80,7 @@ describe('unmappable characters', () => {
   })
 
   test('are replaced with the text a function returns', () => {
-    const seen = new Array<number>()
+    const seen: number[] = []
     const bytes = Charset.encode('a日本b', windows1251, {
       unmappable: (codePoint) => {
         seen.push(codePoint)

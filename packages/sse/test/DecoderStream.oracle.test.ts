@@ -7,7 +7,7 @@ import { decodeChunks, randomChunks, seededRandom, utf8 } from './utils.js'
 // eventsource-parser reports `event: undefined` for the default type and an `id` only on the
 // block that set it. These callbacks turn its output into `MessageEvent` terms for comparison.
 function viaEventsourceParser(chunks: readonly Uint8Array[]): Sse.Event[] {
-  const events = new Array<Sse.Event>()
+  const events: Sse.Event[] = []
   let id: string | undefined
   let retry: number | undefined
   const parser = createParser({
@@ -47,7 +47,7 @@ function randomStream(seed: number): string {
     '0042',
     '12x',
   ]
-  const lines = new Array<string>()
+  const lines: string[] = []
   if (random() < 0.3) lines.push(String.fromCharCode(0xfeff))
   for (let i = 0; i < 200; i++) {
     const roll = random()

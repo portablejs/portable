@@ -15,7 +15,7 @@ export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chun
 
 export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks = new Array<chunk>()
+  const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -63,7 +63,7 @@ export function random(seed: number): () => number {
 /** Splits text into chunks of 1 to 16 code units, which can split surrogate pairs. */
 export function randomChunks(text: string, seed: number): string[] {
   const next = random(seed)
-  const chunks = new Array<string>()
+  const chunks: string[] = []
   for (let i = 0; i < text.length;) {
     const size = 1 + Math.floor(next() * 16)
     chunks.push(text.slice(i, i + size))

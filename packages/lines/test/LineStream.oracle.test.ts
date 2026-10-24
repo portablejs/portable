@@ -5,7 +5,7 @@ import rfc from './fixtures/rfc.txt?raw'
 import { encode, split } from './utils.js'
 
 async function viaSplit2(chunks: readonly Uint8Array[], ...args: unknown[]): Promise<string[]> {
-  const lines = new Array<string>()
+  const lines: string[] = []
   for await (const line of Readable.from(chunks).pipe(split2(...(args as [])))) lines.push(line)
   return lines
 }
@@ -16,7 +16,7 @@ function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
     state = (state * 1103515245 + 12345) % 2 ** 31
     return state / 2 ** 31
   }
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * 64)
     chunks.push(bytes.subarray(i, i + size))

@@ -221,7 +221,7 @@ describe('writes while disconnected', () => {
 
 describe('open', () => {
   test('runs on every connection before queued writes are sent', async () => {
-    const order = new Array<string>()
+    const order: string[] = []
     const { server, writable } = setup({
       open({ send }) {
         order.push('open')
@@ -363,7 +363,7 @@ describe('reconnecting', () => {
   })
 
   test('reconnectIf decides which closes are final', async () => {
-    const seen = new Array<number>()
+    const seen: number[] = []
     const { server, readable } = setup({
       reconnectIf: ({ code }) => {
         seen.push(code)
@@ -405,7 +405,7 @@ describe('reconnecting', () => {
   })
 
   test('passes the failure count and error to a delay function', async () => {
-    const calls = new Array<[number, unknown]>()
+    const calls: [number, unknown][] = []
     const { server } = setup({
       delay: (attempt, error) => {
         calls.push([attempt, error])

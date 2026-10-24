@@ -14,7 +14,7 @@ export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chun
 
 export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks = new Array<chunk>()
+  const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -62,7 +62,7 @@ export const decodeText = (input: string | Uint8Array): string => text(decode(in
 /** Splits bytes into chunks of the given sizes, repeating the last size until the input ends. */
 export function split(bytes: Uint8Array, sizes: number | readonly number[]): Uint8Array[] {
   const list = typeof sizes === 'number' ? [sizes] : sizes
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let pos = 0, i = 0; pos < bytes.length; i++) {
     const size = list[Math.min(i, list.length - 1)]!
     chunks.push(bytes.subarray(pos, pos + size))

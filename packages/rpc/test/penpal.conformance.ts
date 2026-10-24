@@ -32,7 +32,7 @@ function closer() {
 
 /** Collects what arrives on `port` within a few turns of the event loop. */
 async function received(port: MessagePort, send: () => void): Promise<unknown[]> {
-  const messages = new Array<unknown>()
+  const messages: unknown[] = []
   const listener = (event: MessageEvent) => void messages.push(event.data)
   port.addEventListener('message', listener)
   port.start()
@@ -225,8 +225,8 @@ describe('serving methods', () => {
 
   test('removes its message listener from the port when its signal aborts', () => {
     const { port1 } = channel()
-    const added = new Array<unknown>()
-    const removed = new Array<unknown>()
+    const added: unknown[] = []
+    const removed: unknown[] = []
     const target = {
       postMessage: (message) => port1.postMessage(message),
       addEventListener(type, listener) {

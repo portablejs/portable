@@ -203,7 +203,7 @@ function splitUtf8(
   encoding: WordEncoding,
   fits: (length: number) => boolean,
 ): Uint8Array[] {
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   let start = 0
   let length = 0
   for (let i = 0; i < bytes.length;) {
@@ -230,7 +230,7 @@ function splitCharset(
 ): Uint8Array[] {
   const characters = Array.from(text)
   const size = (bytes: Uint8Array) => (encoding === 'B' ? bytes.length : qLengthOf(bytes))
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   let start = 0
   let current = charset.encode('')
   for (let i = 0; i < characters.length; i++) {

@@ -41,7 +41,7 @@ const isUtf8 = (bytes: Uint8Array) => {
 function modelDecode(input: Uint8Array): Uint8Array {
   const isWhitespace = (c: number | undefined) => c === 0x20 || c === 0x09
   const isBreak = (c: number | undefined) => c === undefined || c === 0x0a || c === 0x0d
-  const stripped = new Array<number>()
+  const stripped: number[] = []
   for (let i = 0; i < input.length; i++) {
     if (isWhitespace(input[i])) {
       let end = i
@@ -52,7 +52,7 @@ function modelDecode(input: Uint8Array): Uint8Array {
     }
     stripped.push(input[i]!)
   }
-  const joined = new Array<number>()
+  const joined: number[] = []
   for (let i = 0; i < stripped.length; i++) {
     if (stripped[i] === 0x3d) {
       if (i === stripped.length - 1) continue
@@ -69,7 +69,7 @@ function modelDecode(input: Uint8Array): Uint8Array {
   }
   const isHex = (c: number | undefined) =>
     c !== undefined && /^[0-9a-fA-F]$/.test(String.fromCharCode(c))
-  const output = new Array<number>()
+  const output: number[] = []
   for (let i = 0; i < joined.length; i++) {
     if (joined[i] === 0x3d && isHex(joined[i + 1]) && isHex(joined[i + 2])) {
       output.push(parseInt(String.fromCharCode(joined[i + 1]!, joined[i + 2]!), 16))

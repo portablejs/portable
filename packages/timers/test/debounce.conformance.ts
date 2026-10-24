@@ -8,7 +8,7 @@ type Call = { time: number; args: unknown[]; self: unknown }
 
 function recorder<result = unknown>(result?: (args: unknown[]) => result) {
   const start = Date.now()
-  const calls = new Array<Call>()
+  const calls: Call[] = []
   function fn(this: unknown, ...args: unknown[]) {
     calls.push({ time: Date.now() - start, args, self: this })
     return (result ? result(args) : args[0]) as result
@@ -198,7 +198,7 @@ describe('lodash debounce and throttle', () => {
     test(`${name} supports recursive calls`, async () => {
       const queue = ['a', 'b', 'c'].map((chr) => [{}, chr] as const)
       const expected = queue.slice()
-      const seen = new Array<unknown[]>()
+      const seen: unknown[][] = []
       const funced = make(function (this: unknown, chr: string) {
         seen.push([this, chr])
         const next = queue.shift()
@@ -349,7 +349,7 @@ describe('promises', () => {
   })
 
   test('leading without trailing resolves the burst with the leading result', async () => {
-    const calls = new Array<number>()
+    const calls: number[] = []
     const debounced = Timers.debounce(
       async (value: number) => {
         calls.push(value)

@@ -90,7 +90,7 @@ async function run(
   records: Parameters<typeof resolverFrom>[0],
   options: Partial<Dkim.verify.Options> = {},
 ) {
-  const log = new Array<string>()
+  const log: string[] = []
   const results = await Dkim.verify(encodeBinary(message), {
     resolver: resolverFrom(records, log),
     ...options,
@@ -949,7 +949,7 @@ describe('input', () => {
   test('uses the hasher option for the body hash', async () => {
     let updates = 0
     const hasher = (): Dkim.Hasher => {
-      const chunks = new Array<Uint8Array>()
+      const chunks: Uint8Array[] = []
       return {
         update(data) {
           updates++

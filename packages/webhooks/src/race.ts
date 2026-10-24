@@ -26,7 +26,7 @@ export async function readBody(
   const onAbort = () => reader.cancel(signal.reason).catch(() => {})
   signal.addEventListener('abort', onAbort, { once: true })
   try {
-    const chunks = new Array<Uint8Array>()
+    const chunks: Uint8Array[] = []
     let length = 0
     for (;;) {
       const { done, value } = await reader.read()

@@ -354,7 +354,7 @@ describe('TCP framing matches dns-packet', () => {
         .map(({ hex: text }) => hex(text))
         .map((message) => Uint8Array.from([message.length >> 8, message.length & 0xff, ...message]))
       const stream = Uint8Array.from(frames.flatMap((frame) => [...frame]))
-      const ours = new Array<unknown>()
+      const ours: unknown[] = []
       let buffered = new Uint8Array(0)
       for (let i = 0; i < stream.length;) {
         const size = 1 + Math.floor(next() * 200)

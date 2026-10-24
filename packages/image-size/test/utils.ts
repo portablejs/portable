@@ -18,7 +18,7 @@ export async function fixture(path: string): Promise<Uint8Array> {
 }
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }
@@ -29,7 +29,7 @@ export function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
     state = (state * 1103515245 + 12345) % 2 ** 31
     return state / 2 ** 31
   }
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * 256)
     chunks.push(bytes.subarray(i, i + size))

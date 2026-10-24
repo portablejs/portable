@@ -196,7 +196,7 @@ const txt = {
     for (const item of data) putString(w, item)
   },
   read(r, end) {
-    const strings = new Array<Uint8Array>()
+    const strings: Uint8Array[] = []
     while (r.offset < end) strings.push(bytes(r, u8(r, end), end))
     return strings
   },
@@ -392,7 +392,7 @@ function putTypeBitmap(w: Writer, list: readonly RecordType[]): void {
 }
 
 function readTypeBitmap(r: Reader, end: number): RecordType[] {
-  const list = new Array<RecordType>()
+  const list: RecordType[] = []
   while (r.offset < end) {
     const window = u8(r, end)
     const length = u8(r, end)
@@ -598,7 +598,7 @@ function readOptionBody(r: Reader, code: OptionCode, end: number): EdnsOption {
       return { code, length }
     }
     case 'KEY_TAG': {
-      const tags = new Array<number>()
+      const tags: number[] = []
       while (r.offset < end) tags.push(u16(r, end))
       return { code, tags }
     }

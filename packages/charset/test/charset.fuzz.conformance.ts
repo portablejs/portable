@@ -25,7 +25,7 @@ const names = [
   'UTF-16BE',
   'UTF-16LE',
 ] satisfies readonly Charset.Name[]
-const charsets = new Array<Charset.Charset>()
+const charsets: Charset.Charset[] = []
 beforeAll(async () => {
   for (const name of names) charsets.push(await Charset.load(name))
 })

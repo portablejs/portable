@@ -167,7 +167,7 @@ export function communicationContract(name: string, setup: communicationContract
 
     test("streams an async generator's values", async () => {
       const { remote } = await connect()
-      const values = new Array<number>()
+      const values: number[] = []
       for await (const value of remote.count(3)) values.push(value)
       expect(values).toEqual([0, 1, 2])
     })
@@ -175,14 +175,14 @@ export function communicationContract(name: string, setup: communicationContract
     test('streams a ReadableStream result', async () => {
       const { remote } = await connect()
       const reader = (await remote.numbers(3)).getReader()
-      const values = new Array<number>()
+      const values: number[] = []
       for (let r = await reader.read(); !r.done; r = await reader.read()) values.push(r.value)
       expect(values).toEqual([0, 1, 2])
     })
 
     test("runs the remote generator's finally block when the loop breaks", async () => {
       const { remote } = await connect()
-      const values = new Array<number>()
+      const values: number[] = []
       for await (const value of remote.forever()) {
         values.push(value)
         if (values.length === 2) break

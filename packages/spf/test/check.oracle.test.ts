@@ -148,7 +148,7 @@ test('gives temperror for a SERVFAIL from node:dns, as mailauth does', async () 
   const server = createSocket('udp4')
   server.on('message', (message, remote) => {
     let offset = 12
-    const labels = new Array<string>()
+    const labels: string[] = []
     while (message[offset]) {
       labels.push(message.subarray(offset + 1, offset + 1 + message[offset]!).toString())
       offset += message[offset]! + 1

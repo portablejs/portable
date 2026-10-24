@@ -87,7 +87,7 @@ const lastCodePoint = (name: string) =>
   ['Big5', 'gb18030', 'UTF-8', 'UTF-16LE', 'UTF-16BE'].includes(name) ? 0x10ffff : 0xffff
 
 async function viaIconvStream(chunks: readonly string[], name: string): Promise<Uint8Array> {
-  const parts = new Array<Buffer>()
+  const parts: Buffer[] = []
   for await (const part of Readable.from(chunks, { objectMode: true }).pipe(
     iconv.encodeStream(name),
   )) {
@@ -97,12 +97,12 @@ async function viaIconvStream(chunks: readonly string[], name: string): Promise<
 }
 
 describe.each(Object.entries(iconvNames))('%s matches iconv-lite %s', (name, iconvName) => {
-  const agreed = new Array<number>()
-  const unmappable = new Array<number>()
+  const agreed: number[] = []
+  const unmappable: number[] = []
 
   test('on every code point, apart from the documented differences', async () => {
     const charset = await Charset.load(name)
-    const unexplained = new Array<string>()
+    const unexplained: string[] = []
     const reasons = new Map<string, number>()
     for (let codePoint = 0; codePoint <= lastCodePoint(name); codePoint++) {
       if (codePoint >= 0xd800 && codePoint <= 0xdfff) continue

@@ -226,7 +226,7 @@ describe('digest option', () => {
       })
 
   test('uses a digest passed in', async () => {
-    const calls = new Array<string>()
+    const calls: string[] = []
     const digest = ((algorithm, data) => {
       calls.push(algorithm)
       return nobleDigest(algorithm, data)

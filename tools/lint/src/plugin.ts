@@ -11,7 +11,9 @@ type Rule = Parameters<RuleTester['run']>[1]
  * that TypeScript infers. It allows an annotation when the wider type is the point: `unique
  * symbol`, a type with an index signature such as `Record<string, number>`, whose keys a lookup
  * reads with any string, an object that the code later writes properties to or that refers to
- * itself, and an exported constant, whose annotation is its public type.
+ * itself, and an exported constant, whose annotation is its public type. It also allows one on an
+ * empty collection, such as `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]`
+ * infers `never[]` and the first `push` fails to type-check.
  */
 type Node = { type: string; parent?: Node | null; [key: string]: unknown }
 
@@ -33,6 +35,24 @@ function isWide(type: unknown): boolean {
   if (name['name'] === 'Record') return true
   const [argument] = ((type['typeArguments'] as Node | null)?.['params'] ?? []) as Node[]
   return ['Partial', 'Readonly'].includes(name['name'] as string) && !!argument && isWide(argument)
+}
+
+// `[]`, `new Map()` or `new Set()`, or an array or object literal holding only those.
+function isEmpty(node: unknown): boolean {
+  if (!isNode(node)) return false
+  if (node.type === 'ArrayExpression') return (node['elements'] as unknown[]).every(isEmpty)
+  if (node.type === 'ObjectExpression')
+    return (node['properties'] as Node[]).every(
+      (property) => property.type === 'Property' && isEmpty(property['value']),
+    )
+  if (node.type !== 'NewExpression') return false
+  const callee = node['callee'] as Node
+  return (
+    callee.type === 'Identifier' &&
+    ['Map', 'Set'].includes(callee['name'] as string) &&
+    (node['arguments'] as unknown[]).length === 0 &&
+    node['typeArguments'] == null
+  )
 }
 
 // `name.key = …`, `name[key] = …`, `name.key++` or `delete name.key`.
@@ -61,6 +81,7 @@ const preferSatisfies = {
       if (node.init === null) return
       if (!('typeAnnotation' in node.id) || node.id.typeAnnotation == null) return
       if (isWide(node.id.typeAnnotation.typeAnnotation)) return
+      if (isEmpty(node.init)) return
       // `const view: Type = value` reads an existing value through a wider type.
       if (node.init.type === 'Identifier' || node.init.type === 'MemberExpression') return
       const [variable] = context.sourceCode.getDeclaredVariables(node)

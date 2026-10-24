@@ -69,7 +69,7 @@ function generated(seed: number): string {
   ]
   if (random() < 0.5) fields.push(`DKIM-Signature: v=1; d=example.com; b=${pick(values)}`)
   if (random() < 0.5) fields.push(`Received: from ${pick(values)}`)
-  const lines = new Array<string>()
+  const lines: string[] = []
   const count = Math.floor(random() * 12)
   for (let i = 0; i < count; i++) lines.push(pick(['', ' ', 'text', 'two  spaces', 'tab\t', '.']))
   return binary(

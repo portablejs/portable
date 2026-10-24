@@ -172,7 +172,7 @@ function recordsFor<value extends string>(
   name: string,
   type: value,
 ): DataOf<value>[] {
-  const found = new Array<DataOf<value>>()
+  const found: DataOf<value>[] = []
   let owner = canonical(name)
   for (let hops = 0; hops <= packet.answers.length; hops++) {
     let target: string | undefined

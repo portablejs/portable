@@ -22,7 +22,7 @@ export function pair<api extends object>(
  * message the server wrote within a few turns of the event loop.
  */
 export function raw(api: object, options: Rpc.provide.Options = {}) {
-  const written = new Array<unknown>()
+  const written: unknown[] = []
   let input!: ReadableStreamDefaultController<unknown>
   const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
   const writable = new WritableStream<unknown>({
@@ -48,7 +48,7 @@ export const settle = (): Promise<void> => new Promise((resolve) => setTimeout(r
 /** A `fetch` that answers with `handler`, counting requests. */
 export function fetcher(api: object) {
   const handle = Rpc.handler(api)
-  const requests = new Array<Request>()
+  const requests: Request[] = []
   const fetch = async (request: Request) => {
     requests.push(request.clone())
     return handle(request)

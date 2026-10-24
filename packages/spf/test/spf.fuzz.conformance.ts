@@ -59,7 +59,7 @@ test('check settles with an RFC 7208 result for any record, within the lookup li
       fc.constantFrom('192.0.2.1', '2001:db8::1', '::ffff:192.0.2.9', '10.0.0.1'),
       fc.constantFrom('user@example.test', 'a.b+c@example.test', '', 'example.test', 'x@'),
       async ({ main, other }, ip, sender) => {
-        const log = new Array<Query>()
+        const log: Query[] = []
         const resolver = zoneResolver(
           {
             'example.test': {

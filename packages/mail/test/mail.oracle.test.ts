@@ -65,7 +65,7 @@ function text(next: Next): string {
 }
 
 function chunks(next: Next, bytes: Uint8Array): Uint8Array[] {
-  const result = new Array<Uint8Array>()
+  const result: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(next() * 200)
     result.push(bytes.slice(i, i + size))

@@ -28,7 +28,7 @@ export async function toBytes(
   options: toBytes.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { maxBytes = Infinity, signal } = options
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   let length = 0
   await forEach(
     source,
@@ -68,7 +68,7 @@ export async function toBlob(
   options: toBlob.Options = {},
 ): Promise<Blob> {
   const { maxBytes = Infinity, signal, type = '' } = options
-  const chunks = new Array<BlobPart>()
+  const chunks: BlobPart[] = []
   let length = 0
   await forEach(
     source,
@@ -175,7 +175,7 @@ export async function toArray<value>(
   source: Source<value>,
   options: toArray.Options = {},
 ): Promise<value[]> {
-  const chunks = new Array<value>()
+  const chunks: value[] = []
   await forEach(
     source,
     (chunk) => {

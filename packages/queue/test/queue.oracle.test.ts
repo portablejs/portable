@@ -25,8 +25,8 @@ async function observe(
   schedule: (task: (item: Plan[number]) => Promise<number>) => Promise<unknown>,
 ) {
   const t0 = performance.now()
-  const started = new Array<[number, number]>()
-  const finished = new Array<number>()
+  const started: [number, number][] = []
+  const finished: number[] = []
   let running = 0
   let max = 0
   const task = async (item: Plan[number]) => {
@@ -153,7 +153,7 @@ describe('create matches p-queue', () => {
       resume: () => void,
       task: (item: Plan[number]) => Promise<number>,
     ) => {
-      const results = new Array<Promise<number>>()
+      const results: Promise<number>[] = []
       for (const [i, item] of plan.entries()) {
         results.push(queue.add(() => task(item), { priority: item.priority }))
         if (i === 10) queue.pause()
@@ -183,7 +183,7 @@ describe('create matches p-queue', () => {
       const schedule =
         (queue: { add: (fn: () => Promise<number>) => Promise<number> }) =>
         async (task: (item: Plan[number]) => Promise<number>) => {
-          const results = new Array<Promise<number>>()
+          const results: Promise<number>[] = []
           for (const item of plan) {
             results.push(queue.add(() => task(item)))
             if (item.id % 4 === 0) await new Promise((resolve) => setTimeout(resolve, item.ms))
@@ -212,7 +212,7 @@ describe('rate limit keeps p-throttle strict mode guarantee', () => {
       const schedule =
         (call: (fn: () => Promise<number>) => Promise<number>) =>
         async (task: (item: Plan[number]) => Promise<number>) => {
-          const results = new Array<Promise<number>>()
+          const results: Promise<number>[] = []
           for (const item of plan) {
             results.push(call(() => task(item)))
             if (item.ms < 10) await new Promise((resolve) => setTimeout(resolve, item.ms * 3))

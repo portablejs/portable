@@ -164,7 +164,7 @@ describe('signatures made by nodemailer verify here', () => {
   test('with the same bh= as ours', async () => {
     for (const [name, message] of await corpus()) {
       const signed = await new Promise<Uint8Array>((resolve, reject) => {
-        const chunks = new Array<Buffer>()
+        const chunks: Buffer[] = []
         const output = new DKIM({
           domainName: 'example.com',
           keySelector: 'rsa',

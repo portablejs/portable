@@ -110,7 +110,7 @@ export function create(options: create.Options = {}): Queue {
   let pending = 0
   let paused = false
   let idleWaiters: (() => void)[] = []
-  const starts = new Array<number>()
+  const starts: number[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
   const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>()
 

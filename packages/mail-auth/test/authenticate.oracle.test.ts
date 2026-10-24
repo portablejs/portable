@@ -209,7 +209,7 @@ describe('mailauth and authenticate interoperate', () => {
     const { privateKey, record } = await key('rsa')
     const zone = { 'test._domainkey.example.com': { TXT: [record] } } satisfies Zone
     let message = buildMessage()
-    const results = new Array<string>()
+    const results: string[] = []
     for (let hop = 1; hop <= 4; hop++) {
       if (hop % 2 === 1) {
         const result = await MailAuth.authenticate(message, {

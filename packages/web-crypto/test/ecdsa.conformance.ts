@@ -188,7 +188,7 @@ describe('Wycheproof', () => {
 
   for (const [groups, namedCurve, hash] of suites) {
     test(`${namedCurve} with ${hash}: valid signatures convert and verify, invalid ones throw or fail`, async () => {
-      const wrong = new Array<string>()
+      const wrong: string[] = []
       let checked = 0
       for (const group of groups) {
         const publicKey = await crypto.subtle.importKey(

@@ -41,7 +41,7 @@ export const icns: Format = {
   validate: (input) => startsWith(input, 0, 'icns'),
   calculate(input) {
     const fileLength = u32(input, 4, true)
-    const images = new Array<Image>()
+    const images: Image[] = []
     for (let offset = 8; offset < fileLength;) {
       if (offset >= input.length) throw new NeedMore(offset + 8)
       const length = u32(input, offset + 4, true)

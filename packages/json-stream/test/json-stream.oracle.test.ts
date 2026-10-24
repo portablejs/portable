@@ -8,7 +8,7 @@ import headerFooter from './fixtures/header_footer.json?raw'
 import { encodeText, encodeUtf8, parseValues, randomChunks, streamOf } from './utils.js'
 
 function collect(stream: NodeJS.ReadableStream): Promise<unknown[]> {
-  const values = new Array<unknown>()
+  const values: unknown[] = []
   return new Promise((resolve, reject) => {
     stream.on('data', (value: unknown) => values.push(value))
     stream.on('end', () => resolve(values))

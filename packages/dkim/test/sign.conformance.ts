@@ -111,7 +111,7 @@ describe('the signature field', () => {
   })
 
   test('uses the hasher option for the body hash', async () => {
-    const seen = new Array<Uint8Array>()
+    const seen: Uint8Array[] = []
     const hasher = (): Dkim.Hasher => ({
       update: (data) => seen.push(data.slice()),
       digest: async () => {

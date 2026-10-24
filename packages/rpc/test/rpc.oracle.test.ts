@@ -67,7 +67,7 @@ async function viaUpstream(text: string): Promise<string | undefined> {
 
 /** Serves `api` over a transport that records the exact text each write carries. */
 function wire(served: object) {
-  const written = new Array<string>()
+  const written: string[] = []
   let input!: ReadableStreamDefaultController<unknown>
   const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
   const writable = new WritableStream<unknown>({
@@ -442,7 +442,7 @@ test('random messages and batches match JSONRPCServer, with one-response batches
 
 /** A transport that records what our client writes and lets the test write replies. */
 function capture() {
-  const written = new Array<string>()
+  const written: string[] = []
   let input!: ReadableStreamDefaultController<unknown>
   const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
   const writable = new WritableStream<unknown>({
@@ -463,7 +463,7 @@ function withoutId(text: string): string {
 }
 
 function upstreamClient() {
-  const sent = new Array<string>()
+  const sent: string[] = []
   const client = new JSONRPCClient((payload) => void sent.push(JSON.stringify(payload)))
   return { client, sent }
 }
@@ -519,7 +519,7 @@ describe('client sends the same bytes as JSONRPCClient', () => {
   })
 
   test('a batch over HTTP', async () => {
-    const bodies = new Array<string>()
+    const bodies: string[] = []
     const remote = Rpc.http<Api>('https://rpc.test/', {
       fetch: async (request) => {
         bodies.push(await request.text())
@@ -562,7 +562,7 @@ function toUpstream() {
 
 /** Connects our HTTP client to a JSONRPCServer. */
 function httpToUpstream() {
-  const bodies = new Array<string>()
+  const bodies: string[] = []
   const remote = Rpc.http<Api>('https://rpc.test/', {
     fetch: async (request) => {
       const body = await request.text()
@@ -745,7 +745,7 @@ describe('JSONRPCClient against our server', () => {
 
 function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
   const next = random(seed)
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(next() * 40)
     chunks.push(bytes.subarray(i, i + size))
@@ -782,7 +782,7 @@ describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
           return new Response(body, { headers: response.headers })
         },
       })
-      const items = new Array<unknown>()
+      const items: unknown[] = []
       const counted = (async () => {
         for await (const item of remote.count(25)) items.push(item)
       })()

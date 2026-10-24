@@ -4,9 +4,9 @@ Decisions agents made without the owner's input, with the options they considere
 
 ## `prefer-satisfies` allows annotations that widen on purpose
 
-- **Options:** report every `const name: Type = value`, as loess's rule does, and use `let` or a function with a return type where the inferred type is wrong; report every one and add a disable comment where the annotation is needed; skip the cases where the annotation widens the type on purpose.
+- **Options:** report every `const name: Type = value` and use `let` or a function with a return type where the inferred type is wrong; report every one and add a disable comment where the annotation is needed; skip the cases where the annotation widens the type on purpose.
 - **Trade-offs:** rewriting all 834 annotations left 79 type errors. Most came from a lookup table indexed with a string, an object whose properties are written later, a `JSON.parse` result typed `unknown`, an object whose methods refer to the object itself, and exported constants, whose annotation is the public type. A `let` for a constant that never changes, or a disable comment at each site, is noisier than the annotation. The rule sees only syntax, so it can't tell that an alias such as `Script` has an index signature. In that case the annotation names `Record<string, Handler>` directly.
-- **Chosen:** the rule skips `unknown`, `unique symbol`, `Record` and index-signature types (also inside `Partial` or `Readonly`), objects that the code writes a property of or that refer to themselves, exported constants, and an initializer that is a plain identifier or member access.
+- **Chosen:** the rule skips `unknown`, `unique symbol`, `Record` and index-signature types (also inside `Partial` or `Readonly`), objects that the code writes a property of or that refer to themselves, exported constants, an initializer that is a plain identifier or member access, and an empty collection such as `[]` or `new Map()`. `[] satisfies Uint8Array[]` infers `never[]`, and `new Array<Uint8Array>()`, which the rule first required, read worse than the annotation.
 
 ## Workers runs a smoke check in CI, not the conformance tests
 
@@ -304,7 +304,7 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 
 ## Build `@portable/bytes` instead of pointing to uint8array-extras
 
-Kevin approved this on 2026-10-18 after the niftysim, fast.domains and loess audits. All three apps hand-write hex encoding, concatenation and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
+Approved on 2026-10-18 after an audit of three apps that use Portable. All three hand-write hex encoding, concatenation and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
 
 ## `LineStream` is `Lines.DecoderStream`
 

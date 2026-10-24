@@ -35,7 +35,7 @@ export function randomChunks<value extends string | Uint8Array>(
   maxSize = 16,
 ): value[] {
   const next = random(seed)
-  const chunks = new Array<value>()
+  const chunks: value[] = []
   for (let i = 0; i < input.length;) {
     const size = 1 + Math.floor(next() * maxSize)
     chunks.push(input.slice(i, i + size) as value)
@@ -45,7 +45,7 @@ export function randomChunks<value extends string | Uint8Array>(
 }
 
 export function chunked<value extends string | Uint8Array>(input: value, size: number): value[] {
-  const chunks = new Array<value>()
+  const chunks: value[] = []
   for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as value)
   return chunks
 }

@@ -6,7 +6,7 @@ import { expect, test } from 'vite-plus/test'
 function tasks(delays: readonly number[]) {
   let running = 0
   let most = 0
-  const order = new Array<number>()
+  const order: number[] = []
   const make = (i: number) => async () => {
     running++
     most = Math.max(most, running)
@@ -67,7 +67,7 @@ test('starts queued tasks by priority, first added first among equal priorities'
       async (priorities) => {
         const queue = Queue.create({ concurrency: 1 })
         queue.pause()
-        const started = new Array<number>()
+        const started: number[] = []
         const done = priorities.map((priority, i) =>
           queue.add(async () => started.push(i), { priority }),
         )

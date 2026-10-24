@@ -21,7 +21,7 @@ function counting(options: { onCancel?: (reason: unknown) => void } = {}) {
 }
 
 function drain<chunk>(stream: ReadableStream<chunk>): chunk[] {
-  const received = new Array<chunk>()
+  const received: chunk[] = []
   const reader = stream.getReader()
   void (async () => {
     for (;;) {
@@ -83,7 +83,7 @@ describe('tee', () => {
   })
 
   test('cancelling every branch cancels the source with the last reason', async () => {
-    const reasons = new Array<unknown>()
+    const reasons: unknown[] = []
     const source = counting({ onCancel: (reason) => reasons.push(reason) })
     const [a, b, c] = tee(source.stream, 3)
     const reader = a!.getReader()

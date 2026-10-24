@@ -15,7 +15,7 @@ function random(seed: number) {
 
 function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
   const next = random(seed)
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(next() * 64)
     chunks.push(bytes.slice(i, i + size))

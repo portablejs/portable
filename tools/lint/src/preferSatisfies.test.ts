@@ -24,9 +24,13 @@ new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } }).run(
       'const native: { from?: From } = ReadableStream',
       'export const json: Codec = { encode, decode }',
       'const mock: Mock = { calls: [], call: () => mock.calls.length }',
+      'const chunks: Uint8Array[] = []',
+      'const segments: string[][] = [[]]',
+      'const index: Index = { names: new Map(), ranges: [] }',
     ],
     invalid: [
       { code: 'const count: number = 1', errors: [{ messageId: 'preferSatisfies' }] },
+      { code: 'const chunks: Uint8Array[] = [a]', errors: [{ messageId: 'preferSatisfies' }] },
       {
         code: "const parsed: Parsed = JSON.parse('1')",
         errors: [{ messageId: 'preferSatisfies' }],

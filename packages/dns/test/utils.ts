@@ -42,7 +42,7 @@ export function doh(server: Server): {
   fetch: (request: Request) => Promise<Response>
   requests: Request[]
 } {
-  const requests = new Array<Request>()
+  const requests: Request[] = []
   async function fetch(request: Request): Promise<Response> {
     requests.push(request)
     const query = decodeQuery(request)

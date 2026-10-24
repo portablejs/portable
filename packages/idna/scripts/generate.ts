@@ -54,7 +54,7 @@ const mappedToString = 3
 const kinds = new Uint8Array(size).fill(disallowed)
 const targets = new Int32Array(size)
 const props = new Int32Array(size)
-const strings = new Array<string>()
+const strings: string[] = []
 const stringIndex = new Map<string, number>()
 
 for (const [field, status, mapping = ''] of await lines('idna/IdnaMappingTable.txt')) {
@@ -101,8 +101,8 @@ function packInts(numbers: readonly number[]): string {
 // next code point after the previous one's target, so its value is the first target's distance
 // from the end of the previous mapped run. A run mapped to a string stores the string index's
 // distance from the one after the previous string index. Both are small, which packs well.
-const lengths = new Array<number>()
-const values = new Array<number>()
+const lengths: number[] = []
+const values: number[] = []
 let previousTarget = 0
 let previousIndex = -1
 for (let start = 0; start < size;) {
@@ -128,7 +128,7 @@ for (let start = 0; start < size;) {
 
 // Runs of validation properties, as pairs of (length - 1, properties). Only valid code points
 // are ever looked up, so the others join whichever run they sit in.
-const propertyRuns = new Array<number>()
+const propertyRuns: number[] = []
 let current = -1
 let length = 0
 for (let cp = 0; cp < size; cp++) {
@@ -142,7 +142,7 @@ for (let cp = 0; cp < size; cp++) {
 propertyRuns.push(length - 1, current)
 
 // Each string as its length, then its code points as zigzag deltas from the previous code point.
-const packedStrings = new Array<number>()
+const packedStrings: number[] = []
 let previous = 0
 for (const text of strings) {
   const codePoints = Array.from(text, (char) => char.codePointAt(0)!)

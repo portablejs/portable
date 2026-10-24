@@ -52,7 +52,7 @@ function randomRows(seed: number, count: number, width: number, from = pieces): 
 }
 
 async function viaCsvParse(chunks: readonly Uint8Array[], delimiter = ','): Promise<string[][]> {
-  const rows = new Array<string[]>()
+  const rows: string[][] = []
   const parser = Readable.from(chunks).pipe(
     parseStream({ bom: true, delimiter, relax_quotes: true, skip_empty_lines: true }),
   )

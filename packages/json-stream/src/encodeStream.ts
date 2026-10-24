@@ -78,7 +78,7 @@ export function encodeStream(
         : ''
   const colon = gap ? ': ' : ':'
 
-  const stack = new Array<Frame>()
+  const stack: Frame[] = []
   const quoted = new Map<string, string>()
   const quote = (key: string): string => {
     let json = quoted.get(key)

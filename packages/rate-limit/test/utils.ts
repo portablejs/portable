@@ -23,7 +23,7 @@ export async function takeMany(
   count: number,
   options?: RateLimit.Limiter.TakeOptions,
 ): Promise<boolean[]> {
-  const allowed = new Array<boolean>()
+  const allowed: boolean[] = []
   for (let i = 0; i < count; i++) allowed.push((await limiter.take(key, options)).allowed)
   return allowed
 }

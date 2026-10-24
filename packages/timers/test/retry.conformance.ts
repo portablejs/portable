@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe('attempts', () => {
   test('retries until fn succeeds and resolves with its value', async () => {
-    const seen = new Array<number>()
+    const seen: number[] = []
     const result = await settle(
       Timers.retry(async ({ attempt }) => {
         seen.push(attempt)
@@ -164,7 +164,7 @@ describe('retryIf', () => {
   })
 
   test('receives each error and the number of the attempt that threw it', async () => {
-    const seen = new Array<unknown[]>()
+    const seen: unknown[][] = []
     await settle(
       Timers.retry(
         ({ attempt }) => {
@@ -199,7 +199,7 @@ describe('retryIf', () => {
   })
 
   test('can be async, and the next attempt waits for it', async () => {
-    const times = new Array<number>()
+    const times: number[] = []
     await settle(
       Timers.retry(
         () => {
@@ -335,7 +335,7 @@ describe('delay', () => {
   })
 
   test('a function receives the attempt and the error, and returns the wait', async () => {
-    const seen = new Array<unknown[]>()
+    const seen: unknown[][] = []
     const delays = await retryDelays({
       attempts: 4,
       delay: (attempt, error) => {
@@ -357,7 +357,7 @@ describe('delay', () => {
         super(`HTTP ${response.status}`)
       }
     }
-    const times = new Array<number>()
+    const times: number[] = []
     const result = await settle(
       Timers.retry(
         ({ attempt }) => {
@@ -408,7 +408,7 @@ describe('delay', () => {
 
 describe('timeout', () => {
   test('aborts the attempt signal with a TimeoutError and retries', async () => {
-    const reasons = new Array<unknown>()
+    const reasons: unknown[] = []
     const result = await settle(
       Timers.retry(
         ({ attempt, signal }) =>
@@ -630,7 +630,7 @@ describe('timers', () => {
 
 describe('onRetry', () => {
   test('receives each error, the attempt that threw it and the wait, only before a retry', async () => {
-    const seen = new Array<unknown[]>()
+    const seen: unknown[][] = []
     const result = await settle(
       Timers.retry(
         ({ attempt }) => {

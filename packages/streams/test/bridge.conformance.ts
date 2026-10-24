@@ -135,7 +135,7 @@ describe('through2: web', () => {
       }
     })
     const reader = fromChunks(['go']).pipeThrough(fanOut).getReader()
-    const out = new Array<number>()
+    const out: number[] = []
     for (;;) {
       const { done, value } = await reader.read()
       if (done) break
@@ -433,7 +433,7 @@ describe('fromIterable', () => {
 
 describe('toAsyncIterable', () => {
   test('iterates a stream', async () => {
-    const chunks = new Array<string>()
+    const chunks: string[] = []
     for await (const chunk of toAsyncIterable(fromChunks(['a', 'b']))) chunks.push(chunk)
     expect(chunks).toEqual(['a', 'b'])
   })
@@ -491,7 +491,7 @@ describe('map, filter, tap, batch', () => {
   })
 
   test('tap sees each chunk and passes it on unchanged', async () => {
-    const seen = new Array<[string, number]>()
+    const seen: [string, number][] = []
     const out = await through(
       ['a', 'b'],
       tap((chunk: string, index) => void seen.push([chunk, index])),
@@ -504,7 +504,7 @@ describe('map, filter, tap, batch', () => {
   })
 
   test('tap waits for an async function', async () => {
-    const order = new Array<string>()
+    const order: string[] = []
     const out = fromChunks(['a']).pipeThrough(
       tap(async () => {
         await delay(5)

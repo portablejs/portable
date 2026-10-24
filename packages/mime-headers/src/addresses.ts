@@ -510,7 +510,7 @@ class Parser {
       gap = false
     }
     if (!found) return ''
-    const run = new Array<Token>()
+    const run: Token[] = []
     for (let i = start; i < end; i++) {
       const token = tokens[i]!
       if (token.kind === 'comment' || token.role === 'skip') continue

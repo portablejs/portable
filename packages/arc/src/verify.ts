@@ -168,7 +168,7 @@ export async function verify(message: Message, options: verify.Options): Promise
     if (cv !== expected)
       return stop(failed(`i=${set.instance} has cv=${cv ?? ''} instead of cv=${expected}`))
   }
-  const seals = new Array<Seal>()
+  const seals: Seal[] = []
   for (const set of sets) {
     const seal = prepareSeal(set)
     if (typeof seal === 'string') return stop(failed(seal))
@@ -205,7 +205,7 @@ export async function verify(message: Message, options: verify.Options): Promise
 
   for (let i = seals.length - 1; i >= 0; i--) {
     const seal = seals[i]!
-    const covered = new Array<Field>()
+    const covered: Field[] = []
     for (const set of sets.slice(0, i)) covered.push(set.results, set.signature, set.seal)
     covered.push(seal.set.results, seal.set.signature)
     const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'))

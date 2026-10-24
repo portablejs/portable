@@ -38,7 +38,7 @@ function indexOfScan(bytes: Uint8Array): number {
  */
 async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
   const reader = stream.getReader()
-  const parts = new Array<Uint8Array>()
+  const parts: Uint8Array[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return concat(...parts)

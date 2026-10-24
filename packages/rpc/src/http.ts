@@ -33,7 +33,7 @@ export function handler(methods: object): (request: Request) => Promise<Response
       return Response.json(error(null, -32700, 'Parse error'))
     }
 
-    const buffered = new Array<Message>()
+    const buffered: Message[] = []
     const streams = new Set<Id>()
     let streamed = false
     let writer: WritableStreamDefaultWriter<unknown> | undefined

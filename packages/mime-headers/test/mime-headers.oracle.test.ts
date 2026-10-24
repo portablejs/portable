@@ -40,7 +40,7 @@ const words = (next: () => number, max: number) =>
 
 describe('encoded words', () => {
   test('libmime decodes what encodeWord encoded, and the reverse', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(1, (next) => {
       const input = randomText(next, 80)
       const encoding = pick(next, ['Q', 'B'] as const)
@@ -55,7 +55,7 @@ describe('encoded words', () => {
   })
 
   test('encodeWord writes what libmime writes without a length limit', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(2, (next) => {
       // libmime writes a trailing space in a Q word as "=20", and this package as "_".
       const input = randomText(next, 80).trimEnd()
@@ -67,7 +67,7 @@ describe('encoded words', () => {
   })
 
   test('libmime decodes what encodeWords encoded, and the reverse', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(3, (next) => {
       const input = words(next, 10)
       const encoding = pick(next, ['Q', 'B'] as const)
@@ -81,7 +81,7 @@ describe('encoded words', () => {
   })
 
   test('decodeWords reads mixed text and words the way libmime does', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(4, (next) => {
       const parts = Array.from({ length: Math.floor(next() * 6) + 1 }, () =>
         next() < 0.5
@@ -97,7 +97,7 @@ describe('encoded words', () => {
 
 describe('folding', () => {
   test('fold breaks lines where libmime.foldLines breaks them', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(5, (next) => {
       // libmime breaks in front of trailing whitespace, which leaves a line of only whitespace.
       // fold never does.
@@ -111,7 +111,7 @@ describe('folding', () => {
   })
 
   test('parseHeaders reads the headers libmime.decodeHeaders reads', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(6, (next) => {
       const headers = Array.from({ length: Math.floor(next() * 5) + 1 }, () => ({
         name: pick(next, ['Subject', 'X-Test', 'Content-Type', 'From']),
@@ -156,7 +156,7 @@ describe('header values', () => {
   }
 
   test('libmime parses what formatValue formatted', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(7, (next) => {
       const input = { value: pick(next, ['attachment', 'text/plain']), params: params(next) }
       const theirs = libmime.parseHeaderValue(formatValue(input))
@@ -167,7 +167,7 @@ describe('header values', () => {
   })
 
   test('parseValue parses what libmime built', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(8, (next) => {
       const input = { value: pick(next, ['attachment', 'text/plain']), params: params(next) }
       const built = libmime.buildHeaderValue(input)
@@ -194,7 +194,7 @@ describe('addresses', () => {
     )
 
   test('parseAddresses reads lists the way addressparser does', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(9, (next) => {
       const input = formatAddresses(list(next))
       const decode = (entry: { name: string; address?: string | undefined }) => ({
@@ -211,7 +211,7 @@ describe('addresses', () => {
   })
 
   test('parseAddresses in strict mode accepts what email-addresses accepts', () => {
-    const failures = new Array<unknown>()
+    const failures: unknown[] = []
     each(10, (next) => {
       const entries = list(next)
       const input = formatAddresses(entries)

@@ -30,7 +30,7 @@ function digit(code: number): number {
 
 /** Decodes the base64url varints written by `packInts` in scripts/generate.ts. */
 function unpackInts(text: string): number[] {
-  const values = new Array<number>()
+  const values: number[] = []
   for (let i = 0; i < text.length;) {
     let value = 0
     let scale = 1
@@ -63,7 +63,7 @@ type Table = {
 let decoded: Table | undefined
 
 function decode(): Table {
-  const strings = new Array<string>()
+  const strings: string[] = []
   const packed = unpackInts(table.strings)
   let previous = 0
   for (let i = 0; i < packed.length;) {
@@ -77,7 +77,7 @@ function decode(): Table {
   }
 
   const properties = unpackInts(table.properties)
-  const propertyStarts = new Array<number>()
+  const propertyStarts: number[] = []
   for (let i = 0, start = 0; i < properties.length; i += 2) {
     propertyStarts.push(start)
     start += properties[i]! + 1
@@ -85,8 +85,8 @@ function decode(): Table {
 
   const lengths = unpackInts(table.lengths)
   const kinds = unpackInts(table.values)
-  const starts = new Array<number>()
-  const values = new Array<number>()
+  const starts: number[] = []
+  const values: number[] = []
   let previousTarget = 0
   let previousIndex = -1
   let p = 0

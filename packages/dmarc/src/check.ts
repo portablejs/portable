@@ -209,7 +209,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     }
   }
 
-  const errors = new Array<TempError>()
+  const errors: TempError[] = []
   let policy = record.p
   if (found.domain !== author.name) {
     policy = record.sp ?? record.p
@@ -265,7 +265,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     input.spf && unaligned.spf
       ? await align(input.spf, unaligned.spf, record.aspf === 's')
       : undefined
-  const dkim = new Array<Alignment>()
+  const dkim: Alignment[] = []
   for (const [index, entry] of (input.dkim ?? []).entries()) {
     dkim.push(await align(entry, unaligned.dkim[index]!, record.adkim === 's'))
   }
@@ -319,7 +319,7 @@ function walk(ctx: Context, domain: string): Promise<Walk> {
   let walked = ctx.walks.get(domain)
   if (!walked) {
     walked = (async () => {
-      const found = new Array<Found>()
+      const found: Found[] = []
       for (let labels = domain.split('.'); labels.length;) {
         const name = labels.join('.')
         let parsed: Parsed | undefined

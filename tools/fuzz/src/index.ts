@@ -163,7 +163,7 @@ export function split<value extends Uint8Array | string>(
   at: readonly number[],
 ): value[] {
   const offsets = at.map((offset) => offset % (data.length + 1)).sort((a, b) => a - b)
-  const chunks = new Array<value>()
+  const chunks: value[] = []
   let start = 0
   for (const offset of offsets) {
     chunks.push(data.slice(start, offset) as value)

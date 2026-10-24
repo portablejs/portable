@@ -160,7 +160,7 @@ function suiteRecords(list: readonly YamlRecord[]): Records {
     type: string,
     read: (value: unknown) => value,
   ): value[] | string | undefined => {
-    const found = new Array<value>()
+    const found: value[] = []
     for (const [itemType, value] of ordered) {
       if (itemType === 'TIMEOUT') return found.length ? found : 'ETIMEOUT'
       if (itemType === type && value !== 'NONE') found.push(read(value))

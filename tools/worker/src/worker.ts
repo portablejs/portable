@@ -29,7 +29,7 @@ export type Response =
     }
   | { type: 'error'; message: string }
 
-const unhandled = new Array<unknown>()
+const unhandled: unknown[] = []
 addEventListener('error', (event) => unhandled.push(event.error ?? event.message))
 addEventListener('unhandledrejection', (event) => unhandled.push(event.reason))
 

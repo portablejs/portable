@@ -30,7 +30,7 @@ export async function encode(
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', signal } = options
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   let length = 0
   await run(
     bytes,

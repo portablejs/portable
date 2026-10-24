@@ -250,7 +250,7 @@ describe('signal', () => {
   })
 
   test('passes the signal to the store', async () => {
-    const signals = new Array<AbortSignal | undefined>()
+    const signals: (AbortSignal | undefined)[] = []
     const memory = RateLimit.memoryStore()
     const store = {
       get: (key, options) => (signals.push(options.signal), memory.get(key, options)),

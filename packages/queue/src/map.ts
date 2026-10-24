@@ -53,7 +53,7 @@ export function map<chunk, result>(
     if (signal?.aborted) return reject(signal.reason)
 
     const results: result[] = []
-    const errors = new Array<{ index: number; error: unknown }>()
+    const errors: { index: number; error: unknown }[] = []
     const controller = new AbortController()
     let iterator: Iterator<chunk> | AsyncIterator<chunk>
     let isAsync: boolean

@@ -242,7 +242,7 @@ function keyword(line: string): string {
 }
 
 function authMethods(extensions: readonly string[]): string[] {
-  const methods = new Array<string>()
+  const methods: string[] = []
   for (const line of extensions) {
     if (keyword(line) !== 'AUTH') continue
     for (const method of line
@@ -539,7 +539,7 @@ function createClient(
       })
     }
 
-    const params = new Array<string>()
+    const params: string[] = []
     if (utf8) params.push('SMTPUTF8')
     if (has('8BITMIME')) params.push('BODY=8BITMIME')
     if (size !== undefined && has('SIZE')) params.push(`SIZE=${size}`)
@@ -570,8 +570,8 @@ function createClient(
       })
     }
 
-    const accepted = new Array<string>()
-    const rejected = new Array<Rejection>()
+    const accepted: string[] = []
+    const rejected: Rejection[] = []
     for (const [i, recipient] of recipients.entries()) {
       if (!pipelining) await session.write(rcptCommands[i]!, 'RCPT TO')
       const reply = await session.read('RCPT TO')
@@ -668,7 +668,7 @@ function createClient(
       return { accepted, rejected, response: reply.response }
     }
 
-    const delivered = new Array<string>()
+    const delivered: string[] = []
     let response = ''
     for (const recipient of accepted) {
       const reply = await session.read('DATA')

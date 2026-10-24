@@ -22,7 +22,7 @@ const replyLike = fc
 /** Reads replies until the input runs out, and returns them with the error that ended the reading. */
 async function readAll(chunks: readonly Uint8Array[]) {
   const reader = createReader(fromIterable(chunks))
-  const replies = new Array<unknown>()
+  const replies: unknown[] = []
   const end = await outcomeAsync([Smtp.CommandError], async () => {
     for (;;) replies.push(await reader.read('NOOP'))
   })

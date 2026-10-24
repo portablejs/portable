@@ -17,7 +17,7 @@ export async function collect<chunk>(
   onChunk?: (count: number) => Promise<void>,
 ): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks = new Array<chunk>()
+  const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -64,7 +64,7 @@ export function chunked<value extends Uint8Array | string>(
   sizes: number | readonly number[],
 ): value[] {
   const list = typeof sizes === 'number' ? [sizes] : sizes
-  const chunks = new Array<value>()
+  const chunks: value[] = []
   for (let pos = 0, i = 0; pos < input.length; i++) {
     const size = list[i % list.length]!
     chunks.push(input.slice(pos, pos + size) as value)
@@ -115,7 +115,7 @@ export function referenceEncode(data: Uint8Array): string {
  * both alphabets are skipped, and every `=` ends a segment that is decoded on its own.
  */
 export function referenceDecode(str: string): Uint8Array {
-  const out = new Array<number>()
+  const out: number[] = []
   for (const segment of str.split('=')) {
     let bits = 0
     let count = 0
@@ -136,7 +136,7 @@ export function referenceDecode(str: string): Uint8Array {
 }
 
 export function referenceWrap(str: string, lineLength: number, lineEnding = '\r\n'): string {
-  const lines = new Array<string>()
+  const lines: string[] = []
   for (let pos = 0; pos < str.length; pos += lineLength)
     lines.push(str.slice(pos, pos + lineLength))
   return lines.join(lineEnding)
@@ -150,7 +150,7 @@ export function encodedLike(seed: number, maxLength = 2000): string {
   const next = random(seed)
   const pick = (options: string | readonly string[]) =>
     options[Math.floor(next() * options.length)]!
-  const parts = new Array<string>()
+  const parts: string[] = []
   const length = Math.floor(next() * maxLength)
   for (let i = 0; i < length; i++) {
     const kind = next() * 13

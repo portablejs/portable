@@ -41,7 +41,7 @@ export const jxlStream: Format = {
 }
 
 function codestream(input: Uint8Array): Uint8Array[] {
-  const parts = new Array<Uint8Array>()
+  const parts: Uint8Array[] = []
   for (let offset = 0; offset + 8 <= input.length;) {
     let size = u32(input, offset, true)
     let header = 8

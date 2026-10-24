@@ -87,7 +87,7 @@ export declare namespace decode {
  * ```
  */
 export function decode(input: Uint8Array | string, options: decode.Options = {}): Event[] {
-  const events = new Array<Event>()
+  const events: Event[] = []
   const parser = createParser((event) => events.push(event), options.maxLength)
   parser.push(input)
   parser.end()

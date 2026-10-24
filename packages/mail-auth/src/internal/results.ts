@@ -148,7 +148,7 @@ function passComment(arc: Arc.Result): string {
 type Resinfo = { method: string; result: string; properties: Map<string, string> }
 
 export function parseResults(value: string): Resinfo[] {
-  const segments = [new Array<string>()]
+  const segments: string[][] = [[]]
   let word = ''
   let depth = 0
   const end = () => {
@@ -179,7 +179,7 @@ export function parseResults(value: string): Resinfo[] {
     } else word += char
   }
   end()
-  const results = new Array<Resinfo>()
+  const results: Resinfo[] = []
   for (const words of segments.slice(1)) {
     const [first, ...rest] = words
     const equals = first?.indexOf('=') ?? -1

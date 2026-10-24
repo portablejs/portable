@@ -31,11 +31,7 @@ function isStrings(value: unknown): value is string[] {
 }
 
 function index({ json, response }: Json, url: string): Index {
-  const result = {
-    names: new Map<string, string>(),
-    ranges: new Array<Range>(),
-    numbers: new Array<NumberRange>(),
-  } satisfies Index
+  const result: Index = { names: new Map(), ranges: [], numbers: [] }
   if (!Array.isArray(json.services))
     throw new ResponseError({ message: `${url} has no services array`, response, url, body: json })
   for (const service of json.services) {

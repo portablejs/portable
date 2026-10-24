@@ -200,7 +200,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }

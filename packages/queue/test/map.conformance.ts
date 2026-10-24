@@ -233,8 +233,8 @@ describe('map', () => {
 
 describe('map errors', () => {
   test('rejects at once with the first error when stopOnError is true', async () => {
-    const started = new Array<number>()
-    const finished = new Array<number>()
+    const started: number[] = []
+    const finished: number[] = []
     const error = new Error('bar')
     const result = Queue.map(
       [0, 1, 2, 3],
@@ -265,7 +265,7 @@ describe('map errors', () => {
 
   test('aborts the signal of calls still running after the first error', async () => {
     const error = new Error('first')
-    const signals = new Array<AbortSignal>()
+    const signals: AbortSignal[] = []
     const result = Queue.map(
       [0, 1, 2],
       async (n, { signal }) => {
@@ -297,7 +297,7 @@ describe('map errors', () => {
   })
 
   test('collects every error in input order into an AggregateError when stopOnError is false', async () => {
-    const mapped = new Array<number>()
+    const mapped: number[] = []
     const error = await Queue.map(
       [0, 1, 2, 3, 4],
       async (n) => {
@@ -336,7 +336,7 @@ describe('map errors', () => {
 
   test('rejects with a source error at the item that throws', async () => {
     const { state, iterable } = trackedGenerator(10, 3)
-    const mapped = new Array<number>()
+    const mapped: number[] = []
     await expect(Queue.map(iterable, (n) => mapped.push(n), { concurrency: 1 })).rejects.toThrow(
       'source failed at 3',
     )
@@ -355,7 +355,7 @@ describe('map errors', () => {
   })
 
   test('rejects with an async source error, also when stopOnError is false', async () => {
-    const mapped = new Array<number>()
+    const mapped: number[] = []
     async function* source() {
       yield 0
       yield 1
@@ -473,7 +473,7 @@ describe('map errors', () => {
 describe('map signal', () => {
   test('rejects with the abort reason and aborts the signal passed to fn', async () => {
     const controller = new AbortController()
-    const signals = new Array<AbortSignal>()
+    const signals: AbortSignal[] = []
     const result = Queue.map(
       [1, 2],
       (_, { signal }) => {

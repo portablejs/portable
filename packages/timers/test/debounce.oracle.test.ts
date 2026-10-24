@@ -36,7 +36,7 @@ type Wrapped = {
 
 async function run(make: (fn: (arg: number) => number) => Wrapped, ops: readonly Op[]) {
   const start = Date.now()
-  const invocations = new Array<[number, number]>()
+  const invocations: [number, number][] = []
   const wrapped = make((arg) => {
     invocations.push([Date.now() - start, arg])
     return arg
@@ -136,7 +136,7 @@ describe('debounce matches p-debounce', () => {
       for (const seed of [1, 2, 3]) {
         const ops = schedule(seed, 50, false)
         const results = async (wrapped: (arg: number) => Promise<number>) => {
-          const values = new Array<Promise<number>>()
+          const values: Promise<number>[] = []
           for (const op of ops) {
             await vi.advanceTimersByTimeAsync(op.gap)
             values.push(wrapped(op.arg))

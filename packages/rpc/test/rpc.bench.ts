@@ -28,7 +28,7 @@ const api = {
 }
 type Api = typeof api
 
-const channels = new Array<MessageChannel>()
+const channels: MessageChannel[] = []
 function channel(): MessageChannel {
   const created = new MessageChannel()
   channels.push(created)

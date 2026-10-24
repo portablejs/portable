@@ -19,8 +19,8 @@ async function viaMailsplit(chunks: readonly Uint8Array[], embedded: boolean): P
   const splitter = new Splitter(
     embedded ? { defaultInlineEmbedded: true } : { ignoreEmbedded: true },
   )
-  const types = new Array<string>()
-  const nodes = new Array<unknown>()
+  const types: string[] = []
+  const nodes: unknown[] = []
   const text = new Map<unknown, string>()
   for await (const data of Readable.from(chunks.map((chunk) => Buffer.from(chunk))).pipe(
     splitter,
@@ -35,7 +35,7 @@ async function viaMailsplit(chunks: readonly Uint8Array[], embedded: boolean): P
 }
 
 async function joinedByMailsplit(chunks: readonly Uint8Array[]): Promise<string> {
-  const parts = new Array<Buffer>()
+  const parts: Buffer[] = []
   for await (const part of Readable.from(chunks.map((chunk) => Buffer.from(chunk)))
     .pipe(new Splitter())
     .pipe(new Joiner()))
@@ -85,7 +85,7 @@ function generate(seed: number): string {
 }
 
 const inputs = async () => {
-  const result = new Array<[string, Uint8Array]>()
+  const result: [string, Uint8Array][] = []
   for (const name of fixtureNames) result.push([name, await fixture(name)])
   for (let seed = 1; seed <= 60; seed++) result.push([`generated ${seed}`, binary(generate(seed))])
   return result

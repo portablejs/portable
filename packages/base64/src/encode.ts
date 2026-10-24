@@ -100,7 +100,7 @@ function tablesFor(alphabet: Alphabet): Tables {
   if (cached) return cached
   const chars = characters[alphabet]
   const pairCodes = new Uint16Array(4096)
-  const pairStrings = new Array<string>()
+  const pairStrings: string[] = []
   for (let i = 0; i < 4096; i++) {
     const first = chars.charCodeAt(i >> 6)
     const second = chars.charCodeAt(i & 63)
@@ -167,7 +167,7 @@ function encodeCodes(
   const size = textLength + breaks * lineEnding.length
   const out = new Uint8Array(size + (size & 1))
   const pairs = new Uint16Array(out.buffer, 0, out.length >> 1)
-  const endingPairs = new Array<number>()
+  const endingPairs: number[] = []
   for (let i = 0; i < lineEnding.length; i += 2)
     endingPairs.push(pair(lineEnding.charCodeAt(i), lineEnding.charCodeAt(i + 1)))
 

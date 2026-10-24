@@ -71,8 +71,8 @@ Every package follows the same shape, so a caller who knows one knows the rest.
 
 These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 
-- `type` over `interface`. `readonly T[]` in types. No enums.
-- Write `const name = value satisfies Type`, not `const name: Type = value`, so the constant keeps the type TypeScript infers. Create an empty array or map with its type argument, as in `new Array<Message>()`. An annotation is still right when the wider type is the point: `unknown`, `unique symbol`, a `Record` or index signature that a lookup reads with any string, an object that the code later writes properties to or that refers to itself, an exported constant, or a value read through a wider view. The `portable/prefer-satisfies` lint rule in `tools/lint` checks this.
+- `type` over `interface`. `readonly T[]` in types, never `Array<T>` or `ReadonlyArray<T>` (`typescript/array-type` checks this). No enums.
+- Write `const name = value satisfies Type`, not `const name: Type = value`, so the constant keeps the type TypeScript infers. An annotation is still right on an empty collection, as in `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]` infers `never[]`, and when the wider type is the point: `unknown`, `unique symbol`, a `Record` or index signature that a lookup reads with any string, an object that the code later writes properties to or that refers to itself, an exported constant, or a value read through a wider view. The `portable/prefer-satisfies` lint rule in `tools/lint` checks this.
 - Name a type parameter with a lowercase word that says what it holds, such as `chunk`, `value` or `key`, not `T` or `Chunk`. The `portable/type-parameter-name` lint rule checks this.
 - Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`DecoderStream.Options`).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`.

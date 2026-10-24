@@ -137,7 +137,7 @@ function readValue(r: Reader, type: number, count: number, at: number): TagValue
   if (type === 2) return readString(r.bytes, r.start + at, r.start + at + count)
   if (type === 7) return r.bytes.subarray(r.start + at, r.start + at + count)
   if (count === 1) return readNumber(r.view, r.le, type, at)
-  const values = new Array<number>()
+  const values: number[] = []
   const size = typeSizes[type]!
   for (let i = 0; i < count; i++) values.push(readNumber(r.view, r.le, type, at + i * size))
   return values

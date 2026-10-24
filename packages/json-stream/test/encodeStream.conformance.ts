@@ -172,7 +172,7 @@ describe('json-stream-stringify', () => {
   test('writes a repeated, non-circular reference each time', async () => {
     const a = { foo: 'bar' }
     expect(await encodeText([a, a])).toBe('[{"foo":"bar"},{"foo":"bar"}]')
-    const array = new Array<unknown>()
+    const array: unknown[] = []
     expect(await encodeText({ a: array, b: array })).toBe('{"a":[],"b":[]}')
   })
 
@@ -257,7 +257,7 @@ describe('stream-json', () => {
   })
 
   test('calls toJSON with the key', async () => {
-    const keys = new Array<string>()
+    const keys: string[] = []
     const value = { toJSON: (key: string) => (keys.push(key), key) }
     expect(await encodeText({ a: value, b: [value] })).toBe('{"a":"a","b":["0"]}')
     expect(keys).toEqual(['a', '0'])
@@ -273,7 +273,7 @@ describe('stream-json', () => {
   })
 
   test('calls the replacer with the holder as this', async () => {
-    const holders = new Array<unknown>()
+    const holders: unknown[] = []
     const value = { a: [1] }
     await encodeText(value, {
       replacer(this: unknown, _key, v) {
@@ -336,7 +336,7 @@ describe('encodeStream', () => {
   })
 
   test('calls a function only when the writer reaches it', async () => {
-    const calls = new Array<string>()
+    const calls: string[] = []
     const first = deferred<string>()
     const reader = encodeStream({
       a: first.promise,
@@ -361,7 +361,7 @@ describe('encodeStream', () => {
   })
 
   test('applies the replacer to resolved values only once', async () => {
-    const seen = new Array<unknown>()
+    const seen: unknown[] = []
     const text = await encodeText(
       { a: Promise.resolve(1) },
       {

@@ -84,7 +84,7 @@ describe('store errors', () => {
 
 describe('what take writes', () => {
   test('a ttl after which the key holds a full allowance', async () => {
-    const writes = new Array<RateLimit.Store.SetOptions>()
+    const writes: RateLimit.Store.SetOptions[] = []
     const memory = RateLimit.memoryStore()
     const store = {
       get: (key, options) => memory.get(key, options),

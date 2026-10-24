@@ -60,8 +60,8 @@ export type Server = {
 
 /** A `fetch` that answers from `routes`, then the bootstrap files and the recorded responses. */
 export function server(routes: Readonly<Record<string, Reply>> = {}): Server {
-  const urls = new Array<string>()
-  const requests = new Array<Request>()
+  const urls: string[] = []
+  const requests: Request[] = []
   async function fetch(input: Request | string, init?: RequestInit): Promise<Response> {
     const request = typeof input === 'string' ? new Request(input, init) : input
     const url = typeof input === 'string' ? input : request.url

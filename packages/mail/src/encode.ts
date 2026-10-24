@@ -280,7 +280,7 @@ function msgId(value: string): string {
 
 /** Removes whitespace inside each `<...>` and splits the rest at whitespace, in linear time. */
 function references(value: string | readonly string[]): string {
-  const ids = new Array<string>()
+  const ids: string[] = []
   for (const entry of typeof value === 'string' ? [value] : value) {
     // oxlint-disable-next-line no-control-regex
     const line = entry.replace(lineBreaks, ' ').replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
@@ -347,7 +347,7 @@ function custom(
   headers: HeaderFields | undefined,
   charset: MimeHeaders.CharsetEncoder | undefined,
 ): string[] {
-  const fields = new Array<string>()
+  const fields: string[] = []
   if (!headers) return fields
   for (const [name, value] of Object.entries(headers)) {
     if (!/^[\x21-\x39\x3b-\x7e]+$/.test(name))
@@ -491,7 +491,7 @@ function multipart(
 }
 
 function tree(message: Message, context: Context): Node {
-  const alternatives = new Array<() => Node>()
+  const alternatives: (() => Node)[] = []
   let html: (() => Node) | undefined
   const nonEmpty = (content: Content | undefined): content is Content =>
     content !== undefined && content !== ''

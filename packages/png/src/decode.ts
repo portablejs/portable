@@ -137,7 +137,7 @@ function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
   let gamma: number | undefined
   let palette: Uint8Array | undefined
   let transparent: number[] | undefined
-  const idat = new Array<Uint8Array>()
+  const idat: Uint8Array[] = []
 
   for (let offset = 8; ;) {
     if (offset + 12 > bytes.length) throw new TruncatedError('Unexpected end of file before IEND.')

@@ -13,7 +13,7 @@ export const fixtures: readonly string[] = Object.keys(files)
   .sort()
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }
@@ -25,7 +25,7 @@ export function randomChunks(bytes: Uint8Array, seed: number, max = 4096): Uint8
     state = (state * 1103515245 + 12345) % 2 ** 31
     return state / 2 ** 31
   }
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * max)
     chunks.push(bytes.subarray(i, i + size))
@@ -89,7 +89,7 @@ export function buildTiff(options: {
 }): Uint8Array {
   const le = options.le ?? false
   const ifd0 = [...options.ifd0]
-  const blocks = new Array<{ entries: Entry[] }>()
+  const blocks: { entries: Entry[] }[] = []
   const exifEntry = options.exif && { tag: 0x8769, type: 4, values: [0] }
   const gpsEntry = options.gps && { tag: 0x8825, type: 4, values: [0] }
   if (exifEntry) ifd0.push(exifEntry)
@@ -107,7 +107,7 @@ export function buildTiff(options: {
     }
     return 2 + entries.length * 12 + 4 + data
   }
-  const offsets = new Array<number>()
+  const offsets: number[] = []
   let at = 8
   for (const block of blocks) {
     offsets.push(at)

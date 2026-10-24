@@ -156,7 +156,7 @@ type AnyCodec = Codec<unknown, unknown>
 const codecFor = (type: string): AnyCodec =>
   Object.hasOwn(codecs, type) ? codecs[type as KnownType] : unknown
 
-const none = new Array<never>()
+const none: never[] = []
 const TOP_BIT = 0x8000
 
 const flagBits = { aa: 0x400, tc: 0x200, rd: 0x100, ra: 0x80, ad: 0x20, cd: 0x10 } as const
@@ -308,7 +308,7 @@ function readRecord(r: Reader): DecodedResourceRecord {
     const version = u8(r, end)
     const dnssecOk = (u16(r, end) & TOP_BIT) !== 0
     const rdEnd = rdataEnd(r)
-    const options = new Array<EdnsOption>()
+    const options: EdnsOption[] = []
     while (r.offset < rdEnd) options.push(within('OPT', () => readEdnsOption(r, rdEnd)))
     return { type, name, udpPayloadSize, extendedRcode, version, dnssecOk, options }
   }
@@ -367,7 +367,7 @@ export function decode(bytes: Uint8Array, options: decode.Options = {}): Decoded
   const id = u16(r, end)
   const bits = u16(r, end)
   const counts = [u16(r, end), u16(r, end), u16(r, end), u16(r, end)] as const
-  const questions = new Array<DecodedQuestion>()
+  const questions: DecodedQuestion[] = []
   for (let i = 0; i < counts[0]; i++) {
     const name = readName(r, end)
     const type = types.name(u16(r, end))
@@ -375,7 +375,7 @@ export function decode(bytes: Uint8Array, options: decode.Options = {}): Decoded
     questions.push({ name, type, class: classes.name(klass & ~TOP_BIT), qu: klass >= TOP_BIT })
   }
   const section = (count: number) => {
-    const records = new Array<DecodedResourceRecord>()
+    const records: DecodedResourceRecord[] = []
     for (let i = 0; i < count; i++) records.push(readRecord(r))
     return records
   }

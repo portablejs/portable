@@ -17,7 +17,7 @@ export async function collect<chunk>(
   onChunk?: (count: number) => Promise<void>,
 ): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks = new Array<chunk>()
+  const chunks: chunk[] = []
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -36,7 +36,7 @@ export function split(
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }

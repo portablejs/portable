@@ -135,7 +135,7 @@ export function parseHeaders(
     if (!match) break
     start = lineBreak.lastIndex
   }
-  const headers = new Array<Header>()
+  const headers: Header[] = []
   for (const field of fields) {
     const colon = field.indexOf(':')
     if (colon < 0) continue

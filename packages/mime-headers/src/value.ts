@@ -192,7 +192,7 @@ function formatParam(name: string, text: string): string[] {
       name + '=' + (text === '' || /[\s'"\\;:/=(),<>@[\]?]|^-/.test(text) ? quote(text) : text),
     ]
   if (plain) {
-    const parts = new Array<string>()
+    const parts: string[] = []
     for (let i = 0; i * sectionLength < text.length; i++) {
       const section = text.slice(i * sectionLength, (i + 1) * sectionLength)
       parts.push(
@@ -201,7 +201,7 @@ function formatParam(name: string, text: string): string[] {
     }
     return parts
   }
-  const parts = new Array<string>()
+  const parts: string[] = []
   let section = "utf-8''"
   for (const character of text) {
     const encoded = percentEncode(character)

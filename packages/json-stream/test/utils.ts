@@ -8,7 +8,7 @@ export const encodeUtf8 = (text: string): Uint8Array => new TextEncoder().encode
 
 /** Splits text or bytes into chunks of `size`, the way a network read might. */
 export function chunked<value extends string | Uint8Array>(input: value, size: number): value[] {
-  const chunks = new Array<value>()
+  const chunks: value[] = []
   for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as value)
   return chunks
 }
@@ -20,7 +20,7 @@ export function randomChunks(bytes: Uint8Array, seed: number, maxSize = 64): Uin
     state = (state * 1103515245 + 12345) % 2 ** 31
     return state / 2 ** 31
   }
-  const chunks = new Array<Uint8Array>()
+  const chunks: Uint8Array[] = []
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * maxSize)
     chunks.push(bytes.subarray(i, i + size))
