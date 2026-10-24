@@ -1,5 +1,5 @@
-import { type Address, from } from './address.js'
-import { isInNetwork, parseCidr } from './cidr.js'
+import { type Address, from } from './address.js';
+import { isInNetwork, parseCidr } from './cidr.js';
 
 /**
  * The special-purpose block an address belongs to, named after its entry in the IANA IPv4 and IPv6
@@ -36,15 +36,15 @@ export type Range =
   | 'thisNetwork'
   | 'uniqueLocal'
   | 'unicast'
-  | 'unspecified'
+  | 'unspecified';
 
-type Entry = readonly [bytes: Uint8Array, prefix: number, range: Range]
+type Entry = readonly [bytes: Uint8Array, prefix: number, range: Range];
 
 const table = (entries: readonly (readonly [string, Range])[]): readonly Entry[] =>
   entries.map(([text, range]) => {
-    const { address, prefix } = parseCidr(text)
-    return [address.bytes, prefix, range]
-  })
+    const { address, prefix } = parseCidr(text);
+    return [address.bytes, prefix, range];
+  });
 
 const ipv4 = table([
   ['0.0.0.0/8', 'thisNetwork'],
@@ -66,7 +66,7 @@ const ipv4 = table([
   ['224.0.0.0/4', 'multicast'],
   ['255.255.255.255/32', 'broadcast'],
   ['240.0.0.0/4', 'reserved'],
-])
+]);
 
 const ipv6 = table([
   ['::/128', 'unspecified'],
@@ -95,7 +95,7 @@ const ipv6 = table([
   ['fe80::/10', 'linkLocal'],
   ['fec0::/10', 'deprecatedSiteLocal'],
   ['ff00::/8', 'multicast'],
-])
+]);
 
 /**
  * Returns the special-purpose block the address is in, or `'unicast'` for an ordinary public
@@ -105,20 +105,20 @@ const ipv6 = table([
  *
  * @example
  * ```ts
- * import * as Ip from '@portable/ip'
+ * import * as Ip from '@portable/ip';
  *
- * Ip.range('10.1.2.3') // 'private'
- * Ip.range('fe80::1') // 'linkLocal'
- * Ip.range(Ip.unmap('::ffff:127.0.0.1')) // 'loopback'
- * Ip.range('8.8.8.8') // 'unicast'
+ * Ip.range('10.1.2.3'); // 'private'
+ * Ip.range('fe80::1'); // 'linkLocal'
+ * Ip.range(Ip.unmap('::ffff:127.0.0.1')); // 'loopback'
+ * Ip.range('8.8.8.8'); // 'unicast'
  * ```
  */
 export function range(address: Address | string): Range {
-  const { version, bytes } = from(address)
+  const { version, bytes } = from(address);
   for (const [network, prefix, name] of version === 4 ? ipv4 : ipv6) {
     if (isInNetwork(bytes, network, prefix)) {
-      return name
+      return name;
     }
   }
-  return version === 4 ? 'unicast' : 'reserved'
+  return version === 4 ? 'unicast' : 'reserved';
 }

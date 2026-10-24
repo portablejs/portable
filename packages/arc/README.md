@@ -11,11 +11,11 @@ npm install @portable/arc @portable/dns
 A forwarder, such as a mailing list, validates the chain that arrived and seals the message with the result before it changes the message:
 
 ```ts
-import * as Arc from '@portable/arc'
-import * as Dns from '@portable/dns'
+import * as Arc from '@portable/arc';
+import * as Dns from '@portable/dns';
 
-const resolver = Dns.create()
-const arc = await Arc.verify(message, { resolver, signal: AbortSignal.timeout(10_000) })
+const resolver = Dns.create();
+const arc = await Arc.verify(message, { resolver, signal: AbortSignal.timeout(10_000) });
 
 const fields = await Arc.seal(message, {
   domain: 'lists.example.org',
@@ -23,8 +23,8 @@ const fields = await Arc.seal(message, {
   privateKey: env.ARC_PRIVATE_KEY,
   authResults: `lists.example.org; arc=${arc.result}; spf=pass smtp.mailfrom=example.com`,
   chainValidation: arc.result,
-})
-const forwarded = fields + message
+});
+const forwarded = fields + message;
 ```
 
 A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM and DMARC, in one call.
@@ -43,9 +43,9 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 A receiver uses `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
 
 ```ts
-const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com')
+const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com');
 if (google && /\bdmarc=pass\b/.test(google.authResults)) {
-  deliver()
+  deliver();
 }
 ```
 

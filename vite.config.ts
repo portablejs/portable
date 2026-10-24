@@ -1,17 +1,17 @@
-import { defineConfig } from 'vite-plus'
-import type { Plugin } from 'vite-plus'
-import { playwright } from 'vite-plus/test/browser-playwright'
-import type { Reporter, Vitest } from 'vite-plus/test/node'
+import { defineConfig } from 'vite-plus';
+import type { Plugin } from 'vite-plus';
+import { playwright } from 'vite-plus/test/browser-playwright';
+import type { Reporter, Vitest } from 'vite-plus/test/node';
 
 // Set PW_CHROMIUM_PATH to test against an installed Chromium only, such as
 // /opt/pw-browsers/chromium in the cloud dev container, where Playwright's own browsers aren't
 // installed.
-const chromiumPath = process.env.PW_CHROMIUM_PATH
+const chromiumPath = process.env.PW_CHROMIUM_PATH;
 
 // `pnpm bench` sets BENCH_DIST=1 after building, so benchmarks import each package's built `dist/`
 // and Node loads it directly. Vitest wraps every call between source modules in a getter.
-const benchDist = process.env.BENCH_DIST === '1'
-const src = benchDist ? [] : ['src']
+const benchDist = process.env.BENCH_DIST === '1';
+const src = benchDist ? [] : ['src'];
 
 const nodeBuiltins = [
   'assert',
@@ -33,61 +33,61 @@ const nodeBuiltins = [
   'url',
   'util',
   'zlib',
-]
+];
 
 // When a browser stops running a page's JavaScript, as WebKit does when a collection deadlocks, no
 // timer on the page fires and the run waits forever. The watchdog exits when browser tests report
 // nothing for 4 minutes, so a CI job fails with the stuck file's name before its time limit.
 function watchdog(idle = 240_000): Plugin {
-  let vitest: Vitest
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let running = 0
+  let vitest: Vitest;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let running = 0;
   const arm = () => {
-    clearTimeout(timer)
+    clearTimeout(timer);
     if (running === 0) {
-      return
+      return;
     }
     timer = setTimeout(() => {
       const stuck = vitest.state
         .getTestModules()
         .filter((module) => module.project.config.browser.enabled && module.state() === 'pending')
-        .map((module) => `  ${module.project.name}: ${module.moduleId}`)
+        .map((module) => `  ${module.project.name}: ${module.moduleId}`);
       vitest.logger.error(
         `Browser tests reported nothing for ${idle / 1000} s, so the run stops. Running:\n${stuck.join('\n')}`,
-      )
-      process.exit(1)
-    }, idle)
-  }
+      );
+      process.exit(1);
+    }, idle);
+  };
   const reporter = {
     onTestModuleStart(module) {
       if (!module.project.config.browser.enabled) {
-        return
+        return;
       }
-      running++
-      arm()
+      running++;
+      arm();
     },
     onTestModuleEnd(module) {
       if (!module.project.config.browser.enabled) {
-        return
+        return;
       }
-      running--
-      arm()
+      running--;
+      arm();
     },
     onTestCaseReady: arm,
     onTestCaseResult: arm,
     onHookStart: arm,
     onHookEnd: arm,
     onTestRunEnd: () => clearTimeout(timer),
-  } satisfies Reporter
+  } satisfies Reporter;
   return {
     name: 'portable:watchdog',
     configureVitest(context) {
-      vitest = context.vitest
+      vitest = context.vitest;
       if (!vitest.config.reporters.includes(reporter)) {
-        vitest.config.reporters.push(reporter)
+        vitest.config.reporters.push(reporter);
       }
     },
-  }
+  };
 }
 
 export default defineConfig({
@@ -95,7 +95,7 @@ export default defineConfig({
   envPrefix: ['VITE_', 'FUZZ_'],
   fmt: {
     singleQuote: true,
-    semi: false,
+    semi: true,
     trailingComma: 'all',
     printWidth: 100,
     ignorePatterns: [
@@ -360,4 +360,4 @@ export default defineConfig({
       },
     ],
   },
-})
+});

@@ -1,9 +1,9 @@
-import * as Spf from '@portable/spf'
-import { fc, fuzz, outcomeAsync } from '@portable/fuzz'
-import { expect, test } from 'vite-plus/test'
-import { type Query, zoneResolver } from './utils.js'
+import * as Spf from '@portable/spf';
+import { fc, fuzz, outcomeAsync } from '@portable/fuzz';
+import { expect, test } from 'vite-plus/test';
+import { type Query, zoneResolver } from './utils.js';
 
-const codes = ['pass', 'fail', 'softfail', 'neutral', 'none', 'temperror', 'permerror']
+const codes = ['pass', 'fail', 'softfail', 'neutral', 'none', 'temperror', 'permerror'];
 
 const term = fc.oneof(
   fc.constantFrom(
@@ -39,7 +39,7 @@ const term = fc.oneof(
     unit: fc.constantFrom('a', ':', '/', '%', '{', '}', '.', '=', '-', '1'),
     maxLength: 12,
   }),
-)
+);
 const record = fc
   .tuple(
     fc.constantFrom('v=spf1', 'v=spf1 ', 'V=SPF1', 'v=spf10', 'spf2.0/pra'),
@@ -48,9 +48,9 @@ const record = fc
   .map(
     ([version, terms]) =>
       version + terms.map(([qualifier, term]) => ` ${qualifier}${term}`).join(''),
-  )
+  );
 
-const zone = fc.record({ main: fc.array(record, { minLength: 1, maxLength: 2 }), other: record })
+const zone = fc.record({ main: fc.array(record, { minLength: 1, maxLength: 2 }), other: record });
 
 test('check settles with an RFC 7208 result for any record, within the lookup limits', async () => {
   await fuzz(
@@ -59,7 +59,7 @@ test('check settles with an RFC 7208 result for any record, within the lookup li
       fc.constantFrom('192.0.2.1', '2001:db8::1', '::ffff:192.0.2.9', '10.0.0.1'),
       fc.constantFrom('user@example.test', 'a.b+c@example.test', '', 'example.test', 'x@'),
       async ({ main, other }, ip, sender) => {
-        const log: Query[] = []
+        const log: Query[] = [];
         const resolver = zoneResolver(
           {
             'example.test': {
@@ -74,32 +74,32 @@ test('check settles with an RFC 7208 result for any record, within the lookup li
             'mx.test': { A: ['192.0.2.1'] },
           },
           log,
-        )
+        );
         const result = await Spf.check(
           { ip, sender, helo: 'mail.example.test' },
           { resolver, receiver: 'mx.receiver.test' },
-        )
-        expect(codes).toContain(result.result)
-        expect(result.lookups).toBeLessThanOrEqual(11)
-        expect(result.voidLookups).toBeLessThanOrEqual(3)
-        expect(log.length).toBeLessThanOrEqual(130)
+        );
+        expect(codes).toContain(result.result);
+        expect(result.lookups).toBeLessThanOrEqual(11);
+        expect(result.voidLookups).toBeLessThanOrEqual(3);
+        expect(log.length).toBeLessThanOrEqual(130);
       },
     ),
-  )
-})
+  );
+});
 
 test('check rejects only with RangeError, for an ip that is not an IP address', async () => {
   const text = fc.string({
     unit: fc.constantFrom('1', '9', '.', ':', 'a', 'f', ' ', '%'),
     maxLength: 20,
-  })
+  });
   await fuzz(
     fc.asyncProperty(text, text, text, async (ip, sender, helo) => {
-      const resolver = zoneResolver({})
+      const resolver = zoneResolver({});
       const settled = await outcomeAsync([RangeError], () =>
         Spf.check({ ip, sender, helo }, { resolver }),
-      )
-      expect(codes).toContain('value' in settled ? settled.value.result : 'none')
+      );
+      expect(codes).toContain('value' in settled ? settled.value.result : 'none');
     }),
-  )
-})
+  );
+});

@@ -1,9 +1,9 @@
-import type { Charset, Name } from './Charset.js'
-import { UnsupportedError } from './errors.js'
-import { normalizeLabel } from './labels.js'
-import { utf8 } from './utf-8.js'
+import type { Charset, Name } from './Charset.js';
+import { UnsupportedError } from './errors.js';
+import { normalizeLabel } from './labels.js';
+import { utf8 } from './utf-8.js';
 
-const singleByte = () => import('./single-byte.js')
+const singleByte = () => import('./single-byte.js');
 
 const loaders: Record<Name, () => Promise<Charset>> = {
   'UTF-8': async () => utf8,
@@ -45,13 +45,13 @@ const loaders: Record<Name, () => Promise<Charset>> = {
   'EUC-KR': async () => (await import('./euc-kr.js')).eucKr,
   'UTF-16BE': async () => (await import('./utf-16.js')).utf16be,
   'UTF-16LE': async () => (await import('./utf-16.js')).utf16le,
-}
+};
 
 export declare namespace load {
   type Options = {
     /** Rejects with `signal.reason` when aborted. The import itself keeps running. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -62,25 +62,25 @@ export declare namespace load {
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
+ * import * as Charset from '@portable/charset';
  *
- * Charset.encode('日本', await Charset.load('windows-31j')) // Uint8Array [0x93, 0xfa, 0x96, 0x7b]
+ * Charset.encode('日本', await Charset.load('windows-31j')); // Uint8Array [0x93, 0xfa, 0x96, 0x7b]
  * ```
  */
 export async function load(label: string, options: load.Options = {}): Promise<Charset> {
-  const { signal } = options
-  signal?.throwIfAborted()
-  const name = normalizeLabel(label)
+  const { signal } = options;
+  signal?.throwIfAborted();
+  const name = normalizeLabel(label);
   if (name === undefined) {
-    throw new UnsupportedError(`No encoder for charset "${label}".`)
+    throw new UnsupportedError(`No encoder for charset "${label}".`);
   }
-  const charset = loaders[name]()
+  const charset = loaders[name]();
   if (!signal) {
-    return charset
+    return charset;
   }
   return new Promise<Charset>((resolve, reject) => {
-    const abort = () => reject(signal.reason)
-    signal.addEventListener('abort', abort, { once: true })
-    charset.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort))
-  })
+    const abort = () => reject(signal.reason);
+    signal.addEventListener('abort', abort, { once: true });
+    charset.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
 }

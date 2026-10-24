@@ -1,7 +1,7 @@
 type NativeFrom = <chunk>(
   iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
-) => ReadableStream<chunk>
-type NativeValues<chunk> = (options: { preventCancel: boolean }) => AsyncIterableIterator<chunk>
+) => ReadableStream<chunk>;
+type NativeValues<chunk> = (options: { preventCancel: boolean }) => AsyncIterableIterator<chunk>;
 
 /**
  * Creates a `ReadableStream` from an iterable or async iterable, such as an array or a
@@ -11,32 +11,32 @@ type NativeValues<chunk> = (options: { preventCancel: boolean }) => AsyncIterabl
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
  * async function* countdown() {
  *   for (let i = 3; i > 0; i--) {
- *     yield `${i}\n`
+ *     yield `${i}\n`;
  *   }
  * }
  *
- * return new Response(Streams.fromIterable(countdown()).pipeThrough(new TextEncoderStream()))
+ * return new Response(Streams.fromIterable(countdown()).pipeThrough(new TextEncoderStream()));
  * ```
  */
 export function fromIterable<chunk>(
   iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
 ): ReadableStream<chunk> {
-  const native: { from?: NativeFrom | undefined; prototype: unknown } = ReadableStream
+  const native: { from?: NativeFrom | undefined; prototype: unknown } = ReadableStream;
   if (typeof native.from === 'function') {
-    return native.from(iterable)
+    return native.from(iterable);
   }
-  return pull(asyncIterator(iterable))
+  return pull(asyncIterator(iterable));
 }
 
 export declare namespace toAsyncIterable {
   type Options = {
     /** Release the stream's lock instead of cancelling it when the loop exits early. @default false */
-    preventCancel?: boolean | undefined
-  }
+    preventCancel?: boolean | undefined;
+  };
 }
 
 /**
@@ -47,11 +47,11 @@ export declare namespace toAsyncIterable {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
  * for await (const chunk of Streams.toAsyncIterable(response.body!)) {
  *   if (done(chunk)) {
- *     break
+ *     break;
  *   } // cancels the response body
  * }
  * ```
@@ -60,12 +60,12 @@ export function toAsyncIterable<chunk>(
   stream: ReadableStream<chunk>,
   options: toAsyncIterable.Options = {},
 ): AsyncIterableIterator<chunk> {
-  const { preventCancel = false } = options
-  const native: { values?: NativeValues<chunk> | undefined } = stream
+  const { preventCancel = false } = options;
+  const native: { values?: NativeValues<chunk> | undefined } = stream;
   if (typeof native.values === 'function') {
-    return native.values({ preventCancel })
+    return native.values({ preventCancel });
   }
-  return iterate(stream.getReader(), preventCancel)
+  return iterate(stream.getReader(), preventCancel);
 }
 
 /**
@@ -79,49 +79,49 @@ export function toAsyncIterable<chunk>(
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
  * const sum = Streams.transform(async function* (source: AsyncIterable<number>) {
- *   let total = 0
+ *   let total = 0;
  *   for await (const n of source) {
- *     yield (total += n)
+ *     yield (total += n);
  *   }
- * })
+ * });
  *
- * numbers.pipeThrough(sum)
+ * numbers.pipeThrough(sum);
  * ```
  */
 export function transform<input, output>(
   fn: (source: AsyncIterable<input>) => AsyncIterable<output>,
   options: transform.Options = {},
 ): ReadableWritablePair<output, input> {
-  const input = new TransformStream<input, input>()
-  const reader = input.readable.getReader()
-  const output = asyncIterator(fn(iterate(reader, true)))
+  const input = new TransformStream<input, input>();
+  const reader = input.readable.getReader();
+  const output = asyncIterator(fn(iterate(reader, true)));
   const stop = (reason: unknown) =>
     reader
       .cancel(reason)
       .catch(() => input.readable.cancel(reason))
-      .catch(() => {})
-  return { readable: pull(output, stop, options.signal), writable: input.writable }
+      .catch(() => {});
+  return { readable: pull(output, stop, options.signal), writable: input.writable };
 }
 
 export declare namespace transform {
   type Options = {
     /** Errors the output with `signal.reason`, cancels the input and ends the generator when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 function asyncIterator<chunk>(
   iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
 ): AsyncIterator<chunk> {
   if (Symbol.asyncIterator in iterable) {
-    return iterable[Symbol.asyncIterator]()
+    return iterable[Symbol.asyncIterator]();
   }
   return (async function* () {
-    yield* iterable
-  })()
+    yield* iterable;
+  })();
 }
 
 function pull<chunk>(
@@ -129,82 +129,82 @@ function pull<chunk>(
   stop?: (reason: unknown) => Promise<void>,
   signal?: AbortSignal,
 ): ReadableStream<chunk> {
-  let aborted = false
-  let abort = () => {}
-  const release = () => signal?.removeEventListener('abort', abort)
+  let aborted = false;
+  let abort = () => {};
+  const release = () => signal?.removeEventListener('abort', abort);
   return new ReadableStream<chunk>(
     {
       start(controller) {
         if (!signal) {
-          return
+          return;
         }
         abort = () => {
-          aborted = true
-          controller.error(signal.reason)
-          void stop?.(signal.reason)
-          void Promise.resolve(iterator.return?.(signal.reason)).catch(() => {})
-        }
+          aborted = true;
+          controller.error(signal.reason);
+          void stop?.(signal.reason);
+          void Promise.resolve(iterator.return?.(signal.reason)).catch(() => {});
+        };
         if (signal.aborted) {
-          return abort()
+          return abort();
         }
-        signal.addEventListener('abort', abort, { once: true })
+        signal.addEventListener('abort', abort, { once: true });
       },
       async pull(controller) {
-        let result: IteratorResult<chunk>
+        let result: IteratorResult<chunk>;
         try {
-          result = await iterator.next()
+          result = await iterator.next();
         } catch (error) {
-          release()
+          release();
           if (aborted) {
-            return
+            return;
           }
-          await stop?.(error)
-          throw error
+          await stop?.(error);
+          throw error;
         }
         if (aborted) {
-          return
+          return;
         }
         if (!result.done) {
-          return controller.enqueue(result.value)
+          return controller.enqueue(result.value);
         }
-        release()
-        controller.close()
-        await stop?.(undefined)
+        release();
+        controller.close();
+        await stop?.(undefined);
       },
       async cancel(reason) {
-        release()
-        await stop?.(reason)
-        await iterator.return?.(reason)
+        release();
+        await stop?.(reason);
+        await iterator.return?.(reason);
       },
     },
     { highWaterMark: 0 },
-  )
+  );
 }
 
 async function* iterate<chunk>(
   reader: ReadableStreamDefaultReader<chunk>,
   preventCancel: boolean,
 ): AsyncGenerator<chunk, undefined> {
-  let finished = false
+  let finished = false;
   try {
     for (;;) {
-      let result: ReadableStreamReadResult<chunk>
+      let result: ReadableStreamReadResult<chunk>;
       try {
-        result = await reader.read()
+        result = await reader.read();
       } catch (error) {
-        finished = true
-        throw error
+        finished = true;
+        throw error;
       }
       if (result.done) {
-        finished = true
-        return undefined
+        finished = true;
+        return undefined;
       }
-      yield result.value
+      yield result.value;
     }
   } finally {
     if (!finished && !preventCancel) {
-      await reader.cancel()
+      await reader.cancel();
     }
-    reader.releaseLock()
+    reader.releaseLock();
   }
 }

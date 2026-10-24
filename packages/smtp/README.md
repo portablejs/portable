@@ -9,8 +9,8 @@ npm install @portable/smtp
 ```
 
 ```ts
-import * as Smtp from '@portable/smtp'
-import { connect } from 'cloudflare:sockets'
+import * as Smtp from '@portable/smtp';
+import { connect } from 'cloudflare:sockets';
 
 const result = await Smtp.send(
   { from: 'me@example.com', to: ['you@example.com'], message: 'Subject: Hi\r\n\r\nHello' },
@@ -20,8 +20,8 @@ const result = await Smtp.send(
     auth: { user: 'me@example.com', pass: env.SMTP_PASSWORD },
     signal: AbortSignal.timeout(30_000),
   },
-)
-result.accepted // ['you@example.com']
+);
+result.accepted; // ['you@example.com']
 ```
 
 Cloudflare Workers can't connect to port 25, so use a submission port (587 or 465) on a relay.
@@ -29,13 +29,13 @@ Cloudflare Workers can't connect to port 25, so use a submission port (587 or 46
 To send several messages over one connection, open a client:
 
 ```ts
-const client = await Smtp.connect({ connect, host: 'smtp.example.com', auth })
+const client = await Smtp.connect({ connect, host: 'smtp.example.com', auth });
 try {
   for (const mail of outbox) {
-    await client.send(mail)
+    await client.send(mail);
   }
 } finally {
-  await client.close()
+  await client.close();
 }
 ```
 
@@ -46,28 +46,28 @@ try {
 Deno:
 
 ```ts
-import type * as Smtp from '@portable/smtp'
+import type * as Smtp from '@portable/smtp';
 
 function wrap(opening: Promise<Deno.Conn>, hostname: string): Smtp.Socket {
-  let conn: Deno.Conn | undefined
+  let conn: Deno.Conn | undefined;
   const opened = opening.then((value) => {
-    conn = value
-  })
-  const closed = Promise.withResolvers<void>()
+    conn = value;
+  });
+  const closed = Promise.withResolvers<void>();
   return {
     opened,
     closed: closed.promise,
     readable: new ReadableStream<Uint8Array>(
       {
         async pull(controller) {
-          await opened
-          const buffer = new Uint8Array(16 * 1024)
-          const length = await conn!.read(buffer).catch(() => null)
+          await opened;
+          const buffer = new Uint8Array(16 * 1024);
+          const length = await conn!.read(buffer).catch(() => null);
           if (length === null) {
-            controller.close()
-            closed.resolve()
+            controller.close();
+            closed.resolve();
           } else {
-            controller.enqueue(buffer.subarray(0, length))
+            controller.enqueue(buffer.subarray(0, length));
           }
         },
       },
@@ -75,56 +75,56 @@ function wrap(opening: Promise<Deno.Conn>, hostname: string): Smtp.Socket {
     ),
     writable: new WritableStream<Uint8Array>({
       async write(chunk) {
-        await opened
+        await opened;
         for (let offset = 0; offset < chunk.length; ) {
-          offset += await conn!.write(chunk.subarray(offset))
+          offset += await conn!.write(chunk.subarray(offset));
         }
       },
     }),
     close() {
-      conn?.close()
-      closed.resolve()
+      conn?.close();
+      closed.resolve();
     },
     startTls() {
-      return wrap(opened.then(() => Deno.startTls(conn as Deno.TcpConn, { hostname })), hostname)
+      return wrap(opened.then(() => Deno.startTls(conn as Deno.TcpConn, { hostname })), hostname);
     },
-  }
+  };
 }
 
 export const connect: Smtp.Connect = ({ hostname, port }, { secureTransport }) =>
   wrap(
     secureTransport === 'on' ? Deno.connectTls({ hostname, port }) : Deno.connect({ hostname, port }),
     hostname,
-  )
+  );
 ```
 
 Node:
 
 ```ts
-import net from 'node:net'
-import tls from 'node:tls'
-import type * as Smtp from '@portable/smtp'
+import net from 'node:net';
+import tls from 'node:tls';
+import type * as Smtp from '@portable/smtp';
 
 function wrap(socket: net.Socket, ready: string, hostname: string): Smtp.Socket {
-  socket.setNoDelay(true)
+  socket.setNoDelay(true);
   const opened = new Promise<void>((resolve, reject) => {
-    socket.once(ready, resolve)
-    socket.once('error', reject)
-  })
-  const closed = new Promise<void>((resolve) => socket.once('close', () => resolve()))
-  let attached = true
+    socket.once(ready, resolve);
+    socket.once('error', reject);
+  });
+  const closed = new Promise<void>((resolve) => socket.once('close', () => resolve()));
+  let attached = true;
   return {
     opened,
     closed,
     readable: new ReadableStream<Uint8Array>({
       start(controller) {
         socket.on('data', (chunk: Buffer) => {
-          controller.enqueue(new Uint8Array(chunk))
+          controller.enqueue(new Uint8Array(chunk));
           if ((controller.desiredSize ?? 0) <= 0) {
-            socket.pause()
+            socket.pause();
           }
-        })
-        socket.once('close', () => attached && controller.close())
+        });
+        socket.once('close', () => attached && controller.close());
       },
       pull: () => void socket.resume(),
       cancel: () => void socket.destroy(),
@@ -133,28 +133,28 @@ function wrap(socket: net.Socket, ready: string, hostname: string): Smtp.Socket 
       write: (chunk) =>
         new Promise((resolve, reject) => {
           if (socket.write(chunk)) {
-            return resolve()
+            return resolve();
           }
-          socket.once('drain', resolve)
-          socket.once('close', () => reject(new Error('Socket closed')))
+          socket.once('drain', resolve);
+          socket.once('close', () => reject(new Error('Socket closed')));
         }),
     }),
     close() {
-      socket.destroy()
-      return closed
+      socket.destroy();
+      return closed;
     },
     startTls() {
-      attached = false
-      socket.removeAllListeners('data')
-      return wrap(tls.connect({ socket, servername: hostname }), 'secureConnect', hostname)
+      attached = false;
+      socket.removeAllListeners('data');
+      return wrap(tls.connect({ socket, servername: hostname }), 'secureConnect', hostname);
     },
-  }
+  };
 }
 
 export const connect: Smtp.Connect = ({ hostname, port }, { secureTransport }) =>
   secureTransport === 'on'
     ? wrap(tls.connect({ host: hostname, port, servername: hostname }), 'secureConnect', hostname)
-    : wrap(net.connect({ host: hostname, port }), 'connect', hostname)
+    : wrap(net.connect({ host: hostname, port }), 'connect', hostname);
 ```
 
 ## API

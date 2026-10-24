@@ -1,24 +1,24 @@
-import { assertUint8Array } from '@portable/bytes/internal'
-import * as Streams from '@portable/streams'
-import { MaxLengthError } from './errors.js'
+import { assertUint8Array } from '@portable/bytes/internal';
+import * as Streams from '@portable/streams';
+import { MaxLengthError } from './errors.js';
 
 /** An event read from a stream, as `EventSource` would dispatch it. */
 export type Event = {
   /** The event type: the block's last `event` field, or `'message'` when it has none. */
-  event: string
+  event: string;
   /** The block's `data` fields, joined with `\n`. */
-  data: string
+  data: string;
   /**
    * The last event ID, as in `MessageEvent.lastEventId`. It keeps the value of the last `id` field
    * until another `id` field changes it, and is `undefined` until the stream sends one.
    */
-  id?: string | undefined
+  id?: string | undefined;
   /**
    * The reconnection time in milliseconds, when a valid `retry` field arrived after the previous
    * event.
    */
-  retry?: number | undefined
-}
+  retry?: number | undefined;
+};
 
 export declare namespace DecoderStream {
   type Options = {
@@ -26,10 +26,10 @@ export declare namespace DecoderStream {
      * Longest line, and longest `data` of one event, in UTF-16 code units. A longer one fails the
      * stream with `MaxLengthError`. @default Infinity
      */
-    maxLength?: number | undefined
+    maxLength?: number | undefined;
     /** Fails the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -38,39 +38,39 @@ export declare namespace DecoderStream {
  *
  * @example
  * ```ts
- * import * as Sse from '@portable/sse'
+ * import * as Sse from '@portable/sse';
  *
- * const response = await fetch('https://example.com/events', { method: 'POST', body })
- * const events = response.body!.pipeThrough(new Sse.DecoderStream())
+ * const response = await fetch('https://example.com/events', { method: 'POST', body });
+ * const events = response.body!.pipeThrough(new Sse.DecoderStream());
  * ```
  */
 export class DecoderStream extends TransformStream<Uint8Array | string, Event> {
   constructor(options: DecoderStream.Options = {}) {
-    let parser: Parser
+    let parser: Parser;
     super(
       Streams.abortable(
         {
           start(controller) {
-            parser = createParser((event) => controller.enqueue(event), options.maxLength)
+            parser = createParser((event) => controller.enqueue(event), options.maxLength);
           },
           transform(chunk) {
-            parser.push(chunk)
+            parser.push(chunk);
           },
           flush() {
-            parser.end()
+            parser.end();
           },
         },
         options,
       ),
-    )
+    );
   }
 }
 
 export declare namespace decode {
   type Options = {
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
-    maxLength?: number | undefined
-  }
+    maxLength?: number | undefined;
+  };
 }
 
 /**
@@ -79,81 +79,81 @@ export declare namespace decode {
  *
  * @example
  * ```ts
- * import * as Sse from '@portable/sse'
+ * import * as Sse from '@portable/sse';
  *
- * Sse.decode('event: greeting\ndata: hello\n\n')
+ * Sse.decode('event: greeting\ndata: hello\n\n');
  * // [{ event: 'greeting', data: 'hello', id: undefined, retry: undefined }]
  * ```
  */
 export function decode(input: Uint8Array | string, options: decode.Options = {}): Event[] {
-  const events: Event[] = []
-  const parser = createParser((event) => events.push(event), options.maxLength)
-  parser.push(input)
-  parser.end()
-  return events
+  const events: Event[] = [];
+  const parser = createParser((event) => events.push(event), options.maxLength);
+  parser.push(input);
+  parser.end();
+  return events;
 }
 
 export type Parser = {
-  push(chunk: Uint8Array | string): void
+  push(chunk: Uint8Array | string): void;
   /** Discards an unfinished line or event, as at the end of a stream. */
-  end(): void
+  end(): void;
   /** Starts a new stream, keeping the last event ID and reconnection time. */
-  restart(): void
-  readonly id: string | undefined
-  readonly retry: number | undefined
-}
+  restart(): void;
+  readonly id: string | undefined;
+  readonly retry: number | undefined;
+};
 
-const LF = 10
-const SPACE = 32
-const COLON = 58
+const LF = 10;
+const SPACE = 32;
+const COLON = 58;
 
 export function createParser(emit: (event: Event) => void, maxLength: number = Infinity): Parser {
-  let decoder: TextDecoder | undefined
-  let started = false
-  let skipLf = false
-  let pending: string[] = []
-  let pendingLength = 0
-  let data = ''
-  let hasData = false
-  let type = ''
-  let idBuffer: string | undefined
-  let lastId: string | undefined
-  let retry: number | undefined
-  let reconnectionTime: number | undefined
+  let decoder: TextDecoder | undefined;
+  let started = false;
+  let skipLf = false;
+  let pending: string[] = [];
+  let pendingLength = 0;
+  let data = '';
+  let hasData = false;
+  let type = '';
+  let idBuffer: string | undefined;
+  let lastId: string | undefined;
+  let retry: number | undefined;
+  let reconnectionTime: number | undefined;
 
   const dispatch = () => {
-    lastId = idBuffer
+    lastId = idBuffer;
     if (hasData) {
-      emit({ event: type || 'message', data, id: lastId, retry })
-      retry = undefined
+      emit({ event: type || 'message', data, id: lastId, retry });
+      retry = undefined;
     }
-    data = ''
-    hasData = false
-    type = ''
-  }
+    data = '';
+    hasData = false;
+    type = '';
+  };
 
   const appendData = (value: string) => {
     if (hasData) {
-      data += '\n' + value
+      data += '\n' + value;
     } else {
-      data = value
-      hasData = true
+      data = value;
+      hasData = true;
     }
     if (data.length > maxLength) {
-      throw new MaxLengthError({ maxLength })
+      throw new MaxLengthError({ maxLength });
     }
-  }
+  };
 
   const line = (text: string, start: number, end: number) => {
     if (start === end) {
-      return dispatch()
+      return dispatch();
     }
     if (end - start > maxLength) {
-      throw new MaxLengthError({ maxLength })
+      throw new MaxLengthError({ maxLength });
     }
-    const first = text.charCodeAt(start)
+    const first = text.charCodeAt(start);
     if (first === COLON) {
-      return
+      return;
     }
     if (
       first === 100 &&
@@ -162,94 +162,94 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
       text.charCodeAt(start + 3) === 97 &&
       text.charCodeAt(start + 4) === COLON
     ) {
-      const from = text.charCodeAt(start + 5) === SPACE ? start + 6 : start + 5
-      return appendData(text.slice(from, end))
+      const from = text.charCodeAt(start + 5) === SPACE ? start + 6 : start + 5;
+      return appendData(text.slice(from, end));
     }
     if (first === 101 && text.startsWith('event:', start)) {
-      type = text.slice(text.charCodeAt(start + 6) === SPACE ? start + 7 : start + 6, end)
-      return
+      type = text.slice(text.charCodeAt(start + 6) === SPACE ? start + 7 : start + 6, end);
+      return;
     }
     if (
       first === 105 &&
       text.charCodeAt(start + 1) === 100 &&
       text.charCodeAt(start + 2) === COLON
     ) {
-      const value = text.slice(text.charCodeAt(start + 3) === SPACE ? start + 4 : start + 3, end)
+      const value = text.slice(text.charCodeAt(start + 3) === SPACE ? start + 4 : start + 3, end);
       if (!value.includes('\0')) {
-        idBuffer = value
+        idBuffer = value;
       }
-      return
+      return;
     }
-    const raw = text.slice(start, end)
-    const colon = raw.indexOf(':')
-    const field = colon === -1 ? raw : raw.slice(0, colon)
+    const raw = text.slice(start, end);
+    const colon = raw.indexOf(':');
+    const field = colon === -1 ? raw : raw.slice(0, colon);
     const value =
-      colon === -1 ? '' : raw.slice(raw.charCodeAt(colon + 1) === SPACE ? colon + 2 : colon + 1)
+      colon === -1 ? '' : raw.slice(raw.charCodeAt(colon + 1) === SPACE ? colon + 2 : colon + 1);
     switch (field) {
       case 'event':
-        type = value
-        break
+        type = value;
+        break;
       case 'data':
-        appendData(value)
-        break
+        appendData(value);
+        break;
       case 'id':
         if (!value.includes('\0')) {
-          idBuffer = value
+          idBuffer = value;
         }
-        break
+        break;
       case 'retry':
         if (isDigits(value)) {
-          reconnectionTime = retry = Number(value)
+          reconnectionTime = retry = Number(value);
         }
-        break
+        break;
     }
-  }
+  };
 
   const lines = (text: string, from: number): number => {
-    let start = from
+    let start = from;
     if (text.indexOf('\r', start) === -1) {
       for (let lf = text.indexOf('\n', start); lf !== -1; lf = text.indexOf('\n', start)) {
-        line(text, start, lf)
-        start = lf + 1
+        line(text, start, lf);
+        start = lf + 1;
       }
-      return start
+      return start;
     }
-    let cr = text.indexOf('\r', start)
-    let lf = text.indexOf('\n', start)
+    let cr = text.indexOf('\r', start);
+    let lf = text.indexOf('\n', start);
     for (;;) {
       if (cr !== -1 && cr < start) {
-        cr = text.indexOf('\r', start)
+        cr = text.indexOf('\r', start);
       }
       if (lf !== -1 && lf < start) {
-        lf = text.indexOf('\n', start)
+        lf = text.indexOf('\n', start);
       }
-      const end = cr === -1 ? lf : lf === -1 || cr < lf ? cr : lf
+      const end = cr === -1 ? lf : lf === -1 || cr < lf ? cr : lf;
       if (end === -1) {
-        return start
+        return start;
       }
-      line(text, start, end)
-      start = end + 1
+      line(text, start, end);
+      start = end + 1;
       if (end === cr) {
         if (start === text.length) {
-          skipLf = true
+          skipLf = true;
         } else if (text.charCodeAt(start) === LF) {
-          start++
+          start++;
         }
       }
     }
-  }
+  };
 
   const keep = (text: string, from: number) => {
     if (from === text.length) {
-      return
+      return;
     }
-    const rest = from === 0 ? text : text.slice(from)
-    pending.push(rest)
-    pendingLength += rest.length
+    const rest = from === 0 ? text : text.slice(from);
+    pending.push(rest);
+    pendingLength += rest.length;
     if (pendingLength > maxLength) {
-      throw new MaxLengthError({ maxLength })
+      throw new MaxLengthError({ maxLength });
     }
-  }
+  };
 
   return {
     push(chunk) {
@@ -261,78 +261,78 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
               {
                 stream: true,
               },
-            )
+            );
       if (text === '') {
-        return
+        return;
       }
       if (!started) {
-        started = true
+        started = true;
         if (text.charCodeAt(0) === 0xfeff) {
-          text = text.slice(1)
+          text = text.slice(1);
         }
       }
-      let start = 0
+      let start = 0;
       if (skipLf) {
-        skipLf = false
+        skipLf = false;
         if (text.charCodeAt(0) === LF) {
-          start = 1
+          start = 1;
         }
       }
       if (pending.length > 0) {
-        const lf = text.indexOf('\n', start)
-        const cr = text.indexOf('\r', start)
-        const end = cr === -1 ? lf : lf === -1 || cr < lf ? cr : lf
+        const lf = text.indexOf('\n', start);
+        const cr = text.indexOf('\r', start);
+        const end = cr === -1 ? lf : lf === -1 || cr < lf ? cr : lf;
         if (end === -1) {
-          return keep(text, start)
+          return keep(text, start);
         }
-        pending.push(text.slice(start, end))
-        const joined = pending.join('')
-        pending = []
-        pendingLength = 0
-        line(joined, 0, joined.length)
-        start = end + 1
+        pending.push(text.slice(start, end));
+        const joined = pending.join('');
+        pending = [];
+        pendingLength = 0;
+        line(joined, 0, joined.length);
+        start = end + 1;
         if (end === cr) {
           if (start === text.length) {
-            skipLf = true
+            skipLf = true;
           } else if (text.charCodeAt(start) === LF) {
-            start++
+            start++;
           }
         }
       }
-      keep(text, lines(text, start))
+      keep(text, lines(text, start));
     },
     end() {
-      decoder?.decode()
-      pending = []
-      pendingLength = 0
-      skipLf = false
-      data = ''
-      hasData = false
-      type = ''
+      decoder?.decode();
+      pending = [];
+      pendingLength = 0;
+      skipLf = false;
+      data = '';
+      hasData = false;
+      type = '';
     },
     restart() {
-      this.end()
-      started = false
-      idBuffer = lastId
+      this.end();
+      started = false;
+      idBuffer = lastId;
     },
     get id() {
-      return lastId
+      return lastId;
     },
     get retry() {
-      return reconnectionTime
+      return reconnectionTime;
     },
-  }
+  };
 }
 
 function isDigits(value: string): boolean {
   if (value === '') {
-    return false
+    return false;
   }
   for (let i = 0; i < value.length; i++) {
-    const code = value.charCodeAt(i)
+    const code = value.charCodeAt(i);
     if (code < 48 || code > 57) {
-      return false
+      return false;
     }
   }
-  return true
+  return true;
 }

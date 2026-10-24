@@ -1,62 +1,62 @@
-import * as upstream from 'dns-packet'
-import { describe, expect, test } from 'vite-plus/test'
-import { classes, optionCodes, opcodes, rcodes, types } from '../src/codes.js'
-import { decode, encode, type DecodedPacket, type Packet } from '@portable/dns-packet'
-import responses from './fixtures/responses.json' with { type: 'json' }
-import { hex, random } from './utils.js'
+import * as upstream from 'dns-packet';
+import { describe, expect, test } from 'vite-plus/test';
+import { classes, optionCodes, opcodes, rcodes, types } from '../src/codes.js';
+import { decode, encode, type DecodedPacket, type Packet } from '@portable/dns-packet';
+import responses from './fixtures/responses.json' with { type: 'json' };
+import { hex, random } from './utils.js';
 
-type Loose = Record<string, any>
+type Loose = Record<string, any>;
 
-const bytesOf = (value: Uint8Array) => new Uint8Array(value)
-const canonicalIPv6 = (ip: string) => new URL(`http://[${ip}]`).hostname.slice(1, -1)
-const typeName = (name: string) => types.name(types.value(name.replace(/^UNKNOWN_/, 'TYPE')))
-const className = (name: string) => classes.name(classes.value(name.replace(/^UNKNOWN_/, 'CLASS')))
+const bytesOf = (value: Uint8Array) => new Uint8Array(value);
+const canonicalIPv6 = (ip: string) => new URL(`http://[${ip}]`).hostname.slice(1, -1);
+const typeName = (name: string) => types.name(types.value(name.replace(/^UNKNOWN_/, 'TYPE')));
+const className = (name: string) => classes.name(classes.value(name.replace(/^UNKNOWN_/, 'CLASS')));
 
 function upstreamData(type: string, data: any): unknown {
   switch (type) {
     case 'TXT':
-      return data.map(bytesOf)
+      return data.map(bytesOf);
     case 'AAAA':
-      return canonicalIPv6(data)
+      return canonicalIPv6(data);
     case 'CAA':
-      return { flags: data.flags, tag: data.tag, value: data.value }
+      return { flags: data.flags, tag: data.tag, value: data.value };
     case 'SSHFP':
       return {
         algorithm: data.algorithm,
         fingerprintType: data.hash,
         fingerprint: hex(data.fingerprint),
-      }
+      };
     case 'NSEC':
-      return { nextDomain: data.nextDomain, types: data.rrtypes.map(typeName) }
+      return { nextDomain: data.nextDomain, types: data.rrtypes.map(typeName) };
     case 'NSEC3': {
-      const { nextDomain, rrtypes, ...rest } = data
+      const { nextDomain, rrtypes, ...rest } = data;
       return {
         ...rest,
         salt: bytesOf(rest.salt),
         nextHashedOwner: bytesOf(nextDomain),
         types: rrtypes.map(typeName),
-      }
+      };
     }
     case 'RRSIG':
       return {
         ...data,
         typeCovered: typeName(data.typeCovered),
         signature: bytesOf(data.signature),
-      }
+      };
     case 'DS':
     case 'CDS':
-      return { ...data, digest: bytesOf(data.digest) }
+      return { ...data, digest: bytesOf(data.digest) };
     case 'DNSKEY':
     case 'CDNSKEY':
-      return { ...data, key: bytesOf(data.key) }
+      return { ...data, key: bytesOf(data.key) };
     case 'TLSA':
-      return { ...data, certificate: bytesOf(data.certificate) }
+      return { ...data, certificate: bytesOf(data.certificate) };
   }
-  return data instanceof Uint8Array ? bytesOf(data) : data
+  return data instanceof Uint8Array ? bytesOf(data) : data;
 }
 
 function upstreamOption(option: Loose): unknown {
-  const code = optionCodes.name(option.code)
+  const code = optionCodes.name(option.code);
   switch (option.code) {
     case 8:
       return {
@@ -64,15 +64,15 @@ function upstreamOption(option: Loose): unknown {
         ip: option.family === 2 ? canonicalIPv6(option.ip) : option.ip,
         sourcePrefixLength: option.sourcePrefixLength,
         scopePrefixLength: option.scopePrefixLength,
-      }
+      };
     case 11:
-      return option.timeout === undefined ? { code } : { code, timeout: option.timeout }
+      return option.timeout === undefined ? { code } : { code, timeout: option.timeout };
     case 12:
-      return { code, length: option.data.length }
+      return { code, length: option.data.length };
     case 14:
-      return { code, tags: option.tags }
+      return { code, tags: option.tags };
   }
-  return { code, data: bytesOf(option.data) }
+  return { code, data: bytesOf(option.data) };
 }
 
 function upstreamRecord(record: Loose): unknown {
@@ -85,9 +85,9 @@ function upstreamRecord(record: Loose): unknown {
       version: record.ednsVersion,
       dnssecOk: record.flag_do,
       options: record.options.map(upstreamOption),
-    }
+    };
   }
-  const type = typeName(record.type)
+  const type = typeName(record.type);
   return {
     type,
     name: record.name,
@@ -95,7 +95,7 @@ function upstreamRecord(record: Loose): unknown {
     class: className(record.class),
     flush: record.flush,
     data: upstreamData(type, record.data),
-  }
+  };
 }
 
 /** Translates a packet decoded by dns-packet into this package's shape. */
@@ -122,7 +122,7 @@ function fromUpstream(packet: Loose): unknown {
     answers: packet.answers.map(upstreamRecord),
     authorities: packet.authorities.map(upstreamRecord),
     additionals: packet.additionals.map(upstreamRecord),
-  }
+  };
 }
 
 /** Canonicalizes the IPv6 text in our own decoded packet, so both sides compare the same way. */
@@ -139,13 +139,13 @@ function canonical(packet: DecodedPacket): unknown {
                 : o,
             ),
           }
-        : r
+        : r;
   return {
     ...packet,
     answers: packet.answers.map(record),
     authorities: packet.authorities.map(record),
     additionals: packet.additionals.map(record),
-  }
+  };
 }
 
 const corpus = [
@@ -298,34 +298,34 @@ const corpus = [
       { type: 'TXT', name: 'chaos.example', class: 'CH', data: ['chaos'] },
     ],
   },
-] satisfies Packet[]
+] satisfies Packet[];
 
 describe('dns-packet decodes our output to the same packet', () => {
   corpus.forEach((packet, i) => {
     test(`synthetic packet ${i}`, () => {
-      const bytes = encode(packet)
-      const theirs = upstream.decode(Buffer.from(bytes))
-      expect(fromUpstream(theirs)).toEqual(canonical(decode(bytes)))
-      expect(new Uint8Array(upstream.encode(theirs))).toEqual(bytes)
-    })
+      const bytes = encode(packet);
+      const theirs = upstream.decode(Buffer.from(bytes));
+      expect(fromUpstream(theirs)).toEqual(canonical(decode(bytes)));
+      expect(new Uint8Array(upstream.encode(theirs))).toEqual(bytes);
+    });
 
     test(`synthetic packet ${i}, compressed`, () => {
-      const bytes = encode(packet, { compress: true })
-      expect(fromUpstream(upstream.decode(Buffer.from(bytes)))).toEqual(canonical(decode(bytes)))
-    })
-  })
-})
+      const bytes = encode(packet, { compress: true });
+      expect(fromUpstream(upstream.decode(Buffer.from(bytes)))).toEqual(canonical(decode(bytes)));
+    });
+  });
+});
 
 describe('decodes real responses like dns-packet', () => {
   for (const { query, server, hex: text } of responses) {
     test(`${query} from ${server}`, () => {
-      const theirs = upstream.decode(Buffer.from(text, 'hex'))
-      const ours = decode(hex(text))
-      expect(canonical(ours)).toEqual(fromUpstream(theirs))
-      expect(encode(ours)).toEqual(new Uint8Array(upstream.encode(theirs)))
-    })
+      const theirs = upstream.decode(Buffer.from(text, 'hex'));
+      const ours = decode(hex(text));
+      expect(canonical(ours)).toEqual(fromUpstream(theirs));
+      expect(encode(ours)).toEqual(new Uint8Array(upstream.encode(theirs)));
+    });
   }
-})
+});
 
 describe('TCP framing matches dns-packet', () => {
   test('the length-prefixed packet from the dns-packet suite', () => {
@@ -334,43 +334,45 @@ describe('TCP framing matches dns-packet', () => {
         '0001000100000e10000481fa0baac00f0002000100000e10000502636ac00fc00f' +
         '0002000100000e100002c00cc03a0001000100000e100004454d9b9cc00c001c00' +
         '0100000e10001020010418000050000000000000000001f9',
-    )
-    const theirs = upstream.streamDecode(Buffer.from(framed))
-    expect(canonical(decode(framed, { framing: 'tcp' }))).toEqual(fromUpstream(theirs))
-  })
+    );
+    const theirs = upstream.streamDecode(Buffer.from(framed));
+    expect(canonical(decode(framed, { framing: 'tcp' }))).toEqual(fromUpstream(theirs));
+  });
 
   test('encoding', () => {
     for (const packet of corpus) {
-      const theirs = upstream.decode(Buffer.from(encode(packet)))
+      const theirs = upstream.decode(Buffer.from(encode(packet)));
       expect(encode(packet, { framing: 'tcp' })).toEqual(
         new Uint8Array(upstream.streamEncode(theirs)),
-      )
+      );
     }
-  })
+  });
 
   for (const seed of [1, 2, 3]) {
     test(`frames read in random chunks, seed ${seed}`, () => {
-      const next = random(seed)
+      const next = random(seed);
       const frames = responses
         .map(({ hex: text }) => hex(text))
-        .map((message) => Uint8Array.from([message.length >> 8, message.length & 0xff, ...message]))
-      const stream = Uint8Array.from(frames.flatMap((frame) => [...frame]))
-      const ours: unknown[] = []
-      let buffered = new Uint8Array(0)
+        .map((message) =>
+          Uint8Array.from([message.length >> 8, message.length & 0xff, ...message]),
+        );
+      const stream = Uint8Array.from(frames.flatMap((frame) => [...frame]));
+      const ours: unknown[] = [];
+      let buffered = new Uint8Array(0);
       for (let i = 0; i < stream.length;) {
-        const size = 1 + Math.floor(next() * 200)
-        buffered = Uint8Array.from([...buffered, ...stream.subarray(i, i + size)])
-        i += size
+        const size = 1 + Math.floor(next() * 200);
+        buffered = Uint8Array.from([...buffered, ...stream.subarray(i, i + size)]);
+        i += size;
         while (
           buffered.length >= 2 &&
           buffered.length >= 2 + ((buffered[0]! << 8) | buffered[1]!)
         ) {
-          ours.push(canonical(decode(buffered, { framing: 'tcp' })))
-          buffered = buffered.subarray(2 + ((buffered[0]! << 8) | buffered[1]!))
+          ours.push(canonical(decode(buffered, { framing: 'tcp' })));
+          buffered = buffered.subarray(2 + ((buffered[0]! << 8) | buffered[1]!));
         }
       }
-      const theirs = frames.map((frame) => fromUpstream(upstream.streamDecode(Buffer.from(frame))))
-      expect(ours).toEqual(theirs)
-    })
+      const theirs = frames.map((frame) => fromUpstream(upstream.streamDecode(Buffer.from(frame))));
+      expect(ours).toEqual(theirs);
+    });
   }
-})
+});

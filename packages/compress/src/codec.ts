@@ -1,18 +1,18 @@
-import { assertUint8Array, toBufferSource } from '@portable/bytes/internal'
-import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js'
-import { concat } from './bytes.js'
-import { MaxBytesError, TruncatedError, classify } from './errors.js'
+import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
+import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
+import { concat } from './bytes.js';
+import { MaxBytesError, TruncatedError, classify } from './errors.js';
 
 /** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
-export type Format = 'gzip' | 'deflate' | 'deflate-raw'
+export type Format = 'gzip' | 'deflate' | 'deflate-raw';
 
 export declare namespace encode {
   type Options = {
     /** @default 'gzip' */
-    format?: Format | undefined
+    format?: Format | undefined;
     /** Rejects with `signal.reason` when aborted, and stops the compression stream. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -20,41 +20,41 @@ export declare namespace encode {
  *
  * @example
  * ```ts
- * import * as Compress from '@portable/compress'
+ * import * as Compress from '@portable/compress';
  *
- * const gzipped = await Compress.encode('hello world')
- * const zlib = await Compress.encode(bytes, { format: 'deflate' })
+ * const gzipped = await Compress.encode('hello world');
+ * const zlib = await Compress.encode(bytes, { format: 'deflate' });
  * ```
  */
 export async function encode(
   data: Uint8Array | string,
   options: encode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { format = 'gzip', signal } = options
-  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : assertUint8Array(data)
-  const chunks: Uint8Array[] = []
-  let length = 0
+  const { format = 'gzip', signal } = options;
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : assertUint8Array(data);
+  const chunks: Uint8Array[] = [];
+  let length = 0;
   await run(
     bytes,
     new CompressionStream(format),
     (chunk) => {
-      chunks.push(chunk)
-      length += chunk.byteLength
+      chunks.push(chunk);
+      length += chunk.byteLength;
     },
     signal,
-  )
-  return concat(chunks, length)
+  );
+  return concat(chunks, length);
 }
 
 export declare namespace decode {
   type Options = {
     /** @default 'gzip' */
-    format?: Format | undefined
+    format?: Format | undefined;
     /** Fail with `MaxBytesError` once the output grows past this many bytes. @default Infinity */
-    maxBytes?: number | undefined
+    maxBytes?: number | undefined;
     /** Rejects with `signal.reason` when aborted, and stops the compression stream. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -63,49 +63,49 @@ export declare namespace decode {
  *
  * @example
  * ```ts
- * import * as Compress from '@portable/compress'
+ * import * as Compress from '@portable/compress';
  *
- * const response = await fetch('https://example.com/data.json.gz')
- * const bytes = await Compress.decode(await response.bytes(), { maxBytes: 100_000_000 })
+ * const response = await fetch('https://example.com/data.json.gz');
+ * const bytes = await Compress.decode(await response.bytes(), { maxBytes: 100_000_000 });
  * ```
  */
 export async function decode(
   data: Uint8Array,
   options: decode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const { format = 'gzip', maxBytes = Infinity, signal } = options
-  assertUint8Array(data)
-  const chunks: Uint8Array[] = []
-  let length = 0
+  const { format = 'gzip', maxBytes = Infinity, signal } = options;
+  assertUint8Array(data);
+  const chunks: Uint8Array[] = [];
+  let length = 0;
   const decodeAll = (input: Uint8Array) =>
     run(
       input,
       new DecompressionStream(format),
       (chunk) => {
-        length += chunk.byteLength
+        length += chunk.byteLength;
         if (length > maxBytes) {
-          throw new MaxBytesError({ maxBytes })
+          throw new MaxBytesError({ maxBytes });
         }
-        chunks.push(chunk)
+        chunks.push(chunk);
       },
       signal,
-    )
+    );
 
-  let firstError: unknown
+  let firstError: unknown;
   try {
-    await decodeAll(data)
+    await decodeAll(data);
     if (format === 'deflate' && (await needsTrailerCheck())) {
       assertTrailer(
         data,
         chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
-      )
+      );
     }
-    return concat(chunks, length)
+    return concat(chunks, length);
   } catch (error) {
     if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) {
-      throw error
+      throw error;
     }
-    firstError = error
+    firstError = error;
   }
 
   // DecompressionStream rejects anything after the first gzip member. Each member starts with
@@ -114,86 +114,86 @@ export async function decode(
   // decoding one that runs past it fails with InvalidInputError, so memberEnd binary searches the
   // positions. Trying each position in turn would take quadratic time when the member's data
   // contains 1f 8b 08 many times.
-  chunks.length = 0
-  length = 0
+  chunks.length = 0;
+  length = 0;
   const memberEnd = async (offset: number): Promise<number> => {
-    const ends: number[] = []
+    const ends: number[] = [];
     const end = (index: number): number => {
       while (ends.length <= index) {
-        const next = nextMember(data, ends.length === 0 ? offset + 18 : ends.at(-1)! + 1)
+        const next = nextMember(data, ends.length === 0 ? offset + 18 : ends.at(-1)! + 1);
         if (next === -1) {
-          return -1
+          return -1;
         }
-        ends.push(next)
+        ends.push(next);
       }
-      return ends[index]!
-    }
+      return ends[index]!;
+    };
     const attempt = async (end: number): Promise<'before' | 'at' | 'after'> => {
-      const before = chunks.length
+      const before = chunks.length;
       try {
-        await decodeAll(data.subarray(offset, end))
-        return 'at'
+        await decodeAll(data.subarray(offset, end));
+        return 'at';
       } catch (error) {
         if (error instanceof MaxBytesError || signal?.aborted) {
-          throw error
+          throw error;
         }
         for (const chunk of chunks.splice(before)) {
-          length -= chunk.byteLength
+          length -= chunk.byteLength;
         }
-        return error instanceof TruncatedError ? 'before' : 'after'
+        return error instanceof TruncatedError ? 'before' : 'after';
       }
-    }
-    let low = 0
-    let high = -1
+    };
+    let low = 0;
+    let high = -1;
     for (let index = 0; high === -1; index = index * 2 + 1) {
-      const position = end(index)
+      const position = end(index);
       if (position === -1) {
-        high = ends.length
+        high = ends.length;
       } else {
-        const result = await attempt(position)
+        const result = await attempt(position);
         if (result === 'at') {
-          return position
+          return position;
         }
         if (result === 'before') {
-          low = index + 1
+          low = index + 1;
         } else {
-          high = index
+          high = index;
         }
       }
     }
     while (low < high) {
-      const index = (low + high) >>> 1
-      const result = await attempt(ends[index]!)
+      const index = (low + high) >>> 1;
+      const result = await attempt(ends[index]!);
       if (result === 'at') {
-        return ends[index]!
+        return ends[index]!;
       }
       if (result === 'before') {
-        low = index + 1
+        low = index + 1;
       } else {
-        high = index
+        high = index;
       }
     }
-    return -1
-  }
+    return -1;
+  };
 
-  let offset = 0
+  let offset = 0;
   for (let end = await memberEnd(0); end !== -1; end = await memberEnd(offset)) {
-    offset = end
+    offset = end;
   }
   if (offset === 0) {
-    throw firstError
+    throw firstError;
   }
-  await decodeAll(data.subarray(offset))
-  return concat(chunks, length)
+  await decodeAll(data.subarray(offset));
+  return concat(chunks, length);
 }
 
 function nextMember(data: Uint8Array, from: number): number {
   for (let i = from; i + 2 < data.length; i++) {
     if (data[i] === 0x1f && data[i + 1] === 0x8b && data[i + 2] === 0x08) {
-      return i
+      return i;
     }
   }
-  return -1
+  return -1;
 }
 
 async function run(
@@ -202,43 +202,43 @@ async function run(
   onChunk: (chunk: Uint8Array<ArrayBuffer>) => void,
   signal: AbortSignal | undefined,
 ): Promise<void> {
-  signal?.throwIfAborted()
-  const writer = stream.writable.getWriter()
-  let closing = false
+  signal?.throwIfAborted();
+  const writer = stream.writable.getWriter();
+  let closing = false;
   writer
     .write(toBufferSource(data))
     .then(() => {
-      closing = true
-      return writer.close()
+      closing = true;
+      return writer.close();
     })
-    .catch(() => {})
-  const reader = stream.readable.getReader()
+    .catch(() => {});
+  const reader = stream.readable.getReader();
   const onAbort = () => {
-    reader.cancel(signal!.reason).catch(() => {})
-    writer.abort(signal!.reason).catch(() => {})
-  }
-  signal?.addEventListener('abort', onAbort, { once: true })
+    reader.cancel(signal!.reason).catch(() => {});
+    writer.abort(signal!.reason).catch(() => {});
+  };
+  signal?.addEventListener('abort', onAbort, { once: true });
   try {
     for (;;) {
-      let result: ReadableStreamReadResult<Uint8Array<ArrayBuffer>>
+      let result: ReadableStreamReadResult<Uint8Array<ArrayBuffer>>;
       try {
-        result = await reader.read()
+        result = await reader.read();
       } catch (error) {
-        signal?.throwIfAborted()
-        throw classify(error, closing)
+        signal?.throwIfAborted();
+        throw classify(error, closing);
       }
-      signal?.throwIfAborted()
+      signal?.throwIfAborted();
       if (result.done) {
-        return
+        return;
       }
       try {
-        onChunk(result.value)
+        onChunk(result.value);
       } catch (error) {
-        await reader.cancel(error).catch(() => {})
-        throw error
+        await reader.cancel(error).catch(() => {});
+        throw error;
       }
     }
   } finally {
-    signal?.removeEventListener('abort', onAbort)
+    signal?.removeEventListener('abort', onAbort);
   }
 }

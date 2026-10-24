@@ -1,4 +1,4 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown by `parseAddresses` with `strict: true` when the input isn't a valid RFC 5322 address
  * list, and by `formatValue` and `formatAddresses` when given something that can't be
@@ -6,19 +6,19 @@ import * as Errors from '@portable/errors'
  *
  * @example
  * ```ts
- * import * as MimeHeaders from '@portable/mime-headers'
+ * import * as MimeHeaders from '@portable/mime-headers';
  *
  * try {
- *   MimeHeaders.parseAddresses('not an address', { strict: true })
+ *   MimeHeaders.parseAddresses('not an address', { strict: true });
  * } catch (error) {
  *   if (error instanceof MimeHeaders.InvalidInputError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'MimeHeaders.InvalidInputError'
+  static override readonly kind: string = 'MimeHeaders.InvalidInputError';
 }
 
 /**
@@ -26,20 +26,20 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as MimeHeaders from '@portable/mime-headers'
+ * import * as MimeHeaders from '@portable/mime-headers';
  *
  * try {
- *   MimeHeaders.parseHeaders(message, { maxLength: 64 * 1024 })
+ *   MimeHeaders.parseHeaders(message, { maxLength: 64 * 1024 });
  * } catch (error) {
  *   if (error instanceof MimeHeaders.MaxLengthError) {
- *     console.log(error.maxLength)
+ *     console.log(error.maxLength);
  *   }
  * }
  * ```
  */
 export class MaxLengthError extends Errors.MaxLengthError {
-  static override readonly kind: string = 'MimeHeaders.MaxLengthError'
+  static override readonly kind: string = 'MimeHeaders.MaxLengthError';
   constructor(options: Errors.MaxLengthError.Options) {
-    super({ message: `The header block exceeded maxLength of ${options.maxLength}.`, ...options })
+    super({ message: `The header block exceeded maxLength of ${options.maxLength}.`, ...options });
   }
 }

@@ -1,7 +1,7 @@
-import * as Dns from '@portable/dns'
-import type * as Spf from '@portable/spf'
-import { canExist, parseDomain } from './domain.js'
-import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './record.js'
+import * as Dns from '@portable/dns';
+import type * as Spf from '@portable/spf';
+import { canExist, parseDomain } from './domain.js';
+import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './record.js';
 
 /**
  * The DNS lookups DMARC needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or a
@@ -12,59 +12,59 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
  *
  * @example
  * ```ts
- * import * as Dns from '@portable/dns'
- * import * as Dmarc from '@portable/dmarc'
+ * import * as Dns from '@portable/dns';
+ * import * as Dmarc from '@portable/dmarc';
  *
- * const resolver: Dmarc.Resolver = Dns.create()
+ * const resolver: Dmarc.Resolver = Dns.create();
  * ```
  */
-export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>
+export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>;
 
 /**
  * The outcome of a DMARC check.
  *
  * @example
  * ```ts
- * import * as Dmarc from '@portable/dmarc'
+ * import * as Dmarc from '@portable/dmarc';
  *
- * const dmarc: Dmarc.Result = await Dmarc.check({ from, spf, dkim }, { resolver })
+ * const dmarc: Dmarc.Result = await Dmarc.check({ from, spf, dkim }, { resolver });
  * if (dmarc.disposition === 'reject') {
- *   reject('550 5.7.1 Rejected by DMARC policy')
+ *   reject('550 5.7.1 Rejected by DMARC policy');
  * }
  * ```
  */
 export type Result = {
   /** The DMARC result, as Authentication-Results reports it (RFC 8601). */
-  result: Result.Code
+  result: Result.Code;
   /** The From domain that was checked, in lower case with U-labels converted to A-labels. */
-  domain: string
+  domain: string;
   /**
    * The policy the domain owner asks for: `p` for the From domain's own record, otherwise `sp`, or
    * `np` when the From domain doesn't exist. With `t=y` it is one level lower. Set when a record
    * applies.
    */
-  policy?: Policy | undefined
+  policy?: Policy | undefined;
   /** What to do with the message: `policy` when the result is `fail`, `'none'` otherwise. */
-  disposition: Policy
+  disposition: Policy;
   /** The domain whose `_dmarc` record applies: the From domain, its organizational domain or its public suffix domain. */
-  policyDomain?: string | undefined
+  policyDomain?: string | undefined;
   /** The record that applies. */
-  record?: Record | undefined
+  record?: Record | undefined;
   /** Whether the SPF result aligns. Set when `spf` was passed. */
-  spf?: Alignment | undefined
+  spf?: Alignment | undefined;
   /** Whether each DKIM signature aligns, in the order they were passed. */
-  dkim: readonly Alignment[]
+  dkim: readonly Alignment[];
   /** Why the result is `none`, `temperror` or `permerror`. */
-  reason?: string | undefined
+  reason?: string | undefined;
   /**
    * The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one
    * lookup failed.
    */
-  cause?: unknown
-}
+  cause?: unknown;
+};
 
 export declare namespace Result {
-  type Code = 'pass' | 'fail' | 'none' | 'temperror' | 'permerror'
+  type Code = 'pass' | 'fail' | 'none' | 'temperror' | 'permerror';
 }
 
 /**
@@ -73,76 +73,76 @@ export declare namespace Result {
  *
  * @example
  * ```ts
- * import * as Dmarc from '@portable/dmarc'
+ * import * as Dmarc from '@portable/dmarc';
  *
- * const { dkim } = await Dmarc.check({ from, dkim: signatures }, { resolver })
- * const aligned: Dmarc.Alignment[] = dkim.filter((signature) => signature.aligned)
+ * const { dkim } = await Dmarc.check({ from, dkim: signatures }, { resolver });
+ * const aligned: Dmarc.Alignment[] = dkim.filter((signature) => signature.aligned);
  * ```
  */
 export type Alignment = {
   /** The SPF domain or the signature's `d=` domain, normalized like `Result.domain`. */
-  domain: string
-  aligned: boolean
-}
+  domain: string;
+  aligned: boolean;
+};
 
 export declare namespace check {
   type Input = {
     /** The domain of the RFC5322.From address, such as `example.com`. */
-    from: string
+    from: string;
     /** The SPF result of the MAIL FROM identity, as `Spf.check` returns it. */
-    spf?: Pick<Spf.Result, 'result' | 'domain'> | undefined
+    spf?: Pick<Spf.Result, 'result' | 'domain'> | undefined;
     /** One entry per DKIM signature, with the signature's result and its `d=` domain. */
-    dkim?: readonly DkimResult[] | undefined
-  }
+    dkim?: readonly DkimResult[] | undefined;
+  };
 
   type DkimResult = {
     /** Only `'pass'` counts. */
-    result: string
+    result: string;
     /** The signature's `d=` domain. */
-    domain: string
-  }
+    domain: string;
+  };
 
   type Options = {
     /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
-    resolver: Resolver
+    resolver: Resolver;
     /**
      * Returns the organizational domain of a domain from a public suffix list, as tldts'
      * `getDomain` does, and switches from RFC 9989's DNS tree walk to RFC 7489's lookups. A
      * missing result means the domain is its own organizational domain.
      */
-    organizationalDomain?: ((domain: string) => string | null | undefined) | undefined
+    organizationalDomain?: ((domain: string) => string | null | undefined) | undefined;
     /** Stops the check, such as `AbortSignal.timeout(10_000)`. The promise rejects with `signal.reason`. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 type Context = {
-  resolver: Resolver
-  signal: AbortSignal | undefined
-  records: Map<string, Promise<Parsed | undefined>>
-  walks: Map<string, Promise<Walk>>
-}
+  resolver: Resolver;
+  signal: AbortSignal | undefined;
+  records: Map<string, Promise<Parsed | undefined>>;
+  walks: Map<string, Promise<Walk>>;
+};
 
-type Found = Parsed & { domain: string }
+type Found = Parsed & { domain: string };
 
-type Walk = { found: Found[]; error?: TempError | undefined }
+type Walk = { found: Found[]; error?: TempError | undefined };
 
 // oxlint-disable-next-line portable/error-kind -- never leaves this module, and its message becomes the verdict's reason
 class TempError extends Error {
-  override name = 'Dmarc.TempError'
+  override name = 'Dmarc.TempError';
 }
 
 function failure(errors: readonly TempError[]): { reason: string; cause?: unknown } {
-  const reason = errors.map((error) => error.message).join('; ')
-  const causes = errors.flatMap((error) => (error.cause === undefined ? [] : [error.cause]))
+  const reason = errors.map((error) => error.message).join('; ');
+  const causes = errors.flatMap((error) => (error.cause === undefined ? [] : [error.cause]));
   if (causes.length === 0) {
-    return { reason }
+    return { reason };
   }
-  return { reason, cause: causes.length === 1 ? causes[0] : new AggregateError(causes, reason) }
+  return { reason, cause: causes.length === 1 ? causes[0] : new AggregateError(causes, reason) };
 }
 
-const maxWalkLabels = 7
-const maxAlignmentWalks = 10
+const maxWalkLabels = 7;
+const maxAlignmentWalks = 10;
 
 /**
  * Checks a message against the DMARC policy of its From domain (RFC 9989, which replaces RFC
@@ -152,34 +152,34 @@ const maxAlignmentWalks = 10
  *
  * @example
  * ```ts
- * import * as Dmarc from '@portable/dmarc'
- * import * as Dns from '@portable/dns'
- * import * as Spf from '@portable/spf'
+ * import * as Dmarc from '@portable/dmarc';
+ * import * as Dns from '@portable/dns';
+ * import * as Spf from '@portable/spf';
  *
- * const resolver = Dns.create()
- * const spf = await Spf.check({ ip, sender, helo }, { resolver })
+ * const resolver = Dns.create();
+ * const spf = await Spf.check({ ip, sender, helo }, { resolver });
  * const dmarc = await Dmarc.check(
  *   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'mail.example.com' }] },
  *   { resolver },
- * )
- * dmarc.result // 'pass', 'fail', 'none', 'temperror' or 'permerror'
- * dmarc.disposition // 'none', 'quarantine' or 'reject'
+ * );
+ * dmarc.result; // 'pass', 'fail', 'none', 'temperror' or 'permerror'
+ * dmarc.disposition; // 'none', 'quarantine' or 'reject'
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
-  options.signal?.throwIfAborted()
-  const author = parseDomain(input.from)
-  const domain = author.kind === 'name' ? author.name : input.from.trim().toLowerCase()
+  options.signal?.throwIfAborted();
+  const author = parseDomain(input.from);
+  const domain = author.kind === 'name' ? author.name : input.from.trim().toLowerCase();
   const unaligned = {
     ...(input.spf && { spf: { domain: identifier(input.spf.domain), aligned: false } }),
     dkim: (input.dkim ?? []).map((entry) => ({ domain: identifier(entry.domain), aligned: false })),
-  }
-  const base = { domain, disposition: 'none', ...unaligned } as const
+  };
+  const base = { domain, disposition: 'none', ...unaligned } as const;
   if (author.kind === 'invalid') {
-    return { ...base, result: 'permerror', reason: `"${input.from}" is not a domain name` }
+    return { ...base, result: 'permerror', reason: `"${input.from}" is not a domain name` };
   }
   if (author.kind === 'address') {
-    return { ...base, result: 'none', reason: 'The From domain is an address literal' }
+    return { ...base, result: 'none', reason: 'The From domain is an address literal' };
   }
 
   const ctx = {
@@ -187,124 +187,124 @@ export async function check(input: check.Input, options: check.Options): Promise
     signal: options.signal,
     records: new Map(),
     walks: new Map(),
-  } satisfies Context
-  const psl = options.organizationalDomain
+  } satisfies Context;
+  const psl = options.organizationalDomain;
   const orgDomain = psl
     ? async (name: string) => identifier(psl(name) ?? name)
     : async (name: string) => {
-        const { found, error } = await walk(ctx, name)
+        const { found, error } = await walk(ctx, name);
         if (error) {
-          throw error
+          throw error;
         }
-        return selectOrgDomain(name, found)
-      }
+        return selectOrgDomain(name, found);
+      };
 
-  let found: Found | undefined
+  let found: Found | undefined;
   try {
-    found = psl ? await discoverByList(ctx, author.name, psl) : await discover(ctx, author.name)
+    found = psl ? await discoverByList(ctx, author.name, psl) : await discover(ctx, author.name);
   } catch (error) {
     if (!(error instanceof TempError)) {
-      throw error
+      throw error;
     }
-    return { ...base, result: 'temperror', ...failure([error]) }
+    return { ...base, result: 'temperror', ...failure([error]) };
   }
   if (!found) {
-    return { ...base, result: 'none', reason: 'No DMARC record' }
+    return { ...base, result: 'none', reason: 'No DMARC record' };
   }
-  const { record } = found
+  const { record } = found;
   if (!record) {
     return {
       ...base,
       result: 'none',
       reason: `The record at _dmarc.${found.domain} has no valid policy and no valid rua`,
-    }
+    };
   }
 
-  const errors: TempError[] = []
-  let policy = record.p
+  const errors: TempError[] = [];
+  let policy = record.p;
   if (found.domain !== author.name) {
-    policy = record.sp ?? record.p
+    policy = record.sp ?? record.p;
     if (record.np && record.np !== policy) {
       try {
         if (!(await exists(ctx, author.name))) {
-          policy = record.np
+          policy = record.np;
         }
       } catch (error) {
         if (!(error instanceof TempError)) {
-          throw error
+          throw error;
         }
-        errors.push(error)
+        errors.push(error);
         if (strength[record.np] < strength[policy]) {
-          policy = record.np
+          policy = record.np;
         }
       }
     }
   }
   if (record.t === 'y') {
-    policy = policy === 'reject' ? 'quarantine' : 'none'
+    policy = policy === 'reject' ? 'quarantine' : 'none';
   }
 
-  const walked = new Set<string>()
+  const walked = new Set<string>();
   const aligns = async (name: string, strict: boolean): Promise<boolean> => {
     if (name === author.name) {
-      return true
+      return true;
     }
     if (strict) {
-      return false
+      return false;
     }
     if (psl) {
-      return (await orgDomain(name)) === (await orgDomain(author.name))
+      return (await orgDomain(name)) === (await orgDomain(author.name));
     }
-    let authorOrg: string
+    let authorOrg: string;
     try {
-      authorOrg = await orgDomain(author.name)
+      authorOrg = await orgDomain(author.name);
     } catch (error) {
       if (name.split('.').at(-1) !== author.name.split('.').at(-1)) {
-        return false
+        return false;
       }
-      throw error
+      throw error;
     }
     if (name !== authorOrg && !name.endsWith(`.${authorOrg}`)) {
-      return false
+      return false;
     }
     if (!walked.has(name) && walked.size >= maxAlignmentWalks) {
       throw new TempError(
         `Alignment of ${name} not checked: more than ${maxAlignmentWalks} tree walks`,
-      )
+      );
     }
-    walked.add(name)
-    return (await orgDomain(name)) === authorOrg
-  }
+    walked.add(name);
+    return (await orgDomain(name)) === authorOrg;
+  };
   const align = async (
     entry: { result: string; domain: string },
     alignment: Alignment,
     strict: boolean,
   ): Promise<Alignment> => {
     if (entry.result !== 'pass' || parseDomain(entry.domain).kind !== 'name') {
-      return alignment
+      return alignment;
     }
     try {
-      return { ...alignment, aligned: await aligns(alignment.domain, strict) }
+      return { ...alignment, aligned: await aligns(alignment.domain, strict) };
     } catch (error) {
       if (!(error instanceof TempError)) {
-        throw error
+        throw error;
       }
-      errors.push(error)
-      return alignment
+      errors.push(error);
+      return alignment;
     }
-  }
+  };
 
   const spf =
     input.spf && unaligned.spf
       ? await align(input.spf, unaligned.spf, record.aspf === 's')
-      : undefined
-  const dkim: Alignment[] = []
+      : undefined;
+  const dkim: Alignment[] = [];
   for (const [index, entry] of (input.dkim ?? []).entries()) {
-    dkim.push(await align(entry, unaligned.dkim[index]!, record.adkim === 's'))
+    dkim.push(await align(entry, unaligned.dkim[index]!, record.adkim === 's'));
   }
 
-  const pass = spf?.aligned || dkim.some((signature) => signature.aligned)
-  const result = pass ? 'pass' : errors.length ? 'temperror' : 'fail'
+  const pass = spf?.aligned || dkim.some((signature) => signature.aligned);
+  const result = pass ? 'pass' : errors.length ? 'temperror' : 'fail';
   return {
     result,
     domain,
@@ -315,28 +315,30 @@ export async function check(input: check.Input, options: check.Options): Promise
     ...(spf && { spf }),
     dkim,
     ...(result === 'temperror' && failure(errors)),
-  }
+  };
 }
 
-const strength: { [params in Policy]: number } = { none: 0, quarantine: 1, reject: 2 }
+const strength: { [params in Policy]: number } = { none: 0, quarantine: 1, reject: 2 };
 
 function identifier(value: string): string {
-  const parsed = parseDomain(value)
-  return parsed.kind === 'name' ? parsed.name : value.trim().toLowerCase()
+  const parsed = parseDomain(value);
+  return parsed.kind === 'name' ? parsed.name : value.trim().toLowerCase();
 }
 
 async function discover(ctx: Context, domain: string): Promise<Found | undefined> {
-  const own = await lookup(ctx, domain)
+  const own = await lookup(ctx, domain);
   if (own) {
-    return { domain, ...own }
+    return { domain, ...own };
   }
-  const { found, error } = await walk(ctx, domain)
+  const { found, error } = await walk(ctx, domain);
   if (error) {
-    throw error
+    throw error;
   }
-  const orgDomain = selectOrgDomain(domain, found)
-  const last = found.at(-1)
-  return found.find((entry) => entry.domain === orgDomain) ?? (last?.psd === 'y' ? last : undefined)
+  const orgDomain = selectOrgDomain(domain, found);
+  const last = found.at(-1);
+  return (
+    found.find((entry) => entry.domain === orgDomain) ?? (last?.psd === 'y' ? last : undefined)
+  );
 }
 
 async function discoverByList(
@@ -344,96 +346,96 @@ async function discoverByList(
   domain: string,
   orgDomain: (domain: string) => string | null | undefined,
 ): Promise<Found | undefined> {
-  const own = await lookup(ctx, domain)
+  const own = await lookup(ctx, domain);
   if (own) {
-    return { domain, ...own }
+    return { domain, ...own };
   }
-  const org = identifier(orgDomain(domain) ?? domain)
+  const org = identifier(orgDomain(domain) ?? domain);
   if (org === domain) {
-    return undefined
+    return undefined;
   }
-  const parent = await lookup(ctx, org)
-  return parent && { domain: org, ...parent }
+  const parent = await lookup(ctx, org);
+  return parent && { domain: org, ...parent };
 }
 
 function walk(ctx: Context, domain: string): Promise<Walk> {
-  let walked = ctx.walks.get(domain)
+  let walked = ctx.walks.get(domain);
   if (!walked) {
     walked = (async () => {
-      const found: Found[] = []
+      const found: Found[] = [];
       for (let labels = domain.split('.'); labels.length;) {
-        const name = labels.join('.')
-        let parsed: Parsed | undefined
+        const name = labels.join('.');
+        let parsed: Parsed | undefined;
         try {
-          parsed = await lookup(ctx, name)
+          parsed = await lookup(ctx, name);
         } catch (error) {
           if (!(error instanceof TempError)) {
-            throw error
+            throw error;
           }
-          return { found, error }
+          return { found, error };
         }
         if (parsed) {
-          found.push({ domain: name, ...parsed })
+          found.push({ domain: name, ...parsed });
           if (parsed.psd !== 'u') {
-            break
+            break;
           }
         }
-        labels = labels.length > maxWalkLabels ? labels.slice(-maxWalkLabels) : labels.slice(1)
+        labels = labels.length > maxWalkLabels ? labels.slice(-maxWalkLabels) : labels.slice(1);
       }
-      return { found }
-    })()
-    ctx.walks.set(domain, walked)
+      return { found };
+    })();
+    ctx.walks.set(domain, walked);
   }
-  return walked
+  return walked;
 }
 
 function selectOrgDomain(domain: string, found: readonly Found[]): string {
   for (const entry of found) {
     if (entry.psd === 'n') {
-      return entry.domain
+      return entry.domain;
     }
     if (entry.psd === 'y' && entry.domain !== domain) {
       return domain
         .split('.')
         .slice(-(entry.domain.split('.').length + 1))
-        .join('.')
+        .join('.');
     }
   }
-  return found.at(-1)?.domain ?? domain
+  return found.at(-1)?.domain ?? domain;
 }
 
 function lookup(ctx: Context, domain: string): Promise<Parsed | undefined> {
-  let answer = ctx.records.get(domain)
+  let answer = ctx.records.get(domain);
   if (!answer) {
-    const name = `_dmarc.${domain}`
+    const name = `_dmarc.${domain}`;
     answer = canExist(name)
       ? query(ctx, `TXT lookup of ${name}`, () => ctx.resolver.resolveTxt(name)).then((answer) => {
-          const records = 'value' in answer ? answer.value : []
-          const texts = records.map((strings) => strings.join('').trimEnd()).filter(isDmarc)
-          return texts.length === 1 ? parseRecord(texts[0]!) : undefined
+          const records = 'value' in answer ? answer.value : [];
+          const texts = records.map((strings) => strings.join('').trimEnd()).filter(isDmarc);
+          return texts.length === 1 ? parseRecord(texts[0]!) : undefined;
         })
-      : Promise.resolve(undefined)
-    answer.catch(() => {})
-    ctx.records.set(domain, answer)
+      : Promise.resolve(undefined);
+    answer.catch(() => {});
+    ctx.records.set(domain, answer);
   }
-  return abortable(answer, ctx.signal)
+  return abortable(answer, ctx.signal);
 }
 
 async function exists(ctx: Context, domain: string): Promise<boolean> {
   if (!canExist(domain)) {
-    return false
+    return false;
   }
-  const a = await query(ctx, `A lookup of ${domain}`, () => ctx.resolver.resolve4(domain))
+  const a = await query(ctx, `A lookup of ${domain}`, () => ctx.resolver.resolve4(domain));
   if ('value' in a || a.empty === 'ENODATA') {
-    return true
+    return true;
   }
   if (a.empty === 'EBADNAME') {
-    return false
+    return false;
   }
   const cname = await query(ctx, `CNAME lookup of ${domain}`, () =>
     ctx.resolver.resolveCname(domain),
-  )
-  return 'value' in cname && cname.value.length > 0
+  );
+  return 'value' in cname && cname.value.length > 0;
 }
 
 async function query<value>(
@@ -442,19 +444,19 @@ async function query<value>(
   run: () => Promise<value>,
 ): Promise<{ value: value } | { empty: string }> {
   try {
-    return { value: await abortable(Promise.resolve().then(run), ctx.signal) }
+    return { value: await abortable(Promise.resolve().then(run), ctx.signal) };
   } catch (error) {
     if (error instanceof TempError || ctx.signal?.aborted) {
-      throw error
+      throw error;
     }
     const code =
-      typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
+      typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
     if (Dns.isNotFound(error)) {
-      return { empty: code as string }
+      return { empty: code as string };
     }
     throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`, {
       cause: error,
-    })
+    });
   }
 }
 
@@ -463,14 +465,14 @@ function abortable<value>(
   signal: AbortSignal | undefined,
 ): Promise<value> {
   if (!signal) {
-    return promise
+    return promise;
   }
   if (signal.aborted) {
-    return Promise.reject(signal.reason)
+    return Promise.reject(signal.reason);
   }
   return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason)
-    signal.addEventListener('abort', onAbort, { once: true })
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort))
-  })
+    const onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+  });
 }

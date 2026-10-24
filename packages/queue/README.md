@@ -9,22 +9,22 @@ npm install @portable/queue
 ```
 
 ```ts
-import * as Queue from '@portable/queue'
+import * as Queue from '@portable/queue';
 
-const queue = Queue.create({ concurrency: 4 })
+const queue = Queue.create({ concurrency: 4 });
 const pages = await Promise.all(
   urls.map((url) => queue.add(async ({ signal }) => (await fetch(url, { signal })).text())),
-)
+);
 
-const limit = Queue.limit(4)
-const sizes = await Promise.all(files.map((file) => limit(() => upload(file))))
+const limit = Queue.limit(4);
+const sizes = await Promise.all(files.map((file) => limit(() => upload(file))));
 
 const thumbnails = await Queue.map(images, (image, { signal }) => resize(image, { signal }), {
   concurrency: 2,
-})
+});
 
-const connect = Queue.once(() => openDatabase(url))
-const db = await connect()
+const connect = Queue.once(() => openDatabase(url));
+const db = await connect();
 ```
 
 ## API
@@ -82,8 +82,8 @@ Invalid arguments, such as `concurrency: 0` or a `NaN` priority, throw a `RangeE
 `interval` and `intervalCap` count task starts in a sliding window: no more than `intervalCap` tasks start in any `interval` ms, so there is no burst of twice the cap at a window boundary. This is p-queue's and p-throttle's `strict` mode. Time comes from `performance.now()`, so a change to the system clock has no effect. A queue with only a rate limit replaces p-throttle:
 
 ```ts
-const queue = Queue.create({ interval: 1000, intervalCap: 5 })
-const throttled = (id: string) => queue.add(() => fetchUser(id))
+const queue = Queue.create({ interval: 1000, intervalCap: 5 });
+const throttled = (id: string) => queue.add(() => fetchUser(id));
 ```
 
 ## With `@portable/timers`
@@ -91,14 +91,14 @@ const throttled = (id: string) => queue.add(() => fetchUser(id))
 Retries, timeouts and delays come from `@portable/timers`. To retry inside one slot, wrap the work in `Timers.retry` inside the task:
 
 ```ts
-import * as Queue from '@portable/queue'
-import * as Timers from '@portable/timers'
+import * as Queue from '@portable/queue';
+import * as Timers from '@portable/timers';
 
-const queue = Queue.create({ concurrency: 4 })
+const queue = Queue.create({ concurrency: 4 });
 
 const response = await queue.add(({ signal }) =>
   Timers.retry(({ signal }) => fetch(url, { signal }), { attempts: 3, timeout: 10_000, signal }),
-)
+);
 ```
 
 The task holds its slot during the waits between attempts. To give the slot back while waiting, put the queue inside the retry so each attempt queues again:
@@ -107,7 +107,7 @@ The task holds its slot during the waits between attempts. To give the slot back
 const response = await Timers.retry(
   ({ signal }) => queue.add(({ signal }) => fetch(url, { signal }), { signal }),
   { attempts: 3 },
-)
+);
 ```
 
 A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(5000) })`, which also counts the time the task waits. To time only the run, combine the signals inside the task: `AbortSignal.any([signal, AbortSignal.timeout(5000)])`.

@@ -1,9 +1,9 @@
-import groups from '../../packages.json' with { type: 'json' }
+import groups from '../../packages.json' with { type: 'json' };
 
-const base = import.meta.env.BASE_URL
+const base = import.meta.env.BASE_URL;
 
 const code = (text: string) =>
-  text.split(/`([^`]+)`/).map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part))
+  text.split(/`([^`]+)`/).map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part));
 
 export function Home() {
   return (
@@ -47,5 +47,5 @@ export function Home() {
       ))}
       <footer className="home-footer">MIT License</footer>
     </div>
-  )
+  );
 }

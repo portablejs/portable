@@ -1,5 +1,5 @@
-import * as Dkim from '@portable/dkim'
-import { beforeAll, describe, expect, test } from 'vite-plus/test'
+import * as Dkim from '@portable/dkim';
+import { beforeAll, describe, expect, test } from 'vite-plus/test';
 import {
   binary,
   ed25519Record,
@@ -14,149 +14,150 @@ import {
   rsaRecord,
   stream,
   tagsOf,
-} from './utils.js'
+} from './utils.js';
 
 const MSG =
-  'From: Andris <andris@example.com>\r\nTo: x@example.net\r\nSubject: test\r\nDate: Thu, 01 Jan 2026 00:00:00 +0000\r\n\r\nHello world\r\n'
-const CUSTOM = 'From: a@example.com\r\nX-Custom: one\r\nSubject: s\r\nX-Priority: 1\r\n\r\nbody\r\n'
+  'From: Andris <andris@example.com>\r\nTo: x@example.net\r\nSubject: test\r\nDate: Thu, 01 Jan 2026 00:00:00 +0000\r\n\r\nHello world\r\n';
+const CUSTOM =
+  'From: a@example.com\r\nX-Custom: one\r\nSubject: s\r\nX-Priority: 1\r\n\r\nbody\r\n';
 
-let rsaPem: string
-let edPem: string
-let rsaPublic: CryptoKey
-let edPublic: CryptoKey
-let resolver: Dkim.Resolver
+let rsaPem: string;
+let edPem: string;
+let rsaPublic: CryptoKey;
+let edPublic: CryptoKey;
+let resolver: Dkim.Resolver;
 
 beforeAll(async () => {
-  rsaPem = await privatePem('rsa')
-  edPem = await privatePem('ed25519')
-  rsaPublic = await importPublic('rsa')
-  edPublic = await importPublic('ed25519')
-  const rsa = await rsaRecord()
+  rsaPem = await privatePem('rsa');
+  edPem = await privatePem('ed25519');
+  rsaPublic = await importPublic('rsa');
+  edPublic = await importPublic('ed25519');
+  const rsa = await rsaRecord();
   resolver = resolverFrom({
     's._domainkey.example.com': [rsa],
     't._domainkey.example.com': [rsa],
     'ed._domainkey.example.com': [await ed25519Record()],
     's._domainkey.xn--nnelik-oxa.ee': [rsa],
-  })
-})
+  });
+});
 
 const base = (options: Partial<Dkim.sign.Options> = {}): Dkim.sign.Options => ({
   domain: 'example.com',
   selector: 's',
   privateKey: rsaPem,
   ...options,
-})
+});
 
 async function signed(options: Partial<Dkim.sign.Options> = {}, message = MSG) {
-  const field = await Dkim.sign(message, base(options))
-  return { field, tags: tagsOf(field), out: field + message }
+  const field = await Dkim.sign(message, base(options));
+  return { field, tags: tagsOf(field), out: field + message };
 }
 
 const results = async (message: string | Uint8Array) =>
-  (await Dkim.verify(message, { resolver })).map((r) => r.result)
+  (await Dkim.verify(message, { resolver })).map((r) => r.result);
 
 describe('the signature field', () => {
   test('signs with rsa-sha256, relaxed/relaxed and the time of signing by default', async () => {
-    const before = Math.floor(Date.now() / 1000)
-    const { field, tags, out } = await signed()
+    const before = Math.floor(Date.now() / 1000);
+    const { field, tags, out } = await signed();
     expect(field).toMatch(
       /^DKIM-Signature: v=1; a=rsa-sha256; c=relaxed\/relaxed; d=example\.com; s=s;/,
-    )
-    expect(field.endsWith('\r\n')).toBe(true)
-    expect(Object.keys(tags)).toEqual(['v', 'a', 'c', 'd', 's', 't', 'h', 'bh', 'b'])
-    expect(Number(tags.t)).toBeGreaterThanOrEqual(before)
-    expect(Number(tags.t)).toBeLessThanOrEqual(Math.ceil(Date.now() / 1000))
-    expect(tags.h).toBe('Date: Subject: To: From')
-    expect(await referenceVerify(out, rsaPublic)).toBe(true)
-    expect(await results(out)).toEqual(['pass'])
-  })
+    );
+    expect(field.endsWith('\r\n')).toBe(true);
+    expect(Object.keys(tags)).toEqual(['v', 'a', 'c', 'd', 's', 't', 'h', 'bh', 'b']);
+    expect(Number(tags.t)).toBeGreaterThanOrEqual(before);
+    expect(Number(tags.t)).toBeLessThanOrEqual(Math.ceil(Date.now() / 1000));
+    expect(tags.h).toBe('Date: Subject: To: From');
+    expect(await referenceVerify(out, rsaPublic)).toBe(true);
+    expect(await results(out)).toEqual(['pass']);
+  });
 
   test('folds lines at 76 characters', async () => {
     const { field } = await signed({
       headers: ['From', 'To', 'Subject', 'Date', 'Message-ID', 'Cc'],
-    })
-    const lines = field.slice(0, -2).split('\r\n')
-    expect(lines.length).toBeGreaterThan(3)
+    });
+    const lines = field.slice(0, -2).split('\r\n');
+    expect(lines.length).toBeGreaterThan(3);
     for (const line of lines) {
-      expect(line.length).toBeLessThanOrEqual(76)
+      expect(line.length).toBeLessThanOrEqual(76);
     }
     for (const line of lines.slice(1)) {
-      expect(line).toMatch(/^ \S/)
+      expect(line).toMatch(/^ \S/);
     }
-  })
+  });
 
   test('signs with ed25519-sha256 for an Ed25519 key', async () => {
-    const { tags, out } = await signed({ privateKey: edPem, selector: 'ed' })
-    expect(tags.a).toBe('ed25519-sha256')
-    expect(await referenceVerify(out, edPublic)).toBe(true)
-    expect(await results(out)).toEqual(['pass'])
-  })
+    const { tags, out } = await signed({ privateKey: edPem, selector: 'ed' });
+    expect(tags.a).toBe('ed25519-sha256');
+    expect(await referenceVerify(out, edPublic)).toBe(true);
+    expect(await results(out)).toEqual(['pass']);
+  });
 
   test('writes t= and x=', async () => {
     const { tags, out } = await signed({
       now: new Date('2026-01-01T00:00:00Z'),
       expiresAt: new Date('2026-01-02T00:00:00Z'),
-    })
-    expect(tags.t).toBe('1767225600')
-    expect(tags.x).toBe('1767312000')
-    expect(await referenceVerify(out, rsaPublic)).toBe(true)
-    const [result] = await Dkim.verify(out, { resolver, now: new Date('2026-01-01T12:00:00Z') })
-    expect(result!.result).toBe('pass')
-  })
+    });
+    expect(tags.t).toBe('1767225600');
+    expect(tags.x).toBe('1767312000');
+    expect(await referenceVerify(out, rsaPublic)).toBe(true);
+    const [result] = await Dkim.verify(out, { resolver, now: new Date('2026-01-01T12:00:00Z') });
+    expect(result!.result).toBe('pass');
+  });
 
   test('gives the same field whatever the chunking of the message', async () => {
-    const options = base({ now: new Date(1e12) })
-    const expected = await Dkim.sign(MSG, options)
+    const options = base({ now: new Date(1e12) });
+    const expected = await Dkim.sign(MSG, options);
     for (const seed of [1, 2, 3, 4]) {
-      const chunks = randomChunks(encode(MSG), seed, 8)
-      expect(await Dkim.sign(stream(chunks), options)).toBe(expected)
+      const chunks = randomChunks(encode(MSG), seed, 8);
+      expect(await Dkim.sign(stream(chunks), options)).toBe(expected);
     }
-    expect(await Dkim.sign(encode(MSG), options)).toBe(expected)
-  })
+    expect(await Dkim.sign(encode(MSG), options)).toBe(expected);
+  });
 
   test('uses the hasher option for the body hash', async () => {
-    const seen: Uint8Array[] = []
-    const hashes: Dkim.Hash[] = []
+    const seen: Uint8Array[] = [];
+    const hashes: Dkim.Hash[] = [];
     const hasher = (hash: Dkim.Hash): Dkim.Hasher => ({
       update: (data) => seen.push(data.slice()),
       digest: async () => {
-        const all = new Uint8Array(seen.reduce((n, c) => n + c.length, 0))
-        let at = 0
+        const all = new Uint8Array(seen.reduce((n, c) => n + c.length, 0));
+        let at = 0;
         for (const c of seen) {
-          all.set(c, at)
-          at += c.length
+          all.set(c, at);
+          at += c.length;
         }
-        return new Uint8Array(await crypto.subtle.digest(hash, all))
+        return new Uint8Array(await crypto.subtle.digest(hash, all));
       },
-    })
+    });
     const { out } = await signed({
       hasher: (hash) => {
-        hashes.push(hash)
-        return hasher(hash)
+        hashes.push(hash);
+        return hasher(hash);
       },
-    })
-    expect(hashes).toEqual(['SHA-256'])
-    expect(seen.map(binary).join('')).toBe('Hello world\r\n')
-    expect(await results(out)).toEqual(['pass'])
-  })
-})
+    });
+    expect(hashes).toEqual(['SHA-256']);
+    expect(seen.map(binary).join('')).toBe('Hello world\r\n');
+    expect(await results(out)).toEqual(['pass']);
+  });
+});
 
 describe('private keys', () => {
   test('takes a PKCS #8 PEM, a PKCS #1 PEM, a JWK or a CryptoKey', async () => {
-    const pkcs1 = await fixtureText('rfc8463-rsa.key.txt')
+    const pkcs1 = await fixtureText('rfc8463-rsa.key.txt');
     const keyResolver = resolverFrom({
       'test._domainkey.football.example.com': [
         (JSON.parse(await fixtureText('rfc8463-dns.json')) as Record<string, { TXT: string[][] }>)[
           'test._domainkey.football.example.com'
         ]!.TXT[0]!,
       ],
-    })
+    });
     const field = await Dkim.sign(MSG, {
       domain: 'football.example.com',
       selector: 'test',
       privateKey: pkcs1,
-    })
-    expect((await Dkim.verify(field + MSG, { resolver: keyResolver }))[0]!.result).toBe('pass')
+    });
+    expect((await Dkim.verify(field + MSG, { resolver: keyResolver }))[0]!.result).toBe('pass');
 
     const extractable = await crypto.subtle.importKey(
       'pkcs8',
@@ -164,44 +165,44 @@ describe('private keys', () => {
       { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
       true,
       ['sign'],
-    )
-    const jwk = await crypto.subtle.exportKey('jwk', extractable)
+    );
+    const jwk = await crypto.subtle.exportKey('jwk', extractable);
     for (const privateKey of [extractable, jwk]) {
-      const { out } = await signed({ privateKey })
-      expect(await results(out)).toEqual(['pass'])
+      const { out } = await signed({ privateKey });
+      expect(await results(out)).toEqual(['pass']);
     }
-  })
+  });
 
   test('takes the RFC 8463 Ed25519 key and gives its body hash', async () => {
-    const seed = await fixtureText('rfc8463-ed25519.key.txt')
-    const pkcs8 = btoa(atob('MC4CAQAwBQYDK2VwBCIEIA==') + atob(seed.trim()))
-    const message = binary(await fixture('rfc8463-signed.eml'))
-    const unsigned = message.slice(message.indexOf('\nFrom:') + 1)
+    const seed = await fixtureText('rfc8463-ed25519.key.txt');
+    const pkcs8 = btoa(atob('MC4CAQAwBQYDK2VwBCIEIA==') + atob(seed.trim()));
+    const message = binary(await fixture('rfc8463-signed.eml'));
+    const unsigned = message.slice(message.indexOf('\nFrom:') + 1);
     const field = await Dkim.sign(unsigned, {
       domain: 'football.example.com',
       selector: 'brisbane',
       privateKey: `-----BEGIN PRIVATE KEY-----\n${pkcs8}\n-----END PRIVATE KEY-----`,
       headers: ['from', 'to', 'subject', 'date', 'message-id', 'from', 'subject', 'date'],
       now: new Date(1528637909000),
-    })
-    expect(tagsOf(field).bh).toBe('2jUSOH9NhtVGCQWNr9BrIAPreKQjO6Sn7XIkfJVOzv8=')
+    });
+    expect(tagsOf(field).bh).toBe('2jUSOH9NhtVGCQWNr9BrIAPreKQjO6Sn7XIkfJVOzv8=');
     const zone = JSON.parse(await fixtureText('rfc8463-dns.json')) as Record<
       string,
       { TXT: string[][] }
-    >
+    >;
     const results = await Dkim.verify(field + unsigned, {
       resolver: resolverFrom(
         Object.fromEntries(Object.entries(zone).map(([n, { TXT }]) => [n, TXT])),
       ),
       now: new Date(1528637909000),
-    })
-    expect(results.map((r) => r.result)).toEqual(['pass'])
-  })
+    });
+    expect(results.map((r) => r.result)).toEqual(['pass']);
+  });
 
   test('refuses anything that is not an RSA or Ed25519 private signing key', async () => {
     const ecdsa = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, [
       'sign',
-    ])
+    ]);
     const sha1 = await crypto.subtle.generateKey(
       {
         name: 'RSASSA-PKCS1-v1_5',
@@ -211,7 +212,7 @@ describe('private keys', () => {
       },
       false,
       ['sign'],
-    )
+    );
     for (const privateKey of [
       '',
       'not a pem key',
@@ -220,19 +221,19 @@ describe('private keys', () => {
       sha1.privateKey,
       rsaPublic,
     ]) {
-      await expect(Dkim.sign(MSG, base({ privateKey }))).rejects.toThrow(RangeError)
+      await expect(Dkim.sign(MSG, base({ privateKey }))).rejects.toThrow(RangeError);
     }
     await expect(
       Dkim.sign(MSG, base({ privateKey: undefined as unknown as string })),
-    ).rejects.toThrow(TypeError)
-  })
+    ).rejects.toThrow(TypeError);
+  });
 
   test('refuses an RSA key under 1024 bits (RFC 8301 section 3.2)', async () => {
     await expect(Dkim.sign(MSG, base({ privateKey: await privatePem('small') }))).rejects.toThrow(
       RangeError,
-    )
-  })
-})
+    );
+  });
+});
 
 describe('options', () => {
   for (const [title, options] of [
@@ -274,8 +275,8 @@ describe('options', () => {
     test(`refuses ${title} with a RangeError`, async () => {
       await expect(Dkim.sign(MSG, base(options as Partial<Dkim.sign.Options>))).rejects.toThrow(
         RangeError,
-      )
-    })
+      );
+    });
   }
 
   for (const [title, options] of [
@@ -287,8 +288,8 @@ describe('options', () => {
     test(`refuses ${title} with a TypeError`, async () => {
       await expect(
         Dkim.sign(MSG, base(options as unknown as Partial<Dkim.sign.Options>)),
-      ).rejects.toThrow(TypeError)
-    })
+      ).rejects.toThrow(TypeError);
+    });
   }
 
   test('converts U-labels to lower-case A-labels', async () => {
@@ -299,12 +300,12 @@ describe('options', () => {
       ['xn--nnelik-oxa.ee', 'xn--nnelik-oxa.ee'],
       ['Example.COM', 'example.com'],
     ]) {
-      const { tags, out } = await signed({ domain: input!, selector: 'sõber' })
-      expect(tags.d).toBe(expected)
-      expect(tags.s).toBe('xn--sber-0qa')
-      expect(await referenceVerify(out, rsaPublic)).toBe(true)
+      const { tags, out } = await signed({ domain: input!, selector: 'sõber' });
+      expect(tags.d).toBe(expected);
+      expect(tags.s).toBe('xn--sber-0qa');
+      expect(await referenceVerify(out, rsaPublic)).toBe(true);
     }
-  })
+  });
 
   test('takes each canonicalization', async () => {
     for (const canonicalization of [
@@ -313,40 +314,40 @@ describe('options', () => {
       'simple/relaxed',
       'simple/simple',
     ] as const) {
-      const { tags, out } = await signed({ canonicalization })
-      expect(tags.c).toBe(canonicalization)
-      expect(await referenceVerify(out, rsaPublic)).toBe(true)
-      expect(await results(out)).toEqual(['pass'])
+      const { tags, out } = await signed({ canonicalization });
+      expect(tags.c).toBe(canonicalization);
+      expect(await referenceVerify(out, rsaPublic)).toBe(true);
+      expect(await results(out)).toEqual(['pass']);
     }
-  })
-})
+  });
+});
 
 describe('the h= list', () => {
   test('lists the fields of the message bottom-up', async () => {
-    const { tags, out } = await signed({ headers: ['From', 'X-Custom', 'Subject'] }, CUSTOM)
-    expect(tags.h).toBe('Subject: X-Custom: From')
-    expect(await referenceVerify(out, rsaPublic)).toBe(true)
-  })
+    const { tags, out } = await signed({ headers: ['From', 'X-Custom', 'Subject'] }, CUSTOM);
+    expect(tags.h).toBe('Subject: X-Custom: From');
+    expect(await referenceVerify(out, rsaPublic)).toBe(true);
+  });
 
   test('signs every field of a name listed once', async () => {
-    const message = 'Received: a\r\nReceived: b\r\n' + CUSTOM
-    const { tags } = await signed({ headers: ['From', 'Received'] }, message)
-    expect(tags.h).toBe('From: Received: Received')
-  })
+    const message = 'Received: a\r\nReceived: b\r\n' + CUSTOM;
+    const { tags } = await signed({ headers: ['From', 'Received'] }, message);
+    expect(tags.h).toBe('From: Received: Received');
+  });
 
   test('leaves out names the message does not have', async () => {
-    const { tags } = await signed({ headers: ['From', 'X-Absent', 'Subject', 'Reply-To'] }, CUSTOM)
-    expect(tags.h).toBe('Subject: From')
-    expect((await signed({}, CUSTOM)).tags.h).toBe('Subject: From')
-  })
+    const { tags } = await signed({ headers: ['From', 'X-Absent', 'Subject', 'Reply-To'] }, CUSTOM);
+    expect(tags.h).toBe('Subject: From');
+    expect((await signed({}, CUSTOM)).tags.h).toBe('Subject: From');
+  });
 
   test('keeps the case of the field names in the message', async () => {
     const { tags } = await signed(
       { headers: ['FROM', 'subject'] },
       'from: a@example.com\r\nSUBJECT: s\r\n\r\nx',
-    )
-    expect(tags.h).toBe('SUBJECT: from')
-  })
+    );
+    expect(tags.h).toBe('SUBJECT: from');
+  });
 
   describe('over-signing (RFC 6376 section 8.15)', () => {
     test('lists a repeated name more times than the message has the field', async () => {
@@ -354,46 +355,46 @@ describe('the h= list', () => {
         const { field, tags, out } = await signed(
           { canonicalization, headers: ['From', 'From', 'Subject', 'Subject'] },
           CUSTOM,
-        )
-        expect(tags.h).toBe('Subject: From: From: Subject')
-        expect(await referenceVerify(out, rsaPublic)).toBe(true)
-        expect(await results(out)).toEqual(['pass'])
-        expect(await results(field + 'From: other@example.net\r\n' + CUSTOM)).toEqual(['fail'])
+        );
+        expect(tags.h).toBe('Subject: From: From: Subject');
+        expect(await referenceVerify(out, rsaPublic)).toBe(true);
+        expect(await results(out)).toEqual(['pass']);
+        expect(await results(field + 'From: other@example.net\r\n' + CUSTOM)).toEqual(['fail']);
         expect(await results(out.replace('\r\n\r\n', '\r\nSubject: other\r\n\r\n'))).toEqual([
           'fail',
-        ])
-        expect(await results(field + 'X-Custom: two\r\n' + CUSTOM)).toEqual(['pass'])
+        ]);
+        expect(await results(field + 'X-Custom: two\r\n' + CUSTOM)).toEqual(['pass']);
       }
-    })
+    });
 
     test('over-signs a repeated name the message does not have', async () => {
       const { field, tags, out } = await signed(
         { headers: ['From', 'Reply-To', 'Reply-To', 'reply-to'] },
         CUSTOM,
-      )
-      expect(tags.h).toBe('From: Reply-To: Reply-To: Reply-To')
-      expect(await results(out)).toEqual(['pass'])
-      expect(await results(field + 'Reply-To: other@example.net\r\n' + CUSTOM)).toEqual(['fail'])
-    })
+      );
+      expect(tags.h).toBe('From: Reply-To: Reply-To: Reply-To');
+      expect(await results(out)).toEqual(['pass']);
+      expect(await results(field + 'Reply-To: other@example.net\r\n' + CUSTOM)).toEqual(['fail']);
+    });
 
     test('adds no names when the message has as many fields as listed', async () => {
-      const message = 'Received: a\r\nReceived: b\r\n' + CUSTOM
+      const message = 'Received: a\r\nReceived: b\r\n' + CUSTOM;
       let { tags, out, field } = await signed(
         { headers: ['From', 'Received', 'Received'] },
         message,
-      )
-      expect(tags.h).toBe('From: Received: Received')
-      expect(await results(out)).toEqual(['pass'])
-      ;({ tags, out, field } = await signed(
+      );
+      expect(tags.h).toBe('From: Received: Received');
+      expect(await results(out)).toEqual(['pass']);
+      ({ tags, out, field } = await signed(
         { headers: ['From', 'Received', 'Received', 'Received'] },
         message,
-      ))
-      expect(tags.h).toBe('From: Received: Received: Received')
-      expect(await results(out)).toEqual(['pass'])
-      expect(await results(field + 'Received: c\r\n' + message)).toEqual(['fail'])
-    })
-  })
-})
+      ));
+      expect(tags.h).toBe('From: Received: Received: Received');
+      expect(await results(out)).toEqual(['pass']);
+      expect(await results(field + 'Received: c\r\n' + message)).toEqual(['fail']);
+    });
+  });
+});
 
 describe('i=', () => {
   test('writes the identity as dkim-quoted-printable (RFC 6376 section 2.11)', async () => {
@@ -406,15 +407,15 @@ describe('i=', () => {
         ['@mail.example.com', '@mail.example.com'],
         ['"a b"@example.com', '"a=20b"@example.com'],
       ]) {
-        const { tags, out } = await signed({ canonicalization, identity: identity! })
-        expect(tags.i).toBe(encoded)
-        expect(await referenceVerify(out, rsaPublic)).toBe(true)
-        const [result] = await Dkim.verify(out, { resolver })
-        expect(result).toMatchObject({ result: 'pass', identity })
+        const { tags, out } = await signed({ canonicalization, identity: identity! });
+        expect(tags.i).toBe(encoded);
+        expect(await referenceVerify(out, rsaPublic)).toBe(true);
+        const [result] = await Dkim.verify(out, { resolver });
+        expect(result).toMatchObject({ result: 'pass', identity });
       }
     }
-  })
-})
+  });
+});
 
 describe('messages', () => {
   for (const [title, message] of [
@@ -426,10 +427,10 @@ describe('messages', () => {
     ['a message with an empty body', 'From: user@example.com\r\nSubject: test\r\n\r\n'],
   ]) {
     test(`signs and verifies ${title}`, async () => {
-      const { tags, out } = await signed({}, message)
-      expect(tags.bh).toBe('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')
-      expect(await results(out)).toEqual(['pass'])
-    })
+      const { tags, out } = await signed({}, message);
+      expect(tags.bh).toBe('47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=');
+      expect(await results(out)).toEqual(['pass']);
+    });
   }
 
   for (const [title, input] of <[string, string][]>[
@@ -443,10 +444,10 @@ describe('messages', () => {
     ],
   ]) {
     test(`refuses ${title} with InvalidInputError`, async () => {
-      const error = await Dkim.sign(input, base()).catch((e: unknown) => e)
-      expect(error).toBeInstanceOf(Dkim.InvalidInputError)
-      expect((error as Error).name).toBe('Dkim.InvalidInputError')
-    })
+      const error = await Dkim.sign(input, base()).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(Dkim.InvalidInputError);
+      expect((error as Error).name).toBe('Dkim.InvalidInputError');
+    });
   }
 
   // nodemailer's "DKIM signatures verified by mailauth" cases: raw messages signed here and
@@ -482,40 +483,40 @@ describe('messages', () => {
       'duplicate header fields',
       'Subject: first\r\nFrom: a@example.com\r\nSubject: second\r\n\r\nbody\r\n',
     ],
-  ] satisfies [string, string | Uint8Array][]
+  ] satisfies [string, string | Uint8Array][];
   for (const [title, message] of cases) {
     test(`signs a message with ${title}`, async () => {
       for (const canonicalization of ['relaxed/relaxed', 'simple/simple'] as const) {
-        const field = await Dkim.sign(message, base({ canonicalization }))
-        const bytes = typeof message === 'string' ? encode(message) : message
-        const out = binary(encode(field)) + binary(bytes)
-        const crlf = !/(^|[^\r])\n/.test(out)
-        expect(crlf ? await referenceVerify(out, rsaPublic) : true).toBe(true)
-        const all = new Uint8Array([...encode(field), ...bytes])
-        expect(await results(all)).toEqual(['pass'])
-        expect(await results(new Uint8Array([...all, ...encode('more\r\n')]))).toEqual(['fail'])
+        const field = await Dkim.sign(message, base({ canonicalization }));
+        const bytes = typeof message === 'string' ? encode(message) : message;
+        const out = binary(encode(field)) + binary(bytes);
+        const crlf = !/(^|[^\r])\n/.test(out);
+        expect(crlf ? await referenceVerify(out, rsaPublic) : true).toBe(true);
+        const all = new Uint8Array([...encode(field), ...bytes]);
+        expect(await results(all)).toEqual(['pass']);
+        expect(await results(new Uint8Array([...all, ...encode('more\r\n')]))).toEqual(['fail']);
       }
-    })
+    });
   }
 
   test('signs the multipart fixture message', async () => {
     for (const name of ['message1.eml', 'nodemailer-message1.eml']) {
-      const message = await fixture(name)
-      const field = await Dkim.sign(message, base())
-      expect(await results(new Uint8Array([...encode(field), ...message]))).toEqual(['pass'])
+      const message = await fixture(name);
+      const field = await Dkim.sign(message, base());
+      expect(await results(new Uint8Array([...encode(field), ...message]))).toEqual(['pass']);
     }
-  })
+  });
 
   test('gives a signature that fails once a signed header changes', async () => {
-    const { out } = await signed({}, 'From: a@example.com\r\nSubject: x\r\n\r\nabc\r\n')
-    expect(await results(out.replace('Subject: x', 'Subject: y'))).toEqual(['fail'])
-  })
-})
+    const { out } = await signed({}, 'From: a@example.com\r\nSubject: x\r\n\r\nabc\r\n');
+    expect(await results(out.replace('Subject: x', 'Subject: y'))).toEqual(['fail']);
+  });
+});
 
 describe('header smuggling', () => {
   // A line some mail readers show as part of the field above it. Whatever the verifier does
   // with it, the signature must not pass.
-  const message = 'From: real@example.com\r\nSubject: hello\r\n\r\nbody\r\n'
+  const message = 'From: real@example.com\r\nSubject: hello\r\n\r\nbody\r\n';
   for (const bytes of [
     '\x0b',
     '\x0c',
@@ -527,53 +528,53 @@ describe('header smuggling', () => {
     '\xe2\x81\x9f',
   ]) {
     test(`a line that starts with ${JSON.stringify(bytes)} after a signed field fails`, async () => {
-      const field = await Dkim.sign(message, base())
+      const field = await Dkim.sign(message, base());
       const tampered = (field + message).replace(
         'From: real@example.com\r\n',
         `From: real@example.com\r\n${bytes}, evil@attacker.test\r\n`,
-      )
-      expect(await results(Uint8Array.from(tampered, (c) => c.charCodeAt(0)))).toEqual(['fail'])
-    })
+      );
+      expect(await results(Uint8Array.from(tampered, (c) => c.charCodeAt(0)))).toEqual(['fail']);
+    });
   }
 
   test('a folded From whose colon is on the continuation line is signed', async () => {
-    const folded = 'From\r\n : boss@example.com\r\nSubject: t\r\n\r\nbody\r\n'
-    const field = await Dkim.sign(folded, base())
-    expect(tagsOf(field).h).toBe('Subject: From')
-    expect(await results(field + folded)).toEqual(['pass'])
-  })
+    const folded = 'From\r\n : boss@example.com\r\nSubject: t\r\n\r\nbody\r\n';
+    const field = await Dkim.sign(folded, base());
+    expect(tagsOf(field).h).toBe('Subject: From');
+    expect(await results(field + folded)).toEqual(['pass']);
+  });
 
   test('a field added above with a leading space is part of the signed field', async () => {
-    const field = await Dkim.sign(message, base())
+    const field = await Dkim.sign(message, base());
     const tampered = (field + message).replace(
       'Subject: hello\r\n',
       'Subject: hello\r\n , world\r\n',
-    )
-    expect(await results(tampered)).toEqual(['fail'])
-  })
-})
+    );
+    expect(await results(tampered)).toEqual(['fail']);
+  });
+});
 
 describe('signal', () => {
   test('rejects at once for an aborted signal', async () => {
-    const signal = AbortSignal.abort()
-    await expect(Dkim.sign(MSG, base({ signal }))).rejects.toBe(signal.reason)
-  })
+    const signal = AbortSignal.abort();
+    await expect(Dkim.sign(MSG, base({ signal }))).rejects.toBe(signal.reason);
+  });
 
   test('rejects with the reason and cancels the message when the signal aborts the read', async () => {
-    const controller = new AbortController()
-    let cancelled = false
+    const controller = new AbortController();
+    let cancelled = false;
     const message = new ReadableStream<Uint8Array>({
       start(c) {
-        c.enqueue(encode('From: a@example.com\r\n\r\nbody'))
+        c.enqueue(encode('From: a@example.com\r\n\r\nbody'));
       },
       pull: () => new Promise<void>(() => {}),
       cancel() {
-        cancelled = true
+        cancelled = true;
       },
-    })
-    const pending = Dkim.sign(message, base({ signal: controller.signal }))
-    setTimeout(() => controller.abort(), 10)
-    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
-    expect(cancelled).toBe(true)
-  })
-})
+    });
+    const pending = Dkim.sign(message, base({ signal: controller.signal }));
+    setTimeout(() => controller.abort(), 10);
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(cancelled).toBe(true);
+  });
+});

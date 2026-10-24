@@ -9,20 +9,20 @@ npm install @portable/rdap
 ```
 
 ```ts
-import * as Rdap from '@portable/rdap'
+import * as Rdap from '@portable/rdap';
 
-const domain = await Rdap.domain('example.com')
-domain.events.expiration // Date
-domain.status // ['client delete prohibited', 'client transfer prohibited', 'client update prohibited']
-domain.nameservers // ['elliott.ns.cloudflare.com', 'hera.ns.cloudflare.com']
-domain.entities.find((entity) => entity.roles.includes('registrar'))?.name
+const domain = await Rdap.domain('example.com');
+domain.events.expiration; // Date
+domain.status; // ['client delete prohibited', 'client transfer prohibited', 'client update prohibited']
+domain.nameservers; // ['elliott.ns.cloudflare.com', 'hera.ns.cloudflare.com']
+domain.entities.find((entity) => entity.roles.includes('registrar'))?.name;
 
-const network = await Rdap.ip('8.8.8.8')
-network.cidrs // ['8.8.8.0/24']
-network.entities.find((entity) => entity.roles.includes('abuse'))?.email // 'network-abuse@google.com'
+const network = await Rdap.ip('8.8.8.8');
+network.cidrs; // ['8.8.8.0/24']
+network.entities.find((entity) => entity.roles.includes('abuse'))?.email; // 'network-abuse@google.com'
 
-const autnum = await Rdap.asn(15169)
-autnum.name // 'GOOGLE'
+const autnum = await Rdap.asn(15169);
+autnum.name; // 'GOOGLE'
 ```
 
 To check whether a name is registered, catch `NotFoundError`:
@@ -30,13 +30,13 @@ To check whether a name is registered, catch `NotFoundError`:
 ```ts
 async function isRegistered(name: string) {
   try {
-    await Rdap.domain(name, { follow: false })
-    return true
+    await Rdap.domain(name, { follow: false });
+    return true;
   } catch (error) {
     if (error instanceof Rdap.NotFoundError) {
-      return false
+      return false;
     }
-    throw error
+    throw error;
   }
 }
 ```

@@ -1,24 +1,24 @@
-import * as Streams from '@portable/streams'
-import { InvalidInputError } from './errors.js'
+import * as Streams from '@portable/streams';
+import { InvalidInputError } from './errors.js';
 
 /** A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. */
 export type Message = {
   /** Event type. Must not contain CR or LF. */
-  event?: string | undefined
+  event?: string | undefined;
   /**
    * Event data. Line breaks become separate `data` lines. Without `data`, no event is
    * dispatched.
    */
-  data?: string | undefined
+  data?: string | undefined;
   /** Event ID, which the client sends back as `Last-Event-ID`. Must not contain CR, LF or NUL. */
-  id?: string | undefined
+  id?: string | undefined;
   /** Reconnection time for the client, in milliseconds. Must be a non-negative integer. */
-  retry?: number | undefined
+  retry?: number | undefined;
   /** A comment, which clients ignore. Servers send one to keep an idle connection open. */
-  comment?: string | undefined
-}
+  comment?: string | undefined;
+};
 
-const lineBreak = /\r\n|\r|\n/
+const lineBreak = /\r\n|\r|\n/;
 
 /**
  * Writes one message in `text/event-stream` format, ending with the blank line that dispatches it.
@@ -26,58 +26,58 @@ const lineBreak = /\r\n|\r|\n/
  *
  * @example
  * ```ts
- * import * as Sse from '@portable/sse'
+ * import * as Sse from '@portable/sse';
  *
- * Sse.encode({ event: 'update', data: 'line 1\nline 2', id: '7' })
+ * Sse.encode({ event: 'update', data: 'line 1\nline 2', id: '7' });
  * // 'event: update\ndata: line 1\ndata: line 2\nid: 7\n\n'
  * ```
  */
 export function encode(message: Message): string {
-  const { comment, event, data, id, retry } = message
-  let text = ''
+  const { comment, event, data, id, retry } = message;
+  let text = '';
   if (comment !== undefined) {
     for (const line of comment.split(lineBreak)) {
-      text += line === '' ? ':\n' : `: ${line}\n`
+      text += line === '' ? ':\n' : `: ${line}\n`;
     }
   }
   if (event === undefined && data === undefined && id === undefined && retry === undefined) {
-    return text
+    return text;
   }
   if (event !== undefined) {
     if (/[\r\n]/.test(event)) {
-      throw new InvalidInputError('`event` must not contain CR or LF.')
+      throw new InvalidInputError('`event` must not contain CR or LF.');
     }
-    text += `event: ${event}\n`
+    text += `event: ${event}\n`;
   }
   if (data !== undefined) {
     if (data.indexOf('\n') === -1 && data.indexOf('\r') === -1) {
-      text += `data: ${data}\n`
+      text += `data: ${data}\n`;
     } else {
       for (const line of data.split(lineBreak)) {
-        text += `data: ${line}\n`
+        text += `data: ${line}\n`;
       }
     }
   }
   if (id !== undefined) {
     if (/[\r\n\0]/.test(id)) {
-      throw new InvalidInputError('`id` must not contain CR, LF or NUL.')
+      throw new InvalidInputError('`id` must not contain CR, LF or NUL.');
     }
-    text += `id: ${id}\n`
+    text += `id: ${id}\n`;
   }
   if (retry !== undefined) {
     if (!Number.isSafeInteger(retry) || retry < 0) {
-      throw new InvalidInputError('`retry` must be a non-negative integer.')
+      throw new InvalidInputError('`retry` must be a non-negative integer.');
     }
-    text += `retry: ${retry}\n`
+    text += `retry: ${retry}\n`;
   }
-  return text + '\n'
+  return text + '\n';
 }
 
 export declare namespace EncoderStream {
   type Options = {
     /** Fails the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -86,27 +86,27 @@ export declare namespace EncoderStream {
  *
  * @example
  * ```ts
- * import * as Sse from '@portable/sse'
+ * import * as Sse from '@portable/sse';
  *
- * const body = messages.pipeThrough(new Sse.EncoderStream())
- * return new Response(body, { headers: { 'content-type': 'text/event-stream' } })
+ * const body = messages.pipeThrough(new Sse.EncoderStream());
+ * return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
  * ```
  */
 export class EncoderStream extends TransformStream<Message, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
-    const encoder = new TextEncoder()
+    const encoder = new TextEncoder();
     super(
       Streams.abortable(
         {
           transform(message, controller) {
-            const text = encode(message)
+            const text = encode(message);
             if (text !== '') {
-              controller.enqueue(encoder.encode(text))
+              controller.enqueue(encoder.encode(text));
             }
           },
         },
         options,
       ),
-    )
+    );
   }
 }

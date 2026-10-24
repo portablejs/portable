@@ -1,4 +1,4 @@
-export { isNotFound, QueryError } from '../errors.js'
+export { isNotFound, QueryError } from '../errors.js';
 export {
   create,
   type CaaRecord,
@@ -8,4 +8,4 @@ export {
   type Resolver,
   type SoaRecord,
   type SrvRecord,
-} from '../resolver.js'
+} from '../resolver.js';

@@ -23,11 +23,11 @@ Receiving:
 ## Send a signed message from a Worker
 
 ```ts
-import * as Dkim from '@portable/dkim'
-import * as Mail from '@portable/mail'
-import * as Smtp from '@portable/smtp'
-import * as Streams from '@portable/streams'
-import { connect } from 'cloudflare:sockets'
+import * as Dkim from '@portable/dkim';
+import * as Mail from '@portable/mail';
+import * as Smtp from '@portable/smtp';
+import * as Streams from '@portable/streams';
+import { connect } from 'cloudflare:sockets';
 
 const message: Mail.Message = {
   from: 'Ada <ada@example.com>',
@@ -37,14 +37,14 @@ const message: Mail.Message = {
   attachments: [
     { content: (await fetch(reportUrl)).body!, filename: 'report.pdf' },
   ],
-}
+};
 
-const [forSigning, forSending] = Mail.encodeStream(message).tee()
+const [forSigning, forSending] = Mail.encodeStream(message).tee();
 const field = await Dkim.sign(forSigning, {
   domain: 'example.com',
   selector: 'mail',
   privateKey: env.DKIM_KEY,
-})
+});
 
 await Smtp.send(
   {
@@ -60,7 +60,7 @@ await Smtp.send(
     port: 587,
     auth: { user: 'ada@example.com', pass: env.SMTP_PASSWORD },
   },
-)
+);
 ```
 
 `Dkim.sign` must read the whole message before it returns, because the DKIM-Signature field goes before the message and contains a hash of the body. `tee` splits the stream in two. While `Dkim.sign` reads the first copy, `tee` queues the second in memory, and `Smtp.send` sends it after the signature field, so the whole message is held in memory once.

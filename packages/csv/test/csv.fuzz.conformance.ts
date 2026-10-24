@@ -1,4 +1,4 @@
-import * as Csv from '@portable/csv'
+import * as Csv from '@portable/csv';
 import {
   byteForm,
   cuts,
@@ -9,12 +9,12 @@ import {
   outcomeAsync,
   split,
   toByteForm,
-} from '@portable/fuzz'
-import { fromIterable, toArray } from '@portable/streams'
-import { expect, test } from 'vite-plus/test'
-import { bom, encodeUtf8 } from './utils.js'
+} from '@portable/fuzz';
+import { fromIterable, toArray } from '@portable/streams';
+import { expect, test } from 'vite-plus/test';
+import { bom, encodeUtf8 } from './utils.js';
 
-const errors = [Csv.InvalidInputError, Csv.TruncatedError, Csv.MaxLengthError]
+const errors = [Csv.InvalidInputError, Csv.TruncatedError, Csv.MaxLengthError];
 
 const field = fc.string({
   unit: fc.oneof(
@@ -23,7 +23,7 @@ const field = fc.string({
     { weight: 1, arbitrary: fc.string({ unit: 'grapheme', minLength: 1, maxLength: 1 }) },
   ),
   maxLength: 12,
-})
+});
 
 const csvLike = fc.string({
   unit: fc.oneof(
@@ -32,7 +32,7 @@ const csvLike = fc.string({
     { weight: 1, arbitrary: fc.string({ unit: 'grapheme', minLength: 1, maxLength: 1 }) },
   ),
   maxLength: 80,
-})
+});
 
 const options = fc.record(
   {
@@ -43,7 +43,7 @@ const options = fc.record(
     maxLength: fc.integer({ min: 0, max: 40 }),
   },
   { requiredKeys: [] },
-)
+);
 
 async function decodeStream(
   chunks: readonly (string | Uint8Array)[],
@@ -51,7 +51,7 @@ async function decodeStream(
 ): Promise<string[][]> {
   return (await toArray(
     fromIterable(chunks).pipeThrough(new Csv.DecoderStream(options)),
-  )) as string[][]
+  )) as string[][];
 }
 
 test('decodes what encode writes', () => {
@@ -65,23 +65,23 @@ test('decodes what encode writes', () => {
       fc.constantFrom(',', ';', '\t'),
       fc.constantFrom<'\r\n' | '\n'>('\r\n', '\n'),
       (rows, delimiter, newline) => {
-        const text = Csv.encode(rows, { delimiter, newline })
-        expect(Csv.decode(text, { delimiter, skipEmpty: false })).toEqual(rows)
+        const text = Csv.encode(rows, { delimiter, newline });
+        expect(Csv.decode(text, { delimiter, skipEmpty: false })).toEqual(rows);
       },
     ),
-  )
-})
+  );
+});
 
 test('decode and DecoderStream agree however the input is chunked', async () => {
   await fuzz(
     fc.asyncProperty(csvLike, cuts, options, fc.boolean(), async (text, at, options, bytes) => {
-      const input = bytes ? encodeUtf8(text) : text
-      const whole = outcome(errors, () => Csv.decode(input, options))
-      const streamed = await outcomeAsync(errors, () => decodeStream(split(input, at), options))
-      expect(streamed).toEqual(whole)
+      const input = bytes ? encodeUtf8(text) : text;
+      const whole = outcome(errors, () => Csv.decode(input, options));
+      const streamed = await outcomeAsync(errors, () => decodeStream(split(input, at), options));
+      expect(streamed).toEqual(whole);
     }),
-  )
-})
+  );
+});
 
 test('rejects mutated CSV only with documented errors', () => {
   const original = encodeUtf8(
@@ -90,21 +90,21 @@ test('rejects mutated CSV only with documented errors', () => {
       ['Ada', 'said "hi", left'],
       ['Grace', 'line\r\nbreak'],
     ]),
-  )
+  );
   fuzz(
     fc.property(mutated(original), (bytes) => {
-      outcome(errors, () => Csv.decode(bytes))
+      outcome(errors, () => Csv.decode(bytes));
     }),
-  )
-})
+  );
+});
 
 test('decode reads every byte form like a Uint8Array', () => {
   fuzz(
     fc.property(fc.uint8Array({ maxLength: 64 }), byteForm, (bytes, form) => {
-      const errors = [Csv.InvalidInputError, Csv.TruncatedError]
+      const errors = [Csv.InvalidInputError, Csv.TruncatedError];
       expect(outcome(errors, () => Csv.decode(toByteForm(bytes, form)))).toEqual(
         outcome(errors, () => Csv.decode(bytes)),
-      )
+      );
     }),
-  )
-})
+  );
+});

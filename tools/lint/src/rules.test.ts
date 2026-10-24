@@ -1,11 +1,11 @@
-import { RuleTester } from 'oxlint/plugins-dev'
-import { describe, it } from 'vite-plus/test'
-import plugin from './plugin.js'
+import { RuleTester } from 'oxlint/plugins-dev';
+import { describe, it } from 'vite-plus/test';
+import plugin from './plugin.js';
 
-RuleTester.describe = describe
-RuleTester.it = it
+RuleTester.describe = describe;
+RuleTester.it = it;
 
-const tester = new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } })
+const tester = new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } });
 
 tester.run('optional-undefined', plugin.rules['optional-undefined'], {
   valid: [
@@ -25,7 +25,7 @@ tester.run('optional-undefined', plugin.rules['optional-undefined'], {
       errors: [{ messageId: 'optionalUndefined' }],
     },
   ],
-})
+});
 
 tester.run('import-extension', plugin.rules['import-extension'], {
   valid: [
@@ -40,7 +40,7 @@ tester.run('import-extension', plugin.rules['import-extension'], {
     { code: "export { a } from '../a.ts'", errors: [{ messageId: 'importExtension' }] },
     { code: "const a = import('./a')", errors: [{ messageId: 'importExtension' }] },
   ],
-})
+});
 
 tester.run('error-kind', plugin.rules['error-kind'], {
   valid: [
@@ -75,14 +75,14 @@ tester.run('error-kind', plugin.rules['error-kind'], {
       errors: [{ messageId: 'errorKind' }],
     },
   ],
-})
+});
 
 tester.run('no-enum', plugin.rules['no-enum'], {
   valid: ["type Mode = 'read' | 'write'"],
   invalid: [{ code: 'enum Mode { Read, Write }', errors: [{ messageId: 'noEnum' }] }],
-})
+});
 
 tester.run('no-private-symbol', plugin.rules['no-private-symbol'], {
   valid: ["const brand = Symbol.for('portable.errors.kinds')"],
   invalid: [{ code: "const brand = Symbol('brand')", errors: [{ messageId: 'noPrivateSymbol' }] }],
-})
+});

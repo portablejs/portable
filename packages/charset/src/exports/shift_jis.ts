@@ -1,1 +1,1 @@
-export * from '../shift_jis.js'
+export * from '../shift_jis.js';

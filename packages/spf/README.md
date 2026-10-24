@@ -9,25 +9,25 @@ npm install @portable/spf @portable/dns
 ```
 
 ```ts
-import * as Dns from '@portable/dns'
-import * as Spf from '@portable/spf'
+import * as Dns from '@portable/dns';
+import * as Spf from '@portable/spf';
 
 const spf = await Spf.check(
   { ip: '192.0.2.10', sender: 'alice@example.com', helo: 'mail.example.com' },
   { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
-)
+);
 
 if (spf.result === 'fail') {
-  reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`)
+  reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`);
 }
 ```
 
 In Node, `node:dns/promises` works as the resolver and uses the system's DNS servers:
 
 ```ts
-import dns from 'node:dns/promises'
+import dns from 'node:dns/promises';
 
-await Spf.check({ ip, sender, helo }, { resolver: dns })
+await Spf.check({ ip, sender, helo }, { resolver: dns });
 ```
 
 ## Input

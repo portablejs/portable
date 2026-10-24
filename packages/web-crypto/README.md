@@ -9,16 +9,16 @@ npm install @portable/web-crypto
 ```
 
 ```ts
-import * as WebCrypto from '@portable/web-crypto'
+import * as WebCrypto from '@portable/web-crypto';
 
-const hash = await WebCrypto.digest('SHA-256', 'hello')
-const mac = await WebCrypto.hmac('SHA-256', 'whsec_secret', body)
-const key = await WebCrypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', length: 32 })
+const hash = await WebCrypto.digest('SHA-256', 'hello');
+const mac = await WebCrypto.hmac('SHA-256', 'whsec_secret', body);
+const key = await WebCrypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', length: 32 });
 
-const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed)
+const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed);
 
-const raw = WebCrypto.derToRawEcdsa(assertion.signature)
-await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, raw, signedData)
+const raw = WebCrypto.derToRawEcdsa(assertion.signature);
+await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, raw, signedData);
 ```
 
 ## API

@@ -6,8 +6,8 @@ export declare namespace once {
      * it settles calls `fn` again. A rejection is never kept.
      * @default true
      */
-    cache?: boolean | undefined
-  }
+    cache?: boolean | undefined;
+  };
 }
 
 /**
@@ -17,32 +17,32 @@ export declare namespace once {
  *
  * @example
  * ```ts
- * import * as Queue from '@portable/queue'
+ * import * as Queue from '@portable/queue';
  *
- * const connect = Queue.once(() => openDatabase(url))
- * const db = await connect() // concurrent and later callers get the same connection
+ * const connect = Queue.once(() => openDatabase(url));
+ * const db = await connect(); // concurrent and later callers get the same connection
  *
- * const refresh = Queue.once(() => fetchToken(), { cache: false })
+ * const refresh = Queue.once(() => fetchToken(), { cache: false });
  * ```
  */
 export function once<value>(
   fn: () => value | PromiseLike<value>,
   options: once.Options = {},
 ): () => Promise<value> {
-  const { cache = true } = options
-  let current: Promise<value> | undefined
+  const { cache = true } = options;
+  let current: Promise<value> | undefined;
   return () => {
     if (current) {
-      return current
+      return current;
     }
-    const promise = new Promise<value>((resolve) => resolve(fn()))
-    current = promise
+    const promise = new Promise<value>((resolve) => resolve(fn()));
+    current = promise;
     const reset = () => {
       if (current === promise) {
-        current = undefined
+        current = undefined;
       }
-    }
-    promise.then(cache ? undefined : reset, reset)
-    return promise
-  }
+    };
+    promise.then(cache ? undefined : reset, reset);
+    return promise;
+  };
 }

@@ -16,8 +16,8 @@ A long-lived connection can drop, and a slow reader must not make the sender buf
 This Worker reads a server-sent event stream from an API and forwards the `text` field of each event as a new event stream:
 
 ```ts
-import * as Sse from '@portable/sse'
-import * as Streams from '@portable/streams'
+import * as Sse from '@portable/sse';
+import * as Streams from '@portable/streams';
 
 export default {
   async fetch(request: Request) {
@@ -25,16 +25,16 @@ export default {
       method: 'POST',
       body: await request.text(),
       signal: request.signal,
-    })
+    });
     const body = upstream
       .body!.pipeThrough(new Sse.DecoderStream())
       .pipeThrough(
         Streams.map((event) => ({ data: JSON.parse(event.data).text })),
       )
-      .pipeThrough(new Sse.EncoderStream())
+      .pipeThrough(new Sse.EncoderStream());
     return new Response(body, {
       headers: { 'content-type': 'text/event-stream' },
-    })
+    });
   },
-}
+};
 ```

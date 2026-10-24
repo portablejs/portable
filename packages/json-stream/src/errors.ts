@@ -1,25 +1,25 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown when the input isn't valid JSON. The message gives the offset of the first bad
  * character.
  *
  * @example
  * ```ts
- * import * as JsonStream from '@portable/json-stream'
- * import * as Streams from '@portable/streams'
+ * import * as JsonStream from '@portable/json-stream';
+ * import * as Streams from '@portable/streams';
  *
  * try {
- *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()))
+ *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()));
  * } catch (error) {
  *   if (error instanceof JsonStream.InvalidInputError) {
- *     return new Response('Bad JSON', { status: 400 })
+ *     return new Response('Bad JSON', { status: 400 });
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'JsonStream.InvalidInputError'
+  static override readonly kind: string = 'JsonStream.InvalidInputError';
 }
 
 /**
@@ -27,22 +27,22 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as JsonStream from '@portable/json-stream'
- * import * as Streams from '@portable/streams'
+ * import * as JsonStream from '@portable/json-stream';
+ * import * as Streams from '@portable/streams';
  *
  * try {
- *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()))
+ *   await Streams.toArray(body.pipeThrough(new JsonStream.DecoderStream()));
  * } catch (error) {
  *   if (error instanceof JsonStream.TruncatedError) {
- *     console.log('connection dropped')
+ *     console.log('connection dropped');
  *   }
  * }
  * ```
  */
 export class TruncatedError extends Errors.TruncatedError {
-  static override readonly kind: string = 'JsonStream.TruncatedError'
+  static override readonly kind: string = 'JsonStream.TruncatedError';
   constructor(message: string = 'JSON input ended inside a value.', options?: ErrorOptions) {
-    super(message, options)
+    super(message, options);
   }
 }
 
@@ -51,25 +51,25 @@ export class TruncatedError extends Errors.TruncatedError {
  *
  * @example
  * ```ts
- * import * as JsonStream from '@portable/json-stream'
- * import * as Streams from '@portable/streams'
+ * import * as JsonStream from '@portable/json-stream';
+ * import * as Streams from '@portable/streams';
  *
  * const matches = body.pipeThrough(
  *   new JsonStream.DecoderStream({ paths: ['$.rows[*]'], maxLength: 100_000 }),
- * )
+ * );
  * try {
- *   await Streams.toArray(matches)
+ *   await Streams.toArray(matches);
  * } catch (error) {
  *   if (error instanceof JsonStream.MaxLengthError) {
- *     return new Response(null, { status: 413 })
+ *     return new Response(null, { status: 413 });
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class MaxLengthError extends Errors.MaxLengthError {
-  static override readonly kind: string = 'JsonStream.MaxLengthError'
+  static override readonly kind: string = 'JsonStream.MaxLengthError';
   constructor(options: Errors.MaxLengthError.Options) {
-    super({ message: `A value exceeded maxLength of ${options.maxLength}.`, ...options })
+    super({ message: `A value exceeded maxLength of ${options.maxLength}.`, ...options });
   }
 }

@@ -9,27 +9,27 @@ npm install @portable/csv
 ```
 
 ```ts
-import * as Csv from '@portable/csv'
+import * as Csv from '@portable/csv';
 
-Csv.decode('name,age\r\n"Smith, J",42\r\n') // [['name', 'age'], ['Smith, J', '42']]
-Csv.decode('name,age\nAda,36\n', { header: true }) // [{ name: 'Ada', age: '36' }]
+Csv.decode('name,age\r\n"Smith, J",42\r\n'); // [['name', 'age'], ['Smith, J', '42']]
+Csv.decode('name,age\nAda,36\n', { header: true }); // [{ name: 'Ada', age: '36' }]
 
-Csv.encode([{ name: 'Ada', note: 'said "hi"' }], { header: true })
+Csv.encode([{ name: 'Ada', note: 'said "hi"' }], { header: true });
 // 'name,note\r\nAda,"said ""hi"""\r\n'
 ```
 
 Streams read a `fetch` body and write a `Response` body:
 
 ```ts
-const response = await fetch('https://example.com/users.csv')
-const reader = response.body!.pipeThrough(new Csv.DecoderStream({ header: true })).getReader()
+const response = await fetch('https://example.com/users.csv');
+const reader = response.body!.pipeThrough(new Csv.DecoderStream({ header: true })).getReader();
 for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.email)
+  console.log(r.value.email);
 }
 
 const body = Streams.fromIterable(users)
-  .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }))
-return new Response(body, { headers: { 'content-type': 'text/csv' } })
+  .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }));
+return new Response(body, { headers: { 'content-type': 'text/csv' } });
 ```
 
 ## Decoding

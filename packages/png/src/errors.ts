@@ -1,22 +1,22 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown by `decode` when the file ends early: before `IEND`, inside a chunk, or with less image data than the image needs.
  *
  * @example
  * ```ts
- * import * as Png from '@portable/png'
+ * import * as Png from '@portable/png';
  *
  * try {
- *   await Png.decode(bytes.subarray(0, 100))
+ *   await Png.decode(bytes.subarray(0, 100));
  * } catch (error) {
  *   if (error instanceof Png.TruncatedError) {
- *     console.log('incomplete download')
+ *     console.log('incomplete download');
  *   }
  * }
  * ```
  */
 export class TruncatedError extends Errors.TruncatedError {
-  static override readonly kind: string = 'Png.TruncatedError'
+  static override readonly kind: string = 'Png.TruncatedError';
 }
 
 /**
@@ -25,19 +25,19 @@ export class TruncatedError extends Errors.TruncatedError {
  *
  * @example
  * ```ts
- * import * as Png from '@portable/png'
+ * import * as Png from '@portable/png';
  *
  * try {
- *   await Png.decode(new TextEncoder().encode('not a png'))
+ *   await Png.decode(new TextEncoder().encode('not a png'));
  * } catch (error) {
  *   if (error instanceof Png.InvalidInputError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'Png.InvalidInputError'
+  static override readonly kind: string = 'Png.InvalidInputError';
 }
 
 /**
@@ -46,17 +46,17 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as Png from '@portable/png'
+ * import * as Png from '@portable/png';
  *
  * try {
- *   await Png.decode(bytes)
+ *   await Png.decode(bytes);
  * } catch (error) {
  *   if (error instanceof Png.UnsupportedError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class UnsupportedError extends Errors.UnsupportedError {
-  static override readonly kind: string = 'Png.UnsupportedError'
+  static override readonly kind: string = 'Png.UnsupportedError';
 }

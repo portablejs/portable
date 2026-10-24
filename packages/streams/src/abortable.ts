@@ -1,13 +1,13 @@
 export declare namespace abortable {
   type Options = {
     /** Errors the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 
   /** A `Transformer` that may have `cancel`, which TypeScript's DOM types don't have yet. */
   type Transformer<input, output> = globalThis.Transformer<input, output> & {
-    cancel?: ((reason: unknown) => void | PromiseLike<void>) | undefined
-  }
+    cancel?: ((reason: unknown) => void | PromiseLike<void>) | undefined;
+  };
 }
 
 /**
@@ -17,7 +17,7 @@ export declare namespace abortable {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
  * class UpperCaseStream extends TransformStream<string, string> {
  *   constructor(options: { signal?: AbortSignal | undefined } = {}) {
@@ -26,40 +26,40 @@ export declare namespace abortable {
  *         { transform: (chunk, controller) => controller.enqueue(chunk.toUpperCase()) },
  *         options,
  *       ),
- *     )
+ *     );
  *   }
  * }
  *
- * text.pipeThrough(new UpperCaseStream({ signal: AbortSignal.timeout(5000) }))
+ * text.pipeThrough(new UpperCaseStream({ signal: AbortSignal.timeout(5000) }));
  * ```
  */
 export function abortable<input, output>(
   transformer: abortable.Transformer<input, output>,
   options: abortable.Options = {},
 ): abortable.Transformer<input, output> {
-  const { signal } = options
+  const { signal } = options;
   if (!signal) {
-    return transformer
+    return transformer;
   }
-  let onAbort = () => {}
-  const done = () => signal.removeEventListener('abort', onAbort)
+  let onAbort = () => {};
+  const done = () => signal.removeEventListener('abort', onAbort);
   return {
     ...transformer,
     start(controller) {
       if (signal.aborted) {
-        return controller.error(signal.reason)
+        return controller.error(signal.reason);
       }
-      onAbort = () => controller.error(signal.reason)
-      signal.addEventListener('abort', onAbort, { once: true })
-      return transformer.start?.(controller)
+      onAbort = () => controller.error(signal.reason);
+      signal.addEventListener('abort', onAbort, { once: true });
+      return transformer.start?.(controller);
     },
     flush(controller) {
-      done()
-      return transformer.flush?.(controller)
+      done();
+      return transformer.flush?.(controller);
     },
     cancel(reason: unknown) {
-      done()
-      return transformer.cancel?.(reason)
+      done();
+      return transformer.cancel?.(reason);
     },
-  }
+  };
 }

@@ -17,25 +17,25 @@ Workers and browsers have no `node:dns` and can't send UDP, so `dns` looks up re
 A service that fetches URLs from its users must not connect to its own internal network. Resolve the host and check every address before you connect:
 
 ```ts
-import * as Dns from '@portable/dns'
-import * as Ip from '@portable/ip'
+import * as Dns from '@portable/dns';
+import * as Ip from '@portable/ip';
 
-const resolver = Dns.create()
+const resolver = Dns.create();
 
 async function safeFetch(url: string, init: RequestInit = {}) {
   // URL keeps the brackets around an IPv6 host, such as [::1].
-  const hostname = new URL(url).hostname.replace(/^\[|\]$/g, '')
+  const hostname = new URL(url).hostname.replace(/^\[|\]$/g, '');
   const addresses = Ip.canParse(hostname)
     ? [hostname]
     : await resolver.resolve4(hostname, {
         signal: init.signal ?? undefined,
-      })
+      });
   for (const address of addresses) {
     if (Ip.range(Ip.unmap(address)) !== 'unicast') {
-      throw new Error(`Refusing to fetch ${address}`)
+      throw new Error(`Refusing to fetch ${address}`);
     }
   }
-  return fetch(url, init)
+  return fetch(url, init);
 }
 ```
 

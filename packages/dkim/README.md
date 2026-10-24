@@ -9,22 +9,22 @@ npm install @portable/dkim @portable/dns
 ```
 
 ```ts
-import * as Dns from '@portable/dns'
-import * as Dkim from '@portable/dkim'
+import * as Dns from '@portable/dns';
+import * as Dkim from '@portable/dkim';
 
 const field = await Dkim.sign(message, {
   domain: 'example.com',
   selector: 'mail',
   privateKey: env.DKIM_PRIVATE_KEY,
-})
-const signed = field + message
+});
+const signed = field + message;
 
 const results = await Dkim.verify(signed, {
   resolver: Dns.create(),
   signal: AbortSignal.timeout(10_000),
-})
+});
 for (const r of results) {
-  console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
+  console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`);
 }
 ```
 
@@ -33,9 +33,9 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 In Node, `node:dns/promises` works as the resolver and uses the system's DNS servers:
 
 ```ts
-import dns from 'node:dns/promises'
+import dns from 'node:dns/promises';
 
-await Dkim.verify(message, { resolver: dns })
+await Dkim.verify(message, { resolver: dns });
 ```
 
 ## Signing
@@ -104,9 +104,9 @@ The body hash is different. `crypto.subtle.digest` can't hash incrementally, so 
 To verify in constant memory, pass `hasher`, a function that takes the hash name and returns an incremental hash with `update(bytes)` and `digest()`. DKIM calls it with `'SHA-256'`, and `sha256.create()` from `@noble/hashes` returns one:
 
 ```ts
-import { sha256 } from '@noble/hashes/sha2.js'
+import { sha256 } from '@noble/hashes/sha2.js';
 
-await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() })
+await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 ```
 
 ## Types

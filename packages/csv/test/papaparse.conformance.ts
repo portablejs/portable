@@ -1,10 +1,10 @@
-import { describe, expect, test } from 'vite-plus/test'
-import * as Csv from '@portable/csv'
-import { bom, decodeAll, decodeError, decodeStream } from './utils.js'
+import { describe, expect, test } from 'vite-plus/test';
+import * as Csv from '@portable/csv';
+import { bom, decodeAll, decodeError, decodeStream } from './utils.js';
 
-const record = String.fromCharCode(30)
+const record = String.fromCharCode(30);
 
-type Case = readonly [name: string, input: string, expected: unknown, options?: Csv.decode.Options]
+type Case = readonly [name: string, input: string, expected: unknown, options?: Csv.decode.Options];
 
 const coreParser = [
   ['One row', 'A,b,c', [['A', 'b', 'c']]],
@@ -170,7 +170,7 @@ const coreParser = [
     [['a'], ['b'], [''], [''], ['c'], ['d'], ['e']],
     { skipEmpty: false },
   ],
-] satisfies readonly Case[]
+] satisfies readonly Case[];
 
 const parse = [
   [
@@ -560,123 +560,123 @@ const parse = [
       ['d', 'e', 'f'],
     ],
   ],
-] satisfies readonly Case[]
+] satisfies readonly Case[];
 
 describe('papaparse', () => {
   describe('Core Parser Tests', () => {
     for (const [name, input, expected, options] of coreParser) {
       test(`${name}`, async () => {
-        expect(await decodeAll(input, options)).toEqual(expected)
-      })
+        expect(await decodeAll(input, options)).toEqual(expected);
+      });
     }
 
     test('Quoted field has no closing quote', async () => {
-      expect(await decodeError('a,"b,c\nd,e,f')).toBeInstanceOf(Csv.TruncatedError)
-    })
+      expect(await decodeError('a,"b,c\nd,e,f')).toBeInstanceOf(Csv.TruncatedError);
+    });
 
     test('Quoted field has invalid trailing quote after delimiter with a valid closer', async () => {
-      expect(await decodeError('"a,"b,c"\nd,e,f')).toBeInstanceOf(Csv.InvalidInputError)
-    })
+      expect(await decodeError('"a,"b,c"\nd,e,f')).toBeInstanceOf(Csv.InvalidInputError);
+    });
 
     test('Quoted field has invalid trailing quote after delimiter', async () => {
-      expect(await decodeError('a,"b,"c\nd,e,f')).toBeInstanceOf(Csv.InvalidInputError)
-    })
+      expect(await decodeError('a,"b,"c\nd,e,f')).toBeInstanceOf(Csv.InvalidInputError);
+    });
 
     test('Quoted field has invalid trailing quote before delimiter', async () => {
-      expect(await decodeError('a,"b"c,d\ne,f,g')).toBeInstanceOf(Csv.InvalidInputError)
-    })
+      expect(await decodeError('a,"b"c,d\ne,f,g')).toBeInstanceOf(Csv.InvalidInputError);
+    });
 
     test('Quoted field has invalid trailing quote after new line', async () => {
-      expect(await decodeError('a,"b,c\nd"e,f,g')).toBeInstanceOf(Csv.InvalidInputError)
-    })
+      expect(await decodeError('a,"b,c\nd"e,f,g')).toBeInstanceOf(Csv.InvalidInputError);
+    });
 
     test('Duplicated header names', async () => {
       for (const text of ['A,A,A,A\n1,2,3,4', 'c,c,c,c_1\n1,2,3,4', '__proto__,__proto__\n1,2']) {
-        expect(await decodeError(text, { header: true })).toBeInstanceOf(Csv.InvalidInputError)
+        expect(await decodeError(text, { header: true })).toBeInstanceOf(Csv.InvalidInputError);
       }
-    })
-  })
+    });
+  });
 
   describe('Parse Tests', () => {
     for (const [name, input, expected, options] of parse) {
       test(`${name}`, async () => {
-        expect(await decodeAll(input, options)).toEqual(expected)
-      })
+        expect(await decodeAll(input, options)).toEqual(expected);
+      });
     }
 
     test('Row with too few fields', async () => {
       expect(await decodeError('A,B,C\r\na,b', { header: true })).toBeInstanceOf(
         Csv.InvalidInputError,
-      )
+      );
       expect(await decodeAll('A,B,C\r\na,b', { header: true, relaxColumnCount: true })).toEqual([
         { A: 'a', B: 'b' },
-      ])
-    })
+      ]);
+    });
 
     test('Row with too many fields', async () => {
-      const text = 'A,B,C\r\na,b,c,d,e\r\nf,g,h'
-      expect(await decodeError(text, { header: true })).toBeInstanceOf(Csv.InvalidInputError)
+      const text = 'A,B,C\r\na,b,c,d,e\r\nf,g,h';
+      expect(await decodeError(text, { header: true })).toBeInstanceOf(Csv.InvalidInputError);
       expect(await decodeAll(text, { header: true, relaxColumnCount: true })).toEqual([
         { A: 'a', B: 'b', C: 'c' },
         { A: 'f', B: 'g', C: 'h' },
-      ])
-    })
+      ]);
+    });
 
     test('Bad delimiter (\\n)', () => {
-      expect(() => Csv.decode('a,b,c', { delimiter: '\n' })).toThrow(RangeError)
-    })
+      expect(() => Csv.decode('a,b,c', { delimiter: '\n' })).toThrow(RangeError);
+    });
 
     test('Multi-character delimiter', () => {
-      expect(() => Csv.decode('a, b, c', { delimiter: ', ' })).toThrow(RangeError)
-    })
-  })
+      expect(() => Csv.decode('a, b, c', { delimiter: ', ' })).toThrow(RangeError);
+    });
+  });
 
   describe('Parse Async Tests', () => {
     test('Simple worker', async () => {
       expect(await decodeStream(['A,B,C\nX,Y,Z'])).toEqual([
         ['A', 'B', 'C'],
         ['X', 'Y', 'Z'],
-      ])
-    })
-  })
+      ]);
+    });
+  });
 
   describe('Custom Tests', () => {
     test('Duplicate values in a data row are not renamed after resume (Regression Test for Issue #998)', async () => {
-      const text = 'c1,c2,c3\n"foo, bar","foo, bar",v1\n"foo, bar","foo, bar",v2'
+      const text = 'c1,c2,c3\n"foo, bar","foo, bar",v1\n"foo, bar","foo, bar",v2';
       expect(await decodeAll(text, { header: true })).toEqual([
         { c1: 'foo, bar', c2: 'foo, bar', c3: 'v1' },
         { c1: 'foo, bar', c2: 'foo, bar', c3: 'v2' },
-      ])
-    })
+      ]);
+    });
 
     test('Empty trailing fields stay empty after resume (Regression Test for Issue #985)', async () => {
       expect(await decodeAll('a,b,c,d\n1,x,,\n2,y,,', { header: true })).toEqual([
         { a: '1', b: 'x', c: '', d: '' },
         { a: '2', b: 'y', c: '', d: '' },
-      ])
-    })
+      ]);
+    });
 
     test('Data is correctly parsed with steps when there are empty values', async () => {
       expect(await decodeAll('A,B,C,D\na,b,c,d\na,,,', { header: true })).toEqual([
         { A: 'a', B: 'b', C: 'c', D: 'd' },
         { A: 'a', B: '', C: '', D: '' },
-      ])
-    })
+      ]);
+    });
 
     test('Quoted line breaks near chunk boundaries are handled', async () => {
       expect(await decodeStream(['A,B,C\nX,"Y\n1\n2', '\n3",Z'])).toEqual([
         ['A', 'B', 'C'],
         ['X', 'Y\n1\n2\n3', 'Z'],
-      ])
-    })
+      ]);
+    });
 
     test('Step functions can abort parsing', async () => {
-      const reader = new Csv.DecoderStream()
-      const writer = reader.writable.getWriter()
-      void writer.write('A,b,c\nd,E,f\nG,h,i')
-      const rows = reader.readable.getReader()
-      expect((await rows.read()).value).toEqual(['A', 'b', 'c'])
-      await rows.cancel()
-    })
-  })
-})
+      const reader = new Csv.DecoderStream();
+      const writer = reader.writable.getWriter();
+      void writer.write('A,b,c\nd,E,f\nG,h,i');
+      const rows = reader.readable.getReader();
+      expect((await rows.read()).value).toEqual(['A', 'b', 'c']);
+      await rows.cancel();
+    });
+  });
+});

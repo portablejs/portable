@@ -1,12 +1,12 @@
-import * as Streams from '@portable/streams'
+import * as Streams from '@portable/streams';
 export declare namespace EncoderStream {
   type Options = {
     /**
      * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
      * from.
      */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -17,30 +17,30 @@ export declare namespace EncoderStream {
  *
  * @example
  * ```ts
- * import * as Jsonl from '@portable/jsonl'
- * import * as Streams from '@portable/streams'
+ * import * as Jsonl from '@portable/jsonl';
+ * import * as Streams from '@portable/streams';
  *
  * const body = Streams.fromIterable(rows)
- *   .pipeThrough(new Jsonl.EncoderStream())
- * return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
+ *   .pipeThrough(new Jsonl.EncoderStream());
+ * return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } });
  * ```
  */
 export class EncoderStream extends TransformStream<unknown, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
-    const utf8 = new TextEncoder()
+    const utf8 = new TextEncoder();
     super(
       Streams.abortable(
         {
           transform(value, controller) {
-            const json = JSON.stringify(value) satisfies string | undefined
+            const json = JSON.stringify(value) satisfies string | undefined;
             if (json === undefined) {
-              throw new TypeError(`Can't encode ${typeof value} as JSON.`)
+              throw new TypeError(`Can't encode ${typeof value} as JSON.`);
             }
-            controller.enqueue(utf8.encode(json + '\n'))
+            controller.enqueue(utf8.encode(json + '\n'));
           },
         },
         options,
       ),
-    )
+    );
   }
 }

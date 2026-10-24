@@ -1,11 +1,11 @@
-import { createClient } from './client.js'
-import { TransportError } from './errors.js'
-import { remote } from './remote.js'
-import { direct } from './port.js'
-import { createServer, error, noop, type Send } from './server.js'
-import type { Codec, Message, Remote, Transport } from './types.js'
+import { createClient } from './client.js';
+import { TransportError } from './errors.js';
+import { remote } from './remote.js';
+import { direct } from './port.js';
+import { createServer, error, noop, type Send } from './server.js';
+import type { Codec, Message, Remote, Transport } from './types.js';
 
-const decoder = new TextDecoder()
+const decoder = new TextDecoder();
 
 /**
  * The default codec: JSON text. It decodes text or UTF-8 bytes, so it reads binary WebSocket
@@ -13,27 +13,27 @@ const decoder = new TextDecoder()
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
- * import * as cbor from 'cborg'
+ * import * as Rpc from '@portable/rpc';
+ * import * as cbor from 'cborg';
  *
- * Rpc.connect(transport, { codec: Rpc.json })
- * Rpc.connect(transport, { codec: { encode: cbor.encode, decode: cbor.decode } })
+ * Rpc.connect(transport, { codec: Rpc.json });
+ * Rpc.connect(transport, { codec: { encode: cbor.encode, decode: cbor.decode } });
  * ```
  */
 export const json: Codec<string | Uint8Array> = {
   encode: (message) => JSON.stringify(message),
   decode: (data) => JSON.parse(typeof data === 'string' ? data : decoder.decode(data)),
-}
+};
 
 export declare namespace connect {
   type Options = {
     /** Encodes messages for the transport. @default Rpc.json */
-    codec?: Codec<any> | undefined
+    codec?: Codec<any> | undefined;
     /** Methods the other side can call over the same transport. */
-    methods?: object | undefined
+    methods?: object | undefined;
     /** Closes the connection: waiting calls reject with `signal.reason`, and the transport is cancelled. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -43,68 +43,68 @@ export declare namespace connect {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
- * import type { Api } from './worker.ts'
+ * import * as Rpc from '@portable/rpc';
+ * import type { Api } from './worker.ts';
  *
- * const worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type: 'module' })))
- * await worker.add(1, 2)
+ * const worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type: 'module' })));
+ * await worker.add(1, 2);
  * for await (const event of worker.watch('x')) {
- *   console.log(event)
+ *   console.log(event);
  * }
  * ```
  */
 export function connect<api>(transport: Transport, options: connect.Options = {}): Remote<api> {
-  const { codec = json, methods = {}, signal } = options
-  const port = direct.get(transport)
+  const { codec = json, methods = {}, signal } = options;
+  const port = direct.get(transport);
   const failed = (cause: unknown) =>
-    close(signal?.aborted ? signal.reason : new TransportError('The transport failed.', { cause }))
-  let unlisten: (() => void) | undefined
-  const reader = port?.listen ? undefined : transport.readable.getReader()
-  const writer = port ? undefined : transport.writable.getWriter()
+    close(signal?.aborted ? signal.reason : new TransportError('The transport failed.', { cause }));
+  let unlisten: (() => void) | undefined;
+  const reader = port?.listen ? undefined : transport.readable.getReader();
+  const writer = port ? undefined : transport.writable.getWriter();
   const send = (
     port
       ? (message: Message) => port.post(codec.encode(message))
       : (message: Message) => writer!.write(codec.encode(message))
-  ) satisfies Send
-  const client = createClient(send, true)
-  const server = createServer(methods, send, { flow: true })
+  ) satisfies Send;
+  const client = createClient(send, true);
+  const server = createServer(methods, send, { flow: true });
 
   function close(reason: unknown) {
-    signal?.removeEventListener('abort', onAbort)
-    unlisten?.()
-    client.close(reason)
-    server.close(reason)
+    signal?.removeEventListener('abort', onAbort);
+    unlisten?.();
+    client.close(reason);
+    server.close(reason);
   }
   function onAbort() {
-    close(signal!.reason)
-    reader?.cancel(signal!.reason).catch(noop)
-    writer?.abort(signal!.reason).catch(noop)
+    close(signal!.reason);
+    reader?.cancel(signal!.reason).catch(noop);
+    writer?.abort(signal!.reason).catch(noop);
   }
   if (port?.listen) {
-    unlisten = port.listen(dispatch, failed)
+    unlisten = port.listen(dispatch, failed);
   }
   if (signal?.aborted) {
-    onAbort()
+    onAbort();
   } else {
-    signal?.addEventListener('abort', onAbort)
+    signal?.addEventListener('abort', onAbort);
   }
 
   function dispatch(data: unknown) {
-    let message: unknown
+    let message: unknown;
     try {
-      message = codec.decode(data)
+      message = codec.decode(data);
     } catch {
-      void Promise.resolve(send(error(null, -32700, 'Parse error'))).catch(noop)
-      return
+      void Promise.resolve(send(error(null, -32700, 'Parse error'))).catch(noop);
+      return;
     }
     if (isResponse(message)) {
-      client.receive(message)
+      client.receive(message);
     } else if (Array.isArray(message) && message.length > 0 && message.every(isResponse)) {
       for (const response of message) {
-        client.receive(response)
+        client.receive(response);
       }
     } else {
-      void server.handle(message).catch(noop)
+      void server.handle(message).catch(noop);
     }
   }
 
@@ -112,24 +112,24 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
     void (async () => {
       try {
         for (;;) {
-          const { done, value } = await reader.read()
+          const { done, value } = await reader.read();
           if (done) {
-            break
+            break;
           }
-          dispatch(value)
+          dispatch(value);
         }
-        close(new TransportError('The transport closed.'))
+        close(new TransportError('The transport closed.'));
       } catch (cause) {
-        failed(cause)
+        failed(cause);
       }
-    })()
+    })();
   }
 
-  return remote(client)
+  return remote(client);
 }
 
 export declare namespace provide {
-  type Options = Omit<connect.Options, 'methods'>
+  type Options = Omit<connect.Options, 'methods'>;
 }
 
 /**
@@ -139,19 +139,19 @@ export declare namespace provide {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
+ * import * as Rpc from '@portable/rpc';
  *
  * const api = {
  *   add: (a: number, b: number) => a + b,
  *   async *watch(id: string) {
  *     for (let i = 0; ; i++) {
- *       yield { id, i }
+ *       yield { id, i };
  *     }
  *   },
- * }
- * export type Api = typeof api
+ * };
+ * export type Api = typeof api;
  *
- * Rpc.provide(Rpc.port(self), api)
+ * Rpc.provide(Rpc.port(self), api);
  * ```
  */
 export function provide(
@@ -159,15 +159,15 @@ export function provide(
   methods: object,
   options: provide.Options = {},
 ): void {
-  connect(transport, { ...options, methods })
+  connect(transport, { ...options, methods });
 }
 
 function isResponse(message: unknown): message is Record<string, unknown> {
   if (message === null || typeof message !== 'object' || Array.isArray(message)) {
-    return false
+    return false;
   }
   if ('method' in message) {
-    return message.method === '$/stream' || message.method === '$/stream/next'
+    return message.method === '$/stream' || message.method === '$/stream/next';
   }
-  return 'result' in message || 'error' in message
+  return 'result' in message || 'error' in message;
 }

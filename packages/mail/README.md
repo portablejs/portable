@@ -9,7 +9,7 @@ npm install @portable/mail
 ```
 
 ```ts
-import * as Mail from '@portable/mail'
+import * as Mail from '@portable/mail';
 
 const message: Mail.Message = {
   from: 'Mari Tamm <mari@example.com>',
@@ -21,12 +21,12 @@ const message: Mail.Message = {
     { content: logoBytes, contentType: 'image/png', cid: 'logo' },
     { content: (await fetch(reportUrl)).body!, filename: 'aruanne.pdf', contentType: 'application/pdf' },
   ],
-}
+};
 
-const raw = Mail.encodeStream(message) // ReadableStream<Uint8Array>
-const { from, to } = Mail.envelope(message) // for MAIL FROM and RCPT TO
+const raw = Mail.encodeStream(message); // ReadableStream<Uint8Array>
+const { from, to } = Mail.envelope(message); // for MAIL FROM and RCPT TO
 
-await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' })
+await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' });
 ```
 
 The report is read from the network while the caller reads the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
@@ -73,12 +73,12 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 Set `boundary`, `messageId` and `date` to get the same bytes on every run, for example in tests.
 
 ```ts
-import { iso2022Jp } from '@portable/charset/iso-2022-jp'
+import { iso2022Jp } from '@portable/charset/iso-2022-jp';
 
 Mail.encodeStream(
   { from: 'テスト <a@example.com>', subject: 'こんにちは', text: 'こんにちは' },
   { charset: iso2022Jp },
-)
+);
 ```
 
 ### Signing and sending
@@ -86,25 +86,25 @@ Mail.encodeStream(
 `@portable/dkim` signs the bytes `encodeStream` produces and `@portable/smtp` sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
 
 ```ts
-import * as Bytes from '@portable/bytes'
-import * as Dkim from '@portable/dkim'
-import * as Mail from '@portable/mail'
-import * as Smtp from '@portable/smtp'
-import * as Streams from '@portable/streams'
-import { connect } from 'cloudflare:sockets'
+import * as Bytes from '@portable/bytes';
+import * as Dkim from '@portable/dkim';
+import * as Mail from '@portable/mail';
+import * as Smtp from '@portable/smtp';
+import * as Streams from '@portable/streams';
+import { connect } from 'cloudflare:sockets';
 
-const signal = AbortSignal.timeout(30_000)
-const raw = await Streams.toBytes(Mail.encodeStream(message, { signal }))
+const signal = AbortSignal.timeout(30_000);
+const raw = await Streams.toBytes(Mail.encodeStream(message, { signal }));
 const field = await Dkim.sign(raw, {
   domain: 'example.com',
   selector: 'mail',
   privateKey: env.DKIM_PRIVATE_KEY,
   signal,
-})
+});
 await Smtp.send(
   { ...Mail.envelope(message), message: Bytes.concat([new TextEncoder().encode(field), raw]) },
   { connect, host: 'smtp.example.com', auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD }, signal },
-)
+);
 ```
 
 Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, which sends each chunk as soon as it reads it.

@@ -1,4 +1,4 @@
-import { InvalidInputError } from './errors.js'
+import { InvalidInputError } from './errors.js';
 
 const typeNumbers = {
   A: 1,
@@ -52,16 +52,23 @@ const typeNumbers = {
   CAA: 257,
   TA: 32768,
   DLV: 32769,
-} as const
+} as const;
 
 /** A record type name. A type without a name is written `TYPE<number>`, as in RFC 3597. */
-export type RecordType = keyof typeof typeNumbers | `TYPE${number}`
+export type RecordType = keyof typeof typeNumbers | `TYPE${number}`;
 
 /** A class name. A class without a name is written `CLASS<number>`, as in RFC 3597. */
-export type RecordClass = 'IN' | 'CS' | 'CH' | 'HS' | 'NONE' | 'ANY' | `CLASS${number}`
+export type RecordClass = 'IN' | 'CS' | 'CH' | 'HS' | 'NONE' | 'ANY' | `CLASS${number}`;
 
 /** A header opcode name. An opcode without a name is written `OPCODE<number>`. */
-export type Opcode = 'QUERY' | 'IQUERY' | 'STATUS' | 'NOTIFY' | 'UPDATE' | 'DSO' | `OPCODE${number}`
+export type Opcode =
+  | 'QUERY'
+  | 'IQUERY'
+  | 'STATUS'
+  | 'NOTIFY'
+  | 'UPDATE'
+  | 'DSO'
+  | `OPCODE${number}`;
 
 /** A header response code name. A code without a name is written `RCODE<number>`. */
 export type Rcode =
@@ -77,7 +84,7 @@ export type Rcode =
   | 'NOTAUTH'
   | 'NOTZONE'
   | 'DSOTYPENI'
-  | `RCODE${number}`
+  | `RCODE${number}`;
 
 /** An EDNS option code name. A code without a name is written `OPTION<number>`. */
 export type OptionCode =
@@ -96,12 +103,12 @@ export type OptionCode =
   | 'KEY_TAG'
   | 'EDE'
   | 'DEVICEID'
-  | `OPTION${number}`
+  | `OPTION${number}`;
 
 export type Table<name extends string> = {
-  name(value: number): name
-  value(name: string): number
-}
+  name(value: number): name;
+  value(name: string): number;
+};
 
 function table<name extends string>(
   what: string,
@@ -109,30 +116,30 @@ function table<name extends string>(
   max: number,
   values: Record<string, number>,
 ): Table<name> {
-  const byValue = new Map<number, string>()
-  const byName = new Map<string, number>()
+  const byValue = new Map<number, string>();
+  const byName = new Map<string, number>();
   for (const [name, value] of Object.entries(values)) {
-    byValue.set(value, name)
-    byName.set(name, value)
+    byValue.set(value, name);
+    byName.set(name, value);
   }
   return {
     name: (value) => (byValue.get(value) ?? `${prefix}${value}`) as name,
     value(name) {
-      const known = byName.get(name) ?? byName.get(String(name).toUpperCase())
+      const known = byName.get(name) ?? byName.get(String(name).toUpperCase());
       if (known !== undefined) {
-        return known
+        return known;
       }
-      const match = new RegExp(`^${prefix}(\\d+)$`, 'i').exec(String(name))
-      const value = match ? Number(match[1]) : Number.NaN
+      const match = new RegExp(`^${prefix}(\\d+)$`, 'i').exec(String(name));
+      const value = match ? Number(match[1]) : Number.NaN;
       if (value <= max) {
-        return value
+        return value;
       }
-      throw new InvalidInputError(`Unknown ${what} "${name}".`)
+      throw new InvalidInputError(`Unknown ${what} "${name}".`);
     },
-  }
+  };
 }
 
-export const types: Table<RecordType> = table('record type', 'TYPE', 0xffff, typeNumbers)
+export const types: Table<RecordType> = table('record type', 'TYPE', 0xffff, typeNumbers);
 
 export const classes: Table<RecordClass> = table('class', 'CLASS', 0xffff, {
   IN: 1,
@@ -141,7 +148,7 @@ export const classes: Table<RecordClass> = table('class', 'CLASS', 0xffff, {
   HS: 4,
   NONE: 254,
   ANY: 255,
-})
+});
 
 export const opcodes: Table<Opcode> = table('opcode', 'OPCODE', 15, {
   QUERY: 0,
@@ -150,7 +157,7 @@ export const opcodes: Table<Opcode> = table('opcode', 'OPCODE', 15, {
   NOTIFY: 4,
   UPDATE: 5,
   DSO: 6,
-})
+});
 
 export const rcodes: Table<Rcode> = table('rcode', 'RCODE', 15, {
   NOERROR: 0,
@@ -165,7 +172,7 @@ export const rcodes: Table<Rcode> = table('rcode', 'RCODE', 15, {
   NOTAUTH: 9,
   NOTZONE: 10,
   DSOTYPENI: 11,
-})
+});
 
 export const optionCodes: Table<OptionCode> = table('EDNS option code', 'OPTION', 0xffff, {
   LLQ: 1,
@@ -183,4 +190,4 @@ export const optionCodes: Table<OptionCode> = table('EDNS option code', 'OPTION'
   KEY_TAG: 14,
   EDE: 15,
   DEVICEID: 26946,
-})
+});

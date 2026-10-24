@@ -9,13 +9,13 @@ npm install @portable/quoted-printable
 ```
 
 ```ts
-import * as QuotedPrintable from '@portable/quoted-printable'
+import * as QuotedPrintable from '@portable/quoted-printable';
 
-QuotedPrintable.encode('tere jõgeva') // 'tere j=C3=B5geva'
-new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')) // 'tere jõgeva'
+QuotedPrintable.encode('tere jõgeva'); // 'tere j=C3=B5geva'
+new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')); // 'tere jõgeva'
 
-const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream())
-const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream())
+const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream());
+const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 ```
 
 ## API

@@ -68,7 +68,7 @@ export const hmacRfc4231 = [
     sha512:
       'e37b6a775dc87dbaa4dfa9f96e5e3ffddebd71f8867289865df5a32d20cdc944b6022cac3c4982b10d5eeb55c3e4de15134676fb6de0446065c97440fa8c6a58',
   },
-]
+];
 
 export const hkdfRfc5869 = [
   {
@@ -134,7 +134,7 @@ export const hkdfRfc5869 = [
     length: 42,
     okm: '2c91117204d745f3500d636a62f64f0ab3bae548aa53d423b0d1f27ebba6f5e5673a081d70cce7acfc48',
   },
-]
+];
 
 export const ed25519Rfc8032 = [
   {
@@ -179,7 +179,7 @@ export const ed25519Rfc8032 = [
     signature:
       'dc2a4459e7369633a52b1bf277839a00201009a3efbf3ecb69bea2186c26b58909351fc9ac90b3ecfdfbc7c66431e0303dca179c138ac17ad9bef1177331a704',
   },
-]
+];
 
 export const x25519Rfc7748 = {
   scalarMultiplication: [
@@ -201,4 +201,4 @@ export const x25519Rfc7748 = {
     bobPublic: 'de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f',
     shared: '4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742',
   },
-}
+};

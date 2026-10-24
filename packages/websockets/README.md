@@ -9,24 +9,24 @@ npm install @portable/websockets
 ```
 
 ```ts
-import * as WebSockets from '@portable/websockets'
+import * as WebSockets from '@portable/websockets';
 
 const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
   async open({ send, messages }) {
-    send(JSON.stringify({ token }))
-    const reader = messages.getReader()
-    const { value } = await reader.read()
+    send(JSON.stringify({ token }));
+    const reader = messages.getReader();
+    const { value } = await reader.read();
     if (value !== 'ok') {
-      throw new Error('Not authorized')
+      throw new Error('Not authorized');
     }
   },
-})
+});
 
-const writer = writable.getWriter()
-await writer.write(JSON.stringify({ subscribe: 'prices' }))
+const writer = writable.getWriter();
+await writer.write(JSON.stringify({ subscribe: 'prices' }));
 
 for await (const message of readable) {
-  console.log(message)
+  console.log(message);
 }
 ```
 
@@ -36,11 +36,11 @@ A server can wrap the socket it accepted in the same two streams:
 
 ```ts
 // Cloudflare Workers
-const [client, server] = Object.values(new WebSocketPair())
-server.accept()
-const { readable, writable } = WebSockets.fromSocket(server)
-readable.pipeTo(writable) // echo
-return new Response(null, { status: 101, webSocket: client })
+const [client, server] = Object.values(new WebSocketPair());
+server.accept();
+const { readable, writable } = WebSockets.fromSocket(server);
+readable.pipeTo(writable); // echo
+return new Response(null, { status: 101, webSocket: client });
 ```
 
 Deno's `Deno.upgradeWebSocket(request).socket` works the same way. Bun's `ServerWebSocket` has handler callbacks instead of `addEventListener`, so `fromSocket` can't wrap it.

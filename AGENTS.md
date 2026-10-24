@@ -77,6 +77,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 - Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`DecoderStream.Options`).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`. `portable/optional-undefined` checks this and fixes it.
 - Relative imports end in `.js` (`portable/import-extension`).
+- Statements end with semicolons, and so do the statements in examples. oxfmt adds them to code (`semi: true` in `vite.config.ts`), and `tools/lint/src/examples.test.ts` checks the examples, which oxfmt doesn't format.
 - Every `if`, `else` and loop body goes in braces, even a one-line early `return`, and so do the bodies in examples. The `curly` lint rule checks the code, and `tools/lint/src/examples.test.ts` checks the examples.
 - A helper that throws for an invalid value and otherwise returns nothing or the same value is named `assert*`, such as `assertSize` and `assertUint8Array`. A helper that also changes the value, such as trimming it or converting a domain to its A-label, is named for the change: `normalizeName`, `formatAddress`.
 - Classes only for errors and for subclasses of platform types. Error classes extend a class from `@portable/errors` and set `static override readonly kind: string`, which `BaseError` copies to `name`. Kinds are namespaced by package, like `'Lines.MaxLengthError'`. A package's error classes live in `src/errors.ts`. `portable/error-kind` checks that each error class sets `kind`.

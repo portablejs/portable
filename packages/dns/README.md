@@ -9,11 +9,11 @@ npm install @portable/dns
 ```
 
 ```ts
-import * as Dns from '@portable/dns'
+import * as Dns from '@portable/dns';
 
-const resolver = Dns.create()
-const records = await resolver.resolveTxt('_dmarc.example.com')
-const dmarc = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
+const resolver = Dns.create();
+const records = await resolver.resolveTxt('_dmarc.example.com');
+const dmarc = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'));
 ```
 
 ## Bring your own resolver
@@ -21,16 +21,16 @@ const dmarc = records.map((chunks) => chunks.join('')).find((text) => text.start
 `Dns.Resolver` is a type listing the lookups that SPF, DMARC and DKIM need, with Node's method names and result shapes. The resolver from `create` fits it, and so do `node:dns/promises` and `new Resolver()` from it:
 
 ```ts
-import * as Dns from '@portable/dns'
-import dns from 'node:dns/promises'
+import * as Dns from '@portable/dns';
+import dns from 'node:dns/promises';
 
 async function dmarcRecord(resolver: Dns.Resolver, domain: string) {
-  const records = await resolver.resolveTxt(`_dmarc.${domain}`)
-  return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
+  const records = await resolver.resolveTxt(`_dmarc.${domain}`);
+  return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'));
 }
 
-await dmarcRecord(Dns.create(), 'example.com')
-await dmarcRecord(dns, 'example.com')
+await dmarcRecord(Dns.create(), 'example.com');
+await dmarcRecord(dns, 'example.com');
 ```
 
 In tests, pass an object whose methods return fixed records.
@@ -90,10 +90,10 @@ Each method rejects with a `TypeError` for a name that isn't a string.
 ```ts
 const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
   if (Dns.isNotFound(error)) {
-    return []
+    return [];
   }
-  throw error
-})
+  throw error;
+});
 ```
 
 ## Types

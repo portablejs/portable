@@ -1,6 +1,6 @@
-import type { encode } from './encode.js'
-import * as Streams from '@portable/streams'
-import { createEncoder, type Encoder } from './encoder.js'
+import type { encode } from './encode.js';
+import * as Streams from '@portable/streams';
+import { createEncoder, type Encoder } from './encoder.js';
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
@@ -8,8 +8,8 @@ export declare namespace EncoderStream {
      * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
      * cancel the source.
      */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -18,33 +18,33 @@ export declare namespace EncoderStream {
  *
  * @example
  * ```ts
- * import * as Csv from '@portable/csv'
- * import * as Streams from '@portable/streams'
+ * import * as Csv from '@portable/csv';
+ * import * as Streams from '@portable/streams';
  *
  * const body = Streams.fromIterable(users)
- *   .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }))
- * return new Response(body, { headers: { 'content-type': 'text/csv' } })
+ *   .pipeThrough(new Csv.EncoderStream({ header: ['id', 'email'] }));
+ * return new Response(body, { headers: { 'content-type': 'text/csv' } });
  * ```
  */
 export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
-    const encoder = createEncoder(options) satisfies Encoder
-    const utf8 = new TextEncoder()
+    const encoder = createEncoder(options) satisfies Encoder;
+    const utf8 = new TextEncoder();
     super(
       Streams.abortable(
         {
           transform(row, controller) {
-            controller.enqueue(utf8.encode(encoder.row(row)))
+            controller.enqueue(utf8.encode(encoder.row(row)));
           },
           flush(controller) {
-            const rest = encoder.end()
+            const rest = encoder.end();
             if (rest) {
-              controller.enqueue(utf8.encode(rest))
+              controller.enqueue(utf8.encode(rest));
             }
           },
         },
         options,
       ),
-    )
+    );
   }
 }

@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vite-plus/test'
-import * as JsonStream from '@portable/json-stream'
+import { describe, expect, test } from 'vite-plus/test';
+import * as JsonStream from '@portable/json-stream';
 import {
   attempt,
   byteForms,
@@ -7,31 +7,34 @@ import {
   rejectedByteForms,
   streamOf,
   toByteForm,
-} from '@portable/fuzz'
+} from '@portable/fuzz';
 
-const bytes = new TextEncoder().encode('{"rows":[{"id":"ü"},{"id":"b"}]}')
+const bytes = new TextEncoder().encode('{"rows":[{"id":"ü"},{"id":"b"}]}');
 
 describe('byte inputs', () => {
   for (const form of byteForms) {
     test(`reads ${form} chunks`, async () => {
-      const chunks = [toByteForm(bytes.subarray(0, 18), form), toByteForm(bytes.subarray(18), form)]
+      const chunks = [
+        toByteForm(bytes.subarray(0, 18), form),
+        toByteForm(bytes.subarray(18), form),
+      ];
       const matches = await readAll(
         streamOf(chunks).pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows.*'] })),
-      )
-      expect(matches.map((match) => match.value)).toEqual([{ id: 'ü' }, { id: 'b' }])
-    })
+      );
+      expect(matches.map((match) => match.value)).toEqual([{ id: 'ü' }, { id: 'b' }]);
+    });
   }
-})
+});
 
 describe('rejected byte inputs', () => {
   for (const [name, value] of Object.entries(rejectedByteForms)) {
     test(`throws a TypeError for ${name}`, async () => {
-      const v = value as never
+      const v = value as never;
       await expect(
         attempt(() =>
           readAll(streamOf([v]).pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows.*'] }))),
         ),
-      ).rejects.toThrow(TypeError)
-    })
+      ).rejects.toThrow(TypeError);
+    });
   }
-})
+});

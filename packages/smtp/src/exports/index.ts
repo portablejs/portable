@@ -1,4 +1,4 @@
-export { CommandError, type Rejection } from '../errors.js'
+export { CommandError, type Rejection } from '../errors.js';
 export {
   connect,
   send,
@@ -7,5 +7,5 @@ export {
   type Dsn,
   type Mail,
   type Result,
-} from '../connect.js'
-export type { Connect, Socket, SocketOptions } from '../Socket.js'
+} from '../connect.js';
+export type { Connect, Socket, SocketOptions } from '../Socket.js';

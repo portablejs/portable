@@ -1,30 +1,30 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown when a webhook fails verification. Respond with a 4xx status. A scheme's `parse` throws
  * it for a missing or malformed header.
  *
  * @example
  * ```ts
- * import * as Webhooks from '@portable/webhooks'
+ * import * as Webhooks from '@portable/webhooks';
  *
  * try {
- *   await Webhooks.verify(request, { scheme: Webhooks.github, secret })
+ *   await Webhooks.verify(request, { scheme: Webhooks.github, secret });
  * } catch (error) {
  *   if (error instanceof Webhooks.VerificationError) {
- *     return new Response(error.code, { status: 400 })
+ *     return new Response(error.code, { status: 400 });
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class VerificationError extends Errors.BaseError {
-  static override readonly kind: string = 'Webhooks.VerificationError'
-  readonly code: VerificationError.Code
+  static override readonly kind: string = 'Webhooks.VerificationError';
+  readonly code: VerificationError.Code;
 
   constructor(options: ErrorOptions & { code: VerificationError.Code; message: string }) {
-    const { code, message, ...rest } = options
-    super(message, rest)
-    this.code = code
+    const { code, message, ...rest } = options;
+    super(message, rest);
+    this.code = code;
   }
 }
 
@@ -37,7 +37,7 @@ export declare namespace VerificationError {
    * - `'signature'`: no signature matches the body and any of the secrets.
    * - `'timestamp'`: the signature matches, but the timestamp is further from now than `tolerance`.
    */
-  type Code = 'missing-header' | 'malformed-header' | 'signature' | 'timestamp'
+  type Code = 'missing-header' | 'malformed-header' | 'signature' | 'timestamp';
 }
 
 /**
@@ -45,18 +45,18 @@ export declare namespace VerificationError {
  *
  * @example
  * ```ts
- * import * as Webhooks from '@portable/webhooks'
+ * import * as Webhooks from '@portable/webhooks';
  *
  * try {
- *   await Webhooks.verify(request, { scheme: Webhooks.github, secret, maxBytes: 1_000_000 })
+ *   await Webhooks.verify(request, { scheme: Webhooks.github, secret, maxBytes: 1_000_000 });
  * } catch (error) {
  *   if (error instanceof Webhooks.MaxBytesError) {
- *     return new Response(null, { status: 413 })
+ *     return new Response(null, { status: 413 });
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class MaxBytesError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'Webhooks.MaxBytesError'
+  static override readonly kind: string = 'Webhooks.MaxBytesError';
 }

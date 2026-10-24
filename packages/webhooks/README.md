@@ -9,7 +9,7 @@ npm install @portable/webhooks
 ```
 
 ```ts
-import * as Webhooks from '@portable/webhooks'
+import * as Webhooks from '@portable/webhooks';
 
 export default {
   async fetch(request: Request, env: { STRIPE_WEBHOOK_SECRET: string }) {
@@ -17,18 +17,18 @@ export default {
       const { body } = await Webhooks.verify(request, {
         scheme: Webhooks.stripe,
         secret: env.STRIPE_WEBHOOK_SECRET,
-      })
-      const event = JSON.parse(body)
+      });
+      const event = JSON.parse(body);
       // handle event
-      return new Response(null, { status: 204 })
+      return new Response(null, { status: 204 });
     } catch (error) {
       if (error instanceof Webhooks.VerificationError) {
-        return new Response(null, { status: 400 })
+        return new Response(null, { status: 400 });
       }
-      throw error
+      throw error;
     }
   },
-}
+};
 ```
 
 `verify` reads the raw bytes of the request body and computes the HMAC over them, so a body parser, a re-serialized JSON object or a lost byte order mark can't break the signature. It then returns the body as text for you to parse: Slack slash commands and some GitHub deliveries are form-encoded, not JSON.
@@ -36,9 +36,9 @@ export default {
 In tests, `sign` returns the headers the provider would send:
 
 ```ts
-const body = JSON.stringify({ id: 'evt_1', object: 'event' })
-const headers = await Webhooks.sign(body, { scheme: Webhooks.stripe, secret: 'whsec_test' })
-const response = await worker.fetch(new Request('https://example.com', { method: 'POST', body, headers }), env)
+const body = JSON.stringify({ id: 'evt_1', object: 'event' });
+const headers = await Webhooks.sign(body, { scheme: Webhooks.stripe, secret: 'whsec_test' });
+const response = await worker.fetch(new Request('https://example.com', { method: 'POST', body, headers }), env);
 ```
 
 ## API
@@ -85,29 +85,29 @@ A header may carry several signatures (Standard Webhooks separates them with spa
 A scheme is an object of plain functions: `parse` reads the signatures (as bytes), timestamp and id from the headers, `payload` returns what the sender signs, `headers` writes the headers for `sign`, and the optional `key` turns a string secret into key bytes. `verify` and `sign` do everything else the same way for every scheme: the HMAC, the length check and constant-time compare, several secrets and the timestamp tolerance. For a sender that signs with HMAC-SHA256, write its scheme:
 
 ```ts
-import * as Webhooks from '@portable/webhooks'
+import * as Webhooks from '@portable/webhooks';
 
-const utf8 = new TextEncoder()
-const seconds = (date: Date) => String(Math.floor(date.getTime() / 1000))
+const utf8 = new TextEncoder();
+const seconds = (date: Date) => String(Math.floor(date.getTime() / 1000));
 const toHex = (bytes: Uint8Array) =>
-  Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
 // Acme sends `acme-timestamp: <seconds>` and `acme-signature: <hex>`, the HMAC-SHA256 of
 // `{timestamp}.{body}`.
 const acme: Webhooks.Scheme = {
   parse(headers) {
-    const signature = headers.get('acme-signature')
-    const timestamp = headers.get('acme-timestamp')
+    const signature = headers.get('acme-signature');
+    const timestamp = headers.get('acme-timestamp');
     if (!signature || !timestamp) {
-      throw new Webhooks.VerificationError({ code: 'missing-header', message: 'Missing Acme headers' })
+      throw new Webhooks.VerificationError({ code: 'missing-header', message: 'Missing Acme headers' });
     }
     if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp)) {
-      throw new Webhooks.VerificationError({ code: 'malformed-header', message: 'Malformed Acme headers' })
+      throw new Webhooks.VerificationError({ code: 'malformed-header', message: 'Malformed Acme headers' });
     }
     return {
       signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
       timestamp: new Date(Number(timestamp) * 1000),
-    }
+    };
   },
   payload: ({ timestamp, body }) =>
     new Uint8Array([...utf8.encode(`${seconds(timestamp!)}.`), ...body]),
@@ -115,9 +115,9 @@ const acme: Webhooks.Scheme = {
     'acme-timestamp': seconds(timestamp),
     'acme-signature': toHex(signature),
   }),
-}
+};
 
-const { body } = await Webhooks.verify(request, { scheme: acme, secret: env.ACME_SECRET })
+const { body } = await Webhooks.verify(request, { scheme: acme, secret: env.ACME_SECRET });
 ```
 
 This package won't add schemes beyond these four. The built-in ones in [`src/schemes.ts`](src/schemes.ts) are written the same way.
@@ -129,15 +129,15 @@ This package won't add schemes beyond these four. The built-in ones in [`src/sch
 On Node, WebCrypto's HMAC is about 7× slower than `@noble/hashes`. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
 
 ```ts
-import { hmac } from '@noble/hashes/hmac.js'
-import { sha256 } from '@noble/hashes/sha2.js'
-import * as Webhooks from '@portable/webhooks'
+import { hmac } from '@noble/hashes/hmac.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import * as Webhooks from '@portable/webhooks';
 
 const { body } = await Webhooks.verify(request, {
   scheme: Webhooks.github,
   secret,
   hmac: (_hash, key, data) => hmac(sha256, key, data),
-})
+});
 ```
 
 ## Types

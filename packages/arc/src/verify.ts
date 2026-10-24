@@ -1,5 +1,5 @@
-import * as Bytes from '@portable/bytes'
-import type * as Dkim from '@portable/dkim'
+import * as Bytes from '@portable/bytes';
+import type * as Dkim from '@portable/dkim';
 import {
   binaryToText,
   bodyHashKey,
@@ -24,7 +24,7 @@ import {
   toALabel,
   toBinary,
   verifyData,
-} from '@portable/dkim/internal'
+} from '@portable/dkim/internal';
 import {
   type ArcSet,
   authResultsOf,
@@ -32,7 +32,7 @@ import {
   isArcField,
   newest,
   readChain,
-} from './internal/chain.js'
+} from './internal/chain.js';
 
 /**
  * The DNS lookup ARC needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
@@ -40,85 +40,85 @@ import {
  *
  * @example
  * ```ts
- * import * as Arc from '@portable/arc'
- * import * as Dns from '@portable/dns'
+ * import * as Arc from '@portable/arc';
+ * import * as Dns from '@portable/dns';
  *
- * const resolver: Arc.Resolver = Dns.create()
+ * const resolver: Arc.Resolver = Dns.create();
  * ```
  */
-export type Resolver = Dkim.Resolver
+export type Resolver = Dkim.Resolver;
 
 /**
  * The outcome of validating a message's ARC chain.
  *
  * @example
  * ```ts
- * import * as Arc from '@portable/arc'
+ * import * as Arc from '@portable/arc';
  *
- * const arc: Arc.Result = await Arc.verify(message, { resolver })
- * const google = arc.sets.find((set) => set.domain === 'google.com')
+ * const arc: Arc.Result = await Arc.verify(message, { resolver });
+ * const google = arc.sets.find((set) => set.domain === 'google.com');
  * ```
  */
 export type Result = {
   /** The chain validation status (RFC 8617 section 4.4), which is also the `arc=` result. */
-  result: Result.Code
+  result: Result.Code;
   /** The highest instance on the message's ARC fields, or 0 when it has none. */
-  instance: number
+  instance: number;
   /** Why the result is `fail`, such as `i=2 as signature did not verify`. */
-  reason?: string | undefined
+  reason?: string | undefined;
   /** The resolver's error when a key lookup failed. */
-  cause?: unknown
+  cause?: unknown;
   /** The ARC sets from the oldest (`i=1`) to the newest. Empty unless the result is `pass`. */
-  sets: readonly Result.Set[]
-}
+  sets: readonly Result.Set[];
+};
 
 export declare namespace Result {
-  type Code = 'pass' | 'fail' | 'none'
+  type Code = 'pass' | 'fail' | 'none';
 
   /** One validated ARC set. */
   type Set = {
-    instance: number
+    instance: number;
     /** The sealing domain (`d=` of the ARC-Seal), in lower-case A-label form. */
-    domain: string
+    domain: string;
     /** The selector of the ARC-Seal. */
-    selector: string
+    selector: string;
     /**
      * The ARC-Authentication-Results payload after `i=`: the sealer's authserv-id and the results it
      * recorded, unfolded. It is only as trustworthy as the sealing domain.
      */
-    authResults: string
-  }
+    authResults: string;
+  };
 }
 
 export declare namespace verify {
   type Options = {
     /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
-    resolver: Resolver
+    resolver: Resolver;
     /** The time to check the ARC-Message-Signature's `x=` against. @default new Date() */
-    now?: Date | undefined
+    now?: Date | undefined;
     /** RSA keys shorter than this fail the chain (RFC 8301 section 3.2). @default 1024 */
-    minKeyBits?: number | undefined
+    minKeyBits?: number | undefined;
     /** Creates the body hash, as in `Dkim.verify`. @default buffers the body for `crypto.subtle.digest` */
-    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined
+    hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined;
     /** Stops reading the message and the key lookups, and rejects with `signal.reason`. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 type Seal = {
-  set: ArcSet
-  type: KeyType
-  value: Uint8Array<ArrayBuffer>
-  domain: string
-  selector: string
-  keyName: string
-}
+  set: ArcSet;
+  type: KeyType;
+  value: Uint8Array<ArrayBuffer>;
+  domain: string;
+  selector: string;
+  keyName: string;
+};
 
 const sealAlgorithms: Record<string, KeyType> = {
   'rsa-sha256': 'rsa',
   'ed25519-sha256': 'ed25519',
-}
-const sealTags = ['a', 'b', 'cv', 'd', 's']
+};
+const sealTags = ['a', 'b', 'cv', 'd', 's'];
 
 /**
  * Validates the ARC chain of a message (RFC 8617 section 5.2) and resolves to `pass`, `fail` or
@@ -130,109 +130,109 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
  *
  * @example
  * ```ts
- * import * as Arc from '@portable/arc'
- * import * as Dns from '@portable/dns'
+ * import * as Arc from '@portable/arc';
+ * import * as Dns from '@portable/dns';
  *
- * const arc = await Arc.verify(message, { resolver: Dns.create() })
- * console.log(`arc=${arc.result}${arc.reason ? ` (${arc.reason})` : ''}`)
+ * const arc = await Arc.verify(message, { resolver: Dns.create() });
+ * console.log(`arc=${arc.result}${arc.reason ? ` (${arc.reason})` : ''}`);
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options
+  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options;
   if (typeof resolver?.resolveTxt !== 'function') {
-    throw new TypeError('options.resolver must have a resolveTxt method.')
+    throw new TypeError('options.resolver must have a resolveTxt method.');
   }
-  signal?.throwIfAborted()
-  const { header, body } = await splitMessage(message)
-  const fields = parseFields(toBinary(header))
-  const { instance } = newest(fields)
+  signal?.throwIfAborted();
+  const { header, body } = await splitMessage(message);
+  const fields = parseFields(toBinary(header));
+  const { instance } = newest(fields);
   const failed = (reason: string, cause?: unknown): Result => ({
     result: 'fail',
     instance,
     reason,
     ...(cause !== undefined && { cause }),
     sets: [],
-  })
+  });
   const stop = async (result: Result): Promise<Result> => {
-    await body.cancel()
-    return result
-  }
+    await body.cancel();
+    return result;
+  };
 
   if (!fields.some(isArcField)) {
-    return stop({ result: 'none', instance: 0, sets: [] })
+    return stop({ result: 'none', instance: 0, sets: [] });
   }
-  const sets = readChain(fields)
+  const sets = readChain(fields);
   if (typeof sets === 'string') {
-    return stop(failed(sets))
+    return stop(failed(sets));
   }
-  const last = sets.at(-1)!
+  const last = sets.at(-1)!;
   if (chainValidation(last.seal) === 'fail') {
-    return stop(failed(`i=${last.instance} has cv=fail`))
+    return stop(failed(`i=${last.instance} has cv=fail`));
   }
   for (const set of sets) {
-    const expected = set.instance === 1 ? 'none' : 'pass'
-    const cv = chainValidation(set.seal)
+    const expected = set.instance === 1 ? 'none' : 'pass';
+    const cv = chainValidation(set.seal);
     if (cv !== expected) {
-      return stop(failed(`i=${set.instance} has cv=${cv ?? ''} instead of cv=${expected}`))
+      return stop(failed(`i=${set.instance} has cv=${cv ?? ''} instead of cv=${expected}`));
     }
   }
-  const seals: Seal[] = []
+  const seals: Seal[] = [];
   for (const set of sets) {
-    const seal = prepareSeal(set)
+    const seal = prepareSeal(set);
     if (typeof seal === 'string') {
-      return stop(failed(seal))
+      return stop(failed(seal));
     }
-    seals.push(seal)
+    seals.push(seal);
   }
-  const signature = prepare(last.signature, now, 'arc')
+  const signature = prepare(last.signature, now, 'arc');
   if (signature.outcome) {
-    return stop(failed(`i=${last.instance} ams ${signature.outcome.reason}`))
+    return stop(failed(`i=${last.instance} ams ${signature.outcome.reason}`));
   }
   if (signature.names.includes('arc-seal')) {
-    return stop(failed(`i=${last.instance} ams signs ARC-Seal`))
+    return stop(failed(`i=${last.instance} ams signs ARC-Seal`));
   }
 
-  const keys = new Map<string, Promise<KeyRecord>>()
+  const keys = new Map<string, Promise<KeyRecord>>();
   for (const keyName of [signature.keyName, ...seals.map((seal) => seal.keyName)]) {
     if (keys.has(keyName)) {
-      continue
+      continue;
     }
-    const key = fetchKey(resolver, keyName, signal)
-    key.catch(() => {})
-    keys.set(keyName, key)
+    const key = fetchKey(resolver, keyName, signal);
+    key.catch(() => {});
+    keys.set(keyName, key);
   }
-  const cancel = () => void body.cancel().catch(() => {})
-  signal?.addEventListener('abort', cancel, { once: true })
+  const cancel = () => void body.cancel().catch(() => {});
+  signal?.addEventListener('abort', cancel, { once: true });
   const digests = await hashBody(body, [signature.body], hasher).finally(() =>
     signal?.removeEventListener('abort', cancel),
-  )
-  signal?.throwIfAborted()
+  );
+  signal?.throwIfAborted();
 
-  const digest = digests.get(bodyHashKey(signature.body))!
-  const { length } = signature.body
+  const digest = digests.get(bodyHashKey(signature.body))!;
+  const { length } = signature.body;
   if (length !== undefined && length > digest.total) {
-    return failed(`i=${last.instance} ams l= is longer than the body`)
+    return failed(`i=${last.instance} ams l= is longer than the body`);
   }
   if (!Bytes.equal(digest.digest, signature.bodyHash)) {
-    return failed(`i=${last.instance} ams body hash did not verify`)
+    return failed(`i=${last.instance} ams body hash did not verify`);
   }
-  const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
+  const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits);
   if (outcome.result !== 'pass') {
-    return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause)
+    return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause);
   }
 
   for (let i = seals.length - 1; i >= 0; i--) {
-    const seal = seals[i]!
-    const covered: Field[] = []
+    const seal = seals[i]!;
+    const covered: Field[] = [];
     for (const set of sets.slice(0, i)) {
-      covered.push(set.results, set.signature, set.seal)
+      covered.push(set.results, set.signature, set.seal);
     }
-    covered.push(seal.set.results, seal.set.signature)
-    const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'))
-    const record = await keys.get(seal.keyName)!
-    const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits)
+    covered.push(seal.set.results, seal.set.signature);
+    const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'));
+    const record = await keys.get(seal.keyName)!;
+    const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits);
     if (outcome.result !== 'pass') {
-      return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause)
+      return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause);
     }
   }
 
@@ -245,43 +245,43 @@ export async function verify(message: Message, options: verify.Options): Promise
       selector,
       authResults: authResultsOf(set.results),
     })),
-  }
+  };
 }
 
 /** Checks an ARC-Seal's tags (RFC 8617 section 4.1.3) before any key is looked up. */
 function prepareSeal(set: ArcSet): Seal | string {
-  const at = `i=${set.instance} as`
-  const { tags, valid } = parseTags(set.seal.raw.slice(set.seal.raw.indexOf(':') + 1))
+  const at = `i=${set.instance} as`;
+  const { tags, valid } = parseTags(set.seal.raw.slice(set.seal.raw.indexOf(':') + 1));
   if (!valid) {
-    return `${at} syntax error`
+    return `${at} syntax error`;
   }
-  const missing = sealTags.find((name) => !tags.has(name))
+  const missing = sealTags.find((name) => !tags.has(name));
   if (missing) {
-    return `${at} has no ${missing}=`
+    return `${at} has no ${missing}=`;
   }
-  const timestamp = tags.get('t')
+  const timestamp = tags.get('t');
   if (timestamp !== undefined && !/^\d{1,12}$/.test(timestamp)) {
-    return `${at} has an invalid t=`
+    return `${at} has an invalid t=`;
   }
   if (tags.has('h')) {
-    return `${at} has h=`
+    return `${at} has h=`;
   }
-  const type = sealAlgorithms[stripFws(tags.get('a')!).toLowerCase()]
+  const type = sealAlgorithms[stripFws(tags.get('a')!).toLowerCase()];
   if (!type) {
-    return `${at} has an unknown algorithm`
+    return `${at} has an unknown algorithm`;
   }
-  const domain = toALabel(binaryToText(tags.get('d')!))
+  const domain = toALabel(binaryToText(tags.get('d')!));
   if (!domain || !isDomainName(domain)) {
-    return `${at} has an invalid d=`
+    return `${at} has an invalid d=`;
   }
-  const selector = toALabel(binaryToText(tags.get('s')!))
-  const keyName = `${selector}._domainkey.${domain}`
+  const selector = toALabel(binaryToText(tags.get('s')!));
+  const keyName = `${selector}._domainkey.${domain}`;
   if (!selector || !isSelector(selector) || !canFitDns(keyName)) {
-    return `${at} has an invalid s=`
+    return `${at} has an invalid s=`;
   }
-  const value = decodeBase64(tags.get('b')!)
+  const value = decodeBase64(tags.get('b')!);
   if (!value) {
-    return `${at} syntax error`
+    return `${at} syntax error`;
   }
-  return { set, type, value, domain, selector, keyName }
+  return { set, type, value, domain, selector, keyName };
 }

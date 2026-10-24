@@ -1,55 +1,55 @@
-import { describe, expect, test } from 'vite-plus/test'
-import * as Streams from '@portable/streams'
+import { describe, expect, test } from 'vite-plus/test';
+import * as Streams from '@portable/streams';
 
 function endless<chunk>(chunk: chunk) {
-  const source = { cancelled: undefined as unknown }
+  const source = { cancelled: undefined as unknown };
   const stream = new ReadableStream<chunk>({
     pull: (controller) => controller.enqueue(chunk),
     cancel: (reason) => {
-      source.cancelled = reason
+      source.cancelled = reason;
     },
-  })
-  return { stream, source }
+  });
+  return { stream, source };
 }
 
 function stalled<chunk>(chunk: chunk) {
-  const source = { cancelled: undefined as unknown, pulls: 0 }
+  const source = { cancelled: undefined as unknown, pulls: 0 };
   const stream = new ReadableStream<chunk>(
     {
       pull(controller) {
-        source.pulls++
+        source.pulls++;
         if (source.pulls === 1) {
-          controller.enqueue(chunk)
+          controller.enqueue(chunk);
         } else {
-          return new Promise<void>(() => {})
+          return new Promise<void>(() => {});
         }
-        return undefined
+        return undefined;
       },
       cancel(reason) {
-        source.cancelled = reason
+        source.cancelled = reason;
       },
     },
     { highWaterMark: 0 },
-  )
-  return { stream, source }
+  );
+  return { stream, source };
 }
 
 async function abortMidway<value>(
   chunk: value,
   transform: (signal: AbortSignal) => ReadableWritablePair<unknown, value>,
 ): Promise<boolean> {
-  const controller = new AbortController()
-  const { stream, source } = endless(chunk)
-  const reader = stream.pipeThrough(transform(controller.signal)).getReader()
-  await reader.read()
-  const reason = new Error('stop')
-  controller.abort(reason)
-  await expect(reader.read()).rejects.toBe(reason)
-  await new Promise((resolve) => setTimeout(resolve, 0))
-  return source.cancelled === reason
+  const controller = new AbortController();
+  const { stream, source } = endless(chunk);
+  const reader = stream.pipeThrough(transform(controller.signal)).getReader();
+  await reader.read();
+  const reason = new Error('stop');
+  controller.abort(reason);
+  await expect(reader.read()).rejects.toBe(reason);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return source.cancelled === reason;
 }
 
-const bytes = new Uint8Array([1, 2, 3])
+const bytes = new Uint8Array([1, 2, 3]);
 
 describe('collectors', () => {
   const collectors = {
@@ -61,72 +61,72 @@ describe('collectors', () => {
       Streams.toJson(stream, { signal }),
     toArray: (stream: ReadableStream<Uint8Array>, signal: AbortSignal) =>
       Streams.toArray(stream, { signal }),
-  }
+  };
 
   for (const [name, collect] of Object.entries(collectors)) {
     test(`aborting ${name} mid-way rejects with the reason and cancels the source`, async () => {
-      const { stream, source } = stalled(bytes)
-      const controller = new AbortController()
-      const reason = new Error('stop')
-      const collecting = collect(stream, controller.signal)
-      await new Promise((resolve) => setTimeout(resolve, 0))
-      controller.abort(reason)
-      await expect(collecting).rejects.toBe(reason)
-      expect(source.cancelled).toBe(reason)
-    })
+      const { stream, source } = stalled(bytes);
+      const controller = new AbortController();
+      const reason = new Error('stop');
+      const collecting = collect(stream, controller.signal);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      controller.abort(reason);
+      await expect(collecting).rejects.toBe(reason);
+      expect(source.cancelled).toBe(reason);
+    });
 
     test(`an aborted signal rejects ${name} at once and cancels the source`, async () => {
-      const { stream, source } = stalled(bytes)
-      const reason = new Error('stop')
-      await expect(collect(stream, AbortSignal.abort(reason))).rejects.toBe(reason)
-      expect(source.cancelled).toBe(reason)
-    })
+      const { stream, source } = stalled(bytes);
+      const reason = new Error('stop');
+      await expect(collect(stream, AbortSignal.abort(reason))).rejects.toBe(reason);
+      expect(source.cancelled).toBe(reason);
+    });
   }
 
   test('aborting while an async iterable is pending rejects with the reason', async () => {
     async function* slow() {
-      yield bytes
-      await new Promise(() => {})
+      yield bytes;
+      await new Promise(() => {});
     }
-    const controller = new AbortController()
-    const reason = new Error('stop')
-    const collecting = Streams.toBytes(slow(), { signal: controller.signal })
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    controller.abort(reason)
-    await expect(collecting).rejects.toBe(reason)
-  })
+    const controller = new AbortController();
+    const reason = new Error('stop');
+    const collecting = Streams.toBytes(slow(), { signal: controller.signal });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort(reason);
+    await expect(collecting).rejects.toBe(reason);
+  });
 
   test('aborting between chunks of an async iterable runs its finally block', async () => {
-    let finished = false
-    const controller = new AbortController()
+    let finished = false;
+    const controller = new AbortController();
     async function* numbers() {
       try {
-        yield 1
-        controller.abort(new Error('stop'))
-        yield 2
-        yield 3
+        yield 1;
+        controller.abort(new Error('stop'));
+        yield 2;
+        yield 3;
       } finally {
-        finished = true
+        finished = true;
       }
     }
-    await expect(Streams.toArray(numbers(), { signal: controller.signal })).rejects.toThrow('stop')
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(finished).toBe(true)
-  })
+    await expect(Streams.toArray(numbers(), { signal: controller.signal })).rejects.toThrow('stop');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(finished).toBe(true);
+  });
 
   test('an aborted signal rejects an iterable source at once', async () => {
-    const reason = new Error('stop')
+    const reason = new Error('stop');
     await expect(Streams.toArray([1, 2], { signal: AbortSignal.abort(reason) })).rejects.toBe(
       reason,
-    )
-  })
+    );
+  });
 
   test('a signal that never aborts reads to the end', async () => {
-    const signal = new AbortController().signal
-    expect(await Streams.toArray([1, 2, 3], { signal })).toEqual([1, 2, 3])
-    expect(await Streams.toText(['a', 'b'], { signal })).toBe('ab')
-  })
-})
+    const signal = new AbortController().signal;
+    expect(await Streams.toArray([1, 2, 3], { signal })).toEqual([1, 2, 3]);
+    expect(await Streams.toText(['a', 'b'], { signal })).toBe('ab');
+  });
+});
 
 describe('transforms', () => {
   const transforms = {
@@ -140,51 +140,51 @@ describe('transforms', () => {
     transform: (signal: AbortSignal) =>
       Streams.transform(
         async function* (source: AsyncIterable<Uint8Array>) {
-          yield* source
+          yield* source;
         },
         { signal },
       ),
-  }
+  };
 
   for (const [name, create] of Object.entries(transforms)) {
     test(`aborting ${name} mid-way errors it and cancels its source`, async () => {
-      expect(await abortMidway(bytes, create)).toBe(true)
-    })
+      expect(await abortMidway(bytes, create)).toBe(true);
+    });
 
     test(`an aborted signal errors ${name} at once`, async () => {
-      const reason = new Error('stop')
-      const { readable } = create(AbortSignal.abort(reason))
-      await expect(readable.getReader().read()).rejects.toBe(reason)
-    })
+      const reason = new Error('stop');
+      const { readable } = create(AbortSignal.abort(reason));
+      await expect(readable.getReader().read()).rejects.toBe(reason);
+    });
   }
 
   test('aborting transform runs the generator finally block', async () => {
-    let finished = false
-    const controller = new AbortController()
+    let finished = false;
+    const controller = new AbortController();
     const pair = Streams.transform(
       async function* (source: AsyncIterable<Uint8Array>) {
         try {
-          yield* source
+          yield* source;
         } finally {
-          finished = true
+          finished = true;
         }
       },
       { signal: controller.signal },
-    )
-    const reader = endless(bytes).stream.pipeThrough(pair).getReader()
-    await reader.read()
-    controller.abort(new Error('stop'))
-    await new Promise((resolve) => setTimeout(resolve, 10))
-    expect(finished).toBe(true)
-  })
-})
+    );
+    const reader = endless(bytes).stream.pipeThrough(pair).getReader();
+    await reader.read();
+    controller.abort(new Error('stop'));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(finished).toBe(true);
+  });
+});
 
 describe('abortable', () => {
   test('returns the transformer unchanged without a signal', () => {
-    const transformer = { transform: () => {} }
-    expect(Streams.abortable(transformer)).toBe(transformer)
-    expect(Streams.abortable(transformer, { signal: undefined })).toBe(transformer)
-  })
+    const transformer = { transform: () => {} };
+    expect(Streams.abortable(transformer)).toBe(transformer);
+    expect(Streams.abortable(transformer, { signal: undefined })).toBe(transformer);
+  });
 
   test('runs the start, transform and flush of the transformer', async () => {
     const stream = new TransformStream<number, number>(
@@ -196,37 +196,37 @@ describe('abortable', () => {
         },
         { signal: new AbortController().signal },
       ),
-    )
-    const writer = stream.writable.getWriter()
-    void writer.write(1)
-    void writer.write(2)
-    void writer.close()
-    expect(await Streams.toArray(stream.readable)).toEqual([0, 2, 4, -1])
-  })
+    );
+    const writer = stream.writable.getWriter();
+    void writer.write(1);
+    void writer.write(2);
+    void writer.close();
+    expect(await Streams.toArray(stream.readable)).toEqual([0, 2, 4, -1]);
+  });
 
   test('an abort after the stream ends has no effect', async () => {
-    const controller = new AbortController()
-    const stream = new TransformStream(Streams.abortable({}, { signal: controller.signal }))
-    await stream.writable.close()
-    controller.abort(new Error('late'))
-    expect(await Streams.toArray(stream.readable)).toEqual([])
-  })
+    const controller = new AbortController();
+    const stream = new TransformStream(Streams.abortable({}, { signal: controller.signal }));
+    await stream.writable.close();
+    controller.abort(new Error('late'));
+    expect(await Streams.toArray(stream.readable)).toEqual([]);
+  });
 
   test('cancelling the stream calls the cancel of the transformer', async () => {
-    let cancelled: unknown
+    let cancelled: unknown;
     const stream = new TransformStream(
       Streams.abortable(
         {
           cancel: (reason: unknown) => {
-            cancelled = reason
+            cancelled = reason;
           },
         },
         { signal: new AbortController().signal },
       ),
-    )
-    const reason = new Error('stop')
-    await stream.readable.cancel(reason)
+    );
+    const reason = new Error('stop');
+    await stream.readable.cancel(reason);
     // Runtimes without Transformer.cancel never call it.
-    expect([undefined, reason]).toContain(cancelled)
-  })
-})
+    expect([undefined, reason]).toContain(cancelled);
+  });
+});

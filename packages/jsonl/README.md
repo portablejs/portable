@@ -9,12 +9,12 @@ npm install @portable/jsonl
 ```
 
 ```ts
-import * as Jsonl from '@portable/jsonl'
+import * as Jsonl from '@portable/jsonl';
 
-const response = await fetch('https://example.com/events.ndjson')
-const reader = response.body!.pipeThrough(new Jsonl.DecoderStream()).getReader()
+const response = await fetch('https://example.com/events.ndjson');
+const reader = response.body!.pipeThrough(new Jsonl.DecoderStream()).getReader();
 for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value)
+  console.log(r.value);
 }
 ```
 
@@ -24,8 +24,8 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) {
 
 ```ts
 const body = Streams.fromIterable(rows)
-  .pipeThrough(new Jsonl.EncoderStream())
-return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })
+  .pipeThrough(new Jsonl.EncoderStream());
+return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } });
 ```
 
 ## Options

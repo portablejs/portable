@@ -9,23 +9,23 @@ npm install @portable/dns-packet
 ```
 
 ```ts
-import * as DnsPacket from '@portable/dns-packet'
+import * as DnsPacket from '@portable/dns-packet';
 
 const query = DnsPacket.encode({
   id: 0,
   flags: { rd: true },
   questions: [{ name: 'example.com', type: 'A' }],
   additionals: [{ type: 'OPT', dnssecOk: true }],
-})
+});
 const response = await fetch('https://cloudflare-dns.com/dns-query', {
   method: 'POST',
   headers: { 'content-type': 'application/dns-message' },
   body: query,
-})
-const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
+});
+const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()));
 for (const answer of packet.answers) {
   if (answer.type === 'A') {
-    console.log(answer.data)
+    console.log(answer.data);
   }
 }
 ```

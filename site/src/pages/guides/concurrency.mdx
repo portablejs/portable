@@ -15,8 +15,8 @@ Every timer, retry, and queue in these packages takes an `AbortSignal`. Pass `re
 This function runs at most four requests at once, tries each URL up to three times with backoff, and gives each attempt 10 seconds. Aborting `signal` stops every request, including the ones still in the queue:
 
 ```ts
-import * as Queue from '@portable/queue'
-import * as Timers from '@portable/timers'
+import * as Queue from '@portable/queue';
+import * as Timers from '@portable/timers';
 
 async function fetchAll(urls: readonly string[], signal: AbortSignal) {
   return Queue.map(
@@ -27,6 +27,6 @@ async function fetchAll(urls: readonly string[], signal: AbortSignal) {
         { attempts: 3, timeout: 10_000, signal },
       ),
     { concurrency: 4, signal },
-  )
+  );
 }
 ```

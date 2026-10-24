@@ -1,5 +1,5 @@
-import * as Bytes from '@portable/bytes'
-import { MaxBytesError } from './errors.js'
+import * as Bytes from '@portable/bytes';
+import { MaxBytesError } from './errors.js';
 
 /** Settles as `work` does, or rejects with `signal.reason` as soon as `signal` aborts. */
 export function race<value>(
@@ -7,18 +7,18 @@ export function race<value>(
   signal: AbortSignal | undefined,
 ): Promise<value> {
   if (!signal) {
-    return Promise.resolve(work)
+    return Promise.resolve(work);
   }
   return new Promise<value>((resolve, reject) => {
     if (signal.aborted) {
-      return reject(signal.reason)
+      return reject(signal.reason);
     }
-    const onAbort = () => reject(signal.reason)
-    signal.addEventListener('abort', onAbort, { once: true })
+    const onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
     Promise.resolve(work)
       .then(resolve, reject)
-      .finally(() => signal.removeEventListener('abort', onAbort))
-  })
+      .finally(() => signal.removeEventListener('abort', onAbort));
+  });
 }
 
 /**
@@ -32,34 +32,34 @@ export async function readBody(
 ): Promise<Uint8Array<ArrayBuffer>> {
   // Firefox has no `Request.prototype.body`, so a request body there can only be read whole.
   if (!body.body) {
-    const bytes = new Uint8Array(await race(body.arrayBuffer(), signal))
+    const bytes = new Uint8Array(await race(body.arrayBuffer(), signal));
     if (bytes.length > maxBytes) {
-      throw new MaxBytesError({ maxBytes })
+      throw new MaxBytesError({ maxBytes });
     }
-    return bytes
+    return bytes;
   }
-  signal?.throwIfAborted()
-  const reader = body.body.getReader()
-  const onAbort = () => reader.cancel(signal?.reason).catch(() => {})
-  signal?.addEventListener('abort', onAbort, { once: true })
+  signal?.throwIfAborted();
+  const reader = body.body.getReader();
+  const onAbort = () => reader.cancel(signal?.reason).catch(() => {});
+  signal?.addEventListener('abort', onAbort, { once: true });
   try {
-    const chunks: Uint8Array[] = []
-    let length = 0
+    const chunks: Uint8Array[] = [];
+    let length = 0;
     for (;;) {
-      const { done, value } = await reader.read()
-      signal?.throwIfAborted()
+      const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       if (done) {
-        break
+        break;
       }
-      length += value.length
+      length += value.length;
       if (length > maxBytes) {
-        await reader.cancel().catch(() => {})
-        throw new MaxBytesError({ maxBytes })
+        await reader.cancel().catch(() => {});
+        throw new MaxBytesError({ maxBytes });
       }
-      chunks.push(value)
+      chunks.push(value);
     }
-    return Bytes.concat(chunks)
+    return Bytes.concat(chunks);
   } finally {
-    signal?.removeEventListener('abort', onAbort)
+    signal?.removeEventListener('abort', onAbort);
   }
 }

@@ -1,32 +1,32 @@
-import { assertUint8Array } from '@portable/bytes/internal'
-import { NeedMore } from './bytes.js'
-import { MaxBytesError, TruncatedError, UnsupportedError } from './errors.js'
-import type { Format } from './formats/format.js'
-import { heif } from './formats/heif.js'
-import { icns } from './formats/icns.js'
-import { cur, ico } from './formats/ico.js'
-import { jp2 } from './formats/jp2.js'
-import { jpg } from './formats/jpg.js'
-import { jxl, jxlStream } from './formats/jxl.js'
-import { pnm } from './formats/pnm.js'
-import { bmp, dds, gif, j2c, ktx, png, psd, tga } from './formats/simple.js'
-import { svg } from './formats/svg.js'
-import { tiff } from './formats/tiff.js'
-import { webp } from './formats/webp.js'
+import { assertUint8Array } from '@portable/bytes/internal';
+import { NeedMore } from './bytes.js';
+import { MaxBytesError, TruncatedError, UnsupportedError } from './errors.js';
+import type { Format } from './formats/format.js';
+import { heif } from './formats/heif.js';
+import { icns } from './formats/icns.js';
+import { cur, ico } from './formats/ico.js';
+import { jp2 } from './formats/jp2.js';
+import { jpg } from './formats/jpg.js';
+import { jxl, jxlStream } from './formats/jxl.js';
+import { pnm } from './formats/pnm.js';
+import { bmp, dds, gif, j2c, ktx, png, psd, tga } from './formats/simple.js';
+import { svg } from './formats/svg.js';
+import { tiff } from './formats/tiff.js';
+import { webp } from './formats/webp.js';
 
 /** The type and dimensions of an image, in the shape image-size returns. */
 export type Size = {
   /** Width in pixels. For a file with several images, the width of the largest. */
-  width: number
+  width: number;
   /** Height in pixels. For a file with several images, the height of the largest. */
-  height: number
+  height: number;
   /** The detected format. */
-  type: Type
+  type: Type;
   /** EXIF orientation (1 to 8) of a JPEG, when the file has a non-zero one. */
-  orientation?: number | undefined
+  orientation?: number | undefined;
   /** Every image in an ICO, CUR or ICNS file that holds more than one. */
-  images?: readonly Image[] | undefined
-}
+  images?: readonly Image[] | undefined;
+};
 
 /**
  * The detected format. HEIF files report their brand (`avif`, `heic`, `mif1` and so on), KTX 2
@@ -61,10 +61,10 @@ export type Type =
   | 'svg'
   | 'tga'
   | 'tiff'
-  | 'webp'
+  | 'webp';
 
 /** One image of a multi-image file. ICNS entries include their icon type, such as `ic08`. */
-export type Image = { width: number; height: number; type?: string | undefined }
+export type Image = { width: number; height: number; type?: string | undefined };
 
 /** Detection order, the same as image-size's. */
 const formats = [
@@ -88,7 +88,7 @@ const formats = [
   tga,
   tiff,
   webp,
-] satisfies readonly Format[]
+] satisfies readonly Format[];
 
 const byFirstByte = new Map<number, Format>([
   [0x00, heif],
@@ -102,41 +102,41 @@ const byFirstByte = new Map<number, Format>([
   [0x69, icns],
   [0x89, png],
   [0xff, jpg],
-])
+]);
 
 function detect(input: Uint8Array, final: boolean): Format {
-  let truncated = false
+  let truncated = false;
   const matches = (format: Format) => {
     try {
-      return format.validate(input, final)
+      return format.validate(input, final);
     } catch (error) {
       if (!final || !(error instanceof NeedMore)) {
-        throw error
+        throw error;
       }
-      truncated = true
-      return false
+      truncated = true;
+      return false;
     }
-  }
-  const likely = byFirstByte.get(input[0] ?? -1)
-  const format = likely && matches(likely) ? likely : formats.find(matches)
+  };
+  const likely = byFirstByte.get(input[0] ?? -1);
+  const format = likely && matches(likely) ? likely : formats.find(matches);
   if (format) {
-    return format
+    return format;
   }
-  throw truncated ? new TruncatedError() : new UnsupportedError()
+  throw truncated ? new TruncatedError() : new UnsupportedError();
 }
 
 function measure(input: Uint8Array, final: boolean): Size {
-  const size = detect(input, final).calculate(input, final)
+  const size = detect(input, final).calculate(input, final);
   if (!size.images || size.images.length < 2) {
-    return size
+    return size;
   }
-  let largest = size.images[0]!
+  let largest = size.images[0]!;
   for (const image of size.images) {
     if (image.width * image.height > largest.width * largest.height) {
-      largest = image
+      largest = image;
     }
   }
-  return { ...size, width: largest.width, height: largest.height }
+  return { ...size, width: largest.width, height: largest.height };
 }
 
 /**
@@ -149,17 +149,17 @@ function measure(input: Uint8Array, final: boolean): Size {
  *
  * @example
  * ```ts
- * import * as ImageSize from '@portable/image-size'
+ * import * as ImageSize from '@portable/image-size';
  *
- * const bytes = new Uint8Array(await (await fetch('https://example.com/photo.jpg')).arrayBuffer())
- * ImageSize.parse(bytes) // { width: 1600, height: 1200, type: 'jpg' }
+ * const bytes = new Uint8Array(await (await fetch('https://example.com/photo.jpg')).arrayBuffer());
+ * ImageSize.parse(bytes); // { width: 1600, height: 1200, type: 'jpg' }
  * ```
  */
 export function parse(bytes: Uint8Array): Size {
   try {
-    return measure(assertUint8Array(bytes), true)
+    return measure(assertUint8Array(bytes), true);
   } catch (error) {
-    throw error instanceof NeedMore ? new TruncatedError() : error
+    throw error instanceof NeedMore ? new TruncatedError() : error;
   }
 }
 
@@ -170,10 +170,10 @@ export declare namespace parseStream {
      * measured from them, as image-size's `imageSizeFromFile` does with the first 512 KiB.
      * @default 524288
      */
-    maxBytes?: number | undefined
+    maxBytes?: number | undefined;
     /** Rejects with `signal.reason` when aborted, and cancels the stream. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -187,60 +187,60 @@ export declare namespace parseStream {
  *
  * @example
  * ```ts
- * import * as ImageSize from '@portable/image-size'
+ * import * as ImageSize from '@portable/image-size';
  *
- * const response = await fetch('https://example.com/photo.jpg')
- * const { width, height } = await ImageSize.parseStream(response.body!)
+ * const response = await fetch('https://example.com/photo.jpg');
+ * const { width, height } = await ImageSize.parseStream(response.body!);
  * ```
  */
 export async function parseStream(
   stream: ReadableStream<Uint8Array>,
   options: parseStream.Options = {},
 ): Promise<Size> {
-  const { maxBytes = 512 * 1024, signal } = options
-  signal?.throwIfAborted()
-  const reader = stream.getReader()
-  const abort = () => reader.cancel(signal!.reason).catch(() => {})
-  signal?.addEventListener('abort', abort, { once: true })
-  let buffer = new Uint8Array(0)
-  let length = 0
-  let needed = 1
+  const { maxBytes = 512 * 1024, signal } = options;
+  signal?.throwIfAborted();
+  const reader = stream.getReader();
+  const abort = () => reader.cancel(signal!.reason).catch(() => {});
+  signal?.addEventListener('abort', abort, { once: true });
+  let buffer = new Uint8Array(0);
+  let length = 0;
+  let needed = 1;
   try {
     for (;;) {
-      const { done, value } = await reader.read()
-      signal?.throwIfAborted()
+      const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       if (done) {
-        return parse(buffer.subarray(0, length))
+        return parse(buffer.subarray(0, length));
       }
-      assertUint8Array(value)
+      assertUint8Array(value);
       if (length + value.length > buffer.length) {
-        const grown = new Uint8Array(Math.max(length + value.length, buffer.length * 2))
-        grown.set(buffer.subarray(0, length))
-        buffer = grown
+        const grown = new Uint8Array(Math.max(length + value.length, buffer.length * 2));
+        grown.set(buffer.subarray(0, length));
+        buffer = grown;
       }
-      buffer.set(value, length)
-      length += value.length
+      buffer.set(value, length);
+      length += value.length;
       if (length >= maxBytes) {
         try {
-          return parse(buffer.subarray(0, maxBytes))
+          return parse(buffer.subarray(0, maxBytes));
         } catch (error) {
-          throw error instanceof TruncatedError ? new MaxBytesError({ maxBytes }) : error
+          throw error instanceof TruncatedError ? new MaxBytesError({ maxBytes }) : error;
         }
       }
       if (length < needed) {
-        continue
+        continue;
       }
       try {
-        return measure(buffer.subarray(0, length), false)
+        return measure(buffer.subarray(0, length), false);
       } catch (error) {
         if (!(error instanceof NeedMore)) {
-          throw error
+          throw error;
         }
-        needed = Math.max(error.end, length + 1)
+        needed = Math.max(error.end, length + 1);
       }
     }
   } finally {
-    signal?.removeEventListener('abort', abort)
-    reader.cancel().catch(() => {})
+    signal?.removeEventListener('abort', abort);
+    reader.cancel().catch(() => {});
   }
 }

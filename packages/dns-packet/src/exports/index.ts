@@ -1,5 +1,5 @@
-export type { Opcode, OptionCode, Rcode, RecordClass, RecordType } from '../codes.js'
-export { InvalidInputError, TruncatedError, UnsupportedError } from '../errors.js'
+export type { Opcode, OptionCode, Rcode, RecordClass, RecordType } from '../codes.js';
+export { InvalidInputError, TruncatedError, UnsupportedError } from '../errors.js';
 export {
   decode,
   encode,
@@ -13,5 +13,5 @@ export {
   type Question,
   type ResourceRecord,
   type UnknownType,
-} from '../packet.js'
-export type { DecodedRecordData, EdnsOption, RecordData } from '../records.js'
+} from '../packet.js';
+export type { DecodedRecordData, EdnsOption, RecordData } from '../records.js';

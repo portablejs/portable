@@ -9,7 +9,7 @@ npm install @portable/mime-stream
 ```
 
 ```ts
-import * as MimeStream from '@portable/mime-stream'
+import * as MimeStream from '@portable/mime-stream';
 
 // Replace every PDF attachment with a note, and keep the rest of the message as it was.
 const output = message
@@ -18,14 +18,14 @@ const output = message
     new TransformStream<MimeStream.Chunk, MimeStream.EncoderStream.Input>({
       transform(chunk, controller) {
         if (chunk.part.contentType !== 'application/pdf') {
-          controller.enqueue(chunk)
+          controller.enqueue(chunk);
         } else if (chunk.type === 'headers') {
-          controller.enqueue('Content-Type: text/plain\r\n\r\nAttachment removed.')
+          controller.enqueue('Content-Type: text/plain\r\n\r\nAttachment removed.');
         }
       },
     }),
   )
-  .pipeThrough(new MimeStream.EncoderStream())
+  .pipeThrough(new MimeStream.EncoderStream());
 ```
 
 `message` is a `ReadableStream<Uint8Array>`, such as `request.body` or `file.stream()`.
@@ -33,7 +33,7 @@ const output = message
 To read only the header block, for example to check a DKIM signature, use `splitHeaders`. It doesn't look for parts, so the body passes through untouched:
 
 ```ts
-const { headers, body } = await MimeStream.splitHeaders(message)
+const { headers, body } = await MimeStream.splitHeaders(message);
 // headers: the header block as received, with the empty line that ends it
 // body: a ReadableStream of every byte after it
 ```

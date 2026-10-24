@@ -1,22 +1,22 @@
-import { describe, expect, test } from 'vite-plus/test'
-import { big5 } from '@portable/charset/big5'
-import { eucJp } from '@portable/charset/euc-jp'
-import { eucKr } from '@portable/charset/euc-kr'
-import { gb18030, gbk } from '@portable/charset/gbk'
-import * as Charset from '@portable/charset'
-import { iso2022Jp } from '@portable/charset/iso-2022-jp'
-import { shiftJis } from '@portable/charset/shift_jis'
-import * as singleByte from '@portable/charset/single-byte'
-import { binary, hex } from './utils.js'
+import { describe, expect, test } from 'vite-plus/test';
+import { big5 } from '@portable/charset/big5';
+import { eucJp } from '@portable/charset/euc-jp';
+import { eucKr } from '@portable/charset/euc-kr';
+import { gb18030, gbk } from '@portable/charset/gbk';
+import * as Charset from '@portable/charset';
+import { iso2022Jp } from '@portable/charset/iso-2022-jp';
+import { shiftJis } from '@portable/charset/shift_jis';
+import * as singleByte from '@portable/charset/single-byte';
+import { binary, hex } from './utils.js';
 
-const ascii = Array.from({ length: 0x80 }, (_, i) => String.fromCharCode(i)).join('')
+const ascii = Array.from({ length: 0x80 }, (_, i) => String.fromCharCode(i)).join('');
 
 type Case = {
-  name: string
-  labels: readonly string[]
-  strings: Record<string, [text: string, bytes: string]>
-  unmappable: string
-}
+  name: string;
+  labels: readonly string[];
+  strings: Record<string, [text: string, bytes: string]>;
+  unmappable: string;
+};
 
 // From iconv-lite's cyrillic, greek and turkish tests. The bytes are written as Latin-1 text.
 const singleByteCases = [
@@ -126,115 +126,115 @@ const singleByteCases = [
     },
     unmappable: '',
   },
-] satisfies Case[]
+] satisfies Case[];
 
 describe('single-byte charsets', () => {
   for (const { name, labels, strings, unmappable } of singleByteCases) {
     describe(`${name} (${labels[0]})`, () => {
       test('encodes text', async () => {
-        const charset = await Charset.load(labels[0]!)
-        expect(charset.name).toBe(name)
+        const charset = await Charset.load(labels[0]!);
+        expect(charset.name).toBe(name);
         for (const [text, bytes] of Object.values(strings)) {
-          expect(Charset.encode(text, charset)).toEqual(binary(bytes))
+          expect(Charset.encode(text, charset)).toEqual(binary(bytes));
         }
-      })
+      });
 
       test('encodes the same with every label', async () => {
         for (const label of labels) {
-          const [text, bytes] = Object.values(strings).at(-1)!
-          expect(Charset.encode(text, await Charset.load(label))).toEqual(binary(bytes))
+          const [text, bytes] = Object.values(strings).at(-1)!;
+          expect(Charset.encode(text, await Charset.load(label))).toEqual(binary(bytes));
         }
-      })
+      });
 
       test("writes '?' for each unmappable character", async () => {
-        const charset = await Charset.load(labels[0]!)
-        expect(Charset.encode(unmappable, charset)).toEqual(binary('?'.repeat(unmappable.length)))
-      })
-    })
+        const charset = await Charset.load(labels[0]!);
+        expect(Charset.encode(unmappable, charset)).toEqual(binary('?'.repeat(unmappable.length)));
+      });
+    });
   }
 
   test('ISO-8859-8-I and ISO-8859-8-E encode like ISO-8859-8', async () => {
     for (const label of ['iso-8859-8', 'iso-8859-8-i', 'ISO-8859-8-I', 'iso-8859-8-e']) {
-      expect(hex(Charset.encode('אבג', await Charset.load(label)))).toBe('e0e1e2')
+      expect(hex(Charset.encode('אבג', await Charset.load(label)))).toBe('e0e1e2');
     }
-  })
+  });
 
   test('windows-125x and windows-874 encode the C1 controls their index maps', () => {
     expect(hex(Charset.encode('\x81\x8d\x8e\x8f\x90\x9d\x9e', singleByte.windows1254))).toBe(
       '818d8e8f909d9e',
-    )
-    expect(hex(Charset.encode('\x81\x8d\x8f\x90\x9d', singleByte.windows1252))).toBe('818d8f909d')
-    expect(hex(Charset.encode('\x80', singleByte.windows1252))).toBe('3f')
-  })
+    );
+    expect(hex(Charset.encode('\x81\x8d\x8f\x90\x9d', singleByte.windows1252))).toBe('818d8f909d');
+    expect(hex(Charset.encode('\x80', singleByte.windows1252))).toBe('3f');
+  });
 
   test("encode U+FFFD as '?', not as a byte the charset leaves undefined", () => {
     for (const charset of Object.values(singleByte)) {
-      expect(hex(Charset.encode('�', charset))).toBe('3f')
+      expect(hex(Charset.encode('�', charset))).toBe('3f');
     }
-  })
+  });
 
   test('KOI8-U is KOI8-RU, with Ў and ў', () => {
-    expect(hex(Charset.encode('Ўў', singleByte.koi8U))).toBe('beae')
-  })
+    expect(hex(Charset.encode('Ўў', singleByte.koi8U))).toBe('beae');
+  });
 
   test('macintosh maps € and U+F8FF, and Ω only from U+03A9', () => {
-    expect(hex(Charset.encode('€\uf8ffΩ', singleByte.macintosh))).toBe('dbf0bd')
-    expect(hex(Charset.encode('Ω¤', singleByte.macintosh))).toBe('3f3f')
-  })
+    expect(hex(Charset.encode('€\uf8ffΩ', singleByte.macintosh))).toBe('dbf0bd');
+    expect(hex(Charset.encode('Ω¤', singleByte.macintosh))).toBe('3f3f');
+  });
 
   test('x-mac-cyrillic is the Mac OS Ukrainian variant, with Ґ, ґ and €', () => {
-    expect(hex(Charset.encode('Ґґ€', singleByte.xMacCyrillic))).toBe('a2b6ff')
-  })
+    expect(hex(Charset.encode('Ґґ€', singleByte.xMacCyrillic))).toBe('a2b6ff');
+  });
 
   test('x-user-defined encodes ASCII and U+F780 to U+F7FF', () => {
-    expect(hex(Charset.encode('a\uf780\uf7ff', singleByte.xUserDefined))).toBe('6180ff')
-    expect(hex(Charset.encode('\x80\uf800é', singleByte.xUserDefined))).toBe('3f3f3f')
-  })
-})
+    expect(hex(Charset.encode('a\uf780\uf7ff', singleByte.xUserDefined))).toBe('6180ff');
+    expect(hex(Charset.encode('\x80\uf800é', singleByte.xUserDefined))).toBe('3f3f3f');
+  });
+});
 
 describe('Big5', () => {
   test('encodes Chinese and ASCII text', async () => {
-    expect(hex(Charset.encode('中文abc', big5))).toBe('a4a4a4e5616263')
-    expect(hex(Charset.encode('測試', big5))).toBe('b4fab8d5')
-    expect(hex(Charset.encode('中文abc', await Charset.load('cp950')))).toBe('a4a4a4e5616263')
-  })
+    expect(hex(Charset.encode('中文abc', big5))).toBe('a4a4a4e5616263');
+    expect(hex(Charset.encode('測試', big5))).toBe('b4fab8d5');
+    expect(hex(Charset.encode('中文abc', await Charset.load('cp950')))).toBe('a4a4a4e5616263');
+  });
 
   test('encodes · and ×', () => {
-    expect(hex(Charset.encode('·×', big5))).toBe('a150a1d1')
-  })
+    expect(hex(Charset.encode('·×', big5))).toBe('a150a1d1');
+  });
 
   test('encodes 十, 卅 and the box drawings that appear twice in the index with their last pointer', () => {
-    expect(hex(Charset.encode('十', big5))).toBe('a451')
-    expect(hex(Charset.encode('卅', big5))).toBe('a4ca')
-    expect(hex(Charset.encode('═╞╡╪', big5))).toBe('f9f9f9e9f9ebf9ea')
-  })
+    expect(hex(Charset.encode('十', big5))).toBe('a451');
+    expect(hex(Charset.encode('卅', big5))).toBe('a4ca');
+    expect(hex(Charset.encode('═╞╡╪', big5))).toBe('f9f9f9e9f9ebf9ea');
+  });
 
   test('encodes 起 with its Big5 code, not its HKSCS code', () => {
-    expect(hex(Charset.encode('起', big5))).toBe('b05f')
-  })
+    expect(hex(Charset.encode('起', big5))).toBe('b05f');
+  });
 
   test('does not encode HKSCS characters below lead byte 0xA1', () => {
-    expect(hex(Charset.encode('Ê\u0304', big5))).toBe('3f3f')
-    expect(hex(Charset.encode('Ê', big5))).toBe('3f')
-    expect(hex(Charset.encode('Ê𠕇', big5))).toBe('3ffa40')
-  })
-})
+    expect(hex(Charset.encode('Ê\u0304', big5))).toBe('3f3f');
+    expect(hex(Charset.encode('Ê', big5))).toBe('3f');
+    expect(hex(Charset.encode('Ê𠕇', big5))).toBe('3ffa40');
+  });
+});
 
 describe('GBK and gb18030', () => {
   test('encode Chinese and ASCII text', async () => {
-    expect(hex(Charset.encode('中国abc', gbk))).toBe('d6d0b9fa616263')
-    expect(hex(Charset.encode('中国abc', await Charset.load('GB2312')))).toBe('d6d0b9fa616263')
-    expect(hex(Charset.encode('中国abc', gb18030))).toBe('d6d0b9fa616263')
-  })
+    expect(hex(Charset.encode('中国abc', gbk))).toBe('d6d0b9fa616263');
+    expect(hex(Charset.encode('中国abc', await Charset.load('GB2312')))).toBe('d6d0b9fa616263');
+    expect(hex(Charset.encode('中国abc', gb18030))).toBe('d6d0b9fa616263');
+  });
 
   test('encode · and ×', () => {
-    expect(hex(Charset.encode('·×', gbk))).toBe('a1a4a1c1')
-  })
+    expect(hex(Charset.encode('·×', gbk))).toBe('a1a4a1c1');
+  });
 
   test('GBK writes € as 0x80 and gb18030 as A2 E3', () => {
-    expect(hex(Charset.encode('€', gbk))).toBe('80')
-    expect(hex(Charset.encode('€', gb18030))).toBe('a2e3')
-  })
+    expect(hex(Charset.encode('€', gbk))).toBe('80');
+    expect(hex(Charset.encode('€', gb18030))).toBe('a2e3');
+  });
 
   test('gb18030 writes four-byte sequences', () => {
     const cases: Record<string, string> = {
@@ -247,98 +247,98 @@ describe('GBK and gb18030', () => {
       '\u{10000}': '90308130',
       '\u{10ffff}': 'e3329a35',
       '�': '8431a437',
-    }
+    };
     for (const [text, bytes] of Object.entries(cases)) {
-      expect(hex(Charset.encode(text, gb18030))).toBe(bytes)
+      expect(hex(Charset.encode(text, gb18030))).toBe(bytes);
     }
-  })
+  });
 
   test('GBK has no four-byte sequences', () => {
-    expect(hex(Charset.encode('\u0080㦟😀\ue7c7', gbk))).toBe('3f3f3f3f')
-  })
+    expect(hex(Charset.encode('\u0080㦟😀\ue7c7', gbk))).toBe('3f3f3f3f');
+  });
 
   test('gb18030 applies the GB18030-2005 changes', () => {
-    expect(hex(Charset.encode('ḿ\u0000\ue7c7', gb18030))).toBe('a8bc008135f437')
-  })
+    expect(hex(Charset.encode('ḿ\u0000\ue7c7', gb18030))).toBe('a8bc008135f437');
+  });
 
   test('gb18030 writes the GB18030-2022 characters with their two-byte codes', () => {
-    expect(hex(Charset.encode('龴︐', gb18030))).toBe('fe59a6d9')
-    expect(hex(Charset.encode('\ue81e\ue78d', gb18030))).toBe('fe59a6d9')
-  })
+    expect(hex(Charset.encode('龴︐', gb18030))).toBe('fe59a6d9');
+    expect(hex(Charset.encode('\ue81e\ue78d', gb18030))).toBe('fe59a6d9');
+  });
 
   test('U+E5E5 is unmappable, because A3 A0 decodes to U+3000', () => {
-    expect(hex(Charset.encode('\ue5e5', gb18030))).toBe('3f')
-    expect(hex(Charset.encode('\u3000', gb18030))).toBe('a1a1')
-  })
-})
+    expect(hex(Charset.encode('\ue5e5', gb18030))).toBe('3f');
+    expect(hex(Charset.encode('\u3000', gb18030))).toBe('a1a1');
+  });
+});
 
 describe('Shift_JIS', () => {
   test('encodes Japanese and ASCII text', () => {
-    expect(hex(Charset.encode('中文abc', shiftJis))).toBe('928695b6616263')
-    expect(hex(Charset.encode('測試', shiftJis))).toBe('91aa8e8e')
-  })
+    expect(hex(Charset.encode('中文abc', shiftJis))).toBe('928695b6616263');
+    expect(hex(Charset.encode('測試', shiftJis))).toBe('91aa8e8e');
+  });
 
   test('encodes characters duplicated in the NEC rows with their IBM extension codes', () => {
-    expect(hex(Charset.encode('纊＂ⅰ', shiftJis))).toBe('fa5cfa57fa40')
-  })
+    expect(hex(Charset.encode('纊＂ⅰ', shiftJis))).toBe('fa5cfa57fa40');
+  });
 
   test('does not encode the user-defined area that F0 40 to F9 FC decode to', () => {
-    expect(hex(Charset.encode('\ue000\ue233\ue757', shiftJis))).toBe('3f3f3f')
-  })
+    expect(hex(Charset.encode('\ue000\ue233\ue757', shiftJis))).toBe('3f3f3f');
+  });
 
   test('includes the NEC extensions', () => {
-    expect(hex(Charset.encode('①', shiftJis))).toBe('8740')
-  })
+    expect(hex(Charset.encode('①', shiftJis))).toBe('8740');
+  });
 
   test('encodes ¥, ‾, U+0080, halfwidth katakana and the minus sign', () => {
-    expect(hex(Charset.encode('¥‾\x80ｱﾟ−', shiftJis))).toBe('5c7e80b1df817c')
-  })
-})
+    expect(hex(Charset.encode('¥‾\x80ｱﾟ−', shiftJis))).toBe('5c7e80b1df817c');
+  });
+});
 
 describe('EUC-JP', () => {
   test('encodes Japanese, halfwidth katakana, ¥ and ‾', () => {
-    expect(hex(Charset.encode('日本ｱ¥‾−', eucJp))).toBe('c6fccbdc8eb15c7ea1dd')
-  })
+    expect(hex(Charset.encode('日本ｱ¥‾−', eucJp))).toBe('c6fccbdc8eb15c7ea1dd');
+  });
 
   test('does not encode JIS X 0212 characters', () => {
-    const text = new TextDecoder('euc-jp').decode(new Uint8Array([0x8f, 0xa2, 0xc2]))
-    expect(text).toBe('¡')
-    expect(hex(Charset.encode(text, eucJp))).toBe('3f')
-  })
-})
+    const text = new TextDecoder('euc-jp').decode(new Uint8Array([0x8f, 0xa2, 0xc2]));
+    expect(text).toBe('¡');
+    expect(hex(Charset.encode(text, eucJp))).toBe('3f');
+  });
+});
 
 describe('ISO-2022-JP', () => {
   test('stays in ASCII for ASCII text', () => {
-    expect(hex(Charset.encode('abc', iso2022Jp))).toBe('616263')
-  })
+    expect(hex(Charset.encode('abc', iso2022Jp))).toBe('616263');
+  });
 
   test('switches to JIS X 0208 and back to ASCII at the end', () => {
-    expect(hex(Charset.encode('日本', iso2022Jp))).toBe('1b2442467c4b5c1b2842')
-  })
+    expect(hex(Charset.encode('日本', iso2022Jp))).toBe('1b2442467c4b5c1b2842');
+  });
 
   test('switches to JIS X 0201 Roman for ¥ and ‾', () => {
-    expect(hex(Charset.encode('¥a‾\\', iso2022Jp))).toBe('1b284a5c617e1b28425c')
-  })
+    expect(hex(Charset.encode('¥a‾\\', iso2022Jp))).toBe('1b284a5c617e1b28425c');
+  });
 
   test('encodes halfwidth katakana as fullwidth', () => {
-    expect(hex(Charset.encode('ｱﾞ', iso2022Jp))).toBe('1b24422522212b1b2842')
-  })
+    expect(hex(Charset.encode('ｱﾞ', iso2022Jp))).toBe('1b24422522212b1b2842');
+  });
 
   test('does not write SO, SI or ESC, which would change the decoder state', () => {
-    expect(hex(Charset.encode('\x0e\x0f\x1b', iso2022Jp))).toBe('3f3f3f')
-    const html = Charset.encode('\x1b', iso2022Jp, { unmappable: 'html' })
-    expect(new TextDecoder().decode(html)).toBe('&#65533;')
-  })
+    expect(hex(Charset.encode('\x0e\x0f\x1b', iso2022Jp))).toBe('3f3f3f');
+    const html = Charset.encode('\x1b', iso2022Jp, { unmappable: 'html' });
+    expect(new TextDecoder().decode(html)).toBe('&#65533;');
+  });
 
   test('decodes back to the input with TextDecoder', () => {
-    const text = 'メール本文 ¥100 and ASCII ‾ 漢字'
-    expect(new TextDecoder('iso-2022-jp').decode(Charset.encode(text, iso2022Jp))).toBe(text)
-  })
-})
+    const text = 'メール本文 ¥100 and ASCII ‾ 漢字';
+    expect(new TextDecoder('iso-2022-jp').decode(Charset.encode(text, iso2022Jp))).toBe(text);
+  });
+});
 
 describe('EUC-KR', () => {
   test('encodes Hangul, including syllables outside KS X 1001', () => {
-    expect(hex(Charset.encode('한국어', eucKr))).toBe('c7d1b1b9beee')
-    expect(hex(Charset.encode('똠', eucKr))).toBe('8c63')
-  })
-})
+    expect(hex(Charset.encode('한국어', eucKr))).toBe('c7d1b1b9beee');
+    expect(hex(Charset.encode('똠', eucKr))).toBe('8c63');
+  });
+});

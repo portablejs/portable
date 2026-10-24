@@ -1,27 +1,27 @@
-import { assertLimit, isThenable } from './create.js'
+import { assertLimit, isThenable } from './create.js';
 
 export declare namespace map {
   type Options = {
     /** The most calls of `fn` that run at once: a positive integer or `Infinity`. @default Infinity */
-    concurrency?: number | undefined
+    concurrency?: number | undefined;
     /** Rejects with `signal.reason`, aborts the `signal` passed to `fn` and stops reading `input`. */
-    signal?: AbortSignal | undefined
+    signal?: AbortSignal | undefined;
     /**
      * With `true`, the first error rejects at once, aborts the `signal` passed to `fn` and stops
      * reading `input`. With `false`, `map` calls `fn` on every item and then rejects with the
      * errors as one `AggregateError`, in input order.
      * @default true
      */
-    stopOnError?: boolean | undefined
-  }
+    stopOnError?: boolean | undefined;
+  };
 
   /** The second argument of `fn`. */
   type Context = {
     /** The item's position in `input`. */
-    index: number
+    index: number;
     /** Aborts when `options.signal` aborts, or when another item fails and `stopOnError` is `true`. */
-    signal: AbortSignal
-  }
+    signal: AbortSignal;
+  };
 }
 
 /**
@@ -31,14 +31,14 @@ export declare namespace map {
  *
  * @example
  * ```ts
- * import * as Queue from '@portable/queue'
+ * import * as Queue from '@portable/queue';
  *
- * const urls = ['https://example.com/a', 'https://example.com/b']
+ * const urls = ['https://example.com/a', 'https://example.com/b'];
  * const pages = await Queue.map(
  *   urls,
  *   async (url, { signal }) => (await fetch(url, { signal })).text(),
  *   { concurrency: 4 },
- * )
+ * );
  * ```
  */
 export function map<chunk, result>(
@@ -46,169 +46,169 @@ export function map<chunk, result>(
   fn: (item: chunk, context: map.Context) => result | PromiseLike<result>,
   options: map.Options = {},
 ): Promise<result[]> {
-  const { signal, stopOnError = true } = options
-  const concurrency = assertLimit('concurrency', options.concurrency ?? Infinity)
+  const { signal, stopOnError = true } = options;
+  const concurrency = assertLimit('concurrency', options.concurrency ?? Infinity);
   if (typeof fn !== 'function') {
-    throw new TypeError('Expected `fn` to be a function.')
+    throw new TypeError('Expected `fn` to be a function.');
   }
 
   return new Promise<result[]>((resolve, reject) => {
     if (signal?.aborted) {
-      return reject(signal.reason)
+      return reject(signal.reason);
     }
 
-    const results: result[] = []
-    const errors: { index: number; error: unknown }[] = []
-    const controller = new AbortController()
-    let iterator: Iterator<chunk> | AsyncIterator<chunk>
-    let isAsync: boolean
-    let index = 0
-    let running = 0
-    let done = false
-    let pulling = false
-    let settled = false
+    const results: result[] = [];
+    const errors: { index: number; error: unknown }[] = [];
+    const controller = new AbortController();
+    let iterator: Iterator<chunk> | AsyncIterator<chunk>;
+    let isAsync: boolean;
+    let index = 0;
+    let running = 0;
+    let done = false;
+    let pulling = false;
+    let settled = false;
 
     try {
-      const asyncMethod = (input as AsyncIterable<chunk>)[Symbol.asyncIterator]
-      isAsync = typeof asyncMethod === 'function'
+      const asyncMethod = (input as AsyncIterable<chunk>)[Symbol.asyncIterator];
+      isAsync = typeof asyncMethod === 'function';
       iterator = isAsync
         ? (input as AsyncIterable<chunk>)[Symbol.asyncIterator]()
-        : (input as Iterable<chunk>)[Symbol.iterator]()
+        : (input as Iterable<chunk>)[Symbol.iterator]();
     } catch (error) {
-      return reject(error)
+      return reject(error);
     }
 
-    const onAbort = () => fail(signal!.reason, true)
-    signal?.addEventListener('abort', onAbort, { once: true })
+    const onAbort = () => fail(signal!.reason, true);
+    signal?.addEventListener('abort', onAbort, { once: true });
 
     function fail(error: unknown, close: boolean) {
       if (settled) {
-        return
+        return;
       }
-      settled = true
-      signal?.removeEventListener('abort', onAbort)
-      controller.abort(error)
+      settled = true;
+      signal?.removeEventListener('abort', onAbort);
+      controller.abort(error);
       if (close && !done) {
-        done = true
+        done = true;
         try {
-          const closing = iterator.return?.()
+          const closing = iterator.return?.();
           if (isThenable(closing)) {
-            closing.then(undefined, () => {})
+            closing.then(undefined, () => {});
           }
         } catch {}
       }
-      reject(error)
+      reject(error);
     }
 
     function next() {
       while (!settled && !done && !pulling && running < concurrency) {
         if (isAsync) {
-          pulling = true
-          let result: Promise<IteratorResult<chunk>>
+          pulling = true;
+          let result: Promise<IteratorResult<chunk>>;
           try {
-            result = Promise.resolve((iterator as AsyncIterator<chunk>).next())
+            result = Promise.resolve((iterator as AsyncIterator<chunk>).next());
           } catch (error) {
-            done = true
-            return fail(error, false)
+            done = true;
+            return fail(error, false);
           }
           result.then(
             (item) => {
-              pulling = false
+              pulling = false;
               if (settled) {
-                return
+                return;
               }
               if (!isResult(item)) {
-                done = true
-                return fail(new TypeError('Expected `next()` to return an object.'), false)
+                done = true;
+                return fail(new TypeError('Expected `next()` to return an object.'), false);
               }
               if (item.done) {
-                done = true
+                done = true;
               } else {
-                start(item.value)
+                start(item.value);
               }
-              next()
+              next();
             },
             (error: unknown) => {
-              pulling = false
-              done = true
-              fail(error, false)
+              pulling = false;
+              done = true;
+              fail(error, false);
             },
-          )
-          return
+          );
+          return;
         }
-        let item: IteratorResult<chunk>
+        let item: IteratorResult<chunk>;
         try {
-          item = (iterator as Iterator<chunk>).next()
+          item = (iterator as Iterator<chunk>).next();
         } catch (error) {
-          done = true
-          return fail(error, false)
+          done = true;
+          return fail(error, false);
         }
         if (!isResult(item)) {
-          done = true
-          return fail(new TypeError('Expected `next()` to return an object.'), false)
+          done = true;
+          return fail(new TypeError('Expected `next()` to return an object.'), false);
         }
         if (item.done) {
-          done = true
+          done = true;
         } else {
-          start(item.value)
+          start(item.value);
         }
       }
       if (done && running === 0 && !pulling && !settled) {
-        settled = true
-        signal?.removeEventListener('abort', onAbort)
+        settled = true;
+        signal?.removeEventListener('abort', onAbort);
         if (errors.length > 0) {
-          reject(new AggregateError(sortedErrors(errors), 'Some items failed to map.'))
+          reject(new AggregateError(sortedErrors(errors), 'Some items failed to map.'));
         } else {
-          resolve(results)
+          resolve(results);
         }
       }
     }
 
     function start(item: chunk) {
-      const i = index++
-      running++
-      let result: result | PromiseLike<result>
+      const i = index++;
+      running++;
+      let result: result | PromiseLike<result>;
       try {
-        result = fn(item, { index: i, signal: controller.signal })
+        result = fn(item, { index: i, signal: controller.signal });
       } catch (error) {
-        running--
+        running--;
         if (stopOnError) {
-          fail(error, true)
+          fail(error, true);
         } else {
-          errors.push({ index: i, error })
+          errors.push({ index: i, error });
         }
-        return
+        return;
       }
       if (isThenable(result)) {
         result.then(
           (value) => {
-            results[i] = value
-            running--
-            next()
+            results[i] = value;
+            running--;
+            next();
           },
           (error: unknown) => {
-            running--
+            running--;
             if (stopOnError) {
-              return fail(error, true)
+              return fail(error, true);
             }
-            errors.push({ index: i, error })
-            next()
+            errors.push({ index: i, error });
+            next();
           },
-        )
+        );
       } else {
-        results[i] = result
-        running--
+        results[i] = result;
+        running--;
       }
     }
 
-    next()
-  })
+    next();
+  });
 }
 
 function isResult(value: unknown): value is IteratorResult<unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null;
 }
 
 function sortedErrors(errors: { index: number; error: unknown }[]): unknown[] {
-  return errors.sort((a, b) => a.index - b.index).map(({ error }) => error)
+  return errors.sort((a, b) => a.index - b.index).map(({ error }) => error);
 }
