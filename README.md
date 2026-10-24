@@ -2,6 +2,8 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
+For example, this streams a model's reply with three of the packages and saves it as a transcript:
+
 ```sh
 npm install @portable/sse @portable/jsonl @portable/streams
 ```
