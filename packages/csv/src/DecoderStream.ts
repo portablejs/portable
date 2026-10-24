@@ -1,4 +1,4 @@
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 import { createParser, type Parser } from './parser.js'
 
 export declare namespace DecoderStream {
@@ -54,7 +54,7 @@ export class DecoderStream<
     const decoder = new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true })
     let parser: Parser
     super(
-      abortable(
+      Streams.abortable(
         {
           start(controller) {
             parser = createParser(options, (row) =>
@@ -71,7 +71,7 @@ export class DecoderStream<
             parser.end()
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

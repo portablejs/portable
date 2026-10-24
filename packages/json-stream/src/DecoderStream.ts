@@ -1,6 +1,6 @@
 import { InvalidInputError, MaxLengthError, TruncatedError } from './errors.js'
 import { compile, type States } from './path.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 export declare namespace DecoderStream {
   type Options = {
@@ -425,7 +425,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
     }
 
     super(
-      abortable(
+      Streams.abortable(
         {
           start(c) {
             controller = c
@@ -450,7 +450,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             if (state !== ROOT) throw new TruncatedError()
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

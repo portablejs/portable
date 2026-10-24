@@ -154,7 +154,7 @@ function withSignal<chunk>(
   signal: AbortSignal | undefined,
 ): ReadableStream<chunk> {
   return signal
-    ? stream.pipeThrough(new TransformStream<chunk, chunk>(abortable({}, signal)))
+    ? stream.pipeThrough(new TransformStream<chunk, chunk>(abortable({}, { signal })))
     : stream
 }
 
@@ -191,7 +191,7 @@ export function limitBytes<chunk extends Uint8Array | string>(
           controller.enqueue(chunk)
         },
       },
-      options.signal,
+      options,
     ),
   )
 }

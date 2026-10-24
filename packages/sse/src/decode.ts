@@ -1,4 +1,4 @@
-import { errorOnAbort } from './signal.js'
+import * as Streams from '@portable/streams'
 import { MaxLengthError } from './errors.js'
 
 /** An event read from a stream, as `EventSource` would dispatch it. */
@@ -46,24 +46,22 @@ export declare namespace DecoderStream {
 export class DecoderStream extends TransformStream<Uint8Array | string, Event> {
   constructor(options: DecoderStream.Options = {}) {
     let parser: Parser
-    let release: () => void
-    const transformer = {
-      start(controller: TransformStreamDefaultController<Event>) {
-        parser = createParser((event) => controller.enqueue(event), options.maxLength)
-        release = errorOnAbort(options.signal, controller)
-      },
-      transform(chunk: Uint8Array | string) {
-        parser.push(chunk)
-      },
-      flush() {
-        release()
-        parser.end()
-      },
-      cancel() {
-        release()
-      },
-    }
-    super(transformer)
+    super(
+      Streams.abortable(
+        {
+          start(controller) {
+            parser = createParser((event) => controller.enqueue(event), options.maxLength)
+          },
+          transform(chunk) {
+            parser.push(chunk)
+          },
+          flush() {
+            parser.end()
+          },
+        },
+        options,
+      ),
+    )
   }
 }
 

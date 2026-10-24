@@ -35,22 +35,26 @@ L2  dkim          → dns, idna, web-crypto, base64, bytes
     oauth1, webhooks → web-crypto, base64, bytes
     password, smtp, web-push → base64, bytes
     rdap          → idna, ip
-L1  mime-stream   → mime-headers, bytes
+L1  mime-stream   → mime-headers, bytes, streams
     mime-headers  → base64, bytes
     rpc           → jsonl
-    sse, websockets → timers
+    sse           → timers, streams
+    websockets    → timers
     compress, exif, image-size, png → bytes
-    csv, idna, json-stream, jsonl
-L0  base64, streams, web-crypto → bytes
-    bytes, charset, dns-packet, ip, lines, queue, quoted-printable, random, rate-limit, timers
+    csv, json-stream, jsonl → streams
+    idna
+L0  base64        → bytes, streams
+    charset, lines, quoted-printable → streams
+    streams, web-crypto → bytes
+    bytes, dns-packet, ip, queue, random, rate-limit, timers
     errors        (every package that throws depends on it)
 ```
 
-### L0: primitives (no dependencies, apart from `bytes`)
+### L0: primitives (no dependencies, apart from `bytes` and `streams`)
 
 | Package | Purpose | Replaces (monthly downloads) |
 | --- | --- | --- |
-| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, a `Blob`, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Bridge** (see below): convert between streams and iterables, async iterables or generators. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
+| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, a `Blob`, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Bridge** (see below): convert between streams and iterables, async iterables or generators. **`abortable`**: makes a hand-written `Transformer` cancellable with an `AbortSignal`, which every stream transform in the family uses. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
 | `@portable/lines` | Split byte or text streams into lines. Handles CRLF/LF/CR, a `maxLength` guard, and a trailing line with no newline. `new Lines.DecoderStream()`. | split2 406M, byline |
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
@@ -103,16 +107,16 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 
 | Package | Purpose | Depends on | Replaces |
 | --- | --- | --- | --- |
-| `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and `encodeStream`, which walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | (none) | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
+| `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and `encodeStream`, which walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | `streams` | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
 | `@portable/websockets` | A reconnecting WebSocket client as one `readable`/`writable` pair that spans reconnects, with an `open` hook for handshakes, a queue for writes made while disconnected, backpressure, and `fromSocket` for server-side sockets. | `timers` | reconnecting-websocket, partysocket, websocket-ts |
-| `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `timers` | eventsource-parser, eventsource, @microsoft/fetch-event-source, the event writers in better-sse and hono |
-| `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | (none) | csv-parse, csv-stringify, papaparse, fast-csv |
+| `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `timers`, `streams` | eventsource-parser, eventsource, @microsoft/fetch-event-source, the event writers in better-sse and hono |
+| `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | `streams` | csv-parse, csv-stringify, papaparse, fast-csv |
 | `@portable/compress` | One-shot gzip, deflate and deflate-raw on `CompressionStream`, a `maxBytes` cap on decompression against zip bombs, larger output chunks than `DecompressionStream`'s 4 KB, and `crc32`. | `bytes` | pako and fflate (one-shot use), node:zlib's sync helpers |
 | `@portable/rpc` | Typed JSON-RPC 2.0 over `MessagePort`, windows, WebSocket and HTTP, with streaming results. | `jsonl` | comlink, penpal, post-me, birpc, json-rpc-2.0, tRPC (simple cases) |
 | `@portable/idna` | UTS #46 `toUnicode` and `toAscii` for domain names. The platform's `URL` only converts to ASCII. | (none) | punycode, tr46 |
-| `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | (none) | ndjson 10.5M, the `jsonl` modules of stream-json |
+| `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | `streams` | ndjson 10.5M, the `jsonl` modules of stream-json |
 | `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. Other charsets come from a `charset` option, which `@portable/charset` encoders fit. | `base64`, `bytes` | libmime 37M, addressparser, email-addresses |
-| `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `bytes`, `mime-headers` | mailsplit 2.7M |
+| `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `bytes`, `mime-headers`, `streams` | mailsplit 2.7M |
 | `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | `bytes` | image-size 133M |
 | `@portable/exif` | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF, and stripping it from JPEG, PNG and WebP. | `bytes` | exif-parser 17M |
 | `@portable/png` | PNG decode/encode to RGBA, deflate via `CompressionStream` by default or a passed-in `{ inflate, deflate }` for sync use. | `bytes` | pngjs 283M |

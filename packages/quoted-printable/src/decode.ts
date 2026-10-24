@@ -1,5 +1,5 @@
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 /**
  * Decodes quoted-printable (RFC 2045 section 6.7) into bytes. A string is read as UTF-8.
@@ -43,7 +43,7 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
     const decoder = createDecoder()
     const utf8 = createUtf8Encoder()
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             const output = decoder.write(utf8.write(chunk), false)
@@ -54,7 +54,7 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
             if (output.length > 0) controller.enqueue(output)
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

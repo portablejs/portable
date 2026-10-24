@@ -33,6 +33,7 @@
   ],
   "dependencies": {
     "@portable/errors": "workspace:*",
+    "@portable/streams": "workspace:*",
     "@portable/timers": "workspace:*"
   },
   "exports": {

@@ -113,6 +113,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/base64/test:
     devDependencies:
@@ -167,6 +170,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/charset/test:
     devDependencies:
@@ -227,6 +233,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/csv/test:
     devDependencies:
@@ -565,6 +574,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/json-stream/test:
     devDependencies:
@@ -598,6 +610,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/jsonl/test:
     devDependencies:
@@ -631,6 +646,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/lines/test:
     devDependencies:
@@ -808,6 +826,9 @@ importers:
       '@portable/mime-headers':
         specifier: workspace:*
         version: link:../mime-headers
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/mime-stream/test:
     devDependencies:
@@ -976,7 +997,11 @@ importers:
         specifier: ^8.1.1
         version: 8.1.1
 
-  packages/quoted-printable: {}
+  packages/quoted-printable:
+    dependencies:
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/quoted-printable/test:
     devDependencies:
@@ -1221,6 +1246,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
       '@portable/timers':
         specifier: workspace:*
         version: link:../timers

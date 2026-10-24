@@ -1,4 +1,4 @@
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 import { MaxLengthError } from './errors.js'
 /**
  * Splits text into lines. A string matches literally, and anything with `[Symbol.split]`, such as a
@@ -72,7 +72,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     }
 
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             let text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
@@ -108,7 +108,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
             if (last !== '') emit(last, controller)
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

@@ -1,7 +1,7 @@
 import type { Charset } from './Charset.js'
 import type { encode } from './encode.js'
 import { createState, run } from './internal/run.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
@@ -43,7 +43,7 @@ export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Arr
       return decoder ? decoder.decode() + chunk : chunk
     }
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             const bytes = run(state, text(chunk), false)
@@ -54,7 +54,7 @@ export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Arr
             if (bytes.length > 0) controller.enqueue(bytes)
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

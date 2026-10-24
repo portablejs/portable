@@ -91,3 +91,25 @@ test('maps 30,000 objects within 25% of a TransformStream', async ({ bench }) =>
     delta: 0.25,
   })
 })
+
+test('abortable adds less than 25% to a TransformStream of 30,000 objects', async ({ bench }) => {
+  const transformer = (): Transformer<{ id: number }, number> => ({
+    transform: (value, controller) => controller.enqueue(value.id),
+  })
+  const signal = new AbortController().signal
+  const result = await bench.compare(
+    bench('@portable/streams', async () => {
+      await collect(
+        fromChunks(values).pipeThrough(
+          new TransformStream(Streams.abortable(transformer(), { signal })),
+        ),
+      )
+    }),
+    bench('TransformStream', async () => {
+      await collect(fromChunks(values).pipeThrough(new TransformStream(transformer())))
+    }),
+  )
+  expect(result.get('TransformStream')).not.toBeFasterThan(result.get('@portable/streams'), {
+    delta: 0.25,
+  })
+})

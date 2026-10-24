@@ -1,4 +1,4 @@
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 export declare namespace EncoderStream {
   type Options = {
     /**
@@ -29,7 +29,7 @@ export class EncoderStream extends TransformStream<unknown, Uint8Array<ArrayBuff
   constructor(options: EncoderStream.Options = {}) {
     const utf8 = new TextEncoder()
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(value, controller) {
             const json = JSON.stringify(value) satisfies string | undefined
@@ -37,7 +37,7 @@ export class EncoderStream extends TransformStream<unknown, Uint8Array<ArrayBuff
             controller.enqueue(utf8.encode(json + '\n'))
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

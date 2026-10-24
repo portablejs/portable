@@ -35,7 +35,8 @@
   "dependencies": {
     "@portable/bytes": "workspace:*",
     "@portable/errors": "workspace:*",
-    "@portable/mime-headers": "workspace:*"
+    "@portable/mime-headers": "workspace:*",
+    "@portable/streams": "workspace:*"
   },
   "exports": {
     ".": {
