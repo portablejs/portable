@@ -53,9 +53,8 @@ export function parseAddresses(
   options: parseAddresses.Options = {},
 ): Address[] {
   const { strict = false } = options
-  const parser = new Parser(toText(input), strict)
-  const list = parser.run()
-  if (strict && parser.error) throw new InvalidInputError(parser.error)
+  const { list, error } = parseList(toText(input), strict)
+  if (strict && error) throw new InvalidInputError(error)
   return list
 }
 
@@ -164,33 +163,28 @@ const dotAtom = /^[^\x00-\x20\x7f"(),.:;<>@[\\\]]+(?:\.[^\x00-\x20\x7f"(),.:;<>@
 const isWsp = (code: number) => code === 0x20 || code === 0x09
 const isSpace = (code: number) => isWsp(code) || code === 0x0d || code === 0x0a
 
-class Parser {
-  error = ''
-  private readonly list: Address[] = []
-  private group: { name: string; members: Mailbox[] } | null = null
-  private tokens: Token[] = []
-  private open = -1
-  private close = -1
-  private last: Kind | '' = ''
-  private space = false
-  private count = 0
+/** Parses an address list and returns it with the first reason it isn't valid, or `''`. */
+function parseList(text: string, strict: boolean): { list: Address[]; error: string } {
+  let error = ''
+  const list: Address[] = []
+  let group: { name: string; members: Mailbox[] } | null = null
+  let tokens: Token[] = []
+  let open = -1
+  let close = -1
+  let last: Kind | '' = ''
+  let space = false
+  let count = 0
 
-  constructor(
-    private readonly text: string,
-    private readonly strict: boolean,
-  ) {}
-
-  run(): Address[] {
-    const { text } = this
+  function parse(): Address[] {
     for (let i = 0; i < text.length;) {
       const code = text.charCodeAt(i)
       if (isSpace(code)) {
-        if (this.strict) this.checkSpace(i)
-        this.space = true
+        if (strict) checkSpace(i)
+        space = true
         i++
-      } else if (code === 0x22) i = this.quoted(i)
-      else if (code === 0x28) i = this.comment(i)
-      else if (code === 0x5b && this.last === '@') i = this.literal(i)
+      } else if (code === 0x22) i = readQuoted(i)
+      else if (code === 0x28) i = readComment(i)
+      else if (code === 0x5b && last === '@') i = readLiteral(i)
       else if (
         code === 0x40 ||
         code === 0x3c ||
@@ -199,55 +193,52 @@ class Parser {
         code === 0x3b ||
         code === 0x2c
       ) {
-        this.token(text[i] as Kind, text[i]!)
+        addToken(text[i] as Kind, text[i]!)
         i++
-      } else i = this.atom(i)
+      } else i = readAtom(i)
     }
-    if (this.open >= 0 && this.close < 0) this.invalid('An angle bracket is not closed.')
-    this.endEntry()
-    if (this.group) {
-      this.invalid('A group is not closed with ";".')
-      this.endGroup()
+    if (open >= 0 && close < 0) invalid('An angle bracket is not closed.')
+    endEntry()
+    if (group) {
+      invalid('A group is not closed with ";".')
+      endGroup()
     }
-    if (this.count === 0) this.invalid('The list holds no address.')
-    return mergeNameFragments(this.list)
+    if (count === 0) invalid('The list holds no address.')
+    return mergeNameFragments(list)
   }
 
-  private invalid(reason: string) {
-    if (!this.error) this.error = reason
+  function invalid(reason: string) {
+    if (!error) error = reason
   }
 
-  private checkSpace(i: number) {
-    const { text } = this
+  function checkSpace(i: number) {
     const code = text.charCodeAt(i)
     if (code === 0x0a) {
-      if (text.charCodeAt(i - 1) !== 0x0d) this.invalid('A line feed is not part of a CRLF.')
+      if (text.charCodeAt(i - 1) !== 0x0d) invalid('A line feed is not part of a CRLF.')
     } else if (code === 0x0d) {
-      if (text.charCodeAt(i + 1) !== 0x0a) this.invalid('A carriage return is not part of a CRLF.')
-      else if (!isWsp(text.charCodeAt(i + 2))) this.invalid('A CRLF is not followed by whitespace.')
+      if (text.charCodeAt(i + 1) !== 0x0a) invalid('A carriage return is not part of a CRLF.')
+      else if (!isWsp(text.charCodeAt(i + 2))) invalid('A CRLF is not followed by whitespace.')
     }
   }
 
-  private inner(i: number): number {
-    const { text } = this
+  function inner(i: number): number {
     const code = text.charCodeAt(i)
     if (code === 0x5c) {
       if (i + 1 < text.length) return 2
-      this.invalid('A backslash ends the input.')
+      invalid('A backslash ends the input.')
       return 1
     }
-    if (code === 0) this.invalid('A NUL character is not escaped.')
-    else if (code === 0x0d || code === 0x0a) this.checkSpace(i)
+    if (code === 0) invalid('A NUL character is not escaped.')
+    else if (code === 0x0d || code === 0x0a) checkSpace(i)
     return 1
   }
 
-  private quoted(start: number): number {
-    const { text } = this
+  function readQuoted(start: number): number {
     let value = ''
     let i = start + 1
     for (;;) {
       if (i >= text.length) {
-        this.invalid('A quoted string is not closed.')
+        invalid('A quoted string is not closed.')
         break
       }
       const code = text.charCodeAt(i)
@@ -255,23 +246,22 @@ class Parser {
         i++
         break
       }
-      const length = this.strict ? this.inner(i) : code === 0x5c && i + 1 < text.length ? 2 : 1
+      const length = strict ? inner(i) : code === 0x5c && i + 1 < text.length ? 2 : 1
       if (code === 0x5c && length === 2) value += text[i + 1]
       else if (code !== 0x0d && code !== 0x0a) value += text[i]
       i += length
     }
-    this.token('quoted', value)
+    addToken('quoted', value)
     return i
   }
 
-  private comment(start: number): number {
-    const { text } = this
+  function readComment(start: number): number {
     let value = ''
     let depth = 1
     let i = start + 1
     for (;;) {
       if (i >= text.length) {
-        this.invalid('A comment is not closed.')
+        invalid('A comment is not closed.')
         break
       }
       const code = text.charCodeAt(i)
@@ -280,28 +270,27 @@ class Parser {
         break
       }
       if (code === 0x28) depth++
-      const length = this.strict ? this.inner(i) : code === 0x5c && i + 1 < text.length ? 2 : 1
+      const length = strict ? inner(i) : code === 0x5c && i + 1 < text.length ? 2 : 1
       if (code === 0x5c && length === 2) value += text[i + 1]
       else value += text[i]
       i += length
     }
-    this.tokens.push({
+    tokens.push({
       kind: 'comment',
       value: value.replace(/[\r\n]+/g, ''),
-      space: this.space,
+      space: space,
       role: 'name',
     })
-    this.space = true
+    space = true
     return i
   }
 
-  private literal(start: number): number {
-    const { text } = this
-    const inAngle = this.open >= 0 && this.close < 0
+  function readLiteral(start: number): number {
+    const inAngle = open >= 0 && close < 0
     let i = start + 1
     for (;;) {
       if (i >= text.length || (!inAngle && ',;<>()"'.includes(text[i]!))) {
-        this.invalid('A domain literal is not closed.')
+        invalid('A domain literal is not closed.')
         break
       }
       const code = text.charCodeAt(i)
@@ -309,17 +298,16 @@ class Parser {
         i++
         break
       }
-      if (this.strict) {
-        if (code === 0x5b) this.invalid('A domain literal holds "[".')
-        i += this.inner(i)
+      if (strict) {
+        if (code === 0x5b) invalid('A domain literal holds "[".')
+        i += inner(i)
       } else i += code === 0x5c && i + 1 < text.length ? 2 : 1
     }
-    this.token('literal', text.slice(start, i))
+    addToken('literal', text.slice(start, i))
     return i
   }
 
-  private atom(start: number): number {
-    const { text } = this
+  function readAtom(start: number): number {
     let i = start
     while (i < text.length) {
       const code = text.charCodeAt(i)
@@ -327,131 +315,125 @@ class Parser {
       i++
     }
     const value = text.slice(start, i)
-    if (this.strict && !atext.test(value.replaceAll('.', 'a')))
-      this.invalid(`${JSON.stringify(value)} holds a character that needs quoting.`)
-    this.token('text', value)
+    if (strict && !atext.test(value.replaceAll('.', 'a')))
+      invalid(`${JSON.stringify(value)} holds a character that needs quoting.`)
+    addToken('text', value)
     return i
   }
 
-  private token(kind: Kind, value: string) {
-    const token: Token = { kind, value, space: this.space, role: 'name' }
-    this.space = false
-    this.last = kind
-    const inAngle = this.open >= 0 && this.close < 0
+  function addToken(kind: Kind, value: string) {
+    const token: Token = { kind, value, space: space, role: 'name' }
+    space = false
+    last = kind
+    const inAngle = open >= 0 && close < 0
     if (inAngle) {
       if (kind === '<') {
-        this.invalid('An angle bracket opens inside another.')
-        for (let i = this.open; i < this.tokens.length; i++) this.tokens[i]!.role = 'skip'
-        this.open = this.tokens.length
-      } else if (kind === '>') this.close = this.tokens.length
-      else if ((kind === ',' && this.angleHoldsAddress()) || (kind === ';' && this.group)) {
-        this.invalid('An angle bracket is not closed.')
-        this.close = this.tokens.length
-        this.separator(kind)
+        invalid('An angle bracket opens inside another.')
+        for (let i = open; i < tokens.length; i++) tokens[i]!.role = 'skip'
+        open = tokens.length
+      } else if (kind === '>') close = tokens.length
+      else if ((kind === ',' && angleHoldsAddress()) || (kind === ';' && group)) {
+        invalid('An angle bracket is not closed.')
+        close = tokens.length
+        separator(kind)
         return
       }
-      this.tokens.push(token)
+      tokens.push(token)
       return
     }
-    if (kind === ',' || kind === ';') return this.separator(kind)
+    if (kind === ',' || kind === ';') return separator(kind)
     if (kind === ':') {
-      if (this.group) {
-        this.invalid('Groups can not be nested.')
+      if (group) {
+        invalid('Groups can not be nested.')
       } else {
-        this.markAngle()
-        const name = buildName(this.tokens)
-        const quoted = this.tokens.some((token) => token.kind === 'quoted' && token.role === 'name')
-        if (name.text === '' && !quoted) this.invalid('A group has no name.')
-        else if (this.strict) this.checkPhrase(this.tokens)
-        this.group = { name: decodeWords(name.text || name.comments), members: [] }
+        markAngle()
+        const name = buildName(tokens)
+        const quoted = tokens.some((token) => token.kind === 'quoted' && token.role === 'name')
+        if (name.text === '' && !quoted) invalid('A group has no name.')
+        else if (strict) checkPhrase(tokens)
+        group = { name: decodeWords(name.text || name.comments), members: [] }
       }
-      this.resetEntry()
+      resetEntry()
       return
     }
     if (kind === '<') {
-      if (this.open < 0) {
-        this.open = this.tokens.length
+      if (open < 0) {
+        open = tokens.length
       } else {
-        this.invalid('An entry has two angle addresses.')
+        invalid('An entry has two angle addresses.')
         token.kind = 'text'
       }
     } else if (kind === '>') {
-      this.invalid('An angle bracket closes without opening.')
+      invalid('An angle bracket closes without opening.')
       token.kind = 'text'
     }
-    this.tokens.push(token)
+    tokens.push(token)
   }
 
-  private angleHoldsAddress(): boolean {
-    for (let i = this.open + 2; i < this.tokens.length; i++)
-      if (
-        this.tokens[i]!.kind === '@' &&
-        this.tokens[i - 1]!.kind !== ',' &&
-        this.tokens[i - 1]!.kind !== ':'
-      )
+  function angleHoldsAddress(): boolean {
+    for (let i = open + 2; i < tokens.length; i++)
+      if (tokens[i]!.kind === '@' && tokens[i - 1]!.kind !== ',' && tokens[i - 1]!.kind !== ':')
         return true
     return false
   }
 
-  private separator(kind: ',' | ';') {
-    this.endEntry()
+  function separator(kind: ',' | ';') {
+    endEntry()
     if (kind === ';') {
-      if (this.group) this.endGroup()
-      else this.invalid('";" separates two addresses outside a group.')
+      if (group) endGroup()
+      else invalid('";" separates two addresses outside a group.')
     }
   }
 
-  private resetEntry() {
-    this.tokens = []
-    this.open = -1
-    this.close = -1
+  function resetEntry() {
+    tokens = []
+    open = -1
+    close = -1
   }
 
-  private endEntry() {
-    const { tokens } = this
+  function endEntry() {
     if (tokens.length > 0) {
-      const mailbox = this.resolve()
-      this.count++
-      if (this.group) this.group.members.push(mailbox)
-      else this.list.push(mailbox)
+      const mailbox = resolve()
+      count++
+      if (group) group.members.push(mailbox)
+      else list.push(mailbox)
     }
-    this.resetEntry()
+    resetEntry()
   }
 
-  private endGroup() {
-    this.list.push({ name: this.group!.name, group: mergeNameFragments(this.group!.members) })
-    this.count++
-    this.group = null
+  function endGroup() {
+    list.push({ name: group!.name, group: mergeNameFragments(group!.members) })
+    count++
+    group = null
   }
 
-  private markAngle() {
-    if (this.open < 0) return
-    const end = this.close < 0 ? this.tokens.length : this.close
-    for (let i = this.open; i <= end && i < this.tokens.length; i++) this.tokens[i]!.role = 'skip'
+  function markAngle() {
+    if (open < 0) return
+    const end = close < 0 ? tokens.length : close
+    for (let i = open; i <= end && i < tokens.length; i++) tokens[i]!.role = 'skip'
   }
 
-  private resolve(): Mailbox {
-    const { tokens, open, strict } = this
-    const close = this.close < 0 ? tokens.length : this.close
+  function resolve(): Mailbox {
+    const end = close < 0 ? tokens.length : close
     let address = ''
     if (open >= 0) {
       tokens[open]!.role = 'skip'
-      if (close < tokens.length) tokens[close]!.role = 'skip'
+      if (end < tokens.length) tokens[end]!.role = 'skip'
       let from = open + 1
-      while (from < close && tokens[from]!.role === 'skip') from++
+      while (from < end && tokens[from]!.role === 'skip') from++
       from = skipRoute(tokens, from, close)
-      address = this.takeAddress(from, close)
+      address = takeAddress(from, end)
       if (strict) {
-        this.checkPhrase(tokens.slice(0, open))
+        checkPhrase(tokens.slice(0, open))
         for (let i = from; i < tokens.length; i++) {
           const token = tokens[i]!
           if (token.kind !== 'comment' && token.role === 'name')
-            this.invalid(`${JSON.stringify(token.value)} follows the address.`)
+            invalid(`${JSON.stringify(token.value)} follows the address.`)
         }
-        if (!address) this.invalid('An angle address is empty.')
+        if (!address) invalid('An angle address is empty.')
       }
     } else {
-      address = this.takeAddress(0, tokens.length)
+      address = takeAddress(0, tokens.length)
       if (!address) {
         const words = tokens.filter((token) => token.kind !== 'comment')
         const only = words[0]
@@ -464,18 +446,17 @@ class Parser {
         }
       }
       if (strict) {
-        if (!address) this.invalid('An entry holds no address.')
+        if (!address) invalid('An entry holds no address.')
         for (const token of tokens)
           if (token.kind !== 'comment' && token.role === 'name')
-            this.invalid(`${JSON.stringify(token.value)} is not part of the address.`)
+            invalid(`${JSON.stringify(token.value)} is not part of the address.`)
       }
     }
     const name = buildName(tokens)
     return { name: decodeWords(name.text || name.comments), address }
   }
 
-  private takeAddress(from: number, to: number): string {
-    const { tokens } = this
+  function takeAddress(from: number, to: number): string {
     let start = -1
     let previous: Token | undefined
     let gap = false
@@ -517,24 +498,24 @@ class Parser {
       token.role = 'address'
       run.push(token)
     }
-    return this.formatSpec(run)
+    return formatSpec(run)
   }
 
-  private formatSpec(run: readonly Token[]): string {
+  function formatSpec(run: readonly Token[]): string {
     const at = run.findIndex((token) => token.kind === '@')
     const single =
       at > 0 && at < run.length - 1 && run.findIndex((t, i) => i > at && t.kind === '@') < 0
     const raw = (token: Token) => (token.kind === 'quoted' ? quote(token.value) : token.value)
     if (!single) {
-      this.invalid('An address does not have one "@" between a local part and a domain.')
+      invalid('An address does not have one "@" between a local part and a domain.')
       return run.map(raw).join('')
     }
     const local = run.slice(0, at)
     const domain = run.slice(at + 1)
-    if (this.strict) {
-      if (!isWords(local)) this.invalid('The local part of an address is malformed.')
+    if (strict) {
+      if (!isWords(local)) invalid('The local part of an address is malformed.')
       if (!(domain.length === 1 && domain[0]!.kind === 'literal') && !isWords(domain, true))
-        this.invalid('The domain of an address is malformed.')
+        invalid('The domain of an address is malformed.')
     }
     let localPart = local.map(raw).join('')
     if (local.some((token) => token.kind === 'quoted')) {
@@ -544,7 +525,7 @@ class Parser {
     return localPart + '@' + domain.map(raw).join('')
   }
 
-  private checkPhrase(tokens: readonly Token[]) {
+  function checkPhrase(tokens: readonly Token[]) {
     let first = true
     for (const token of tokens) {
       if (token.kind === 'comment' || token.role === 'skip') continue
@@ -552,10 +533,12 @@ class Parser {
         (token.kind !== 'text' && token.kind !== 'quoted') ||
         (first && token.kind === 'text' && token.value.startsWith('.'))
       )
-        this.invalid(`${JSON.stringify(token.value)} can't be part of a display name.`)
+        invalid(`${JSON.stringify(token.value)} can't be part of a display name.`)
       first = false
     }
   }
+
+  return { list: parse(), error }
 }
 
 /**

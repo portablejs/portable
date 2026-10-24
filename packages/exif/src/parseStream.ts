@@ -55,7 +55,7 @@ export async function parseStream(
 ): Promise<Metadata> {
   const { maxBytes = 16 * 1024 * 1024, signal } = options
   const reader = stream.getReader()
-  const source = new Source(reader, maxBytes, signal)
+  const source = createSource(reader, maxBytes, signal)
   const abort = () => reader.cancel(signal!.reason).catch(() => {})
   signal?.addEventListener('abort', abort)
   try {
@@ -86,65 +86,64 @@ function finish(found: FoundIn): Metadata {
   return toMetadata(found, bytes, offset)
 }
 
-/**
- * `buffer` holds the stream from offset `start` to `end`, the count of bytes pulled so far.
- * While skipping, `start` is past `end`.
- */
-class Source {
-  readonly reader: ReadableStreamDefaultReader<Uint8Array>
-  readonly maxBytes: number
-  readonly signal: AbortSignal | undefined
-  buffer = new Uint8Array(0)
-  start = 0
-  end = 0
-  done = false
-  keep = false
-
-  constructor(
-    reader: ReadableStreamDefaultReader<Uint8Array>,
-    maxBytes: number,
-    signal: AbortSignal | undefined,
-  ) {
-    this.reader = reader
-    this.maxBytes = maxBytes
-    this.signal = signal
-  }
-
+type Source = {
   /**
    * Returns the bytes from `offset` to `offset + length`, fewer if the stream ends first. Unless
    * `keep` is set, discards the bytes before `offset`.
    */
-  async read(offset: number, length: number): Promise<Uint8Array> {
-    if (!this.keep && offset > this.start) {
-      this.buffer =
-        offset < this.end ? this.buffer.subarray(offset - this.start) : new Uint8Array(0)
-      this.start = offset
-    }
-    const want = offset + Math.max(length, 0)
-    while (this.end < want && !this.done) {
-      const held = Math.max(this.end - this.start, 0)
-      if (held >= this.maxBytes) throw new MaxBytesError({ maxBytes: this.maxBytes })
-      const { done, value } = await this.reader.read()
-      this.signal?.throwIfAborted()
-      if (done) {
-        this.done = true
-        break
+  read(offset: number, length: number): Promise<Uint8Array>
+  /** Whether the stream has ended. */
+  done: boolean
+  keep: boolean
+}
+
+/**
+ * `buffer` holds the stream from offset `start` to `end`, the count of bytes pulled so far.
+ * While skipping, `start` is past `end`.
+ */
+function createSource(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  maxBytes: number,
+  signal: AbortSignal | undefined,
+): Source {
+  let buffer = new Uint8Array(0)
+  let start = 0
+  let end = 0
+  const source: Source = {
+    done: false,
+    keep: false,
+    async read(offset, length) {
+      if (!source.keep && offset > start) {
+        buffer = offset < end ? buffer.subarray(offset - start) : new Uint8Array(0)
+        start = offset
       }
-      const chunkStart = this.end
-      this.end += value.length
-      if (this.end <= this.start) continue
-      const chunk = chunkStart < this.start ? value.subarray(this.start - chunkStart) : value
-      if (held + chunk.length > this.buffer.length) {
-        const grown = new Uint8Array(Math.max(held + chunk.length, held * 2))
-        grown.set(this.buffer.subarray(0, held))
-        this.buffer = grown
+      const want = offset + Math.max(length, 0)
+      while (end < want && !source.done) {
+        const held = Math.max(end - start, 0)
+        if (held >= maxBytes) throw new MaxBytesError({ maxBytes })
+        const { done, value } = await reader.read()
+        signal?.throwIfAborted()
+        if (done) {
+          source.done = true
+          break
+        }
+        const chunkStart = end
+        end += value.length
+        if (end <= start) continue
+        const chunk = chunkStart < start ? value.subarray(start - chunkStart) : value
+        if (held + chunk.length > buffer.length) {
+          const grown = new Uint8Array(Math.max(held + chunk.length, held * 2))
+          grown.set(buffer.subarray(0, held))
+          buffer = grown
+        }
+        buffer.set(chunk, held)
       }
-      this.buffer.set(chunk, held)
-    }
-    const available = Math.min(want, this.end)
-    if (available <= offset) return new Uint8Array(0)
-    return this.buffer.subarray(offset - this.start, available - this.start)
+      const available = Math.min(want, end)
+      if (available <= offset) return new Uint8Array(0)
+      return buffer.subarray(offset - start, available - start)
+    },
   }
+  return source
 }
 
 async function embedded(source: Source, start: number, end: number): Promise<Region | undefined> {

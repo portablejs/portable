@@ -39,7 +39,7 @@ export declare namespace strip {
  */
 export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
   const parts: Uint8Array[] = []
-  const stripper = new Stripper(options, (part) => parts.push(part))
+  const stripper = createStripper(options, (part) => parts.push(part))
   stripper.push(bytes)
   stripper.close()
   return Bytes.concat(parts)
@@ -74,7 +74,7 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
     let abort: (() => void) | undefined
     super({
       start(controller) {
-        stripper = new Stripper(options, (part) => controller.enqueue(part))
+        stripper = createStripper(options, (part) => controller.enqueue(part))
         if (!signal) return
         signal.throwIfAborted()
         abort = () => controller.error(signal.reason)
@@ -114,242 +114,235 @@ const pngMetadataKeywords = new Set([
 ])
 const pngTextTypes = new Set(['tEXt', 'zTXt', 'iTXt'])
 
+type Stripper = { push(chunk: Uint8Array): void; close(): void }
+
 /**
  * Takes the file in chunks of any size and emits the stripped file. Each state waits until the
  * buffer holds `want` bytes, or the input ends, then consumes some of them. `pass` and `skip`
  * count bytes to copy or drop without buffering them.
  */
-class Stripper {
-  readonly emit: (part: Uint8Array) => void
-  readonly keepOrientation: boolean
-  readonly keepColorProfile: boolean
-  state: State = 'detect'
-  data: Uint8Array = new Uint8Array(0)
-  start = 0
-  end = 0
-  want = 12
-  pass = 0
-  skip = 0
-  orientationWritten = false
+function createStripper(options: strip.Options, emit: (part: Uint8Array) => void): Stripper {
+  const keepOrientation = options.keepOrientation ?? true
+  const keepColorProfile = options.keepColorProfile ?? true
+  let state: State = 'detect'
+  let buffer: Uint8Array = new Uint8Array(0)
+  let bufferStart = 0
+  let bufferEnd = 0
+  let want = 12
+  let pass = 0
+  let skip = 0
+  let orientationWritten = false
 
-  constructor(options: strip.Options, emit: (part: Uint8Array) => void) {
-    this.emit = emit
-    this.keepOrientation = options.keepOrientation ?? true
-    this.keepColorProfile = options.keepColorProfile ?? true
-  }
-
-  push(chunk: Uint8Array): void {
+  function push(chunk: Uint8Array): void {
     for (let at = 0; at < chunk.length;) {
-      if (this.start === this.end && this.pass > 0) {
-        const n = Math.min(this.pass, chunk.length - at)
-        this.emit(chunk.subarray(at, at + n))
-        this.pass -= n
+      if (bufferStart === bufferEnd && pass > 0) {
+        const n = Math.min(pass, chunk.length - at)
+        emit(chunk.subarray(at, at + n))
+        pass -= n
         at += n
-      } else if (this.start === this.end && this.skip > 0) {
-        const n = Math.min(this.skip, chunk.length - at)
-        this.skip -= n
+      } else if (bufferStart === bufferEnd && skip > 0) {
+        const n = Math.min(skip, chunk.length - at)
+        skip -= n
         at += n
       } else {
-        const n = Math.min(this.want - (this.end - this.start), chunk.length - at)
-        this.append(chunk.subarray(at, at + n))
+        const n = Math.min(want - (bufferEnd - bufferStart), chunk.length - at)
+        append(chunk.subarray(at, at + n))
         at += n
-        this.drain(false)
+        drain(false)
       }
     }
   }
 
-  close(): void {
-    this.drain(true)
+  function close(): void {
+    drain(true)
   }
 
-  append(bytes: Uint8Array): void {
-    const held = this.end - this.start
-    if (this.end + bytes.length > this.data.length) {
-      const data = new Uint8Array(Math.max(held + bytes.length, held * 2, 64))
-      data.set(this.data.subarray(this.start, this.end))
-      this.data = data
-      this.start = 0
-      this.end = held
+  function append(bytes: Uint8Array): void {
+    const held = bufferEnd - bufferStart
+    if (bufferEnd + bytes.length > buffer.length) {
+      const grown = new Uint8Array(Math.max(held + bytes.length, held * 2, 64))
+      grown.set(buffer.subarray(bufferStart, bufferEnd))
+      buffer = grown
+      bufferStart = 0
+      bufferEnd = held
     }
-    this.data.set(bytes, this.end)
-    this.end += bytes.length
+    buffer.set(bytes, bufferEnd)
+    bufferEnd += bytes.length
   }
 
-  drain(final: boolean): void {
-    while (this.start < this.end) {
-      const held = this.end - this.start
-      if (this.pass > 0 || this.skip > 0) {
-        const n = Math.min(held, this.pass || this.skip)
-        if (this.pass > 0) {
-          this.emit(this.data.slice(this.start, this.start + n))
-          this.pass -= n
-        } else this.skip -= n
-        this.start += n
-      } else if (held >= this.want || final) {
-        this.start += this.step(this.data.subarray(this.start, this.end), final)
+  function drain(final: boolean): void {
+    while (bufferStart < bufferEnd) {
+      const held = bufferEnd - bufferStart
+      if (pass > 0 || skip > 0) {
+        const n = Math.min(held, pass || skip)
+        if (pass > 0) {
+          emit(buffer.slice(bufferStart, bufferStart + n))
+          pass -= n
+        } else skip -= n
+        bufferStart += n
+      } else if (held >= want || final) {
+        bufferStart += step(buffer.subarray(bufferStart, bufferEnd), final)
       } else return
     }
   }
 
   /** Handles the buffered `bytes` in the current state and returns how many it consumed. */
-  step(bytes: Uint8Array, final: boolean): number {
-    switch (this.state) {
+  function step(bytes: Uint8Array, final: boolean): number {
+    switch (state) {
       case 'detect':
-        return this.detect(bytes)
+        return detect(bytes)
       case 'jpegMarker':
-        return this.jpegMarker(bytes, final)
+        return jpegMarker(bytes, final)
       case 'jpegSegment':
-        return this.jpegSegment(bytes)
+        return jpegSegment(bytes)
       case 'pngSignature':
-        this.out(bytes.subarray(0, 8))
-        this.next('pngChunk', 8)
+        out(bytes.subarray(0, 8))
+        next('pngChunk', 8)
         return Math.min(8, bytes.length)
       case 'pngChunk':
-        return this.pngChunk(bytes, final)
+        return pngChunk(bytes, final)
       case 'pngExif':
-        return this.pngExif(bytes)
+        return pngExif(bytes)
       case 'pngText':
-        return this.pngText(bytes)
+        return pngText(bytes)
       case 'webp':
-        this.emit(this.webp(bytes))
+        emit(stripWebp(bytes))
         return bytes.length
     }
   }
 
   /** Emits a copy of buffered bytes, which the buffer may overwrite later. */
-  out(bytes: Uint8Array): void {
-    this.emit(bytes.slice())
+  function out(bytes: Uint8Array): void {
+    emit(bytes.slice())
   }
 
-  next(state: State, want: number): void {
-    this.state = state
-    this.want = want
+  function next(nextState: State, nextWant: number): void {
+    state = nextState
+    want = nextWant
   }
 
-  detect(bytes: Uint8Array): number {
+  function detect(bytes: Uint8Array): number {
     if (bytes[0] === 0xff && bytes[1] === 0xd8) {
-      this.out(bytes.subarray(0, 2))
-      this.next('jpegMarker', 4)
+      out(bytes.subarray(0, 2))
+      next('jpegMarker', 4)
       return 2
     }
-    if (startsWith(bytes, 0, pngSignature)) this.next('pngSignature', 8)
-    else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) this.next('webp', Infinity)
+    if (startsWith(bytes, 0, pngSignature)) next('pngSignature', 8)
+    else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) next('webp', Infinity)
     else throw new UnsupportedError()
     return 0
   }
 
-  jpegMarker(bytes: Uint8Array, final: boolean): number {
+  function jpegMarker(bytes: Uint8Array, final: boolean): number {
     if (bytes[0] !== 0xff) throw new InvalidInputError('Invalid JPEG: expected a marker.')
     const marker = bytes[1]
     if (marker === undefined || bytes.length < 4) {
-      this.out(bytes)
+      out(bytes)
       return bytes.length
     }
     if (marker === 0xff) {
-      this.out(bytes.subarray(0, 1))
+      out(bytes.subarray(0, 1))
       return 1
     }
     if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) {
-      this.out(bytes.subarray(0, 2))
+      out(bytes.subarray(0, 2))
       return 2
     }
     if (marker === 0xda || marker === 0xd9) {
-      this.pass = Infinity
+      pass = Infinity
       return 0
     }
     const length = u16be(bytes, 2)
     if (length < 2) throw new InvalidInputError('Invalid JPEG: segment length is less than 2.')
     if (marker === 0xe1 || marker === 0xe2 || marker === 0xed) {
-      this.next('jpegSegment', 2 + length)
-      return final ? this.jpegSegment(bytes) : 0
+      next('jpegSegment', 2 + length)
+      return final ? jpegSegment(bytes) : 0
     }
-    this.out(bytes.subarray(0, 4))
-    this.pass = length - 2
+    out(bytes.subarray(0, 4))
+    pass = length - 2
     return 4
   }
 
-  jpegSegment(buffered: Uint8Array): number {
+  function jpegSegment(buffered: Uint8Array): number {
     const bytes = buffered.subarray(0, 2 + u16be(buffered, 2))
     const marker = bytes[1]
     const payload = bytes.subarray(4)
-    this.next('jpegMarker', 4)
+    next('jpegMarker', 4)
     if (marker === 0xe1 && startsWith(payload, 0, exifHeader)) {
-      const tiff = this.orientationTiff(payload.subarray(6))
+      const tiff = orientationTiff(payload.subarray(6))
       if (tiff)
-        this.emit(
-          Bytes.concat([new Uint8Array([0xff, 0xe1, 0, tiff.length + 8]), exifPrefix, tiff]),
-        )
-    } else if (this.keepJpegSegment(marker!, payload)) this.out(bytes)
+        emit(Bytes.concat([new Uint8Array([0xff, 0xe1, 0, tiff.length + 8]), exifPrefix, tiff]))
+    } else if (keepJpegSegment(marker!, payload)) out(bytes)
     return bytes.length
   }
 
-  keepJpegSegment(marker: number, payload: Uint8Array): boolean {
+  function keepJpegSegment(marker: number, payload: Uint8Array): boolean {
     if (marker === 0xed) return false
     if (marker === 0xe1)
       return !startsWith(payload, 0, xmp) && !startsWith(payload, 0, xmpExtension)
-    return this.keepColorProfile || !startsWith(payload, 0, iccProfile)
+    return keepColorProfile || !startsWith(payload, 0, iccProfile)
   }
 
-  pngChunk(bytes: Uint8Array, final: boolean): number {
+  function pngChunk(bytes: Uint8Array, final: boolean): number {
     if (bytes.length < 8) {
-      this.out(bytes)
+      out(bytes)
       return bytes.length
     }
     const length = u32be(bytes, 0)
     const type = String.fromCharCode(...bytes.subarray(4, 8))
     if (type === 'IEND') {
-      this.pass = Infinity
+      pass = Infinity
       return 0
     }
     if (type === 'eXIf') {
-      if (this.keepOrientation) {
-        this.next('pngExif', 8 + length + 4)
-        return final ? this.pngExif(bytes) : 0
+      if (keepOrientation) {
+        next('pngExif', 8 + length + 4)
+        return final ? pngExif(bytes) : 0
       }
-      this.skip = length + 4
+      skip = length + 4
       return 8
     }
     if (pngTextTypes.has(type)) {
-      this.next('pngText', 8 + Math.min(length, 80))
-      return final ? this.pngText(bytes) : 0
+      next('pngText', 8 + Math.min(length, 80))
+      return final ? pngText(bytes) : 0
     }
-    if (type === 'iCCP' && !this.keepColorProfile) {
-      this.skip = length + 4
+    if (type === 'iCCP' && !keepColorProfile) {
+      skip = length + 4
       return 8
     }
-    this.out(bytes.subarray(0, 8))
-    this.pass = length + 4
+    out(bytes.subarray(0, 8))
+    pass = length + 4
     return 8
   }
 
-  pngExif(buffered: Uint8Array): number {
+  function pngExif(buffered: Uint8Array): number {
     const bytes = buffered.subarray(0, 12 + u32be(buffered, 0))
     let data = bytes.subarray(8, 8 + u32be(bytes, 0))
     if (startsWith(data, 0, exifHeader)) data = data.subarray(6)
-    const tiff = this.orientationTiff(data)
+    const tiff = orientationTiff(data)
     if (tiff) {
       const chunk = Bytes.concat([bigEndian32(tiff.length), ascii('eXIf'), tiff])
-      this.emit(Bytes.concat([chunk, bigEndian32(crc32(chunk.subarray(4)))]))
+      emit(Bytes.concat([chunk, bigEndian32(crc32(chunk.subarray(4)))]))
     }
-    this.next('pngChunk', 8)
+    next('pngChunk', 8)
     return bytes.length
   }
 
-  pngText(bytes: Uint8Array): number {
+  function pngText(bytes: Uint8Array): number {
     const length = u32be(bytes, 0)
     const payload = bytes.subarray(8, 8 + Math.min(length, 80))
     const nul = payload.indexOf(0)
     const keyword = String.fromCharCode(...payload.subarray(0, nul < 0 ? payload.length : nul))
-    this.next('pngChunk', 8)
-    if (pngMetadataKeywords.has(keyword)) this.skip = length + 4 - payload.length
+    next('pngChunk', 8)
+    if (pngMetadataKeywords.has(keyword)) skip = length + 4 - payload.length
     else {
-      this.out(bytes.subarray(0, 8 + payload.length))
-      this.pass = length + 4 - payload.length
+      out(bytes.subarray(0, 8 + payload.length))
+      pass = length + 4 - payload.length
     }
     return 8 + payload.length
   }
 
-  webp(bytes: Uint8Array): Uint8Array {
+  function stripWebp(bytes: Uint8Array): Uint8Array {
     const parts = [bytes.subarray(0, 12)] satisfies Uint8Array[]
     let vp8x: Uint8Array | undefined
     let hasExif = false
@@ -368,13 +361,13 @@ class Stripper {
       if (type === 'EXIF') {
         let data = chunk.subarray(8, 8 + length)
         if (startsWith(data, 0, exifHeader)) data = data.subarray(6)
-        const tiff = this.orientationTiff(data)
+        const tiff = orientationTiff(data)
         if (!tiff) continue
         hasExif = true
         parts.push(Bytes.concat([ascii('EXIF'), littleEndian32(tiff.length), tiff]))
       } else if (type === 'XMP ') continue
       else if (type === 'ICCP') {
-        if (!this.keepColorProfile) continue
+        if (!keepColorProfile) continue
         hasIcc = true
         parts.push(chunk)
       } else if (type === 'VP8X' && !vp8x) {
@@ -385,14 +378,14 @@ class Stripper {
     if (vp8x && vp8x.length > 8) {
       vp8x[8] = (vp8x[8]! & ~0x2c) | (hasIcc ? 0x20 : 0) | (hasExif ? 0x08 : 0)
     }
-    const out = Bytes.concat(parts)
-    out.set(littleEndian32(out.length - 8), 4)
-    return out
+    const file = Bytes.concat(parts)
+    file.set(littleEndian32(file.length - 8), 4)
+    return file
   }
 
   /** Returns a TIFF block holding only the Orientation tag of `data`, if it should be kept. */
-  orientationTiff(data: Uint8Array): Uint8Array | undefined {
-    if (!this.keepOrientation || this.orientationWritten) return undefined
+  function orientationTiff(data: Uint8Array): Uint8Array | undefined {
+    if (!keepOrientation || orientationWritten) return undefined
     let orientation: unknown
     try {
       orientation = readTiff(data, 0, data.length).ifds.ifd0.Orientation
@@ -400,7 +393,7 @@ class Stripper {
       return undefined
     }
     if (typeof orientation !== 'number' || orientation < 2 || orientation > 8) return undefined
-    this.orientationWritten = true
+    orientationWritten = true
     return new Uint8Array([
       0x4d,
       0x4d,
@@ -430,6 +423,8 @@ class Stripper {
       0,
     ])
   }
+
+  return { push, close }
 }
 
 function ascii(text: string): Uint8Array {
