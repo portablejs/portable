@@ -242,37 +242,149 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 ## Migrating
 
-| Upstream | @portable/timers |
-| --- | --- |
-| `delay(ms)` | `Timers.sleep(ms)` |
-| `delay(ms, { value })` | `Timers.sleep(ms).then(() => value)` |
-| `delay(ms, { signal })` | `Timers.sleep(ms, { signal })` |
-| `rangeDelay(min, max)` | `Timers.sleep(min + Math.random() * (max - min))` |
-| `clearDelay(promise)` | Abort the `signal`. The promise rejects instead of resolving early. |
-| `pRetry(fn, { retries: 5 })` | `Timers.retry(fn, { attempts: 6 })`. `retries` counts retries after the first call, and `attempts` counts every call. |
-| `pRetry(fn, { minTimeout, maxTimeout, factor, randomize: false })` | `Timers.retry(fn, { delay: { initial: minTimeout, max: maxTimeout, factor, jitter: false } })` |
-| `throw new AbortError(error)` | Return `false` from `retryIf` for that error. |
-| `shouldRetry: ({ error }) => ...` | `retryIf: (error) => ...` |
-| `onFailedAttempt: ({ error, attemptNumber }) => log(...)` | `onRetry: (error, { attempt }) => log(...)`, which runs before each retry. To log the last failure too, catch the rejection. |
-| `maxRetryTime: ms` | `signal: AbortSignal.timeout(ms)`. The call rejects with a `TimeoutError` instead of the last error. |
-| `makeRetriable(fn, options)` | `(...args) => Timers.retry(() => fn(...args), options)` |
-| `asyncRetry(async (bail, attempt) => ..., { retries })` | `Timers.retry(async ({ attempt }) => ..., { attempts: retries + 1 })`. async-retry's `randomize` defaults to `true` and waits 1 to 2 times the backoff, and the default here waits 0 to 1 times. |
-| `bail(error)` | Throw `error` and return `false` from `retryIf` for it. |
-| `onRetry: (error, attempt) => ...` | `onRetry: (error, { attempt }) => ...` |
-| `pWaitFor(condition, { interval })` | `Timers.poll(async () => (await condition()) || undefined, { delay: interval })`. A check that returns `false` ends the poll, so turn `false` into `undefined`. |
-| `pWaitFor(() => pWaitFor.resolveWith(value))` | `Timers.poll(() => value)` |
-| `pWaitFor(condition, { before: false })` | `await Timers.sleep(interval)` first. |
-| `pWaitFor(condition, { timeout: { milliseconds, fallback } })` | `Timers.poll(fn, { signal: AbortSignal.timeout(milliseconds) }).catch((error) => ...)` |
-| `_.debounce(fn, wait, options)`, `lodashDebounce(fn, wait, options)` | `Timers.debounce(fn, wait, options)`. Calls return a promise of the invocation's result. |
-| `_.throttle(fn, wait, options)`, `lodashThrottle(fn, wait, options)` | `Timers.throttle(fn, wait, options)` |
-| `debounced.cancel()`, `debounced.flush()` | The same. Calls dropped by `cancel` reject with an `AbortError`, and `flush` returns a promise. |
-| `throttle(delay, fn, { noTrailing: true })` from throttle-debounce | `Timers.throttle(fn, delay, { trailing: false })` |
-| `throttle(delay, fn, { noLeading: true })` from throttle-debounce | `Timers.throttle(fn, delay, { leading: false })`. Setting both `leading` and `trailing` to `false` is a `RangeError`, because the function would never run. |
-| `debounce(delay, fn, { atBegin: true })` from throttle-debounce | `Timers.debounce(fn, delay, { leading: true, trailing: false })` |
-| `throttled.cancel()` from throttle-debounce | Abort the `signal`. throttle-debounce's `cancel` disables the function permanently. |
-| `throttled.cancel({ upcomingOnly: true })` from throttle-debounce | `throttled.cancel()` |
-| `pDebounce(fn, wait, { before: true })` | `Timers.debounce(fn, wait, { leading: true, trailing: false })` |
-| `pDebounce(fn, wait, { signal })` | `Timers.debounce(fn, wait, { signal })` |
-| `pDebounce.promise(fn)` | No equivalent. It limits concurrency rather than time. |
+From delay:
+
+```diff
+- import delay, { rangeDelay } from 'delay'
++ import * as Timers from '@portable/timers'
+
+- await delay(ms, { signal })
++ await Timers.sleep(ms, { signal })
+
+- const result = await delay(ms, { value })
++ const result = await Timers.sleep(ms).then(() => value)
+
+- await rangeDelay(min, max)
++ await Timers.sleep(min + Math.random() * (max - min))
+```
+
+`clearDelay(promise)` has no equivalent. Abort the `signal` instead, and the promise rejects rather than resolving early.
+
+From p-retry:
+
+```diff
+- import pRetry, { AbortError } from 'p-retry'
++ import * as Timers from '@portable/timers'
+
+- await pRetry(fn, {
+-   retries: 5,
+-   minTimeout,
+-   maxTimeout,
+-   factor,
+-   randomize: false,
+-   shouldRetry: ({ error }) => isTemporary(error),
+-   onFailedAttempt: ({ error, attemptNumber }) => log(error, attemptNumber),
+-   maxRetryTime: 60_000,
+- })
++ await Timers.retry(fn, {
++   attempts: 6,
++   delay: { initial: minTimeout, max: maxTimeout, factor, jitter: false },
++   retryIf: (error) => isTemporary(error),
++   onRetry: (error, { attempt }) => log(error, attempt),
++   signal: AbortSignal.timeout(60_000),
++ })
+
+- const retriable = makeRetriable(fn, options)
++ const retriable = (...args) => Timers.retry(() => fn(...args), options)
+```
+
+- `retries` counts the retries after the first call, and `attempts` counts every call, so `retries: 5` becomes `attempts: 6`.
+- Instead of throwing `AbortError`, return `false` from `retryIf` for that error.
+- `onRetry` runs before each retry, so it doesn't see the last failure. Catch the rejection to log that one.
+- When the signal from `AbortSignal.timeout` fires, the call rejects with a `TimeoutError` instead of the last error.
+
+From async-retry:
+
+```diff
+- import asyncRetry from 'async-retry'
++ import * as Timers from '@portable/timers'
+
+- await asyncRetry(async (bail, attempt) => {
+-   if (isFatal(error)) {
+-     bail(error)
+-   }
+- }, { retries, onRetry: (error, attempt) => log(error, attempt) })
++ await Timers.retry(async ({ attempt }) => {
++   if (isFatal(error)) {
++     throw error
++   }
++ }, {
++   attempts: retries + 1,
++   retryIf: (error) => !isFatal(error),
++   onRetry: (error, { attempt }) => log(error, attempt),
++ })
+```
+
+async-retry's `randomize` defaults to `true` and waits 1 to 2 times the backoff. The default here waits 0 to 1 times.
+
+From p-wait-for:
+
+```diff
+- import pWaitFor from 'p-wait-for'
++ import * as Timers from '@portable/timers'
+
+- await pWaitFor(condition, { interval })
++ await Timers.poll(async () => (await condition()) || undefined, {
++   delay: interval,
++ })
+
+- const value = await pWaitFor(() => pWaitFor.resolveWith(value))
++ const value = await Timers.poll(() => value)
+
+- await pWaitFor(condition, { timeout: { milliseconds, fallback } })
++ await Timers.poll(check, { signal: AbortSignal.timeout(milliseconds) })
++   .catch(fallback)
+```
+
+- A check that returns `false` ends the poll, so turn `false` into `undefined`.
+- For `before: false`, call `await Timers.sleep(interval)` first.
+
+From lodash and p-debounce:
+
+```diff
+- import debounce from 'lodash.debounce'
+- import throttle from 'lodash.throttle'
+- import pDebounce from 'p-debounce'
++ import * as Timers from '@portable/timers'
+
+- const debounced = debounce(fn, wait, options)
++ const debounced = Timers.debounce(fn, wait, options)
+
+- const throttled = throttle(fn, wait, options)
++ const throttled = Timers.throttle(fn, wait, options)
+
+- const debounced = pDebounce(fn, wait, { before: true, signal })
++ const debounced = Timers.debounce(fn, wait, {
++   leading: true,
++   trailing: false,
++   signal,
++ })
+```
+
+- Calls to a debounced function return a promise of the call's result.
+- `cancel()` and `flush()` work as in lodash. Calls dropped by `cancel` reject with an `AbortError`, and `flush` returns a promise.
+- `pDebounce.promise(fn)` has no equivalent, because it limits concurrency rather than time.
+
+From throttle-debounce:
+
+```diff
+- import { debounce, throttle } from 'throttle-debounce'
++ import * as Timers from '@portable/timers'
+
+- throttle(delay, fn, { noTrailing: true })
++ Timers.throttle(fn, delay, { trailing: false })
+
+- throttle(delay, fn, { noLeading: true })
++ Timers.throttle(fn, delay, { leading: false })
+
+- debounce(delay, fn, { atBegin: true })
++ Timers.debounce(fn, delay, { leading: true, trailing: false })
+
+- throttled.cancel({ upcomingOnly: true })
++ throttled.cancel()
+```
+
+- Setting both `leading` and `trailing` to `false` throws a `RangeError`, because the function would never run.
+- throttle-debounce's `cancel()` disables the function permanently. Abort the `signal` for the same effect.
 
 p-wait-for checks every 20 ms by default. `poll` waits 1000 ms, because it is mostly used against servers.

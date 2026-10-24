@@ -66,14 +66,43 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 ## Migrating
 
-| split2 / byline | @portable/lines |
-| --- | --- |
-| `stream.pipe(split2())` | `stream.pipeThrough(new Lines.DecoderStream())` |
-| `split2('~')`, `split2(/~/)` | `new Lines.DecoderStream({ separator: '~' })` |
-| `split2(JSON.parse)` | `.pipeThrough(new Lines.DecoderStream()).pipeThrough(new TransformStream({ transform: (line, c) => c.enqueue(JSON.parse(line)) }))` |
-| `split2({ maxLength, skipOverflow: true })` | `new Lines.DecoderStream({ maxLength, overflow: 'skip' })` |
-| `byline(stream)` | `stream.pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))` |
-| `byline(stream, { keepEmptyLines: true })` | `stream.pipeThrough(new Lines.DecoderStream())` |
+From split2:
+
+```diff
+- import split2 from 'split2'
++ import * as Lines from '@portable/lines'
+
+- stream.pipe(split2())
++ stream.pipeThrough(new Lines.DecoderStream())
+
+- stream.pipe(split2('~'))
++ stream.pipeThrough(new Lines.DecoderStream({ separator: '~' }))
+
+- stream.pipe(split2({ maxLength, skipOverflow: true }))
++ stream.pipeThrough(new Lines.DecoderStream({ maxLength, overflow: 'skip' }))
+
+- stream.pipe(split2(JSON.parse))
++ stream
++   .pipeThrough(new Lines.DecoderStream())
++   .pipeThrough(
++     new TransformStream({
++       transform: (line, controller) => controller.enqueue(JSON.parse(line)),
++     }),
++   )
+```
+
+From byline:
+
+```diff
+- import byline from 'byline'
++ import * as Lines from '@portable/lines'
+
+- byline(stream)
++ stream.pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))
+
+- byline(stream, { keepEmptyLines: true })
++ stream.pipeThrough(new Lines.DecoderStream())
+```
 
 Two behaviors differ from split2:
 
