@@ -19,19 +19,16 @@ const [live, saved] = response
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .tee()
 
-const saving = saved.pipeThrough(new Jsonl.EncoderStream()).pipeThrough(new TextEncoderStream()).pipeTo(transcript)
+const saving = saved
+  .pipeThrough(new Jsonl.EncoderStream())
+  .pipeThrough(new TextEncoderStream())
+  .pipeTo(transcript) // write to a file
 const reader = live.getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.value.choices[0].delta.content ?? '')
 await saving
 ```
 
-This code runs unchanged in a browser, Deno, Bun and Node, with no polyfills, bundler aliases or `nodejs_compat` flag. Only `transcript` depends on the runtime. It is any `WritableStream<Uint8Array>`:
-
-| Runtime | `transcript` |
-| --- | --- |
-| Browser | `await (await (await navigator.storage.getDirectory()).getFileHandle('chat.jsonl', { create: true })).createWritable()` |
-| Deno | `(await Deno.open('chat.jsonl', { create: true, append: true })).writable` |
-| Node | `Writable.toWeb(fs.createWriteStream('chat.jsonl', { flags: 'a' }))` |
+This code runs unchanged in a browser, Deno, Bun and Node, with no polyfills, bundler aliases or `nodejs_compat` flag.
 
 Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: `fetch`, Web Streams, `Uint8Array`, `TextEncoder` and `crypto.subtle`.
 
