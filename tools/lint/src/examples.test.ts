@@ -16,9 +16,13 @@ type Example = { file: string; line: number; code: string; dir: string }
 
 function walk(dir: string, extension: RegExp): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name === 'node_modules' || entry.name === 'dist') return []
+    if (entry.name === 'node_modules' || entry.name === 'dist') {
+      return []
+    }
     const path = join(dir, entry.name)
-    if (entry.isDirectory()) return walk(path, extension)
+    if (entry.isDirectory()) {
+      return walk(path, extension)
+    }
     return extension.test(entry.name) ? [path] : []
   })
 }
@@ -33,7 +37,9 @@ function packages(): Package[] {
   const result: Package[] = []
   for (const dir of readdirSync(join(root, 'packages'))) {
     const file = join(root, 'packages', dir, 'package.json')
-    if (!existsSync(file)) continue
+    if (!existsSync(file)) {
+      continue
+    }
     const json = JSON.parse(readFileSync(file, 'utf8'))
     result.push({ name: json.name, dir: join(root, 'packages', dir), exports: json.exports ?? {} })
   }
@@ -54,12 +60,15 @@ function examples(list: readonly Package[]): Example[] {
     const text = readFileSync(file, 'utf8')
     const test = join(dirname(file), 'test')
     const dir = existsSync(test) ? test : dirname(file)
-    for (const match of text.matchAll(fence))
+    for (const match of text.matchAll(fence)) {
       result.push({ file, line: lineOf(text, match.index) + 1, code: match[1]!, dir })
+    }
   }
   const jsdoc = /^[^\S\n]*\* ```ts\n([\s\S]*?)^[^\S\n]*\* ```/gm
   for (const pkg of list) {
-    if (!existsSync(join(pkg.dir, 'src'))) continue
+    if (!existsSync(join(pkg.dir, 'src'))) {
+      continue
+    }
     const test = join(pkg.dir, 'test')
     for (const file of walk(join(pkg.dir, 'src'), /\.ts$/)) {
       const text = readFileSync(file, 'utf8')
@@ -81,7 +90,7 @@ function rewriteRelativeImports(code: string): string {
 
 function localModules(codes: readonly string[]): string {
   const modules = new Map<string, Set<string>>()
-  for (const code of codes)
+  for (const code of codes) {
     for (const match of code.matchAll(
       /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'(local:[^']*)'/g,
     )) {
@@ -91,10 +100,13 @@ function localModules(codes: readonly string[]): string {
           .replace(/^\s*type\s+/, '')
           .trim()
           .split(/\s+/)[0]
-        if (local) names.add(local)
+        if (local) {
+          names.add(local)
+        }
       }
       modules.set(match[2]!, names)
     }
+  }
   return [...modules]
     .map(([module, names]) => {
       const exports = [...names].map(
@@ -189,7 +201,9 @@ function check(): string[] {
     const fileExists = host.fileExists.bind(host)
     const readFile = host.readFile.bind(host)
     host.getSourceFile = (file, language) => {
-      if (file === ambientFile) return ts.createSourceFile(file, ambientCode, language)
+      if (file === ambientFile) {
+        return ts.createSourceFile(file, ambientCode, language)
+      }
       const entry = files.get(file)
       return entry ? ts.createSourceFile(file, entry.code, language) : getSourceFile(file, language)
     }
@@ -199,10 +213,11 @@ function check(): string[] {
     host.resolveModuleNameLiterals = (literals, containingFile, redirect, compilerOptions) =>
       literals.map((literal) => {
         const portable = resolvePortable(literal.text)
-        if (portable)
+        if (portable) {
           return {
             resolvedModule: { resolvedFileName: portable, extension: ts.Extension.Ts },
           }
+        }
         return ts.resolveModuleName(
           literal.text,
           containingFile,
@@ -218,18 +233,26 @@ function check(): string[] {
   // The first compile collects the names each example uses without declaring them and the
   // libraries it imports that aren't installed. The loop after it declares them, and the second
   // compile reports the errors that remain.
-  for (const entry of files.values())
-    if (hasTopLevelReturn(entry.code)) entry.code = wrapInFunction(entry.code)
+  for (const entry of files.values()) {
+    if (hasTopLevelReturn(entry.code)) {
+      entry.code = wrapInFunction(entry.code)
+    }
+  }
   const undeclared = new Map<string, Set<string>>()
   for (const diagnostic of ts.getPreEmitDiagnostics(compile())) {
     const file = diagnostic.file
-    if (!file || !files.has(file.fileName) || diagnostic.start === undefined) continue
+    if (!file || !files.has(file.fileName) || diagnostic.start === undefined) {
+      continue
+    }
     const name = file.text.slice(diagnostic.start, diagnostic.start + diagnostic.length!)
     // If only an example imports a library, such as cborg in rpc's README, the library isn't
     // installed, so the test declares it as an untyped module.
-    if (diagnostic.code === 2307 && !name.includes('@portable/'))
+    if (diagnostic.code === 2307 && !name.includes('@portable/')) {
       ambientCode += `\ndeclare module ${name}`
-    if (![2304, 2503, 2552, 18004].includes(diagnostic.code)) continue
+    }
+    if (![2304, 2503, 2552, 18004].includes(diagnostic.code)) {
+      continue
+    }
     const names = undeclared.get(file.fileName) ?? new Set()
     undeclared.set(file.fileName, names.add(name))
   }
@@ -247,7 +270,9 @@ function check(): string[] {
   const problems: string[] = []
   for (const diagnostic of ts.getPreEmitDiagnostics(compile())) {
     const entry = diagnostic.file && files.get(diagnostic.file.fileName)
-    if (!entry || diagnostic.start === undefined) continue
+    if (!entry || diagnostic.start === undefined) {
+      continue
+    }
     const line =
       entry.example.line + diagnostic.file!.getLineAndCharacterOfPosition(diagnostic.start).line
     const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, ' ')

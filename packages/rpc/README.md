@@ -94,7 +94,9 @@ When the transport closes or fails, or an HTTP request fails, waiting calls reje
 A method that returns an async iterable (such as an async generator) or a `ReadableStream` streams its values back:
 
 ```ts
-for await (const event of remote.watch('x')) console.log(event)
+for await (const event of remote.watch('x')) {
+  console.log(event)
+}
 
 const stream = await remote.watch('x') // a ReadableStream
 stream.pipeThrough(new TransformStream())
