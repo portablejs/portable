@@ -179,16 +179,16 @@ describe('derToRawEcdsa', () => {
 })
 
 describe('Wycheproof', () => {
-  const suites: [WycheproofEcdsa['groups'], WebCrypto.NamedCurve, string][] = [
+  const suites = [
     [p256.groups, 'P-256', 'SHA-256'],
     [p384.groups, 'P-384', 'SHA-384'],
     [p521.groups, 'P-521', 'SHA-512'],
-  ]
+  ] satisfies [WycheproofEcdsa['groups'], WebCrypto.NamedCurve, string][]
   const encodingFlags = new Set(['BerEncodedSignature', 'InvalidEncoding', 'MissingZero'])
 
   for (const [groups, namedCurve, hash] of suites) {
     test(`${namedCurve} with ${hash}: valid signatures convert and verify, invalid ones throw or fail`, async () => {
-      const wrong: string[] = []
+      const wrong = new Array<string>()
       let checked = 0
       for (const group of groups) {
         const publicKey = await crypto.subtle.importKey(

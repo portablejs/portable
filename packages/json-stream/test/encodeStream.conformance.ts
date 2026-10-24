@@ -31,7 +31,7 @@ function erroring(error: Error): ReadableStream<unknown> {
 describe('json-stream-stringify', () => {
   const date = new Date()
 
-  const cases: [string, unknown, string][] = [
+  const cases = [
     ['null', null, 'null'],
     ['Infinity', Infinity, 'null'],
     ['a date', date, `"${date.toJSON()}"`],
@@ -60,7 +60,7 @@ describe('json-stream-stringify', () => {
     ['a promise', Promise.resolve(1), '1'],
     ['a promise of a promise', Promise.resolve(Promise.resolve(1)), '1'],
     ['a promise property', { a: Promise.resolve(1) }, '{"a":1}'],
-  ]
+  ] satisfies [string, unknown, string][]
   for (const [name, value, expected] of cases) {
     test(`writes ${name} as JSON.stringify does`, async () => {
       expect(await encodeText(value)).toBe(expected)
@@ -172,7 +172,7 @@ describe('json-stream-stringify', () => {
   test('writes a repeated, non-circular reference each time', async () => {
     const a = { foo: 'bar' }
     expect(await encodeText([a, a])).toBe('[{"foo":"bar"},{"foo":"bar"}]')
-    const array: unknown[] = []
+    const array = new Array<unknown>()
     expect(await encodeText({ a: array, b: array })).toBe('{"a":[],"b":[]}')
   })
 
@@ -197,7 +197,7 @@ describe('json-stream-stringify', () => {
 })
 
 describe('@worker-tools/json-stream', () => {
-  async function* items<T>(values: readonly T[]) {
+  async function* items<value>(values: readonly value[]) {
     for (const value of values) {
       await new Promise((resolve) => setTimeout(resolve))
       yield value
@@ -257,7 +257,7 @@ describe('stream-json', () => {
   })
 
   test('calls toJSON with the key', async () => {
-    const keys: string[] = []
+    const keys = new Array<string>()
     const value = { toJSON: (key: string) => (keys.push(key), key) }
     expect(await encodeText({ a: value, b: [value] })).toBe('{"a":"a","b":["0"]}')
     expect(keys).toEqual(['a', '0'])
@@ -273,7 +273,7 @@ describe('stream-json', () => {
   })
 
   test('calls the replacer with the holder as this', async () => {
-    const holders: unknown[] = []
+    const holders = new Array<unknown>()
     const value = { a: [1] }
     await encodeText(value, {
       replacer(this: unknown, _key, v) {
@@ -336,7 +336,7 @@ describe('encodeStream', () => {
   })
 
   test('calls a function only when the writer reaches it', async () => {
-    const calls: string[] = []
+    const calls = new Array<string>()
     const first = deferred<string>()
     const reader = encodeStream({
       a: first.promise,
@@ -361,7 +361,7 @@ describe('encodeStream', () => {
   })
 
   test('applies the replacer to resolved values only once', async () => {
-    const seen: unknown[] = []
+    const seen = new Array<unknown>()
     const text = await encodeText(
       { a: Promise.resolve(1) },
       {

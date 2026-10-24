@@ -32,7 +32,7 @@ const sha256 = async (data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBu
 
 export function randomChunks(bytes: Uint8Array, seed: number, max = 64): Uint8Array[] {
   const random = prng(seed)
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * max)
     chunks.push(bytes.subarray(i, i + size))

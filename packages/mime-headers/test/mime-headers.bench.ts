@@ -59,10 +59,10 @@ const values = Array.from({ length: 200 }, (_, i): Value => ({
 }))
 const builtValues = values.map((value) => formatValue(value))
 
-const mailboxes: Mailbox[] = Array.from({ length: 500 }, (_, i) => ({
+const mailboxes = Array.from({ length: 500 }, (_, i) => ({
   name: i % 3 ? `User ${i}` : '',
   address: `user.${i}@example.com`,
-}))
+})) satisfies Mailbox[]
 const addressList = formatAddresses(mailboxes)
 
 const headerBlock = Array.from({ length: 200 }, (_, i) =>

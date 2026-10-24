@@ -252,7 +252,7 @@ describe('stored hash format', () => {
 
 // RFC 6070 §2. The 16,777,216-iteration vector is in Password.test.ts, which runs only in Node.
 describe('RFC 6070 (PBKDF2-HMAC-SHA1)', () => {
-  const vectors: [string, string, number, string][] = [
+  const vectors = [
     ['password', 'salt', 1, '0c60c80f961f0e71f3a9b524af6012062fe037a6'],
     ['password', 'salt', 2, 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'],
     ['password', 'salt', 4096, '4b007901b765489abead49d926f721d065a429c1'],
@@ -263,7 +263,7 @@ describe('RFC 6070 (PBKDF2-HMAC-SHA1)', () => {
       '3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038',
     ],
     ['pass\0word', 'sa\0lt', 4096, '56fa6aa75548099dcc37d7f03425e0c3'],
-  ]
+  ] satisfies [string, string, number, string][]
 
   for (const [password, salt, iterations, expected] of vectors) {
     test(`${JSON.stringify(password)}, ${JSON.stringify(salt)}, c=${iterations}`, async () => {
@@ -275,7 +275,7 @@ describe('RFC 6070 (PBKDF2-HMAC-SHA1)', () => {
 })
 
 describe('RFC 7914 §11 (PBKDF2-HMAC-SHA256)', () => {
-  const vectors: [string, string, number, string][] = [
+  const vectors = [
     [
       'passwd',
       'salt',
@@ -288,7 +288,7 @@ describe('RFC 7914 §11 (PBKDF2-HMAC-SHA256)', () => {
       80000,
       '4ddcd8f60b98be21830cee5ef22701f9641a4418d04c0414aeff08876b34ab56a1d425a1225833549adb841b51c9b3176a272bdebba1d078478f62b397f33c8d',
     ],
-  ]
+  ] satisfies [string, string, number, string][]
 
   for (const [password, salt, iterations, expected] of vectors) {
     test(`${password}, ${salt}, c=${iterations}, dkLen=64`, async () => {
@@ -302,7 +302,7 @@ describe('RFC 7914 §11 (PBKDF2-HMAC-SHA256)', () => {
 // passlib 1.7.4, passlib/tests/test_handlers_pbkdf2.py (BSD licensed).
 describe('passlib', () => {
   const wav = 'Ιωαννης'
-  const known: [string, string, string][] = [
+  const known = [
     ['pbkdf2_sha1', 'password', '$pbkdf2$1212$OB.dtnSEXZK8U5cgxU/GYQ$y5LKPOplRmok7CZp/aqVDVg8zGI'],
     ['pbkdf2_sha1', wav, '$pbkdf2$1212$THDqatpidANpadlLeTeOEg$HV3oi1k5C5LQCgG1BMOL.BX4YZc'],
     [
@@ -325,7 +325,7 @@ describe('passlib', () => {
       wav,
       '$pbkdf2-sha512$1212$KkbvoKGsAIcF8IslDR6skQ$8be/PRmd88Ps8fmPowCJttH9G3vgxpG.Krjt3KT.NP6cKJ0V4Prarqf.HBwz0dCkJ6xgWnSj2ynXSV7MlvMa8Q',
     ],
-  ]
+  ] satisfies [string, string, string][]
 
   for (const [handler, password, stored] of known) {
     test(`${handler} known hash of ${JSON.stringify(password)}`, async () => {
@@ -357,7 +357,7 @@ describe('pbkdf2 fixtures', () => {
     dkLen: number
     results: Record<string, string>
   }
-  const { valid }: { valid: Fixture[] } = JSON.parse(pbkdf2Fixtures)
+  const { valid } = JSON.parse(pbkdf2Fixtures) satisfies { valid: Fixture[] }
 
   const bytes = (
     text: string | undefined,

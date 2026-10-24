@@ -55,7 +55,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
   if (order !== 0x4949 && order !== 0x4d4d)
     throw new InvalidInputError('Invalid TIFF header: no byte order mark.')
   const length = end - start
-  const r: Reader = {
+  const r = {
     bytes,
     view: new DataView(bytes.buffer, bytes.byteOffset + start, length),
     start,
@@ -64,7 +64,7 @@ export function readTiff(bytes: Uint8Array, start: number, end: number): Tiff {
     next: 0,
     pointers: new Map(),
     end: 8,
-  }
+  } satisfies Reader
   if (r.view.getUint16(2, r.le) !== 42)
     throw new InvalidInputError('Invalid TIFF header: magic number is not 42.')
   const ifd0Offset = r.view.getUint32(4, r.le)
@@ -137,7 +137,7 @@ function readValue(r: Reader, type: number, count: number, at: number): TagValue
   if (type === 2) return readString(r.bytes, r.start + at, r.start + at + count)
   if (type === 7) return r.bytes.subarray(r.start + at, r.start + at + count)
   if (count === 1) return readNumber(r.view, r.le, type, at)
-  const values: number[] = []
+  const values = new Array<number>()
   const size = typeSizes[type]!
   for (let i = 0; i < count; i++) values.push(readNumber(r.view, r.le, type, at + i * size))
   return values

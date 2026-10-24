@@ -19,7 +19,7 @@ export async function encodeMessages(messages: readonly Sse.Message[]): Promise<
 export const utf8 = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder().encode(text)
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }
@@ -32,16 +32,16 @@ export function seededRandom(seed: number): () => number {
   }
 }
 
-export function randomChunks<T extends Uint8Array | string>(
-  input: T,
+export function randomChunks<value extends Uint8Array | string>(
+  input: value,
   seed: number,
   maxSize = 64,
-): T[] {
+): value[] {
   const random = seededRandom(seed)
-  const chunks: T[] = []
+  const chunks = new Array<value>()
   for (let i = 0; i < input.length;) {
     const size = 1 + Math.floor(random() * maxSize)
-    chunks.push(input.slice(i, i + size) as T)
+    chunks.push(input.slice(i, i + size) as value)
     i += size
   }
   return chunks
@@ -75,7 +75,7 @@ export type MockFetch = {
  * Aborting a request's signal fails its pending response body, as a real `fetch` does.
  */
 export function mockFetch(replies: readonly (Reply | Error)[]): MockFetch {
-  const waiting: { count: number; resolve: () => void }[] = []
+  const waiting = new Array<{ count: number; resolve: () => void }>()
   const mock: MockFetch = {
     requests: [],
     cancelled: 0,

@@ -1,6 +1,6 @@
 /** Counts how often each key occurs. */
-export function tally<K>(values: Iterable<K>): Map<K, number> {
-  const counts = new Map<K, number>()
+export function tally<key>(values: Iterable<key>): Map<key, number> {
+  const counts = new Map<key, number>()
   for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1)
   return counts
 }
@@ -71,7 +71,8 @@ export function looksUniform(
 }
 
 /** Calls `draw` `count` times and returns the results. */
-export const draws = <T>(count: number, draw: () => T): T[] => Array.from({ length: count }, draw)
+export const draws = <value>(count: number, draw: () => value): value[] =>
+  Array.from({ length: count }, draw)
 
 export const seededP = 0.001
 export const cryptoP = 1e-9

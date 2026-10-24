@@ -64,7 +64,9 @@ type NativeFromBase64 = (
   text: string,
   options: { alphabet: Alphabet; lastChunkHandling: 'loose' | 'strict' },
 ) => Uint8Array<ArrayBuffer>
-const nativeFromBase64: NativeFromBase64 | undefined = Reflect.get(Uint8Array, 'fromBase64')
+const nativeFromBase64 = Reflect.get(Uint8Array, 'fromBase64') satisfies
+  | NativeFromBase64
+  | undefined
 
 function table(characters: string): Int8Array {
   const values = new Int8Array(128).fill(-1)

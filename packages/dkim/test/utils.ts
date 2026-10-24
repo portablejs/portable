@@ -34,14 +34,14 @@ export const sha256 = async (data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<
   new Uint8Array(await crypto.subtle.digest('SHA-256', data))
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }
 
 export function randomChunks(bytes: Uint8Array, seed: number, max = 64): Uint8Array[] {
   const random = prng(seed)
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * max)
     chunks.push(bytes.subarray(i, i + size))
@@ -164,7 +164,7 @@ function canonicalHeaderRelaxed(line: string): string {
 
 function selectHeaders(headers: readonly string[], names: readonly string[]): string[] {
   const used = new Set<number>()
-  const out: string[] = []
+  const out = new Array<string>()
   for (const name of names) {
     for (let i = headers.length - 1; i >= 0; i--) {
       if (used.has(i)) continue

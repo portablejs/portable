@@ -45,7 +45,7 @@ export declare namespace asn {
   type Options = Shared
 }
 
-const defaultFetch: Fetch = (request) => globalThis.fetch(request)
+const defaultFetch = ((request) => globalThis.fetch(request)) satisfies Fetch
 
 const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/
 

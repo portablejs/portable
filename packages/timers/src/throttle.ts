@@ -23,11 +23,11 @@ export declare namespace throttle {
  * addEventListener('scroll', () => report())
  * ```
  */
-export function throttle<Args extends unknown[], Result, This = unknown>(
-  fn: (this: This, ...args: Args) => Result,
+export function throttle<args extends unknown[], result, self = unknown>(
+  fn: (this: self, ...args: args) => result,
   ms: number,
   options: throttle.Options = {},
-): Debounced<Args, Result, This> {
+): Debounced<args, result, self> {
   const { leading = true, trailing = true, signal } = options
   return debounce(fn, ms, { leading, trailing, maxWait: ms, signal })
 }

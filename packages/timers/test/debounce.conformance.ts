@@ -6,12 +6,12 @@ useFakeTimers()
 
 type Call = { time: number; args: unknown[]; self: unknown }
 
-function recorder<R = unknown>(result?: (args: unknown[]) => R) {
+function recorder<result = unknown>(result?: (args: unknown[]) => result) {
   const start = Date.now()
-  const calls: Call[] = []
+  const calls = new Array<Call>()
   function fn(this: unknown, ...args: unknown[]) {
     calls.push({ time: Date.now() - start, args, self: this })
-    return (result ? result(args) : args[0]) as R
+    return (result ? result(args) : args[0]) as result
   }
   return { fn, calls, times: () => calls.map((call) => call.time) }
 }
@@ -198,12 +198,12 @@ describe('lodash debounce and throttle', () => {
     test(`${name} supports recursive calls`, async () => {
       const queue = ['a', 'b', 'c'].map((chr) => [{}, chr] as const)
       const expected = queue.slice()
-      const seen: unknown[][] = []
-      const funced: Timers.Debounced<[string], void> = make(function (this: unknown, chr: string) {
+      const seen = new Array<unknown[]>()
+      const funced = make(function (this: unknown, chr: string) {
         seen.push([this, chr])
         const next = queue.shift()
         if (next) void funced.call(next[0], next[1])
-      }, 32)
+      }, 32) satisfies Timers.Debounced<[string], void>
       const first = queue.shift()!
       void funced.call(first[0], first[1])
       expect(seen).toEqual(expected.slice(0, isDebounce ? 0 : 1))
@@ -349,7 +349,7 @@ describe('promises', () => {
   })
 
   test('leading without trailing resolves the burst with the leading result', async () => {
-    const calls: number[] = []
+    const calls = new Array<number>()
     const debounced = Timers.debounce(
       async (value: number) => {
         calls.push(value)

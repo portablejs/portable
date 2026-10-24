@@ -47,9 +47,10 @@ export type Envelope = {
 type Entry = MimeHeaders.Mailbox | MimeHeaders.Group
 
 export function parse(input: Addresses): Entry[] {
-  const items: readonly (string | Mailbox)[] =
+  const items = (
     typeof input === 'string' || 'address' in input ? [input] : input
-  const entries: Entry[] = []
+  ) satisfies readonly (string | Mailbox)[]
+  const entries = new Array<Entry>()
   for (const item of items) {
     if (typeof item === 'string') {
       for (const entry of MimeHeaders.parseAddresses(item))

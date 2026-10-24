@@ -112,7 +112,7 @@ export type Capture = { port: number; data: Uint8Array[]; close(): Promise<void>
  * arrive on the wire, terminator included. With `record: false` it keeps nothing, for benchmarks.
  */
 export function startCapture(record = true): Promise<Capture> {
-  const data: Uint8Array[] = []
+  const data = new Array<Uint8Array>()
   const sockets = new Set<net.Socket>()
   const server = net.createServer((socket) => {
     sockets.add(socket)

@@ -6,7 +6,7 @@ import type { Hasher } from '@portable/web-crypto'
 
 /** `crypto.subtle.digest` takes its whole input at once, so this collects the chunks. */
 function webCryptoHash(): Hasher {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   return {
     update(data) {
       chunks.push(data)
@@ -44,7 +44,7 @@ export async function hashBody(
     if (hashes.has(key)) continue
     let pass = passes.get(request.canonicalization)
     if (!pass) {
-      const sinks: Sink[] = []
+      const sinks = new Array<Sink>()
       const created: Pass = {
         sinks,
         total: 0,

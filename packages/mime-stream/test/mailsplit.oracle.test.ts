@@ -19,8 +19,8 @@ async function viaMailsplit(chunks: readonly Uint8Array[], embedded: boolean): P
   const splitter = new Splitter(
     embedded ? { defaultInlineEmbedded: true } : { ignoreEmbedded: true },
   )
-  const types: string[] = []
-  const nodes: unknown[] = []
+  const types = new Array<string>()
+  const nodes = new Array<unknown>()
   const text = new Map<unknown, string>()
   for await (const data of Readable.from(chunks.map((chunk) => Buffer.from(chunk))).pipe(
     splitter,
@@ -35,7 +35,7 @@ async function viaMailsplit(chunks: readonly Uint8Array[], embedded: boolean): P
 }
 
 async function joinedByMailsplit(chunks: readonly Uint8Array[]): Promise<string> {
-  const parts: Buffer[] = []
+  const parts = new Array<Buffer>()
   for await (const part of Readable.from(chunks.map((chunk) => Buffer.from(chunk)))
     .pipe(new Splitter())
     .pipe(new Joiner()))
@@ -58,7 +58,7 @@ function generate(seed: number): string {
     state = (state * 1103515245 + 12345) % 2 ** 31
     return Math.floor((state / 2 ** 31) * n)
   }
-  const pick = <T>(items: readonly T[]): T => items[random(items.length)]!
+  const pick = <value>(items: readonly value[]): value => items[random(items.length)]!
   let count = 0
   const line = () =>
     pick(['hello world', '--', '-x', 'AAECAwQFBg==', 'x'.repeat(100), '--b1xy', 'õäöü', ''])
@@ -85,7 +85,7 @@ function generate(seed: number): string {
 }
 
 const inputs = async () => {
-  const result: [string, Uint8Array][] = []
+  const result = new Array<[string, Uint8Array]>()
   for (const name of fixtureNames) result.push([name, await fixture(name)])
   for (let seed = 1; seed <= 60; seed++) result.push([`generated ${seed}`, binary(generate(seed))])
   return result

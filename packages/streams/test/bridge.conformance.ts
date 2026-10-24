@@ -12,8 +12,10 @@ import {
 } from '@portable/streams'
 import { collect, decode, delay, encode, fromChunks } from './utils.js'
 
-const through = <I, O>(chunks: readonly I[], pair: ReadableWritablePair<O, I>) =>
-  collect(fromChunks(chunks).pipeThrough(pair))
+const through = <input, output>(
+  chunks: readonly input[],
+  pair: ReadableWritablePair<output, input>,
+) => collect(fromChunks(chunks).pipeThrough(pair))
 
 const double = () =>
   transform(async function* (source: AsyncIterable<string>) {
@@ -133,7 +135,7 @@ describe('through2: web', () => {
       }
     })
     const reader = fromChunks(['go']).pipeThrough(fanOut).getReader()
-    const out: number[] = []
+    const out = new Array<number>()
     for (;;) {
       const { done, value } = await reader.read()
       if (done) break
@@ -431,7 +433,7 @@ describe('fromIterable', () => {
 
 describe('toAsyncIterable', () => {
   test('iterates a stream', async () => {
-    const chunks: string[] = []
+    const chunks = new Array<string>()
     for await (const chunk of toAsyncIterable(fromChunks(['a', 'b']))) chunks.push(chunk)
     expect(chunks).toEqual(['a', 'b'])
   })
@@ -489,7 +491,7 @@ describe('map, filter, tap, batch', () => {
   })
 
   test('tap sees each chunk and passes it on unchanged', async () => {
-    const seen: [string, number][] = []
+    const seen = new Array<[string, number]>()
     const out = await through(
       ['a', 'b'],
       tap((chunk: string, index) => void seen.push([chunk, index])),
@@ -502,7 +504,7 @@ describe('map, filter, tap, batch', () => {
   })
 
   test('tap waits for an async function', async () => {
-    const order: string[] = []
+    const order = new Array<string>()
     const out = fromChunks(['a']).pipeThrough(
       tap(async () => {
         await delay(5)

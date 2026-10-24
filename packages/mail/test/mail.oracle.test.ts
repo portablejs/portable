@@ -42,7 +42,8 @@ const random = (seed: number) => () => {
   return seed / 2 ** 31
 }
 type Next = () => number
-const pick = <T>(next: Next, items: readonly T[]): T => items[Math.floor(next() * items.length)]!
+const pick = <value>(next: Next, items: readonly value[]): value =>
+  items[Math.floor(next() * items.length)]!
 
 const words: Record<string, readonly string[]> = {
   ascii: ['tere', 'hello', 'world', 'mail', 'test', 'a.b', 'x-y', 'Mari', 'Ants'],
@@ -64,7 +65,7 @@ function text(next: Next): string {
 }
 
 function chunks(next: Next, bytes: Uint8Array): Uint8Array[] {
-  const result: Uint8Array[] = []
+  const result = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(next() * 200)
     result.push(bytes.slice(i, i + size))

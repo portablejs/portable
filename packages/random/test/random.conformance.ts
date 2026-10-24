@@ -6,7 +6,7 @@ const distinct = (values: Iterable<unknown>) => new Set(values).size
 
 describe('int', () => {
   test('returns an integer within the range, both ends included', () => {
-    const ranges: [number, number][] = [
+    const ranges = [
       [0, 1],
       [0, 2],
       [0, 10],
@@ -18,7 +18,7 @@ describe('int', () => {
       [-(2 ** 52), 2 ** 52 - 1],
       [0, Number.MAX_SAFE_INTEGER],
       [-Number.MAX_SAFE_INTEGER, 0],
-    ]
+    ] satisfies [number, number][]
     for (const [min, max] of ranges) {
       for (let i = 0; i < 200; i++) {
         const value = Random.int(min, max)

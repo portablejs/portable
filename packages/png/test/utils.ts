@@ -84,7 +84,7 @@ export function adam7Scanlines(image: {
     [1, 0, 2, 2],
     [0, 1, 1, 2],
   ]
-  const bytes: number[] = []
+  const bytes = new Array<number>()
   for (const [x0, y0, dx, dy] of passes as [number, number, number, number][]) {
     if (x0 >= image.width || y0 >= image.height) continue
     for (let y = y0; y < image.height; y += dy) {

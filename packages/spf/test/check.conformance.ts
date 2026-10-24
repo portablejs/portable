@@ -55,7 +55,7 @@ describe('Spf.check', () => {
     const zone = {
       'mail.example.test': { TXT: ['v=spf1 exists:%{l}.%{o}.allow.example.test -all'] },
     }
-    const log: Query[] = []
+    const log = new Array<Query>()
     const allowed = { 'postmaster.mail.example.test.allow.example.test': { A: ['127.0.0.2'] } }
     for (const sender of ['', undefined]) {
       expect(await check({ ...zone, ...allowed }, { sender }, { log })).toMatchObject({
@@ -166,26 +166,26 @@ describe('spf-verify-test.js', () => {
   })
 
   test('passes MX records', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': {
         TXT: ['v=spf1 mx -all'],
         MX: [{ priority: 1, exchange: 'example.test' }],
         A: ['192.0.2.10', '192.0.2.11'],
       },
-    }
+    } satisfies Zone
     expect(await resultOf(zone, { ip: '1.2.3.4' })).toBe('fail')
     expect(await resultOf(zone, { ip: '192.0.2.10' })).toBe('pass')
     expect(await resultOf(zone, { ip: '192.0.2.11' })).toBe('pass')
   })
 
   test('passes MX records with a CIDR length', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': {
         TXT: ['v=spf1 mx/24 -all'],
         MX: [{ priority: 1, exchange: 'example.test' }],
         A: ['192.0.2.10', '192.0.2.11'],
       },
-    }
+    } satisfies Zone
     expect(await resultOf(zone, { ip: '1.2.3.4' })).toBe('fail')
     expect(await resultOf(zone, { ip: '192.0.2.10' })).toBe('pass')
     expect(await resultOf(zone, { ip: '192.0.2.56' })).toBe('pass')
@@ -200,14 +200,14 @@ describe('spf-verify-test.js', () => {
   })
 
   test('expands macros in the mx mechanism', async () => {
-    const zone: Zone = {
+    const zone = {
       'skinanalytics.test': {
         TXT: ['v=spf1 include:spf.lcn.test -all'],
         MX: [{ priority: 10, exchange: 'mail.skinanalytics.test' }],
       },
       'spf.lcn.test': { TXT: ['v=spf1 mx:%{o} -all'] },
       'mail.skinanalytics.test': { A: ['209.85.208.173'] },
-    }
+    } satisfies Zone
     const input = { sender: 'test@skinanalytics.test' }
     expect(await resultOf(zone, { ...input, ip: '209.85.208.173' })).toBe('pass')
     expect(await resultOf(zone, { ...input, ip: '192.0.2.20' })).toBe('fail')
@@ -303,13 +303,13 @@ describe('spf-verify-test.js', () => {
   })
 
   test('expands %{d} to the included domain in nested includes', async () => {
-    const log: Query[] = []
-    const zone: Zone = {
+    const log = new Array<Query>()
+    const zone = {
       'sender.test': { TXT: ['v=spf1 include:mid.test ~all'] },
       'mid.test': { TXT: ['v=spf1 include:policy.test ~all'] },
       'policy.test': { TXT: ['v=spf1 include:%{ir}.%{v}.%{d}.spf.provider.test ~all'] },
       '3.2.0.192.in-addr.policy.test.spf.provider.test': { TXT: ['v=spf1 ip4:192.0.2.3 -all'] },
-    }
+    } satisfies Zone
     expect(await resultOf(zone, { ip: '192.0.2.3', sender: 'user@sender.test' }, { log })).toBe(
       'pass',
     )
@@ -318,34 +318,34 @@ describe('spf-verify-test.js', () => {
   })
 
   test('keeps %{o} on the sender domain in nested includes', async () => {
-    const zone: Zone = {
+    const zone = {
       'sender.test': { TXT: ['v=spf1 include:policy.test -all'] },
       'policy.test': { TXT: ['v=spf1 include:%{o}.spf.provider.test -all'] },
       'sender.test.spf.provider.test': { TXT: ['v=spf1 ip4:192.0.2.3 -all'] },
-    }
+    } satisfies Zone
     expect(await resultOf(zone, { ip: '192.0.2.3', sender: 'user@sender.test' })).toBe('pass')
   })
 
   test('expands %{d} to the redirect target', async () => {
-    const zone: Zone = {
+    const zone = {
       'sender.test': { TXT: ['v=spf1 redirect=redirected.test'] },
       'redirected.test': { TXT: ['v=spf1 exists:%{ir}.%{d}.spf.provider.test -all'] },
       '3.2.0.192.redirected.test.spf.provider.test': { A: ['127.0.0.2'] },
-    }
+    } satisfies Zone
     expect(await resultOf(zone, { ip: '192.0.2.3', sender: 'user@sender.test' })).toBe('pass')
   })
 })
 
 describe('macro-test.js', () => {
   const expansion = async (macro: string, input: Partial<Spf.check.Input> = {}) => {
-    const log: Query[] = []
+    const log = new Array<Query>()
     await check(withRecord(`v=spf1 exists:${macro}.x.test -all`), input, { log })
     return log[1]?.replace(/^A /, '').replace(/\.x\.test$/, '')
   }
   const sender = 'strong-bad@email.example.com'
 
   test('renders macro values', async () => {
-    const cases: [string, string][] = [
+    const cases = [
       ['%{s}', 'strong-bad@email.example.com'],
       ['%{o}', 'email.example.com'],
       ['%{d}', 'email.example.com'],
@@ -365,9 +365,9 @@ describe('macro-test.js', () => {
       ['%{lr-}.lp.%{ir}.%{v}._spf.%{d2}', 'bad.strong.lp.3.2.0.192.in-addr._spf.example.com'],
       ['%{ir}.%{v}.%{l1r-}.lp._spf.%{d2}', '3.2.0.192.in-addr.strong.lp._spf.example.com'],
       ['%{d2}.trusted-domains.example.net', 'example.com.trusted-domains.example.net'],
-    ]
+    ] satisfies [string, string][]
     for (const [macro, expected] of cases) {
-      const log: Query[] = []
+      const log = new Array<Query>()
       await check(
         { 'email.example.com': { TXT: [`v=spf1 exists:${macro}.x.test -all`] } },
         { sender, ip: '192.0.2.3' },
@@ -378,7 +378,7 @@ describe('macro-test.js', () => {
   })
 
   test('renders %{i} of an IPv6 client as nibbles', async () => {
-    const log: Query[] = []
+    const log = new Array<Query>()
     await check(
       { 'email.example.com': { TXT: ['v=spf1 exists:%{ir}.%{v}._spf.%{d2} -all'] } },
       { sender, ip: '2001:db8::cb01' },
@@ -390,15 +390,15 @@ describe('macro-test.js', () => {
   })
 
   test('expands %{d} to the domain being evaluated and %{o} to the sender domain', async () => {
-    const log: Query[] = []
-    const zone: Zone = {
+    const log = new Array<Query>()
+    const zone = {
       'email.example.com': { TXT: ['v=spf1 include:included.example.net -all'] },
       'included.example.net': {
         TXT: [
           'v=spf1 exists:%{d}.%{d2}.%{o}.%{s}.x.test exists:%{ir}.%{v}.%{d}.spf.example.org -all',
         ],
       },
-    }
+    } satisfies Zone
     await check(zone, { sender, ip: '192.0.2.3' }, { log })
     expect(log).toContain(
       'A included.example.net.example.net.email.example.com.strong-bad@email.example.com.x.test',
@@ -424,7 +424,7 @@ describe('macro-test.js', () => {
 
   test('reads every digit of the transformer', async () => {
     const digits = async (macro: string, domain: string) => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       await check(
         { [domain]: { TXT: [`v=spf1 exists:${macro}.x.test -all`] } },
         { sender: `a@${domain}` },
@@ -490,14 +490,14 @@ describe('limited-resolver-test.js', () => {
   })
 
   test('reports the lookup count', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': {
         TXT: ['v=spf1 a mx -all'],
         MX: [{ priority: 10, exchange: 'mx.example.test' }],
         A: ['192.0.2.9'],
       },
       'mx.example.test': { A: ['192.0.2.1'] },
-    }
+    } satisfies Zone
     expect(await check(zone)).toMatchObject({ result: 'pass', lookups: 2 })
   })
 
@@ -671,10 +671,10 @@ describe('rfc-compliance-test.js', () => {
   })
 
   describe('ptr lookup counting (RFC 7208 4.6.4)', () => {
-    const rdns: Zone = {
+    const rdns = {
       '1.2.0.192.in-addr.arpa': { PTR: ['mail.other.test'] },
       'mail.other.test': { A: ['192.0.2.1'] },
-    }
+    } satisfies Zone
 
     test('counts every ptr term toward the lookup limit', async () => {
       const terms = Array.from({ length: 11 }, (_, i) => `ptr:d${i}.example.test`).join(' ')
@@ -696,12 +696,12 @@ describe('rfc-compliance-test.js', () => {
 
     test('bounds the DNS queries of a record with many ptr terms', async () => {
       const ptrNames = Array.from({ length: 10 }, (_, i) => `h${i}.attacker.test`)
-      const zone: Zone = {
+      const zone = {
         'attacker.test': { TXT: [['v=spf1', ...Array<string>(1000).fill(' ptr'), ' -all']] },
         '1.2.0.192.in-addr.arpa': { PTR: ptrNames },
         ...Object.fromEntries(ptrNames.map((name) => [name, { A: ['198.51.100.9'] }])),
-      }
-      const log: Query[] = []
+      } satisfies Zone
+      const log = new Array<Query>()
       const result = await check(zone, { sender: 'user@attacker.test' }, { log })
       expect(result).toMatchObject({ result: 'permerror', lookups: 11 })
       expect(log.length).toBeLessThanOrEqual(1 + 1 + 10)
@@ -709,13 +709,13 @@ describe('rfc-compliance-test.js', () => {
 
     test('counts the PTR lookup of a %{p} expansion', async () => {
       const terms = Array.from({ length: 6 }, (_, i) => `a:%{p}.e${i}.example.test`)
-      const zone: Zone = {
+      const zone = {
         '1.2.0.192.in-addr.arpa': { PTR: ['mx.example.test'] },
         'mx.example.test': { A: ['192.0.2.1'] },
         ...Object.fromEntries(
           terms.map((_, i) => [`mx.example.test.e${i}.example.test`, { A: ['198.51.100.1'] }]),
         ),
-      }
+      } satisfies Zone
       const over = await check({ ...zone, ...withRecord(`v=spf1 ${terms.join(' ')} -all`) })
       expect(over).toMatchObject({ result: 'permerror', reason: 'More than 10 DNS-querying terms' })
       const under = await check({
@@ -743,19 +743,19 @@ describe('rfc-compliance-test.js', () => {
 
   describe('%{p} macro (RFC 7208 7.3)', () => {
     test('expands to "unknown" when there is no validated name', async () => {
-      const zone: Zone = {
+      const zone = {
         'partner.test': { TXT: ['v=spf1 include:example.test -all'] },
         'example.test': { TXT: ['v=spf1 exists:%{p}.trusted.example.test -all'] },
         'partner.test.trusted.example.test': { A: ['127.0.0.2'] },
         'unknown.trusted.example.test': { AAAA: ['2001:db8::1'] },
-      }
-      const log: Query[] = []
+      } satisfies Zone
+      const log = new Array<Query>()
       expect(await resultOf(zone, { sender: 'user@partner.test' }, { log })).toBe('fail')
       expect(log).toContain('A unknown.trusted.example.test')
     })
 
     test('expands to a validated name, preferring a subdomain of <domain>', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord('v=spf1 exists:%{p}.allow.example.test -all', {
         '1.2.0.192.in-addr.arpa': { PTR: ['mx.other.test', 'mx.example.test'] },
         'mx.other.test': { A: ['192.0.2.1'] },
@@ -835,7 +835,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('ignores redirect when the record has an all term', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord('v=spf1 ?all redirect=_spf.example.test', {
         '_spf.example.test': { TXT: ['v=spf1 -all'] },
       })
@@ -875,19 +875,19 @@ describe('rfc-compliance-test.js', () => {
     }
 
     test('skips a null MX', async () => {
-      const nullMx: Zone = {
+      const nullMx = {
         'example.test': {
           TXT: ['v=spf1 mx ip4:192.0.2.1 -all'],
           MX: [{ priority: 0, exchange: '' }],
         },
-      }
+      } satisfies Zone
       expect(await resultOf(nullMx)).toBe('pass')
-      const dotted: Zone = {
+      const dotted = {
         'example.test': {
           TXT: ['v=spf1 mx ip4:192.0.2.1 -all'],
           MX: [{ priority: 0, exchange: '.' }],
         },
-      }
+      } satisfies Zone
       expect(await resultOf(dotted)).toBe('pass')
     })
   })
@@ -896,7 +896,7 @@ describe('rfc-compliance-test.js', () => {
     const zone = withRecord('v=spf1 exists:%{o}.%{h}.allow.example.test -all')
 
     test('evaluates a MAIL FROM domain with a trailing dot', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const result = await check(
         zone,
         { sender: 'user@example.test.', helo: 'mail.example.test.' },
@@ -910,7 +910,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('evaluates a HELO name with a trailing dot for a null sender', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const result = await check(zone, { sender: '', helo: 'example.test.' }, { log })
       expect(result).toMatchObject({ result: 'fail', domain: 'example.test', identity: 'helo' })
       expect(log).toEqual(['TXT example.test', 'A example.test.example.test.allow.example.test'])
@@ -918,7 +918,7 @@ describe('rfc-compliance-test.js', () => {
 
     for (const sender of ['user@example.test..', 'user@example..test', 'user@.']) {
       test(`gives none without a lookup for "${sender}"`, async () => {
-        const log: Query[] = []
+        const log = new Array<Query>()
         expect(await resultOf(zone, { sender }, { log })).toBe('none')
         expect(log).toEqual([])
       })
@@ -947,7 +947,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Internationalized sender (RFC 8616 4)', () => {
     test('converts a U-label MAIL FROM domain to A-labels', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = { 'xn--bcher-kva.example': { TXT: ['v=spf1 ip4:192.0.2.1 -all'] } }
       const result = await check(zone, { sender: 'user@bücher.example' }, { log })
       expect(result).toMatchObject({ result: 'pass', domain: 'xn--bcher-kva.example' })
@@ -955,10 +955,10 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('uses the A-label domain in %{o}', async () => {
-      const zone: Zone = {
+      const zone = {
         'xn--bcher-kva.example': { TXT: ['v=spf1 exists:%{o}.allow.example.test -all'] },
         'xn--bcher-kva.example.allow.example.test': { A: ['127.0.0.2'] },
-      }
+      } satisfies Zone
       expect(await resultOf(zone, { sender: 'user@BÜCHER.example' })).toBe('pass')
     })
 
@@ -978,7 +978,7 @@ describe('rfc-compliance-test.js', () => {
   describe('Long names (RFC 7208 7.3)', () => {
     test('truncates names over 253 characters from the left', async () => {
       const local = Array.from({ length: 5 }, (_, i) => String(i).repeat(60)).join('.')
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord('v=spf1 exists:%{l}._spf.example.test -all')
       expect(await resultOf(zone, { sender: `${local}@example.test` }, { log })).toBe('fail')
       expect(log[1]).toBe(
@@ -989,7 +989,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Invalid names after macro expansion (RFC 7208 4.8)', () => {
     test('does not query a name with a label over 63 characters', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord('v=spf1 exists:%{l}.users.example.test -all')
       expect(await resultOf(zone, { sender: `${'a'.repeat(64)}@example.test` }, { log })).toBe(
         'fail',
@@ -1027,7 +1027,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('queries the escaped name', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord('v=spf1 exists:%{L}.users.example.test -all', {
         'foo%2bbar.users.example.test': { A: ['127.0.0.2'] },
       })
@@ -1038,7 +1038,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Quoted local-part with "@" (RFC 5321 4.1.2)', () => {
     test('splits the sender at the last "@"', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord('v=spf1 exists:%{o}.chk.example.test -all', {
         'example.test.chk.example.test': { A: ['127.0.0.2'] },
       })
@@ -1081,12 +1081,12 @@ describe('rfc-compliance-test.js', () => {
       const zone = withRecord('v=spf1 -all exp=explain.example.test', {
         'explain.example.test': { TXT: ['%{c}'] },
       })
-      const cases: [string, string][] = [
+      const cases = [
         ['2001:0DB8:0000:0000:0000:0000:0000:0001', '2001:db8::1'],
         ['2001:db8:0:1:1:1:1:1', '2001:db8:0:1:1:1:1:1'],
         ['2001:db8:0:0:1:0:0:1', '2001:db8::1:0:0:1'],
         ['::', '::'],
-      ]
+      ] satisfies [string, string][]
       for (const [ip, expected] of cases) {
         expect((await check(zone, { ip })).explanation).toBe(expected)
       }
@@ -1134,7 +1134,7 @@ describe('rfc-compliance-test.js', () => {
 
   describe('Void lookups (RFC 7208 4.6.4)', () => {
     test('does not count address lookups of MX hosts as void lookups', async () => {
-      const zone: Zone = {
+      const zone = {
         'example.test': {
           TXT: ['v=spf1 mx -all'],
           MX: [1, 2, 3]
@@ -1145,7 +1145,7 @@ describe('rfc-compliance-test.js', () => {
             }),
         },
         'live.example.test': { A: ['192.0.2.1'] },
-      }
+      } satisfies Zone
       expect(await check(zone)).toMatchObject({ result: 'pass', voidLookups: 0 })
     })
 
@@ -1165,7 +1165,7 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('sends a repeated query once but counts it every time', async () => {
-      const log: Query[] = []
+      const log = new Array<Query>()
       const zone = withRecord(
         'v=spf1 a:gone.example.test a:gone.example.test a:gone.example.test -all',
         {
@@ -1250,10 +1250,10 @@ describe('rfc-compliance-test.js', () => {
     })
 
     test('ignores the explanation of an included record and uses the one of a redirect target', async () => {
-      const texts: Zone = {
+      const texts = {
         'outer.example.test': { TXT: ['outer'] },
         'inner.example.test': { TXT: ['inner'] },
-      }
+      } satisfies Zone
       const included = withRecord('v=spf1 include:inc.example.test -all exp=outer.example.test', {
         ...texts,
         'inc.example.test': { TXT: ['v=spf1 -all exp=inner.example.test'] },
@@ -1315,7 +1315,7 @@ describe('rfc-compliance-test.js', () => {
 
 describe('known upstream issues', () => {
   test('mailauth #104: MX hosts of the other family do not use up the void limit', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': { TXT: ['v=spf1 include:res.example.test ip6:2001:db8::/32 -all'] },
       'res.example.test': {
         TXT: ['v=spf1 mx:res.example.test -all'],
@@ -1324,29 +1324,29 @@ describe('known upstream issues', () => {
       ...Object.fromEntries(
         [1, 2, 3, 4].map((n) => [`esa${n}.example.test`, { A: [`192.0.2.${n}`] }]),
       ),
-    }
+    } satisfies Zone
     expect(await resultOf(zone, { ip: '2001:db8::1' })).toBe('pass')
   })
 
   test('mailauth #100: expands macros before an mx lookup', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': {
         TXT: ['v=spf1 mx:%{o} -all'],
         MX: [{ priority: 10, exchange: 'mail.example.test' }],
       },
       'mail.example.test': { A: ['192.0.2.1'] },
-    }
+    } satisfies Zone
     expect(await resultOf(zone)).toBe('pass')
   })
 
   test('mailauth #33: accepts MX host names in upper case', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': {
         TXT: ['v=spf1 mx -all'],
         MX: [{ priority: 1, exchange: 'ASPMX.EXAMPLE.TEST' }],
       },
       'aspmx.example.test': { A: ['192.0.2.1'] },
-    }
+    } satisfies Zone
     expect(await resultOf(zone)).toBe('pass')
   })
 
@@ -1356,11 +1356,11 @@ describe('known upstream issues', () => {
   })
 
   test('mailauth #125: %{d} in a nested include is the included domain', async () => {
-    const zone: Zone = {
+    const zone = {
       'example.test': { TXT: ['v=spf1 include:policy.test -all'] },
       'policy.test': { TXT: ['v=spf1 exists:%{d}.allow.test -all'] },
       'policy.test.allow.test': { A: ['127.0.0.2'] },
-    }
+    } satisfies Zone
     expect(await resultOf(zone)).toBe('pass')
   })
 

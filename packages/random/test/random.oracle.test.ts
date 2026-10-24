@@ -7,7 +7,7 @@ import seedrandom from 'seedrandom'
 import { describe, expect, test } from 'vite-plus/test'
 import * as Random from '@portable/random'
 
-const draws = <T>(count: number, draw: () => T): Set<T> =>
+const draws = <value>(count: number, draw: () => value): Set<value> =>
   new Set(Array.from({ length: count }, draw))
 const characters = (text: string) => new Set(Array.from(text))
 const sorted = (values: Set<number>) => [...values].sort((a, b) => a - b)

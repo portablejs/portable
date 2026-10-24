@@ -51,7 +51,10 @@ function equal(actual: unknown, expected: unknown) {
   if (a !== b) throw new Error(`Expected ${b}, got ${a}`)
 }
 
-function through<T>(chunks: readonly T[], ...transforms: TransformStream[]): Promise<unknown[]> {
+function through<value>(
+  chunks: readonly value[],
+  ...transforms: TransformStream[]
+): Promise<unknown[]> {
   let stream: ReadableStream = Streams.fromIterable(chunks)
   for (const transform of transforms) stream = stream.pipeThrough(transform)
   return Streams.toArray(stream)

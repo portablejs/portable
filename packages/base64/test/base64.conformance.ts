@@ -224,10 +224,10 @@ type Native = {
   toBase64?: (this: Uint8Array, options: object) => string
   fromBase64?: (text: string, options: object) => Uint8Array
 }
-const native: Native = {
+const native = {
   toBase64: Reflect.get(Uint8Array.prototype, 'toBase64'),
   fromBase64: Reflect.get(Uint8Array, 'fromBase64'),
-}
+} satisfies Native
 
 describe.runIf(native.toBase64 && native.fromBase64)('fallback matches the native API', () => {
   test('encodes like Uint8Array.prototype.toBase64', () => {

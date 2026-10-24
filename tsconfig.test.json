@@ -3,7 +3,9 @@
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node", "vite-plus/client"],
-    "isolatedDeclarations": false
+    "isolatedDeclarations": false,
+    "declaration": false,
+    "declarationMap": false
   },
   "include": ["packages/*/test", "tools/*/src"]
 }

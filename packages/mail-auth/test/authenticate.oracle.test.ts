@@ -108,7 +108,8 @@ const froms = [
 
 async function makeCase(seed: number): Promise<Case> {
   const random = prng(seed)
-  const pick = <T>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!
+  const pick = <value>(items: readonly value[]): value =>
+    items[Math.floor(random() * items.length)]!
   const from = pick(froms)
   let message = buildMessage({ from: from || 'x@example.com' })
   if (from === '') message = message.replace(/^From: .*\r\n/m, '')
@@ -206,9 +207,9 @@ describe('mailauth strict mode agrees with authenticate', () => {
 describe('mailauth and authenticate interoperate', () => {
   test('mailauth passes the ARC sets authenticate seals, and the other way around', async () => {
     const { privateKey, record } = await key('rsa')
-    const zone: Zone = { 'test._domainkey.example.com': { TXT: [record] } }
+    const zone = { 'test._domainkey.example.com': { TXT: [record] } } satisfies Zone
     let message = buildMessage()
-    const results: string[] = []
+    const results = new Array<string>()
     for (let hop = 1; hop <= 4; hop++) {
       if (hop % 2 === 1) {
         const result = await MailAuth.authenticate(message, {

@@ -16,7 +16,7 @@ const colonFirst = /^[ \t]*:/
 export function parseFields(header: string): Field[] {
   const lines = header.split('\r\n')
   if (lines.at(-1) === '') lines.pop()
-  const rows: string[][] = []
+  const rows = new Array<string[]>()
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
     const next = lines[i + 1]
@@ -75,7 +75,7 @@ export function selectFields(
   skip?: Field,
 ): Field[] {
   const taken = new Set<Field>(skip ? [skip] : [])
-  const selected: Field[] = []
+  const selected = new Array<Field>()
   for (const name of names) {
     for (let i = fields.length - 1; i >= 0; i--) {
       const field = fields[i]!

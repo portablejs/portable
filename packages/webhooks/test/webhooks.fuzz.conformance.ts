@@ -2,12 +2,12 @@ import * as Webhooks from '@portable/webhooks'
 import { fc, fuzz, outcomeAsync } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 
-const schemes: readonly Webhooks.Scheme[] = [
+const schemes = [
   Webhooks.standard,
   Webhooks.stripe,
   Webhooks.github,
   Webhooks.slack,
-]
+] satisfies readonly Webhooks.Scheme[]
 const scheme = fc.constantFrom(...schemes)
 const secret = fc.uint8Array({ minLength: 1, maxLength: 64 })
 const body = fc.oneof(fc.string({ unit: 'grapheme' }), fc.uint8Array())

@@ -250,12 +250,12 @@ describe('signal', () => {
   })
 
   test('passes the signal to the store', async () => {
-    const signals: (AbortSignal | undefined)[] = []
+    const signals = new Array<AbortSignal | undefined>()
     const memory = RateLimit.memoryStore()
-    const store: RateLimit.Store = {
+    const store = {
       get: (key, options) => (signals.push(options.signal), memory.get(key, options)),
       set: (key, value, options) => (signals.push(options.signal), memory.set(key, value, options)),
-    }
+    } satisfies RateLimit.Store
     const { signal } = new AbortController()
     await RateLimit.create({ limit: 1, period: 1000, store }).take('a', { signal })
     expect(signals).toEqual([signal, signal])
@@ -264,10 +264,10 @@ describe('signal', () => {
   test('rejects when the signal aborts during a store read, before writing', async () => {
     const controller = new AbortController()
     let writes = 0
-    const store: RateLimit.Store = {
+    const store = {
       get: () => (controller.abort(new Error('gone')), undefined),
       set: () => (writes++, true),
-    }
+    } satisfies RateLimit.Store
     const limiter = RateLimit.create({ limit: 1, period: 1000, store })
     await expect(limiter.take('a', { signal: controller.signal })).rejects.toThrow('gone')
     expect(writes).toBe(0)

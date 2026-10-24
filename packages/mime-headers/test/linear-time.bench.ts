@@ -61,7 +61,7 @@ const strict = (input: string) => {
 const repeat = (unit: string) => (size: number) => unit.repeat(Math.ceil(size / unit.length))
 
 describe('linear time', { timeout: 120_000, retry: 3 }, () => {
-  const addressInputs: [string, (size: number) => string][] = [
+  const addressInputs = [
     ['a flat list', repeat('a@b.com,')],
     ['name fragments to merge', repeat('a, b <c@d.com>,')],
     ['comment-joined atoms', (size) => 'a' + repeat('@b(c)')(size)],
@@ -94,7 +94,7 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['many comments beside the "@"', (size) => '<a' + repeat('(x)')(size) + '@b.com>'],
     ['many group openers', (size) => repeat('g: ')(size) + 'a@b.com'],
     ['many "@"', repeat('@')],
-  ]
+  ] satisfies [string, (size: number) => string][]
   for (const [label, make] of addressInputs)
     test(`parseAddresses() of ${label}`, () => {
       expect(slowdown(16 * 1024, make, (input) => parseAddresses(input))).toBeLessThan(maxRatio)
@@ -135,7 +135,7 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
   const chunk = Array.from({ length: 240 }, () => pick(next, pieces)).join('')
   const hostile = repeat(chunk)
 
-  const textInputs: [string, (input: string) => unknown][] = [
+  const textInputs = [
     ['decodeWords()', decodeWords],
     ['parseValue()', parseValue],
     ['parseHeaders()', parseHeaders],
@@ -146,7 +146,7 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['formatValue()', (input) => formatValue({ value: 'x', params: { f: input } })],
     ['fold()', (input) => fold(input)],
     ['parseAddresses()', (input) => parseAddresses(input)],
-  ]
+  ] satisfies [string, (input: string) => unknown][]
   for (const [label, run] of textInputs)
     test(`${label} of hostile text`, () => {
       expect(slowdown(16 * 1024, hostile, run)).toBeLessThan(maxRatio)

@@ -201,9 +201,10 @@ describe('HMAC', () => {
 })
 
 describe('digest option', () => {
-  const nobleDigest: OAuth1.Digest = (algorithm, data) =>
-    algorithm === 'SHA-1' ? sha1(data) : sha256(data)
-  const asyncDigest: OAuth1.Digest = async (algorithm, data) => nobleDigest(algorithm, data)
+  const nobleDigest = ((algorithm, data) =>
+    algorithm === 'SHA-1' ? sha1(data) : sha256(data)) satisfies OAuth1.Digest
+  const asyncDigest = (async (algorithm, data) =>
+    nobleDigest(algorithm, data)) satisfies OAuth1.Digest
   const longSecret = { key: twitter.consumer.key, secret: 'k'.repeat(100) }
 
   for (const signatureMethod of ['HMAC-SHA1', 'HMAC-SHA256'] as const)
@@ -225,11 +226,11 @@ describe('digest option', () => {
       })
 
   test('uses a digest passed in', async () => {
-    const calls: string[] = []
-    const digest: OAuth1.Digest = (algorithm, data) => {
+    const calls = new Array<string>()
+    const digest = ((algorithm, data) => {
       calls.push(algorithm)
       return nobleDigest(algorithm, data)
-    }
+    }) satisfies OAuth1.Digest
     await OAuth1.authorization(new Request(tweetUrl), {
       ...twitter,
       signatureMethod: 'HMAC-SHA256',

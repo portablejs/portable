@@ -67,7 +67,7 @@ describe('DecoderStream', () => {
 
   test('types rows as objects when header is set', async () => {
     const [row] = await decodeStream(['name\nAda\n'], { header: true })
-    const name: string | undefined = row?.name
+    const name = row?.name satisfies string | undefined
     expect(name).toBe('Ada')
   })
 })

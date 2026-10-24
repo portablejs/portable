@@ -19,7 +19,7 @@ const name = fc.string({
   maxLength: 10,
 })
 
-const message: fc.Arbitrary<Mail.Message> = fc.record({
+const message = fc.record({
   from: name.map((name) => ({ name, address: 'mari@example.com' })),
   to: fc.array(
     name.map((name) => ({ name, address: 'jaan@example.org' })),
@@ -38,7 +38,7 @@ const message: fc.Arbitrary<Mail.Message> = fc.record({
     }),
     { maxLength: 2 },
   ),
-})
+}) satisfies fc.Arbitrary<Mail.Message>
 
 const unfolded = (raw: string, field: string) => {
   const header = MimeHeaders.parseHeaders(head(raw)).find((each) => each.name === field)

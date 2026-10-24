@@ -24,16 +24,19 @@ export const runs: number = Number(env.FUZZ_RUNS) || 100
  *   }))
  * })
  */
-export function fuzz<Ts>(property: fc.IProperty<Ts>, options?: fuzz.Options): void
-export function fuzz<Ts>(property: fc.IAsyncProperty<Ts>, options?: fuzz.Options): Promise<void>
-export function fuzz<Ts>(
-  property: fc.IProperty<Ts> | fc.IAsyncProperty<Ts>,
+export function fuzz<types>(property: fc.IProperty<types>, options?: fuzz.Options): void
+export function fuzz<types>(
+  property: fc.IAsyncProperty<types>,
+  options?: fuzz.Options,
+): Promise<void>
+export function fuzz<types>(
+  property: fc.IProperty<types> | fc.IAsyncProperty<types>,
   options: fuzz.Options = {},
 ): void | Promise<void> {
-  const parameters: fc.Parameters<Ts> = { numRuns: Math.ceil(runs * (options.scale ?? 1)) }
+  const parameters: fc.Parameters<types> = { numRuns: Math.ceil(runs * (options.scale ?? 1)) }
   if (env.FUZZ_SEED) parameters.seed = Number(env.FUZZ_SEED)
   if (env.FUZZ_PATH) parameters.path = env.FUZZ_PATH
-  return fc.assert(property as fc.IProperty<Ts>, parameters)
+  return fc.assert(property as fc.IProperty<types>, parameters)
 }
 
 export declare namespace fuzz {
@@ -46,7 +49,7 @@ export declare namespace fuzz {
 type ErrorClass = abstract new (...args: never[]) => Error
 
 /** What a call returned, or the class of the documented error it threw. */
-export type Outcome<T> = { value: T } | { error: ErrorClass }
+export type Outcome<value> = { value: value } | { error: ErrorClass }
 
 /**
  * Calls `run` and returns its value, or the class of the error it threw when that is one of
@@ -55,7 +58,7 @@ export type Outcome<T> = { value: T } | { error: ErrorClass }
  * @example
  * outcome([Exif.TruncatedError, Exif.InvalidInputError], () => Exif.parse(bytes))
  */
-export function outcome<T>(errors: readonly ErrorClass[], run: () => T): Outcome<T> {
+export function outcome<value>(errors: readonly ErrorClass[], run: () => value): Outcome<value> {
   try {
     return { value: run() }
   } catch (error) {
@@ -69,10 +72,10 @@ export function outcome<T>(errors: readonly ErrorClass[], run: () => T): Outcome
  * @example
  * await outcomeAsync([Png.InvalidInputError], () => Png.decode(bytes))
  */
-export async function outcomeAsync<T>(
+export async function outcomeAsync<value>(
   errors: readonly ErrorClass[],
-  run: () => Promise<T>,
-): Promise<Outcome<T>> {
+  run: () => Promise<value>,
+): Promise<Outcome<value>> {
   try {
     return { value: await run() }
   } catch (error) {
@@ -93,11 +96,11 @@ const byte = fc.oneof(
 
 type Edit = { op: 'set' | 'insert' | 'delete'; at: number; byte: number }
 
-const edit: fc.Arbitrary<Edit> = fc.record({
+const edit = fc.record({
   op: fc.constantFrom('set', 'set', 'insert', 'delete'),
   at: fc.nat(),
   byte,
-})
+}) satisfies fc.Arbitrary<Edit>
 
 /**
  * Copies of `original` with up to 8 bytes set, inserted or deleted, and sometimes cut short.
@@ -155,14 +158,17 @@ export const cuts: fc.Arbitrary<number[]> = fc.array(fc.nat(), { maxLength: 16 }
  * @example
  * split('abcdef', [2, 4]) // ['ab', 'cd', 'ef']
  */
-export function split<T extends Uint8Array | string>(data: T, at: readonly number[]): T[] {
+export function split<value extends Uint8Array | string>(
+  data: value,
+  at: readonly number[],
+): value[] {
   const offsets = at.map((offset) => offset % (data.length + 1)).sort((a, b) => a - b)
-  const chunks: T[] = []
+  const chunks = new Array<value>()
   let start = 0
   for (const offset of offsets) {
-    chunks.push(data.slice(start, offset) as T)
+    chunks.push(data.slice(start, offset) as value)
     start = offset
   }
-  chunks.push(data.slice(start) as T)
+  chunks.push(data.slice(start) as value)
   return chunks
 }

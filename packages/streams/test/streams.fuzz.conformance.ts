@@ -8,7 +8,7 @@ const text = fc.string({ unit: 'grapheme', maxLength: 40 })
 test('map, filter, tap and batch match the array methods', async () => {
   await fuzz(
     fc.asyncProperty(items, fc.integer({ min: 1, max: 7 }), async (items, size) => {
-      const seen: number[] = []
+      const seen = new Array<number>()
       const output = await Streams.toArray(
         Streams.fromIterable(items)
           .pipeThrough(Streams.tap((item: number) => void seen.push(item)))
@@ -17,7 +17,7 @@ test('map, filter, tap and batch match the array methods', async () => {
           .pipeThrough(Streams.batch(size)),
       )
       const expected = items.map((item) => item * 2).filter((item) => item % 3 !== 0)
-      const batches: number[][] = []
+      const batches = new Array<number[]>()
       for (let i = 0; i < expected.length; i += size) batches.push(expected.slice(i, i + size))
       expect(output).toEqual(batches)
       expect(seen).toEqual(items)

@@ -36,7 +36,7 @@ function cases(count: number): Case[] {
 }
 
 async function observe(run: (attempt: () => number) => Promise<unknown>) {
-  const times: number[] = []
+  const times = new Array<number>()
   const result = await settle(run(() => times.push(Date.now())))
   return { result, delays: gaps(times) }
 }
@@ -51,8 +51,8 @@ function failing(attempt: () => number, errors: Error[]) {
 describe('retry matches p-retry', () => {
   for (const c of cases(40)) {
     test(`backoff without jitter: ${JSON.stringify(c)}`, async () => {
-      const ours: Error[] = []
-      const theirs: Error[] = []
+      const ours = new Array<Error>()
+      const theirs = new Array<Error>()
       const a = await observe((attempt) =>
         Timers.retry(() => failing(attempt, ours), {
           attempts: c.attempts,

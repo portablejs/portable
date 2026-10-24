@@ -15,7 +15,7 @@ import {
 } from './utils.js'
 
 async function viaNodeStream(transform: Transform, chunks: readonly Uint8Array[]): Promise<Buffer> {
-  const output: Buffer[] = []
+  const output = new Array<Buffer>()
   for await (const chunk of Readable.from(chunks).pipe(transform)) output.push(chunk as Buffer)
   return Buffer.concat(output)
 }

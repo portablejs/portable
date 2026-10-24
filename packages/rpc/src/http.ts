@@ -33,7 +33,7 @@ export function handler(methods: object): (request: Request) => Promise<Response
       return Response.json(error(null, -32700, 'Parse error'))
     }
 
-    const buffered: Message[] = []
+    const buffered = new Array<Message>()
     const streams = new Set<Id>()
     let streamed = false
     let writer: WritableStreamDefaultWriter<unknown> | undefined
@@ -124,8 +124,9 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
         messages: [],
         pending: new Set(),
         controller: new AbortController(),
-        sent: Promise.resolve().then(() => post(batch)),
+        sent: Promise.resolve(),
       }
+      batch.sent = batch.sent.then(() => post(batch))
       queued = batch
     }
     queued.messages.push(text)

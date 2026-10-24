@@ -68,8 +68,8 @@ const mimeLike = fc
  * start and end, but not the joined result.
  */
 function structure(chunks: readonly MimeStream.Chunk[]) {
-  const joined: { type: string; contentType: string; boundary?: string; text: string }[] = []
-  const parts: MimeStream.Part[] = []
+  const joined = new Array<{ type: string; contentType: string; boundary?: string; text: string }>()
+  const parts = new Array<MimeStream.Part>()
   for (const chunk of chunks) {
     const last = joined.at(-1)
     if (last && parts.at(-1) === chunk.part && last.type === chunk.type)

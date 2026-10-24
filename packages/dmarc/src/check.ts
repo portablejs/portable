@@ -177,12 +177,12 @@ export async function check(input: check.Input, options: check.Options): Promise
     return { ...base, result: 'none', reason: 'The From domain is an address literal' }
   }
 
-  const ctx: Context = {
+  const ctx = {
     resolver: options.resolver,
     signal: options.signal,
     records: new Map(),
     walks: new Map(),
-  }
+  } satisfies Context
   const psl = options.organizationalDomain
   const orgDomain = psl
     ? async (name: string) => identifier(psl(name) ?? name)
@@ -209,7 +209,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     }
   }
 
-  const errors: TempError[] = []
+  const errors = new Array<TempError>()
   let policy = record.p
   if (found.domain !== author.name) {
     policy = record.sp ?? record.p
@@ -265,7 +265,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     input.spf && unaligned.spf
       ? await align(input.spf, unaligned.spf, record.aspf === 's')
       : undefined
-  const dkim: Alignment[] = []
+  const dkim = new Array<Alignment>()
   for (const [index, entry] of (input.dkim ?? []).entries()) {
     dkim.push(await align(entry, unaligned.dkim[index]!, record.adkim === 's'))
   }
@@ -285,7 +285,7 @@ export async function check(input: check.Input, options: check.Options): Promise
   }
 }
 
-const strength: { [P in Policy]: number } = { none: 0, quarantine: 1, reject: 2 }
+const strength: { [params in Policy]: number } = { none: 0, quarantine: 1, reject: 2 }
 
 function identifier(value: string): string {
   const parsed = parseDomain(value)
@@ -319,7 +319,7 @@ function walk(ctx: Context, domain: string): Promise<Walk> {
   let walked = ctx.walks.get(domain)
   if (!walked) {
     walked = (async () => {
-      const found: Found[] = []
+      const found = new Array<Found>()
       for (let labels = domain.split('.'); labels.length;) {
         const name = labels.join('.')
         let parsed: Parsed | undefined
@@ -383,11 +383,11 @@ async function exists(ctx: Context, domain: string): Promise<boolean> {
   return 'value' in cname && cname.value.length > 0
 }
 
-async function query<T>(
+async function query<value>(
   ctx: Context,
   what: string,
-  run: () => Promise<T>,
-): Promise<{ value: T } | { empty: string }> {
+  run: () => Promise<value>,
+): Promise<{ value: value } | { empty: string }> {
   try {
     return { value: await abortable(Promise.resolve().then(run), ctx.signal) }
   } catch (error) {
@@ -401,7 +401,10 @@ async function query<T>(
   }
 }
 
-function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+function abortable<value>(
+  promise: Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return promise
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {

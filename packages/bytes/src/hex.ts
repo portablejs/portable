@@ -45,10 +45,10 @@ export function fromHex(text: string | Uint8Array): Uint8Array<ArrayBuffer> {
 }
 
 type NativeToHex = (this: Uint8Array) => string
-const nativeToHex: NativeToHex | undefined = Reflect.get(Uint8Array.prototype, 'toHex')
+const nativeToHex = Reflect.get(Uint8Array.prototype, 'toHex') satisfies NativeToHex | undefined
 
 type NativeFromHex = (text: string) => Uint8Array<ArrayBuffer>
-const nativeFromHex: NativeFromHex | undefined = Reflect.get(Uint8Array, 'fromHex')
+const nativeFromHex = Reflect.get(Uint8Array, 'fromHex') satisfies NativeFromHex | undefined
 
 const digits = '0123456789abcdef'
 const pairs = Array.from({ length: 256 }, (_, byte) => digits[byte >> 4]! + digits[byte & 15]!)

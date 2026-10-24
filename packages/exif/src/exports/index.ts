@@ -1,0 +1,6 @@
+export { InvalidInputError, MaxBytesError, TruncatedError, UnsupportedError } from '../errors.js'
+export { type Metadata, parse } from '../parse.js'
+export { parseDate } from '../parseDate.js'
+export { parseStream } from '../parseStream.js'
+export { StripStream, strip } from '../strip.js'
+export type { Tags, TagValue } from '../tiff.js'

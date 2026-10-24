@@ -95,7 +95,7 @@ export type OptRecord = {
 
 /** A resource record in the answer, authority or additional section. */
 export type ResourceRecord =
-  | { [T in KnownType]: Fields & { type: T; data: RecordData[T] } }[KnownType]
+  | { [key in KnownType]: Fields & { type: key; data: RecordData[key] } }[KnownType]
   | (Fields & { type: UnknownType; data: Uint8Array })
   | OptRecord
 
@@ -134,7 +134,7 @@ export type DecodedOptRecord = {
 
 /** A resource record as `decode` returns it. */
 export type DecodedResourceRecord =
-  | { [T in KnownType]: DecodedFields & { type: T; data: DecodedRecordData[T] } }[KnownType]
+  | { [key in KnownType]: DecodedFields & { type: key; data: DecodedRecordData[key] } }[KnownType]
   | (DecodedFields & { type: UnknownType; data: Uint8Array })
   | DecodedOptRecord
 
@@ -144,7 +144,7 @@ export type DecodedPacket = {
   type: 'query' | 'response'
   opcode: Opcode
   rcode: Rcode
-  flags: { [K in keyof Flags]-?: boolean }
+  flags: { [key in keyof Flags]-?: boolean }
   questions: DecodedQuestion[]
   answers: DecodedResourceRecord[]
   authorities: DecodedResourceRecord[]
@@ -156,7 +156,7 @@ type AnyCodec = Codec<unknown, unknown>
 const codecFor = (type: string): AnyCodec =>
   (Object.hasOwn(codecs, type) ? codecs[type as KnownType] : unknown) as AnyCodec
 
-const none: readonly never[] = []
+const none = new Array<never>()
 const TOP_BIT = 0x8000
 
 const flagBits = { aa: 0x400, tc: 0x200, rd: 0x100, ra: 0x80, ad: 0x20, cd: 0x10 } as const
@@ -255,12 +255,12 @@ export function encode(packet: Packet, options: encode.Options = {}): Uint8Array
   const length = encodingLength(packet) + (tcp ? 2 : 0)
   if (tcp && length > 0xffff + 2)
     throw new InvalidInputError('A TCP message is limited to 65535 bytes.')
-  const w: Writer = {
+  const w = {
     bytes: new Uint8Array(length),
     offset: tcp ? 2 : 0,
     start: tcp ? 2 : 0,
     names: options.compress ? new Map() : undefined,
-  }
+  } satisfies Writer
   const questions = packet.questions ?? none
   const answers = packet.answers ?? none
   const authorities = packet.authorities ?? none
@@ -308,7 +308,7 @@ function readRecord(r: Reader): DecodedResourceRecord {
     const version = u8(r, end)
     const dnssecOk = (u16(r, end) & TOP_BIT) !== 0
     const rdEnd = rdataEnd(r)
-    const options: EdnsOption[] = []
+    const options = new Array<EdnsOption>()
     while (r.offset < rdEnd) options.push(within('OPT', () => readEdnsOption(r, rdEnd)))
     return { type, name, udpPayloadSize, extendedRcode, version, dnssecOk, options }
   }
@@ -362,12 +362,12 @@ export function decode(bytes: Uint8Array, options: decode.Options = {}): Decoded
     bytes = bytes.subarray(2, 2 + length)
   }
   if (bytes.length < 12) throw new TruncatedError('A DNS header is 12 bytes.')
-  const r: Reader = { bytes, offset: 0 }
+  const r = { bytes, offset: 0 } satisfies Reader
   const end = bytes.length
   const id = u16(r, end)
   const bits = u16(r, end)
   const counts = [u16(r, end), u16(r, end), u16(r, end), u16(r, end)] as const
-  const questions: DecodedQuestion[] = []
+  const questions = new Array<DecodedQuestion>()
   for (let i = 0; i < counts[0]; i++) {
     const name = readName(r, end)
     const type = types.name(u16(r, end))
@@ -375,7 +375,7 @@ export function decode(bytes: Uint8Array, options: decode.Options = {}): Decoded
     questions.push({ name, type, class: classes.name(klass & ~TOP_BIT), qu: klass >= TOP_BIT })
   }
   const section = (count: number) => {
-    const records: DecodedResourceRecord[] = []
+    const records = new Array<DecodedResourceRecord>()
     for (let i = 0; i < count; i++) records.push(readRecord(r))
     return records
   }

@@ -82,10 +82,10 @@ describe('address headers', () => {
   })
 
   test('the header lists exactly the recipients of the envelope', async () => {
-    const inputs: Mail.Addresses[] = [
+    const inputs = [
       [{ address: '"a,b"@good.com' }, { address: '"c;d"@good.com' }],
       'x@example.com, grp: y@example.com, "z, w" <z@example.com>;',
-    ]
+    ] satisfies Mail.Addresses[]
     for (const input of inputs)
       expect(Mail.envelope({ to: (await to(input))! }).to).toEqual(Mail.envelope({ to: input }).to)
   })

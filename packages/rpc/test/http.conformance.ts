@@ -120,7 +120,7 @@ describe('http', () => {
 
   test('iterates a streamed result', async () => {
     const remote = Rpc.http<typeof api>(url, fetcher(api))
-    const values: number[] = []
+    const values = new Array<number>()
     for await (const value of remote.count(50)) values.push(value)
     expect(values).toEqual(Array.from({ length: 50 }, (_, i) => i))
   })

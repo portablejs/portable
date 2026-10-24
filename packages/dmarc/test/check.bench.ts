@@ -3,12 +3,12 @@ import { dmarc } from 'mailauth/lib/dmarc/index.js'
 import { expect, test } from 'vite-plus/test'
 import { type Zone, zoneResolver } from './utils.js'
 
-const zone: Zone = {
+const zone = {
   '_dmarc.example.com': {
     TXT: ['v=DMARC1; p=reject; sp=quarantine; np=reject; rua=mailto:dmarc@example.com'],
   },
   'news.example.com': { A: ['192.0.2.1'] },
-}
+} satisfies Zone
 
 const input = {
   from: 'news.example.com',

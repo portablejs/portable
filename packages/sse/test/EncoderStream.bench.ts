@@ -2,14 +2,14 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Sse from '@portable/sse'
 import * as Streams from '@portable/streams'
 
-const tokens: Sse.Message[] = Array.from({ length: 2000 }, (_, i) => ({
+const tokens = Array.from({ length: 2000 }, (_, i) => ({
   data: JSON.stringify({ choices: [{ index: 0, delta: { content: `token ${i} ` } }] }),
-}))
-const named: Sse.Message[] = Array.from({ length: 2000 }, (_, i) => ({
+})) satisfies Sse.Message[]
+const named = Array.from({ length: 2000 }, (_, i) => ({
   id: String(i),
   event: 'block-delta',
   data: `line one ${i}\nline two ${i}`,
-}))
+})) satisfies Sse.Message[]
 
 const fixtures = { 'LLM tokens': tokens, 'named events with multi-line data': named }
 

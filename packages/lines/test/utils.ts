@@ -2,7 +2,7 @@ import * as Lines from '@portable/lines'
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
-export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
+export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   let i = 0
   return new ReadableStream({
     pull(controller) {
@@ -12,12 +12,12 @@ export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
   })
 }
 
-export async function collect<T>(
-  stream: ReadableStream<T>,
+export async function collect<chunk>(
+  stream: ReadableStream<chunk>,
   onChunk?: (count: number) => Promise<void>,
-): Promise<T[]> {
+): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks: T[] = []
+  const chunks = new Array<chunk>()
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -36,7 +36,7 @@ export function split(
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }

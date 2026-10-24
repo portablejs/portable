@@ -45,7 +45,7 @@ export declare namespace retry {
   }
 }
 
-const defaultDelay: Delay = { initial: 200, max: 10_000 }
+const defaultDelay = { initial: 200, max: 10_000 } satisfies Delay
 
 /**
  * Calls `fn` until it returns without throwing, waiting between attempts. When every attempt fails,
@@ -65,10 +65,10 @@ const defaultDelay: Delay = { initial: 200, max: 10_000 }
  * )
  * ```
  */
-export async function retry<T>(
-  fn: (context: Context) => T | PromiseLike<T>,
+export async function retry<value>(
+  fn: (context: Context) => value | PromiseLike<value>,
   options: retry.Options = {},
-): Promise<T> {
+): Promise<value> {
   const {
     attempts = 3,
     delay = defaultDelay,
@@ -101,11 +101,11 @@ export async function retry<T>(
   }
 }
 
-function run<T>(
-  fn: (context: Context) => T | PromiseLike<T>,
+function run<value>(
+  fn: (context: Context) => value | PromiseLike<value>,
   context: Context,
   timeout: number,
-): Promise<T> {
+): Promise<value> {
   if (timeout === Infinity) {
     const result = call(fn, context)
     return context.signal === neverAborted() ? result : abortable(result, context.signal)

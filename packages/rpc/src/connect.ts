@@ -3,7 +3,7 @@ import { TransportError } from './errors.js'
 import { remote } from './remote.js'
 import { direct } from './port.js'
 import { createServer, error, noop, type Send } from './server.js'
-import type { Codec, Remote, Transport } from './types.js'
+import type { Codec, Message, Remote, Transport } from './types.js'
 
 const decoder = new TextDecoder()
 
@@ -59,9 +59,11 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
   let unlisten: (() => void) | undefined
   const reader = port?.listen ? undefined : transport.readable.getReader()
   const writer = port ? undefined : transport.writable.getWriter()
-  const send: Send = port
-    ? (message) => port.post(codec.encode(message))
-    : (message) => writer!.write(codec.encode(message))
+  const send = (
+    port
+      ? (message: Message) => port.post(codec.encode(message))
+      : (message: Message) => writer!.write(codec.encode(message))
+  ) satisfies Send
   const client = createClient(send, true)
   const server = createServer(methods, send, { flow: true })
 

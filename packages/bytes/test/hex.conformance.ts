@@ -82,12 +82,12 @@ type Native = {
   toHex?: (this: Uint8Array) => string
   fromHex?: (text: string) => Uint8Array
 }
-const native: Native = {
+const native = {
   toHex: Reflect.get(Uint8Array.prototype, 'toHex'),
   fromHex: Reflect.get(Uint8Array, 'fromHex'),
-}
+} satisfies Native
 
-const fail = <T>(fn: () => T): T | 'error' => {
+const fail = <value>(fn: () => value): value | 'error' => {
   try {
     return fn()
   } catch {

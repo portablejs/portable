@@ -1,5 +1,5 @@
 /** Anything the collectors and combinators read from: a `ReadableStream`, an async iterable or an iterable. */
-export type Source<T> = ReadableStream<T> | AsyncIterable<T> | Iterable<T>
+export type Source<chunk> = ReadableStream<chunk> | AsyncIterable<chunk> | Iterable<chunk>
 
 export function isReadableStream(value: unknown): value is ReadableStream<unknown> {
   return (
@@ -20,9 +20,9 @@ export function assertSource(source: unknown): void {
   throw new TypeError('The source must be a ReadableStream, an async iterable or an iterable.')
 }
 
-export async function forEach<T>(
-  source: Source<T>,
-  onChunk: (chunk: T) => void,
+export async function forEach<value>(
+  source: Source<value>,
+  onChunk: (chunk: value) => void,
   signal?: AbortSignal,
 ): Promise<void> {
   assertSource(source)
@@ -49,9 +49,9 @@ export async function forEach<T>(
   }
 }
 
-async function forEachIterable<T>(
-  source: AsyncIterable<T> | Iterable<T>,
-  onChunk: (chunk: T) => void,
+async function forEachIterable<chunk>(
+  source: AsyncIterable<chunk> | Iterable<chunk>,
+  onChunk: (chunk: chunk) => void,
   signal: AbortSignal | undefined,
 ): Promise<void> {
   if (!signal) {

@@ -140,7 +140,7 @@ export async function verifyVapid(authorization: string | null): Promise<Jwt> {
 
 /** A `fetch` that records each request and answers with `status`. */
 export function pushService(status = 201, body = '') {
-  const requests: Request[] = []
+  const requests = new Array<Request>()
   const fetch = async (request: Request): Promise<Response> => {
     requests.push(request)
     return new Response(status === 204 ? null : body, { status })

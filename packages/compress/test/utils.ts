@@ -31,14 +31,14 @@ export function hex(text: string): Uint8Array {
 }
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }
 
 export function randomChunks(bytes: Uint8Array, seed: number, maxSize = 64): Uint8Array[] {
   const random = seeded(seed)
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * maxSize)
     chunks.push(bytes.subarray(i, i + size))

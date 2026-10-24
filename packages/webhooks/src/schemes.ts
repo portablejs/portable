@@ -62,7 +62,7 @@ export declare namespace Scheme {
 export const standard: Scheme = {
   parse(headers) {
     const get = (name: string) => required(headers, `webhook-${name}`, `svix-${name}`)
-    const signatures: Uint8Array[] = []
+    const signatures = new Array<Uint8Array>()
     for (const entry of get('signature').split(' ')) {
       if (!entry.startsWith('v1,')) continue
       try {
@@ -100,7 +100,7 @@ export const standard: Scheme = {
 export const stripe: Scheme = {
   parse(headers) {
     let timestamp: Date | undefined
-    const signatures: Uint8Array[] = []
+    const signatures = new Array<Uint8Array>()
     for (const item of required(headers, 'stripe-signature').split(',')) {
       const [key, value = ''] = item.split('=').map((part) => part.trim())
       if (key === 't') {

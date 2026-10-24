@@ -39,7 +39,7 @@ const loneSurrogate = (next: () => number) =>
 
 describe('encoded words', () => {
   test('decodeWords gives back what encodeWord encoded, as well-formed words', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(1, (next) => {
       const input = randomText(next, 80)
       for (const encoding of ['Q', 'B'] as const) {
@@ -66,7 +66,7 @@ describe('encoded words', () => {
   })
 
   test('a lone surrogate becomes U+FFFD and the text around it is kept', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(2, (next) => {
       const input = randomText(next, 10) + loneSurrogate(next) + randomText(next, 10)
       for (const encoding of ['Q', 'B'] as const) {
@@ -81,7 +81,7 @@ describe('encoded words', () => {
   })
 
   test('decodeWords gives back what encodeWords encoded, and printable ASCII is left as it is', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(3, (next) => {
       const input = words(next, 10, ['ascii', 'specials', 'latin', 'cjk', 'astral', 'controls'])
       const encoded = encodeWords(input, {
@@ -100,12 +100,12 @@ describe('encoded words', () => {
   })
 
   test('words in another charset decode the way TextDecoder decodes them', () => {
-    const latin1: CharsetEncoder = {
+    const latin1 = {
       name: 'ISO-8859-1',
       encode: (text) => Uint8Array.from(text, (c) => c.charCodeAt(0)),
-    }
+    } satisfies CharsetEncoder
     const decoder = new TextDecoder('iso-8859-1')
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(4, (next) => {
       const input = Array.from({ length: Math.floor(next() * 20) }, () =>
         pick(next, Array.from('abc XYZ 019 õäöüéèàçñ!?=_')),
@@ -123,7 +123,7 @@ describe('encoded words', () => {
   })
 
   test('decodeWords leaves text without encoded words as it is', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(5, (next) => {
       const input = randomText(next, 60, ['ascii', 'specials', 'latin', 'controls']).replaceAll(
         '=?',
@@ -166,7 +166,7 @@ describe('header values', () => {
     ).join('')
 
   test('parseValue gives back the params formatValue formatted, whatever they hold', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(7, (next) => {
       const params: Record<string, string> = {}
       for (let i = Math.floor(next() * 4) + 1; i > 0; i--)
@@ -220,7 +220,7 @@ describe('header values', () => {
 
 describe('folding', () => {
   test('fold only inserts line breaks before whitespace, and unfold removes them', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(9, (next) => {
       const input = words(next, 40, ['ascii', 'latin', 'specials'])
       const lineLength = Math.floor(next() * 76) + 5
@@ -266,16 +266,16 @@ describe('addresses', () => {
   })
 
   test('parseAddresses gives back what formatAddresses formatted', () => {
-    const failures: unknown[] = []
+    const failures = new Array<unknown>()
     each(11, (next) => {
-      const list: Address[] = Array.from({ length: Math.floor(next() * 4) + 1 }, () =>
+      const list = Array.from({ length: Math.floor(next() * 4) + 1 }, () =>
         next() < 0.2
           ? {
               name: randomText(next, 10, ['ascii', 'latin']) || 'g',
               group: [mailbox(next), mailbox(next)],
             }
           : mailbox(next),
-      )
+      ) satisfies Address[]
       const formatted = formatAddresses(list)
       const normal = (entry: Mailbox) => ({
         name: entry.name.trim().replace(/\s+/g, ' '),

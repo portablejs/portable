@@ -22,9 +22,9 @@ export declare namespace tee {
   }
 }
 
-type Branch<T> = {
-  controller: ReadableStreamDefaultController<T>
-  queue: T[]
+type Branch<chunk> = {
+  controller: ReadableStreamDefaultController<chunk>
+  queue: chunk[]
   queued: number
   waiting: boolean
 }
@@ -50,11 +50,11 @@ type Branch<T> = {
  * })
  * ```
  */
-export function tee<T>(
-  source: Source<T>,
+export function tee<chunk>(
+  source: Source<chunk>,
   count: number,
   options: tee.Options = {},
-): ReadableStream<T>[] {
+): ReadableStream<chunk>[] {
   const { signal, unit = 'chunks', highWaterMark = unit === 'bytes' ? 65536 : 16 } = options
   if (!Number.isInteger(count) || count < 1)
     throw new RangeError(`count must be a positive integer, got ${count}.`)
@@ -62,7 +62,7 @@ export function tee<T>(
     throw new RangeError(`highWaterMark must be 0 or more, got ${highWaterMark}.`)
   const sizeOf = unit === 'bytes' ? byteLength : () => 1
   const reader = toStream(source).getReader()
-  const active = new Set<Branch<T>>()
+  const active = new Set<Branch<chunk>>()
   let reading = false
 
   const finish = () => {
@@ -117,8 +117,8 @@ export function tee<T>(
   }
 
   const branches = Array.from({ length: count }, () => {
-    let branch!: Branch<T>
-    return new ReadableStream<T>(
+    let branch!: Branch<chunk>
+    return new ReadableStream<chunk>(
       {
         start(controller) {
           branch = { controller, queue: [], queued: 0, waiting: false }

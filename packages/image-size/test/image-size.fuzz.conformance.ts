@@ -5,7 +5,7 @@ import { beforeAll, expect, test } from 'vite-plus/test'
 import { encode, fixture, fixtures } from './utils.js'
 
 const errors = [ImageSize.InvalidInputError, ImageSize.TruncatedError, ImageSize.UnsupportedError]
-const files: Uint8Array[] = []
+const files = new Array<Uint8Array>()
 beforeAll(async () => {
   for (const path of fixtures) files.push(await fixture(path))
 }, 60_000)

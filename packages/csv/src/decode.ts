@@ -34,7 +34,7 @@ export function decode<const header extends DecoderStream.Header = false>(
     typeof input === 'string'
       ? input
       : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(input)
-  const rows: DecoderStream.Row<header>[] = []
+  const rows = new Array<DecoderStream.Row<header>>()
   const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header>))
   parser.write(text)
   parser.end()

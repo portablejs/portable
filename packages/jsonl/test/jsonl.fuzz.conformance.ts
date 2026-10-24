@@ -20,7 +20,7 @@ const jsonlLike = fc.string({
 
 /** Each line that isn't blank, parsed on its own. Blank lines are skipped. */
 function expected(text: string, invalid: 'error' | 'skip'): unknown[] {
-  const out: unknown[] = []
+  const out = new Array<unknown>()
   for (const line of text.split('\n')) {
     if (line.trim() === '') continue
     try {

@@ -278,7 +278,7 @@ describe('Ed25519 seals (RFC 8463)', () => {
 })
 
 describe('ARC-Seal and ARC-Message-Signature tag syntax (RFC 6376 section 3.2)', () => {
-  const invalid: [string, () => Promise<string>, string][] = [
+  const invalid = [
     [
       'a duplicate tag',
       () => withSealTags('i=1; a=rsa-sha256; cv=none; d=one.example; s=s; s=s; b='),
@@ -320,7 +320,7 @@ describe('ARC-Seal and ARC-Message-Signature tag syntax (RFC 6376 section 3.2)',
       'i=1 as has an unknown algorithm',
     ],
     ['a duplicate tag in the AMS', () => withAmsTags('s=s; '), 'i=1 ams signature syntax error'],
-  ]
+  ] satisfies [string, () => Promise<string>, string][]
   for (const [title, build, reason] of invalid) {
     test(`fails ${title}`, async () => {
       expect(await check(await build())).toMatchObject({ result: 'fail', reason })
@@ -493,11 +493,11 @@ describe('keys', () => {
 
   test('applies the key record h=, s= and v= to ARC keys', async () => {
     const { message } = await singleSet()
-    const cases: [string, string][] = [
+    const cases = [
       [await dnsTxt('k1', 'h=sha1; '), 'i=1 ams inappropriate hash algorithm'],
       [await dnsTxt('k1', 's=other; '), 'i=1 ams key not for email'],
       [(await dnsTxt('k1')).replace('v=DKIM1', 'v=DKIM2'), 'i=1 ams unknown key version'],
-    ]
+    ] satisfies [string, string][]
     for (const [record, reason] of cases) {
       expect((await check(message, { 's._domainkey.one.example': record })).reason).toBe(reason)
     }
@@ -531,9 +531,9 @@ describe('keys', () => {
 
   test('fails on a DNS error other than no records', async () => {
     const { message } = await singleSet()
-    const resolver: Arc.Resolver = {
+    const resolver = {
       resolveTxt: () => Promise.reject(Object.assign(new Error('timeout'), { code: 'ETIMEOUT' })),
-    }
+    } satisfies Arc.Resolver
     const result = await Arc.verify(fromBinary(message), { resolver })
     expect(result).toMatchObject({ result: 'fail', reason: 'i=1 ams key lookup failed: ETIMEOUT' })
   })
@@ -543,11 +543,11 @@ describe('a d= that is not a host name (RFC 6376 section 3.5)', () => {
   const aar = 'ARC-Authentication-Results: i=1; one.example; spf=pass smtp.mailfrom=example.com'
   for (const separator of ['/', '?', '#', '\\', '@', ':']) {
     const d = `one.example${separator}x.attacker.test`
-    const variants: [string, Parameters<typeof singleSet>[0], string][] = [
+    const variants = [
       ['the ARC-Seal and the AMS', { d, aar }, 'i=1 as has an invalid d='],
       ['the ARC-Seal', { d, aar, amsOptions: { d: 'one.example' } }, 'i=1 as has an invalid d='],
       ['the AMS', { d: 'one.example', aar, amsOptions: { d } }, 'i=1 ams signature syntax error'],
-    ]
+    ] satisfies [string, Parameters<typeof singleSet>[0], string][]
     for (const [title, options, reason] of variants) {
       test(`fails d=${d} in ${title} without a key query`, async () => {
         const resolver = resolverFrom({
@@ -605,12 +605,12 @@ describe('cancellation', () => {
     const { message } = await singleSet()
     const controller = new AbortController()
     const reason = new Error('stop')
-    const resolver: Arc.Resolver = {
+    const resolver = {
       resolveTxt: () => {
         controller.abort(reason)
         return new Promise(() => {})
       },
-    }
+    } satisfies Arc.Resolver
     await expect(
       Arc.verify(fromBinary(message), { resolver, signal: controller.signal }),
     ).rejects.toBe(reason)

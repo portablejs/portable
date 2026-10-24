@@ -35,7 +35,7 @@ describe('matches mailauth strict mode on the RFC 7208 suite', () => {
   }
 })
 
-const zone: Zone = {
+const zone = {
   'host.example.test': { A: ['192.0.2.1', '198.51.100.9'], AAAA: ['2001:db8::1'] },
   'v6.example.test': { AAAA: ['2001:db8:1::5'] },
   'mx1.example.test': { A: ['203.0.113.5'] },
@@ -58,7 +58,7 @@ const zone: Zone = {
   '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa': {
     PTR: ['host.example.test'],
   },
-}
+} satisfies Zone
 
 const terms = [
   'ip4:192.0.2.0/24',
@@ -140,7 +140,7 @@ describe('matches mailauth strict mode on random records', () => {
 })
 
 test('node:dns/promises fits Spf.Resolver', () => {
-  const resolvers: Spf.Resolver[] = [dns, new Resolver()]
+  const resolvers = [dns, new Resolver()] satisfies Spf.Resolver[]
   expect(resolvers).toHaveLength(2)
 })
 
@@ -148,7 +148,7 @@ test('gives temperror for a SERVFAIL from node:dns, as mailauth does', async () 
   const server = createSocket('udp4')
   server.on('message', (message, remote) => {
     let offset = 12
-    const labels: string[] = []
+    const labels = new Array<string>()
     while (message[offset]) {
       labels.push(message.subarray(offset + 1, offset + 1 + message[offset]!).toString())
       offset += message[offset]! + 1

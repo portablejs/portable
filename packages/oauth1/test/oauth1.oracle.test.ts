@@ -12,7 +12,7 @@ function random(seed: number) {
     return state / 2 ** 31
   }
   const int = (n: number) => Math.floor(next() * n)
-  const pick = <T>(items: readonly T[]): T => items[int(items.length)]!
+  const pick = <value>(items: readonly value[]): value => items[int(items.length)]!
   const string = (alphabet: readonly string[], max: number) =>
     Array.from({ length: int(max + 1) }, () => pick(alphabet)).join('')
   return { int, pick, string }

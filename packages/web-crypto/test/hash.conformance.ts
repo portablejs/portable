@@ -39,7 +39,7 @@ describe('digest', () => {
   })
 
   test('returns bytes backed by an ArrayBuffer', async () => {
-    const hash: Uint8Array<ArrayBuffer> = await WebCrypto.digest('SHA-256', 'abc')
+    const hash = (await WebCrypto.digest('SHA-256', 'abc')) satisfies Uint8Array<ArrayBuffer>
     expect(hash.buffer).toBeInstanceOf(ArrayBuffer)
     expect(hash.byteLength).toBe(hash.buffer.byteLength)
   })

@@ -422,7 +422,7 @@ describe('a bridge on the main thread', () => {
       methods: parentApi(),
       signal,
     })
-    const api: BridgeApi = {
+    const api = {
       ...parentApi(),
       worker: {
         multiply: (a, b) => toWorker.multiply(a, b),
@@ -430,7 +430,7 @@ describe('a bridge on the main thread', () => {
         forever: () => toWorker.forever(),
         wasCancelled: () => toWorker.wasCancelled(),
       },
-    }
+    } satisfies BridgeApi
     const element = child({ origin: location.origin }, otherOrigin)
     return Rpc.connect<Methods>(
       Rpc.window(element.contentWindow!, { origin: otherOrigin, signal }),

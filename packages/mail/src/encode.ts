@@ -197,14 +197,14 @@ type Context = {
  * stream is locked or given twice.
  */
 export function encode(message: Message, options: encode.Options = {}): ReadableStream<Uint8Array> {
-  const context: Context = {
+  const context = {
     charset: options.charset,
     prefix: checkBoundary(options.boundary ?? `=_${randomHex(8)}_`),
     streams: new Set(),
     id: 0,
     reader: undefined,
     cancelled: false,
-  }
+  } satisfies Context
   let root: Node
   let fields: string[]
   try {
@@ -280,7 +280,7 @@ function msgId(value: string): string {
 
 /** Removes whitespace inside each `<...>` and splits the rest at whitespace, in linear time. */
 function references(value: string | readonly string[]): string {
-  const ids: string[] = []
+  const ids = new Array<string>()
   for (const entry of typeof value === 'string' ? [value] : value) {
     // oxlint-disable-next-line no-control-regex
     const line = entry.replace(lineBreaks, ' ').replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
@@ -347,7 +347,7 @@ function custom(
   headers: HeaderFields | undefined,
   charset: MimeHeaders.CharsetEncoder | undefined,
 ): string[] {
-  const fields: string[] = []
+  const fields = new Array<string>()
   if (!headers) return fields
   for (const [name, value] of Object.entries(headers)) {
     if (!/^[\x21-\x39\x3b-\x7e]+$/.test(name))
@@ -491,7 +491,7 @@ function multipart(
 }
 
 function tree(message: Message, context: Context): Node {
-  const alternatives: (() => Node)[] = []
+  const alternatives = new Array<() => Node>()
   let html: (() => Node) | undefined
   const nonEmpty = (content: Content | undefined): content is Content =>
     content !== undefined && content !== ''

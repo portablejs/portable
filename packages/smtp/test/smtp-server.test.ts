@@ -5,7 +5,7 @@ import { connect } from './node.js'
 import { startServer, type TestServer } from './server.js'
 import { chunked, encode, failure } from './utils.js'
 
-const servers: TestServer[] = []
+const servers = new Array<TestServer>()
 afterEach(async () => {
   await Promise.all(servers.splice(0).map((server) => server.close()))
 })
@@ -222,7 +222,7 @@ describe('TLS and authentication', () => {
   })
 
   test('logs in with LOGIN when the server offers only LOGIN', async () => {
-    const methods: string[] = []
+    const methods = new Array<string>()
     const server = await serve({
       secure: true,
       authMethods: ['LOGIN'],
@@ -237,7 +237,7 @@ describe('TLS and authentication', () => {
   })
 
   test('logs in with XOAUTH2', async () => {
-    const seen: unknown[] = []
+    const seen = new Array<unknown>()
     const server = await serve({
       secure: true,
       authMethods: ['XOAUTH2'],

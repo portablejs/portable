@@ -128,7 +128,7 @@ function createSession(first: Socket): Session {
   }
   watch(socket)
 
-  const session: Session = {
+  const session = {
     get closed() {
       return closed
     },
@@ -197,15 +197,15 @@ function createSession(first: Socket): Session {
         Promise.resolve(socket.close()).catch(() => {})
       } catch {}
     },
-  }
+  } satisfies Session
   return session
 }
 
-async function guard<T>(
+async function guard<value>(
   session: Session,
   signal: AbortSignal | undefined,
-  run: () => Promise<T>,
-): Promise<T> {
+  run: () => Promise<value>,
+): Promise<value> {
   if (!signal) return run()
   signal.throwIfAborted()
   let onAbort = () => {}
@@ -242,7 +242,7 @@ function keyword(line: string): string {
 }
 
 function authMethods(extensions: readonly string[]): string[] {
-  const methods: string[] = []
+  const methods = new Array<string>()
   for (const line of extensions) {
     if (keyword(line) !== 'AUTH') continue
     for (const method of line
@@ -463,7 +463,7 @@ function createClient(
   const { tls, extensions, lmtp } = state
   const has = (name: string) => extensions.some((line) => keyword(line) === name)
   let queue: Promise<unknown> = Promise.resolve()
-  const enqueue = <T>(run: () => Promise<T>): Promise<T> => {
+  const enqueue = <value>(run: () => Promise<value>): Promise<value> => {
     const next = queue.then(run)
     queue = next.catch(() => {})
     return next
@@ -539,7 +539,7 @@ function createClient(
       })
     }
 
-    const params: string[] = []
+    const params = new Array<string>()
     if (utf8) params.push('SMTPUTF8')
     if (has('8BITMIME')) params.push('BODY=8BITMIME')
     if (size !== undefined && has('SIZE')) params.push(`SIZE=${size}`)
@@ -570,8 +570,8 @@ function createClient(
       })
     }
 
-    const accepted: string[] = []
-    const rejected: Rejection[] = []
+    const accepted = new Array<string>()
+    const rejected = new Array<Rejection>()
     for (const [i, recipient] of recipients.entries()) {
       if (!pipelining) await session.write(rcptCommands[i]!, 'RCPT TO')
       const reply = await session.read('RCPT TO')
@@ -668,7 +668,7 @@ function createClient(
       return { accepted, rejected, response: reply.response }
     }
 
-    const delivered: string[] = []
+    const delivered = new Array<string>()
     let response = ''
     for (const recipient of accepted) {
       const reply = await session.read('DATA')

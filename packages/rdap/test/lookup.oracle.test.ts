@@ -209,7 +209,7 @@ test('the random inputs reached every RIR and many registries', () => {
 describe('responses match node-rdap', () => {
   test('raw is the JSON node-rdap returns, for every recorded registry', async () => {
     const f = { fetch: ours.fetch }
-    const lookups: [Promise<{ raw: unknown }>, Promise<unknown>][] = [
+    const lookups = [
       [Rdap.domain('google.com', { ...f, follow: false }), NodeRdap.domain('google.com')],
       [Rdap.domain('wikipedia.org', { ...f, follow: false }), NodeRdap.domain('wikipedia.org')],
       [Rdap.domain('sidn.nl', f), NodeRdap.domain('sidn.nl')],
@@ -221,7 +221,7 @@ describe('responses match node-rdap', () => {
       [Rdap.ip('1.1.1.1', f), NodeRdap.ip('1.1.1.1')],
       [Rdap.asn(15169, f), NodeRdap.autnum(15169)],
       [Rdap.asn(3333, f), NodeRdap.autnum(3333)],
-    ]
+    ] satisfies [Promise<{ raw: unknown }>, Promise<unknown>][]
     for (const [mine, upstream] of lookups) expect((await mine).raw).toEqual(await upstream)
   })
 

@@ -66,7 +66,7 @@ export type Type =
 export type Image = { width: number; height: number; type?: string | undefined }
 
 /** Detection order, the same as image-size's. */
-const formats: readonly Format[] = [
+const formats = [
   bmp,
   cur,
   dds,
@@ -87,7 +87,7 @@ const formats: readonly Format[] = [
   tga,
   tiff,
   webp,
-]
+] satisfies readonly Format[]
 
 const byFirstByte = new Map<number, Format>([
   [0x00, heif],

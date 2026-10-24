@@ -38,7 +38,7 @@ export declare namespace strip {
  * ```
  */
 export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
-  const parts: Uint8Array[] = []
+  const parts = new Array<Uint8Array>()
   const stripper = new Stripper(options, (part) => parts.push(part))
   stripper.push(bytes)
   stripper.close()
@@ -350,7 +350,7 @@ class Stripper {
   }
 
   webp(bytes: Uint8Array): Uint8Array {
-    const parts: Uint8Array[] = [bytes.subarray(0, 12)]
+    const parts = [bytes.subarray(0, 12)] satisfies Uint8Array[]
     let vp8x: Uint8Array | undefined
     let hasExif = false
     let hasIcc = false

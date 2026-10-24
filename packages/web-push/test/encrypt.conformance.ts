@@ -155,7 +155,7 @@ describe('encrypt', () => {
   })
 
   describe('rejects malformed subscription keys', () => {
-    const cases: [string, unknown][] = [
+    const cases = [
       ['no subscription keys', undefined],
       ['keys that are not an object', 'silly example'],
       ['only p256dh', { p256dh }],
@@ -173,7 +173,7 @@ describe('encrypt', () => {
       ['auth of 15 bytes', { p256dh, auth: base64url(agent.auth.subarray(1)) }],
       ['auth of 17 bytes', { p256dh, auth: base64url(new Uint8Array([...agent.auth, 0])) }],
       ['an empty auth', { p256dh, auth: '' }],
-    ]
+    ] satisfies [string, unknown][]
     test.for(cases)('%s', async ([, keys]) => {
       await expect(
         WebPush.encrypt({ subscription: { keys: keys as WebPush.Keys }, payload: 'hello' }),

@@ -23,11 +23,11 @@ export function dnsError(code: string, name: string): Error {
 
 export function zoneResolver(zone: Zone, log: Query[] = []): Spf.Resolver {
   const names = new Map(Object.entries(zone).map(([name, records]) => [normalize(name), records]))
-  async function answer<T>(
+  async function answer<value>(
     type: 'TXT' | 'A' | 'AAAA' | 'MX' | 'PTR',
     name: string,
-    pick: (records: Records) => readonly T[] | string | undefined,
-  ): Promise<T[]> {
+    pick: (records: Records) => readonly value[] | string | undefined,
+  ): Promise<value[]> {
     log.push(`${type} ${name}`)
     if (name.split('.').some((label) => label.length > 63)) throw dnsError('EBADNAME', name)
     let key = normalize(name)
@@ -156,8 +156,11 @@ function suiteRecords(list: readonly YamlRecord[]): Records {
   const hasTxt = typed.some(([type]) => type === 'TXT')
   const generated = typed.filter(([type]) => type === 'SPF').map(([, value]) => ['TXT', value])
   const ordered = hasTxt ? typed : [...typed, ...generated]
-  const collect = <T>(type: string, read: (value: unknown) => T): T[] | string | undefined => {
-    const found: T[] = []
+  const collect = <value>(
+    type: string,
+    read: (value: unknown) => value,
+  ): value[] | string | undefined => {
+    const found = new Array<value>()
     for (const [itemType, value] of ordered) {
       if (itemType === 'TIMEOUT') return found.length ? found : 'ETIMEOUT'
       if (itemType === type && value !== 'NONE') found.push(read(value))

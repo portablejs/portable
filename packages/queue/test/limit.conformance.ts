@@ -103,7 +103,7 @@ describe('p-limit', () => {
 
   test('lowering the concurrency lets running tasks finish and starts fewer', async () => {
     const queue = Queue.create({ concurrency: 4 })
-    const log: number[] = []
+    const log = new Array<number>()
     let running = 0
     const tasks = Array.from({ length: 10 }, () =>
       queue.add(async () => {
@@ -121,7 +121,7 @@ describe('p-limit', () => {
 
   test('raising the concurrency starts waiting tasks at once', async () => {
     const queue = Queue.create({ concurrency: 2 })
-    const log: number[] = []
+    const log = new Array<number>()
     let running = 0
     const tasks = Array.from({ length: 10 }, () =>
       queue.add(async () => {

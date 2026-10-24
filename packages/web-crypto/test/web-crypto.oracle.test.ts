@@ -113,8 +113,9 @@ describe('publicKeyOf matches node:crypto createPublicKey', () => {
   ]
 
   test.each(algorithms)('$name $namedCurve', async (algorithm) => {
-    const usages: KeyUsage[] =
+    const usages = (
       algorithm.name === 'ECDH' || algorithm.name === 'X25519' ? ['deriveBits'] : ['sign', 'verify']
+    ) satisfies KeyUsage[]
     const pair = await crypto.subtle.generateKey(algorithm, true, usages)
     const keyPair = 'privateKey' in pair ? pair : undefined
     if (!keyPair) throw new Error('Expected a key pair')

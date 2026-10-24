@@ -148,7 +148,7 @@ function assemble(
   view.setUint32(4, image.height)
   header[8] = 8
   header[9] = colorType
-  const chunks: [number, Uint8Array][] = [[0x49484452, header]]
+  const chunks = Array.of<[number, Uint8Array]>([0x49484452, header])
   if (image.gamma) {
     const gamma = new Uint8Array(4)
     new DataView(gamma.buffer).setUint32(0, Math.floor(image.gamma * 100000))

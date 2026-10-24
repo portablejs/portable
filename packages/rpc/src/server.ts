@@ -96,13 +96,13 @@ export function createServer(
     const target = lookup(api, method)
     if (!target) return notification ? undefined : error(id, -32601, 'Method not found')
     const [holder, fn] = target
-    const call: Call = {
+    const call = {
       controller: new AbortController(),
       credit: flow ? 0 : Infinity,
       done: false,
       wake: undefined,
       cancel: undefined,
-    }
+    } satisfies Call
     if (!notification) calls.set(id, call)
     try {
       const args = params === undefined ? [] : Array.isArray(params) ? params : [params]

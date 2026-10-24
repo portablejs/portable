@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vite-plus/test'
 import { decode, encode, encodeUtf8, randomChunks, rows } from './utils.js'
 
 function collect(stream: NodeJS.ReadableStream): Promise<unknown[]> {
-  const values: unknown[] = []
+  const values = new Array<unknown>()
   return new Promise((resolve, reject) => {
     stream.on('data', (value: unknown) => values.push(value))
     stream.on('end', () => resolve(values))

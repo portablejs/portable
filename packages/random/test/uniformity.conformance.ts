@@ -4,17 +4,17 @@ import { cryptoP, draws, looksUniform, permutations, seededP } from './utils.js'
 
 type Functions = Pick<typeof Random, 'int' | 'float' | 'string' | 'shuffle' | 'pick' | 'bytes'>
 
-const sources: readonly [string, () => Functions, number][] = [
+const sources = [
   ['seeded', () => Random.seeded(20261018), seededP],
   ['crypto', () => Random, cryptoP],
-]
+] satisfies readonly [string, () => Functions, number][]
 
 const alphabetOf = (size: number) =>
   Array.from({ length: size }, (_, i) => String.fromCodePoint(0x4e00 + i)).join('')
 
 for (const [name, source, p] of sources) {
   describe(`${name}: chi-squared uniformity`, () => {
-    const intCases: readonly [string, number, number, (value: number) => unknown, number][] = [
+    const intCases = [
       ['a die', 1, 6, (v) => v, 6],
       ['0 to 36', 0, 36, (v) => v, 37],
       ['-50 to 49', -50, 49, (v) => v, 100],
@@ -24,7 +24,7 @@ for (const [name, source, p] of sources) {
       ['2^32 + 1 integers, modulo 7', 0, 2 ** 32, (v) => v % 7, 7],
       ['thirds of 0 to 3 * 2^51 - 1', 0, 3 * 2 ** 51 - 1, (v) => Math.floor(v / 2 ** 51), 3],
       ['the low bit of 0 to 2^53 - 1', 0, Number.MAX_SAFE_INTEGER, (v) => v % 2, 2],
-    ]
+    ] satisfies readonly [string, number, number, (value: number) => unknown, number][]
     for (const [label, min, max, bucket, categories] of intCases) {
       test(`int over ${label}`, () => {
         const random = source()

@@ -40,12 +40,12 @@ test(`encodes ${messages.length} real responses within 25% of dns-packet`, async
   })
 })
 
-const query: Packet = {
+const query = {
   id: 1,
   flags: { rd: true },
   questions: [{ type: 'A', name: 'example.com' }],
   additionals: [{ type: 'OPT', dnssecOk: true }],
-}
+} satisfies Packet
 const upstreamQuery = {
   id: 1,
   flags: upstream.RECURSION_DESIRED,

@@ -67,7 +67,7 @@ async function viaUpstream(text: string): Promise<string | undefined> {
 
 /** Serves `api` over a transport that records the exact text each write carries. */
 function wire(served: object) {
-  const written: string[] = []
+  const written = new Array<string>()
   let input!: ReadableStreamDefaultController<unknown>
   const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
   const writable = new WritableStream<unknown>({
@@ -122,7 +122,7 @@ const request = (method: string, params?: unknown, id: unknown = 1) =>
 const notification = (method: string, params?: unknown) =>
   JSON.stringify({ jsonrpc: '2.0', method, params })
 
-const jsonValues: readonly [string, unknown][] = [
+const jsonValues = [
   ['null', null],
   ['true', true],
   ['false', false],
@@ -135,10 +135,10 @@ const jsonValues: readonly [string, unknown][] = [
   ['a nested array', [1, [2, [null, 'x']]]],
   ['an empty object', {}],
   ['a nested object', { a: { b: [true, { c: 'd' }] }, 'key with space': 1 }],
-]
+] satisfies readonly [string, unknown][]
 
 describe('server sends the same bytes as JSONRPCServer', () => {
-  const cases: readonly [string, string][] = [
+  const cases = [
     ['positional params', request('add', [1, 2])],
     ['params by name', request('subtract', { minuend: 42, subtrahend: 23 })],
     ['no params', request('nothing')],
@@ -181,7 +181,7 @@ describe('server sends the same bytes as JSONRPCServer', () => {
       `a result of ${name}`,
       request('echo', [value]),
     ]),
-  ]
+  ] satisfies readonly [string, string][]
   for (const [name, text] of cases) {
     test(`${name}`, async () => {
       expect(await ours(wire(api), text)).toEqual(sends(await viaUpstream(text)))
@@ -199,12 +199,7 @@ describe('server sends the same bytes as JSONRPCServer', () => {
 describe('server follows the spec where JSONRPCServer does not', () => {
   const answer = (body: string, id = '1') => `{"jsonrpc":"2.0","id":${id},${body}}`
   const invalid = answer('"error":{"code":-32600,"message":"Invalid Request"}', 'null')
-  const cases: readonly {
-    name: string
-    text: string
-    upstream: string | undefined
-    ours: string | undefined
-  }[] = [
+  const cases = [
     {
       name: 'a batch of one request answers an array',
       text: `[${request('add', [1, 2])}]`,
@@ -319,7 +314,12 @@ describe('server follows the spec where JSONRPCServer does not', () => {
       upstream: undefined,
       ours: undefined,
     },
-  ]
+  ] satisfies readonly {
+    name: string
+    text: string
+    upstream: string | undefined
+    ours: string | undefined
+  }[]
   for (const { name, text, upstream: expectedUpstream, ours: expected } of cases) {
     test(`${name}`, async () => {
       expect(await viaUpstream(text)).toBe(expectedUpstream)
@@ -406,7 +406,7 @@ function randomMessages(seed: number): string {
       case 5:
         return { jsonrpc: '2.0', id: id(), method: pick(['missing', 'toString', 'math.sub']) }
       case 6: {
-        const params: unknown[] = [int(1000), string()]
+        const params = Array.of<unknown>(int(1000), string())
         if (next() < 0.5) params.push(pick([0, false, 'd', { a: [1] }]))
         return { jsonrpc: '2.0', id: id(), method: 'fail', params }
       }
@@ -442,7 +442,7 @@ test('random messages and batches match JSONRPCServer, with one-response batches
 
 /** A transport that records what our client writes and lets the test write replies. */
 function capture() {
-  const written: string[] = []
+  const written = new Array<string>()
   let input!: ReadableStreamDefaultController<unknown>
   const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
   const writable = new WritableStream<unknown>({
@@ -463,7 +463,7 @@ function withoutId(text: string): string {
 }
 
 function upstreamClient() {
-  const sent: string[] = []
+  const sent = new Array<string>()
   const client = new JSONRPCClient((payload) => void sent.push(JSON.stringify(payload)))
   return { client, sent }
 }
@@ -519,7 +519,7 @@ describe('client sends the same bytes as JSONRPCClient', () => {
   })
 
   test('a batch over HTTP', async () => {
-    const bodies: string[] = []
+    const bodies = new Array<string>()
     const remote = Rpc.http<Api>('https://rpc.test/', {
       fetch: async (request) => {
         bodies.push(await request.text())
@@ -562,7 +562,7 @@ function toUpstream() {
 
 /** Connects our HTTP client to a JSONRPCServer. */
 function httpToUpstream() {
-  const bodies: string[] = []
+  const bodies = new Array<string>()
   const remote = Rpc.http<Api>('https://rpc.test/', {
     fetch: async (request) => {
       const body = await request.text()
@@ -667,9 +667,9 @@ describe('JSONRPCClient against our server', () => {
   function overTransport() {
     let input!: ReadableStreamDefaultController<unknown>
     const readable = new ReadableStream<unknown>({ start: (c) => void (input = c) })
-    const client: JSONRPCClient = new JSONRPCClient((payload) => {
+    const client = new JSONRPCClient((payload) => {
       input.enqueue(JSON.stringify(payload))
-    })
+    }) satisfies JSONRPCClient
     const writable = new WritableStream<unknown>({
       write: (text) => client.receive(JSON.parse(text as string)),
     })
@@ -680,12 +680,12 @@ describe('JSONRPCClient against our server', () => {
   }
 
   function overHttp() {
-    const client: JSONRPCClient = new JSONRPCClient(async (payload) => {
+    const client = new JSONRPCClient(async (payload) => {
       const response = await handle(
         new Request('https://rpc.test/', { method: 'POST', body: JSON.stringify(payload) }),
       )
       if (response.status === 200) client.receive(await response.json())
-    })
+    }) satisfies JSONRPCClient
     return client
   }
 
@@ -745,7 +745,7 @@ describe('JSONRPCClient against our server', () => {
 
 function randomChunks(bytes: Uint8Array, seed: number): Uint8Array[] {
   const next = random(seed)
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(next() * 40)
     chunks.push(bytes.subarray(i, i + size))
@@ -782,7 +782,7 @@ describe('Rpc.http reads a randomly chunked NDJSON stream', () => {
           return new Response(body, { headers: response.headers })
         },
       })
-      const items: unknown[] = []
+      const items = new Array<unknown>()
       const counted = (async () => {
         for await (const item of remote.count(25)) items.push(item)
       })()

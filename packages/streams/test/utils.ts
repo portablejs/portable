@@ -1,6 +1,6 @@
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
-export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
+export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   let i = 0
   return new ReadableStream({
     pull(controller) {
@@ -10,9 +10,9 @@ export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
   })
 }
 
-export async function collect<T>(stream: ReadableStream<T>): Promise<T[]> {
+export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks: T[] = []
+  const chunks = new Array<chunk>()
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -21,14 +21,14 @@ export async function collect<T>(stream: ReadableStream<T>): Promise<T[]> {
 }
 
 /** A stream whose chunks the test pushes by hand, like a Node `Readable` with an empty `_read`. */
-export function pushable<T>(): {
-  stream: ReadableStream<T>
-  push: (chunk: T) => void
+export function pushable<chunk>(): {
+  stream: ReadableStream<chunk>
+  push: (chunk: chunk) => void
   end: () => void
   error: (reason: unknown) => void
 } {
-  let controller!: ReadableStreamDefaultController<T>
-  const stream = new ReadableStream<T>({
+  let controller!: ReadableStreamDefaultController<chunk>
+  const stream = new ReadableStream<chunk>({
     start(c) {
       controller = c
     },
@@ -48,7 +48,7 @@ export const encode = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder
 export const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
 
 export function chunked(bytes: Uint8Array<ArrayBuffer>, size: number): Uint8Array<ArrayBuffer>[] {
-  const chunks: Uint8Array<ArrayBuffer>[] = []
+  const chunks = new Array<Uint8Array<ArrayBuffer>>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }

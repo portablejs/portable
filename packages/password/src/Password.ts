@@ -271,7 +271,10 @@ async function deriveWithHmac(
   return out
 }
 
-function abortable<T>(start: () => Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+function abortable<value>(
+  start: () => Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return start()
   signal.throwIfAborted()
   return new Promise((resolve, reject) => {

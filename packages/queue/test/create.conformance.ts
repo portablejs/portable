@@ -26,7 +26,7 @@ describe('add', () => {
 
   test('starts tasks in the order they were added with concurrency 1', async () => {
     const queue = Queue.create({ concurrency: 1 })
-    const started: number[] = []
+    const started = new Array<number>()
     await Promise.all(
       [30, 10, 20, 0].map((ms, i) =>
         queue.add(async () => {
@@ -40,7 +40,7 @@ describe('add', () => {
 
   test('starts tasks with a higher priority first', async () => {
     const queue = Queue.create({ concurrency: 1 })
-    const order: number[] = []
+    const order = new Array<number>()
     const run = (n: number) => () => void order.push(n)
     await Promise.all([
       queue.add(run(1), { priority: 1 }),
@@ -56,7 +56,7 @@ describe('add', () => {
 
   test('keeps the order of equal priorities, including Infinity and -Infinity', async () => {
     const queue = Queue.create({ concurrency: 1 })
-    const order: string[] = []
+    const order = new Array<string>()
     const run = (name: string) => () => void order.push(name)
     const blocker = queue.add(() => delay(5))
     const tasks = [
@@ -72,8 +72,8 @@ describe('add', () => {
 
   test('keeps priority order after many tasks have started', async () => {
     const queue = Queue.create({ concurrency: 1 })
-    const order: number[] = []
-    const tasks: Promise<void>[] = []
+    const order = new Array<number>()
+    const tasks = new Array<Promise<void>>()
     for (let i = 0; i < 3000; i++)
       tasks.push(queue.add(() => void order.push(i % 3), { priority: 0 }))
     await delay(0)
@@ -94,7 +94,7 @@ describe('add', () => {
 
   test('a rejected priority does not change the order of the other tasks', async () => {
     const queue = Queue.create({ concurrency: 1 })
-    const order: string[] = []
+    const order = new Array<string>()
     const blocker = queue.add(() => delay(5))
     const a = queue.add(() => void order.push('a'), { priority: 1 })
     expect(() => queue.add(() => void order.push('nan'), { priority: Number.NaN })).toThrow(
@@ -150,7 +150,7 @@ describe('add', () => {
   test('a task added from inside a running task waits for a free slot', async () => {
     const queue = Queue.create({ concurrency: 2 })
     const probe = concurrencyProbe()
-    const inner: Promise<unknown>[] = []
+    const inner = new Array<Promise<unknown>>()
     await Promise.all(
       Array.from({ length: 4 }, () =>
         queue.add(async () => {
@@ -352,7 +352,7 @@ describe('signal', () => {
     const queueController = new AbortController()
     const queue = Queue.create({ signal: queueController.signal })
     const taskController = new AbortController()
-    const signals: AbortSignal[] = []
+    const signals = new Array<AbortSignal>()
     const first = queue.add(
       ({ signal }) => {
         signals.push(signal)
@@ -373,7 +373,7 @@ describe('signal', () => {
 describe('idle, pause and clear', () => {
   test('idle resolves when every task has settled', async () => {
     const queue = Queue.create({ concurrency: 2 })
-    const done: number[] = []
+    const done = new Array<number>()
     for (const ms of [5, 10, 15]) void queue.add(() => delay(ms).then(() => void done.push(ms)))
     await queue.idle()
     expect(done).toEqual([5, 10, 15])

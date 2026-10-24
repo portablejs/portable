@@ -1,0 +1,11 @@
+{
+  "name": "@portable/lint",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/plugin.ts"
+  },
+  "devDependencies": {
+    "oxlint": "1.88.0"
+  }
+}

@@ -117,7 +117,7 @@ function contents(der: Uint8Array, at: number): Uint8Array | undefined {
 /** The offsets of the elements inside the constructed element at `at`. */
 function children(der: Uint8Array, at: number): number[] {
   const header = readHeader(der, at)
-  const offsets: number[] = []
+  const offsets = new Array<number>()
   if (!header) return offsets
   for (let offset = header.start; offset < header.end;) {
     const child = readHeader(der, offset)

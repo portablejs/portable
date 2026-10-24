@@ -25,12 +25,12 @@ const nodeOAuth = new NodeOAuth(
   null,
   'HMAC-SHA1',
 )
-const nodeDigest: OAuth1.Digest = (algorithm, data) =>
+const nodeDigest = ((algorithm, data) =>
   createHash(algorithm === 'SHA-1' ? 'sha1' : 'sha256')
     .update(data)
-    .digest()
-const nobleDigest: OAuth1.Digest = (algorithm, data) =>
-  algorithm === 'SHA-1' ? sha1(data) : sha256(data)
+    .digest()) satisfies OAuth1.Digest
+const nobleDigest = ((algorithm, data) =>
+  algorithm === 'SHA-1' ? sha1(data) : sha256(data)) satisfies OAuth1.Digest
 
 // oauth-1.0a is given node:crypto's HMAC, and Node's crypto.subtle.digest is 4 to 8 times slower
 // than a JavaScript hash, so the assertions compare it with `digest` set to @noble/hashes. The

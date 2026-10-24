@@ -22,7 +22,7 @@ function randomMessage(seed: number): string {
     state = (state * 1103515245 + 12345) % 2 ** 31
     return Math.floor((state / 2 ** 31) * n)
   }
-  const pick = <T>(items: readonly T[]): T => items[random(items.length)]!
+  const pick = <value>(items: readonly value[]): value => items[random(items.length)]!
   const words = ['hello', '--', '-', '\r', 'x'.repeat(80), '=?utf-8?Q?=C3=B5?=', 'õ', '--b1', '']
   let boundaries = 0
   const text = (eol: string) => {

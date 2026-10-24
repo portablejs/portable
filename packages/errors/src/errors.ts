@@ -32,7 +32,7 @@ export class BaseError extends Error {
 
   constructor(message?: string, options?: ErrorOptions) {
     super(message, options)
-    const kinds: string[] = []
+    const kinds = new Array<string>()
     for (let c: unknown = new.target; typeof c === 'function' && Object.hasOwn(c, 'kind');) {
       kinds.push((c as typeof BaseError).kind)
       c = Object.getPrototypeOf(c)

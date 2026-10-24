@@ -405,14 +405,14 @@ describe('parseValue()', () => {
   })
 
   test('stores a __proto__ parameter as an own property', () => {
-    const cases: [string, string][] = [
+    const cases = [
       ['text/plain; __proto__; x=1', ''],
       ['text/plain; __proto__=plain; x=1', 'plain'],
       ['text/plain; __proto__=plain', 'plain'],
       ['text/plain; x=1; __proto__', ''],
       ["text/plain; __proto__*0*=utf-8''polluted", 'polluted'],
       ['text/plain; __proto__*0=abc', 'abc'],
-    ]
+    ] satisfies [string, string][]
     for (const [input, value] of cases) {
       const { params } = parseValue(input)
       expect(Object.getPrototypeOf(params)).toBe(Object.prototype)

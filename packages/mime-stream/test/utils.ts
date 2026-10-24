@@ -27,7 +27,7 @@ export const binary = (text: string): Uint8Array =>
   Uint8Array.from(text, (character) => character.charCodeAt(0))
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }
@@ -38,7 +38,7 @@ export function randomChunks(bytes: Uint8Array, seed: number, maxSize = 64): Uin
     state = (state * 1103515245 + 12345) % 2 ** 31
     return state / 2 ** 31
   }
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length;) {
     const size = 1 + Math.floor(random() * maxSize)
     chunks.push(bytes.subarray(i, i + size))
@@ -71,7 +71,7 @@ export async function roundTrip(
 
 /** Chunks as `[type, Latin-1 text]` pairs, with consecutive chunks of one type and part joined. */
 export function summary(chunks: readonly MimeStream.Chunk[]): [string, string][] {
-  const result: [string, string][] = []
+  const result = new Array<[string, string]>()
   let last: MimeStream.Chunk | undefined
   for (const chunk of chunks) {
     const text = latin1(chunk.bytes)
@@ -89,7 +89,7 @@ export const contentTypes = (chunks: readonly MimeStream.Chunk[]): string[] =>
 
 /** Body of each leaf part, joined, in order. */
 export function bodies(chunks: readonly MimeStream.Chunk[]): string[] {
-  const parts: MimeStream.Part[] = []
+  const parts = new Array<MimeStream.Part>()
   const text = new Map<MimeStream.Part, string>()
   for (const chunk of chunks) {
     if (chunk.type === 'headers') parts.push(chunk.part)

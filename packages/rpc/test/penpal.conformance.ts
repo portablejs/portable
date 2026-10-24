@@ -32,7 +32,7 @@ function closer() {
 
 /** Collects what arrives on `port` within a few turns of the event loop. */
 async function received(port: MessagePort, send: () => void): Promise<unknown[]> {
-  const messages: unknown[] = []
+  const messages = new Array<unknown>()
   const listener = (event: MessageEvent) => void messages.push(event.data)
   port.addEventListener('message', listener)
   port.start()
@@ -225,9 +225,9 @@ describe('serving methods', () => {
 
   test('removes its message listener from the port when its signal aborts', () => {
     const { port1 } = channel()
-    const added: unknown[] = []
-    const removed: unknown[] = []
-    const target: Rpc.port.Target = {
+    const added = new Array<unknown>()
+    const removed = new Array<unknown>()
+    const target = {
       postMessage: (message) => port1.postMessage(message),
       addEventListener(type, listener) {
         added.push(listener)
@@ -237,7 +237,7 @@ describe('serving methods', () => {
         removed.push(listener)
         port1.removeEventListener(type, listener)
       },
-    }
+    } satisfies Rpc.port.Target
     const controller = new AbortController()
     Rpc.provide(Rpc.port(target), createMethods(), { signal: controller.signal })
     expect(added).toHaveLength(1)

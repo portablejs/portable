@@ -1,0 +1,5 @@
+export { InvalidInputError } from '../errors.js'
+export type { Hasher } from '@portable/web-crypto'
+export type { Message } from '../internal/message.js'
+export { sign } from '../sign.js'
+export { type Resolver, type Result, verify } from '../verify.js'

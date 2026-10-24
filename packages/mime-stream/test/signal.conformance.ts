@@ -18,13 +18,13 @@ function endless(first: string, then: string) {
   return { stream, state }
 }
 
-async function abortMidway<T>(
-  chunk: T,
-  transform: (signal: AbortSignal) => TransformStream<T, unknown>,
+async function abortMidway<chunk>(
+  chunk: chunk,
+  transform: (signal: AbortSignal) => TransformStream<chunk, unknown>,
 ): Promise<boolean> {
   const controller = new AbortController()
   let cancelled: unknown
-  const source = new ReadableStream<T>({
+  const source = new ReadableStream<chunk>({
     pull: (c) => c.enqueue(chunk),
     cancel: (reason) => {
       cancelled = reason

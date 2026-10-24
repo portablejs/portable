@@ -1,7 +1,10 @@
 /** Settles as `work` does, or rejects with `signal.reason` as soon as `signal` aborts. */
-export function race<T>(work: T | PromiseLike<T>, signal: AbortSignal | undefined): Promise<T> {
+export function race<value>(
+  work: value | PromiseLike<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return Promise.resolve(work)
-  return new Promise<T>((resolve, reject) => {
+  return new Promise<value>((resolve, reject) => {
     if (signal.aborted) return reject(signal.reason)
     const onAbort = () => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })
@@ -23,7 +26,7 @@ export async function readBody(
   const onAbort = () => reader.cancel(signal.reason).catch(() => {})
   signal.addEventListener('abort', onAbort, { once: true })
   try {
-    const chunks: Uint8Array[] = []
+    const chunks = new Array<Uint8Array>()
     let length = 0
     for (;;) {
       const { done, value } = await reader.read()

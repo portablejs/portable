@@ -60,13 +60,13 @@ describe('authorization', () => {
           nonce: 'nonce',
           now: new Date(1_000),
         }
-        const protocol: [string, string][] = [
+        const protocol = [
           ['oauth_consumer_key', 'consumer'],
           ['oauth_nonce', 'nonce'],
           ['oauth_signature_method', 'HMAC-SHA1'],
           ['oauth_timestamp', '1'],
           ['oauth_version', '1.0'],
-        ]
+        ] satisfies [string, string][]
         const parameters = [...protocol, ...query, ...body]
           .map(([name, value]) => [rfc3986(name), rfc3986(value)] as const)
           .sort(([a, x], [b, y]) => (a < b ? -1 : a > b ? 1 : x < y ? -1 : x > y ? 1 : 0))

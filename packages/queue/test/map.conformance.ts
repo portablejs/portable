@@ -2,17 +2,17 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Queue from '@portable/queue'
 import { concurrencyProbe, countingSignal, deferred, delay, flush } from './utils.js'
 
-const timed: readonly [number, number][] = [
+const timed = [
   [10, 30],
   [20, 20],
   [30, 10],
-]
+] satisfies readonly [number, number][]
 const slowly = async ([value, ms]: readonly [number, number]) => {
   await delay(ms)
   return value
 }
 
-async function* fromArray<T>(items: readonly T[]) {
+async function* fromArray<value>(items: readonly value[]) {
   for (const item of items) {
     await delay(0)
     yield item
@@ -149,7 +149,7 @@ describe('map', () => {
     await Queue.map(input, (n) => n, { concurrency: 2, stopOnError: false })
     expect(calls).toBe(3)
     let asyncCalls = 0
-    const asyncInput: AsyncIterable<number> = {
+    const asyncInput = {
       [Symbol.asyncIterator]: () => ({
         next: async () => {
           await delay(1)
@@ -158,7 +158,7 @@ describe('map', () => {
             : { done: false, value: asyncCalls }
         },
       }),
-    }
+    } satisfies AsyncIterable<number>
     await Queue.map(asyncInput, (n) => n, { concurrency: Infinity })
     expect(asyncCalls).toBe(3)
   })
@@ -233,8 +233,8 @@ describe('map', () => {
 
 describe('map errors', () => {
   test('rejects at once with the first error when stopOnError is true', async () => {
-    const started: number[] = []
-    const finished: number[] = []
+    const started = new Array<number>()
+    const finished = new Array<number>()
     const error = new Error('bar')
     const result = Queue.map(
       [0, 1, 2, 3],
@@ -265,7 +265,7 @@ describe('map errors', () => {
 
   test('aborts the signal of calls still running after the first error', async () => {
     const error = new Error('first')
-    const signals: AbortSignal[] = []
+    const signals = new Array<AbortSignal>()
     const result = Queue.map(
       [0, 1, 2],
       async (n, { signal }) => {
@@ -297,7 +297,7 @@ describe('map errors', () => {
   })
 
   test('collects every error in input order into an AggregateError when stopOnError is false', async () => {
-    const mapped: number[] = []
+    const mapped = new Array<number>()
     const error = await Queue.map(
       [0, 1, 2, 3, 4],
       async (n) => {
@@ -336,7 +336,7 @@ describe('map errors', () => {
 
   test('rejects with a source error at the item that throws', async () => {
     const { state, iterable } = trackedGenerator(10, 3)
-    const mapped: number[] = []
+    const mapped = new Array<number>()
     await expect(Queue.map(iterable, (n) => mapped.push(n), { concurrency: 1 })).rejects.toThrow(
       'source failed at 3',
     )
@@ -355,7 +355,7 @@ describe('map errors', () => {
   })
 
   test('rejects with an async source error, also when stopOnError is false', async () => {
-    const mapped: number[] = []
+    const mapped = new Array<number>()
     async function* source() {
       yield 0
       yield 1
@@ -445,12 +445,12 @@ describe('map errors', () => {
 
   test('a source return() that rejects does not change the rejection', async () => {
     const error = new Error('mapper')
-    const input: AsyncIterable<number> = {
+    const input = {
       [Symbol.asyncIterator]: () => ({
         next: async () => ({ done: false, value: 1 }),
         return: () => Promise.reject(new Error('return failed')),
       }),
-    }
+    } satisfies AsyncIterable<number>
     await expect(Queue.map(input, () => Promise.reject(error), { concurrency: 1 })).rejects.toBe(
       error,
     )
@@ -473,7 +473,7 @@ describe('map errors', () => {
 describe('map signal', () => {
   test('rejects with the abort reason and aborts the signal passed to fn', async () => {
     const controller = new AbortController()
-    const signals: AbortSignal[] = []
+    const signals = new Array<AbortSignal>()
     const result = Queue.map(
       [1, 2],
       (_, { signal }) => {
@@ -513,9 +513,9 @@ describe('map signal', () => {
 
   test('does not wait for an async source blocked in next()', async () => {
     const controller = new AbortController()
-    const source: AsyncIterable<number> = {
+    const source = {
       [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
-    }
+    } satisfies AsyncIterable<number>
     const result = Queue.map(source, (n) => n, { signal: controller.signal })
     controller.abort('now')
     await expect(result).rejects.toBe('now')

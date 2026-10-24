@@ -76,7 +76,7 @@ export function seconds(option: string, date: Date): number {
 
 export function selectForSigning(fields: readonly Field[], names: readonly string[]): Field[] {
   const wanted = new Set(names.map(lowerAscii))
-  const selected: Field[] = []
+  const selected = new Array<Field>()
   for (let i = fields.length - 1; i >= 0; i--)
     if (wanted.has(fields[i]!.name)) selected.push(fields[i]!)
   return selected
@@ -94,7 +94,7 @@ export function overSigned(names: readonly string[], selected: readonly Field[])
     entry.count++
     listed.set(key, entry)
   }
-  const extra: string[] = []
+  const extra = new Array<string>()
   for (const [key, { name, count }] of listed) {
     if (count < 2) continue
     const present = selected.filter((field) => field.name === key).length

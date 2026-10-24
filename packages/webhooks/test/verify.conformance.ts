@@ -11,7 +11,7 @@ const schemes = Object.entries({
   slack: Webhooks.slack,
 })
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw'
-const nobleHmac: Webhooks.Hmac = (_hash, key, data) => hmac(sha256, key, data)
+const nobleHmac = ((_hash, key, data) => hmac(sha256, key, data)) satisfies Webhooks.Hmac
 
 describe('every scheme', () => {
   for (const [name, scheme] of schemes) {
@@ -81,7 +81,8 @@ describe('verify', () => {
 
   test('takes a synchronous or an asynchronous hmac', async () => {
     const headers = await Webhooks.sign('{}', { scheme: Webhooks.github, secret })
-    const asyncHmac: Webhooks.Hmac = async (hash, key, data) => nobleHmac(hash, key, data)
+    const asyncHmac = (async (hash, key, data) =>
+      nobleHmac(hash, key, data)) satisfies Webhooks.Hmac
     for (const fn of [nobleHmac, asyncHmac]) {
       const result = await Webhooks.verify(
         { headers, body: '{}' },
@@ -214,7 +215,7 @@ describe('a scheme written by the caller', () => {
 
   // Acme sends `acme-timestamp: <seconds>` and `acme-signature: <hex>`, the HMAC-SHA256 of
   // `{timestamp}.{body}`.
-  const acme: Webhooks.Scheme = {
+  const acme = {
     parse(headers) {
       const signature = headers.get('acme-signature')
       const timestamp = headers.get('acme-timestamp')
@@ -239,7 +240,7 @@ describe('a scheme written by the caller', () => {
       'acme-timestamp': seconds(timestamp),
       'acme-signature': toHex(signature),
     }),
-  }
+  } satisfies Webhooks.Scheme
 
   test('signs and verifies with the shared checks', async () => {
     const timestamp = new Date(1_700_000_000_000)

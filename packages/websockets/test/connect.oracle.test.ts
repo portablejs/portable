@@ -9,7 +9,7 @@ import { read, until } from './utils.js'
 const ReconnectingWebSocket =
   ReconnectingWebSocketModule as unknown as typeof ReconnectingWebSocketModule.default
 
-const cleanup: (() => unknown)[] = []
+const cleanup = new Array<() => unknown>()
 afterEach(async () => {
   for (const fn of cleanup.splice(0)) await fn()
 })
@@ -41,7 +41,7 @@ function viaUpstream(url: string, count: number, sent: WebSockets.Message[] = []
   socket.binaryType = 'arraybuffer'
   cleanup.push(() => socket.close())
   for (const message of sent) socket.send(message)
-  const received: WebSockets.Message[] = []
+  const received = new Array<WebSockets.Message>()
   socket.addEventListener('message', (event: MessageEvent) => {
     const data: unknown = event.data
     received.push(data instanceof ArrayBuffer ? new Uint8Array(data) : String(data))

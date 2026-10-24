@@ -885,7 +885,7 @@ describe('comments after a quoted local part', () => {
 
   test('no address holds unquoted whitespace', () => {
     const wellFormed = /^"(?:[^"\\]|\\[\s\S])*"@\S*$/
-    const malformed: string[] = []
+    const malformed = new Array<string>()
     for (const lead of ['', '(c)', 'Name ', '"Name" '])
       for (const local of [
         'user',

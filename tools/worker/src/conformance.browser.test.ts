@@ -26,7 +26,7 @@ test('collects the files in a dedicated worker', () => {
 for (const [index, file] of collected.files.entries()) {
   describe(file.name, () => {
     const results = new Map<string, Task>()
-    const errors: TestError[] = [...file.errors]
+    const errors = [...file.errors] satisfies TestError[]
     beforeAll(async () => {
       const {
         files: [ran],
@@ -90,7 +90,7 @@ async function run(mode: Request['mode'], files: readonly string[]): Promise<Don
 function attempt(mode: Request['mode'], files: readonly string[]): Promise<Done> {
   const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
   running.add(worker)
-  const request: Request = { mode, files, config: server.config }
+  const request = { mode, files, config: server.config } satisfies Request
   let timer: ReturnType<typeof setTimeout> | undefined
   return new Promise<Done>((resolve, reject) => {
     // A test or hook in the worker fails when its timeout passes, so a worker that sends nothing

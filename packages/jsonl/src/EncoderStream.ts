@@ -32,7 +32,7 @@ export class EncoderStream extends TransformStream<unknown, Uint8Array<ArrayBuff
       abortable(
         {
           transform(value, controller) {
-            const json: string | undefined = JSON.stringify(value)
+            const json = JSON.stringify(value) satisfies string | undefined
             if (json === undefined) throw new TypeError(`Can't encode ${typeof value} as JSON.`)
             controller.enqueue(utf8.encode(json + '\n'))
           },

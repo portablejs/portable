@@ -90,7 +90,7 @@ async function run(
   records: Parameters<typeof resolverFrom>[0],
   options: Partial<Dkim.verify.Options> = {},
 ) {
-  const log: string[] = []
+  const log = new Array<string>()
   const results = await Dkim.verify(encodeBinary(message), {
     resolver: resolverFrom(records, log),
     ...options,
@@ -116,7 +116,7 @@ const key = (record: () => string) => () => ({ [KEY]: [record()] })
 
 // The cases of mailauth's test/dkim/verify-rfc-compliance-test.js, with the results of its
 // strict mode, except where PARITY.md lists a difference.
-const cases: Case[] = [
+const cases = [
   {
     title: 'a valid rsa-sha256 signature',
     message: () => std(),
@@ -646,7 +646,7 @@ const cases: Case[] = [
     reason: 'signature syntax error',
     noDns: true,
   },
-]
+] satisfies Case[]
 
 let edSpki: string
 let smallRec: string
@@ -907,7 +907,7 @@ describe('input', () => {
 
   test('rejects with the reason when the signal aborts a key lookup', async () => {
     const controller = new AbortController()
-    const resolver: Dkim.Resolver = { resolveTxt: () => new Promise(() => {}) }
+    const resolver = { resolveTxt: () => new Promise(() => {}) } satisfies Dkim.Resolver
     const pending = Dkim.verify(await std(), { resolver, signal: controller.signal })
     const reason = new Error('stop')
     setTimeout(() => controller.abort(reason), 10)
@@ -949,7 +949,7 @@ describe('input', () => {
   test('uses the hasher option for the body hash', async () => {
     let updates = 0
     const hasher = (): Dkim.Hasher => {
-      const chunks: Uint8Array[] = []
+      const chunks = new Array<Uint8Array>()
       return {
         update(data) {
           updates++

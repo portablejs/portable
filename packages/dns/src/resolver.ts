@@ -160,25 +160,25 @@ function reverseName(ip: string): string | undefined {
   return Ip.reverseName(address)
 }
 
-type DataOf<T extends string> =
-  Extract<DnsPacket.DecodedResourceRecord, { type: T }> extends {
-    data: infer D
+type DataOf<value extends string> =
+  Extract<DnsPacket.DecodedResourceRecord, { type: value }> extends {
+    data: infer data
   }
-    ? D
+    ? data
     : never
 
-function recordsFor<T extends string>(
+function recordsFor<value extends string>(
   packet: DnsPacket.DecodedPacket,
   name: string,
-  type: T,
-): DataOf<T>[] {
-  const found: DataOf<T>[] = []
+  type: value,
+): DataOf<value>[] {
+  const found = new Array<DataOf<value>>()
   let owner = canonical(name)
   for (let hops = 0; hops <= packet.answers.length; hops++) {
     let target: string | undefined
     for (const record of packet.answers) {
       if (canonical(record.name) !== owner) continue
-      if (record.type === type) found.push((record as unknown as { data: DataOf<T> }).data)
+      if (record.type === type) found.push((record as unknown as { data: DataOf<value> }).data)
       else if (record.type === 'CNAME') target = record.data
     }
     if (found.length > 0 || target === undefined) break
@@ -316,13 +316,13 @@ export function create(options: create.Options = {}): create.ReturnType {
     throw error
   }
 
-  async function lookup<T extends DnsPacket.RecordType>(
+  async function lookup<value extends DnsPacket.RecordType>(
     hostname: string,
     name: string,
-    type: T,
+    type: value,
     syscall: string,
     signal: AbortSignal | undefined,
-  ): Promise<DataOf<T>[]> {
+  ): Promise<DataOf<value>[]> {
     const packet = await exchange(hostname, name, type, syscall, signal)
     if (packet.rcode === 'NXDOMAIN') throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
     const records = recordsFor(packet, name, type)
@@ -330,11 +330,11 @@ export function create(options: create.Options = {}): create.ReturnType {
     return records
   }
 
-  async function resolve<T extends DnsPacket.RecordType>(
+  async function resolve<value extends DnsPacket.RecordType>(
     name: string,
-    type: T,
+    type: value,
     options: create.CallOptions = {},
-  ): Promise<DataOf<T>[]> {
+  ): Promise<DataOf<value>[]> {
     const syscall = syscallFor(type)
     return lookup(name, toQueryName(name, syscall), type, syscall, options.signal)
   }

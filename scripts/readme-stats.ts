@@ -23,8 +23,8 @@ type PackageJson = {
   dependencies?: Record<string, string>
 }
 
-const readJson = <T>(path: string): T | undefined =>
-  existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as T) : undefined
+const readJson = <value>(path: string): value | undefined =>
+  existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as value) : undefined
 
 const machine = readJson<Machine>('.bench/machine.json')
 const sizes = readJson<Record<string, Record<string, Size>>>('.bench/sizes.json') ?? {}
@@ -87,7 +87,10 @@ const packageJson = (dir: string) => readJson<PackageJson>(join(dir, 'package.js
 /** Every package installed with the column's imports, not counting the first one itself. */
 function dependencyCount(testDir: string, column: Column): number | undefined {
   const seen = new Set<string>()
-  const queue: [string, string][] = column.imports!.map(({ from }) => [testDir, packageName(from)])
+  const queue = column.imports!.map(({ from }) => [testDir, packageName(from)]) satisfies [
+    string,
+    string,
+  ][]
   while (queue.length) {
     const [from, name] = queue.shift()!
     const dir = findPackage(from, name)
@@ -130,7 +133,7 @@ function statsTable(name: string, table: Table): string {
   const measured = sizes[name] ?? {}
   const cell = (column: Column, library: () => string, platform: Record<'node' | 'web', string>) =>
     column.imports ? library() : platform[column.platform ?? 'web']
-  const rows: [string, (column: Column) => string][] = [
+  const rows = [
     [
       'Minified and gzipped',
       (column) =>
@@ -175,7 +178,7 @@ function statsTable(name: string, table: Table): string {
       'Version compared',
       (column) => cell(column, () => versionOf(testDir, column), { node: '–', web: '–' }),
     ],
-  ]
+  ] satisfies [string, (column: Column) => string][]
   return [
     `| | ${table.columns.map(header).join(' | ')} |`,
     `| --- |${' --- |'.repeat(table.columns.length)}`,

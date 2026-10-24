@@ -103,8 +103,8 @@ export function createReader(readable: ReadableStream<Uint8Array>): Reader {
 
   return {
     async read(command) {
-      const lines: string[] = []
-      const raw: string[] = []
+      const lines = new Array<string>()
+      const raw = new Array<string>()
       let budget = maxReplyLength
       for (;;) {
         const bytes = await readLine(command, budget)

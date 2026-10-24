@@ -46,7 +46,7 @@ export async function splitHeaders(
   }
   const stop = () => signal?.removeEventListener('abort', onAbort)
   signal?.addEventListener('abort', onAbort, { once: true })
-  const pieces: Uint8Array[] = []
+  const pieces = new Array<Uint8Array>()
   let length = 0
   let lineLength = 0
   let lineStartsWithCr = false

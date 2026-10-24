@@ -83,7 +83,7 @@ A package can use an API newer than this baseline if it checks whether the runti
 
 ```json
 "exports": {
-  ".": "./src/index.ts"
+  ".": "./src/exports/index.ts"
 }
 ```
 

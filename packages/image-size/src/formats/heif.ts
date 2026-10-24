@@ -4,7 +4,7 @@ import type { Format } from './format.js'
 
 type Brand = 'avif' | 'avis' | 'heic' | 'heix' | 'hevc' | 'hevx' | 'mif1' | 'msf1'
 
-const brands: ReadonlySet<string> = new Set<Brand>([
+const brands = new Set<string>([
   'avif',
   'avis',
   'heic',
@@ -13,7 +13,7 @@ const brands: ReadonlySet<string> = new Set<Brand>([
   'hevx',
   'mif1',
   'msf1',
-])
+] satisfies Brand[])
 
 const isBrand = (value: string): value is Brand => brands.has(value)
 
@@ -25,7 +25,7 @@ function brand(input: Uint8Array): Brand | undefined {
 }
 
 function children(input: Uint8Array, parent: Box, headerSize: number): Box[] {
-  const boxes: Box[] = []
+  const boxes = new Array<Box>()
   const end = parent.offset + parent.size
   for (let offset = parent.offset + headerSize; offset + 8 <= end;) {
     const size = u32(input, offset, true)
@@ -53,7 +53,7 @@ function propertiesOf(input: Uint8Array, ipma: Box, item: number): number[] {
     const id = version < 1 ? u16(input, offset, true) : u32(input, offset, true)
     offset += version < 1 ? 2 : 4
     const associations = u8(input, offset++)
-    const indexes: number[] = []
+    const indexes = new Array<number>()
     for (let i = 0; i < associations; i++) {
       indexes.push(wideIndexes ? u16(input, offset, true) & 0x7fff : u8(input, offset) & 0x7f)
       offset += wideIndexes ? 2 : 1

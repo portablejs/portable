@@ -3,7 +3,7 @@
  * byte unchanged.
  */
 export function toBinary(bytes: Uint8Array): string {
-  const parts: string[] = []
+  const parts = new Array<string>()
   for (let i = 0; i < bytes.length; i += 8192)
     parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 8192) as unknown as number[]))
   return parts.join('')

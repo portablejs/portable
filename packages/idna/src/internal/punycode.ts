@@ -32,8 +32,8 @@ const digits = 'abcdefghijklmnopqrstuvwxyz0123456789'
  */
 export function decode(input: string): string | undefined {
   const delimiter = input.lastIndexOf('-')
-  const positions: number[] = []
-  const codes: number[] = []
+  const positions = new Array<number>()
+  const codes = new Array<number>()
   for (let i = 0; i < delimiter; i++) {
     const code = input.charCodeAt(i)
     if (code >= 0x80) return undefined

@@ -56,7 +56,7 @@ function watchdog(idle = 240_000): Plugin {
       process.exit(1)
     }, idle)
   }
-  const reporter: Reporter = {
+  const reporter = {
     onTestModuleStart(module) {
       if (!module.project.config.browser.enabled) return
       running++
@@ -72,7 +72,7 @@ function watchdog(idle = 240_000): Plugin {
     onHookStart: arm,
     onHookEnd: arm,
     onTestRunEnd: () => clearTimeout(timer),
-  }
+  } satisfies Reporter
   return {
     name: 'portable:watchdog',
     configureVitest(context) {
@@ -100,10 +100,13 @@ export default defineConfig({
   },
   lint: {
     plugins: ['eslint', 'typescript', 'unicorn', 'vitest'],
+    jsPlugins: ['./tools/lint/src/plugin.ts'],
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
       'no-console': 'error',
+      'portable/prefer-satisfies': 'error',
+      'portable/type-parameter-name': 'error',
       // `fuzz` from @portable/fuzz asserts a property, like `expect`.
       'vitest/expect-expect': ['warn', { assertFunctionNames: ['expect', 'expect*', 'fuzz'] }],
       'no-irregular-whitespace': [
@@ -115,6 +118,10 @@ export default defineConfig({
         {
           patterns: [
             { group: ['node:*'], message: 'portable packages use web-standard APIs only.' },
+            {
+              group: ['**/exports/*'],
+              message: 'Import the source module. A file in src/exports is only a package entry.',
+            },
           ],
           paths: nodeBuiltins.map((name) => ({
             name,
@@ -189,6 +196,7 @@ export default defineConfig({
           },
           include: [
             'packages/*/{test,src}/**/*.test.ts',
+            'tools/lint/src/*.test.ts',
             'packages/*/{test,src}/**/*.conformance.ts',
             '!packages/*/{test,src}/**/*.browser.test.ts',
           ],

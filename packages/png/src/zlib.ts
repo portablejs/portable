@@ -33,7 +33,7 @@ export async function deflate(
 ): Promise<Uint8Array> {
   const reader = transform(data, new CompressionStream('deflate')).getReader()
   const stop = cancelOnAbort(reader, signal)
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   try {
     for (;;) {
       const { done, value } = await reader.read()

@@ -18,7 +18,7 @@ function bob() {
 
 /** A transport whose written messages the test reads back, and which never answers. */
 function silent() {
-  const written: unknown[] = []
+  const written = new Array<unknown>()
   const readable = new ReadableStream<unknown>()
   const writable = new WritableStream<unknown>({ write: (m) => void written.push(m) })
   return { transport: { readable, writable }, written }
@@ -83,7 +83,7 @@ describe('calls', () => {
 
   test('resolves concurrent calls in the order they finish', async () => {
     const remote = pair({ wait: (ms: number) => new Promise((r) => setTimeout(() => r(ms), ms)) })
-    const order: number[] = []
+    const order = new Array<number>()
     await Promise.all(
       [30, 10, 20].map((ms) => remote.wait(ms).then((v) => order.push(v as number))),
     )
@@ -468,7 +468,7 @@ describe('streams', () => {
         for (let i = 0; i < n; i++) yield i
       },
     })
-    const values: number[] = []
+    const values = new Array<number>()
     for await (const value of remote.count(100)) values.push(value)
     expect(values).toEqual(Array.from({ length: 100 }, (_, i) => i))
   })
@@ -523,7 +523,7 @@ describe('streams', () => {
         }
       },
     })
-    const values: number[] = []
+    const values = new Array<number>()
     for await (const value of remote.forever()) {
       values.push(value)
       if (value === 3) break
@@ -539,7 +539,7 @@ describe('streams', () => {
         throw new Rpc.RemoteError({ code: 1, message: 'broken' })
       },
     })
-    const values: number[] = []
+    const values = new Array<number>()
     const error = await (async () => {
       for await (const value of remote.failing()) values.push(value)
     })().catch((e: unknown) => e)

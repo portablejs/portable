@@ -18,7 +18,7 @@ const message = binary(
 )
 const chunks = chunked(message, 16384)
 
-function drain<T>(stream: ReadableStream<T>): Promise<void> {
+function drain<chunk>(stream: ReadableStream<chunk>): Promise<void> {
   const reader = stream.getReader()
   const next = (): Promise<void> => reader.read().then((r) => (r.done ? undefined : next()))
   return next()

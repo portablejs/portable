@@ -13,7 +13,7 @@ export declare namespace communicationContract {
   type Setup = (options: Options) => Promise<Rpc.Remote<Methods>>
 }
 
-const parentApi: ParentApi = { add: (a, b) => a + b, getChannel: () => '' }
+const parentApi = { add: (a, b) => a + b, getChannel: () => '' } satisfies ParentApi
 
 const waitFor = async (check: () => Promise<boolean>) => {
   for (let i = 0; i < 100 && !(await check()); i++)
@@ -167,7 +167,7 @@ export function communicationContract(name: string, setup: communicationContract
 
     test("streams an async generator's values", async () => {
       const { remote } = await connect()
-      const values: number[] = []
+      const values = new Array<number>()
       for await (const value of remote.count(3)) values.push(value)
       expect(values).toEqual([0, 1, 2])
     })
@@ -175,14 +175,14 @@ export function communicationContract(name: string, setup: communicationContract
     test('streams a ReadableStream result', async () => {
       const { remote } = await connect()
       const reader = (await remote.numbers(3)).getReader()
-      const values: number[] = []
+      const values = new Array<number>()
       for (let r = await reader.read(); !r.done; r = await reader.read()) values.push(r.value)
       expect(values).toEqual([0, 1, 2])
     })
 
     test("runs the remote generator's finally block when the loop breaks", async () => {
       const { remote } = await connect()
-      const values: number[] = []
+      const values = new Array<number>()
       for await (const value of remote.forever()) {
         values.push(value)
         if (values.length === 2) break

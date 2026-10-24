@@ -14,7 +14,7 @@ const text = (exclude?: RegExp) =>
     })
     .map((value) => (exclude ? value.replace(exclude, '') : value))
 
-const message: fc.Arbitrary<Sse.Message> = fc.record(
+const message = fc.record(
   {
     event: text(/[\r\n]/g),
     data: text(),
@@ -23,11 +23,11 @@ const message: fc.Arbitrary<Sse.Message> = fc.record(
     comment: text(),
   },
   { requiredKeys: [] },
-)
+) satisfies fc.Arbitrary<Sse.Message>
 
 /** The events a client dispatches for these messages, following the HTML event stream rules. */
 function expected(messages: readonly Sse.Message[]): Sse.Event[] {
-  const events: Sse.Event[] = []
+  const events = new Array<Sse.Event>()
   let id: string | undefined
   let retry: number | undefined
   for (const message of messages) {

@@ -95,7 +95,7 @@ type Answers = { A: string[]; AAAA: string[]; MX: Dns.MxRecord[]; TXT: string[][
 type Context = {
   resolver: Resolver
   signal: AbortSignal | undefined
-  cache: { [K in keyof Answers]: Map<string, Promise<Answers[K]>> }
+  cache: { [key in keyof Answers]: Map<string, Promise<Answers[key]>> }
   client: Ip.Address
   values: Values
   asciiLocal: boolean
@@ -112,9 +112,13 @@ const results: Record<Qualifier, Result.Code> = {
   '?': 'neutral',
 }
 
-type Lookup<T> = (resolver: Resolver, name: string, options: Dns.create.CallOptions) => Promise<T>
+type Lookup<value> = (
+  resolver: Resolver,
+  name: string,
+  options: Dns.create.CallOptions,
+) => Promise<value>
 
-const methods: { [K in keyof Answers]: Lookup<Answers[K]> } = {
+const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
   A: (resolver, name, options) => resolver.resolve4(name, options),
   AAAA: (resolver, name, options) => resolver.resolve6(name, options),
   MX: (resolver, name, options) => resolver.resolveMx(name, options),
@@ -165,7 +169,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     }
   }
 
-  const ctx: Context = {
+  const ctx = {
     resolver: options.resolver,
     signal: options.signal,
     cache: { A: new Map(), AAAA: new Map(), MX: new Map(), TXT: new Map(), PTR: new Map() },
@@ -186,7 +190,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     asciiLocal: /^\p{ASCII}*$/u.test(local),
     lookups: 0,
     voidLookups: 0,
-  }
+  } satisfies Context
 
   let outcome: Outcome
   try {
@@ -398,12 +402,12 @@ async function addresses(
   })
 }
 
-async function query<K extends keyof Answers>(
+async function query<key extends keyof Answers>(
   ctx: Context,
-  type: K,
+  type: key,
   name: string,
-): Promise<Answers[K]> {
-  const cache: Map<string, Promise<Answers[K]>> = ctx.cache[type]
+): Promise<Answers[key]> {
+  const cache = ctx.cache[type] satisfies Map<string, Promise<Answers[key]>>
   const key = name.toLowerCase()
   let answer = cache.get(key)
   if (!answer) {
@@ -426,7 +430,10 @@ async function query<K extends keyof Answers>(
   }
 }
 
-function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+function abortable<value>(
+  promise: Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return promise
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {

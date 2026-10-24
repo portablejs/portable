@@ -14,12 +14,12 @@ test('a message encoded, signed and sent arrives with a valid DKIM signature', a
   ])) as CryptoKeyPair
   const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keys.publicKey))
   const record = `v=DKIM1; k=ed25519; p=${btoa(String.fromCharCode(...publicKey))}`
-  const resolver: Dkim.Resolver = {
+  const resolver = {
     async resolveTxt(name) {
       if (name !== 'mail._domainkey.example.com') throw new Error(`unexpected lookup ${name}`)
       return [[record]]
     },
-  }
+  } satisfies Dkim.Resolver
 
   const message = await Streams.toBytes(
     Mail.encode({

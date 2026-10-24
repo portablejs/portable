@@ -10,9 +10,9 @@ export function useFakeTimers(): void {
   })
 }
 
-export async function settle<T>(
-  promise: Promise<T>,
-): Promise<{ value: T } | { error: unknown; rejected: true }> {
+export async function settle<value>(
+  promise: Promise<value>,
+): Promise<{ value: value } | { error: unknown; rejected: true }> {
   const settled = promise.then(
     (value) => ({ value }),
     (error: unknown) => ({ error, rejected: true as const }),
@@ -22,7 +22,7 @@ export async function settle<T>(
 }
 
 export async function retryDelays(options: Timers.retry.Options): Promise<number[]> {
-  const times: number[] = []
+  const times = new Array<number>()
   await settle(
     Timers.retry(() => {
       times.push(Date.now())

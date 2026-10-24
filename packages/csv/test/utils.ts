@@ -29,24 +29,24 @@ function random(seed: number): () => number {
   }
 }
 
-export function randomChunks<T extends string | Uint8Array>(
-  input: T,
+export function randomChunks<value extends string | Uint8Array>(
+  input: value,
   seed: number,
   maxSize = 16,
-): T[] {
+): value[] {
   const next = random(seed)
-  const chunks: T[] = []
+  const chunks = new Array<value>()
   for (let i = 0; i < input.length;) {
     const size = 1 + Math.floor(next() * maxSize)
-    chunks.push(input.slice(i, i + size) as T)
+    chunks.push(input.slice(i, i + size) as value)
     i += size
   }
   return chunks
 }
 
-export function chunked<T extends string | Uint8Array>(input: T, size: number): T[] {
-  const chunks: T[] = []
-  for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as T)
+export function chunked<value extends string | Uint8Array>(input: value, size: number): value[] {
+  const chunks = new Array<value>()
+  for (let i = 0; i < input.length; i += size) chunks.push(input.slice(i, i + size) as value)
   return chunks
 }
 

@@ -151,7 +151,7 @@ export async function seal(message: Message, options: seal.Options): Promise<str
           : `cv=${cv} needs an ARC chain, and the message has ${chained ? 'no valid ARC set' : 'none'}.`,
       ),
     )
-  const covered: Field[] = []
+  const covered = new Array<Field>()
   if (cv === 'pass') {
     const chain = readChain(fields)
     if (typeof chain === 'string')

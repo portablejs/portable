@@ -22,12 +22,12 @@ const login = (script: Script, auth: Smtp.Auth, options: Partial<Smtp.connect.Op
 
 const password = { user: 'testuser', pass: 'testpass' }
 
-const loginOnly: Script = {
+const loginOnly = {
   EHLO: '250-test\r\n250 AUTH LOGIN\r\n',
   AUTH: '334 VXNlcm5hbWU6\r\n',
   DEFAULT: (line) =>
     line === b64('testuser') ? '334 UGFzc3dvcmQ6\r\n' : '235 2.7.0 Authentication successful\r\n',
-}
+} satisfies Script
 
 function expectNoSecrets(error: Smtp.CommandError, ...secrets: string[]) {
   const { message, command, response } = error

@@ -30,10 +30,10 @@ export declare namespace poll {
  * )
  * ```
  */
-export async function poll<T>(
-  fn: (context: Context) => T | undefined | PromiseLike<T | undefined>,
+export async function poll<value>(
+  fn: (context: Context) => value | undefined | PromiseLike<value | undefined>,
   options: poll.Options = {},
-): Promise<T> {
+): Promise<value> {
   const { delay = 1000, signal } = options
   const next = backoff(delay)
   signal?.throwIfAborted()

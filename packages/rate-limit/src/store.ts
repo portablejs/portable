@@ -9,7 +9,7 @@ export type Store = {
 }
 
 export declare namespace Store {
-  type MaybePromise<T> = T | Promise<T>
+  type MaybePromise<value> = value | Promise<value>
   type GetOptions = {
     signal?: AbortSignal | undefined
   }

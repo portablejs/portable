@@ -98,7 +98,7 @@ describe('sleep with scheduler.wait', () => {
   })
 
   test('uses scheduler.wait when the runtime has it', async () => {
-    const calls: unknown[][] = []
+    const calls = new Array<unknown[]>()
     vi.stubGlobal('scheduler', {
       wait: (...args: unknown[]) => {
         calls.push(args)

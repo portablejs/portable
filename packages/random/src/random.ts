@@ -129,7 +129,7 @@ export function string(length: number, options: string.Options = {}): string {
  * const deck = Random.shuffle(['A', 'K', 'Q', 'J'])
  * ```
  */
-export function shuffle<T>(array: readonly T[]): T[] {
+export function shuffle<value>(array: readonly value[]): value[] {
   return internal.shuffle(next, array)
 }
 
@@ -143,7 +143,7 @@ export function shuffle<T>(array: readonly T[]): T[] {
  * const color = Random.pick(['red', 'green', 'blue'])
  * ```
  */
-export function pick<T>(array: readonly T[]): T {
+export function pick<value>(array: readonly value[]): value {
   return internal.pick(next, array)
 }
 

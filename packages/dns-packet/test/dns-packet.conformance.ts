@@ -273,11 +273,11 @@ describe('dns-packet cases', () => {
   })
 
   test('stream', () => {
-    const packet: Packet = {
+    const packet = {
       id: 45632,
       flags: { aa: true, ra: true },
       answers: [{ type: 'A', name: 'test2.example.net', data: '198.51.100.1' }],
-    }
+    } satisfies Packet
     const framed = encode(packet, { framing: 'tcp' })
     expect(framed.subarray(2)).toEqual(encode(packet))
     expect((framed[0]! << 8) | framed[1]!).toBe(framed.length - 2)
@@ -303,14 +303,14 @@ describe('dns-packet cases', () => {
       options: [],
     })
 
-    const options: EdnsOption[] = [
+    const options = [
       { code: 'CLIENT_SUBNET', ip: 'fe80::', sourcePrefixLength: 64, scopePrefixLength: 0 },
       { code: 'CLIENT_SUBNET', ip: '5.6.0.0', sourcePrefixLength: 16, scopePrefixLength: 16 },
       { code: 'PADDING', length: 31 },
       { code: 'TCP_KEEPALIVE' },
       { code: 'TCP_KEEPALIVE', timeout: 150 },
       { code: 'KEY_TAG', tags: [1, 82, 987] },
-    ]
+    ] satisfies EdnsOption[]
     const opt = roundTrip({
       questions: [question],
       additionals: [
@@ -444,7 +444,7 @@ describe('dns-packet cases', () => {
   })
 
   test('option codes', () => {
-    const codes: [number, string][] = [
+    const codes = [
       [0, 'OPTION0'],
       [1, 'LLQ'],
       [2, 'UL'],
@@ -461,7 +461,7 @@ describe('dns-packet cases', () => {
       [65535, 'OPTION65535'],
       [64000, 'OPTION64000'],
       [65002, 'OPTION65002'],
-    ]
+    ] satisfies [number, string][]
     for (const [number, code] of codes) {
       const options = [{ code, data: Uint8Array.of(1) }] as EdnsOption[]
       const bytes = encode({ additionals: [{ type: 'OPT', options }] })
@@ -557,9 +557,9 @@ describe('known upstream issues', () => {
   })
 
   test('encode does not modify its input', () => {
-    const packet: Packet = {
+    const packet = {
       answers: [{ type: 'CAA', name: 'a.com', data: { flags: 128, tag: 'issue', value: 'ca' } }],
-    }
+    } satisfies Packet
     const copy = structuredClone(packet)
     encode(packet)
     expect(packet).toEqual(copy)
@@ -632,7 +632,7 @@ describe('known upstream issues', () => {
 })
 
 describe('compression', () => {
-  const response: Packet = {
+  const response = {
     type: 'response',
     questions: [{ type: 'MX', name: 'example.com' }],
     answers: [
@@ -662,7 +662,7 @@ describe('compression', () => {
         data: { priority: 0, weight: 0, port: 5060, target: 'mail.example.com' },
       },
     ],
-  }
+  } satisfies Packet
 
   test('replaces repeated names with pointers and decodes to the same packet', () => {
     const plain = encode(response)
@@ -821,7 +821,7 @@ describe('encoding', () => {
   })
 
   test('decodes HTTPS records as raw bytes', () => {
-    const record: ResourceRecord = { type: 'HTTPS', name: 'a.com', data: hex('00010000') }
+    const record = { type: 'HTTPS', name: 'a.com', data: hex('00010000') } satisfies ResourceRecord
     expect(roundTripRecord(record)).toMatchObject({ type: 'HTTPS', data: hex('00010000') })
   })
 

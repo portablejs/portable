@@ -8,8 +8,8 @@ const tick = (ms: number) => vi.advanceTimersByTimeAsync(ms)
 
 function recorder() {
   const start = Date.now()
-  const times: number[] = []
-  const args: unknown[] = []
+  const times = new Array<number>()
+  const args = new Array<unknown>()
   const fn = (value?: unknown) => {
     times.push(Date.now() - start)
     args.push(value)

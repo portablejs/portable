@@ -778,7 +778,7 @@ describe('recorded responses', () => {
 })
 
 test('a plain object of functions fits the Resolver type, as create does', () => {
-  const fake: Resolver = {
+  const fake = {
     resolve4: async () => ['192.0.2.1'],
     resolve6: async () => [],
     resolveCname: async () => [],
@@ -799,8 +799,8 @@ test('a plain object of functions fits the Resolver type, as create does', () =>
     resolveCaa: async () => [],
     resolveNaptr: async () => [],
     reverse: async () => [],
-  }
-  const ours: Resolver = create()
+  } satisfies Resolver
+  const ours = create() satisfies Resolver
   expect(Object.keys(fake).every((key) => typeof ours[key as keyof Resolver] === 'function')).toBe(
     true,
   )

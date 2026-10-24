@@ -24,11 +24,11 @@ export function dnsError(code: string, name: string): Error {
  */
 export function zoneResolver(zone: Zone, log?: Query[]): Dmarc.Resolver {
   const names = new Map(Object.entries(zone).map(([name, records]) => [normalize(name), records]))
-  async function answer<T>(
+  async function answer<value>(
     type: 'TXT' | 'A' | 'CNAME',
     name: string,
-    pick: (records: Records) => readonly T[] | string | undefined,
-  ): Promise<T[]> {
+    pick: (records: Records) => readonly value[] | string | undefined,
+  ): Promise<value[]> {
     log?.push(`${type} ${name}`)
     let key = normalize(name)
     for (let hops = 0; ; hops++) {

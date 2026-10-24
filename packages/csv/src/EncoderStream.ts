@@ -28,7 +28,7 @@ export declare namespace EncoderStream {
  */
 export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
-    const encoder: Encoder = createEncoder(options)
+    const encoder = createEncoder(options) satisfies Encoder
     const utf8 = new TextEncoder()
     super(
       abortable(

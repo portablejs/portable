@@ -2,12 +2,12 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as WebPush from '@portable/web-push'
 import { decrypt, pushService, userAgent, verifyVapid } from './utils.js'
 
-const vapid: WebPush.Vapid = {
+const vapid = {
   subject: 'mailto:ops@example.com',
   publicKey:
     'BDktD8eWXxRBejqiC_F3OwkHxonimzIBkPa7L4XflJtOnPoBLJQ7lLbCmxlLNywNTp-MF30-cKWa3k9WEkLcZEE',
   privateKey: 'sfgZehuVVExoyNAnj7Benvwt4H2RyaHyafL_A_FzTn0',
-}
+} satisfies WebPush.Vapid
 const text = new TextDecoder()
 const agent = await userAgent()
 

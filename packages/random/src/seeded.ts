@@ -9,9 +9,9 @@ export type Seeded = {
   /** Same as `Random.string`. */
   readonly string: (length: number, options?: { alphabet?: string | undefined }) => string
   /** Same as `Random.shuffle`. */
-  readonly shuffle: <T>(array: readonly T[]) => T[]
+  readonly shuffle: <value>(array: readonly value[]) => value[]
   /** Same as `Random.pick`. */
-  readonly pick: <T>(array: readonly T[]) => T
+  readonly pick: <value>(array: readonly value[]) => value
   /** Same as `Random.bytes`. Each group of four bytes is one 32-bit output, least significant byte first. */
   readonly bytes: (length: number) => Uint8Array<ArrayBuffer>
 }

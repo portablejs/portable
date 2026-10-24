@@ -18,8 +18,8 @@ function drain(stream: EventEmitter): Promise<void> {
   })
 }
 
-function handMerge<T>(sources: readonly ReadableStream<T>[]): ReadableStream<T> {
-  const { readable, writable } = new TransformStream<T, T>()
+function handMerge<chunk>(sources: readonly ReadableStream<chunk>[]): ReadableStream<chunk> {
+  const { readable, writable } = new TransformStream<chunk, chunk>()
   const writer = writable.getWriter()
   void Promise.all(
     sources.map(async (source) => {

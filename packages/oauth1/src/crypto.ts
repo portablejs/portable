@@ -87,7 +87,7 @@ function pkcs1ToPkcs8(pkcs1: Uint8Array): Uint8Array<ArrayBuffer> {
 
 function derLength(length: number): number[] {
   if (length < 0x80) return [length]
-  const bytes: number[] = []
+  const bytes = new Array<number>()
   for (let n = length; n > 0; n >>>= 8) bytes.unshift(n & 0xff)
   return [0x80 | bytes.length, ...bytes]
 }

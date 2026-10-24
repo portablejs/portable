@@ -48,7 +48,7 @@ function source(
   })
 }
 
-async function drain<T>(stream: ReadableStream<T>): Promise<number> {
+async function drain<chunk>(stream: ReadableStream<chunk>): Promise<number> {
   const reader = stream.getReader()
   let count = 0
   while (!(await reader.read()).done) count++
@@ -69,7 +69,7 @@ class HandWrittenStream extends TransformStream<Uint8Array, { event: string; dat
         buffer = blocks.pop()!
         for (const block of blocks) {
           let event = 'message'
-          const data: string[] = []
+          const data = new Array<string>()
           for (const line of block.split('\n')) {
             if (line.startsWith('data:')) data.push(line.slice(line[5] === ' ' ? 6 : 5))
             else if (line.startsWith('event:')) event = line.slice(line[6] === ' ' ? 7 : 6)
@@ -112,7 +112,7 @@ describe('decodes an event stream', () => {
   for (const [name, chunks] of Object.entries(fixtures)) {
     const text = chunks.map((chunk) => new TextDecoder().decode(chunk)).join('')
     test(`whole text: ${name}`, async ({ bench }) => {
-      const parsed: EventSourceMessage[] = []
+      const parsed = new Array<EventSourceMessage>()
       createParser({ onEvent: (event) => parsed.push(event) }).feed(text)
       expect(Sse.decode(text).map((event) => event.data)).toEqual(parsed.map((event) => event.data))
       await bench.compare(
@@ -120,7 +120,7 @@ describe('decodes an event stream', () => {
           Sse.decode(text)
         }),
         bench('eventsource-parser', () => {
-          const events: EventSourceMessage[] = []
+          const events = new Array<EventSourceMessage>()
           createParser({ onEvent: (event) => events.push(event) }).feed(text)
         }),
       )

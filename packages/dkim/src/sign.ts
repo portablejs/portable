@@ -128,7 +128,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     await split.body.cancel()
     throw new InvalidInputError('The message has no From field to sign.')
   }
-  const request: BodyHash = { canonicalization: bodyCanonicalization }
+  const request = { canonicalization: bodyCanonicalization } satisfies BodyHash
   const cancel = () => void split.body.cancel().catch(() => {})
   signal?.addEventListener('abort', cancel, { once: true })
   const digests = await hashBody(split.body, [request], hasher).finally(() =>

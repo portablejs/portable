@@ -8,7 +8,7 @@ function check(
   convert: (source: string) => string,
   expected: (testCase: (typeof idnaTestCases)[number]) => string | null,
 ): Mismatch[] {
-  const mismatches: Mismatch[] = []
+  const mismatches = new Array<Mismatch>()
   for (const testCase of idnaTestCases) {
     const actual = attempt(() => convert(testCase.source))
     if (actual !== expected(testCase))

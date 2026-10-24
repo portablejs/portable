@@ -6,7 +6,7 @@ useFakeTimers()
 
 const aborted = new Error('Aborted')
 
-function after<T>(ms: number, value: T): Promise<T> {
+function after<value>(ms: number, value: value): Promise<value> {
   return Timers.sleep(ms).then(() => value)
 }
 
@@ -55,7 +55,7 @@ describe('results', () => {
   })
 
   test('passes the check number', async () => {
-    const seen: number[] = []
+    const seen = new Array<number>()
     await settle(
       Timers.poll(({ attempt }) => {
         seen.push(attempt)
@@ -110,13 +110,13 @@ describe('results', () => {
 
 describe('delay', () => {
   test('waits 1000 ms between checks by default', async () => {
-    const times: number[] = []
+    const times = new Array<number>()
     await settle(Timers.poll(() => (times.push(Date.now()) === 3 ? true : undefined)))
     expect(gaps(times)).toEqual([1000, 1000])
   })
 
   test('waits the given number of ms between checks', async () => {
-    const times: number[] = []
+    const times = new Array<number>()
     await settle(
       Timers.poll(() => (times.push(Date.now()) === 3 ? true : undefined), { delay: 50 }),
     )
@@ -124,7 +124,7 @@ describe('delay', () => {
   })
 
   test('takes the same backoff as retry', async () => {
-    const times: number[] = []
+    const times = new Array<number>()
     await settle(
       Timers.poll(() => (times.push(Date.now()) === 5 ? true : undefined), {
         delay: { initial: 100, max: 500, jitter: false },
@@ -134,7 +134,7 @@ describe('delay', () => {
   })
 
   test('takes a function of the check number', async () => {
-    const times: number[] = []
+    const times = new Array<number>()
     await settle(
       Timers.poll(() => (times.push(Date.now()) === 4 ? true : undefined), {
         delay: (attempt) => attempt * 10,

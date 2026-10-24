@@ -40,22 +40,22 @@ export declare namespace map {
  * )
  * ```
  */
-export function map<T, R>(
-  input: Iterable<T> | AsyncIterable<T>,
-  fn: (item: T, context: map.Context) => R | PromiseLike<R>,
+export function map<chunk, result>(
+  input: Iterable<chunk> | AsyncIterable<chunk>,
+  fn: (item: chunk, context: map.Context) => result | PromiseLike<result>,
   options: map.Options = {},
-): Promise<R[]> {
+): Promise<result[]> {
   const { signal, stopOnError = true } = options
   const concurrency = checkLimit('concurrency', options.concurrency ?? Infinity)
   if (typeof fn !== 'function') throw new TypeError('Expected `fn` to be a function.')
 
-  return new Promise<R[]>((resolve, reject) => {
+  return new Promise<result[]>((resolve, reject) => {
     if (signal?.aborted) return reject(signal.reason)
 
-    const results: R[] = []
-    const errors: { index: number; error: unknown }[] = []
+    const results: result[] = []
+    const errors = new Array<{ index: number; error: unknown }>()
     const controller = new AbortController()
-    let iterator: Iterator<T> | AsyncIterator<T>
+    let iterator: Iterator<chunk> | AsyncIterator<chunk>
     let isAsync: boolean
     let index = 0
     let running = 0
@@ -64,11 +64,11 @@ export function map<T, R>(
     let settled = false
 
     try {
-      const asyncMethod = (input as AsyncIterable<T>)[Symbol.asyncIterator]
+      const asyncMethod = (input as AsyncIterable<chunk>)[Symbol.asyncIterator]
       isAsync = typeof asyncMethod === 'function'
       iterator = isAsync
-        ? (input as AsyncIterable<T>)[Symbol.asyncIterator]()
-        : (input as Iterable<T>)[Symbol.iterator]()
+        ? (input as AsyncIterable<chunk>)[Symbol.asyncIterator]()
+        : (input as Iterable<chunk>)[Symbol.iterator]()
     } catch (error) {
       return reject(error)
     }
@@ -95,9 +95,9 @@ export function map<T, R>(
       while (!settled && !done && !pulling && running < concurrency) {
         if (isAsync) {
           pulling = true
-          let result: Promise<IteratorResult<T>>
+          let result: Promise<IteratorResult<chunk>>
           try {
-            result = Promise.resolve((iterator as AsyncIterator<T>).next())
+            result = Promise.resolve((iterator as AsyncIterator<chunk>).next())
           } catch (error) {
             done = true
             return fail(error, false)
@@ -122,9 +122,9 @@ export function map<T, R>(
           )
           return
         }
-        let item: IteratorResult<T>
+        let item: IteratorResult<chunk>
         try {
-          item = (iterator as Iterator<T>).next()
+          item = (iterator as Iterator<chunk>).next()
         } catch (error) {
           done = true
           return fail(error, false)
@@ -145,10 +145,10 @@ export function map<T, R>(
       }
     }
 
-    function start(item: T) {
+    function start(item: chunk) {
       const i = index++
       running++
-      let result: R | PromiseLike<R>
+      let result: result | PromiseLike<result>
       try {
         result = fn(item, { index: i, signal: controller.signal })
       } catch (error) {

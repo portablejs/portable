@@ -9,7 +9,10 @@ function isArrayBufferBacked(bytes: Uint8Array): bytes is Uint8Array<ArrayBuffer
   return bytes.buffer instanceof ArrayBuffer
 }
 
-export async function run<T>(signal: AbortSignal | undefined, task: () => Promise<T>): Promise<T> {
+export async function run<value>(
+  signal: AbortSignal | undefined,
+  task: () => Promise<value>,
+): Promise<value> {
   signal?.throwIfAborted()
   const result = await task()
   signal?.throwIfAborted()

@@ -3,12 +3,12 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as WebPush from '@portable/web-push'
 import { fromBase64url, pushService, verifyVapid } from './utils.js'
 
-const keys: WebPush.VapidKeys = {
+const keys = {
   publicKey:
     'BDktD8eWXxRBejqiC_F3OwkHxonimzIBkPa7L4XflJtOnPoBLJQ7lLbCmxlLNywNTp-MF30-cKWa3k9WEkLcZEE',
   privateKey: 'sfgZehuVVExoyNAnj7Benvwt4H2RyaHyafL_A_FzTn0',
-}
-const vapid: WebPush.Vapid = { subject: 'mailto:ops@example.com', ...keys }
+} satisfies WebPush.VapidKeys
+const vapid = { subject: 'mailto:ops@example.com', ...keys } satisfies WebPush.Vapid
 
 let endpoints = 0
 /** A new endpoint origin for each call, so no test gets a token another test cached. */

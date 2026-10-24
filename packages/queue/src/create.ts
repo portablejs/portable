@@ -5,7 +5,7 @@ export type Context = {
 }
 
 /** A function the queue calls when a slot is free. It can return a value or a promise. */
-export type Task<T> = (context: Context) => T | PromiseLike<T>
+export type Task<value> = (context: Context) => value | PromiseLike<value>
 
 /** A queue made by `create`. */
 export type Queue = {
@@ -14,7 +14,7 @@ export type Queue = {
    * `options.signal` or the queue's `signal` aborts, and with an `AbortError` `DOMException` when
    * `clear()` removes the task before it starts.
    */
-  add: <T>(task: Task<T>, options?: Queue.AddOptions) => Promise<T>
+  add: <value>(task: Task<value>, options?: Queue.AddOptions) => Promise<value>
   /** Resolves when no task is waiting or running. It never rejects. */
   idle: () => Promise<void>
   /** Stops starting tasks. Running tasks continue. */
@@ -110,7 +110,7 @@ export function create(options: create.Options = {}): Queue {
   let pending = 0
   let paused = false
   let idleWaiters: (() => void)[] = []
-  const starts: number[] = []
+  const starts = new Array<number>()
   let timer: ReturnType<typeof setTimeout> | undefined
   const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>()
 
@@ -282,7 +282,7 @@ export function create(options: create.Options = {}): Queue {
   }
 
   return {
-    add<T>(task: Task<T>, addOptions: Queue.AddOptions = {}): Promise<T> {
+    add<value>(task: Task<value>, addOptions: Queue.AddOptions = {}): Promise<value> {
       const { priority = 0, signal } = addOptions
       if (typeof priority !== 'number') throw new TypeError('Expected `priority` to be a number.')
       if (Number.isNaN(priority))
@@ -300,7 +300,7 @@ export function create(options: create.Options = {}): Queue {
         begin: noop,
         promise: undefined!,
       }
-      const promise = new Promise<T>((resolve, reject) => {
+      const promise = new Promise<value>((resolve, reject) => {
         entry.resolve = resolve as (value: unknown) => void
         entry.reject = reject
       })

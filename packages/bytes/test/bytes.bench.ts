@@ -10,10 +10,9 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Bytes from '@portable/bytes'
 import { randomBytes } from './utils.js'
 
-const nativeToHex: ((this: Uint8Array) => string) | undefined = Reflect.get(
-  Uint8Array.prototype,
-  'toHex',
-)
+const nativeToHex = Reflect.get(Uint8Array.prototype, 'toHex') satisfies
+  | ((this: Uint8Array) => string)
+  | undefined
 
 const sizes = { '32 B': 32, '1 MiB': 1 << 20 }
 

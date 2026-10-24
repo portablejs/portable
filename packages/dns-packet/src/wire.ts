@@ -21,7 +21,7 @@ export function need(r: Reader, n: number, end: number): void {
  * Runs `read` on a length-delimited field such as RDATA, where running past the end means the
  * field is malformed, not that the message was cut short.
  */
-export function within<T>(field: string, read: () => T): T {
+export function within<value>(field: string, read: () => value): value {
   try {
     return read()
   } catch (error) {
@@ -170,7 +170,7 @@ type Label = { start: number; bytes: Uint8Array }
 
 /** Splits a name written with RFC 1035 escapes (`\.`, `\\`, `\DDD`) into labels. */
 function escapedLabels(name: string, from: number, end: number): Label[] {
-  const labels: Label[] = []
+  const labels = new Array<Label>()
   let start = from
   let label: number[] = []
   let text = ''
@@ -364,7 +364,7 @@ function parseIPv6(ip: string): number[] | undefined {
   if (halves.length > 2) return undefined
   const groups = (half: string): number[] | undefined => {
     if (half === '') return []
-    const words: number[] = []
+    const words = new Array<number>()
     const parts = half.split(':')
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i]!
@@ -400,7 +400,7 @@ export function putIPv6(w: Writer, ip: string): void {
  * zero groups replaced by `::`.
  */
 export function readIPv6(b: Uint8Array, o: number): string {
-  const words: number[] = []
+  const words = new Array<number>()
   for (let i = 0; i < 16; i += 2) words.push((b[o + i]! << 8) | b[o + i + 1]!)
   let bestStart = -1
   let bestLength = 1

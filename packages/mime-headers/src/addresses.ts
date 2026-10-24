@@ -510,7 +510,7 @@ class Parser {
       gap = false
     }
     if (!found) return ''
-    const run: Token[] = []
+    const run = new Array<Token>()
     for (let i = start; i < end; i++) {
       const token = tokens[i]!
       if (token.kind === 'comment' || token.role === 'skip') continue
@@ -617,8 +617,8 @@ function buildName(tokens: readonly Token[]): { text: string; comments: string }
  * `Joe Foo, PhD <joe@example.com>`: an entry with only a name is joined to a following entry that
  * has both a name and an address.
  */
-function mergeNameFragments<T extends Address>(list: readonly T[]): T[] {
-  const merged: T[] = []
+function mergeNameFragments<value extends Address>(list: readonly value[]): value[] {
+  const merged: value[] = []
   for (let i = list.length - 1; i >= 0; i--) {
     const current = list[i]!
     const next = merged[merged.length - 1]

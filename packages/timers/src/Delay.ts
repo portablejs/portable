@@ -73,11 +73,11 @@ export function checkMs(name: string, value: number): void {
   if (!(value >= 0)) throw new RangeError(`Expected \`${name}\` to be a non-negative number.`)
 }
 
-export function call<T>(
-  fn: (context: Context) => T | PromiseLike<T>,
+export function call<value>(
+  fn: (context: Context) => value | PromiseLike<value>,
   context: Context,
-): Promise<T> {
-  return new Promise<T>((resolve) => resolve(fn(context)))
+): Promise<value> {
+  return new Promise<value>((resolve) => resolve(fn(context)))
 }
 
 export function withTimeout(

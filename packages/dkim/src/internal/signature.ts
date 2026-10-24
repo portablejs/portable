@@ -281,7 +281,10 @@ function parseKeyRecord(text: string): KeyRecord {
   return { data: der, type, hashes: list('h'), flags: list('t') ?? [] }
 }
 
-export function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+export function abortable<value>(
+  promise: Promise<value>,
+  signal: AbortSignal | undefined,
+): Promise<value> {
   if (!signal) return promise
   if (signal.aborted) return Promise.reject(signal.reason)
   return new Promise((resolve, reject) => {

@@ -46,7 +46,7 @@ export function slowStream(chunks: readonly Uint8Array[]): ReadableStream<Uint8A
 }
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }

@@ -1,16 +1,16 @@
 export const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms))
 
-export type Deferred<T> = {
-  promise: Promise<T>
-  resolve: (value: T) => void
+export type Deferred<value> = {
+  promise: Promise<value>
+  resolve: (value: value) => void
   reject: (reason: unknown) => void
 }
 
-export function deferred<T = void>(): Deferred<T> {
-  let resolve!: (value: T) => void
+export function deferred<value = void>(): Deferred<value> {
+  let resolve!: (value: value) => void
   let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((res, rej) => {
+  const promise = new Promise<value>((res, rej) => {
     resolve = res
     reject = rej
   })
@@ -26,7 +26,7 @@ export function concurrencyProbe() {
     get running() {
       return running
     },
-    async run<T>(ms: number, value?: T): Promise<T | undefined> {
+    async run<value>(ms: number, value?: value): Promise<value | undefined> {
       running++
       probe.max = Math.max(probe.max, running)
       await delay(ms)

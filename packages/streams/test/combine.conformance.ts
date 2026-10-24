@@ -246,7 +246,7 @@ describe('concat', () => {
   })
 
   test('cancelling the output cancels every source', async () => {
-    const reasons: unknown[] = []
+    const reasons = new Array<unknown>()
     const source = () =>
       new ReadableStream({ pull: (c) => c.enqueue(1), cancel: (r) => void reasons.push(r) })
     const reader = concat([source(), source(), source()]).getReader()
@@ -301,7 +301,7 @@ describe('merge', () => {
   })
 
   test('cancelling the output cancels every source', async () => {
-    const reasons: unknown[] = []
+    const reasons = new Array<unknown>()
     const source = () =>
       new ReadableStream({ pull: (c) => c.enqueue(1), cancel: (r) => void reasons.push(r) })
     const reader = merge([source(), fromIterable([1, 2]), source()]).getReader()
@@ -324,7 +324,7 @@ describe('limitBytes', () => {
       pull: (c) => c.enqueue(new Uint8Array(++i)),
       cancel: (reason) => void (cancelled = reason),
     })
-    const output: Uint8Array[] = []
+    const output = new Array<Uint8Array>()
     const reader = source.pipeThrough(limitBytes(5)).getReader()
     const error = await (async () => {
       for (;;) output.push((await reader.read()).value!)
@@ -347,7 +347,7 @@ describe.each([
   ['merge', merge],
 ] as const)('%s with a signal', (_, combine) => {
   test('errors the output with the reason and cancels every source', async () => {
-    const reasons: unknown[] = []
+    const reasons = new Array<unknown>()
     const source = () =>
       new ReadableStream<number>({ cancel: (reason) => void reasons.push(reason) })
     const controller = new AbortController()

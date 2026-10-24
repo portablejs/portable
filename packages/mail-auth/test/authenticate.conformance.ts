@@ -290,12 +290,12 @@ describe('ARC', () => {
   })
 
   test('reports what the newest sealer recorded in the arc=pass comment', async () => {
-    const zone: Zone = {
+    const zone = {
       ...(await arcZone()),
       'test._domainkey.mail.example.com': { TXT: [await rsaRecord()] },
       'mail.example.com': { TXT: ['v=spf1 ip4:198.51.100.1 -all'] },
       '_dmarc.mail.example.com': { TXT: ['v=DMARC1; p=reject'] },
-    }
+    } satisfies Zone
     const input = await signed(message, 'mail.example.com')
     const first = await authenticate(input, zone, { seal: await seal() })
     const second = await authenticate(first.headers + input, zone, {
@@ -436,14 +436,14 @@ describe('input', () => {
     )
     const controller = new AbortController()
     const resolver = zoneResolver({})
-    const slow: MailAuth.Resolver = {
+    const slow = {
       ...resolver,
       resolveTxt: (name) =>
         new Promise((_, reject) => {
           controller.abort(reason)
           setTimeout(() => reject(new Error(`late ${name}`)), 50)
         }),
-    }
+    } satisfies MailAuth.Resolver
     await expect(
       MailAuth.authenticate(message, { ...envelope, resolver: slow, signal: controller.signal }),
     ).rejects.toBe(reason)

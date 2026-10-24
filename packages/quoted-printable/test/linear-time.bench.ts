@@ -20,10 +20,10 @@ async function bestOf(run: () => unknown): Promise<number> {
   return best
 }
 
-async function slowdown<T>(
+async function slowdown<value>(
   size: number,
-  make: (size: number) => T,
-  run: (input: T) => unknown,
+  make: (size: number) => value,
+  run: (input: value) => unknown,
 ): Promise<number> {
   const small = make(size)
   const large = make(size * scale)
@@ -34,7 +34,7 @@ async function slowdown<T>(
 const repeat = (unit: string) => (size: number) => unit.repeat(Math.ceil(size / unit.length))
 
 describe('linear time', { timeout: 120_000, retry: 3 }, () => {
-  const decodeInputs: [string, (size: number) => string][] = [
+  const decodeInputs = [
     ['a run of spaces', (size) => ' '.repeat(size) + 'x'],
     ['a run of tabs', (size) => '\t'.repeat(size) + 'x'],
     ['alternating spaces and tabs', repeat(' \t')],
@@ -45,13 +45,13 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['escapes', repeat('=C3=B5')],
     ['line breaks', repeat('\r\n')],
     ['whitespace lines', repeat(' \t\r\n')],
-  ]
+  ] satisfies [string, (size: number) => string][]
   for (const [label, make] of decodeInputs)
     test(`decode() of ${label}`, async () => {
       expect(await slowdown(64 * 1024, make, decode)).toBeLessThan(maxRatio)
     })
 
-  const encodeInputs: [string, (size: number) => Uint8Array][] = [
+  const encodeInputs = [
     ['a line without spaces', (size) => utf8(repeat('a')(size))],
     ['multi-byte characters', (size) => utf8(repeat('õ')(size))],
     ['continuation bytes', (size) => new Uint8Array(size).fill(0x80)],
@@ -61,7 +61,7 @@ describe('linear time', { timeout: 120_000, retry: 3 }, () => {
     ['"="', (size) => utf8(repeat('=')(size))],
     ['punctuation', (size) => utf8(repeat('.,!?')(size))],
     ['every byte value', (size) => Uint8Array.from({ length: size }, (_, i) => i % 256)],
-  ]
+  ] satisfies [string, (size: number) => Uint8Array][]
   for (const [label, make] of encodeInputs)
     test(`encode() of ${label}`, async () => {
       expect(await slowdown(64 * 1024, make, (input) => encode(input))).toBeLessThan(maxRatio)

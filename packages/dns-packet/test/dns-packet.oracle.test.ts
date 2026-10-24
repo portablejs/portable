@@ -147,7 +147,7 @@ function canonical(packet: DecodedPacket): unknown {
   }
 }
 
-const corpus: Packet[] = [
+const corpus = [
   { id: 1, flags: { rd: true }, questions: [{ type: 'A', name: 'example.com' }] },
   {
     id: 0xbeef,
@@ -297,7 +297,7 @@ const corpus: Packet[] = [
       { type: 'TXT', name: 'chaos.example', class: 'CH', data: ['chaos'] },
     ],
   },
-]
+] satisfies Packet[]
 
 describe('dns-packet decodes our output to the same packet', () => {
   corpus.forEach((packet, i) => {
@@ -354,7 +354,7 @@ describe('TCP framing matches dns-packet', () => {
         .map(({ hex: text }) => hex(text))
         .map((message) => Uint8Array.from([message.length >> 8, message.length & 0xff, ...message]))
       const stream = Uint8Array.from(frames.flatMap((frame) => [...frame]))
-      const ours: unknown[] = []
+      const ours = new Array<unknown>()
       let buffered = new Uint8Array(0)
       for (let i = 0; i < stream.length;) {
         const size = 1 + Math.floor(next() * 200)

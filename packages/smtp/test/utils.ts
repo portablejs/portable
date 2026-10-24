@@ -38,7 +38,7 @@ export type FakeServer = {
   closed: number
 }
 
-const defaults: Script = {
+const defaults: Record<string, Handler> = {
   greeting: '220 test ESMTP\r\n',
   EHLO: '250 test\r\n',
   HELO: '250 test\r\n',
@@ -82,13 +82,13 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
     let body: string[] = []
     let current: { controller: ReadableStreamDefaultController<Uint8Array>; done: boolean }
 
-    const connection: Connection = {
+    const connection = {
       secure: socketOptions.secureTransport === 'on',
       write(reply) {
         if (current.done) return
         current.controller.enqueue(typeof reply === 'string' ? encoder.encode(reply) : reply)
       },
-      end(reply) {
+      end(reply?: string) {
         if (reply) connection.write(reply)
         if (current.done) return
         current.done = true
@@ -99,7 +99,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
         current.done = true
         current.controller.error(new Error('Connection reset'))
       },
-    }
+    } satisfies Connection
 
     const answer = (key: string, line: string): string | false | void => {
       const handler = script[key] ?? defaults[key] ?? script.DEFAULT ?? defaults.DEFAULT!
@@ -200,7 +200,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
 export const encode = (text: string): Uint8Array => new TextEncoder().encode(text)
 
 export function chunked(bytes: Uint8Array, size: number): Uint8Array[] {
-  const chunks: Uint8Array[] = []
+  const chunks = new Array<Uint8Array>()
   for (let i = 0; i < bytes.length; i += size) chunks.push(bytes.subarray(i, i + size))
   return chunks
 }

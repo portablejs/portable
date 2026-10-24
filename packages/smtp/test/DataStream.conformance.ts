@@ -130,7 +130,7 @@ describe('input handling', () => {
     const text = '.a\r\n.\r\nb\rc\n\n..d\r\r\n.e\r'
     const whole = decoder.decode(encodeData(encode(text)))
     for (let size = 1; size <= text.length; size++) {
-      const chunks: string[] = []
+      const chunks = new Array<string>()
       for (let i = 0; i < text.length; i += size) chunks.push(text.slice(i, i + size))
       expect(await stream(chunks)).toBe(whole)
     }

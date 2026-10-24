@@ -6,12 +6,12 @@ import { expect, test } from 'vite-plus/test'
 import { encode, fixtureText, key, signed, type Zone, zoneResolver } from './utils.js'
 
 const rsa = await key('rsa')
-const zone: Zone = {
+const zone = {
   'test._domainkey.example.com': { TXT: [rsa.record] },
   'example.com': { TXT: ['v=spf1 ip4:192.0.2.0/24 include:_spf.example.com -all'] },
   '_spf.example.com': { TXT: ['v=spf1 ip4:198.51.100.0/24 -all'] },
   '_dmarc.example.com': { TXT: ['v=DMARC1; p=reject'] },
-}
+} satisfies Zone
 const resolver = zoneResolver(zone)
 const upstreamResolver = async (name: string, type: string) => {
   if (type !== 'TXT') throw Object.assign(new Error(type), { code: 'ENODATA' })

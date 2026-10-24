@@ -17,14 +17,14 @@ function expectSlidingWindow(starts: readonly number[], cap: number, interval: n
 
 function recorder() {
   const t0 = performance.now()
-  const starts: number[] = []
+  const starts = new Array<number>()
   return {
     starts,
     task: () => () => void starts.push(performance.now() - t0),
   }
 }
 
-async function settle<T>(promise: Promise<T>): Promise<T> {
+async function settle<value>(promise: Promise<value>): Promise<value> {
   await vi.runAllTimersAsync()
   return promise
 }
@@ -92,7 +92,7 @@ describe('rate limit', () => {
 
   test('starts the higher priority task first when a slot frees', async () => {
     const queue = Queue.create({ interval: 30, intervalCap: 1 })
-    const order: string[] = []
+    const order = new Array<string>()
     const tasks = [
       queue.add(() => void order.push('first')),
       queue.add(() => void order.push('low'), { priority: 0 }),
@@ -195,7 +195,7 @@ describe('rate limit', () => {
   test('a task added from inside a running task still counts against the limit', async () => {
     const queue = Queue.create({ interval: 50, intervalCap: 2 })
     const { starts, task } = recorder()
-    const inner: Promise<void>[] = []
+    const inner = new Array<Promise<void>>()
     await settle(
       Promise.all(
         Array.from({ length: 3 }, () =>
@@ -233,7 +233,7 @@ describe('rate limit', () => {
   test('keeps the limit when many tasks are added over time', async () => {
     const queue = Queue.create({ interval: 100, intervalCap: 4 })
     const { starts, task } = recorder()
-    const tasks: Promise<void>[] = []
+    const tasks = new Array<Promise<void>>()
     for (let i = 0; i < 40; i++) {
       tasks.push(queue.add(task()))
       await vi.advanceTimersByTimeAsync(7)

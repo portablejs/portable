@@ -9,9 +9,13 @@ type Kind = 'dns' | 'ipv4' | 'ipv6' | 'asn'
 
 type Index = {
   names: Map<string, string>
-  ranges: { prefix: Address.Prefix; url: string }[]
-  numbers: { start: number; end: number; url: string }[]
+  ranges: Range[]
+  numbers: NumberRange[]
 }
+
+type Range = { prefix: Address.Prefix; url: string }
+
+type NumberRange = { start: number; end: number; url: string }
 
 type Entry = {
   expires: number
@@ -27,7 +31,11 @@ function isStrings(value: unknown): value is string[] {
 }
 
 function index({ json, response }: Json, url: string): Index {
-  const result: Index = { names: new Map(), ranges: [], numbers: [] }
+  const result = {
+    names: new Map<string, string>(),
+    ranges: new Array<Range>(),
+    numbers: new Array<NumberRange>(),
+  } satisfies Index
   if (!Array.isArray(json.services))
     throw new ResponseError({ message: `${url} has no services array`, response, url, body: json })
   for (const service of json.services) {
@@ -61,12 +69,12 @@ function load(kind: Kind, fetch: Fetch, signal: AbortSignal | undefined): Promis
   if (!entry || entry.expires <= Date.now()) {
     const controller = new AbortController()
     const url = `${base}${kind}.json`
-    const created: Entry = {
+    const created = {
       expires: Date.now() + ttl,
       index: request(url, fetch, controller.signal).then((result) => index(result, url)),
       waiters: 0,
       controller,
-    }
+    } satisfies Entry
     const cache = entries
     created.index.catch(() => {
       if (cache.get(kind) === created) cache.delete(kind)

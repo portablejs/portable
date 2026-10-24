@@ -24,7 +24,7 @@ const body = JSON.stringify({
   data: { object: { items: Array.from({ length: 20 }, (_, i) => ({ id: i, name: `item ${i}` })) } },
 })
 const bytes = new TextEncoder().encode(body)
-const nobleHmac: Webhooks.Hmac = (_hash, key, data) => hmac(sha256, key, data)
+const nobleHmac = ((_hash, key, data) => hmac(sha256, key, data)) satisfies Webhooks.Hmac
 
 async function headers(scheme: Webhooks.Scheme): Promise<Record<string, string>> {
   return Webhooks.sign(body, { scheme, secret })

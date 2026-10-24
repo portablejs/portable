@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## `prefer-satisfies` allows annotations that widen on purpose
+
+- **Options:** report every `const name: Type = value`, as loess's rule does, and use `let` or a function with a return type where the inferred type is wrong; report every one and add a disable comment where the annotation is needed; skip the cases where the annotation widens the type on purpose.
+- **Trade-offs:** rewriting all 834 annotations left 79 type errors. Most came from a lookup table indexed with a string, an object whose properties are written later, a `JSON.parse` result typed `unknown`, an object whose methods refer to the object itself, and exported constants, whose annotation is the public type. A `let` for a constant that never changes, or a disable comment at each site, is noisier than the annotation. The rule sees only syntax, so it can't tell that an alias such as `Script` has an index signature. In that case the annotation names `Record<string, Handler>` directly.
+- **Chosen:** the rule skips `unknown`, `unique symbol`, `Record` and index-signature types (also inside `Partial` or `Readonly`), objects that the code writes a property of or that refer to themselves, exported constants, and an initializer that is a plain identifier or member access.
+
 ## Workers runs a smoke check in CI, not the conformance tests
 
 - **Options:** `@cloudflare/vitest-pool-workers` pinned to Vitest 4 in its own package; bundle each conformance file with Vitest's runner and run it in workerd; bundle every package into one Worker and run one hand-written check per package.

@@ -31,10 +31,10 @@ import {
 } from './wire.js'
 
 /** Reads and writes the RDATA of one record type, without the RDLENGTH prefix. */
-export type Codec<In, Out> = {
-  length(data: In): number
-  write(w: Writer, data: In): void
-  read(r: Reader, end: number): Out
+export type Codec<input, output> = {
+  length(data: input): number
+  write(w: Writer, data: input): void
+  read(r: Reader, end: number): output
 }
 
 type DigestData = { keyTag: number; algorithm: number; digestType: number; digest: Uint8Array }
@@ -127,27 +127,27 @@ const address = (size: 4 | 16): Codec<string, string> => ({
 })
 
 // RFC 3597 section 4 allows compression only inside the RDATA of the RFC 1035 types.
-const compressedName: Codec<string, string> = {
+const compressedName = {
   length: nameLength,
   write: (w, name) => putName(w, name, true),
   read: readName,
-}
+} satisfies Codec<string, string>
 
-const name: Codec<string, string> = {
+const name = {
   ...compressedName,
   write: (w, name) => putName(w, name, false),
-}
+} satisfies Codec<string, string>
 
-const mx: Codec<RecordData['MX'], RecordData['MX']> = {
+const mx = {
   length: (data) => 2 + nameLength(data.exchange),
   write(w, data) {
     putU16(w, data.preference)
     putName(w, data.exchange, true)
   },
   read: (r, end) => ({ preference: u16(r, end), exchange: readName(r, end) }),
-}
+} satisfies Codec<RecordData['MX'], RecordData['MX']>
 
-const soa: Codec<RecordData['SOA'], RecordData['SOA']> = {
+const soa = {
   length: (data) => 20 + nameLength(data.mname) + nameLength(data.rname),
   write(w, data) {
     putName(w, data.mname, true)
@@ -167,9 +167,9 @@ const soa: Codec<RecordData['SOA'], RecordData['SOA']> = {
     expire: u32(r, end),
     minimum: u32(r, end),
   }),
-}
+} satisfies Codec<RecordData['SOA'], RecordData['SOA']>
 
-const srv: Codec<RecordData['SRV'], RecordData['SRV']> = {
+const srv = {
   length: (data) => 6 + nameLength(data.target),
   write(w, data) {
     putU16(w, data.priority)
@@ -183,9 +183,9 @@ const srv: Codec<RecordData['SRV'], RecordData['SRV']> = {
     port: u16(r, end),
     target: readName(r, end),
   }),
-}
+} satisfies Codec<RecordData['SRV'], RecordData['SRV']>
 
-const txt: Codec<RecordData['TXT'], DecodedRecordData['TXT']> = {
+const txt = {
   length(data) {
     if (!Array.isArray(data)) throw new InvalidInputError('TXT data must be an array.')
     let length = 0
@@ -196,28 +196,28 @@ const txt: Codec<RecordData['TXT'], DecodedRecordData['TXT']> = {
     for (const item of data) putString(w, item)
   },
   read(r, end) {
-    const strings: Uint8Array[] = []
+    const strings = new Array<Uint8Array>()
     while (r.offset < end) strings.push(bytes(r, u8(r, end), end))
     return strings
   },
-}
+} satisfies Codec<RecordData['TXT'], DecodedRecordData['TXT']>
 
-const raw: Codec<Uint8Array, Uint8Array> = {
+const raw = {
   length: (data) => bytesOf(data, 'Record data').length,
   write: putBytes,
   read: rest,
-}
+} satisfies Codec<Uint8Array, Uint8Array>
 
-const hinfo: Codec<RecordData['HINFO'], RecordData['HINFO']> = {
+const hinfo = {
   length: (data) => stringLength(data.cpu, 'HINFO cpu') + stringLength(data.os, 'HINFO os'),
   write(w, data) {
     putString(w, data.cpu)
     putString(w, data.os)
   },
   read: (r, end) => ({ cpu: readString(r, end), os: readString(r, end) }),
-}
+} satisfies Codec<RecordData['HINFO'], RecordData['HINFO']>
 
-const caa: Codec<RecordData['CAA'], RecordData['CAA']> = {
+const caa = {
   length: (data) => 1 + stringLength(data.tag, 'CAA tag') + utf8Length(data.value),
   write(w, data) {
     putU8(w, data.flags)
@@ -231,9 +231,9 @@ const caa: Codec<RecordData['CAA'], RecordData['CAA']> = {
     r.offset = end
     return { flags, tag, value }
   },
-}
+} satisfies Codec<RecordData['CAA'], RecordData['CAA']>
 
-const naptr: Codec<RecordData['NAPTR'], RecordData['NAPTR']> = {
+const naptr = {
   length: (data) =>
     4 +
     stringLength(data.flags, 'NAPTR flags') +
@@ -256,9 +256,9 @@ const naptr: Codec<RecordData['NAPTR'], RecordData['NAPTR']> = {
     regexp: readString(r, end),
     replacement: readName(r, end),
   }),
-}
+} satisfies Codec<RecordData['NAPTR'], RecordData['NAPTR']>
 
-const tlsa: Codec<RecordData['TLSA'], RecordData['TLSA']> = {
+const tlsa = {
   length: (data) => 3 + bytesOf(data.certificate, 'TLSA certificate').length,
   write(w, data) {
     putU8(w, data.usage)
@@ -272,9 +272,9 @@ const tlsa: Codec<RecordData['TLSA'], RecordData['TLSA']> = {
     matchingType: u8(r, end),
     certificate: rest(r, end),
   }),
-}
+} satisfies Codec<RecordData['TLSA'], RecordData['TLSA']>
 
-const sshfp: Codec<RecordData['SSHFP'], RecordData['SSHFP']> = {
+const sshfp = {
   length: (data) => 2 + bytesOf(data.fingerprint, 'SSHFP fingerprint').length,
   write(w, data) {
     putU8(w, data.algorithm)
@@ -286,9 +286,9 @@ const sshfp: Codec<RecordData['SSHFP'], RecordData['SSHFP']> = {
     fingerprintType: u8(r, end),
     fingerprint: rest(r, end),
   }),
-}
+} satisfies Codec<RecordData['SSHFP'], RecordData['SSHFP']>
 
-const ds: Codec<DigestData, DigestData> = {
+const ds = {
   length: (data) => 4 + bytesOf(data.digest, 'DS digest').length,
   write(w, data) {
     putU16(w, data.keyTag)
@@ -302,11 +302,11 @@ const ds: Codec<DigestData, DigestData> = {
     digestType: u8(r, end),
     digest: rest(r, end),
   }),
-}
+} satisfies Codec<DigestData, DigestData>
 
 const PROTOCOL_DNSSEC = 3
 
-const dnskey: Codec<KeyData, KeyData> = {
+const dnskey = {
   length: (data) => 4 + bytesOf(data.key, 'DNSKEY key').length,
   write(w, data) {
     putU16(w, data.flags)
@@ -319,9 +319,9 @@ const dnskey: Codec<KeyData, KeyData> = {
     if (u8(r, end) !== PROTOCOL_DNSSEC) throw new InvalidInputError('DNSKEY protocol must be 3.')
     return { flags, algorithm: u8(r, end), key: rest(r, end) }
   },
-}
+} satisfies Codec<KeyData, KeyData>
 
-const rrsig: Codec<RecordData['RRSIG'], RecordData['RRSIG']> = {
+const rrsig = {
   length: (data) =>
     18 + nameLength(data.signersName) + bytesOf(data.signature, 'RRSIG signature').length,
   write(w, data) {
@@ -346,16 +346,16 @@ const rrsig: Codec<RecordData['RRSIG'], RecordData['RRSIG']> = {
     signersName: readName(r, end),
     signature: rest(r, end),
   }),
-}
+} satisfies Codec<RecordData['RRSIG'], RecordData['RRSIG']>
 
-const rp: Codec<RecordData['RP'], RecordData['RP']> = {
+const rp = {
   length: (data) => nameLength(data.mbox) + nameLength(data.txt),
   write(w, data) {
     putName(w, data.mbox, false)
     putName(w, data.txt, false)
   },
   read: (r, end) => ({ mbox: readName(r, end), txt: readName(r, end) }),
-}
+} satisfies Codec<RecordData['RP'], RecordData['RP']>
 
 function typeWindows(list: readonly RecordType[]): Uint8Array[] {
   const windows: Uint8Array[] = []
@@ -392,7 +392,7 @@ function putTypeBitmap(w: Writer, list: readonly RecordType[]): void {
 }
 
 function readTypeBitmap(r: Reader, end: number): RecordType[] {
-  const list: RecordType[] = []
+  const list = new Array<RecordType>()
   while (r.offset < end) {
     const window = u8(r, end)
     const length = u8(r, end)
@@ -409,16 +409,16 @@ function readTypeBitmap(r: Reader, end: number): RecordType[] {
   return list
 }
 
-const nsec: Codec<RecordData['NSEC'], RecordData['NSEC']> = {
+const nsec = {
   length: (data) => nameLength(data.nextDomain) + typeBitmapLength(data.types),
   write(w, data) {
     putName(w, data.nextDomain, false)
     putTypeBitmap(w, data.types)
   },
   read: (r, end) => ({ nextDomain: readName(r, end), types: readTypeBitmap(r, end) }),
-}
+} satisfies Codec<RecordData['NSEC'], RecordData['NSEC']>
 
-const nsec3: Codec<RecordData['NSEC3'], RecordData['NSEC3']> = {
+const nsec3 = {
   length: (data) =>
     4 +
     stringLength(bytesOf(data.salt, 'NSEC3 salt'), 'NSEC3 salt') +
@@ -440,10 +440,10 @@ const nsec3: Codec<RecordData['NSEC3'], RecordData['NSEC3']> = {
     const nextHashedOwner = bytes(r, u8(r, end), end)
     return { algorithm, flags, iterations, salt, nextHashedOwner, types: readTypeBitmap(r, end) }
   },
-}
+} satisfies Codec<RecordData['NSEC3'], RecordData['NSEC3']>
 
 export const codecs: {
-  readonly [T in keyof RecordData]: Codec<RecordData[T], DecodedRecordData[T]>
+  readonly [key in keyof RecordData]: Codec<RecordData[key], DecodedRecordData[key]>
 } = {
   A: address(4),
   AAAA: address(16),
@@ -598,7 +598,7 @@ function readOptionBody(r: Reader, code: OptionCode, end: number): EdnsOption {
       return { code, length }
     }
     case 'KEY_TAG': {
-      const tags: number[] = []
+      const tags = new Array<number>()
       while (r.offset < end) tags.push(u16(r, end))
       return { code, tags }
     }

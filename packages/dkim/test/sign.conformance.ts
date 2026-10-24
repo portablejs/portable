@@ -111,7 +111,7 @@ describe('the signature field', () => {
   })
 
   test('uses the hasher option for the body hash', async () => {
-    const seen: Uint8Array[] = []
+    const seen = new Array<Uint8Array>()
     const hasher = (): Dkim.Hasher => ({
       update: (data) => seen.push(data.slice()),
       digest: async () => {
@@ -439,7 +439,7 @@ describe('messages', () => {
 
   // nodemailer's "DKIM signatures verified by mailauth" cases: raw messages signed here and
   // verified by an independent implementation.
-  const cases: [string, string | Uint8Array][] = [
+  const cases = [
     ['a body without a final line break', 'From: a@example.com\r\nSubject: x\r\n\r\nabc'],
     [
       'a body with trailing whitespace only lines',
@@ -470,7 +470,7 @@ describe('messages', () => {
       'duplicate header fields',
       'Subject: first\r\nFrom: a@example.com\r\nSubject: second\r\n\r\nbody\r\n',
     ],
-  ]
+  ] satisfies [string, string | Uint8Array][]
   for (const [title, message] of cases) {
     test(`signs a message with ${title}`, async () => {
       for (const canonicalization of ['relaxed/relaxed', 'simple/simple'] as const) {

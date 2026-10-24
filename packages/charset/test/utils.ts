@@ -3,7 +3,7 @@ import type { Charset } from '@portable/charset'
 
 // Not every browser has ReadableStream.from or async iteration of streams yet, so the
 // tests build and drain streams by hand.
-export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
+export function fromChunks<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   let i = 0
   return new ReadableStream({
     pull(controller) {
@@ -13,9 +13,9 @@ export function fromChunks<T>(chunks: readonly T[]): ReadableStream<T> {
   })
 }
 
-export async function collect<T>(stream: ReadableStream<T>): Promise<T[]> {
+export async function collect<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const reader = stream.getReader()
-  const chunks: T[] = []
+  const chunks = new Array<chunk>()
   for (;;) {
     const { done, value } = await reader.read()
     if (done) return chunks
@@ -63,7 +63,7 @@ export function random(seed: number): () => number {
 /** Splits text into chunks of 1 to 16 code units, which can split surrogate pairs. */
 export function randomChunks(text: string, seed: number): string[] {
   const next = random(seed)
-  const chunks: string[] = []
+  const chunks = new Array<string>()
   for (let i = 0; i < text.length;) {
     const size = 1 + Math.floor(next() * 16)
     chunks.push(text.slice(i, i + size))

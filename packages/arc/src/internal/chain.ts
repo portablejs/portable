@@ -53,7 +53,7 @@ export function readChain(fields: readonly Field[]): ArcSet[] | string {
     set[field.name] = field
     byInstance.set(instance, set)
   }
-  const sets: ArcSet[] = []
+  const sets = new Array<ArcSet>()
   for (let instance = 1; instance <= byInstance.size; instance++) {
     const set = byInstance.get(instance)
     if (!set) return `i=${instance} is missing`
