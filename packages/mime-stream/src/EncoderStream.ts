@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 
 export declare namespace EncoderStream {
@@ -36,10 +37,9 @@ export class EncoderStream extends TransformStream<EncoderStream.Input, Uint8Arr
       Streams.abortable(
         {
           transform(chunk, controller) {
-            const value =
-              chunk instanceof Uint8Array || typeof chunk === 'string' ? chunk : chunk.bytes
+            const value = isUint8Array(chunk) || typeof chunk === 'string' ? chunk : chunk.bytes
             const bytes = typeof value === 'string' ? encoder.encode(value) : value
-            if (!(bytes instanceof Uint8Array))
+            if (!isUint8Array(bytes))
               throw new TypeError('Expected a Uint8Array, a string or an object with bytes.')
             if (bytes.length > 0) controller.enqueue(bytes)
           },

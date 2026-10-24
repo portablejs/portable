@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import type { DecoderStream } from './DecoderStream.js'
 import { createParser } from './parser.js'
 
@@ -33,7 +34,9 @@ export function decode<const header extends DecoderStream.Header = false>(
   const text =
     typeof input === 'string'
       ? input
-      : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(input)
+      : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(
+          checkUint8Array(input),
+        )
   const rows: DecoderStream.Row<header>[] = []
   const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header>))
   parser.write(text)

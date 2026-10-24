@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 import * as MimeHeaders from '@portable/mime-headers'
 
 const utf8 = (text: string) => new TextEncoder().encode(text)
@@ -27,8 +27,15 @@ describe('byte inputs', () => {
       expect(MimeHeaders.decodeWords(as('=?UTF-8?B?w7U=?='))).toBe('õ')
     })
   }
+})
 
-  test('throws a TypeError for an array of numbers', () => {
-    expect(() => MimeHeaders.unfold([0x61] as never)).toThrow(TypeError)
-  })
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => MimeHeaders.parseAddresses(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => MimeHeaders.unfold(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => MimeHeaders.decodeWords(v))).rejects.toThrow(TypeError)
+    })
+  }
 })

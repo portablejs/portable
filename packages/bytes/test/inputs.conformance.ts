@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Bytes from '@portable/bytes'
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 
 const bytes = new Uint8Array([0, 1, 0x7f, 0x80, 0xfe, 0xff])
 
@@ -35,6 +35,20 @@ describe('byte inputs', () => {
       expect(() => Bytes.equal(value as never, bytes)).toThrow(TypeError)
       expect(() => Bytes.timingSafeEqual(bytes, value as never)).toThrow(TypeError)
       expect(() => Bytes.concat([value as never])).toThrow(TypeError)
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Bytes.toHex(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Bytes.fromHex(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Bytes.concat([v]))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Bytes.equal(v, bytes))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Bytes.equal(bytes, v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Bytes.timingSafeEqual(bytes, v))).rejects.toThrow(TypeError)
     })
   }
 })

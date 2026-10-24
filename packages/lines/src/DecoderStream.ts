@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 import { MaxLengthError } from './errors.js'
 /**
@@ -75,7 +76,10 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       Streams.abortable(
         {
           transform(chunk, controller) {
-            let text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            let text =
+              typeof chunk === 'string'
+                ? chunk
+                : decoder.decode(checkUint8Array(chunk), { stream: true })
             if (cr) text = '\r' + text
             cr = text.endsWith('\r')
             const lines = splitLines(partial + (cr ? text.slice(0, -1) : text))

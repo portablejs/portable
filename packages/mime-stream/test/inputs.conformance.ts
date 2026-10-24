@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, readAll, readBytes, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readAll,
+  readBytes,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 import * as MimeStream from '@portable/mime-stream'
 
 const message = new TextEncoder().encode(
@@ -38,6 +46,21 @@ describe('byte inputs', () => {
         'Content-Type: multipart/mixed; boundary=b\r\n\r\n',
       )
       expect(await readBytes(body)).toEqual(message.subarray(headers.length))
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(
+        attempt(() => readAll(streamOf([v]).pipeThrough(new MimeStream.DecoderStream()))),
+      ).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new MimeStream.EncoderStream()))),
+      ).rejects.toThrow(TypeError)
+      await expect(attempt(() => MimeStream.splitHeaders(streamOf([v])))).rejects.toThrow(TypeError)
     })
   }
 })

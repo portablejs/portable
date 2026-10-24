@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 import * as Ip from '@portable/ip'
 
 describe('byte inputs', () => {
@@ -11,6 +11,15 @@ describe('byte inputs', () => {
       expect(address.bytes).toBeInstanceOf(Uint8Array)
       input.fill(9)
       expect(Ip.format(address)).toBe('127.0.0.1')
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Ip.fromBytes(v))).rejects.toThrow(TypeError)
     })
   }
 })

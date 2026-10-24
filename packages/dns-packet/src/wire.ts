@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, TruncatedError } from './errors.js'
 
 export type Reader = { readonly bytes: Uint8Array; offset: number }
@@ -125,13 +126,13 @@ export function readText(b: Uint8Array, start: number, end: number): string {
 }
 
 export function bytesOf(value: unknown, field: string): Uint8Array {
-  if (value instanceof Uint8Array) return value
+  if (isUint8Array(value)) return value
   throw new InvalidInputError(`${field} must be a Uint8Array.`)
 }
 
 /** Length of a <character-string>: one length byte, then up to 255 bytes. */
 export function stringLength(value: string | Uint8Array, field: string): number {
-  if (typeof value !== 'string' && !(value instanceof Uint8Array))
+  if (typeof value !== 'string' && !isUint8Array(value))
     throw new InvalidInputError(`${field} must be a string or a Uint8Array.`)
   const length = typeof value === 'string' ? utf8Length(value) : value.length
   if (length > 255) throw new InvalidInputError(`${field} is longer than 255 bytes.`)

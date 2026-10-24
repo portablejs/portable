@@ -1,3 +1,4 @@
+import { checkUint8Array, isUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { InvalidInputError } from './errors.js'
@@ -80,7 +81,7 @@ export async function encrypt(options: encrypt.Options): Promise<Uint8Array<Arra
       `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
     )
   const salt = options.salt
-    ? new Uint8Array(options.salt)
+    ? new Uint8Array(checkUint8Array(options.salt))
     : crypto.getRandomValues(new Uint8Array(16))
   if (salt.length !== 16) throw new RangeError('salt must be 16 bytes')
 
@@ -142,9 +143,9 @@ function readKeys(subscription: Pick<Subscription, 'keys'>) {
 }
 
 function readKey(key: unknown, name: string): Uint8Array<ArrayBuffer> {
-  if (typeof key !== 'string' && !(key instanceof Uint8Array))
+  if (typeof key !== 'string' && !isUint8Array(key))
     throw new InvalidInputError(`${name} must be a base64url string or a Uint8Array`)
-  if (key instanceof Uint8Array) return new Uint8Array(key)
+  if (isUint8Array(key)) return new Uint8Array(key)
   try {
     return new Uint8Array(
       Base64.decode(key.replaceAll('+', '-').replaceAll('/', '_'), { alphabet: 'base64url' }),
@@ -156,7 +157,7 @@ function readKey(key: unknown, name: string): Uint8Array<ArrayBuffer> {
 
 function toBytes(payload: unknown): Uint8Array {
   if (typeof payload === 'string') return utf8.encode(payload)
-  if (payload instanceof Uint8Array) return payload
+  if (isUint8Array(payload)) return payload
   throw new TypeError('payload must be a string or Uint8Array')
 }
 

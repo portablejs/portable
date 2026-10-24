@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { InvalidInputError, MaxBytesError, UnsupportedError } from './errors.js'
@@ -212,7 +213,7 @@ function toBytes(password: string | Uint8Array, maxBytes: number): Uint8Array<Ar
   const bytes =
     typeof password === 'string'
       ? encoder.encode(password.normalize('NFC'))
-      : new Uint8Array(password)
+      : new Uint8Array(checkUint8Array(password))
   if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
   return bytes
 }

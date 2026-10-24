@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 import * as WebPush from '@portable/web-push'
 import { decrypt, userAgent } from './utils.js'
 
@@ -20,6 +20,22 @@ describe('byte inputs', () => {
         salt,
       })
       expect(await decrypt(body, agent)).toEqual(payload)
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      const agent = await userAgent()
+      const subscription = { keys: { p256dh: agent.publicKey, auth: agent.auth } }
+      await expect(attempt(() => WebPush.encrypt({ subscription, payload: v }))).rejects.toThrow(
+        TypeError,
+      )
+      await expect(
+        attempt(() => WebPush.encrypt({ subscription, payload, salt: v })),
+      ).rejects.toThrow(TypeError)
     })
   }
 })

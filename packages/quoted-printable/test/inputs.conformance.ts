@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, readBytes, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readBytes,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 import * as QuotedPrintable from '@portable/quoted-printable'
 
 const bytes = new TextEncoder().encode('héllo = wörld')
@@ -22,6 +29,22 @@ describe('byte inputs', () => {
       expect(
         await readBytes(streamOf(encodedChunks).pipeThrough(new QuotedPrintable.DecoderStream())),
       ).toEqual(bytes)
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => QuotedPrintable.encode(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => QuotedPrintable.decode(v))).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new QuotedPrintable.EncoderStream()))),
+      ).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new QuotedPrintable.DecoderStream()))),
+      ).rejects.toThrow(TypeError)
     })
   }
 })

@@ -1,4 +1,4 @@
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 import * as WebSockets from '@portable/websockets'
 import { describe, expect, test } from 'vite-plus/test'
 import { FakeServer, FakeWebSocket, until } from './utils.js'
@@ -30,6 +30,28 @@ describe('byte inputs', () => {
       await until(() => socket.sent.length >= 3)
       expect(socket.sent.slice(0, 3)).toEqual([data, data, data])
       await writer.abort()
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      const socket = new FakeWebSocket('wss://example.com')
+      socket.accept()
+      await expect(
+        attempt(() => WebSockets.fromSocket(socket).writable.getWriter().write(v)),
+      ).rejects.toThrow(TypeError)
+      const server = new FakeServer()
+      await expect(
+        attempt(() =>
+          WebSockets.connect('wss://example.com', {
+            WebSocket: server.WebSocket,
+            heartbeat: { ping: v, pong: () => true, interval: 10 },
+          }),
+        ),
+      ).rejects.toThrow(TypeError)
     })
   }
 })

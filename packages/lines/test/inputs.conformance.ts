@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Lines from '@portable/lines'
-import { byteForms, readAll, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readAll,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 
 const bytes = new TextEncoder().encode('one\r\ntwö\nthree')
 
@@ -15,10 +22,15 @@ describe('byte inputs', () => {
       ])
     })
   }
+})
 
-  test('errors the stream for a chunk that is neither bytes nor a string', async () => {
-    await expect(
-      readAll(streamOf([[0x61]] as never[]).pipeThrough(new Lines.DecoderStream())),
-    ).rejects.toThrow(TypeError)
-  })
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(
+        attempt(() => readAll(streamOf([v]).pipeThrough(new Lines.DecoderStream()))),
+      ).rejects.toThrow(TypeError)
+    })
+  }
 })

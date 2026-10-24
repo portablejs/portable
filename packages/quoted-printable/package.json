@@ -33,6 +33,7 @@
     "src"
   ],
   "dependencies": {
+    "@portable/bytes": "workspace:*",
     "@portable/streams": "workspace:*"
   },
   "exports": {

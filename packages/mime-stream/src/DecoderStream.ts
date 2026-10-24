@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import * as MimeHeaders from '@portable/mime-headers'
 import * as Streams from '@portable/streams'
 import { MaxBoundaryLineBytesError, MaxHeaderBytesError, MaxPartsError } from './errors.js'
@@ -413,7 +414,7 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
 
   return {
     write(chunk: Uint8Array) {
-      if (!(chunk instanceof Uint8Array)) throw new TypeError('Expected a Uint8Array chunk.')
+      if (!isUint8Array(chunk)) throw new TypeError('Expected a Uint8Array chunk.')
       if (chunk.length === 0) return
       let b = chunk
       if (carry) {

@@ -210,6 +210,29 @@ export function toByteForm(bytes: Uint8Array, form: ByteForm): Uint8Array<ArrayB
 }
 
 /**
+ * Values that a test passes in place of a `Uint8Array` to check that a function that takes bytes
+ * throws a `TypeError`. Each one holds the numbers 1, 2 and 3.
+ */
+export const rejectedByteForms: Readonly<Record<string, unknown>> = {
+  'an ArrayBuffer': new Uint8Array([1, 2, 3]).buffer,
+  'a DataView': new DataView(new Uint8Array([1, 2, 3]).buffer),
+  'an Int8Array': new Int8Array([1, 2, 3]),
+  'a Uint16Array': new Uint16Array([1, 2, 3]),
+  'an array of numbers': [1, 2, 3],
+}
+
+/**
+ * Calls `run` in a microtask and returns a promise that rejects if `run` throws or returns a
+ * rejected promise, so a test can check sync and async functions the same way.
+ *
+ * @example
+ * await expect(attempt(() => Bytes.toHex(new ArrayBuffer(1) as never))).rejects.toThrow(TypeError)
+ */
+export function attempt(run: () => unknown): Promise<unknown> {
+  return Promise.resolve().then(run)
+}
+
+/**
  * A `ReadableStream` that enqueues `chunks` and closes.
  *
  * @example

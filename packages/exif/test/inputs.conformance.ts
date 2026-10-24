@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Exif from '@portable/exif'
-import { byteForms, readBytes, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readBytes,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 import { fixture } from './utils.js'
 
 describe('byte inputs', () => {
@@ -19,6 +26,20 @@ describe('byte inputs', () => {
       expect(await readBytes(streamOf(chunks).pipeThrough(new Exif.StripStream()))).toEqual(
         stripped,
       )
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Exif.parse(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Exif.strip(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Exif.parseStream(streamOf([v])))).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new Exif.StripStream()))),
+      ).rejects.toThrow(TypeError)
     })
   }
 })

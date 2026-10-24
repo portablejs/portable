@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Base64 from '@portable/base64'
-import { byteForms, readBytes, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readBytes,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 
 const bytes = new Uint8Array([0xfb, 0xff, 0x00, 0x61, 0x62])
 const text = new TextEncoder().encode('+/8AYWI=')
@@ -26,9 +33,20 @@ describe('byte inputs', () => {
       expect(decoded).toEqual(bytes)
     })
   }
+})
 
-  test('throws a TypeError for an array of numbers', () => {
-    expect(() => Base64.encode([1, 2] as never)).toThrow(TypeError)
-    expect(() => Base64.decode([1, 2] as never)).toThrow(TypeError)
-  })
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Base64.encode(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Base64.decode(v))).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new Base64.EncoderStream()))),
+      ).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new Base64.DecoderStream()))),
+      ).rejects.toThrow(TypeError)
+    })
+  }
 })

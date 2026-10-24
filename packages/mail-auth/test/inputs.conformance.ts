@@ -1,4 +1,4 @@
-import { byteForms, streamOf, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, streamOf, toByteForm } from '@portable/fuzz'
 import * as MailAuth from '@portable/mail-auth'
 import { describe, expect, test } from 'vite-plus/test'
 import { buildMessage, encode, key, signed, zoneResolver } from './utils.js'
@@ -28,6 +28,21 @@ describe('byte inputs', () => {
       expect(await MailAuth.authenticate(streamOf(chunks), { ...options, resolver })).toEqual(
         expected,
       )
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      const resolver = zoneResolver({})
+      await expect(
+        attempt(() => MailAuth.authenticate(v, { ...options, resolver })),
+      ).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => MailAuth.authenticate(streamOf([v]), { ...options, resolver })),
+      ).rejects.toThrow(TypeError)
     })
   }
 })

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 import * as Webhooks from '@portable/webhooks'
 
 const body = new TextEncoder().encode('{"test": 2432232314}')
@@ -26,11 +26,26 @@ describe('byte inputs', () => {
       ).resolves.toBeDefined()
     })
   }
+})
 
-  test('throws a TypeError for a body that is neither bytes nor a string', async () => {
-    const headers = await Webhooks.sign(body, { scheme: Webhooks.github, secret, now })
-    await expect(
-      Webhooks.verify({ headers, body: [1] as never }, { scheme: Webhooks.github, secret, now }),
-    ).rejects.toThrow(TypeError)
-  })
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      const scheme = Webhooks.github
+      await expect(attempt(() => Webhooks.sign(v, { scheme, secret, now }))).rejects.toThrow(
+        TypeError,
+      )
+      await expect(attempt(() => Webhooks.sign(body, { scheme, secret: v, now }))).rejects.toThrow(
+        TypeError,
+      )
+      const headers = await Webhooks.sign(body, { scheme, secret, now })
+      await expect(
+        attempt(() => Webhooks.verify({ headers, body: v }, { scheme, secret, now })),
+      ).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => Webhooks.verify({ headers, body }, { scheme, secret: v, now })),
+      ).rejects.toThrow(TypeError)
+    })
+  }
 })

@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import * as Timers from '@portable/timers'
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>
@@ -46,6 +47,11 @@ export function toMessage(data: unknown): Message {
     return new Uint8Array(new Uint8Array(buffer, byteOffset, byteLength))
   }
   throw new TypeError('Expected a string or ArrayBuffer message. Set binaryType to "arraybuffer".')
+}
+
+export function checkOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
+  if (typeof message !== 'string') checkUint8Array(message)
+  return message as string | Uint8Array<ArrayBuffer>
 }
 
 export const messageSize = (message: Message): number =>

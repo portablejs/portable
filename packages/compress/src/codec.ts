@@ -1,4 +1,4 @@
-import { toBufferSource } from '@portable/bytes/internal'
+import { checkUint8Array, toBufferSource } from '@portable/bytes/internal'
 import { concat } from './bytes.js'
 import { MaxBytesError, TruncatedError, classify } from './errors.js'
 
@@ -30,7 +30,7 @@ export async function encode(
   options: encode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', signal } = options
-  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : checkUint8Array(data)
   const chunks: Uint8Array[] = []
   let length = 0
   await run(
@@ -73,6 +73,7 @@ export async function decode(
   options: decode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', maxBytes = Infinity, signal } = options
+  checkUint8Array(data)
   const chunks: Uint8Array[] = []
   let length = 0
   const decodeAll = (input: Uint8Array) =>

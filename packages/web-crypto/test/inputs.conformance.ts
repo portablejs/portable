@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vite-plus/test'
-import { byteForms, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz'
 import * as WebCrypto from '@portable/web-crypto'
 
 const data = new TextEncoder().encode('hello')
@@ -30,6 +30,20 @@ describe('byte inputs', () => {
       const der = WebCrypto.rawToDerEcdsa(toByteForm(raw, form))
       expect(der).toEqual(WebCrypto.rawToDerEcdsa(raw))
       expect(WebCrypto.derToRawEcdsa(toByteForm(der, form))).toEqual(raw)
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => WebCrypto.digest('SHA-256', v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => WebCrypto.hmac('SHA-256', v, data))).rejects.toThrow(TypeError)
+      await expect(attempt(() => WebCrypto.hmac('SHA-256', key, v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => WebCrypto.importSeed('X25519', v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => WebCrypto.rawToDerEcdsa(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => WebCrypto.derToRawEcdsa(v))).rejects.toThrow(TypeError)
     })
   }
 })

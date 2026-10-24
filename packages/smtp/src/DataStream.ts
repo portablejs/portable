@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 const CR = 13
 const LF = 10
 const DOT = 46
@@ -76,7 +77,7 @@ export class DataStream extends TransformStream<Uint8Array, Uint8Array> {
     let last = START
     super({
       transform(chunk, controller) {
-        if (chunk.length === 0) return
+        if (checkUint8Array(chunk).length === 0) return
         controller.enqueue(stuff(chunk, last))
         last = chunk[chunk.length - 1]!
       },

@@ -1,8 +1,9 @@
+import { isUint8Array } from '@portable/bytes/internal'
 const utf8Decoder = new TextDecoder()
 
 export function toText(input: string | Uint8Array): string {
   if (typeof input === 'string') return input
-  if (input instanceof Uint8Array) return utf8Decoder.decode(input)
+  if (isUint8Array(input)) return utf8Decoder.decode(input)
   throw new TypeError('Expected a string or a Uint8Array.')
 }
 

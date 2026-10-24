@@ -1,4 +1,4 @@
-import { byteForms, streamOf, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, streamOf, toByteForm } from '@portable/fuzz'
 import { describe, expect, test } from 'vite-plus/test'
 import { compose } from './utils.js'
 
@@ -40,6 +40,19 @@ describe('byte inputs', () => {
           attachments: [{ content: streamOf([pdf]), filename: 'a.pdf' }],
         }),
       )
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => compose({ text: v }))).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => compose({ attachments: [{ content: v, filename: 'a.pdf' }] })),
+      ).rejects.toThrow(TypeError)
+      await expect(attempt(() => compose({ text: streamOf([v]) }))).rejects.toThrow(TypeError)
     })
   }
 })

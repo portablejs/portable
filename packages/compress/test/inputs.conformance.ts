@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Compress from '@portable/compress'
-import { byteForms, readBytes, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readBytes,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 
 const bytes = new TextEncoder().encode('hello hello hello hello')
 
@@ -18,6 +25,20 @@ describe('byte inputs', () => {
       expect(await readBytes(streamOf(chunks).pipeThrough(new Compress.DecoderStream()))).toEqual(
         bytes,
       )
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Compress.encode(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Compress.decode(v))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Compress.crc32(v))).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readBytes(streamOf([v]).pipeThrough(new Compress.DecoderStream()))),
+      ).rejects.toThrow(TypeError)
     })
   }
 })

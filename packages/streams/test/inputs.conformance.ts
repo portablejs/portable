@@ -1,4 +1,11 @@
-import { byteForms, readAll, streamOf, toByteForm } from '@portable/fuzz'
+import {
+  attempt,
+  byteForms,
+  readAll,
+  rejectedByteForms,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 import * as Streams from '@portable/streams'
 import { describe, expect, test } from 'vite-plus/test'
 
@@ -28,4 +35,18 @@ describe('byte inputs', () => {
     const blob = await Streams.toBlob(streamOf([new Uint8Array(shared)]))
     expect(new Uint8Array(await blob.arrayBuffer())).toEqual(new Uint8Array([7, 8]))
   })
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Streams.toBytes(streamOf([v])))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Streams.toBlob(streamOf([v])))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Streams.toText(streamOf([v])))).rejects.toThrow(TypeError)
+      await expect(
+        attempt(() => readAll(streamOf([v]).pipeThrough(Streams.limitBytes(10)))),
+      ).rejects.toThrow(TypeError)
+    })
+  }
 })

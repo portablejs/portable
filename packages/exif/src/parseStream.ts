@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { MaxBytesError, UnsupportedError } from './errors.js'
 import {
   type Found,
@@ -128,6 +129,7 @@ function createSource(
           source.done = true
           break
         }
+        checkUint8Array(value)
         const chunkStart = end
         end += value.length
         if (end <= start) continue

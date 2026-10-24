@@ -6,6 +6,7 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
+  checkOutgoing,
   checkSize,
   queueLimit,
   drained,
@@ -157,6 +158,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   if (heartbeat) {
     checkSize('heartbeat.interval', heartbeat.interval, 1)
     checkSize('heartbeat.timeout', heartbeat.timeout ?? heartbeat.interval, 1)
+    checkOutgoing(heartbeat.ping)
   }
   const protocolList = typeof protocols === 'string' ? protocols : protocols && [...protocols]
 
@@ -304,7 +306,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
       const send = (message: string | Uint8Array<ArrayBuffer>) => {
         if (outcome || socket.readyState !== OPEN)
           throw new DOMException('The WebSocket is not open.', 'InvalidStateError')
-        socket.send(message)
+        socket.send(checkOutgoing(message))
       }
       const handshakeDone = Promise.resolve().then(() =>
         open({ send, messages, signal: attempt.signal }),
@@ -377,6 +379,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   }
 
   const write = (chunk: string | Uint8Array<ArrayBuffer>): Promise<void> | undefined => {
+    checkOutgoing(chunk)
     if (stop.signal.aborted) throw failure
     if (current?.readyState === OPEN && queue.length === 0) {
       if (current.bufferedAmount > highWaterMark)

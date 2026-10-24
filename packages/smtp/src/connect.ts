@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import { CommandError, type Rejection } from './errors.js'
 import { DataStream, encodeData } from './DataStream.js'
@@ -523,10 +524,16 @@ function createClient(
       })
     }
     const { message } = mail
+    if (
+      typeof message !== 'string' &&
+      !isUint8Array(message) &&
+      !(message instanceof ReadableStream)
+    )
+      throw new TypeError('message must be a string, a Uint8Array or a ReadableStream.')
     const data =
       typeof message === 'string'
         ? encodeData(encoder.encode(message))
-        : message instanceof Uint8Array
+        : isUint8Array(message)
           ? encodeData(message)
           : undefined
     const size = data ? data.length : mail.size

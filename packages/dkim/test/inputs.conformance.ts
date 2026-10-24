@@ -1,5 +1,5 @@
 import * as Dkim from '@portable/dkim'
-import { byteForms, streamOf, toByteForm } from '@portable/fuzz'
+import { attempt, byteForms, rejectedByteForms, streamOf, toByteForm } from '@portable/fuzz'
 import { beforeAll, describe, expect, test } from 'vite-plus/test'
 import { encode, privatePem, resolverFrom, rsaRecord } from './utils.js'
 
@@ -41,6 +41,19 @@ describe('byte inputs', () => {
       ]
       const [streamed] = await Dkim.verify(streamOf(signedChunks), { resolver, now })
       expect(streamed!.result).toBe('pass')
+    })
+  }
+})
+
+describe('rejected byte inputs', () => {
+  for (const [name, value] of Object.entries(rejectedByteForms)) {
+    test(`throws a TypeError for ${name}`, async () => {
+      const v = value as never
+      await expect(attempt(() => Dkim.sign(v, options))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Dkim.verify(v, { resolver }))).rejects.toThrow(TypeError)
+      await expect(attempt(() => Dkim.verify(streamOf([v]), { resolver }))).rejects.toThrow(
+        TypeError,
+      )
     })
   }
 })

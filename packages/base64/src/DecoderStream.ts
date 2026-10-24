@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { createDecoder, decode } from './decode.js'
 import * as Streams from '@portable/streams'
 
@@ -39,7 +40,10 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
       Streams.abortable(
         {
           transform(chunk, controller) {
-            const text = typeof chunk === 'string' ? chunk : utf8.decode(chunk, { stream: true })
+            const text =
+              typeof chunk === 'string'
+                ? chunk
+                : utf8.decode(checkUint8Array(chunk), { stream: true })
             enqueue(write(text, false), controller)
           },
           flush(controller) {
