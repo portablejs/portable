@@ -229,7 +229,7 @@ describe('dns-packet cases', () => {
   })
 
   test('an RDATA field that is too short throws InvalidInputError with the TruncatedError as cause', () => {
-    const bytes = hex('000081800000000100000000' + '00000f000100000000000101')
+    const bytes = hex('00008180000000010000000000000f000100000000000101')
     const error = (() => {
       try {
         decode(bytes)

@@ -31,7 +31,7 @@ const rfcResults: Record<string, Arc.Result.Code> = {
 
 describe('ARC validation suite', () => {
   for (const file of validationSuite) {
-    const resolver = suiteResolver(file['txt-records'] as Records)
+    const resolver = suiteResolver(file['txt-records'])
     describe(`${file.description}`, () => {
       for (const [name, data] of Object.entries(
         file.tests as Record<string, { message?: string; cv?: string }>,
@@ -64,7 +64,7 @@ const tagValue = (value: string, tag: string): string | undefined =>
 
 describe('ARC signing suite', () => {
   for (const file of signSuite) {
-    const resolver = suiteResolver(file['txt-records'] as Records)
+    const resolver = suiteResolver(file['txt-records'])
     describe(`${file.description}`, () => {
       for (const [name, data] of Object.entries(file.tests as Record<string, SignCase>)) {
         test(`${name}`, async () => {

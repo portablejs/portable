@@ -67,9 +67,7 @@ test('decode and DecoderStream agree however the input is chunked', async () => 
     fc.asyncProperty(csvLike, cuts, options, fc.boolean(), async (text, at, options, bytes) => {
       const input = bytes ? encodeUtf8(text) : text
       const whole = outcome(errors, () => Csv.decode(input, options))
-      const streamed = await outcomeAsync(errors, () =>
-        decodeStream(split(input, at) as (string | Uint8Array)[], options),
-      )
+      const streamed = await outcomeAsync(errors, () => decodeStream(split(input, at), options))
       expect(streamed).toEqual(whole)
     }),
   )

@@ -53,7 +53,7 @@ test('writes CRLF lines of at most 998 bytes, and headers that decode back to th
       for (const line of raw.split('\r\n'))
         expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(998)
       expect(MimeHeaders.decodeWords(unfolded(raw, 'Subject') ?? '').trim()).toBe(
-        (message.subject as string).replace(/\r\n|\r|\n/g, ' ').trim(),
+        message.subject.replace(/\r\n|\r|\n/g, ' ').trim(),
       )
       expect(
         MimeHeaders.parseMailboxes(unfolded(raw, 'To') ?? '').map((mailbox) => mailbox.address),

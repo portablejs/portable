@@ -104,7 +104,7 @@ const ranges = indexes['gb18030-ranges'] as [number, number][]
 write(
   'gb18030.ts',
   `export const gb18030: string = '${packIndex(index('gb18030'))}'\n` +
-    `export const gb18030Ranges: string = '${packInts(ranges.flatMap(([pointer, codePoint], i) => (i ? [pointer - ranges[i - 1]![0], codePoint - ranges[i - 1]![1]] : [pointer, codePoint])))}'\n`,
+    `export const gb18030Ranges: string = '${packInts(ranges.flatMap(([pointer, codePoint], i) => (i ? [pointer - ranges[i - 1][0], codePoint - ranges[i - 1][1]] : [pointer, codePoint])))}'\n`,
 )
 
 const canonicalize = (label: string) => label.toLowerCase().replace(/:\d{4}$|[^0-9a-z]/g, '')

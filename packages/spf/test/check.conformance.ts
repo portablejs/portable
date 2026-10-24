@@ -77,10 +77,7 @@ describe('Spf.check', () => {
   test('throws a RangeError for an ip that is not an IP address', async () => {
     for (const ip of ['', 'not-an-ip', '192.0.2', '127.1', '192.0.2.256', '1::2::3']) {
       await expect(
-        Spf.check(
-          { ip: ip as string, sender: 'user@example.test' },
-          { resolver: zoneResolver({}) },
-        ),
+        Spf.check({ ip: ip, sender: 'user@example.test' }, { resolver: zoneResolver({}) }),
       ).rejects.toThrow(RangeError)
     }
     await expect(

@@ -122,7 +122,7 @@ async function createPair(name: string): Promise<KeyPair> {
     const p = type === 'rsa' ? spki : spki.subarray(-32)
     return { privateKey, pem, type, record: `v=DKIM1; k=${type}; p=${base64(p)}` }
   }
-  const generated = (await crypto.subtle.generateKey(
+  const generated = await crypto.subtle.generateKey(
     {
       name: 'RSASSA-PKCS1-v1_5',
       modulusLength: 2048,
@@ -131,7 +131,7 @@ async function createPair(name: string): Promise<KeyPair> {
     },
     true,
     ['sign', 'verify'],
-  )) as CryptoKeyPair
+  )
   const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8', generated.privateKey))
   const spki = new Uint8Array(await crypto.subtle.exportKey('spki', generated.publicKey))
   const pem = `-----BEGIN PRIVATE KEY-----\n${base64(pkcs8)}\n-----END PRIVATE KEY-----\n`
@@ -243,7 +243,7 @@ export async function makeAms(message: string, options: AmsOptions): Promise<str
   for (const name of h) {
     const candidates = fields.filter((f) => fieldName(f) === name.toLowerCase())
     used[name] = (used[name] ?? 0) + 1
-    const selected = candidates[candidates.length - used[name]!]
+    const selected = candidates[candidates.length - used[name]]
     if (selected) data += (headerCanon === 'relaxed' ? relaxedHeader(selected) : selected) + '\r\n'
   }
   data += headerCanon === 'relaxed' ? relaxedHeader(field) : field

@@ -124,10 +124,7 @@ type Encoder = { write: (bytes: Uint8Array, final: boolean) => string }
 // The unfinished line stays at the end of `out` until it is complete.
 function createEncoder(options: encode.Options): Encoder {
   const { binary = false, lineLength: lineLengthOption = 76 } = options
-  if (
-    lineLengthOption !== false &&
-    (!Number.isInteger(lineLengthOption) || (lineLengthOption as number) < 4)
-  )
+  if (lineLengthOption !== false && (!Number.isInteger(lineLengthOption) || lineLengthOption < 4))
     throw new RangeError(
       `lineLength must be false or an integer of at least 4, got ${String(lineLengthOption)}.`,
     )

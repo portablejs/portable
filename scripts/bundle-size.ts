@@ -41,7 +41,7 @@ async function measure(name: string, imports: readonly Import[]): Promise<Size> 
           resolveId(source) {
             if (source === entry) return entry
             if (!isBuiltin(source)) return null
-            builtins.add(source.replace(/^node:/, '').split('/')[0]!)
+            builtins.add(source.replace(/^node:/, '').split('/')[0])
             return { id: source, external: true }
           },
           load(id) {
@@ -57,7 +57,7 @@ async function measure(name: string, imports: readonly Import[]): Promise<Size> 
     if (/\bBuffer\b/.test(bundle) && !builtins.has('buffer')) builtins.add('Buffer')
     return { gzip: gzipSync(bundle).length, builtins: [...builtins].sort() }
   } catch (error) {
-    return { error: String((error as Error).message ?? error).split('\n')[0]! }
+    return { error: String((error as Error).message ?? error).split('\n')[0] }
   }
 }
 

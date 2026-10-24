@@ -167,7 +167,7 @@ function message(next: Next) {
 }
 
 async function upstream(data: Record<string, unknown>): Promise<string> {
-  const buffer = await new MailComposer(data as never).compile().build()
+  const buffer = await new MailComposer(data).compile().build()
   return buffer.toString('utf8')
 }
 

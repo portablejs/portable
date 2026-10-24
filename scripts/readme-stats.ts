@@ -104,7 +104,7 @@ function dependencyCount(testDir: string, column: Column): number | undefined {
 }
 
 function typesOf(testDir: string, column: Column): string {
-  const name = packageName(column.imports![0]!.from)
+  const name = packageName(column.imports![0].from)
   const dir = findPackage(testDir, name)
   if (!dir) return '–'
   const json = packageJson(dir)
@@ -120,7 +120,7 @@ function typesOf(testDir: string, column: Column): string {
 }
 
 function versionOf(testDir: string, column: Column): string {
-  const name = packageName(column.imports![0]!.from)
+  const name = packageName(column.imports![0].from)
   if (name.startsWith('@portable/')) return '–'
   const dir = findPackage(testDir, name)
   return dir ? (packageJson(dir).version ?? '–') : '–'

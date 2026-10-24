@@ -60,7 +60,7 @@ test('authenticates a 250 KB message with a DKIM signature and an ARC set within
     bench('mailauth', async () => {
       const result = await upstreamAuthenticate(Buffer.from(largeSealed), {
         ...envelope,
-        resolver: upstreamResolver as never,
+        resolver: upstreamResolver,
         mta: 'mx.example.net',
         strict: true,
         disableBimi: true,
@@ -92,7 +92,7 @@ test('authenticates and seals a short message within 25% of mailauth', async ({ 
     bench('mailauth', async () => {
       await upstreamAuthenticate(Buffer.from(small), {
         ...envelope,
-        resolver: upstreamResolver as never,
+        resolver: upstreamResolver,
         mta: 'mx.example.net',
         strict: true,
         disableBimi: true,

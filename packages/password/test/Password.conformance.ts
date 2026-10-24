@@ -378,7 +378,7 @@ describe('pbkdf2 fixtures', () => {
     const salt = bytes(f.salt, f.saltHex, f.saltUint8Array, f.saltInt32Array, f.saltFloat64Array)
     for (const digest of ['sha1', 'sha256', 'sha512'] satisfies Digest[]) {
       test(`#${index} ${digest}, c=${f.iterations}, dkLen=${f.dkLen}`, async () => {
-        const stored = phc(digest, f.iterations, salt, fromHex(f.results[digest]!))
+        const stored = phc(digest, f.iterations, salt, fromHex(f.results[digest]))
         expect(await Password.verify(password, stored)).toBe(true)
       })
     }

@@ -29,7 +29,7 @@ function replace(json: Json, path: readonly (string | number)[], value: Json): J
     Json
   >
   copy[key!] = replace(copy[key!]!, rest, value)
-  return copy as Json
+  return copy
 }
 
 /** `original` with up to three values swapped for random JSON. */

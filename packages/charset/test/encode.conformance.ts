@@ -199,9 +199,7 @@ describe('EncoderStream', () => {
   })
 
   test('errors on chunks that are neither strings nor Uint8Arrays', async () => {
-    const stream = fromChunks<unknown>([42]).pipeThrough(
-      new Charset.EncoderStream(windows1251) as unknown as TransformStream<unknown, Uint8Array>,
-    )
+    const stream = fromChunks<unknown>([42]).pipeThrough(new Charset.EncoderStream(windows1251))
     await expect(collect(stream)).rejects.toThrow(TypeError)
   })
 

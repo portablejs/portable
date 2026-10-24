@@ -28,7 +28,7 @@ function upstreamEncrypt(
     }) as typeof ecdh.generateKeys
     return ecdh
   })
-  vi.spyOn(crypto, 'randomBytes').mockImplementation((() => salt) as never)
+  vi.spyOn(crypto, 'randomBytes').mockImplementation(() => salt)
   const { cipherText } = webPush.encrypt(keys.p256dh, keys.auth, payload, 'aes128gcm')
   vi.restoreAllMocks()
   return cipherText

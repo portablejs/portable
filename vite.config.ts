@@ -99,7 +99,8 @@ export default defineConfig({
     ],
   },
   lint: {
-    plugins: ['eslint', 'typescript', 'unicorn', 'vitest'],
+    plugins: ['eslint', 'typescript', 'unicorn', 'vitest', 'import', 'jsdoc', 'oxc'],
+    categories: { suspicious: 'error', perf: 'error' },
     jsPlugins: ['./tools/lint/src/plugin.ts'],
     options: { typeAware: true, typeCheck: true },
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
@@ -107,6 +108,48 @@ export default defineConfig({
       'no-console': 'error',
       'portable/prefer-satisfies': 'error',
       'portable/type-parameter-name': 'error',
+      // Turned off from the suspicious and perf categories. Streams and retries await in a loop on
+      // purpose, and the other rules report a style the code uses everywhere.
+      'eslint/no-await-in-loop': 'off',
+      'eslint/no-shadow': 'off',
+      'eslint/no-underscore-dangle': 'off',
+      'unicorn/consistent-function-scoping': 'off',
+      'typescript/no-unsafe-type-assertion': 'off',
+      // toSorted and toReversed are ES2023, newer than package code targets.
+      'unicorn/no-array-sort': 'off',
+      'unicorn/no-array-reverse': 'off',
+      // Default imports of CommonJS libraries in oracle tests and benchmarks.
+      'import/no-named-as-default': 'off',
+      'import/no-named-as-default-member': 'off',
+      // A loop condition that a callback changes, early `return` in a void function, MessagePort's
+      // postMessage without an origin, and String() on input typed string but unchecked at run time.
+      'eslint/no-unmodified-loop-condition': 'off',
+      'typescript/consistent-return': 'off',
+      'unicorn/require-post-message-target-origin': 'off',
+      'typescript/no-unnecessary-type-conversion': 'off',
+      // JSON encoding tells boxed primitives (new Number(1)) apart with instanceof.
+      'unicorn/no-instanceof-builtins': 'off',
+      // Its fix turns a test title `${name}` into `name`, which vitest/valid-title then rejects.
+      'typescript/no-unnecessary-template-expression': 'off',
+      'import/no-cycle': 'error',
+      'import/no-self-import': 'error',
+      'import/no-duplicates': 'error',
+      'import/no-default-export': 'error',
+      'typescript/consistent-type-definitions': ['error', 'type'],
+      'typescript/no-unnecessary-type-assertion': 'error',
+      'unicorn/no-abusive-eslint-disable': 'error',
+      'jsdoc/check-tag-names': 'error',
+      'jsdoc/empty-tags': 'error',
+      'jsdoc/no-defaults': 'error',
+      'jsdoc/require-param-name': 'error',
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'ReadableStream',
+          property: 'from',
+          message: 'Some supported browsers lack ReadableStream.from. Use Streams.fromIterable.',
+        },
+      ],
       // `fuzz` from @portable/fuzz asserts a property, like `expect`.
       'vitest/expect-expect': ['warn', { assertFunctionNames: ['expect', 'expect*', 'fuzz'] }],
       'no-irregular-whitespace': [
@@ -148,6 +191,23 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
+        files: ['vite.config.ts', 'tools/lint/src/plugin.ts'],
+        rules: { 'import/no-default-export': 'off' },
+      },
+      {
+        // Tests build fakes and measure constructors, so these patterns are deliberate there.
+        files: ['packages/*/test/**', 'tools/*/src/**'],
+        rules: {
+          'eslint/no-new': 'off',
+          'eslint/no-extend-native': 'off',
+          'oxc/no-map-spread': 'off',
+          'typescript/no-extraneous-class': 'off',
+          'unicorn/no-array-fill-with-reference-type': 'off',
+          'unicorn/prefer-add-event-listener': 'off',
+          'jsdoc/require-yields': 'off',
+        },
+      },
+      {
         // The worker harness declares one test for each test it collects from the worker.
         files: ['tools/worker/src/*.browser.test.ts'],
         rules: {
@@ -162,6 +222,8 @@ export default defineConfig({
           'no-restricted-imports': 'off',
           'no-restricted-globals': 'off',
           'no-console': 'off',
+          // readJson<value>() types a parsed file for its caller.
+          'typescript/no-unnecessary-type-parameters': 'off',
         },
       },
     ],

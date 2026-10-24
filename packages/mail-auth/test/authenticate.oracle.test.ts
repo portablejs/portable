@@ -136,7 +136,7 @@ async function makeCase(seed: number): Promise<Case> {
           algorithm: 'rsa-sha1',
         },
       ],
-    } as never)
+    })
     message = signatures + message
   }
   if (signing === 'broken') message = message.replace('body', 'changed')

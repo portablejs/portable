@@ -92,7 +92,8 @@ describe('calls', () => {
 
   test('a remote can be awaited without making a call', async () => {
     const remote = pair(alice)
-    const awaited: unknown = await (remote as unknown)
+    // oxlint-disable-next-line typescript/await-thenable -- a remote must not look like a thenable
+    const awaited: unknown = await remote
     expect(awaited).toBe(remote)
   })
 })

@@ -8,10 +8,7 @@ import { fakeServer, plain } from './utils.js'
 // it with Smtp, then checks that Dkim.verify accepts the signature on the received message.
 
 test('a message encoded, signed and sent arrives with a valid DKIM signature', async () => {
-  const keys = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, [
-    'sign',
-    'verify',
-  ])) as CryptoKeyPair
+  const keys = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify'])
   const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keys.publicKey))
   const record = `v=DKIM1; k=ed25519; p=${btoa(String.fromCharCode(...publicKey))}`
   const resolver = {

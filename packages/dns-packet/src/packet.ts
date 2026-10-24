@@ -154,7 +154,7 @@ export type DecodedPacket = {
 type AnyCodec = Codec<unknown, unknown>
 
 const codecFor = (type: string): AnyCodec =>
-  (Object.hasOwn(codecs, type) ? codecs[type as KnownType] : unknown) as AnyCodec
+  Object.hasOwn(codecs, type) ? codecs[type as KnownType] : unknown
 
 const none = new Array<never>()
 const TOP_BIT = 0x8000

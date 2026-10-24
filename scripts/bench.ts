@@ -22,8 +22,8 @@ writeFileSync(
 
 let failed = 0
 for (const name of names.filter(hasBench)) {
-  while (loadavg()[0]! > maxLoad) {
-    console.log(`Load average ${loadavg()[0]!.toFixed(1)} is above ${maxLoad}, waiting.`)
+  while (loadavg()[0] > maxLoad) {
+    console.log(`Load average ${loadavg()[0].toFixed(1)} is above ${maxLoad}, waiting.`)
     await sleep(30_000)
   }
   console.log(`\n${name}`)

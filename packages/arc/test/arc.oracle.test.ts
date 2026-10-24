@@ -30,7 +30,7 @@ const mailauthResolver = (records: Records) => {
 /** mailauth's strict-mode ARC result. */
 async function upstream(message: Uint8Array, records: Records): Promise<string> {
   const result = await authenticate(Buffer.from(message), {
-    resolver: mailauthResolver(records) as never,
+    resolver: mailauthResolver(records),
     strict: true,
     disableDmarc: true,
     disableBimi: true,
@@ -118,7 +118,7 @@ describe('mailauth agrees with verify', () => {
       )) {
         const message = encode((data.message ?? '').replace(/\r?\n/g, '\r\n'))
         const theirs = await authenticate(Buffer.from(message), {
-          resolver: upstreamResolver as never,
+          resolver: upstreamResolver,
           strict: true,
           disableDmarc: true,
           disableBimi: true,

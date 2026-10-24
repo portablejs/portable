@@ -51,10 +51,7 @@ function equal(actual: unknown, expected: unknown) {
   if (a !== b) throw new Error(`Expected ${b}, got ${a}`)
 }
 
-function through<value>(
-  chunks: readonly value[],
-  ...transforms: TransformStream[]
-): Promise<unknown[]> {
+function through(chunks: readonly unknown[], ...transforms: TransformStream[]): Promise<unknown[]> {
   let stream: ReadableStream = Streams.fromIterable(chunks)
   for (const transform of transforms) stream = stream.pipeThrough(transform)
   return Streams.toArray(stream)
@@ -64,10 +61,10 @@ const message = 'From: a@example.com\r\nTo: b@example.com\r\nSubject: tere\r\n\r
 
 // Returns the DKIM key, the SPF record and the DMARC record that the mail checks look up.
 async function mailResolver() {
-  const { privateKey, publicKey } = (await crypto.subtle.generateKey('Ed25519', true, [
+  const { privateKey, publicKey } = await crypto.subtle.generateKey('Ed25519', true, [
     'sign',
     'verify',
-  ])) as CryptoKeyPair
+  ])
   const raw = new Uint8Array(await crypto.subtle.exportKey('raw', publicKey))
   const records: Record<string, string> = {
     'mail._domainkey.example.com': `v=DKIM1; k=ed25519; p=${Base64.encode(raw)}`,
@@ -314,9 +311,9 @@ export const checks: Record<string, () => Promise<void> | void> = {
     equal(publicKey.algorithm.name, 'Ed25519')
   },
   async webPush() {
-    const keys = (await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+    const keys = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
       'deriveBits',
-    ])) as CryptoKeyPair
+    ])
     const p256dh = new Uint8Array(await crypto.subtle.exportKey('raw', keys.publicKey))
     const subscription = {
       endpoint: 'https://push.example/1',

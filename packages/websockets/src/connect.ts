@@ -199,7 +199,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     try {
       const target = typeof url === 'function' ? await url() : url
       if (stop.signal.aborted) return { ready: false, kind: 'error', error: failure }
-      socket = new Impl!(String(target), protocolList)
+      socket = new Impl(String(target), protocolList)
     } catch (error) {
       return { ready: false, kind: 'error', error, final: typeof url !== 'function' }
     }
