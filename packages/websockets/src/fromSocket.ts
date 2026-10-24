@@ -6,6 +6,7 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
+  checkOutgoing,
   checkSize,
   queueLimit,
   closedError,
@@ -129,6 +130,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
       writableController = controller
     },
     write(chunk) {
+      checkOutgoing(chunk)
       if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark)
         return socket.send(chunk)
       return opened

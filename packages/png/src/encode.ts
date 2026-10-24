@@ -1,4 +1,4 @@
-import { crc32 } from '@portable/bytes/internal'
+import { crc32, isUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { type FilterType, filterRows } from './filter.js'
 import * as zlib from './zlib.js'
@@ -85,6 +85,8 @@ const channelsByColorType = { 0: 1, 2: 3, 4: 2, 6: 4 } as const
 
 function filtered(image: RgbaImage, colorType: 0 | 2 | 4 | 6, options: encode.Options) {
   const { width, height, data } = image
+  if (!isUint8Array(data) && Object.prototype.toString.call(data) !== '[object Uint8ClampedArray]')
+    throw new TypeError('data must be a Uint8Array or a Uint8ClampedArray.')
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1)
     throw new InvalidInputError('width and height must be positive integers.')
   if (data.length !== width * height * 4)

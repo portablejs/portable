@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as QuotedPrintable from '@portable/quoted-printable'
 
@@ -27,7 +28,7 @@ export type TransferEncoding = 'base64' | 'quoted-printable' | '7bit' | '8bit'
 export function isContent(value: unknown): value is Content {
   return (
     typeof value === 'string' ||
-    value instanceof Uint8Array ||
+    isUint8Array(value) ||
     value instanceof Blob ||
     value instanceof ReadableStream
   )
@@ -63,7 +64,7 @@ function textEncoding(text: string): TransferEncoding {
  * The encoding for a text part without a `transferEncoding`. A stream can't be scanned up front.
  */
 export function chooseTextEncoding(content: Content): TransferEncoding {
-  if (typeof content !== 'string' && !(content instanceof Uint8Array)) return 'quoted-printable'
+  if (typeof content !== 'string' && !isUint8Array(content)) return 'quoted-printable'
   const text = typeof content === 'string' ? content : new TextDecoder().decode(content)
   return isShortAscii(text) ? '7bit' : textEncoding(text)
 }

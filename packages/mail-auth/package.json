@@ -34,6 +34,7 @@
   ],
   "dependencies": {
     "@portable/arc": "workspace:*",
+    "@portable/bytes": "workspace:*",
     "@portable/dkim": "workspace:*",
     "@portable/dmarc": "workspace:*",
     "@portable/mime-headers": "workspace:*",

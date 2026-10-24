@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import type { Charset } from './Charset.js'
 import type { encode } from './encode.js'
 import { createState, run } from './internal/run.js'
@@ -33,7 +34,7 @@ export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Arr
     const state = createState(charset, options)
     let decoder: TextDecoder | undefined
     const text = (chunk: string | Uint8Array) => {
-      if (chunk instanceof Uint8Array) {
+      if (isUint8Array(chunk)) {
         decoder ??= new TextDecoder()
         return decoder.decode(chunk, { stream: true })
       }

@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 import { createParser, type Parser } from './parser.js'
 
@@ -63,7 +64,9 @@ export class DecoderStream<
           },
           transform(chunk) {
             parser.write(
-              typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true }),
+              typeof chunk === 'string'
+                ? chunk
+                : decoder.decode(checkUint8Array(chunk), { stream: true }),
             )
           },
           flush() {

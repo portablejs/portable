@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import * as Arc from '@portable/arc'
 import * as Dkim from '@portable/dkim'
 import * as Dmarc from '@portable/dmarc'
@@ -143,7 +144,7 @@ export async function authenticate(
   const bytes =
     typeof message === 'string'
       ? new TextEncoder().encode(message)
-      : message instanceof Uint8Array
+      : isUint8Array(message)
         ? message
         : await Streams.toBytes(message, { signal })
   const verifyOptions = { resolver, now, minKeyBits, hasher, signal }

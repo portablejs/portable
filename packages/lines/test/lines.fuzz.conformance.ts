@@ -1,4 +1,15 @@
-import { cuts, fc, fuzz, outcomeAsync, split as splitAt } from '@portable/fuzz'
+import {
+  byteForm,
+  byteForms,
+  cuts,
+  fc,
+  fuzz,
+  outcomeAsync,
+  readAll,
+  split as splitAt,
+  streamOf,
+  toByteForm,
+} from '@portable/fuzz'
 import * as Lines from '@portable/lines'
 import { expect, test } from 'vite-plus/test'
 import { encode, split, unicodeLineBreak } from './utils.js'
@@ -72,6 +83,24 @@ test("with overflow: 'error', fails exactly when a line is longer than maxLength
           split(splitAt(input, at), { ...options, maxLength }),
         )
         expect(await result).toEqual(tooLong ? { error: Lines.MaxLengthError } : { value: lines })
+      },
+    ),
+  )
+})
+
+test('DecoderStream gives the same lines for chunks in any byte form', async () => {
+  await fuzz(
+    fc.asyncProperty(
+      fc.uint8Array({ maxLength: 64 }),
+      cuts,
+      fc.array(byteForm, { minLength: 17, maxLength: 17 }),
+      async (bytes, at, forms) => {
+        const chunks = splitAt(bytes, at)
+        const expected = await readAll(streamOf(chunks).pipeThrough(new Lines.DecoderStream()))
+        const inputs = chunks.map((chunk, i) => toByteForm(chunk, forms[i] ?? byteForms[0]))
+        expect(await readAll(streamOf(inputs).pipeThrough(new Lines.DecoderStream()))).toEqual(
+          expected,
+        )
       },
     ),
   )

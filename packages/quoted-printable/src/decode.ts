@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
 import * as Streams from '@portable/streams'
 
@@ -16,7 +17,7 @@ import * as Streams from '@portable/streams'
  * ```
  */
 export function decode(input: string | Uint8Array): Uint8Array<ArrayBuffer> {
-  const bytes = typeof input === 'string' ? encodeUtf8(input) : input
+  const bytes = typeof input === 'string' ? encodeUtf8(input) : checkUint8Array(input)
   return createDecoder().write(bytes, true)
 }
 

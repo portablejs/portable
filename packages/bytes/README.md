@@ -41,6 +41,17 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 
 `concat` and `fromHex` return `Uint8Array<ArrayBuffer>`, so TypeScript 5.9 and later accept them as a `BlobPart` or a `BufferSource` for `crypto.subtle`.
 
+### Byte input
+
+Every `@portable/*` function that takes bytes accepts a `Uint8Array` or a Node `Buffer`, which is a subclass of `Uint8Array`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView` or another typed array. Given a buffer or a view, a function can't tell which of its bytes you meant: `view.buffer` also holds the bytes outside the view, and an `Int16Array` has two bytes per element in the platform's byte order. Convert the value to a `Uint8Array` yourself, so your code shows which bytes the function reads:
+
+```ts
+new Uint8Array(arrayBuffer)
+new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
+```
+
+A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk, or the function may read some bytes before the write and some after.
+
 ## Why use this over uint8array-extras and node:crypto
 
 - `node:crypto` exists only in Node, Deno and Bun. This package runs in browsers and Workers too.

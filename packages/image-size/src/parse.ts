@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { NeedMore } from './bytes.js'
 import { MaxBytesError, TruncatedError, UnsupportedError } from './errors.js'
 import type { Format } from './formats/format.js'
@@ -148,7 +149,7 @@ function measure(input: Uint8Array, final: boolean): Size {
  */
 export function parse(bytes: Uint8Array): Size {
   try {
-    return measure(bytes, true)
+    return measure(checkUint8Array(bytes), true)
   } catch (error) {
     throw error instanceof NeedMore ? new TruncatedError() : error
   }
@@ -201,6 +202,7 @@ export async function parseStream(
       const { done, value } = await reader.read()
       signal?.throwIfAborted()
       if (done) return parse(buffer.subarray(0, length))
+      checkUint8Array(value)
       if (length + value.length > buffer.length) {
         const grown = new Uint8Array(Math.max(length + value.length, buffer.length * 2))
         grown.set(buffer.subarray(0, length))

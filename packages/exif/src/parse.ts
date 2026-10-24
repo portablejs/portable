@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { UnsupportedError } from './errors.js'
 import { type Ifds, type Tiff, readTiff } from './tiff.js'
 
@@ -40,6 +41,7 @@ export type Metadata = Ifds & {
  * ```
  */
 export function parse(bytes: Uint8Array): Metadata {
+  checkUint8Array(bytes)
   const b0 = bytes[0]
   const b1 = bytes[1]
   let found: Found

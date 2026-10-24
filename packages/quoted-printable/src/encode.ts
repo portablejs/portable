@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
 import * as Streams from '@portable/streams'
 
@@ -32,7 +33,7 @@ export declare namespace encode {
  * ```
  */
 export function encode(input: Uint8Array | string, options: encode.Options = {}): string {
-  const bytes = typeof input === 'string' ? encodeUtf8(input) : input
+  const bytes = typeof input === 'string' ? encodeUtf8(input) : checkUint8Array(input)
   return createEncoder(options).write(bytes, true)
 }
 

@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 import * as Bytes from '@portable/bytes'
 import * as MimeHeaders from '@portable/mime-headers'
 import { type Addresses, format, parse, wordEncoding } from './addresses.js'
@@ -579,7 +580,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
     }
     const content = current.content
     if (content === undefined || content === '') return
-    if (typeof content === 'string' || content instanceof Uint8Array) {
+    if (typeof content === 'string' || isUint8Array(content)) {
       const encoded = encodeBody(content, current.body)
       if (typeof encoded === 'string') {
         pending += encoded

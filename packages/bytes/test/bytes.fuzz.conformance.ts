@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { fc, fuzz, outcome } from '@portable/fuzz'
+import { byteForm, fc, fuzz, outcome, toByteForm } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 
 test('fromHex reads what toHex writes, in either case', () => {
@@ -56,6 +56,18 @@ test('equal and timingSafeEqual agree with comparing every byte', () => {
       const expected = a.length === b.length && a.every((byte, i) => byte === b[i])
       expect(Bytes.equal(a, b)).toBe(expected)
       expect(Bytes.timingSafeEqual(a, b)).toBe(expected)
+    }),
+  )
+})
+
+test('every byte form gives the same result as a Uint8Array', () => {
+  fuzz(
+    fc.property(fc.uint8Array({ maxLength: 64 }), byteForm, (bytes, form) => {
+      const input = toByteForm(bytes, form)
+      expect(Bytes.toHex(input)).toBe(Bytes.toHex(bytes))
+      expect(Bytes.concat([input, bytes])).toEqual(Bytes.concat([bytes, bytes]))
+      expect(Bytes.equal(input, bytes)).toBe(true)
+      expect(Bytes.timingSafeEqual(input, bytes)).toBe(true)
     }),
   )
 })

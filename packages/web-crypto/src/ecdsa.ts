@@ -1,3 +1,4 @@
+import { checkUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError } from './errors.js'
 
 /** An ECDSA curve, named as WebCrypto names it. */
@@ -29,6 +30,7 @@ export function derToRawEcdsa(
   signature: Uint8Array,
   options: derToRawEcdsa.Options = {},
 ): Uint8Array<ArrayBuffer> {
+  checkUint8Array(signature)
   const size = sizes[options.namedCurve ?? 'P-256']
   if (signature[0] !== 0x30) throw new InvalidInputError('Expected a DER SEQUENCE')
   let length = signature[1] ?? 0
@@ -91,6 +93,7 @@ function readInteger(
  * ```
  */
 export function rawToDerEcdsa(signature: Uint8Array): Uint8Array<ArrayBuffer> {
+  checkUint8Array(signature)
   const size = signature.length / 2
   if (size !== 32 && size !== 48 && size !== 66)
     throw new InvalidInputError(

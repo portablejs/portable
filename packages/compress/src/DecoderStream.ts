@@ -1,4 +1,4 @@
-import { toBufferSource } from '@portable/bytes/internal'
+import { isUint8Array, toBufferSource } from '@portable/bytes/internal'
 import { concat } from './bytes.js'
 import type { Format } from './codec.js'
 import { MaxBytesError, classify } from './errors.js'
@@ -52,12 +52,14 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
     let writable: WritableStreamDefaultController | undefined
     let readable: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>> | undefined
 
-    const onAbort = () => {
-      const error = fail(signal!.reason)
+    const stop = (reason: unknown): unknown => {
+      const error = fail(reason)
       readable?.error(error)
       reader.cancel(error).catch(() => {})
       writer.abort(error).catch(() => {})
+      return error
     }
+    const onAbort = () => stop(signal!.reason)
 
     const fail = (error: unknown): unknown => {
       if (failure) return failure.error
@@ -90,7 +92,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
       },
       async write(chunk) {
         throwIfFailed()
-        if (!(chunk instanceof Uint8Array)) throw new TypeError('Expected a Uint8Array chunk.')
+        if (!isUint8Array(chunk)) throw stop(new TypeError('Expected a Uint8Array chunk.'))
         queue.push(chunk)
         queued += chunk.byteLength
         writing ??= writeQueue()

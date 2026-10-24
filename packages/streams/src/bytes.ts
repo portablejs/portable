@@ -1,13 +1,14 @@
+import { isUint8Array } from '@portable/bytes/internal'
 const encoder = new TextEncoder()
 
 export function toUint8Array(chunk: unknown): Uint8Array {
-  if (chunk instanceof Uint8Array) return chunk
+  if (isUint8Array(chunk)) return chunk
   if (typeof chunk === 'string') return encoder.encode(chunk)
   throw unsupportedChunk(chunk)
 }
 
 export function byteLength(chunk: unknown): number {
-  if (chunk instanceof Uint8Array) return chunk.byteLength
+  if (isUint8Array(chunk)) return chunk.byteLength
   if (typeof chunk === 'string') return utf8Length(chunk)
   throw unsupportedChunk(chunk)
 }

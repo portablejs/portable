@@ -1,5 +1,5 @@
 import * as Base64 from '@portable/base64'
-import { cuts, fc, fuzz, outcome, outcomeAsync, split } from '@portable/fuzz'
+import { byteForm, cuts, fc, fuzz, outcome, outcomeAsync, split, toByteForm } from '@portable/fuzz'
 import { describe, expect, test } from 'vite-plus/test'
 import { decodeStream, encodeStream, referenceDecode } from './utils.js'
 
@@ -132,4 +132,14 @@ describe('DecoderStream', () => {
       }),
     )
   })
+})
+
+test('every byte form encodes and decodes like a Uint8Array', () => {
+  fuzz(
+    fc.property(fc.uint8Array({ maxLength: 64 }), byteForm, (bytes, form) => {
+      const encoded = Base64.encode(bytes)
+      expect(Base64.encode(toByteForm(bytes, form))).toBe(encoded)
+      expect(Base64.decode(toByteForm(new TextEncoder().encode(encoded), form))).toEqual(bytes)
+    }),
+  )
 })

@@ -1,3 +1,4 @@
+import { isUint8Array } from '@portable/bytes/internal'
 const CR = 0x0d
 const LF = 0x0a
 
@@ -71,7 +72,7 @@ function findEmptyLine(bytes: Uint8Array, from: number, to: number): number {
 
 function readChunks(input: Message): Body {
   if (typeof input === 'string') input = new TextEncoder().encode(input)
-  if (input instanceof Uint8Array) {
+  if (isUint8Array(input)) {
     let chunk: Uint8Array | undefined = input
     return {
       read() {
@@ -92,7 +93,7 @@ function readChunks(input: Message): Body {
     async read() {
       const { done, value } = await reader.read()
       if (done) return undefined
-      if (!(value instanceof Uint8Array)) throw new TypeError('Expected Uint8Array chunks.')
+      if (!isUint8Array(value)) throw new TypeError('Expected Uint8Array chunks.')
       return value
     },
     cancel: () => reader.cancel(),
