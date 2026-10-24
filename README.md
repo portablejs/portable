@@ -121,10 +121,6 @@ Most npm packages for streams, encodings, email and crypto were written for Node
 </tbody>
 </table>
 
-## Contributing
-
-See [docs/architecture.md](docs/architecture.md) for how the repo is built and tested, and [AGENTS.md](AGENTS.md) for the commands and the rules contributors follow.
-
 ## License
 
 MIT
