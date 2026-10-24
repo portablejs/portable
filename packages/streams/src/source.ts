@@ -55,7 +55,6 @@ async function forEachIterable<chunk>(
   signal: AbortSignal | undefined,
 ): Promise<void> {
   if (!signal) {
-    // oxlint-disable-next-line portable/no-for-await -- forEach reads a ReadableStream with a reader.
     for await (const chunk of source) onChunk(chunk)
     return
   }

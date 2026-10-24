@@ -82,16 +82,6 @@ tester.run('no-enum', plugin.rules['no-enum'], {
   invalid: [{ code: 'enum Mode { Read, Write }', errors: [{ messageId: 'noEnum' }] }],
 })
 
-tester.run('no-for-await', plugin.rules['no-for-await'], {
-  valid: ['for (const chunk of chunks) use(chunk)'],
-  invalid: [
-    {
-      code: 'async function f() { for await (const chunk of stream) use(chunk) }',
-      errors: [{ messageId: 'noForAwait' }],
-    },
-  ],
-})
-
 tester.run('no-private-symbol', plugin.rules['no-private-symbol'], {
   valid: ["const brand = Symbol.for('portable.errors.kinds')"],
   invalid: [{ code: "const brand = Symbol('brand')", errors: [{ messageId: 'noPrivateSymbol' }] }],

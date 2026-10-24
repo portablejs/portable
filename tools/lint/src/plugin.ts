@@ -248,26 +248,6 @@ const noEnum = {
 } satisfies Rule
 
 /**
- * Reports `for await`. Some browsers the packages support can't iterate a `ReadableStream` with
- * it, and the rule can't see the type of the value being iterated, so every `for await` in
- * package code needs a disable comment that says the value isn't a stream.
- */
-const noForAwait = {
-  meta: {
-    type: 'problem',
-    messages: {
-      noForAwait:
-        'Read a ReadableStream with getReader(). For another async iterable, disable this rule on the line.',
-    },
-  },
-  create: (context) => ({
-    ForOfStatement: (node) => {
-      if (node.await) context.report({ node, messageId: 'noForAwait' })
-    },
-  }),
-} satisfies Rule
-
-/**
  * Reports `Symbol()`. A second copy of the package creates a different symbol, so a mark it
  * stores isn't found by the other copy, while `Symbol.for('portable.…')` returns the same symbol
  * in both.
@@ -295,7 +275,6 @@ const plugin = {
     'error-kind': errorKind,
     'import-extension': importExtension,
     'no-enum': noEnum,
-    'no-for-await': noForAwait,
     'no-private-symbol': noPrivateSymbol,
     'optional-undefined': optionalUndefined,
     'prefer-satisfies': preferSatisfies,
