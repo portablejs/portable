@@ -144,16 +144,16 @@ await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
 
 | Package | Purpose | Notes |
 | --- | --- | --- |
-| `@portable/xml-c14n` → `@portable/xml-dsig` → `@portable/saml` | XML canonicalization, XML signatures, then SAML assertions | replaces xml-crypto 21M; biggest effort, needs a careful XML parser choice. Kevin asked to skip XML for now (2026-10-18). |
+| `@portable/xml-c14n` → `@portable/xml-dsig` → `@portable/saml` | XML canonicalization, XML signatures, then SAML assertions | replaces xml-crypto 21M; biggest effort, needs a careful XML parser choice. Skipped for now (2026-10-18). |
 | `@portable/google-auth` | Service-account access tokens | possibly just a documented `jose` recipe; build only if the recipe proves too fiddly |
 | `@portable/xlsx` | Streaming xlsx writer | replaces exceljs 72M for the write path; zips with fflate as a peer |
-| Document formats (pdf, docx) | Read or write office documents | parked with xlsx; Kevin asked to save document formats for later (2026-10-18) |
+| Document formats (pdf, docx) | Read or write office documents | parked with xlsx until later (2026-10-18) |
 | `@portable/http-signatures` | RFC 9421 HTTP Message Signatures and `Content-Digest` (RFC 9530) on WebCrypto | parked: most ActivityPub servers still use draft-cavage signatures, and Web Bot Auth is new. Revisit if RFC 9421 adoption grows. |
-| Partial JSON | Snapshots of an incomplete JSON document as deltas arrive, such as streamed tool-call arguments | parked: Kevin asked to wait for a strong use case (2026-10-19) |
+| Partial JSON | Snapshots of an incomplete JSON document as deltas arrive, such as streamed tool-call arguments | parked until there is a strong use case (2026-10-19) |
 
 ## Not building (point to these instead)
 
-Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars, aws4fetch, otpauth, cbor-x, @msgpack/msgpack, postal-mime), plus what Remix v3 already covers, which drops two packages from revision 1:
+Everything in the original list (jose, noble, fflate, modern-tar, multitars, aws4fetch, otpauth, cbor-x, @msgpack/msgpack, postal-mime), plus what Remix v3 already covers, which drops two packages from revision 1:
 
 | Need | Use | Effect on our list |
 | --- | --- | --- |
@@ -178,7 +178,7 @@ Everything in Kevin's original list (jose, noble, fflate, modern-tar, multitars,
 
 The scaffold PR tests the build, test and release setup with `lines` (the first package and a 406M replacement), instead of `content-disposition` from revision 1.
 
-## Questions for Kevin
+## Open questions
 
 1. Claim `portable` (unscoped) on npm now for the umbrella package? It is currently unregistered.
 2. Is dropping `content-disposition` and `cookie-signature` in favor of Remix's packages right, or do you want standalone versions with no Remix dependency?

@@ -106,6 +106,7 @@ Read the `technical-writing` and `unslop` skills (in `.agents/pstack/skills/`) b
 - No "X. So Y. So Z." chains. Vary sentence length, and keep a cause and its effect in one sentence when they belong together.
 - No AI vocabulary (delve, crucial, leverage), no "not just X but Y", no forced groups of three, no em dashes, no filler or hedging, and no clipped fragments with arrows.
 - A commit message says why the change is made and what else was considered.
+- Keep docs, comments, commit messages and PR bodies blameless and neutral. Describe what the code does and why, not who asked for it, approved it or wrote it, and don't name people or private projects and apps. Write "an audit of three apps that use Portable", not the apps' names.
 
 Each row of this table is a pattern to avoid, not only the one sentence. When you or a reviewer finds a new pattern, add a row, using the real sentence from this repo where there is one. An example shows a pattern more clearly than a rule does, so add a row for each new pattern instead of only rewording a rule.
 

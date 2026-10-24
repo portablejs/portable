@@ -85,7 +85,7 @@ Decisions agents made without the owner's input, with the options they considere
 
 - **Options:** keep `engines` at `>=24` and test 24; lower it to `>=22` and test 22, 24 and 26; keep `>=24` and test 24 and 26.
 - **Trade-offs:** On Node 22.23, 15 Node tests fail. Five compress tests fail because callers would see different behavior: Node 22's `DecompressionStream` ignores bytes after the end of the stream, so `Compress.decode` accepts trailing data and a second gzip member. The other ten fail because Node 22 differs from the specs or from Node 24. Its `TextDecoder` and `domainToASCII` disagree with the WHATWG specs, it calls a WebCrypto error `InvalidAccessException`, and its streams pass a cancellation to the source one tick later than Node 24 does. Node 22 reaches end of life in April 2027. Node 26.12 passes every test. It is the only Node version with native `Uint8Array.toBase64` and `fromHex`, so it runs the tests that compare the base64 and hex fallbacks with the native API, which Node 24 skips.
-- **Chosen:** keep `>=24` and test 24 and 26, because supporting Node 22 would need our own check for trailing data in compress, and Node 26 runs the native base64 and hex comparisons. Kevin asked for CI to run only on pushes to `main` and on `workflow_dispatch`.
+- **Chosen:** keep `>=24` and test 24 and 26, because supporting Node 22 would need our own check for trailing data in compress, and Node 26 runs the native base64 and hex comparisons. CI runs only on pushes to `main` and on `workflow_dispatch`.
 
 ## The prose review is a repo skill, not an edit to `interrogate`
 
@@ -187,7 +187,7 @@ Decisions agents made without the owner's input, with the options they considere
 
 ## Webhooks schemes are objects of functions
 
-The owner asked for this redesign: we couldn't maintain a branch per vendor inside `verify` and `sign` as we added vendors.
+The redesign was needed because a branch per vendor inside `verify` and `sign` couldn't be maintained as vendors were added.
 
 - **Options:** keep `scheme: 'stripe'` strings with a branch per vendor; a scheme object with declarative fields (`encoding: 'hex'`, a header name, a prefix string) that the package interprets; a scheme object of plain functions.
 - **Trade-offs:** declarative fields are shorter to write, but every new vendor quirk becomes another field for us to interpret and maintain. Plain functions push hex or base64 decoding and the header format into each scheme, so a preset is about 20 lines instead of 5, but the package code doesn't change when a vendor does.
@@ -226,7 +226,7 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 
 ## `WebCrypto` keeps the function names from the package brief
 
-- **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as the approved brief names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
+- **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as the package brief names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
 - **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. The brief's names say both forms.
 - **Chosen:** the brief's names. Each async function still takes `signal`, which it checks before and after the `crypto.subtle` call, because WebCrypto has no way to cancel a call.
 
@@ -304,7 +304,7 @@ The owner asked for this redesign: we couldn't maintain a branch per vendor insi
 
 ## Build `@portable/bytes` instead of pointing to uint8array-extras
 
-Approved on 2026-10-18 after an audit of three apps that use Portable. All three hand-write hex encoding, concatenation and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
+Added on 2026-10-18 after an audit of three apps that use Portable. All three hand-write hex encoding, concatenation and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
 
 ## `LineStream` is `Lines.DecoderStream`
 
@@ -557,7 +557,7 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 
 Agents that couldn't edit this file reported these. Each package's README and PARITY.md have the details.
 
-- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hash` option takes an incremental hasher such as noble's `sha256.create()` for large messages. Kevin approved this.
+- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hash` option takes an incremental hasher such as noble's `sha256.create()` for large messages.
 - **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` still reports an abort as `temperror` and should change to match.
 - **dmarc** finds the organizational domain with the RFC 9989 DNS tree walk by default, and takes a public-suffix function as an option, so no suffix list ships with it. Its verb is `check`, as in spf, because a DMARC fail is a result and not an error. `from` is a domain, and the caller extracts it from the header.
 - **ip** `contains` treats an IPv4-mapped IPv6 address and the IPv4 address as the same, as Node's `BlockList` does, which is the safer choice for SSRF allowlists. `range` classifies addresses outside `2000::/3` as `reserved`. `parseCidr` clears host bits.
