@@ -24,7 +24,7 @@ export function Home() {
         <p>
           Small packages built only on Web Streams, <code>Uint8Array</code>, <code>fetch</code>, and{' '}
           <code>crypto.subtle</code>. The same code runs in browsers, Cloudflare Workers, Bun, and
-          Node.
+          Node 24 or later.
         </p>
         <div className="home-cta">
           <a href={`${base}getting-started`}>Get started</a>

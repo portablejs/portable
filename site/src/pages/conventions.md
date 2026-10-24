@@ -4,7 +4,7 @@ description: The rules every Portable package follows for names, streams, option
 
 # Conventions
 
-All packages follow the same rules for names, streams, options, cancellation, and errors. These are the rules.
+All packages follow the same rules for names, streams, options, cancellation, and errors.
 
 ## Names
 
@@ -30,26 +30,27 @@ response.body!.pipeThrough(new Jsonl.DecoderStream())
 
 ## Bytes and text
 
-Functions take and return bytes as `Uint8Array`, never `ArrayBuffer` or `Buffer`. A function that takes text also takes the text's bytes (`string | Uint8Array`). Functions return text as `string`.
+Functions take and return bytes as `Uint8Array`, never `ArrayBuffer` or another view. A Node `Buffer` is a `Uint8Array`, so you can pass one. A function that takes text also takes the text's bytes (`string | Uint8Array`). Functions return text as `string`.
 
 ## Options
 
-A function takes one optional `options` object as its last argument. No function takes a positional boolean.
+A function takes the value it acts on as a positional argument and its settings in one optional `options` object, which comes last. A function that mirrors a platform function, such as `Compress.crc32(data, previous)`, copies that function's signature. No function takes a positional boolean.
 
 ## Cancellation
 
-Every async function and every stream takes `signal?: AbortSignal` in its options. When the signal aborts, the function rejects with `signal.reason`, as `fetch` does. The abort also stops the work the function started: its `fetch` calls, timers, readers, and nested streams. For a timeout, pass `AbortSignal.timeout(ms)`.
+Every async function and every stream takes `signal?: AbortSignal` in its options. When the signal aborts, a function rejects with `signal.reason`, as `fetch` does, and a stream errors with it and cancels its source. The abort also stops the work the function started: its `fetch` calls, timers, readers, and nested streams. For a timeout, pass `AbortSignal.timeout(ms)`.
 
 ## Errors
 
-Functions throw errors. No function returns an error as a value.
+Functions throw errors instead of returning them.
 
 | Error | Thrown when |
 | --- | --- |
-| `InvalidInputError` | The data that the function reads, decodes, or verifies is malformed. Catch this error for input from outside your program. |
+| `InvalidInputError` | The data that the function reads, decodes, encodes, or verifies is malformed. Catch this error for input from outside your program. |
 | `TruncatedError` | The input ended early. |
 | `UnsupportedError` | The input is valid, but the package doesn't handle it. |
-| `MaxBytesError`, `MaxLengthError` | The input exceeded the `maxBytes` or `maxLength` option. The error stores the limit. |
+| `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. The error stores the limit. |
+| `ResponseError` | A server answered with a status or body that the package can't use. The error keeps the whole `Response`. |
 | `TypeError`, `RangeError` | An argument or option is missing, has the wrong type, or has a value that the function doesn't accept. These errors mean the calling code has a bug. |
 
 Each error's `name` starts with the package's namespace, such as `Lines.MaxLengthError`.

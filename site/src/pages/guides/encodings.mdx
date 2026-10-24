@@ -4,9 +4,9 @@ description: Encode bytes as base64 and quoted-printable, text in legacy charset
 
 # Encodings
 
-These packages encode bytes as text that is safe to put in a URL, a JSON field, or an email body. Each package has functions for values in memory and `TransformStream` classes for data that doesn't fit in memory.
+These packages convert bytes, text, and domain names between encodings. `base64`, `quoted-printable`, and `charset` also have `TransformStream` classes for data too large to hold in memory.
 
-- [`base64`](/packages/base64) handles base64 and base64url, with MIME line wrapping.
+- [`base64`](/packages/base64) encodes and decodes base64 and base64url, with optional line wrapping for MIME.
 - [`quoted-printable`](/packages/quoted-printable) encodes mostly ASCII text for email bodies.
 - [`charset`](/packages/charset) encodes text into legacy charsets such as Shift_JIS, GBK, and windows-1251. `TextDecoder` already decodes them.
 - [`idna`](/packages/idna) converts domain names between Unicode and the ASCII form DNS uses.
@@ -23,7 +23,7 @@ const url = `data:image/png;base64,${Base64.encode(bytes)}`
 
 ## Stream a file into a MIME body
 
-`lineLength: 76` wraps the output at 76 characters with CRLF, as MIME requires. The stream holds at most one chunk of the file at a time:
+`lineLength: 76` wraps the output at 76 characters with CRLF, as MIME requires. The stream encodes each chunk as it arrives, so it never holds the whole file:
 
 ```ts
 const response = await fetch('https://example.com/report.pdf')

@@ -4,9 +4,9 @@ description: Sign, verify, and hash with crypto.subtle in browsers, Workers, and
 
 # Crypto and auth
 
-These packages use `crypto.subtle` for every cryptographic operation, and none of them ships its own implementation. The same code signs and verifies in a browser, a Worker, and Node.
+These packages call `crypto.subtle` for every cryptographic operation and contain no cryptography of their own. The same code signs and verifies in a browser, a Worker, and Node.
 
-- [`web-crypto`](/packages/web-crypto) has bytes-in, bytes-out helpers that WebCrypto leaves out, such as HKDF and Ed25519 keys from seeds.
+- [`web-crypto`](/packages/web-crypto) wraps `digest`, `hmac`, and `hkdf` as bytes-in, bytes-out functions, and builds Ed25519 and X25519 keys from 32-byte seeds.
 - [`password`](/packages/password) hashes and verifies passwords with PBKDF2.
 - [`webhooks`](/packages/webhooks) verifies and signs webhooks from Stripe, GitHub, Slack, and Standard Webhooks senders.
 - [`oauth1`](/packages/oauth1) signs OAuth 1.0a requests.

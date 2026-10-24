@@ -4,11 +4,11 @@ description: Collect, transform, split, and decompress Web Streams, with size li
 
 # Streams
 
-Packages that read or write large data use Web Streams: the `ReadableStream`, `WritableStream`, and `TransformStream` classes that `fetch` uses. You can pipe a `fetch` body through any transform in these packages and return the result as a `Response`.
+Packages that read or write large data use Web Streams: the `ReadableStream`, `WritableStream`, and `TransformStream` classes that `fetch` uses. You can pipe a `fetch` body through these transforms, and a transform that emits bytes, such as `Compress.DecoderStream`, can be a `Response` body.
 
 - [`streams`](/packages/streams) collects a stream into bytes, text, or JSON with a size limit. It also has transforms such as `map`, `filter`, and `batch`.
 - [`lines`](/packages/lines) splits bytes or text into lines.
-- [`compress`](/packages/compress) wraps `CompressionStream` for gzip and deflate, and limits how much a decompression may produce.
+- [`compress`](/packages/compress) compresses and decompresses gzip and deflate with the platform's `CompressionStream` and `DecompressionStream`, and limits how much a decompression may produce.
 
 ## Read a request body with a limit
 
@@ -40,7 +40,6 @@ export default {
 ```ts
 import * as Compress from '@portable/compress'
 import * as Lines from '@portable/lines'
-import * as Streams from '@portable/streams'
 
 const response = await fetch('https://example.com/access.log.gz')
 const lines = response
@@ -48,7 +47,14 @@ const lines = response
     new Compress.DecoderStream({ maxBytes: 1_000_000_000 }),
   )
   .pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))
-const count = (await Streams.toArray(lines)).length
+let count = 0
+await lines.pipeTo(
+  new WritableStream({
+    write() {
+      count++
+    },
+  }),
+)
 ```
 
-The decoder's `maxBytes` option stops a small file that decompresses to gigabytes.
+With `maxBytes`, the decoder fails with `MaxBytesError` once the output passes 1 GB, so a small file that decompresses to many gigabytes can't exhaust memory.

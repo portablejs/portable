@@ -6,7 +6,7 @@ description: Install a Portable package and run the same code in browsers, Cloud
 
 Portable is a set of small npm packages built only on web-standard APIs: Web Streams, `Uint8Array`, `TextEncoder`, `fetch`, and `crypto.subtle`. The same code runs in browsers, Cloudflare Workers, Bun, and Node 24 or later. You don't need polyfills or the `nodejs_compat` flag.
 
-Each package replaces a popular Node-only library.
+Each package page lists the npm libraries the package replaces.
 
 ## Install a package
 
@@ -16,9 +16,9 @@ Install only the packages you use. They are ESM-only, and their only runtime dep
 npm install @portable/streams
 ```
 
-## Use
+## Import a package
 
-Import a package as a namespace. Exports have short names such as `toJson`, and the namespace shows which package each one comes from. This Cloudflare Worker reads a JSON request body, and answers 413 if the body is larger than 1 MB instead of reading all of it. The same code runs in Node and Bun:
+Import a package as a namespace. Export names are short, such as `toJson`, because the namespace shows the package. This Cloudflare Worker reads a JSON request body, and if the body passes 1 MB, it stops reading and answers 413:
 
 ```ts
 import * as Streams from '@portable/streams'
@@ -54,6 +54,6 @@ esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You d
 
 ## Runtimes
 
-The packages run in Node 24 or later, Bun, Cloudflare Workers, and current browsers. The tests run in Node, Chromium, Firefox, and WebKit.
+The tests run in Node, Bun, workerd, Chromium, Firefox, and WebKit.
 
-`@portable/smtp` also needs a TCP socket API. Browsers don't have one.
+`@portable/smtp` needs a TCP socket API, so it doesn't run in browsers.

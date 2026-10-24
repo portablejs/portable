@@ -4,15 +4,15 @@ description: Run timers, retries, and queues that stop when their AbortSignal ab
 
 # Concurrency and timing
 
-Every timer, retry, and queue in these packages takes an `AbortSignal`. When a request is cancelled, its signal stops the sleeps, retries, and queued tasks that the request started. Without the signal, they would keep running after the response is sent.
+Every timer, retry, and queue in these packages takes an `AbortSignal`. Pass `request.signal`, and when the client disconnects, the sleeps, retries, and queued tasks that the request started stop instead of running on.
 
 - [`queue`](/packages/queue) limits how many async tasks run at once, with priorities.
 - [`timers`](/packages/timers) has sleep, retry, poll, debounce, and throttle.
 - [`rate-limit`](/packages/rate-limit) limits requests per key, in memory, Workers KV, a Durable Object, or Redis over HTTP.
 
-## Fetch many URLs politely
+## Fetch many URLs with a concurrency limit and retries
 
-This function runs at most four requests at once and gives each attempt 10 seconds. It retries a failed request up to three times, with backoff. Aborting `signal` stops every request, including the waiting ones:
+This function runs at most four requests at once, tries each URL up to three times with backoff, and gives each attempt 10 seconds. Aborting `signal` stops every request, including the ones still in the queue:
 
 ```ts
 import * as Queue from '@portable/queue'
