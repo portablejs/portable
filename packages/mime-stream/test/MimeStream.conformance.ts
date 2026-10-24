@@ -125,6 +125,15 @@ describe('DecoderStream', () => {
     expect(chunks.filter((chunk) => chunk.type === 'body').length).toBeGreaterThan(10)
   })
 
+  test('has no size limits by default', async () => {
+    const header = `X-Long: ${'a'.repeat(2 * 1024 * 1024)}\r\n`
+    const parts = Array.from({ length: 1500 }, () => '--B\r\n\r\nx\r\n').join('')
+    const message = `Content-Type: multipart/mixed; boundary=B\r\n${header}\r\n${parts}--B${' '.repeat(2000)}--`
+    const chunks = await decode(message)
+    expect(chunks[0]!.part.headers).toHaveLength(2)
+    expect(bodies(chunks)).toHaveLength(1500)
+  })
+
   test('tells a boundary from a longer boundary that starts with it', async () => {
     const message =
       'Content-Type: multipart/mixed; boundary==_a\n\n--=_a\n' +

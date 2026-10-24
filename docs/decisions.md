@@ -42,7 +42,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** no limit; a limit that is off by default; a finite default such as 1 MiB.
 - **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` buffered input until a line, value or header block ended, so untrusted input without a line break made the buffer grow without limit. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects a caller who doesn't read the docs, but any number we choose rejects some valid large record, and the three older packages would have needed the same breaking change.
-- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop.
+- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop. `MimeStream.DecoderStream` and `MimeStream.splitHeaders` dropped mailsplit's finite defaults (1 MiB of headers, 1,000 parts) for `Infinity`, so a caller who reads untrusted mail sets `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts`.
 
 ## Every function that reads the clock takes `now`
 

@@ -3,7 +3,7 @@ import { MaxHeaderBytesError } from './errors.js'
 
 export declare namespace splitHeaders {
   type Options = {
-    /** Longest header block, counted with the empty line that ends it. @default 1048576 */
+    /** Longest header block, counted with the empty line that ends it. @default Infinity */
     maxHeaderBytes?: number | undefined
     /**
      * Rejects with `signal.reason` while the header block is read, and later errors `body` with
@@ -36,7 +36,7 @@ export async function splitHeaders(
   stream: ReadableStream<Uint8Array>,
   options: splitHeaders.Options = {},
 ): Promise<splitHeaders.ReturnType> {
-  const { maxHeaderBytes = 1024 * 1024, signal } = options
+  const { maxHeaderBytes = Infinity, signal } = options
   signal?.throwIfAborted()
   const reader = stream.getReader()
   let output: ReadableStreamDefaultController<Uint8Array> | undefined

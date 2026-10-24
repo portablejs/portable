@@ -74,9 +74,9 @@ Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `embedded` | `DecoderStream` | `false` | Split the message inside a `message/rfc822` or `message/global` part into parts too, unless it is base64 or quoted-printable. Its root part's `parent` is the `message/rfc822` part. |
-| `maxHeaderBytes` | `DecoderStream`, `splitHeaders` | `1048576` | Longest header block of a part, counted with the empty line that ends it. |
-| `maxBoundaryLineBytes` | `DecoderStream` | `1000` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory. |
-| `maxParts` | `DecoderStream` | `1000` | Most parts in a message, the root and embedded messages included. |
+| `maxHeaderBytes` | `DecoderStream`, `splitHeaders` | `Infinity` | Longest header block of a part, counted with the empty line that ends it. |
+| `maxBoundaryLineBytes` | `DecoderStream` | `Infinity` | Longest boundary line, line break included. Only whitespace after the boundary makes a line this long. Other lines are never held in memory. |
+| `maxParts` | `DecoderStream` | `Infinity` | Most parts in a message, the root and embedded messages included. |
 | `signal` | all | | When it aborts, the streams fail with `signal.reason` and cancel their source. `splitHeaders` rejects with it while it reads the header block, and fails `body` with it after. |
 
 ## Types
@@ -124,8 +124,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `.pipe(new Joiner())` | `.pipeThrough(new EncoderStream())` |
 | `{ ignoreEmbedded: true }` | the default |
 | `{ defaultInlineEmbedded: true }` | `{ embedded: true }` |
-| `{ maxHeadSize }` | `{ maxHeaderBytes }`, counted in bytes. mailsplit counts each line as at least 64 bytes. |
-| `{ maxChildNodes }` | `{ maxParts }` |
+| `{ maxHeadSize }` | `{ maxHeaderBytes }`, counted in bytes. mailsplit counts each line as at least 64 bytes. mailsplit defaults to 1 MiB and we default to no limit, so pass `maxHeaderBytes: 1024 * 1024` to keep its limit. |
+| `{ maxChildNodes }` | `{ maxParts }`. mailsplit defaults to 1000 and we default to no limit, so pass `maxParts: 1000` to keep its limit. |
 | `err.code === 'EMAXLEN'` | `instanceof MaxHeaderBytesError`, `MaxBoundaryLineBytesError` or `MaxPartsError` |
 | `data.type === 'node'` | `chunk.type === 'headers'` |
 | `data.type === 'body'` | `chunk.type === 'body'` |

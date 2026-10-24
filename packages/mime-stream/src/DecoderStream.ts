@@ -55,15 +55,15 @@ export declare namespace DecoderStream {
     /**
      * Longest boundary line, line break included. Only whitespace after the boundary can make one
      * this long.
-     * @default 1000
+     * @default Infinity
      */
     maxBoundaryLineBytes?: number | undefined
     /**
      * Longest header block of a part, counted with the empty line that ends it.
-     * @default 1048576
+     * @default Infinity
      */
     maxHeaderBytes?: number | undefined
-    /** Most parts in a message, the root included. @default 1000 */
+    /** Most parts in a message, the root included. @default Infinity */
     maxParts?: number | undefined
     /**
      * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
@@ -129,9 +129,9 @@ const encoder = new TextEncoder()
 function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) => void) {
   const {
     embedded = false,
-    maxBoundaryLineBytes = 1000,
-    maxHeaderBytes = 1024 * 1024,
-    maxParts = 1000,
+    maxBoundaryLineBytes = Infinity,
+    maxHeaderBytes = Infinity,
+    maxParts = Infinity,
   } = options
 
   const frames: Frame[] = []
