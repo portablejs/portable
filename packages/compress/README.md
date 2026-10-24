@@ -58,7 +58,7 @@ pako and fflate implement deflate in JavaScript, although every runtime already 
 
 - `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and fflate allocates its output from the length field, so a forged length gives truncated output (fflate #161, #181).
 - `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).
-- Truncated input always gives `TruncatedError`, never partial output.
+- Truncated input gives `TruncatedError`, never partial output. Deno's `DecompressionStream` returns partial output for a cut-short zlib stream, so `decode` and `DecoderStream` check the zlib Adler-32 trailer there themselves. Raw deflate has no trailer, so on Deno a cut-short `'deflate-raw'` stream still decodes to partial output.
 - `decode` reads every member of a multi-member gzip file, such as BGZF or `cat a.gz b.gz`. fflate returns only the first member (fflate #102), and `DecompressionStream` throws.
 - `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and each chunk pays the decompressor's and every later stage's per-chunk cost. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
 

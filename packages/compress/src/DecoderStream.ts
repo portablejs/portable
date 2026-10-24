@@ -1,4 +1,5 @@
 import { isUint8Array, toBufferSource } from '@portable/bytes/internal'
+import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js'
 import { concat } from './bytes.js'
 import type { Format } from './codec.js'
 import { MaxBytesError, classify } from './errors.js'
@@ -48,6 +49,11 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
     let queued = 0
     let writing: Promise<void> | undefined
     let length = 0
+    const checkTrailer = format === 'deflate' ? needsTrailerCheck() : undefined
+    let checking = checkTrailer !== undefined
+    void checkTrailer?.then((needed) => (checking = needed))
+    let tail = new Uint8Array(0)
+    let checksum = 1
 
     let writable: WritableStreamDefaultController | undefined
     let readable: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>> | undefined
@@ -93,6 +99,11 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
       async write(chunk) {
         throwIfFailed()
         if (!isUint8Array(chunk)) throw stop(new TypeError('Expected a Uint8Array chunk.'))
+        if (checkTrailer)
+          tail =
+            chunk.byteLength >= 4
+              ? chunk.slice(-4)
+              : concat([tail, chunk], tail.byteLength + chunk.byteLength).slice(-4)
         queue.push(chunk)
         queued += chunk.byteLength
         writing ??= writeQueue()
@@ -126,9 +137,17 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
             throw fail(classify(error, closing))
           }
           if (result.done) {
+            if (await checkTrailer) {
+              try {
+                assertTrailer(tail, checksum)
+              } catch (error) {
+                throw fail(error)
+              }
+            }
             signal?.removeEventListener('abort', onAbort)
             return controller.close()
           }
+          if (checking) checksum = adler32(result.value, checksum)
           length += result.value.byteLength
           if (length > maxBytes) {
             const error = fail(new MaxBytesError({ maxBytes }))
