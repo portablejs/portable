@@ -29,7 +29,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
   constructor(options: EncoderStream.Options = {}) {
     const {
       alphabet = 'base64',
-      lineEnding = '\r\n',
+      newline = '\r\n',
       lineLength = false,
       omitPadding = false,
     } = options
@@ -60,7 +60,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
     const encodeLines = (bytes: Uint8Array, final: boolean): string => {
       if (bytes.length === 0) return ''
       const pad = final && omitPadding
-      const text = toBase64(bytes, { alphabet, omitPadding: pad, lineLength, lineEnding }, column)
+      const text = toBase64(bytes, { alphabet, omitPadding: pad, lineLength, newline }, column)
       if (lineLength !== false) {
         const rest = bytes.length % 3
         const length = ((bytes.length - rest) / 3) * 4 + (rest === 0 ? 0 : pad ? rest + 1 : 4)

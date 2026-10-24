@@ -10,7 +10,7 @@ const encodeOptions = fc.record(
   {
     alphabet,
     lineLength: fc.oneof(fc.constant(false as const), fc.integer({ min: 1, max: 80 })),
-    lineEnding: fc.constantFrom('\r\n', '\n', ' '),
+    newline: fc.constantFrom('\r\n', '\n', ' '),
     omitPadding: fc.boolean(),
   },
   { requiredKeys: [] },

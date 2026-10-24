@@ -135,11 +135,11 @@ export function referenceDecode(str: string): Uint8Array {
   return Uint8Array.from(out)
 }
 
-export function referenceWrap(str: string, lineLength: number, lineEnding = '\r\n'): string {
+export function referenceWrap(str: string, lineLength: number, newline = '\r\n'): string {
   const lines: string[] = []
   for (let pos = 0; pos < str.length; pos += lineLength)
     lines.push(str.slice(pos, pos + lineLength))
-  return lines.join(lineEnding)
+  return lines.join(newline)
 }
 
 /**

@@ -435,7 +435,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 - **The oracle is libqp 3.0.1, copied into `test/fixtures/`.** 3.0.1 fixes chunk-dependent output, split UTF-8 sequences and a boundary injection, but it was published hours ago and `minimumReleaseAge` refuses it, tarball URLs included. The tests install libqp 2.1.3 from npm for the cases 3.0.1 didn't change. Replace the copy with `libqp@^3.0.1` once it is a day old.
 - **A bad `lineLength` throws a `RangeError`.** libqp quietly treats bad values as 76 or 4. A bad option is a programming mistake, so it doesn't need its own error class.
-- **No `lineEnding` option,** unlike base64. RFC 2045 requires CRLF for soft breaks, and `encode` keeps hard breaks as they are in the input.
+- **No `newline` option,** unlike base64 and csv. RFC 2045 requires CRLF for soft breaks, and `encode` keeps hard breaks as they are in the input.
 - **Strings are UTF-8 in both directions.** libqp's `decode` reads each character's low byte.
 - **Linear-time tests run only in Node and retry up to 3 times,** because other processes on the machine made linear runs measure up to 24× slower. A quadratic regression (about 64×) still fails every attempt.
 

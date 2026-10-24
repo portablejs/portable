@@ -44,7 +44,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `alphabet` | `'base64'` | `'base64'` uses `+` and `/`. `'base64url'` uses `-` and `_` (RFC 4648 §5). |
 | `omitPadding` | `false` | Leave out the trailing `=`. |
 | `lineLength` | `false` | Characters per line, or `false` for one line. MIME uses 76. The output never ends with a line ending. |
-| `lineEnding` | `'\r\n'` | Inserted between lines. |
+| `newline` | `'\r\n'` | Inserted between lines. |
 | `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ### Decode options
