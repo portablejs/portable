@@ -12,6 +12,7 @@ export type Writer = {
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
+const fatalDecoder = new TextDecoder('utf-8', { fatal: true })
 
 export function need(r: Reader, n: number, end: number): void {
   if (r.offset + n > end) throw new TruncatedError(`Unexpected end of data at offset ${r.offset}.`)
@@ -292,14 +293,35 @@ export function putName(w: Writer, name: string, compress: boolean): void {
   b[w.offset++] = 0
 }
 
-/** Reads a label as text, escaping `.` and `\` as RFC 1035 presentation format does. */
+/**
+ * Reads a label as text, escaping `.` and `\` as RFC 1035 presentation format does. A label that
+ * isn't valid UTF-8 has its other bytes escaped as `\DDD`, so encoding the name writes the same
+ * bytes back.
+ */
 function readLabel(b: Uint8Array, start: number, end: number): string {
   let text = ''
   for (let i = start; i < end; i++) {
     const c = b[i]!
-    if (c >= 0x80) return decoder.decode(b.subarray(start, end)).replace(/[.\\]/g, '\\$&')
+    if (c >= 0x80) {
+      try {
+        return fatalDecoder.decode(b.subarray(start, end)).replace(/[.\\]/g, '\\$&')
+      } catch {
+        return escapeLabel(b, start, end)
+      }
+    }
     if (c === DOT || c === BACKSLASH) text += '\\'
     text += String.fromCharCode(c)
+  }
+  return text
+}
+
+function escapeLabel(b: Uint8Array, start: number, end: number): string {
+  let text = ''
+  for (let i = start; i < end; i++) {
+    const c = b[i]!
+    if (c === DOT || c === BACKSLASH) text += `\\${String.fromCharCode(c)}`
+    else if (c > 0x20 && c < 0x7f) text += String.fromCharCode(c)
+    else text += `\\${String(c).padStart(3, '0')}`
   }
   return text
 }

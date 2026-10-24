@@ -587,6 +587,16 @@ describe('known upstream issues', () => {
     expect(nameBytes('\\065\\.b')).toEqual(Uint8Array.of(3, 0x41, 0x2e, 0x62, 0))
   })
 
+  test('a label that is not UTF-8 decodes with \\DDD escapes and encodes to the same bytes', () => {
+    // Found by the fuzzer: decoding replaced each invalid byte with U+FFFD, so the label grew past
+    // 63 bytes when it was encoded again.
+    const label = [0x68, 0x10, 0x84, 0xe5, 0x00, 0x20, 0x2e]
+    const name = decodeQuestionName([label.length, ...label, 0])
+    expect(name).toBe('h\\016\\132\\229\\000\\032\\.')
+    expect(nameBytes(name)).toEqual(Uint8Array.of(label.length, ...label, 0))
+    expect(decodeQuestionName([2, 0xc3, 0xb5, 0])).toBe('õ')
+  })
+
   test('CLIENT_SUBNET clears address bits past the source prefix (RFC 7871)', () => {
     const option = { code: 'CLIENT_SUBNET', ip: '192.0.2.77', sourcePrefixLength: 20 } as const
     const bytes = encode({ additionals: [{ type: 'OPT', options: [option] }] })
