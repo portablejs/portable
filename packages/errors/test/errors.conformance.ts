@@ -28,6 +28,14 @@ describe('name', () => {
     expect(new Errors.TruncatedError().name).toBe('Truncated')
   })
 
+  test('is the nearest kind when a subclass sets none', () => {
+    class LocalError extends Base64InvalidInputError {}
+    const error = new LocalError('bad')
+    expect(error.name).toBe('Base64.InvalidInputError')
+    expect(error).toBeInstanceOf(Errors.InvalidInputError)
+    expect(Errors.is(error, 'InvalidInput')).toBe(true)
+  })
+
   test('shows in the stack and in String(error)', () => {
     const error = new Base64InvalidInputError('bad input')
     expect(String(error)).toBe('Base64.InvalidInputError: bad input')

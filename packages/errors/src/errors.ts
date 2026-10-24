@@ -33,10 +33,8 @@ export class BaseError extends Error {
   constructor(message?: string, options?: ErrorOptions) {
     super(message, options)
     const kinds: string[] = []
-    for (let c: unknown = new.target; typeof c === 'function' && Object.hasOwn(c, 'kind');) {
-      kinds.push((c as typeof BaseError).kind)
-      c = Object.getPrototypeOf(c)
-    }
+    for (let c: unknown = new.target; typeof c === 'function'; c = Object.getPrototypeOf(c))
+      if (Object.hasOwn(c, 'kind')) kinds.push((c as typeof BaseError).kind)
     Object.defineProperty(this, brand, { value: kinds })
     Object.defineProperty(this, 'name', { value: kinds[0], writable: true, configurable: true })
   }
