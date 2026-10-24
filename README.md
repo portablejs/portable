@@ -2,10 +2,10 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
-#### Example
+#### Examples
 
 ```sh
-npm install @portable/sse @portable/jsonl @portable/streams
+npm install @portable/sse @portable/jsonl @portable/streams @portable/exif @portable/image-size
 ```
 
 ```ts
@@ -29,6 +29,16 @@ const saving = saved.pipeThrough(new Jsonl.EncoderStream()).pipeTo(transcript) /
 const reader = live.getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.value.choices[0].delta.content ?? '')
 await saving
+```
+
+```ts
+import * as Exif from '@portable/exif'
+import * as ImageSize from '@portable/image-size'
+
+// Remove location and camera data from a photo before it leaves the device.
+const photo = await new Response(file.stream().pipeThrough(new Exif.StripStream())).blob()
+const { width, height } = await ImageSize.parseStream(photo.stream())
+await fetch('/upload', { method: 'POST', body: photo, headers: { 'x-size': `${width}x${height}` } })
 ```
 
 Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API), [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`TextEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) and [`crypto.subtle`](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto).
