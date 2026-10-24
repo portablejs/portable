@@ -94,6 +94,15 @@ describe('DecoderStream', () => {
     )
   })
 
+  test('deflate cut inside its data or its checksum fails with TruncatedError', async () => {
+    const compressed = await Compress.encode(randomBytes(50_000, 8), { format: 'deflate' })
+    for (const cut of [2, 10])
+      for (const size of [3, 1000])
+        await expect(
+          decodeChunks(chunked(compressed.subarray(0, -cut), size), { format: 'deflate' }),
+        ).rejects.toThrow(Compress.TruncatedError)
+  })
+
   test('corrupt input fails with InvalidInputError', async () => {
     const compressed = await Compress.encode(randomBytes(50_000, 9))
     compressed[compressed.length - 7]! ^= 1

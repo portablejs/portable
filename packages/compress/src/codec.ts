@@ -1,4 +1,5 @@
 import { assertUint8Array, toBufferSource } from '@portable/bytes/internal'
+import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js'
 import { concat } from './bytes.js'
 import { MaxBytesError, TruncatedError, classify } from './errors.js'
 
@@ -91,6 +92,11 @@ export async function decode(
   let firstError: unknown
   try {
     await decodeAll(data)
+    if (format === 'deflate' && (await needsTrailerCheck()))
+      assertTrailer(
+        data,
+        chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
+      )
     return concat(chunks, length)
   } catch (error) {
     if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) throw error
