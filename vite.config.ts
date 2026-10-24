@@ -113,9 +113,7 @@ export default defineConfig({
     categories: { suspicious: 'error', perf: 'error' },
     jsPlugins: ['./tools/lint/src/plugin.ts'],
     options: { typeAware: true, typeCheck: true },
-    // site/src needs its generated pages and its own dependencies to type-check, and `vocs build`
-    // checks it instead.
-    ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**', 'site/src/**', 'site/*.ts'],
+    ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
       // Every if, else and loop body needs braces, so a reader always sees where the body ends.
       curly: ['error', 'all'],
@@ -223,7 +221,7 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
-        files: ['vite.config.ts', 'tools/lint/src/plugin.ts'],
+        files: ['vite.config.ts', 'site/vocs.config.ts', 'tools/lint/src/plugin.ts'],
         rules: { 'import/no-default-export': 'off' },
       },
       {
@@ -256,6 +254,7 @@ export default defineConfig({
           'packages/*/scripts/**',
           'scripts/**',
           'site/scripts/**',
+          'site/vocs.config.ts',
           'tools/workers/src/run.ts',
         ],
         rules: {
