@@ -21,5 +21,6 @@ export async function formatSnippets(md) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { readFileSync, writeFileSync } = await import('node:fs')
-  for (const file of process.argv.slice(2)) writeFileSync(file, await formatSnippets(readFileSync(file, 'utf8')))
+  for (const file of process.argv.slice(2))
+    writeFileSync(file, await formatSnippets(readFileSync(file, 'utf8')))
 }

@@ -104,6 +104,8 @@ export default defineConfig({
       '**/CHANGELOG.md',
       '.agents/**',
       '**/fixtures/**',
+      // site/scripts/snippets.mjs formats the code blocks in these pages to 72 columns.
+      'site/src/pages/**/*.mdx',
     ],
   },
   lint: {

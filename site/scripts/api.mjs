@@ -32,10 +32,13 @@ export function api(name) {
     const symbols = checker.getExportsOfModule(checker.getSymbolAtLocation(source))
     const sections = { Functions: [], Classes: [], Constants: [], Errors: [], Types: [] }
     for (const exported of symbols) {
-      const symbol = exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
+      const symbol =
+        exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
       const decls = symbol.declarations ?? []
       const doc = ts.displayPartsToString(symbol.getDocumentationComment(checker))
-      const tags = symbol.getJsDocTags(checker).map((t) => ({ name: t.name, text: ts.displayPartsToString(t.text) }))
+      const tags = symbol
+        .getJsDocTags(checker)
+        .map((t) => ({ name: t.name, text: ts.displayPartsToString(t.text) }))
       const fn = decls.filter(ts.isFunctionDeclaration)
       const cls = decls.find(ts.isClassDeclaration)
       const variable = decls.find(ts.isVariableDeclaration)
@@ -46,22 +49,61 @@ export function api(name) {
         section = 'Functions'
         const overloads = fn.filter((d) => !d.body)
         signature = (overloads.length ? overloads : fn)
-          .map((d) => print(ts.factory.updateFunctionDeclaration(d, stripExport(d.modifiers), d.asteriskToken, d.name, d.typeParameters, d.parameters, d.type, undefined)))
+          .map((d) =>
+            print(
+              ts.factory.updateFunctionDeclaration(
+                d,
+                stripExport(d.modifiers),
+                d.asteriskToken,
+                d.name,
+                d.typeParameters,
+                d.parameters,
+                d.type,
+                undefined,
+              ),
+            ),
+          )
           .join('\n')
       } else if (cls) {
         const heritage = cls.heritageClauses?.map((h) => h.getText()).join(' ') ?? ''
         section = /\bextends\s+[\w.]*Error\b/.test(heritage) ? 'Errors' : 'Classes'
         const ctors = cls.members.filter(ts.isConstructorDeclaration)
-        const ctorSigs = (ctors.filter((c) => !c.body).length ? ctors.filter((c) => !c.body) : ctors).map((c) => `  constructor(${c.parameters.map((p) => print(ts.factory.updateParameterDeclaration(p, undefined, p.dotDotDotToken, p.name, p.questionToken, p.type, p.initializer))).join(', ')})`)
-        const props = cls.members.filter((m) => (ts.isPropertyDeclaration(m) || ts.isGetAccessor(m)) && !m.modifiers?.some((x) => x.kind === ts.SyntaxKind.PrivateKeyword || x.kind === ts.SyntaxKind.ProtectedKeyword) && !ts.isPrivateIdentifier(m.name))
-          .map((m) => `  ${m.modifiers?.some((x) => x.kind === ts.SyntaxKind.ReadonlyKeyword) || ts.isGetAccessor(m) ? 'readonly ' : ''}${m.name.getText()}: ${m.type ? m.type.getText() : checker.typeToString(checker.getTypeAtLocation(m))}`)
+        const ctorSigs = (
+          ctors.filter((c) => !c.body).length ? ctors.filter((c) => !c.body) : ctors
+        ).map(
+          (c) =>
+            `  constructor(${c.parameters.map((p) => print(ts.factory.updateParameterDeclaration(p, undefined, p.dotDotDotToken, p.name, p.questionToken, p.type, p.initializer))).join(', ')})`,
+        )
+        const props = cls.members
+          .filter(
+            (m) =>
+              (ts.isPropertyDeclaration(m) || ts.isGetAccessor(m)) &&
+              !m.modifiers?.some(
+                (x) =>
+                  x.kind === ts.SyntaxKind.PrivateKeyword ||
+                  x.kind === ts.SyntaxKind.ProtectedKeyword,
+              ) &&
+              !ts.isPrivateIdentifier(m.name),
+          )
+          .map(
+            (m) =>
+              `  ${m.modifiers?.some((x) => x.kind === ts.SyntaxKind.ReadonlyKeyword) || ts.isGetAccessor(m) ? 'readonly ' : ''}${m.name.getText()}: ${m.type ? m.type.getText() : checker.typeToString(checker.getTypeAtLocation(m))}`,
+          )
         signature = `class ${symbol.name} ${heritage} {\n${[...ctorSigs, ...props].join('\n')}\n}`
       } else if (variable) {
         section = 'Constants'
         signature = `const ${symbol.name}: ${variable.type ? variable.type.getText() : checker.typeToString(checker.getTypeAtLocation(variable), undefined, ts.TypeFormatFlags.NoTruncation)}`
       } else if (alias) {
         section = 'Types'
-        signature = print(ts.factory.updateTypeAliasDeclaration(alias, stripExport(alias.modifiers), alias.name, alias.typeParameters, alias.type))
+        signature = print(
+          ts.factory.updateTypeAliasDeclaration(
+            alias,
+            stripExport(alias.modifiers),
+            alias.name,
+            alias.typeParameters,
+            alias.type,
+          ),
+        )
       } else continue
 
       let entry = `### \`${ns}.${symbol.name}\`\n\n`
@@ -70,7 +112,8 @@ export function api(name) {
       const options = optionsOf(symbol, decls, checker)
       if (options.length) {
         entry += '| Option | Type | Default | Description |\n| --- | --- | --- | --- |\n'
-        for (const o of options) entry += `| \`${o.name}\` | \`${cell(o.type)}\` | ${!o.default ? '' : o.default.includes('`') ? cell(o.default) : `\`${cell(o.default)}\``} | ${cell(o.doc)} |\n`
+        for (const o of options)
+          entry += `| \`${o.name}\` | \`${cell(o.type)}\` | ${!o.default ? '' : o.default.includes('`') ? cell(o.default) : `\`${cell(o.default)}\``} | ${cell(o.doc)} |\n`
         entry += '\n'
       }
       const throws = tags.filter((t) => t.name === 'throws')
@@ -84,33 +127,51 @@ export function api(name) {
     }
     for (const [title, entries] of Object.entries(sections)) {
       if (!entries.length) continue
-      md += `${files.length > 1 ? '###' : '##'} ${title}\n\n` + (files.length > 1 ? entries.map((e) => e.replace(/^### /, '#### ')) : entries).join('')
+      md +=
+        `${files.length > 1 ? '###' : '##'} ${title}\n\n` +
+        (files.length > 1 ? entries.map((e) => e.replace(/^### /, '#### ')) : entries).join('')
     }
   }
   return md
 }
 
 function stripExport(modifiers) {
-  return modifiers?.filter((m) => m.kind !== ts.SyntaxKind.ExportKeyword && m.kind !== ts.SyntaxKind.DeclareKeyword)
+  return modifiers?.filter(
+    (m) => m.kind !== ts.SyntaxKind.ExportKeyword && m.kind !== ts.SyntaxKind.DeclareKeyword,
+  )
 }
 
 function print(node) {
-  return printer.printNode(ts.EmitHint.Unspecified, node, node.getSourceFile?.() ?? ts.createSourceFile('x.ts', '', ts.ScriptTarget.ESNext))
+  return printer.printNode(
+    ts.EmitHint.Unspecified,
+    node,
+    node.getSourceFile?.() ?? ts.createSourceFile('x.ts', '', ts.ScriptTarget.ESNext),
+  )
 }
 
 // The `<name>.Options` type that a function or class declares in its namespace.
 function optionsOf(symbol, decls, checker) {
   const module = decls.find(ts.isModuleDeclaration)
   if (!module?.body || !ts.isModuleBlock(module.body)) return []
-  const alias = module.body.statements.find((s) => ts.isTypeAliasDeclaration(s) && s.name.text === 'Options')
+  const alias = module.body.statements.find(
+    (s) => ts.isTypeAliasDeclaration(s) && s.name.text === 'Options',
+  )
   if (!alias) return []
   const type = checker.getTypeAtLocation(alias.name)
   return checker.getPropertiesOfType(type).map((p) => {
     const tags = p.getJsDocTags(checker)
     return {
       name: p.name,
-      type: checker.typeToString(checker.getTypeOfSymbolAtLocation(p, alias), alias, ts.TypeFormatFlags.NoTruncation).replace(/ \| undefined$/, ''),
-      default: tags.find((t) => t.name === 'default') ? ts.displayPartsToString(tags.find((t) => t.name === 'default').text) : '',
+      type: checker
+        .typeToString(
+          checker.getTypeOfSymbolAtLocation(p, alias),
+          alias,
+          ts.TypeFormatFlags.NoTruncation,
+        )
+        .replace(/ \| undefined$/, ''),
+      default: tags.find((t) => t.name === 'default')
+        ? ts.displayPartsToString(tags.find((t) => t.name === 'default').text)
+        : '',
       doc: ts.displayPartsToString(p.getDocumentationComment(checker)),
     }
   })

@@ -18,7 +18,11 @@ for (const line of root.split('\n')) {
   const m = line.match(/^- \[`@portable\/([\w-]+)`\]\([^)]*\): (.+?)\. Replaces (.+)\.$/)
   if (m && groups.length && !seen.has(m[1])) {
     seen.add(m[1])
-    groups.at(-1).items.push({ name: m[1], description: m[2][0].toUpperCase() + m[2].slice(1) + '.', replaces: m[3] })
+    groups.at(-1).items.push({
+      name: m[1],
+      description: m[2][0].toUpperCase() + m[2].slice(1) + '.',
+      replaces: m[3],
+    })
   }
 }
 
@@ -44,16 +48,33 @@ for (const name of seen) {
     return `](${gh}/packages/${name}/${href.replace(/^\.\//, '')})`
   })
   md = md.replace(/<!-- bench:(start|end) -->\n/g, '')
-  md = md.replace('Cloudflare Workers, Deno, Bun and Node 24+', 'Cloudflare Workers, Bun and Node 24+')
-  md = md.replace(/`((?:[^`\n\\]|\\.)*?\\`(?:[^`\n\\]|\\.)*?)`(?=[^`]|$)/g, (_, inner) => '`` ' + inner.replace(/\\`/g, '`') + ' ``')
+  md = md.replace(
+    'Cloudflare Workers, Deno, Bun and Node 24+',
+    'Cloudflare Workers, Bun and Node 24+',
+  )
+  md = md.replace(
+    /`((?:[^`\n\\]|\\.)*?\\`(?:[^`\n\\]|\\.)*?)`(?=[^`]|$)/g,
+    (_, inner) => '`` ' + inner.replace(/\\`/g, '`') + ' ``',
+  )
   // A block whose first line is a lone `// name` comment gets that name as its Vocs title bar.
   md = md.replace(/^```(\w+)\n\/\/ (\S+)\n/gm, '```$1 [$2]\n')
   md = toMdx(await formatSnippets(md))
   mkdirSync(join(out, name))
   const tabs = (current) =>
-    `<nav className="package-tabs">${[['Guide', ''], ['API', '/api']].map(([text, path]) => `<a href={import.meta.env.BASE_URL + 'packages/${name}${path}'}${text === current ? ' aria-current="page"' : ''}>${text}</a>`).join('')}</nav>`
+    `<nav className="package-tabs">${[
+      ['Guide', ''],
+      ['API', '/api'],
+    ]
+      .map(
+        ([text, path]) =>
+          `<a href={import.meta.env.BASE_URL + 'packages/${name}${path}'}${text === current ? ' aria-current="page"' : ''}>${text}</a>`,
+      )
+      .join('')}</nav>`
   writeFileSync(join(out, name, 'index.mdx'), md.replace(/^(# .+\n)/, `$1\n${tabs('Guide')}\n`))
-  writeFileSync(join(out, name, 'api.mdx'), toMdx(await formatSnippets(api(name))).replace(/^(# .+\n)/, `$1\n${tabs('API')}\n`))
+  writeFileSync(
+    join(out, name, 'api.mdx'),
+    toMdx(await formatSnippets(api(name))).replace(/^(# .+\n)/, `$1\n${tabs('API')}\n`),
+  )
 }
 
 // Vocs compiles .md as MDX, so braces and stray `<` outside code are escaped, as are pipes
