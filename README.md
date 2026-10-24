@@ -11,22 +11,19 @@ import * as Jsonl from '@portable/jsonl'
 import * as Sse from '@portable/sse'
 import * as Streams from '@portable/streams'
 
+const transcript: WritableStream = ... // a file
+
 const response = await fetch('https://api.openai.com/v1/chat/completions', {
   method: 'POST',
   headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
   body: JSON.stringify({ model, messages, stream: true }),
 })
-const [live, saved] = response
-  .body!.pipeThrough(new Sse.DecoderStream())
+await response.body!
+  .pipeThrough(new Sse.DecoderStream())
   .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
-  .tee()
-
-const transcript: WritableStream = ... // a file
-const saving = saved.pipeThrough(new Jsonl.EncoderStream()).pipeTo(transcript)
-const reader = live.getReader()
-for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.value.choices[0].delta.content ?? '')
-await saving
+  .pipeThrough(new Jsonl.EncoderStream())
+  .pipeTo(transcript)
 ```
 
 Strip photo metadata (GPS, camera, dates) before uploading:
@@ -36,18 +33,11 @@ import * as Exif from '@portable/exif'
 import * as ImageSize from '@portable/image-size'
 
 const file: File = ... // from a file input or a drop
+
 const photo = await new Response(file.stream().pipeThrough(new Exif.StripStream())).blob()
 const { width, height } = await ImageSize.parseStream(photo.stream())
-await fetch('/upload', { method: 'POST', body: photo, headers: { 'x-size': `${width}x${height}` } })
+await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo })
 ```
-
-Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), [Web Streams](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API), [`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [`TextEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) and [`crypto.subtle`](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto).
-
-- **Only web APIs.** Lint rejects `node:*` imports, `Buffer`, `process` and DOM globals in package code. The tests run in Node 24 and 26, Bun, Deno, Chromium, Firefox and WebKit, and inside a Web Worker, and every package is loaded and checked in workerd, the Cloudflare Workers runtime.
-- **No outside dependencies.** A package depends only on other `@portable/*` packages. Crypto uses WebCrypto by default, and you can pass a function from `@noble/hashes` or another library instead.
-- **Tested against the npm libraries for the same job.** Each package's `PARITY.md` maps every test of those libraries to our test for the same case, or says why the case doesn't apply. Oracle tests compare our output with theirs.
-- **Benchmarked.** Each package README has a table that compares its speed, bundle size and dependency count with those libraries.
-- **Consistent API.** You import a package as a namespace (`import * as Base64`), call `encode` and `decode` or `parse` and `format`, pipe through a `DecoderStream` or `EncoderStream`, and pass a `signal` to anything that can be cancelled.
 
 ### Packages
 
@@ -121,6 +111,6 @@ Most npm packages for streams, encodings, email and crypto were written for Node
 </tbody>
 </table>
 
-## License
+### License
 
 MIT
