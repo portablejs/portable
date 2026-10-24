@@ -20,7 +20,7 @@ export function Home() {
             <a href="https://github.com/portablejs/portable">GitHub</a>
           </nav>
         </header>
-        <h1>Web-standard building blocks that work everywhere.</h1>
+        <h1>Web-standard building blocks for any JavaScript runtime.</h1>
         <p>
           Small packages built only on Web Streams, <code>Uint8Array</code>, <code>fetch</code>, and{' '}
           <code>crypto.subtle</code>. The same code runs in browsers, Cloudflare Workers, Bun, and

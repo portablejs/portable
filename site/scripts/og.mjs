@@ -71,18 +71,22 @@ function image({ title, description }) {
     h(
       'div',
       { style: { display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1000 } },
-      // A package page's title is its npm name. The scope goes on a smaller line above the name, so
-      // the longest name, quoted-printable, still fits on one line.
-      scoped &&
-        h(
-          'div',
-          { style: { fontSize: 36, fontWeight: 600, color: '#737373', marginBottom: -16 } },
-          scoped[1],
-        ),
+      // A package page's title is its npm name, set smaller than other titles so that the longest,
+      // @portable/quoted-printable, fits on one line.
       h(
         'div',
-        { style: { fontSize: 72, fontWeight: 700, letterSpacing: -2, lineHeight: 1.1 } },
-        scoped ? scoped[2] : title,
+        {
+          style: {
+            display: 'flex',
+            fontSize: scoped ? 56 : 72,
+            fontWeight: 700,
+            letterSpacing: -2,
+            lineHeight: 1.1,
+          },
+        },
+        scoped
+          ? [h('span', { key: 'scope', style: { color: '#a3a3a3' } }, scoped[1]), scoped[2]]
+          : title,
       ),
       description &&
         h('div', { style: { fontSize: 32, lineHeight: 1.4, color: '#a3a3a3' } }, description),

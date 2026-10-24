@@ -22,7 +22,7 @@ export default defineConfig({
   title: 'Portable',
   ...(basePath && { basePath }),
   renderStrategy: 'full-static',
-  description: 'Web-standard building blocks that work everywhere.',
+  description: 'Web-standard building blocks for any JavaScript runtime.',
   logoUrl: { light: `${basePath}/logo-light.svg`, dark: `${basePath}/logo-dark.svg` },
   iconUrl: `${basePath}/logo.svg`,
   accentColor: '#fc7c00',
