@@ -4,7 +4,8 @@ import * as WebCrypto from '@portable/web-crypto'
 
 const data = new TextEncoder().encode('hello')
 const key = new TextEncoder().encode('key')
-const seed = Uint8Array.from({ length: 32 }, (_, i) => i)
+// WebKit rejects an Ed25519 or X25519 key whose first byte is 0 (docs/papercuts.md).
+const seed = Uint8Array.from({ length: 32 }, (_, i) => i + 1)
 
 describe('byte inputs', () => {
   for (const form of byteForms) {

@@ -29,6 +29,17 @@ function childUrl(config: Config = {}, origin = location.origin): string {
 const inlineChild = (config: Config, url = startUrl) =>
   `<!doctype html><script type="module">import { start } from ${JSON.stringify(url)}; start(${JSON.stringify(config)})</script>`
 
+/**
+ * A data URL of a JavaScript module. `inlineModule` nests data URLs inside data URLs, and
+ * `encodeURIComponent` encodes the `%` of each inner URL again, so a Worker's module grew past
+ * Chromium's 2 MB limit for data URLs. This encodes only the characters that end the URL, the
+ * string or the script element around it, and `/`, without which Chromium never finishes loading
+ * the nested modules.
+ */
+function dataUrl(code: string): string {
+  return `data:text/javascript,${code.replace(/[%#\t\n\r"\\/<>]/g, encodeURIComponent)}`
+}
+
 const inlined = new Map<string, Promise<string>>()
 
 /**
@@ -40,7 +51,7 @@ function inlineModule(url: string): Promise<string> {
   let module = inlined.get(url)
   if (!module) {
     module = (async () => {
-      let code = await (await fetch(url)).text()
+      let code = (await (await fetch(url)).text()).replace(/\n\/\/# sourceMappingURL=\S*/g, '')
       const specifiers = new Set(
         [...code.matchAll(/(?:from|import)\s*"([^"]+)"/g)].map((match) => match[1]!),
       )
@@ -48,7 +59,7 @@ function inlineModule(url: string): Promise<string> {
         const inner = await inlineModule(new URL(specifier, url).href)
         code = code.replaceAll(`"${specifier}"`, JSON.stringify(inner))
       }
-      return `data:text/javascript,${encodeURIComponent(code)}`
+      return dataUrl(code)
     })()
     inlined.set(url, module)
   }
@@ -705,9 +716,7 @@ describe('targets', () => {
   test('connects to a Worker created from a data URL', async () => {
     const methods = await inlineModule(methodsUrl)
     const code = `import { servePort } from ${JSON.stringify(methods)}; servePort(self)`
-    const created = new Worker(`data:text/javascript,${encodeURIComponent(code)}`, {
-      type: 'module',
-    })
+    const created = new Worker(dataUrl(code), { type: 'module' })
     onTestFinished(() => created.terminate())
     const remote = Rpc.connect<Methods>(Rpc.port(created), { signal: closer().signal })
     await expect(remote.multiply(2, 5)).resolves.toBe(10)
