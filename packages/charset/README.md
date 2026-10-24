@@ -70,6 +70,13 @@ Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encod
 
 `TextDecoder` decodes every charset here. In browsers it follows the WHATWG standard exactly. Node's `TextDecoder` uses ICU, which differs from WHATWG for Big5, EUC-KR, ISO-2022-JP and Shift_JIS on rarely used code points, and some edge runtimes ship `TextDecoder` with UTF-8 and UTF-16 only. Check the runtime you deploy to if you decode legacy charsets there.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Charset.Charset` | A charset that `encode` and `EncoderStream` write, with its `name` and an `encode(text)` method. |
+| `Charset.Name` | The WHATWG name of a charset this package encodes, such as `'Shift_JIS'`. |
+
 ## Why use this over iconv-lite
 
 iconv-lite looks charsets up by name in one registry, so a bundle includes every table. In this package, each charset family is its own entry point, decoding is left to `TextDecoder`, and the package has no dependencies.

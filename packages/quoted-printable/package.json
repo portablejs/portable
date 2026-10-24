@@ -1,6 +1,6 @@
 {
   "name": "@portable/quoted-printable",
-  "description": "Quoted-printable encode and decode, as functions and as streams, in any JavaScript runtime.",
+  "description": "Encode and decode quoted-printable text, as functions and as streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

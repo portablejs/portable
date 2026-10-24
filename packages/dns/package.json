@@ -1,6 +1,6 @@
 {
   "name": "@portable/dns",
-  "description": "DNS lookups over DNS-over-HTTPS, behind a resolver interface that node:dns/promises also fits, in any JavaScript runtime.",
+  "description": "Look up DNS records over DNS-over-HTTPS, behind a resolver interface that node:dns/promises also fits, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

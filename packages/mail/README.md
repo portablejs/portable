@@ -109,6 +109,20 @@ await Smtp.send(
 
 Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, which sends each chunk as soon as it reads it.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Mail.Message` | A message to encode. Every field is optional. |
+| `Mail.Addresses` | An address list as text, a `Mailbox`, or a list of either. |
+| `Mail.Mailbox` | `{ name?, address }`. |
+| `Mail.Content` | Text, bytes, a `Blob` or a byte stream, for a body or an attachment. |
+| `Mail.Attachment` | A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`. |
+| `Mail.Part` | An alternative body, such as a calendar invitation. |
+| `Mail.HeaderFields` | Extra header fields by name, with a list for repeated fields. |
+| `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'` or `'base64'`. |
+| `Mail.Envelope` | `{ from, to }`, what `envelope` returns. |
+
 ## Why use this over nodemailer
 
 nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.

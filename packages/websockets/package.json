@@ -1,6 +1,6 @@
 {
   "name": "@portable/websockets",
-  "description": "A WebSocket that reconnects, as a readable and a writable stream, in any JavaScript runtime.",
+  "description": "Open a WebSocket that reconnects, as a readable and a writable stream, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

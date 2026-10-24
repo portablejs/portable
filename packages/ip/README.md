@@ -99,6 +99,14 @@ A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` tre
 
 `::192.0.2.1` is an IPv4-compatible address, deprecated by RFC 4291, and is not treated as mapped. Its range is `'reserved'`.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Ip.Address` | `{ version, bytes, zone? }`, an IPv4 or IPv6 address with its bytes in network order. |
+| `Ip.Cidr` | `{ address, prefix }`, a network address and its prefix length. |
+| `Ip.Range` | The name of the special-purpose block an address belongs to, from the IANA registries. |
+
 ## Why use this over ip or ipaddr.js
 
 ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). The package is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.

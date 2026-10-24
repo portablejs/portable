@@ -51,6 +51,12 @@ The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its aut
 
 xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 2^128 orders. That is fewer than the 35! orders of a 35-element array. `Random.shuffle` doesn't have that limit.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Random.Seeded` | The functions of `@portable/random`, drawing from a seeded generator, as `Random.seeded` returns them. |
+
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom and lodash
 
 These libraries each cover part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator, crypto-random-string and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.

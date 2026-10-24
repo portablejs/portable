@@ -1,6 +1,6 @@
 {
   "name": "@portable/rate-limit",
-  "description": "GCRA rate limiting with a pluggable store, in any JavaScript runtime.",
+  "description": "Rate-limit requests with GCRA and a pluggable store, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

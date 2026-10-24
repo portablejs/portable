@@ -13,13 +13,21 @@ portable/
 │  ├─ test/                tests, benchmarks, fixtures and PARITY.md: a private package
 │  ├─ package.json
 │  └─ README.md
-├─ docs/                   this file, packages.md, decisions.md
+├─ tools/
+│  ├─ fuzz/                fuzz(), which runs fast-check properties for the fuzz tests
+│  ├─ lint/                the portable oxlint plugin and the public API test
+│  ├─ worker/              runs the conformance tests in a browser Web Worker
+│  └─ workers/             bundles every package into one Worker for workerd
+├─ scripts/                bench, bundle size and README table scripts
+├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
+├─ .github/workflows/      CI (verify.yml)
 ├─ .vite-hooks/            git hooks
 ├─ AGENTS.md               rules for agents and contributors (CLAUDE.md imports it)
 ├─ vite.config.ts          format, lint, staged-file and test config
 ├─ tsconfig.base.json
+├─ tsconfig.test.json      type-checks every package's test/ directory
 └─ pnpm-workspace.yaml
 ```
 
@@ -79,15 +87,19 @@ A package can use an API newer than this baseline if it checks whether the runti
 
 ## Building
 
-[zile](https://github.com/wevm/zile) builds each package with `tsc` into `dist/`, one ESM file and one declaration file per source file, with no bundling. A package's `package.json` lists its entry points as source files:
+[zile](https://github.com/wevm/zile) builds each package with `tsc` into `dist/`, one ESM file and one declaration file per source file, with no bundling. A package's `package.json` lists each entry point with its source file and its built files:
 
 ```json
 "exports": {
-  ".": "./src/exports/index.ts"
+  ".": {
+    "src": "./src/exports/index.ts",
+    "types": "./dist/exports/index.d.ts",
+    "default": "./dist/exports/index.js"
+  }
 }
 ```
 
-zile reads `exports`, builds those files, and rewrites each entry to `{ "src", "types", "default" }` paths in the published `package.json`. Only the fields after the `"[!start-pkg]"` key are published, so scripts and dev dependencies stay in the repo. Inside the workspace, `customConditions: ["src"]` points TypeScript at source, so nothing needs a build before tests or type checks.
+zile reads `exports` and builds the `src` files into the `types` and `default` paths. Only the fields after the `"[!start-pkg]"` key are published, so scripts and dev dependencies stay in the repo. Inside the workspace, `customConditions: ["src"]` points TypeScript at source, so nothing needs a build before tests or type checks.
 
 If zile causes problems, removing it takes two steps: commit the `package.json` that `zile publish:prepare` writes, and change the build script to `tsc`.
 

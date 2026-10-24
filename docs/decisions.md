@@ -1,6 +1,6 @@
 # Decisions
 
-Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
+Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
 ## Public API conventions are checked by a test, not a lint rule
 
@@ -84,7 +84,7 @@ Decisions agents made without the owner's input, with the options they considere
 ## The worker harness runs a stalled file again in WebKit
 
 - **Options:** drop WebKit from the worker suite; stop calling `releaseLock()` in `@portable/streams`; run a file again in a new worker when its WebKit worker stops responding; leave the suite as it is.
-- **Trade-offs:** The hang is a deadlock inside WebKit's `releaseLock()` (see papercuts.md), so no change to our packages fixes it. `Streams.forEach` releases the lock because callers and tests expect `stream.locked` to be `false` after a collector finishes, so removing the call would change behavior in every runtime to avoid a WebKit bug. Dropping WebKit would lose the only check that the packages work in a WebKit worker. Without a change, about one WebKit run in three hung. A second attempt costs 60 s and passes unless the deadlock happens twice in the same file. A package bug that loops forever still fails, because the second attempt stalls too, and the retry applies only in WebKit, so Chromium and Firefox fail at the first stall.
+- **Trade-offs:** The hang is a deadlock inside WebKit's `releaseLock()` (see papercuts.md), so no change to our packages fixes it. The stream collectors in `@portable/streams` release the lock because callers and tests expect `stream.locked` to be `false` after a collector finishes, so removing the call would change behavior in every runtime to avoid a WebKit bug. Dropping WebKit would lose the only check that the packages work in a WebKit worker. Without a change, about one WebKit run in three hung. A second attempt costs 60 s and passes unless the deadlock happens twice in the same file. A package bug that loops forever still fails, because the second attempt stalls too, and the retry applies only in WebKit, so Chromium and Firefox fail at the first stall.
 - **Chosen:** run the file once more in WebKit, print the stall with `console.warn`, and fail the file if the second attempt stalls too. WebKit runs with `JSC_useConcurrentJIT=false` and `JSC_numberOfGCMarkers=1`, so a deadlocked worker doesn't block threads that the page and the next workers need. Remove the retry and the options when WebKit fixes `releaseLock()`.
 
 ## CI tests Node 24 and 26, not 22
@@ -102,7 +102,7 @@ Decisions agents made without the owner's input, with the options they considere
 ## `@example` on values, not types
 
 - **Options:** an `@example` on every export; on functions, classes and constants only.
-- **Trade-offs:** AGENTS.md asked for an `@example` on every public export, but about 100 exported types had JSDoc without one, and an example for `Mailbox` would repeat the `parseAddresses` example. Error classes are values a caller uses in `instanceof`, so their example shows the call that throws them.
+- **Trade-offs:** AGENTS.md required an `@example` on every public export, but about 100 exported types had JSDoc without one, and an example for `Mailbox` would repeat the `parseAddresses` example. Error classes are values a caller uses in `instanceof`, so their example shows the call that throws them.
 - **Chosen:** functions, classes (error classes included) and constants have an `@example`; types have JSDoc without one.
 
 ## Bad arguments throw `TypeError` or `RangeError`, bad data throws `InvalidInputError`
@@ -230,11 +230,11 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Trade-offs:** the second import makes `importSeed` about 40% slower (8,100 instead of 12,900 calls a second on Node). An extractable key can be exported by any code that holds it.
 - **Chosen:** non-extractable, as `crypto.subtle` keys are by default for code that doesn't ask. `extractable: true` skips the second import.
 
-## `WebCrypto` keeps the function names from the package brief
+## `WebCrypto` keeps the function names from the package plan
 
-- **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as the package brief names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
-- **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. The brief's names say both forms.
-- **Chosen:** the brief's names. Each async function still takes `signal`, which it checks before and after the `crypto.subtle` call, because WebCrypto has no way to cancel a call.
+- **Options:** `derToRawEcdsa`, `rawToDerEcdsa` and `publicKeyOf` as docs/packages.md names them; names built from the `encode`, `decode`, `parse` and `format` verbs in AGENTS.md.
+- **Trade-offs:** both sides of the ECDSA conversion are bytes, so neither direction is an `encode` or a `decode` of a value, and `decodeDer` would hide which form comes out. Those names say both forms.
+- **Chosen:** the names from docs/packages.md. Each async function still takes `signal`, which it checks before and after the `crypto.subtle` call, because WebCrypto has no way to cancel a call.
 
 ## `WebCrypto.hmac` and `WebCrypto.hkdf` take key bytes, not a `CryptoKey`
 
@@ -267,7 +267,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 
 ## `WebPush.toRequest` returns a `Request`
 
-- **Options:** only `encrypt`, as the brief listed; a `generateRequestDetails`-style plain object; a `Request`.
+- **Options:** only `encrypt`, as docs/packages.md listed; a `generateRequestDetails`-style plain object; a `Request`.
 - **Trade-offs:** a caller with its own transport needs the VAPID header and the other headers as well as the body, so `encrypt` alone isn't enough. A caller can pass a `Request` to any `fetch`, put it on a queue after `arrayBuffer()`, or add headers to it.
 - **Chosen:** export both `encrypt` and `toRequest`. `send` calls `toRequest`, then `fetch`.
 
@@ -332,7 +332,7 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 
 ## Crypto defaults to WebCrypto, with no `/core` entry
 
-The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
+This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
 
 - **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for a caller who wants noble.
 - **Trade-offs:** noble HMAC-SHA256 adds about 3.0 kB gzipped to a browser bundle and needs an optional peer. Node's WebCrypto HMAC is about 7× slower than noble's. Export conditions avoid both costs but give each runtime different code, which tests in one runtime don't cover.
@@ -384,7 +384,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## Tests are a separate workspace package in `packages/<name>/test/`
 
-- **Options:** `src/_test/` inside each package (the first layout); a sibling `test/` directory with its own `package.json` (the owner's suggestion).
+- **Options:** `src/_test/` inside each package (the first layout); a sibling `test/` directory with its own `package.json`.
 - **Trade-offs:** a separate package keeps upstream libraries, their `@types` and Node types out of the published `package.json`, and makes tests import the package by name through its `exports` map. It adds one workspace package per package. Tests can still import unexported code by path.
 - **Chosen:** `test/`, named `@portable/<name>-test`. Shared tools (Vitest, TypeScript, Playwright, `@types/node`) stay in the root. `tsconfig.test.json` type-checks every test directory, which `tsc -b` didn't do before.
 
@@ -465,12 +465,6 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 - **No limit on `toArray` and no `bufferedData` on errors.** The memory risk is in bytes, and keeping partial data on the error would hold up to `maxBytes` after the caller has given up.
 - **`toText` decodes chunk by chunk.** Joining the bytes and decoding once was 37% slower than get-stream.
 
-## Workers tests are not set up yet
-
-- **Options:** `@cloudflare/vitest-pool-workers` in its own workspace package pinned to Vitest 4; a custom script that bundles the conformance tests and runs them in Miniflare; wait.
-- **Trade-offs:** the pool-workers package supports only Vitest 4, and Vite+ ships Vitest 5, so the first option means two Vitest versions in one repo. A custom runner is more code to maintain.
-- **Chosen:** wait, and rely on the lint rules that reject Node APIs. Revisit when pool-workers supports Vitest 5 or when a package depends on a Workers-specific behavior.
-
 ## `maxLength` in `@portable/lines` applies to every line
 
 - **Options:** copy split2, which only checks the unfinished line at the end of each chunk; check every line.
@@ -508,7 +502,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## Open questions from the package plan
 
-- **Umbrella `portable` package:** not claimed yet. It needs an npm publish from the owner's account, and nothing depends on it until several packages exist.
+- **Umbrella `portable` package:** not claimed yet. It needs an npm publish from the account that owns the npm scope, and nothing depends on it until several packages exist.
 - **content-disposition and cookie-signature:** point to `@remix-run/headers` and `@remix-run/cookie` instead of building them. Both are maintained, dependency-free and web-standard.
 - **Package names:** `mime-headers` and `mime-stream`. MIME is the format they handle, and the same code applies to non-mail MIME such as `multipart/related`.
 - **`@portable/dns`:** yes, as a separate package from `dns-packet`, because SPF and DMARC need a resolver and `dns-packet` users don't.
@@ -516,7 +510,7 @@ The owner made this call for `@portable/webhooks` and `@portable/oauth1`, and do
 
 ## Agent skills live in `.agents/pstack/`
 
-- **Options:** `.claude/pstack/` (the first instruction); `.agents/pstack/` (the follow-up).
+- **Options:** `.claude/pstack/`; `.agents/pstack/`.
 - **Chosen:** `.agents/pstack/` holds the copies. `.claude/skills/<name>` and `.agents/skills/<name>` are symlinks, so Claude Code and agents that read `.agents/skills` both find them. AGENTS.md is the guide, and CLAUDE.md imports it with `@AGENTS.md`.
 
 ## `Exif.parseStream` limits memory, not bytes read
@@ -561,7 +555,7 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 
 ## Decisions from the second batch of packages
 
-Agents that couldn't edit this file reported these. Each package's README and PARITY.md have the details.
+These were recorded as each package was built. Each package's README and PARITY.md have the details.
 
 - **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hash` option takes an incremental hasher such as noble's `sha256.create()` for large messages.
 - **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` still reports an abort as `temperror` and should change to match.

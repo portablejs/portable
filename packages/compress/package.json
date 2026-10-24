@@ -1,6 +1,6 @@
 {
   "name": "@portable/compress",
-  "description": "One-shot gzip and deflate, a bounded decompression stream and CRC-32 on CompressionStream, in any JavaScript runtime.",
+  "description": "Compress and decompress gzip and deflate in one call or through a bounded stream, and compute CRC-32, on CompressionStream, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

@@ -93,6 +93,13 @@ Sse.connect(request, {
 })
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Sse.Event` | An event read from a stream, as `EventSource` would dispatch it. |
+| `Sse.Message` | A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. |
+
 ## Why use this over eventsource-parser, eventsource and fetch-event-source
 
 eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies.

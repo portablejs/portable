@@ -67,6 +67,13 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 `'mime'` follows RFC 2045 §6.8, which tells decoders to ignore characters outside the alphabet, and libbase64, which decodes each `=`-terminated segment on its own. It reads both alphabets and never throws, so use it for mail bodies and other input you don't control.
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Base64.Alphabet` | `'base64'` or `'base64url'` (RFC 4648). |
+| `Base64.Mode` | `'loose'`, `'strict'` or `'mime'`, how `decode` treats input that isn't canonical base64. |
+
 ## Why use this over base64-js, js-base64 and libbase64
 
 One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and has no dependencies.

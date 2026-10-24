@@ -79,6 +79,13 @@ Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line
 | `maxParts` | `DecoderStream` | `1000` | Most parts in a message, the root and embedded messages included. |
 | `signal` | all | | When it aborts, the streams fail with `signal.reason` and cancel their source. `splitHeaders` rejects with it while it reads the header block, and fails `body` with it after. |
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `MimeStream.Chunk` | A run of bytes from the message, with its `type` and the `part` it belongs to. |
+| `MimeStream.Part` | One part of the message: the root, a part of a multipart, or the message inside a `message/rfc822` part. |
+
 ## Why use this over mailsplit
 
 mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as dependencies. `DecoderStream` is a `TransformStream` with one dependency, `@portable/mime-headers`, so it reads a `fetch` body or a Workers email in any runtime.

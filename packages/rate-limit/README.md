@@ -189,6 +189,14 @@ const store: RateLimit.Store = {
 }
 ```
 
+## Types
+
+| Type | Description |
+| --- | --- |
+| `RateLimit.Limiter` | What `create` returns, with `take`. |
+| `RateLimit.Result` | What `take` resolves to. Durations are milliseconds. |
+| `RateLimit.Store` | Where a limiter keeps one number per key. See [Stores](#stores). |
+
 ## Why use this over rate-limiter-flexible, limiter and bottleneck
 
 rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a two-method store, so any storage that can compare and set one number works, and it has no dependencies.
