@@ -39,7 +39,7 @@ export function Home() {
               <code>{item.name}</code>
               <p>
                 {code(item.description)}
-                <small>Replaces {code(item.replaces)}</small>
+                {item.replaces && <small>Replaces {code(item.replaces)}</small>}
               </p>
             </a>
           ))}

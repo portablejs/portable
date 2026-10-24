@@ -10,19 +10,35 @@ const repo = resolve(process.argv[2] ?? fileURLToPath(new URL('../..', import.me
 const gh = 'https://github.com/portablejs/portable/blob/main'
 const root = readFileSync(join(repo, 'README.md'), 'utf8')
 
+// The root README lists the packages in an HTML table, with a header row for each group.
 const groups = []
 const seen = new Set()
+const text = (html) =>
+  html
+    .replace(/<code>(.*?)<\/code>/g, '`$1`')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+// Returns the first sentence of a package README's "Replaces" line, with each Markdown link
+// replaced by its text and any trailing ", which …" or ", and covers …" clause removed.
+const replaces = (name) => {
+  const md = readFileSync(join(repo, 'packages', name, 'README.md'), 'utf8')
+  const line = md.match(/^Replaces (.+)$/m)?.[1] ?? ''
+  return line
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/\.(\s.*)?$/, '')
+    .replace(/, (which|and covers) .*$/, '')
+}
 for (const line of root.split('\n')) {
-  const h = line.match(/^### (.+)/)
-  if (h) groups.push({ title: h[1], items: [] })
-  const m = line.match(/^- \[`@portable\/([\w-]+)`\]\([^)]*\): (.+?)\. Replaces (.+)\.$/)
+  const h = line.match(/^<tr><th[^>]*>(.+)<\/th><\/tr>$/)
+  if (h) groups.push({ title: text(h[1]), items: [] })
+  const m = line.match(
+    /<a href="packages\/([\w-]+)"><code>@portable\/[\w-]+<\/code><\/a><\/td><td>(.+)<\/td><\/tr>$/,
+  )
   if (m && groups.length && !seen.has(m[1])) {
     seen.add(m[1])
-    groups.at(-1).items.push({
-      name: m[1],
-      description: m[2][0].toUpperCase() + m[2].slice(1) + '.',
-      replaces: m[3],
-    })
+    groups.at(-1).items.push({ name: m[1], description: text(m[2]), replaces: replaces(m[1]) })
   }
 }
 
