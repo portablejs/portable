@@ -37,7 +37,7 @@ Most npm packages for streams, encodings, email and crypto were written for Node
 - **No outside dependencies.** A package depends only on other `@portable/*` packages. Crypto uses WebCrypto by default, and you can pass a function from `@noble/hashes` or another library instead.
 - **Tested against the npm libraries for the same job.** Each package's `PARITY.md` maps every test of those libraries to our test for the same case, or says why the case doesn't apply. Oracle tests compare our output with theirs.
 - **Benchmarked.** Each package README has a table that compares its speed, bundle size and dependency count with those libraries.
-- **One API shape.** You import a package as a namespace (`import * as Base64`), call `encode` and `decode` or `parse` and `format`, pipe through a `DecoderStream` or `EncoderStream`, and pass a `signal` to anything that can be cancelled.
+- **Consistent API.** You import a package as a namespace (`import * as Base64`), call `encode` and `decode` or `parse` and `format`, pipe through a `DecoderStream` or `EncoderStream`, and pass a `signal` to anything that can be cancelled.
 
 ## Packages
 
