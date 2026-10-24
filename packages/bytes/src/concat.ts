@@ -1,4 +1,4 @@
-import { checkUint8Array } from './internal/uint8Array.js'
+import { assertUint8Array } from './internal/uint8Array.js'
 
 /**
  * Joins byte arrays into one new array. The result never shares memory with the input, even for a
@@ -13,7 +13,7 @@ import { checkUint8Array } from './internal/uint8Array.js'
  */
 export function concat(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
   let length = 0
-  for (const chunk of chunks) length += checkUint8Array(chunk).length
+  for (const chunk of chunks) length += assertUint8Array(chunk).length
   const bytes = new Uint8Array(length)
   let offset = 0
   for (const chunk of chunks) {

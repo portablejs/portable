@@ -3,8 +3,8 @@ import type * as Dkim from '@portable/dkim'
 import {
   appendValue,
   casedName,
-  checkHeaders,
-  checkName,
+  assertHeaders,
+  normalizeName,
   defaultHeaders,
   type Field,
   canFitDns,
@@ -103,15 +103,15 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders]
  */
 export async function seal(message: Message, options: seal.Options): Promise<string> {
   const { headers = arcDefaultHeaders, now = new Date(), hasher, signal } = options
-  const domain = checkName('domain', options.domain, isDomainName)
-  const selector = checkName('selector', options.selector, isSelector)
+  const domain = normalizeName('domain', options.domain, isDomainName)
+  const selector = normalizeName('selector', options.selector, isSelector)
   if (!canFitDns(`${selector}._domainkey.${domain}`))
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
-  const authResults = checkAuthResults(options.authResults)
+  const authResults = normalizeAuthResults(options.authResults)
   const { chainValidation } = options
   if (chainValidation !== undefined && !statuses.has(chainValidation))
     throw new RangeError('options.chainValidation must be none, pass or fail.')
-  const names = checkHeaders(headers).filter((name) => !unsigned.has(lowerAscii(name)))
+  const names = assertHeaders(headers).filter((name) => !unsigned.has(lowerAscii(name)))
   const timestamp = seconds('now', now)
   const key = await importPrivateKey(options.privateKey)
   const type = keyType(key)!
@@ -223,7 +223,7 @@ const field = (text: string): Field => ({
  * The payload must not end the field early: a CR or LF is allowed only as folding, CRLF followed
  * by whitespace and more text.
  */
-function checkAuthResults(value: unknown): string {
+function normalizeAuthResults(value: unknown): string {
   if (typeof value !== 'string') throw new TypeError('options.authResults must be a string.')
   if (!/\S/.test(value)) throw new RangeError('options.authResults is empty.')
   if (/\r(?!\n[ \t]+[^ \t\r\n])|(?<!\r)\n/.test(value))

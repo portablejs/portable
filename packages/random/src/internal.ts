@@ -110,7 +110,7 @@ export function pick<value>(next: Next, array: readonly value[]): value {
   return array[below(next, array.length)]!
 }
 
-export function checkLength(length: number): void {
+export function assertLength(length: number): void {
   if (!Number.isSafeInteger(length) || length < 0)
     throw new RangeError(`Expected length to be a non-negative integer, got ${length}.`)
 }

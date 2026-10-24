@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError } from './errors.js'
 
 /**
@@ -75,7 +75,7 @@ export function canParse(text: unknown, options: canParse.Options = {}): boolean
  * ```
  */
 export function fromBytes(bytes: Uint8Array): Address {
-  checkUint8Array(bytes)
+  assertUint8Array(bytes)
   if (bytes.length === 4) return { version: 4, bytes: bytes.slice() }
   if (bytes.length === 16) return { version: 6, bytes: bytes.slice() }
   throw new InvalidInputError(`An IP address has 4 or 16 bytes, not ${bytes.length}.`)

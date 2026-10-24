@@ -98,8 +98,8 @@ const maxDelay = 2 ** 31 - 1
  */
 export function create(options: create.Options = {}): Queue {
   const { interval = 0, intervalCap = Infinity, signal: queueSignal } = options
-  let concurrency = checkLimit('concurrency', options.concurrency ?? Infinity)
-  checkLimit('intervalCap', intervalCap)
+  let concurrency = assertLimit('concurrency', options.concurrency ?? Infinity)
+  assertLimit('intervalCap', intervalCap)
   if (!(interval >= 0 && interval < Infinity))
     throw new RangeError('Expected `interval` to be a finite number from 0 up.')
   const rateLimited = interval > 0 && intervalCap !== Infinity
@@ -340,7 +340,7 @@ export function create(options: create.Options = {}): Queue {
       return concurrency
     },
     set concurrency(value: number) {
-      concurrency = checkLimit('concurrency', value)
+      concurrency = assertLimit('concurrency', value)
       drain()
     },
   }
@@ -362,7 +362,7 @@ export function limit(concurrency: number): Queue['add'] {
   return create({ concurrency }).add
 }
 
-export function checkLimit(name: string, value: number): number {
+export function assertLimit(name: string, value: number): number {
   if (!(value === Infinity || (Number.isInteger(value) && value >= 1)))
     throw new RangeError(`Expected \`${name}\` to be a positive integer or Infinity, got ${value}.`)
   return value

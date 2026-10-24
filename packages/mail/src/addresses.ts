@@ -58,11 +58,11 @@ export function parse(input: Addresses): Entry[] {
 }
 
 function normalizeMailbox(mailbox: { name: string; address: string }): MimeHeaders.Mailbox {
-  const address = check(normalizeAddress(mailbox.address))
+  const address = formatAddress(normalizeAddress(mailbox.address))
   return { name: mailbox.name, address }
 }
 
-function check(address: string): string {
+function formatAddress(address: string): string {
   try {
     return MimeHeaders.formatAddresses([{ name: '', address }])
   } catch (error) {

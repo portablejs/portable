@@ -59,13 +59,13 @@ export function seeded(seed: number): Seeded {
     int: (min, max) => internal.int(next, min, max),
     float: () => ((next() >>> 11) * 4294967296 + next()) / 9007199254740992,
     string(length, { alphabet = internal.urlAlphabet } = {}) {
-      internal.checkLength(length)
+      internal.assertLength(length)
       return internal.string(next, fill, length, internal.alphabet(alphabet))
     },
     shuffle: (array) => internal.shuffle(next, array),
     pick: (array) => internal.pick(next, array),
     bytes(length) {
-      internal.checkLength(length)
+      internal.assertLength(length)
       const result = new Uint8Array(length)
       fill(result)
       return result

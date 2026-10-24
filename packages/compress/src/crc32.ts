@@ -1,4 +1,4 @@
-import { checkUint8Array, crc32 as crc } from '@portable/bytes/internal'
+import { assertUint8Array, crc32 as crc } from '@portable/bytes/internal'
 
 const encoder = new TextEncoder()
 
@@ -15,6 +15,6 @@ const encoder = new TextEncoder()
  * ```
  */
 export function crc32(data: Uint8Array | string, previous: number = 0): number {
-  const bytes = typeof data === 'string' ? encoder.encode(data) : checkUint8Array(data)
+  const bytes = typeof data === 'string' ? encoder.encode(data) : assertUint8Array(data)
   return crc(bytes, previous)
 }

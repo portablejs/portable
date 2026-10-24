@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, MaxLengthError } from './errors.js'
 import * as Streams from '@portable/streams'
 
@@ -70,7 +70,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
             const text =
               typeof chunk === 'string'
                 ? chunk
-                : decoder.decode(checkUint8Array(chunk), { stream: true })
+                : decoder.decode(assertUint8Array(chunk), { stream: true })
             if (!text.includes('\n')) {
               partial += text
               if (partial.length > maxLength + 1) throw new MaxLengthError({ maxLength })

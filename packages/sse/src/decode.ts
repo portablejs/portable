@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 import { MaxLengthError } from './errors.js'
 
@@ -229,7 +229,7 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
         typeof chunk === 'string'
           ? chunk
           : (decoder ??= new TextDecoder('utf-8', { ignoreBOM: true })).decode(
-              checkUint8Array(chunk),
+              assertUint8Array(chunk),
               {
                 stream: true,
               },

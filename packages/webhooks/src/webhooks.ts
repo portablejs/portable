@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { checkUint8Array, isUint8Array, toBufferSource } from '@portable/bytes/internal'
+import { assertUint8Array, isUint8Array, toBufferSource } from '@portable/bytes/internal'
 import type { Hmac } from '@portable/web-crypto'
 import { VerificationError } from './errors.js'
 import { utf8 } from './internal.js'
@@ -93,7 +93,7 @@ export async function verify(
     signal,
   } = options
   signal?.throwIfAborted()
-  checkScheme(scheme)
+  assertScheme(scheme)
   if (!(tolerance >= 0)) throw new RangeError('tolerance must be a non-negative number')
   if (!(maxBytes >= 0)) throw new RangeError('maxBytes must be a non-negative number')
   const secrets =
@@ -190,15 +190,15 @@ export async function sign(
     signal,
   } = options
   signal?.throwIfAborted()
-  checkScheme(scheme)
+  assertScheme(scheme)
   const key = keyOf(scheme, options.secret)
-  const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : checkUint8Array(body)
+  const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : assertUint8Array(body)
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }))
   const signature = await race(hmac('SHA-256', key, content), signal)
   return scheme.headers({ signature, id, timestamp })
 }
 
-function checkScheme(scheme: Scheme): void {
+function assertScheme(scheme: Scheme): void {
   if (typeof scheme?.parse !== 'function' || typeof scheme.payload !== 'function')
     throw new TypeError('scheme must be a Webhooks.Scheme, such as Webhooks.stripe')
 }
@@ -206,7 +206,7 @@ function checkScheme(scheme: Scheme): void {
 function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
   const key =
     typeof secret !== 'string'
-      ? checkUint8Array(secret)
+      ? assertUint8Array(secret)
       : scheme.key
         ? scheme.key(secret)
         : utf8.encode(secret)

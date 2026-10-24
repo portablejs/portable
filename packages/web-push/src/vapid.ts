@@ -56,7 +56,7 @@ export async function generateVapidKeys(
 export function authorization(audience: string, vapid: Vapid, date: Date): Promise<string> {
   if (!vapid) throw new TypeError('vapid is required')
   const { subject, publicKey, privateKey } = vapid
-  checkSubject(subject)
+  assertSubject(subject)
   const now = Math.floor(date.getTime() / 1000)
   if (!Number.isFinite(now)) throw new RangeError('`now` must be a valid Date.')
   const id = `${audience} ${subject} ${publicKey} ${privateKey}`
@@ -78,7 +78,7 @@ async function sign(audience: string, vapid: Vapid, exp: number): Promise<string
   return `vapid t=${input}.${base64url(new Uint8Array(signature))}, k=${vapid.publicKey}`
 }
 
-function checkSubject(subject: unknown): asserts subject is string {
+function assertSubject(subject: unknown): asserts subject is string {
   if (typeof subject !== 'string') throw new TypeError('vapid.subject must be a string')
   if (/\s/.test(subject)) throw new RangeError('vapid.subject must not contain spaces')
   const url = parseUrl(subject)

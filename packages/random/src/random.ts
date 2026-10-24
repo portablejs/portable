@@ -99,7 +99,7 @@ export declare namespace string {
  */
 export function string(length: number, options: string.Options = {}): string {
   const { alphabet = internal.urlAlphabet } = options
-  internal.checkLength(length)
+  internal.assertLength(length)
   const parsed = internal.alphabet(alphabet)
   if (parsed.table === undefined) return internal.string(next, fill, length, parsed)
   if (alphabet !== textAlphabet) {
@@ -159,7 +159,7 @@ export function pick<value>(array: readonly value[]): value {
  * ```
  */
 export function bytes(length: number): Uint8Array<ArrayBuffer> {
-  internal.checkLength(length)
+  internal.assertLength(length)
   const result = new Uint8Array(length)
   fill(result)
   return result

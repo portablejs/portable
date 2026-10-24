@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { InvalidInputError, MaxBytesError, UnsupportedError } from './errors.js'
@@ -55,7 +55,7 @@ export async function hash(
   options: hash.Options = {},
 ): Promise<string> {
   const { iterations = defaultIterations, maxBytes = defaultMaxBytes, signal } = options
-  checkIterations(iterations)
+  assertIterations(iterations)
   const salt = crypto.getRandomValues(new Uint8Array(saltLength))
   const bytes = toBytes(password, maxBytes)
   const derived = await abortable(
@@ -140,7 +140,7 @@ export declare namespace needsRehash {
  */
 export function needsRehash(stored: string, options: needsRehash.Options = {}): boolean {
   const { iterations = defaultIterations } = options
-  checkIterations(iterations)
+  assertIterations(iterations)
   const parsed = parse(stored)
   return (
     parsed.digest !== 'SHA-256' ||
@@ -213,12 +213,12 @@ function toBytes(password: string | Uint8Array, maxBytes: number): Uint8Array<Ar
   const bytes =
     typeof password === 'string'
       ? encoder.encode(password.normalize('NFC'))
-      : new Uint8Array(checkUint8Array(password))
+      : new Uint8Array(assertUint8Array(password))
   if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
   return bytes
 }
 
-function checkIterations(iterations: number): void {
+function assertIterations(iterations: number): void {
   if (!Number.isInteger(iterations) || iterations < 1 || iterations > 0xffffffff)
     throw new RangeError(`iterations must be an integer from 1 to 2^32 - 1, got ${iterations}.`)
 }

@@ -1,4 +1,4 @@
-import { checkUint8Array, isUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array, isUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { InvalidInputError } from './errors.js'
@@ -81,7 +81,7 @@ export async function encrypt(options: encrypt.Options): Promise<Uint8Array<Arra
       `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
     )
   const salt = options.salt
-    ? new Uint8Array(checkUint8Array(options.salt))
+    ? new Uint8Array(assertUint8Array(options.salt))
     : crypto.getRandomValues(new Uint8Array(16))
   if (salt.length !== 16) throw new RangeError('salt must be 16 bytes')
 

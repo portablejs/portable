@@ -1,6 +1,6 @@
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
-import { checkLength, decodeCharset, hexDigit, toText } from './internal/text.js'
+import { assertLength, decodeCharset, hexDigit, toText } from './internal/text.js'
 
 const utf8Encoder = new TextEncoder()
 let scratch = new Uint8Array(1024)
@@ -61,7 +61,7 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
   const { charset, wordEncoding: encoding = 'Q', wordLength = 75 } = options
   if (encoding !== 'Q' && encoding !== 'B')
     throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`)
-  if (wordLength !== false) checkLength('wordLength', wordLength)
+  if (wordLength !== false) assertLength('wordLength', wordLength)
   const prefix = charset
     ? `=?${charset.name}?${encoding}?`
     : encoding === 'Q'

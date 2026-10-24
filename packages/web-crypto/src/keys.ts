@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError } from './errors.js'
 import { run } from './internal.js'
 
@@ -48,7 +48,7 @@ export function importSeed(
 ): Promise<CryptoKeyPair> {
   const { extractable = false, signal } = options
   return run(signal, async () => {
-    if (checkUint8Array(seed).length !== 32)
+    if (assertUint8Array(seed).length !== 32)
       throw new InvalidInputError(`An ${algorithm} seed is 32 bytes, not ${seed.length}`)
     const pkcs8 = new Uint8Array(48)
     pkcs8.set(pkcs8Prefix[algorithm])

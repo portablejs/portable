@@ -116,7 +116,7 @@ export function formatAddresses(
   options: formatAddresses.Options = {},
 ): string {
   const mailbox = (entry: Mailbox) => {
-    const address = checkAddress(entry.address)
+    const address = parseSingleAddress(entry.address)
     return entry.name === '' ? address : `${phrase(entry.name, options)} <${address}>`
   }
   return addresses
@@ -134,7 +134,7 @@ function phrase(name: string, options: formatAddresses.Options): string {
   return quote(name)
 }
 
-function checkAddress(address: string): string {
+function parseSingleAddress(address: string): string {
   const parsed = address === '' ? [] : parseAddresses(address, { strict: true })
   const only = parsed[0]
   if (parsed.length !== 1 || !only || 'group' in only || only.name !== '' || only.address === '')

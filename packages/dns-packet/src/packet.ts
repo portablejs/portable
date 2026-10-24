@@ -1,4 +1,4 @@
-import { checkUint8Array } from '@portable/bytes/internal'
+import { assertUint8Array } from '@portable/bytes/internal'
 import {
   classes,
   opcodes,
@@ -355,7 +355,7 @@ export declare namespace decode {
  * ```
  */
 export function decode(bytes: Uint8Array, options: decode.Options = {}): DecodedPacket {
-  checkUint8Array(bytes)
+  assertUint8Array(bytes)
   if (options.framing === 'tcp') {
     if (bytes.length < 2) throw new TruncatedError('The TCP length prefix is 2 bytes.')
     const length = (bytes[0]! << 8) | bytes[1]!
