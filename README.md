@@ -1,6 +1,11 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo-light.svg" alt="" style="height: 1cap"></picture>&nbsp; Portable
+<div align="center">
+  <h1>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo-light.svg" alt="" height="32"></picture>&nbsp; Portable
+  </h1>
+  <p>Web-standard building blocks for any JavaScript runtime.</p>
+</div>
 
-Web-standard building blocks for any JavaScript runtime.
+---
 
 #### Examples
 
