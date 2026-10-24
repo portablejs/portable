@@ -60,7 +60,7 @@ test('any record and identifiers give a result, never an exception', async () =>
         expect(['pass', 'fail', 'none', 'temperror', 'permerror']).toContain(result.result)
         expect(result.disposition).toBe(result.result === 'fail' ? result.policy : 'none')
         expect(result.dkim).toHaveLength(dkim.length)
-        expect(result.record?.text ?? record).toBe(record)
+        expect(result.record?.text ?? record.trimEnd()).toBe(record.trimEnd())
       },
     ),
   )

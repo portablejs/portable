@@ -319,6 +319,11 @@ describe('dmarc-verify-test.js', () => {
         'v=DMARC1; p=reject; pct=100',
       )
     })
+
+    test('record.text drops trailing whitespace', async () => {
+      const zone = withRecord('v=DMARC1; p=none; ')
+      expect((await check(zone, { from: 'example.com' })).record?.text).toBe('v=DMARC1; p=none;')
+    })
   })
 
   describe('Reported identifiers', () => {
