@@ -15,7 +15,7 @@ let endpoints = 0
 const freshEndpoint = () => `https://push${++endpoints}.example.net/p/abc`
 
 async function authorizationFor(
-  options: Partial<WebPush.Vapid> & { endpoint?: string } = {},
+  options: Partial<WebPush.Vapid> & { endpoint?: string | undefined } = {},
 ): Promise<string | null> {
   const { endpoint = freshEndpoint(), ...rest } = options
   const request = await WebPush.toRequest({

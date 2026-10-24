@@ -23,7 +23,7 @@ const waitFor = async (check: () => Promise<boolean>) => {
 
 /** The penpal communication and method call lifecycle contracts, for one kind of remote. */
 export function communicationContract(name: string, setup: communicationContract.Setup): void {
-  async function connect(options: { codec?: 'json' | 'identity' } = {}) {
+  async function connect(options: { codec?: 'json' | 'identity' | undefined } = {}) {
     const controller = new AbortController()
     onTestFinished(() => controller.abort())
     const remote = await setup({ ...options, methods: parentApi, signal: controller.signal })

@@ -19,7 +19,7 @@ function makePlan(seed: number, length: number, { priorities = false, failures =
   }))
 }
 
-type Settled = { value?: unknown; error?: string | string[] }
+type Settled = { value?: unknown; error?: string | string[] | undefined }
 
 async function observe(
   schedule: (task: (item: Plan[number]) => Promise<number>) => Promise<unknown>,

@@ -20,7 +20,7 @@ export const twitter = {
 
 export function form(
   body: string,
-  init: { method?: string; headers?: Record<string, string> } = {},
+  init: { method?: string | undefined; headers?: Record<string, string> | undefined } = {},
 ): RequestInit {
   return {
     method: init.method ?? 'POST',

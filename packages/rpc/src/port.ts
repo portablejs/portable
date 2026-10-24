@@ -100,7 +100,7 @@ const directKey = Symbol.for('portable.rpc.direct')
  */
 export const direct = {
   get: (transport: Transport): Direct | undefined =>
-    (transport as { [directKey]?: Direct })[directKey],
+    (transport as { [directKey]?: Direct | undefined })[directKey],
   set(transport: Transport, value: Direct): void {
     Object.defineProperty(transport, directKey, { value })
   },

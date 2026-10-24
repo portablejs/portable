@@ -23,7 +23,11 @@ export type Socket = {
 }
 
 /** The fields this package reads from `message` and `close` events. */
-export type SocketEvent = Event & { data?: unknown; code?: number; reason?: string }
+export type SocketEvent = Event & {
+  data?: unknown
+  code?: number | undefined
+  reason?: string | undefined
+}
 
 /**
  * Thrown when the other side closes the connection, or when the connection closes and `connect`

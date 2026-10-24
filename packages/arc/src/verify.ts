@@ -7,7 +7,7 @@ import {
   decodeBase64,
   type Field,
   fetchKey,
-  fitsDns,
+  canFitDns,
   fromBinary,
   hashBody,
   isDomainName,
@@ -243,7 +243,7 @@ function prepareSeal(set: ArcSet): Seal | string {
   if (!domain || !isDomainName(domain)) return `${at} has an invalid d=`
   const selector = toALabel(binaryToText(tags.get('s')!))
   const keyName = `${selector}._domainkey.${domain}`
-  if (!selector || !isSelector(selector) || !fitsDns(keyName)) return `${at} has an invalid s=`
+  if (!selector || !isSelector(selector) || !canFitDns(keyName)) return `${at} has an invalid s=`
   const value = decodeBase64(tags.get('b')!)
   if (!value) return `${at} syntax error`
   return { set, type, value, domain, selector, keyName }

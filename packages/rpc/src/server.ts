@@ -106,7 +106,7 @@ export function createServer(
     if (!notification) calls.set(id, call)
     try {
       const args = params === undefined ? [] : Array.isArray(params) ? params : [params]
-      const original = (fn as { [contextKey]?: Function })[contextKey]
+      const original = (fn as { [contextKey]?: Function | undefined })[contextKey]
       let result: unknown = original
         ? original.call(holder, { signal: call.controller.signal, request }, ...args)
         : fn.apply(holder, args)

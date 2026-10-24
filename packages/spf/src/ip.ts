@@ -6,7 +6,7 @@ export function parseIp(text: string): Ip.Address | undefined {
   return address.version === 6 && address.zone !== undefined ? undefined : address
 }
 
-export function inNetwork(address: Ip.Address, network: Ip.Address, prefix: number): boolean {
+export function isInNetwork(address: Ip.Address, network: Ip.Address, prefix: number): boolean {
   return address.version === network.version && Ip.contains({ address: network, prefix }, address)
 }
 

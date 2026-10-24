@@ -114,7 +114,7 @@ describe('mailauth agrees with verify', () => {
       } satisfies Arc.Resolver
       const upstreamResolver = async (name: string) => resolver.resolveTxt(name)
       for (const [name, data] of Object.entries(
-        file.tests as Record<string, { message?: string }>,
+        file.tests as Record<string, { message?: string | undefined }>,
       )) {
         const message = encode((data.message ?? '').replace(/\r?\n/g, '\r\n'))
         const theirs = await authenticate(Buffer.from(message), {

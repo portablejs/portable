@@ -15,7 +15,7 @@ type Rule = Parameters<RuleTester['run']>[1]
  * empty collection, such as `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]`
  * infers `never[]` and the first `push` fails to type-check.
  */
-type Node = { type: string; parent?: Node | null; [key: string]: unknown }
+type Node = { type: string; parent?: Node | null | undefined; [key: string]: unknown }
 
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && 'type' in value
@@ -126,12 +126,145 @@ const typeParameterName = {
 } satisfies Rule
 
 /**
+ * Reports an optional property whose type leaves out `undefined`, such as `foo?: string`. With
+ * `exactOptionalPropertyTypes`, that property rejects an explicit `undefined`, so a caller can't
+ * pass `{ signal: options.signal }` through when `options.signal` is optional.
+ */
+const optionalUndefined = {
+  meta: {
+    type: 'problem',
+    fixable: 'code',
+    messages: { optionalUndefined: 'Write an optional property as `name?: Type | undefined`.' },
+  },
+  create: (context) => ({
+    TSPropertySignature: (node) => {
+      if (!node.optional || node.typeAnnotation == null) return
+      const type = node.typeAnnotation.typeAnnotation as unknown as Node
+      if (allowsUndefined(type)) return
+      const text = context.sourceCode.getText(type as never)
+      const wrap =
+        type.type === 'TSFunctionType' ||
+        type.type === 'TSConstructorType' ||
+        type.type === 'TSConditionalType'
+      context.report({
+        node: node.key,
+        messageId: 'optionalUndefined',
+        fix: (fixer) =>
+          fixer.replaceText(type as never, `${wrap ? `(${text})` : text} | undefined`),
+      })
+    },
+  }),
+} satisfies Rule
+
+// `undefined`, `unknown`, `any`, or a union that holds one of them.
+function allowsUndefined(type: Node): boolean {
+  if (['TSUndefinedKeyword', 'TSUnknownKeyword', 'TSAnyKeyword'].includes(type.type)) return true
+  return type.type === 'TSUnionType' && (type['types'] as Node[]).some(allowsUndefined)
+}
+
+/**
+ * Reports a relative import or re-export without the `.js` extension. Node and browsers resolve
+ * the path as written, so `./utils` doesn't load after the build.
+ */
+const importExtension = {
+  meta: {
+    type: 'problem',
+    messages: { importExtension: 'End a relative import with `.js`.' },
+  },
+  create: (context) => {
+    const check = (node: { source?: unknown }) => {
+      const source = node.source as Node | null | undefined
+      if (!isNode(source) || typeof source['value'] !== 'string') return
+      const path = source['value']
+      if (!path.startsWith('./') && !path.startsWith('../')) return
+      if (/\.(js|json)$/.test(path) || path.includes('?')) return
+      context.report({ node: source as never, messageId: 'importExtension' })
+    }
+    return {
+      ImportDeclaration: check,
+      ExportAllDeclaration: check,
+      ExportNamedDeclaration: check,
+      ImportExpression: check,
+    }
+  },
+} satisfies Rule
+
+/**
+ * Reports an error class without `static override readonly kind`. `BaseError` copies `kind` to
+ * `name`, and `Errors.is` compares it, so a class without its own kind matches its parent's.
+ */
+const errorKind = {
+  meta: {
+    type: 'problem',
+    messages: {
+      errorKind: "Give an error class `static override readonly kind = 'Package.ClassName'`.",
+    },
+  },
+  create: (context) => ({
+    ClassDeclaration: (node) => {
+      const name = node.id?.name
+      if (!name?.endsWith('Error') || node.superClass == null) return
+      const kind = node.body.body.find(
+        (member) =>
+          member.type === 'PropertyDefinition' &&
+          member.static &&
+          member.key.type === 'Identifier' &&
+          member.key.name === 'kind',
+      )
+      const base = node.superClass.type === 'Identifier' && node.superClass.name === 'Error'
+      if (kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override)) return
+      context.report({ node: node.id ?? node, messageId: 'errorKind' })
+    },
+  }),
+} satisfies Rule
+
+/**
+ * Reports an `enum`. A union of string literals types the same values, needs no runtime object,
+ * and lets a caller pass the string itself.
+ */
+const noEnum = {
+  meta: {
+    type: 'suggestion',
+    messages: { noEnum: "Use a union of string literals, such as `type Mode = 'a' | 'b'`." },
+  },
+  create: (context) => ({
+    TSEnumDeclaration: (node) => context.report({ node: node.id, messageId: 'noEnum' }),
+  }),
+} satisfies Rule
+
+/**
+ * Reports `Symbol()`. A second copy of the package creates a different symbol, so a mark it
+ * stores isn't found by the other copy, while `Symbol.for('portable.…')` returns the same symbol
+ * in both.
+ */
+const noPrivateSymbol = {
+  meta: {
+    type: 'problem',
+    messages: { noPrivateSymbol: "Use `Symbol.for('portable.<package>.<name>')`." },
+  },
+  create: (context) => ({
+    CallExpression: (node) => {
+      if (node.callee.type === 'Identifier' && node.callee.name === 'Symbol')
+        context.report({ node, messageId: 'noPrivateSymbol' })
+    },
+  }),
+} satisfies Rule
+
+/**
  * The oxlint rules that only this repo has, under the `portable` prefix. `vite.config.ts` loads
  * the plugin, so `vp check` runs the rules on every package.
  */
 const plugin = {
   meta: { name: 'portable' },
-  rules: { 'prefer-satisfies': preferSatisfies, 'type-parameter-name': typeParameterName },
+  rules: {
+    'error-kind': errorKind,
+    'import-extension': importExtension,
+    'no-enum': noEnum,
+    'no-private-symbol': noPrivateSymbol,
+    'optional-undefined': optionalUndefined,
+    'prefer-satisfies': preferSatisfies,
+    'type-parameter-name': typeParameterName,
+  },
 }
 
 export default plugin

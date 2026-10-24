@@ -2,6 +2,12 @@
 
 Decisions agents made without the owner's input, with the options they considered and the reason for each choice. Newest first. Change any of them by replying in the project thread or editing this file.
 
+## Public API conventions are checked by a test, not a lint rule
+
+- **Options:** lint rules for `@example` JSDoc, `is`/`has`/`can` names and positional booleans on every exported function; the same rules with a disable comment on each internal helper; a test that reads each package's entry points with the TypeScript checker.
+- **Trade-offs:** a lint rule sees one file, so it can't tell a public export from a helper that one module exports to another. The lint version reported 45 positional booleans, almost all in internal helpers such as image-size's `u16(input, offset, bigEndian)`, where an options object would add an allocation to every read. The test resolves `export *` and aliases and skips `./internal`, but it runs a TypeScript program over every package, which takes a few seconds.
+- **Chosen:** `tools/lint/src/publicApi.test.ts`. It allows the standard boolean names `contains`, `equal`, `is`, `needsRehash` and `timingSafeEqual`. Four internal helpers were renamed anyway (`canFitDns`, `isInNetwork`, `hasMacro`). The other conventions that hold in every file (`?: T | undefined`, `.js` imports, error `kind`, no enums, no `Symbol()`) are lint rules in `tools/lint/src/plugin.ts`.
+
 ## `prefer-satisfies` allows annotations that widen on purpose
 
 - **Options:** report every `const name: Type = value` and use `let` or a function with a return type where the inferred type is wrong; report every one and add a disable comment where the annotation is needed; skip the cases where the annotation widens the type on purpose.

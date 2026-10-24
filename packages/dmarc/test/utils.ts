@@ -71,7 +71,7 @@ export const pass = (domain: string) => ({ result: 'pass' as const, domain })
 export function check(
   zone: Zone,
   input: Dmarc.check.Input,
-  options: Partial<Dmarc.check.Options> & { log?: Query[] } = {},
+  options: Partial<Dmarc.check.Options> & { log?: Query[] | undefined } = {},
 ): Promise<Dmarc.Result> {
   const { log, ...rest } = options
   return Dmarc.check(input, { resolver: zoneResolver(zone, log), ...rest })

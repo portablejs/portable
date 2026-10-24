@@ -10,7 +10,13 @@ const vector = {
   header: 't=1700000000,v1=4f1cd7feda9826e746b7d482c4badebb657398df1099e1046364f6196a230150',
 }
 
-const header = async (options: { timestamp?: Date; secret?: string; body?: string } = {}) =>
+const header = async (
+  options: {
+    timestamp?: Date | undefined
+    secret?: string | undefined
+    body?: string | undefined
+  } = {},
+) =>
   (
     await Webhooks.sign(options.body ?? payload, {
       scheme,

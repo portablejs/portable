@@ -92,7 +92,7 @@ export function withRecord(record: string | readonly string[], extra: Zone = {})
 export function check(
   zone: Zone,
   input: Partial<Spf.check.Input> = {},
-  options: Partial<Spf.check.Options> & { log?: Query[] } = {},
+  options: Partial<Spf.check.Options> & { log?: Query[] | undefined } = {},
 ): Promise<Spf.Result> {
   const { log, ...rest } = options
   return Spf.check(

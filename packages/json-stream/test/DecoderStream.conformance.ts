@@ -328,7 +328,7 @@ describe('stream-json', () => {
   test('creates "__proto__" as an own property, as JSON.parse does', async () => {
     const [value] = (await parseValues(['{"__proto__":{"polluted":true}}'])) as [object]
     expect(Object.hasOwn(value, '__proto__')).toBe(true)
-    expect(({} as { polluted?: boolean }).polluted).toBeUndefined()
+    expect(({} as { polluted?: boolean | undefined }).polluted).toBeUndefined()
   })
 })
 

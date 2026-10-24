@@ -34,7 +34,7 @@ describe('ARC validation suite', () => {
     const resolver = suiteResolver(file['txt-records'])
     describe(`${file.description}`, () => {
       for (const [name, data] of Object.entries(
-        file.tests as Record<string, { message?: string; cv?: string }>,
+        file.tests as Record<string, { message?: string | undefined; cv?: string | undefined }>,
       )) {
         test(`${name}`, async () => {
           const result = await Arc.verify(crlf(data.message ?? ''), { resolver })
@@ -51,9 +51,9 @@ type SignCase = {
   t: number
   'sig-headers': string
   'srv-id': string
-  AS?: string
-  AMS?: string
-  AAR?: string
+  AS?: string | undefined
+  AMS?: string | undefined
+  AAR?: string | undefined
 }
 
 const bodyHashTag = (value: string): string =>

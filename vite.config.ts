@@ -106,6 +106,11 @@ export default defineConfig({
     ignorePatterns: ['**/dist/**', '.agents/**', '**/fixtures/**'],
     rules: {
       'no-console': 'error',
+      'portable/error-kind': 'error',
+      'portable/import-extension': 'error',
+      'portable/no-enum': 'error',
+      'portable/no-private-symbol': 'error',
+      'portable/optional-undefined': 'error',
       'portable/prefer-satisfies': 'error',
       'portable/type-parameter-name': 'error',
       // Turned off from the suspicious and perf categories. Streams and retries await in a loop on
@@ -188,7 +193,12 @@ export default defineConfig({
     },
     overrides: [
       {
-        files: ['**/*.oracle.test.ts', '**/*.bench.ts', 'vite.config.ts'],
+        files: [
+          '**/*.oracle.test.ts',
+          '**/*.bench.ts',
+          'vite.config.ts',
+          'tools/lint/src/publicApi.test.ts',
+        ],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
@@ -206,6 +216,9 @@ export default defineConfig({
           'unicorn/no-array-fill-with-reference-type': 'off',
           'unicorn/prefer-add-event-listener': 'off',
           'jsdoc/require-yields': 'off',
+          // These rules check the API a package publishes, not test helpers and fixtures.
+          'portable/error-kind': 'off',
+          'portable/no-private-symbol': 'off',
         },
       },
       {
@@ -223,6 +236,8 @@ export default defineConfig({
           'no-restricted-imports': 'off',
           'no-restricted-globals': 'off',
           'no-console': 'off',
+          // Node runs these files directly, so their imports name the `.ts` file.
+          'portable/import-extension': 'off',
           // readJson<value>() types a parsed file for its caller.
           'typescript/no-unnecessary-type-parameters': 'off',
         },

@@ -1,8 +1,8 @@
 import * as Dns from '@portable/dns'
 import { Failure, permerror, temperror } from './errors.js'
 import * as Ip from '@portable/ip'
-import { dotted, inNetwork, parseIp } from './ip.js'
-import { expand, isTopLabel, parseMacroString, type Token, uses, type Values } from './macro.js'
+import { dotted, isInNetwork, parseIp } from './ip.js'
+import { expand, isTopLabel, parseMacroString, type Token, hasMacro, type Values } from './macro.js'
 import { type Directive, parseRecord, type Qualifier } from './record.js'
 import { hostToAscii } from '@portable/idna/internal'
 
@@ -249,7 +249,7 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
       return true
     case 'ip4':
     case 'ip6':
-      return inNetwork(client, directive.network, directive.prefix)
+      return isInNetwork(client, directive.network, directive.prefix)
     case 'include': {
       countLookup(ctx)
       const target = await expandTarget(ctx, directive.domain, values, true)
@@ -274,7 +274,7 @@ async function matches(ctx: Context, directive: Directive, values: Values): Prom
         : { name: values.d }
       if (!('name' in target)) return false
       const prefix = client.version === 4 ? directive.cidr4 : directive.cidr6
-      const inRange = (ip: Ip.Address) => inNetwork(client, ip, prefix)
+      const inRange = (ip: Ip.Address) => isInNetwork(client, ip, prefix)
       if (directive.kind === 'a')
         return (await addresses(ctx, target.name, family(ctx), true)).some(inRange)
       return mxMatches(ctx, target.name, inRange)
@@ -338,7 +338,8 @@ async function expandTarget(
   values: Values,
   counted: boolean,
 ): Promise<Target> {
-  if (!ctx.asciiLocal && (uses(tokens, 'l') || uses(tokens, 's'))) return { skip: 'local-part' }
+  if (!ctx.asciiLocal && (hasMacro(tokens, 'l') || hasMacro(tokens, 's')))
+    return { skip: 'local-part' }
   let name = expand(tokens, await withPtr(ctx, tokens, values, counted)).replace(/\.$/, '')
   while (name.length > 253 && name.includes('.')) name = name.slice(name.indexOf('.') + 1)
   return isValidName(name) ? { name } : { skip: 'invalid' }
@@ -350,7 +351,7 @@ async function withPtr(
   values: Values,
   counted: boolean,
 ): Promise<Values> {
-  if (!uses(tokens, 'p')) return values
+  if (!hasMacro(tokens, 'p')) return values
   if (counted) countLookup(ctx)
   const names = await validate(ctx, (await reverseNames(ctx)) ?? [])
   const domain = values.d.toLowerCase()

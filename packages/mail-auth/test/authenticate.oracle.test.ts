@@ -27,7 +27,7 @@ type Case = { message: string; zone: Zone; ip: string; sender: string; helo: str
 type Upstream = {
   headers: string
   dmarc: false | { status: { result: string } }
-  dmarcSkipReason?: string
+  dmarcSkipReason?: string | undefined
   spf: { status: { result: string } }
   arc: false | { status: { result: string } }
   dkim: { results: { status: { result: string } }[] }

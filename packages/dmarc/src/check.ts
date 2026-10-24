@@ -125,6 +125,7 @@ type Found = Parsed & { domain: string }
 
 type Walk = { found: Found[]; error?: TempError | undefined }
 
+// oxlint-disable-next-line portable/error-kind -- never leaves this module, and its message becomes the verdict's reason
 class TempError extends Error {
   override name = 'Dmarc.TempError'
 }

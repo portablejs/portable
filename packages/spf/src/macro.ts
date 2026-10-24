@@ -83,7 +83,7 @@ export function isTopLabel(label: string): boolean {
   return /^(?:[a-z\d]*[a-z][a-z\d]*|[a-z\d]+-[a-z\d-]*[a-z\d])$/i.test(label)
 }
 
-export function uses(tokens: readonly Token[], letter: string): boolean {
+export function hasMacro(tokens: readonly Token[], letter: string): boolean {
   return tokens.some((token) => token.kind === 'macro' && token.letter === letter)
 }
 

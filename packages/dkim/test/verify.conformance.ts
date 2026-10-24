@@ -48,18 +48,18 @@ beforeAll(async () => {
 })
 
 type Std = {
-  algorithm?: string
-  c?: string
-  h?: string
-  names?: string
-  d?: string
-  s?: string
-  rawTags?: string
-  key?: () => CryptoKey
-  headers?: readonly string[]
-  body?: string
-  suffix?: string
-  length?: number
+  algorithm?: string | undefined
+  c?: string | undefined
+  h?: string | undefined
+  names?: string | undefined
+  d?: string | undefined
+  s?: string | undefined
+  rawTags?: string | undefined
+  key?: (() => CryptoKey) | undefined
+  headers?: readonly string[] | undefined
+  body?: string | undefined
+  suffix?: string | undefined
+  length?: number | undefined
 }
 
 /**
@@ -104,12 +104,12 @@ type Case = {
   title: string
   message: () => Promise<string>
   records: () => Parameters<typeof resolverFrom>[0]
-  now?: Date
+  now?: Date | undefined
   result: Dkim.Result.Code
-  reason?: string
+  reason?: string | undefined
   /** The verifier makes no DNS query. */
-  noDns?: boolean
-  testing?: boolean
+  noDns?: boolean | undefined
+  testing?: boolean | undefined
 }
 
 const key = (record: () => string) => () => ({ [KEY]: [record()] })

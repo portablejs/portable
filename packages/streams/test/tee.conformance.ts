@@ -3,7 +3,7 @@ import { tee } from '@portable/streams'
 import { collect, delay, encode, fromChunks } from './utils.js'
 
 /** A source of 1 to 50 that counts how many times it was pulled. */
-function counting(options: { onCancel?: (reason: unknown) => void } = {}) {
+function counting(options: { onCancel?: ((reason: unknown) => void) | undefined } = {}) {
   const source = {
     pulls: 0,
     stream: new ReadableStream<number>(

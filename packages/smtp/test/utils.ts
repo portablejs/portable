@@ -59,9 +59,9 @@ const decoder = new TextDecoder()
 
 export type FakeOptions = {
   /** Make `opened` reject, as a refused connection does. */
-  refuse?: boolean
+  refuse?: boolean | undefined
   /** Make `opened` of the TLS socket reject, as a failed handshake does. */
-  failTls?: boolean
+  failTls?: boolean | undefined
 }
 
 /** A scripted SMTP server behind a fake `connect`, so tests run in every runtime. */

@@ -392,8 +392,8 @@ function leaf(
   extra: {
     headers?: HeaderFields | undefined
     cid?: string | undefined
-    disposition?: string
-    computed?: boolean
+    disposition?: string | undefined
+    computed?: boolean | undefined
   },
 ): Leaf {
   context.id++

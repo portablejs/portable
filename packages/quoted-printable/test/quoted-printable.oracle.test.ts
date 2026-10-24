@@ -27,7 +27,7 @@ const lineLengths = [4, 5, 6, 7, 8, 10, 16, 20, 33, 76, 100]
 
 async function viaLibqpEncoder(
   chunks: readonly Uint8Array[],
-  options: { lineLength: number | false; binary?: boolean },
+  options: { lineLength: number | false; binary?: boolean | undefined },
 ): Promise<string> {
   const encoder = new libqp.Encoder(options)
   return (

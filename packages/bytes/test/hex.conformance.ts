@@ -79,8 +79,8 @@ describe('fromHex', () => {
 })
 
 type Native = {
-  toHex?: (this: Uint8Array) => string
-  fromHex?: (text: string) => Uint8Array
+  toHex?: ((this: Uint8Array) => string) | undefined
+  fromHex?: ((text: string) => Uint8Array) | undefined
 }
 const native = {
   toHex: Reflect.get(Uint8Array.prototype, 'toHex'),

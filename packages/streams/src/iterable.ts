@@ -23,7 +23,7 @@ type NativeValues<chunk> = (options: { preventCancel: boolean }) => AsyncIterabl
 export function fromIterable<chunk>(
   iterable: Iterable<chunk | PromiseLike<chunk>> | AsyncIterable<chunk>,
 ): ReadableStream<chunk> {
-  const native: { from?: NativeFrom; prototype: unknown } = ReadableStream
+  const native: { from?: NativeFrom | undefined; prototype: unknown } = ReadableStream
   if (typeof native.from === 'function') return native.from(iterable)
   return pull(asyncIterator(iterable))
 }
@@ -55,7 +55,7 @@ export function toAsyncIterable<chunk>(
   options: toAsyncIterable.Options = {},
 ): AsyncIterableIterator<chunk> {
   const { preventCancel = false } = options
-  const native: { values?: NativeValues<chunk> } = stream
+  const native: { values?: NativeValues<chunk> | undefined } = stream
   if (typeof native.values === 'function') return native.values({ preventCancel })
   return iterate(stream.getReader(), preventCancel)
 }

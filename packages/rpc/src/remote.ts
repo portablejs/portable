@@ -24,7 +24,9 @@ export function remote(client: Target['client'], method = ''): any {
 
 function target(method: unknown): Target {
   const found =
-    typeof method === 'function' ? (method as { [targetKey]?: Target })[targetKey] : undefined
+    typeof method === 'function'
+      ? (method as { [targetKey]?: Target | undefined })[targetKey]
+      : undefined
   if (!found) throw new TypeError('Expected a method of a remote from connect or http.')
   return found
 }

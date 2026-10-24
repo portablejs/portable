@@ -147,7 +147,10 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
   }
   const receive = (batch: Batch, message: unknown) => {
     if (message === null || typeof message !== 'object') return
-    const { id, error: remoteError } = message as { id?: Id; error?: RemoteError.Options }
+    const { id, error: remoteError } = message as {
+      id?: Id | undefined
+      error?: RemoteError.Options | undefined
+    }
     if ('method' in message || id === undefined)
       return client.receive(message as Record<string, unknown>)
     if (id === null && remoteError) {

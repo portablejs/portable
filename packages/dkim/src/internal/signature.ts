@@ -13,7 +13,7 @@ import {
 } from './header.js'
 import { importPublicKey, type KeyType } from './keys.js'
 import {
-  fitsDns,
+  canFitDns,
   isDomainName,
   isLocalPart,
   isSameOrSubdomain,
@@ -110,7 +110,13 @@ export function prepare(field: Field, now: Date, kind: 'dkim' | 'arc' = 'dkim'):
       (length !== undefined && !/^\d{1,76}$/.test(length))
     )
       return neutral('signature syntax error')
-    if (!domain || !isDomainName(domain) || !selector || !isSelector(selector) || !fitsDns(keyName))
+    if (
+      !domain ||
+      !isDomainName(domain) ||
+      !selector ||
+      !isSelector(selector) ||
+      !canFitDns(keyName)
+    )
       return neutral('signature syntax error')
     const query = tags.get('q')
     if (

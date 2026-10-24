@@ -88,7 +88,7 @@ export async function key(name: 'rsa' | 'ed25519'): Promise<Key> {
 export const buildMessage = ({
   from = 'sender@example.com',
   to = 'rcpt@example.net',
-}: { from?: string; to?: string } = {}): string =>
+}: { from?: string | undefined; to?: string | undefined } = {}): string =>
   [
     `From: ${from}`,
     `To: ${to}`,

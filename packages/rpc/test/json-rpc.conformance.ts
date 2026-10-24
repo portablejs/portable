@@ -7,7 +7,9 @@ const invalidRequest = {
   id: null,
   error: { code: -32600, message: 'Invalid Request' },
 }
-const echo = { echo: (p: { text?: string; message?: string }) => p.text ?? p.message }
+const echo = {
+  echo: (p: { text?: string | undefined; message?: string | undefined }) => p.text ?? p.message,
+}
 
 describe('server', () => {
   test('passes by-name params to the method as one object', async () => {

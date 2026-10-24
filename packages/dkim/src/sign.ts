@@ -7,7 +7,7 @@ import { type Canonicalization, parseFields, signedData } from './internal/heade
 import { importPrivateKey, keyType } from './internal/keys.js'
 import { type Message, splitMessage } from './internal/message.js'
 import {
-  fitsDns,
+  canFitDns,
   isDomainName,
   isLocalPart,
   isSameOrSubdomain,
@@ -100,7 +100,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
-  if (!fitsDns(`${selector}._domainkey.${domain}`))
+  if (!canFitDns(`${selector}._domainkey.${domain}`))
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
   if (!canonicalizations.has(canonicalization))
     throw new RangeError(`canonicalization must be one of ${[...canonicalizations].join(', ')}.`)

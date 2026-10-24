@@ -342,17 +342,17 @@ describe('passlib', () => {
 // pbkdf2 3.1.7, test/fixtures.json (MIT, Daniel Cousens), checked through verify.
 describe('pbkdf2 fixtures', () => {
   type Fixture = {
-    description?: string
-    key?: string
-    keyHex?: string
-    keyUint8Array?: number[]
-    keyInt32Array?: number[]
-    keyFloat64Array?: number[]
-    salt?: string
-    saltHex?: string
-    saltUint8Array?: number[]
-    saltInt32Array?: number[]
-    saltFloat64Array?: number[]
+    description?: string | undefined
+    key?: string | undefined
+    keyHex?: string | undefined
+    keyUint8Array?: number[] | undefined
+    keyInt32Array?: number[] | undefined
+    keyFloat64Array?: number[] | undefined
+    salt?: string | undefined
+    saltHex?: string | undefined
+    saltUint8Array?: number[] | undefined
+    saltInt32Array?: number[] | undefined
+    saltFloat64Array?: number[] | undefined
     iterations: number
     dkLen: number
     results: Record<string, string>

@@ -49,14 +49,14 @@ export function randomChunks<value extends Uint8Array | string>(
 
 export type Body = {
   /** Chunks to send, each as text or bytes. */
-  chunks?: readonly (string | Uint8Array)[]
+  chunks?: readonly (string | Uint8Array)[] | undefined
   /** What happens after the last chunk: the body ends, fails with this error, or never ends. */
-  end?: 'close' | 'hang' | Error
+  end?: 'close' | 'hang' | Error | undefined
 }
 
 export type Reply = Body & {
-  status?: number
-  contentType?: string | null
+  status?: number | undefined
+  contentType?: string | null | undefined
 }
 
 export type MockFetch = {

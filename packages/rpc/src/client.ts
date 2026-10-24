@@ -97,7 +97,7 @@ export function createClient(send: Send, flow: boolean): Client {
 
   function receive(message: Record<string, unknown>) {
     if (typeof message.method === 'string') {
-      const params = message.params as { id?: Id; value?: unknown } | undefined
+      const params = message.params as { id?: Id | undefined; value?: unknown } | undefined
       const call = params ? calls.get(params.id ?? null) : undefined
       if (!call) return
       if (message.method === '$/stream' && !call.stream) start(params!.id!, call)

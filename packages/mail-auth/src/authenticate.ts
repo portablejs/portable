@@ -98,7 +98,7 @@ export declare namespace authenticate {
      * Finds organizational domains from a public suffix list, as in `Dmarc.check`.
      * @default the DNS tree walk
      */
-    organizationalDomain?: Dmarc.check.Options['organizationalDomain']
+    organizationalDomain?: Dmarc.check.Options['organizationalDomain'] | undefined
     /** Stops reading the message and every lookup, and rejects with `signal.reason`. */
     signal?: AbortSignal | undefined
   }

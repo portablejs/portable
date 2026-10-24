@@ -15,7 +15,7 @@ const prefix = 'webhook'
 
 describe('standard', () => {
   async function headers(
-    options: { timestamp?: Date; body?: string } = {},
+    options: { timestamp?: Date | undefined; body?: string | undefined } = {},
   ): Promise<Record<string, string>> {
     return Webhooks.sign(options.body ?? payload, { scheme, secret, id, now: options.timestamp })
   }

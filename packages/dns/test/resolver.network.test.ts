@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vite-plus/test'
 import { create } from '@portable/dns'
 
-const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env
+const env = (globalThis as { process?: { env: Record<string, string | undefined> } | undefined })
+  .process?.env
 
 describe.skipIf(!env?.DNS_NETWORK)('live DNS-over-HTTPS (set DNS_NETWORK=1)', () => {
   for (const endpoint of ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query'])

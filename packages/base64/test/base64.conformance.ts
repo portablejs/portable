@@ -221,8 +221,8 @@ describe('DecoderStream', () => {
 })
 
 type Native = {
-  toBase64?: (this: Uint8Array, options: object) => string
-  fromBase64?: (text: string, options: object) => Uint8Array
+  toBase64?: ((this: Uint8Array, options: object) => string) | undefined
+  fromBase64?: ((text: string, options: object) => Uint8Array) | undefined
 }
 const native = {
   toBase64: Reflect.get(Uint8Array.prototype, 'toBase64'),

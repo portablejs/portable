@@ -10,17 +10,17 @@ import { type Column, type Row, type Table, tables } from './readme-tables.ts'
 type BenchTask = { name: string; throughput: { mean: number } }
 type BenchReport = {
   testResults: {
-    assertionResults: { fullName: string; benchmarks?: { tasks: BenchTask[] }[] }[]
+    assertionResults: { fullName: string; benchmarks?: { tasks: BenchTask[] }[] | undefined }[]
   }[]
 }
 type Machine = { node: string; cpu: string; cores: number }
 type PackageJson = {
   name: string
-  version?: string
-  types?: string
-  typings?: string
+  version?: string | undefined
+  types?: string | undefined
+  typings?: string | undefined
   exports?: unknown
-  dependencies?: Record<string, string>
+  dependencies?: Record<string, string> | undefined
 }
 
 const readJson = <value>(path: string): value | undefined =>

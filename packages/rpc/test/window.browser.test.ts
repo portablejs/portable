@@ -9,7 +9,10 @@ import {
   type ParentApi,
 } from './fixtures/methods.js'
 
-type WorkerConfig = Config & { mode?: 'self' | 'broadcast' | 'ports'; broadcast?: string }
+type WorkerConfig = Config & {
+  mode?: 'self' | 'broadcast' | 'ports' | undefined
+  broadcast?: string | undefined
+}
 
 const otherHost = location.hostname === '127.0.0.1' ? 'localhost' : '127.0.0.1'
 const otherOrigin = `${location.protocol}//${otherHost}:${location.port}`
@@ -117,9 +120,9 @@ function connect(
   target: Window,
   options: {
     origin: string
-    channel?: string
-    codec?: Config['codec']
-    signal?: AbortSignal
+    channel?: string | undefined
+    codec?: Config['codec'] | undefined
+    signal?: AbortSignal | undefined
   },
 ): Rpc.Remote<Methods> {
   const { origin, channel = '', codec, signal = closer().signal } = options

@@ -1,7 +1,7 @@
 const maxTimeout = 2 ** 31 - 1
 
 type Scheduler = {
-  wait?: (ms: number, options?: { signal?: AbortSignal }) => Promise<void>
+  wait?: ((ms: number, options?: { signal?: AbortSignal | undefined }) => Promise<void>) | undefined
 }
 
 export declare namespace sleep {

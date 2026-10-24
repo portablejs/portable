@@ -7,7 +7,7 @@ import {
   checkName,
   defaultHeaders,
   type Field,
-  fitsDns,
+  canFitDns,
   fold,
   fromBinary,
   hashBody,
@@ -105,7 +105,7 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   const { headers = arcDefaultHeaders, now = new Date(), hasher, signal } = options
   const domain = checkName('domain', options.domain, isDomainName)
   const selector = checkName('selector', options.selector, isSelector)
-  if (!fitsDns(`${selector}._domainkey.${domain}`))
+  if (!canFitDns(`${selector}._domainkey.${domain}`))
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.')
   const authResults = checkAuthResults(options.authResults)
   const { chainValidation } = options

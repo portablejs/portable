@@ -27,5 +27,5 @@ export const isSameOrSubdomain = (child: string, parent: string): boolean =>
   child === parent || child.endsWith(`.${parent}`)
 
 /** Whether a name fits in DNS (RFC 1035 section 2.3.4). */
-export const fitsDns = (name: string): boolean =>
+export const canFitDns = (name: string): boolean =>
   name.length <= 253 && name.split('.').every((part) => part.length > 0 && part.length <= 63)

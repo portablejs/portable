@@ -86,10 +86,10 @@ export function contains(cidr: Cidr | string, address: Address | string): boolea
     else if (network.length === 16) bytes = toIpv6({ version: 4, bytes }).bytes
     else return false
   }
-  return matches(bytes, network, prefix)
+  return isInNetwork(bytes, network, prefix)
 }
 
-export function matches(bytes: Uint8Array, network: Uint8Array, prefix: number): boolean {
+export function isInNetwork(bytes: Uint8Array, network: Uint8Array, prefix: number): boolean {
   const whole = prefix >> 3
   for (let i = 0; i < whole; i++) if (bytes[i] !== network[i]) return false
   const bits = prefix & 7

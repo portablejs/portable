@@ -4,7 +4,10 @@ import { onTestFinished } from 'vite-plus/test'
 /** Serves `api` on one end of a `MessageChannel` and connects to it from the other end. */
 export function pair<api extends object>(
   api: api,
-  options: { provide?: Rpc.provide.Options; connect?: Rpc.connect.Options } = {},
+  options: {
+    provide?: Rpc.provide.Options | undefined
+    connect?: Rpc.connect.Options | undefined
+  } = {},
 ): Rpc.Remote<api> {
   const { port1, port2 } = new MessageChannel()
   const controller = new AbortController()
