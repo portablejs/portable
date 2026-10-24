@@ -32,7 +32,9 @@ const replaces = (name) => {
 }
 for (const line of root.split('\n')) {
   const h = line.match(/^<tr><th[^>]*>(.+)<\/th><\/tr>$/)
-  if (h) groups.push({ title: text(h[1]), items: [] })
+  if (h) {
+    groups.push({ title: text(h[1]), items: [] })
+  }
   const m = line.match(
     /<a href="packages\/([\w-]+)"><code>@portable\/[\w-]+<\/code><\/a><\/td><td>(.+)<\/td><\/tr>$/,
   )
@@ -47,7 +49,9 @@ for (const line of root.split('\n')) {
 const take = (name) => {
   for (const group of groups) {
     const index = group.items.findIndex((i) => i.name === name)
-    if (index !== -1) return group.items.splice(index, 1)[0]
+    if (index !== -1) {
+      return group.items.splice(index, 1)[0]
+    }
   }
 }
 groups.find((g) => g.title === 'Streams and bytes').title = 'Streams'
@@ -60,7 +64,9 @@ for (const name of seen) {
   let md = readFileSync(join(repo, 'packages', name, 'README.md'), 'utf8')
   md = md.replace(/\]\((?!https?:|#|mailto:)([^)]+)\)/g, (_, href) => {
     const sibling = href.match(/^\.\.\/([\w-]+)(?:\/README\.md)?(#.*)?$/)
-    if (sibling) return `](/packages/${sibling[1]}${sibling[2] ?? ''})`
+    if (sibling) {
+      return `](/packages/${sibling[1]}${sibling[2] ?? ''})`
+    }
     return `](${gh}/packages/${name}/${href.replace(/^\.\//, '')})`
   })
   md = md.replace(/<!-- bench:(start|end) -->\n/g, '')
@@ -100,13 +106,19 @@ function toMdx(md) {
   return md
     .split('\n')
     .map((line) => {
-      if (/^\s*```/.test(line)) fenced = !fenced
-      if (fenced || /^\s*```/.test(line)) return line
+      if (/^\s*```/.test(line)) {
+        fenced = !fenced
+      }
+      if (fenced || /^\s*```/.test(line)) {
+        return line
+      }
       const table = line.startsWith('|')
       return line
         .split(/(``.+?``|`[^`]+`)/)
         .map((part, i) => {
-          if (i % 2) return table ? part.replace(/(?<!\\)\|/g, '\\|') : part
+          if (i % 2) {
+            return table ? part.replace(/(?<!\\)\|/g, '\\|') : part
+          }
           return part
             .replace(/[{}]/g, (c) => '\\' + c)
             .replace(/<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd)\b|!--)/g, '&lt;')

@@ -34,7 +34,9 @@ async function publish(state) {
     body: JSON.stringify({ files, claimToken: state?.claimToken, displayName: 'Portable docs' }),
   })
   const site = await res.json()
-  if (!res.ok) throw new Error(`${res.status} ${JSON.stringify(site)}`)
+  if (!res.ok) {
+    throw new Error(`${res.status} ${JSON.stringify(site)}`)
+  }
   const queue = [...site.upload.uploads]
   await Promise.all(
     Array.from({ length: 16 }, async () => {
@@ -48,10 +50,14 @@ async function publish(state) {
               body,
               signal: AbortSignal.timeout(30_000),
             })
-            if (r.ok) break
+            if (r.ok) {
+              break
+            }
             throw new Error(`${u.path} ${r.status}`)
           } catch (error) {
-            if (attempt === 3) throw error
+            if (attempt === 3) {
+              throw error
+            }
           }
         }
       }
@@ -63,7 +69,9 @@ async function publish(state) {
     headers,
     body: JSON.stringify({ versionId: site.upload.versionId, claimToken }),
   })
-  if (!fin.ok) throw new Error(await fin.text())
+  if (!fin.ok) {
+    throw new Error(await fin.text())
+  }
   return {
     slug: site.slug,
     siteUrl: site.siteUrl,
@@ -79,11 +87,17 @@ let site
 try {
   site = await publish(reusable ? previous : undefined)
 } catch (error) {
-  if (!reusable) throw error
+  if (!reusable) {
+    throw error
+  }
   console.warn(`Could not update ${previous.slug}, creating a new site: ${error.message}`)
   site = await publish()
 }
 
-if (stateFile) writeFileSync(stateFile, JSON.stringify(site))
-if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `url=${site.siteUrl}\n`)
+if (stateFile) {
+  writeFileSync(stateFile, JSON.stringify(site))
+}
+if (process.env.GITHUB_OUTPUT) {
+  appendFileSync(process.env.GITHUB_OUTPUT, `url=${site.siteUrl}\n`)
+}
 console.log(site.siteUrl)

@@ -27,7 +27,9 @@ export function api(name) {
   let md = `# @portable/${name}\n\n`
   for (const [i, file] of files.entries()) {
     const sub = entries[i][0]
-    if (files.length > 1) md += `## \`@portable/${name}${sub.slice(1)}\`\n\n`
+    if (files.length > 1) {
+      md += `## \`@portable/${name}${sub.slice(1)}\`\n\n`
+    }
     const source = program.getSourceFile(file)
     const symbols = checker.getExportsOfModule(checker.getSymbolAtLocation(source))
     const sections = { Functions: [], Classes: [], Constants: [], Errors: [], Types: [] }
@@ -104,29 +106,40 @@ export function api(name) {
             alias.type,
           ),
         )
-      } else continue
+      } else {
+        continue
+      }
 
       let entry = `### \`${ns}.${symbol.name}\`\n\n`
-      if (doc) entry += `${doc}\n\n`
+      if (doc) {
+        entry += `${doc}\n\n`
+      }
       entry += '```ts\n' + signature.replace(/\n{2,}/g, '\n') + '\n```\n\n'
       const options = optionsOf(symbol, decls, checker)
       if (options.length) {
         entry += '| Option | Type | Default | Description |\n| --- | --- | --- | --- |\n'
-        for (const o of options)
+        for (const o of options) {
           entry += `| \`${o.name}\` | \`${cell(o.type)}\` | ${!o.default ? '' : o.default.includes('`') ? cell(o.default) : `\`${cell(o.default)}\``} | ${cell(o.doc)} |\n`
+        }
         entry += '\n'
       }
       const throws = tags.filter((t) => t.name === 'throws')
       if (throws.length) {
         entry += '**Throws**\n\n'
-        for (const t of throws) entry += `- ${t.text.replace(/^\{(\w+)\}\s*/, '`$1` ')}\n`
+        for (const t of throws) {
+          entry += `- ${t.text.replace(/^\{(\w+)\}\s*/, '`$1` ')}\n`
+        }
         entry += '\n'
       }
-      for (const t of tags.filter((t) => t.name === 'example')) entry += `${t.text.trim()}\n\n`
+      for (const t of tags.filter((t) => t.name === 'example')) {
+        entry += `${t.text.trim()}\n\n`
+      }
       sections[section].push(entry)
     }
     for (const [title, entries] of Object.entries(sections)) {
-      if (!entries.length) continue
+      if (!entries.length) {
+        continue
+      }
       md +=
         `${files.length > 1 ? '###' : '##'} ${title}\n\n` +
         (files.length > 1 ? entries.map((e) => e.replace(/^### /, '#### ')) : entries).join('')
@@ -152,11 +165,15 @@ function print(node) {
 // The `<name>.Options` type that a function or class declares in its namespace.
 function optionsOf(symbol, decls, checker) {
   const module = decls.find(ts.isModuleDeclaration)
-  if (!module?.body || !ts.isModuleBlock(module.body)) return []
+  if (!module?.body || !ts.isModuleBlock(module.body)) {
+    return []
+  }
   const alias = module.body.statements.find(
     (s) => ts.isTypeAliasDeclaration(s) && s.name.text === 'Options',
   )
-  if (!alias) return []
+  if (!alias) {
+    return []
+  }
   const type = checker.getTypeAtLocation(alias.name)
   return checker.getPropertiesOfType(type).map((p) => {
     const tags = p.getJsDocTags(checker)
