@@ -54,16 +54,21 @@ export declare namespace DecoderStream {
     embedded?: boolean | undefined
     /**
      * Longest boundary line, line break included. Only whitespace after the boundary can make one
-     * this long.
+     * this long. Set it, for example to 1000, when the input is untrusted.
      * @default Infinity
      */
     maxBoundaryLineBytes?: number | undefined
     /**
-     * Longest header block of a part, counted with the empty line that ends it.
+     * Longest header block of a part, counted with the empty line that ends it. Set it, for
+     * example to 1 MiB, when the input is untrusted.
      * @default Infinity
      */
     maxHeaderBytes?: number | undefined
-    /** Most parts in a message, the root included. @default Infinity */
+    /**
+     * Most parts in a message, the root included. Set it, for example to 1000, when the input is
+     * untrusted.
+     * @default Infinity
+     */
     maxParts?: number | undefined
     /**
      * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped

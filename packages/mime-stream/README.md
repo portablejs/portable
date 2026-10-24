@@ -71,6 +71,8 @@ Parts are split as RFC 2046 says. A delimiter is `--` and the boundary on a line
 
 ## Options
 
+The size limits default to `Infinity`. Set `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts` when you read mail from outside your program, because without them a message can make the decoder buffer a header block or boundary line of any size, or report any number of parts. `maxHeaderBytes: 1024 * 1024`, `maxBoundaryLineBytes: 1000` and `maxParts: 1000` are enough for real mail.
+
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `embedded` | `DecoderStream` | `false` | Split the message inside a `message/rfc822` or `message/global` part into parts too, unless it is base64 or quoted-printable. Its root part's `parent` is the `message/rfc822` part. |

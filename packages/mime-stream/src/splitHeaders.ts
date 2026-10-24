@@ -3,7 +3,11 @@ import { MaxHeaderBytesError } from './errors.js'
 
 export declare namespace splitHeaders {
   type Options = {
-    /** Longest header block, counted with the empty line that ends it. @default Infinity */
+    /**
+     * Longest header block, counted with the empty line that ends it. Set it, for example to
+     * 1 MiB, when the input is untrusted.
+     * @default Infinity
+     */
     maxHeaderBytes?: number | undefined
     /**
      * Rejects with `signal.reason` while the header block is read, and later errors `body` with
