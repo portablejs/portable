@@ -172,3 +172,102 @@ export function split<value extends Uint8Array | string>(
   chunks.push(data.slice(start) as value)
   return chunks
 }
+
+/**
+ * The forms of byte input that the tests pass: the kinds of `Bytes.Input` a caller is likely to
+ * use. The offset forms start partway into a larger buffer filled with `0xee`, so code
+ * that reads the whole buffer instead of the view gives a different result.
+ */
+export const byteForms = [
+  'Uint8Array',
+  'ArrayBuffer',
+  'DataView',
+  'Int8Array',
+  'Uint8Array with offset',
+  'DataView with offset',
+] as const
+
+/** One of {@link byteForms}. */
+export type ByteForm = (typeof byteForms)[number]
+
+/**
+ * Picks one of {@link byteForms}.
+ *
+ * @example
+ * fc.property(fc.uint8Array(), byteForm, (bytes, form) => ... toByteForm(bytes, form) ...)
+ */
+export const byteForm: fc.Arbitrary<ByteForm> = fc.constantFrom(...byteForms)
+
+/**
+ * Copies `bytes` into the given form.
+ *
+ * @example
+ * toByteForm(new Uint8Array([1, 2]), 'DataView with offset') // DataView over [0xee, 0xee, 0xee, 1, 2, 0xee, 0xee]
+ */
+export function toByteForm(bytes: Uint8Array, form: ByteForm): ArrayBuffer | ArrayBufferView {
+  const copy = bytes.slice()
+  switch (form) {
+    case 'Uint8Array':
+      return copy
+    case 'ArrayBuffer':
+      return copy.buffer
+    case 'DataView':
+      return new DataView(copy.buffer)
+    case 'Int8Array':
+      return new Int8Array(copy.buffer)
+    case 'Uint8Array with offset':
+    case 'DataView with offset': {
+      const padded = new Uint8Array(bytes.length + 5).fill(0xee)
+      padded.set(bytes, 3)
+      return form === 'DataView with offset'
+        ? new DataView(padded.buffer, 3, bytes.length)
+        : padded.subarray(3, 3 + bytes.length)
+    }
+  }
+}
+
+/**
+ * A `ReadableStream` that enqueues `chunks` and closes.
+ *
+ * @example
+ * await Streams.toBytes(streamOf([new ArrayBuffer(2), new DataView(new ArrayBuffer(1))]))
+ */
+export function streamOf<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
+  return new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk)
+      controller.close()
+    },
+  })
+}
+
+/**
+ * Reads every chunk of `stream`.
+ *
+ * @example
+ * const lines = await readAll(streamOf([bytes]).pipeThrough(new Lines.DecoderStream()))
+ */
+export async function readAll<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
+  const chunks: chunk[] = []
+  const reader = stream.getReader()
+  for (let next = await reader.read(); !next.done; next = await reader.read())
+    chunks.push(next.value)
+  return chunks
+}
+
+/**
+ * Reads every chunk of a byte stream and joins them.
+ *
+ * @example
+ * const encoded = await readBytes(streamOf([bytes]).pipeThrough(new Base64.EncoderStream()))
+ */
+export async function readBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
+  const chunks = await readAll(stream)
+  const bytes = new Uint8Array(chunks.reduce((length, chunk) => length + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.length
+  }
+  return bytes
+}

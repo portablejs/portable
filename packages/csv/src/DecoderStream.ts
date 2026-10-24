@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 import { createParser, type Parser } from './parser.js'
 
@@ -49,7 +51,7 @@ export declare namespace DecoderStream {
  */
 export class DecoderStream<
   const header extends DecoderStream.Header = false,
-> extends TransformStream<Uint8Array | string, DecoderStream.Row<header>> {
+> extends TransformStream<Bytes.Input | string, DecoderStream.Row<header>> {
   constructor(options: DecoderStream.Options<header> = {}) {
     const decoder = new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true })
     let parser: Parser
@@ -63,7 +65,9 @@ export class DecoderStream<
           },
           transform(chunk) {
             parser.write(
-              typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true }),
+              typeof chunk === 'string'
+                ? chunk
+                : decoder.decode(toUint8Array(chunk), { stream: true }),
             )
           },
           flush() {

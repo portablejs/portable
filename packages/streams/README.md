@@ -35,7 +35,7 @@ Each collector reads a `ReadableStream`, an async iterable (such as a Node `Read
 | `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`. |
 | `toArray(source, { signal })` | The chunks, unchanged. |
 
-`toBytes`, `toBlob`, `toText` and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
+`toBytes`, `toBlob`, `toText` and `toJson` take byte chunks (an `ArrayBuffer` or any view of one, such as a `Uint8Array`) and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
 
 ```ts
 const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
@@ -179,7 +179,7 @@ Behavior that differs:
 
 - `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`. `toArray` has no limit.
 - Errors carry no `bufferedData`. A collector that fails has already cancelled its source and dropped what it read.
-- Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView` and other typed arrays, and concat-stream accepted numbers.
+- Byte collectors accept chunks that are an `ArrayBuffer`, any view of one (including `Buffer`) or a `string`, as get-stream did. concat-stream also accepted numbers, which throw a `TypeError` here.
 - Arrays and other iterables are valid sources, where get-stream rejected them.
 - Errors in any source always propagate through `concat` and `merge`. merge2 needed `pipeError: true`.
 - There is no `.add()` or `{ end: false }`: pass every source when calling `concat` or `merge`.

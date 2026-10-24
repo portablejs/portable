@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import { InvalidInputError } from './errors.js'
 import { toText } from './internal/text.js'
 import { decodeWords, encodeWord } from './words.js'
@@ -49,7 +50,7 @@ export declare namespace parseAddresses {
  * @throws {InvalidInputError} With `strict: true`, when the input isn't a valid address list.
  */
 export function parseAddresses(
-  input: string | Uint8Array,
+  input: string | Bytes.Input,
   options: parseAddresses.Options = {},
 ): Address[] {
   const { strict = false } = options
@@ -81,7 +82,7 @@ export declare namespace parseMailboxes {
  * @throws {InvalidInputError} With `strict: true`, when the input isn't a valid address list.
  */
 export function parseMailboxes(
-  input: string | Uint8Array,
+  input: string | Bytes.Input,
   options: parseMailboxes.Options = {},
 ): Mailbox[] {
   return parseAddresses(input, options).flatMap((entry) =>

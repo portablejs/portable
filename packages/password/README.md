@@ -29,7 +29,7 @@ if (await Password.verify(password, stored)) {
 | `verify(password, stored, options?)` | `Promise<boolean>` | `true` if the password matches. Compares in constant time. |
 | `needsRehash(stored, options?)` | `boolean` | `true` if `stored` uses fewer iterations than `options.iterations`, a digest other than SHA-256, a salt under 16 bytes or a hash under 32 bytes. |
 
-`password` is a `string` or its bytes as a `Uint8Array`. A string is normalized to NFC before it is encoded as UTF-8, so `'café'` typed as one code point or as `e` plus a combining accent gives the same hash. Bytes are hashed as they are.
+`password` is a `string` or its bytes, as an `ArrayBuffer` or any view of one. A string is normalized to NFC before it is encoded as UTF-8, so `'café'` typed as one code point or as `e` plus a combining accent gives the same hash. Bytes are hashed as they are.
 
 `verify` resolves to `false` for a wrong password and rejects for a bad `stored` string. It reads:
 
@@ -146,5 +146,5 @@ The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` and `$pbkdf2-sha512$`.
 
 Two behaviors differ from these libraries:
 
-- String passwords are normalized to NFC. A hash made elsewhere from a password in another normalization form verifies only if you pass the original bytes as a `Uint8Array`. Most keyboards produce NFC, so this rarely matters.
+- String passwords are normalized to NFC. A hash made elsewhere from a password in another normalization form verifies only if you pass the original bytes. Most keyboards produce NFC, so this rarely matters.
 - passlib can't read the `i=` form that `hash` writes. `verify` reads passlib's hashes, so moving from passlib works, but a Python service that keeps reading the table has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.

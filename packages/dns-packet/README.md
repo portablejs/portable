@@ -22,7 +22,7 @@ const response = await fetch('https://cloudflare-dns.com/dns-query', {
   headers: { 'content-type': 'application/dns-message' },
   body: query,
 })
-const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
+const packet = DnsPacket.decode(await response.arrayBuffer())
 for (const answer of packet.answers) if (answer.type === 'A') console.log(answer.data)
 ```
 
@@ -43,7 +43,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 | `compress` | `false` | Compress repeated names with pointers. Saves space in responses. Queries rarely gain anything from it. |
 | `framing` | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS. |
 
-`decode(bytes, options)`:
+`decode(bytes, options)` takes an `ArrayBuffer` or any view of one, such as a `Uint8Array`:
 
 | Option | Default | Description |
 | --- | --- | --- |

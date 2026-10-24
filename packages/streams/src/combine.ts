@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import { abortable } from './abortable.js'
 import { byteLength } from './bytes.js'
 import { MaxBytesError } from './errors.js'
@@ -177,7 +178,7 @@ export declare namespace limitBytes {
  * await request.body!.pipeThrough(Streams.limitBytes(1_000_000)).pipeTo(upload)
  * ```
  */
-export function limitBytes<chunk extends Uint8Array | string>(
+export function limitBytes<chunk extends Bytes.Input | string>(
   maxBytes: number,
   options: limitBytes.Options = {},
 ): TransformStream<chunk, chunk> {

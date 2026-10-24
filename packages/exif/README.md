@@ -12,7 +12,7 @@ npm install @portable/exif
 import * as Exif from '@portable/exif'
 
 const response = await fetch('https://example.com/photo.jpg', { headers: { range: 'bytes=0-65535' } })
-const exif = Exif.parse(new Uint8Array(await response.arrayBuffer()))
+const exif = Exif.parse(await response.arrayBuffer())
 
 exif.ifd0.Make // 'Apple'
 exif.exif.DateTimeOriginal // '2019:10:20 18:34:30'
@@ -25,7 +25,7 @@ The input can be a whole file or only its start. In a JPEG the EXIF data is in t
 
 ## `Exif.parse(bytes)`
 
-Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chunk), HEIF file such as HEIC or AVIF (`Exif` item), or raw EXIF data that starts with `Exif\0\0` or a TIFF header. Returns a plain object:
+Takes an `ArrayBuffer` or any view of one, such as a `Uint8Array`, holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chunk), HEIF file such as HEIC or AVIF (`Exif` item), or raw EXIF data that starts with `Exif\0\0` or a TIFF header. Returns a plain object:
 
 | Property | Type | Description |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its va
 
 ## `Exif.parseStream(stream, options?)`
 
-Reads a `ReadableStream<Uint8Array>`, such as a `fetch` body or `File.stream()`, until it has the metadata, then cancels the stream. Returns a promise of the same object `parse` returns for the whole file, so you get the EXIF of a large photo without downloading all of it.
+Reads a `ReadableStream` of bytes, such as a `fetch` body or `File.stream()`, until it has the metadata, then cancels the stream. Returns a promise of the same object `parse` returns for the whole file, so you get the EXIF of a large photo without downloading all of it.
 
 ```ts
 const response = await fetch('https://example.com/photo.jpg')
@@ -89,7 +89,7 @@ Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesErro
 
 ## `Exif.strip(bytes, options?)` and `Exif.StripStream`
 
-Remove the EXIF and XMP metadata from a JPEG, PNG or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
+Remove the EXIF and XMP metadata from a JPEG, PNG or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes an `ArrayBuffer` or any view of one, and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
 
 ```ts
 const [stored, inspected] = request.body!.tee()
@@ -144,7 +144,7 @@ const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exi
 
 ## Why use this over exif-parser
 
-exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies.
+exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes an `ArrayBuffer` or any view of one in any JavaScript runtime, and has no dependencies.
 
 - Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 10× faster than exifr.
 - `parse` skips the bad tags in damaged data and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).

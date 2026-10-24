@@ -1,4 +1,5 @@
-import { crc32 } from '@portable/bytes/internal'
+import type * as Bytes from '@portable/bytes'
+import { crc32, toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { type FilterType, filterRows } from './filter.js'
 import * as zlib from './zlib.js'
@@ -7,7 +8,7 @@ import * as zlib from './zlib.js'
 export type RgbaImage = {
   width: number
   height: number
-  data: Uint8Array | Uint8ClampedArray
+  data: Bytes.Input
   /** Written to a `gAMA` chunk when set. The pixels are not changed. */
   gamma?: number | undefined
 }
@@ -84,7 +85,8 @@ export function encodeSync(image: RgbaImage, options: encodeSync.Options): Uint8
 const channelsByColorType = { 0: 1, 2: 3, 4: 2, 6: 4 } as const
 
 function filtered(image: RgbaImage, colorType: 0 | 2 | 4 | 6, options: encode.Options) {
-  const { width, height, data } = image
+  const { width, height } = image
+  const data = toUint8Array(image.data)
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1)
     throw new InvalidInputError('width and height must be positive integers.')
   if (data.length !== width * height * 4)
@@ -102,11 +104,11 @@ function filtered(image: RgbaImage, colorType: 0 | 2 | 4 | 6, options: encode.Op
 }
 
 function pack(
-  data: Uint8Array | Uint8ClampedArray,
+  data: Uint8Array,
   colorType: 0 | 2 | 4 | 6,
   background: encode.Options['background'],
 ): Uint8Array {
-  if (colorType === 6) return new Uint8Array(data.buffer, data.byteOffset, data.length)
+  if (colorType === 6) return data
   const { red = 255, green = 255, blue = 255 } = background ?? {}
   const pixels = data.length / 4
   const out = new Uint8Array(pixels * channelsByColorType[colorType])

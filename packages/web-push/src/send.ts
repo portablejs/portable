@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import { encrypt, type Subscription } from './encrypt.js'
 import { InvalidInputError, ResponseError } from './errors.js'
 import { authorization, parseUrl, type Vapid } from './vapid.js'
@@ -10,7 +11,7 @@ export declare namespace toRequest {
     /** The browser's push subscription, from `PushSubscription.toJSON()`. */
     subscription: Subscription
     /** The message to encrypt. Leave it out to send a push with no data. */
-    payload?: string | Uint8Array | undefined
+    payload?: string | Bytes.Input | undefined
     /** The VAPID subject and key pair that sign the request. */
     vapid: Vapid
     /**

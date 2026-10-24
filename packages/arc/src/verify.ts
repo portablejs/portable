@@ -128,6 +128,9 @@ const sealTags = ['a', 'b', 'cv', 'd', 's']
  *
  * The promise rejects only for invalid options, a failing message stream or an aborted `signal`.
  *
+ * If `message` is in a `SharedArrayBuffer`, don't write to it until the promise settles,
+ * because `verify` may otherwise check different bytes from the ones you use afterwards.
+ *
  * @example
  * ```ts
  * import * as Arc from '@portable/arc'

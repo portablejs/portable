@@ -43,7 +43,7 @@ Deno's `Deno.upgradeWebSocket(request).socket` works the same way. Bun's `Server
 
 ## `connect(url, options)`
 
-Returns `{ readable, writable }`. `readable` is a `ReadableStream<string | Uint8Array>`: text messages are strings and binary messages are `Uint8Array`. `writable` takes the same types. `url` is a string, a `URL`, or a function that returns one (or a promise of one). `connect` calls the function before every attempt, so it can fetch a fresh token.
+Returns `{ readable, writable }`. `readable` is a `ReadableStream<string | Uint8Array>`: text messages are strings and binary messages are `Uint8Array`. `writable` takes strings and bytes, as an `ArrayBuffer` or any view of one, and copies a view of a `SharedArrayBuffer` before sending it, because `WebSocket.send` rejects shared memory. `url` is a string, a `URL`, or a function that returns one (or a promise of one). `connect` calls the function before every attempt, so it can fetch a fresh token.
 
 The first attempt starts at once. When a connection drops or an attempt fails, `connect` waits `delay` and tries again.
 

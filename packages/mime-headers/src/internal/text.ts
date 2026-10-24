@@ -1,9 +1,10 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 const utf8Decoder = new TextDecoder()
 
-export function toText(input: string | Uint8Array): string {
+export function toText(input: string | Bytes.Input): string {
   if (typeof input === 'string') return input
-  if (input instanceof Uint8Array) return utf8Decoder.decode(input)
-  throw new TypeError('Expected a string or a Uint8Array.')
+  return utf8Decoder.decode(toUint8Array(input))
 }
 
 const decoders = new Map<string, TextDecoder>()

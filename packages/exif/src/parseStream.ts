@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { MaxBytesError, UnsupportedError } from './errors.js'
 import {
   type Found,
@@ -50,7 +52,7 @@ export declare namespace parseStream {
  * ```
  */
 export async function parseStream(
-  stream: ReadableStream<Uint8Array>,
+  stream: ReadableStream<Bytes.Input>,
   options: parseStream.Options = {},
 ): Promise<Metadata> {
   const { maxBytes = 16 * 1024 * 1024, signal } = options
@@ -103,7 +105,7 @@ type Source = {
  * to that offset, so `start` is greater than `end` until the stream catches up.
  */
 function createSource(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
+  reader: ReadableStreamDefaultReader<Bytes.Input>,
   maxBytes: number,
   signal: AbortSignal | undefined,
 ): Source {
@@ -122,12 +124,13 @@ function createSource(
       while (end < want && !source.done) {
         const held = Math.max(end - start, 0)
         if (held >= maxBytes) throw new MaxBytesError({ maxBytes })
-        const { done, value } = await reader.read()
+        const { done, value: input } = await reader.read()
         signal?.throwIfAborted()
         if (done) {
           source.done = true
           break
         }
+        const value = toUint8Array(input)
         const chunkStart = end
         end += value.length
         if (end <= start) continue

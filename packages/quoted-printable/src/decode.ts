@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
 import * as Streams from '@portable/streams'
 
@@ -15,8 +17,8 @@ import * as Streams from '@portable/streams'
  * new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')) // 'tere jõgeva'
  * ```
  */
-export function decode(input: string | Uint8Array): Uint8Array<ArrayBuffer> {
-  const bytes = typeof input === 'string' ? encodeUtf8(input) : input
+export function decode(input: string | Bytes.Input): Uint8Array<ArrayBuffer> {
+  const bytes = typeof input === 'string' ? encodeUtf8(input) : toUint8Array(input)
   return createDecoder().write(bytes, true)
 }
 
@@ -38,7 +40,7 @@ export declare namespace DecoderStream {
  * const text = body.pipeThrough(new QuotedPrintable.DecoderStream()).pipeThrough(new TextDecoderStream())
  * ```
  */
-export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
+export class DecoderStream extends TransformStream<string | Bytes.Input, Uint8Array<ArrayBuffer>> {
   constructor(options: DecoderStream.Options = {}) {
     const decoder = createDecoder()
     const utf8 = createUtf8Encoder()

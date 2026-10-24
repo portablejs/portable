@@ -1,4 +1,5 @@
-import { toBufferSource } from '@portable/bytes/internal'
+import type * as Bytes from '@portable/bytes'
+import { toBufferSource, toUint8Array } from '@portable/bytes/internal'
 import { concat } from './bytes.js'
 import { MaxBytesError, TruncatedError, classify } from './errors.js'
 
@@ -26,11 +27,11 @@ export declare namespace encode {
  * ```
  */
 export async function encode(
-  data: Uint8Array | string,
+  data: Bytes.Input | string,
   options: encode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', signal } = options
-  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : toUint8Array(data)
   const chunks: Uint8Array[] = []
   let length = 0
   await run(
@@ -69,10 +70,11 @@ export declare namespace decode {
  * ```
  */
 export async function decode(
-  data: Uint8Array,
+  input: Bytes.Input,
   options: decode.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', maxBytes = Infinity, signal } = options
+  const data = toUint8Array(input)
   const chunks: Uint8Array[] = []
   let length = 0
   const decodeAll = (input: Uint8Array) =>

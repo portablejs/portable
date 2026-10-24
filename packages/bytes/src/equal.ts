@@ -1,3 +1,6 @@
+import type { Input } from './input.js'
+import { toUint8Array } from './internal/toUint8Array.js'
+
 /**
  * Whether two byte arrays hold the same bytes. Returns at the first difference, so the time it
  * takes shows where the arrays differ. Compare secrets with `timingSafeEqual` instead.
@@ -9,7 +12,11 @@
  * Bytes.equal(new Uint8Array([1, 2]), new Uint8Array([1, 2])) // true
  * ```
  */
-export function equal(a: Uint8Array, b: Uint8Array): boolean {
+export function equal(a: Input, b: Input): boolean {
+  return equalBytes(toUint8Array(a), toUint8Array(b))
+}
+
+function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a === b) return true
   const length = a.length
   if (length !== b.length) return false
@@ -35,11 +42,15 @@ export function equal(a: Uint8Array, b: Uint8Array): boolean {
  * ```ts
  * import * as Bytes from '@portable/bytes'
  *
- * const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, body))
+ * const expected = await crypto.subtle.sign('HMAC', key, body)
  * if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) throw new Error('Bad signature')
  * ```
  */
-export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+export function timingSafeEqual(a: Input, b: Input): boolean {
+  return timingSafeEqualBytes(toUint8Array(a), toUint8Array(b))
+}
+
+function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
   const length = a.length
   if (length !== b.length) return false
   let diff = 0

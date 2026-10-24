@@ -25,7 +25,7 @@ export declare namespace EncoderStream {
  * const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))
  * ```
  */
-export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Array<ArrayBuffer>> {
+export class EncoderStream extends TransformStream<Bytes.Input | string, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
     const {
       alphabet = 'base64',
@@ -40,7 +40,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
     let highSurrogate = ''
     let column = 0
 
-    const readChunk = (chunk: Uint8Array | string): Uint8Array => {
+    const readChunk = (chunk: Bytes.Input | string): Uint8Array => {
       if (typeof chunk === 'string') {
         let text = highSurrogate + chunk
         highSurrogate = ''

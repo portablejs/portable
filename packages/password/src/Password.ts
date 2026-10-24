@@ -1,5 +1,6 @@
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, MaxBytesError, UnsupportedError } from './errors.js'
 
 type Digest = 'SHA-1' | 'SHA-256' | 'SHA-512'
@@ -50,7 +51,7 @@ export declare namespace hash {
  * @throws {MaxBytesError} When the password is longer than `maxBytes`.
  */
 export async function hash(
-  password: string | Uint8Array,
+  password: string | Bytes.Input,
   options: hash.Options = {},
 ): Promise<string> {
   const { iterations = defaultIterations, maxBytes = defaultMaxBytes, signal } = options
@@ -97,7 +98,7 @@ export declare namespace verify {
  * @throws {MaxBytesError} When the password is longer than `maxBytes`.
  */
 export async function verify(
-  password: string | Uint8Array,
+  password: string | Bytes.Input,
   stored: string,
   options: verify.Options = {},
 ): Promise<boolean> {
@@ -206,13 +207,13 @@ function decode(text: string): Uint8Array {
 
 const encoder = new TextEncoder()
 
-function toBytes(password: string | Uint8Array, maxBytes: number): Uint8Array<ArrayBuffer> {
+function toBytes(password: string | Bytes.Input, maxBytes: number): Uint8Array<ArrayBuffer> {
   if (!(maxBytes >= 0))
     throw new RangeError(`maxBytes must be a non-negative number, got ${maxBytes}.`)
   const bytes =
     typeof password === 'string'
       ? encoder.encode(password.normalize('NFC'))
-      : new Uint8Array(password)
+      : new Uint8Array(toUint8Array(password))
   if (bytes.length > maxBytes) throw new MaxBytesError({ maxBytes })
   return bytes
 }

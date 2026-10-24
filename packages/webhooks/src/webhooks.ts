@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { toBufferSource } from '@portable/bytes/internal'
+import { isInput, toBufferSource, toUint8Array } from '@portable/bytes/internal'
 import type { Hmac } from '@portable/web-crypto'
 import { VerificationError } from './errors.js'
 import { utf8 } from './internal.js'
@@ -10,11 +10,11 @@ import { type Scheme, standard } from './schemes.js'
  * A signing secret as the sender shows it, or the raw key bytes. The scheme's `key` reads a
  * string as base64 for Standard Webhooks and as UTF-8 text for the others.
  */
-export type Secret = string | Uint8Array
+export type Secret = string | Bytes.Input
 
 export declare namespace verify {
   /** A `Request`, or the headers and raw body of one. */
-  type Input = Request | { headers: HeadersInit; body: string | Uint8Array }
+  type Input = Request | { headers: HeadersInit; body: string | Bytes.Input }
 
   type Options = {
     /** How the sender signs. @default Webhooks.standard */
@@ -58,6 +58,9 @@ export declare namespace verify {
  * Checks a webhook's signature and timestamp, and returns its body. A `Request`'s body is read,
  * so it can't be read again.
  *
+ * If the body is in a `SharedArrayBuffer`, don't write to it until the promise settles,
+ * because `verify` may otherwise check different bytes from the ones you use afterwards.
+ *
  * @example
  * ```ts
  * import * as Webhooks from '@portable/webhooks'
@@ -78,7 +81,7 @@ export declare namespace verify {
  * the timestamp is outside `tolerance`.
  * @throws {RangeError} When a secret is empty or not valid base64.
  * @throws {TypeError} When the scheme isn't a scheme object, or the body isn't a string or
- * `Uint8Array`.
+ * bytes.
  */
 export async function verify(
   input: verify.Input,
@@ -97,7 +100,7 @@ export async function verify(
   if (!(tolerance >= 0)) throw new RangeError('tolerance must be a non-negative number')
   if (!(maxBytes >= 0)) throw new RangeError('maxBytes must be a non-negative number')
   const secrets =
-    typeof options.secret === 'string' || options.secret instanceof Uint8Array
+    typeof options.secret === 'string' || isInput(options.secret)
       ? [options.secret]
       : options.secret
   const keys = secrets.map((secret) => keyOf(scheme, secret))
@@ -117,8 +120,8 @@ export async function verify(
   let text: string | undefined
   if (typeof input.body === 'string') body = utf8.encode((text = input.body))
   else if (input instanceof Request) body = await readBody(input, maxBytes, signal)
-  else if (input.body instanceof Uint8Array) body = input.body
-  else throw new TypeError('body must be the raw request body as a string or Uint8Array')
+  else if (isInput(input.body)) body = toUint8Array(input.body)
+  else throw new TypeError('body must be the raw request body as a string or bytes')
 
   const content = bytes(scheme.payload({ id, timestamp, body }))
   let match = false
@@ -166,6 +169,9 @@ export declare namespace sign {
  * Signs a body the way the sender does and returns the headers to send with it. Use it to test
  * a webhook handler, or to send Standard Webhooks.
  *
+ * If the body is in a `SharedArrayBuffer`, don't write to it until the promise settles, or the
+ * signature may not match the bytes you send.
+ *
  * @example
  * ```ts
  * import * as Webhooks from '@portable/webhooks'
@@ -179,7 +185,7 @@ export declare namespace sign {
  * @throws {TypeError} When the scheme isn't a scheme object.
  */
 export async function sign(
-  body: string | Uint8Array,
+  body: string | Bytes.Input,
   options: sign.Options,
 ): Promise<Record<string, string>> {
   const {
@@ -192,7 +198,7 @@ export async function sign(
   signal?.throwIfAborted()
   checkScheme(scheme)
   const key = keyOf(scheme, options.secret)
-  const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : body
+  const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : toUint8Array(body)
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }))
   const signature = await race(hmac('SHA-256', key, content), signal)
   return scheme.headers({ signature, id, timestamp })
@@ -205,7 +211,11 @@ function checkScheme(scheme: Scheme): void {
 
 function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
   const key =
-    typeof secret !== 'string' ? secret : scheme.key ? scheme.key(secret) : utf8.encode(secret)
+    typeof secret !== 'string'
+      ? toUint8Array(secret)
+      : scheme.key
+        ? scheme.key(secret)
+        : utf8.encode(secret)
   if (key.length === 0) throw new RangeError('Secret is empty')
   return new Uint8Array(key)
 }

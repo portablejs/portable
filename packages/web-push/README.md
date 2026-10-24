@@ -54,9 +54,9 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 | `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, the whole `response` and its `body` as text. |
 | `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
 
-`payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
+`payload` is a string, sent as UTF-8, or bytes (an `ArrayBuffer` or any view of one). Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
 
-`subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
+`subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or bytes, such as the `ArrayBuffer` that `PushSubscription.getKey()` returns.
 
 A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too. A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
 

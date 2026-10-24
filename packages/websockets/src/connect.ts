@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import * as Timers from '@portable/timers'
 import {
   type Duplex,
@@ -13,6 +14,7 @@ import {
   messageSize,
   timeout as startTimer,
   toMessage,
+  toOutgoing,
 } from './Socket.js'
 import { CloseError, MaxBufferedError } from './errors.js'
 
@@ -68,7 +70,7 @@ export declare namespace connect {
      * Sends a message on this connection now, ahead of queued writes. Throws once the connection
      * has closed.
      */
-    send: (message: string | Uint8Array<ArrayBuffer>) => void
+    send: (message: string | Bytes.Input) => void
     /**
      * Messages received while `open` runs. Messages that `open` doesn't read go to `readable` once
      * `open` returns or cancels this stream.
@@ -87,7 +89,7 @@ export declare namespace connect {
   /** An application-level ping, for servers that close idle connections or drop them silently. */
   type Heartbeat = {
     /** The message to send. */
-    ping: string | Uint8Array<ArrayBuffer>
+    ping: string | Bytes.Input
     /** Returns `true` for the reply. Replies are not passed to `readable`. */
     pong: (message: Message) => boolean
     /** Time between pings, in ms. */
@@ -301,10 +303,10 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         },
         { highWaterMark: 0 },
       )
-      const send = (message: string | Uint8Array<ArrayBuffer>) => {
+      const send = (message: string | Bytes.Input) => {
         if (outcome || socket.readyState !== OPEN)
           throw new DOMException('The WebSocket is not open.', 'InvalidStateError')
-        socket.send(message)
+        socket.send(toOutgoing(message))
       }
       const handshakeDone = Promise.resolve().then(() =>
         open({ send, messages, signal: attempt.signal }),
@@ -329,7 +331,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     notify()
 
     if (heartbeat) {
-      const { ping, interval, timeout: wait = interval } = heartbeat
+      const { interval, timeout: wait = interval } = heartbeat
+      const ping = toOutgoing(heartbeat.ping)
       pingTimer = setInterval(() => {
         if (socket.readyState !== OPEN) return
         socket.send(ping)
@@ -403,12 +406,12 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     { highWaterMark: queueLimit(maxBuffered), size: messageSize },
   )
 
-  const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({
+  const writable = new WritableStream<string | Bytes.Input>({
     start(controller) {
       writableController = controller
     },
     write(chunk) {
-      return write(chunk)
+      return write(toOutgoing(chunk))
     },
     async close() {
       while (queue.length > 0 && !stop.signal.aborted) await changed()

@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## Byte inputs accept any `ArrayBuffer` or view
+
+- **Options:** keep `Uint8Array` as the only byte input; accept `Uint8Array | ArrayBuffer`; accept `ArrayBuffer`, `DataView` and the views with one-byte elements, and throw for wider typed arrays; accept any `ArrayBuffer`, `SharedArrayBuffer` or view, as `TextDecoder` does.
+- **Trade-offs:** with `Uint8Array` only, callers wrap `await response.arrayBuffer()` and the `ArrayBuffer` that `crypto.subtle` returns, and some convert an `Int16Array` with `new Uint8Array(samples)`, which truncates every element to one byte without an error. If views are accepted, an `Int16Array` is read in the platform's byte order (little-endian on every runtime we support), and nothing makes the caller think about byte order. If `ArrayBuffer` is accepted, a caller can make the same mistake as with uint8array-extras: passing `view.buffer`, which reads the whole buffer instead of the view. Rejecting shared memory, as `crypto.subtle` and `fetch` do, would make every `Uint8Array` variable fail to type-check, because TypeScript's plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`. Every function now passes its byte input to `toUint8Array`, and every stream passes each chunk to it, which costs one `instanceof` check when the input is already a `Uint8Array`.
+- **Chosen:** `Bytes.Input`, which is `ArrayBufferLike | ArrayBufferView`, the set `TextDecoder` accepts. It matches the platform, so a value that works with `TextDecoder` or `crypto.subtle` works with every package. Output stays `Uint8Array<ArrayBuffer>`. A caller who passes shared memory must not write to it until the call or stream finishes, and the docs for `Bytes.Input` say so. The type is named `Bytes.Input` rather than `BufferSource`, because `BufferSource` excludes shared memory and is defined only in the DOM and web worker libs, which package code doesn't load.
+
 ## Multi-member gzip decoding searches for each member's end
 
 - **Options:** try each `1f 8b 08` position in turn as the end of the current member; parse the deflate blocks to find where a member ends; binary search the positions, using whether `DecompressionStream` throws `TruncatedError` or `InvalidInputError` for a prefix of the input.
@@ -469,7 +475,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 
 ## `@portable/streams` API
 
-- **Chunk types:** only `Uint8Array` and `string`, and anything else throws a `TypeError`. get-stream also accepts `ArrayBuffer`, `DataView` and other typed arrays, but the API conventions say bytes are `Uint8Array`, and raw-body's `NaN` length bug came from mixed chunk types. Some callers have to wrap chunks.
+- **Chunk types:** only `Uint8Array` and `string`, and anything else throws a `TypeError`. get-stream also accepts `ArrayBuffer`, `DataView` and other typed arrays, but the API conventions say bytes are `Uint8Array`, and raw-body's `NaN` length bug came from mixed chunk types. Some callers have to wrap chunks. Replaced by "Byte inputs accept any `ArrayBuffer` or view": chunks can now be any `Bytes.Input` or a `string`, and `byteLength` counts each one, which avoids raw-body's bug.
 - **`transform()` returns `{ readable, writable }`, not a `TransformStream`.** Support for `Transformer.cancel` varies between runtimes, and the generator needs to see cancellation so its `finally` blocks run. The pair still works with `pipeThrough`. Cancelling the output ends `source` instead of throwing into it, as through2 does, so code after the `for await` loop still runs.
 - **Operators are factories, not classes.** `map`, `filter`, `tap`, `batch` and `limitBytes` take a function or a number, like the array and iterator helpers. AGENTS.md now allows this for generic operators.
 - **`MaxBytesError` is its own class,** because hitting a limit is not truncated, invalid or unsupported input.

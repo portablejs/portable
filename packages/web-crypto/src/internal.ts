@@ -1,10 +1,11 @@
-import { toBufferSource as copyShared } from '@portable/bytes/internal'
+import type * as Bytes from '@portable/bytes'
+import { toBufferSource as copyShared, toUint8Array } from '@portable/bytes/internal'
 
 const encoder = new TextEncoder()
 
-export function toBufferSource(data: string | Uint8Array): Uint8Array<ArrayBuffer> {
+export function toBufferSource(data: string | Bytes.Input): Uint8Array<ArrayBuffer> {
   if (typeof data === 'string') return encoder.encode(data)
-  return copyShared(data)
+  return copyShared(toUint8Array(data))
 }
 
 export async function run<value>(

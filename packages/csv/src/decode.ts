@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import type { DecoderStream } from './DecoderStream.js'
 import { createParser } from './parser.js'
 
@@ -27,13 +29,15 @@ export declare namespace decode {
  * @throws {MaxLengthError} When a row is longer than `maxLength`.
  */
 export function decode<const header extends DecoderStream.Header = false>(
-  input: string | Uint8Array,
+  input: string | Bytes.Input,
   options: decode.Options<header> = {},
 ): DecoderStream.Row<header>[] {
   const text =
     typeof input === 'string'
       ? input
-      : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(input)
+      : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(
+          toUint8Array(input),
+        )
   const rows: DecoderStream.Row<header>[] = []
   const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header>))
   parser.write(text)

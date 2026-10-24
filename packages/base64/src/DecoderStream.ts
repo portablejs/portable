@@ -1,4 +1,6 @@
 import { createDecoder, decode } from './decode.js'
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 
 export declare namespace DecoderStream {
@@ -24,7 +26,7 @@ export declare namespace DecoderStream {
  * const bytes = mimePartBody.pipeThrough(new Base64.DecoderStream({ mode: 'mime' }))
  * ```
  */
-export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
+export class DecoderStream extends TransformStream<string | Bytes.Input, Uint8Array<ArrayBuffer>> {
   constructor(options: DecoderStream.Options = {}) {
     const { alphabet = 'base64', mode = 'loose' } = options
     const write = createDecoder(alphabet, mode)
@@ -39,7 +41,8 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
       Streams.abortable(
         {
           transform(chunk, controller) {
-            const text = typeof chunk === 'string' ? chunk : utf8.decode(chunk, { stream: true })
+            const text =
+              typeof chunk === 'string' ? chunk : utf8.decode(toUint8Array(chunk), { stream: true })
             enqueue(write(text, false), controller)
           },
           flush(controller) {

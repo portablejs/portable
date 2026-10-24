@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import { InvalidInputError } from './errors.js'
 import { decodeCharset, hexDigit, toText } from './internal/text.js'
 import { decodeWords, encodeUtf8Scratch } from './words.js'
@@ -27,7 +28,7 @@ export type Value = {
  * // { value: 'attachment', params: { filename: 'Jõgeva.txt' } }
  * ```
  */
-export function parseValue(input: string | Uint8Array): Value {
+export function parseValue(input: string | Bytes.Input): Value {
   const text = toText(input)
   const params = new Map<string, string>()
   const sections = new Map<string, Section[]>()

@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { NeedMore } from './bytes.js'
 import { MaxBytesError, TruncatedError, UnsupportedError } from './errors.js'
 import type { Format } from './formats/format.js'
@@ -142,13 +144,13 @@ function measure(input: Uint8Array, final: boolean): Size {
  * ```ts
  * import * as ImageSize from '@portable/image-size'
  *
- * const bytes = new Uint8Array(await (await fetch('https://example.com/photo.jpg')).arrayBuffer())
+ * const bytes = await (await fetch('https://example.com/photo.jpg')).arrayBuffer()
  * ImageSize.parse(bytes) // { width: 1600, height: 1200, type: 'jpg' }
  * ```
  */
-export function parse(bytes: Uint8Array): Size {
+export function parse(bytes: Bytes.Input): Size {
   try {
-    return measure(bytes, true)
+    return measure(toUint8Array(bytes), true)
   } catch (error) {
     throw error instanceof NeedMore ? new TruncatedError() : error
   }
@@ -185,7 +187,7 @@ export declare namespace parseStream {
  * ```
  */
 export async function parseStream(
-  stream: ReadableStream<Uint8Array>,
+  stream: ReadableStream<Bytes.Input>,
   options: parseStream.Options = {},
 ): Promise<Size> {
   const { maxBytes = 512 * 1024, signal } = options
@@ -198,9 +200,10 @@ export async function parseStream(
   let needed = 1
   try {
     for (;;) {
-      const { done, value } = await reader.read()
+      const { done, value: chunk } = await reader.read()
       signal?.throwIfAborted()
       if (done) return parse(buffer.subarray(0, length))
+      const value = toUint8Array(chunk)
       if (length + value.length > buffer.length) {
         const grown = new Uint8Array(Math.max(length + value.length, buffer.length * 2))
         grown.set(buffer.subarray(0, length))

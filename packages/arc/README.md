@@ -27,7 +27,7 @@ const fields = await Arc.seal(message, {
 const forwarded = fields + message
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM and DMARC, in one call.
+A message is bytes (an `ArrayBuffer` or any view of one, such as a `Uint8Array`), a `ReadableStream` of bytes, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM and DMARC, in one call. If the bytes are in a `SharedArrayBuffer`, don't write to it until the promise settles, because `verify` may otherwise check different bytes from the ones you use afterwards ([details](../bytes#byte-input)).
 
 ## Verifying
 

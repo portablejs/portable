@@ -1,3 +1,4 @@
+import { toUint8Array } from '@portable/bytes/internal'
 import * as Bytes from '@portable/bytes'
 import { MaxHeaderBytesError } from './errors.js'
 
@@ -37,7 +38,7 @@ export declare namespace splitHeaders {
  * ```
  */
 export async function splitHeaders(
-  stream: ReadableStream<Uint8Array>,
+  stream: ReadableStream<Bytes.Input>,
   options: splitHeaders.Options = {},
 ): Promise<splitHeaders.ReturnType> {
   const { maxHeaderBytes = Infinity, signal } = options
@@ -58,9 +59,10 @@ export async function splitHeaders(
 
   try {
     read: for (;;) {
-      const { done, value } = await reader.read()
+      const { done, value: chunk } = await reader.read()
       signal?.throwIfAborted()
       if (done) break
+      const value = toUint8Array(chunk)
       for (let i = 0; i < value.length; i++) {
         const byte = value[i]
         if (byte === 0x0a) {
@@ -107,7 +109,7 @@ export async function splitHeaders(
       if (done) {
         stop()
         controller.close()
-      } else controller.enqueue(value)
+      } else controller.enqueue(toUint8Array(value))
     },
     cancel(reason) {
       stop()

@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { crc32 } from '@portable/bytes/internal'
+import { crc32, toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, UnsupportedError } from './errors.js'
 import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js'
 import { readTiff } from './tiff.js'
@@ -32,15 +32,14 @@ export declare namespace strip {
  * ```ts
  * import * as Exif from '@portable/exif'
  *
- * const photo = new Uint8Array(await file.arrayBuffer())
- * const stripped = Exif.strip(photo)
+ * const stripped = Exif.strip(await file.arrayBuffer())
  * Exif.parse(stripped).gps // {}
  * ```
  */
-export function strip(bytes: Uint8Array, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
+export function strip(bytes: Bytes.Input, options: strip.Options = {}): Uint8Array<ArrayBuffer> {
   const parts: Uint8Array[] = []
   const stripper = createStripper(options, (part) => parts.push(part))
-  stripper.push(bytes)
+  stripper.push(toUint8Array(bytes))
   stripper.close()
   return Bytes.concat(parts)
 }
@@ -67,7 +66,7 @@ export declare namespace StripStream {
  * const exif = await Exif.parseStream(inspected)
  * ```
  */
-export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
+export class StripStream extends TransformStream<Bytes.Input, Uint8Array> {
   constructor(options: StripStream.Options = {}) {
     const { signal } = options
     let stripper: Stripper
@@ -81,7 +80,7 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
         signal.addEventListener('abort', abort, { once: true })
       },
       transform(chunk) {
-        stripper.push(chunk)
+        stripper.push(toUint8Array(chunk))
       },
       flush() {
         if (abort) signal!.removeEventListener('abort', abort)

@@ -1,22 +1,25 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 const textEncoder = new TextEncoder()
 
 export const encodeUtf8 = (text: string): Uint8Array => textEncoder.encode(text)
 
 /** Encodes string chunks as UTF-8, keeping a surrogate pair together when a chunk boundary splits it. */
 export function createUtf8Encoder(): {
-  write: (chunk: Uint8Array | string) => Uint8Array
+  write: (chunk: Bytes.Input | string) => Uint8Array
   flush: () => Uint8Array
 } {
   let highSurrogate = ''
   return {
     write(chunk) {
       if (typeof chunk !== 'string') {
-        if (highSurrogate === '') return chunk
+        const bytes = toUint8Array(chunk)
+        if (highSurrogate === '') return bytes
         const pending = encodeUtf8(highSurrogate)
         highSurrogate = ''
-        const joined = new Uint8Array(pending.length + chunk.length)
+        const joined = new Uint8Array(pending.length + bytes.length)
         joined.set(pending)
-        joined.set(chunk, pending.length)
+        joined.set(bytes, pending.length)
         return joined
       }
       let text = highSurrogate + chunk

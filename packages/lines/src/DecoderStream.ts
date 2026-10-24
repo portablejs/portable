@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 import { MaxLengthError } from './errors.js'
 /**
@@ -41,7 +43,7 @@ export declare namespace DecoderStream {
  * for await (const line of response.body!.pipeThrough(new Lines.DecoderStream())) console.log(line)
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array | string, string> {
+export class DecoderStream extends TransformStream<Bytes.Input | string, string> {
   constructor(options: DecoderStream.Options = {}) {
     const {
       encoding = 'utf-8',
@@ -75,7 +77,10 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       Streams.abortable(
         {
           transform(chunk, controller) {
-            let text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            let text =
+              typeof chunk === 'string'
+                ? chunk
+                : decoder.decode(toUint8Array(chunk), { stream: true })
             if (cr) text = '\r' + text
             cr = text.endsWith('\r')
             const lines = splitLines(partial + (cr ? text.slice(0, -1) : text))

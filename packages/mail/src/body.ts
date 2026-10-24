@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { isInput, toUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as QuotedPrintable from '@portable/quoted-printable'
 
@@ -11,7 +13,7 @@ import * as QuotedPrintable from '@portable/quoted-printable'
  * const content: Mail.Content = (await fetch('https://example.com/report.pdf')).body!
  * ```
  */
-export type Content = string | Uint8Array | Blob | ReadableStream<Uint8Array>
+export type Content = string | Bytes.Input | Blob | ReadableStream<Bytes.Input>
 
 /**
  * How a part's bytes are written. `7bit` and `8bit` write them as they are, with line breaks
@@ -27,7 +29,7 @@ export type TransferEncoding = 'base64' | 'quoted-printable' | '7bit' | '8bit'
 export function isContent(value: unknown): value is Content {
   return (
     typeof value === 'string' ||
-    value instanceof Uint8Array ||
+    isInput(value) ||
     value instanceof Blob ||
     value instanceof ReadableStream
   )
@@ -63,8 +65,9 @@ function textEncoding(text: string): TransferEncoding {
  * The encoding for a text part without a `transferEncoding`. A stream can't be scanned up front.
  */
 export function chooseTextEncoding(content: Content): TransferEncoding {
-  if (typeof content !== 'string' && !(content instanceof Uint8Array)) return 'quoted-printable'
-  const text = typeof content === 'string' ? content : new TextDecoder().decode(content)
+  if (typeof content !== 'string' && !isInput(content)) return 'quoted-printable'
+  const text =
+    typeof content === 'string' ? content : new TextDecoder().decode(toUint8Array(content))
   return isShortAscii(text) ? '7bit' : textEncoding(text)
 }
 
@@ -105,11 +108,12 @@ function toCrlfBytes(bytes: Uint8Array, afterCr: boolean): Uint8Array {
   return out.subarray(0, length)
 }
 
-class CrlfStream extends TransformStream<Uint8Array, Uint8Array> {
+class CrlfStream extends TransformStream<Bytes.Input, Uint8Array> {
   constructor() {
     let afterCr = false
     super({
-      transform(chunk, controller) {
+      transform(input, controller) {
+        const chunk = toUint8Array(input)
         if (chunk.length === 0) return
         controller.enqueue(toCrlfBytes(chunk, afterCr))
         afterCr = chunk[chunk.length - 1] === 0x0d
@@ -124,7 +128,8 @@ export type Body = {
   readonly text: boolean
 }
 
-export function encodeBody(content: string | Uint8Array, body: Body): string | Uint8Array {
+export function encodeBody(input: string | Bytes.Input, body: Body): string | Uint8Array {
+  const content = typeof input === 'string' ? input : toUint8Array(input)
   switch (body.encoding) {
     case 'base64':
       return Base64.encode(content, { lineLength: 76 })
@@ -139,7 +144,7 @@ export function encodeBody(content: string | Uint8Array, body: Body): string | U
 }
 
 export function encodeBodyStream(
-  source: ReadableStream<Uint8Array>,
+  source: ReadableStream<Bytes.Input>,
   body: Body,
 ): ReadableStream<Uint8Array> {
   switch (body.encoding) {

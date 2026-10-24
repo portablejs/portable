@@ -17,6 +17,10 @@ const singleChunks: Record<string, unknown> = {
   Uint8Array: fixtureBytes,
   'Uint8Array with offset': new Uint8Array(wide, 2, fixtureString.length),
   'Uint8Array subclass': SubclassedBytes.from(fixtureBytes),
+  ArrayBuffer: fixtureArrayBuffer,
+  Uint16Array: new Uint16Array(fixtureArrayBuffer),
+  DataView: new DataView(fixtureArrayBuffer),
+  'DataView with offset': new DataView(wide, 2, fixtureString.length),
 }
 
 const multiChunks: Record<string, unknown[]> = {
@@ -25,9 +29,6 @@ const multiChunks: Record<string, unknown[]> = {
 }
 
 const invalidChunks: Record<string, unknown> = {
-  ArrayBuffer: fixtureArrayBuffer,
-  Uint16Array: new Uint16Array(fixtureArrayBuffer),
-  DataView: new DataView(fixtureArrayBuffer),
   object: {},
   array: [],
   boolean: false,
@@ -531,9 +532,9 @@ describe('raw-body: web streams', () => {
     expect(stream.locked).toBe(false)
   })
 
-  test('rejects an ArrayBuffer chunk instead of miscounting it', async () => {
+  test('counts the bytes of an ArrayBuffer chunk', async () => {
     const stream = fromChunks([new ArrayBuffer(10)])
-    await expect(toBytes(stream as never, { maxBytes: 5 })).rejects.toThrow(TypeError)
+    await expect(toBytes(stream, { maxBytes: 5 })).rejects.toThrow(MaxBytesError)
     expect(stream.locked).toBe(false)
   })
 

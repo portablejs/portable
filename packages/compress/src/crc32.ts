@@ -1,4 +1,5 @@
-import { crc32 as crc } from '@portable/bytes/internal'
+import type * as Bytes from '@portable/bytes'
+import { crc32 as crc, toUint8Array } from '@portable/bytes/internal'
 
 const encoder = new TextEncoder()
 
@@ -14,7 +15,7 @@ const encoder = new TextEncoder()
  * Compress.crc32(' world', Compress.crc32('hello')) === Compress.crc32('hello world') // true
  * ```
  */
-export function crc32(data: Uint8Array | string, previous: number = 0): number {
-  const bytes = typeof data === 'string' ? encoder.encode(data) : data
+export function crc32(data: Bytes.Input | string, previous: number = 0): number {
+  const bytes = typeof data === 'string' ? encoder.encode(data) : toUint8Array(data)
   return crc(bytes, previous)
 }

@@ -20,7 +20,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(
 
 ## `DecoderStream`
 
-A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace.
+A `TransformStream<Bytes.Input | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace. `Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 | Option | Default | Description |
 | --- | --- | --- |

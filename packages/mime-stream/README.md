@@ -26,7 +26,7 @@ const output = message
   .pipeThrough(new MimeStream.EncoderStream())
 ```
 
-`message` is a `ReadableStream<Uint8Array>`, such as `request.body` or `file.stream()`.
+`message` is a `ReadableStream` of bytes, such as `request.body` or `file.stream()`. Its chunks can be any `ArrayBuffer` or view.
 
 To read only the header block, for example to check a DKIM signature, use `splitHeaders`. It doesn't look for parts, so the body passes through untouched:
 
@@ -40,12 +40,14 @@ const { headers, body } = await MimeStream.splitHeaders(message)
 
 | Export | Description |
 | --- | --- |
-| `new DecoderStream(options?)` | `TransformStream<Uint8Array, Chunk>`. Splits a message into chunks. Nothing is decoded: bodies are still base64 or quoted-printable. |
-| `new EncoderStream(options?)` | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes a `Uint8Array`, or a string, which it writes as UTF-8. |
+| `new DecoderStream(options?)` | `TransformStream<Bytes.Input, Chunk>`. Splits a message into chunks. Nothing is decoded: bodies are still base64 or quoted-printable. |
+| `new EncoderStream(options?)` | `TransformStream<Input, Uint8Array>`. Writes each chunk's `bytes`. It also takes bytes, or a string, which it writes as UTF-8. |
 | `splitHeaders(stream, options?)` | Resolves to `{ headers, body }`: the root header block as a `Uint8Array` and the rest as a `ReadableStream<Uint8Array>`. If the input ends before an empty line, all of it is the header block. |
 | `MaxHeaderBytesError` | Thrown when a header block is longer than `maxHeaderBytes`. Stores `maxHeaderBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
 | `MaxBoundaryLineBytesError` | Thrown when a boundary line is longer than `maxBoundaryLineBytes`. Stores `maxBoundaryLineBytes`, and extends `Errors.MaxBytesError`, so `maxBytes` holds the same limit. |
 | `MaxPartsError` | Thrown when a message has more than `maxParts` parts. Stores `maxParts`. |
+
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 A `Chunk` is `{ type, part, bytes }`. Joining every chunk's `bytes` in order gives back the input.
 

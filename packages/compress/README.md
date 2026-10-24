@@ -24,9 +24,11 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 | --- | --- |
 | `encode(data, { format, signal })` | Compresses a `Uint8Array` or a string (as UTF-8). Returns `Promise<Uint8Array>`. |
 | `decode(data, { format, maxBytes, signal })` | Decompresses a `Uint8Array`. Returns `Promise<Uint8Array>`. A gzip file with several members decodes to all of them joined. |
-| `new DecoderStream({ format, maxBytes, signal })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. |
-| `crc32(data, previous?)` | The CRC-32 of a `Uint8Array` or a string (as UTF-8). Pass the previous result to continue a checksum over several pieces. |
+| `new DecoderStream({ format, maxBytes, signal })` | A `TransformStream<Bytes.Input, Uint8Array>` that decompresses. |
+| `crc32(data, previous?)` | The CRC-32 of bytes or a string (as UTF-8). Pass the previous result to continue a checksum over several pieces. |
 | `Format` | `'gzip' \| 'deflate' \| 'deflate-raw'`: gzip (RFC 1952), zlib (RFC 1950) and raw deflate (RFC 1951), the formats the platform supports. |
+
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 | Option | Default | Description |
 | --- | --- | --- |

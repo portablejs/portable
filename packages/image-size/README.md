@@ -20,11 +20,13 @@ const { width, height, type } = await ImageSize.parseStream(response.body!)
 
 ## API
 
-### `parse(bytes: Uint8Array): Size`
+### `parse(bytes: Bytes.Input): Size`
+
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 Returns the size of the image in `bytes`. The bytes only have to cover the header.
 
-### `parseStream(stream: ReadableStream<Uint8Array>, options?): Promise<Size>`
+### `parseStream(stream: ReadableStream<Bytes.Input>, options?): Promise<Size>`
 
 Reads `stream` until the size is known, then cancels it.
 

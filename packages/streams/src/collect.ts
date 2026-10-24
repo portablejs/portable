@@ -1,4 +1,5 @@
 import * as Bytes from '@portable/bytes'
+import { toBufferSource } from '@portable/bytes/internal'
 import { byteLength, toUint8Array } from './bytes.js'
 import { MaxBytesError } from './errors.js'
 import { type Source, forEach } from './source.js'
@@ -25,7 +26,7 @@ export declare namespace toBytes {
  * ```
  */
 export async function toBytes(
-  source: Source<Uint8Array | string>,
+  source: Source<Bytes.Input | string>,
   options: toBytes.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { maxBytes = Infinity, signal } = options
@@ -65,7 +66,7 @@ export declare namespace toBlob {
  * ```
  */
 export async function toBlob(
-  source: Source<Uint8Array | string>,
+  source: Source<Bytes.Input | string>,
   options: toBlob.Options = {},
 ): Promise<Blob> {
   const { maxBytes = Infinity, signal, type = '' } = options
@@ -77,7 +78,7 @@ export async function toBlob(
       const bytes = toUint8Array(chunk)
       length += bytes.byteLength
       if (length > maxBytes) throw new MaxBytesError({ maxBytes })
-      chunks.push(bytes as Uint8Array<ArrayBuffer>)
+      chunks.push(toBufferSource(bytes))
     },
     signal,
   )
@@ -109,7 +110,7 @@ export declare namespace toText {
  * ```
  */
 export async function toText(
-  source: Source<Uint8Array | string>,
+  source: Source<Bytes.Input | string>,
   options: toText.Options = {},
 ): Promise<string> {
   const { encoding = 'utf-8', maxBytes = Infinity, signal } = options
@@ -127,7 +128,7 @@ export async function toText(
         decoding = false
         text += chunk
       } else {
-        text += decoder.decode(chunk, { stream: true })
+        text += decoder.decode(toUint8Array(chunk), { stream: true })
         decoding = true
       }
     },
@@ -152,7 +153,7 @@ export declare namespace toJson {
  * ```
  */
 export async function toJson(
-  source: Source<Uint8Array | string>,
+  source: Source<Bytes.Input | string>,
   options: toJson.Options = {},
 ): Promise<unknown> {
   return JSON.parse(await toText(source, options))

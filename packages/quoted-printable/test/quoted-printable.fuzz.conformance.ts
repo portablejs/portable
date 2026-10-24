@@ -1,5 +1,5 @@
 import * as QuotedPrintable from '@portable/quoted-printable'
-import { cuts, fc, fuzz, split } from '@portable/fuzz'
+import { byteForm, cuts, fc, fuzz, split, toByteForm } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 import { decodeStream, encodeStream } from './utils.js'
 
@@ -69,6 +69,18 @@ test('DecoderStream returns what decode returns, however the input is chunked', 
   await fuzz(
     fc.asyncProperty(quotedPrintableLike, cuts, async (input, at) => {
       expect(await decodeStream(split(input, at))).toEqual(QuotedPrintable.decode(input))
+    }),
+  )
+})
+
+test('every byte form encodes and decodes like a Uint8Array', () => {
+  fuzz(
+    fc.property(fc.uint8Array({ maxLength: 64 }), byteForm, (bytes, form) => {
+      const encoded = QuotedPrintable.encode(bytes)
+      expect(QuotedPrintable.encode(toByteForm(bytes, form))).toBe(encoded)
+      expect(QuotedPrintable.decode(toByteForm(new TextEncoder().encode(encoded), form))).toEqual(
+        bytes,
+      )
     }),
   )
 })

@@ -4,3 +4,4 @@
  */
 export * from '../internal/crc32.js'
 export * from '../internal/toBufferSource.js'
+export * from '../internal/toUint8Array.js'

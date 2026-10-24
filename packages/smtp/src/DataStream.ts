@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 const CR = 13
 const LF = 10
 const DOT = 46
@@ -71,11 +73,12 @@ export function encodeData(message: Uint8Array): Uint8Array {
 }
 
 /** A `TransformStream` from a message to the bytes sent after `DATA`, like `encodeData` for a stream. */
-export class DataStream extends TransformStream<Uint8Array, Uint8Array> {
+export class DataStream extends TransformStream<Bytes.Input, Uint8Array> {
   constructor() {
     let last = START
     super({
-      transform(chunk, controller) {
+      transform(input, controller) {
+        const chunk = toUint8Array(input)
         if (chunk.length === 0) return
         controller.enqueue(stuff(chunk, last))
         last = chunk[chunk.length - 1]!

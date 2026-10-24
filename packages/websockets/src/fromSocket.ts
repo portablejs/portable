@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import {
   CONNECTING,
   type Duplex,
@@ -13,6 +14,7 @@ import {
   isNormalClose,
   messageSize,
   toMessage,
+  toOutgoing,
 } from './Socket.js'
 import { CloseError, MaxBufferedError } from './errors.js'
 
@@ -124,11 +126,12 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     { highWaterMark: queueLimit(maxBuffered), size: messageSize },
   )
 
-  const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({
+  const writable = new WritableStream<string | Bytes.Input>({
     start(controller) {
       writableController = controller
     },
-    write(chunk) {
+    write(input) {
+      const chunk = toOutgoing(input)
       if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark)
         return socket.send(chunk)
       return opened

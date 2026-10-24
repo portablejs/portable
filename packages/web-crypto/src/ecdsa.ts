@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError } from './errors.js'
 
 /** An ECDSA curve, named as WebCrypto names it. */
@@ -26,29 +28,30 @@ export declare namespace derToRawEcdsa {
  * ```
  */
 export function derToRawEcdsa(
-  signature: Uint8Array,
+  signature: Bytes.Input,
   options: derToRawEcdsa.Options = {},
 ): Uint8Array<ArrayBuffer> {
+  const der = toUint8Array(signature)
   const size = sizes[options.namedCurve ?? 'P-256']
-  if (signature[0] !== 0x30) throw new InvalidInputError('Expected a DER SEQUENCE')
-  let length = signature[1] ?? 0
+  if (der[0] !== 0x30) throw new InvalidInputError('Expected a DER SEQUENCE')
+  let length = der[1] ?? 0
   let offset = 2
   if (length === 0x81) {
-    length = signature[2] ?? 0
+    length = der[2] ?? 0
     offset = 3
     if (length < 0x80)
       throw new InvalidInputError('The SEQUENCE length is not in its shortest form')
   } else if (length >= 0x80) {
     throw new InvalidInputError('The SEQUENCE length is too long for an ECDSA signature')
   }
-  if (length !== signature.length - offset)
+  if (length !== der.length - offset)
     throw new InvalidInputError(
-      `The SEQUENCE is ${length} bytes, but ${signature.length - offset} bytes follow its header`,
+      `The SEQUENCE is ${length} bytes, but ${der.length - offset} bytes follow its header`,
     )
   const raw = new Uint8Array(size * 2)
-  offset = readInteger(signature, offset, raw, 0, size)
-  offset = readInteger(signature, offset, raw, size, size)
-  if (offset !== signature.length)
+  offset = readInteger(der, offset, raw, 0, size)
+  offset = readInteger(der, offset, raw, size, size)
+  if (offset !== der.length)
     throw new InvalidInputError('The SEQUENCE holds more than two INTEGERs')
   return raw
 }
@@ -87,27 +90,26 @@ function readInteger(
  * import * as WebCrypto from '@portable/web-crypto'
  *
  * const raw = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, privateKey, data)
- * const der = WebCrypto.rawToDerEcdsa(new Uint8Array(raw))
+ * const der = WebCrypto.rawToDerEcdsa(raw)
  * ```
  */
-export function rawToDerEcdsa(signature: Uint8Array): Uint8Array<ArrayBuffer> {
-  const size = signature.length / 2
+export function rawToDerEcdsa(signature: Bytes.Input): Uint8Array<ArrayBuffer> {
+  const raw = toUint8Array(signature)
+  const size = raw.length / 2
   if (size !== 32 && size !== 48 && size !== 66)
-    throw new InvalidInputError(
-      `A raw ECDSA signature is 64, 96 or 132 bytes, not ${signature.length}`,
-    )
-  const r = firstSignificantByte(signature, 0, size)
-  const s = firstSignificantByte(signature, size, size * 2)
-  const rLength = size - r + (signature[r]! >> 7)
-  const sLength = size * 2 - s + (signature[s]! >> 7)
+    throw new InvalidInputError(`A raw ECDSA signature is 64, 96 or 132 bytes, not ${raw.length}`)
+  const r = firstSignificantByte(raw, 0, size)
+  const s = firstSignificantByte(raw, size, size * 2)
+  const rLength = size - r + (raw[r]! >> 7)
+  const sLength = size * 2 - s + (raw[s]! >> 7)
   const length = 4 + rLength + sLength
   const der = new Uint8Array(length + (length < 0x80 ? 2 : 3))
   let offset = 0
   der[offset++] = 0x30
   if (length >= 0x80) der[offset++] = 0x81
   der[offset++] = length
-  offset = writeInteger(der, offset, signature, r, size, rLength)
-  writeInteger(der, offset, signature, s, size * 2, sLength)
+  offset = writeInteger(der, offset, raw, r, size, rLength)
+  writeInteger(der, offset, raw, s, size * 2, sLength)
   return der
 }
 

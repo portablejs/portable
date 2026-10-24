@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, MaxLengthError, TruncatedError } from './errors.js'
 import { compile, type States } from './path.js'
 import * as Streams from '@portable/streams'
@@ -91,7 +93,7 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * // { path: ['total_rows'], value: 129 }, { path: ['rows', 0], value: { id: 'a' } }, ...
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array | string, DecoderStream.Match> {
+export class DecoderStream extends TransformStream<Bytes.Input | string, DecoderStream.Match> {
   constructor(options: DecoderStream.Options = {}) {
     const { paths = ['$'], maxLength = Infinity } = options
     if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
@@ -431,7 +433,10 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
             controller = c
           },
           transform(chunk) {
-            text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            text =
+              typeof chunk === 'string'
+                ? chunk
+                : decoder.decode(toUint8Array(chunk), { stream: true })
             scan()
             hold()
             offset += text.length

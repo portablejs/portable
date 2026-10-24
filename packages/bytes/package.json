@@ -1,6 +1,6 @@
 {
   "name": "@portable/bytes",
-  "description": "Convert Uint8Array to and from hex, and concatenate and compare byte arrays, in any JavaScript runtime.",
+  "description": "Convert bytes to and from hex, and concatenate and compare them, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

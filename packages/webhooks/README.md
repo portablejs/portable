@@ -43,14 +43,14 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 
 | Export | Does |
 | --- | --- |
-| `verify(input, options)` | Checks the signature, then the timestamp, and returns `{ body, id, timestamp }`. `input` is a `Request` or `{ headers, body }`, where `headers` is a `Headers` or a plain object and `body` is the raw body as a string or `Uint8Array`. |
+| `verify(input, options)` | Checks the signature, then the timestamp, and returns `{ body, id, timestamp }`. `input` is a `Request` or `{ headers, body }`, where `headers` is a `Headers` or a plain object and `body` is the raw body as a string or bytes (an `ArrayBuffer` or any view of one). If the bytes are in a `SharedArrayBuffer`, don't write to it until the promise settles. |
 | `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object. |
 | `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`. |
 | `Scheme` | The type of a scheme object, for writing one for another sender. |
 | `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 | `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` holds the limit. |
 
-`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret or a Standard Webhooks secret that isn't base64 throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
+`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret or a Standard Webhooks secret that isn't base64 throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or bytes, such as a parsed JSON object, throws a `TypeError`.
 
 The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
 

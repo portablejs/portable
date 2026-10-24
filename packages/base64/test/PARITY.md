@@ -126,7 +126,7 @@ libbase64 has no issue tracker, so its rows come from its changelog. Each row ha
 | base64-js #45, #41 | Unpadded input throws "Length must be a multiple of 4". | `'loose'` mode accepts it. |
 | base64-js #31 | Line breaks in the input are not skipped. | Skipped in every mode. |
 | base64-js #42 | Concatenated base64 files stop at the first padding. | `'mime'` mode decodes each segment (libbase64 > padding inside the input). |
-| base64-js #38, #43 | Negative numbers or an `Int8Array` encode to wrong output, including the text `undefined`. | `encode` throws `TypeError` for anything but `Uint8Array` or `string`. |
+| base64-js #38, #43 | Negative numbers or an `Int8Array` encode to wrong output, including the text `undefined`. | `encode` reads any typed array, `DataView` or `ArrayBuffer` as the bytes in memory, and throws `TypeError` for anything else, such as a plain array. |
 | base64-js #44 | A `Buffer` of base64 text crashes `toByteArray`. | `decode` takes bytes. |
 | js-base64 #164 | Callers stripped one `=` with `replace('=', '')` and kept the second. | `omitPadding` removes all padding. |
 | js-base64 #176 | Decoding a JWT throws "malformed base64". | A JWT segment decodes with `alphabet: 'base64url'`. The whole token throws `InvalidInputError` because of the `.`. |

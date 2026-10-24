@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { isInput, toUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 
 export declare namespace EncoderStream {
@@ -5,7 +7,7 @@ export declare namespace EncoderStream {
    * A chunk from `DecoderStream`, or any object with `bytes`, or bytes or text to insert. Text is
    * written as UTF-8.
    */
-  type Input = Uint8Array | string | { readonly bytes: Uint8Array | string }
+  type Input = Bytes.Input | string | { readonly bytes: Bytes.Input | string }
 
   type Options = {
     /**
@@ -36,11 +38,10 @@ export class EncoderStream extends TransformStream<EncoderStream.Input, Uint8Arr
       Streams.abortable(
         {
           transform(chunk, controller) {
-            const value =
-              chunk instanceof Uint8Array || typeof chunk === 'string' ? chunk : chunk.bytes
-            const bytes = typeof value === 'string' ? encoder.encode(value) : value
-            if (!(bytes instanceof Uint8Array))
-              throw new TypeError('Expected a Uint8Array, a string or an object with bytes.')
+            const value = typeof chunk === 'string' || isInput(chunk) ? chunk : chunk.bytes
+            if (typeof value !== 'string' && !isInput(value))
+              throw new TypeError('Expected bytes, a string or an object with bytes.')
+            const bytes = typeof value === 'string' ? encoder.encode(value) : toUint8Array(value)
             if (bytes.length > 0) controller.enqueue(bytes)
           },
         },

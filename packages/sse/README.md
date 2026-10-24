@@ -50,7 +50,7 @@ A block without a `data` field is not an event, but its `id` and `retry` still a
 
 ### `new Sse.DecoderStream(options)` and `Sse.decode(input, options)`
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, Sse.Event>`. `decode` reads a complete body, as a string or bytes, into an array. Both follow the [WHATWG event stream rules](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation): bytes are UTF-8, one leading BOM is skipped, CR, LF and CRLF all end a line, comments and unknown fields are ignored, an `id` containing NUL is ignored, `retry` is read only when it is all ASCII digits, and an event without its closing blank line is dropped when the input ends.
+`DecoderStream` is a `TransformStream<Bytes.Input | string, Sse.Event>`. `decode` reads a complete body, as a string or bytes, into an array. Both follow the [WHATWG event stream rules](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation): bytes are UTF-8, one leading BOM is skipped, CR, LF and CRLF all end a line, comments and unknown fields are ignored, an `id` containing NUL is ignored, `retry` is read only when it is all ASCII digits, and an event without its closing blank line is dropped when the input ends. `Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 | Option | Default | Description |
 | --- | --- | --- |

@@ -86,6 +86,9 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders]
  * Throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line
  * break that isn't folding, and `Arc.InvalidInputError` for a message that must not be sealed.
  *
+ * If `message` is in a `SharedArrayBuffer`, don't write to it until the promise settles, or the
+ * signature may not match the bytes you send.
+ *
  * @example
  * ```ts
  * import * as Arc from '@portable/arc'

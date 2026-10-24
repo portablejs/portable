@@ -77,6 +77,9 @@ const canonicalizations = new Set([
  * Throws a `TypeError` or `RangeError` for invalid options, and `Dkim.InvalidInputError` for a
  * message without a From field.
  *
+ * If `message` is in a `SharedArrayBuffer`, don't write to it until the promise settles, or the
+ * signature may not match the bytes you send.
+ *
  * @example
  * ```ts
  * import * as Dkim from '@portable/dkim'

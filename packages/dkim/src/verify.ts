@@ -87,6 +87,9 @@ export declare namespace verify {
  * a missing, revoked or unusable key, and `temperror` for a DNS failure. The promise rejects only
  * for invalid options, a failing message stream or an aborted `signal`.
  *
+ * If `message` is in a `SharedArrayBuffer`, don't write to it until the promise settles,
+ * because `verify` may otherwise check different bytes from the ones you use afterwards.
+ *
  * @example
  * ```ts
  * import * as Dns from '@portable/dns'

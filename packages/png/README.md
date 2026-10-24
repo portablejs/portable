@@ -36,9 +36,11 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. Both functio
 
 ## API
 
-### `decode(bytes: Uint8Array, options?): Promise<Decoded>`
+### `decode(bytes: Bytes.Input, options?): Promise<Decoded>`
 
-### `decodeSync(bytes: Uint8Array, options): Decoded`
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
+
+### `decodeSync(bytes: Bytes.Input, options): Decoded`
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -64,7 +66,7 @@ Bytes after `IEND` are ignored. Unknown ancillary chunks are skipped.
 
 ### `encodeSync(image: RgbaImage, options): Uint8Array`
 
-`image` is `{ width, height, data, gamma? }` with 8-bit RGBA `data` (`Uint8Array` or `Uint8ClampedArray`), so a `Decoded` result or a canvas `ImageData` can be passed as is. When `gamma` is set, it is written to a `gAMA` chunk.
+`image` is `{ width, height, data, gamma? }` with 8-bit RGBA `data` (an `ArrayBuffer` or any view of one, such as a `Uint8Array` or `Uint8ClampedArray`), so a `Decoded` result or a canvas `ImageData` can be passed as is. When `gamma` is set, it is written to a `gAMA` chunk.
 
 | Option | Default | Description |
 | --- | --- | --- |

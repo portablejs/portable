@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { isInput, toUint8Array } from '@portable/bytes/internal'
 const CR = 0x0d
 const LF = 0x0a
 
@@ -11,7 +13,7 @@ const LF = 0x0a
  * const message: Dkim.Message = request.body!
  * ```
  */
-export type Message = ReadableStream<Uint8Array> | Uint8Array | string
+export type Message = ReadableStream<Bytes.Input> | Bytes.Input | string
 
 /** Pulls the body chunks that follow the header section. `undefined` ends the body. */
 export type Body = {
@@ -71,8 +73,8 @@ function findEmptyLine(bytes: Uint8Array, from: number, to: number): number {
 
 function readChunks(input: Message): Body {
   if (typeof input === 'string') input = new TextEncoder().encode(input)
-  if (input instanceof Uint8Array) {
-    let chunk: Uint8Array | undefined = input
+  if (isInput(input)) {
+    let chunk: Uint8Array | undefined = toUint8Array(input)
     return {
       read() {
         const result = chunk
@@ -86,14 +88,13 @@ function readChunks(input: Message): Body {
     }
   }
   if (!(input instanceof ReadableStream))
-    throw new TypeError('Expected the message as a ReadableStream, a Uint8Array or a string.')
+    throw new TypeError('Expected the message as a ReadableStream, bytes or a string.')
   const reader = input.getReader()
   return {
     async read() {
       const { done, value } = await reader.read()
       if (done) return undefined
-      if (!(value instanceof Uint8Array)) throw new TypeError('Expected Uint8Array chunks.')
-      return value
+      return toUint8Array(value)
     },
     cancel: () => reader.cancel(),
   }

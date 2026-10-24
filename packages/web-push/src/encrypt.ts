@@ -1,3 +1,4 @@
+import { isInput, toUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import * as Bytes from '@portable/bytes'
 import { InvalidInputError } from './errors.js'
@@ -16,9 +17,9 @@ export type Subscription = {
 /** The browser's public key and authentication secret for payload encryption. */
 export type Keys = {
   /** The user agent's ECDH P-256 public key, uncompressed (65 bytes). */
-  p256dh: string | Uint8Array
+  p256dh: string | Bytes.Input
   /** The 16-byte authentication secret. */
-  auth: string | Uint8Array
+  auth: string | Bytes.Input
 }
 
 /**
@@ -39,9 +40,9 @@ export declare namespace encrypt {
     /** The subscription. The payload is encrypted with its `keys`. */
     subscription: Pick<Subscription, 'keys'>
     /** The message. */
-    payload: string | Uint8Array
+    payload: string | Bytes.Input
     /** The 16-byte salt. Use a fresh random salt for every message. @default 16 random bytes */
-    salt?: Uint8Array | undefined
+    salt?: Bytes.Input | undefined
     /**
      * The application server's ECDH P-256 key pair. Use a fresh pair for every message.
      * @default a new key pair from `crypto.subtle.generateKey`
@@ -80,7 +81,7 @@ export async function encrypt(options: encrypt.Options): Promise<Uint8Array<Arra
       `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
     )
   const salt = options.salt
-    ? new Uint8Array(options.salt)
+    ? new Uint8Array(toUint8Array(options.salt))
     : crypto.getRandomValues(new Uint8Array(16))
   if (salt.length !== 16) throw new RangeError('salt must be 16 bytes')
 
@@ -142,9 +143,9 @@ function readKeys(subscription: Pick<Subscription, 'keys'>) {
 }
 
 function readKey(key: unknown, name: string): Uint8Array<ArrayBuffer> {
-  if (typeof key !== 'string' && !(key instanceof Uint8Array))
-    throw new InvalidInputError(`${name} must be a base64url string or a Uint8Array`)
-  if (key instanceof Uint8Array) return new Uint8Array(key)
+  if (isInput(key)) return new Uint8Array(toUint8Array(key))
+  if (typeof key !== 'string')
+    throw new InvalidInputError(`${name} must be a base64url string or bytes`)
   try {
     return new Uint8Array(
       Base64.decode(key.replaceAll('+', '-').replaceAll('/', '_'), { alphabet: 'base64url' }),
@@ -156,8 +157,8 @@ function readKey(key: unknown, name: string): Uint8Array<ArrayBuffer> {
 
 function toBytes(payload: unknown): Uint8Array {
   if (typeof payload === 'string') return utf8.encode(payload)
-  if (payload instanceof Uint8Array) return payload
-  throw new TypeError('payload must be a string or Uint8Array')
+  if (isInput(payload)) return toUint8Array(payload)
+  throw new TypeError('payload must be a string or bytes')
 }
 
 function hkdf(

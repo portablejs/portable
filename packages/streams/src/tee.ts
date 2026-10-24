@@ -11,7 +11,7 @@ export declare namespace tee {
      */
     highWaterMark?: number | undefined
     /**
-     * What `highWaterMark` counts: `'chunks'`, or `'bytes'` for `Uint8Array` and string chunks,
+     * What `highWaterMark` counts: `'chunks'`, or `'bytes'` for byte and string chunks,
      * with strings counted as their UTF-8 length. With `'bytes'`, any other chunk errors every
      * branch with a `TypeError`.
      * @default 'chunks'

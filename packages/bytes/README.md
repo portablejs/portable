@@ -1,6 +1,6 @@
 # @portable/bytes
 
-Hex encoding, concatenation and comparison for `Uint8Array`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Hex encoding, concatenation and comparison of bytes. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces the hex, concat and equality functions of [uint8array-extras](https://www.npmjs.com/package/uint8array-extras), and `crypto.timingSafeEqual` from `node:crypto`.
 
@@ -18,7 +18,7 @@ Bytes.concat([header, body]) // a new Uint8Array
 
 Bytes.equal(a, b)
 
-const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload))
+const expected = await crypto.subtle.sign('HMAC', key, payload)
 if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) throw new Error('Bad signature')
 ```
 
@@ -28,9 +28,9 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) throw new Error(
 
 | Export | Does |
 | --- | --- |
-| `toHex(bytes)` | Encodes a `Uint8Array` as lowercase hex. |
+| `toHex(bytes)` | Encodes bytes as lowercase hex. |
 | `fromHex(text)` | Decodes hex, as a string or its ASCII bytes, to a `Uint8Array`. Upper and lower case are accepted. |
-| `concat(chunks)` | Joins a `readonly Uint8Array[]` into a new `Uint8Array`. The result never shares memory with a chunk. |
+| `concat(chunks)` | Joins a `readonly Bytes.Input[]` into a new `Uint8Array`. The result never shares memory with a chunk. |
 | `equal(a, b)` | Whether `a` and `b` hold the same bytes. Returns at the first difference. |
 | `timingSafeEqual(a, b)` | Whether `a` and `b` hold the same bytes, in time that depends only on the length. Returns `false` for different lengths. |
 | `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. |
@@ -41,12 +41,25 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 
 `concat` and `fromHex` return `Uint8Array<ArrayBuffer>`, so TypeScript 5.9 and later accept them as a `BlobPart` or a `BufferSource` for `crypto.subtle`.
 
+### Byte input
+
+Every function takes bytes as a `Bytes.Input`: an `ArrayBuffer`, a `SharedArrayBuffer`, or any view of one, such as a `Uint8Array`, an `Int16Array`, a `DataView` or a Node `Buffer`. That is what `TextDecoder` accepts, so `await response.arrayBuffer()` or the `ArrayBuffer` from `crypto.subtle.sign` can be passed as it is. The other `@portable/*` packages take bytes the same way.
+
+A view is read as the bytes in its range, in the platform's byte order, so `new Int16Array([1])` reads as `01 00` on every common platform. Pass the view itself and not `view.buffer`, because the buffer can hold bytes outside the view. Anything else, such as an array of numbers, throws a `TypeError`.
+
+Don't write to shared memory while a function or stream is reading it. An async function can still read its input after it has returned a promise, and a stream may read a chunk some time after the chunk was written to it. In that time a write from another thread can change the bytes that are parsed, signed or verified.
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Bytes.Input` | Bytes that a function takes: `ArrayBufferLike \| ArrayBufferView`. |
+
 ## Why use this over uint8array-extras and node:crypto
 
 - `node:crypto` exists only in Node, Deno and Bun. This package runs in browsers and Workers too.
 - `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so every caller has to check the length first or catch the error.
 - `fromHex` throws `Bytes.InvalidInputError`, which a caller can tell apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
-- Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, and passing `view.buffer` by mistake reads every byte of the buffer, not only the view's.
 
 Node's `Buffer` methods are C++ and are faster on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
 
@@ -87,6 +100,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `concatUint8Arrays(arrays, totalLength)` | `Bytes.concat(arrays)`. The length is always the sum of the chunks. |
 | `areUint8ArraysEqual(a, b)` | `Bytes.equal(a, b)` |
 | `crypto.timingSafeEqual(a, b)` | `Bytes.timingSafeEqual(a, b)`. Returns `false` instead of throwing for different lengths. |
-| A function given an `ArrayBuffer` | Pass `new Uint8Array(buffer)`. |
+| A function given an `ArrayBuffer` | Pass the `ArrayBuffer` as it is. |
 
 For base64 use [`@portable/base64`](../base64), and for random bytes `crypto.getRandomValues(new Uint8Array(n))`. uint8array-extras' string, base64, compare, `indexOf` and `getUintBE` functions have no equivalent here.

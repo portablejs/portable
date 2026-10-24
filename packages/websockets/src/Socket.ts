@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toBufferSource, toUint8Array } from '@portable/bytes/internal'
 import * as Timers from '@portable/timers'
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>
@@ -7,7 +9,7 @@ export type Duplex = {
   /** Received messages. */
   readable: ReadableStream<Message>
   /** Messages to send. */
-  writable: WritableStream<string | Uint8Array<ArrayBuffer>>
+  writable: WritableStream<string | Bytes.Input>
 }
 
 /** The part of the platform `WebSocket` this package uses. Any object with this shape works. */
@@ -46,6 +48,10 @@ export function toMessage(data: unknown): Message {
     return new Uint8Array(new Uint8Array(buffer, byteOffset, byteLength))
   }
   throw new TypeError('Expected a string or ArrayBuffer message. Set binaryType to "arraybuffer".')
+}
+
+export function toOutgoing(message: string | Bytes.Input): string | Uint8Array<ArrayBuffer> {
+  return typeof message === 'string' ? message : toBufferSource(toUint8Array(message))
 }
 
 export const messageSize = (message: Message): number =>

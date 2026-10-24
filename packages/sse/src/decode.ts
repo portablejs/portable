@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import * as Streams from '@portable/streams'
 import { MaxLengthError } from './errors.js'
 
@@ -43,7 +45,7 @@ export declare namespace DecoderStream {
  * const events = response.body!.pipeThrough(new Sse.DecoderStream())
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array | string, Event> {
+export class DecoderStream extends TransformStream<Bytes.Input | string, Event> {
   constructor(options: DecoderStream.Options = {}) {
     let parser: Parser
     super(
@@ -84,7 +86,7 @@ export declare namespace decode {
  * // [{ event: 'greeting', data: 'hello', id: undefined, retry: undefined }]
  * ```
  */
-export function decode(input: Uint8Array | string, options: decode.Options = {}): Event[] {
+export function decode(input: Bytes.Input | string, options: decode.Options = {}): Event[] {
   const events: Event[] = []
   const parser = createParser((event) => events.push(event), options.maxLength)
   parser.push(input)
@@ -93,7 +95,7 @@ export function decode(input: Uint8Array | string, options: decode.Options = {})
 }
 
 export type Parser = {
-  push(chunk: Uint8Array | string): void
+  push(chunk: Bytes.Input | string): void
   /** Discards an unfinished line or event, as at the end of a stream. */
   end(): void
   /** Starts a new stream, keeping the last event ID and reconnection time. */
@@ -227,9 +229,12 @@ export function createParser(emit: (event: Event) => void, maxLength: number = I
       let text =
         typeof chunk === 'string'
           ? chunk
-          : (decoder ??= new TextDecoder('utf-8', { ignoreBOM: true })).decode(chunk, {
-              stream: true,
-            })
+          : (decoder ??= new TextDecoder('utf-8', { ignoreBOM: true })).decode(
+              toUint8Array(chunk),
+              {
+                stream: true,
+              },
+            )
       if (text === '') return
       if (!started) {
         started = true

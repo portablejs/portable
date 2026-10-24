@@ -10,14 +10,14 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | --- | --- | --- |
 | concatUint8Arrays - combining multiple Uint8Arrays | `concat > joins several arrays in order` | |
 | concatUint8Arrays - with an empty array | `concat > returns an empty array for no chunks or empty chunks` | |
-| concatUint8Arrays - throws when input is not a Uint8Array | skipped | The parameter type is `readonly Uint8Array[]`, so TypeScript rejects a number. `concat` doesn't check types at runtime. |
-| concatUint8Arrays - with ArrayBuffer | skipped | Inputs are `Uint8Array` only, see "Known upstream issues". The `totalLength` argument it also tests doesn't exist here. |
+| concatUint8Arrays - throws when input is not a Uint8Array | `byte inputs > throws a TypeError for …` | `concat` throws a `TypeError` for a chunk that isn't an `ArrayBuffer` or a view. |
+| concatUint8Arrays - with ArrayBuffer | `byte inputs > reads ArrayBuffer input as the bytes in its range` | The `totalLength` argument it also tests doesn't exist here. |
 | areUint8ArraysEqual - with identical Uint8Arrays | `equal > identical arrays are equal` | |
 | areUint8ArraysEqual - with different content | `equal > arrays with different content are unequal` | |
 | areUint8ArraysEqual - with different sizes | `equal > arrays of different lengths are unequal` | |
-| areUint8ArraysEqual - with ArrayBuffer | skipped | Inputs are `Uint8Array` only. |
+| areUint8ArraysEqual - with ArrayBuffer | `byte inputs > reads ArrayBuffer input as the bytes in its range` | |
 | uint8ArrayToHex | `toHex and fromHex > encodes UTF-8 text` | Same fixture, with the expected hex written out instead of computed with `Buffer`. |
-| uint8ArrayToHex with ArrayBuffer | `toHex and fromHex > encodes every byte value with two lowercase digits` | Same bytes, as a `Uint8Array`. |
+| uint8ArrayToHex with ArrayBuffer | `byte inputs > reads ArrayBuffer input as the bytes in its range` | |
 | hexToUint8Array | `toHex and fromHex > decodes UTF-8 text` | |
 | hexToUint8Array - invalid length throws | `toHex and fromHex > throws on odd length` | |
 | hexToUint8Array - invalid character throws | `toHex and fromHex > throws on a character that is not a hex digit` | |
@@ -37,7 +37,7 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | TypedArrays with different lengths but equal byteLengths | `timingSafeEqual > compares only the bytes each subarray covers` | Inputs are `Uint8Array` only, so the case becomes different views of the same bytes. |
 | floating-point inputs compare bytes, not values | `timingSafeEqual > compares the bytes of other typed arrays, not their values` | Same NaN, `-0` and signaling NaN cases, through `Uint8Array` views. |
 | throws `ERR_CRYPTO_TIMING_SAFE_EQUAL_LENGTH` for different lengths | `timingSafeEqual > arrays of different lengths are unequal` | Returns `false` instead, see "Known upstream issues". |
-| throws `ERR_INVALID_ARG_TYPE` for a string (2 tests) | skipped | TypeScript rejects a string. `timingSafeEqual` doesn't check types at runtime. |
+| throws `ERR_INVALID_ARG_TYPE` for a string (2 tests) | `byte inputs > throws a TypeError for a string` | A `TypeError`, as in Node. |
 | V8 fast API path (`-fast.js`) | `timingSafeEqual > finds a difference at any position, length and alignment` | The upstream test checks that V8's optimized call gives the same results. Here the code that could give different results is the path that compares four bytes at a time, and this test drives it with lengths around 64 and unaligned views. |
 
 ## Known upstream issues
@@ -45,7 +45,7 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | Issue | Test |
 | --- | --- |
 | uint8array-extras [#16](https://github.com/sindresorhus/uint8array-extras/issues/16): results typed `Uint8Array<ArrayBufferLike>` weren't accepted as a `BlobPart` under TypeScript 5.9. `concat` and `fromHex` return `Uint8Array<ArrayBuffer>`. | `concat > returns bytes that a Blob accepts`, `fromHex > returns bytes that a Blob accepts` |
-| uint8array-extras accepts an `ArrayBuffer`. Passing `view.buffer` for a subarray, or a Node `Buffer` from the shared pool, compares or encodes every byte in the buffer. | `known upstream issues > uint8array-extras: an ArrayBuffer is rejected, ...` (a type error) |
+| uint8array-extras accepts an `ArrayBuffer`, and passing `view.buffer` for a subarray, or for a Node `Buffer` from the shared pool, compares or encodes every byte in the buffer. Every function here also accepts an `ArrayBuffer`, as `TextDecoder` does, so passing `view.buffer` here also reads the whole buffer. Pass the view itself, which is read only within its range. | `known upstream issues > uint8array-extras: an ArrayBuffer is read whole, ...`, `byte inputs > does not read the bytes of the buffer outside a view` |
 | uint8array-extras' `hexToUint8Array('0G')` reports position 0, the start of the pair, when the bad character is at 1. | `known upstream issues > uint8array-extras: the error gives the position of the bad digit, not of its pair` |
 | `node:crypto`'s `timingSafeEqual` throws a `RangeError` for different lengths, so callers must check lengths first. Here it returns `false`. | `known upstream issues > node:crypto: timingSafeEqual returns false for different lengths instead of throwing`, and the oracle test of the same name |
 

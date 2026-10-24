@@ -32,7 +32,7 @@ return new Response(body, { headers: { 'content-type': 'text/csv' } })
 
 ## Decoding
 
-`Csv.decode(input, options)` takes a `string` or a `Uint8Array` and returns every row. `new Csv.DecoderStream(options)` is a `TransformStream<Uint8Array | string, Row>` that emits one row per chunk, and gives the same rows however the input is split.
+`Csv.decode(input, options)` takes a `string` or bytes and returns every row. `new Csv.DecoderStream(options)` is a `TransformStream<Bytes.Input | string, Row>` that emits one row per chunk, and gives the same rows however the input is split. `Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values are never converted: `02134` stays `'02134'`.
 

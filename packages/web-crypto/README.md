@@ -23,7 +23,7 @@ await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, ra
 
 ## API
 
-Every function that takes bytes takes any `Uint8Array`, including a `subarray` or a Node `Buffer`, and reads only the bytes the view covers. Every result is a `Uint8Array<ArrayBuffer>` that `crypto.subtle` accepts as a `BufferSource` without a copy. `Hash` is `'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'`.
+Every function that takes bytes takes an `ArrayBuffer` or any view of one, including a `subarray`, a `DataView` or a Node `Buffer`, and reads only the bytes the view covers. Every result is a `Uint8Array<ArrayBuffer>` that `crypto.subtle` accepts as a `BufferSource` without a copy. `Hash` is `'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'`.
 
 | Function | Returns | Description |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is
 
 Each helper replaces a few lines that apps write by hand, and handles a trap those lines often miss.
 
-- In TypeScript 5.9 and later, a plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`, which `crypto.subtle` doesn't accept as a `BufferSource`. Hand-written code adds `.slice()` or a cast at every call. These functions take any `Uint8Array`, copy it only when its buffer is not an `ArrayBuffer` (a `SharedArrayBuffer`, for example), and return `Uint8Array<ArrayBuffer>`.
+- In TypeScript 5.9 and later, a plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`, which `crypto.subtle` doesn't accept as a `BufferSource`. Hand-written code adds `.slice()` or a cast at every call. These functions take any `ArrayBuffer` or view, copy it only when it is backed by a `SharedArrayBuffer`, and return `Uint8Array<ArrayBuffer>`.
 - `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. These functions take a `Uint8Array` and read only the bytes the view covers.
 - WebCrypto refuses an empty HMAC key. HMAC pads the key with zero bytes, so `hmac` uses a single zero byte, which gives the result RFC 2104 defines.
 - WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.

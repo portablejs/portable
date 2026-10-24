@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import { run, toBufferSource } from './internal.js'
 
 /** A hash algorithm, named as WebCrypto names it. */
@@ -49,7 +50,7 @@ export declare namespace digest {
  */
 export function digest(
   hash: Hash,
-  data: string | Uint8Array,
+  data: string | Bytes.Input,
   options: digest.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   return run(
@@ -77,8 +78,8 @@ export declare namespace hmac {
  */
 export function hmac(
   hash: Hash,
-  key: string | Uint8Array,
-  data: string | Uint8Array,
+  key: string | Bytes.Input,
+  data: string | Bytes.Input,
   options: hmac.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   return run(options.signal, async () => {
@@ -106,11 +107,11 @@ const hashLengths: Record<Hash, number> = {
 export declare namespace hkdf {
   type Options = {
     /** Context for the derived key. @default empty */
-    info?: string | Uint8Array | undefined
+    info?: string | Bytes.Input | undefined
     /** Bytes to derive, at most 255 times the hash length. @default the hash length */
     length?: number | undefined
     /** @default empty, which RFC 5869 treats as a string of zero bytes as long as the hash */
-    salt?: string | Uint8Array | undefined
+    salt?: string | Bytes.Input | undefined
     /** Rejects with `signal.reason` once aborted. */
     signal?: AbortSignal | undefined
   }
@@ -128,7 +129,7 @@ export declare namespace hkdf {
  */
 export function hkdf(
   hash: Hash,
-  key: string | Uint8Array,
+  key: string | Bytes.Input,
   options: hkdf.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { info = '', length = hashLengths[hash], salt = '', signal } = options

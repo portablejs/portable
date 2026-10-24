@@ -1,5 +1,5 @@
 import * as Compress from '@portable/compress'
-import { cuts, fc, fuzz, mutated, outcomeAsync, split } from '@portable/fuzz'
+import { byteForm, cuts, fc, fuzz, mutated, outcomeAsync, split, toByteForm } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 import { decodeChunks, formats } from './utils.js'
 
@@ -55,6 +55,14 @@ test('crc32 continues across chunks', () => {
     fc.property(fc.uint8Array({ maxLength: 500 }), cuts, (bytes, at) => {
       const running = split(bytes, at).reduce((crc, chunk) => Compress.crc32(chunk, crc), 0)
       expect(running).toBe(Compress.crc32(bytes))
+    }),
+  )
+})
+
+test('crc32 gives the same checksum for every byte form', () => {
+  fuzz(
+    fc.property(fc.uint8Array({ maxLength: 256 }), byteForm, (bytes, form) => {
+      expect(Compress.crc32(toByteForm(bytes, form))).toBe(Compress.crc32(bytes))
     }),
   )
 })

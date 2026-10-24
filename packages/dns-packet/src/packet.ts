@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import {
   classes,
   opcodes,
@@ -349,11 +351,15 @@ export declare namespace decode {
  *   headers: { 'content-type': 'application/dns-message' },
  *   body: query,
  * })
- * const packet = DnsPacket.decode(new Uint8Array(await response.arrayBuffer()))
+ * const packet = DnsPacket.decode(await response.arrayBuffer())
  * for (const answer of packet.answers) if (answer.type === 'A') console.log(answer.data)
  * ```
  */
-export function decode(bytes: Uint8Array, options: decode.Options = {}): DecodedPacket {
+export function decode(bytes: Bytes.Input, options: decode.Options = {}): DecodedPacket {
+  return decodeBytes(toUint8Array(bytes), options)
+}
+
+function decodeBytes(bytes: Uint8Array, options: decode.Options): DecodedPacket {
   if (options.framing === 'tcp') {
     if (bytes.length < 2) throw new TruncatedError('The TCP length prefix is 2 bytes.')
     const length = (bytes[0]! << 8) | bytes[1]!

@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { isInput, toUint8Array } from '@portable/bytes/internal'
 import * as Base64 from '@portable/base64'
 import { CommandError, type Rejection } from './errors.js'
 import { DataStream, encodeData } from './DataStream.js'
@@ -34,7 +36,7 @@ export type Mail = {
   /** The envelope recipients (RCPT TO). */
   to: string | readonly string[]
   /** The raw RFC 5322 message. Line breaks are converted to CRLF and dot-stuffing is applied. */
-  message: ReadableStream<Uint8Array> | Uint8Array | string
+  message: ReadableStream<Bytes.Input> | Bytes.Input | string
   /**
    * The message size in bytes, declared with SIZE and checked against the server's limit. For
    * bytes and strings, `send` computes the size and ignores this value.
@@ -106,7 +108,7 @@ type Session = {
   read(command: string): Promise<Reply>
   write(text: string, command: string): Promise<void>
   writeBytes(bytes: Uint8Array, command: string): Promise<void>
-  pipe(stream: ReadableStream<Uint8Array>): Promise<void>
+  pipe(stream: ReadableStream<Bytes.Input>): Promise<void>
   upgrade(): Promise<void>
   destroy(): void
   readonly closed: boolean
@@ -526,8 +528,8 @@ function createClient(
     const data =
       typeof message === 'string'
         ? encodeData(encoder.encode(message))
-        : message instanceof Uint8Array
-          ? encodeData(message)
+        : isInput(message)
+          ? encodeData(toUint8Array(message))
           : undefined
     const size = data ? data.length : mail.size
     const limit = sizeLimit(extensions)
@@ -653,7 +655,7 @@ function createClient(
 
     sending = true
     if (data) await session.writeBytes(data, 'DATA')
-    else await session.pipe(message as ReadableStream<Uint8Array>)
+    else await session.pipe(message as ReadableStream<Bytes.Input>)
 
     if (!lmtp) {
       const reply = await session.read('DATA')

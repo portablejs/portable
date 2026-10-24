@@ -1,3 +1,4 @@
+import type * as Bytes from '@portable/bytes'
 import { MaxLengthError } from './errors.js'
 import { checkLength, toText } from './internal/text.js'
 
@@ -22,7 +23,7 @@ export declare namespace fold {
  * // 'To: a@example.com,\r\n b@example.com'
  * ```
  */
-export function fold(input: string | Uint8Array, options: fold.Options = {}): string {
+export function fold(input: string | Bytes.Input, options: fold.Options = {}): string {
   const { lineLength = 76 } = options
   checkLength('lineLength', lineLength)
   const text = toText(input)
@@ -76,7 +77,7 @@ function foldLine(line: string, lineLength: number): string {
  * MimeHeaders.unfold('Subject: line one\r\n line two') // 'Subject: line one line two'
  * ```
  */
-export function unfold(input: string | Uint8Array): string {
+export function unfold(input: string | Bytes.Input): string {
   return toText(input).replace(/(?:\r\n|\r|\n)(?=[ \t])/g, '')
 }
 
@@ -113,7 +114,7 @@ export declare namespace parseHeaders {
  * @throws {MaxLengthError} When the header block is longer than `maxLength`.
  */
 export function parseHeaders(
-  input: string | Uint8Array,
+  input: string | Bytes.Input,
   options: parseHeaders.Options = {},
 ): Header[] {
   const { maxLength = Infinity } = options

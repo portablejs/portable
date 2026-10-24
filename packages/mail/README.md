@@ -55,7 +55,7 @@ The report is read from the network while the caller reads the message, so a lar
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
 | `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value writes one field per value. |
 
-`Content` is a `string`, `Uint8Array`, `Blob` (including `File`) or `ReadableStream<Uint8Array>`. A `File` gives the attachment its file name and a `Blob` its content type.
+`Content` is a `string`, bytes (an `ArrayBuffer` or any view of one, such as a `Uint8Array`), a `Blob` (including `File`) or a `ReadableStream` of bytes. A `File` gives the attachment its file name and a `Blob` its content type.
 
 Attachments with a `cid` go into `multipart/related` beside the HTML, and other attachments into `multipart/mixed`. An image with a `cid` defaults to `Content-Disposition: inline`, everything else to `attachment`.
 
@@ -132,7 +132,7 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 - An invalid address, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
 - `encodeStream` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
 - Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so a reader sees the subject the sender wrote. Quotes in a subject stay readable, but nodemailer 10.1.7 encodes them.
-- A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.
+- `encodeStream` scans a text body given as bytes the same way as a string, so it can send that body as `7bit`. nodemailer always encodes a `Buffer` body.
 - `Message` has no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
 - Cancelling the output cancels every content stream that hasn't been read, and a failing stream errors the output and cancels the rest.
 
@@ -164,7 +164,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `compile().createReadStream()` | `Mail.encodeStream(message)` |
 | `compile().getEnvelope()` | `Mail.envelope(message)`, which throws for a message without a sender where nodemailer returns `from: false`. |
 | `from`, `to`, `cc`, `bcc`, `replyTo`, `sender`, `inReplyTo`, `references`, `subject`, `messageId`, `date`, `text`, `html`, `amp`, `alternatives`, `attachments`, `headers` | The same names. |
-| attachment `content: Buffer \| string \| Readable` | `content: Uint8Array \| string \| Blob \| ReadableStream`. In Node, `Readable.toWeb(stream)`. |
+| attachment `content: Buffer \| string \| Readable` | `content: Bytes.Input \| string \| Blob \| ReadableStream`. A `Buffer` is passed as it is. In Node, `Readable.toWeb(stream)`. |
 | attachment or alternative `path`, `href` | `content: (await fetch(url)).body` or `content: await fs.openAsBlob(path)` with `filename`. |
 | `contentType` detected from the file name | Pass `contentType`. `@remix-run/mime` maps file names to types. |
 | `contentTransferEncoding` | `transferEncoding` |
@@ -180,6 +180,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 | `normalizeHeaderKey` | Header names are written as given. |
 | `disableFileAccess`, `disableUrlAccess` | Not needed: nothing is read from files or URLs. |
 | `envelope` | Pass your own envelope to the transport. |
+
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 ### Differences
 

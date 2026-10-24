@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError } from './errors.js'
 
 /**
@@ -73,10 +75,11 @@ export function canParse(text: unknown, options: canParse.Options = {}): boolean
  * Ip.format(Ip.fromBytes(new Uint8Array([127, 0, 0, 1]))) // '127.0.0.1'
  * ```
  */
-export function fromBytes(bytes: Uint8Array): Address {
-  if (bytes.length === 4) return { version: 4, bytes: bytes.slice() }
-  if (bytes.length === 16) return { version: 6, bytes: bytes.slice() }
-  throw new InvalidInputError(`An IP address has 4 or 16 bytes, not ${bytes.length}.`)
+export function fromBytes(bytes: Bytes.Input): Address {
+  const view = toUint8Array(bytes)
+  if (view.length === 4) return { version: 4, bytes: view.slice() }
+  if (view.length === 16) return { version: 6, bytes: view.slice() }
+  throw new InvalidInputError(`An IP address has 4 or 16 bytes, not ${view.length}.`)
 }
 
 /**

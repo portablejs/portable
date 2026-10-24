@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import type { Charset } from './Charset.js'
 import type { encode } from './encode.js'
 import { createState, run } from './internal/run.js'
@@ -28,19 +30,14 @@ export declare namespace EncoderStream {
  * const shiftJisBytes = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis))
  * ```
  */
-export class EncoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
+export class EncoderStream extends TransformStream<string | Bytes.Input, Uint8Array<ArrayBuffer>> {
   constructor(charset: Charset, options: EncoderStream.Options = {}) {
     const state = createState(charset, options)
     let decoder: TextDecoder | undefined
-    const text = (chunk: string | Uint8Array) => {
-      if (chunk instanceof Uint8Array) {
-        decoder ??= new TextDecoder()
-        return decoder.decode(chunk, { stream: true })
-      }
-      if (typeof chunk !== 'string') {
-        throw new TypeError('EncoderStream accepts only strings and Uint8Arrays.')
-      }
-      return decoder ? decoder.decode() + chunk : chunk
+    const text = (chunk: string | Bytes.Input) => {
+      if (typeof chunk === 'string') return decoder ? decoder.decode() + chunk : chunk
+      decoder ??= new TextDecoder()
+      return decoder.decode(toUint8Array(chunk), { stream: true })
     }
     super(
       Streams.abortable(

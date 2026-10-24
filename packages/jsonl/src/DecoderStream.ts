@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError, MaxLengthError } from './errors.js'
 import * as Streams from '@portable/streams'
 
@@ -39,7 +41,7 @@ export declare namespace DecoderStream {
  * const events = response.body!.pipeThrough(new Jsonl.DecoderStream())
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array | string, unknown> {
+export class DecoderStream extends TransformStream<Bytes.Input | string, unknown> {
   constructor(options: DecoderStream.Options = {}) {
     const { invalid = 'error', maxLength = Infinity } = options
     if (!(maxLength >= 0)) throw new RangeError('`maxLength` must be a number >= 0.')
@@ -66,7 +68,10 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
       Streams.abortable(
         {
           transform(chunk, controller) {
-            const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
+            const text =
+              typeof chunk === 'string'
+                ? chunk
+                : decoder.decode(toUint8Array(chunk), { stream: true })
             if (!text.includes('\n')) {
               partial += text
               if (partial.length > maxLength + 1) throw new MaxLengthError({ maxLength })

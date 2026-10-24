@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { UnsupportedError } from './errors.js'
 import { type Ifds, type Tiff, readTiff } from './tiff.js'
 
@@ -35,23 +37,24 @@ export type Metadata = Ifds & {
  * import * as Exif from '@portable/exif'
  *
  * const response = await fetch('https://example.com/photo.jpg', { headers: { range: 'bytes=0-65535' } })
- * const exif = Exif.parse(new Uint8Array(await response.arrayBuffer()))
+ * const exif = Exif.parse(await response.arrayBuffer())
  * console.log(exif.ifd0.Make, exif.exif.DateTimeOriginal, exif.latitude, exif.longitude)
  * ```
  */
-export function parse(bytes: Uint8Array): Metadata {
-  const b0 = bytes[0]
-  const b1 = bytes[1]
+export function parse(bytes: Bytes.Input): Metadata {
+  const view = toUint8Array(bytes)
+  const b0 = view[0]
+  const b1 = view[1]
   let found: Found
-  if (b0 === 0xff && b1 === 0xd8) found = fromJpeg(bytes)
-  else if ((b0 === 0x49 && b1 === 0x49) || (b0 === 0x4d && b1 === 0x4d)) found = fromTiff(bytes, 0)
-  else if (startsWith(bytes, 0, exifHeader)) found = fromTiff(bytes, 6)
-  else if (startsWith(bytes, 0, pngSignature)) found = fromPng(bytes)
-  else if (startsWith(bytes, 0, riff) && startsWith(bytes, 8, webp)) found = fromWebp(bytes)
-  else if (startsWith(bytes, 4, ftyp)) found = fromHeif(bytes)
+  if (b0 === 0xff && b1 === 0xd8) found = fromJpeg(view)
+  else if ((b0 === 0x49 && b1 === 0x49) || (b0 === 0x4d && b1 === 0x4d)) found = fromTiff(view, 0)
+  else if (startsWith(view, 0, exifHeader)) found = fromTiff(view, 6)
+  else if (startsWith(view, 0, pngSignature)) found = fromPng(view)
+  else if (startsWith(view, 0, riff) && startsWith(view, 8, webp)) found = fromWebp(view)
+  else if (startsWith(view, 4, ftyp)) found = fromHeif(view)
   else throw new UnsupportedError()
 
-  return toMetadata(found, bytes, 0)
+  return toMetadata(found, view, 0)
 }
 
 /** Builds the result from `found`. `data` holds the input from `offset` on, for the thumbnail. */

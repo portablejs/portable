@@ -1,3 +1,4 @@
+import { isInput } from '@portable/bytes/internal'
 import * as Bytes from '@portable/bytes'
 import * as MimeHeaders from '@portable/mime-headers'
 import { type Addresses, format, parse, wordEncoding } from './addresses.js'
@@ -157,7 +158,7 @@ type Context = {
   readonly charset: MimeHeaders.CharsetEncoder | undefined
   readonly prefix: string
   /** Content streams not read yet, cancelled when the output is cancelled or fails. */
-  readonly streams: Set<ReadableStream<Uint8Array>>
+  readonly streams: Set<ReadableStream<Bytes.Input>>
   id: number
   reader: ReadableStreamDefaultReader<Uint8Array | string> | undefined
   cancelled: boolean
@@ -193,7 +194,7 @@ type Context = {
  *
  * @throws {InvalidInputError} When an address, header, content type or file name can't be
  * written.
- * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
+ * @throws {TypeError} When content isn't a string, bytes, a `Blob` or a `ReadableStream`, or a
  * stream is locked or given twice.
  */
 export function encodeStream(
@@ -401,7 +402,7 @@ function leaf(
 ): Leaf {
   context.id++
   if (!isContent(content))
-    throw new TypeError('Content must be a string, Uint8Array, Blob or ReadableStream.')
+    throw new TypeError('Content must be a string, bytes, a Blob or a ReadableStream.')
   if (content instanceof ReadableStream) {
     if (content.locked || context.streams.has(content))
       throw new TypeError('A content stream is locked or given twice; it can be read only once.')
@@ -579,7 +580,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
     }
     const content = current.content
     if (content === undefined || content === '') return
-    if (typeof content === 'string' || content instanceof Uint8Array) {
+    if (typeof content === 'string' || isInput(content)) {
       const encoded = encodeBody(content, current.body)
       if (typeof encoded === 'string') {
         pending += encoded
@@ -592,7 +593,7 @@ async function* write(root: Node, head: string, context: Context): AsyncGenerato
       }
       return
     }
-    let source: ReadableStream<Uint8Array>
+    let source: ReadableStream<Bytes.Input>
     if (content instanceof ReadableStream) {
       context.streams.delete(content)
       source = content

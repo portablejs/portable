@@ -28,12 +28,14 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 | Export | Does |
 | --- | --- |
-| `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
+| `encode(input, options?)` | Encodes bytes, or a string as UTF-8, to a base64 string. |
 | `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
-| `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input. |
-| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding and groups of four characters can be split across chunks anywhere. |
+| `new EncoderStream(options?)` | `TransformStream<Bytes.Input \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input. |
+| `new DecoderStream(options?)` | `TransformStream<string \| Bytes.Input, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding and groups of four characters can be split across chunks anywhere. |
 | `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
 | `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |
+
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 ### Encode options
 
@@ -137,7 +139,7 @@ These behaviors differ on purpose:
 - `lineLength` must be a positive integer or `false`, and anything else throws `RangeError`. libbase64 rounds fractions down and replaces anything else with 76.
 - The default `'loose'` mode throws on characters outside the alphabet and on data after padding. libbase64 and js-base64 skip them, and base64-js returns wrong bytes or stops at the first `=`. `'mime'` mode gives libbase64's result.
 - base64-js and js-base64 accept `+/` and `-_` mixed in one string. `decode` accepts only the alphabet that `alphabet` selects, except in `'mime'` mode.
-- `decode` of a `Uint8Array` reads it as base64 text. libbase64 returns a `Buffer` argument unchanged.
+- `decode` of bytes reads them as base64 text. libbase64 returns a `Buffer` argument unchanged.
 - Strings are encoded with `TextEncoder`, which replaces a lone surrogate with U+FFFD. js-base64 encodes lone surrogates as is.
 - `EncoderStream` has no `skipStartBytes`, `limitOutputBytes`, `startPadding` or byte counters, and string chunks are always UTF-8.
-- `encode` throws `TypeError` for typed arrays other than `Uint8Array`. base64-js encoded an `Int8Array` with negative values to wrong output.
+- `encode` reads any typed array as the bytes in memory, so an `Int8Array` with negative values encodes correctly. base64-js produced wrong output for it.

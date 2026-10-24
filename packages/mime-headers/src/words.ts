@@ -57,7 +57,7 @@ export declare namespace encodeWord {
  * MimeHeaders.encodeWord('See on õhin test', { wordEncoding: 'B' }) // '=?UTF-8?B?U2VlIG9uIMO1aGluIHRlc3Q=?='
  * ```
  */
-export function encodeWord(input: string | Uint8Array, options: encodeWord.Options = {}): string {
+export function encodeWord(input: string | Bytes.Input, options: encodeWord.Options = {}): string {
   const { charset, wordEncoding: encoding = 'Q', wordLength = 75 } = options
   if (encoding !== 'Q' && encoding !== 'B')
     throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`)
@@ -110,7 +110,10 @@ export declare namespace encodeWords {
  * MimeHeaders.encodeWords('plain ascii') // 'plain ascii'
  * ```
  */
-export function encodeWords(input: string | Uint8Array, options: encodeWords.Options = {}): string {
+export function encodeWords(
+  input: string | Bytes.Input,
+  options: encodeWords.Options = {},
+): string {
   const text = toText(input)
   let start = -1
   let end = -1
@@ -151,7 +154,7 @@ export function encodeWords(input: string | Uint8Array, options: encodeWords.Opt
  * MimeHeaders.decodeWords('=?UTF-8?B?w7U=?= =?UTF-8?B?w7U=?=') // 'õõ'
  * ```
  */
-export function decodeWords(input: string | Uint8Array): string {
+export function decodeWords(input: string | Bytes.Input): string {
   const text = toText(input)
   const word = /=\?([^?\s]+)\?([BbQq])\?([^?]*)\?=/g
   let result = ''

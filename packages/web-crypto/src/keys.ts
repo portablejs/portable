@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { InvalidInputError } from './errors.js'
 import { run } from './internal.js'
 
@@ -42,16 +44,17 @@ export declare namespace importSeed {
  */
 export function importSeed(
   algorithm: SeedAlgorithm,
-  seed: Uint8Array,
+  seed: Bytes.Input,
   options: importSeed.Options = {},
 ): Promise<CryptoKeyPair> {
   const { extractable = false, signal } = options
   return run(signal, async () => {
-    if (seed.length !== 32)
-      throw new InvalidInputError(`An ${algorithm} seed is 32 bytes, not ${seed.length}`)
+    const bytes = toUint8Array(seed)
+    if (bytes.length !== 32)
+      throw new InvalidInputError(`An ${algorithm} seed is 32 bytes, not ${bytes.length}`)
     const pkcs8 = new Uint8Array(48)
     pkcs8.set(pkcs8Prefix[algorithm])
-    pkcs8.set(seed, 16)
+    pkcs8.set(bytes, 16)
     const usages = privateUsages[algorithm]
     const exportable = await crypto.subtle.importKey('pkcs8', pkcs8, algorithm, true, usages)
     const publicKey = await publicKeyOf(exportable)

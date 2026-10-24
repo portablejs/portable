@@ -1,3 +1,4 @@
+import { isInput, toUint8Array } from '@portable/bytes/internal'
 import * as Arc from '@portable/arc'
 import * as Dkim from '@portable/dkim'
 import * as Dmarc from '@portable/dmarc'
@@ -116,6 +117,9 @@ export declare namespace authenticate {
  * The promise rejects only for invalid options, a failing message stream or an aborted `signal`.
  * DNS failures are reported as results, such as `temperror`.
  *
+ * If `message` is in a `SharedArrayBuffer`, don't write to it until the promise settles,
+ * because `authenticate` may otherwise check different bytes from the ones you use afterwards.
+ *
  * @example
  * ```ts
  * import * as Dns from '@portable/dns'
@@ -143,8 +147,8 @@ export async function authenticate(
   const bytes =
     typeof message === 'string'
       ? new TextEncoder().encode(message)
-      : message instanceof Uint8Array
-        ? message
+      : isInput(message)
+        ? toUint8Array(message)
         : await Streams.toBytes(message, { signal })
   const verifyOptions = { resolver, now, minKeyBits, hasher, signal }
   const [spf, dkim, arc] = await Promise.all([

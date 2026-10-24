@@ -1,3 +1,6 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
+
 /** The standard alphabet with `+` and `/`, or the URL-safe one with `-` and `_` (RFC 4648). */
 export type Alphabet = 'base64' | 'base64url'
 
@@ -27,7 +30,7 @@ export declare namespace encode {
  * Base64.encode(attachment, { lineLength: 76 }) // MIME body, lines joined with CRLF
  * ```
  */
-export function encode(input: Uint8Array | string, options: encode.Options = {}): string {
+export function encode(input: Bytes.Input | string, options: encode.Options = {}): string {
   const { alphabet = 'base64', newline = '\r\n', lineLength = false, omitPadding = false } = options
   checkAlphabet(alphabet)
   checkLineLength(lineLength)
@@ -36,10 +39,9 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 
 const utf8 = new TextEncoder()
 
-export function toBytes(input: Uint8Array | string): Uint8Array {
+export function toBytes(input: Bytes.Input | string): Uint8Array {
   if (typeof input === 'string') return utf8.encode(input)
-  if (input instanceof Uint8Array) return input
-  throw new TypeError('Expected a Uint8Array or a string.')
+  return toUint8Array(input)
 }
 
 type NativeToBase64 = (

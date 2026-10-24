@@ -176,7 +176,7 @@ Sends one message and resolves with `{ accepted, rejected, response }`. It resol
 | --- | --- |
 | `from` | The envelope sender. `''` sends `MAIL FROM:<>`, as bounces do. |
 | `to` | One recipient or an array. |
-| `message` | The raw message as a `string`, `Uint8Array` or `ReadableStream<Uint8Array>`. Bare CR and bare LF become CRLF, and lines starting with a dot get a second dot. |
+| `message` | The raw message as a `string`, bytes (an `ArrayBuffer` or any view of one), or a `ReadableStream` of bytes. Bare CR and bare LF become CRLF, and lines starting with a dot get a second dot. |
 | `size` | The message size for the SIZE extension. Computed for strings and bytes. A message over the server's limit fails before MAIL FROM. |
 | `dsn` | `{ ret, envid, notify }`: RFC 3461 delivery status notification parameters, sent when the server offers DSN. |
 | `requireTls` | Ask the server to relay only over TLS (RFC 8689). Fails before MAIL FROM if the connection isn't encrypted or the server doesn't offer REQUIRETLS. |

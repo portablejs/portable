@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
 import * as Streams from '@portable/streams'
 
@@ -31,8 +33,8 @@ export declare namespace encode {
  * QuotedPrintable.encode('a'.repeat(80)) // 75 a's, a soft line break ('=\r\n'), then 5 a's
  * ```
  */
-export function encode(input: Uint8Array | string, options: encode.Options = {}): string {
-  const bytes = typeof input === 'string' ? encodeUtf8(input) : input
+export function encode(input: Bytes.Input | string, options: encode.Options = {}): string {
+  const bytes = typeof input === 'string' ? encodeUtf8(input) : toUint8Array(input)
   return createEncoder(options).write(bytes, true)
 }
 
@@ -47,7 +49,7 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
  * const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream())
  * ```
  */
-export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Array<ArrayBuffer>> {
+export class EncoderStream extends TransformStream<Bytes.Input | string, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
     const encoder = createEncoder(options)
     const utf8 = createUtf8Encoder()

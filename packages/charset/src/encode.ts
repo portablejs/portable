@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import type { Charset } from './Charset.js'
 import { createState, run, type Unmappable } from './internal/run.js'
 
@@ -34,10 +36,10 @@ export declare namespace encode {
  * ```
  */
 export function encode(
-  text: string | Uint8Array,
+  text: string | Bytes.Input,
   charset: Charset,
   options: encode.Options = {},
 ): Uint8Array<ArrayBuffer> {
-  const input = typeof text === 'string' ? text : new TextDecoder().decode(text)
+  const input = typeof text === 'string' ? text : new TextDecoder().decode(toUint8Array(text))
   return run(createState(charset, options), input, true)
 }

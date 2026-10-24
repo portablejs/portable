@@ -1,5 +1,5 @@
+import { toUint8Array, crc32 } from '@portable/bytes/internal'
 import * as Bytes from '@portable/bytes'
-import { crc32 } from '@portable/bytes/internal'
 import { InvalidInputError, TruncatedError, UnsupportedError } from './errors.js'
 import { unfilter } from './filter.js'
 import * as zlib from './zlib.js'
@@ -58,10 +58,10 @@ export declare namespace decodeSync {
  * const { width, height, data } = await Png.decode(await response.bytes())
  * ```
  */
-export async function decode(bytes: Uint8Array, options: decode.Options = {}): Promise<Decoded> {
+export async function decode(bytes: Bytes.Input, options: decode.Options = {}): Promise<Decoded> {
   const { checkCrc = true, inflate, signal } = options
   signal?.throwIfAborted()
-  const png = parse(bytes, checkCrc)
+  const png = parse(toUint8Array(bytes), checkCrc)
   const size = rawSize(png)
   let raw: Uint8Array
   try {
@@ -85,9 +85,9 @@ export async function decode(bytes: Uint8Array, options: decode.Options = {}): P
  * const { width, height, data } = Png.decodeSync(bytes, { inflate: unzlibSync })
  * ```
  */
-export function decodeSync(bytes: Uint8Array, options: decodeSync.Options): Decoded {
+export function decodeSync(bytes: Bytes.Input, options: decodeSync.Options): Decoded {
   const { checkCrc = true, inflate } = options
-  const png = parse(bytes, checkCrc)
+  const png = parse(toUint8Array(bytes), checkCrc)
   let raw: Uint8Array
   try {
     raw = inflate(png.idat)

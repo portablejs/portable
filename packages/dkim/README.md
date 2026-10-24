@@ -26,7 +26,7 @@ const results = await Dkim.verify(signed, {
 for (const r of results) console.log(`dkim=${r.result} header.d=${r.domain} header.s=${r.selector}`)
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF, so a message stored with LF line ends signs and verifies the same as one with CRLF.
+A message is bytes (an `ArrayBuffer` or any view of one, such as a `Uint8Array`), a `ReadableStream` of bytes, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF, so a message stored with LF line ends signs and verifies the same as one with CRLF. If the bytes are in a `SharedArrayBuffer`, don't write to it until the promise settles, because `verify` may otherwise check different bytes from the ones you use afterwards ([details](../bytes#byte-input)).
 
 In Node, `node:dns/promises` works as the resolver and uses the system's DNS servers:
 
@@ -111,10 +111,12 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() })
 
 | Type | Description |
 | --- | --- |
-| `Dkim.Message` | What `sign` and `verify` read: a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. |
+| `Dkim.Message` | What `sign` and `verify` read: `ReadableStream<Bytes.Input> \| Bytes.Input \| string`. A string is encoded as UTF-8. |
 | `Dkim.Resolver` | `Pick<Dns.Resolver, 'resolveTxt'>`, the lookup `verify` needs. |
 | `Dkim.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Dkim.Hash) => Dkim.Hasher`. Re-exported from `@portable/web-crypto`. |
 | `Dkim.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/web-crypto`. |
+
+`Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 ## Why use this over mailauth and nodemailer
 

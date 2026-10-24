@@ -1,4 +1,5 @@
-import { toBufferSource } from '@portable/bytes/internal'
+import type * as Bytes from '@portable/bytes'
+import { toBufferSource, toUint8Array } from '@portable/bytes/internal'
 import { concat } from './bytes.js'
 import type { Format } from './codec.js'
 import { MaxBytesError, classify } from './errors.js'
@@ -32,9 +33,9 @@ export declare namespace DecoderStream {
  * const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }))
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayBuffer>> {
+export class DecoderStream extends TransformStream<Bytes.Input, Uint8Array<ArrayBuffer>> {
   override readonly readable: ReadableStream<Uint8Array<ArrayBuffer>>
-  override readonly writable: WritableStream<Uint8Array>
+  override readonly writable: WritableStream<Bytes.Input>
 
   constructor(options: DecoderStream.Options = {}) {
     super()
@@ -84,15 +85,15 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
       writing = undefined
     }
 
-    this.writable = new WritableStream<Uint8Array>({
+    this.writable = new WritableStream<Bytes.Input>({
       start(controller) {
         writable = controller
       },
       async write(chunk) {
         throwIfFailed()
-        if (!(chunk instanceof Uint8Array)) throw new TypeError('Expected a Uint8Array chunk.')
-        queue.push(chunk)
-        queued += chunk.byteLength
+        const bytes = toUint8Array(chunk)
+        queue.push(bytes)
+        queued += bytes.byteLength
         writing ??= writeQueue()
         if (queued >= maxQueued) await writing
         throwIfFailed()

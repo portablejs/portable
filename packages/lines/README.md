@@ -16,7 +16,7 @@ const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader()
 for (let r = await reader.read(); !r.done; r = await reader.read()) console.log(r.value)
 ```
 
-`Lines.DecoderStream` is a `TransformStream<Uint8Array | string, string>`. Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly, and a CRLF split across chunks counts as one line break.
+`Lines.DecoderStream` is a `TransformStream<Bytes.Input | string, string>`. Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly, and a CRLF split across chunks counts as one line break. `Bytes.Input` is an `ArrayBuffer` or any view of one, such as a `Uint8Array` or a `DataView` (see [`@portable/bytes`](../bytes#byte-input)).
 
 ## Options
 

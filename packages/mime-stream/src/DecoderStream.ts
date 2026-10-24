@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import * as MimeHeaders from '@portable/mime-headers'
 import * as Streams from '@portable/streams'
 import { MaxBoundaryLineBytesError, MaxHeaderBytesError, MaxPartsError } from './errors.js'
@@ -93,7 +95,7 @@ export declare namespace DecoderStream {
  * }
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array, Chunk> {
+export class DecoderStream extends TransformStream<Bytes.Input, Chunk> {
   constructor(options: DecoderStream.Options = {}) {
     let decoder: ReturnType<typeof createDecoder>
     super(
@@ -412,8 +414,8 @@ function createDecoder(options: DecoderStream.Options, enqueue: (chunk: Chunk) =
   }
 
   return {
-    write(chunk: Uint8Array) {
-      if (!(chunk instanceof Uint8Array)) throw new TypeError('Expected a Uint8Array chunk.')
+    write(input: Bytes.Input) {
+      const chunk = toUint8Array(input)
       if (chunk.length === 0) return
       let b = chunk
       if (carry) {

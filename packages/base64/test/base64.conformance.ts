@@ -274,10 +274,11 @@ describe('known upstream issues', () => {
     expect(text(decode('YWJj\r\nZGVm\nZw=='))).toBe('abcdefg')
   })
 
-  test('base64-js #38 and #43: typed arrays other than Uint8Array are rejected', () => {
+  test('base64-js #38 and #43: other typed arrays encode as their bytes', () => {
     const digest = new Int8Array([-101, -113, 0, 1])
-    expect(() => encode(digest as unknown as Uint8Array)).toThrow(TypeError)
-    expect(encode(new Uint8Array(digest.buffer))).toBe('m48AAQ==')
+    expect(encode(digest)).toBe('m48AAQ==')
+    expect(encode(digest.buffer)).toBe('m48AAQ==')
+    expect(() => encode([155, 143, 0, 1] as never)).toThrow(TypeError)
   })
 
   test('base64-js #44: base64 given as bytes decodes', () => {

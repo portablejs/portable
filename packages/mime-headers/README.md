@@ -32,7 +32,7 @@ MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\
 
 ## API
 
-Functions come in pairs. `encode*` and `decode*` convert text to encoded-words and back, and `parse*` and `format*` read structured values from header text and write them back. Every function that takes text also takes a `Uint8Array`, which it reads as UTF-8.
+Functions come in pairs. `encode*` and `decode*` convert text to encoded-words and back, and `parse*` and `format*` read structured values from header text and write them back. Every function that takes text also takes its bytes, as an `ArrayBuffer` or any view of one, which it reads as UTF-8.
 
 | Export | Takes | Returns |
 | --- | --- | --- |

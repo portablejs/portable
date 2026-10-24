@@ -1,3 +1,5 @@
+import type * as Bytes from '@portable/bytes'
+import { toUint8Array } from '@portable/bytes/internal'
 import type { Alphabet } from './encode.js'
 import { InvalidInputError, TruncatedError } from './errors.js'
 
@@ -38,12 +40,12 @@ export declare namespace decode {
  * @throws {TruncatedError} When `'loose'` or `'strict'` mode finds the input ending inside a group.
  */
 export function decode(
-  input: string | Uint8Array,
+  input: string | Bytes.Input,
   options: decode.Options = {},
 ): Uint8Array<ArrayBuffer> {
   const { alphabet = 'base64', mode = 'loose' } = options
   const state = createState(alphabet, mode)
-  const text = typeof input === 'string' ? input : utf8.decode(input)
+  const text = typeof input === 'string' ? input : utf8.decode(toUint8Array(input))
   if (nativeFromBase64 && mode !== 'mime') {
     try {
       return nativeFromBase64.call(Uint8Array, text, { alphabet, lastChunkHandling: mode })

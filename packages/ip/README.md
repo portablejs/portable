@@ -37,7 +37,7 @@ type Cidr = { address: Address; prefix: number }
 | `parse(text)` | An `Address`. Throws `InvalidInputError` for anything else. |
 | `canParse(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string. |
 | `format(address)` | Text: dotted decimal for IPv4, RFC 5952 for IPv6, with `%zone` if present. |
-| `fromBytes(bytes)` | An `Address` built from a copy of 4 or 16 bytes. Throws `InvalidInputError` for any other length. |
+| `fromBytes(bytes)` | An `Address` built from a copy of 4 or 16 bytes, given as an `ArrayBuffer` or any view of one. Throws `InvalidInputError` for any other length. |
 | `compare(a, b)` | A negative number, zero or a positive number: IPv4 before IPv6, then by bytes, then by zone. Fits `Array.prototype.sort`. |
 | `unmap(address)` | The IPv4 address inside an IPv4-mapped address (`::ffff:192.0.2.1`), and any other address unchanged. |
 | `toIpv6(address)` | The IPv4-mapped form of an IPv4 address, and an IPv6 address unchanged. |

@@ -34,7 +34,7 @@ import * as ImageSize from '@portable/image-size'
 
 const file: File = ... // from a file input or a drop
 
-const photo = Exif.strip(new Uint8Array(await file.arrayBuffer()))
+const photo = Exif.strip(await file.arrayBuffer())
 const { width, height } = ImageSize.parse(photo)
 await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo })
 ```
