@@ -31,7 +31,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) print(r.valu
 await saving
 ```
 
-This code runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+, with no polyfills, bundler aliases or `nodejs_compat` flag.
+This code runs unchanged in a browser, a Web Worker, a Cloudflare Worker, Node 24+, Bun and Deno, with no polyfills, bundler aliases or `nodejs_compat` flag.
 
 Most npm packages for streams, encodings, email and crypto were written for Node. They import `node:stream`, `node:crypto` or `Buffer`, so a browser bundle needs polyfills and a Cloudflare Worker needs the `nodejs_compat` flag. Portable packages use only the APIs that every runtime has: `fetch`, Web Streams, `Uint8Array`, `TextEncoder` and `crypto.subtle`.
 
