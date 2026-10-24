@@ -147,7 +147,7 @@ function upstash(url: string, token: string): RateLimit.Store {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(args),
-      signal,
+      signal: signal ?? null,
     })
     const { result, error } = (await response.json()) as { result: unknown; error?: string }
     if (error) {

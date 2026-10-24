@@ -12,7 +12,7 @@ npm install @portable/errors
 import * as Errors from '@portable/errors'
 
 try {
-  const body = await Streams.toBytes(request.body.pipeThrough(Streams.limitBytes(1_000_000)))
+  const body = await Streams.toBytes(request.body!.pipeThrough(Streams.limitBytes(1_000_000)))
   const image = await Compress.decode(body, { maxBytes: 10_000_000 })
 } catch (error) {
   if (Errors.is(error, 'MaxBytes')) {

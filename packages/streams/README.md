@@ -63,6 +63,7 @@ Sources are streams, async iterables or iterables. An error in one source errors
 An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
 
 ```ts
+const upload = (await request.formData()).get('file') as File
 const [forExif, forStorage, forResize] = Streams.tee(upload.stream(), 3, {
   highWaterMark: 1_000_000,
   unit: 'bytes',

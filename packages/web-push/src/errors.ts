@@ -35,7 +35,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *   await WebPush.send({ subscription, payload: 'hello', vapid })
  * } catch (error) {
  *   if (error instanceof WebPush.ResponseError && error.status === 429) {
- *     retryAfter(error.headers.get('retry-after'))
+ *     retryAfter(error.response.headers.get('retry-after'))
  *   } else {
  *     throw error
  *   }

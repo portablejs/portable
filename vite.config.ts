@@ -218,6 +218,7 @@ export default defineConfig({
           'vite.config.ts',
           'tools/lint/src/publicApi.test.ts',
           'tools/lint/src/forAwait.test.ts',
+          'tools/lint/src/examples.test.ts',
         ],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },

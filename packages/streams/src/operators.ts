@@ -16,7 +16,7 @@ export declare namespace map {
  * import * as Streams from '@portable/streams'
  * import * as Lines from '@portable/lines'
  *
- * const records = body.pipeThrough(new Lines.DecoderStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
+ * const records = response.body!.pipeThrough(new Lines.DecoderStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
  * ```
  */
 export function map<input, output>(
@@ -110,7 +110,7 @@ export declare namespace tap {
  * import * as Streams from '@portable/streams'
  *
  * let received = 0
- * body.pipeThrough(Streams.tap((chunk) => { received += chunk.byteLength }))
+ * response.body!.pipeThrough(Streams.tap((chunk) => { received += chunk.byteLength }))
  * ```
  */
 export function tap<chunk>(

@@ -97,7 +97,7 @@ A method that returns an async iterable (such as an async generator) or a `Reada
 for await (const event of remote.watch('x')) console.log(event)
 
 const stream = await remote.watch('x') // a ReadableStream
-stream.pipeThrough(new TransformStream(...))
+stream.pipeThrough(new TransformStream())
 ```
 
 Breaking out of the loop or cancelling the stream stops the generator on the server, so its `finally` block runs. The server sends at most 256 values ahead of what the caller has read.
