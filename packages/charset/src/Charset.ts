@@ -24,10 +24,10 @@ export type Charset = {
 
 declare const definition: unique symbol
 
-/** What `encode` reads from a `Charset`. Callers see only `name`. */
+/** The fields of a `Charset` that `encode` reads. Only `name` is in the public type. */
 export type Definition = {
   readonly name: Name
-  /** Most bytes one UTF-16 code unit can encode to. */
+  /** The most bytes that encoding one UTF-16 code unit produces. */
   readonly maxBytes: number
   /** Byte order mark written when `bom` is set. */
   readonly bom?: readonly number[] | undefined

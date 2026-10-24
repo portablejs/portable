@@ -66,6 +66,8 @@ export type Result = {
   instance: number
   /** Why the result is `fail`, such as `i=2 as signature did not verify`. */
   reason?: string | undefined
+  /** The resolver's error when a key lookup failed. */
+  cause?: unknown
   /** The ARC sets from the oldest (`i=1`) to the newest. Empty unless the result is `pass`. */
   sets: readonly Result.Set[]
 }
@@ -90,7 +92,7 @@ export declare namespace Result {
 
 export declare namespace verify {
   type Options = {
-    /** Looks up the keys. `Dns.create()` and `node:dns/promises` both fit. */
+    /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /** The time to check the ARC-Message-Signature's `x=` against. @default new Date() */
     now?: Date | undefined
@@ -143,7 +145,13 @@ export async function verify(message: Message, options: verify.Options): Promise
   const { header, body } = await splitMessage(message)
   const fields = parseFields(toBinary(header))
   const { instance } = newest(fields)
-  const failed = (reason: string): Result => ({ result: 'fail', instance, reason, sets: [] })
+  const failed = (reason: string, cause?: unknown): Result => ({
+    result: 'fail',
+    instance,
+    reason,
+    ...(cause !== undefined && { cause }),
+    sets: [],
+  })
   const stop = async (result: Result): Promise<Result> => {
     await body.cancel()
     return result
@@ -192,7 +200,8 @@ export async function verify(message: Message, options: verify.Options): Promise
   if (!Bytes.equal(digest.digest, signature.bodyHash))
     return failed(`i=${last.instance} ams body hash did not verify`)
   const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
-  if (outcome.result !== 'pass') return failed(`i=${last.instance} ams ${outcome.reason}`)
+  if (outcome.result !== 'pass')
+    return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause)
 
   for (let i = seals.length - 1; i >= 0; i--) {
     const seal = seals[i]!
@@ -202,7 +211,8 @@ export async function verify(message: Message, options: verify.Options): Promise
     const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'))
     const record = await keys.get(seal.keyName)!
     const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits)
-    if (outcome.result !== 'pass') return failed(`i=${seal.set.instance} as ${outcome.reason}`)
+    if (outcome.result !== 'pass')
+      return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause)
   }
 
   return {

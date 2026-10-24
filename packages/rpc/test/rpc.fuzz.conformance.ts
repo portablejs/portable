@@ -2,7 +2,7 @@ import { fc, fuzz } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 import { pair, raw } from './utils.js'
 
-/** JSON values as JSON.parse returns them, so without -0. */
+/** JSON values in the form `JSON.parse` returns, which never includes -0. */
 const json = fc
   .jsonValue({ maxDepth: 3 })
   .map((value) => JSON.parse(JSON.stringify(value)) as unknown)

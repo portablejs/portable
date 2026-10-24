@@ -47,8 +47,8 @@ export type NaptrRecord = {
 
 /**
  * The lookups that SPF, DMARC and DKIM need, with the method names and result shapes of
- * `node:dns/promises`. The object `create` returns fits it, and so do `node:dns/promises`
- * itself, `new Resolver()` from it, and a plain object of functions in tests.
+ * `node:dns/promises`. `create` returns one, and `node:dns/promises`, a `new Resolver()` from it
+ * and a plain object of functions in a test also match the type.
  *
  * @example
  * ```ts

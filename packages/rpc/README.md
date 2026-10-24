@@ -172,7 +172,7 @@ const rpc = Rpc.handler(api)
 export default { fetch: (request: Request) => rpc(request) }
 ```
 
-`Rpc.http` is the client. Calls made in the same tick are sent as one batch request. Its `fetch` option is called with a `Request`, so a handler from `Rpc.handler` works as one in tests.
+`Rpc.http` is the client. Calls made in the same tick are sent as one batch request. Its `fetch` option is called with a `Request`, so a test can pass the function returned by `Rpc.handler` as `fetch`.
 
 ```ts
 const api = Rpc.http<Api>('https://example.com/rpc', {
@@ -187,7 +187,7 @@ A response is JSON, or, when a method returns a stream, `application/x-ndjson` w
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one `@portable/websockets` returns, is a transport as is. Without that package, a few lines wrap a socket:
+A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one `@portable/websockets` returns, can be passed as a transport unchanged. Without that package, you can wrap a socket in a few lines:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc')

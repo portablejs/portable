@@ -45,7 +45,7 @@ const body = await Streams.toJson(request.body!, { maxBytes: 100_000 })
 
 | Function | Does |
 | --- | --- |
-| `concat(sources, { signal })` | One stream with every chunk of the first source in the array, then the next. A source is read only after the one before it ends. |
+| `concat(sources, { signal })` | One stream with every chunk of the first source, then every chunk of the second, and so on. A source is read only after the one before it ends. |
 | `merge(sources, { signal })` | One stream that reads every source in the array at once and passes chunks on as they arrive. |
 | `limitBytes(maxBytes, { signal })` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
 | `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`. |

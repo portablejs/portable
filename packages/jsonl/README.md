@@ -33,7 +33,7 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 | Option | Default | Description |
 | --- | --- | --- |
 | `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number, and `'skip'` drops the line. |
-| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, line ending excluded. A longer line fails the stream with `Jsonl.MaxLengthError`, whose `maxLength` holds the limit, as soon as the line grows past it. Set it when the input comes from outside the program. |
+| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, line ending excluded. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Set it when the input comes from outside the program. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over ndjson

@@ -26,8 +26,8 @@ export declare namespace connect {
     /** Wait before each reconnect. @default { initial: 1000, max: 30000 } */
     delay?: Timers.Delay | undefined
     /**
-     * How many attempts in a row, the first one included, may fail before `connect` gives up. The
-     * streams then fail with the last error. A connection that finishes `open` resets the count.
+     * The number of consecutive failed attempts, counting the first, after which `connect` stops
+     * reconnecting and fails the streams with the last error. A connection that finishes `open` resets the count.
      * @default Infinity
      */
     attempts?: number | undefined

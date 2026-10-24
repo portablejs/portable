@@ -67,7 +67,7 @@ export declare namespace Result {
 
 export declare namespace authenticate {
   type Options = {
-    /** Answers the DNS lookups. `Dns.create()` and `node:dns/promises` both fit. */
+    /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /**
      * The authserv-id of Authentication-Results (RFC 8601 section 2.5), usually this server's host

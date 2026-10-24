@@ -84,7 +84,7 @@ Mail.encode(
 
 ### Signing and sending
 
-`@portable/dkim` signs the bytes `encode` produces and `@portable/smtp` sends them. DKIM hashes the whole body before it writes the signature field above the headers, so read the message into bytes first:
+`@portable/dkim` signs the bytes `encode` produces and `@portable/smtp` sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
 
 ```ts
 import * as Bytes from '@portable/bytes'
@@ -109,7 +109,7 @@ await Smtp.send(
 )
 ```
 
-Without DKIM, pass `Mail.encode(message)` to `Smtp.send` as the message and it is sent as it is read.
+Without DKIM, pass the stream from `Mail.encode(message)` to `Smtp.send`, which sends each chunk as soon as it reads it.
 
 ## Why use this over nodemailer
 

@@ -2,7 +2,7 @@ import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
-import { encode, reasonOf, request } from './utils.js'
+import { encode, codeOf, request } from './utils.js'
 
 const schemes = Object.entries({
   standard: Webhooks.standard,
@@ -21,7 +21,7 @@ describe('every scheme', () => {
       await Webhooks.verify(request(body, headers), { scheme, secret })
       await Webhooks.verify({ headers, body }, { scheme, secret })
       expect(
-        await reasonOf(
+        await codeOf(
           Webhooks.verify({ headers, body: new TextDecoder().decode(body) }, { scheme, secret }),
         ),
       ).toBe('signature')
@@ -51,16 +51,14 @@ describe('every scheme', () => {
         (await Webhooks.verify({ headers, body: '{}' }, { scheme, secret: rotating })).body,
       ).toBe('{}')
       expect(
-        await reasonOf(
-          Webhooks.verify({ headers, body: '{}' }, { scheme, secret: ['whsec_b2xk'] }),
-        ),
+        await codeOf(Webhooks.verify({ headers, body: '{}' }, { scheme, secret: ['whsec_b2xk'] })),
       ).toBe('signature')
     })
 
     test(`${name}: rejects a body changed after signing`, async () => {
       const headers = await Webhooks.sign('{"amount":1}', { scheme, secret })
       expect(
-        await reasonOf(Webhooks.verify({ headers, body: '{"amount":2}' }, { scheme, secret })),
+        await codeOf(Webhooks.verify({ headers, body: '{"amount":2}' }, { scheme, secret })),
       ).toBe('signature')
     })
   }
@@ -138,7 +136,7 @@ describe('verify', () => {
         now: late,
       })
       expect(
-        await reasonOf(
+        await codeOf(
           Webhooks.verify(
             { headers: lateHeaders, body: '{}' },
             { scheme: Webhooks.slack, secret, now },
@@ -155,7 +153,7 @@ describe('verify', () => {
     expect((await Webhooks.verify({ headers: same, body: '{}' }, options)).body).toBe('{}')
     const timestamp = new Date(now.getTime() - 1000)
     const before = await Webhooks.sign('{}', { scheme: Webhooks.stripe, secret, now: timestamp })
-    expect(await reasonOf(Webhooks.verify({ headers: before, body: '{}' }, options))).toBe(
+    expect(await codeOf(Webhooks.verify({ headers: before, body: '{}' }, options))).toBe(
       'timestamp',
     )
   })
@@ -167,7 +165,7 @@ describe('verify', () => {
       now: new Date(0),
     })
     expect(
-      await reasonOf(
+      await codeOf(
         Webhooks.verify({ headers, body: '{"x":1}' }, { scheme: Webhooks.stripe, secret }),
       ),
     ).toBe('signature')
@@ -179,7 +177,7 @@ describe('verify', () => {
     for (const length of [4, 8, 20, 40]) {
       const truncated = { ...headers, 'webhook-signature': full.slice(0, 3 + length) }
       expect(
-        await reasonOf(
+        await codeOf(
           Webhooks.verify(
             { headers: truncated, body: '{}' },
             { scheme: Webhooks.standard, secret },
@@ -196,7 +194,7 @@ describe('verify', () => {
       const options = { scheme: Webhooks.github, secret: each } as const
       expect((await Webhooks.verify({ headers, body: '{}' }, options)).body).toBe('{}')
       const other = { scheme: Webhooks.github, secret: secrets[(i + 1) % secrets.length]! } as const
-      expect(await reasonOf(Webhooks.verify({ headers, body: '{}' }, other))).toBe('signature')
+      expect(await codeOf(Webhooks.verify({ headers, body: '{}' }, other))).toBe('signature')
     }
   })
 
@@ -222,12 +220,12 @@ describe('a scheme written by the caller', () => {
       const timestamp = headers.get('acme-timestamp')
       if (!signature || !timestamp)
         throw new Webhooks.VerificationError({
-          reason: 'missing-header',
+          code: 'missing-header',
           message: 'Missing Acme headers',
         })
       if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp))
         throw new Webhooks.VerificationError({
-          reason: 'malformed-header',
+          code: 'malformed-header',
           message: 'Malformed Acme headers',
         })
       return {
@@ -249,12 +247,10 @@ describe('a scheme written by the caller', () => {
     expect(Object.keys(headers)).toEqual(['acme-timestamp', 'acme-signature'])
     const options = { scheme: acme, secret, now: timestamp }
     expect((await Webhooks.verify({ headers, body: '{"a":1}' }, options)).body).toBe('{"a":1}')
-    expect(await reasonOf(Webhooks.verify({ headers, body: '{"a":2}' }, options))).toBe('signature')
+    expect(await codeOf(Webhooks.verify({ headers, body: '{"a":2}' }, options))).toBe('signature')
     expect(
-      await reasonOf(Webhooks.verify({ headers, body: '{"a":1}' }, { scheme: acme, secret })),
+      await codeOf(Webhooks.verify({ headers, body: '{"a":1}' }, { scheme: acme, secret })),
     ).toBe('timestamp')
-    expect(await reasonOf(Webhooks.verify({ headers: {}, body: '' }, options))).toBe(
-      'missing-header',
-    )
+    expect(await codeOf(Webhooks.verify({ headers: {}, body: '' }, options))).toBe('missing-header')
   })
 })

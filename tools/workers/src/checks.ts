@@ -1,6 +1,6 @@
 // One check per package, run inside workerd by run.ts. Each check calls the package the way a
 // Worker would and throws if the result is wrong. The conformance tests cover the behavior, so a
-// check only needs to reach the platform APIs the package uses: streams, CompressionStream,
+// check only needs to call each platform API that the package uses: streams, CompressionStream,
 // crypto.subtle, getRandomValues, timers, TextDecoder labels and MessageChannel.
 import * as Arc from '@portable/arc'
 import * as Base64 from '@portable/base64'
@@ -59,7 +59,7 @@ function through<T>(chunks: readonly T[], ...transforms: TransformStream[]): Pro
 
 const message = 'From: a@example.com\r\nTo: b@example.com\r\nSubject: tere\r\n\r\nHello.\r\n'
 
-// A resolver that serves the one DKIM key and the SPF and DMARC records the mail checks need.
+// Returns the DKIM key, the SPF record and the DMARC record that the mail checks look up.
 async function mailResolver() {
   const { privateKey, publicKey } = (await crypto.subtle.generateKey('Ed25519', true, [
     'sign',

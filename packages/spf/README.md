@@ -47,7 +47,7 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 | `now` | `new Date()` | The time for `%{t}` in explanations. |
 | `signal` | none | Rejects with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
-There is no default resolver. The one you pass decides which servers see the client's IP address (`exists:%{i}...` sends it in queries), and a mail server usually has its own. Pass `Dns.create()` for DNS-over-HTTPS.
+There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.
 
 `check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as an empty answer, so an `a`, `mx` or `exists` term doesn't match and an `include` gives `permerror`. It treats any other rejection as `temperror`.
 

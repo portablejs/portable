@@ -51,6 +51,8 @@ export type Result = {
   explanation?: string | undefined
   /** Why the result is `none`, `temperror` or `permerror`. */
   reason?: string | undefined
+  /** The resolver's error behind a `temperror`. */
+  cause?: unknown
   /** DNS-querying terms evaluated. More than 10 gives `permerror`. */
   lookups: number
   /** Lookups that found no records. More than 2 gives `permerror`. */
@@ -75,7 +77,7 @@ export declare namespace check {
   }
 
   type Options = {
-    /** Answers the DNS lookups. `Dns.create()` and `node:dns/promises` both fit. */
+    /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined
@@ -191,7 +193,11 @@ export async function check(input: check.Input, options: check.Options): Promise
     outcome = await evaluate(ctx, domain, false)
   } catch (error) {
     if (!(error instanceof Failure)) throw error
-    outcome = { result: error.result, reason: error.message }
+    outcome = {
+      result: error.result,
+      reason: error.message,
+      ...(error.cause !== undefined && { cause: error.cause }),
+    }
   }
   return { ...base, ...outcome, lookups: ctx.lookups, voidLookups: ctx.voidLookups }
 }
@@ -415,6 +421,7 @@ async function query<K extends keyof Answers>(
     if (Dns.isNotFound(error)) return []
     throw temperror(
       `${type} lookup of ${name} failed: ${typeof code === 'string' ? code : String(error)}`,
+      error,
     )
   }
 }

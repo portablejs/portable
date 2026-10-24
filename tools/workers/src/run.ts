@@ -1,7 +1,7 @@
 // Bundles every package into one Worker and runs it in workerd through Miniflare. The Worker
-// imports every entry point listed in a package's `exports`, so a module that calls `setTimeout`
-// or `crypto.getRandomValues` at the top level fails here as it would on Cloudflare, and then runs
-// the checks in checks.ts. `@cloudflare/vitest-pool-workers` supports only
+// imports every entry point in each package's `exports`, then runs the checks in checks.ts.
+// Because it imports every module, a module that calls `setTimeout` or `crypto.getRandomValues`
+// at the top level fails here as it would on Cloudflare. `@cloudflare/vitest-pool-workers` supports only
 // Vitest 4, so this runs outside Vitest until it supports Vitest 5.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -68,7 +68,8 @@ const output = (await build({
 const chunks = output.output.filter((file): file is Rollup.OutputChunk => file.type === 'chunk')
 if (chunks.length !== 1) throw new Error(`Expected one chunk, got ${chunks.length}`)
 
-// A stack trace from workerd gives lines in the bundle, so WORKERS_BUNDLE=<path> saves it.
+// Line numbers in a workerd stack trace refer to the bundle. Set WORKERS_BUNDLE=<path> to save
+// the bundle and look them up.
 if (process.env.WORKERS_BUNDLE) writeFileSync(process.env.WORKERS_BUNDLE, chunks[0]!.code)
 const miniflare = new Miniflare({
   modules: true,

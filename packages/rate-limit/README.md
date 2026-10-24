@@ -71,7 +71,7 @@ RateLimit.headers(result)
 // { 'RateLimit-Policy': '"default";q=100;w=60', RateLimit: '"default";r=0;t=3', 'Retry-After': '3' }
 ```
 
-`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. `t` is the seconds until the allowance is full, or `retryAfter` for a denied request, so `Retry-After` is never earlier than the end of `t`, as the draft asks. All times round up to whole seconds. Pass `{ name }` to change the policy name from `"default"`, and `{ now }` to count `t` from a time other than the current one. `Retry-After` is left out when `retryAfter` is `Infinity`.
+`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. For an allowed request, `t` is the number of seconds until the allowance is full again. For a denied request, `t` is `retryAfter`, so `Retry-After` never ends before `t`, as the IETF RateLimit header draft requires. All times round up to whole seconds. Pass `{ name }` to change the policy name from `"default"`, and `{ now }` to count `t` from a time other than the current one. `Retry-After` is left out when `retryAfter` is `Infinity`.
 
 ## Stores
 

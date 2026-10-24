@@ -13,7 +13,7 @@ class Base64InvalidInputError extends Errors.InvalidInputError {
   static override readonly kind: string = 'Base64.InvalidInputError'
 }
 
-/** An error as another copy of `@portable/errors` would build it: a different class, the same brand. */
+/** Builds an error from a different class with the same brand, as another copy of the package would. */
 function fromAnotherCopy(kinds: readonly string[], fields: object = {}): Error {
   const error = Object.assign(new Error('from another copy'), fields)
   Object.defineProperty(error, Symbol.for('portable.error'), { value: kinds })

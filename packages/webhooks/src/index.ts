@@ -5,7 +5,7 @@ import { utf8 } from './internal.js'
 import { race, readBody } from './race.js'
 import { type Scheme, standard } from './schemes.js'
 
-export { type Reason, VerificationError } from './errors.js'
+export { VerificationError } from './errors.js'
 export { github, type Scheme, slack, standard, stripe } from './schemes.js'
 export type { Hmac } from '@portable/web-crypto'
 
@@ -105,7 +105,7 @@ export async function verify(
   const { id, timestamp } = signed
   if (timestamp !== undefined && Number.isNaN(timestamp.getTime()))
     throw new VerificationError({
-      reason: 'malformed-header',
+      code: 'malformed-header',
       message: 'Timestamp is not a valid time',
     })
 
@@ -124,13 +124,13 @@ export async function verify(
       if (Bytes.timingSafeEqual(signature, expected)) match = true
   }
   if (!match)
-    throw new VerificationError({ reason: 'signature', message: 'No signature matches the body' })
+    throw new VerificationError({ code: 'signature', message: 'No signature matches the body' })
 
   if (timestamp !== undefined) {
     const skew = Math.abs(Math.floor(now.getTime() / 1000) - Math.floor(timestamp.getTime() / 1000))
     if (skew * 1000 > tolerance)
       throw new VerificationError({
-        reason: 'timestamp',
+        code: 'timestamp',
         message: `Timestamp is ${skew} s from now`,
       })
   }

@@ -53,8 +53,8 @@ function makeCrc32(): (bytes: Uint8Array, crc: number) => number {
 let hash: ((bytes: Uint8Array, crc: number) => number) | undefined
 
 /**
- * The CRC-32 checksum used by gzip, zip and PNG, continued from `previous`. The table is built on
- * the first call, so importing this module costs nothing until then.
+ * Computes the CRC-32 checksum of gzip, zip and PNG, starting from `previous`. The lookup table is
+ * built on the first call, not when the module is imported.
  */
 export function crc32(bytes: Uint8Array, previous: number = 0): number {
   return ~(hash ??= makeCrc32())(bytes, ~previous) >>> 0

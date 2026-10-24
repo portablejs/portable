@@ -25,10 +25,10 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 | Option | Default | Description |
 | --- | --- | --- |
 | `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]` and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
-| `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. A matched value is held until it ends, so a longer one fails the stream with `MaxLengthError` as soon as it grows past the limit. Values outside `paths` are never held. |
+| `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError`, whose `maxLength` holds the limit, on a matched value longer than `maxLength`.
+The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The error stores the limit in `maxLength`.
 
 ## `encodeStream`
 

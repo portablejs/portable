@@ -72,7 +72,11 @@ describe('Dmarc.check', () => {
     })
     expect(
       await check({ '_dmarc.example.com': { TXT: 'ETIMEOUT' } }, { from: 'example.com' }),
-    ).toMatchObject({ result: 'temperror', reason: expect.stringContaining('ETIMEOUT') })
+    ).toMatchObject({
+      result: 'temperror',
+      reason: expect.stringContaining('ETIMEOUT'),
+      cause: expect.objectContaining({ code: 'ETIMEOUT' }),
+    })
     expect(await check({}, { from: 'bad domain.test' })).toMatchObject({
       result: 'permerror',
       reason: expect.any(String),
@@ -361,6 +365,26 @@ describe('dmarc-fixes-test.js', () => {
       expect(result).toMatchObject({ result: 'temperror', disposition: 'none' })
       expect(result.reason).toContain('_dmarc.com')
     }
+  })
+
+  test('keeps every failed lookup behind a temperror in an AggregateError', async () => {
+    const zone: Zone = {
+      ...reject,
+      '_dmarc.sub.example.com': { TXT: 'ESERVFAIL' },
+      '_dmarc.other.example.com': { TXT: 'ETIMEOUT' },
+    }
+    const result = await check(zone, {
+      from: 'example.com',
+      dkim: [pass('sub.example.com'), pass('other.example.com')],
+    })
+    expect(result.result).toBe('temperror')
+    expect(result.cause).toBeInstanceOf(AggregateError)
+    expect((result.cause as AggregateError).errors).toMatchObject([
+      { code: 'ESERVFAIL' },
+      { code: 'ETIMEOUT' },
+    ])
+    expect(result.reason).toContain('ESERVFAIL')
+    expect(result.reason).toContain('ETIMEOUT')
   })
 
   test('F5: an identifier past the limit of 10 tree walks gives temperror, not fail', async () => {

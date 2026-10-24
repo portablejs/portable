@@ -228,6 +228,20 @@ describe('dns-packet cases', () => {
     }
   })
 
+  test('an RDATA field that is too short throws InvalidInputError with the TruncatedError as cause', () => {
+    const bytes = hex('000081800000000100000000' + '00000f000100000000000101')
+    const error = (() => {
+      try {
+        decode(bytes)
+      } catch (error) {
+        return error
+      }
+      return undefined
+    })()
+    expect(error).toBeInstanceOf(InvalidInputError)
+    expect((error as Error).cause).toBeInstanceOf(TruncatedError)
+  })
+
   test('name decoding', () => {
     expect(() => decodeQuestionName([0x80])).toThrow(InvalidInputError)
     expect(() => decodeQuestionName([0xb0])).toThrow(InvalidInputError)

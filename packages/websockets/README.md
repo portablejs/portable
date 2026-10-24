@@ -95,7 +95,7 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 | --- | --- |
 | `WebSockets.CloseError` | The connection closed permanently. `code` and `reason` hold the close event's values. |
 | `WebSockets.MaxBufferedError` | Received messages exceeded `maxBuffered`, stored in `maxBuffered`. |
-| `TimeoutError` (`DOMException`) | An attempt or a heartbeat reply took too long, once `attempts` is used up. |
+| `TimeoutError` (`DOMException`) | `attempts` is used up, and the last attempt timed out while opening or while waiting for a heartbeat reply. |
 | `TypeError` | No `WebSocket` class was found. |
 | `RangeError` | An option is out of range. |
 

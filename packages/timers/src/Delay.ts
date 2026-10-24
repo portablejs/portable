@@ -37,8 +37,8 @@ export function neverAborted(): AbortSignal {
 }
 
 /**
- * Checks `delay` and returns a function of the attempt number (starting at 1) and the error that
- * ended it, which gives the wait before the next attempt in ms. `retry` and `poll` use it, and so
+ * Checks `delay` and returns a function that takes the attempt number, starting at 1, and the
+ * error that ended that attempt, and returns the wait in ms before the next attempt. `retry` and `poll` use it, and so
  * do the reconnecting clients in `@portable/websockets` and `@portable/sse`.
  *
  * @example

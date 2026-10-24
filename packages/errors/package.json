@@ -1,6 +1,6 @@
 {
   "name": "@portable/errors",
-  "description": "Defines the error classes every @portable package throws, and checks them across duplicate package copies, in any JavaScript runtime.",
+  "description": "Defines the shared error classes for @portable packages and checks an error's kind even when an app installs two copies of a package, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

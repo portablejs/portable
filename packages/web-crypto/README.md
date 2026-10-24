@@ -44,7 +44,7 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
 | `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'` or `'P-521'`. It sets the width of `r` and `s` in the output. |
 
-The functions throw or reject with `WebCrypto.InvalidInputError` for malformed DER, a raw signature or seed of the wrong length, and a key that is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are passed on unchanged.
+The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, a raw signature or seed has the wrong length, or a key is not an extractable private key. Errors from `crypto.subtle` itself, such as an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 

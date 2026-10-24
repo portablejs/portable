@@ -672,6 +672,13 @@ describe('RFC compliance cases', () => {
 })
 
 describe('the result object', () => {
+  test('keeps the resolver error behind a temperror as cause', async () => {
+    const error = dnsError('ESERVFAIL', KEY)
+    const { result } = await run(await std(), { [KEY]: error })
+    expect(result.result).toBe('temperror')
+    expect(result.cause).toBe(error)
+  })
+
   test('reports the domain, selector, algorithm, identity and signature', async () => {
     const message = await std(' i=joe@sub.example.com;')
     const { result } = await run(message, { [KEY]: [rsaRec] })

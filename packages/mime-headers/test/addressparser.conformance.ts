@@ -3,8 +3,9 @@ import { parseAddresses, parseMailboxes, type Address } from '@portable/mime-hea
 
 // Ported from nodemailer 10.1.7 test/addressparser/addressparser-test.ts, the current home of
 // addressparser. addressparser(input) is parseAddresses(input) here, and addressparser(input,
-// { flatten: true }) is parseMailboxes(input). Where this package reads malformed input differently, the test asserts our result
-// and its comment says why. PARITY.md lists those cases.
+// { flatten: true }) is parseMailboxes(input). If this package parses
+// malformed input differently from addressparser, the test asserts our result and its comment
+// gives the reason. PARITY.md lists those cases.
 
 const parse = (input: string) => parseAddresses(input)
 const flat = (input: string) => parseMailboxes(input)

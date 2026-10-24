@@ -25,6 +25,7 @@ describe('Spf.check', () => {
     expect(await check({ 'example.test': { TXT: 'ESERVFAIL' } })).toMatchObject({
       result: 'temperror',
       reason: expect.stringContaining('ESERVFAIL'),
+      cause: expect.objectContaining({ code: 'ESERVFAIL' }),
     })
     expect(await check(withRecord('v=spf1 foo:bar -all'))).toMatchObject({
       result: 'permerror',

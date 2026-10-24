@@ -121,7 +121,7 @@ export function checkSize(name: string, value: number, min = 0): void {
   if (!(value >= min)) throw new RangeError(`Expected \`${name}\` to be a number >= ${min}.`)
 }
 
-// Workers throws a TypeError for a `highWaterMark` of `Infinity`, which the Streams spec allows.
+// The Streams spec allows a `highWaterMark` of `Infinity`, but Workers throws a TypeError for it.
 export function queueLimit(maxBuffered: number): number {
   return Math.min(maxBuffered, Number.MAX_SAFE_INTEGER)
 }

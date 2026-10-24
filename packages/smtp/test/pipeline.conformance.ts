@@ -4,8 +4,8 @@ import * as Streams from '@portable/streams'
 import { expect, test } from 'vite-plus/test'
 import { fakeServer, plain } from './utils.js'
 
-// A message built with Mail.encode, signed with Dkim.sign and sent with Smtp, as the mail README
-// shows, must arrive with a signature that Dkim.verify accepts.
+// Follows the mail README: builds a message with Mail.encode, signs it with Dkim.sign and sends
+// it with Smtp, then checks that Dkim.verify accepts the signature on the received message.
 
 test('a message encoded, signed and sent arrives with a valid DKIM signature', async () => {
   const keys = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, [

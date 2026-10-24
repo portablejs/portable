@@ -23,8 +23,8 @@ export declare namespace retry {
     retryIf?: ((error: unknown, attempt: number) => boolean | PromiseLike<boolean>) | undefined
     /**
      * Called after `retryIf` decides to retry and before the wait, with the error, the number of the
-     * attempt that threw it, and the wait in ms. Use it to log retries. The next attempt waits for
-     * a returned promise, and an error it throws stops the retries and rejects with that error.
+     * attempt that threw it, and the wait in ms. Use it to log retries. If `onRetry` returns a
+     * promise, the next attempt waits for it. If `onRetry` throws, `retry` rejects with that error.
      */
     onRetry?: ((error: unknown, retry: retry.Retry) => void | PromiseLike<void>) | undefined
     /**
@@ -36,7 +36,7 @@ export declare namespace retry {
     signal?: AbortSignal | undefined
   }
 
-  /** What `onRetry` receives about the retry it is called for. */
+  /** Details of the retry, passed to `onRetry` as its second argument. */
   type Retry = {
     /** The number of the attempt that failed, starting at 1. */
     attempt: number

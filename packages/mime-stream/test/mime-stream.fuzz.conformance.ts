@@ -63,7 +63,10 @@ const mimeLike = fc
   )
   .map((pieces) => binary(pieces.join('')))
 
-/** The chunks with adjacent ones of the same type and part joined, as a chunk boundary moves them. */
+/**
+ * Joins adjacent chunks of the same type and part. Where the input is split changes where chunks
+ * start and end, but not the joined result.
+ */
 function structure(chunks: readonly MimeStream.Chunk[]) {
   const joined: { type: string; contentType: string; boundary?: string; text: string }[] = []
   const parts: MimeStream.Part[] = []

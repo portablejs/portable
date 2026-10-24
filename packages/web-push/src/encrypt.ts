@@ -36,7 +36,7 @@ export const maxPayloadBytes = 3993
 
 export declare namespace encrypt {
   type Options = {
-    /** The subscription whose `keys` the payload is encrypted for. */
+    /** The subscription. The payload is encrypted with its `keys`. */
     subscription: Pick<Subscription, 'keys'>
     /** The message. */
     payload: string | Uint8Array

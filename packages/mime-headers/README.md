@@ -48,7 +48,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `parseMailboxes(text, options?)` | an address list | `Mailbox[]`, with the members of each group in place of the group |
 | `formatAddresses(addresses, options?)` | `Address[]` | the address list |
 | `InvalidInputError` | | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses` |
-| `MaxLengthError` | | thrown by `parseHeaders` when the header block is longer than `maxLength`, which it stores |
+| `MaxLengthError` | | thrown by `parseHeaders` when the header block is longer than `maxLength`. The error stores the limit in `maxLength`. |
 
 `decodeWords` joins encoded words that only whitespace separates, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
@@ -65,7 +65,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. `@portable/charset` provides the encoders. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
 | `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
-| `maxLength` | `parseHeaders` | `Infinity` | Longest header block in UTF-16 code units. A longer block throws `MaxLengthError`, and the body isn't counted. |
+| `maxLength` | `parseHeaders` | `Infinity` | Longest header block in UTF-16 code units. `parseHeaders` throws `MaxLengthError` for a longer block. The body doesn't count toward the limit. |
 
 ## Types
 

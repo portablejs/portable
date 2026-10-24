@@ -48,6 +48,8 @@ export type Result = {
   signature: string
   /** Why the result is not `pass`, such as `body hash did not verify` or `no key`. */
   reason?: string | undefined
+  /** The resolver's error behind a `temperror`. */
+  cause?: unknown
   /** The key record has `t=y`: the domain is testing DKIM, so treat a pass as unsigned mail. */
   testing: boolean
   /** The `l=` value: only this many bytes of the canonicalized body are signed. */
@@ -62,7 +64,7 @@ export declare namespace Result {
 
 export declare namespace verify {
   type Options = {
-    /** Looks up the keys. `Dns.create()` and `node:dns/promises` both fit. */
+    /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /** The time to check `x=` against. @default new Date() */
     now?: Date | undefined
@@ -147,6 +149,7 @@ export async function verify(message: Message, options: verify.Options): Promise
             : await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits)
       result.result = outcome.result
       if (outcome.reason) result.reason = outcome.reason
+      if ('cause' in outcome) result.cause = outcome.cause
       return result
     }),
   )

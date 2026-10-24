@@ -22,7 +22,7 @@ import {
 } from './names.js'
 import { parseTags } from './tags.js'
 
-export type Outcome = { result: Result.Code; reason: string }
+export type Outcome = { result: Result.Code; reason: string; cause?: unknown }
 
 export type Signature = {
   field: Field
@@ -247,6 +247,7 @@ export async function fetchKey(
     return {
       result: 'temperror',
       reason: `key lookup failed${typeof code === 'string' ? `: ${code}` : ''}`,
+      cause: error,
     }
   }
   const text = records[0]?.join('')

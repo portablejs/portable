@@ -8,7 +8,7 @@ import { Webhook as SvixWebhook } from 'svix'
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
 import { octokitWeb } from './octokit-web.js'
-import { reasonOf } from './utils.js'
+import { codeOf } from './utils.js'
 
 const stripe = new Stripe('sk_test_oracle')
 
@@ -277,7 +277,7 @@ describe('deliberate differences', () => {
       { headers: { 'x-hub-signature-256': hex }, body: c.body },
       { scheme: Webhooks.github, secret: c.secret },
     )
-    expect(await reasonOf(result)).toBe('malformed-header')
+    expect(await codeOf(result)).toBe('malformed-header')
   })
 
   test('github: rejects non-hex characters, which the web build of upstream skips or crashes on', async () => {
@@ -291,7 +291,7 @@ describe('deliberate differences', () => {
         { headers: { 'x-hub-signature-256': header }, body: c.body },
         { scheme: Webhooks.github, secret: c.secret },
       )
-      expect(await reasonOf(result)).toBe('malformed-header')
+      expect(await codeOf(result)).toBe('malformed-header')
     }
   })
 })

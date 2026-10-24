@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test'
 import * as Webhooks from '@portable/webhooks'
-import { encode, reasonOf, request } from './utils.js'
+import { encode, codeOf, request } from './utils.js'
 
 const id = 'msg_p5jXN8AQM9LWM0D4loKWxJek'
 const payload = '{"test": 2432232314}'
@@ -79,19 +79,19 @@ describe('standard', () => {
     test(`rejects a missing ${header} header`, async () => {
       const signed = await headers()
       delete signed[`${prefix}-${header}`]
-      expect(await reasonOf(verify(signed))).toBe('missing-header')
+      expect(await codeOf(verify(signed))).toBe('missing-header')
     })
   }
 
   test('rejects a timestamp that is not a number', async () => {
-    expect(await reasonOf(verify({ ...(await headers()), [`${prefix}-timestamp`]: 'hello' }))).toBe(
+    expect(await codeOf(verify({ ...(await headers()), [`${prefix}-timestamp`]: 'hello' }))).toBe(
       'malformed-header',
     )
   })
 
   test('rejects an invalid signature', async () => {
     expect(
-      await reasonOf(
+      await codeOf(
         verify({ ...(await headers()), [`${prefix}-signature`]: 'v1,dawfeoifkpqwoekfpqoekf' }),
       ),
     ).toBe('signature')
@@ -101,19 +101,19 @@ describe('standard', () => {
     const signed = await headers()
     const signature = signed[`${prefix}-signature`]!
     expect(
-      await reasonOf(verify({ ...signed, [`${prefix}-signature`]: signature.slice(0, 8) })),
+      await codeOf(verify({ ...signed, [`${prefix}-signature`]: signature.slice(0, 8) })),
     ).toBe('signature')
-    expect(await reasonOf(verify({ ...signed, [`${prefix}-signature`]: 'v1,' }))).toBe('signature')
+    expect(await codeOf(verify({ ...signed, [`${prefix}-signature`]: 'v1,' }))).toBe('signature')
   })
 
   test('rejects a timestamp older than the tolerance', async () => {
     const signed = await headers({ timestamp: new Date(Date.now() - 301_000) })
-    expect(await reasonOf(verify(signed))).toBe('timestamp')
+    expect(await codeOf(verify(signed))).toBe('timestamp')
   })
 
   test('rejects a timestamp newer than the tolerance', async () => {
     const signed = await headers({ timestamp: new Date(Date.now() + 301_000) })
-    expect(await reasonOf(verify(signed))).toBe('timestamp')
+    expect(await codeOf(verify(signed))).toBe('timestamp')
   })
 
   test('accepts any one valid signature among several', async () => {
@@ -130,7 +130,7 @@ describe('standard', () => {
   test('ignores signatures of other versions', async () => {
     const signed = await headers()
     signed[`${prefix}-signature`] = signed[`${prefix}-signature`]!.replace('v1,', 'v1a,')
-    expect(await reasonOf(verify(signed))).toBe('signature')
+    expect(await codeOf(verify(signed))).toBe('signature')
   })
 
   test('returns an empty body', async () => {

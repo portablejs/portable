@@ -16,7 +16,7 @@ import { hostToAscii } from '@portable/idna/internal'
 
 type Shared = {
   /**
-   * Sends each request, called with a `Request`. Pass one to add headers, set a
+   * The function that sends each `Request`. Pass one to add headers, set a
    * timeout, route through a proxy, or mock responses. Bootstrap files are cached separately for
    * each `fetch` function.
    * @default globalThis.fetch

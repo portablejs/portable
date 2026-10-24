@@ -54,8 +54,9 @@ function inlineModule(url: string): Promise<string> {
 
 /**
  * Adds data URLs of the module at `url` and every module it imports to `graph`, keyed by their
- * URLs, for an import map. `inlineModule` copies a module into every module that imports it, so a
- * data URL page built from it passed Chromium's 2 MB URL limit.
+ * URLs, for an import map. This doesn't use `inlineModule`, because it copies a module into every
+ * module that imports it, and a page built that way was longer than Chromium's 2 MB limit for
+ * data URLs.
  */
 async function moduleGraph(url: string, graph: Record<string, string> = {}) {
   if (url in graph) return graph

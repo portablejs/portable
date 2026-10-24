@@ -47,7 +47,7 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object. |
 | `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`. |
 | `Scheme` | The type of a scheme object, for writing one for another sender. |
-| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `reason` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
 `verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret or a Standard Webhooks secret that isn't base64 throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
@@ -95,9 +95,9 @@ const acme: Webhooks.Scheme = {
     const signature = headers.get('acme-signature')
     const timestamp = headers.get('acme-timestamp')
     if (!signature || !timestamp)
-      throw new Webhooks.VerificationError({ reason: 'missing-header', message: 'Missing Acme headers' })
+      throw new Webhooks.VerificationError({ code: 'missing-header', message: 'Missing Acme headers' })
     if (!/^[\da-f]{64}$/.test(signature) || !/^\d+$/.test(timestamp))
-      throw new Webhooks.VerificationError({ reason: 'malformed-header', message: 'Malformed Acme headers' })
+      throw new Webhooks.VerificationError({ code: 'malformed-header', message: 'Malformed Acme headers' })
     return {
       signatures: [Uint8Array.from(signature.match(/../g)!, (byte) => parseInt(byte, 16))],
       timestamp: new Date(Number(timestamp) * 1000),
@@ -139,7 +139,7 @@ const { body } = await Webhooks.verify(request, {
 | Type | Description |
 | --- | --- |
 | `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
-| `Webhooks.Reason` | `VerificationError.reason`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
 ## Why use this over the provider libraries
 

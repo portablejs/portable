@@ -54,6 +54,11 @@ export type Result = {
   dkim: readonly Alignment[]
   /** Why the result is `none`, `temperror` or `permerror`. */
   reason?: string | undefined
+  /**
+   * The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one
+   * lookup failed.
+   */
+  cause?: unknown
 }
 
 export declare namespace Result {
@@ -96,7 +101,7 @@ export declare namespace check {
   }
 
   type Options = {
-    /** Answers the DNS lookups. `Dns.create()` and `node:dns/promises` both fit. */
+    /** Looks up DNS records. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver
     /**
      * Returns the organizational domain of a domain from a public suffix list, as tldts'
@@ -122,6 +127,13 @@ type Walk = { found: Found[]; error?: TempError | undefined }
 
 class TempError extends Error {
   override name = 'Dmarc.TempError'
+}
+
+function failure(errors: readonly TempError[]): { reason: string; cause?: unknown } {
+  const reason = errors.map((error) => error.message).join('; ')
+  const causes = errors.flatMap((error) => (error.cause === undefined ? [] : [error.cause]))
+  if (causes.length === 0) return { reason }
+  return { reason, cause: causes.length === 1 ? causes[0] : new AggregateError(causes, reason) }
 }
 
 const maxWalkLabels = 7
@@ -185,7 +197,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     found = psl ? await discoverByList(ctx, author.name, psl) : await discover(ctx, author.name)
   } catch (error) {
     if (!(error instanceof TempError)) throw error
-    return { ...base, result: 'temperror', reason: error.message }
+    return { ...base, result: 'temperror', ...failure([error]) }
   }
   if (!found) return { ...base, result: 'none', reason: 'No DMARC record' }
   const { record } = found
@@ -269,7 +281,7 @@ export async function check(input: check.Input, options: check.Options): Promise
     record,
     ...(spf && { spf }),
     dkim,
-    ...(result === 'temperror' && { reason: errors[0]!.message }),
+    ...(result === 'temperror' && failure(errors)),
   }
 }
 
@@ -383,7 +395,9 @@ async function query<T>(
     const code =
       typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
     if (Dns.isNotFound(error)) return { empty: code as string }
-    throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`)
+    throw new TempError(`${what} failed: ${typeof code === 'string' ? code : String(error)}`, {
+      cause: error,
+    })
   }
 }
 

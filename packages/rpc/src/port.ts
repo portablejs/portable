@@ -93,9 +93,9 @@ type Direct = {
 const directKey = Symbol.for('portable.rpc.direct')
 
 /**
- * Lets `connect` post, and for ports receive, messages directly instead of through the streams.
- * That is faster, and a message that can't be cloned rejects one call instead of erroring the
- * writable permanently. The functions are stored on the transport under a `Symbol.for` key, so
+ * Lets `connect` post messages directly instead of writing them to the streams, and receive them
+ * directly when the transport is a port. Posting directly is faster, and if a message can't be
+ * cloned, only that call rejects and the writable stays usable. The functions are stored on the transport under a `Symbol.for` key, so
  * `connect` from another copy of this package finds them too.
  */
 export const direct = {

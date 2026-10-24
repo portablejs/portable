@@ -25,7 +25,8 @@ export function within<T>(field: string, read: () => T): T {
   try {
     return read()
   } catch (error) {
-    if (error instanceof TruncatedError) throw new InvalidInputError(`${field} data is too short.`)
+    if (error instanceof TruncatedError)
+      throw new InvalidInputError(`${field} data is too short.`, { cause: error })
     throw error
   }
 }

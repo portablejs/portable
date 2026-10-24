@@ -4,8 +4,8 @@ import { run, toBufferSource } from './internal.js'
 export type Hash = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'
 
 /**
- * Hashes `data` with `hash`, sync or async. Packages that hash take one as their `digest` option.
- * `WebCrypto.digest` fits this type.
+ * A function that hashes `data` with the algorithm `hash` and returns the digest or a promise of
+ * it. Packages that hash take one as their `digest` option, and `WebCrypto.digest` is one.
  */
 export type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
 
@@ -21,9 +21,9 @@ export type Hmac = (
 ) => Uint8Array | Promise<Uint8Array>
 
 /**
- * An incremental hash, the shape of `@noble/hashes`' `sha256.create()`. Packages that hash a
- * stream take a function that returns one as their `hasher` option, because `crypto.subtle.digest`
- * needs the whole input at once.
+ * An incremental hash with the same methods as `sha256.create()` from `@noble/hashes`.
+ * `crypto.subtle.digest` needs the whole input at once, so a package that hashes a stream takes a
+ * `hasher` option, a function that returns one of these.
  */
 export type Hasher = {
   update(data: Uint8Array): unknown

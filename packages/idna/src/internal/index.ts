@@ -1,5 +1,5 @@
 /**
- * The domain conversion that other `@portable/*` packages share. It isn't public API and can
+ * The domain conversion shared by other `@portable/*` packages. This module isn't public API and can
  * change in any release.
  */
 export * from './host.js'

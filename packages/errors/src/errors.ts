@@ -9,10 +9,11 @@ function isBranded(value: unknown): value is Branded {
 }
 
 /**
- * The base class of every error that `@portable/*` packages throw. Each error carries the `kind` of
- * its class and of every class above it, stored under `Symbol.for('portable.error')`. Because
- * `Symbol.for` returns the same symbol in every copy of every package, `instanceof` and `is` work
- * when an app has two copies of a package, such as a direct one and an older transitive one.
+ * The base class of every error that `@portable/*` packages throw. Each error stores the `kind` of
+ * its own class and of each superclass under `Symbol.for('portable.error')`. An app loads two
+ * copies of a package when it depends on one version and one of its dependencies requires
+ * another. `Symbol.for` returns the same symbol in both copies, so `instanceof` and `is` still
+ * recognize an error from the other copy.
  *
  * @example
  * ```ts
@@ -208,7 +209,7 @@ export declare namespace ResponseError {
 }
 
 /**
- * Thrown when a server answers with a status or body the package can't use. `response` is the
+ * Thrown when the package can't use the status or body of a server's response. `response` is the
  * whole `Response`, so callers can read headers such as `Retry-After`.
  *
  * @example

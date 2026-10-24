@@ -4,8 +4,8 @@ import { expect, test } from 'vite-plus/test'
 
 const errors = [Password.InvalidInputError, Password.UnsupportedError]
 /**
- * The password as HMAC uses it: HMAC pads a short key with zero bytes, so PBKDF2 treats `'a'` and
- * `'a\0'` as the same password, in every implementation.
+ * Removes trailing zero bytes from the password. HMAC pads a short key with zero bytes, so every
+ * PBKDF2 implementation treats `'a'` and `'a\0'` as the same password.
  */
 function hmacKey(password: string | Uint8Array): string {
   const bytes =
@@ -45,7 +45,8 @@ test('a changed hash verifies to a boolean or throws a documented error', async 
     fc.asyncProperty(
       mutated(stored)
         .map((bytes) => decoder.decode(bytes))
-        // verify trusts the iteration count in a stored hash, which can be in the billions, so skip counts of four digits or more to keep the runs fast.
+        // `verify` runs as many iterations as the stored hash says, and a mutated hash can say
+        // billions, so this drops counts of four or more digits to keep each run fast.
         .filter((text) => !/(?:i=|\$)\d{4}/.test(text)),
       async (text) => {
         const verified = await outcomeAsync(errors, () => Password.verify('password', text))

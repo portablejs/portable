@@ -2,8 +2,9 @@ import * as Idna from '@portable/idna'
 import { fc, fuzz, outcome } from '@portable/fuzz'
 import { expect, test } from 'vite-plus/test'
 
-// idna.oracle.test.ts compares 20,000 random domains with tr46. These properties check what
-// holds for any input: only InvalidInputError is thrown, and the results convert back.
+// idna.oracle.test.ts compares 20,000 random domains with tr46. For any input, these
+// properties check that the functions throw only InvalidInputError and that converting a result
+// back returns the same domain.
 
 const errors = [Idna.InvalidInputError]
 
