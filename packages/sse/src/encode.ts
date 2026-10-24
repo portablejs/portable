@@ -1,4 +1,4 @@
-import { errorOnAbort } from './signal.js'
+import * as Streams from '@portable/streams'
 import { InvalidInputError } from './errors.js'
 
 /** A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. */
@@ -81,25 +81,16 @@ export declare namespace EncoderStream {
 export class EncoderStream extends TransformStream<Message, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
     const encoder = new TextEncoder()
-    let release: () => void
-    const transformer = {
-      start(controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>) {
-        release = errorOnAbort(options.signal, controller)
-      },
-      transform(
-        message: Message,
-        controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>,
-      ) {
-        const text = encode(message)
-        if (text !== '') controller.enqueue(encoder.encode(text))
-      },
-      flush() {
-        release()
-      },
-      cancel() {
-        release()
-      },
-    }
-    super(transformer)
+    super(
+      Streams.abortable(
+        {
+          transform(message, controller) {
+            const text = encode(message)
+            if (text !== '') controller.enqueue(encoder.encode(text))
+          },
+        },
+        options,
+      ),
+    )
   }
 }

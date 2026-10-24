@@ -39,7 +39,8 @@
     "src"
   ],
   "dependencies": {
-    "@portable/errors": "workspace:*"
+    "@portable/errors": "workspace:*",
+    "@portable/streams": "workspace:*"
   },
   "exports": {
     ".": {

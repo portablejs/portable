@@ -1,5 +1,5 @@
 import { createUtf8Encoder, encodeUtf8 } from './utf8.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 export declare namespace encode {
   type Options = {
@@ -53,7 +53,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
     const utf8 = createUtf8Encoder()
     const ascii = new TextEncoder()
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             const output = encoder.write(utf8.write(chunk), false)
@@ -64,7 +64,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
             if (output !== '') controller.enqueue(ascii.encode(output))
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

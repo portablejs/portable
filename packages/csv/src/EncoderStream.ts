@@ -1,5 +1,5 @@
 import type { encode } from './encode.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 import { createEncoder, type Encoder } from './encoder.js'
 
 export declare namespace EncoderStream {
@@ -31,7 +31,7 @@ export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayB
     const encoder = createEncoder(options) satisfies Encoder
     const utf8 = new TextEncoder()
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(row, controller) {
             controller.enqueue(utf8.encode(encoder.row(row)))
@@ -41,7 +41,7 @@ export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayB
             if (rest) controller.enqueue(utf8.encode(rest))
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

@@ -1,5 +1,5 @@
 import { InvalidInputError, MaxLengthError } from './errors.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 export declare namespace DecoderStream {
   type Options = {
@@ -63,7 +63,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
     }
 
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             const text = typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
@@ -82,7 +82,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
             decode(partial + decoder.decode(), controller)
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

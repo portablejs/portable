@@ -1,5 +1,5 @@
 import * as MimeHeaders from '@portable/mime-headers'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 import { MaxBoundaryLineBytesError, MaxHeaderBytesError, MaxPartsError } from './errors.js'
 
 /**
@@ -97,7 +97,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Chunk> {
   constructor(options: DecoderStream.Options = {}) {
     let decoder: ReturnType<typeof createDecoder>
     super(
-      abortable(
+      Streams.abortable(
         {
           start(controller) {
             decoder = createDecoder(options, (chunk) => controller.enqueue(chunk))
@@ -109,7 +109,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Chunk> {
             decoder.end()
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

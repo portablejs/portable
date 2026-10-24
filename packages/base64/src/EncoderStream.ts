@@ -1,6 +1,6 @@
 import * as Bytes from '@portable/bytes'
 import { checkAlphabet, checkLineLength, encode, toBase64, toBytes } from './encode.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
@@ -70,7 +70,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
     }
 
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             let bytes = readChunk(chunk)
@@ -95,7 +95,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
             if (text !== '') controller.enqueue(utf8.encode(text))
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

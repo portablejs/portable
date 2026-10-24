@@ -1,5 +1,5 @@
 import { createDecoder, decode } from './decode.js'
-import { abortable } from './abortable.js'
+import * as Streams from '@portable/streams'
 
 export declare namespace DecoderStream {
   type Options = decode.Options & {
@@ -36,7 +36,7 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
       if (bytes.length > 0) controller.enqueue(bytes)
     }
     super(
-      abortable(
+      Streams.abortable(
         {
           transform(chunk, controller) {
             const text = typeof chunk === 'string' ? chunk : utf8.decode(chunk, { stream: true })
@@ -46,7 +46,7 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
             enqueue(write(utf8.decode(), true), controller)
           },
         },
-        options.signal,
+        options,
       ),
     )
   }

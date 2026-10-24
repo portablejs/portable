@@ -117,11 +117,11 @@ Decisions made while building the packages, with the options considered and the 
 - **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. A caller who knows `Streams.toBytes(stream, { maxBytes })` would guess wrong in compress.
 - **Chosen:** name it by unit. compress's option is now `maxBytes` and its error `Compress.MaxBytesError`, and AGENTS.md states the rule.
 
-## Each stream package keeps its own copy of `abortable`
+## Stream transforms use `Streams.abortable`, and promise helpers stay private
 
-- **Options:** export `abortable` from streams or another shared package; keep a private copy of the 30-line helper in each package that needs it.
-- **Trade-offs:** A shared export would become public API that callers could start to depend on, and it would add a dependency to packages such as base64 and lines that need nothing else from streams. Copies can drift, but they are identical today and the signal tests in each package catch a broken copy.
-- **Chosen:** keep the copies. The consistency pass added copies to csv and mime-stream. If they ever differ, move the helper to an `./internal` subpath of streams.
+- **Options:** keep a private copy of the 30-line transformer helper in each package; move it to a new shared or internal package; export it from streams.
+- **Trade-offs:** Nine packages had identical copies, and sse wrote the same logic out by hand. A separate shared package would add a package whose only job is one helper. Exporting it from streams makes it public API, and base64, charset, csv, json-stream, jsonl, lines, mime-stream, quoted-printable and sse now depend on streams, but streams is `sideEffects: false`, so their bundles take only `abortable`. Callers who write their own transforms can use it too. The promise helpers that race work against a signal (in dkim, dmarc, spf, timers, password, oauth1 and webhooks) only stop the caller from waiting, while the DNS query or the PBKDF2 keeps running, so a public "abortable promise" would claim more than it does.
+- **Chosen:** Kevin chose to export `Streams.abortable(transformer, { signal })` and to keep each promise helper private in the package that uses it.
 
 ## arc reuses dkim through `@portable/dkim/internal`
 

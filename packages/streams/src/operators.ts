@@ -33,7 +33,7 @@ export function map<input, output>(
           return Promise.resolve(result).then((value) => controller.enqueue(value))
         },
       },
-      options.signal,
+      options,
     ),
   )
 }
@@ -83,7 +83,7 @@ export function filter<chunk>(
           })
         },
       },
-      options.signal,
+      options,
     ),
   )
 }
@@ -121,7 +121,7 @@ export function tap<chunk>(
           return Promise.resolve(result).then(() => controller.enqueue(chunk))
         },
       },
-      options.signal,
+      options,
     ),
   )
 }
@@ -164,7 +164,7 @@ export function batch<chunk>(
           if (items.length > 0) controller.enqueue(items)
         },
       },
-      options.signal,
+      options,
     ),
   )
 }

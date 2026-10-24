@@ -132,6 +132,8 @@ describe('transforms', () => {
     tap: (signal: AbortSignal) => Streams.tap(() => {}, { signal }),
     batch: (signal: AbortSignal) => Streams.batch<Uint8Array>(1, { signal }),
     limitBytes: (signal: AbortSignal) => Streams.limitBytes<Uint8Array>(Infinity, { signal }),
+    abortable: (signal: AbortSignal) =>
+      new TransformStream<Uint8Array, Uint8Array>(Streams.abortable({}, { signal })),
     transform: (signal: AbortSignal) =>
       Streams.transform(
         async function* (source: AsyncIterable<Uint8Array>) {
@@ -171,5 +173,57 @@ describe('transforms', () => {
     controller.abort(new Error('stop'))
     await new Promise((resolve) => setTimeout(resolve, 10))
     expect(finished).toBe(true)
+  })
+})
+
+describe('abortable', () => {
+  test('returns the transformer unchanged without a signal', () => {
+    const transformer = { transform: () => {} }
+    expect(Streams.abortable(transformer)).toBe(transformer)
+    expect(Streams.abortable(transformer, { signal: undefined })).toBe(transformer)
+  })
+
+  test('runs the start, transform and flush of the transformer', async () => {
+    const stream = new TransformStream<number, number>(
+      Streams.abortable(
+        {
+          start: (controller) => controller.enqueue(0),
+          transform: (chunk, controller) => controller.enqueue(chunk * 2),
+          flush: (controller) => controller.enqueue(-1),
+        },
+        { signal: new AbortController().signal },
+      ),
+    )
+    const writer = stream.writable.getWriter()
+    void writer.write(1)
+    void writer.write(2)
+    void writer.close()
+    expect(await Streams.toArray(stream.readable)).toEqual([0, 2, 4, -1])
+  })
+
+  test('an abort after the stream ends has no effect', async () => {
+    const controller = new AbortController()
+    const stream = new TransformStream(Streams.abortable({}, { signal: controller.signal }))
+    await stream.writable.close()
+    controller.abort(new Error('late'))
+    expect(await Streams.toArray(stream.readable)).toEqual([])
+  })
+
+  test('cancelling the stream calls the cancel of the transformer', async () => {
+    let cancelled: unknown
+    const stream = new TransformStream(
+      Streams.abortable(
+        {
+          cancel: (reason: unknown) => {
+            cancelled = reason
+          },
+        },
+        { signal: new AbortController().signal },
+      ),
+    )
+    const reason = new Error('stop')
+    await stream.readable.cancel(reason)
+    // Runtimes without Transformer.cancel never call it.
+    expect([undefined, reason]).toContain(cancelled)
   })
 })

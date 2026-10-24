@@ -1,6 +1,6 @@
 # @portable/streams
 
-Collects, combines and transforms web streams and iterables. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+, including browsers that lack `ReadableStream.from` and `for await` over a stream.
+Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+, including browsers that lack `ReadableStream.from` and `for await` over a stream.
 
 Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body).
 
@@ -96,11 +96,29 @@ const lines = Streams.transform(async function* (source: AsyncIterable<string>) 
 })
 ```
 
+## Cancel your own TransformStream
+
+`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends or is cancelled, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv and the other Portable packages use it to support their `signal` option.
+
+```ts
+class UpperCaseStream extends TransformStream<string, string> {
+  constructor(options: { signal?: AbortSignal | undefined } = {}) {
+    super(
+      Streams.abortable(
+        { transform: (chunk, controller) => controller.enqueue(chunk.toUpperCase()) },
+        options,
+      ),
+    )
+  }
+}
+```
+
 ## Types
 
 | Type | Description |
 | --- | --- |
 | `Streams.Source` | What the collectors and combinators read: a `ReadableStream`, an async iterable or an iterable. |
+| `Streams.abortable.Transformer` | The `Transformer` that `abortable` takes and returns. It adds the optional `cancel` method, which TypeScript's DOM types don't have yet. |
 
 ## Why use this over get-stream, concat-stream and merge2
 

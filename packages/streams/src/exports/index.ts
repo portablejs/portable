@@ -1,3 +1,4 @@
+export { abortable } from '../abortable.js'
 export { MaxBytesError } from '../errors.js'
 export { toArray, toBlob, toBytes, toJson, toText } from '../collect.js'
 export { concat, limitBytes, merge } from '../combine.js'
