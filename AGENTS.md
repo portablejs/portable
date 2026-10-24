@@ -77,7 +77,7 @@ These follow [wevm/ox](https://github.com/wevm/ox/blob/main/AGENTS.md).
 - Options objects are `options: Options = {}` and are typed in a `declare namespace` named after the function or class (`DecoderStream.Options`).
 - With `exactOptionalPropertyTypes`, write optional properties as `foo?: T | undefined`. `portable/optional-undefined` checks this and fixes it.
 - Relative imports end in `.js` (`portable/import-extension`).
-- Classes only for errors and for subclasses of platform types. Error classes extend a class from `@portable/errors` and set `static override readonly kind: string`, which `BaseError` copies to `name`. Kinds are namespaced by package, like `'Lines.MaxLengthError'`. `portable/error-kind` checks that each error class sets `kind`.
+- Classes only for errors and for subclasses of platform types. Error classes extend a class from `@portable/errors` and set `static override readonly kind: string`, which `BaseError` copies to `name`. Kinds are namespaced by package, like `'Lines.MaxLengthError'`. A package's error classes live in `src/errors.ts`. `portable/error-kind` checks that each error class sets `kind`.
 - Public functions, classes and constants, error classes included, have JSDoc with an `@example`. Exported types have JSDoc without one, because the function that takes or returns the type already shows it in use. `tools/lint/src/publicApi.test.ts` reads every entry point except `./internal` with the TypeScript checker and checks this, the `is`, `has` and `can` names, and that no public function takes a positional boolean. Other comments are rare: write one only when the code can't say why, and run the `no-comments` skill before you finish a change.
 
 ## Tests

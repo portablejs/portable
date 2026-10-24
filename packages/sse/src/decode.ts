@@ -1,5 +1,5 @@
-import * as Errors from '@portable/errors'
 import { errorOnAbort } from './signal.js'
+import { MaxLengthError } from './errors.js'
 
 /** An event read from a stream, as `EventSource` would dispatch it. */
 export type Event = {
@@ -92,30 +92,6 @@ export function decode(input: Uint8Array | string, options: decode.Options = {})
   parser.push(input)
   parser.end()
   return events
-}
-
-/**
- * Thrown when a line or an event's `data` grows past `maxLength`.
- *
- * @example
- * ```ts
- * import * as Sse from '@portable/sse'
- *
- * try {
- *   Sse.decode(`data: ${'x'.repeat(2000)}\n\n`, { maxLength: 1000 })
- * } catch (error) {
- *   if (error instanceof Sse.MaxLengthError) console.log(`longer than ${error.maxLength}`)
- * }
- * ```
- */
-export class MaxLengthError extends Errors.MaxLengthError {
-  static override readonly kind: string = 'Sse.MaxLengthError'
-  constructor(options: Errors.MaxLengthError.Options) {
-    super({
-      message: `Event stream line or data exceeded maxLength of ${options.maxLength}.`,
-      ...options,
-    })
-  }
 }
 
 export type Parser = {

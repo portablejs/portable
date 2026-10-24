@@ -1,5 +1,6 @@
 import { abortable } from './abortable.js'
-import { MaxBytesError, byteLength } from './bytes.js'
+import { byteLength } from './bytes.js'
+import { MaxBytesError } from './errors.js'
 import { fromIterable } from './iterable.js'
 import { type Source, assertSource, isReadableStream } from './source.js'
 

@@ -1,4 +1,4 @@
-export { CommandError, type Rejection } from '../CommandError.js'
+export { CommandError, type Rejection } from '../errors.js'
 export {
   connect,
   send,

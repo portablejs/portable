@@ -1,5 +1,6 @@
 import * as Bytes from '@portable/bytes'
-import { MaxBytesError, byteLength, toUint8Array } from './bytes.js'
+import { byteLength, toUint8Array } from './bytes.js'
+import { MaxBytesError } from './errors.js'
 import { type Source, forEach } from './source.js'
 
 export declare namespace toBytes {

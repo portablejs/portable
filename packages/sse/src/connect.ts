@@ -1,6 +1,6 @@
-import * as Errors from '@portable/errors'
 import * as Timers from '@portable/timers'
-import { createParser, type Event, MaxLengthError } from './decode.js'
+import { createParser, type Event } from './decode.js'
+import { MaxLengthError, ResponseError } from './errors.js'
 
 export declare namespace connect {
   type Options = {
@@ -145,25 +145,6 @@ export function connect(
       await reader?.cancel(reason).catch(() => {})
     },
   })
-}
-
-/**
- * Thrown by `connect` for a response that isn't an event stream.
- *
- * @example
- * ```ts
- * import * as Sse from '@portable/sse'
- *
- * const reader = Sse.connect('https://example.com/events').getReader()
- * try {
- *   await reader.read()
- * } catch (error) {
- *   if (error instanceof Sse.ResponseError) console.log(error.response.status)
- * }
- * ```
- */
-export class ResponseError extends Errors.ResponseError {
-  static override readonly kind: string = 'Sse.ResponseError'
 }
 
 function reconnectByDefault(error: unknown): boolean {

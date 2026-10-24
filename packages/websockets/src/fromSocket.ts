@@ -1,8 +1,6 @@
 import {
   CONNECTING,
-  CloseError,
   type Duplex,
-  MaxBufferedError,
   type Message,
   OPEN,
   type Socket,
@@ -16,6 +14,7 @@ import {
   messageSize,
   toMessage,
 } from './Socket.js'
+import { CloseError, MaxBufferedError } from './errors.js'
 
 export declare namespace fromSocket {
   type Options = {

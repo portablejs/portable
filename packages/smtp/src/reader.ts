@@ -1,5 +1,5 @@
 import * as Bytes from '@portable/bytes'
-import { CommandError } from './CommandError.js'
+import { CommandError } from './errors.js'
 
 export type Reply = {
   code: number

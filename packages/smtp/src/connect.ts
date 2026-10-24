@@ -1,5 +1,5 @@
 import * as Base64 from '@portable/base64'
-import { CommandError, type Rejection } from './CommandError.js'
+import { CommandError, type Rejection } from './errors.js'
 import { DataStream, encodeData } from './DataStream.js'
 import { createReader, type Reader, type Reply } from './reader.js'
 import type { Connect, Socket } from './Socket.js'
