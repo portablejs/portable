@@ -1,4 +1,5 @@
 import * as Bytes from '@portable/bytes'
+import { toBufferSource } from '@portable/bytes/internal'
 import type { Hmac } from '@portable/web-crypto'
 import { VerificationError } from './errors.js'
 import { utf8 } from './internal.js'
@@ -211,9 +212,7 @@ function keyOf(scheme: Scheme, secret: Secret): Uint8Array<ArrayBuffer> {
 
 function bytes(content: Uint8Array | string): Uint8Array<ArrayBuffer> {
   if (typeof content === 'string') return utf8.encode(content)
-  return content.buffer instanceof ArrayBuffer
-    ? (content as Uint8Array<ArrayBuffer>)
-    : new Uint8Array(content)
+  return toBufferSource(content)
 }
 
 async function hmacSha256(

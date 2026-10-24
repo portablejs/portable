@@ -41,8 +41,8 @@ L1  mime-stream   → mime-headers, bytes
     sse, websockets → timers
     compress, exif, image-size, png → bytes
     csv, idna, json-stream, jsonl
-L0  base64, streams → bytes
-    bytes, charset, dns-packet, ip, lines, queue, quoted-printable, random, rate-limit, timers, web-crypto
+L0  base64, streams, web-crypto → bytes
+    bytes, charset, dns-packet, ip, lines, queue, quoted-printable, random, rate-limit, timers
     errors        (every package that throws depends on it)
 ```
 

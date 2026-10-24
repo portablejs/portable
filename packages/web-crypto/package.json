@@ -37,6 +37,7 @@
     "src"
   ],
   "dependencies": {
+    "@portable/bytes": "workspace:*",
     "@portable/errors": "workspace:*"
   },
   "exports": {

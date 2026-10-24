@@ -1,4 +1,5 @@
-import { concat, toBufferSource } from './bytes.js'
+import { toBufferSource } from '@portable/bytes/internal'
+import { concat } from './bytes.js'
 import type { Format } from './codec.js'
 import { MaxBytesError, classify } from './errors.js'
 

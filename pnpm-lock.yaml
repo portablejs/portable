@@ -1373,6 +1373,9 @@ importers:
 
   packages/web-crypto:
     dependencies:
+      '@portable/bytes':
+        specifier: workspace:*
+        version: link:../bytes
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors

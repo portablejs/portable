@@ -3,3 +3,4 @@
  * release.
  */
 export * from '../internal/crc32.js'
+export * from '../internal/toBufferSource.js'

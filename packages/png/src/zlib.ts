@@ -1,4 +1,5 @@
 import * as Bytes from '@portable/bytes'
+import { toBufferSource } from '@portable/bytes/internal'
 
 export async function inflate(
   data: Uint8Array,
@@ -63,11 +64,7 @@ function transform(
   stream: TransformStream<BufferSource, Uint8Array>,
 ): ReadableStream<Uint8Array> {
   const writer = stream.writable.getWriter()
-  writer.write(ownsArrayBuffer(data) ? data : data.slice()).catch(() => {})
+  writer.write(toBufferSource(data)).catch(() => {})
   writer.close().catch(() => {})
   return stream.readable
-}
-
-function ownsArrayBuffer(data: Uint8Array): data is Uint8Array<ArrayBuffer> {
-  return data.buffer instanceof ArrayBuffer
 }
