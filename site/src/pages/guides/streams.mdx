@@ -47,6 +47,7 @@ const lines = response
     new Compress.DecoderStream({ maxBytes: 1_000_000_000 }),
   )
   .pipeThrough(new Lines.DecoderStream({ skipEmpty: true }))
+
 let count = 0
 await lines.pipeTo(
   new WritableStream({
