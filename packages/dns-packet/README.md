@@ -124,7 +124,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 Other differences from dns-packet:
 
 - Compression is off unless you pass `compress: true`, and inside RDATA it applies only to the names of NS, CNAME, PTR, MX and SOA records, as RFC 3597 requires.
-- Names are checked: empty labels, labels over 63 bytes and names over 255 bytes throw instead of being written corrupted. `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped.
+- Names are checked: empty labels, labels over 63 bytes and names over 255 bytes throw instead of being written corrupted. `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so it encodes to the same bytes.
 - Decoding checks that each record's data fills its RDLENGTH exactly and that EDNS options have the right length for their fields.
 - IPv6 addresses decode in RFC 5952 form, and invalid addresses throw on encode.
 - `encode` clears the bits of a CLIENT_SUBNET address past the source prefix, as RFC 7871 requires.
