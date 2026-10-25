@@ -81,7 +81,7 @@ export declare namespace verify {
  *
  * @throws {VerificationError} When a header is missing or malformed, no signature matches, or
  * the timestamp is outside `tolerance`.
- * @throws {RangeError} When a secret is empty or not valid base64.
+ * @throws {RangeError} When a secret is empty or not valid base64, or `now` is an invalid time.
  * @throws {TypeError} When the scheme isn't a scheme object, or the body isn't a string or
  * `Uint8Array`.
  */
@@ -96,7 +96,7 @@ export async function verify(
     maxBytes = Infinity,
     signal,
   } = options;
-  const now = toDate(options.now);
+  const now = validDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   if (!(tolerance >= 0)) {
@@ -202,7 +202,7 @@ export declare namespace sign {
  * await fetch('https://example.com/webhooks', { method: 'POST', body, headers });
  * ```
  *
- * @throws {RangeError} When the secret is empty or not valid base64.
+ * @throws {RangeError} When the secret is empty or not valid base64, or `now` is an invalid time.
  * @throws {TypeError} When the scheme isn't a scheme object.
  */
 export async function sign(
@@ -210,7 +210,7 @@ export async function sign(
   options: sign.Options,
 ): Promise<Record<string, string>> {
   const { scheme = standard, hmac = WebCrypto.hmac, id = crypto.randomUUID(), signal } = options;
-  const timestamp = toDate(options.now);
+  const timestamp = validDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   const key = keyOf(scheme, options.secret);
@@ -218,6 +218,14 @@ export async function sign(
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }));
   const signature = await race(hmac('SHA-256', key, content), signal);
   return scheme.headers({ signature, id, timestamp });
+}
+
+function validDate(instant: Instant | undefined): Date {
+  const date = toDate(instant);
+  if (Number.isNaN(date.getTime())) {
+    throw new RangeError('`now` must be a valid Date or instant.');
+  }
+  return date;
 }
 
 function assertScheme(scheme: Scheme): void {

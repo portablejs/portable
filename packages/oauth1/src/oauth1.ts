@@ -110,7 +110,7 @@ const utf8 = new TextEncoder();
  * ```
  *
  * @throws {UnsupportedError} For an unknown `signatureMethod`.
- * @throws {RangeError} For an RSA private key that can't be used.
+ * @throws {RangeError} For an RSA private key that can't be used, or an invalid `now`.
  */
 export async function authorization(
   request: Request,
@@ -118,12 +118,13 @@ export async function authorization(
 ): Promise<string> {
   const { signal } = options;
   signal?.throwIfAborted();
+  const fields = protocolFields(options);
   const form = isForm(request);
   const body =
     (form || options.bodyHash) && hasBody(request)
       ? await readBody(request.clone(), signal)
       : undefined;
-  const pairs = await race(protocolParameters(request, form, body, options), signal);
+  const pairs = await race(protocolParameters(request, form, body, fields, options), signal);
   return header(pairs, options.realm);
 }
 
@@ -149,17 +150,18 @@ export async function authorization(
  * ```
  *
  * @throws {UnsupportedError} For an unknown `signatureMethod`.
- * @throws {RangeError} For an RSA private key that can't be used.
+ * @throws {RangeError} For an RSA private key that can't be used, or an invalid `now`.
  */
 export async function sign(request: Request, options: sign.Options): Promise<Request> {
   const { placement = 'header', signal } = options;
   signal?.throwIfAborted();
+  const fields = protocolFields(options);
   const form = isForm(request);
   const body =
     (form || options.bodyHash || placement === 'query') && hasBody(request)
       ? await readBody(request, signal)
       : undefined;
-  const pairs = await race(protocolParameters(request, form, body, options), signal);
+  const pairs = await race(protocolParameters(request, form, body, fields, options), signal);
 
   if (placement === 'query') {
     const url = new URL(request.url);
@@ -202,16 +204,27 @@ function isForm(request: Request): boolean {
   return type?.split(';')[0]!.trim().toLowerCase() === 'application/x-www-form-urlencoded';
 }
 
-async function protocolParameters(
-  request: Request,
-  form: boolean,
-  body: Uint8Array<ArrayBuffer> | undefined,
-  options: authorization.Options,
-): Promise<Pair[]> {
+type ProtocolFields = { signatureMethod: SignatureMethod; timestamp: string };
+
+function protocolFields(options: authorization.Options): ProtocolFields {
   const signatureMethod = options.signatureMethod ?? 'HMAC-SHA1';
   if (!methods.has(signatureMethod)) {
     throw new UnsupportedError(`Unsupported signature method: ${String(signatureMethod)}`);
   }
+  const seconds = Math.floor(toDate(options.now).getTime() / 1000);
+  if (!Number.isFinite(seconds)) {
+    throw new RangeError('`now` must be a valid Date or instant.');
+  }
+  return { signatureMethod, timestamp: String(seconds) };
+}
+
+async function protocolParameters(
+  request: Request,
+  form: boolean,
+  body: Uint8Array<ArrayBuffer> | undefined,
+  { signatureMethod, timestamp }: ProtocolFields,
+  options: authorization.Options,
+): Promise<Pair[]> {
   const { callback, digest = WebCrypto.digest, hmac = WebCrypto.hmac, token, verifier } = options;
   const hash = (signatureMethod === 'HMAC-SHA256' ? 'SHA-256' : 'SHA-1') satisfies WebCrypto.Hash;
 
@@ -219,7 +232,7 @@ async function protocolParameters(
     ['oauth_consumer_key', percentEncode(options.consumer.key)],
     ['oauth_nonce', percentEncode(options.nonce ?? randomNonce())],
     ['oauth_signature_method', signatureMethod],
-    ['oauth_timestamp', String(Math.floor(toDate(options.now).getTime() / 1000))],
+    ['oauth_timestamp', timestamp],
     ['oauth_version', '1.0'],
   ] satisfies Pair[];
   if (token !== undefined) {

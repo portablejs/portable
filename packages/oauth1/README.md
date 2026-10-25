@@ -48,7 +48,7 @@ The signature covers what the server will see, because it is computed from the `
 | `hmac` | `crypto.subtle` HMAC | `(algorithm: 'SHA-1' \| 'SHA-256', key, data) => Uint8Array \| Promise<Uint8Array>`, used for HMAC-SHA1 and HMAC-SHA256. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for `oauth_body_hash`. |
 
-`sign` and `authorization` reject with a `RangeError` for an RSA key that can't be used, and with `UnsupportedError` for another signature method.
+`sign` and `authorization` reject with a `RangeError` for an RSA key that can't be used or an invalid `now`, and with `UnsupportedError` for another signature method. Both check `now` and the signature method before they read the body.
 
 ### RSA-SHA1
 

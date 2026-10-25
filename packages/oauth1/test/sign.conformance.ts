@@ -92,6 +92,20 @@ describe('sign()', () => {
     expect(await signed.text()).toBe('text');
     expect(parseHeader(signed.headers.get('authorization')!).oauth_body_hash).toBeDefined();
   });
+
+  test('rejects an invalid now or signature method without reading the body', async () => {
+    const cases = [
+      [{ ...twitter, now: new Date(NaN) }, RangeError],
+      [{ ...twitter, now: { epochMilliseconds: NaN } }, RangeError],
+      [{ ...twitter, signatureMethod: 'RSA-SHA256' as never }, OAuth1.UnsupportedError],
+    ] as const;
+    for (const [options, error] of cases) {
+      const request = new Request(tweetUrl, form(tweetBody));
+      await expect(OAuth1.sign(request, options)).rejects.toThrow(error);
+      expect(request.bodyUsed).toBe(false);
+      expect(await request.text()).toBe(tweetBody);
+    }
+  });
 });
 
 describe('RSA-SHA1', () => {

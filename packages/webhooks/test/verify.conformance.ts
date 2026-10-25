@@ -191,6 +191,18 @@ describe('verify', () => {
     ).toBe('timestamp');
   });
 
+  test('rejects an invalid now instead of skipping the timestamp check', async () => {
+    const headers = await Webhooks.sign('{}', { scheme: Webhooks.slack, secret, now: new Date(0) });
+    for (const now of [new Date(NaN), { epochMilliseconds: NaN }]) {
+      await expect(
+        Webhooks.verify({ headers, body: '{}' }, { scheme: Webhooks.slack, secret, now }),
+      ).rejects.toThrow(RangeError);
+      await expect(Webhooks.sign('{}', { scheme: Webhooks.slack, secret, now })).rejects.toThrow(
+        RangeError,
+      );
+    }
+  });
+
   test('accepts only the same second when tolerance is 0', async () => {
     const now = new Date(1_700_000_000_500);
     const options = { scheme: Webhooks.stripe, secret, tolerance: 0, now } as const;
