@@ -1,5 +1,5 @@
 import * as MimeStream from '@portable/mime-stream';
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, test, vi } from 'vite-plus/test';
 
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
 
@@ -97,5 +97,25 @@ describe('signal', () => {
     controller.abort(reason);
     await expect(reader.read()).rejects.toBe(reason);
     expect(state.cancelled).toBe(reason);
+  });
+
+  test('splitHeaders removes its abort listener when the input errors after the header block', async () => {
+    const reason = new Error('broken');
+    let sent = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (sent) {
+          controller.error(reason);
+        } else {
+          controller.enqueue(encode('Subject: x\r\n\r\n'));
+          sent = true;
+        }
+      },
+    });
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    const { body } = await MimeStream.splitHeaders(stream, { signal: controller.signal });
+    await expect(body.getReader().read()).rejects.toBe(reason);
+    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });

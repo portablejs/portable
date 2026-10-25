@@ -52,8 +52,11 @@ function isShortAscii(text: string): boolean {
   return true;
 }
 
-/** Quoted-printable keeps mostly Latin text readable, and base64 is shorter for anything else. */
-function textEncoding(text: string): TransferEncoding {
+/**
+ * Whether ASCII letters outnumber non-ASCII and control characters. Quoted-printable and Q words
+ * keep such text readable, and base64 and B words are shorter for anything else.
+ */
+export function isMostlyLatin(text: string): boolean {
   let latin = 0;
   let other = 0;
   for (let i = 0; i < text.length; i++) {
@@ -64,7 +67,7 @@ function textEncoding(text: string): TransferEncoding {
       other++;
     }
   }
-  return other < latin ? 'quoted-printable' : 'base64';
+  return other < latin;
 }
 
 /**
@@ -75,7 +78,7 @@ export function chooseTextEncoding(content: Content): TransferEncoding {
     return 'quoted-printable';
   }
   const text = typeof content === 'string' ? content : new TextDecoder().decode(content);
-  return isShortAscii(text) ? '7bit' : textEncoding(text);
+  return isShortAscii(text) ? '7bit' : isMostlyLatin(text) ? 'quoted-printable' : 'base64';
 }
 
 const bareBreak = /\r(?!\n)|(?<!\r)\n/;

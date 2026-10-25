@@ -89,10 +89,11 @@ The size limits default to `Infinity`. Set `maxHeaderBytes`, `maxBoundaryLineByt
 | --- | --- |
 | `MimeStream.Chunk` | A run of bytes from the message, with its `type` and the `part` it belongs to. |
 | `MimeStream.Part` | One part of the message: the root, a part of a multipart, or the message inside a `message/rfc822` part. |
+| `MimeStream.EncoderStream.Input` | What `EncoderStream` takes: a `Chunk` or any object with `bytes`, a `Uint8Array`, or a string. |
 
 ## Why use this over mailsplit
 
-mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as dependencies. `DecoderStream` is a `TransformStream` with one dependency, `@portable/mime-headers`, so it reads a `fetch` body or a Workers email in any runtime.
+mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as dependencies. `DecoderStream` is a `TransformStream` with no dependencies outside `@portable/*`, so it reads a `fetch` body or a Workers email in any runtime.
 
 - Splitting and joining 1.5 MB of mail took 1.5 ms on Node 24, against 8.7 ms for mailsplit. `splitHeaders` reads the header block and passes on the body of the same message in 0.08 ms. mailsplit has no equivalent and took 8.7 ms with `ignoreEmbedded`.
 - A part that has headers and no body, followed by a delimiter (`--B\r\nX-Only: headers\r\n--B`), is kept. mailsplit 5.4.23 drops its bytes, so its output is not the input.

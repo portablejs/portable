@@ -112,13 +112,19 @@ export async function splitHeaders(
           return;
         }
       }
-      const { done, value } = await reader.read();
-      signal?.throwIfAborted();
-      if (done) {
+      try {
+        const { done, value } = await reader.read();
+        signal?.throwIfAborted();
+        if (done) {
+          stop();
+          controller.close();
+        } else {
+          controller.enqueue(assertUint8Array(value));
+        }
+      } catch (error) {
         stop();
-        controller.close();
-      } else {
-        controller.enqueue(assertUint8Array(value));
+        reader.cancel(error).catch(() => {});
+        throw error;
       }
     },
     cancel(reason) {

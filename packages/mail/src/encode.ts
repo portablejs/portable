@@ -1,7 +1,7 @@
 import { isUint8Array } from '@portable/bytes/internal';
 import * as Bytes from '@portable/bytes';
 import * as MimeHeaders from '@portable/mime-headers';
-import { type Addresses, format, parse, wordEncoding } from './addresses.js';
+import { type Addresses, format, mailboxes, parse, wordEncoding } from './addresses.js';
 import {
   type Body,
   type Content,
@@ -110,9 +110,9 @@ export type Message = {
 export declare namespace encodeStream {
   type Options = {
     /**
-     * Start of every multipart boundary. Each boundary is this prefix followed by the number of
-     * its multipart part, counted from 1 in the order the parts are written. Up to 60 characters
-     * from RFC 2046's `bchars`.
+     * Start of every multipart boundary. Each boundary is this prefix followed by the position of
+     * its multipart among all parts, counted from 1 in the order the parts are written. Up to 60
+     * characters from RFC 2046's `bchars`.
      * @default `'=_'` and 16 random hex digits and `'_'`, which no base64 or quoted-printable line
      * can contain
      */
@@ -160,7 +160,7 @@ type Context = {
   /** Content streams not read yet, cancelled when the output is cancelled or fails. */
   readonly streams: Set<ReadableStream<Uint8Array>>;
   id: number;
-  reader: ReadableStreamDefaultReader<Uint8Array | string> | undefined;
+  reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   cancelled: boolean;
 };
 
@@ -192,7 +192,7 @@ type Context = {
  * await new Response(raw).text();
  * ```
  *
- * @throws {InvalidInputError} When an address, header, content type or file name can't be
+ * @throws {InvalidInputError} When an address, header, content type, file name or date can't be
  * written.
  * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
  * stream is locked or given twice.
@@ -298,8 +298,7 @@ function msgId(value: string): string {
 function references(value: string | readonly string[]): string {
   const ids: string[] = [];
   for (const entry of typeof value === 'string' ? [value] : value) {
-    // oxlint-disable-next-line no-control-regex
-    const line = entry.replace(lineBreaks, ' ').replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '');
+    const line = entry.replace(lineBreaks, ' ').replace(controls, '');
     const lastClose = line.lastIndexOf('>');
     let joined = '';
     for (let i = 0; i < line.length; i++) {
@@ -364,8 +363,7 @@ function messageFields(
   if (message.subject) {
     fields.push(fold('Subject', text(message.subject, charset)));
   }
-  const from = message.from === undefined ? [] : parse(message.from);
-  const first = from.flatMap((entry) => ('group' in entry ? entry.group : [entry]))[0];
+  const first = mailboxes(message.from)[0];
   const domain = first ? first.address.slice(first.address.lastIndexOf('@') + 1) : 'localhost';
   fields.push(
     fold(

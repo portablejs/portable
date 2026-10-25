@@ -434,7 +434,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { maxLen
 
 ## Known upstream issues
 
-`upstream-issues.conformance.ts` unless the row names another file. The oracle test compares against libmime 5.4.9, nodemailer 10.1.2 and email-addresses 5.0.0, which are the newest versions old enough for `minimumReleaseAge`.
+`upstream-issues.conformance.ts` unless the row names another file. The oracle test compares against libmime 5.4.9, nodemailer 10.2.1 and email-addresses 5.0.0.
 
 | Issue | Covered by | Status upstream |
 | --- | --- | --- |
@@ -442,7 +442,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { maxLen
 | [GHSA-9h6g-pr28-7cqp](https://github.com/advisories/GHSA-9h6g-pr28-7cqp) and GHSA-v53p-9fqp-m79j: quadratic regular expressions in addressparser | `linear-time.bench.ts > parseAddresses() of ...` (29 inputs) | GHSA-9h6g-pr28-7cqp was fixed in nodemailer 6.9.9, and the later linear-time fixes are in 10.0.x. |
 | Stack overflow on deeply nested groups (nodemailer b61b9c0) | `deeply nested groups do not overflow the stack` | Fixed in nodemailer 7.0.11 with a depth limit. 10.x reads groups without recursion. |
 | An unclosed "[" swallowed later recipients ([nodemailer #1829](https://github.com/nodemailer/nodemailer/issues/1829)) | `operators inside a domain literal are part of it` | Fixed in nodemailer 9.0.2. |
-| A mailbox was read out of a comment (nodemailer a1538ea) | `a comment never holds the address` | Fixed in nodemailer 10.1.4, after the 10.1.2 the oracle runs. |
+| A mailbox was read out of a comment (nodemailer a1538ea) | `a comment never holds the address` | Fixed in nodemailer 10.1.4. |
 | An escaped ")" ended a comment (nodemailer c4ae20d) | `an escaped ")" does not end a comment` | Fixed in nodemailer 10.0.16. |
 | A quoted display name was moved into the address (nodemailer 3570d26) | `a quoted display name without "@" is not moved into the address` | Fixed in nodemailer 10.0.14 for a name without "@". A quoted name holding "@" is still moved. This package keeps it a name (`addressparser.conformance.ts > a quoted display name with "@" is not made an address either`). |
 | A CRLF in a display name could start a new header | `formatAddresses encodes a CRLF in a name instead of writing a new header` | Not an upstream report. Any address formatter can make this mistake. |

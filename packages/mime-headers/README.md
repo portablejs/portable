@@ -39,7 +39,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `encodeWord(text, options?)` | text | all of it as encoded words |
 | `encodeWords(text, options?)` | text | the text, with the part that needs it as encoded words |
 | `decodeWords(text)` | a header value | the value with its encoded words decoded |
-| `fold(line, options?)` | a header line | the line with CRLF and whitespace where it is too long |
+| `fold(line, options?)` | a header line | the line with a CRLF inserted before whitespace where it is too long |
 | `unfold(text)` | folded text | the text with every CRLF before whitespace removed |
 | `parseHeaders(text, options?)` | a header block | `Header[]`, `{ name, value }` in order, unfolded |
 | `parseValue(text)` | a value such as `text/plain; charset=utf-8` | `Value`, `{ value, params }` |
@@ -71,6 +71,12 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 | Type | Description |
 | --- | --- |
+| `MimeHeaders.Address` | One entry of an address list: a `Mailbox` or a `Group`. |
+| `MimeHeaders.Mailbox` | `{ name, address }`. `address` is `''` when the entry has no address. |
+| `MimeHeaders.Group` | `{ name, group }`, a named group of mailboxes. |
+| `MimeHeaders.Header` | `{ name, value }`, one header field from `parseHeaders`. |
+| `MimeHeaders.Value` | `{ value, params }`, a header value with parameters. |
+| `MimeHeaders.CharsetEncoder` | `{ name, encode(text) }`, the charset that encoded words are written in. `encode` is called once per word, so the bytes from each call must decode on their own. |
 | `MimeHeaders.WordEncoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
 
 ## Why use this over libmime, addressparser and email-addresses
@@ -78,12 +84,12 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 It has no dependencies, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. One address parser covers what addressparser and email-addresses each do: a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
 
 - In the benchmarks on Node 24, `parseAddresses` was 2× faster than addressparser and about 50× faster than email-addresses (25× in strict mode). `fold` was 7× faster than libmime's `foldLines`, `parseHeaders` 3.5× faster than `decodeHeaders`, `encodeWords` 3× faster and `formatValue` 2× faster. `decodeWords`, `parseValue` and `encodeWord` were 1.1 to 1.3× faster. `Buffer` and `TextDecoder` decode a single B word 3.7× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
-- `parseAddresses` reads an address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, as the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.1.2 still moves a quoted display name that contains "@" into the address.
+- `parseAddresses` reads an address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, as the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.2.1 still moves a quoted display name that contains "@" into the address.
 - `parseAddresses` never takes the address from a comment: `(evil@evil.com) Name <good@good.com>` parses to `good@good.com`. nodemailer fixed this in 10.1.4.
 - `encodeWords` encodes text that looks like an encoded word, so a reader can't decode a subject the sender didn't encode. libmime 5.5.1 leaves it as is.
 - `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
-- Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
+- Every function runs in linear time on hostile input. The tests check 45 adversarial inputs.
 - libmime's `encodeWord` writes one word unless given a length, and `encodeWord` limits words to 75 characters by default. Pass `wordLength: false` where you passed libmime a length of 0.
 - In a Q word, `encodeWord` writes a trailing space as `_`, where libmime writes `=20`.
 - `encodeWords` encodes words that contain control characters. libmime leaves them as they are.

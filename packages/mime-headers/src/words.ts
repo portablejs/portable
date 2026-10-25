@@ -20,8 +20,7 @@ export function encodeUtf8Scratch(text: string): Uint8Array {
  * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
  * is called once per encoded word, so the bytes from each call must decode on their own. For a
  * stateful charset such as ISO-2022-JP, each call's output has to return to the initial state
- * before it ends. Every charset from
- * `@portable/charset` is a `CharsetEncoder`.
+ * before it ends. Every charset from `@portable/charset` is a `CharsetEncoder`.
  */
 export type CharsetEncoder = {
   /** The name written into each encoded word. */
@@ -78,7 +77,7 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
     wordLength === false
       ? Infinity
       : Math.max(wordLength - prefix.length - 2, encoding === 'Q' ? 12 : 4);
-  const text = typeof input === 'string' ? input : toText(input);
+  const text = toText(input);
   const bytes = charset ? undefined : encodeUtf8Scratch(text);
   if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget) {
     return prefix + Base64.encode(bytes) + '?=';

@@ -1,4 +1,5 @@
 import * as MimeHeaders from '@portable/mime-headers';
+import { isMostlyLatin } from './body.js';
 import { InvalidInputError } from './errors.js';
 import { hostToAscii } from '@portable/idna/internal';
 
@@ -105,19 +106,8 @@ export function format(
     .join(', ');
 }
 
-/** Q keeps mostly Latin text readable, and B is shorter for everything else. */
 export function wordEncoding(text: string): MimeHeaders.WordEncoding {
-  let latin = 0;
-  let other = 0;
-  for (let i = 0; i < text.length; i++) {
-    const code = text.charCodeAt(i);
-    if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
-      latin++;
-    } else if (code >= 0x80 || (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d)) {
-      other++;
-    }
-  }
-  return other < latin ? 'Q' : 'B';
+  return isMostlyLatin(text) ? 'Q' : 'B';
 }
 
 export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {

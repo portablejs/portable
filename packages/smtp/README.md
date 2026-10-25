@@ -221,13 +221,14 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `EPROTOCOL` | The greeting wasn't 220, EHLO and HELO were refused, or a reply was malformed or over 1 MiB. |
 | `ETLS` | STARTTLS was not offered or was refused, or the TLS handshake failed. |
 | `EAUTH` | Login failed, no supported method was offered, or AUTH over plaintext without `allowInsecureAuth`. |
-| `EENVELOPE` | The sender or every recipient was refused, or the server can't honor SMTPUTF8 or REQUIRETLS. |
-| `EMESSAGE` | DATA was refused, the message is over the SIZE limit, the server refused the message, or the message stream errored. |
+| `EENVELOPE` | An address is invalid, the server refused the sender, every recipient or DATA, or the server can't honor SMTPUTF8 or REQUIRETLS. |
+| `EMESSAGE` | The message is over the SIZE limit, the message stream errored, or the server refused the message after DATA. |
 
 ## Types
 
 | Type | Description |
 | --- | --- |
+| `Smtp.Client` | An open session from `connect`: `send` and `close`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
 | `Smtp.Mail` | A message and its envelope, as `send` takes them. |
 | `Smtp.Result` | The outcome of a send that reached at least one recipient. |
 | `Smtp.Rejection` | A recipient the server refused, with its reply. |
@@ -239,7 +240,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 
 ## Why use this over nodemailer
 
-- It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies.
+- It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies outside `@portable/*`.
 - STARTTLS is required unless you pass `secure: 'off'`. nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set.
 - Credentials are never sent over plaintext unless `allowInsecureAuth` is set, and never skipped: nodemailer sends the message unauthenticated when the server doesn't advertise AUTH, unless `forceAuth` is set.
 - Bare CR and bare LF are converted to CRLF before dot-stuffing, so a message can't smuggle an end of DATA. An oracle test checks that the output is byte-identical to nodemailer's.

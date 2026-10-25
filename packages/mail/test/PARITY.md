@@ -139,7 +139,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should set unicode filename | body: filename table (`jõgeva.txt`) |
 | should set dashed filename | body: filename table (`test-file.txt`) |
 | should clean the content type before the multipart check reads it | body: a multipart content type throws |
-| should not let a normalizeHeaderKey result inject a header | Not applicable: no `normalizeHeaderKey`. headers: a header name outside printable ASCII or with a colon throws |
+| should not let a normalizeHeaderKey result inject a header | Not applicable: no `normalizeHeaderKey`. headers: the header name … throws because it is outside printable ASCII or holds a colon |
 | should not leave a control char anywhere in the headers | headers: a control character in a header value is encoded; body: filename table |
 | should encode filename with a tab | body: filename table |
 | should encode filename with a DEL | body: filename table |
@@ -188,9 +188,9 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should flatten arrays nested to any depth | Not applicable: `Addresses` is one level, a string or `Mailbox` or a list of them. |
 | should not loop on an array that contains itself | Not applicable: no nested lists. |
 | should normalize header key (`_normalizeHeaderKey`) | Not applicable: header names keep the caller's case. See differences. |
-| should strip control chars from a header key | headers: a header name outside printable ASCII or with a colon throws |
-| should strip the colon and whitespace from a header key | headers: a header name outside printable ASCII or with a colon throws |
-| should not let a header key smuggle a second From or a visible Bcc into the message | headers: a header name … throws; headers the package writes itself are refused in headers |
+| should strip control chars from a header key | headers: the header name … throws because it is outside printable ASCII or holds a colon |
+| should strip the colon and whitespace from a header key | headers: the header name … throws because it is outside printable ASCII or holds a colon |
+| should not let a header key smuggle a second From or a visible Bcc into the message | headers: the header name … throws because it is outside printable ASCII or holds a colon; the header … is refused in headers because encode writes it |
 | should do nothing on non multipart | Not applicable: internal. |
 | should use provided boundary | structure: every test passes `boundary` |
 | should generate boundary | structure: the default boundary is random and holds "=\_" |
@@ -249,7 +249,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should re-quote a local-part whose closing quote is a quoted-pair (security) | addresses: the address … throws because it is not one addr-spec |
 | should quote a local-part with dots outside dot-atom positions | Different: throws. mime-headers `formatAddresses` tests |
 | should quote an empty local-part | Different: throws. |
-| should keep an empty address empty | addresses: the address "" throws |
+| should keep an empty address empty | addresses: the address … throws because it is not one addr-spec (`""`) |
 | should quote a bare username that carries a special | addresses: a bare name is not an address |
 | should be idempotent | addresses: the header lists exactly the recipients of the envelope |
 | #\_generateMessageId: should generate uuid-looking message-id | headers: Date, Message-ID and MIME-Version are generated |
