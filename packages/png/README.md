@@ -1,6 +1,6 @@
 # @portable/png
 
-Decodes PNG files to 8-bit RGBA pixels and encodes RGBA pixels as PNG. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+, with no dependencies: zlib comes from the platform's `CompressionStream` and `DecompressionStream`.
+Decodes PNG files to 8-bit RGBA pixels and encodes RGBA pixels as PNG, with zlib from the platform's `CompressionStream` and `DecompressionStream`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [pngjs](https://www.npmjs.com/package/pngjs).
 

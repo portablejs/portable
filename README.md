@@ -115,6 +115,20 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 </tbody>
 </table>
 
+### How the packages work
+
+Every package follows the same conventions, so after one package you know the shape of the rest:
+
+- Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and call `Csv.decode` or `new Csv.DecoderStream()`.
+- Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. Functions that take text also take its bytes.
+- A streaming transform is a `TransformStream` that you pass to `pipeThrough`, as with `TextDecoderStream`.
+- Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers and nested streams underneath, and rejects with `signal.reason`, as `fetch` does.
+- Errors extend the classes in `@portable/errors`. `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
+
+### Runtimes
+
+The tests run in Chromium, Firefox, WebKit, Node 24 and 26, Deno and Bun, and a check of every package runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124 and Safari 17.4 or later. Ed25519 signatures, in `@portable/web-crypto`, `@portable/dkim`, `@portable/arc` and `@portable/mail-auth`, need Chrome 137 and Firefox 129, and X25519 keys in `@portable/web-crypto` need Chrome 133 and Firefox 130. `@portable/smtp` needs a TCP socket API, so it runs in Workers, Deno, Bun and Node but not in browsers. Packages don't ship polyfills: an app that supports older browsers adds its own.
+
 ### License
 
 MIT

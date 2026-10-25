@@ -40,6 +40,17 @@ A function takes the value it acts on as a positional argument and its settings 
 
 Every async function and every stream takes `signal?: AbortSignal` in its options. When the signal aborts, a function rejects with `signal.reason`, as `fetch` does, and a stream errors with it and cancels its source. The abort also stops the work the function started: its `fetch` calls, timers, readers, and nested streams. For a timeout, pass `AbortSignal.timeout(ms)`.
 
+## Connections and other long-lived objects
+
+An object that keeps running after the call that created it, such as an SMTP client, a queue or a debounced function, stops when you call its `close()` method, or when you abort the `signal` you passed when you created it if it has no `close()`. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Node 24, Deno and Bun), the object also works with `await using`, which stops it when the block exits:
+
+```ts
+import { connect } from 'cloudflare:sockets';
+
+await using client = await Smtp.connect({ connect, host: 'smtp.example.com' });
+await client.send({ from: 'me@example.com', to: 'you@example.com', message });
+```
+
 ## Errors
 
 Functions throw errors instead of returning them.

@@ -15,7 +15,7 @@ portable/
 │  └─ README.md
 ├─ tools/
 │  ├─ fuzz/                fuzz(), which runs fast-check properties for the fuzz tests
-│  ├─ lint/                the portable oxlint plugin and the public API test
+│  ├─ lint/                the portable oxlint plugin and the public API and package.json tests
 │  ├─ worker/              runs the conformance tests in a browser Web Worker
 │  └─ workers/             bundles every package into one Worker for workerd
 ├─ scripts/                bench, bundle size and README table scripts
@@ -51,7 +51,7 @@ pnpm 11 manages the workspace. Every shared dev dependency has one version in th
 oxlint rejects what the types allow but the runtimes don't share:
 
 - `no-restricted-imports` rejects `node:*` and the bare Node built-in names.
-- `no-restricted-globals` rejects `Buffer`, `process`, `global`, `require`, `__dirname`, `window`, `document`, `navigator` and `localStorage`.
+- `no-restricted-globals` rejects `Buffer`, `process`, `global`, `require`, `__dirname`, `window`, `document`, `navigator` and `localStorage`, and also `DisposableStack`, `AsyncDisposableStack` and `SuppressedError`, which Safari 26 doesn't have.
 
 Both rules are off for `*.oracle.test.ts` and `*.bench.ts`, which run in Node to compare against Node libraries.
 
@@ -76,15 +76,17 @@ Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so ev
 
 | API | Packages | Usage share | Chrome | Firefox | Safari |
 | --- | --- | --- | --- | --- | --- |
+| `crypto.randomUUID` | webhooks | 96.4% | 92 | 95 | 15.4 |
 | `AbortSignal.timeout` | none (the examples pass it as `signal`) | 96.1% | 103 | 100 | 16 |
 | `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
+| `Response.json` | rpc | 95.3% | 105 | 115 | 17 |
 | `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
 | WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
 | WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
 
-Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
+Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
 
-A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, and timers uses `scheduler.wait`. Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
+A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, timers uses `scheduler.wait`, and queue, rpc, smtp, timers and websockets set `[Symbol.asyncDispose]` or `[Symbol.dispose]` only where the symbol exists (Chrome 134, Firefox 141 and Node 24, but not Safari 26). Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
 
 ## Building
 
