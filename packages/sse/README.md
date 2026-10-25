@@ -1,6 +1,6 @@
 # @portable/sse
 
-Reads, writes and reconnects server-sent event streams (`text/event-stream`). Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Reads, writes and reconnects server-sent event streams (`text/event-stream`). Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [eventsource-parser](https://www.npmjs.com/package/eventsource-parser), the [eventsource](https://www.npmjs.com/package/eventsource) polyfill, [@microsoft/fetch-event-source](https://www.npmjs.com/package/@microsoft/fetch-event-source), and the event writers in [better-sse](https://www.npmjs.com/package/better-sse) and [hono's `streamSSE`](https://hono.dev/docs/helpers/streaming#streamsse).
 

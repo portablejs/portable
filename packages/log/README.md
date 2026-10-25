@@ -1,6 +1,6 @@
 # @portable/log
 
-Logs by namespace and level. Namespaces are turned on with debug's `DEBUG` patterns from an environment variable or `localStorage`. A change to `localStorage.debug` applies to a running page without a reload. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Logs by namespace and level. Namespaces are turned on with debug's `DEBUG` patterns from an environment variable or `localStorage`. A change to `localStorage.debug` applies to a running page without a reload. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [debug](https://www.npmjs.com/package/debug).
 
@@ -107,7 +107,7 @@ export default {
 };
 ```
 
-`AsyncLocalStorage` exists in Cloudflare Workers with `nodejs_compat`, Deno, Bun and Node. If your request handler passes its logger down to the code it calls, `log.with({ requestId })` does the same without a storage.
+`AsyncLocalStorage` exists in Cloudflare Workers with `nodejs_compat`, Node, Bun, and Deno. If your request handler passes its logger down to the code it calls, `log.with({ requestId })` does the same without a storage.
 
 ### `Log.format(record)`
 

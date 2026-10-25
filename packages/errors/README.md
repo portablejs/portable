@@ -1,6 +1,6 @@
 # @portable/errors
 
-The shared error classes for `@portable/*` packages, and `is`, which checks an error's kind even when two copies of a package are installed. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+The shared error classes for `@portable/*` packages, and `is`, which checks an error's kind even when two copies of a package are installed. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces hand-written `class XError extends Error` hierarchies and `instanceof` checks, which fail when two copies of a package are installed.
 

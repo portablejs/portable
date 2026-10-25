@@ -1,6 +1,6 @@
 # @portable/base64
 
-Encodes and decodes base64 and base64url, with optional line wrapping for MIME and streams for large bodies. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Encodes and decodes base64 and base64url, with optional line wrapping for MIME and streams for large bodies. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [libbase64](https://www.npmjs.com/package/libbase64), [base64-js](https://www.npmjs.com/package/base64-js) and [js-base64](https://www.npmjs.com/package/js-base64).
 

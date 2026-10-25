@@ -1,6 +1,6 @@
 # @portable/spf
 
-Checks whether an SMTP client may send mail for a domain, using SPF (RFC 7208). Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Checks whether an SMTP client may send mail for a domain, using SPF (RFC 7208). Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the SPF module of [mailauth](https://www.npmjs.com/package/mailauth), and covers the cases of the OpenSPF RFC 7208 test suite that [pyspf](https://github.com/sdgathman/pyspf) and other implementations run.
 

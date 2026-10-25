@@ -16,7 +16,7 @@ const entry = resolve(tool, 'src/__entry.ts');
 
 const specifiers = readdirSync(resolve(root, 'packages')).flatMap((name) => {
   const pkg = JSON.parse(readFileSync(resolve(root, 'packages', name, 'package.json'), 'utf8'));
-  // A `./node` entry imports node:* and runs only in Node, Bun and Deno.
+  // A `./node` entry imports node:* and runs only in Node, Bun, and Deno.
   return Object.keys(pkg.exports ?? {})
     .filter((path) => path !== './node')
     .map((path: string) => pkg.name + path.slice(1));

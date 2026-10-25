@@ -1,6 +1,6 @@
 # @portable/password
 
-Hashes and verifies passwords with PBKDF2 on WebCrypto. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Hashes and verifies passwords with PBKDF2 on WebCrypto. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the PBKDF2 use of `node:crypto`, [pbkdf2](https://www.npmjs.com/package/pbkdf2) and [pbkdf2-password](https://www.npmjs.com/package/pbkdf2-password), and hand-written `salt:hash` formats in app code.
 

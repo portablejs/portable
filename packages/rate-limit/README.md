@@ -1,6 +1,6 @@
 # @portable/rate-limit
 
-Rate limiting per key with the generic cell rate algorithm (GCRA) and a store you choose: memory, Workers KV, a Durable Object or Redis over HTTP. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Rate limiting per key with the generic cell rate algorithm (GCRA) and a store you choose: memory, Workers KV, a Durable Object or Redis over HTTP. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [rate-limiter-flexible](https://www.npmjs.com/package/rate-limiter-flexible), [limiter](https://www.npmjs.com/package/limiter) and the reservoir options of [bottleneck](https://www.npmjs.com/package/bottleneck).
 

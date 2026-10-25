@@ -1,6 +1,6 @@
 # @portable/image-size
 
-Reads an image's type and dimensions from its header bytes or from a stream, reading only as far as the header. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Reads an image's type and dimensions from its header bytes or from a stream, reading only as far as the header. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [image-size](https://www.npmjs.com/package/image-size).
 

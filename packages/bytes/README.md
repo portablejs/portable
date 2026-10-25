@@ -1,6 +1,6 @@
 # @portable/bytes
 
-Converts `Uint8Array`s to and from hex, concatenates them and compares them, with a constant-time comparison for secrets. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Converts `Uint8Array`s to and from hex, concatenates them and compares them, with a constant-time comparison for secrets. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the hex, concat and equality functions of [uint8array-extras](https://www.npmjs.com/package/uint8array-extras), and `crypto.timingSafeEqual` from `node:crypto`.
 

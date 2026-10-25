@@ -1,6 +1,6 @@
 # @portable/quoted-printable
 
-Encodes and decodes quoted-printable (RFC 2045 section 6.7), as functions and as streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Encodes and decodes quoted-printable (RFC 2045 section 6.7), as functions and as streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [libqp](https://www.npmjs.com/package/libqp) and [quoted-printable](https://www.npmjs.com/package/quoted-printable).
 

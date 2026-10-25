@@ -22,9 +22,8 @@ export function Home() {
         </header>
         <h1>Web-standard building blocks for any JavaScript runtime.</h1>
         <p>
-          Small packages built only on Web Streams, <code>Uint8Array</code>, <code>fetch</code>, and{' '}
-          <code>crypto.subtle</code>. The same code runs in browsers, Cloudflare Workers, Deno, Bun,
-          and Node 24+.
+          The web's missing standard library: fast, lightweight, composable packages, so you can
+          write your code once and run it in browsers, Cloudflare Workers, Node, Bun, and Deno.
         </p>
         <div className="home-cta">
           <a href={`${base}getting-started`}>Get started &rarr;</a>
@@ -35,11 +34,8 @@ export function Home() {
           <h2>{group.title}</h2>
           {group.items.map((item) => (
             <a className="home-row" key={item.name} href={`${base}packages/${item.name}`}>
-              <code>{item.name}</code>
-              <p>
-                {code(item.description)}
-                {item.replaces && <small>Replaces {code(item.replaces)}</small>}
-              </p>
+              <span className="home-name">{item.name}</span>
+              <p>{code(item.description)}</p>
             </a>
           ))}
         </section>

@@ -1,6 +1,6 @@
 # @portable/dkim
 
-Signs and verifies DKIM signatures (RFC 6376), with RSA and Ed25519 keys (RFC 8463) and the algorithm rules of RFC 8301. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Signs and verifies DKIM signatures (RFC 6376), with RSA and Ed25519 keys (RFC 8463) and the algorithm rules of RFC 8301. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the DKIM parts of [mailauth](https://www.npmjs.com/package/mailauth) and the DKIM signer of [nodemailer](https://www.npmjs.com/package/nodemailer).
 

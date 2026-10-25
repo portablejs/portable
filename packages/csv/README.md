@@ -1,6 +1,6 @@
 # @portable/csv
 
-Decodes and encodes CSV (RFC 4180), as functions and as `TransformStream`s. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Decodes and encodes CSV (RFC 4180), as functions and as `TransformStream`s. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [csv-parse](https://www.npmjs.com/package/csv-parse), [csv-stringify](https://www.npmjs.com/package/csv-stringify), [papaparse](https://www.npmjs.com/package/papaparse) and [fast-csv](https://www.npmjs.com/package/fast-csv).
 

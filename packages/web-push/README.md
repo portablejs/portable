@@ -1,6 +1,6 @@
 # @portable/web-push
 
-Sends Web Push notifications, with aes128gcm payload encryption (RFC 8291) and VAPID (RFC 8292), on WebCrypto and `fetch`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Sends Web Push notifications, with aes128gcm payload encryption (RFC 8291) and VAPID (RFC 8292), on WebCrypto and `fetch`. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [web-push](https://www.npmjs.com/package/web-push), which uses `node:crypto` and `node:https` and runs only on Node.
 

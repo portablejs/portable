@@ -40,7 +40,7 @@ export type Logger = {
 
 /**
  * Storage for `withContext`. `AsyncLocalStorage` has this shape in Cloudflare Workers with
- * `nodejs_compat`, Deno, Bun and Node.
+ * `nodejs_compat`, Node, Bun, and Deno.
  */
 export type ContextStorage = {
   run: <result>(store: Properties, fn: () => result) => result;

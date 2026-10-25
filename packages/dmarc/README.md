@@ -1,6 +1,6 @@
 # @portable/dmarc
 
-Checks a message against the DMARC policy of its From domain, from its SPF and DKIM results (RFC 9989, the update of RFC 7489). Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Checks a message against the DMARC policy of its From domain, from its SPF and DKIM results (RFC 9989, the update of RFC 7489). Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the DMARC module of [mailauth](https://www.npmjs.com/package/mailauth).
 

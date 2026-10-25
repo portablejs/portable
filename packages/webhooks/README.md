@@ -1,6 +1,6 @@
 # @portable/webhooks
 
-Verifies and signs webhooks from Standard Webhooks senders (Svix, Resend, Clerk and others), Stripe, GitHub and Slack, and from any other sender that signs with HMAC-SHA256 once you describe its headers. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Verifies and signs webhooks from Standard Webhooks senders (Svix, Resend, Clerk and others), Stripe, GitHub and Slack, and from any other sender that signs with HMAC-SHA256 once you describe its headers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [standardwebhooks](https://www.npmjs.com/package/standardwebhooks), the `Webhook` class in [svix](https://www.npmjs.com/package/svix), Stripe's `constructEvent` and `constructEventAsync` in [stripe](https://www.npmjs.com/package/stripe), [@octokit/webhooks-methods](https://www.npmjs.com/package/@octokit/webhooks-methods) and the request verification in [@slack/bolt](https://www.npmjs.com/package/@slack/bolt).
 

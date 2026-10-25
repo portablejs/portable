@@ -1,6 +1,6 @@
 # @portable/exif
 
-Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG and WebP files. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG and WebP files. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [exif-parser](https://www.npmjs.com/package/exif-parser).
 

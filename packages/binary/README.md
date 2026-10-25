@@ -1,6 +1,6 @@
 # @portable/binary
 
-Reads and writes integers, varints and strings in binary data, and splits byte streams into length-prefixed frames. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Reads and writes integers, varints and strings in binary data, and splits byte streams into length-prefixed frames. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [smart-buffer](https://www.npmjs.com/package/smart-buffer), [varint](https://www.npmjs.com/package/varint), [it-length-prefixed](https://www.npmjs.com/package/it-length-prefixed) and [length-prefixed-stream](https://www.npmjs.com/package/length-prefixed-stream).
 

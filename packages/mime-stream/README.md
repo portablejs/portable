@@ -1,6 +1,6 @@
 # @portable/mime-stream
 
-Splits a raw MIME message into a stream of header blocks, bodies and multipart structure, and writes it back out byte for byte. Use it to change a message on its way through, such as removing attachments or hashing bodies, without parsing the whole message into objects. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Splits a raw MIME message into a stream of header blocks, bodies and multipart structure, and writes it back out byte for byte. Use it to change a message on its way through, such as removing attachments or hashing bodies, without parsing the whole message into objects. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [mailsplit](https://www.npmjs.com/package/mailsplit) (now [@zone-eu/mailsplit](https://www.npmjs.com/package/@zone-eu/mailsplit)). To parse a message into text, HTML and attachments, use [postal-mime](https://www.npmjs.com/package/postal-mime).
 
