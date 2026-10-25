@@ -94,9 +94,9 @@ export type Message = {
 export declare namespace encodeStream {
   type Options = {
     /**
-     * Start of every multipart boundary. Each boundary is this prefix followed by the position of
-     * its multipart among all parts, counted from 1 in the order the parts are written. Up to 60
-     * characters from RFC 2046's `bchars`.
+     * The prefix of every multipart boundary, up to 60 characters from RFC 2046's `bchars`. Each
+     * boundary is this prefix followed by the position of its multipart among all parts, counted
+     * from 1 in the order the parts are written.
      * @default `'=_'` and 16 random hex digits and `'_'`, which no base64 or quoted-printable line
      * can contain
      */

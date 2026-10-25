@@ -6,7 +6,7 @@ The ported tests are in `check.conformance.ts`, in a `describe` block named afte
 
 mailauth has a default mode that case-folds tag names, uses the last of duplicate tags, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. `check` follows the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
 
-The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so From header parsing belongs to the caller (`@portable/mime-headers`, or `@portable/mail-auth`, which parses the From field). The tests that only parse addresses are listed as not applicable below.
+The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so you parse the From header yourself with `@portable/mime-headers`, or use `@portable/mail-auth`, which parses it for you. The tests that only parse addresses are listed as not applicable below.
 
 ## dmarc-verify-test.js
 

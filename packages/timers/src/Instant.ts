@@ -6,9 +6,9 @@ export type Instant = Date | { readonly epochMilliseconds: number };
 
 /**
  * Returns the milliseconds since the Unix epoch of `instant`. It reads `epochMilliseconds` when the
- * value has it, and `getTime()` otherwise, which also works for a `Date` from another realm. It
- * throws a `RangeError` that mentions the option `name` if the time is outside the range of `Date`,
- * as it is for an invalid `Date`.
+ * value has it, and `getTime()` otherwise, which also works for a `Date` from another realm. If the
+ * time is outside the range of `Date`, as an invalid `Date`'s is, it throws a `RangeError` that
+ * mentions the option `name`.
  */
 export function toEpochMilliseconds(instant: Instant, name = 'now'): number {
   const epochMilliseconds = (instant as { epochMilliseconds?: unknown } | null | undefined)

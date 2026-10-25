@@ -91,7 +91,7 @@ type Store = {
 };
 ```
 
-`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
+`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so if your store expires keys itself, it can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
 
 Several limiters can share a store. Give each one its own key prefix, such as `login:${ip}`, unless they should share the allowance.
 
@@ -203,7 +203,7 @@ const store: RateLimit.Store = {
 
 ## Why use this over rate-limiter-flexible, limiter and bottleneck
 
-rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a two-method store, so any storage that can compare and set one number works, and it has no dependencies outside `@portable/*`.
+rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a store with two methods, so you can use any storage that can compare and set one number, and it has no dependencies outside `@portable/*`.
 
 - rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
 - `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.

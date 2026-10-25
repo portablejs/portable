@@ -6,7 +6,10 @@ export declare namespace headers {
   type Options = {
     /** The quota policy name in both fields. @default 'default' */
     name?: string | undefined;
-    /** The time `resetAt` is counted from. A `Date` or a `Temporal.Instant`. @default new Date() */
+    /**
+     * The time `resetAt` is counted from, as a `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
     now?: Instant | undefined;
   };
 }

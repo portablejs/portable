@@ -1,7 +1,8 @@
 import * as Errors from '@portable/errors';
 /**
  * Thrown by `verify` and `needsRehash` for a stored hash that is malformed: a PBKDF2 hash in PHC
- * or passlib format with a missing field or a bad value, or a string that names no algorithm.
+ * or passlib format with a missing field or a bad value, or a string without a `$<algorithm>$`
+ * prefix.
  *
  * @example
  * ```ts

@@ -41,7 +41,7 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 
 ## ecdsa-sig-formatter `fuzz/happy.js` and `benchmarks/`
 
-`fuzz/happy.js` signs random messages with OpenSSL and checks that DER converts to JOSE and back unchanged. `round trips > <curve> signatures from crypto.subtle verify after a round trip through DER` does the same with WebCrypto signatures in every runtime, and the oracle test converts 500 node:crypto signatures per curve in each direction and compares with ecdsa-sig-formatter and @noble/curves. `benchmarks/der-to-jose.js` and `jose-to-der.js` are in `web-crypto.bench.ts`.
+`fuzz/happy.js` signs random messages with OpenSSL and checks that DER converts to JOSE and back unchanged. `round trips > <curve> signatures from crypto.subtle verify after a round trip through DER` does the same with WebCrypto signatures in every runtime, and the oracle test converts 500 node:crypto signatures per curve in each direction and compares with ecdsa-sig-formatter and @noble/curves. `web-crypto.bench.ts` covers upstream's `benchmarks/der-to-jose.js` and `jose-to-der.js`.
 
 ## RFC vectors
 

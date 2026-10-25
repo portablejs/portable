@@ -99,7 +99,7 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 - The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
 - `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret, as RFC 5849 requires. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
 - The header separator is always `", "` and the nonce is always 32 hex digits, so oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.
-- oauth-1.0a's `getTimeStamp` returns seconds, and `now` is a `Date` or a `Temporal.Instant`, so pass `new Date(seconds * 1000)`.
+- If you overrode oauth-1.0a's `getTimeStamp`, which returns seconds, pass `now: new Date(seconds * 1000)` instead, because `now` takes a `Date` or a `Temporal.Instant`.
 - oauth-1.0a can put the protocol parameters in a form body. This package puts them only in the `Authorization` header, or in the URL with `placement: 'query'`.
 - The package has no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL, where node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
 
@@ -124,4 +124,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. Browsers and Workers have fast WebCrypto HMAC, so the default is fine there.
+The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. WebCrypto HMAC is fast in browsers and Workers, so you can keep the default there.

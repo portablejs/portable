@@ -1,6 +1,6 @@
 # @portable/web-crypto
 
-Bytes-in, bytes-out helpers over `crypto.subtle`: `digest`, `hmac` and `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, PEM key import, the public key of a private key, and ECDSA signatures converted between DER and raw `r || s`. It contains no cryptography of its own. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Functions over `crypto.subtle` that take and return bytes: `digest`, `hmac` and `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, PEM key import, the public key of a private key, and ECDSA signatures converted between DER and raw `r || s`. It contains no cryptography of its own. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [ecdsa-sig-formatter](https://www.npmjs.com/package/ecdsa-sig-formatter) and the WebCrypto wrappers that apps write by hand.
 
@@ -68,9 +68,9 @@ Each helper replaces a few lines that apps write by hand, and handles a trap tho
 - In TypeScript 5.9 and later, a plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`, which `crypto.subtle` doesn't accept as a `BufferSource`. Hand-written code adds `.slice()` or a cast at every call. These functions take any `Uint8Array`, copy it only when its buffer is not an `ArrayBuffer` (a `SharedArrayBuffer`, for example), and return `Uint8Array<ArrayBuffer>`.
 - `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. These functions take a `Uint8Array` and read only the bytes the view covers.
 - WebCrypto refuses an empty HMAC key. HMAC pads the key with zero bytes, so `hmac` uses a single zero byte, which gives the result RFC 2104 defines.
-- Hand-written code imports the HMAC key on every call, and `importKey` takes about two thirds of the time of an HMAC on Node. `hmac` keeps up to 16 imported keys, so signing again with the same secret, such as a webhook secret, skips the import.
+- If you call `crypto.subtle` yourself, you usually import the HMAC key on every call, and `importKey` takes about two thirds of the time of an HMAC on Node. `hmac` keeps up to 16 imported keys, so signing again with the same secret, such as a webhook secret, skips the import.
 - WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.
-- WebCrypto has no PEM import, and imports RSA keys only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` and many key files use PKCS #1 (`RSA PRIVATE KEY`). Hand-written code strips the armor with a regex that often misses CRLF line breaks or text before the block, and fails on PKCS #1. `importPem` reads both forms and wraps PKCS #1 in the structure WebCrypto takes.
+- WebCrypto has no PEM import, and imports RSA keys only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` and many key files use PKCS #1 (`RSA PRIVATE KEY`). The usual workaround is a regex that strips the armor, which often misses CRLF line breaks or text before the block, and which still fails on PKCS #1. `importPem` reads both forms and wraps PKCS #1 in the structure WebCrypto takes.
 - WebAuthn and OpenSSL produce DER ECDSA signatures, and `crypto.subtle.verify` and JWS take raw `r || s`.
 
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 15 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.

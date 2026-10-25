@@ -25,9 +25,10 @@ export declare namespace connect {
     maxLength?: number | undefined;
     /**
      * Called after a connection ends while `attempts` isn't used up, with the error and
-     * `{ attempt }`, where `attempt` is the number of reconnects since the last accepted response. `error` is `undefined` when the
-     * response ended normally. Return `false` to stop reconnecting: the stream then closes if
-     * `error` is `undefined`, and errors with `error` otherwise.
+     * `{ attempt }`, where `attempt` is the number of reconnects since the last accepted response.
+     * `error` is `undefined` when the response ended normally. Return `false` to stop
+     * reconnecting. The stream then closes if `error` is `undefined`, and errors with `error`
+     * otherwise.
      * @default (error) => !(error instanceof Sse.ResponseError || error instanceof Sse.MaxLengthError)
      */
     reconnectIf?:

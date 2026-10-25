@@ -10,7 +10,7 @@ The packages are small and do one thing each, like much of npm's most-used code,
 2. **Compose upward.** A higher package builds on Portable packages in lower layers, and the dependency graph is a strict layer DAG (§Layers). Remix's `response` builds on `headers`, `mime` and `html-template` this way, and our `mail` builds on `mime-headers`, `base64` and `quoted-printable`.
 3. **No dependencies outside the family.** The one exception is crypto: it defaults to WebCrypto and is pluggable, and a package that needs an incremental hash takes `@noble/hashes` as an optional peer.
 4. **Web standards are the API.** Inputs and outputs are `Uint8Array`, `string`, `ReadableStream`, `Request`/`Response`, `Headers`, `Blob`/`File`. Streaming transforms are `TransformStream` subclasses used like the platform's own (`stream.pipeThrough(new Lines.DecoderStream())`, as with `TextDecoderStream` and Deno's `TextLineStream`). Where a platform type is close, extend it rather than invent one, as Remix's `SuperHeaders extends Headers` does.
-5. **A small, stable API before 1.0.** Each package documents what it does not do. Its README names the libraries it replaces and, under "Why use this over", what a caller switching from them could miss.
+5. **A small, stable API before 1.0.** Each package documents what it does not do. Its README lists the libraries it replaces, and its "Why use this over" section lists the differences that are easy to miss when switching from them.
 6. **Same coverage as what we replace.** A package that replaces a popular library solves the same problem with its own API and implementation, and covers every case that library's tests cover, with a `PARITY.md` mapping each upstream test to ours or to the reason it doesn't apply (details in [architecture.md](architecture.md#parity-with-the-replaced-library)). We port upstream benchmarks too, and benchmark every package against the library it replaces ([architecture.md](architecture.md#benchmarks)). It reaches 1.0 only when those tests and the oracle tests both pass and performance is comparable or better.
 7. **Don't rebuild existing web-standard packages.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
 8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. We still publish and version each `@portable/*` package on its own.
@@ -50,7 +50,7 @@ L1  mime-stream   → mime-headers, bytes, streams
 L0  base64, charset, lines, quoted-printable → bytes, streams
     ip, streams, web-crypto → bytes
     bytes, queue, random, timers
-    errors        (a dependency of every package except dmarc, mail-auth, quoted-printable, random and rate-limit, for its error classes or its dispose helper)
+    errors        (every package except dmarc, mail-auth, quoted-printable, random and rate-limit depends on it for its error classes or its dispose helpers)
 ```
 
 ### L0: primitives (no dependencies, apart from `bytes` and `streams`)

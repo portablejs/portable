@@ -84,7 +84,8 @@ export declare namespace verify {
     /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver;
     /**
-     * The time to check the ARC-Message-Signature's `x=` against. A `Date` or a `Temporal.Instant`.
+     * The time to check the ARC-Message-Signature's `x=` against, as a `Date` or a
+     * `Temporal.Instant`.
      * @default new Date()
      */
     now?: Instant | undefined;
@@ -140,9 +141,10 @@ export async function verify(message: Message, options: verify.Options): Promise
 }
 
 /**
- * Checks the chain's structure and every check that needs no key, starts the key lookups and
- * returns the body hash the newest ARC-Message-Signature needs, with the step that checks the
- * signatures once the body is hashed. A chain that fails before that needs no body hash.
+ * Runs the checks that need no key, starting with the chain's structure, then starts the key
+ * lookups and returns the body hash the newest ARC-Message-Signature needs, with the step that
+ * checks the signatures once the body is hashed. If the chain fails one of the first checks, the
+ * plan requests no body hash.
  */
 export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result> {
   const { resolver, minKeyBits = 1024, signal } = options;

@@ -32,7 +32,7 @@ export declare namespace decode {
     /** Verify the CRC of every chunk. @default true */
     checkCrc?: boolean | undefined;
     /**
-     * Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
+     * The most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
      * anything is decompressed or allocated.
      * @default Infinity
      */
@@ -49,7 +49,7 @@ export declare namespace decodeSync {
     /** Verify the CRC of every chunk. @default true */
     checkCrc?: boolean | undefined;
     /**
-     * Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
+     * The most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
      * anything is decompressed or allocated.
      * @default Infinity
      */

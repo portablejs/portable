@@ -85,7 +85,7 @@ export class InvalidInputError extends BaseError {
 
 export declare namespace TruncatedError {
   type Options = ErrorOptions & {
-    /** How much input arrived, in bytes or characters as the package documents. */
+    /** How much input arrived, in bytes or characters. Each package that throws it says which. */
     offset?: number | undefined;
   };
 }

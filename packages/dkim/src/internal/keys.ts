@@ -59,8 +59,8 @@ export function importPublicKey(type: KeyType, der: Uint8Array<ArrayBuffer>): Pr
     }
     return crypto.subtle.importKey('raw', der, ed25519, false, ['verify']);
   }
-  // The outer SEQUENCE of a SubjectPublicKeyInfo starts with a SEQUENCE, and that of an
-  // RSAPublicKey with an INTEGER.
+  // Inside the outer SEQUENCE, a SubjectPublicKeyInfo starts with another SEQUENCE and an
+  // RSAPublicKey starts with an INTEGER.
   const length = der[1] ?? 0;
   const first = der[length < 0x80 ? 2 : 2 + (length & 0x7f)];
   const spki = first === 0x02 ? pkcs1ToSpki(der) : der;

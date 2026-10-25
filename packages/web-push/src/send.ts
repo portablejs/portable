@@ -31,7 +31,7 @@ export declare namespace toRequest {
      */
     topic?: string | undefined;
     /**
-     * The time the VAPID token's expiry is counted from. A `Date` or a `Temporal.Instant`.
+     * The time the VAPID token's expiry is counted from, as a `Date` or a `Temporal.Instant`.
      * @default new Date()
      */
     now?: Instant | undefined;

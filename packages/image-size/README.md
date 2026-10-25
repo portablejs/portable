@@ -30,7 +30,7 @@ Reads `stream` until the size is known, then cancels it.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. A negative or `NaN` value throws a `RangeError`. |
+| `maxBytes` | `524288` | The most bytes that `parseStream` buffers. If the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. A negative or `NaN` value throws a `RangeError`. |
 | `signal` | none | Aborting rejects with `signal.reason` and cancels the stream. |
 
 ### `Size`

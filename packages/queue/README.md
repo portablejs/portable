@@ -50,13 +50,13 @@ Returns a queue object.
 | `pending` | The number of running tasks. |
 | `paused` | Whether the queue is paused. |
 | `concurrency` | Read or set the limit. Raising it starts waiting tasks at once. |
-| `[Symbol.asyncDispose]()` | Does what aborting the queue's `signal` does, with an `AbortError` `DOMException`: rejects waiting and running tasks and every later `add`, and aborts the `signal` of running tasks. It then resolves once the running tasks have settled. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
+| `[Symbol.asyncDispose]()` | Rejects waiting and running tasks and every later `add` with an `AbortError` `DOMException`, and aborts the `signal` of running tasks, as aborting the queue's `signal` does. It then resolves once the running tasks have settled. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
 
 The `signal` passed to a task aborts when the task's own `signal` or the queue's `signal` aborts, or when the queue is disposed. If the task is still waiting, it is removed. If it is running, `add` rejects with the abort reason at once, but the task keeps its slot until it settles, so no more than `concurrency` tasks ever run. Pass the signal on to `fetch` or whatever the task awaits so it stops early.
 
 When `clear()` or an abort removes a task that never started, the queue marks the promise from `add` as handled, so ignoring it doesn't cause an unhandled rejection. A task that fails still rejects its promise as usual, so handle it or `await` it.
 
-Declared with `await using`, a queue is disposed when the scope ends, so a scope that throws doesn't leave tasks waiting or running behind it:
+If you declare a queue with `await using`, it is disposed when the scope ends, so no tasks are left waiting or running if the code in the scope throws:
 
 ```ts
 async function crawl(urls: string[]) {

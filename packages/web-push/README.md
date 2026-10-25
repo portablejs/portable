@@ -92,7 +92,7 @@ The JWT in the `Authorization` header expires 12 hours after it is signed. `send
 
 ## Why use this over web-push
 
-It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server can send notifications. It depends only on four other `@portable/*` packages, where web-push has five dependencies, including an ASN.1 library and an HTTPS proxy agent.
+It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a Worker or from a Deno or Bun server. It depends only on four other `@portable/*` packages, where web-push has five dependencies, including an ASN.1 library and an HTTPS proxy agent.
 
 - `send` returns `{ kind: 'gone' }` for a 404 or 410, so you can tell an expired subscription from a failed send without checking status codes yourself.
 - Payloads over 3993 bytes are rejected before sending. web-push has no limit, and http_ece splits a payload over about 4079 bytes into several records, which push services reject.

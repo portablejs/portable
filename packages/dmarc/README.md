@@ -96,7 +96,7 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 - It reports the alignment of each DKIM signature, not only the first that aligned, and gives the disposition directly.
 - It makes fewer DNS queries. mailauth walks above the From domain on every message, and asks whether the domain exists whenever the record has `np`. `check` walks only for a relaxed alignment check of a different domain, and asks whether the domain exists only when `np` would change the policy.
 - It has no dependencies outside `@portable/*`, and `@portable/spf` is imported for types only.
-- It is a little faster. The table below checks a subdomain with an inherited record, relaxed alignment and three identifiers in Node, with an in-memory resolver.
+- It is a little faster. In the benchmark below, each run checks a subdomain that inherits its parent's record, with relaxed alignment and three identifiers, in Node with an in-memory resolver.
 
 <!-- bench:start -->
 | | @portable/dmarc | mailauth, strict mode |

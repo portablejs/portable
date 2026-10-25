@@ -63,7 +63,7 @@ export declare namespace seal {
      * @default DKIM-Signature, Delivered-To and the fields `Dkim.sign` signs
      */
     headers?: readonly string[] | undefined;
-    /** The signature time (`t=`). A `Date` or a `Temporal.Instant`. @default new Date() */
+    /** The signature time (`t=`), as a `Date` or a `Temporal.Instant`. @default new Date() */
     now?: Instant | undefined;
     /** Creates the body hash, as in `Dkim.sign`. @default buffers the body for `crypto.subtle.digest` */
     hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined;
@@ -126,7 +126,7 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   return sign(digests);
 }
 
-/** A checked sealing domain, selector, header list, time and imported key. */
+/** The sealing domain, selector, header list and time, already checked, with the imported key. */
 export type Sealer = {
   /** The body hash the ARC-Message-Signature needs. */
   request: BodyHash;

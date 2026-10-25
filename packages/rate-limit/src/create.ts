@@ -28,7 +28,7 @@ export declare namespace Limiter {
   type TakeOptions = {
     /** How much of the allowance this request uses. `0` reads the state without changing it, and a negative cost gives allowance back. @default 1 */
     cost?: number | undefined;
-    /** The time of the request. A `Date` or a `Temporal.Instant`. @default new Date() */
+    /** The time of the request, as a `Date` or a `Temporal.Instant`. @default new Date() */
     now?: Instant | undefined;
     signal?: AbortSignal | undefined;
   };

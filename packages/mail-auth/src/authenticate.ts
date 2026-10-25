@@ -79,8 +79,8 @@ export declare namespace authenticate {
     /** Seals the message with an ARC set that records these results. */
     seal?: Seal | undefined;
     /**
-     * The time to check DKIM and ARC signature expiry against, and for `%{t}` in SPF
-     * explanations. A `Date` or a `Temporal.Instant`. @default new Date()
+     * The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF
+     * explanations, as a `Date` or a `Temporal.Instant`. @default new Date()
      */
     now?: Instant | undefined;
     /** RSA keys shorter than this give DKIM `policy` and fail the ARC chain. @default 1024 */

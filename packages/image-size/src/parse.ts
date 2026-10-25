@@ -166,8 +166,8 @@ export function parse(bytes: Uint8Array): Size {
 export declare namespace parseStream {
   type Options = {
     /**
-     * Most bytes to buffer. If the dimensions aren't in the first `maxBytes` bytes, `parseStream`
-     * cancels the stream and rejects with `MaxBytesError`.
+     * The most bytes to buffer. If the dimensions aren't in the first `maxBytes` bytes,
+     * `parseStream` cancels the stream and rejects with `MaxBytesError`.
      * @default 524288
      */
     maxBytes?: number | undefined;

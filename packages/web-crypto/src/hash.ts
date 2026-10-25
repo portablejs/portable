@@ -1,9 +1,9 @@
 import { run, toBufferSource } from './internal.js';
 
 /**
- * A hash algorithm, named as WebCrypto names it. A `Digest` or `Hmac` function is called only with
- * these names. A hash that WebCrypto adds later, such as SHA-3, gets its own type, so code that
- * handles each `Hash` keeps compiling.
+ * A hash algorithm, by its WebCrypto name. The `@portable/*` packages call a `Digest` or `Hmac`
+ * function only with these names. If WebCrypto adds a hash later, such as SHA-3, it will get its
+ * own type, so a `switch` over `Hash` in your code still compiles.
  */
 export type Hash = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512';
 

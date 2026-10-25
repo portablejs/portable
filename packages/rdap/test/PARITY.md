@@ -21,7 +21,7 @@ Test files:
 | --- | --- | --- |
 | autnum.test.ts: should return json for valid ASN | `asn > ARIN: AS15169` | |
 | autnum.test.ts: should throw error for an ASN with no registry | `asn > rejects a reserved number with UnsupportedError` | |
-| autnum.test.ts: should throw a validation error for an impossible ASN | `asn > rejects what is not an AS number with InvalidInputError, without a request`, `asn > throws a TypeError for a value that is not a number` | Also 2^32 and `NaN`. A string throws a `TypeError`. |
+| autnum.test.ts: should throw a validation error for an impossible ASN | `asn > rejects what is not an AS number with InvalidInputError, without a request`, `asn > throws a TypeError for a value that is not a number` | The test also covers 2^32 and `NaN`. A string throws a `TypeError`. |
 | client.test.ts: domain rejects an invalid FQDN without touching the network | `names > rejects malformed names with InvalidInputError, without a request` | |
 | client.test.ts: domain rejects when no RDAP server is known for the tld | `names > rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file` | |
 | client.test.ts: domain rejects when the RDAP server responds with an error status | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | 404 has its own error class. |

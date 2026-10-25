@@ -82,7 +82,7 @@ How far it reads depends on where the format stores the metadata:
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `16777216` (16 MiB) | Most bytes of the stream to hold in memory at once. Skipped bytes don't count. A negative or `NaN` value throws a `RangeError`. |
+| `maxBytes` | `16777216` (16 MiB) | The most bytes of the stream that `parseStream` holds in memory at once. Skipped bytes don't count. A negative or `NaN` value throws a `RangeError`. |
 | `signal` | none | An `AbortSignal`. Aborting rejects with `signal.reason` and cancels the stream. |
 
 Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesError` when it would need to hold more than `maxBytes`. The error's `maxBytes` property holds the limit. An error from the stream itself is passed on unchanged.

@@ -124,7 +124,7 @@ This package won't add schemes beyond these four. The built-in ones in [`src/sch
 
 ## Crypto
 
-`verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package has no dependency outside the family for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
+`verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package needs no dependency outside `@portable/*` for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
 On Node, `verify` is about 3 times faster with `@noble/hashes` than with WebCrypto's HMAC. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
 
@@ -144,7 +144,7 @@ const { body } = await Webhooks.verify(request, {
 
 | Type | Description |
 | --- | --- |
-| `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. A scheme's `key` reads a string, and bytes are the raw key. |
+| `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes, or UTF-8 encoding does if the scheme has no `key`. A `Uint8Array` is used as the raw key. |
 | `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
 | `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
@@ -186,4 +186,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. Browsers and Workers have fast WebCrypto HMAC, so the default is fine there.
+The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. WebCrypto HMAC is fast in browsers and Workers, so you can keep the default there.

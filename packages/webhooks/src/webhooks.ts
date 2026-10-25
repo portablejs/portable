@@ -36,7 +36,7 @@ export declare namespace verify {
      */
     tolerance?: number | undefined;
     /**
-     * The time to compare the signed timestamp with. A `Date` or a `Temporal.Instant`.
+     * The time to compare the signed timestamp with, as a `Date` or a `Temporal.Instant`.
      * @default new Date()
      */
     now?: Instant | undefined;
@@ -178,7 +178,7 @@ export declare namespace sign {
      */
     hmac?: WebCrypto.Hmac | undefined;
     /**
-     * The time to sign. Schemes without a timestamp ignore it. A `Date` or a `Temporal.Instant`.
+     * The time to sign, as a `Date` or a `Temporal.Instant`. Schemes without a timestamp ignore it.
      * @default new Date()
      */
     now?: Instant | undefined;

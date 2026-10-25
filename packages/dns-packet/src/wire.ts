@@ -431,7 +431,8 @@ export function readName(r: Reader, end: number): string {
 
 /**
  * Parses an address with `Ip.parse`, which rejects IPv4 numbers with leading zeros and other
- * spellings that programs read differently. A zone throws, because DNS can't carry one.
+ * spellings that different parsers read as different addresses. An address with a zone ID throws,
+ * because DNS has no field for one.
  */
 export function parseAddress(ip: string, version?: 4 | 6): Uint8Array {
   let address: Ip.Address;

@@ -75,7 +75,7 @@ export declare namespace check {
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined;
     /**
-     * The time for `%{t}` in explanations. A `Date` or a `Temporal.Instant`.
+     * The time for `%{t}` in explanations, as a `Date` or a `Temporal.Instant`.
      * @default new Date()
      */
     now?: Instant | undefined;

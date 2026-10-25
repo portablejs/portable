@@ -52,7 +52,7 @@ export declare namespace verify {
   type Options = {
     /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver;
-    /** The time to check `x=` against. A `Date` or a `Temporal.Instant`. @default new Date() */
+    /** The time to check `x=` against, as a `Date` or a `Temporal.Instant`. @default new Date() */
     now?: Instant | undefined;
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined;

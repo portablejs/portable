@@ -16,7 +16,7 @@ export declare namespace DecoderStream {
     signal?: AbortSignal | undefined;
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined;
-    /** Longest line, in UTF-16 code units, separator excluded. @default Infinity */
+    /** The longest line, in UTF-16 code units, not counting the separator. @default Infinity */
     maxLength?: number | undefined;
     /**
      * What to do with a line longer than `maxLength`: fail the stream, or drop the line and

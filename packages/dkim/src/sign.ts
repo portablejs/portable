@@ -53,9 +53,9 @@ export declare namespace sign {
     canonicalization?: `${Canonicalization}/${Canonicalization}` | undefined;
     /** The agent or user identifier (`i=`), such as `user@example.com` or `@mail.example.com`. */
     identity?: string | undefined;
-    /** The signature time (`t=`). A `Date` or a `Temporal.Instant`. @default new Date() */
+    /** The signature time (`t=`), as a `Date` or a `Temporal.Instant`. @default new Date() */
     now?: Instant | undefined;
-    /** The expiry (`x=`). It must be after `now`. A `Date` or a `Temporal.Instant`. */
+    /** The expiry (`x=`), as a `Date` or a `Temporal.Instant`. It must be after `now`. */
     expiresAt?: Instant | undefined;
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hasher?: ((hash: Hash) => Hasher) | undefined;

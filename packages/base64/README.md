@@ -80,7 +80,7 @@ One package does what the three did separately: base64 and base64url, MIME line 
 
 - In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 8× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 11× faster than js-base64.
 - `EncoderStream` at 76 columns was as fast as libbase64's `Encoder`, and `DecoderStream` was about 1.3× faster than its `Decoder`.
-- `Buffer` is 11 to 21× faster on 1 MB in Node, and so are libbase64's plain `encode` and `decode`, which call `Buffer`. In Node-only code where that matters, keep `Buffer`.
+- `Buffer` is 11 to 21× faster on 1 MB in Node, and so are libbase64's plain `encode` and `decode`, which call `Buffer`. If your code runs only in Node and you need that speed, keep using `Buffer`.
 - The default mode throws `InvalidInputError` on characters outside the alphabet. base64-js drops them and returns wrong bytes (base64-js #81), and throws a `RangeError` on `'===='` (base64-js #73).
 - `encode` throws a `TypeError` for an `Int8Array`, which base64-js encoded to wrong output (base64-js #38), and the stream output doesn't depend on chunk boundaries, which libbase64 fixed only in 1.3.2.
 

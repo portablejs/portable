@@ -139,7 +139,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should set unicode filename | body: filename table (`jõgeva.txt`) |
 | should set dashed filename | body: filename table (`test-file.txt`) |
 | should clean the content type before the multipart check reads it | body: a multipart content type throws |
-| should not let a normalizeHeaderKey result inject a header | Not applicable: no `normalizeHeaderKey`. headers: the header name … throws because it is outside printable ASCII or holds a colon |
+| should not let a normalizeHeaderKey result inject a header | Not applicable, because there is no `normalizeHeaderKey`. headers: the header name … throws because it is outside printable ASCII or holds a colon |
 | should not leave a control char anywhere in the headers | headers: a control character in a header value is encoded; body: filename table |
 | should encode filename with a tab | body: filename table |
 | should encode filename with a DEL | body: filename table |

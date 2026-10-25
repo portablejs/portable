@@ -46,7 +46,7 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. Both functio
 | --- | --- | --- |
 | `inflate` | `DecompressionStream('deflate')` | Decompresses zlib data. Required for `decodeSync`. `decode` also accepts an async function. |
 | `checkCrc` | `true` | Verify each chunk's CRC. The zlib checksum is always verified by the inflate function. |
-| `maxPixels` | `Infinity` | Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` as soon as `IHDR` is read, before anything is decompressed or allocated. Set it when you decode untrusted files. |
+| `maxPixels` | `Infinity` | The largest number of pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` as soon as `IHDR` is read, before anything is decompressed or allocated. Set it when you decode untrusted files. |
 | `signal` | none | `decode` only. Aborting rejects with `signal.reason` and stops the default decompression. |
 
 `Decoded` is a plain object:
@@ -104,7 +104,7 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 
 - A header that claims more pixels than the data can hold throws `TruncatedError` before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB and throw a `RangeError`.
 - A valid file can still be small and decode to a huge image: a 1-bit 100000×100000 image compresses to about 1.2 MB and decodes to 40 GB of RGBA. `maxPixels` rejects it from the header, as sharp's `limitInputPixels` does. pngjs has no limit.
-- Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.3× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool.
+- Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.3× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` sends zlib work to the thread pool one 16 KiB chunk at a time.
 - Encoding with `CompressionStream` was about 1.2× faster than pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
 - A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
 - Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
