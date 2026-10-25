@@ -115,7 +115,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/oauth1 | @portable/oauth1 with @noble/hashes | oauth-1.0a | oauth |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 5.2 kB | 7.9 kB | 1.7 kB | 5.2 kB |
+| Minified and gzipped | 5.3 kB | 8.0 kB | 1.7 kB | 5.2 kB |
 | Runtime dependencies | 6 | 7 | 0 | 0 |
 | Node built-ins used | none | none | none | `Buffer`, `crypto`, `http`, `https`, `querystring`, `url` |
 | TypeScript types | included | included | included | none |

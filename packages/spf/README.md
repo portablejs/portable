@@ -112,7 +112,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/spf | mailauth | mailauth, strict mode |
 | --- | --- | --- | --- |
-| Minified and gzipped | 14 kB | 442 kB | 442 kB |
+| Minified and gzipped | 15 kB | 442 kB | 442 kB |
 | Runtime dependencies | 9 | 38 | 38 |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
 | TypeScript types | included | included | included |

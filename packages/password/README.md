@@ -122,7 +122,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | | @portable/password | pbkdf2 | pbkdf2-password | `node:crypto` | `crypto.subtle` |
 | --- | --- | --- | --- | --- | --- |
 | Minified and gzipped | 4.2 kB | 22 kB | 1.5 kB | built in | built in |
-| Runtime dependencies | 4 | 43 | 2 | – | – |
+| Runtime dependencies | 5 | 43 | 2 | – | – |
 | Node built-ins used | none | `buffer`, `events`, `util` | `Buffer`, `crypto` | Node only | none |
 | TypeScript types | included | included | none | – | – |
 | Version compared | – | 3.1.7 | 1.2.1 | – | – |
