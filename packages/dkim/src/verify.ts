@@ -89,8 +89,9 @@ export declare namespace verify {
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result[]> {
   assertResolver(options.resolver);
+  const now = toDate(options.now);
   const { header, body } = await splitMessage(message, options.signal);
-  const plan = planVerify(parseFields(toBinary(header)), options);
+  const plan = planVerify(parseFields(toBinary(header)), { ...options, now });
   const digests = await hashBody(body, plan.requests, options.hasher);
   options.signal?.throwIfAborted();
   return plan.finish(digests);

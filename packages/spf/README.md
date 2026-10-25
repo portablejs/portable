@@ -100,7 +100,7 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 
 - It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
 - It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and RFC behavior needs `strict: true`. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
-- It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
+- It has no dependencies outside `@portable/*`. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
 - It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 
 <!-- bench:start -->

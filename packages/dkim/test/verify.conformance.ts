@@ -898,11 +898,31 @@ describe('input', () => {
     expect(pulls).toBeLessThan(3);
   });
 
-  test('rejects a stream of chunks that are not Uint8Array', async () => {
+  test('rejects a stream of chunks that are not Uint8Array, and cancels it', async () => {
     const resolver = resolverFrom({});
     await expect(
       Dkim.verify(stream(['From: a\r\n\r\n' as unknown as Uint8Array]), { resolver }),
     ).rejects.toThrow(TypeError);
+    let cancelled = false;
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue('From: a\r\n' as unknown as Uint8Array);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    await expect(Dkim.verify(message, { resolver })).rejects.toThrow(TypeError);
+    expect(cancelled).toBe(true);
+  });
+
+  test('rejects an invalid now without reading the message', async () => {
+    const message = stream([encode('From: a@example.com\r\n\r\n')]);
+    const now = 'yesterday' as unknown as Date;
+    await expect(Dkim.verify(message, { resolver: resolverFrom({}), now })).rejects.toThrow(
+      TypeError,
+    );
+    expect(message.locked).toBe(false);
   });
 
   test('rejects a missing resolver', async () => {

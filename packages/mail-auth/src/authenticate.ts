@@ -1,4 +1,5 @@
 import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Arc from '@portable/arc';
 import { createSealer, planVerify as planArc } from '@portable/arc/internal';
 import * as Dkim from '@portable/dkim';
@@ -133,9 +134,10 @@ export async function authenticate(
   message: Dkim.Message,
   options: authenticate.Options,
 ): Promise<Result> {
-  const { resolver, ip, helo, sender, now, minKeyBits, hasher, signal } = options;
+  const { resolver, ip, helo, sender, minKeyBits, hasher, signal } = options;
   const authservId = assertAuthservId(options.authservId);
   assertResolver(resolver);
+  const now = toDate(options.now);
   signal?.throwIfAborted();
   const sealer = options.seal && (await createSealer(options.seal));
   const spfCheck = Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal });

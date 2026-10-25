@@ -410,6 +410,20 @@ describe('the newest ARC-Message-Signature (RFC 8617 section 4.1.2)', () => {
     expect(instant).toEqual(await check(message, records, { now: new Date(1_500_000) }));
     expect(instant.result).toBe('pass');
   });
+
+  test('rejects an invalid now without reading the message', async () => {
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n\r\n'));
+        c.close();
+      },
+    });
+    const now = 'yesterday' as unknown as Date;
+    await expect(Arc.verify(message, { resolver: resolverFrom(records), now })).rejects.toThrow(
+      TypeError,
+    );
+    expect(message.locked).toBe(false);
+  });
 });
 
 describe('instance values (RFC 8617 section 3.9)', () => {

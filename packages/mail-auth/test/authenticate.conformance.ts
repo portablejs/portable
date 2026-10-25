@@ -546,4 +546,16 @@ describe('now', () => {
     expect(await at({ epochMilliseconds: after })).toBe(await at(new Date(after)));
     expect(await at({ epochMilliseconds: after })).not.toBe('pass');
   });
+
+  test('rejects an invalid now without reading the message', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode(message));
+        c.close();
+      },
+    });
+    const now = 'yesterday' as unknown as Date;
+    await expect(authenticate(stream, {}, { now })).rejects.toThrow(TypeError);
+    expect(stream.locked).toBe(false);
+  });
 });

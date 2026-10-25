@@ -131,6 +131,7 @@ function readChunks(input: Message, signal: AbortSignal | undefined): Body {
         return value;
       } catch (error) {
         release();
+        void reader.cancel(error).catch(() => {});
         throw error;
       }
     },
