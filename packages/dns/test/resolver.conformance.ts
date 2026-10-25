@@ -29,10 +29,10 @@ describe('record types', () => {
       answers:
         type === 'A'
           ? [record(N, 'A', '192.0.2.1'), record(N, 'A', '192.0.2.2')]
-          : [record(N, 'AAAA', '2001:0DB8:0:0:0:0:0:1')],
+          : [record(N, 'AAAA', '2001:0DB8:0:0:0:0:0:1'), record(N, 'AAAA', '::ffff:c000:201')],
     }));
     expect(await resolver.resolve4(N)).toEqual(['192.0.2.1', '192.0.2.2']);
-    expect(await resolver.resolve6(N)).toEqual(['2001:db8::1']);
+    expect(await resolver.resolve6(N)).toEqual(['2001:db8::1', '::ffff:192.0.2.1']);
   });
 
   test('resolveTxt returns each record as its list of strings', async () => {

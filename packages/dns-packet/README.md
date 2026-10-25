@@ -113,5 +113,6 @@ Other differences to check when you switch:
 - dns-packet encodes an unknown type, class, opcode, rcode or option name as 0. `encode` throws for it.
 - `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so the label encodes back to the same bytes.
 - `decode` checks that each EDNS option has the right length for its fields.
-- IPv6 addresses decode in RFC 5952 form, and `encode` throws for an invalid address.
+- IPv6 addresses decode in RFC 5952 form, as `Ip.format` from `@portable/ip` writes them, so an IPv4-mapped address is `::ffff:192.0.2.1`. dns-packet writes `::ffff:c000:201`.
+- `encode` throws for an invalid address, and for an IPv4 number with a leading zero, such as `010.0.0.1`, which dns-packet writes as 10.0.0.1 and `inet_aton` reads as octal 8.
 - `encode` clears the bits of a CLIENT_SUBNET address past the source prefix, as RFC 7871 requires.

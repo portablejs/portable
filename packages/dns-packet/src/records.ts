@@ -45,9 +45,12 @@ type KeyData = { flags: number; algorithm: number; key: Uint8Array };
  * TXT strings are always `Uint8Array`.
  */
 export type RecordData = {
-  /** An IPv4 address, such as `'192.0.2.1'`. */
+  /** An IPv4 address, such as `'192.0.2.1'`, without leading zeros. */
   A: string;
-  /** An IPv6 address. Decoded addresses are formatted as RFC 5952 recommends. */
+  /**
+   * An IPv6 address. Decoded addresses are formatted as RFC 5952 recommends, with an IPv4-mapped
+   * address as `::ffff:192.0.2.1`.
+   */
   AAAA: string;
   CNAME: string;
   DNAME: string;

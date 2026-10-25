@@ -428,13 +428,17 @@ export function readName(r: Reader, end: number): string {
   return name === '' ? '.' : name;
 }
 
+/**
+ * Writes an IPv4 address given as four decimal numbers from 0 to 255. A number with a leading zero
+ * throws, because `inet_aton` reads `010` as octal 8 and other parsers read it as 10.
+ */
 export function putIPv4(w: Writer, ip: string): void {
   const parts = typeof ip === 'string' ? ip.split('.') : [];
   if (parts.length !== 4) {
     throw new InvalidInputError(`Invalid IPv4 address "${ip}".`);
   }
   for (const part of parts) {
-    if (!/^\d{1,3}$/.test(part) || Number(part) > 255) {
+    if (!/^(?:0|[1-9]\d{0,2})$/.test(part) || Number(part) > 255) {
       throw new InvalidInputError(`Invalid IPv4 address "${ip}".`);
     }
     putU8(w, Number(part));
@@ -501,9 +505,12 @@ export function putIPv6(w: Writer, ip: string): void {
 
 /**
  * Formats an IPv6 address as RFC 5952 recommends: lowercase, with the longest run of two or more
- * zero groups replaced by `::`.
+ * zero groups replaced by `::`, and an IPv4-mapped address in mixed notation (`::ffff:192.0.2.1`).
  */
 export function readIPv6(b: Uint8Array, o: number): string {
+  if (isMapped(b, o)) {
+    return `::ffff:${readIPv4(b, o + 12)}`;
+  }
   const words: number[] = [];
   for (let i = 0; i < 16; i += 2) {
     words.push((b[o + i]! << 8) | b[o + i + 1]!);
@@ -534,4 +541,13 @@ export function readIPv6(b: Uint8Array, o: number): string {
     return hex(0, 8);
   }
   return `${hex(0, bestStart)}::${hex(bestStart + bestLength, 8)}`;
+}
+
+function isMapped(b: Uint8Array, o: number): boolean {
+  for (let i = 0; i < 10; i++) {
+    if (b[o + i] !== 0) {
+      return false;
+    }
+  }
+  return b[o + 10] === 0xff && b[o + 11] === 0xff;
 }
