@@ -266,6 +266,7 @@ export default defineConfig({
           'scripts/**',
           'site/scripts/**',
           'site/vocs.config.ts',
+          'tools/lint/src/commitMessage.ts',
           'tools/workers/src/run.ts',
         ],
         rules: {

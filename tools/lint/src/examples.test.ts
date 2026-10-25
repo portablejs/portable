@@ -124,6 +124,7 @@ const conventional: Record<string, string> = {
   request: 'Request',
   response: 'Response',
   signal: 'AbortSignal',
+  socket: '{ readable: ReadableStream<Uint8Array>; writable: WritableStream<Uint8Array> }',
 };
 
 const ambient = `

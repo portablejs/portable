@@ -46,7 +46,7 @@ L1  mime-stream   → mime-headers, bytes, streams
     csv, exif, json-stream, jsonl → bytes, streams
     rate-limit    → timers
     idna
-L0  base64, charset, lines, quoted-printable → bytes, streams
+L0  base64, binary, charset, lines, quoted-printable → bytes, streams
     ip, streams, web-crypto → bytes
     bytes, log, queue, random, timers
     errors        (every package except dmarc, log, mail-auth, quoted-printable, random and rate-limit depends on it for its error classes or its dispose helpers)
@@ -58,6 +58,7 @@ L0  base64, charset, lines, quoted-printable → bytes, streams
 | --- | --- | --- |
 | `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, a `Blob`, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Split**: `tee` into any number of branches, reading the source only as fast as the slowest branch. **Bridge** (see below): convert between streams and iterables, async iterables or generators. **`abortable`**: makes a hand-written `Transformer` cancellable with an `AbortSignal`, which every stream transform in the family uses. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
 | `@portable/lines` | Split byte or text streams into lines. Handles CRLF/LF/CR, a `maxLength` guard, and a trailing line with no newline. `new Lines.DecoderStream()`. | split2 406M, byline |
+| `@portable/binary` | A `Reader` and a `Writer` for binary protocols: integers of 1 to 8 bytes in either byte order, floats, varints (LEB128, zigzag and SLEB128, as numbers or bigints), UTF-8 and null-terminated strings, with offsets you can move back to fill in a length. `FrameDecoderStream` and `FrameEncoderStream` split a byte stream into length-prefixed frames, with a `maxBytes` guard. | smart-buffer, varint, length-prefixed-stream, it-length-prefixed, hand-written `DataView` code |
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |

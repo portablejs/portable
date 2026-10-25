@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vite-plus/test';
-import { findMadeUpActor } from '../../../scripts/prose.js';
+import { findMadeUpActor } from './prose.js';
 
 // Rejects prose built around a made-up actor (see `findMadeUpActor`) in Markdown and source. The
 // rows of the table in AGENTS.md quote the pattern without quotes, so they are skipped.
@@ -27,7 +27,7 @@ const files = [
   ...['docs', '.changeset', 'packages', 'scripts', 'site/src', 'tools'].flatMap((dir) =>
     walk(join(root, dir)),
   ),
-].filter((file) => file !== join(root, 'scripts/prose.ts'));
+].filter((file) => file !== join(root, 'tools/lint/src/prose.ts'));
 
 test('no prose describes a made-up app, caller or user', () => {
   const found: string[] = [];

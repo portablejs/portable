@@ -5,6 +5,7 @@
   "devDependencies": {
     "@portable/arc": "workspace:*",
     "@portable/base64": "workspace:*",
+    "@portable/binary": "workspace:*",
     "@portable/bytes": "workspace:*",
     "@portable/charset": "workspace:*",
     "@portable/compress": "workspace:*",

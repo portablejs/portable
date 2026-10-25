@@ -46,6 +46,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tr><th colspan="2" align="left">Streams and bytes</th></tr>
 <tr><td><a href="packages/streams"><code>@portable/streams</code></a></td><td>Collects, combines and transforms web streams and iterables, and converts Node streams to web streams.</td></tr>
 <tr><td><a href="packages/lines"><code>@portable/lines</code></a></td><td>Splits a stream of bytes or text into lines.</td></tr>
+<tr><td><a href="packages/binary"><code>@portable/binary</code></a></td><td>Reads and writes integers, varints and strings in binary protocols, and splits streams into length-prefixed frames.</td></tr>
 <tr><td><a href="packages/bytes"><code>@portable/bytes</code></a></td><td>Hex encoding, concatenation and constant-time comparison of <code>Uint8Array</code>s.</td></tr>
 <tr><td><a href="packages/errors"><code>@portable/errors</code></a></td><td>The error classes every package throws. <code>Errors.is</code> and <code>instanceof</code> match them even when an app has two copies of a package.</td></tr>
 <tr><td><a href="packages/compress"><code>@portable/compress</code></a></td><td>gzip and deflate on the platform's <code>CompressionStream</code>, a decompression stream with an output limit, and CRC-32.</td></tr>
