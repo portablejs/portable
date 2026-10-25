@@ -445,7 +445,8 @@ const lazyContext = {
   },
 };
 
-// A `__proto__` key in an object literal made each `add` with a `signal` about 30% slower in V8.
+// This builds the context with `Object.create` because an object literal with a `__proto__` key
+// made each `add` with a `signal` about 30% slower in V8.
 function combined(queue: AbortSignal, task: AbortSignal): Context {
   const context = Object.create(lazyContext) as LazyContext;
   context.queue = queue;
