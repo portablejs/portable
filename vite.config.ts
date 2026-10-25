@@ -232,6 +232,11 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off' },
       },
       {
+        // The site's examples are browser pages, so they use the DOM.
+        files: ['site/examples/**'],
+        rules: { 'no-restricted-globals': 'off' },
+      },
+      {
         files: ['vite.config.ts', 'site/vocs.config.ts', 'tools/lint/src/plugin.ts'],
         rules: { 'import/no-default-export': 'off' },
       },

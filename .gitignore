@@ -9,3 +9,4 @@ coverage
 site/src/pages/packages
 site/src/packages.json
 site/.herenow.json
+site/public/examples

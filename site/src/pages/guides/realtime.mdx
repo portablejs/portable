@@ -11,6 +11,8 @@ A long-lived connection can drop, and a slow reader must not make the sender buf
 - [`rpc`](/packages/rpc) makes typed JSON-RPC calls between workers, windows, servers, and browsers.
 - [`web-push`](/packages/web-push) sends notifications to a site's service worker, even when no page of the site is open.
 
+The <a href={`${import.meta.env.BASE_URL}examples/bluesky/`}>Bluesky stream</a> example reads every new Bluesky post from a WebSocket with `websockets` and `streams`, and reconnects from a cursor to replay the posts it skipped.
+
 ## Stream a model's output to the browser
 
 This Worker reads a server-sent event stream from an API and forwards the `text` field of each event as a new event stream:

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" />
+    <meta
+      name="description"
+      content="Every new Bluesky post in real time, one column per language, read from a WebSocket with Portable streams."
+    />
+    <meta property="og:title" content="Bluesky stream example" />
+    <meta
+      property="og:description"
+      content="Every new Bluesky post in real time, one column per language, read from a WebSocket with Portable streams."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Bluesky stream example · Portable</title>
+    <style>
+      :root {
+        --bg: #0b0d12;
+        --panel: #141821;
+        --line: #232a36;
+        --text: #e6e9ef;
+        --dim: #8a93a6;
+        --live: #22c55e;
+        --warn: #f59e0b;
+        --off: #ef4444;
+        --accent: #60a5fa;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(400px, 38%);
+        height: 100vh;
+        height: 100svh;
+      }
+      .stage {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 16px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      h1 {
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+        margin: 0;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: inherit;
+        text-decoration: none;
+      }
+      .brand img {
+        height: 1cap;
+      }
+      h1 .divider {
+        width: 1px;
+        height: 1.1em;
+        margin: 0 14px;
+        background: var(--line);
+      }
+      h1 .page {
+        font-weight: 500;
+        color: var(--dim);
+      }
+      .pill {
+        font-size: 12px;
+        padding: 1px 9px;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+      }
+      .live {
+        color: var(--live);
+      }
+      .wait {
+        color: var(--warn);
+      }
+      .off {
+        color: var(--off);
+      }
+      .stat {
+        color: var(--dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .stat b {
+        color: var(--text);
+        font-size: 15px;
+      }
+      .how {
+        display: none;
+        margin-left: auto;
+        color: var(--dim);
+        font-size: 13px;
+        text-decoration: none;
+      }
+      main {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+      }
+      #tip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: none;
+        max-width: 360px;
+        padding: 8px 10px;
+        background: #1b2130;
+        border: 1px solid #2f384a;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        pointer-events: none;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+      }
+      #tip img {
+        display: block;
+        margin-top: 8px;
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 6px;
+      }
+      canvas {
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        display: block;
+        cursor: pointer;
+      }
+      .source {
+        overflow-y: auto;
+        border-left: 1px solid var(--line);
+        padding: 20px 24px 48px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .source h2 {
+        font-size: 18px;
+        margin: 0 0 6px;
+        letter-spacing: -0.01em;
+      }
+      .source h3 {
+        font-size: 14px;
+        margin: 24px 0 4px;
+      }
+      .source p {
+        color: #c3c9d5;
+        margin: 6px 0;
+      }
+      .source a {
+        color: var(--accent);
+      }
+      :not(pre) > code {
+        background: var(--panel);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 12.5px;
+      }
+      pre {
+        background: var(--panel) !important;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        overflow-x: auto;
+        font:
+          12.5px/1.55 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        margin: 10px 0;
+      }
+      .cursor {
+        display: grid;
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0 4px;
+      }
+      .cursor div {
+        background: var(--panel);
+        padding: 8px 12px;
+        min-width: 0;
+      }
+      .cursor span {
+        display: block;
+        color: var(--dim);
+        font-size: 12px;
+      }
+      .cursor b {
+        display: block;
+        font:
+          12.5px ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+      }
+      .hint {
+        font-size: 13px;
+        color: var(--dim) !important;
+      }
+      @media (max-width: 1000px) {
+        .app {
+          display: block;
+          height: auto;
+        }
+        .stage {
+          height: 75vh;
+          height: 75svh;
+        }
+        .source {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 32px 16px 64px;
+        }
+        .how {
+          display: inline;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section class="stage">
+        <header>
+          <h1>
+            <a class="brand" href="/"><img src="/logo-dark.svg" alt="" />Portable</a
+            ><span class="divider"></span><span class="page">Bluesky stream</span>
+          </h1>
+          <span id="status" class="pill wait">connecting</span>
+          <span class="stat"><b id="rate">0</b> posts/s</span
+          ><span class="stat"><b id="total">0</b> seen</span>
+          <a class="how" href="#source">How it works ↓</a>
+        </header>
+        <main>
+          <canvas id="rain"></canvas>
+          <div id="tip"></div>
+        </main>
+      </section>
+      <aside class="source" id="source">
+        <h2>How it works</h2>
+        <p>
+          This page has no server. It reads Bluesky's public
+          <a href="https://github.com/bluesky-social/jetstream">Jetstream</a> WebSocket, which sends
+          every new post as JSON, with two <a href="/">Portable</a> packages:
+          <a href="/packages/websockets">@portable/websockets</a> and
+          <a href="/packages/streams">@portable/streams</a>. The same code runs in browsers,
+          Cloudflare Workers, Node 24+, Bun, and Deno.
+        </p>
+
+        <h3>Subscribe from a cursor</h3>
+        <p>
+          Every event has a <code>time_us</code> cursor.
+          <a href="/packages/websockets#connecturl-options"><code>WebSockets.connect</code></a>
+          calls the URL function before every attempt, so a dropped connection resumes from the last
+          post seen instead of skipping what was posted in between.
+        </p>
+        <pre><code>import * as Streams from '@portable/streams';
+import * as WebSockets from '@portable/websockets';
+
+let cursor: number | undefined;
+
+function jetstream(from?: number): URL {
+  const url = new URL('wss://jetstream2.us-east.bsky.network/subscribe');
+  url.searchParams.set('wantedCollections', 'app.bsky.feed.post');
+  if (from) {
+    url.searchParams.set('cursor', String(from));
+  }
+  return url;
+}
+
+function subscribe(signal?: AbortSignal): ReadableStream&lt;string | Uint8Array&gt; {
+  return WebSockets.connect(() =&gt; jetstream(cursor), { signal }).readable;
+}</code></pre>
+
+        <h3>Pipe messages into posts</h3>
+        <p>
+          The socket's <code>readable</code> is a web
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream"
+            ><code>ReadableStream</code></a
+          >, so it pipes through transforms like any other stream.
+          <a href="/packages/streams#bridge-streams-and-iterables"
+            ><code>Streams.toAsyncIterable</code></a
+          >
+          loops over it in every runtime, including browsers that can't iterate a stream with
+          <code>for await</code> yet.
+        </p>
+        <pre><code>const posts = subscribe()
+  .pipeThrough(Streams.map((message) =&gt; JSON.parse(message as string)))
+  .pipeThrough(Streams.tap((event) =&gt; {
+    cursor = event.time_us;
+  }))
+  .pipeThrough(Streams.filter((event) =&gt; event.commit?.operation === 'create'));
+
+for await (const event of Streams.toAsyncIterable(posts)) {
+  draw(columnFor(event), event);
+}</code></pre>
+
+        <h3>Pause a column, then catch up from its cursor</h3>
+        <p>
+          Hovering a column saves the cursor and drops that column's new posts, so the page buffers
+          nothing. Leaving it opens a second socket at the saved cursor. Jetstream replays from
+          there, the page keeps that column's language, and the socket closes once it reaches the
+          cursor where the column resumed. The main socket never stops. Jetstream keeps about a day
+          and a half of posts.
+        </p>
+        <pre><code>async function catchUp(column: Column, from: number, until: number) {
+  const controller = new AbortController();
+  const replay = WebSockets.connect(jetstream(from), { signal: controller.signal }).readable
+    .pipeThrough(Streams.map((message) =&gt; JSON.parse(message as string)));
+
+  for await (const event of Streams.toAsyncIterable(replay)) {
+    if (event.time_us &gt; until) {
+      break;
+    }
+    if (columnFor(event) === column) {
+      draw(column, event);
+    }
+  }
+  controller.abort(); // closes the catch-up socket
+}</code></pre>
+        <div class="cursor" aria-live="polite">
+          <div><span>main socket</span><b id="c-state">connecting</b></div>
+          <div><span>cursor</span><b id="c-cursor">none yet</b></div>
+          <div><span>main socket URL</span><b id="c-url">none yet</b></div>
+          <div><span>catch-up socket</span><b id="c-catch">Hover a column to pause it.</b></div>
+        </div>
+        <p class="hint">These values are live. Hover a column for a few seconds, then move away.</p>
+
+        <h3>Run it anywhere</h3>
+        <p>
+          Apart from the canvas, nothing here uses a browser API, so <code>subscribe</code> and
+          <code>catchUp</code> work unchanged in a Cloudflare Worker or Durable Object that counts
+          posts per language, or in a command-line tool on Node, Bun, or Deno.
+        </p>
+        <pre><code>npm install @portable/websockets @portable/streams</code></pre>
+      </aside>
+    </div>
+    <script type="module" src="./app.ts"></script>
+  </body>
+</html>

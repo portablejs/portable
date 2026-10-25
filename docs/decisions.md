@@ -760,6 +760,12 @@ These were recorded as each package was built. Each package's README and PARITY.
 - **Trade-offs:** A small `Buffer` shares Node's pool, which is 64 KiB in Node 24, so transferring a chunk's `ArrayBuffer` detaches the other buffers in the pool. Copying the pooled ones avoids that, but in Node 24 a 4 KB `Buffer` is pooled, so most chunks of a typical stream would be copied. The `Buffer` that the Node stream passes to `NodeStreams` already shares the pool, so a `Uint8Array` over its memory shares nothing that the `Buffer` didn't.
 - **Chosen:** a `Uint8Array` over the same memory, and a copy only for a `SharedArrayBuffer`. The README says not to transfer a chunk's `ArrayBuffer`.
 
+## The site's examples are static pages built outside Vocs
+
+- **Options:** a Vocs page that renders the example as a React component; a Vocs page that loads the example in an `iframe`; a static page that Vite builds into `site/public/examples/`.
+- **Trade-offs:** The Bluesky stream example fills the window with a canvas and a code panel, so the docs layout around it would only take up space, and a React page would need its canvas loop rewritten as a component. A static page runs the same `index.html` and `app.ts` that a reader can copy. Vocs doesn't know about the page, so its dead-link check rejects a Markdown link to it, and its router would load a sidebar link to it as a missing route.
+- **Chosen:** static pages. `site/scripts/examples.mjs` builds each folder in `site/examples/` with Vite and highlights its code blocks with `@pierre/highlights`. The sidebar entry is marked `external` and adds the base path itself, and the Realtime guide links to the page with an `<a>` element that reads `import.meta.env.BASE_URL`.
+
 ## The site preview has a pull request button and keeps the `preview` label
 
 - **Options:** keep only the `preview` label; replace the label with a `workflow_dispatch` button from GitHub PR Buttons; keep the label and add the button.

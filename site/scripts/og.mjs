@@ -104,8 +104,9 @@ function image({ title, description }) {
 const list = pages(dist);
 for (const page of list) {
   const html = readFileSync(join(dist, page), 'utf8');
+  // Vocs titles end in " – Portable" and the examples' titles in " · Portable".
   const title = decode(/<title>([^<]*)<\/title>/.exec(html)?.[1] ?? 'Portable').replace(
-    / – Portable$/,
+    / [–·] Portable$/,
     '',
   );
   const description = decode(/<meta name="description" content="([^"]*)"/.exec(html)?.[1] ?? '');
