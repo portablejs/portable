@@ -16,7 +16,8 @@ const sink = (text: string) => {
 };
 
 function setup(on: boolean) {
-  Log.enable(on ? 'app' : '', { console: false });
+  Log.configure({ console: false });
+  Log.enable(on ? 'app' : '');
   if (on) {
     createDebug.enable('app');
   } else {

@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## `Log.configure` sets the output options, and `Log.enable` takes only patterns
+
+- **Options:** keep `Log.enable(patterns, options)`, where `undefined` patterns keep the current ones so `Log.enable(undefined, { console: false })` changes only the output; require `patterns` and move `console`, `time` and `context` to a `Log.configure(options)`.
+- **Trade-offs:** AGENTS.md rules out a positional that accepts `undefined`, and `enable(undefined, …)` hides what the call does. `configure` adds one export, and switching from debug still needs only `enable`. `persist` stays on `enable`, because it writes the patterns. For the same reason, `log.isEnabled(level)` now requires its level instead of defaulting to `'debug'`.
+- **Chosen:** `Log.enable(patterns, { persist })` and `Log.configure({ console, time, context })`. `tools/lint/src/publicApi.test.ts` now also rejects an optional positional or one that accepts `undefined` in a public function, except `Compress.crc32`, which copies `zlib.crc32`, and `Exif.parseDate`, which takes a tag value that is `undefined` when the tag is missing.
+
 ## `@portable/sockets` has types and a Node adapter, with no default per runtime
 
 - **Options:** a main entry whose `connect` picks `cloudflare:sockets`, `node:net` or Deno's API by export condition; a main entry with only the `Sockets.Connect` and `Sockets.Socket` types, with drivers taking a `connect` option, and the Node adapter in a `/node` subpath.
@@ -42,7 +48,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** read patterns only from `enable()`; also read `localStorage.debug`, `process.env.DEBUG` and `import.meta.env`, as debug does. For a change to `localStorage.debug` made in the same tab: no detection, a check of the time on every log call, or a 1 second interval.
 - **Trade-offs:** The package rules forbid `process`, but `DEBUG=app:* node server.js` is how most debug users turn logging on. Reading `globalThis.process?.env` uses no Node API and does nothing where `process` doesn't exist. Browsers fire `storage` only in other tabs. Checking the time on every call cost about 40 ns per call in a prototype, and a disabled call costs less than that. AGENTS.md asks for a `signal` on anything that holds a timer, but the interval runs for the life of the page and takes no `signal`.
-- **Chosen:** read all three sources, and in a browser, listen for `storage` and check `localStorage.debug` once a second. `localStorage` is read only when `document` exists, so Node, Bun, Deno and Workers hold no timer. Deno has a `localStorage` too, but it persists across runs and would override `DEBUG`.
+- **Chosen:** read all three sources, and in a browser, listen for `storage` and check `localStorage.debug` once a second. `localStorage` is read only when `document` exists, so Workers, Deno, Bun and Node hold no timer. Deno has a `localStorage` too, but it persists across runs and would override `DEBUG`.
 
 ## `@portable/log` loggers are objects with one method per level
 
@@ -731,7 +737,7 @@ These were recorded as each package was built. Each package's README and PARITY.
 
 - **Options:** export `./node` only under the `node` condition, as packages.md planned; a plain `./node` export with `src`, `types` and `default`, like every other entry.
 - **Trade-offs:** With only a `node` condition, a browser or Workers bundle that imports the entry fails to resolve it, which gives a clearer error than a missing `node:stream`. But zile adds a `default` condition to every export when it publishes, so the published package would have one anyway, and `tools/lint/src/packages.test.ts` requires the same three conditions for every entry. Bun and Deno resolve `node:stream` either way.
-- **Chosen:** a plain export. The module JSDoc and the README say it runs in Node, Bun and Deno, and `tools/workers/src/run.ts` leaves `./node` entries out of the Worker bundle.
+- **Chosen:** a plain export. The module JSDoc and the README say it runs in Deno, Bun and Node, and `tools/workers/src/run.ts` leaves `./node` entries out of the Worker bundle.
 
 ## `@portable/streams/node` has only `toWeb`'s two functions
 

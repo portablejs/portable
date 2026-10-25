@@ -35,7 +35,7 @@ Returns a logger. `debug` and `info` calls print only when a pattern enables the
 | `debug(...args)`, `info(...args)`, `warn(...args)`, `error(...args)` | Logs at that level. The arguments are the same as `console.log`'s, and a string first argument can hold `%s`, `%d`, `%o` and the other format specifiers. The methods don't use `this`, so `const { debug } = log` works. |
 | `extend(suffix)` | Returns a logger for `namespace:suffix` with the same properties. |
 | `with(properties)` | Returns a logger with the same namespace whose records also carry `properties`. |
-| `isEnabled(level?)` | Whether a call at `level` would log with the current patterns. `level` defaults to `'debug'`. Use it to skip expensive work: `if (log.isEnabled()) { log.debug(dump(state)); }`. |
+| `isEnabled(level)` | Whether a call at `level` would log with the current patterns. Use it to skip expensive work: `if (log.isEnabled('debug')) { log.debug(dump(state)); }`. |
 | `namespace` | The namespace string. |
 
 ### Patterns
@@ -51,18 +51,25 @@ When several patterns match a namespace, it logs at the lowest level any of them
 Patterns are read the first time `create`, `enable` or `disable` is called, from the first of these that is set:
 
 1. `localStorage.debug`, in browsers.
-2. `process.env.DEBUG`, in Node, Bun and Deno with `--allow-env`.
+2. `process.env.DEBUG`, in Deno (with `--allow-env`), Bun and Node.
 3. `import.meta.env.DEBUG` or `import.meta.env.VITE_DEBUG`, when a bundler such as Vite defines them.
 
 In a browser, a change to `localStorage.debug` in another tab applies at once through the `storage` event, and a change in the same tab, such as typing `localStorage.debug = 'app:*'` in the console, applies within a second. An invalid value is ignored and the previous patterns stay until it is fixed.
 
 ### `Log.enable(patterns, options?)`
 
-Replaces the patterns. Pass `undefined` to keep the current patterns and change only options. Throws a `RangeError` when a pattern has an unknown level, and keeps the previous patterns.
+Replaces the patterns. Throws a `RangeError` when a pattern has an unknown level, and keeps the previous patterns.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `persist` | `false` | Also writes the patterns to `localStorage.debug`, so they apply after a reload. |
+
+### `Log.configure(options)`
+
+Changes how enabled calls are written. An option you leave out keeps its current value.
+
+| Option | Default | Description |
+| --- | --- | --- |
 | `console` | `true` | Writes enabled calls to `console`. Set to `false` to log only through `subscribe`. |
 | `time` | `false` | Prefixes console output with an ISO 8601 timestamp, which Node's console doesn't show. |
 | `context` | | Storage for `withContext`, such as `new AsyncLocalStorage()` from `node:async_hooks`. |
@@ -73,10 +80,10 @@ Turns off every namespace at every level and returns the patterns that were in e
 
 ### `Log.subscribe(subscriber, options?)`
 
-Calls `subscriber(record)` with every enabled call, after the console output. Use it to send logs somewhere else, or to replace the console output with `Log.enable(undefined, { console: false })`. Pass `signal` to remove the subscriber.
+Calls `subscriber(record)` with every enabled call, after the console output. Use it to send logs somewhere else, or to replace the console output with `Log.configure({ console: false })`. Pass `signal` to remove the subscriber.
 
 ```ts
-Log.enable(undefined, { console: false });
+Log.configure({ console: false });
 Log.subscribe((record) => {
   if (record.level === 'error') {
     report(record);
@@ -87,12 +94,12 @@ Log.subscribe((record) => {
 
 ### `Log.withContext(properties, fn)`
 
-Runs `fn` and adds `properties` to every record logged during the call, including records from loggers created elsewhere. It needs a `context` storage passed to `enable`, because only the platform can follow a call through `await`. Without one it just calls `fn`.
+Runs `fn` and adds `properties` to every record logged during the call, including records from loggers created elsewhere. It needs a `context` storage passed to `configure`, because only the platform can follow a call through `await`. Without one it just calls `fn`.
 
 ```ts
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-Log.enable(undefined, { context: new AsyncLocalStorage() });
+Log.configure({ context: new AsyncLocalStorage() });
 
 export default {
   fetch: (request: Request) =>
@@ -100,7 +107,7 @@ export default {
 };
 ```
 
-`AsyncLocalStorage` exists in Node, Bun, Deno and Cloudflare Workers with `nodejs_compat`. For one request handler that passes its logger down, `log.with({ requestId })` does the same without a storage.
+`AsyncLocalStorage` exists in Cloudflare Workers with `nodejs_compat`, Deno, Bun and Node. If your request handler passes its logger down to the code it calls, `log.with({ requestId })` does the same without a storage.
 
 ### `Log.format(record)`
 
@@ -135,11 +142,11 @@ When switching from debug, note these differences:
 - A logger is an object, not a function: `createDebug('app')('x %s', y)` becomes `Log.create('app').debug('x %s', y)`.
 - `warn` and `error` calls print with no patterns set, and `disable()` silences them too.
 - `extend` always joins with `:`. For debug's `extend('db', '-')`, call `Log.create('app-db')`.
-- debug's `enabled` property becomes `log.isEnabled()`, and `createDebug.enabled('app')` becomes `Log.create('app').isEnabled()`.
-- Setting `debug.log` becomes `Log.enable(undefined, { console: false })` with a subscriber that writes `Log.format(record)`.
+- debug's `enabled` property becomes `log.isEnabled('debug')`, and `createDebug.enabled('app')` becomes `Log.create('app').isEnabled('debug')`.
+- Setting `debug.log` becomes `Log.configure({ console: false })` with a subscriber that writes `Log.format(record)`.
 - There are no custom formatters such as `createDebug.formatters.h`. Format the value before passing it, or format records in a subscriber.
 - `DEBUG_HIDE_DATE`, `DEBUG_COLORS`, `DEBUG_DEPTH` and the other `DEBUG_*` variables are not read. Node's console picks colors and depth itself, and `time: true` adds timestamps.
-- In Node, debug writes everything to stderr. Here `warn` and `error` go to stderr, and `debug` and `info` to stdout. To send everything to stderr, subscribe with `console: false` and call `console.error(Log.format(record))`.
+- In Node, debug writes everything to stderr. Here `warn` and `error` go to stderr, and `debug` and `info` to stdout. To send everything to stderr, call `Log.configure({ console: false })` and subscribe with `(record) => console.error(Log.format(record))`.
 
 <!-- bench:start -->
 | | @portable/log | debug | loglevel | consola | @logtape/logtape | pino |
