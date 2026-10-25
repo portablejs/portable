@@ -1,10 +1,10 @@
 import { isUint8Array } from '@portable/bytes/internal';
 import * as Base64 from '@portable/base64';
 import { type AsyncDisposeMethod, withAsyncDispose } from '@portable/errors/internal';
+import type * as Sockets from '@portable/sockets';
 import { CommandError, type Rejection } from './errors.js';
 import { DataStream, encodeData } from './DataStream.js';
 import { createReader, type Reader, type Reply } from './reader.js';
-import type { Connect, Socket } from './Socket.js';
 
 /** Credentials for AUTH PLAIN or LOGIN, or an OAuth 2.0 access token for XOAUTH2. */
 export type Auth =
@@ -89,8 +89,11 @@ export declare namespace Client {
 
 export declare namespace connect {
   type Options = {
-    /** Opens the TCP connection, such as `connect` from `cloudflare:sockets`. */
-    connect: Connect;
+    /**
+     * Opens the TCP connection, such as `connect` from `cloudflare:sockets` or from
+     * `@portable/sockets/node`.
+     */
+    connect: Sockets.Connect;
     host: string;
     /** @default 465 when `secure` is `'on'`, otherwise 587 */
     port?: number | undefined;
@@ -125,13 +128,13 @@ const encoder = new TextEncoder();
 const nonAscii = /[^ -~]/;
 const invalidAddress = /[<>]|[^ -~\u0080-\uffff]/;
 
-function createSession(first: Socket): Session {
+function createSession(first: Sockets.Socket): Session {
   let socket = first;
   let reader: Reader = createReader(socket.readable);
   let writer = socket.writable.getWriter();
   let closed = false;
 
-  const watch = (s: Socket) => {
+  const watch = (s: Sockets.Socket) => {
     s.opened.catch(() => {});
     s.closed.catch(() => {});
   };
@@ -212,7 +215,7 @@ function createSession(first: Socket): Session {
       closed = true;
       reader.cancel();
       try {
-        Promise.resolve(socket.close()).catch(() => {});
+        socket.close().catch(() => {});
       } catch {}
     },
   } satisfies Session;
@@ -321,7 +324,7 @@ export async function connect(options: connect.Options): Promise<Client> {
   }
   signal?.throwIfAborted();
 
-  let socket: Socket;
+  let socket: Sockets.Socket;
   try {
     socket = open({ hostname: host, port }, { secureTransport: secure, allowHalfOpen: false });
   } catch (cause) {

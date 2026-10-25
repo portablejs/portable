@@ -2,6 +2,18 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## `@portable/sockets` has types and a Node adapter, with no default per runtime
+
+- **Options:** a main entry whose `connect` picks `cloudflare:sockets`, `node:net` or Deno's API by export condition; a main entry with only the `Sockets.Connect` and `Sockets.Socket` types, with drivers taking a `connect` option, and the Node adapter in a `/node` subpath.
+- **Trade-offs:** an export condition per runtime keeps drivers free of a `connect` option, but each runtime's build of every driver then needs its own tests, and `cloudflare:sockets` doesn't resolve outside workerd, so a bundler for another target would fail on it. A `connect` option costs the caller one import, and smtp already had one. `connect` from `cloudflare:sockets` fits the type as it is, and Deno and Bun run `node:net` and `node:tls`, so one adapter covers the runtimes without a Sockets API. The `cloudflare:sockets` types require `allowHalfOpen`, so `Sockets.Options` requires both fields, and a driver always passes them. The WinterTC draft's `sni` and `alpn` options are left out, because the `cloudflare:sockets` types have neither.
+- **Chosen:** types in the main entry, and `connect` and `create` in `@portable/sockets/node`. smtp takes `Sockets.Connect` and re-exports it as `Smtp.Connect`. The Node adapter verifies certificates for `startTls()` and sends SNI, which @arrowood.dev/socket doesn't, and `create({ ca, rejectUnauthorized })` covers private CAs and test servers. Runs in workerd under Miniflare showed behavior the draft leaves open, such as `closed` staying pending after both sides end, and the README lists these differences. The adapter keeps Node's behavior instead of copying workerd's, because Miniflare connects through a local proxy and Cloudflare's network may behave differently.
+
+## The sockets Node adapter's tests are named `*.conformance.test.ts`
+
+- **Options:** `*.conformance.ts`, which also runs in browsers and in the worker harness; `*.test.ts`, which runs only in Node; `*.conformance.test.ts`.
+- **Trade-offs:** the tests need `node:net` and `node:tls` servers, so they can't run in a browser. They should still run on Bun and Deno, because the adapter is the `connect` for those runtimes. The browser project and the worker harness only run `*.conformance.ts`, and `pnpm test:bun` and `pnpm test:deno` select files by the word `conformance`.
+- **Chosen:** `*.conformance.test.ts`. As with `@portable/streams/node`, `./node` is a plain export that `tools/workers/src/run.ts` leaves out of the Worker bundle, and the main entry, which has only types, is checked in workerd by a check that passes `connect` from `cloudflare:sockets` as a `Sockets.Connect`.
+
 ## `@portable/binary` readers and writers are objects on a shared prototype
 
 - **Options:** a class, as smart-buffer has; an object of closures made by `createReader`; an object whose methods live on one shared prototype and read their state from a `Symbol.for('portable.binary.reader')` property.

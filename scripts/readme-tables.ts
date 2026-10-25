@@ -820,6 +820,20 @@ export const tables: Record<string, Table> = {
       { label: 'Send a 1 MB message', test: 'streams a 1 MB message' },
     ],
   },
+  sockets: {
+    columns: [
+      {
+        name: '@portable/sockets',
+        imports: [{ from: '@portable/sockets/node', use: ['connect'] }],
+      },
+      lib('@arrowood.dev/socket', [{ from: '@arrowood.dev/socket', use: ['connect'] }]),
+      node('node:net'),
+    ],
+    rows: [
+      { label: 'Echo 16 MB over TCP on localhost', test: 'echoes 16 MB over TCP' },
+      { label: 'Open and close a connection on localhost', test: 'opens and closes a connection' },
+    ],
+  },
   spf: {
     columns: [
       ours('spf', ['check'], [{ from: '@portable/dns', use: ['create'] }]),

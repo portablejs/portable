@@ -39,120 +39,13 @@ for (const mail of outbox) {
 
 ## Sockets
 
-`connect` is called as `connect({ hostname, port }, { secureTransport, allowHalfOpen })` and returns a socket with the shape of the [Sockets API](https://sockets-api.proposal.wintertc.org/): `readable`, `writable`, `opened`, `closed`, `close()` and `startTls()`. `connect` from `cloudflare:sockets` fits as it is. For Deno and Node, wrap the native socket.
-
-Deno:
+`connect` is called as `connect({ hostname, port }, { secureTransport, allowHalfOpen })` and returns a socket with the shape of the [Sockets API](https://sockets-api.proposal.wintertc.org/), typed as `Sockets.Connect` in [`@portable/sockets`](../sockets). On Cloudflare Workers, pass `connect` from `cloudflare:sockets`. On Deno, Bun and Node, pass `connect` from `@portable/sockets/node`:
 
 ```ts
-import type * as Smtp from '@portable/smtp';
+import * as Smtp from '@portable/smtp';
+import { connect } from '@portable/sockets/node';
 
-function wrap(opening: Promise<Deno.Conn>, hostname: string): Smtp.Socket {
-  let conn: Deno.Conn | undefined;
-  const opened = opening.then((value) => {
-    conn = value;
-  });
-  const closed = Promise.withResolvers<void>();
-  return {
-    opened,
-    closed: closed.promise,
-    readable: new ReadableStream<Uint8Array>(
-      {
-        async pull(controller) {
-          await opened;
-          const buffer = new Uint8Array(16 * 1024);
-          const length = await conn!.read(buffer).catch(() => null);
-          if (length === null) {
-            controller.close();
-            closed.resolve();
-          } else {
-            controller.enqueue(buffer.subarray(0, length));
-          }
-        },
-      },
-      { highWaterMark: 0 },
-    ),
-    writable: new WritableStream<Uint8Array>({
-      async write(chunk) {
-        await opened;
-        for (let offset = 0; offset < chunk.length; ) {
-          offset += await conn!.write(chunk.subarray(offset));
-        }
-      },
-    }),
-    close() {
-      conn?.close();
-      closed.resolve();
-    },
-    startTls() {
-      return wrap(opened.then(() => Deno.startTls(conn as Deno.TcpConn, { hostname })), hostname);
-    },
-  };
-}
-
-export const connect: Smtp.Connect = ({ hostname, port }, { secureTransport }) =>
-  wrap(
-    secureTransport === 'on' ? Deno.connectTls({ hostname, port }) : Deno.connect({ hostname, port }),
-    hostname,
-  );
-```
-
-Node:
-
-```ts
-import net from 'node:net';
-import tls from 'node:tls';
-import type * as Smtp from '@portable/smtp';
-
-function wrap(socket: net.Socket, ready: string, hostname: string): Smtp.Socket {
-  socket.setNoDelay(true);
-  const opened = new Promise<void>((resolve, reject) => {
-    socket.once(ready, resolve);
-    socket.once('error', reject);
-  });
-  const closed = new Promise<void>((resolve) => socket.once('close', () => resolve()));
-  let attached = true;
-  return {
-    opened,
-    closed,
-    readable: new ReadableStream<Uint8Array>({
-      start(controller) {
-        socket.on('data', (chunk: Buffer) => {
-          controller.enqueue(new Uint8Array(chunk));
-          if ((controller.desiredSize ?? 0) <= 0) {
-            socket.pause();
-          }
-        });
-        socket.once('close', () => attached && controller.close());
-      },
-      pull: () => void socket.resume(),
-      cancel: () => void socket.destroy(),
-    }),
-    writable: new WritableStream<Uint8Array>({
-      write: (chunk) =>
-        new Promise((resolve, reject) => {
-          if (socket.write(chunk)) {
-            return resolve();
-          }
-          socket.once('drain', resolve);
-          socket.once('close', () => reject(new Error('Socket closed')));
-        }),
-    }),
-    close() {
-      socket.destroy();
-      return closed;
-    },
-    startTls() {
-      attached = false;
-      socket.removeAllListeners('data');
-      return wrap(tls.connect({ socket, servername: hostname }), 'secureConnect', hostname);
-    },
-  };
-}
-
-export const connect: Smtp.Connect = ({ hostname, port }, { secureTransport }) =>
-  secureTransport === 'on'
-    ? wrap(tls.connect({ host: hostname, port, servername: hostname }), 'secureConnect', hostname)
-    : wrap(net.connect({ host: hostname, port }), 'connect', hostname);
+await Smtp.send(mail, { connect, host: 'smtp.example.com', auth });
 ```
 
 ## API
@@ -234,9 +127,8 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `Smtp.Rejection` | A recipient the server refused, with its reply. |
 | `Smtp.Auth` | Credentials for AUTH PLAIN or LOGIN, or an OAuth 2.0 access token for XOAUTH2. |
 | `Smtp.Dsn` | RFC 3461 delivery status notification parameters. |
-| `Smtp.Connect` | The function that opens a socket, such as `connect` from `cloudflare:sockets`. |
-| `Smtp.Socket` | The socket `Connect` returns. |
-| `Smtp.SocketOptions` | The options `Connect` receives. |
+| `Smtp.Connect` | The function that opens a socket, such as `connect` from `cloudflare:sockets` or `@portable/sockets/node`. The same type as `Sockets.Connect`. |
+| `Smtp.Socket` | The socket `Connect` returns. The same type as `Sockets.Socket`. |
 
 ## Why use this over nodemailer
 

@@ -226,9 +226,9 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
-        // @portable/streams/node converts between Node streams and web streams, so it is the one
-        // entry of any package that imports node:*. Its tests run only in Node.
-        files: ['packages/streams/src/node/**', 'packages/streams/test/node.test.ts'],
+        // A `./node` entry (docs/packages.md rule 9) is the only package code that imports node:*.
+        // The streams/node tests import node:stream too.
+        files: ['packages/*/src/node/**', 'packages/streams/test/node.test.ts'],
         rules: { 'no-restricted-imports': 'off' },
       },
       {

@@ -17,6 +17,7 @@ type Machine = { node: string; cpu: string; cores: number };
 type PackageJson = {
   name: string;
   version?: string | undefined;
+  main?: string | undefined;
   types?: string | undefined;
   typings?: string | undefined;
   exports?: unknown;
@@ -133,7 +134,8 @@ function typesOf(testDir: string, column: Column): string {
     json.types ||
     json.typings ||
     JSON.stringify(json.exports ?? {}).includes('"types"') ||
-    existsSync(join(dir, 'index.d.ts'))
+    existsSync(join(dir, 'index.d.ts')) ||
+    (json.main !== undefined && existsSync(join(dir, json.main.replace(/\.[cm]?js$/, '.d.ts'))))
   ) {
     return 'included';
   }

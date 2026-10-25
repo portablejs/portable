@@ -37,6 +37,7 @@
     "@portable/rdap": "workspace:*",
     "@portable/rpc": "workspace:*",
     "@portable/smtp": "workspace:*",
+    "@portable/sockets": "workspace:*",
     "@portable/spf": "workspace:*",
     "@portable/sse": "workspace:*",
     "@portable/streams": "workspace:*",

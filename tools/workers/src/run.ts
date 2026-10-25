@@ -4,6 +4,7 @@
 // at the top level fails here as it would on Cloudflare. `@cloudflare/vitest-pool-workers` supports only
 // Vitest 4, so this runs outside Vitest until it supports Vitest 5.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import net from 'node:net';
 import { resolve } from 'node:path';
 import { Miniflare } from 'miniflare';
 import { build, type Rollup } from 'vite-plus';
@@ -19,19 +20,21 @@ const specifiers = readdirSync(resolve(root, 'packages')).flatMap((name) => {
     .filter((path) => path !== './node')
     .map((path: string) => pkg.name + path.slice(1));
 });
+const typesOnly = new Set(['@portable/sockets']);
 
 const code = [
   ...specifiers.map((specifier, i) => `import * as m${i} from '${specifier}'`),
   `import { checks } from './checks.ts'`,
   `const modules = { ${specifiers.map((s, i) => `${JSON.stringify(s)}: m${i}`).join(', ')} }`,
+  `const typesOnly = new Set(${JSON.stringify([...typesOnly])})`,
   `export default {
-    async fetch() {
+    async fetch(request, env) {
       const results = {}
       for (const [name, module] of Object.entries(modules))
-        results[name] = Object.keys(module).length > 0 ? 'pass' : 'no exports'
+        results[name] = Object.keys(module).length > 0 || typesOnly.has(name) ? 'pass' : 'no exports'
       for (const [name, check] of Object.entries(checks)) {
         try {
-          await check()
+          await check(env)
           results[name] = 'pass'
         } catch (error) {
           results[name] = String(error?.stack ?? error)
@@ -55,6 +58,7 @@ const output = (await build({
     rollupOptions: {
       input: entry,
       preserveEntrySignatures: 'strict',
+      external: ['cloudflare:sockets'],
       output: { format: 'es', codeSplitting: false },
     },
   },
@@ -78,10 +82,13 @@ if (chunks.length !== 1) {
 if (process.env.WORKERS_BUNDLE) {
   writeFileSync(process.env.WORKERS_BUNDLE, chunks[0]!.code);
 }
+const echo = net.createServer({ allowHalfOpen: true }, (socket) => socket.pipe(socket));
+await new Promise<void>((done) => echo.listen(0, '127.0.0.1', done));
 const miniflare = new Miniflare({
   modules: true,
   script: chunks[0]!.code,
   compatibilityDate: '2026-07-01',
+  bindings: { echoPort: (echo.address() as net.AddressInfo).port },
 });
 let failed = 0;
 try {
@@ -98,5 +105,6 @@ try {
   console.log(`\n${Object.keys(results).length - failed} passed, ${failed} failed in workerd`);
 } finally {
   await miniflare.dispose();
+  echo.close();
 }
 process.exitCode = failed > 0 ? 1 : 0;

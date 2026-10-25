@@ -15,7 +15,7 @@ The packages are small and do one thing each, like much of npm's most-used code,
 7. **Don't rebuild existing web-standard packages.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
 8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. We still publish and version each `@portable/*` package on its own.
 
-9. **`/node` entrypoints where Node helps.** The main entry of every package is web-standard only. A package may add a `./node` subpath when Node has a better API, or to convert between Node and web types. It is the only code allowed to import `node:*` (an oxlint override on that package's `src/node/**`), it never changes the main API, and no other Portable package imports it. `streams/node` exists and is described below. The other candidates:
+9. **`/node` entrypoints where Node helps.** The main entry of every package is web-standard only. A package may add a `./node` subpath when Node has a better API, or to convert between Node and web types. It is the only code allowed to import `node:*` (an oxlint override on that package's `src/node/**`), it never changes the main API, and no other Portable package imports it. `streams/node` and `sockets/node` exist, and `streams/node` is described below. The other candidates:
    - `dns/node`: a resolver backed by `node:dns/promises`, so Node users skip DNS-over-HTTPS.
    - `png/node`: sync inflate/deflate via `node:zlib`, so Node users get a sync API without adding fflate.
 
@@ -34,7 +34,7 @@ L2  dkim          → dns, idna, web-crypto, base64, bytes, timers
     oauth1, webhooks → web-crypto, base64, bytes, timers
     web-push      → base64, bytes, timers
     password      → base64, bytes, timers
-    smtp          → base64, bytes
+    smtp          → base64, bytes, sockets
     rdap          → idna, ip, timers
 L1  mime-stream   → mime-headers, bytes, streams
     mime-headers  → base64, bytes
@@ -47,7 +47,7 @@ L1  mime-stream   → mime-headers, bytes, streams
     rate-limit    → timers
     idna
 L0  base64, binary, charset, lines, quoted-printable → bytes, streams
-    ip, streams, web-crypto → bytes
+    ip, sockets, streams, web-crypto → bytes
     bytes, log, queue, random, timers
     errors        (every package except dmarc, log, mail-auth, quoted-printable, random and rate-limit depends on it for its error classes or its dispose helpers)
 ```
@@ -66,6 +66,7 @@ L0  base64, binary, charset, lines, quoted-printable → bytes, streams
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, nanoid's `customAlphabet`, seedrandom, lodash's `random`, `sample` and `shuffle` |
 | `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf`, `dns` and `dns-packet` use it. | ip, ipaddr.js, is-ip, ip-cidr, cidr-tools, ip-range-check |
 | `@portable/log` | Namespaced logging with `debug`, `info`, `warn` and `error` levels, turned on with debug's `DEBUG` patterns from an environment variable or `localStorage`. A change to `localStorage.debug` applies without a reload, and `subscribe` sends records to other outputs. | debug |
+| `@portable/sockets` | The WinterTC Sockets API types `Sockets.Connect` and `Sockets.Socket`. Protocol clients such as smtp take a `connect` function of type `Sockets.Connect`, so you can pass `connect` from `cloudflare:sockets` unchanged. `@portable/sockets/node` has a `connect` on `node:net` and `node:tls`, which Deno and Bun also run, with certificate verification and SNI for `startTls()`. | @arrowood.dev/socket |
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency`, a rate limit (`interval`, `intervalCap`) and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map, p-throttle |
 | `@portable/web-crypto` | Helpers over `crypto.subtle` that take and return `Uint8Array`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, keys from PEM text with `importPem`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/errors` | The error classes that every package's errors extend, and `Errors.is`, which matches an error's kind across two copies of a package. Its `./internal` entry holds the dispose helpers for long-lived objects. | none (shared by the family) |
@@ -135,7 +136,7 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | Package | Purpose | Depends on | Replaces / fills |
 | --- | --- | --- | --- |
 | `@portable/mail` | Compose a raw RFC 5322 message as a `ReadableStream`: text/html alternatives, attachments, inline images, custom headers. No transport. | `base64`, `bytes`, `idna`, `mime-headers`, `quoted-printable`, `timers` | nodemailer's MailComposer |
-| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` fits): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | `base64`, `bytes` | nodemailer's SMTP transport, smtp-connection |
+| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` and `@portable/sockets/node` fit): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | `base64`, `bytes`, `sockets` | nodemailer's SMTP transport, smtp-connection |
 | `@portable/web-push` | Send Web Push messages with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292) on WebCrypto and `fetch`. | `base64`, `bytes`, `timers` | web-push |
 | `@portable/rdap` | RDAP lookups for domains, IPs and ASNs with IANA bootstrap and normalized results. | `idna`, `ip`, `timers` | whoiser, whois-json, node-rdap |
 | `@portable/dns` | DNS lookups in runtimes without a DNS API: `resolveTxt`, `resolveMx` and the other `node:dns/promises` methods over DNS-over-HTTPS, behind a resolver interface that `node:dns/promises` also fits. | `base64`, `dns-packet`, `idna`, `ip` | node:dns/promises where it doesn't exist, tangerine, dohjs |
