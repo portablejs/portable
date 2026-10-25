@@ -2,6 +2,30 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## `@portable/binary` readers and writers are objects on a shared prototype
+
+- **Options:** a class, as smart-buffer has; an object of closures made by `createReader`; an object whose methods live on one shared prototype and read their state from a `Symbol.for('portable.binary.reader')` property.
+- **Trade-offs:** AGENTS.md allows classes only for errors and platform subclasses. A protocol client creates a reader for every packet, and the closure version allocates about 25 functions each time. Methods on a prototype need `this`, so `const { uint8 } = reader` doesn't work, as it doesn't for `DataView`.
+- **Chosen:** the shared prototype. `createReader` and `createWriter` allocate one object and one state object.
+
+## `@portable/binary` throws a `RangeError` for an out-of-range value
+
+- **Options:** wrap the value, as `DataView.setUint8(0, 256)` does; throw a `RangeError`, as `Buffer.writeUInt8(256)` does.
+- **Trade-offs:** Wrapping writes a different number than the one passed and gives no sign of it. The check costs one comparison per write, and the benchmarks show no difference.
+- **Chosen:** a `RangeError` for a value outside the type's range or not an integer, and a `TypeError` for a value of the wrong type. `FrameEncoderStream` errors the stream with `Binary.InvalidInputError` for a chunk too long for its prefix, because that chunk is malformed input.
+
+## `@portable/binary` varints have three encodings and two result types
+
+- **Options:** one varint type per protocol (protobuf `int32`, `sint32`, Minecraft `VarInt`); an `encoding` option of `'unsigned'`, `'zigzag'` or `'signed'` (SLEB128), with `varint` returning a number and `bigVarint` a bigint.
+- **Trade-offs:** Protocols disagree on negative numbers. Minecraft writes a negative `VarInt` as its 32-bit two's complement in 5 bytes, and protobuf writes a negative `int32` sign-extended to 64 bits in 10 bytes. Both write the value as an unsigned varint after converting it. If `varint` returned `number | bigint`, you would have to check the type of every result.
+- **Chosen:** the `encoding` option and two methods. `varint` reads and writes safe integers and throws `Binary.InvalidInputError` for a larger value, so it never returns a rounded number. A Minecraft `VarInt` is `reader.varint() | 0` and `writer.varint(value >>> 0)`, and a negative protobuf `int32` is `writer.bigVarint(BigInt.asUintN(64, BigInt(value)))`.
+
+## `@portable/binary` frame lengths count only the frame's bytes
+
+- **Options:** a length that counts only the bytes after the prefix, as it-length-prefixed and Minecraft use; an option for a length that includes the prefix, as the PostgreSQL wire protocol uses; an option for a header before the length.
+- **Trade-offs:** Each option adds a case to the decoder and its tests. PostgreSQL also puts a type byte before the length, so one option wouldn't cover it.
+- **Chosen:** only the first. For other layouts, read the header with a `Reader` from your own buffered bytes.
+
 ## `@portable/log` reads `process.env.DEBUG` and polls `localStorage`
 
 - **Options:** read patterns only from `enable()`; also read `localStorage.debug`, `process.env.DEBUG` and `import.meta.env`, as debug does. For a change to `localStorage.debug` made in the same tab: no detection, a check of the time on every log call, or a 1 second interval.

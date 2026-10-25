@@ -1,0 +1,17 @@
+{
+  "name": "@portable/binary-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@bufbuild/protobuf": "^2.16.0",
+    "@portable/binary": "workspace:*",
+    "@portable/fuzz": "workspace:*",
+    "@portable/streams": "workspace:*",
+    "@types/node": "^26.6.5",
+    "@types/varint": "^6.0.3",
+    "fast-check": "^4.10.2",
+    "it-length-prefixed": "^11.0.1",
+    "smart-buffer": "^4.2.0",
+    "varint": "^6.0.0"
+  }
+}
