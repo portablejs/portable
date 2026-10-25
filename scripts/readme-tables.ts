@@ -190,7 +190,7 @@ export const tables: Record<string, Table> = {
   },
   'web-crypto': {
     columns: [
-      ours('web-crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'derToRawEcdsa']),
+      ours('web-crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'importPem', 'derToRawEcdsa']),
       lib('ecdsa-sig-formatter'),
       lib('@noble/hashes', [
         { from: '@noble/hashes/sha2.js', use: ['sha256'] },

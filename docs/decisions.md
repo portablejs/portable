@@ -377,7 +377,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 ## `@portable/web-push` benchmarks against direct WebCrypto calls
 
 - **Options:** require being within 25% of web-push; compare with the same WebCrypto calls made directly and show web-push for reference.
-- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 3.5 times slower one at a time and 1.4 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
+- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 2.5 times slower one at a time and 1.2 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
 - **Chosen:** the 25% assertions compare with direct WebCrypto calls, and the README shows web-push's numbers.
 
 ## `@portable/rate-limit`: GCRA and a compare-and-set store
@@ -467,7 +467,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 ## `@portable/webhooks` API
 
 - **One `verify(input, { scheme, secret })`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers. The `scheme` string became a scheme object (see "Webhooks schemes are objects of functions").
-- **The default is WebCrypto `importKey` plus `sign`, with a cache of imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
+- **The default is `WebCrypto.hmac`, which caches imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
 - **`verify` returns `{ body, id, timestamp }` as text, not parsed JSON,** because Slack commands and GitHub form deliveries aren't JSON, and the `id` lets callers drop replays.
 - **One `VerificationError` with a `code`** (`missing-header`, `malformed-header`, `signature`, `timestamp`) instead of the shared error names, because every failure maps to the same 4xx. Mistakes in the call throw `TypeError` or `RangeError`. The signature is checked first, so `timestamp` always means a genuine but stale message.
 - **The tolerance applies in both directions,** while Stripe and Slack accept any future timestamp. No SHA-1 for GitHub, which always sends SHA-256.
