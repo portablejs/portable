@@ -180,10 +180,18 @@ The libraries above were written for Node streams. This package reads web stream
 - An error in any source of `concat` or `merge` errors the output and cancels the other sources. merge-stream and merge2 didn't propagate errors ([merge-stream #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7)), and concat-stream never called back when the stream errored ([concat-stream #50](https://github.com/max-mapper/concat-stream/issues/50)).
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
 - The collectors reject a number chunk with a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
-- `NodeStreams.toWeb` reads from a `Readable` only when the stream is read. On Node 24, `Readable.toWeb` read 128 KB from a `Readable` before anything read the stream.
-- On Node 24, `toWeb` read 6.8 MB about 1.7× faster than `Readable.toWeb`, and `toWebTransform` ran a `PassThrough` about 1.2× faster than `Duplex.toWeb`. The other four conversions took up to 1.3× as long as Node's, and `fromWebTransform` was the slowest of them.
+
+### Compared with the conversions in `node:stream`
+
+Node has `Readable.toWeb`, `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb`. On Node 24, `@portable/streams/node` differs from them in these ways:
+
 - `Readable.toWeb` passes the strings of a `Readable` with `setEncoding` through as strings, so a `ReadableStream` that should hold bytes holds hex or base64 text. `NodeStreams.toWeb` encodes them back to the original bytes.
-- `Readable.toWeb`, `Writable.toWeb` and `Duplex.toWeb` take no `signal`. Each `NodeStreams` function takes one, and aborting it stops both streams.
+- `Readable.toWeb` read 128 KB from a `Readable` before anything read the stream. `NodeStreams.toWeb` reads from the `Readable` only when the stream is read, and it read 6.8 MB about 1.7× faster. `toWebTransform` ran a `PassThrough` about 1.2× faster than `Duplex.toWeb`.
+- `Readable.toWeb`, `Writable.toWeb` and `Duplex.toWeb` take no `signal`. Every `NodeStreams` function takes one, and aborting it stops both streams.
+- Node types every converted web stream as `ReadableStream<any>` or `WritableStream<any>`. `NodeStreams.toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>`, and `toWebObjects` returns `ReadableStream<unknown>` for an object-mode `Readable`.
+- `Readable.fromWeb` in object mode ends the `Readable` at a `null` chunk and drops the chunks after it. `NodeStreams.fromWeb` destroys the `Readable` with a `TypeError` instead.
+
+Node already covers the rest. `Readable.toWeb` returns plain `Uint8Array`s for a byte-mode `Readable`, and `Readable.fromWeb` and `Writable.fromWeb` take a `signal`. `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb` and `Duplex.fromWeb` were also faster: the `NodeStreams` functions that match them took up to 1.3× as long, and `fromWebTransform` was the slowest.
 
 <!-- bench:start -->
 | | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
