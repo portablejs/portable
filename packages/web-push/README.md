@@ -54,13 +54,13 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 | `generateVapidKeys(options?)` | Returns a new `{ publicKey, privateKey }` pair as base64url strings. |
 | `maxPayloadBytes` | `3993`, the largest payload in bytes. |
 | `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, the whole `response` and its `body` as text. |
-| `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
+| `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. A payload longer than `maxPayloadBytes` throws it too, so check the payload's length first if you delete subscriptions on this error. |
 
 `payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
 
 `subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
 
-A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too. A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
+A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
 
 ### Options
 
@@ -83,6 +83,9 @@ The JWT in the `Authorization` header expires 12 hours after it is signed. `send
 
 | Type | Description |
 | --- | --- |
+| `WebPush.Subscription` | `{ endpoint, expirationTime?, keys? }`, the `subscription` option, as `PushSubscription.toJSON()` returns it. |
+| `WebPush.Keys` | `{ p256dh, auth }`, each a base64url or base64 string or a `Uint8Array`. |
+| `WebPush.Urgency` | `'very-low' \| 'low' \| 'normal' \| 'high'`, the `urgency` option. |
 | `WebPush.VapidKeys` | `{ publicKey, privateKey }` as base64url strings, as `generateVapidKeys` returns them. |
 | `WebPush.Vapid` | The `vapid` option: `VapidKeys` and a `subject`. |
 

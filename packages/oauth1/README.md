@@ -124,4 +124,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, WebCrypto HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
+The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. Browsers and Workers have fast WebCrypto HMAC, so the default is fine there.

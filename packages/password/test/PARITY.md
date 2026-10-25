@@ -30,7 +30,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | sha224, sha384, ripemd160 fixtures | skipped | No PHC identifier exists for them, so `verify` throws `UnsupportedError` for `$pbkdf2-sha384$`. |
 | Unicode salt, no truncation | `pbkdf2 fixtures > #8 ...` | The hex form of the same salt is in the fixtures. |
 | invalid fixtures (NaN, negative iterations, bad key length) | `hash > rejects iterations outside 1 to 2^32 - 1`, `stored hash format > throws InvalidInputError for zero iterations`, `... non-numeric iterations`, `... negative iterations`, `... empty hash` | The key length is the stored hash's length, so a bad one is a malformed string. |
-| does not return all zeroes for any algorithm | `stored hash format > throws UnsupportedError for a SHA-384 PBKDF2 hash`, `... uppercase identifier` | Names other than our three identifiers throw instead of hashing. |
+| does not return all zeroes for any algorithm | `stored hash format > throws UnsupportedError for a SHA-384 PBKDF2 hash`, `... throws InvalidInputError for uppercase identifier` | Names other than our three identifiers throw instead of hashing. |
 | coerces `-0` keylen to `+0` (GHSA-xcx4-h4w9-hqq4) | `stored hash format > throws InvalidInputError for empty hash` | There is no key length argument to pass `-0` to. |
 | long passwords are hashed once, not per iteration (GHSA-477h-4r7f-fvrx) | `verify > verifies a password longer than the HMAC block as its SHA-256 digest`, `Password.oracle.test.ts > hash matches node:crypto pbkdf2Sync > passwords around the HMAC block size, as bytes` | The timing half is not ported. WebCrypto implementations hash the key once in native code. |
 

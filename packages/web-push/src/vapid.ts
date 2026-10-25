@@ -157,7 +157,12 @@ function readVapidKey(key: unknown, name: string, length: number): Uint8Array {
   if (!/^[\w-]+$/.test(key)) {
     throw new RangeError(`vapid.${name} must be base64url without padding`);
   }
-  const bytes = Base64.decode(key, { alphabet: 'base64url' });
+  let bytes: Uint8Array;
+  try {
+    bytes = Base64.decode(key, { alphabet: 'base64url' });
+  } catch (cause) {
+    throw new RangeError(`vapid.${name} must be base64url without padding`, { cause });
+  }
   if (bytes.length !== length) {
     throw new RangeError(`vapid.${name} must be ${length} bytes`);
   }

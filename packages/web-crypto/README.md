@@ -54,7 +54,7 @@ The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is
 | `WebCrypto.Digest` | `(hash, data) => bytes`, sync or async. `@portable/oauth1` takes one as `digest`, and `WebCrypto.digest` fits it. |
 | `WebCrypto.Hmac` | `(hash, key, data) => bytes`, sync or async. `@portable/webhooks` takes one as `hmac`, and `WebCrypto.hmac` fits it. |
 | `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take a function that returns one as `hasher`. |
-| `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa` and `rawToDerEcdsa`. |
+| `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa`. |
 | `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
 
 ## Why use this over hand-written WebCrypto calls

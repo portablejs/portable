@@ -2,7 +2,8 @@ import * as Errors from '@portable/errors';
 /**
  * Thrown when a subscription can't be used: its endpoint isn't an `https:` URL, `p256dh` isn't a P-256
  * public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that
- * fails this way.
+ * fails this way. A payload longer than `maxPayloadBytes` throws it too, so check the payload's
+ * length first if you delete subscriptions on this error.
  *
  * @example
  * ```ts

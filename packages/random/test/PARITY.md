@@ -13,7 +13,7 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 
 ## crypto-random-string
 
-`cryptoRandomString({ length, type })` becomes `Random.string(length, alphabet)` with the alphabet that `type` uses. `oracle > matches the upstream libraries where they agree on a contract > string with the <type> alphabet gives crypto-random-string's <type> characters` checks each alphabet against crypto-random-string's output.
+`cryptoRandomString({ length, type })` becomes `Random.string(length, { alphabet })` with the alphabet that `type` uses. `oracle > matches the upstream libraries where they agree on a contract > string with the <type> alphabet gives crypto-random-string's <type> characters` checks each alphabet against crypto-random-string's output.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -31,11 +31,11 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 | discarding selector values keeps the distribution uniform | `random > string > keeps a large alphabet uniform when its size does not divide 2^32`, `uniformity > string characters from an alphabet of 1000` | |
 | length beyond the `crypto.getRandomValues` limit | `random > string > has no runs left by unfilled entropy in long strings` | |
 | successive calls return different strings | `random > string > returns a different string on each call` | |
-| argument errors | `random > string > throws a RangeError for a length that is not a non-negative integer`, `throws a RangeError for an empty alphabet` | `type` and `characters` are one argument here, so "either" and "unknown type" errors can't happen. There is no 65,536-character limit to reject. |
+| argument errors | `random > string > throws a RangeError for a length that is not a non-negative integer`, `throws a RangeError for an empty alphabet` | `type` and `characters` are both the `alphabet` option here, so "either" and "unknown type" errors can't happen. There is no 65,536-character limit to reject. |
 
 ## nanoid
 
-`nanoid(size)` becomes `Random.string(size)` and `customAlphabet(alphabet, size)()` becomes `Random.string(size, alphabet)`.
+`nanoid(size)` becomes `Random.string(size)` and `customAlphabet(alphabet, size)()` becomes `Random.string(size, { alphabet })`.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |

@@ -149,7 +149,9 @@ describe('VAPID Authorization header', () => {
       { publicKey: Base64.encode(fromBase64url(keys.publicKey)) },
     ],
     ['a public key that is not a point', { publicKey: `BA${zeros(64).slice(2)}` }],
+    ['a public key of a length base64 cannot have', { publicKey: `${zeros(63)}AAAAA` }],
     ['a 31-byte private key', { privateKey: zeros(31) }],
+    ['a private key of a length base64 cannot have', { privateKey: `${zeros(30)}AAAAA` }],
     ['a private key that is not base64url', { privateKey: 'This is invalid' }],
     ['an empty private key', { privateKey: '' }],
     [
