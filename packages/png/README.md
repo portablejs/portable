@@ -128,7 +128,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/png | pngjs |
 | --- | --- | --- |
-| Minified and gzipped | 4.8 kB | 9.1 kB |
+| Minified and gzipped | 4.9 kB | 9.1 kB |
 | Runtime dependencies | 2 | 0 |
 | Node built-ins used | none | `assert`, `buffer`, `stream`, `util`, `zlib` |
 | TypeScript types | included | `@types/pngjs` |

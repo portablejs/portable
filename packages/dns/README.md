@@ -129,7 +129,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/dns | tangerine | `node:dns/promises` over local UDP |
 | --- | --- | --- | --- |
-| Minified and gzipped | 11 kB | 556 kB | built in |
+| Minified and gzipped | 10 kB | 556 kB | built in |
 | Runtime dependencies | 7 | 87 | – |
 | Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `process`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | Node only |
 | TypeScript types | included | included | – |

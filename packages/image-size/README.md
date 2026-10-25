@@ -95,7 +95,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/image-size | image-size |
 | --- | --- | --- |
-| Minified and gzipped | 5.2 kB | 4.6 kB |
+| Minified and gzipped | 5.3 kB | 4.6 kB |
 | Runtime dependencies | 2 | 0 |
 | Node built-ins used | none | none |
 | TypeScript types | included | included |

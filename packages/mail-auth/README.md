@@ -133,7 +133,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | | @portable/mail-auth | mailauth |
 | --- | --- | --- |
 | Minified and gzipped | 32 kB | 775 kB |
-| Runtime dependencies | 14 | 38 |
+| Runtime dependencies | 15 | 38 |
 | Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` |
 | TypeScript types | included | included |
 | Version compared | – | 7.3.0 |

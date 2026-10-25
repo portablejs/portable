@@ -98,7 +98,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/charset | iconv-lite | `TextEncoder` |
 | --- | --- | --- | --- |
-| Minified and gzipped | 13 kB | 153 kB | built in |
+| Minified and gzipped | 14 kB | 153 kB | built in |
 | Runtime dependencies | 3 | 1 | – |
 | Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none |
 | TypeScript types | included | included | – |

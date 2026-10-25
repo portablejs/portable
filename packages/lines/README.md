@@ -58,7 +58,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/lines | split2 | byline | `node:readline` |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.2 kB | 1.1 kB | 1.2 kB | built in |
+| Minified and gzipped | 1.3 kB | 1.1 kB | 1.2 kB | built in |
 | Runtime dependencies | 3 | 0 | 0 | – |
 | Node built-ins used | none | `stream`, `string_decoder` | `Buffer`, `stream`, `timers`, `util` | Node only |
 | TypeScript types | included | `@types/split2` | `@types/byline` | – |

@@ -259,7 +259,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/smtp | nodemailer |
 | --- | --- | --- |
-| Minified and gzipped | 5.9 kB | 15 kB |
+| Minified and gzipped | 6.1 kB | 15 kB |
 | Runtime dependencies | 4 | 0 |
 | Node built-ins used | none | `Buffer`, `crypto`, `dns`, `events`, `fs`, `http`, `https`, `net`, `os`, `stream`, `tls`, `url`, `util`, `zlib` |
 | TypeScript types | included | none |

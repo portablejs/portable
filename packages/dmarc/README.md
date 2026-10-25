@@ -108,7 +108,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | | @portable/dmarc | mailauth, strict mode |
 | --- | --- | --- |
 | Minified and gzipped | 17 kB | 446 kB |
-| Runtime dependencies | 9 | 38 |
+| Runtime dependencies | 10 | 38 |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
 | TypeScript types | included | included |
 | Version compared | – | 7.3.0 |

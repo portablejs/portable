@@ -139,7 +139,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
 | --- | --- | --- | --- | --- |
 | Minified and gzipped | 19 kB | 449 kB | 4.4 kB | built in |
-| Runtime dependencies | 9 | 38 | 0 | – |
+| Runtime dependencies | 10 | 38 | 0 | – |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | `Buffer`, `crypto`, `fs`, `path`, `stream` | Node only |
 | TypeScript types | included | included | none | – |
 | Version compared | – | 7.3.0 | 10.2.1 | – |

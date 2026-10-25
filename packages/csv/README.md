@@ -106,7 +106,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/csv | csv-parse or csv-stringify | papaparse | fast-csv |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.4 kB | 10 kB | 7.0 kB | 6.9 kB |
+| Minified and gzipped | 2.5 kB | 10 kB | 7.0 kB | 6.9 kB |
 | Runtime dependencies | 3 | 1 | 0 | 1 |
 | Node built-ins used | none | `Buffer` | none | `Buffer`, `fs`, `stream`, `string_decoder`, `util` |
 | TypeScript types | included | included | `@types/papaparse` | included |

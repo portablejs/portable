@@ -124,8 +124,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/web-push | web-push | The same WebCrypto calls by hand |
 | --- | --- | --- | --- |
-| Minified and gzipped | 5.5 kB | 32 kB | built in |
-| Runtime dependencies | 4 | 16 | – |
+| Minified and gzipped | 5.6 kB | 32 kB | built in |
+| Runtime dependencies | 5 | 16 | – |
 | Node built-ins used | none | `assert`, `buffer`, `crypto`, `http`, `https`, `net`, `stream`, `tls`, `url`, `util` | none |
 | TypeScript types | included | `@types/web-push` | – |
 | Version compared | – | 3.6.7 | – |

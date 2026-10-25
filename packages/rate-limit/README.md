@@ -232,8 +232,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/rate-limit | rate-limiter-flexible | limiter |
 | --- | --- | --- | --- |
-| Minified and gzipped | 1.0 kB | 17 kB | 1.4 kB |
-| Runtime dependencies | 0 | 0 | 0 |
+| Minified and gzipped | 1.1 kB | 17 kB | 1.4 kB |
+| Runtime dependencies | 2 | 0 | 0 |
 | Node built-ins used | none | `Buffer`, `cluster`, `crypto` | none |
 | TypeScript types | included | included | included |
 | Version compared | – | 11.2.3 | 4.1.0 |

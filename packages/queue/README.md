@@ -165,8 +165,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/queue | p-limit | p-queue | p-map | `Promise.all`, no limit |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.1 kB | 1.0 kB | 3.5 kB | 2.1 kB | built in |
-| Runtime dependencies | 0 | 1 | 0 | 0 | – |
+| Minified and gzipped | 2.3 kB | 1.0 kB | 3.5 kB | 2.1 kB | built in |
+| Runtime dependencies | 1 | 1 | 0 | 0 | – |
 | Node built-ins used | none | none | none | none | none |
 | TypeScript types | included | included | included | included | – |
 | Version compared | – | 7.3.3 | 10.0.0 | 7.1.1 | – |

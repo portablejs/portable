@@ -141,7 +141,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 3.0 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
+| Minified and gzipped | 3.1 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
 | Runtime dependencies | 3 | 0 | 1 | 0 | 0 | – |
 | Node built-ins used | none | none | none | none | none | none |
 | TypeScript types | included | included | included | included | `@types/ws` | – |
