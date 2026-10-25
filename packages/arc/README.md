@@ -1,6 +1,6 @@
 # @portable/arc
 
-Validates and adds Authenticated Received Chain (ARC) sets (RFC 8617), with RSA and Ed25519 keys (RFC 8463). Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Validates and adds Authenticated Received Chain (ARC) sets (RFC 8617), with RSA and Ed25519 keys (RFC 8463). Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the ARC parts of [mailauth](https://www.npmjs.com/package/mailauth).
 

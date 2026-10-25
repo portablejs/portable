@@ -1,6 +1,6 @@
 # @portable/mail-auth
 
-Checks a received message's SPF, DKIM, DMARC and ARC in one call, writes the results as an Authentication-Results header field (RFC 8601), and can ARC-seal the message with them. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Checks a received message's SPF, DKIM, DMARC and ARC in one call, writes the results as an Authentication-Results header field (RFC 8601), and can ARC-seal the message with them. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces `authenticate` from [mailauth](https://www.npmjs.com/package/mailauth).
 

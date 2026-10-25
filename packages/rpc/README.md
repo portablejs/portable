@@ -1,6 +1,6 @@
 # @portable/rpc
 
-Typed remote calls between workers, windows, servers and browsers, as JSON-RPC 2.0. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Typed remote calls between workers, windows, servers and browsers, as JSON-RPC 2.0. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [comlink](https://www.npmjs.com/package/comlink), [penpal](https://www.npmjs.com/package/penpal), [post-me](https://www.npmjs.com/package/post-me), [birpc](https://www.npmjs.com/package/birpc), [json-rpc-2.0](https://www.npmjs.com/package/json-rpc-2.0), and [tRPC](https://trpc.io) for simple cases.
 
@@ -180,7 +180,7 @@ The handshake has no timeout of its own. Aborting the connection's `signal` clos
 
 ### `Rpc.handler(api)` and `Rpc.http(url, { fetch, signal })`
 
-`Rpc.handler` returns a `(request: Request) => Promise<Response>` for JSON-RPC over HTTP POST, which works with Workers, Deno, Bun and any framework that takes a fetch handler:
+`Rpc.handler` returns a `(request: Request) => Promise<Response>` for JSON-RPC over HTTP POST, which works with Workers, Node, Bun, Deno, and any framework that takes a fetch handler:
 
 ```ts
 const rpc = Rpc.handler(api);

@@ -1,4 +1,4 @@
-// Needs node:net servers, so it runs in Deno, Bun and Node but not in browsers (see
+// Needs node:net servers, so it runs in Node, Bun, and Deno but not in browsers (see
 // node.conformance.test.ts).
 import { byteForm, cuts, fc, fuzz, split, toByteForm } from '@portable/fuzz';
 import type * as Sockets from '@portable/sockets';

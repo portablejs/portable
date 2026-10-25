@@ -1,6 +1,6 @@
 # @portable/oauth1
 
-Signs OAuth 1.0a requests ([RFC 5849](https://www.rfc-editor.org/rfc/rfc5849)) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1 or PLAINTEXT. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Signs OAuth 1.0a requests ([RFC 5849](https://www.rfc-editor.org/rfc/rfc5849)) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1 or PLAINTEXT. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [oauth-1.0a](https://www.npmjs.com/package/oauth-1.0a) and the OAuth 1.0a half of [oauth](https://www.npmjs.com/package/oauth) (node-oauth).
 

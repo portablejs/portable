@@ -1,6 +1,6 @@
 # @portable/rdap
 
-Looks up who holds a domain name, an IP address or an AS number over RDAP (RFC 9082 and RFC 9083), the JSON protocol that replaced WHOIS. It finds the right server in IANA's bootstrap files (RFC 9224), follows the registry's referral to the registrar, and returns dates as `Date`s and contacts as plain fields. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Looks up who holds a domain name, an IP address or an AS number over RDAP (RFC 9082 and RFC 9083), the JSON protocol that replaced WHOIS. It finds the right server in IANA's bootstrap files (RFC 9224), follows the registry's referral to the registrar, and returns dates as `Date`s and contacts as plain fields. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [whoiser](https://www.npmjs.com/package/whoiser), [whois-json](https://www.npmjs.com/package/whois-json) and [node-rdap](https://www.npmjs.com/package/node-rdap).
 

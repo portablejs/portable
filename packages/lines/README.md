@@ -1,6 +1,6 @@
 # @portable/lines
 
-Splits a stream of bytes or text into lines. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Splits a stream of bytes or text into lines. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [split2](https://www.npmjs.com/package/split2) and [byline](https://www.npmjs.com/package/byline).
 

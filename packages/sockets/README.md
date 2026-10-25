@@ -1,6 +1,6 @@
 # @portable/sockets
 
-TCP and TLS client sockets with the shape of the [WinterTC Sockets API](https://sockets-api.proposal.wintertc.org/), the API of `connect` from `cloudflare:sockets`. The main entry exports only types. `@portable/smtp` and other protocol clients take a `connect` function of type `Sockets.Connect` instead of opening sockets themselves. `@portable/sockets/node` has a `connect` built on `node:net` and `node:tls`, so the same client runs in Cloudflare Workers, Deno, Bun and Node 24+.
+TCP and TLS client sockets with the shape of the [WinterTC Sockets API](https://sockets-api.proposal.wintertc.org/), the API of `connect` from `cloudflare:sockets`. The main entry exports only types. `@portable/smtp` and other protocol clients take a `connect` function of type `Sockets.Connect` instead of opening sockets themselves. `@portable/sockets/node` has a `connect` built on `node:net` and `node:tls`, so the same client runs in Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [@arrowood.dev/socket](https://www.npmjs.com/package/@arrowood.dev/socket).
 
@@ -33,7 +33,7 @@ import { connect } from 'cloudflare:sockets';
 await greeting(connect, 'mx.example.com');
 ```
 
-On Deno, Bun and Node, pass `connect` from `@portable/sockets/node`:
+On Node, Bun, and Deno, pass `connect` from `@portable/sockets/node`:
 
 ```ts
 import { connect } from '@portable/sockets/node';

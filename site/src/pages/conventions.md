@@ -46,7 +46,7 @@ Every async function and every stream takes `signal?: AbortSignal` in its option
 
 ## Connections and other long-lived objects
 
-Some objects keep running after the call that created them returns. An SMTP client stops when you call its `close()` method, and a debounced function when you call `cancel()`. A queue and a WebSocket from `WebSockets.connect` stop when you abort the `signal` you passed when you created them. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Deno, Bun and Node 24), the object also works with `await using`, which stops it when the block exits:
+Some objects keep running after the call that created them returns. An SMTP client stops when you call its `close()` method, and a debounced function when you call `cancel()`. A queue and a WebSocket from `WebSockets.connect` stop when you abort the `signal` you passed when you created them. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Node 24, Bun, and Deno), the object also works with `await using`, which stops it when the block exits:
 
 ```ts
 import { connect } from 'cloudflare:sockets';

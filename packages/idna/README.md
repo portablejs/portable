@@ -1,6 +1,6 @@
 # @portable/idna
 
-Converts internationalized domain names between Unicode and the ASCII form that DNS and `URL` use, by [UTS #46](https://www.unicode.org/reports/tr46/) with Unicode 18.0.0 tables. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Converts internationalized domain names between Unicode and the ASCII form that DNS and `URL` use, by [UTS #46](https://www.unicode.org/reports/tr46/) with Unicode 18.0.0 tables. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [punycode](https://www.npmjs.com/package/punycode), the deprecated `node:punycode`, and [tr46](https://www.npmjs.com/package/tr46).
 

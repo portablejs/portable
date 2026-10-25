@@ -1,6 +1,6 @@
 # @portable/mail
 
-Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client or to an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client or to an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces nodemailer's `MailComposer` (`nodemailer/lib/mail-composer`) and the `MimeNode` it builds on.
 

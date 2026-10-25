@@ -1,6 +1,6 @@
 # @portable/charset
 
-Encodes text into legacy charsets such as Shift_JIS, GBK, Big5 and windows-1251, and normalizes charset labels. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Encodes text into legacy charsets such as Shift_JIS, GBK, Big5 and windows-1251, and normalizes charset labels. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the encoding half of [iconv-lite](https://www.npmjs.com/package/iconv-lite). For decoding, use `TextDecoder`, which already supports every charset here.
 
