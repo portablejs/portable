@@ -2,6 +2,7 @@
 // Worker would and throws if the result is wrong. The conformance tests cover the behavior, so a
 // check only needs to call each platform API that the package uses: streams, CompressionStream,
 // crypto.subtle, getRandomValues, timers, TextDecoder labels and MessageChannel.
+import { connect } from 'cloudflare:sockets';
 import * as Arc from '@portable/arc';
 import * as Base64 from '@portable/base64';
 import * as Binary from '@portable/binary';
@@ -35,6 +36,7 @@ import * as Random from '@portable/random';
 import * as RateLimit from '@portable/rate-limit';
 import * as Rdap from '@portable/rdap';
 import * as Rpc from '@portable/rpc';
+import type * as Sockets from '@portable/sockets';
 import * as Smtp from '@portable/smtp';
 import * as Spf from '@portable/spf';
 import * as Sse from '@portable/sse';
@@ -98,7 +100,9 @@ async function mailResolver() {
   return { privateKey, resolver };
 }
 
-export const checks: Record<string, () => Promise<void> | void> = {
+export type Env = { echoPort: number };
+
+export const checks: Record<string, (env: Env) => Promise<void> | void> = {
   async arc() {
     const { privateKey, resolver } = await mailResolver();
     const sealed = await Arc.seal(message, {
@@ -316,6 +320,20 @@ export const checks: Record<string, () => Promise<void> | void> = {
     if (typeof Smtp.send !== 'function') {
       throw new Error('Smtp.send is missing');
     }
+  },
+  async sockets(env) {
+    const open = connect satisfies Sockets.Connect;
+    const socket = open(
+      { hostname: '127.0.0.1', port: env.echoPort },
+      { secureTransport: 'off', allowHalfOpen: true },
+    );
+    await socket.opened;
+    const writer = socket.writable.getWriter();
+    await writer.write(new TextEncoder().encode('ping'));
+    await writer.close();
+    equal(text(await Streams.toBytes(socket.readable)), 'ping');
+    // workerd leaves `closed` pending after both sides end, until `close()` is called.
+    await socket.close();
   },
   async spf() {
     const { resolver } = await mailResolver();

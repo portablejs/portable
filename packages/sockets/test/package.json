@@ -1,0 +1,13 @@
+{
+  "name": "@portable/sockets-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@arrowood.dev/socket": "^0.2.0",
+    "@portable/fuzz": "workspace:*",
+    "@portable/sockets": "workspace:*",
+    "@portable/streams": "workspace:*",
+    "@types/node": "^26.6.5",
+    "fast-check": "^4.10.2"
+  }
+}

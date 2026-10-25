@@ -1,3 +1,4 @@
+import type * as Sockets from '@portable/sockets';
 import * as Smtp from '@portable/smtp';
 import { expect } from 'vite-plus/test';
 
@@ -33,7 +34,7 @@ export type FakeServer = {
   /** Each chunk the client wrote, decoded as UTF-8. */
   writes: string[];
   /** The address and options of each socket opened. */
-  sockets: ({ hostname: string; port: number } & Smtp.SocketOptions)[];
+  sockets: ({ hostname: string; port: number } & Sockets.Options)[];
   /** How many sockets the client closed. */
   closed: number;
 };
@@ -75,7 +76,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
     closed: 0,
   };
 
-  function connect(address: { hostname: string; port: number }, socketOptions: Smtp.SocketOptions) {
+  function connect(address: { hostname: string; port: number }, socketOptions: Sockets.Options) {
     server.sockets.push({ ...address, ...socketOptions });
     let buffered = '';
     let inData = false;
@@ -147,7 +148,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
       }
     };
 
-    const createSocket = (secure: boolean, open: Promise<unknown>): Smtp.Socket => {
+    const createSocket = (secure: boolean, open: Promise<unknown>): Sockets.Socket => {
       let controller!: ReadableStreamDefaultController<Uint8Array>;
       const readable = new ReadableStream<Uint8Array>({
         start(c) {
@@ -171,15 +172,20 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
           receive(chunk);
         },
       });
-      open.catch(() => {});
+      const opened = open.then(() => ({}));
+      opened.catch(() => {});
+      let upgraded = false;
       return {
         readable,
         writable,
-        opened: open,
+        opened,
         closed,
+        get upgraded() {
+          return upgraded;
+        },
         close() {
           if (state.closedByClient) {
-            return;
+            return closed;
           }
           state.closedByClient = true;
           server.closed++;
@@ -188,6 +194,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
             controller.close();
           }
           resolveClosed();
+          return closed;
         },
         startTls() {
           if (socketOptions.secureTransport !== 'starttls' || secure) {
@@ -198,6 +205,7 @@ export function fakeServer(script: Script = {}, options: FakeOptions = {}): Fake
             controller.close();
           }
           buffered = '';
+          upgraded = true;
           Object.assign(connection, { secure: true });
           return createSocket(
             true,

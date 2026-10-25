@@ -8,4 +8,4 @@ export {
   type Mail,
   type Result,
 } from '../connect.js';
-export type { Connect, Socket, SocketOptions } from '../Socket.js';
+export type { Connect, Socket } from '@portable/sockets';

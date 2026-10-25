@@ -7,6 +7,7 @@
     "@portable/fuzz": "workspace:*",
     "@portable/mail": "workspace:*",
     "@portable/smtp": "workspace:*",
+    "@portable/sockets": "workspace:*",
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",

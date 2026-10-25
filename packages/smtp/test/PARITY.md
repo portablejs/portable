@@ -5,7 +5,7 @@ This package replaces the SMTP client of [nodemailer](https://github.com/nodemai
 Test files:
 
 - `DataStream.conformance.ts`, `connect.conformance.ts`, `tls.conformance.ts`, `auth.conformance.ts` and `send.conformance.ts` run in Node and Chromium against a scripted fake socket (`utils.ts`). The fake replies the way upstream's `raw-smtp-server.ts` does, and each test can override a command's reply.
-- `smtp-server.test.ts` runs against [smtp-server](https://github.com/nodemailer/smtp-server) 3.19.23 over real TCP and TLS, through the Node adapter in `node.ts`. It covers what upstream's `smtp-connection-test.ts` checks against the same server.
+- `smtp-server.test.ts` runs against [smtp-server](https://github.com/nodemailer/smtp-server) 3.19.23 over real TCP and TLS, through the Node adapter from `@portable/sockets/node`. It covers what upstream's `smtp-connection-test.ts` checks against the same server.
 - `send.oracle.test.ts` sends the same 12 messages through nodemailer and this package, each whole and in two random chunkings. It compares the DATA bytes on the wire, the bytes smtp-server delivers, the envelope, and the accepted and refused recipients.
 - `send.bench.ts` compares sends over one connection with nodemailer's `SMTPConnection`.
 
@@ -135,7 +135,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | connection-lifecycle: plaintext after the STARTTLS response | `tls > STARTTLS > discards plaintext sent after the STARTTLS reply ...` | Discarded silently. There is no logger. |
 | connection-lifecycle: destroys the socket when the server never closes | `send > signals and closing > close() sends QUIT and closes the socket`, `close() stops waiting for the QUIT reply when its signal aborts` | |
 | connection-lifecycle: logs the error message as is | Not applicable | No logger. |
-| connection-lifecycle: DNS lookup in the timeout, system error code, greeting timeout, keepalive and Nagle, IPv6 fallback, connectionTimeout (7 tests) | Not applicable | Belongs to the `connect` function. The Node adapter in `node.ts` turns Nagle off. Every wait is bounded by the caller's signal. |
+| connection-lifecycle: DNS lookup in the timeout, system error code, greeting timeout, keepalive and Nagle, IPv6 fallback, connectionTimeout (7 tests) | Not applicable | Belongs to the `connect` function. The Node adapter in `@portable/sockets/node` turns Nagle off. Every wait is bounded by the caller's signal. |
 | connection-lifecycle: ends without an error when the server closes an idle connection | `send > signals and closing > reports a send after the server closed an idle connection` | |
 | connection-lifecycle: 421 to RCPT TO with and without PIPELINING | `send > pipelining > ends the session on a 421 reply to RCPT TO ${mode} PIPELINING` | |
 | connection-lifecycle: keeps the error code of the command a 421 answered | `auth > AUTH replies > treats a 421 reply to AUTH as the server closing` | Deliberate difference: every 421 is ECONNECTION. |

@@ -14,12 +14,15 @@ const names = readdirSync(join(root, 'packages')).filter((name) =>
 );
 const rootReadme = readFileSync(join(root, 'README.md'), 'utf8');
 
-// smtp needs a TCP socket API, which browsers don't have, so it lists the runtimes that do.
+// smtp and sockets need a TCP socket API, which browsers don't have, so they list the runtimes
+// that do.
+const tcp = {
+  description: /, in any JavaScript runtime that has a TCP socket API\.$/,
+  readme: 'Cloudflare Workers, Deno, Bun and Node 24+.',
+};
 const runtimes: Record<string, { description: RegExp; readme: string }> = {
-  smtp: {
-    description: /, in any JavaScript runtime that has a TCP socket API\.$/,
-    readme: 'Cloudflare Workers, Deno, Bun and Node 24+.',
-  },
+  smtp: tcp,
+  sockets: tcp,
 };
 const defaultRuntimes = {
   description: /, in any JavaScript runtime\.$/,
