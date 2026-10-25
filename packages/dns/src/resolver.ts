@@ -50,18 +50,6 @@ export type NaptrRecord = {
  * The lookups that SPF, DMARC and DKIM need, with the method names and result shapes of
  * `node:dns/promises`. `create` returns one, and `node:dns/promises`, a `new Resolver()` from it
  * and a plain object of functions in a test also match the type.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- *
- * async function dmarcRecord(resolver: Dns.Resolver, domain: string) {
- *   const records = await resolver.resolveTxt(`_dmarc.${domain}`);
- *   return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'));
- * }
- *
- * await dmarcRecord(Dns.create(), 'example.com');
- * ```
  */
 export type Resolver = {
   /** IPv4 addresses (A records). */

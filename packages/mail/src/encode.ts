@@ -15,21 +15,11 @@ import { InvalidInputError } from './errors.js';
 
 /**
  * Extra header fields, by name. A list writes one field per value, in order.
- *
- * @example
- * ```ts
- * const headers: Mail.HeaderFields = { 'List-Unsubscribe': '<https://example.com/u/1>', Keywords: ['a', 'b'] };
- * ```
  */
 export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
 
 /**
  * An alternative body, such as a calendar invitation next to the text and HTML.
- *
- * @example
- * ```ts
- * const invite: Mail.Part = { contentType: 'text/calendar; charset=utf-8; method=REQUEST', content: ics };
- * ```
  */
 export type Part = {
   readonly content: Content;
@@ -45,12 +35,6 @@ export type Part = {
 
 /**
  * A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`.
- *
- * @example
- * ```ts
- * const logo: Mail.Attachment = { content: pngBytes, contentType: 'image/png', cid: 'logo' };
- * const report: Mail.Attachment = { content: file, filename: 'report.pdf' };
- * ```
  */
 export type Attachment = {
   readonly content: Content;
@@ -73,11 +57,6 @@ export type Attachment = {
 /**
  * A message to encode. Every field is optional, and a message with no body gets an empty
  * text body.
- *
- * @example
- * ```ts
- * const message: Mail.Message = { from: 'mari@example.com', to: 'jaan@example.com', subject: 'Tere', text: 'Tere!' };
- * ```
  */
 export type Message = {
   readonly from?: Addresses | undefined;

@@ -5,11 +5,6 @@ import { hostToAscii } from '@portable/idna/internal';
 
 /**
  * One mailbox. Without a `name`, only the address is written.
- *
- * @example
- * ```ts
- * const mailbox: Mail.Mailbox = { name: 'Mari Tamm', address: 'mari@example.com' };
- * ```
  */
 export type Mailbox = {
   readonly name?: string | undefined;
@@ -19,12 +14,6 @@ export type Mailbox = {
 /**
  * The recipients or senders of one header: an address list as text, a `Mailbox`, or a list of
  * either.
- *
- * @example
- * ```ts
- * const to: Mail.Addresses = ['Mari <mari@example.com>', { name: 'Jaan', address: 'jaan@example.com' }];
- * const cc: Mail.Addresses = 'Team: a@example.com, b@example.com;';
- * ```
  */
 export type Addresses = string | Mailbox | readonly (string | Mailbox)[];
 

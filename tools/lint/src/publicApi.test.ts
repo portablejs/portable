@@ -89,6 +89,8 @@ function check(): string[] {
         problems.push(`${name}: no JSDoc`);
       } else if (isValue && !tags.includes('example')) {
         problems.push(`${name}: no @example`);
+      } else if (!isValue && tags.includes('example')) {
+        problems.push(`${name}: @example on a type`);
       }
       if (!(symbol.flags & (ts.SymbolFlags.Function | ts.SymbolFlags.Variable))) {
         continue;
