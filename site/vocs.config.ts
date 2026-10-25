@@ -44,6 +44,11 @@ export default defineConfig({
       items: guides.map(([slug, text]) => ({ text, link: `/guides/${slug}` })),
     },
     {
+      text: 'Examples',
+      // The examples are static pages outside Vocs, so the links load them in a new tab.
+      items: [{ text: 'Bluesky stream', link: `${basePath}/examples/bluesky/`, external: true }],
+    },
+    {
       text: 'Packages',
       items: groups
         .flatMap((group) => group.items.map((item) => item.name))

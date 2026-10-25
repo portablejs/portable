@@ -20,6 +20,7 @@ portable/
 │  └─ workers/             bundles every package into one Worker for workerd
 ├─ scripts/                bench, bundle size and README table scripts
 ├─ site/                   the docs site, built with Vocs from the READMEs and JSDoc
+│  └─ examples/            demo pages that Vite builds into the site as static files
 ├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
