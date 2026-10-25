@@ -31,7 +31,7 @@ In Node, `node:dns/promises` works as the resolver.
 
 | Field | Description |
 | --- | --- |
-| `from` | The domain of the RFC5322.From address. U-labels are converted to A-labels. Extracting it is the caller's job: when the From header has no address, or addresses in more than one domain, RFC 9989 section 5.3.1 says DMARC doesn't apply. |
+| `from` | The domain of the RFC5322.From address. U-labels are converted to A-labels. You extract it yourself, because when the From header has no address, or addresses in more than one domain, RFC 9989 section 5.3.1 says DMARC doesn't apply. |
 | `spf` | The SPF result of the MAIL FROM identity, as `Spf.check` returns it. Only `result` and `domain` are read. For a bounce, `Spf.check` checks the HELO name, which RFC 7208 section 2.4 makes the MAIL FROM identity. |
 | `dkim` | One `{ result, domain }` per DKIM signature: the verification result and the `d=` domain. Only `'pass'` counts, so a richer DKIM result object fits as is. |
 

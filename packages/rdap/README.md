@@ -59,7 +59,7 @@ Each returns a plain object. These fields are on all three:
 | `entities` | `readonly Entity[]` | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list. |
 | `raw` | `Record<string, unknown>` | The response JSON, for fields such as `secureDNS`, `remarks` and `notices`. |
 
-An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` holds RDAP roles such as `registrar`, `registrant`, `administrative`, `technical` and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org` and `email`, the first `tel` that isn't a fax without its `tel:` prefix, and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
+An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` holds RDAP roles such as `registrar`, `registrant`, `administrative`, `technical` and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org` and `email`, the first `tel` that isn't a fax, with its `tel:` prefix removed, and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
 
 `Rdap.domain` also returns `name` (A-labels, lowercased), `unicodeName`, `nameservers` (lowercased, without trailing dots) and `referral`. `Rdap.ip` returns `name`, `version` (4 or 6), `startAddress`, `endAddress`, `cidrs`, `type`, `country` and `parentHandle`. `Rdap.asn` returns `name`, `start`, `end`, `type` and `country`.
 
@@ -78,7 +78,7 @@ For a timeout, pass `signal: AbortSignal.timeout(5000)`.
 
 gTLD registries such as Verisign and PIR return the registrar, the dates and the nameservers, and link to the registrar's own RDAP response with a `related` link. The registrar's response holds the registrant and the other contacts. With `follow` on, `Rdap.domain` fetches that response too. `entities` then holds the registrar's entities, plus registry entities in roles the registrar has no entity for. `status`, `events` and `nameservers` stay the registry's, because the registry is the authority for them.
 
-`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. Only links of type `application/rdap+json`, or with no type, to another URL ending in `/domain/<name>` are followed.
+`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. A link is followed only if its type is `application/rdap+json` or missing and it points to another URL ending in `/domain/<name>`.
 
 ### Bootstrap files
 
@@ -129,7 +129,7 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 - `status` holds RDAP's words (`client transfer prohibited`), where WHOIS output holds EPP's (`clientTransferProhibited`).
 - TLDs without an RDAP server, such as `.de`, `.ch` and `.io`, reject with `UnsupportedError`. whoiser and whois-json can still look them up, because WHOIS is the only source for them, and it needs TCP.
 
-The benchmarks serve recorded responses from memory. node-rdap does no work after `response.json()`.
+The benchmarks serve recorded responses from memory. node-rdap returns the response JSON as it is, so its numbers cover only `response.json()`.
 
 <!-- bench:start -->
 | | @portable/rdap | node-rdap | `fetch` and `response.json()` |

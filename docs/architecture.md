@@ -1,6 +1,6 @@
 # Portable architecture
 
-Portable is a pnpm monorepo of small packages, published to npm under `@portable/*`. Every package runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24 or later, because it uses only the WinterTC common API. [packages.md](packages.md) lists the packages and the rules for what becomes one. This document covers how the repository is built, tested and released.
+Portable is a pnpm monorepo of small packages, published to npm under `@portable/*`. Every package runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+, because it uses only the WinterTC common API. [packages.md](packages.md) lists the packages and the rules for what becomes one. This document covers how the repository is built, tested and released.
 
 Most of the setup is copied from [wevm/ox](https://github.com/wevm/ox), which is also a web-standard TypeScript library with multi-runtime tests. A few pieces come from [wevm/viem](https://github.com/wevm/viem) and [arktypeio/arktype](https://github.com/arktypeio/arktype). Each section says where its setup came from.
 
@@ -57,7 +57,7 @@ Both rules are off for `*.oracle.test.ts` and `*.bench.ts`, which run in Node to
 
 ## Runtime baseline
 
-Packages run on ES2022 and on the web APIs listed below. We don't ship polyfills, and a package never patches a global. If an app has to support older browsers, it needs to add polyfills itself, for example with core-js. Vite, esbuild and `tsc` rewrite newer syntax for older targets but never add a missing API, so the app's build doesn't add polyfills either. ox, viem, hono and jose don't ship polyfills either: each documents the oldest runtimes it supports and leaves polyfills to the app. A polyfill patches a global when its module loads, so a package that contained one couldn't declare `"sideEffects": false`, and a bundler that trusts the flag would drop the polyfill.
+Packages run on ES2022 and on the web APIs listed below. We don't ship polyfills, and a package never patches a global. If you support older browsers, add polyfills yourself, for example with core-js. Vite, esbuild and `tsc` rewrite newer syntax for older targets but never add a missing API, so your build won't add the polyfills for you. ox, viem, hono and jose don't ship polyfills either: each documents the oldest runtimes it supports and leaves polyfills to you. A polyfill patches a global when its module loads, so a package that contained one couldn't declare `"sideEffects": false`, and a bundler that trusts the flag would drop the polyfill.
 
 For each ES version, the table gives the share of global browser usage that comes from browsers supporting all of its features, and the first Chrome, Firefox and Safari versions that support them. The data is from caniuse-lite 1.0.30001817 and @mdn/browser-compat-data 8.1.6 as of October 2026. No ES version can reach more than 96.7%, because caniuse counts the remaining usage, from Opera Mini, UC Browser, QQ Browser, Internet Explorer and browsers it doesn't track, as supporting none of them. The rows don't count top-level await, because no package uses it and MDN lists Safari support before 27 as partial.
 
@@ -84,7 +84,7 @@ Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so ev
 | WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
 | WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
 
-Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
+Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Cloudflare Workers, Deno, Bun and Node 22 and later have every API in both tables.
 
 A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, timers uses `scheduler.wait`, and queue, rpc, smtp, timers and websockets set `[Symbol.asyncDispose]` or `[Symbol.dispose]` only where the symbol exists (Chrome 134, Firefox 141 and Node 24, but not Safari 26). No package calls Temporal: an option that takes an instant reads `epochMilliseconds`, so it accepts a `Temporal.Instant` in runtimes that have one and a `Date` in Safari, which has no Temporal. Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
 
@@ -172,7 +172,7 @@ The tests that compare the base64 and hex fallbacks with the native API run only
 
 [Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with `@changesets/changelog-github`. The config is copied from ox.
 
-Nothing is published yet, so each package has one changeset, `.changeset/<package>-initial.md`, which describes the package for the first release. A change before then edits that file instead of adding a changeset. A new package adds its own `-initial.md`.
+Nothing is published yet, so each package has one changeset, `.changeset/<package>-initial.md`, which becomes the package's first changelog entry. Each one starts with "Initial release.", says what the package does, and names its main exports and the libraries it replaces. Until the first release, if you change a package, edit its `-initial.md` instead of adding a changeset, and if you add a package, add an `-initial.md` for it.
 
 1. `pnpm changeset` records which packages changed and how.
 2. `pnpm changeset:version` bumps versions and writes changelogs.
@@ -180,7 +180,7 @@ Nothing is published yet, so each package has one changeset, `.changeset/<packag
 
 A maintainer publishes releases from their own machine after `npm login`, so packages have no provenance yet. With CI, publishing moves to GitHub Actions with npm trusted publishing (OIDC), which adds provenance and removes the npm token.
 
-We don't publish to JSR. Deno, Bun and Workers all install from npm, and because of `isolatedDeclarations`, adding JSR later needs no code changes.
+We don't publish to JSR. Workers, Deno and Bun all install from npm, and because of `isolatedDeclarations`, adding JSR later needs no code changes.
 
 ## Crypto
 
@@ -194,7 +194,7 @@ type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promis
 
 Each package takes only the one it needs, under an option with the type's name: `@portable/oauth1` takes `hmac` and `digest`, `@portable/webhooks` takes `hmac`, and `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take `hasher`, a function that takes the hash name and returns a `Hasher`. They re-export the type, so a caller doesn't need to install `@portable/web-crypto`. None of them imports a crypto library or lists one as a dependency, and none has a `/core` entry, because the WebCrypto default imports no library, and if you want another implementation, you pass it in the option.
 
-WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC-SHA256 of 1 KB is about 4.6× slower than noble's, as the `@portable/web-crypto` benchmark table shows. We expect Node's WebCrypto to get faster. Until then, the READMEs show how to pass noble instead, for code that signs or verifies many messages on Node or needs a sync result.
+WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC-SHA256 of 1 KB is about 4.6× slower than noble's, as the `@portable/web-crypto` benchmark table shows. We expect Node's WebCrypto to get faster. Until then, the READMEs show how to pass noble instead, for when you sign or verify many messages on Node or need a sync result.
 
 A package needs noble only where WebCrypto can't do the job, such as an incremental or streaming hash, because `crypto.subtle.digest` takes the whole input at once. A DKIM body hash over a stream is one case. Such a package takes noble as an optional peer dependency or requires the caller to pass the function.
 

@@ -10,8 +10,7 @@ export type Separator = string | { [Symbol.split](text: string, limit?: number):
 export declare namespace DecoderStream {
   type Options = {
     /**
-     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
-     * from.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */

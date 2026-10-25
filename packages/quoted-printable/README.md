@@ -1,6 +1,6 @@
 # @portable/quoted-printable
 
-Quoted-printable encoding and decoding (RFC 2045 section 6.7), as functions and as streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Encodes and decodes quoted-printable (RFC 2045 section 6.7), as functions and as streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [libqp](https://www.npmjs.com/package/libqp) and [quoted-printable](https://www.npmjs.com/package/quoted-printable).
 
@@ -59,7 +59,7 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - libqp's `Encoder` counts `inputBytes` and `outputBytes`, and `EncoderStream` doesn't. Count chunks in a `TransformStream` of your own.
 - quoted-printable escapes every CR and LF and keeps every line within 75 characters. `encode` keeps line breaks, escapes a lone CR or LF only with `binary: true`, and allows 76.
 - quoted-printable's `decode` also treats `=` before a lone CR as a soft line break. RFC 2045 and libqp don't, and neither does `decode`.
-- The libqp 2.x `Encoder` kept a hyphen after a lone CR literal, which starts a line once a relay turns the CR into CRLF. `encode` follows libqp 3, which escapes it.
+- The libqp 2.x `Encoder` left a hyphen after a lone CR unescaped, so the hyphen starts a line once a relay turns the CR into CRLF. `encode` follows libqp 3, which escapes it.
 
 <!-- bench:start -->
 | | @portable/quoted-printable | libqp | quoted-printable |

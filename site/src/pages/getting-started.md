@@ -16,7 +16,7 @@ npm install @portable/streams
 
 ## Import a package
 
-Import a package as a namespace. Export names are short, such as `toJson`, because the namespace shows the package. This Cloudflare Worker reads a JSON request body, and if the body passes 1 MB, it stops reading and answers 413:
+Import a package as a namespace. Export names are short, such as `toJson`, because the namespace shows the package. This Cloudflare Worker reads a JSON request body, and if the body exceeds 1 MB, it stops reading and responds with 413:
 
 ```ts
 import * as Streams from '@portable/streams';
@@ -54,4 +54,4 @@ esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You d
 
 The tests run in Chromium, Firefox, WebKit, Deno, Bun, and Node, and a check of every package runs in workerd, the Cloudflare Workers runtime.
 
-`@portable/smtp` needs a TCP socket API, so it doesn't run in browsers.
+`@portable/smtp` and `@portable/sockets` need a TCP socket API, so they run in Cloudflare Workers, Deno, Bun and Node but not in browsers.

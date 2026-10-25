@@ -1,6 +1,6 @@
 # @portable/random
 
-Unbiased random integers, floats, strings, shuffles and bytes from `crypto.getRandomValues`, plus a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Draws unbiased random integers, floats, strings, shuffles and bytes from `crypto.getRandomValues`, and has a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [random-int](https://www.npmjs.com/package/random-int), [crypto-random-string](https://www.npmjs.com/package/crypto-random-string), [nanoid](https://www.npmjs.com/package/nanoid)'s `customAlphabet`, [seedrandom](https://www.npmjs.com/package/seedrandom), and [lodash](https://www.npmjs.com/package/lodash)'s `random`, `sample` and `shuffle`.
 

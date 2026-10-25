@@ -129,7 +129,7 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - Close codes such as 1008 are final by default, so a client the server rejected doesn't reconnect in a loop.
 - A URL function that throws counts as a failed attempt. websocket-ts stopped reconnecting permanently.
 - Closing a `ws` client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
-- Echoing 1,000 messages of 100 bytes through a local server on Node 24 runs within 5% of a bare `WebSocket` with `connect`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
+- On Node 24, echoing 1,000 messages of 100 bytes through a local server with `connect` runs within 5% of a bare `WebSocket`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
 
 <!-- bench:start -->
 | | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |

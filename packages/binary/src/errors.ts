@@ -23,8 +23,9 @@ export class TruncatedError extends Errors.TruncatedError {
 }
 
 /**
- * Thrown for malformed data: a varint longer than 10 bytes or too large for its type, or text that
- * doesn't decode when `fatal` is set. `offset` is where the value starts.
+ * Thrown for malformed data: a varint longer than 10 bytes or too large for its type, text that
+ * doesn't decode when `fatal` is set, or a frame too long for its prefix. `offset` is where the
+ * value starts.
  *
  * @example
  * ```ts
@@ -46,7 +47,8 @@ export class InvalidInputError extends Errors.InvalidInputError {
 
 /**
  * Thrown by `FrameDecoderStream` when a frame's length prefix is larger than `maxBytes`.
- * `FrameDecoderStream` throws it as soon as it reads the prefix, before buffering any of the frame.
+ * `FrameDecoderStream` errors the stream with it as soon as it reads the prefix, before it buffers
+ * any of the frame.
  *
  * @example
  * ```ts

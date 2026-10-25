@@ -50,7 +50,7 @@ await Dkim.verify(message, { resolver: dns });
 | `headers` | mailauth's list, from `From` to `BIMI-Selector` | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times, so listing a name more often than the message has it over-signs it, and a field of that name added later breaks the signature (RFC 6376 section 8.15). |
 | `canonicalization` | `'relaxed/relaxed'` | `'relaxed/relaxed'`, `'relaxed/simple'`, `'simple/relaxed'` or `'simple/simple'`. |
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
-| `now` | `new Date()` | The signature time (`t=`). A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The signature time (`t=`), as a `Date` or a `Temporal.Instant`. |
 | `expiresAt` | none | The expiry (`x=`), a `Date` or a `Temporal.Instant`. It must be at least one second after `now`. |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
@@ -64,12 +64,12 @@ await Dkim.verify(message, { resolver: dns });
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check `x=` against. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time to check `x=` against, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |
 
-There is no default resolver, so you decide which servers see the lookups. It treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as no key, and any other rejection as `temperror`.
+There is no default resolver, so you decide which servers see the lookups. `verify` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as no key, and any other rejection as `temperror`.
 
 `verify` rejects only for invalid options, a message stream that fails, and an aborted `signal`.
 
@@ -100,7 +100,7 @@ There is no default resolver, so you decide which servers see the lookups. It tr
 
 RSA and Ed25519 signing and verification use WebCrypto (`crypto.subtle`), which every supported runtime has. There are no crypto dependencies.
 
-The body hash is different. `crypto.subtle.digest` can't hash incrementally, so by default the canonicalized body is collected and hashed with one call. MTAs usually limit a message to 25 to 50 MB, so the buffer is no larger than what a mail server already holds. A signer has to buffer the message anyway, because the DKIM-Signature field goes before the body and contains the body hash, so only verification would gain from streaming. If WebCrypto adds streaming digests, the default can switch to one without an API change.
+The body hash is different. `crypto.subtle.digest` can't hash incrementally, so by default the canonicalized body is collected and hashed with one call. MTAs usually limit a message to 25 to 50 MB, so the buffer is no larger than what a mail server already holds. `sign` has to buffer the message anyway, because the DKIM-Signature field goes before the body and contains the body hash, so only `verify` would gain from streaming. If WebCrypto adds streaming digests, the default can switch to one without an API change.
 
 To verify in constant memory, pass `hasher`, a function that takes the hash name and returns an incremental hash with `update(bytes)` and `digest()`. DKIM calls it with `'SHA-256'`, and `sha256.create()` from `@noble/hashes` returns one:
 

@@ -8,7 +8,7 @@ Replaces the ARC parts of [mailauth](https://www.npmjs.com/package/mailauth).
 npm install @portable/arc @portable/dns
 ```
 
-A forwarder, such as a mailing list, validates the chain that arrived and seals the message with the result before it changes the message:
+If you forward mail, as a mailing list does, verify the chain that arrived and seal the message with the result before you change it:
 
 ```ts
 import * as Arc from '@portable/arc';
@@ -41,7 +41,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `cause` | The resolver's error when a key lookup failed. |
 | `sets` | On `pass`, each set from `i=1` to the newest, with the sealer's `domain` and `selector` and its `authResults`, the ARC-Authentication-Results text after `i=`. Empty otherwise. |
 
-A receiver uses `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
+Use `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
 
 ```ts
 const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com');
@@ -53,12 +53,12 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) {
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
 
-The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, as every ARC failure is permanent (RFC 8617 section 5.2).
+The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, because every ARC failure is permanent (RFC 8617 section 5.2).
 
 ## Sealing
 
@@ -72,7 +72,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `now` | `new Date()` | The time (`t=`) of both signatures. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time (`t=`) of both signatures, as a `Date` or a `Temporal.Instant`. |
 | `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 

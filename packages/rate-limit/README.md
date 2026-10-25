@@ -25,7 +25,7 @@ export default {
 };
 ```
 
-A limiter allows `limit` requests per `period` for each key. Allowance comes back continuously, one request every `period / limit` milliseconds, and a key that has been quiet can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
+A limiter allows `limit` requests per `period` for each key. Allowance comes back continuously, one request every `period / limit` milliseconds, and a key with no recent requests can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
 
 ## API
 
@@ -213,12 +213,12 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - On Node, `take` with the memory store runs about 15% slower than `RateLimiterMemory.consume` on allowed requests over 1,000 keys, and about 5× faster on denied requests, because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket is about 6× faster than an `await`ed `take`. The benchmark table below has the numbers.
 - rate-limiter-flexible's `duration` is in seconds, and limiter's `interval` also takes names such as `'second'`. `period` is always in milliseconds, so `duration: 1` becomes `period: 1000`.
 - `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
-- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
+- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which isn't a rate.
 - rate-limiter-flexible's `msBeforeNext` is set for allowed and denied requests. `retryAfter` is `0` for an allowed request, so compute the time until the allowance is full from `resetAt`.
 - rate-limiter-flexible's `reward`, `get` and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0` or with `cost: -burst`.
 - rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first denies.
 - The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
-- Bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
+- bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
 
 <!-- bench:start -->
 | | @portable/rate-limit | rate-limiter-flexible | limiter |

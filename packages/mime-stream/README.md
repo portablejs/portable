@@ -105,7 +105,7 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 - mailsplit's `maxHeadSize` defaults to 1 MiB and counts each line as at least 64 bytes. `maxHeaderBytes` counts bytes and defaults to no limit, so pass `maxHeaderBytes: 1024 * 1024` to keep mailsplit's limit.
 - mailsplit's `maxChildNodes` defaults to 1000, and `maxParts` defaults to no limit, so pass `maxParts: 1000` to keep mailsplit's limit.
 - mailsplit's limit errors have the `code` `'EMAXLEN'`. For an exceeded limit, `DecoderStream` throws `MaxHeaderBytesError`, `MaxBoundaryLineBytesError` or `MaxPartsError`.
-- A part has no `charset`, `filename` or `disposition` field as mailsplit's nodes do. Read them with `MimeHeaders.parseValue` from the `Content-Type` or `Content-Disposition` field.
+- Unlike mailsplit's nodes, a part has no `charset`, `filename` or `disposition` field. Read them with `MimeHeaders.parseValue` from the `Content-Type` or `Content-Disposition` field.
 - mailsplit's `headers.mbox` and `headers.http` have no equivalent. The mbox `From ` line or HTTP status line stays at the start of the root `headers` chunk, and `part.headers` skips it.
 - `part.headers` skips a first line that starts with whitespace and a line with no valid field name. A bare CR doesn't end a line.
 - `encoding` drops every comment, including an unclosed one, so `base64 (x` is `base64`. mailsplit keeps the text when a comment isn't closed.

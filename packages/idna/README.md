@@ -26,7 +26,7 @@ Idna.toAscii('Bücher.example'); // 'xn--bcher-kva.example'
 
 Decodes each `xn--` label and checks the result against UTS #46 with the URL Standard's settings: the bidi rule (CheckBidi), the joiner rules (CheckJoiners) and nontransitional processing. Unicode input is mapped and normalized too, so `toUnicode('BÜCHER.example')` returns `'bücher.example'`.
 
-It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn--` label that isn't valid Punycode or that decodes to a character IDNA doesn't allow. UTS #46 lets the caller decide what to show instead. Browsers show the ASCII form:
+It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn--` label that isn't valid Punycode or that decodes to a character IDNA doesn't allow. UTS #46 leaves it to you to decide what to show instead. Browsers show the ASCII form:
 
 ```ts
 function displayHost(hostname: string): string {
@@ -42,7 +42,7 @@ function displayHost(hostname: string): string {
 
 Follows the URL Standard's domain parser: ASCII input is lowercased, and other input goes through UTS #46 ToASCII, which maps, normalizes, validates and encodes each non-ASCII label as `xn--` Punycode. It throws `Idna.InvalidInputError` when the domain breaks a rule, when the result is empty, or when the result contains a character that URL forbids in a host, such as a space, `%`, `/` or `@`.
 
-The result equals `new URL('http://' + domain).hostname` with three exceptions. `URL` parses a host that ends in a number as an IPv4 address (`0x7f.1` becomes `127.0.0.1`), and decodes percent-encoding. Neither is IDNA, and `toAscii` does neither. The third is that runtimes don't agree with each other or with the standard, as the next section shows.
+The result equals `new URL('http://' + domain).hostname` with three exceptions. `URL` parses a host that ends in a number as an IPv4 address (`0x7f.1` becomes `127.0.0.1`), and decodes percent-encoding. Neither is IDNA, and `toAscii` does neither. The third is that runtimes don't agree with each other or with the standard, as [Where `URL` isn't exact](#where-url-isnt-exact) shows.
 
 ### Options
 
@@ -52,13 +52,13 @@ The result equals `new URL('http://' + domain).hostname` with three exceptions. 
 
 ## Why use this over punycode and tr46
 
-punycode only converts the Punycode encoding of each label. It doesn't map uppercase or compatibility characters and doesn't check the result, so `punycode.toUnicode('xn--google-')` returns `google`, and `punycode.toASCII('ÜBER.COM')` returns `xn--BER-ska.COM`, which no browser produces. tr46 implements UTS #46, but needs punycode, which prints a deprecation warning on Node 21 and later.
+punycode only converts the Punycode encoding of each label. It doesn't map uppercase or compatibility characters and doesn't check the result, so `punycode.toUnicode('xn--google-')` returns `google`, and `punycode.toASCII('ÜBER.COM')` returns `xn--BER-ska.COM`, which no browser produces. tr46 implements UTS #46 and depends on punycode.
 
 - All 6396 cases in Unicode's `IdnaTestV2.txt` 18.0.0 pass in Node and Chromium, and so do WPT's URL tests for IDNA. The output equals tr46 7.0.0's on those cases and 20,000 random domains.
 - It is 16 kB minified and gzipped with both functions, against 64 kB for tr46 with punycode. The tables are generated from the Unicode data files by `scripts/generate.ts`.
 - `toUnicode` on 10 hostnames was 6.8× as fast as tr46 and as fast as punycode, which does no mapping or validation. `toAscii` was 5.8× as fast as tr46 and as fast as punycode. `new URL()` is about 1.2× faster than `toAscii` in Node, where it runs in C++.
 - `toAscii` and `toUnicode` take O(n log n) time on long labels. punycode and tr46 take about 15 s to encode a 40,000-character label, as Python's idna did before CVE-2024-3651.
-- Both functions throw errors instead of returning them. tr46's `toUnicode` returns `{ domain, error }`, and code that reads only `domain` displays `xn--google-` as `google`.
+- Both functions throw errors instead of returning them. tr46's `toUnicode` returns `{ domain, error }`, so if you read only `domain`, you display `xn--google-` as `google`.
 - tr46's `toASCII` returns `null` for an invalid domain, where `toAscii` throws `InvalidInputError`.
 - Without `strict`, `toAscii` lowercases ASCII input without decoding it, as the URL Standard now specifies, so `toAscii('xn--b.com')` returns `'xn--b.com'` where tr46 returns `null`. `toUnicode` still throws for it.
 - tr46's `toASCII` returns `'a b'` for `'a b'`, but `toAscii` throws for a space and the other characters that URL forbids in a host.

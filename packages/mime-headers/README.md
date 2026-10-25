@@ -1,6 +1,6 @@
 # @portable/mime-headers
 
-Email header values: encoded-words (RFC 2047), folding (RFC 5322), parameters with RFC 2231 encoding, and address lists. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Reads and writes email header values: encoded-words (RFC 2047), folding (RFC 5322), parameters with RFC 2231 encoding, and address lists. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces the header functions of [libmime](https://www.npmjs.com/package/libmime), [addressparser](https://www.npmjs.com/package/addressparser) (now `nodemailer/lib/addressparser`) and [email-addresses](https://www.npmjs.com/package/email-addresses).
 
@@ -50,7 +50,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `InvalidInputError` | | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses` |
 | `MaxLengthError` | | thrown by `parseHeaders` when the header block is longer than `maxLength`. The error stores the limit in `maxLength`. |
 
-`decodeWords` joins encoded words that only whitespace separates, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
+`decodeWords` joins encoded words separated only by whitespace, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
 `parseValue` lowercases parameter names, joins RFC 2231 sections (`name*0*`, `name*1*`), decodes their charset, and decodes encoded words in plain values. When a parameter has both forms, `parseValue` uses the RFC 2231 one (RFC 6266 section 4.3). `formatValue` quotes values that need it and writes values outside printable ASCII, or ones that look like encoded words, as UTF-8 RFC 2231 sections.
 
@@ -88,14 +88,14 @@ It has no dependencies outside `@portable/*`, takes and returns plain strings an
 - `parseAddresses` never takes the address from a comment: `(evil@evil.com) Name <good@good.com>` parses to `good@good.com`. nodemailer fixed this in 10.1.4.
 - `encodeWords` encodes text that looks like an encoded word, so a reader can't decode a subject the sender didn't encode. libmime 5.5.1 leaves it as is.
 - `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
-- `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
+- `formatAddresses` encodes a CRLF in a name and throws `InvalidInputError` for an address that would parse back as a different address, so a header can't be split into two.
 - Every function runs in linear time on hostile input, and the tests check this with 45 adversarial inputs.
 - libmime's `encodeWord` writes one word unless you give it a length, but this package's `encodeWord` limits words to 75 characters by default. If you passed libmime a length of 0, pass `wordLength: Infinity`.
 - In a Q word, `encodeWord` writes a trailing space as `_`, where libmime writes `=20`.
 - `encodeWords` encodes words that contain control characters. libmime leaves them as they are.
 - libmime's `encodeWords` takes bytes in another charset, and `encodeWords` reads a `Uint8Array` as UTF-8, so decode such bytes with `TextDecoder` first.
 - `fold` allows a line of exactly `lineLength`, where libmime's `foldLines` keeps its lines one character shorter. `fold` never breaks in front of trailing whitespace, which would leave a line of only whitespace.
-- libmime's `decodeHeaders` lowercases names, collapses the whitespace a fold leaves to one space and groups values by name. `parseHeaders` keeps the case of names and the whitespace, and returns a list in order, so lowercase the names yourself to group them.
+- libmime's `decodeHeaders` lowercases names, collapses the whitespace left by each fold to one space and groups values by name. `parseHeaders` keeps the case of names and the whitespace, and returns a list in order, so lowercase the names yourself to group them.
 - libmime's `parseHeaderValue` returns the decoded parameters in `decodedParams`. `parseValue` has no `decodedParams`, because it decodes every parameter in `params`.
 - Unlike libmime's `parseHeaderValue`, `parseValue` reads a backslash as an escape only inside quotes.
 - `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name, where libmime 5.5's `buildHeaderValue` drops it. It marks every section of an encoded value with `*`.

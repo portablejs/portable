@@ -24,7 +24,7 @@ export function decode(input: string | Uint8Array): Uint8Array<ArrayBuffer> {
 
 export declare namespace DecoderStream {
   type Options = {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /** Aborting errors the stream with `signal.reason` and cancels the source piped into it. */
     signal?: AbortSignal | undefined;
   };
 }

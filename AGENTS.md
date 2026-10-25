@@ -150,6 +150,8 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | Hand-written code strips the armor with a regex that often misses CRLF line breaks. | If you strip the armor yourself, the usual regex often misses CRLF line breaks. |
 | The time to sign. Schemes without a timestamp ignore it. A `Date` or a `Temporal.Instant`. (A verbless fragment tacked on as its own sentence.) | The time to sign, as a `Date` or a `Temporal.Instant`. Schemes without a timestamp ignore it. |
 | `fold` was 7.7× faster than libmime's `foldLines`, `parseHeaders` 3.7× faster than `decodeHeaders`. | `fold` was 7.7× faster than `foldLines`, and `parseHeaders` was 3.7× faster than `decodeHeaders`. |
+| Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. (The "which" has no clear antecedent.) | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| A forwarder, such as a mailing list, validates the chain that arrived and seals the message. (A made-up actor carries the advice.) | If you forward mail, as a mailing list does, verify the chain that arrived and seal the message. |
 
 ### Prose review
 

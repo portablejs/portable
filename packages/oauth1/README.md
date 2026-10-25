@@ -101,7 +101,7 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 - The header separator is always `", "` and the nonce is always 32 hex digits, so oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.
 - If you overrode oauth-1.0a's `getTimeStamp`, which returns seconds, pass `now: new Date(seconds * 1000)` instead, because `now` takes a `Date` or a `Temporal.Instant`.
 - oauth-1.0a can put the protocol parameters in a form body. This package puts them only in the `Authorization` header, or in the URL with `placement: 'query'`.
-- The package has no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL, where node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
+- The package has no HTTP client. On a same-origin redirect, `fetch` sends the same `Authorization` header, whose signature covers the old URL, and on a cross-origin redirect it drops the header. node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
 
 ### Performance
 

@@ -66,7 +66,7 @@ Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TL
 | `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
 | `signal` | None | Limits connecting, TLS and login. Aborting rejects with `signal.reason` and closes the socket. |
 
-With `auth` set, the client always authenticates. If the server offers AUTH but neither PLAIN nor LOGIN, it fails without sending the password.
+With `auth` set, the client always authenticates. If the server offers AUTH but neither PLAIN nor LOGIN, `connect` rejects with `EAUTH` without sending the password.
 
 ### `client.send(mail, { signal })`
 
@@ -163,7 +163,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `Smtp.send` and `client.send` send an empty message. nodemailer refuses it.
 - `Smtp.connect` throws a `RangeError` for a `name` that contains CR or LF. nodemailer removes the CR and LF instead.
 - nodemailer's `opportunisticTLS`, `logger` and `debug` options have no equivalent.
-- nodemailer refreshes an OAuth2 access token itself. `auth: { user, accessToken }` sends the token it is given, so the caller refreshes it.
+- nodemailer refreshes an OAuth2 access token itself. `auth: { user, accessToken }` sends the token as given, so refresh it yourself before it expires.
 - CRAM-MD5 and custom `auth.type` handlers aren't supported, because WebCrypto has no MD5.
 - `mail.dsn` has no equivalent of nodemailer's `orcpt`.
 - nodemailer's `pool: true` has no equivalent. Keep a `Client` open and send several messages over it instead.

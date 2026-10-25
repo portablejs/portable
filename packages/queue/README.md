@@ -71,7 +71,7 @@ A task added from inside a running task waits for a free slot like any other. If
 
 ### `Queue.limit(concurrency)`
 
-Returns `create({ concurrency }).add`, for code that only needs to run tasks.
+Returns `create({ concurrency }).add`. Use it when you only need to run tasks.
 
 ### `Queue.map(input, fn, options?)`
 
@@ -132,14 +132,14 @@ A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(50
 | `Queue.Task` | `(context) => value \| Promise<value>`, a function the queue runs. |
 | `Queue.Context` | `{ signal }`, what a task receives. The signal aborts when the task's or the queue's `signal` aborts, or when the queue is disposed. |
 
-## Why use this over p-limit, p-queue and p-map
+## Why use this over p-limit, p-queue, p-map and p-throttle
 
-They run in browsers too, but they are three packages with three APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies outside `@portable/*`.
+They run in browsers too, but they are four packages with four APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies outside `@portable/*`.
 
 - **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 0.8 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.6 µs against p-queue's 3.6 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 0.7 µs for p-map and 0.8 µs for p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
 - **An aborted running task keeps its slot.** p-queue frees the slot when a running task's signal aborts, while the task may still be running, so more than `concurrency` tasks can run at once.
 - **`clear()` rejects the removed tasks** with an `AbortError`. p-limit's `clearQueue()` leaves their promises pending forever unless `rejectOnClear` is set.
-- **`map` stops in-flight work.** After the first error, or when `signal` aborts, the `signal` passed to each running call aborts. p-map gives the mapper no signal, so after the first error the other calls run to the end unless the caller wires up its own `AbortController`.
+- **`map` stops in-flight work.** After the first error, or when `signal` aborts, the `signal` passed to each running call aborts. p-map gives the mapper no signal, so after the first error the other calls run to the end unless you create your own `AbortController` and pass its signal to them.
 - **The rate limit is a sliding window** measured with `performance.now()`. p-queue's default fixed windows let twice `intervalCap` tasks start around a boundary, and its use of `Date.now()` stalls the queue if the clock goes back.
 - **Tasks run in the async context of their `add` call**, as in p-limit and p-queue, so `AsyncLocalStorage` values carry over in Node.
 - p-limit's `limit(fn, a, b)` passes the extra arguments to `fn`. The function from `Queue.limit` takes only a task, so write `limit(() => fn(a, b))`.

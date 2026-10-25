@@ -1,6 +1,6 @@
 # @portable/mail
 
-Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client, an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client or to an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces nodemailer's `MailComposer` (`nodemailer/lib/mail-composer`) and the `MimeNode` it builds on.
 
@@ -29,7 +29,7 @@ const { from, to } = Mail.envelope(message); // for MAIL FROM and RCPT TO
 await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' });
 ```
 
-The report is read from the network while the caller reads the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
+The report is read from the network while you read the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
 
 ## API
 
@@ -59,7 +59,7 @@ The report is read from the network while the caller reads the message, so a lar
 
 Attachments with a `cid` go into `multipart/related` beside the HTML, and other attachments into `multipart/mixed`. An image with a `cid` defaults to `Content-Disposition: inline`, everything else to `attachment`.
 
-Text bodies are `7bit` when every line is ASCII and at most 76 characters, otherwise `quoted-printable` for mostly Latin text and `base64` for the rest. A body from a stream or `Blob` can't be scanned first, so it is `quoted-printable`. Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit` and text `quoted-printable` bodies become CRLF.
+Text bodies are `7bit` when every line is ASCII and at most 76 characters, otherwise `quoted-printable` for mostly Latin text and `base64` for the rest. `encodeStream` can't scan a body from a stream or `Blob` before writing it, so it writes that body as `quoted-printable`. Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit` and text `quoted-printable` bodies become CRLF.
 
 ### Options
 

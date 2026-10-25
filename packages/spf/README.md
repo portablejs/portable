@@ -55,7 +55,7 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 ## Result
 
-`check` resolves to a plain object. It rejects only for an invalid `ip` or a `resolver` without one of the five methods, or with `signal.reason` when `signal` aborts.
+`check` resolves to a plain object. It rejects only for an invalid `ip` or a `resolver` that lacks any of the five methods, or with `signal.reason` when `signal` aborts.
 
 | Field | Description |
 | --- | --- |
@@ -79,7 +79,7 @@ The limits of RFC 7208 section 4.6.4 are fixed:
 - An `mx` term whose name has more than 10 MX records gives `permerror`.
 - A `ptr` term or `%{p}` validates only the first 10 PTR names.
 
-Each name and type is queried once per check, even when several terms ask for it, and each term still counts.
+`check` queries each name and type once, even when several terms need it, and each of those terms still counts toward the lookup limit.
 
 ## Macros
 
@@ -123,7 +123,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 - mailauth's `resolver` is one `(name, type)` function. The `resolver` option of `Spf.check` is an object with `resolve4` and the other methods, such as `dns` from `node:dns/promises`.
 - mailauth's `strict: true` is the only behavior, and its `maxResolveCount` and `maxVoidCount` options have no equivalent, because the RFC's limits are fixed.
-- mailauth's `maxElapsedTime` returns `temperror` when time runs out. With `signal: AbortSignal.timeout(ms)`, `check` rejects with a `TimeoutError`, which the caller reports as `temperror`.
+- mailauth's `maxElapsedTime` returns `temperror` when time runs out. With `signal: AbortSignal.timeout(ms)`, `check` rejects with a `TimeoutError`, which you report as `temperror`.
 - `check` builds no comment like mailauth's `result.status.comment` and no `result.header` or `result.info`.
 - These results differ from mailauth's default mode and match its strict mode: a syntax error anywhere in the record is `permerror`, even after the term that matched.
 - An `a` term counts as a void lookup when the host has no address of the client's family, even if it has one of the other family. mailauth's default mode doesn't count it, and its strict mode does.

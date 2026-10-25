@@ -59,7 +59,7 @@ await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type:
 await worker.add(1, 2);
 ```
 
-Disposing closes the connection but not what carries it, so the worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method named by a symbol can't be called remotely, so the key never hides one of your methods. In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to close the remote, which does the same teardown.
+Disposing closes the connection but not what carries it, so the worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method with a symbol key can't be called remotely, so `[Symbol.asyncDispose]` never hides one of your methods. In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to close the remote, which does the same teardown.
 
 ### Options per call
 
@@ -71,7 +71,7 @@ await Rpc.call(remote.search, ['shoes'], { signal: AbortSignal.timeout(5000) });
 
 Aborting rejects the call with `signal.reason` and sends `$/cancel` to the server.
 
-Params can also be an object. JSON-RPC calls that "by name", and the server method receives the object as its one argument.
+Params can also be an object. JSON-RPC calls these by-name params, and the server method receives the object as its one argument.
 
 `Rpc.notify(remote.log, ['loaded'])` sends a notification: a call without an id, which the server doesn't answer.
 
@@ -176,7 +176,7 @@ Rpc.provide(Rpc.window(window.parent, { origin: 'https://parent.example.com' }),
 
 Both sides post a hello every 100 ms until the other answers, so either can load first, and writes wait until the handshake is done. The hello carries a protocol version. Messages whose `event.origin` differs from `origin`, or that come from a window other than `target`, are ignored, and messages are posted only to `origin`. `origin` is required: pass `'*'` to accept any origin. `channel` lets several connections share one window.
 
-The handshake has no timeout of its own, and `signal` closes the connection whenever it aborts, so pass a signal to each call (`Rpc.call(..., { signal: AbortSignal.timeout(10_000) })`) to give up on a window that never answers. When the other window reloads, its new page says hello again and the same remote keeps working. A call the old page didn't answer stays pending until its signal aborts.
+The handshake has no timeout of its own. Aborting the connection's `signal` closes the whole connection, so to give up on a window that never answers, pass a signal to each call instead: `Rpc.call(..., { signal: AbortSignal.timeout(10_000) })`. When the other window reloads, its new page says hello again and the same remote keeps working. A call the old page didn't answer stays pending until its signal aborts.
 
 ### `Rpc.handler(api)` and `Rpc.http(url, { fetch, signal })`
 

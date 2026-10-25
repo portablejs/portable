@@ -56,7 +56,7 @@ L0  base64, binary, charset, lines, quoted-printable → bytes, streams
 
 | Package | Purpose | Replaces (monthly downloads) |
 | --- | --- | --- |
-| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, a `Blob`, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Split**: `tee` into any number of branches, reading the source only as fast as the slowest branch. **Bridge** (see below): convert between streams and iterables, async iterables or generators. **`abortable`**: makes a hand-written `Transformer` cancellable with an `AbortSignal`, which every stream transform in the family uses. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
+| `@portable/streams` | Stream plumbing. **Collect**: a stream into bytes, a `Blob`, text, JSON or an array with a `maxBytes` guard. **Combine**: concatenate, merge, byte-limit. **Split**: `tee` into any number of branches, reading the source only as fast as the slowest branch. **Bridge** (see below): convert between streams and iterables, async iterables or generators. **`abortable`**: makes a hand-written `Transformer` cancellable with an `AbortSignal`. Every stream transform in the family uses it. | get-stream 900M, bl 360M, concat-stream 171M, stream-to-array, merge2, merge-stream, through2, raw-body (limit handling) |
 | `@portable/lines` | Split byte or text streams into lines. Handles CRLF/LF/CR, a `maxLength` guard, and a trailing line with no newline. `new Lines.DecoderStream()`. | split2 406M, byline |
 | `@portable/binary` | A `Reader` and a `Writer` for binary protocols: integers of 1 to 8 bytes in either byte order, floats, varints (LEB128, zigzag and SLEB128, as numbers or bigints), UTF-8 and null-terminated strings, with offsets you can move back to fill in a length. `FrameDecoderStream` and `FrameEncoderStream` split a byte stream into length-prefixed frames, with a `maxBytes` guard. | smart-buffer, varint, length-prefixed-stream, it-length-prefixed, hand-written `DataView` code |
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
@@ -66,7 +66,7 @@ L0  base64, binary, charset, lines, quoted-printable → bytes, streams
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, nanoid's `customAlphabet`, seedrandom, lodash's `random`, `sample` and `shuffle` |
 | `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf`, `dns` and `dns-packet` use it. | ip, ipaddr.js, is-ip, ip-cidr, cidr-tools, ip-range-check |
 | `@portable/log` | Namespaced logging with `debug`, `info`, `warn` and `error` levels, turned on with debug's `DEBUG` patterns from an environment variable or `localStorage`. A change to `localStorage.debug` applies without a reload, and `subscribe` sends records to other outputs. | debug |
-| `@portable/sockets` | The WinterTC Sockets API types `Sockets.Connect` and `Sockets.Socket`. Protocol clients such as smtp take a `connect` function of type `Sockets.Connect`, so you can pass `connect` from `cloudflare:sockets` unchanged. `@portable/sockets/node` has a `connect` on `node:net` and `node:tls`, which Deno and Bun also run, with certificate verification and SNI for `startTls()`. | @arrowood.dev/socket |
+| `@portable/sockets` | The WinterTC Sockets API types `Sockets.Connect` and `Sockets.Socket`. Protocol clients such as smtp take a `connect` function of type `Sockets.Connect`, so you can pass `connect` from `cloudflare:sockets` unchanged. `@portable/sockets/node` has a `connect` built on `node:net` and `node:tls`, with certificate verification and SNI for `startTls()`, which also runs in Deno and Bun. | @arrowood.dev/socket |
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency`, a rate limit (`interval`, `intervalCap`) and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map, p-throttle |
 | `@portable/web-crypto` | Helpers over `crypto.subtle` that take and return `Uint8Array`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, keys from PEM text with `importPem`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/errors` | The error classes that every package's errors extend, and `Errors.is`, which matches an error's kind across two copies of a package. Its `./internal` entry holds the dispose helpers for long-lived objects. | none (shared by the family) |
@@ -74,7 +74,7 @@ L0  base64, binary, charset, lines, quoted-printable → bytes, streams
 
 #### `streams` bridge API
 
-The platform covers part of this: `ReadableStream.from()` and `for await (const chunk of stream)` are not in every target browser yet, and neither handles cleanup the way people expect. The bridge adds the rest and uses the native functions where they exist:
+`ReadableStream.from()` and `for await (const chunk of stream)` are not in every target browser yet. The bridge covers them and uses the native functions where they exist:
 
 | Function | Does |
 | --- | --- |
@@ -92,7 +92,7 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 
 For the other directions, `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` in `node:stream` already work.
 
-The portable half needs no special support: a Node `Readable` is already an async iterable, so `fromIterable(nodeReadable)` works everywhere.
+A Node `Readable` is already an async iterable, so `fromIterable(nodeReadable)` also works without the `./node` subpath.
 
 ```ts
 import * as Streams from '@portable/streams';
@@ -129,7 +129,7 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | `@portable/exif` | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF, and stripping it from JPEG, PNG and WebP. | `bytes`, `streams` | exif-parser 17M |
 | `@portable/png` | PNG decode/encode to RGBA, deflate via `CompressionStream` by default or a passed-in `{ inflate, deflate }` for sync use. | `bytes` | pngjs 283M |
 | `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | `bytes`, `ip` | dns-packet 79M |
-| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | `timers` | rate-limiter-flexible, limiter, bottleneck's reservoir options |
+| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus the `RateLimit`, `RateLimit-Policy` and `Retry-After` header fields. | `timers` | rate-limiter-flexible, limiter, bottleneck's reservoir options |
 
 ### L2: purposes
 

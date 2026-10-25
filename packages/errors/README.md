@@ -1,8 +1,8 @@
 # @portable/errors
 
-The shared error classes for `@portable/*` packages, and `is`, which checks an error's kind even when an app installs two copies of a package. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+The shared error classes for `@portable/*` packages, and `is`, which checks an error's kind even when two copies of a package are installed. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces hand-written `class XError extends Error` hierarchies and `instanceof` checks, which fail when an app has two copies of a package.
+Replaces hand-written `class XError extends Error` hierarchies and `instanceof` checks, which fail when two copies of a package are installed.
 
 ```sh
 npm install @portable/errors
@@ -26,7 +26,7 @@ try {
 
 ## Why not `instanceof`
 
-An app can end up with two copies of a package, for example when the app needs version 2 of a package and one of its dependencies needs version 1. An error thrown by one copy then fails `instanceof` against the class from the other copy. `@portable/*` packages depend on each other at exact versions, because pnpm publishes `workspace:*` that way, and npm installs a separate copy for each exact version it is asked for. Two copies are therefore more likely with these packages than with most.
+You can end up with two copies of a package, for example when your app needs version 2 of a package and one of its dependencies needs version 1. An error thrown by one copy then fails `instanceof` against the class from the other copy. `@portable/*` packages depend on each other at exact versions, because pnpm publishes `workspace:*` that way, and npm installs a separate copy for each exact version it is asked for. Two copies are therefore more likely with these packages than with most.
 
 Each error stores its class's `kind`, and the `kind` of every parent class, under `Symbol.for('portable.error')`. `Symbol.for` returns the same symbol in every copy of every package. Other libraries don't set this key by accident, and `JSON.stringify` and `Object.keys` skip it. The classes define `static [Symbol.hasInstance]` to read it, so `instanceof` works across copies too:
 
@@ -67,6 +67,6 @@ export class MaxBytesError extends Errors.MaxBytesError {
 
 ## Why use this over a hand-written error class
 
-- `instanceof` and `is` give the same answer when an app has two copies of a package.
+- `instanceof` and `is` give the same answer when two copies of a package are installed.
 - `Errors.is(error, 'MaxBytes')` matches an exceeded size limit from streams, compress, exif or any other package.
-- `ResponseError` keeps the whole `Response`, so a caller can read `Retry-After` and other headers.
+- `ResponseError` keeps the whole `Response`, so you can read `Retry-After` and other headers.

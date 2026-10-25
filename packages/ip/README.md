@@ -111,7 +111,7 @@ A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` tre
 
 ## Why use this over ip or ipaddr.js
 
-ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). The package is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.
+ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). ip is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.
 
 - Parsing eight mixed addresses took about 1.3 µs, 12 times faster than ipaddr.js and 2.3 times faster than Node's `net.isIP`, which only validates.
 - Parsing an address and checking it against a CIDR block was 11 times faster than ipaddr.js and 1.5 times faster than Node's `BlockList.check`.

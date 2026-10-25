@@ -70,11 +70,11 @@ const stored = await Password.hash(password, options);
 Password.needsRehash(stored, options); // false
 ```
 
-100,000 iterations is a sixth of OWASP's recommendation, so a stolen hash costs an attacker six times less to crack. If that's not enough, hash passwords in a service that can run 600,000 iterations or Argon2id, and keep the Worker for the rest. A hash written elsewhere with more than 100,000 iterations can't be verified on Workers at all.
+100,000 iterations is a sixth of OWASP's recommendation, so cracking a stolen hash takes a sixth of the work. If that's not enough, hash passwords in a service that can run 600,000 iterations or Argon2id, and keep the Worker for the rest. A hash written elsewhere with more than 100,000 iterations can't be verified on Workers at all.
 
 ## Why use this over node:crypto, pbkdf2 and pbkdf2-password
 
-`node:crypto` and pbkdf2 give you a key derivation function, and the rest is up to you: a salt, a storage format, a constant-time compare, a plan for raising the iterations. pbkdf2-password adds a salt but defaults to 10,000 SHA-1 iterations and returns the salt and hash separately, and none of them compare. This package does all of it with one string and runs where `node:crypto` doesn't.
+`node:crypto` and pbkdf2 give you a key derivation function, and the rest is up to you: a salt, a storage format, a constant-time compare, a plan for raising the iterations. pbkdf2-password adds a salt but defaults to 10,000 SHA-1 iterations and returns the salt and hash separately, and none of the three compares a password with a stored hash. This package does all of it with one string and runs where `node:crypto` doesn't.
 
 - It hashes at the same speed as `node:crypto`'s `pbkdf2`: about 110 ms per hash at 600,000 iterations for both on the benchmark machine, because both call OpenSSL. `verify` took as long as `pbkdf2` followed by `timingSafeEqual`.
 - The stored string records the digest and iterations, so `needsRehash` can tell you when to upgrade a hash and `verify` keeps reading old ones.
@@ -85,7 +85,7 @@ Password.needsRehash(stored, options); // false
 - An unknown algorithm name throws `UnsupportedError`. pbkdf2 3.1.2 and earlier, in browsers, returned an all-zero key for algorithm names it didn't recognize, such as `'SHA256'`, so every password gave the same key (CVE-2025-6545).
 - pbkdf2-password and code that calls `node:crypto`'s `pbkdf2` store the salt and hash separately. To verify those hashes, build a PHC string from them with the digest and iterations they were made with, and drop the base64 padding: for pbkdf2-password's defaults (SHA-1, 10,000 iterations) that is `$pbkdf2$i=10000$<salt>$<hash>`. The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` for SHA-256 and `$pbkdf2-sha512$` for SHA-512, and a salt stored as text goes in as the base64 of its UTF-8 bytes. `needsRehash` returns `true` for such a string, so rehash on the next login.
 - Because string passwords are normalized to NFC, a hash made elsewhere from a password in another normalization form verifies only if you pass the original bytes as a `Uint8Array`.
-- passlib's `pbkdf2_sha256` can't read the `i=` form that `hash` writes. `verify` reads passlib's hashes, so moving from passlib works, but a Python service that keeps reading the table has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.
+- passlib's `pbkdf2_sha256` can't read the `i=` form that `hash` writes. `verify` reads passlib's hashes, so you can move from passlib, but if Python code still reads the table, it has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.
 
 ### Other algorithms
 
@@ -108,7 +108,7 @@ async function check(user: User, password: string): Promise<boolean> {
 }
 ```
 
-[@noble/hashes](https://github.com/paulmillr/noble-hashes) has `argon2id` and `scrypt` in plain JavaScript, and [hash-wasm](https://github.com/Daninet/hash-wasm) has Argon2, scrypt and bcrypt in WebAssembly. Both run in every runtime this package does. bcryptjs and the `argon2` package are different algorithms, not PBKDF2. Keep using them if you're already on them and their runtime fits. Argon2id is the stronger choice where you can run it, and PBKDF2 is the one WebCrypto can run everywhere.
+[@noble/hashes](https://github.com/paulmillr/noble-hashes) has `argon2id` and `scrypt` in plain JavaScript, and [hash-wasm](https://github.com/Daninet/hash-wasm) has Argon2, scrypt and bcrypt in WebAssembly. Both run in every runtime this package does. bcryptjs and the `argon2` package implement other algorithms, not PBKDF2. Keep using them if you're already on them and their runtime fits. Argon2id is the stronger choice where you can run it, and PBKDF2 is the one WebCrypto can run everywhere.
 
 <!-- bench:start -->
 | | @portable/password | pbkdf2 | pbkdf2-password | `node:crypto` | `crypto.subtle` |

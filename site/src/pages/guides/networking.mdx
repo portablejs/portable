@@ -14,7 +14,7 @@ Workers and browsers have no `node:dns` and can't send UDP, so `dns` looks up re
 
 ## Refuse to fetch internal addresses
 
-A service that fetches URLs from its users must not connect to its own internal network. Resolve the host and check every address before you connect:
+If you fetch URLs that your users give you, don't let those requests reach your internal network. Resolve the host and check every address before you connect:
 
 ```ts
 import * as Dns from '@portable/dns';
@@ -39,4 +39,4 @@ async function safeFetch(url: string, init: RequestInit = {}) {
 }
 ```
 
-This checks A records. Check AAAA records the same way with `resolver.resolve6`. The check doesn't cover redirects or a second DNS answer, so pass `redirect: 'manual'` and check each `Location`, and connect to the address you checked where your runtime allows it.
+This checks A records. Check AAAA records the same way with `resolver.resolve6`. The check doesn't cover redirects or DNS rebinding. Pass `redirect: 'manual'` and check each `Location`, and where your runtime allows it, connect to the address you checked.

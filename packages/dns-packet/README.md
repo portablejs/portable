@@ -36,7 +36,7 @@ Supported types: A, AAAA, CAA, CDNSKEY, CDS, CNAME, DNAME, DNSKEY, DS, HINFO, MX
 
 TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8. Decode them with `new TextDecoder().decode(bytes)` when you know they are text. Strings passed to `encode` are written as UTF-8.
 
-`decode` throws `DnsPacket.TruncatedError` when the message ends early and `DnsPacket.InvalidInputError` when it can't be valid, including compression loops and record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
+`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
 
 ## Options
 

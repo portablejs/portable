@@ -2,7 +2,7 @@
 
 Decodes and encodes CSV (RFC 4180), as functions and as `TransformStream`s. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [csv-parse](https://www.npmjs.com/package/csv-parse) and [csv-stringify](https://www.npmjs.com/package/csv-stringify), [papaparse](https://www.npmjs.com/package/papaparse) and [fast-csv](https://www.npmjs.com/package/fast-csv).
+Replaces [csv-parse](https://www.npmjs.com/package/csv-parse), [csv-stringify](https://www.npmjs.com/package/csv-stringify), [papaparse](https://www.npmjs.com/package/papaparse) and [fast-csv](https://www.npmjs.com/package/fast-csv).
 
 ```sh
 npm install @portable/csv
@@ -56,9 +56,9 @@ const rows = Csv.decode(text, { header: ['id', 'email'] });
 | `header` | `false` | `true` reads column names from the first row. An array gives the names for input with no header row. A repeated name throws `InvalidInputError`. |
 | `relaxColumnCount` | `false` | Accept rows whose field count differs from the first row's or the header's. With `header`, a short row leaves the missing keys out and a long row's extra fields are dropped. |
 | `skipEmpty` | `true` | Drop lines with no characters. `false` reads each as a row with one empty field. |
-| `maxLength` | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row passes it, so a missing closing quote can't buffer the whole input. |
+| `maxLength` | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row is longer than the limit, so a missing closing quote can't make it buffer the whole input. |
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. |
-| `signal` | | `DecoderStream` only. Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. |
+| `signal` | | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 `decode` throws these errors, and `DecoderStream` fails with them. Their messages give the row number, counting from 1 and including skipped empty lines.
 
@@ -86,7 +86,7 @@ A field is quoted only when it holds the delimiter, the quote, CR or LF, and a r
 | `header` | `false` | `true` writes the first object row's keys as a header row. An array writes those names and reads object rows by them, in that order, and is written even with no rows. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. |
 | `bom` | `false` | Start with a byte order mark, which Excel needs to read UTF-8. |
 | `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). |
-| `signal` | | `EncoderStream` only. Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. |
+| `signal` | | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over csv-parse, papaparse and fast-csv
 

@@ -54,7 +54,7 @@ The platform reports every failure as a `TypeError`. The error's `cause` holds i
 
 ## Why use this over pako, fflate and node:zlib
 
-pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` runs only in Node and Bun.
+pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` doesn't run in browsers, and Cloudflare Workers need the `nodejs_compat` flag for it.
 
 - `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and fflate allocates its output from the length field, so a forged length gives truncated output (fflate #161, #181).
 - `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).

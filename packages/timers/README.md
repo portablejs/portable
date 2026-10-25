@@ -127,13 +127,13 @@ Calls `fn` until it returns a value other than `undefined`, and resolves with th
 | `delay` | `1000` | Wait after each check that returns `undefined`. See [Delays](#delays). |
 | `signal` | | Stops polling. Aborting rejects the call with `signal.reason`, even while a check is running, and aborts the `signal` passed to that check. |
 
-A poll of a slow endpoint needs a deadline for the whole wait, so pass `signal: AbortSignal.timeout(ms)`, which rejects with a `TimeoutError` `DOMException`. `retry` has a `timeout` option because it limits each attempt separately, which a signal for the whole call can't do. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)` there too.
+A poll of a slow endpoint needs a deadline for the whole wait, so pass `signal: AbortSignal.timeout(ms)`, which rejects with a `TimeoutError` `DOMException`. `retry` also has a `timeout` option, because a signal for the whole call can't limit each attempt separately. To limit a whole `retry`, pass `signal: AbortSignal.timeout(ms)` there too.
 
 ## `debounce(fn, ms, options)` and `throttle(fn, ms, options)`
 
 `debounce` wraps `fn` so that a burst of calls invokes it once, `ms` after the last call, with the last call's arguments and `this`. `throttle` invokes `fn` at most once every `ms`: on the first call, then once at the end of each window that had more calls. The timing is lodash's, and the oracle tests compare every invocation's time and arguments with lodash 4.18.
 
-Each call returns a promise of the result of the invocation it was merged into, so every call in a burst resolves with the same value, and an error thrown by `fn` rejects all of them. A call that `trailing: false` drops resolves at once with the result of its window's leading invocation.
+Each call returns a promise of the result of the invocation it was merged into, so every call in a burst resolves with the same value, and an error thrown by `fn` rejects all of them. With `trailing: false`, a dropped call resolves at once with the result of its window's leading invocation.
 
 ```ts
 const save = Timers.debounce(async (text: string) => {
@@ -175,7 +175,7 @@ The returned function also has:
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
 | `({ attempt, error }) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
-`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, so other code can call it to wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
+`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
 
 ```ts
 const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false });

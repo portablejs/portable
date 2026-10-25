@@ -1,8 +1,8 @@
 # @portable/dns
 
-DNS lookups for runtimes that have no DNS. Sends queries over DNS-over-HTTPS (RFC 8484) with `fetch`, and returns the results and error codes of `node:dns/promises`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Looks up DNS records in runtimes without a DNS API. Sends queries over DNS-over-HTTPS (RFC 8484) with `fetch`, and returns the results and error codes of `node:dns/promises`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces `node:dns/promises` where it doesn't exist, [tangerine](https://www.npmjs.com/package/tangerine) and [dohjs](https://www.npmjs.com/package/dohjs).
+Replaces [tangerine](https://www.npmjs.com/package/tangerine) and [dohjs](https://www.npmjs.com/package/dohjs), and `node:dns/promises` in runtimes that don't have it.
 
 ```sh
 npm install @portable/dns
@@ -85,7 +85,7 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` a
 
 Each method rejects with a `TypeError` for a name that isn't a string.
 
-`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA` or `EBADNAME`, which means the name has no records. It returns `false` for any other error, which the caller should treat as a temporary failure. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
+`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA` or `EBADNAME`, which means the name has no records. It returns `false` for any other error, so treat that error as a temporary failure. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
 
 ```ts
 const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
@@ -113,7 +113,7 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 
 `node:dns/promises` needs a DNS socket, which Cloudflare Workers and browsers don't have, and tangerine builds on Node's `Resolver`. This package needs only `fetch`.
 
-- Only records in the question's CNAME chain are returned. Node returns every record of the type in the answer, so a bad or poisoned answer can add an SPF record, and tangerine filters by type only.
+- Only records in the question's CNAME chain are returned. Node returns every record of the type in the answer, so a bad or poisoned answer can add an SPF record. tangerine also filters by type only.
 - A truncated response fails with `EBADRESP`. tangerine logs it and returns the partial data.
 - TXT strings are decoded as UTF-8, and SOA values above 2^31 stay positive. Node decodes TXT as Latin-1 and returns those SOA values as negative numbers.
 - Each lookup clears its timer when it finishes. tangerine leaked an `AbortController` per lookup (tangerine #12).

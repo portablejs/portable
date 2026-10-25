@@ -2,7 +2,7 @@
 export type Address = { hostname: string; port: number };
 
 /**
- * The options a `Connect` receives. A driver passes both, because the type of `connect` in
+ * The options a `Connect` receives. Both are required, because the type of `connect` in
  * `@cloudflare/workers-types` requires `allowHalfOpen`.
  */
 export type Options = {

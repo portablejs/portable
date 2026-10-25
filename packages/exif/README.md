@@ -59,7 +59,7 @@ Dates stay strings, as stored (`'2019:10:20 18:34:30'`), because EXIF dates have
 | `Exif.InvalidInputError` | The TIFF header is malformed: no `II` or `MM` byte order mark, a magic number other than 42, or an IFD0 offset inside the header. |
 | `Exif.TruncatedError` | TIFF or raw EXIF input is shorter than its 8-byte header. |
 
-A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its values point outside the data, and returns the other tags. A file whose EXIF data starts past the end of the input gives empty IFDs.
+A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its values point outside the data, and returns the other tags. If the EXIF data starts past the end of the input, `parse` returns empty IFDs.
 
 ## `Exif.parseStream(stream, options?)`
 
@@ -151,7 +151,7 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - Tags are grouped by IFD, so the thumbnail's `Orientation` is never reported as the image's (exif-parser #30).
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
 - Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
-- exif-parser files Exif IFD tags such as `DateTimeOriginal` under its interop section, and `parse` returns them in `exif`.
+- exif-parser returns Exif IFD tags such as `DateTimeOriginal` in its interop section, and `parse` returns them in `exif`.
 - exif-parser converts `GPSLatitude` and `GPSLongitude` to decimal degrees. `parse` keeps the stored degrees, minutes and seconds in those tags and returns decimal degrees in `latitude` and `longitude`.
 - exif-parser leaves out binary tags unless you call `enableBinaryFields(true)`. `parse` always returns them, as `Uint8Array` views of the input.
 - exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)` and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
