@@ -1,6 +1,6 @@
 # @portable/dns-packet
 
-Encodes and decodes DNS messages in wire format. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Encodes and decodes DNS messages in wire format. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [dns-packet](https://www.npmjs.com/package/dns-packet).
 

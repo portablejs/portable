@@ -1,6 +1,6 @@
 # @portable/compress
 
-One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32, built on the platform's `CompressionStream` and `DecompressionStream`, so it ships no compression code of its own. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32, built on the platform's `CompressionStream` and `DecompressionStream`, so it ships no compression code of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the one-shot use of [pako](https://www.npmjs.com/package/pako) and [fflate](https://www.npmjs.com/package/fflate), and `node:zlib`'s `gzipSync`, `gunzipSync`, `deflateSync`, `inflateSync` and `crc32`.
 

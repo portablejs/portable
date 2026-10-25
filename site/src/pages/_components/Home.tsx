@@ -22,9 +22,9 @@ export function Home() {
         </header>
         <h1>Web-standard building blocks for any JavaScript runtime.</h1>
         <p>
-          Small packages built only on Web Streams, <code>Uint8Array</code>, <code>fetch</code>, and{' '}
-          <code>crypto.subtle</code>. The same code runs in browsers, Cloudflare Workers, Deno, Bun,
-          and Node 24+.
+          Fast, lightweight packages for what your runtime doesn't ship, like CSV, SSE, and DKIM, so
+          you can write code once and know it'll work in browsers, Cloudflare Workers, Node 24+,
+          Bun, and Deno.
         </p>
         <div className="home-cta">
           <a href={`${base}getting-started`}>Get started &rarr;</a>

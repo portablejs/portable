@@ -18,7 +18,7 @@ const rootReadme = readFileSync(join(root, 'README.md'), 'utf8');
 // that do.
 const tcp = {
   description: /, in any JavaScript runtime that has a TCP socket API\.$/,
-  readme: 'Cloudflare Workers, Deno, Bun and Node 24+.',
+  readme: 'Cloudflare Workers, Node 24+, Bun, and Deno.',
 };
 const runtimes: Record<string, { description: RegExp; readme: string }> = {
   smtp: tcp,
@@ -26,7 +26,7 @@ const runtimes: Record<string, { description: RegExp; readme: string }> = {
 };
 const defaultRuntimes = {
   description: /, in any JavaScript runtime\.$/,
-  readme: 'Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.',
+  readme: 'Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.',
 };
 
 const fieldOrder = [

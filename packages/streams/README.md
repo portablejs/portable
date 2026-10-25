@@ -1,6 +1,6 @@
 # @portable/streams
 
-Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body). `@portable/streams/node` replaces `Readable.toWeb` from `node:stream`.
 
@@ -120,7 +120,7 @@ class UpperCaseStream extends TransformStream<string, string> {
 
 ## Convert Node streams
 
-`@portable/streams/node` converts a Node `Readable` to a `ReadableStream`, so web stream APIs and the other Portable packages can read the output of a Node library. It imports `node:stream`, so it runs in Deno, Bun and Node, and not in browsers or Cloudflare Workers.
+`@portable/streams/node` converts a Node `Readable` to a `ReadableStream`, so web stream APIs and the other Portable packages can read the output of a Node library. It imports `node:stream`, so it runs in Node, Bun, and Deno, and not in browsers or Cloudflare Workers.
 
 ```ts
 import { createReadStream } from 'node:fs';

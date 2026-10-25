@@ -1,6 +1,6 @@
 # Portable architecture
 
-Portable is a pnpm monorepo of small packages, published to npm under `@portable/*`. Every package runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+, because it uses only the WinterTC common API. [packages.md](packages.md) lists the packages and the rules for what becomes one. This document covers how the repository is built, tested and released.
+Portable is a pnpm monorepo of small packages, published to npm under `@portable/*`. Every package runs unchanged in browsers, Cloudflare Workers, Node 24+, Bun, and Deno, because it uses only the WinterTC common API. [packages.md](packages.md) lists the packages and the rules for what becomes one. This document covers how the repository is built, tested and released.
 
 Most of the setup is copied from [wevm/ox](https://github.com/wevm/ox), which is also a web-standard TypeScript library with multi-runtime tests. A few pieces come from [wevm/viem](https://github.com/wevm/viem) and [arktypeio/arktype](https://github.com/arktypeio/arktype). Each section says where its setup came from.
 
@@ -86,7 +86,7 @@ The version table shows when each browser first shipped a feature, not whether i
 | WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
 | WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
 
-Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Cloudflare Workers, Deno, Bun and Node 22 and later have every API in both tables.
+Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Cloudflare Workers, Node 22 and later, Bun, and Deno have every API in both tables.
 
 A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, timers uses `scheduler.wait`, and queue, rpc, smtp, timers and websockets set `[Symbol.asyncDispose]` or `[Symbol.dispose]` only where the symbol exists (Chrome 134, Firefox 141 and Node 24, but not Safari 26). No package calls Temporal: an option that takes an instant reads `epochMilliseconds`, so it accepts a `Temporal.Instant` in runtimes that have one and a `Date` in Safari, which has no Temporal. Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
 

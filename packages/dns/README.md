@@ -1,6 +1,6 @@
 # @portable/dns
 
-Looks up DNS records in runtimes without a DNS API. Sends queries over DNS-over-HTTPS (RFC 8484) with `fetch`, and returns the results and error codes of `node:dns/promises`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Looks up DNS records in runtimes without a DNS API. Sends queries over DNS-over-HTTPS (RFC 8484) with `fetch`, and returns the results and error codes of `node:dns/promises`. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [tangerine](https://www.npmjs.com/package/tangerine) and [dohjs](https://www.npmjs.com/package/dohjs), and `node:dns/promises` in runtimes that don't have it.
 

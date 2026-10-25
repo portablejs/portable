@@ -2,7 +2,7 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
-Each package is small, uses only web-standard APIs such as Web Streams, `Uint8Array`, `fetch` and `crypto.subtle`, and runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Fast, lightweight packages for what your runtime doesn't ship, like CSV, SSE, and DKIM, so you can write code once and know it'll work in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 ### Examples
 
@@ -82,7 +82,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tr><td><a href="packages/dns-packet"><code>@portable/dns-packet</code></a></td><td>Encodes and decodes DNS messages in wire format.</td></tr>
 <tr><td><a href="packages/ip"><code>@portable/ip</code></a></td><td>Parses, formats, compares and classifies IPv4 and IPv6 addresses and CIDR blocks.</td></tr>
 <tr><td><a href="packages/rdap"><code>@portable/rdap</code></a></td><td>Looks up who holds a domain name, an IP address or an AS number over RDAP.</td></tr>
-<tr><td><a href="packages/sockets"><code>@portable/sockets</code></a></td><td>The WinterTC Sockets API types for TCP and TLS clients, and a <code>connect</code> for Deno, Bun and Node with the same signature as <code>connect</code> from <code>cloudflare:sockets</code>.</td></tr>
+<tr><td><a href="packages/sockets"><code>@portable/sockets</code></a></td><td>The WinterTC Sockets API types for TCP and TLS clients, and a <code>connect</code> for Node, Bun, and Deno with the same signature as <code>connect</code> from <code>cloudflare:sockets</code>.</td></tr>
 </tbody>
 <tbody>
 <tr><th colspan="2" align="left">Crypto and auth</th></tr>
@@ -131,7 +131,7 @@ Every package follows the same conventions, so once you've used one, you know ho
 
 ### Runtimes
 
-The tests run in Chromium, Firefox, WebKit, Deno, Bun, Node 24 and Node 26. A check of every package also runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124 and Safari 17.4 or later. Ed25519 signatures, in `@portable/web-crypto`, `@portable/dkim`, `@portable/arc` and `@portable/mail-auth`, need Chrome 137 and Firefox 129, and X25519 keys in `@portable/web-crypto` need Chrome 133 and Firefox 130. `@portable/smtp` and `@portable/sockets` need a TCP socket API, so they run in Workers, Deno, Bun and Node but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
+The tests run in Chromium, Firefox, WebKit, Node 24, Node 26, Bun, and Deno. A check of every package also runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124 and Safari 17.4 or later. Ed25519 signatures, in `@portable/web-crypto`, `@portable/dkim`, `@portable/arc` and `@portable/mail-auth`, need Chrome 137 and Firefox 129, and X25519 keys in `@portable/web-crypto` need Chrome 133 and Firefox 130. `@portable/smtp` and `@portable/sockets` need a TCP socket API, so they run in Workers, Node, Bun, and Deno, but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
 
 ### License
 

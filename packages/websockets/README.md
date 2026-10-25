@@ -1,6 +1,6 @@
 # @portable/websockets
 
-A WebSocket that reconnects when the connection drops, read and written as a `ReadableStream` and a `WritableStream` that stay the same across reconnects. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+A WebSocket that reconnects when the connection drops, read and written as a `ReadableStream` and a `WritableStream` that stay the same across reconnects. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [reconnecting-websocket](https://www.npmjs.com/package/reconnecting-websocket), [partysocket](https://www.npmjs.com/package/partysocket) and [websocket-ts](https://www.npmjs.com/package/websocket-ts).
 

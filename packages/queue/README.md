@@ -1,6 +1,6 @@
 # @portable/queue
 
-Limits how many async tasks run at once, in memory. A queue runs tasks by priority, pauses and resumes, cancels with `AbortSignal`, and can cap how many tasks start per interval. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` shares one call between concurrent callers. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Limits how many async tasks run at once, in memory. A queue runs tasks by priority, pauses and resumes, cancels with `AbortSignal`, and can cap how many tasks start per interval. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` shares one call between concurrent callers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [p-limit](https://www.npmjs.com/package/p-limit), [p-queue](https://www.npmjs.com/package/p-queue), [p-map](https://www.npmjs.com/package/p-map) and [p-throttle](https://www.npmjs.com/package/p-throttle). It is not a persistent job queue: tasks are kept in memory and are lost when the process exits.
 
