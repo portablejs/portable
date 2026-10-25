@@ -2,7 +2,7 @@
 
 Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body).
+Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body). `@portable/streams/node` replaces `Readable.toWeb` from `node:stream`.
 
 ```sh
 npm install @portable/streams
@@ -118,6 +118,42 @@ class UpperCaseStream extends TransformStream<string, string> {
 }
 ```
 
+## Convert Node streams
+
+`@portable/streams/node` converts a Node `Readable` to a `ReadableStream`, so web stream APIs and the other Portable packages can read the output of a Node library. It imports `node:stream`, so it runs in Node, Bun and Deno, and not in browsers or Cloudflare Workers.
+
+```ts
+import { createReadStream } from 'node:fs';
+import * as NodeStreams from '@portable/streams/node';
+
+const text = await Streams.toText(NodeStreams.toWeb(createReadStream('notes.txt')));
+```
+
+| Function | Does |
+| --- | --- |
+| `toWeb(readable, { signal })` | A `ReadableStream` of plain `Uint8Array`s from a `Readable` of bytes. `Buffer` chunks become `Uint8Array`s, and the strings from a `Readable` with `setEncoding` are encoded back to the bytes they came from. Any other chunk errors the stream with a `TypeError`. |
+| `toWebObjects(readable, { signal })` | A `ReadableStream` of the values of an object-mode `Readable`, typed `unknown`. `Buffer` chunks become `Uint8Array`s. |
+
+Both read from the `Readable` only when the stream's reader asks for a chunk, so a slow reader pauses the `Readable`. An error or a `destroy()` on the `Readable` errors the stream, and cancelling the stream destroys the `Readable` with the cancel reason. Aborting `signal` errors the stream with `signal.reason` and destroys the `Readable` with it.
+
+A `Buffer` chunk becomes a `Uint8Array` over the same memory, so the conversion copies no bytes. A small `Buffer` and the `Uint8Array` made from it share Node's buffer pool with other buffers. Don't transfer the chunk's `ArrayBuffer`, because that detaches every other buffer in the pool.
+
+For the other conversions, use the ones in `node:stream`: `Readable.fromWeb` for a `ReadableStream` that a Node API needs to read, `Writable.toWeb` and `Writable.fromWeb` for writables, and `Duplex.toWeb` and `Duplex.fromWeb` for transforms. Keep the work in web streams and convert only where a Node API needs a Node stream, such as a file:
+
+```ts
+import { createWriteStream } from 'node:fs';
+import { Writable } from 'node:stream';
+import * as Csv from '@portable/csv';
+
+const response = await fetch('https://example.com/report.csv');
+await response.body!
+  .pipeThrough(new Csv.DecoderStream())
+  .pipeThrough(Streams.map((row: readonly string[]) => `${row.join('\t')}\n`))
+  .pipeThrough(new TextEncoderStream())
+  .pipeThrough(new CompressionStream('gzip'))
+  .pipeTo(Writable.toWeb(createWriteStream('report.tsv.gz')));
+```
+
 ## Types
 
 | Type | Description |
@@ -134,6 +170,15 @@ The libraries above were written for Node streams. This package reads web stream
 - An error in any source of `concat` or `merge` errors the output and cancels the other sources. merge-stream and merge2 didn't propagate errors ([merge-stream #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7)), and concat-stream never called back when the stream errored ([concat-stream #50](https://github.com/max-mapper/concat-stream/issues/50)).
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
 - The collectors reject a number chunk with a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
+
+### Compared with `Readable.toWeb`
+
+`@portable/streams/node` has only the conversion that Node doesn't already do well. Node's `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` follow backpressure and propagate errors, and in a benchmark on Node 24 they ran faster than our versions of them, so this package doesn't wrap them. On Node 24, `NodeStreams.toWeb` differs from `Readable.toWeb` in these ways:
+
+- `Readable.toWeb` passes the strings of a `Readable` with `setEncoding` through as strings, so a `ReadableStream` that should hold bytes holds hex or base64 text. `NodeStreams.toWeb` encodes them back to the original bytes.
+- `Readable.toWeb` read 128 KB from a `Readable` before anything read the stream. `NodeStreams.toWeb` reads from the `Readable` only when the stream is read, and it read 6.8 MB about 1.7× faster.
+- `Readable.toWeb` takes no `signal`.
+- `Readable.toWeb` returns a `ReadableStream<any>`. `NodeStreams.toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>`, and `toWebObjects` returns `ReadableStream<unknown>` for an object-mode `Readable`.
 
 <!-- bench:start -->
 | | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
