@@ -49,7 +49,7 @@ The text matches what `JSON.stringify` gives for the resolved tree. A circular s
 
 ## Why use this over JSONStream, stream-json and json-stream-stringify
 
-Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies.
+Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies outside `@portable/*`.
 
 - `DecoderStream` selected the rows of a 3 MB document about 2.3× faster than JSONStream. It builds only the matched values, so memory use depends on the size of a match. JSONStream keeps the parents of every match and runs out of memory on large files (JSONStream #32, #101).
 - `encodeStream` ran at the same speed as json-stream-stringify on a 3 MB object, and about 1.3× faster on rows from an async iterable.

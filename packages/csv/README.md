@@ -90,7 +90,7 @@ A field is quoted only when it holds the delimiter, the quote, CR or LF, and a r
 
 ## Why use this over csv-parse, papaparse and fast-csv
 
-csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies.
+csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
 
 The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
 

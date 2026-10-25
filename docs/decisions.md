@@ -493,7 +493,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Output is always 8-bit RGBA,** and `encode` takes `{ width, height, data }`, so a caller can pass a canvas `ImageData` or a decode result as is. 16-bit precision is lost, and there is no 16-bit or palette writing.
 - **No compression level option,** because `CompressionStream` has none. Callers set a level inside their own `deflate`.
 - **Rows are filtered by the smallest signed-byte sum,** as libpng does.
-- **The `DecompressionStream` decode benchmark allows 50%.** Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool, which adds 10 to 25 ms on a 1024×1024 image. With `node:zlib` our decoder is faster than pngjs (28 ms vs 40 ms).
+- **The `DecompressionStream` decode benchmark allows 50%.** Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool, which adds 10 to 25 ms on a 1024×1024 image. With `node:zlib` our decoder is faster than pngjs (28 ms vs 37 ms in the README table).
 - **Different from pngjs on purpose:** a `tRNS` pixel keeps its color with alpha 0, gray output uses BT.709 luma, bytes after `IEND` are ignored, and a header claiming more pixels than the data holds throws before allocating (pngjs tried to allocate 40 GB).
 
 ## `@portable/charset` API

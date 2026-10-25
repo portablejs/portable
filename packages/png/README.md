@@ -100,7 +100,7 @@ Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.Unsupporte
 
 ## Why use this over pngjs
 
-pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
+pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies outside `@portable/*`.
 
 - A header that claims more pixels than the data can hold throws `TruncatedError` before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB and throw a `RangeError`.
 - A valid file can still be small and decode to a huge image: a 1-bit 100000×100000 image compresses to about 1.2 MB and decodes to 40 GB of RGBA. `maxPixels` rejects it from the header, as sharp's `limitInputPixels` does. pngjs has no limit.
