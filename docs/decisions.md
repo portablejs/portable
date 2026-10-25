@@ -26,6 +26,24 @@ Decisions made while building the packages, with the options considered and the 
 - **Trade-offs:** Chrome 144, Firefox 139, Node 26 and Deno have Temporal, and Safari doesn't. A caller who works in Temporal has to write `new Date(instant.epochMilliseconds)` for every `now` or `expiresAt` they pass. Naming `Temporal.Instant` in a type needs TypeScript's `esnext.temporal` lib in the caller's project, and a caller without it gets a type error in our declaration files. An object type with `epochMilliseconds` needs no lib, and both `Temporal.Instant` and `Temporal.ZonedDateTime` fit it, while a `Date` doesn't have the property, so a package can tell the two apart without `instanceof`, which fails for a `Date` from another realm. Widening an option's type later doesn't break callers, but changing a result from `Date` to `Temporal.Instant` does, and a result has to work in Safari, so results stay `Date`. A package that later returns Temporal adds a field or a function next to the `Date` one.
 - **Chosen:** instants in options have the type `Date | { readonly epochMilliseconds: number }`, converted to milliseconds by one shared helper that reads `epochMilliseconds` when the value has it and calls `getTime()` otherwise. Instants in results stay `Date`. `Exif.parseDate` returns a `Date` for a value with no time zone and reads it as UTC; a `Temporal.PlainDateTime` would describe that value exactly, so a Temporal variant would be a new function, not a change to `parseDate`.
 
+## `WebCrypto.Hash` stays the four SHA-1 and SHA-2 names
+
+- **Options:** add SHA-3 and other new hashes to `Hash`; give them a separate type.
+- **Trade-offs:** `Hash` is the parameter type of `Digest` and `Hmac`, which callers implement, often with a `Record<Hash, …>` of noble functions. Widening it would break those implementations, while widening the parameter of `WebCrypto.digest`, `hmac` and `hkdf` breaks no one.
+- **Chosen:** a separate type for new hashes, accepted by `digest`, `hmac` and `hkdf` once engines ship them. The `Hash` JSDoc says so.
+
+## `Png.decode` takes `maxPixels`
+
+- **Options:** no limit; `maxPixels` with no limit by default; a finite default such as sharp's 268,402,689 pixels.
+- **Trade-offs:** `rawSize` already rejects a header that claims more pixels than deflate's 1032:1 ratio allows, but a valid 1.2 MB file of a 1-bit 100000×100000 image still decodes to 40 GB of RGBA. A finite default would protect callers who don't read the docs, but it would reject some valid large images, the same trade-off as "Decoders that buffer input take a size limit, with no limit by default".
+- **Chosen:** `maxPixels`, defaulting to `Infinity`, checked against `width * height` when `IHDR` is read, before anything is decompressed or allocated. Going past it throws `Png.MaxPixelsError`, named after the option, which stores `maxPixels`.
+
+## `Csv.decode` types rows by the header names
+
+- **Options:** keep `Record<string, string>` for every header; type rows by an array `header` with `Record<name, string>`; also make the keys optional when `relaxColumnCount` is set; split `decode` into one function for arrays and one for objects, as AGENTS.md asks when an option changes the result type.
+- **Trade-offs:** with `Record<string, string>`, a misspelled column such as `row.emial` type-checks and reads `undefined`. Narrowing the type after the first release would break callers who index a row with a plain `string`, so the choice has to be made now. With `relaxColumnCount`, a short row leaves the missing keys out, so `Record<name, string>` would claim keys that aren't there. `header` already changed the row type before this, through a `const` generic, and `Csv.decode(text, { header: true })` is the form papaparse and csv-parse callers know. The AGENTS.md rule exists to rule out overloads keyed on an option's value; a generic inferred from the option has one signature, and its result type follows from the value the caller wrote.
+- **Chosen:** keep one `decode` and one `DecoderStream`, as an exception to the two-functions rule. A `header` array written in the call types the row as `Record<name, string>`, and `relaxColumnCount: true` makes it `Partial`. `header: true`, a `string[]` variable, and a `relaxColumnCount` that is a plain `boolean` keep the wider or optional type.
+
 ## Byte inputs stay `Uint8Array` only
 
 - **Options:** keep `Uint8Array` as the only byte input, and throw a `TypeError` for anything else; accept any `ArrayBuffer`, `SharedArrayBuffer` or view, as `TextDecoder` does.
@@ -170,7 +188,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** copy dkim's tag parser, canonicalization, key lookup and signing into arc; export them from dkim's main entry; add an `./internal` subpath export to dkim.
 - **Trade-offs:** A copy would drift from dkim, and the AMS is a DKIM signature with a different tag set, so we would have to make every fix twice. Exporting the helpers from the main entry would make them public API. Anyone can import a subpath, but its doc comment says it is not public and can change in any release.
-- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which pnpm publishes as the exact version, so a change to the internal modules is released together with arc.
+- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which pnpm publishes as the exact version, so a change to the internal modules is released together with arc. arc also has an `./internal` subpath, so that `MailAuth.authenticate` can split the message once and compute the body hashes for DKIM, the ARC-Message-Signature and the new seal in one pass. `Dkim.verify` and `Arc.verify` each split into a `planVerify` that returns the body hashes it needs and a `finish` step, and `Arc.seal` into `createSealer`. Before this, `authenticate` buffered the message and canonicalized and hashed the body three times. With one pass it takes less than half the time on a 250 KB message, reads a stream without buffering it, and rejects invalid seal options before it reads the message.
 - **Reviewed:** the consistency pass kept the subpath, because the alternatives are a copy that drifts or a public API nobody else needs. AGENTS.md now says when a package may add an `./internal` subpath and that only `@portable/*` packages import it.
 
 ## arc has only RFC 8617 behavior
@@ -289,7 +307,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 
 - **Options:** also accept an imported `CryptoKey` so a caller can reuse it; take bytes or a string only.
 - **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. A caller who reuses a key can call `crypto.subtle.sign` directly.
-- **Chosen:** bytes or a string only.
+- **Chosen:** bytes or a string only. `hmac` caches the keys it imports, so a caller who signs with the same secret again skips `importKey` without passing a `CryptoKey`.
 
 ## `@portable/rdap` API
 
@@ -330,7 +348,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 
 - **Options:** follow web-push and send whatever the caller gives; check against the RFC limits.
 - **Trade-offs:** push services must accept a 4096-byte body (RFC 8291 §4), which leaves 3993 bytes of payload, and FCM and Apple reject larger ones. An endpoint comes from a browser, so an `http:` endpoint either is a mistake or points the server at an internal address. Rejecting `http:` means a local test push service needs `https:` or a `fetch` that rewrites the URL.
-- **Chosen:** throw `InvalidInputError` for a larger payload and for a non-`https:` endpoint, because both are malformed input under the error rule in AGENTS.md.
+- **Chosen:** throw `InvalidInputError` for a non-`https:` endpoint, and `WebPush.MaxBytesError` (with `maxBytes` 3993) for a larger payload. Callers delete a subscription on `InvalidInputError`, so a payload error has to be a different class, or a long notification would delete valid subscriptions.
 
 ## `@portable/web-push` benchmarks against direct WebCrypto calls
 
@@ -387,7 +405,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Trade-offs:** noble HMAC-SHA256 adds about 3.0 kB gzipped to a browser bundle and needs an optional peer. Node's WebCrypto HMAC is about 7× slower than noble's. Export conditions avoid both costs but give each runtime different code, which tests in one runtime don't cover.
 - **Chosen:** WebCrypto everywhere, because it is the platform API and we expect Node's implementation to get faster. Neither package has a noble dependency or peer any more. `/core` existed to keep the noble default out of bundles, so it is gone, and the option is the only way to pass another function. A browser bundle of `verify` from webhooks is 4.7 kB gzipped, and of `sign` from oauth1 5.1 kB, neither with noble code.
 - **On Node:** a webhooks verification with the default is 1.6× faster than Stripe's `constructEventAsync` and about 1.8× slower than standardwebhooks. An oauth1 GET header is about 5× slower than oauth-1.0a with `node:crypto`. With noble passed in, both are faster than the library they replace. The benchmarks assert against the noble path where the upstream library hashes in JavaScript or `node:crypto`, and against the default where it uses WebCrypto.
-- **The webhooks CryptoKey cache stays.** It holds up to 16 imported keys and clears itself when full. Without it, a verification on Node was 2.9× slower, and an HMAC in Chromium took 12 µs instead of 6 µs.
+- **`WebCrypto.hmac` caches imported keys.** It holds up to 16 keys of at most 256 bytes, keyed by the hash and the key bytes, and clears the cache when it is full. The cache started in webhooks, where verifying without it was 2.9× slower on Node and an HMAC in Chromium took 12 µs instead of 6 µs. It moved into `WebCrypto.hmac` so that oauth1 and any other caller get it too, and webhooks now uses `WebCrypto.hmac` as its default.
 
 ## `@portable/mime-headers` API
 
@@ -478,7 +496,8 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Code tables and flag bits are internal.** Packets carry a `flags` object of booleans, and unnamed codes use RFC 3597 names (`TYPE65534`). An unknown name throws.
 - **TXT decodes to `Uint8Array[]`,** which keeps binary and DNS-SD data intact. `@portable/dns` can turn it into text.
 - **CAA `flags` keeps the whole byte** and SVCB/HTTPS stay raw bytes, so DNSSEC-signed data re-encodes exactly.
-- **No subpath for decode-only use:** encode and decode together are 6.6 kB minified and gzipped, and decode alone 5.7 kB.
+- **No subpath for decode-only use:** encode and decode together are 7.4 kB minified and gzipped.
+- **Addresses are parsed and formatted by `@portable/ip`.** `encode` passes each A, AAAA and CLIENT_SUBNET address to `Ip.parse` and wraps its error in `InvalidInputError` with the original as `cause`, so `010.0.0.1`, which `inet_aton` reads as octal 8, throws as it does everywhere else in the family. A zone throws too, because DNS can't carry one. `decode` formats addresses with `Ip.format`, so an IPv4-mapped address is `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends and as Node's `resolve6` writes it. Its own parser kept dns-packet at 7.0 kB, but the two parsers had already drifted apart: dns-packet read `010.0.0.1` as 10.0.0.1 and wrote mapped addresses in hex. `@portable/dns`, which already bundles ip, gets smaller.
 
 ## `@portable/quoted-printable` API
 
