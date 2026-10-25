@@ -186,7 +186,7 @@ describe('csv-stringify', () => {
       expect(() => Csv.encode([['a']], { header: true })).toThrow(TypeError);
     });
 
-    test('throws InvalidInputError for an array row after object rows', () => {
+    test('throws InvalidInputError for an object row after array rows', () => {
       expect(() => Csv.encode([{ a: 1 }, ['x']], { header: true })).not.toThrow();
       expect(() => Csv.encode([['x'], { a: 1 }])).toThrow(Csv.InvalidInputError);
     });

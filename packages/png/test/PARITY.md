@@ -9,7 +9,7 @@ Upstream suite: [pngjs](https://github.com/pngjs/pngjs) 7.0.0 `test/*-spec.js` a
 
 ## API changes
 
-pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four functions, designed for the shared [API conventions](../../../../AGENTS.md#api-conventions). Each pngjs test maps to the test for the same case below.
+pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four functions, designed for the shared [API conventions](../../../AGENTS.md#api-conventions). Each pngjs test maps to the test for the same case below.
 
 | pngjs | @portable/png | Why |
 | --- | --- | --- |

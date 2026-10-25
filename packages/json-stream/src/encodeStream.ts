@@ -386,5 +386,5 @@ function isAsync(value: unknown): boolean {
 }
 
 function isOmitted(value: unknown): boolean {
-  return value === undefined || typeof value === 'symbol' || typeof value === 'function';
+  return value === undefined || typeof value === 'symbol';
 }

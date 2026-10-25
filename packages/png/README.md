@@ -73,7 +73,7 @@ Bytes after `IEND` are ignored. Unknown ancillary chunks are skipped.
 | `deflate` | `CompressionStream('deflate')` | Compresses to zlib format. Required for `encodeSync`. Pass one to choose a compression level. |
 | `colorType` | `6` | `0` grayscale, `2` RGB, `4` grayscale with alpha or `6` RGBA. Gray is the BT.709 luma of each pixel. |
 | `background` | `{ red: 255, green: 255, blue: 255 }` | Color that semi-transparent pixels are blended onto for color types without alpha. |
-| `filter` | `[0, 1, 2, 3, 4]` | A filter for every row (0 none, 1 sub, 2 up, 3 average, 4 Paeth), or a list to choose from per row. With a list, each row gets the filter whose output has the smallest sum as signed bytes, as libpng does. |
+| `filter` | `[0, 1, 2, 3, 4]` | A filter for every row (0 none, 1 sub, 2 up, 3 average, 4 Paeth), or a list to choose from per row. With a list, each row gets the filter whose output has the smallest sum of absolute values, with each byte read as signed, as libpng does. |
 | `signal` | none | `encode` only. Aborting rejects with `signal.reason` and stops the default compression. |
 
 The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
@@ -83,7 +83,7 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 | Error | Thrown when |
 | --- | --- |
 | `TruncatedError` | The file ends before `IEND` or inside a chunk, or holds less image data than its header describes. |
-| `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length, and a `RangeError` for an invalid `filter`. |
+| `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length or a `width` or `height` that isn't a positive integer, and a `RangeError` for an invalid `filter`. |
 | `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
 
 Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.UnsupportedError`.
@@ -100,14 +100,13 @@ Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.Unsuppo
 
 pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
 
-- A header that claims more pixels than the data can hold is rejected before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB.
+- A header that claims more pixels than the data can hold throws `TruncatedError` before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB and throw a `RangeError`.
 - Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.4× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool.
 - Encoding with `CompressionStream` was about as fast as pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
 - A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
 - Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
 - A pixel matching the `tRNS` color gets alpha 0 and keeps its color. pngjs makes it black.
 - `encode` computes gray as BT.709 luma. pngjs averages the channels.
-- A header that claims a huge image throws `TruncatedError`, where pngjs throws a `RangeError` from the failed allocation.
 - The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs. pngjs's `deflateLevel` has no equivalent, so pass a `deflate` function to choose a level.
 - pngjs sets `gamma` to `0` when there is no `gAMA` chunk, and `decode` returns `gamma: undefined`.
 - Pixels are always 8-bit RGBA, so pngjs's `skipRescale`, `bitDepth: 16`, `inputColorType` and `inputHasAlpha` options have no equivalent. Neither do pngjs's `bitblt` and `adjustGamma`.

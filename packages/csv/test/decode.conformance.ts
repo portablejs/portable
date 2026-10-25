@@ -512,6 +512,13 @@ describe('csv-parse', () => {
         expect.stringMatching(/Row 4\b/),
       );
     });
+
+    test('gives the number of the first row that was read, after skipped lines', async () => {
+      expect(await decodeError('\n\na,b\nc')).toHaveProperty(
+        'message',
+        'Row 4 has 1 fields, but row 3 has 2.',
+      );
+    });
   });
 
   describe('maxLength', () => {

@@ -77,10 +77,10 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * built, with `JSON.parse`, and everything else is checked for syntax and dropped. Input may hold
  * several top-level values separated by whitespace, as in NDJSON or concatenated JSON.
  *
- * The stream fails with `InvalidInputError` on malformed JSON and with `TruncatedError` when the
+ * The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the
  * input ends inside a value, and with `MaxLengthError` on a matched value longer than `maxLength`.
- * A structural error inside a matched value, such as a missing comma,
- * is reported when that value ends.
+ * A structural error inside a matched value, such as a missing comma, is reported when that value
+ * ends.
  *
  * @example
  * ```ts
