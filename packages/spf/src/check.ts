@@ -18,14 +18,6 @@ import { hostToAscii } from '@portable/idna/internal';
  * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`,
  * `ENODATA` or `EBADNAME` (an invalid name) as an empty answer, and any other rejection as a
  * temporary DNS error.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as Spf from '@portable/spf';
- *
- * const resolver: Spf.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Pick<
   Dns.Resolver,
@@ -34,16 +26,6 @@ export type Resolver = Pick<
 
 /**
  * The outcome of an SPF check.
- *
- * @example
- * ```ts
- * import * as Spf from '@portable/spf';
- *
- * const spf: Spf.Result = await Spf.check({ ip, sender, helo }, { resolver });
- * if (spf.result === 'fail') {
- *   reject(`550 ${spf.explanation ?? 'SPF check failed'}`);
- * }
- * ```
  */
 export type Result = {
   /** The RFC 7208 result. */
@@ -161,7 +143,7 @@ export async function check(input: check.Input, options: check.Options): Promise
   }
   const address = parseIp(input.ip.trim());
   if (!address) {
-    throw new RangeError(`Spf.check: "${String(input.ip)}" is not an IP address`);
+    throw new RangeError(`Spf.check: "${input.ip}" is not an IP address`);
   }
   const client = Ip.unmap(address);
   const helo = stripDot(input.helo ?? '');

@@ -92,11 +92,15 @@ describe('Dmarc.check', () => {
     }
   });
 
-  test('rejects with the reason when the signal aborts during a lookup', async () => {
+  test('rejects with the reason and aborts the lookup when the signal aborts during a lookup', async () => {
     const controller = new AbortController();
     const reason = new Error('timeout');
     const timer = setTimeout(() => controller.abort(reason), 20);
-    const never = () => new Promise<never>(() => {});
+    let lookupSignal: AbortSignal | undefined;
+    const never = (_name: string, options?: { signal?: AbortSignal | undefined }) => {
+      lookupSignal = options?.signal;
+      return new Promise<never>(() => {});
+    };
     const checked = Dmarc.check(
       { from: 'sub.example.com', dkim: [pass('example.com')] },
       {
@@ -105,6 +109,7 @@ describe('Dmarc.check', () => {
       },
     );
     await expect(checked).rejects.toBe(reason);
+    expect(lookupSignal?.aborted).toBe(true);
     clearTimeout(timer);
   });
 

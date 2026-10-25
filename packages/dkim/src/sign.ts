@@ -125,7 +125,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     Canonicalization,
   ];
 
-  const split = await splitMessage(message);
+  const split = await splitMessage(message, signal);
   const fields = parseFields(toBinary(split.header));
   const selected = selectForSigning(fields, names);
   if (!selected.some((field) => field.name === 'from')) {
@@ -133,11 +133,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     throw new InvalidInputError('The message has no From field to sign.');
   }
   const request = { canonicalization: bodyCanonicalization } satisfies BodyHash;
-  const cancel = () => void split.body.cancel().catch(() => {});
-  signal?.addEventListener('abort', cancel, { once: true });
-  const digests = await hashBody(split.body, [request], hasher).finally(() =>
-    signal?.removeEventListener('abort', cancel),
-  );
+  const digests = await hashBody(split.body, [request], hasher);
   signal?.throwIfAborted();
   const bodyHash = Base64.encode(digests.get(bodyHashKey(request))!.digest);
 

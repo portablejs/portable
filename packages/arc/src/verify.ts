@@ -37,27 +37,11 @@ import {
 /**
  * The DNS lookup ARC needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
  * object with `resolveTxt`. It is the same as `Dkim.Resolver`.
- *
- * @example
- * ```ts
- * import * as Arc from '@portable/arc';
- * import * as Dns from '@portable/dns';
- *
- * const resolver: Arc.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Dkim.Resolver;
 
 /**
  * The outcome of validating a message's ARC chain.
- *
- * @example
- * ```ts
- * import * as Arc from '@portable/arc';
- *
- * const arc: Arc.Result = await Arc.verify(message, { resolver });
- * const google = arc.sets.find((set) => set.domain === 'google.com');
- * ```
  */
 export type Result = {
   /** The chain validation status (RFC 8617 section 4.4), which is also the `arc=` result. */
@@ -142,8 +126,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   if (typeof resolver?.resolveTxt !== 'function') {
     throw new TypeError('options.resolver must have a resolveTxt method.');
   }
-  signal?.throwIfAborted();
-  const { header, body } = await splitMessage(message);
+  const { header, body } = await splitMessage(message, signal);
   const fields = parseFields(toBinary(header));
   const { instance } = newest(fields);
   const failed = (reason: string, cause?: unknown): Result => ({
@@ -201,11 +184,7 @@ export async function verify(message: Message, options: verify.Options): Promise
     key.catch(() => {});
     keys.set(keyName, key);
   }
-  const cancel = () => void body.cancel().catch(() => {});
-  signal?.addEventListener('abort', cancel, { once: true });
-  const digests = await hashBody(body, [signature.body], hasher).finally(() =>
-    signal?.removeEventListener('abort', cancel),
-  );
+  const digests = await hashBody(body, [signature.body], hasher);
   signal?.throwIfAborted();
 
   const digest = digests.get(bodyHashKey(signature.body))!;

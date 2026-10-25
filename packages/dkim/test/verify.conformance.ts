@@ -909,13 +909,39 @@ describe('input', () => {
     await expect(Dkim.verify('', {} as Dkim.verify.Options)).rejects.toThrow(TypeError);
   });
 
-  test('rejects with the reason when the signal aborts a key lookup', async () => {
+  test('rejects with the reason and aborts the lookup when the signal aborts a key lookup', async () => {
     const controller = new AbortController();
-    const resolver = { resolveTxt: () => new Promise(() => {}) } satisfies Dkim.Resolver;
+    let lookupSignal: AbortSignal | undefined;
+    const resolver = {
+      resolveTxt: (_name: string, options?: { signal?: AbortSignal | undefined }) => {
+        lookupSignal = options?.signal;
+        return new Promise<string[][]>(() => {});
+      },
+    } satisfies Dkim.Resolver;
     const pending = Dkim.verify(await std(), { resolver, signal: controller.signal });
     const reason = new Error('stop');
     setTimeout(() => controller.abort(reason), 10);
     await expect(pending).rejects.toBe(reason);
+    expect(lookupSignal?.aborted).toBe(true);
+  });
+
+  test('rejects with the reason and cancels the message when the signal aborts the header read', async () => {
+    const controller = new AbortController();
+    let cancelled = false;
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n'));
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const pending = Dkim.verify(message, { resolver: resolverFrom({}), signal: controller.signal });
+    const reason = new Error('stop');
+    setTimeout(() => controller.abort(reason), 10);
+    await expect(pending).rejects.toBe(reason);
+    expect(cancelled).toBe(true);
   });
 
   test('rejects with the reason and cancels the message when the signal aborts the read', async () => {

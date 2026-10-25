@@ -10,29 +10,11 @@ import { assertAuthservId, formatResults } from './internal/results.js';
 /**
  * The DNS lookups SPF, DKIM, DMARC and ARC need: a `Dns.Resolver` from `@portable/dns`,
  * `node:dns/promises`, or a plain object with these methods.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as MailAuth from '@portable/mail-auth';
- *
- * const resolver: MailAuth.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver;
 
 /**
  * What `authenticate` found, and the header fields to add to the message.
- *
- * @example
- * ```ts
- * import * as MailAuth from '@portable/mail-auth';
- *
- * const result: MailAuth.Result = await MailAuth.authenticate(message, options);
- * if (result.dmarc?.disposition === 'reject') {
- *   reject('550 5.7.1 Rejected by DMARC policy');
- * }
- * ```
  */
 export type Result = {
   /** The SPF result for the MAIL FROM address, or the HELO name for a bounce. */

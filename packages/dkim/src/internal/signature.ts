@@ -286,7 +286,7 @@ export async function fetchKey(
 ): Promise<KeyRecord> {
   let records: string[][];
   try {
-    records = await abortable(resolver.resolveTxt(name), signal);
+    records = await abortable(resolver.resolveTxt(name, { signal }), signal);
   } catch (error) {
     if (signal?.aborted) {
       throw signal.reason;

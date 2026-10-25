@@ -120,9 +120,8 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   if (type === 'rsa' && (key.algorithm as RsaHashedKeyAlgorithm).modulusLength < 1024) {
     throw new RangeError('RSA keys shorter than 1024 bits are not allowed (RFC 8301 section 3.2).');
   }
-  signal?.throwIfAborted();
 
-  const split = await splitMessage(message);
+  const split = await splitMessage(message, signal);
   const refuse = async (error: Error): Promise<never> => {
     await split.body.cancel();
     throw error;
@@ -176,11 +175,7 @@ export async function seal(message: Message, options: seal.Options): Promise<str
     return refuse(new InvalidInputError('The message has no From field to sign.'));
   }
 
-  const cancel = () => void split.body.cancel().catch(() => {});
-  signal?.addEventListener('abort', cancel, { once: true });
-  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hasher).finally(
-    () => signal?.removeEventListener('abort', cancel),
-  );
+  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hasher);
   signal?.throwIfAborted();
   const bodyHash = Base64.encode([...digests.values()][0]!.digest);
 

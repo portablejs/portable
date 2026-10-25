@@ -108,8 +108,11 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 - It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os` and Buffers.
 - It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
 - It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a reader that splits the field on semicolons.
-- It authenticates and seals a short message faster: 445 times a second against 303 for mailauth's strict mode in one run in Node, and about the same, 243 against 251, for a 250 KB message with a DKIM signature and an ARC set.
+- It authenticates and seals a short message faster than mailauth's strict mode in Node, and authenticates a 250 KB message with a DKIM signature and an ARC set about as fast, as the table below shows.
 - It has no dependencies outside `@portable/*`.
+
+Differences to check when you switch from mailauth:
+
 - mailauth's `mta` defaults to `os.hostname()`, and `authservId` has no default, so pass it.
 - mailauth's `resolver` is a function of `(name, type)`. Here `resolver` is an object with `resolveTxt` and the other methods, such as `node:dns/promises`.
 - mailauth's `strict` and `rejectRsaSha1` options have no equivalent, because this package always behaves as if both were set: an rsa-sha1 signature gives DKIM `policy`.

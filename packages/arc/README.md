@@ -38,6 +38,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `result` | `'pass'`, `'fail'` or `'none'` (no ARC fields). It is the `arc=` result of Authentication-Results and the `cv=` value for the next seal. |
 | `instance` | The highest instance on the message's ARC fields, 0 when there are none. |
 | `reason` | Why the result is `fail`, such as `i=1 ams body hash did not verify` or `i=2 as no key`. |
+| `cause` | The resolver's error when a key lookup failed. |
 | `sets` | On `pass`, each set from `i=1` to the newest, with the sealer's `domain` and `selector` and its `authResults`, the ARC-Authentication-Results text after `i=`. Empty otherwise. |
 
 A receiver uses `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
@@ -84,14 +85,14 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 | Type | Description |
 | --- | --- |
 | `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
-| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason` and `sets`, as above. |
+| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause` and `sets`, as above. |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:stream` and Buffers, so it doesn't run in Workers or a browser.
 - It follows RFC 8617 by default. mailauth's default mode accepts ARC-Seal syntax errors, instances such as `i=0x1`, and an ARC-Message-Signature without `c=` signed relaxed/relaxed, as the ARC drafts did. mailauth follows the RFC only with `strict: true`. This package always follows the RFC, and it gives mailauth's strict result on every message of ValiMail's ARC test suite and on 11 altered copies of chains it seals.
 - Sealing is explicit. `seal` requires `chainValidation` once a chain exists, and it throws for options that would produce a set no validator accepts, such as an instance with a gap, instead of producing that set with a warning.
-- It verifies faster. In one run in Node, it verified a 250 KB message with two ARC sets 372 times a second, against 251 for mailauth's strict mode, and sealed it 229 times a second, against 207.
+- It verifies faster. In Node it verifies a 250 KB message with two ARC sets about one and a half times as fast as mailauth, and seals it a little faster, as the table below shows.
 - It has no dependencies outside `@portable/*`.
 
 <!-- bench:start -->

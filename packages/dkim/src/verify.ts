@@ -11,27 +11,11 @@ import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.j
  * The DNS lookup DKIM needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
  * object with `resolveTxt`. `verify` treats a rejection with `code` `ENOTFOUND`, `ENODATA` or
  * `EBADNAME` as no key, and any other rejection as a temporary DNS error.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as Dkim from '@portable/dkim';
- *
- * const resolver: Dkim.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt'>;
 
 /**
  * The outcome of one DKIM-Signature field.
- *
- * @example
- * ```ts
- * import * as Dkim from '@portable/dkim';
- *
- * const results: Dkim.Result[] = await Dkim.verify(message, { resolver });
- * const passed = results.filter((r) => r.result === 'pass' && !r.testing).map((r) => r.domain);
- * ```
  */
 export type Result = {
   /** The RFC 8601 result. */
@@ -106,8 +90,7 @@ export async function verify(message: Message, options: verify.Options): Promise
   if (typeof resolver?.resolveTxt !== 'function') {
     throw new TypeError('options.resolver must have a resolveTxt method.');
   }
-  signal?.throwIfAborted();
-  const { header, body } = await splitMessage(message);
+  const { header, body } = await splitMessage(message, signal);
   const fields = parseFields(toBinary(header));
   const signatures = fields
     .filter((field) => field.name === 'dkim-signature')
@@ -127,13 +110,11 @@ export async function verify(message: Message, options: verify.Options): Promise
     key.catch(() => {});
     keys.set(keyName, key);
   }
-  const stop = () => void body.cancel().catch(() => {});
-  signal?.addEventListener('abort', stop, { once: true });
   const digests = await hashBody(
     body,
     pending.map((signature) => signature.body),
     hasher,
-  ).finally(() => signal?.removeEventListener('abort', stop));
+  );
   signal?.throwIfAborted();
 
   return Promise.all(

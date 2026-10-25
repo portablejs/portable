@@ -604,6 +604,28 @@ describe('cancellation', () => {
     ).rejects.toBe(reason);
   });
 
+  test('rejects with the reason and cancels the message when the signal aborts the header read', async () => {
+    const controller = new AbortController();
+    let cancelled = false;
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n'));
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const pending = Arc.verify(message, {
+      resolver: resolverFrom(records),
+      signal: controller.signal,
+    });
+    const reason = new Error('stop');
+    setTimeout(() => controller.abort(reason), 10);
+    await expect(pending).rejects.toBe(reason);
+    expect(cancelled).toBe(true);
+  });
+
   test('stops a pending key lookup', async () => {
     const { message } = await singleSet();
     const controller = new AbortController();

@@ -62,6 +62,7 @@ In Node, `node:dns/promises` works as the resolver.
 | `spf` | `{ domain, aligned }` for the SPF result. Set when `spf` was passed. |
 | `dkim` | `{ domain, aligned }` for each signature, in the order they were passed. |
 | `reason` | Why the result is `none`, `temperror` or `permerror`. |
+| `cause` | The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one lookup failed. |
 
 `none` means DMARC doesn't apply: there is no record, the record has no valid policy and no valid `rua`, or the From domain is an address literal. `permerror` means `from` isn't a domain name, such as an empty string or a domain with a space or an invisible character.
 
@@ -94,8 +95,8 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 - It follows RFC 9989 and RFC 6376's tag-list rules without a mode switch. mailauth's default mode accepts whitespace before `v=DMARC1`, uses the last of duplicate tags and case-folds tag names, and mailauth follows the RFCs only with `strict: true`. The results match mailauth's strict mode on 400 random zones.
 - It reports the alignment of each DKIM signature, not only the first that aligned, and gives the disposition directly.
 - It makes fewer DNS queries. mailauth walks above the From domain on every message, and asks whether the domain exists whenever the record has `np`. `check` walks only for a relaxed alignment check of a different domain, and asks whether the domain exists only when `np` would change the policy.
-- It has no dependencies of its own, and `@portable/dns` and `@portable/spf` are imported for types only.
-- It is about as fast. On a subdomain with an inherited record, relaxed alignment and three identifiers, it runs 18,700 checks a second in Node against 15,900 for mailauth's strict mode, with an in-memory resolver.
+- It has no dependencies outside `@portable/*`, and `@portable/spf` is imported for types only.
+- It is a little faster. The table below checks a subdomain with an inherited record, relaxed alignment and three identifiers in Node, with an in-memory resolver.
 
 <!-- bench:start -->
 | | @portable/dmarc | mailauth, strict mode |
@@ -121,8 +122,8 @@ Differences to check when you switch from mailauth:
 - mailauth returns `false` for a From header without exactly one domain. Decide that before calling `check`: a `from` that isn't a domain name gives `permerror`, and a domain literal gives `none`.
 - mailauth's `dkimDomains` takes only passing signatures, with an `underSized` flag. `dkim` takes every signature and reports the alignment of each, so check a signature's `l=` tag yourself.
 - mailauth's `resolver` is one `(name, type)` function. `check` takes an object with `resolveTxt`, `resolve4` and `resolveCname`, such as `node:dns/promises`.
-- mailauth's `arcResult` has no equivalent. `@portable/mail-auth` will combine ARC and DMARC.
+- mailauth's `arcResult` has no equivalent. `@portable/mail-auth` adds the ARC result to the comment of its `dmarc=` result.
 - mailauth's `result.domain`, the organizational domain, is not reported. `policyDomain` gives the domain that holds the record.
 - mailauth gives `temperror` when the resolver times out. A `signal` such as `AbortSignal.timeout(ms)` makes `check` reject instead.
-- mailauth's `status.header`, `info` and `warnings` have no equivalent. `@portable/mail-auth` will build Authentication-Results headers.
+- mailauth's `status.header`, `info` and `warnings` have no equivalent. `@portable/mail-auth` builds the Authentication-Results field.
 - `pct` and `ri` are not reported, because RFC 9989 made them historic.

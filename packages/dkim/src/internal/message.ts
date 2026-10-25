@@ -4,13 +4,6 @@ const LF = 0x0a;
 
 /**
  * A message as `sign` and `verify` take it. Text is encoded as UTF-8.
- *
- * @example
- * ```ts
- * import * as Dkim from '@portable/dkim';
- *
- * const message: Dkim.Message = request.body!;
- * ```
  */
 export type Message = ReadableStream<Uint8Array> | Uint8Array | string;
 
@@ -25,10 +18,15 @@ export type Body = {
  * first, in the header section and the body, because messages stored on disk often use LF and
  * DKIM hashes CRLF line ends. `header` holds the header fields with the CRLF that ends the last
  * one, and without the empty line. A message that starts with an empty line has no header
- * fields, and one without an empty line has no body.
+ * fields, and one without an empty line has no body. When `signal` aborts, the stream is cancelled
+ * and the pending read, in the header section or the body, rejects with `signal.reason`.
  */
-export async function splitMessage(input: Message): Promise<{ header: Uint8Array; body: Body }> {
-  const source = readChunks(input);
+export async function splitMessage(
+  input: Message,
+  signal: AbortSignal | undefined,
+): Promise<{ header: Uint8Array; body: Body }> {
+  signal?.throwIfAborted();
+  const source = readChunks(input, signal);
   const next = normalizeLineEnds(source.read);
   let header = new Uint8Array(4096);
   let length = 0;
@@ -79,7 +77,7 @@ function findEmptyLine(bytes: Uint8Array, from: number, to: number): number {
   return -1;
 }
 
-function readChunks(input: Message): Body {
+function readChunks(input: Message, signal: AbortSignal | undefined): Body {
   if (typeof input === 'string') {
     input = new TextEncoder().encode(input);
   }
@@ -101,18 +99,31 @@ function readChunks(input: Message): Body {
     throw new TypeError('Expected the message as a ReadableStream, a Uint8Array or a string.');
   }
   const reader = input.getReader();
+  const abort = () => void reader.cancel(signal?.reason).catch(() => {});
+  const release = () => signal?.removeEventListener('abort', abort);
+  signal?.addEventListener('abort', abort, { once: true });
   return {
     async read() {
-      const { done, value } = await reader.read();
-      if (done) {
-        return undefined;
+      try {
+        const { done, value } = await reader.read();
+        signal?.throwIfAborted();
+        if (done) {
+          release();
+          return undefined;
+        }
+        if (!isUint8Array(value)) {
+          throw new TypeError('Expected Uint8Array chunks.');
+        }
+        return value;
+      } catch (error) {
+        release();
+        throw error;
       }
-      if (!isUint8Array(value)) {
-        throw new TypeError('Expected Uint8Array chunks.');
-      }
-      return value;
     },
-    cancel: () => reader.cancel(),
+    cancel() {
+      release();
+      return reader.cancel();
+    },
   };
 }
 

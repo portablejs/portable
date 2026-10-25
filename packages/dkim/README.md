@@ -82,6 +82,7 @@ There is no default resolver, so you decide which servers see the lookups. It tr
 | `identity` | The `i=` value decoded, with its domain as an A-label, or `@` and the domain when there is no `i=`. For `header.i`. |
 | `signature` | `b=` without whitespace, for `header.b` (RFC 6008). |
 | `reason` | Why the result is not `pass`, such as `body hash did not verify` or `no key`. |
+| `cause` | The resolver's error behind a `temperror`. |
 | `testing` | The key has `t=y`: the domain is testing DKIM, and a pass should count as unsigned mail. |
 | `bodyLength` | The `l=` value, when there is one. |
 | `unsignedBodyBytes` | With `l=`, how many canonicalized body bytes follow the signed part. Anyone could have added them. |
@@ -124,7 +125,7 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 - It follows the RFCs by default. mailauth's default mode accepts signatures that RFC 6376 rejects, such as a missing `v=`, a duplicate tag or rsa-sha1, and mailauth follows the RFC only with `strict: true`. mailauth's strict mode accepts the signatures `sign` makes, `verify` accepts the signatures of mailauth and nodemailer, and the two verifiers agree on 12 kinds of changed message.
 - It refuses what it can't sign safely. nodemailer silently removes tag delimiters from the domain and sends the message unsigned when the key is unusable. `sign` throws for both.
 - It has no dependencies outside `@portable/*`. mailauth pulls in libmime, punycode.js, tldts, joi and more.
-- It verifies faster. In one run in Node, it verified a 250 KB message 170 times a second, against 35 for mailauth's strict mode, and signed it 56 times a second, against 54 for mailauth and 62 for nodemailer.
+- It verifies faster. In Node it verifies a 250 KB message about three times as fast as mailauth, and signs it about as fast as nodemailer, as the table below shows.
 
 <!-- bench:start -->
 | | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |

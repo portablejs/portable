@@ -345,6 +345,25 @@ describe('options', () => {
     await expect(seal(baseMessage, { signal: AbortSignal.abort(reason) })).rejects.toBe(reason);
   });
 
+  test('rejects with the reason and cancels the message when the signal aborts the header read', async () => {
+    const controller = new AbortController();
+    let cancelled = false;
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n'));
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const pending = Arc.seal(message, await options({ signal: controller.signal }));
+    const reason = new Error('stop');
+    setTimeout(() => controller.abort(reason), 10);
+    await expect(pending).rejects.toBe(reason);
+    expect(cancelled).toBe(true);
+  });
+
   test('the result verifies with a resolver for the published key', async () => {
     const fields = await seal(baseMessage);
     const resolver = resolverFrom(records);

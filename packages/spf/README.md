@@ -55,7 +55,7 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 ## Result
 
-`check` resolves to a plain object. It rejects only for an invalid `ip`.
+`check` resolves to a plain object. It rejects only for an invalid `ip`, or with `signal.reason` when `signal` aborts.
 
 | Field | Description |
 | --- | --- |
@@ -66,6 +66,7 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 | `record` | The SPF record that gave the result. After `redirect=`, the record of the redirect target. |
 | `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text. |
 | `reason` | Why the result is `none`, `temperror` or `permerror`, such as `More than 10 DNS-querying terms`. |
+| `cause` | The resolver's error behind a `temperror`. |
 | `lookups` | DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
 | `voidLookups` | Lookups that found no records. |
 
@@ -93,13 +94,14 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 | Type | Description |
 | --- | --- |
 | `Spf.Resolver` | `Pick<Dns.Resolver, 'resolve4' \| 'resolve6' \| 'resolveMx' \| 'resolvePtr' \| 'resolveTxt'>`, the lookups `check` needs. |
+| `Spf.Result` | What `check` resolves to, as above. `Spf.Result.Code` is the type of `result`. |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
 - It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and RFC behavior needs `strict: true`. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
 - It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
-- It is faster. On a record with nested includes and a fake resolver, it runs 11,000 to 13,000 checks a second in Node, against 9,000 for mailauth's default mode and 7,000 for its strict mode.
+- It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 
 <!-- bench:start -->
 | | @portable/spf | mailauth | mailauth, strict mode |
