@@ -85,7 +85,7 @@ export async function parseStream(
     throw new UnsupportedError();
   } finally {
     signal?.removeEventListener('abort', abort);
-    reader.cancel().catch(() => {});
+    reader.cancel(signal?.reason).catch(() => {});
   }
 }
 

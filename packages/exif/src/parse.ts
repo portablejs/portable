@@ -5,11 +5,13 @@ import { type Ifds, type Tiff, readTiff } from './tiff.js';
 /** Metadata read by `parse`. Every IFD is an object, empty when the file doesn't have it. */
 export type Metadata = Ifds & {
   /**
-   * GPS latitude in signed decimal degrees, south negative. Set when `gps.GPSLatitude` is numeric.
+   * GPS latitude in signed decimal degrees, south negative. Set when `gps.GPSLatitude` and
+   * `gps.GPSLongitude` are both numeric.
    */
   latitude?: number | undefined;
   /**
-   * GPS longitude in signed decimal degrees, west negative. Set when `gps.GPSLongitude` is numeric.
+   * GPS longitude in signed decimal degrees, west negative. Set when `gps.GPSLatitude` and
+   * `gps.GPSLongitude` are both numeric.
    */
   longitude?: number | undefined;
   /** Size of the stored image in pixels, before any `Orientation` rotation. */

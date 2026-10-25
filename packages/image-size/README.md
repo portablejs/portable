@@ -59,11 +59,13 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 
 | Type | Description |
 | --- | --- |
+| `ImageSize.Size` | What `parse` and `parseStream` return, described above. |
+| `ImageSize.Type` | The `type` values listed under `Size`. |
 | `ImageSize.Image` | `{ width, height, type? }`, one entry of `images` for a file that holds several images. |
 
 ## Why use this over image-size
 
-`parseStream` reads a `fetch` body or a `File` only up to the header and then cancels it, in any JavaScript runtime. The package has no dependencies.
+`parseStream` reads a `fetch` body or a `File` only up to the header and then cancels it, in any JavaScript runtime. The package has no dependencies outside `@portable/*`.
 
 - `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 60× slower, and image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
 - `parse` read `large.jpg` about 400× faster than image-size, and was 2.5 to 55× faster on the PNG, HEIC, WebP, SVG and TIFF fixtures.

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, test, vi } from 'vite-plus/test';
 import * as Exif from '@portable/exif';
 import * as Png from '@portable/png';
 import {
@@ -220,5 +220,12 @@ describe('strip', () => {
     const result = collect(source.pipeThrough(new Exif.StripStream({ signal: controller.signal })));
     controller.abort(new Error('stop'));
     await expect(result).rejects.toThrow('stop');
+  });
+
+  test('StripStream removes its abort listener when its output is cancelled', async () => {
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    await new Exif.StripStream({ signal: controller.signal }).readable.cancel();
+    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });

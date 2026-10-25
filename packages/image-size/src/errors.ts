@@ -57,8 +57,8 @@ export class TruncatedError extends Errors.TruncatedError {
  *   ImageSize.parse(new TextEncoder().encode('<svg width="10"></svg>'));
  * } catch (error) {
  *   if (error instanceof ImageSize.InvalidInputError) {
- *     console.log(error.message);
- *   } // 'Invalid SVG'
+ *     console.log(error.message); // 'Invalid SVG'
+ *   }
  * }
  * ```
  */

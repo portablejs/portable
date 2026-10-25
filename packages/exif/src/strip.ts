@@ -26,7 +26,8 @@ export declare namespace strip {
  * byte of the image data is copied unchanged.
  *
  * @throws {UnsupportedError} The input is not a JPEG, PNG or WebP file.
- * @throws {InvalidInputError} A JPEG has something other than a marker between its segments.
+ * @throws {InvalidInputError} A JPEG has something other than a marker between its segments, or
+ * a segment length below 2.
  *
  * @example
  * ```ts
@@ -71,9 +72,10 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
   constructor(options: StripStream.Options = {}) {
     const { signal } = options;
     let stripper: Stripper;
-    let abort: (() => void) | undefined;
-    super({
-      start(controller) {
+    let abort = () => {};
+    const done = () => signal?.removeEventListener('abort', abort);
+    const transformer = {
+      start(controller: TransformStreamDefaultController<Uint8Array>) {
         stripper = createStripper(options, (part) => controller.enqueue(part));
         if (!signal) {
           return;
@@ -82,16 +84,16 @@ export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
         abort = () => controller.error(signal.reason);
         signal.addEventListener('abort', abort, { once: true });
       },
-      transform(chunk) {
+      transform(chunk: Uint8Array) {
         stripper.push(assertUint8Array(chunk));
       },
       flush() {
-        if (abort) {
-          signal!.removeEventListener('abort', abort);
-        }
+        done();
         stripper.close();
       },
-    });
+      cancel: done,
+    };
+    super(transformer);
   }
 }
 

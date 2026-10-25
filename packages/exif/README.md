@@ -144,7 +144,7 @@ const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exi
 
 ## Why use this over exif-parser
 
-exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies.
+exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies outside `@portable/*`.
 
 - Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 10× faster than exifr.
 - `parse` skips the bad tags in damaged data and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
