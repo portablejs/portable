@@ -152,8 +152,9 @@ describe.each(names)('%s', (name) => {
 
   test('the README starts with the name and the runtimes, and the root README lists it', () => {
     const readme = readFileSync(join(dir, 'README.md'), 'utf8');
-    expect(readme.split('\n', 1)[0]).toBe(`# @portable/${name}`);
-    expect(readme).toContain(runs.readme);
+    const [title, description] = readme.split('\n\n', 2);
+    expect(title).toBe(`# @portable/${name}`);
+    expect(description).toContain(runs.readme);
     expect(readme).toMatch(/^## Why use this over /m);
     expect(rootReadme).toContain(`<a href="packages/${name}"><code>@portable/${name}</code></a>`);
   });

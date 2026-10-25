@@ -123,6 +123,8 @@ Every package follows the same conventions, so after one package you know the sh
 - Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. Functions that take text also take its bytes.
 - A streaming transform is a `TransformStream` that you pass to `pipeThrough`, as with `TextDecoderStream`.
 - Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers and nested streams underneath, and rejects with `signal.reason`, as `fetch` does.
+- An object that stays open, such as an SMTP client, a queue or a WebSocket, has a `close()` method or closes when you abort its `signal`, and works with `await using` where the runtime has `Symbol.asyncDispose`.
+- Options that take a time, such as `now`, accept a `Date` or a `Temporal.Instant`. Times in results are `Date` objects.
 - Errors extend the classes in `@portable/errors`. `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
 
 ### Runtimes

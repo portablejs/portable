@@ -49,7 +49,7 @@ L1  mime-stream   → mime-headers, bytes, streams
 L0  base64, charset, lines, quoted-printable → bytes, streams
     ip, streams, web-crypto → bytes
     bytes, queue, random, timers
-    errors        (every package depends on it except random and rate-limit, for its error classes or its dispose helper)
+    errors        (a dependency of every package except dmarc, mail-auth, quoted-printable, random and rate-limit, for its error classes or its dispose helper)
 ```
 
 ### L0: primitives (no dependencies, apart from `bytes` and `streams`)
@@ -61,13 +61,11 @@ L0  base64, charset, lines, quoted-printable → bytes, streams
 | `@portable/base64` | base64 and base64url, with optional line wrapping (MIME's 76 columns) and streaming encode/decode. Uses native `Uint8Array.fromBase64` when present. | libbase64 29M, base64-js, js-base64 |
 | `@portable/quoted-printable` | Quoted-printable encode/decode with soft line breaks, as a function and as a stream. | libqp 30M, quoted-printable |
 | `@portable/charset` | Encode text into legacy charsets (the half `TextDecoder` does not cover), with charset label normalization. One subpath per charset family so tables stay out of bundles that don't use them. | iconv-lite 1.29B (encode side) |
-| `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | dns-packet 79M |
 | `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), `crypto.timingSafeEqual` from `node:crypto` |
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, nanoid's `customAlphabet`, seedrandom, lodash's `random`, `sample` and `shuffle` |
 | `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf`, `dns` and `dns-packet` use it. | ip, ipaddr.js, is-ip, ip-cidr, cidr-tools, ip-range-check |
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency`, a rate limit (`interval`, `intervalCap`) and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map, p-throttle |
-| `@portable/web-crypto` | Helpers over `crypto.subtle` that take and return `Uint8Array`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
-| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | rate-limiter-flexible, limiter, bottleneck's reservoir options |
+| `@portable/web-crypto` | Helpers over `crypto.subtle` that take and return `Uint8Array`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, keys from PEM text with `importPem`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/timers` | `sleep`, `retry` with backoff and jitter, `poll` until a value appears, and `debounce` and `throttle`, all cancellable with `AbortSignal`. `backoff` turns a `Delay` into wait times for websockets and sse. | delay, p-retry, async-retry, p-wait-for, lodash.debounce, lodash.throttle, throttle-debounce, p-debounce |
 
 #### `streams` bridge API
@@ -127,6 +125,8 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | `bytes` | image-size 133M |
 | `@portable/exif` | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF, and stripping it from JPEG, PNG and WebP. | `bytes`, `streams` | exif-parser 17M |
 | `@portable/png` | PNG decode/encode to RGBA, deflate via `CompressionStream` by default or a passed-in `{ inflate, deflate }` for sync use. | `bytes` | pngjs 283M |
+| `@portable/dns-packet` | DNS wire format encode/decode with dns-packet's record coverage. | `bytes`, `ip` | dns-packet 79M |
+| `@portable/rate-limit` | Rate limiting with a pluggable async store (in-memory store included; recipes for KV, Durable Objects and Upstash), plus `RateLimit` and `Retry-After` headers. | `timers` | rate-limiter-flexible, limiter, bottleneck's reservoir options |
 
 ### L2: purposes
 
