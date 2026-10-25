@@ -9,18 +9,18 @@ npm install @portable/oauth1
 ```
 
 ```ts
-import * as OAuth1 from '@portable/oauth1'
+import * as OAuth1 from '@portable/oauth1';
 
 const request = new Request('https://api.example.com/1.1/statuses/update.json', {
   method: 'POST',
   body: new URLSearchParams({ status: 'Hello Ladies + Gentlemen, a signed OAuth request!' }),
-})
+});
 const response = await fetch(
   await OAuth1.sign(request, {
     consumer: { key: 'xvz1evFS4wEEPTGEFPHBog', secret: 'kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw' },
     token: { key: '370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb', secret: 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE' },
   }),
-)
+);
 ```
 
 `OAuth1.sign(request, options)` returns a new `Request` with an `Authorization: OAuth …` header. Like `new Request(request)`, it uses up the body of the request you pass in. `OAuth1.authorization(request, options)` returns only the header value and leaves the request unchanged, for HTTP clients that don't take a `Request`. Both are async.
@@ -55,8 +55,8 @@ The signature covers what the server will see, because it is computed from the `
 `privateKey` is a `CryptoKey` for `RSASSA-PKCS1-v1_5` with SHA-1, or a PEM string. Both `-----BEGIN PRIVATE KEY-----` (PKCS #8) and `-----BEGIN RSA PRIVATE KEY-----` (PKCS #1, as OpenSSL writes it) are accepted. A PEM string is imported with `crypto.subtle` on every call, so import a `CryptoKey` once when you sign often:
 
 ```ts
-const privateKey = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, false, ['sign'])
-await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, privateKey }, token })
+const privateKey = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, false, ['sign']);
+await OAuth1.sign(request, { signatureMethod: 'RSA-SHA1', consumer: { key, privateKey }, token });
 ```
 
 ## Crypto
@@ -66,14 +66,14 @@ HMAC uses `crypto.subtle` HMAC and `oauth_body_hash` uses `crypto.subtle.digest`
 On Node, WebCrypto HMAC is several times slower than `@noble/hashes`. To sign many requests on Node, install `@noble/hashes` and pass it as `hmac`, and as `digest` if you use `bodyHash`:
 
 ```ts
-import { hmac as nobleHmac } from '@noble/hashes/hmac.js'
-import { sha1 } from '@noble/hashes/legacy.js'
-import { sha256 } from '@noble/hashes/sha2.js'
-import * as OAuth1 from '@portable/oauth1'
+import { hmac as nobleHmac } from '@noble/hashes/hmac.js';
+import { sha1 } from '@noble/hashes/legacy.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import * as OAuth1 from '@portable/oauth1';
 
 const hmac: OAuth1.Hmac = (algorithm, key, data) =>
-  nobleHmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data)
-await OAuth1.sign(request, { consumer, token, hmac })
+  nobleHmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data);
+await OAuth1.sign(request, { consumer, token, hmac });
 ```
 
 ## Types
@@ -95,6 +95,13 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 - A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
 - RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
 - The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
+- An escaped name in the query, an uppercase host and a name in both the query and the body are signed correctly. oauth-1.0a signs the first two wrongly and keeps only one value of the third. [PARITY.md](test/PARITY.md) lists each case with its test.
+- The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
+- `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret, as RFC 5849 requires. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
+- The header separator is always `", "` and the nonce is always 32 hex digits, so oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.
+- oauth-1.0a's `getTimeStamp` returns seconds, and `now` is a `Date`, so pass `new Date(seconds * 1000)`.
+- oauth-1.0a can put the protocol parameters in a form body. This package puts them only in the `Authorization` header, or in the URL with `placement: 'query'`.
+- The package has no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL, where node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
 
 ### Performance
 
@@ -118,35 +125,3 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 <!-- bench:end -->
 
 On Node, WebCrypto HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if signing speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
-
-## Migrating
-
-| oauth-1.0a | @portable/oauth1 |
-| --- | --- |
-| `OAuth({ consumer, signature_method: 'HMAC-SHA1', hash_function })` | `{ consumer }`. The hash is built in. |
-| `oauth.toHeader(oauth.authorize({ url, method, data }, token))` | `await OAuth1.authorization(new Request(url, { method, body: new URLSearchParams(data) }), { consumer, token })` |
-| `includeBodyHash: true` | `bodyHash: true` |
-| `realm` | `realm` |
-| `oauth.getNonce = () => …`, `oauth.getTimeStamp = () => …` | `nonce`, `now: new Date(seconds * 1000)` |
-| `nonce_length`, `version`, `parameter_seperator`, `last_ampersand` | Not supported. See below. |
-| `form: oauth.authorize(request, token)` (parameters in the body) | Not supported. Use the header, or `placement: 'query'`. |
-
-| oauth (node-oauth) | @portable/oauth1 |
-| --- | --- |
-| `new OAuth(requestUrl, accessUrl, key, secret, '1.0', callback, 'HMAC-SHA1')` | `{ consumer: { key, secret }, callback }` and `fetch` |
-| `oa.getOAuthRequestToken(cb)` | `fetch(await OAuth1.sign(new Request(requestUrl, { method: 'POST' }), { consumer, callback }))`, then read the form-encoded response |
-| `oa.getOAuthAccessToken(token, secret, verifier, cb)` | `fetch(await OAuth1.sign(new Request(accessUrl, { method: 'POST' }), { consumer, token: { key: token, secret }, verifier }))` |
-| `oa.get(url, token, secret, cb)` | `fetch(await OAuth1.sign(new Request(url), { consumer, token }))` |
-| `oa.post(url, token, secret, body, contentType, cb)` | `fetch(await OAuth1.sign(new Request(url, { method: 'POST', body, headers: { 'content-type': contentType } }), { consumer, token }))` |
-| `oa.signUrl(url, token, secret)` | `(await OAuth1.sign(new Request(url), { consumer, token, placement: 'query' })).url` |
-| `oa.authHeader(url, token, secret, method)` | `await OAuth1.authorization(new Request(url, { method }), { consumer, token })` |
-| `new OAuth(…, privateKeyPem, …, 'RSA-SHA1')` | `{ signatureMethod: 'RSA-SHA1', consumer: { key, privateKey: privateKeyPem } }` |
-| `new OAuthEcho(realm, verifyUrl, …)` | `await OAuth1.authorization(new Request(verifyUrl), { consumer, token, realm })`, sent as `X-Verify-Credentials-Authorization` |
-
-These behaviors differ on purpose:
-
-- Both libraries sign some requests wrongly, and those requests are signed correctly here: a `+` or an escaped name in the query (oauth-1.0a), a name in both the query and the body (oauth-1.0a keeps one), repeated query names (node-oauth signs `a[0]` and `a[1]`), a form body passed as a string (node-oauth doesn't sign it), a JSON body passed as `data` (oauth-1.0a signs its keys), a default port such as `:443` (oauth-1.0a keeps it), and an uppercase host. [PARITY.md](test/PARITY.md) lists each one with its test.
-- The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
-- `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret. RFC 5849 requires both. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
-- The header separator is always `", "`, and the nonce is always 32 hex digits from `crypto.getRandomValues` instead of `Math.random`.
-- The package has no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL. node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.

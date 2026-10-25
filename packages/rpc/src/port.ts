@@ -1,17 +1,17 @@
-import type { Transport } from './types.js'
+import type { Transport } from './types.js';
 
 export declare namespace port {
   /** A `MessagePort`, `Worker`, `BroadcastChannel`, or a worker's `self`. */
   type Target = {
-    postMessage(message: unknown): void
-    addEventListener(type: 'message', listener: (event: MessageEvent) => void): void
-    removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void
-    start?(): void
-  }
+    postMessage(message: unknown): void;
+    addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+    removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+    start?(): void;
+  };
   type Options = {
     /** Stops listening and errors the readable with `signal.reason`. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -22,82 +22,82 @@ export declare namespace port {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
+ * import * as Rpc from '@portable/rpc';
  *
- * const { port1, port2 } = new MessageChannel()
- * Rpc.provide(Rpc.port(port1), { add: (a: number, b: number) => a + b })
- * const remote = Rpc.connect<{ add(a: number, b: number): number }>(Rpc.port(port2))
- * await remote.add(1, 2)
+ * const { port1, port2 } = new MessageChannel();
+ * Rpc.provide(Rpc.port(port1), { add: (a: number, b: number) => a + b });
+ * const remote = Rpc.connect<{ add(a: number, b: number): number }>(Rpc.port(port2));
+ * await remote.add(1, 2);
  * ```
  */
 export function port(target: port.Target, options: port.Options = {}): Transport {
-  const { signal } = options
-  let listening = false
+  const { signal } = options;
+  let listening = false;
   const listen = (onMessage: (data: unknown) => void, onError: (reason: unknown) => void) => {
     if (listening) {
-      throw new TypeError('The transport is already connected.')
+      throw new TypeError('The transport is already connected.');
     }
-    listening = true
-    const listener = (event: MessageEvent) => onMessage(event.data)
-    let stopped = false
+    listening = true;
+    const listener = (event: MessageEvent) => onMessage(event.data);
+    let stopped = false;
     const stop = () => {
       if (stopped) {
-        return
+        return;
       }
-      stopped = true
-      target.removeEventListener('message', listener)
-      signal?.removeEventListener('abort', onAbort)
-    }
+      stopped = true;
+      target.removeEventListener('message', listener);
+      signal?.removeEventListener('abort', onAbort);
+    };
     const onAbort = () => {
-      stop()
-      onError(signal!.reason)
-    }
+      stop();
+      onError(signal!.reason);
+    };
     if (signal?.aborted) {
-      onAbort()
+      onAbort();
     } else {
-      signal?.addEventListener('abort', onAbort)
-      target.addEventListener('message', listener)
-      target.start?.()
+      signal?.addEventListener('abort', onAbort);
+      target.addEventListener('message', listener);
+      target.start?.();
     }
-    return stop
-  }
-  let stop: (() => void) | undefined
+    return stop;
+  };
+  let stop: (() => void) | undefined;
   const readable = new ReadableStream<unknown>(
     {
       pull(controller) {
         if (stop) {
-          return
+          return;
         }
         stop = listen(
           (data) => controller.enqueue(data),
           (reason) => controller.error(reason),
-        )
+        );
       },
       cancel: () => stop?.(),
     },
     { highWaterMark: 0 },
-  )
+  );
   const writable = new WritableStream<unknown>({
     write(message) {
-      target.postMessage(message)
+      target.postMessage(message);
     },
-  })
-  const transport = { readable, writable }
+  });
+  const transport = { readable, writable };
   direct.set(transport, {
     post(message) {
-      target.postMessage(message)
+      target.postMessage(message);
     },
     listen,
-  })
-  return transport
+  });
+  return transport;
 }
 
 type Direct = {
-  post(message: unknown): void | Promise<void>
-  listen?(onMessage: (data: unknown) => void, onError: (reason: unknown) => void): () => void
-}
+  post(message: unknown): void | Promise<void>;
+  listen?(onMessage: (data: unknown) => void, onError: (reason: unknown) => void): () => void;
+};
 
-const directKey = Symbol.for('portable.rpc.direct')
+const directKey = Symbol.for('portable.rpc.direct');
 
 /**
  * Lets `connect` post messages directly instead of writing them to the streams, and receive them
@@ -109,6 +109,6 @@ export const direct = {
   get: (transport: Transport): Direct | undefined =>
     (transport as { [directKey]?: Direct | undefined })[directKey],
   set(transport: Transport, value: Direct): void {
-    Object.defineProperty(transport, directKey, { value })
+    Object.defineProperty(transport, directKey, { value });
   },
-}
+};

@@ -92,17 +92,17 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 The portable half needs no special support: a Node `Readable` is already an async iterable, so `fromIterable(nodeReadable)` works everywhere.
 
 ```ts
-import { fromIterable, transform, toText } from '@portable/streams'
+import { fromIterable, transform, toText } from '@portable/streams';
 
-async function* rows() { yield 'a'; yield 'b' }
+async function* rows() { yield 'a'; yield 'b'; }
 
 const upper = transform(async function* (source) {
   for await (const chunk of source) {
-    yield chunk.toUpperCase()
+    yield chunk.toUpperCase();
   }
-})
+});
 
-await toText(fromIterable(rows()).pipeThrough(upper)) // 'AB'
+await toText(fromIterable(rows()).pipeThrough(upper)); // 'AB'
 ```
 
 ### L1: formats (built on L0)

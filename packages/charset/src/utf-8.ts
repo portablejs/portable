@@ -1,5 +1,5 @@
-import type { Charset } from './Charset.js'
-import { define } from './define.js'
+import type { Charset } from './Charset.js';
+import { define } from './define.js';
 
 /**
  * UTF-8, encoded with the platform's `TextEncoder`. Use it when the charset comes from a label
@@ -7,9 +7,9 @@ import { define } from './define.js'
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
+ * import * as Charset from '@portable/charset';
  *
- * Charset.encode('é', Charset.utf8, { bom: true }) // Uint8Array [0xef, 0xbb, 0xbf, 0xc3, 0xa9]
+ * Charset.encode('é', Charset.utf8, { bom: true }); // Uint8Array [0xef, 0xbb, 0xbf, 0xc3, 0xa9]
  * ```
  */
 export const utf8: Charset = /* @__PURE__ */ define({
@@ -17,7 +17,7 @@ export const utf8: Charset = /* @__PURE__ */ define({
   maxBytes: 3,
   bom: [0xef, 0xbb, 0xbf],
   encoder: () => {
-    const encoder = new TextEncoder()
-    return { string: (text) => encoder.encode(text), write: () => -1 }
+    const encoder = new TextEncoder();
+    return { string: (text) => encoder.encode(text), write: () => -1 };
   },
-})
+});

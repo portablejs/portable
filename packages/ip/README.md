@@ -9,16 +9,16 @@ npm install @portable/ip
 ```
 
 ```ts
-import * as Ip from '@portable/ip'
+import * as Ip from '@portable/ip';
 
-const address = Ip.unmap(request.headers.get('cf-connecting-ip')!)
+const address = Ip.unmap(request.headers.get('cf-connecting-ip')!);
 if (Ip.range(address) !== 'unicast') {
-  throw new Error('Refusing to fetch an internal address.')
+  throw new Error('Refusing to fetch an internal address.');
 }
 
-Ip.format('2001:0DB8:0:0:0:0:0:1') // '2001:db8::1'
-Ip.contains('10.0.0.0/8', '10.1.2.3') // true
-Ip.reverseName('192.0.2.1') // '1.2.0.192.in-addr.arpa'
+Ip.format('2001:0DB8:0:0:0:0:0:1'); // '2001:db8::1'
+Ip.contains('10.0.0.0/8', '10.1.2.3'); // true
+Ip.reverseName('192.0.2.1'); // '1.2.0.192.in-addr.arpa'
 ```
 
 ## API
@@ -28,8 +28,8 @@ Every function that takes an address accepts an `Address` or a string, which it 
 ```ts
 type Address =
   | { version: 4; bytes: Uint8Array }
-  | { version: 6; bytes: Uint8Array; zone?: string | undefined }
-type Cidr = { address: Address; prefix: number }
+  | { version: 6; bytes: Uint8Array; zone?: string | undefined };
+type Cidr = { address: Address; prefix: number };
 ```
 
 `bytes` is the address in network order: 4 bytes for IPv4, 16 for IPv6. `zone` is the part after `%` in `fe80::1%eth0`.
@@ -118,6 +118,12 @@ ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and
 - `contains` returns `false` for a block of the other IP version. ipaddr.js's `match` throws.
 - `range` names come from the IANA registries. ipaddr.js reports `100:0:0:1::/64` and every IPv6 address outside `2000::/3` that it doesn't name, such as `4000::1`, as `unicast`, and ip's `isPrivate` misses `198.18.0.0/15`.
 - The IPv4 part of an IPv6 address can't have leading zeros. ipaddr.js reads `::ffff:0177.0.0.1` as `177.0.0.1` and `0177.0.0.1` as `127.0.0.1`.
+- ip and ipaddr.js do subnet arithmetic, such as broadcast and last addresses, masks from prefix lengths, and merging or excluding blocks. This package doesn't.
+- ipaddr.js keeps a CIDR block's address as written, and `parseCidr` clears the host bits, so `192.168.1.134/26` formats as `192.168.1.128/26`.
+- ipaddr.js accepts a zone in a CIDR block, such as `fe80::1%eth0/64`, and `parseCidr` throws for it.
+- ipaddr.js's `toIPv4Address` throws for an address that isn't IPv4-mapped, and `unmap` returns it unchanged.
+- ipaddr.js and ip write `::ffff:c000:201` where `format` writes `::ffff:192.0.2.1`, and Node's `inet_ntop` writes `::192.0.2.1` where `format` writes `::c000:201`.
+- Node's `isIP` accepts a zone that contains `:`, and `parse` rejects it.
 
 <!-- bench:start -->
 | | @portable/ip | ipaddr.js | ip | `node:net` |
@@ -138,34 +144,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| Upstream | @portable/ip |
-| --- | --- |
-| `ipaddr.parse(text)`, `ipaddr.IPv4.parse(text)` | `Ip.parse(text)` |
-| `ipaddr.isValid(text)`, `isIP(text)`, `net.isIP(text) !== 0` | `Ip.canParse(text)` |
-| `isIPv4(text)`, `ipaddr.IPv4.isValidFourPartDecimal(text)` | `Ip.canParse(text, { version: 4 })` |
-| `ipVersion(text)`, `addr.kind()` | `Ip.parse(text).version` |
-| `addr.toString()`, `addr.toRFC5952String()`, `ip.toString(buffer)` | `Ip.format(address)` |
-| `addr.toByteArray()`, `ip.toBuffer(text)` | `Ip.parse(text).bytes` |
-| `ipaddr.fromByteArray(bytes)` | `Ip.fromBytes(bytes)` |
-| `ipaddr.process(text)` | `Ip.unmap(text)` |
-| `addr.toIPv4MappedAddress()` | `Ip.toIpv6(address)` |
-| `addr.match(ipaddr.parseCIDR(cidr))`, `ipRangeCheck(ip, cidr)`, `new IPCIDR(cidr).contains(ip)`, `cidrTools.containsCidr(cidr, ip)` | `Ip.contains(cidr, ip)` |
-| `ipRangeCheck(ip, [a, b])` | `[a, b].some((cidr) => Ip.contains(cidr, ip))` |
-| `ipaddr.IPv4.networkAddressFromCIDR(cidr)`, `ip.cidr(cidr)` | `Ip.format(Ip.parseCidr(cidr).address)` |
-| `cidrTools.normalizeCidr(cidr)` | `Ip.formatCidr(Ip.parseCidr(cidr))` |
-| `addr.range()` | `Ip.range(address)`, with the names in the table above |
-| `ip.isPrivate(text)` | `Ip.range(Ip.unmap(text)) !== 'unicast'` |
-| `ip.isLoopback(text)` | `Ip.range(Ip.unmap(text)) === 'loopback'` |
-| `ip.isEqual(a, b)` | `Ip.compare(Ip.unmap(a), Ip.unmap(b)) === 0` |
-| `ip.toLong(text)` | `new DataView(Ip.parse(text).bytes.buffer).getUint32(0)` |
-
-Subnet arithmetic (broadcast and last addresses, masks from prefix lengths, merging and excluding blocks) is not included. These differ from upstream:
-
-- `parseCidr` clears host bits, so `192.168.1.134/26` formats as `192.168.1.128/26`. ipaddr.js keeps the address as written.
-- A CIDR block can't have a zone. ipaddr.js accepts `fe80::1%eth0/64`.
-- `unmap` returns a non-mapped address unchanged. ipaddr.js's `toIPv4Address` throws.
-- `format` writes `::ffff:192.0.2.1` where ipaddr.js and ip write `::ffff:c000:201`, and `::c000:201` where Node's `inet_ntop` writes `::192.0.2.1`.
-- A zone can't contain `:`, which Node's `isIP` accepts.

@@ -9,15 +9,15 @@ npm install @portable/png
 ```
 
 ```ts
-import * as Png from '@portable/png'
+import * as Png from '@portable/png';
 
-const response = await fetch('https://example.com/photo.png')
-const { width, height, data } = await Png.decode(await response.bytes())
+const response = await fetch('https://example.com/photo.png');
+const { width, height, data } = await Png.decode(await response.bytes());
 
 for (let i = 0; i < data.length; i += 4) {
-  data[i] = 255 - data[i]!
+  data[i] = 255 - data[i]!;
 } // invert red
-const bytes = await Png.encode({ width, height, data })
+const bytes = await Png.encode({ width, height, data });
 ```
 
 `decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8 and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied.
@@ -27,11 +27,11 @@ const bytes = await Png.encode({ width, height, data })
 `decode` and `encode` return promises, because `CompressionStream` and `DecompressionStream` are the only zlib that every runtime has, and they are async. `decodeSync` and `encodeSync` do the same work synchronously with a zlib function you pass:
 
 ```ts
-import * as Png from '@portable/png'
-import { unzlibSync, zlibSync } from 'fflate'
+import * as Png from '@portable/png';
+import { unzlibSync, zlibSync } from 'fflate';
 
-const image = Png.decodeSync(bytes, { inflate: unzlibSync })
-const png = Png.encodeSync(image, { deflate: (raw) => zlibSync(raw, { level: 9 }) })
+const image = Png.decodeSync(bytes, { inflate: unzlibSync });
+const png = Png.encodeSync(image, { deflate: (raw) => zlibSync(raw, { level: 9 }) });
 ```
 
 In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. Both functions use the zlib format (RFC 1950), not raw deflate.
@@ -105,6 +105,12 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 - Encoding with `CompressionStream` was about as fast as pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
 - A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
 - Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
+- A pixel matching the `tRNS` color gets alpha 0 and keeps its color. pngjs makes it black.
+- `encode` computes gray as BT.709 luma. pngjs averages the channels.
+- A header that claims a huge image throws `TruncatedError`, where pngjs throws a `RangeError` from the failed allocation.
+- The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs. pngjs's `deflateLevel` has no equivalent, so pass a `deflate` function to choose a level.
+- pngjs sets `gamma` to `0` when there is no `gAMA` chunk, and `decode` returns `gamma: undefined`.
+- Pixels are always 8-bit RGBA, so pngjs's `skipRescale`, `bitDepth: 16`, `inputColorType` and `inputHasAlpha` options have no equivalent. Neither do pngjs's `bitblt` and `adjustGamma`.
 
 ### Performance
 
@@ -128,29 +134,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| pngjs | @portable/png |
-| --- | --- |
-| `PNG.sync.read(buffer)` | `await Png.decode(bytes)`, or `Png.decodeSync(bytes, { inflate: zlib.inflateSync })` |
-| `stream.pipe(new PNG()).on('parsed', function () { this.data })` | `(await Png.decode(bytes)).data` |
-| `PNG.sync.write(png)` | `await Png.encode(png)` |
-| `new PNG({ width, height })` then filling `png.data` | `Png.encode({ width, height, data })` with your own `Uint8Array(width * height * 4)` |
-| `{ checkCRC: false }` | `{ checkCrc: false }` |
-| `{ colorType: 2, bgColor: { red, green, blue } }` | `{ colorType: 2, background: { red, green, blue } }` |
-| `{ filterType: 4 }` | `{ filter: 4 }` |
-| `{ deflateLevel: 9 }` | `{ deflate: (raw) => zlib.deflateSync(raw, { level: 9 }) }` |
-| `png.gamma === 0` when there is no `gAMA` | `gamma === undefined` |
-| `metadata` event | The `depth`, `colorType`, `interlace` and `alpha` fields of the result. |
-| `{ skipRescale: true }`, `{ bitDepth: 16 }`, `inputColorType`, `inputHasAlpha` | Not supported. Pixels are always 8-bit RGBA. |
-| `bitblt`, `adjustGamma` | Not supported. |
-
-Behavior that differs from pngjs, each listed with its test in [`PARITY.md`](test/PARITY.md#known-upstream-issues):
-
-- A pixel matching the `tRNS` color gets alpha 0 and keeps its color. pngjs makes it black.
-- Grayscale output uses BT.709 luma. pngjs averages the channels.
-- Bytes after `IEND` are ignored. `PNG.sync.read` throws.
-- A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
-- The decoder never allocates more than the compressed data can expand to, so a header that claims a huge image throws `TruncatedError` instead of a `RangeError` from a failed allocation.
-- The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs.

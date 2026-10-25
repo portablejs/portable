@@ -1,21 +1,21 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown by `sign` for a message it can't sign: one without a From field, which RFC 6376
  * section 5.4 requires every signature to cover.
  *
  * @example
  * ```ts
- * import * as Dkim from '@portable/dkim'
+ * import * as Dkim from '@portable/dkim';
  *
  * try {
- *   await Dkim.sign('Subject: hi\r\n\r\nbody\r\n', { domain, selector, privateKey })
+ *   await Dkim.sign('Subject: hi\r\n\r\nbody\r\n', { domain, selector, privateKey });
  * } catch (error) {
  *   if (error instanceof Dkim.InvalidInputError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'Dkim.InvalidInputError'
+  static override readonly kind: string = 'Dkim.InvalidInputError';
 }

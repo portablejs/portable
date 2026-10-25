@@ -1,0 +1,33 @@
+---
+description: Encode bytes as base64 and quoted-printable, text in legacy charsets, and domain names in ASCII.
+---
+
+# Encodings
+
+These packages convert bytes, text, and domain names between encodings. `base64`, `quoted-printable`, and `charset` also have `TransformStream` classes for data too large to hold in memory.
+
+- [`base64`](/packages/base64) encodes and decodes base64 and base64url, with optional line wrapping for MIME.
+- [`quoted-printable`](/packages/quoted-printable) encodes mostly ASCII text for email bodies.
+- [`charset`](/packages/charset) encodes text into legacy charsets such as Shift_JIS, GBK, and windows-1251. `TextDecoder` already decodes them.
+- [`idna`](/packages/idna) converts domain names between Unicode and the ASCII form DNS uses.
+
+## Encode a download as a base64 data URL
+
+```ts
+import * as Base64 from '@portable/base64';
+
+const response = await fetch('https://example.com/logo.png');
+const bytes = new Uint8Array(await response.arrayBuffer());
+const url = `data:image/png;base64,${Base64.encode(bytes)}`;
+```
+
+## Stream a file into a MIME body
+
+`lineLength: 76` wraps the output at 76 characters with CRLF, as MIME requires. The stream encodes each chunk as it arrives, so it never holds the whole file:
+
+```ts
+const response = await fetch('https://example.com/report.pdf');
+const body = response.body!.pipeThrough(
+  new Base64.EncoderStream({ lineLength: 76 }),
+);
+```

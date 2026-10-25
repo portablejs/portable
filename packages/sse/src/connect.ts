@@ -1,22 +1,22 @@
-import * as Timers from '@portable/timers'
-import { createParser, type Event } from './decode.js'
-import { MaxLengthError, ResponseError } from './errors.js'
+import * as Timers from '@portable/timers';
+import { createParser, type Event } from './decode.js';
+import { MaxLengthError, ResponseError } from './errors.js';
 
 export declare namespace connect {
   type Options = {
     /** Wait before each reconnect, until the server sends a `retry` field. @default { initial: 1000, max: 30_000 } */
-    delay?: Timers.Delay | undefined
+    delay?: Timers.Delay | undefined;
     /** Sends each request. Pass a wrapper to change a request before it is sent. @default globalThis.fetch */
-    fetch?: ((request: Request) => Promise<Response>) | undefined
+    fetch?: ((request: Request) => Promise<Response>) | undefined;
     /**
      * How long to wait, in ms, for the response headers and then for each chunk of the body. If
      * no data arrives in that time, `connect` aborts the request and handles the attempt as a
      * failed connection with a `TimeoutError` `DOMException`, so by default it reconnects.
      * Keep-alive comment lines from the server also restart the wait. @default Infinity
      */
-    idleTimeout?: number | undefined
+    idleTimeout?: number | undefined;
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
-    maxLength?: number | undefined
+    maxLength?: number | undefined;
     /**
      * Called after a connection ends, with the error and `{ attempt }`, where `attempt` is the
      * number of reconnects since the last accepted response. `error` is `undefined` when the
@@ -26,10 +26,10 @@ export declare namespace connect {
      */
     reconnectIf?:
       | ((error: unknown, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
-      | undefined
+      | undefined;
     /** Stops the stream, the request in flight and any wait, and fails the stream with `signal.reason`. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -45,23 +45,23 @@ export declare namespace connect {
  *
  * @example
  * ```ts
- * import * as Sse from '@portable/sse'
+ * import * as Sse from '@portable/sse';
  *
  * const request = new Request('https://example.com/events', {
  *   method: 'POST',
  *   body: JSON.stringify({ topic: 'prices' }),
- * })
+ * });
  * const events = Sse.connect(request, {
  *   // Each reconnect gets a fresh token.
  *   fetch: async (request) => {
- *     request.headers.set('authorization', `Bearer ${await getToken()}`)
- *     return fetch(request)
+ *     request.headers.set('authorization', `Bearer ${await getToken()}`);
+ *     return fetch(request);
  *   },
  *   signal: AbortSignal.timeout(60_000),
- * })
- * const reader = events.getReader()
+ * });
+ * const reader = events.getReader();
  * for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *   console.log(r.value.data)
+ *   console.log(r.value.data);
  * }
  * ```
  */
@@ -76,121 +76,124 @@ export function connect(
     maxLength,
     reconnectIf = reconnectByDefault,
     signal,
-  } = options
+  } = options;
   if (!(idleTimeout > 0)) {
-    throw new RangeError(`idleTimeout must be a positive number, got ${idleTimeout}.`)
+    throw new RangeError(`idleTimeout must be a positive number, got ${idleTimeout}.`);
   }
-  const next = Timers.backoff(delay)
-  const base = request instanceof Request ? request.clone() : new Request(request)
-  const aborter = new AbortController()
+  const next = Timers.backoff(delay);
+  const base = request instanceof Request ? request.clone() : new Request(request);
+  const aborter = new AbortController();
   const combined = AbortSignal.any(
     signal ? [aborter.signal, signal, base.signal] : [aborter.signal, base.signal],
-  )
-  let enqueued = false
-  let output: ReadableStreamDefaultController<Event>
+  );
+  let enqueued = false;
+  let output: ReadableStreamDefaultController<Event>;
   const parser = createParser((event) => {
-    output.enqueue(event)
-    enqueued = true
-  }, maxLength)
-  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
-  let current: AbortController | undefined
-  let attempt = 0
+    output.enqueue(event);
+    enqueued = true;
+  }, maxLength);
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  let current: AbortController | undefined;
+  let attempt = 0;
 
   const idle = <value>(promise: Promise<value>): Promise<value> =>
-    withTimeout(promise, idleTimeout, (error) => current?.abort(error))
+    withTimeout(promise, idleTimeout, (error) => current?.abort(error));
 
   const open = async (): Promise<ReadableStreamDefaultReader<Uint8Array> | undefined> => {
-    const headers = new Headers(base.headers)
+    const headers = new Headers(base.headers);
     if (!headers.has('accept')) {
-      headers.set('accept', 'text/event-stream')
+      headers.set('accept', 'text/event-stream');
     }
-    const id = parser.id
+    const id = parser.id;
     if (id === '') {
-      headers.delete('last-event-id')
+      headers.delete('last-event-id');
     } else if (id !== undefined) {
-      headers.set('last-event-id', toByteString(id))
+      headers.set('last-event-id', toByteString(id));
     }
-    current = new AbortController()
+    current = new AbortController();
     const response = await idle(
       fetch(
         new Request(base.clone(), { headers, signal: AbortSignal.any([combined, current.signal]) }),
       ),
-    )
+    );
     if (response.status === 204) {
-      await response.body?.cancel()
-      return undefined
+      await response.body?.cancel();
+      return undefined;
     }
     if (response.status !== 200) {
-      throw new ResponseError({ response, message: `Expected status 200, got ${response.status}.` })
+      throw new ResponseError({
+        response,
+        message: `Expected status 200, got ${response.status}.`,
+      });
     }
-    const type = response.headers.get('content-type')
+    const type = response.headers.get('content-type');
     if (!isEventStream(type)) {
       throw new ResponseError({
         response,
         message: `Expected content type text/event-stream, got ${type}.`,
-      })
+      });
     }
-    attempt = 0
-    parser.restart()
-    return (response.body ?? new ReadableStream({ start: (c) => c.close() })).getReader()
-  }
+    attempt = 0;
+    parser.restart();
+    return (response.body ?? new ReadableStream({ start: (c) => c.close() })).getReader();
+  };
 
   return new ReadableStream<Event>({
     start(controller) {
-      output = controller
+      output = controller;
     },
     async pull(controller) {
       for (;;) {
-        let error: unknown
+        let error: unknown;
         try {
           if (!reader) {
-            reader = await open()
+            reader = await open();
             if (!reader) {
-              return controller.close()
+              return controller.close();
             }
           }
-          const { done, value } = await idle(reader.read())
+          const { done, value } = await idle(reader.read());
           if (!done) {
-            enqueued = false
-            parser.push(value)
+            enqueued = false;
+            parser.push(value);
             if (enqueued) {
-              return
+              return;
             }
-            continue
+            continue;
           }
         } catch (e) {
-          error = e
+          error = e;
         }
         if (combined.aborted) {
-          throw combined.reason
+          throw combined.reason;
         }
         if (error !== undefined) {
-          await reader?.cancel(error).catch(() => {})
+          await reader?.cancel(error).catch(() => {});
         }
-        reader = undefined
-        current = undefined
-        parser.end()
-        attempt++
+        reader = undefined;
+        current = undefined;
+        parser.end();
+        attempt++;
         if (!(await reconnectIf(error, { attempt }))) {
           if (error === undefined) {
-            return controller.close()
+            return controller.close();
           }
-          throw error
+          throw error;
         }
         if (error instanceof ResponseError) {
-          await error.response.body?.cancel()
+          await error.response.body?.cancel();
         }
-        await Timers.sleep(parser.retry ?? next({ attempt, error }), { signal: combined })
+        await Timers.sleep(parser.retry ?? next({ attempt, error }), { signal: combined });
       }
     },
     async cancel(reason) {
-      aborter.abort(reason)
-      await reader?.cancel(reason).catch(() => {})
+      aborter.abort(reason);
+      await reader?.cancel(reason).catch(() => {});
     },
-  })
+  });
 }
 
-const maxTimeout = 2 ** 31 - 1
+const maxTimeout = 2 ** 31 - 1;
 
 async function withTimeout<value>(
   promise: Promise<value>,
@@ -198,49 +201,49 @@ async function withTimeout<value>(
   onTimeout: (error: DOMException) => void,
 ): Promise<value> {
   if (ms === Infinity) {
-    return promise
+    return promise;
   }
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
       () => {
-        const error = new DOMException(`No data within ${ms} ms.`, 'TimeoutError')
-        onTimeout(error)
-        reject(error)
+        const error = new DOMException(`No data within ${ms} ms.`, 'TimeoutError');
+        onTimeout(error);
+        reject(error);
       },
       Math.min(ms, maxTimeout),
-    )
-  })
+    );
+  });
   try {
-    return await Promise.race([promise, timeout])
+    return await Promise.race([promise, timeout]);
   } finally {
-    clearTimeout(timer)
+    clearTimeout(timer);
   }
 }
 
 function reconnectByDefault(error: unknown): boolean {
-  return !(error instanceof ResponseError || error instanceof MaxLengthError)
+  return !(error instanceof ResponseError || error instanceof MaxLengthError);
 }
 
-const httpWhitespace = /^[\t\n\r ]+|[\t\n\r ]+$/g
+const httpWhitespace = /^[\t\n\r ]+|[\t\n\r ]+$/g;
 
 function isEventStream(contentType: string | null): boolean {
   if (contentType === null) {
-    return false
+    return false;
   }
-  const semicolon = contentType.indexOf(';')
-  const essence = semicolon === -1 ? contentType : contentType.slice(0, semicolon)
-  return essence.replace(httpWhitespace, '').toLowerCase() === 'text/event-stream'
+  const semicolon = contentType.indexOf(';');
+  const essence = semicolon === -1 ? contentType : contentType.slice(0, semicolon);
+  return essence.replace(httpWhitespace, '').toLowerCase() === 'text/event-stream';
 }
 
 // HTTP header values are byte strings, so a non-ASCII ID is sent as its UTF-8 bytes.
 function toByteString(text: string): string {
   if (!/[^\0-\x7f]/.test(text)) {
-    return text
+    return text;
   }
-  let bytes = ''
+  let bytes = '';
   for (const byte of new TextEncoder().encode(text)) {
-    bytes += String.fromCharCode(byte)
+    bytes += String.fromCharCode(byte);
   }
-  return bytes
+  return bytes;
 }

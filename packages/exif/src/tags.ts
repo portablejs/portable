@@ -444,7 +444,7 @@ export const tagNames: { readonly [tag: number]: string } = {
   0xfe56: 'Sharpness',
   0xfe57: 'Smoothness',
   0xfe58: 'MoireFilter',
-}
+};
 
 /** Tag names in the GPS IFD. */
 export const gpsTagNames: { readonly [tag: number]: string } = {
@@ -480,4 +480,4 @@ export const gpsTagNames: { readonly [tag: number]: string } = {
   0x001d: 'GPSDateStamp',
   0x001e: 'GPSDifferential',
   0x001f: 'GPSHPositioningError',
-}
+};

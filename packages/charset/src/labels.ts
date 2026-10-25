@@ -1,5 +1,5 @@
-import type { Name } from './Charset.js'
-import { labels } from './tables/labels.js'
+import type { Name } from './Charset.js';
+import { labels } from './tables/labels.js';
 
 /**
  * Returns the WHATWG Encoding Standard name for a charset label, or `undefined` for an unknown
@@ -15,21 +15,21 @@ import { labels } from './tables/labels.js'
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
+ * import * as Charset from '@portable/charset';
  *
- * Charset.normalizeLabel('sjis') // 'Shift_JIS'
- * Charset.normalizeLabel(' Latin1 ') // 'windows-1252'
- * Charset.normalizeLabel('ISO_8859-5:1988') // 'ISO-8859-5'
- * Charset.normalizeLabel('cp437') // undefined
- * Charset.normalizeLabel('iso-2022-kr') // undefined
+ * Charset.normalizeLabel('sjis'); // 'Shift_JIS'
+ * Charset.normalizeLabel(' Latin1 '); // 'windows-1252'
+ * Charset.normalizeLabel('ISO_8859-5:1988'); // 'ISO-8859-5'
+ * Charset.normalizeLabel('cp437'); // undefined
+ * Charset.normalizeLabel('iso-2022-kr'); // undefined
  * ```
  */
 export function normalizeLabel(label: string): Name | undefined {
-  const trimmed = label.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
+  const trimmed = label.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
   if (!/^[\x20-\x7e]+$/.test(trimmed)) {
-    return undefined
+    return undefined;
   }
-  const key = trimmed.toLowerCase().replace(/:\d{4}$|[^0-9a-z]/g, '')
-  const name = Object.hasOwn(labels, key) ? labels[key] : undefined
-  return name === 'replacement' ? undefined : name
+  const key = trimmed.toLowerCase().replace(/:\d{4}$|[^0-9a-z]/g, '');
+  const name = Object.hasOwn(labels, key) ? labels[key] : undefined;
+  return name === 'replacement' ? undefined : name;
 }

@@ -1,18 +1,18 @@
-import * as Charset from '@portable/charset'
-import { iso2022Jp } from '@portable/charset/iso-2022-jp'
-import * as Mail from '@portable/mail'
-import * as Streams from '@portable/streams'
-import PostalMime from 'postal-mime'
-import { describe, expect, test } from 'vite-plus/test'
-import { chunked, randomBytes } from './utils.js'
+import * as Charset from '@portable/charset';
+import { iso2022Jp } from '@portable/charset/iso-2022-jp';
+import * as Mail from '@portable/mail';
+import * as Streams from '@portable/streams';
+import PostalMime from 'postal-mime';
+import { describe, expect, test } from 'vite-plus/test';
+import { chunked, randomBytes } from './utils.js';
 
 const text = (bytes: ArrayBuffer | Uint8Array | string) =>
-  typeof bytes === 'string' ? bytes : new TextDecoder().decode(bytes)
+  typeof bytes === 'string' ? bytes : new TextDecoder().decode(bytes);
 
 describe('postal-mime parses what Mail.encodeStream writes', () => {
   test('a message with every kind of part', async () => {
-    const image = randomBytes(5000, 1)
-    const report = randomBytes(70_000, 2)
+    const image = randomBytes(5000, 1);
+    const report = randomBytes(70_000, 2);
     const parsed = await PostalMime.parse(
       Mail.encodeStream({
         from: { name: 'Jõgeva Ants', address: 'ants@jõgeva.ee' },
@@ -42,13 +42,13 @@ describe('postal-mime parses what Mail.encodeStream writes', () => {
           { content: 'a,b\n1,2\n', filename: 'data.csv', contentType: 'text/csv' },
         ],
       }),
-    )
+    );
 
-    expect(parsed.from).toEqual({ name: 'Jõgeva Ants', address: 'ants@xn--jgeva-dua.ee' })
+    expect(parsed.from).toEqual({ name: 'Jõgeva Ants', address: 'ants@xn--jgeva-dua.ee' });
     expect(parsed.to).toEqual([
       { name: 'Mari', address: 'mari@example.com' },
       { name: '山田 太郎', address: 'taro@example.jp' },
-    ])
+    ]);
     expect(parsed.cc).toEqual([
       {
         name: 'Team',
@@ -57,17 +57,17 @@ describe('postal-mime parses what Mail.encodeStream writes', () => {
           { name: '', address: 'b@example.com' },
         ],
       },
-    ])
-    expect(parsed.subject).toBe('Tere, maailm! 👋 '.repeat(8).trim())
-    expect(parsed.messageId).toBe('<id-1@example.com>')
-    expect(parsed.inReplyTo).toBe('<parent@example.com>')
-    expect(parsed.references).toBe('<root@example.com> <parent@example.com>')
-    expect(parsed.date).toBe('2024-01-02T03:04:05.000Z')
+    ]);
+    expect(parsed.subject).toBe('Tere, maailm! 👋 '.repeat(8).trim());
+    expect(parsed.messageId).toBe('<id-1@example.com>');
+    expect(parsed.inReplyTo).toBe('<parent@example.com>');
+    expect(parsed.references).toBe('<root@example.com> <parent@example.com>');
+    expect(parsed.date).toBe('2024-01-02T03:04:05.000Z');
     expect(parsed.headers.find((header) => header.key === 'x-campaign')?.value).toMatch(
       /^=\?UTF-8\?Q\?Talv_2024_/,
-    )
-    expect(parsed.text).toBe('Tere!\n\nSee rida on pikk: ' + 'sõna '.repeat(40))
-    expect(parsed.html).toBe('<p>Tere! <img src="cid:logo@example.com"></p>')
+    );
+    expect(parsed.text).toBe('Tere!\n\nSee rida on pikk: ' + 'sõna '.repeat(40));
+    expect(parsed.html).toBe('<p>Tere! <img src="cid:logo@example.com"></p>');
     expect(
       parsed.attachments.map(({ filename, mimeType, disposition, contentId }) => ({
         filename,
@@ -94,29 +94,29 @@ describe('postal-mime parses what Mail.encodeStream writes', () => {
         disposition: 'attachment',
         contentId: undefined,
       },
-    ])
+    ]);
     const [logo, pdf, csv] = parsed.attachments.map(
       (attachment) => new Uint8Array(attachment.content as ArrayBuffer),
-    )
-    expect(logo).toEqual(image)
-    expect(pdf!.length).toBe(report.length)
-    expect(pdf!.every((byte, i) => byte === report[i])).toBe(true)
-    expect(text(csv!)).toBe('a,b\n1,2\n')
-  })
+    );
+    expect(logo).toEqual(image);
+    expect(pdf!.length).toBe(report.length);
+    expect(pdf!.every((byte, i) => byte === report[i])).toBe(true);
+    expect(text(csv!)).toBe('a,b\n1,2\n');
+  });
 
   test('a non-UTF-8 charset decodes back to the same text', async () => {
     const charset = {
       name: 'ISO-2022-JP',
       encode: (value: string) => Charset.encode(value, iso2022Jp),
-    }
+    };
     const parsed = await PostalMime.parse(
       Mail.encodeStream(
         { from: '差出人 <a@example.com>', subject: 'こんにちは', text: 'こんにちは、世界' },
         { charset },
       ),
-    )
-    expect(parsed.from).toEqual({ name: '差出人', address: 'a@example.com' })
-    expect(parsed.subject).toBe('こんにちは')
-    expect(parsed.text?.trim()).toBe('こんにちは、世界')
-  })
-})
+    );
+    expect(parsed.from).toEqual({ name: '差出人', address: 'a@example.com' });
+    expect(parsed.subject).toBe('こんにちは');
+    expect(parsed.text?.trim()).toBe('こんにちは、世界');
+  });
+});

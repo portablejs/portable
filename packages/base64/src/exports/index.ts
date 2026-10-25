@@ -1,5 +1,5 @@
-export { decode, type Mode } from '../decode.js'
-export { DecoderStream } from '../DecoderStream.js'
-export { encode, type Alphabet } from '../encode.js'
-export { EncoderStream } from '../EncoderStream.js'
-export { InvalidInputError, TruncatedError } from '../errors.js'
+export { decode, type Mode } from '../decode.js';
+export { DecoderStream } from '../DecoderStream.js';
+export { encode, type Alphabet } from '../encode.js';
+export { EncoderStream } from '../EncoderStream.js';
+export { InvalidInputError, TruncatedError } from '../errors.js';

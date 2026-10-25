@@ -1,45 +1,45 @@
-import type { Client } from './client.js'
-import type { Params } from './types.js'
+import type { Client } from './client.js';
+import type { Params } from './types.js';
 
-type Target = { client: Pick<Client, 'request' | 'notify'>; method: string }
+type Target = { client: Pick<Client, 'request' | 'notify'>; method: string };
 
-const targetKey = Symbol.for('portable.rpc.target')
+const targetKey = Symbol.for('portable.rpc.target');
 
 export function remote(client: Target['client'], method = ''): any {
-  const children = new Map<string, unknown>()
+  const children = new Map<string, unknown>();
   const proxy = new Proxy(function () {}, {
     get(_, key) {
       if (key === targetKey) {
-        return { client, method }
+        return { client, method };
       }
       if (typeof key !== 'string' || key === 'then') {
-        return undefined
+        return undefined;
       }
-      let child = children.get(key)
+      let child = children.get(key);
       if (!child) {
-        children.set(key, (child = remote(client, method ? `${method}.${key}` : key)))
+        children.set(key, (child = remote(client, method ? `${method}.${key}` : key)));
       }
-      return child
+      return child;
     },
     apply(_, __, args) {
-      return client.request(method, args)
+      return client.request(method, args);
     },
-  })
-  return proxy
+  });
+  return proxy;
 }
 
 function target(method: unknown): Target {
   const found =
     typeof method === 'function'
       ? (method as { [targetKey]?: Target | undefined })[targetKey]
-      : undefined
+      : undefined;
   if (!found) {
-    throw new TypeError('Expected a method of a remote from connect or http.')
+    throw new TypeError('Expected a method of a remote from connect or http.');
   }
-  return found
+  return found;
 }
 
-type CallParams<fn> = 0 extends 1 & fn ? Params : Parameters<fn & ((...args: any[]) => unknown)>
+type CallParams<fn> = 0 extends 1 & fn ? Params : Parameters<fn & ((...args: any[]) => unknown)>;
 
 export declare namespace call {
   type Options = {
@@ -47,8 +47,8 @@ export declare namespace call {
      * Cancels the call: the promise rejects with `signal.reason`, and the client sends `$/cancel`
      * to the remote.
      */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -57,12 +57,12 @@ export declare namespace call {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
+ * import * as Rpc from '@portable/rpc';
  *
- * const sum = await Rpc.call(remote.add, [1, 2], { signal: AbortSignal.timeout(5000) })
+ * const sum = await Rpc.call(remote.add, [1, 2], { signal: AbortSignal.timeout(5000) });
  *
- * const mcp = Rpc.connect<any>(transport)
- * const { tools } = await Rpc.call(mcp['tools/list'], {})
+ * const mcp = Rpc.connect<any>(transport);
+ * const { tools } = await Rpc.call(mcp['tools/list'], {});
  * ```
  */
 export function call<fn extends (...args: any[]) => unknown>(
@@ -70,15 +70,15 @@ export function call<fn extends (...args: any[]) => unknown>(
   params: CallParams<fn>,
   options: call.Options = {},
 ): ReturnType<fn> {
-  const { client, method: name } = target(method)
-  return client.request(name, params as Params, options.signal) as ReturnType<fn>
+  const { client, method: name } = target(method);
+  return client.request(name, params as Params, options.signal) as ReturnType<fn>;
 }
 
 export declare namespace notify {
   type Options = {
     /** Rejects with `signal.reason` instead of sending when already aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -87,10 +87,10 @@ export declare namespace notify {
  *
  * @example
  * ```ts
- * import * as Rpc from '@portable/rpc'
+ * import * as Rpc from '@portable/rpc';
  *
- * await Rpc.notify(remote.log, ['page loaded'])
- * await Rpc.notify(mcp['notifications/initialized'], {})
+ * await Rpc.notify(remote.log, ['page loaded']);
+ * await Rpc.notify(mcp['notifications/initialized'], {});
  * ```
  */
 export function notify<fn extends (...args: any[]) => unknown>(
@@ -98,6 +98,6 @@ export function notify<fn extends (...args: any[]) => unknown>(
   params: CallParams<fn>,
   options: notify.Options = {},
 ): Promise<void> {
-  const { client, method: name } = target(method)
-  return client.notify(name, params as Params, options.signal)
+  const { client, method: name } = target(method);
+  return client.notify(name, params as Params, options.signal);
 }

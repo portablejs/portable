@@ -9,13 +9,13 @@ npm install @portable/compress
 ```
 
 ```ts
-import * as Compress from '@portable/compress'
+import * as Compress from '@portable/compress';
 
-const gzipped = await Compress.encode('hello world')
-const bytes = await Compress.decode(gzipped, { maxBytes: 10_000_000 })
+const gzipped = await Compress.encode('hello world');
+const bytes = await Compress.decode(gzipped, { maxBytes: 10_000_000 });
 
-const response = await fetch('https://example.com/export.ndjson.gz')
-const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }))
+const response = await fetch('https://example.com/export.ndjson.gz');
+const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1_000_000_000 }));
 ```
 
 ## API
@@ -85,25 +85,10 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch:
 
-| pako / fflate / node:zlib | @portable/compress |
-| --- | --- |
-| `pako.gzip(data)`, `fflate.gzipSync(data)`, `zlib.gzipSync(data)` | `await Compress.encode(data)` |
-| `pako.ungzip(data)`, `fflate.gunzipSync(data)`, `zlib.gunzipSync(data)` | `await Compress.decode(data)` |
-| `pako.deflate(data)`, `fflate.zlibSync(data)`, `zlib.deflateSync(data)` | `await Compress.encode(data, { format: 'deflate' })` |
-| `pako.inflate(data)`, `fflate.unzlibSync(data)`, `zlib.inflateSync(data)` | `await Compress.decode(data, { format: 'deflate' })` |
-| `pako.deflateRaw(data)`, `fflate.deflateSync(data)`, `zlib.deflateRawSync(data)` | `await Compress.encode(data, { format: 'deflate-raw' })` |
-| `pako.inflateRaw(data)`, `fflate.inflateSync(data)`, `zlib.inflateRawSync(data)` | `await Compress.decode(data, { format: 'deflate-raw' })` |
-| `pako.inflate(data, { to: 'string' })`, `fflate.strFromU8(...)` | `new TextDecoder().decode(await Compress.decode(data))` |
-| `zlib.gunzipSync(data, { maxOutputLength })` | `await Compress.decode(data, { maxBytes })` |
-| `zlib.createGunzip()`, `new fflate.Gunzip()`, `new pako.Inflate()` | `new Compress.DecoderStream()` |
-| `zlib.crc32(data, value)` | `Compress.crc32(data, previous)` |
-| `{ level }`, `{ dictionary }`, `{ strategy }` | Not supported by `CompressionStream`. Keep fflate for these. |
-
-Behavior that differs on purpose:
-
-- Every function is async, because `CompressionStream` is. There are no sync variants.
-- `decode` and `DecoderStream` fail with `InvalidInputError` on bytes after the end of the data. `node:zlib` and pako ignore them, including a second zlib stream and zero padding after a gzip member.
-- `DecoderStream` reads one gzip member, as `DecompressionStream` does, and fails with `InvalidInputError` on a second member. `decode` reads them all.
-- Runtimes differ on a zlib header that declares a smaller window than the data uses. Chromium decodes it, as pako does, and Node throws `InvalidInputError`.
+- pako, fflate and `node:zlib` have sync functions. Every function here is async, because `CompressionStream` is.
+- The `strategy` option of pako, fflate and `node:zlib` has no equivalent. Keep fflate if you need a level, a dictionary or a strategy.
+- `node:zlib` and pako ignore bytes after the end of the data, including a second zlib stream and zero padding after a gzip member. `decode` and `DecoderStream` fail with `InvalidInputError` on them.
+- `zlib.createGunzip()` reads every gzip member. `DecoderStream` reads one, as `DecompressionStream` does, and fails with `InvalidInputError` on a second. `decode` reads them all.
+- pako decodes a zlib stream whose header declares a smaller window than the data uses. `decode` decodes it too in Chromium, and throws `InvalidInputError` in Node.

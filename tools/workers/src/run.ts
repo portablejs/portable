@@ -3,19 +3,19 @@
 // Because it imports every module, a module that calls `setTimeout` or `crypto.getRandomValues`
 // at the top level fails here as it would on Cloudflare. `@cloudflare/vitest-pool-workers` supports only
 // Vitest 4, so this runs outside Vitest until it supports Vitest 5.
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-import { Miniflare } from 'miniflare'
-import { build, type Rollup } from 'vite-plus'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { Miniflare } from 'miniflare';
+import { build, type Rollup } from 'vite-plus';
 
-const root = resolve(import.meta.dirname, '../../..')
-const tool = resolve(root, 'tools/workers')
-const entry = resolve(tool, 'src/__entry.ts')
+const root = resolve(import.meta.dirname, '../../..');
+const tool = resolve(root, 'tools/workers');
+const entry = resolve(tool, 'src/__entry.ts');
 
 const specifiers = readdirSync(resolve(root, 'packages')).flatMap((name) => {
-  const pkg = JSON.parse(readFileSync(resolve(root, 'packages', name, 'package.json'), 'utf8'))
-  return Object.keys(pkg.exports ?? {}).map((path: string) => pkg.name + path.slice(1))
-})
+  const pkg = JSON.parse(readFileSync(resolve(root, 'packages', name, 'package.json'), 'utf8'));
+  return Object.keys(pkg.exports ?? {}).map((path: string) => pkg.name + path.slice(1));
+});
 
 const code = [
   ...specifiers.map((specifier, i) => `import * as m${i} from '${specifier}'`),
@@ -37,7 +37,7 @@ const code = [
       return Response.json(results)
     },
   }`,
-].join('\n')
+].join('\n');
 
 const output = (await build({
   configFile: false,
@@ -63,37 +63,37 @@ const output = (await build({
       load: (id) => (id === entry ? code : null),
     },
   ],
-})) as Rollup.RollupOutput
+})) as Rollup.RollupOutput;
 
-const chunks = output.output.filter((file): file is Rollup.OutputChunk => file.type === 'chunk')
+const chunks = output.output.filter((file): file is Rollup.OutputChunk => file.type === 'chunk');
 if (chunks.length !== 1) {
-  throw new Error(`Expected one chunk, got ${chunks.length}`)
+  throw new Error(`Expected one chunk, got ${chunks.length}`);
 }
 
 // Line numbers in a workerd stack trace refer to the bundle. Set WORKERS_BUNDLE=<path> to save
 // the bundle and look them up.
 if (process.env.WORKERS_BUNDLE) {
-  writeFileSync(process.env.WORKERS_BUNDLE, chunks[0]!.code)
+  writeFileSync(process.env.WORKERS_BUNDLE, chunks[0]!.code);
 }
 const miniflare = new Miniflare({
   modules: true,
   script: chunks[0]!.code,
   compatibilityDate: '2026-07-01',
-})
-let failed = 0
+});
+let failed = 0;
 try {
-  const response = await miniflare.dispatchFetch('https://worker.example/')
-  const results = (await response.json()) as Record<string, string>
+  const response = await miniflare.dispatchFetch('https://worker.example/');
+  const results = (await response.json()) as Record<string, string>;
   for (const [name, result] of Object.entries(results)) {
     if (result === 'pass') {
-      console.log(`✓ ${name}`)
+      console.log(`✓ ${name}`);
     } else {
-      failed++
-      console.log(`✗ ${name}\n  ${result.replaceAll('\n', '\n  ')}`)
+      failed++;
+      console.log(`✗ ${name}\n  ${result.replaceAll('\n', '\n  ')}`);
     }
   }
-  console.log(`\n${Object.keys(results).length - failed} passed, ${failed} failed in workerd`)
+  console.log(`\n${Object.keys(results).length - failed} passed, ${failed} failed in workerd`);
 } finally {
-  await miniflare.dispose()
+  await miniflare.dispose();
 }
-process.exitCode = failed > 0 ? 1 : 0
+process.exitCode = failed > 0 ? 1 : 0;

@@ -1,23 +1,23 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown by `decode` when the input ends before the message does, or a length field points past
  * the end. With `framing: 'tcp'`, this also means the whole message hasn't arrived yet.
  *
  * @example
  * ```ts
- * import * as DnsPacket from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet';
  *
  * try {
- *   DnsPacket.decode(new Uint8Array(4))
+ *   DnsPacket.decode(new Uint8Array(4));
  * } catch (error) {
  *   if (error instanceof DnsPacket.TruncatedError) {
- *     console.log('incomplete message')
+ *     console.log('incomplete message');
  *   }
  * }
  * ```
  */
 export class TruncatedError extends Errors.TruncatedError {
-  static override readonly kind: string = 'DnsPacket.TruncatedError'
+  static override readonly kind: string = 'DnsPacket.TruncatedError';
 }
 
 /**
@@ -28,19 +28,19 @@ export class TruncatedError extends Errors.TruncatedError {
  *
  * @example
  * ```ts
- * import * as DnsPacket from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet';
  *
  * try {
- *   DnsPacket.encode({ answers: [{ type: 'A', name: 'example.com', data: '300.0.0.1' }] })
+ *   DnsPacket.encode({ answers: [{ type: 'A', name: 'example.com', data: '300.0.0.1' }] });
  * } catch (error) {
  *   if (error instanceof DnsPacket.InvalidInputError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'DnsPacket.InvalidInputError'
+  static override readonly kind: string = 'DnsPacket.InvalidInputError';
 }
 
 /**
@@ -49,17 +49,18 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as DnsPacket from '@portable/dns-packet'
+ * import * as DnsPacket from '@portable/dns-packet';
  *
  * try {
- *   DnsPacket.encode({ additionals: [{ type: 'OPT', name: '.', options: [{ code: 'NSID' }] }] })
+ *   // @ts-expect-error The types require `data`, because NSID has no built-in encoder.
+ *   DnsPacket.encode({ additionals: [{ type: 'OPT', name: '.', options: [{ code: 'NSID' }] }] });
  * } catch (error) {
  *   if (error instanceof DnsPacket.UnsupportedError) {
- *     console.log('pass the option as data')
+ *     console.log('pass the option as data');
  *   }
  * }
  * ```
  */
 export class UnsupportedError extends Errors.UnsupportedError {
-  static override readonly kind: string = 'DnsPacket.UnsupportedError'
+  static override readonly kind: string = 'DnsPacket.UnsupportedError';
 }

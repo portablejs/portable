@@ -9,19 +9,19 @@ npm install @portable/dmarc @portable/spf @portable/dns
 ```
 
 ```ts
-import * as Dmarc from '@portable/dmarc'
-import * as Dns from '@portable/dns'
-import * as Spf from '@portable/spf'
+import * as Dmarc from '@portable/dmarc';
+import * as Dns from '@portable/dns';
+import * as Spf from '@portable/spf';
 
-const resolver = Dns.create()
-const spf = await Spf.check({ ip, sender, helo }, { resolver })
+const resolver = Dns.create();
+const spf = await Spf.check({ ip, sender, helo }, { resolver });
 const dmarc = await Dmarc.check(
   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'example.com' }] },
   { resolver, signal: AbortSignal.timeout(10_000) },
-)
+);
 
 if (dmarc.disposition === 'reject') {
-  reject('550 5.7.1 Rejected by the DMARC policy of example.com')
+  reject('550 5.7.1 Rejected by the DMARC policy of example.com');
 }
 ```
 
@@ -74,9 +74,9 @@ The check walks only in two cases: to find the policy when the From domain has n
 Pass `organizationalDomain` to use a public suffix list instead:
 
 ```ts
-import { getDomain } from 'tldts'
+import { getDomain } from 'tldts';
 
-await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDomain })
+await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDomain });
 ```
 
 ## Types
@@ -115,30 +115,14 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch from mailauth:
 
-| mailauth | @portable/dmarc |
-| --- | --- |
-| `dmarc({ headerFrom, spfDomains, dkimDomains, resolver })` | `Dmarc.check({ from, spf, dkim }, { resolver })` |
-| `headerFrom: 'user@example.com'` or an array of addresses | `from: 'example.com'`. Parse the From header first, for example with `@portable/mime-headers`. |
-| `spfDomains: [domain]` for a passing SPF result | `spf`: the `Spf.check` result. |
-| `dkimDomains: [{ domain, underSized }]` for passing signatures | `dkim: [{ result, domain }]` for every signature. Each signature's alignment is reported, so look up its `l=` tag yourself. |
-| `resolver: (name, type) => records` | `resolver: dns` from `node:dns/promises`, or an object with `resolveTxt`, `resolve4` and `resolveCname`. |
-| `strict: true` | The only behavior. |
-| `arcResult` | Not taken. `@portable/mail-auth` will combine ARC and DMARC. |
-| `false` for a From header without one domain | Decide before calling. A `from` that isn't a domain name gives `permerror`. |
-| `result.status.result` | `result.result` |
-| `result.policy` | `result.policy`. `result.disposition` is the policy for `fail` and `'none'` otherwise. |
-| `result.p`, `result.sp`, `result.np`, `result.testMode`, `result.rr` | `result.record.p`, `.sp`, `.np`, `.t === 'y'`, `.text` |
-| `result.policyDomain` | `result.policyDomain` |
-| `result.domain` (the organizational domain) | Not reported. `policyDomain` gives where the record is. |
-| `result.alignment.spf.result`, `.dkim.result` | `result.spf.aligned`, and `result.dkim.find((signature) => signature.aligned)` |
-| `result.alignment.dkim.strict` | `result.record.adkim === 's'` |
-| `result.error` | `result.reason` |
-| A resolver that times out | `signal: AbortSignal.timeout(ms)`, which rejects instead of giving `temperror`. |
-| `result.status.header`, `result.info`, `result.warnings` | Not built. `@portable/mail-auth` will build Authentication-Results headers. |
-
-These results differ from mailauth's strict mode:
-
-- A From domain that isn't a domain name gives `permerror` instead of `false`, and a domain literal gives `none`.
+- mailauth's `headerFrom` takes an address or an array of addresses. `from` takes the domain, so parse the From header first, for example with `@portable/mime-headers`.
+- mailauth returns `false` for a From header without exactly one domain. Decide that before calling `check`: a `from` that isn't a domain name gives `permerror`, and a domain literal gives `none`.
+- mailauth's `dkimDomains` takes only passing signatures, with an `underSized` flag. `dkim` takes every signature and reports the alignment of each, so check a signature's `l=` tag yourself.
+- mailauth's `resolver` is one `(name, type)` function. `check` takes an object with `resolveTxt`, `resolve4` and `resolveCname`, such as `node:dns/promises`.
+- mailauth's `arcResult` has no equivalent. `@portable/mail-auth` will combine ARC and DMARC.
+- mailauth's `result.domain`, the organizational domain, is not reported. `policyDomain` gives the domain that holds the record.
+- mailauth gives `temperror` when the resolver times out. A `signal` such as `AbortSignal.timeout(ms)` makes `check` reject instead.
+- mailauth's `status.header`, `info` and `warnings` have no equivalent. `@portable/mail-auth` will build Authentication-Results headers.
 - `pct` and `ri` are not reported, because RFC 9989 made them historic.

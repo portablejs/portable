@@ -9,10 +9,10 @@ npm install @portable/image-size
 ```
 
 ```ts
-import * as ImageSize from '@portable/image-size'
+import * as ImageSize from '@portable/image-size';
 
-const response = await fetch('https://example.com/photo.jpg')
-const { width, height, type } = await ImageSize.parseStream(response.body!)
+const response = await fetch('https://example.com/photo.jpg');
+const { width, height, type } = await ImageSize.parseStream(response.body!);
 // { width: 1600, height: 1200, type: 'jpg', orientation: 1 }
 ```
 
@@ -70,6 +70,13 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 - Input that ends early gives `TruncatedError`. image-size throws a `RangeError` from `DataView`.
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - Lossless and arithmetic-coded JPEGs are read, which image-size rejects, and there is no global `disableTypes` state shared by every caller in the process.
+- image-size throws a `TypeError` for an unsupported file type. `parse` throws `UnsupportedError` instead, and `TruncatedError` or `InvalidInputError` for a broken file, so a `catch` that checks for `TypeError` has to check for these errors instead.
+- image-size skips the JPEG marker right after the start-of-image marker without reading it, so it misses a frame header there, and it assumes the Exif IFD0 starts 8 bytes into the TIFF header. `parse` reads that marker and follows the IFD0 offset the header stores.
+- image-size lists every HEIF `ispe` property in `images`, which for a tiled photo means every tile. `parse` returns no `images` list for HEIF files, and it detects animated AVIF (`avis`), which image-size doesn't.
+- image-size reads TIFF tags past the IFD's entry count until it finds a zero tag, so data after the IFD can overwrite the width and height, and it returns an undocumented `compression` field. `parse` reads only the entries the first IFD declares and returns no `compression` field.
+- image-size lists ICNS entries that aren't icons, such as the table of contents, and returns the icons found so far when the file is cut short. `parse` skips those entries and throws `TruncatedError` for a short file.
+- image-size splits an SVG `viewBox` on single spaces only, so it gives no size for `0,0,100,100`. `parse` accepts commas and repeated spaces.
+- image-size needs a PNM file's width and height on one line, separated by one space, and returns `NaN` for dimensions that aren't numbers. `parse` reads them across lines with comments between them, and throws `InvalidInputError` for dimensions that aren't numbers.
 
 <!-- bench:start -->
 | | @portable/image-size | image-size |
@@ -94,23 +101,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| image-size | @portable/image-size |
-| --- | --- |
-| `imageSize(buffer)` | `ImageSize.parse(bytes)` |
-| `imageSizeFromFile(path)` | `ImageSize.parseStream((await fs.openAsBlob(path)).stream())` in Node, or `ImageSize.parseStream(file.stream())` for a `File` |
-| `disableTypes(['svg'])` | Check `size.type` after parsing. There is no global state. |
-| `types` | The `ImageSize.Type` union. |
-| `catch (e) { if (e instanceof TypeError) }` | Catch `UnsupportedError`, `TruncatedError` or `InvalidInputError`. |
-
-Behavior that differs from image-size, each fixing a bug listed in [`PARITY.md`](test/PARITY.md#known-upstream-issues):
-
-- Input that is too short gives `TruncatedError`. image-size throws a `RangeError` from `DataView` or reports a malformed file.
-- JPEG: every start-of-frame marker is read, including lossless and arithmetic-coded ones, and a frame header right after the start-of-image marker. The Exif IFD0 offset is read from the header instead of assumed to be 8.
-- HEIF: the size is the primary item's, with the clean aperture and rotation applied, and there is no `images` list. image-size reports every `ispe` property, subtracts the aperture's denominator from the width, and ignores rotation. Animated AVIF (`avis`) is detected.
-- TIFF: only the entries the first IFD declares are read, and the undocumented `compression` field is not returned.
-- ICNS: entries that are not icons, such as the table of contents, are skipped, and a file cut short throws `TruncatedError` instead of listing the icons found so far.
-- SVG: a `viewBox` may separate its numbers with commas or several spaces.
-- PNM: width and height may be on separate lines with comments between them, and dimensions that are not numbers throw `InvalidInputError`.

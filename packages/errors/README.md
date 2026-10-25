@@ -9,16 +9,16 @@ npm install @portable/errors
 ```
 
 ```ts
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 
 try {
-  const body = await Streams.toBytes(request.body.pipeThrough(Streams.limitBytes(1_000_000)))
-  const image = await Compress.decode(body, { maxBytes: 10_000_000 })
+  const body = await Streams.toBytes(request.body!.pipeThrough(Streams.limitBytes(1_000_000)));
+  const image = await Compress.decode(body, { maxBytes: 10_000_000 });
 } catch (error) {
   if (Errors.is(error, 'MaxBytes')) {
-    return new Response(`Over ${error.maxBytes} bytes`, { status: 413 })
+    return new Response(`Over ${error.maxBytes} bytes`, { status: 413 });
   }
-  throw error
+  throw error;
 }
 ```
 
@@ -31,8 +31,8 @@ An app can end up with two copies of a package, for example when the app needs v
 Each error stores its class's `kind`, and the `kind` of every parent class, under `Symbol.for('portable.error')`. `Symbol.for` returns the same symbol in every copy of every package. Other libraries don't set this key by accident, and `JSON.stringify` and `Object.keys` skip it. The classes define `static [Symbol.hasInstance]` to read it, so `instanceof` works across copies too:
 
 ```ts
-error instanceof Errors.MaxBytesError // any package's MaxBytesError, from any copy
-error instanceof Compress.MaxBytesError // only compress's, from any copy of compress
+error instanceof Errors.MaxBytesError; // any package's MaxBytesError, from any copy
+error instanceof Compress.MaxBytesError; // only compress's, from any copy of compress
 ```
 
 ## API
@@ -54,7 +54,7 @@ A package defines each error it throws as a subclass of one of these classes:
 
 ```ts
 export class MaxBytesError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'Compress.MaxBytesError'
+  static override readonly kind: string = 'Compress.MaxBytesError';
 }
 ```
 
@@ -70,10 +70,3 @@ export class MaxBytesError extends Errors.MaxBytesError {
 - `instanceof` and `is` give the same answer when an app has two copies of a package.
 - `Errors.is(error, 'MaxBytes')` matches an exceeded size limit from streams, compress, exif or any other package.
 - `ResponseError` keeps the whole `Response`, so a caller can read `Retry-After` and other headers.
-
-## Migrating
-
-| Before | After |
-| --- | --- |
-| `class XError extends Error { override name = 'Pkg.XError' }` | `class XError extends Errors.InvalidInputError { static override readonly kind: string = 'Pkg.XError' }` |
-| `error instanceof Compress.MaxBytesError \|\| error instanceof Streams.MaxBytesError` | `Errors.is(error, 'MaxBytes')` |

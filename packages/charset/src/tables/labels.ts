@@ -39,7 +39,7 @@ export type CharsetName =
   | 'replacement'
   | 'UTF-16BE'
   | 'UTF-16LE'
-  | 'x-user-defined'
+  | 'x-user-defined';
 
 export const labels: Record<string, CharsetName> = {
   '10007': 'x-mac-cyrillic',
@@ -335,4 +335,4 @@ export const labels: Record<string, CharsetName> = {
   xunicode20utf8: 'UTF-8',
   xuserdefined: 'x-user-defined',
   xxbig5: 'Big5',
-}
+};

@@ -1,12 +1,12 @@
-import type { Result } from './create.js'
+import type { Result } from './create.js';
 
 export declare namespace headers {
   type Options = {
     /** The quota policy name in both fields. @default 'default' */
-    name?: string | undefined
+    name?: string | undefined;
     /** The time `resetAt` is counted from. @default new Date() */
-    now?: Date | undefined
-  }
+    now?: Date | undefined;
+  };
 }
 
 /**
@@ -15,11 +15,11 @@ export declare namespace headers {
  *
  * @example
  * ```ts
- * import * as RateLimit from '@portable/rate-limit'
+ * import * as RateLimit from '@portable/rate-limit';
  *
- * const result = await limiter.take(ip)
+ * const result = await limiter.take(ip);
  * if (!result.allowed) {
- *   return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+ *   return new Response(null, { status: 429, headers: RateLimit.headers(result) });
  * }
  * // RateLimit-Policy: "default";q=100;w=60
  * // RateLimit: "default";r=0;t=1
@@ -27,21 +27,21 @@ export declare namespace headers {
  * ```
  */
 export function headers(result: Result, options: headers.Options = {}): Record<string, string> {
-  const { name = 'default', now = new Date() } = options
+  const { name = 'default', now = new Date() } = options;
   if (!/^[\x20-\x7e]*$/.test(name)) {
-    throw new RangeError(`\`name\` must be printable ASCII, got ${JSON.stringify(name)}.`)
+    throw new RangeError(`\`name\` must be printable ASCII, got ${JSON.stringify(name)}.`);
   }
-  const item = `"${name.replaceAll(/["\\]/g, '\\$&')}"`
-  const retry = !result.allowed && Number.isFinite(result.retryAfter)
-  const window = retry ? result.retryAfter : result.resetAt.getTime() - now.getTime()
+  const item = `"${name.replaceAll(/["\\]/g, '\\$&')}"`;
+  const retry = !result.allowed && Number.isFinite(result.retryAfter);
+  const window = retry ? result.retryAfter : result.resetAt.getTime() - now.getTime();
   const fields: Record<string, string> = {
     'RateLimit-Policy': `${item};q=${result.limit};w=${seconds(result.period)}`,
     RateLimit: `${item};r=${result.remaining};t=${seconds(window)}`,
-  }
+  };
   if (retry) {
-    fields['Retry-After'] = String(seconds(result.retryAfter))
+    fields['Retry-After'] = String(seconds(result.retryAfter));
   }
-  return fields
+  return fields;
 }
 
-const seconds = (ms: number): number => Math.max(0, Math.ceil(ms / 1000))
+const seconds = (ms: number): number => Math.max(0, Math.ceil(ms / 1000));

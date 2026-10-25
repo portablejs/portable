@@ -1,12 +1,12 @@
-import { assertUint8Array } from '@portable/bytes/internal'
-import type { DecoderStream } from './DecoderStream.js'
-import { createParser } from './parser.js'
+import { assertUint8Array } from '@portable/bytes/internal';
+import type { DecoderStream } from './DecoderStream.js';
+import { createParser } from './parser.js';
 
 export declare namespace decode {
   type Options<header extends DecoderStream.Header = DecoderStream.Header> = Omit<
     DecoderStream.Options<header>,
     'signal'
-  >
+  >;
 }
 
 /**
@@ -15,11 +15,11 @@ export declare namespace decode {
  *
  * @example
  * ```ts
- * import * as Csv from '@portable/csv'
+ * import * as Csv from '@portable/csv';
  *
- * Csv.decode('name,age\r\n"Smith, J",42\r\n') // [['name', 'age'], ['Smith, J', '42']]
- * Csv.decode('name,age\nAda,36\n', { header: true }) // [{ name: 'Ada', age: '36' }]
- * Csv.decode('a\tb\n', { delimiter: '\t' }) // [['a', 'b']]
+ * Csv.decode('name,age\r\n"Smith, J",42\r\n'); // [['name', 'age'], ['Smith, J', '42']]
+ * Csv.decode('name,age\nAda,36\n', { header: true }); // [{ name: 'Ada', age: '36' }]
+ * Csv.decode('a\tb\n', { delimiter: '\t' }); // [['a', 'b']]
  * ```
  *
  * @throws {InvalidInputError} When text follows a closing quote, a row's field count differs from
@@ -36,10 +36,10 @@ export function decode<const header extends DecoderStream.Header = false>(
       ? input
       : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(
           assertUint8Array(input),
-        )
-  const rows: DecoderStream.Row<header>[] = []
-  const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header>))
-  parser.write(text)
-  parser.end()
-  return rows
+        );
+  const rows: DecoderStream.Row<header>[] = [];
+  const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header>));
+  parser.write(text);
+  parser.end();
+  return rows;
 }

@@ -1,35 +1,35 @@
-import { Readable } from 'node:stream'
-import ndjson from 'ndjson'
-import { describe, expect, test } from 'vite-plus/test'
-import { decode, encode, encodeUtf8, randomChunks, rows } from './utils.js'
+import { Readable } from 'node:stream';
+import ndjson from 'ndjson';
+import { describe, expect, test } from 'vite-plus/test';
+import { decode, encode, encodeUtf8, randomChunks, rows } from './utils.js';
 
 function collect(stream: NodeJS.ReadableStream): Promise<unknown[]> {
-  const values: unknown[] = []
+  const values: unknown[] = [];
   return new Promise((resolve, reject) => {
-    stream.on('data', (value: unknown) => values.push(value))
-    stream.on('end', () => resolve(values))
-    stream.on('error', reject)
-  })
+    stream.on('data', (value: unknown) => values.push(value));
+    stream.on('end', () => resolve(values));
+    stream.on('error', reject);
+  });
 }
 
 function viaNdjson(chunks: readonly Uint8Array[]): Promise<unknown[]> {
-  return collect(Readable.from(chunks).pipe(ndjson.parse()))
+  return collect(Readable.from(chunks).pipe(ndjson.parse()));
 }
 
 async function stringifyViaNdjson(values: readonly unknown[]): Promise<string> {
-  const stringify = ndjson.stringify()
-  const output = collect(stringify)
+  const stringify = ndjson.stringify();
+  const output = collect(stringify);
   for (const value of values) {
-    stringify.write(value)
+    stringify.write(value);
   }
-  stringify.end()
-  return (await output).join('')
+  stringify.end();
+  return (await output).join('');
 }
 
 const lines =
   rows(500)
     .map((row) => JSON.stringify(row))
-    .join('\n') + '\n'
+    .join('\n') + '\n';
 
 describe('DecoderStream matches ndjson', () => {
   for (const [name, text] of [
@@ -40,16 +40,16 @@ describe('DecoderStream matches ndjson', () => {
   ]) {
     for (const seed of [1, 2, 3]) {
       test(`${name}, random chunking ${seed}`, async () => {
-        const chunks = randomChunks(encodeUtf8(text!), seed)
-        expect(await decode(chunks)).toEqual(await viaNdjson(chunks))
-      })
+        const chunks = randomChunks(encodeUtf8(text!), seed);
+        expect(await decode(chunks)).toEqual(await viaNdjson(chunks));
+      });
     }
   }
-})
+});
 
 describe.skipIf(process.platform === 'win32')('EncoderStream matches ndjson', () => {
   test('rows', async () => {
-    const values = rows(200)
-    expect(await encode(values)).toBe(await stringifyViaNdjson(values))
-  })
-})
+    const values = rows(200);
+    expect(await encode(values)).toBe(await stringifyViaNdjson(values));
+  });
+});

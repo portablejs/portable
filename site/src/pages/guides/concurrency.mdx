@@ -1,0 +1,32 @@
+---
+description: Run timers, retries, and queues that stop when their AbortSignal aborts, and limit requests per key.
+---
+
+# Concurrency and timing
+
+Every timer, retry, and queue in these packages takes an `AbortSignal`. Pass `request.signal`, and when the client disconnects, the sleeps, retries, and queued tasks that the request started stop instead of running on.
+
+- [`queue`](/packages/queue) limits how many async tasks run at once, with priorities.
+- [`timers`](/packages/timers) has sleep, retry, poll, debounce, and throttle.
+- [`rate-limit`](/packages/rate-limit) limits requests per key, in memory, Workers KV, a Durable Object, or Redis over HTTP.
+
+## Fetch many URLs with a concurrency limit and retries
+
+This function runs at most four requests at once, tries each URL up to three times with backoff, and gives each attempt 10 seconds. Aborting `signal` stops every request, including the ones still in the queue:
+
+```ts
+import * as Queue from '@portable/queue';
+import * as Timers from '@portable/timers';
+
+async function fetchAll(urls: readonly string[], signal: AbortSignal) {
+  return Queue.map(
+    urls,
+    (url, { signal }) =>
+      Timers.retry(
+        ({ signal }) => fetch(url, { signal }).then((r) => r.text()),
+        { attempts: 3, timeout: 10_000, signal },
+      ),
+    { concurrency: 4, signal },
+  );
+}
+```

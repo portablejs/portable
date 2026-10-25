@@ -11,11 +11,11 @@ npm install @portable/arc @portable/dns
 A forwarder, such as a mailing list, validates the chain that arrived and seals the message with the result before it changes the message:
 
 ```ts
-import * as Arc from '@portable/arc'
-import * as Dns from '@portable/dns'
+import * as Arc from '@portable/arc';
+import * as Dns from '@portable/dns';
 
-const resolver = Dns.create()
-const arc = await Arc.verify(message, { resolver, signal: AbortSignal.timeout(10_000) })
+const resolver = Dns.create();
+const arc = await Arc.verify(message, { resolver, signal: AbortSignal.timeout(10_000) });
 
 const fields = await Arc.seal(message, {
   domain: 'lists.example.org',
@@ -23,8 +23,8 @@ const fields = await Arc.seal(message, {
   privateKey: env.ARC_PRIVATE_KEY,
   authResults: `lists.example.org; arc=${arc.result}; spf=pass smtp.mailfrom=example.com`,
   chainValidation: arc.result,
-})
-const forwarded = fields + message
+});
+const forwarded = fields + message;
 ```
 
 A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM and DMARC, in one call.
@@ -43,9 +43,9 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 A receiver uses `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
 
 ```ts
-const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com')
+const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com');
 if (google && /\bdmarc=pass\b/.test(google.authResults)) {
-  deliver()
+  deliver();
 }
 ```
 
@@ -114,24 +114,13 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch from mailauth:
 
-| mailauth | @portable/arc |
-| --- | --- |
-| `const { arc } = await authenticate(message, { resolver })` | `const arc = await Arc.verify(message, { resolver })`, or `MailAuth.authenticate` from `@portable/mail-auth` |
-| `arc.status.result` | `arc.result` |
-| `arc.status.comment` | `arc.reason`, for failures. `@portable/mail-auth` builds the pass comment (`i=1 spf=pass dkim=pass`). |
-| `arc.i` | `arc.instance` |
-| `arc.authenticationResults` (parsed) | `arc.sets.at(-1).authResults` (text) |
-| `arc.signature` | Not returned. A failing ARC-Message-Signature is in `arc.reason`. |
-| `arc.status.shouldSeal` | `true` unless the newest seal says `cv=fail`, and in that case `seal` throws `Arc.InvalidInputError`. |
-| `strict: true` | The only behavior. |
-| `minBitLength` | `minKeyBits` |
-| `sealMessage(message, { signingDomain, selector, privateKey, authResults, cv })` | `Arc.seal(message, { domain, selector, privateKey, authResults, chainValidation })`. It resolves to a string, not a Buffer. |
-| `createSeal(message, { seal })` and its `{ headers, errors, warnings }` | `Arc.seal`, which resolves to the fields and throws on errors. |
-| `seal.i` | Not supported. The instance always follows the highest on the message. |
-| `seal.algorithm` | Follows the key type. |
-| `seal.headerList` | `headers`, an array. |
-| `seal.signTime` | `now` |
-| `seal.bodyHash`, `seal.headers` (sealing without the message) | Not supported. Pass the message. |
-| `cv: 'PASS'` | Lower case only: `'none'`, `'pass'` or `'fail'`, as `Arc.verify` returns them. |
+- mailauth's `arc.status.comment` also holds a comment for a pass. `reason` is set only for failures, and `@portable/mail-auth` builds the pass comment (`i=1 spf=pass dkim=pass`).
+- mailauth parses `arc.authenticationResults`. Each entry of `sets` holds `authResults` as text.
+- mailauth's `arc.signature` has no equivalent. A failing ARC-Message-Signature is described in `reason`.
+- mailauth's `arc.status.shouldSeal` has no equivalent. `seal` throws `Arc.InvalidInputError` when the newest seal says `cv=fail`.
+- mailauth's `sealMessage` resolves to a `Buffer`, and `seal` resolves to a string.
+- mailauth's `seal.i` has no equivalent. The instance is always one more than the highest on the message.
+- mailauth's `seal.bodyHash` and `seal.headers` let it seal without the message. `seal` always reads the message.
+- mailauth accepts `cv: 'PASS'` in upper case. `chainValidation` takes only `'none'`, `'pass'` or `'fail'` in lower case, as `Arc.verify` returns them.

@@ -9,20 +9,20 @@ npm install @portable/rdap
 ```
 
 ```ts
-import * as Rdap from '@portable/rdap'
+import * as Rdap from '@portable/rdap';
 
-const domain = await Rdap.domain('example.com')
-domain.events.expiration // Date
-domain.status // ['client delete prohibited', 'client transfer prohibited', 'client update prohibited']
-domain.nameservers // ['elliott.ns.cloudflare.com', 'hera.ns.cloudflare.com']
-domain.entities.find((entity) => entity.roles.includes('registrar'))?.name
+const domain = await Rdap.domain('example.com');
+domain.events.expiration; // Date
+domain.status; // ['client delete prohibited', 'client transfer prohibited', 'client update prohibited']
+domain.nameservers; // ['elliott.ns.cloudflare.com', 'hera.ns.cloudflare.com']
+domain.entities.find((entity) => entity.roles.includes('registrar'))?.name;
 
-const network = await Rdap.ip('8.8.8.8')
-network.cidrs // ['8.8.8.0/24']
-network.entities.find((entity) => entity.roles.includes('abuse'))?.email // 'network-abuse@google.com'
+const network = await Rdap.ip('8.8.8.8');
+network.cidrs; // ['8.8.8.0/24']
+network.entities.find((entity) => entity.roles.includes('abuse'))?.email; // 'network-abuse@google.com'
 
-const autnum = await Rdap.asn(15169)
-autnum.name // 'GOOGLE'
+const autnum = await Rdap.asn(15169);
+autnum.name; // 'GOOGLE'
 ```
 
 To check whether a name is registered, catch `NotFoundError`:
@@ -30,13 +30,13 @@ To check whether a name is registered, catch `NotFoundError`:
 ```ts
 async function isRegistered(name: string) {
   try {
-    await Rdap.domain(name, { follow: false })
-    return true
+    await Rdap.domain(name, { follow: false });
+    return true;
   } catch (error) {
     if (error instanceof Rdap.NotFoundError) {
-      return false
+      return false;
     }
-    throw error
+    throw error;
   }
 }
 ```
@@ -119,6 +119,15 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 - The `https` URL of a bootstrap service is used even when `http` is listed first. node-rdap takes the first URL.
 - Every lookup takes a `signal`, and the `fetch` and cache are per call. node-rdap sets the timeout and cache lifetime for the whole process with `configure`.
 - Prefixes (`8.8.8.0/24`) and IPv4-mapped IPv6 addresses can be looked up. node-rdap rejects the first and finds no server for the second.
+- node-rdap's `domain` returns the registry's JSON. To get the same, call `Rdap.domain(name, { follow: false })` and read `.raw`.
+- node-rdap's `flushCaches` and `resetCaches` have no equivalent. Pass a new `fetch` function to start with an empty bootstrap cache.
+- node-rdap rejects with `RdapTimeoutError` and `RdapNetworkError`. A lookup rejects with the `TimeoutError` that `AbortSignal.timeout` aborts with, or with the error `fetch` rejected with.
+- node-rdap's `nameserver` and `entity` lookups have no equivalent. Read `nameservers` and `entities` from the domain, or fetch a `self` link from `raw` yourself.
+- whoiser returns one object per WHOIS server it asked. `Rdap.domain` returns one merged result.
+- whoiser's `host` option has no equivalent. Pass a `fetch` that rewrites the URL.
+- whoiser's `whoisTld` has no equivalent. IANA's own RDAP server answers `https://rdap.iana.org/domain/com`.
+- `status` holds RDAP's words (`client transfer prohibited`), where WHOIS output holds EPP's (`clientTransferProhibited`).
+- TLDs without an RDAP server, such as `.de`, `.ch` and `.io`, reject with `UnsupportedError`. whoiser and whois-json can still look them up, because WHOIS is the only source for them, and it needs TCP.
 
 The benchmarks serve recorded responses from memory. node-rdap does no work after `response.json()`.
 
@@ -142,36 +151,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| node-rdap | @portable/rdap |
-| --- | --- |
-| `domain(fqdn)` | `Rdap.domain(name, { follow: false })` for the registry's response alone. `.raw` is the JSON node-rdap returns. |
-| `ip(address)` | `Rdap.ip(address)` |
-| `autnum(number)` | `Rdap.asn(number)` |
-| `configure({ timeoutMs })` | `{ signal: AbortSignal.timeout(ms) }` on each call. |
-| `configure({ cacheTtlSeconds })`, `flushCaches()`, `resetCaches()` | Bootstrap files are cached for 24 hours per `fetch` function. Pass a new `fetch` to start with an empty cache. |
-| `RdapValidationError` | `Rdap.InvalidInputError` |
-| `RdapServerNotFoundError` | `Rdap.UnsupportedError` |
-| `RdapRegistryError` with status 404 | `Rdap.NotFoundError` |
-| `RdapRegistryError`, `RdapNetworkError` | `Rdap.ResponseError`, or the error `fetch` rejected with. |
-| `RdapTimeoutError` | The `TimeoutError` that `AbortSignal.timeout` aborts with. |
-| `nameserver(name)`, `entity(handleOrUrl)` | Not available. Read `domain.nameservers` and `domain.entities`, or fetch a `self` link from `raw` yourself. |
-
-| whoiser / whois-json | @portable/rdap |
-| --- | --- |
-| `whoisDomain('google.com')` | `Rdap.domain('google.com')`. One merged result instead of one object per WHOIS server. |
-| `whoisDomain(name, { follow: 1 })` | `Rdap.domain(name, { follow: false })` |
-| `whoisDomain(name, { host })` | `Rdap.domain(name, { fetch })` with a `fetch` that rewrites the URL. |
-| `whoisDomain(name, { timeout })` | `{ signal: AbortSignal.timeout(ms) }` |
-| `whoisDomain(name, { raw: true })` | `.raw` and `.referral.raw` |
-| `whoisIp('1.1.1.1')` | `Rdap.ip('1.1.1.1')`. `range` is `startAddress` and `endAddress`, and `route` is `cidrs`. |
-| `whoisAsn(15169)` | `Rdap.asn(15169)`. `ASName` is `name`. |
-| `whoisTld('com')` | Not available. IANA's own RDAP server answers `https://rdap.iana.org/domain/com`. |
-| `'Expiry Date'`, `'Created Date'`, `updatedDate` | `events.expiration`, `events.registration`, `events.lastChanged` |
-| `'Domain Status'`, `domainStatus` | `status`, with RDAP's words (`client transfer prohibited`) instead of EPP's (`clientTransferProhibited`). |
-| `'Name Server'`, `nameServer` | `nameservers` |
-| `'Registrar'`, `'Registrant Email'`, `registrantOrganization` | `entities.find((e) => e.roles.includes('registrar'))?.name`, and `email` or `org` on the `registrant` entity. |
-
-TLDs without an RDAP server, such as `.de`, `.ch` and `.io`, reject with `UnsupportedError`. WHOIS is the only source for them, and it needs TCP.

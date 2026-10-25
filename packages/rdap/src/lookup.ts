@@ -1,6 +1,6 @@
-import * as Address from './address.js'
-import * as Bootstrap from './bootstrap.js'
-import { InvalidInputError, UnsupportedError } from './errors.js'
+import * as Address from './address.js';
+import * as Bootstrap from './bootstrap.js';
+import { InvalidInputError, UnsupportedError } from './errors.js';
 import {
   relatedLink,
   toAutnum,
@@ -10,9 +10,9 @@ import {
   type Autnum,
   type Domain,
   type Network,
-} from './normalize.js'
-import { request, type Context, type Fetch } from './request.js'
-import { hostToAscii } from '@portable/idna/internal'
+} from './normalize.js';
+import { request, type Context, type Fetch } from './request.js';
+import { hostToAscii } from '@portable/idna/internal';
 
 type Shared = {
   /**
@@ -21,12 +21,12 @@ type Shared = {
    * each `fetch` function.
    * @default globalThis.fetch
    */
-  fetch?: Fetch | undefined
+  fetch?: Fetch | undefined;
   /** Cancels the lookup. It rejects with `signal.reason`, as `fetch` does. */
-  signal?: AbortSignal | undefined
+  signal?: AbortSignal | undefined;
   /** The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. */
-  now?: Date | undefined
-}
+  now?: Date | undefined;
+};
 
 export declare namespace domain {
   type Options = Shared & {
@@ -35,40 +35,40 @@ export declare namespace domain {
      * it. A failed referral doesn't fail the lookup: `referral.error` holds the error.
      * @default true
      */
-    follow?: boolean | undefined
-  }
+    follow?: boolean | undefined;
+  };
 }
 
 export declare namespace ip {
-  type Options = Shared
+  type Options = Shared;
 }
 
 export declare namespace asn {
-  type Options = Shared
+  type Options = Shared;
 }
 
-const defaultFetch = ((request) => globalThis.fetch(request)) satisfies Fetch
+const defaultFetch = ((request) => globalThis.fetch(request)) satisfies Fetch;
 
-const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/
+const label = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
 
 function toAscii(name: string): string {
   if (typeof name !== 'string') {
-    throw new TypeError('The domain name must be a string')
+    throw new TypeError('The domain name must be a string');
   }
-  const host = hostToAscii(name)?.replace(/\.$/, '')
+  const host = hostToAscii(name)?.replace(/\.$/, '');
   if (host === undefined) {
-    throw new InvalidInputError(`Not a domain name: ${name}`)
+    throw new InvalidInputError(`Not a domain name: ${name}`);
   }
-  const labels = host.split('.')
+  const labels = host.split('.');
   if (
     host.length > 253 ||
     labels.length < 2 ||
     !labels.every((part) => label.test(part)) ||
     /^\d+$/.test(labels.at(-1)!)
   ) {
-    throw new InvalidInputError(`Not a domain name: ${name}`)
+    throw new InvalidInputError(`Not a domain name: ${name}`);
   }
-  return host
+  return host;
 }
 
 /**
@@ -82,33 +82,33 @@ function toAscii(name: string): string {
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
- * const domain = await Rdap.domain('example.com')
- * domain.events.expiration // Date
- * domain.entities.find((entity) => entity.roles.includes('registrar'))?.name
+ * const domain = await Rdap.domain('example.com');
+ * domain.events.expiration; // Date
+ * domain.entities.find((entity) => entity.roles.includes('registrar'))?.name;
  * ```
  */
 export async function domain(name: string, options: domain.Options = {}): Promise<Domain> {
-  const { fetch = defaultFetch, signal, now, follow = true } = options
-  const context = { fetch, signal, now } satisfies Context
-  const ascii = toAscii(name)
-  const base = await Bootstrap.domain(ascii, context)
+  const { fetch = defaultFetch, signal, now, follow = true } = options;
+  const context = { fetch, signal, now } satisfies Context;
+  const ascii = toAscii(name);
+  const base = await Bootstrap.domain(ascii, context);
   if (!base) {
-    throw new UnsupportedError(`IANA lists no RDAP server for ${ascii}`)
+    throw new UnsupportedError(`IANA lists no RDAP server for ${ascii}`);
   }
-  const url = new URL(`domain/${ascii}`, base).href
-  const { json } = await request(url, context)
-  const result = toDomain(json, ascii)
-  const related = follow ? relatedLink(json, url) : undefined
+  const url = new URL(`domain/${ascii}`, base).href;
+  const { json } = await request(url, context);
+  const result = toDomain(json, ascii);
+  const related = follow ? relatedLink(json, url) : undefined;
   if (!related) {
-    return result
+    return result;
   }
   try {
-    return withReferral(result, related, (await request(related, context)).json)
+    return withReferral(result, related, (await request(related, context)).json);
   } catch (error) {
-    signal?.throwIfAborted()
-    return { ...result, referral: { url: related, error } }
+    signal?.throwIfAborted();
+    return { ...result, referral: { url: related, error } };
   }
 }
 
@@ -122,29 +122,29 @@ export async function domain(name: string, options: domain.Options = {}): Promis
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
- * const network = await Rdap.ip('8.8.8.8')
- * network.cidrs // ['8.8.8.0/24']
- * network.entities.find((entity) => entity.roles.includes('abuse'))?.email
+ * const network = await Rdap.ip('8.8.8.8');
+ * network.cidrs; // ['8.8.8.0/24']
+ * network.entities.find((entity) => entity.roles.includes('abuse'))?.email;
  * ```
  */
 export async function ip(address: string, options: ip.Options = {}): Promise<Network> {
-  const { fetch = defaultFetch, signal, now } = options
-  const context = { fetch, signal, now } satisfies Context
+  const { fetch = defaultFetch, signal, now } = options;
+  const context = { fetch, signal, now } satisfies Context;
   if (typeof address !== 'string') {
-    throw new TypeError('The address must be a string')
+    throw new TypeError('The address must be a string');
   }
-  const prefix = Address.parse(address)
+  const prefix = Address.parse(address);
   if (!prefix) {
-    throw new InvalidInputError(`Not an IP address or prefix: ${address}`)
+    throw new InvalidInputError(`Not an IP address or prefix: ${address}`);
   }
-  const query = Address.format(prefix)
-  const base = await Bootstrap.ip(prefix, context)
+  const query = Address.format(prefix);
+  const base = await Bootstrap.ip(prefix, context);
   if (!base) {
-    throw new UnsupportedError(`IANA lists no RDAP server for ${query}`)
+    throw new UnsupportedError(`IANA lists no RDAP server for ${query}`);
   }
-  return toNetwork((await request(new URL(`ip/${query}`, base).href, context)).json)
+  return toNetwork((await request(new URL(`ip/${query}`, base).href, context)).json);
 }
 
 /**
@@ -156,21 +156,21 @@ export async function ip(address: string, options: ip.Options = {}): Promise<Net
  *
  * @example
  * ```ts
- * import * as Rdap from '@portable/rdap'
+ * import * as Rdap from '@portable/rdap';
  *
- * const autnum = await Rdap.asn(15169)
- * autnum.name // 'GOOGLE'
+ * const autnum = await Rdap.asn(15169);
+ * autnum.name; // 'GOOGLE'
  * ```
  */
 export async function asn(number: number, options: asn.Options = {}): Promise<Autnum> {
-  const { fetch = defaultFetch, signal, now } = options
-  const context = { fetch, signal, now } satisfies Context
+  const { fetch = defaultFetch, signal, now } = options;
+  const context = { fetch, signal, now } satisfies Context;
   if (!Number.isInteger(number) || number < 0 || number > 0xffffffff) {
-    throw new InvalidInputError(`Not an AS number: ${number}`)
+    throw new InvalidInputError(`Not an AS number: ${number}`);
   }
-  const base = await Bootstrap.asn(number, context)
+  const base = await Bootstrap.asn(number, context);
   if (!base) {
-    throw new UnsupportedError(`IANA lists no RDAP server for AS${number}`)
+    throw new UnsupportedError(`IANA lists no RDAP server for AS${number}`);
   }
-  return toAutnum((await request(new URL(`autnum/${number}`, base).href, context)).json)
+  return toAutnum((await request(new URL(`autnum/${number}`, base).href, context)).json);
 }

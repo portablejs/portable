@@ -1,21 +1,21 @@
 function makeCrc32(): (bytes: Uint8Array, crc: number) => number {
-  const table = new Int32Array(16 * 256)
+  const table = new Int32Array(16 * 256);
   for (let n = 0; n < 256; n++) {
-    let c = n
+    let c = n;
     for (let k = 0; k < 8; k++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
     }
-    table[n] = c
+    table[n] = c;
   }
   for (let n = 0; n < 256; n++) {
-    let c = table[n]!
+    let c = table[n]!;
     for (let k = 1; k < 16; k++) {
-      c = table[c & 0xff]! ^ (c >>> 8)
-      table[k * 256 + n] = c
+      c = table[c & 0xff]! ^ (c >>> 8);
+      table[k * 256 + n] = c;
     }
   }
-  const at = (k: number) => table.subarray(k * 256, k * 256 + 256)
-  const [t0, t1, t2, t3, t4, t5, t6, t7] = [at(0), at(1), at(2), at(3), at(4), at(5), at(6), at(7)]
+  const at = (k: number) => table.subarray(k * 256, k * 256 + 256);
+  const [t0, t1, t2, t3, t4, t5, t6, t7] = [at(0), at(1), at(2), at(3), at(4), at(5), at(6), at(7)];
   const [t8, t9, ta, tb, tc, td, te, tf] = [
     at(8),
     at(9),
@@ -25,9 +25,9 @@ function makeCrc32(): (bytes: Uint8Array, crc: number) => number {
     at(13),
     at(14),
     at(15),
-  ]
+  ];
   return (b, crc) => {
-    let i = 0
+    let i = 0;
     for (const end = b.length - 15; i < end;) {
       crc =
         tf[b[i++]! ^ (crc & 0xff)]! ^
@@ -45,21 +45,21 @@ function makeCrc32(): (bytes: Uint8Array, crc: number) => number {
         t3[b[i++]!]! ^
         t2[b[i++]!]! ^
         t1[b[i++]!]! ^
-        t0[b[i++]!]!
+        t0[b[i++]!]!;
     }
     for (; i < b.length; i++) {
-      crc = t0[(crc ^ b[i]!) & 0xff]! ^ (crc >>> 8)
+      crc = t0[(crc ^ b[i]!) & 0xff]! ^ (crc >>> 8);
     }
-    return crc
-  }
+    return crc;
+  };
 }
 
-let hash: ((bytes: Uint8Array, crc: number) => number) | undefined
+let hash: ((bytes: Uint8Array, crc: number) => number) | undefined;
 
 /**
  * Computes the CRC-32 checksum of gzip, zip and PNG, starting from `previous`. The lookup table is
  * built on the first call, not when the module is imported.
  */
 export function crc32(bytes: Uint8Array, previous: number = 0): number {
-  return ~(hash ??= makeCrc32())(bytes, ~previous) >>> 0
+  return ~(hash ??= makeCrc32())(bytes, ~previous) >>> 0;
 }

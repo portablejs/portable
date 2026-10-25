@@ -1,11 +1,11 @@
-import { type Address, format, from, isMapped, toIpv6, tryParse } from './address.js'
-import { InvalidInputError } from './errors.js'
+import { type Address, format, from, isMapped, toIpv6, tryParse } from './address.js';
+import { InvalidInputError } from './errors.js';
 
 /**
  * A CIDR block: the network address and the number of leading bits that every address in it
  * shares.
  */
-export type Cidr = { address: Address; prefix: number }
+export type Cidr = { address: Address; prefix: number };
 
 /**
  * Parses CIDR notation, such as `10.0.0.0/8` or `2001:db8::/32`. The address follows the rules of
@@ -15,33 +15,33 @@ export type Cidr = { address: Address; prefix: number }
  *
  * @example
  * ```ts
- * import * as Ip from '@portable/ip'
+ * import * as Ip from '@portable/ip';
  *
- * const cidr = Ip.parseCidr('192.168.1.134/26')
- * Ip.formatCidr(cidr) // '192.168.1.128/26'
- * cidr.prefix // 26
+ * const cidr = Ip.parseCidr('192.168.1.134/26');
+ * Ip.formatCidr(cidr); // '192.168.1.128/26'
+ * cidr.prefix; // 26
  * ```
  */
 export function parseCidr(text: string): Cidr {
-  const slash = text.indexOf('/')
-  const digits = text.slice(slash + 1)
-  const address = slash === -1 ? undefined : tryParse(text.slice(0, slash))
-  const prefix = /^(?:0|[1-9]\d{0,2})$/.test(digits) ? Number(digits) : -1
+  const slash = text.indexOf('/');
+  const digits = text.slice(slash + 1);
+  const address = slash === -1 ? undefined : tryParse(text.slice(0, slash));
+  const prefix = /^(?:0|[1-9]\d{0,2})$/.test(digits) ? Number(digits) : -1;
   if (
     address === undefined ||
     (address.version === 6 && address.zone !== undefined) ||
     prefix < 0 ||
     prefix > address.bytes.length * 8
   ) {
-    throw new InvalidInputError(`Invalid CIDR block: ${JSON.stringify(text)}.`)
+    throw new InvalidInputError(`Invalid CIDR block: ${JSON.stringify(text)}.`);
   }
-  const bytes = address.bytes
-  const whole = prefix >> 3
+  const bytes = address.bytes;
+  const whole = prefix >> 3;
   if (whole < bytes.length) {
-    bytes[whole]! &= 0xff00 >> (prefix & 7)
-    bytes.fill(0, whole + 1)
+    bytes[whole]! &= 0xff00 >> (prefix & 7);
+    bytes.fill(0, whole + 1);
   }
-  return { address, prefix }
+  return { address, prefix };
 }
 
 /**
@@ -49,13 +49,13 @@ export function parseCidr(text: string): Cidr {
  *
  * @example
  * ```ts
- * import * as Ip from '@portable/ip'
+ * import * as Ip from '@portable/ip';
  *
- * Ip.formatCidr({ address: Ip.parse('2001:db8::'), prefix: 32 }) // '2001:db8::/32'
+ * Ip.formatCidr({ address: Ip.parse('2001:db8::'), prefix: 32 }); // '2001:db8::/32'
  * ```
  */
 export function formatCidr(cidr: Cidr): string {
-  return `${format(cidr.address)}/${cidr.prefix}`
+  return `${format(cidr.address)}/${cidr.prefix}`;
 }
 
 /**
@@ -66,42 +66,42 @@ export function formatCidr(cidr: Cidr): string {
  *
  * @example
  * ```ts
- * import * as Ip from '@portable/ip'
+ * import * as Ip from '@portable/ip';
  *
- * Ip.contains('10.0.0.0/8', '10.1.2.3') // true
- * Ip.contains('127.0.0.0/8', '::ffff:127.0.0.1') // true
+ * Ip.contains('10.0.0.0/8', '10.1.2.3'); // true
+ * Ip.contains('127.0.0.0/8', '::ffff:127.0.0.1'); // true
  *
- * const internal = Ip.parseCidr('fc00::/7')
- * Ip.contains(internal, 'fd12:3456::1') // true
+ * const internal = Ip.parseCidr('fc00::/7');
+ * Ip.contains(internal, 'fd12:3456::1'); // true
  * ```
  */
 export function contains(cidr: Cidr | string, address: Address | string): boolean {
-  const block = typeof cidr === 'string' ? parseCidr(cidr) : cidr
-  const network = block.address.bytes
-  const { prefix } = block
+  const block = typeof cidr === 'string' ? parseCidr(cidr) : cidr;
+  const network = block.address.bytes;
+  const { prefix } = block;
   if (!Number.isInteger(prefix) || prefix < 0 || prefix > network.length * 8) {
-    throw new RangeError(`Invalid prefix length ${prefix} for IPv${block.address.version}.`)
+    throw new RangeError(`Invalid prefix length ${prefix} for IPv${block.address.version}.`);
   }
-  let bytes = from(address).bytes
+  let bytes = from(address).bytes;
   if (bytes.length !== network.length) {
     if (network.length === 4 && isMapped(bytes)) {
-      bytes = bytes.subarray(12)
+      bytes = bytes.subarray(12);
     } else if (network.length === 16) {
-      bytes = toIpv6({ version: 4, bytes }).bytes
+      bytes = toIpv6({ version: 4, bytes }).bytes;
     } else {
-      return false
+      return false;
     }
   }
-  return isInNetwork(bytes, network, prefix)
+  return isInNetwork(bytes, network, prefix);
 }
 
 export function isInNetwork(bytes: Uint8Array, network: Uint8Array, prefix: number): boolean {
-  const whole = prefix >> 3
+  const whole = prefix >> 3;
   for (let i = 0; i < whole; i++) {
     if (bytes[i] !== network[i]) {
-      return false
+      return false;
     }
   }
-  const bits = prefix & 7
-  return bits === 0 || ((bytes[whole]! ^ network[whole]!) & (0xff00 >> bits) & 0xff) === 0
+  const bits = prefix & 7;
+  return bits === 0 || ((bytes[whole]! ^ network[whole]!) & (0xff00 >> bits) & 0xff) === 0;
 }

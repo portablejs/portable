@@ -1,6 +1,6 @@
-import { byteLength } from './bytes.js'
-import { toStream } from './combine.js'
-import type { Source } from './source.js'
+import { byteLength } from './bytes.js';
+import { toStream } from './combine.js';
+import type { Source } from './source.js';
 
 export declare namespace tee {
   type Options = {
@@ -9,25 +9,25 @@ export declare namespace tee {
      * `unit`s. The fastest branch can be this far ahead of the slowest.
      * @default 16 chunks, or 65536 bytes
      */
-    highWaterMark?: number | undefined
+    highWaterMark?: number | undefined;
     /**
      * What `highWaterMark` counts: `'chunks'`, or `'bytes'` for `Uint8Array` and string chunks,
      * with strings counted as their UTF-8 length. With `'bytes'`, any other chunk errors every
      * branch with a `TypeError`.
      * @default 'chunks'
      */
-    unit?: 'chunks' | 'bytes' | undefined
+    unit?: 'chunks' | 'bytes' | undefined;
     /** Aborting errors every branch with `signal.reason` and cancels the source. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 type Branch<chunk> = {
-  controller: ReadableStreamDefaultController<chunk>
-  queue: chunk[]
-  queued: number
-  waiting: boolean
-}
+  controller: ReadableStreamDefaultController<chunk>;
+  queue: chunk[];
+  queued: number;
+  waiting: boolean;
+};
 
 /**
  * Splits a source into `count` streams that each receive every chunk. The source is read only
@@ -42,12 +42,12 @@ type Branch<chunk> = {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
  * const [forExif, forStorage, forResize] = Streams.tee(request.body!, 3, {
  *   highWaterMark: 1_000_000,
  *   unit: 'bytes',
- * })
+ * });
  * ```
  */
 export function tee<chunk>(
@@ -55,115 +55,115 @@ export function tee<chunk>(
   count: number,
   options: tee.Options = {},
 ): ReadableStream<chunk>[] {
-  const { signal, unit = 'chunks', highWaterMark = unit === 'bytes' ? 65536 : 16 } = options
+  const { signal, unit = 'chunks', highWaterMark = unit === 'bytes' ? 65536 : 16 } = options;
   if (!Number.isInteger(count) || count < 1) {
-    throw new RangeError(`count must be a positive integer, got ${count}.`)
+    throw new RangeError(`count must be a positive integer, got ${count}.`);
   }
   if (!(highWaterMark >= 0)) {
-    throw new RangeError(`highWaterMark must be 0 or more, got ${highWaterMark}.`)
+    throw new RangeError(`highWaterMark must be 0 or more, got ${highWaterMark}.`);
   }
-  const sizeOf = unit === 'bytes' ? byteLength : () => 1
-  const reader = toStream(source).getReader()
-  const active = new Set<Branch<chunk>>()
-  let reading = false
+  const sizeOf = unit === 'bytes' ? byteLength : () => 1;
+  const reader = toStream(source).getReader();
+  const active = new Set<Branch<chunk>>();
+  let reading = false;
 
   const finish = () => {
-    active.clear()
-    signal?.removeEventListener('abort', abort)
-  }
+    active.clear();
+    signal?.removeEventListener('abort', abort);
+  };
   const fail = (error: unknown) => {
     for (const branch of active) {
-      branch.controller.error(error)
+      branch.controller.error(error);
     }
-    finish()
-  }
+    finish();
+  };
   const failAndCancel = (error: unknown) => {
-    fail(error)
-    void reader.cancel(error).catch(() => {})
-  }
-  const abort = () => failAndCancel(signal!.reason)
+    fail(error);
+    void reader.cancel(error).catch(() => {});
+  };
+  const abort = () => failAndCancel(signal!.reason);
 
   const pump = () => {
     if (reading) {
-      return
+      return;
     }
-    let wanted = false
+    let wanted = false;
     for (const branch of active) {
       if (branch.queued >= highWaterMark) {
-        return
+        return;
       }
-      wanted ||= branch.waiting
+      wanted ||= branch.waiting;
     }
     if (!wanted) {
-      return
+      return;
     }
-    reading = true
+    reading = true;
     reader.read().then((result) => {
-      reading = false
+      reading = false;
       if (result.done) {
         for (const { controller, queue } of active) {
           for (const chunk of queue) {
-            controller.enqueue(chunk)
+            controller.enqueue(chunk);
           }
-          controller.close()
+          controller.close();
         }
-        return finish()
+        return finish();
       }
-      let size: number
+      let size: number;
       try {
-        size = sizeOf(result.value)
+        size = sizeOf(result.value);
       } catch (error) {
-        return failAndCancel(error)
+        return failAndCancel(error);
       }
       for (const branch of active) {
         if (branch.waiting) {
-          branch.waiting = false
-          branch.controller.enqueue(result.value)
+          branch.waiting = false;
+          branch.controller.enqueue(result.value);
         } else {
-          branch.queue.push(result.value)
-          branch.queued += size
+          branch.queue.push(result.value);
+          branch.queued += size;
         }
       }
-      pump()
-    }, fail)
-  }
+      pump();
+    }, fail);
+  };
 
   const branches = Array.from({ length: count }, () => {
-    let branch!: Branch<chunk>
+    let branch!: Branch<chunk>;
     return new ReadableStream<chunk>(
       {
         start(controller) {
-          branch = { controller, queue: [], queued: 0, waiting: false }
-          active.add(branch)
+          branch = { controller, queue: [], queued: 0, waiting: false };
+          active.add(branch);
         },
         pull(controller) {
           if (branch.queue.length === 0) {
-            branch.waiting = true
+            branch.waiting = true;
           } else {
-            const chunk = branch.queue.shift()!
-            branch.queued -= sizeOf(chunk)
-            controller.enqueue(chunk)
+            const chunk = branch.queue.shift()!;
+            branch.queued -= sizeOf(chunk);
+            controller.enqueue(chunk);
           }
-          pump()
+          pump();
         },
         cancel(reason) {
           if (!active.delete(branch)) {
-            return
+            return;
           }
           if (active.size > 0) {
-            return pump()
+            return pump();
           }
-          finish()
-          return reader.cancel(reason)
+          finish();
+          return reader.cancel(reason);
         },
       },
       { highWaterMark: 0 },
-    )
-  })
+    );
+  });
   if (signal?.aborted) {
-    abort()
+    abort();
   } else {
-    signal?.addEventListener('abort', abort)
+    signal?.addEventListener('abort', abort);
   }
-  return branches
+  return branches;
 }

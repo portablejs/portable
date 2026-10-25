@@ -1,9 +1,9 @@
-import { RuleTester } from 'oxlint/plugins-dev'
-import { describe, it } from 'vite-plus/test'
-import plugin from './plugin.js'
+import { RuleTester } from 'oxlint/plugins-dev';
+import { describe, it } from 'vite-plus/test';
+import plugin from './plugin.js';
 
-RuleTester.describe = describe
-RuleTester.it = it
+RuleTester.describe = describe;
+RuleTester.it = it;
 
 new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } }).run(
   'prefer-satisfies',
@@ -41,4 +41,4 @@ new RuleTester({ languageOptions: { parserOptions: { lang: 'ts' } } }).run(
       },
     ],
   },
-)
+);

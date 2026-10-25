@@ -1,46 +1,46 @@
-import type { Charset, Encoder } from './Charset.js'
-import { define } from './define.js'
-import { byteTable, unpackIndex } from './internal/tables.js'
-import { big5 as index, big5Start } from './tables/big5.js'
+import type { Charset, Encoder } from './Charset.js';
+import { define } from './define.js';
+import { byteTable, unpackIndex } from './internal/tables.js';
+import { big5 as index, big5Start } from './tables/big5.js';
 
 // These code points appear twice in index Big5, and the encoder uses the last pointer.
-const useLast = new Set([0x2550, 0x255e, 0x2561, 0x256a, 0x5341, 0x5345])
+const useLast = new Set([0x2550, 0x255e, 0x2561, 0x256a, 0x5341, 0x5345]);
 
-let tables: { bmp: Uint16Array; astral: Map<number, number> } | undefined
+let tables: { bmp: Uint16Array; astral: Map<number, number> } | undefined;
 
 function code(pointer: number): number {
-  const trailing = pointer % 157
-  return ((Math.floor(pointer / 157) + 0x81) << 8) | (trailing + (trailing < 0x3f ? 0x40 : 0x62))
+  const trailing = pointer % 157;
+  return ((Math.floor(pointer / 157) + 0x81) << 8) | (trailing + (trailing < 0x3f ? 0x40 : 0x62));
 }
 
 function encoder(): Encoder {
   if (!tables) {
-    const bmp = byteTable()
-    const astral = new Map<number, number>()
+    const bmp = byteTable();
+    const astral = new Map<number, number>();
     unpackIndex(index, big5Start, (pointer, codePoint) => {
       if (codePoint >= 0x10000) {
         if (!astral.has(codePoint)) {
-          astral.set(codePoint, code(pointer))
+          astral.set(codePoint, code(pointer));
         }
       } else if (bmp[codePoint] === 0 || useLast.has(codePoint)) {
-        bmp[codePoint] = code(pointer)
+        bmp[codePoint] = code(pointer);
       }
-    })
-    tables = { bmp, astral }
+    });
+    tables = { bmp, astral };
   }
-  const { bmp, astral } = tables
+  const { bmp, astral } = tables;
   return {
     table: bmp,
     write(codePoint, out) {
-      const bytes = astral.get(codePoint)
+      const bytes = astral.get(codePoint);
       if (bytes === undefined) {
-        return codePoint
+        return codePoint;
       }
-      out.bytes[out.length++] = bytes >> 8
-      out.bytes[out.length++] = bytes & 0xff
-      return -1
+      out.bytes[out.length++] = bytes >> 8;
+      out.bytes[out.length++] = bytes & 0xff;
+      return -1;
     },
-  }
+  };
 }
 
 /**
@@ -49,14 +49,14 @@ function encoder(): Encoder {
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
- * import { big5 } from '@portable/charset/big5'
+ * import * as Charset from '@portable/charset';
+ * import { big5 } from '@portable/charset/big5';
  *
- * Charset.encode('中文', big5) // Uint8Array [0xa4, 0xa4, 0xa4, 0xe5]
+ * Charset.encode('中文', big5); // Uint8Array [0xa4, 0xa4, 0xa4, 0xe5]
  * ```
  */
 export const big5: Charset = /* @__PURE__ */ define({
   name: 'Big5',
   maxBytes: 2,
   encoder,
-})
+});

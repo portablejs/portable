@@ -1,1 +1,1 @@
-export * from '../euc-jp.js'
+export * from '../euc-jp.js';

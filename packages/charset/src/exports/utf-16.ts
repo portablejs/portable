@@ -1,1 +1,1 @@
-export * from '../utf-16.js'
+export * from '../utf-16.js';

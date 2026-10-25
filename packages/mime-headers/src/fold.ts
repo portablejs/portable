@@ -1,11 +1,11 @@
-import { MaxLengthError } from './errors.js'
-import { assertLength, toText } from './internal/text.js'
+import { MaxLengthError } from './errors.js';
+import { assertLength, toText } from './internal/text.js';
 
 export declare namespace fold {
   type Options = {
     /** Longest line, not counting the line break. RFC 5322 recommends 78 at most. @default 76 */
-    lineLength?: number | undefined
-  }
+    lineLength?: number | undefined;
+  };
 }
 
 /**
@@ -15,66 +15,66 @@ export declare namespace fold {
  *
  * @example
  * ```ts
- * import * as MimeHeaders from '@portable/mime-headers'
+ * import * as MimeHeaders from '@portable/mime-headers';
  *
- * MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords(subject))
- * MimeHeaders.fold('To: a@example.com, b@example.com', { lineLength: 20 })
+ * MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords(subject));
+ * MimeHeaders.fold('To: a@example.com, b@example.com', { lineLength: 20 });
  * // 'To: a@example.com,\r\n b@example.com'
  * ```
  */
 export function fold(input: string | Uint8Array, options: fold.Options = {}): string {
-  const { lineLength = 76 } = options
-  assertLength('lineLength', lineLength)
-  const text = toText(input)
-  const lines = text.split(/(\r\n|\r|\n)/)
-  let result = ''
+  const { lineLength = 76 } = options;
+  assertLength('lineLength', lineLength);
+  const text = toText(input);
+  const lines = text.split(/(\r\n|\r|\n)/);
+  let result = '';
   for (let i = 0; i < lines.length; i++) {
-    result += i % 2 === 1 ? lines[i]! : foldLine(lines[i]!, lineLength)
+    result += i % 2 === 1 ? lines[i]! : foldLine(lines[i]!, lineLength);
   }
-  return result
+  return result;
 }
 
-const isSpace = (code: number) => code === 0x20 || code === 0x09
+const isSpace = (code: number) => code === 0x20 || code === 0x09;
 
 function trimSpace(text: string, start: number): string {
-  let end = text.length
+  let end = text.length;
   while (start < end && isSpace(text.charCodeAt(start))) {
-    start++
+    start++;
   }
   while (end > start && isSpace(text.charCodeAt(end - 1))) {
-    end--
+    end--;
   }
-  return text.slice(start, end)
+  return text.slice(start, end);
 }
 
 const isBreak = (text: string, i: number) =>
-  isSpace(text.charCodeAt(i)) && !isSpace(text.charCodeAt(i - 1))
+  isSpace(text.charCodeAt(i)) && !isSpace(text.charCodeAt(i - 1));
 
 function foldLine(line: string, lineLength: number): string {
-  let lastWord = line.length - 1
+  let lastWord = line.length - 1;
   while (lastWord >= 0 && isSpace(line.charCodeAt(lastWord))) {
-    lastWord--
+    lastWord--;
   }
-  let result = ''
-  let start = 0
+  let result = '';
+  let start = 0;
   while (line.length - start > lineLength) {
-    let at = start + lineLength
+    let at = start + lineLength;
     while (at > start && !isBreak(line, at)) {
-      at--
+      at--;
     }
     if (at === start) {
-      at = start + lineLength + 1
+      at = start + lineLength + 1;
       while (at < line.length && !isBreak(line, at)) {
-        at++
+        at++;
       }
     }
     if (at > lastWord) {
-      break
+      break;
     }
-    result += line.slice(start, at) + '\r\n'
-    start = at
+    result += line.slice(start, at) + '\r\n';
+    start = at;
   }
-  return result + line.slice(start)
+  return result + line.slice(start);
 }
 
 /**
@@ -84,20 +84,20 @@ function foldLine(line: string, lineLength: number): string {
  *
  * @example
  * ```ts
- * import * as MimeHeaders from '@portable/mime-headers'
+ * import * as MimeHeaders from '@portable/mime-headers';
  *
- * MimeHeaders.unfold('Subject: line one\r\n line two') // 'Subject: line one line two'
+ * MimeHeaders.unfold('Subject: line one\r\n line two'); // 'Subject: line one line two'
  * ```
  */
 export function unfold(input: string | Uint8Array): string {
-  return toText(input).replace(/(?:\r\n|\r|\n)(?=[ \t])/g, '')
+  return toText(input).replace(/(?:\r\n|\r|\n)(?=[ \t])/g, '');
 }
 
 /** One header field: its name as written and its unfolded value. */
 export type Header = {
-  readonly name: string
-  readonly value: string
-}
+  readonly name: string;
+  readonly value: string;
+};
 
 export declare namespace parseHeaders {
   type Options = {
@@ -105,8 +105,8 @@ export declare namespace parseHeaders {
      * Longest header block, in UTF-16 code units, up to the end of its last line. A longer block
      * throws `MaxLengthError`. @default Infinity
      */
-    maxLength?: number | undefined
-  }
+    maxLength?: number | undefined;
+  };
 }
 
 /**
@@ -117,9 +117,9 @@ export declare namespace parseHeaders {
  *
  * @example
  * ```ts
- * import * as MimeHeaders from '@portable/mime-headers'
+ * import * as MimeHeaders from '@portable/mime-headers';
  *
- * MimeHeaders.parseHeaders('Subject: Hello\r\n world\r\nTo: a@example.com\r\n\r\nBody')
+ * MimeHeaders.parseHeaders('Subject: Hello\r\n world\r\nTo: a@example.com\r\n\r\nBody');
  * // [{ name: 'Subject', value: 'Hello world' }, { name: 'To', value: 'a@example.com' }]
  * ```
  *
@@ -129,48 +129,48 @@ export function parseHeaders(
   input: string | Uint8Array,
   options: parseHeaders.Options = {},
 ): Header[] {
-  const { maxLength = Infinity } = options
+  const { maxLength = Infinity } = options;
   if (!(maxLength >= 0)) {
-    throw new RangeError('`maxLength` must be a number >= 0.')
+    throw new RangeError('`maxLength` must be a number >= 0.');
   }
-  const text = toText(input)
-  const lineBreak = /\r\n|\r|\n/g
-  const fields: string[] = []
-  let blockStart = -1
+  const text = toText(input);
+  const lineBreak = /\r\n|\r|\n/g;
+  const fields: string[] = [];
+  let blockStart = -1;
   for (let start = 0; ;) {
-    const match = lineBreak.exec(text)
-    const end = match ? match.index : text.length
+    const match = lineBreak.exec(text);
+    const end = match ? match.index : text.length;
     if (end > start) {
       if (blockStart < 0) {
-        blockStart = start
+        blockStart = start;
       }
       if (end - blockStart > maxLength) {
-        throw new MaxLengthError({ maxLength })
+        throw new MaxLengthError({ maxLength });
       }
-      const line = text.slice(start, end)
+      const line = text.slice(start, end);
       if (fields.length > 0 && isSpace(line.charCodeAt(0))) {
-        fields[fields.length - 1] += line
+        fields[fields.length - 1] += line;
       } else {
-        fields.push(line)
+        fields.push(line);
       }
     } else if (blockStart >= 0) {
-      break
+      break;
     }
     if (!match) {
-      break
+      break;
     }
-    start = lineBreak.lastIndex
+    start = lineBreak.lastIndex;
   }
-  const headers: Header[] = []
+  const headers: Header[] = [];
   for (const field of fields) {
-    const colon = field.indexOf(':')
+    const colon = field.indexOf(':');
     if (colon < 0) {
-      continue
+      continue;
     }
     headers.push({
       name: field.slice(0, colon).trim(),
       value: trimSpace(field, colon + 1),
-    })
+    });
   }
-  return headers
+  return headers;
 }

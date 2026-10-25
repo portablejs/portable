@@ -1,7 +1,7 @@
-import { NeedMore, startsWith, u32, utf8 } from '../bytes.js'
-import { InvalidInputError } from '../errors.js'
-import type { Image } from '../parse.js'
-import type { Format } from './format.js'
+import { NeedMore, startsWith, u32, utf8 } from '../bytes.js';
+import { InvalidInputError } from '../errors.js';
+import type { Image } from '../parse.js';
+import type { Format } from './format.js';
 
 const iconSizes: Record<string, number> = {
   ICON: 32,
@@ -35,34 +35,34 @@ const iconSizes: Record<string, number> = {
   ic09: 512,
   ic14: 512,
   ic10: 1024,
-}
+};
 
 export const icns: Format = {
   validate: (input) => startsWith(input, 0, 'icns'),
   calculate(input) {
-    const fileLength = u32(input, 4, true)
-    const images: Image[] = []
+    const fileLength = u32(input, 4, true);
+    const images: Image[] = [];
     for (let offset = 8; offset < fileLength;) {
       if (offset >= input.length) {
-        throw new NeedMore(offset + 8)
+        throw new NeedMore(offset + 8);
       }
-      const length = u32(input, offset + 4, true)
+      const length = u32(input, offset + 4, true);
       if (length < 8) {
-        throw new InvalidInputError('Invalid ICNS')
+        throw new InvalidInputError('Invalid ICNS');
       }
-      const type = utf8(input, offset, offset + 4)
-      const size = iconSizes[type]
+      const type = utf8(input, offset, offset + 4);
+      const size = iconSizes[type];
       if (size) {
-        images.push({ width: size, height: size, type })
+        images.push({ width: size, height: size, type });
       }
-      offset += length
+      offset += length;
     }
-    const [first] = images
+    const [first] = images;
     if (!first) {
-      throw new InvalidInputError('Invalid ICNS, no sizes found')
+      throw new InvalidInputError('Invalid ICNS, no sizes found');
     }
     return images.length === 1
       ? { width: first.width, height: first.height, type: 'icns' }
-      : { width: first.width, height: first.height, type: 'icns', images }
+      : { width: first.width, height: first.height, type: 'icns', images };
   },
-}
+};

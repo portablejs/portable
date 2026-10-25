@@ -9,7 +9,7 @@ npm install @portable/mail
 ```
 
 ```ts
-import * as Mail from '@portable/mail'
+import * as Mail from '@portable/mail';
 
 const message: Mail.Message = {
   from: 'Mari Tamm <mari@example.com>',
@@ -21,12 +21,12 @@ const message: Mail.Message = {
     { content: logoBytes, contentType: 'image/png', cid: 'logo' },
     { content: (await fetch(reportUrl)).body!, filename: 'aruanne.pdf', contentType: 'application/pdf' },
   ],
-}
+};
 
-const raw = Mail.encodeStream(message) // ReadableStream<Uint8Array>
-const { from, to } = Mail.envelope(message) // for MAIL FROM and RCPT TO
+const raw = Mail.encodeStream(message); // ReadableStream<Uint8Array>
+const { from, to } = Mail.envelope(message); // for MAIL FROM and RCPT TO
 
-await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' })
+await fetch('https://api.example.com/send-raw', { method: 'POST', body: raw, duplex: 'half' });
 ```
 
 The report is read from the network while the caller reads the message, so a large attachment is never held in memory. Cancelling `raw` cancels the response body.
@@ -73,12 +73,12 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 Set `boundary`, `messageId` and `date` to get the same bytes on every run, for example in tests.
 
 ```ts
-import { iso2022Jp } from '@portable/charset/iso-2022-jp'
+import { iso2022Jp } from '@portable/charset/iso-2022-jp';
 
 Mail.encodeStream(
   { from: 'テスト <a@example.com>', subject: 'こんにちは', text: 'こんにちは' },
   { charset: iso2022Jp },
-)
+);
 ```
 
 ### Signing and sending
@@ -86,25 +86,25 @@ Mail.encodeStream(
 `@portable/dkim` signs the bytes `encodeStream` produces and `@portable/smtp` sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
 
 ```ts
-import * as Bytes from '@portable/bytes'
-import * as Dkim from '@portable/dkim'
-import * as Mail from '@portable/mail'
-import * as Smtp from '@portable/smtp'
-import * as Streams from '@portable/streams'
-import { connect } from 'cloudflare:sockets'
+import * as Bytes from '@portable/bytes';
+import * as Dkim from '@portable/dkim';
+import * as Mail from '@portable/mail';
+import * as Smtp from '@portable/smtp';
+import * as Streams from '@portable/streams';
+import { connect } from 'cloudflare:sockets';
 
-const signal = AbortSignal.timeout(30_000)
-const raw = await Streams.toBytes(Mail.encodeStream(message, { signal }))
+const signal = AbortSignal.timeout(30_000);
+const raw = await Streams.toBytes(Mail.encodeStream(message, { signal }));
 const field = await Dkim.sign(raw, {
   domain: 'example.com',
   selector: 'mail',
   privateKey: env.DKIM_PRIVATE_KEY,
   signal,
-})
+});
 await Smtp.send(
   { ...Mail.envelope(message), message: Bytes.concat([new TextEncoder().encode(field), raw]) },
   { connect, host: 'smtp.example.com', auth: { user: 'mari@example.com', pass: env.SMTP_PASSWORD }, signal },
-)
+);
 ```
 
 Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, which sends each chunk as soon as it reads it.
@@ -135,6 +135,23 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 - A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.
 - `Message` has no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
 - Cancelling the output cancels every content stream that hasn't been read, and a failing stream errors the output and cancels the rest.
+- nodemailer's `getEnvelope()` returns `from: false` for a message without a sender, and `envelope` throws `InvalidInputError`.
+- nodemailer accepts a Node `Readable` as attachment `content`. Here pass a `ReadableStream`, which `Readable.toWeb(stream)` returns in Node.
+- nodemailer detects `contentType` from the file name, and this package doesn't: an attachment without `contentType` gets the `Blob`'s type or `application/octet-stream`. `@remix-run/mime` maps file names to types.
+- nodemailer's `encoding: 'base64'` on string content has no equivalent. Decode the string first and pass the bytes.
+- nodemailer's `icalEvent` has no equivalent. Add an `alternatives` entry with `contentType: 'text/calendar; charset=utf-8; method=REQUEST'` and an attachment with `contentType: 'application/ics'`.
+- nodemailer's `watchHtml` has no equivalent. Add an `alternatives` entry with `contentType: 'text/watch-html; charset=utf-8'`.
+- nodemailer's `baseBoundary` and `boundaryPrefix` have no equivalent. `boundary: '--_NmP-test-Part_'` gives the boundaries nodemailer writes for `baseBoundary: 'test'`.
+- nodemailer's `textEncoding` and `encoding` options have no equivalent. Set `transferEncoding` on a `Part` in `alternatives`.
+- nodemailer's `newline` option has no equivalent, because the output always uses CRLF. Pipe it through a `TransformStream` to get LF.
+- nodemailer's `raw` option isn't supported.
+- nodemailer's `envelope` option has no equivalent. Pass your own envelope to the transport.
+- nodemailer capitalizes each word of a header name, and its `normalizeHeaderKey` option has no equivalent, because this package writes header names as given.
+- nodemailer makes `message/rfc822` attachments `inline`, and this package makes them `attachment`.
+- nodemailer writes a file name containing `"` with RFC 2231 encoding, and this package writes it as a quoted string with `\"` in `filename`.
+- nodemailer splits a name longer than about 40 bytes into encoded words of up to 52 characters, and this package uses up to 75, as `@portable/mime-headers` writes them.
+- nodemailer decodes an A-label domain to UTF-8 and maps it with UTS #46 when the local part isn't ASCII. This package keeps the domain as given, lowercased.
+- nodemailer accepts a backslash in a domain, and this package throws for it.
 
 <!-- bench:start -->
 | | @portable/mail | nodemailer |
@@ -155,37 +172,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| nodemailer | @portable/mail |
-| --- | --- |
-| `new MailComposer(mail).compile().build()` | `await new Response(Mail.encodeStream(message)).bytes()` |
-| `compile().createReadStream()` | `Mail.encodeStream(message)` |
-| `compile().getEnvelope()` | `Mail.envelope(message)`, which throws for a message without a sender where nodemailer returns `from: false`. |
-| `from`, `to`, `cc`, `bcc`, `replyTo`, `sender`, `inReplyTo`, `references`, `subject`, `messageId`, `date`, `text`, `html`, `amp`, `alternatives`, `attachments`, `headers` | The same names. |
-| attachment `content: Buffer \| string \| Readable` | `content: Uint8Array \| string \| Blob \| ReadableStream`. In Node, `Readable.toWeb(stream)`. |
-| attachment or alternative `path`, `href` | `content: (await fetch(url)).body` or `content: await fs.openAsBlob(path)` with `filename`. |
-| `contentType` detected from the file name | Pass `contentType`. `@remix-run/mime` maps file names to types. |
-| `contentTransferEncoding` | `transferEncoding` |
-| `contentDisposition` | `disposition` |
-| `encoding: 'base64'` on string content | Decode it first and pass the bytes. |
-| `icalEvent` | An `alternatives` entry with `contentType: 'text/calendar; charset=utf-8; method=REQUEST'` and an attachment with `contentType: 'application/ics'`. |
-| `watchHtml` | An `alternatives` entry with `contentType: 'text/watch-html; charset=utf-8'`. |
-| `baseBoundary`, `boundaryPrefix` | `boundary` option. `boundary: '--_NmP-test-Part_'` gives nodemailer's boundaries for `baseBoundary: 'test'`. |
-| `keepBcc` | `keepBcc` option. |
-| `textEncoding`, `encoding` | Set `transferEncoding` on a `Part` in `alternatives`. |
-| `newline` | Not needed: output always uses CRLF. Use `pipeThrough` for LF. |
-| `raw` | Not supported. |
-| `normalizeHeaderKey` | Header names are written as given. |
-| `disableFileAccess`, `disableUrlAccess` | Not needed: nothing is read from files or URLs. |
-| `envelope` | Pass your own envelope to the transport. |
-
-### Differences
-
-- Header names keep the case you give. nodemailer capitalizes each word.
-- `message/rfc822` attachments default to `attachment`, where nodemailer uses `inline`.
-- A file name containing `"` is written as a quoted string with `\"` in `filename`, where nodemailer uses RFC 2231 encoding.
-- A name over about 40 bytes is split into encoded words of up to 75 characters, as `@portable/mime-headers` writes them. nodemailer uses 52.
-- An address with a non-ASCII local part keeps its domain as given, lowercased. nodemailer decodes an A-label domain to UTF-8 and maps it with UTS #46.
-- A backslash in a domain throws.

@@ -9,24 +9,24 @@ npm install @portable/mime-headers
 ```
 
 ```ts
-import * as MimeHeaders from '@portable/mime-headers'
+import * as MimeHeaders from '@portable/mime-headers';
 
-MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords('Tere õhtust, Mari'))
+MimeHeaders.fold('Subject: ' + MimeHeaders.encodeWords('Tere õhtust, Mari'));
 // 'Subject: Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'
-MimeHeaders.decodeWords('Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari') // 'Tere õhtust, Mari'
+MimeHeaders.decodeWords('Tere =?UTF-8?Q?=C3=B5htust=2C?= Mari'); // 'Tere õhtust, Mari'
 
-MimeHeaders.parseValue('attachment; filename*=UTF-8\'\'%C3%B5.pdf')
+MimeHeaders.parseValue('attachment; filename*=UTF-8\'\'%C3%B5.pdf');
 // { value: 'attachment', params: { filename: 'õ.pdf' } }
-MimeHeaders.formatValue({ value: 'attachment', params: { filename: 'õ.pdf' } })
+MimeHeaders.formatValue({ value: 'attachment', params: { filename: 'õ.pdf' } });
 // "attachment; filename*0*=utf-8''%C3%B5.pdf"
 
-MimeHeaders.parseAddresses('Mari Maasikas <mari@example.com>, Team: a@example.com;')
+MimeHeaders.parseAddresses('Mari Maasikas <mari@example.com>, Team: a@example.com;');
 // [{ name: 'Mari Maasikas', address: 'mari@example.com' },
 //  { name: 'Team', group: [{ name: '', address: 'a@example.com' }] }]
-MimeHeaders.formatAddresses([{ name: 'Maasikas, Mari', address: 'mari@example.com' }])
+MimeHeaders.formatAddresses([{ name: 'Maasikas, Mari', address: 'mari@example.com' }]);
 // '"Maasikas, Mari" <mari@example.com>'
 
-MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\r\nbody')
+MimeHeaders.parseHeaders('Subject: Tere\r\n õhtust\r\nTo: mari@example.com\r\n\r\nbody');
 // [{ name: 'Subject', value: 'Tere õhtust' }, { name: 'To', value: 'mari@example.com' }]
 ```
 
@@ -84,6 +84,22 @@ It has no dependencies, takes and returns plain strings and `Uint8Array`s, and d
 - `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
 - Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
+- libmime's `encodeWord` writes one word unless given a length, and `encodeWord` limits words to 75 characters by default. Pass `wordLength: false` where you passed libmime a length of 0.
+- In a Q word, `encodeWord` writes a trailing space as `_`, where libmime writes `=20`.
+- `encodeWords` encodes words that contain control characters. libmime leaves them as they are.
+- libmime's `encodeWords` takes bytes in another charset, and `encodeWords` reads a `Uint8Array` as UTF-8, so decode such bytes with `TextDecoder` first.
+- `fold` allows a line of exactly `lineLength`, where libmime's `foldLines` keeps its lines one character shorter. `fold` never breaks in front of trailing whitespace, which would leave a line of only whitespace.
+- libmime's `decodeHeaders` lowercases names, collapses the whitespace a fold leaves to one space and groups values by name. `parseHeaders` keeps the case of names and the whitespace, and returns a list in order, so lowercase the names yourself to group them.
+- libmime's `parseHeaderValue` returns the decoded parameters in `decodedParams`. `parseValue` has no `decodedParams`, because it decodes every parameter in `params`.
+- Unlike libmime's `parseHeaderValue`, `parseValue` reads a backslash as an escape only inside quotes.
+- `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name, where libmime 5.5's `buildHeaderValue` drops it. It marks every section of an encoded value with `*`.
+- libmime's `encodeFlowed`, `decodeFlowed`, `detectMimeType` and `charset` functions are not in this package.
+- `parseAddresses` decodes the encoded words in names. addressparser and email-addresses return them encoded.
+- `parseAddresses` drops quotes a local part doesn't need, inside angle brackets as well, so `<"user"@example.com>` gives `user@example.com`. It keeps whitespace inside a quoted name, where email-addresses collapses it.
+- When malformed input can be read two ways, `parseAddresses` takes the first complete address and makes the rest the name: `<x@evil.com @good.com>` gives `x@evil.com` named `@good.com`, where addressparser returns the whole value. `PARITY.md` lists each case.
+- email-addresses' `parseAddressList` and `parseOneAddress` return `null` for invalid input, and `parseAddresses` with `strict: true` throws `InvalidInputError`. There is no single-address function, so check that the result has one entry.
+- Strict mode accepts the obsolete syntax RFC 5322 says to read, such as `H.P. Lovecraft <a@b.c>`, and UTF-8 (RFC 6532). email-addresses' `strict` refuses the first and needs `rfc6532: true` for the second. `parseAddresses` has no equivalent of email-addresses' `rejectTLD`, `atInDisplayName`, `commaInDisplayName` or `addressListSeparator` options.
+- email-addresses returns `local` and `domain` fields, and `parseAddresses` returns only `address`, so split it at its last `@`. There is no IDN conversion: `user@münchen.de` stays as written.
 
 <!-- bench:start -->
 | | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
@@ -111,38 +127,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| libmime / addressparser / email-addresses | @portable/mime-headers |
-| --- | --- |
-| `libmime.encodeWord(text, 'Q', n)` | `encodeWord(text, { wordLength: n })` (`wordLength: false` for libmime's 0) |
-| `libmime.encodeWords(text, 'B', n)` | `encodeWords(text, { wordEncoding: 'B', wordLength: n })` |
-| `libmime.encodeWords(buffer, 'Q', 0, 'iso-8859-1')` | `encodeWords(new TextDecoder('iso-8859-1').decode(bytes))` |
-| `libmime.decodeWords(text)` | `decodeWords(text)` |
-| `libmime.foldLines(text, n)` | `fold(text, { lineLength: n })` |
-| `libmime.decodeHeaders(text)` | `parseHeaders(text)`, a list in order. Lowercase the names to group them. |
-| `libmime.decodeHeader(line)` | `parseHeaders(line)[0]` |
-| `libmime.parseHeaderValue(text)` | `parseValue(text)` (there is no `decodedParams`: every parameter is decoded) |
-| `libmime.buildHeaderValue({ value, params })` | `formatValue({ value, params })` |
-| `libmime.encodeFlowed`, `decodeFlowed`, `detectMimeType`, `charset.*` | Not in this package. |
-| `addressparser(text)` | `parseAddresses(text)` |
-| `addressparser(text, { flatten: true })` | `parseMailboxes(text)` |
-| `emailAddresses.parseOneAddress(text)` | `parseAddresses(text, { strict: true })`, then check for one entry |
-| `emailAddresses.parseAddressList(text)` | `parseAddresses(text, { strict: true })`, which throws where email-addresses returns `null` |
-| `result.local`, `result.domain` | Split `address` at its last `@`. |
-| nodemailer's address formatting | `formatAddresses(addresses)` |
-
-The oracle tests compare this package with libmime 5.4.9, nodemailer 10.1.2's addressparser and email-addresses 5.0.0 on generated input. Differences:
-
-- `encodeWord` limits words to 75 characters by default, where libmime's `encodeWord` writes one word unless given a length. A trailing space in a Q word is written as `_`, where libmime writes `=20`.
-- `encodeWords` encodes words with control characters, and words that read as encoded words. libmime leaves both as they are.
-- `fold` allows a line of exactly `lineLength`, and libmime keeps its lines one character shorter. `fold` never breaks in front of trailing whitespace, which would leave a line of only whitespace.
-- `parseHeaders` keeps the case of names and the whitespace a fold leaves, and returns a list. libmime lowercases names, collapses the whitespace to one space and groups values by name.
-- `parseValue` also decodes encoded words in plain parameter values. A backslash escapes only inside quotes.
-- `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name, where libmime 5.5 drops it. It marks every section of an encoded value with `*`.
-- `parseAddresses` decodes the encoded words in names. addressparser and email-addresses return them encoded.
-- Quotes a local part doesn't need are dropped, inside angle brackets as well (`<"user"@example.com>` gives `user@example.com`). Whitespace inside a quoted name is kept, where email-addresses collapses it.
-- Where malformed input could be read two ways, `parseAddresses` takes the first complete address and makes the rest the name: `<x@evil.com @good.com>` gives `x@evil.com` named `@good.com`, where addressparser returns the whole value. `PARITY.md` lists each case.
-- Strict mode accepts the obsolete syntax RFC 5322 says to read, such as `H.P. Lovecraft <a@b.c>`, and UTF-8 (RFC 6532). email-addresses' `strict` refuses the first and needs `rfc6532: true` for the second. `parseAddresses` has no `rejectTLD`, `atInDisplayName`, `commaInDisplayName` or `addressListSeparator` options.
-- There are no `local` or `domain` fields and no IDN conversion: `user@münchen.de` stays as written.

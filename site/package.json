@@ -1,0 +1,28 @@
+{
+  "name": "@portable/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "node scripts/gen.mjs",
+    "gen": "node scripts/gen.mjs",
+    "dev": "pnpm gen && vocs dev",
+    "build": "pnpm gen && vocs build && node scripts/og.mjs",
+    "preview": "vocs preview",
+    "deploy:preview": "node scripts/herenow.mjs"
+  },
+  "dependencies": {
+    "@takumi-rs/image-response": "^0.62.8",
+    "@takumi-rs/wasm": "^0.62.8",
+    "prettier": "^3.9.10",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "catalog:",
+    "vite": "^8.3.4",
+    "vocs": "^2.10.3",
+    "waku": "1.0.0-rc.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0"
+  }
+}
