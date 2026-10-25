@@ -1,17 +1,18 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown by `verify` and `needsRehash` for a stored hash that is not a PBKDF2 hash in PHC or
- * passlib format.
+ * Thrown by `verify` and `needsRehash` for a stored hash that is malformed: a PBKDF2 hash in PHC
+ * or passlib format with a missing field or a bad value, or a string without a `$<algorithm>$`
+ * prefix.
  *
  * @example
  * ```ts
  * import * as Password from '@portable/password';
  *
  * try {
- *   await Password.verify(password, '$2b$12$...');
+ *   await Password.verify(password, '$pbkdf2-sha256$i=0$...');
  * } catch (error) {
  *   if (error instanceof Password.InvalidInputError) {
- *     console.log('not a PBKDF2 hash');
+ *     console.log('malformed hash');
  *   }
  * }
  * ```

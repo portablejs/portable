@@ -17,7 +17,7 @@ export const runs: number = Number(env.FUZZ_RUNS) || 100;
  * takes under 100 ms, so the margin covers slower browsers and a loaded machine.
  *
  * @example
- * fuzz(fc.asyncProperty(input, check), { timeout: 10_000 })
+ * fuzz(fc.asyncProperty(input, check), { timeout: 10_000 });
  */
 export const timeout = 2000;
 
@@ -34,9 +34,9 @@ export const timeout = 2000;
  * @example
  * test('decodes what it encodes', () => {
  *   fuzz(fc.property(fc.uint8Array(), (bytes) => {
- *     expect(Base64.decode(Base64.encode(bytes))).toEqual(bytes)
- *   }))
- * })
+ *     expect(Base64.decode(Base64.encode(bytes))).toEqual(bytes);
+ *   }));
+ * });
  */
 export function fuzz<types>(property: fc.IProperty<types>, options?: fuzz.Options): void;
 export function fuzz<types>(
@@ -104,7 +104,7 @@ export type Outcome<value> = { value: value } | { error: ErrorClass };
  * `errors`. Any other error is thrown again, so the property fails with it.
  *
  * @example
- * outcome([Exif.TruncatedError, Exif.InvalidInputError], () => Exif.parse(bytes))
+ * outcome([Exif.TruncatedError, Exif.InvalidInputError], () => Exif.parse(bytes));
  */
 export function outcome<value>(errors: readonly ErrorClass[], run: () => value): Outcome<value> {
   try {
@@ -118,7 +118,7 @@ export function outcome<value>(errors: readonly ErrorClass[], run: () => value):
  * {@link outcome} for an async function.
  *
  * @example
- * await outcomeAsync([Png.InvalidInputError], () => Png.decode(bytes))
+ * await outcomeAsync([Png.InvalidInputError], () => Png.decode(bytes));
  */
 export async function outcomeAsync<value>(
   errors: readonly ErrorClass[],
@@ -210,7 +210,7 @@ export const cuts: fc.Arbitrary<number[]> = fc.array(fc.nat(), { maxLength: 16 }
  * Splits `data` into chunks at `at`, each offset taken modulo the length plus one.
  *
  * @example
- * split('abcdef', [2, 4]) // ['ab', 'cd', 'ef']
+ * split('abcdef', [2, 4]); // ['ab', 'cd', 'ef']
  */
 export function split<value extends Uint8Array | string>(
   data: value,
@@ -249,7 +249,7 @@ export const byteForm: fc.Arbitrary<ByteForm> = fc.constantFrom(...byteForms);
  * Copies `bytes` into the given form.
  *
  * @example
- * toByteForm(new Uint8Array([1, 2]), 'Uint8Array with offset') // [1, 2] inside [0xee, 0xee, 0xee, 1, 2, 0xee, 0xee]
+ * toByteForm(new Uint8Array([1, 2]), 'Uint8Array with offset'); // [1, 2] inside [0xee, 0xee, 0xee, 1, 2, 0xee, 0xee]
  */
 export function toByteForm(bytes: Uint8Array, form: ByteForm): Uint8Array<ArrayBuffer> {
   switch (form) {
@@ -280,7 +280,7 @@ export const rejectedByteForms: Readonly<Record<string, unknown>> = {
  * rejected promise, so a test can check sync and async functions the same way.
  *
  * @example
- * await expect(attempt(() => Bytes.toHex(new ArrayBuffer(1) as never))).rejects.toThrow(TypeError)
+ * await expect(attempt(() => Bytes.toHex(new ArrayBuffer(1) as never))).rejects.toThrow(TypeError);
  */
 export function attempt(run: () => unknown): Promise<unknown> {
   return Promise.resolve().then(run);
@@ -290,7 +290,7 @@ export function attempt(run: () => unknown): Promise<unknown> {
  * A `ReadableStream` that enqueues `chunks` and closes.
  *
  * @example
- * await Streams.toBytes(streamOf([new Uint8Array(2), new Uint8Array(1)]))
+ * await Streams.toBytes(streamOf([new Uint8Array(2), new Uint8Array(1)]));
  */
 export function streamOf<chunk>(chunks: readonly chunk[]): ReadableStream<chunk> {
   return new ReadableStream({
@@ -307,7 +307,7 @@ export function streamOf<chunk>(chunks: readonly chunk[]): ReadableStream<chunk>
  * Reads every chunk of `stream`.
  *
  * @example
- * const lines = await readAll(streamOf([bytes]).pipeThrough(new Lines.DecoderStream()))
+ * const lines = await readAll(streamOf([bytes]).pipeThrough(new Lines.DecoderStream()));
  */
 export async function readAll<chunk>(stream: ReadableStream<chunk>): Promise<chunk[]> {
   const chunks: chunk[] = [];
@@ -322,7 +322,7 @@ export async function readAll<chunk>(stream: ReadableStream<chunk>): Promise<chu
  * Reads every chunk of a byte stream and joins them.
  *
  * @example
- * const encoded = await readBytes(streamOf([bytes]).pipeThrough(new Base64.EncoderStream()))
+ * const encoded = await readBytes(streamOf([bytes]).pipeThrough(new Base64.EncoderStream()));
  */
 export async function readBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
   const chunks = await readAll(stream);

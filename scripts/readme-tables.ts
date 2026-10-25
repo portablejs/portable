@@ -53,7 +53,7 @@ const webhooks = ours('webhooks', ['verify', 'stripe', 'VerificationError']);
 export const tables: Record<string, Table> = {
   arc: {
     columns: [
-      ours('arc', ['seal', 'verify'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('arc', ['seal', 'verify'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [
         { from: 'mailauth/lib/arc/index.js', use: ['arc', 'sealMessage'] },
         { from: 'mailauth/lib/dkim/verify.js', use: ['dkimVerify'] },
@@ -190,7 +190,7 @@ export const tables: Record<string, Table> = {
   },
   'web-crypto': {
     columns: [
-      ours('web-crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'derToRawEcdsa']),
+      ours('web-crypto', ['digest', 'hmac', 'hkdf', 'importSeed', 'importPem', 'derToRawEcdsa']),
       lib('ecdsa-sig-formatter'),
       lib('@noble/hashes', [
         { from: '@noble/hashes/sha2.js', use: ['sha256'] },
@@ -249,7 +249,7 @@ export const tables: Record<string, Table> = {
   },
   dkim: {
     columns: [
-      ours('dkim', ['sign', 'verify'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('dkim', ['sign', 'verify'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [
         { from: 'mailauth/lib/dkim/sign.js', use: ['dkimSign'] },
         { from: 'mailauth/lib/dkim/verify.js', use: ['dkimVerify'] },
@@ -269,7 +269,7 @@ export const tables: Record<string, Table> = {
         'dmarc',
         ['check'],
         [
-          { from: '@portable/dns', use: ['createResolver'] },
+          { from: '@portable/dns', use: ['create'] },
           { from: '@portable/spf', use: ['check'] },
         ],
       ),
@@ -286,7 +286,7 @@ export const tables: Record<string, Table> = {
   },
   dns: {
     columns: [
-      ours('dns', ['createResolver']),
+      ours('dns', ['create']),
       lib('tangerine'),
       node('node:dns/promises over local UDP', '`node:dns/promises` over local UDP'),
     ],
@@ -455,7 +455,7 @@ export const tables: Record<string, Table> = {
     columns: [
       ours('mail', ['encodeStream', 'envelope']),
       {
-        name: 'nodemailer 10.1.2',
+        name: 'nodemailer 10.2.1',
         header: 'nodemailer',
         imports: [{ from: 'nodemailer/lib/mail-composer' }],
       },
@@ -471,7 +471,7 @@ export const tables: Record<string, Table> = {
   },
   'mail-auth': {
     columns: [
-      ours('mail-auth', ['authenticate'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('mail-auth', ['authenticate'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [{ from: 'mailauth', use: ['authenticate'] }]),
     ],
     rows: [
@@ -499,7 +499,7 @@ export const tables: Record<string, Table> = {
       ]),
       { name: 'libmime 5.4.9', header: 'libmime', imports: [{ from: 'libmime' }] },
       {
-        name: 'addressparser (nodemailer 10.1.2)',
+        name: 'addressparser (nodemailer 10.2.1)',
         header: 'addressparser',
         imports: [{ from: 'nodemailer/lib/addressparser' }],
       },
@@ -650,7 +650,7 @@ export const tables: Record<string, Table> = {
   'quoted-printable': {
     columns: [
       ours('quoted-printable', ['encode', 'decode', 'EncoderStream', 'DecoderStream']),
-      { name: 'libqp 3.0.1', header: 'libqp', imports: [{ from: 'libqp' }] },
+      { name: 'libqp 3.0.1', header: 'libqp', imports: [{ from: 'libqp3' }] },
       lib('quoted-printable'),
     ],
     rows: [
@@ -743,7 +743,7 @@ export const tables: Record<string, Table> = {
   },
   rpc: {
     columns: [
-      ours('rpc', ['serve', 'port']),
+      ours('rpc', ['connect', 'provide', 'port']),
       lib('birpc', [{ from: 'birpc', use: ['createBirpc'] }]),
       lib('comlink', [{ from: 'comlink', use: ['expose', 'wrap'] }]),
       lib('penpal', [{ from: 'penpal', use: ['connect', 'PortMessenger'] }]),
@@ -782,7 +782,7 @@ export const tables: Record<string, Table> = {
   },
   spf: {
     columns: [
-      ours('spf', ['check'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('spf', ['check'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [{ from: 'mailauth/lib/spf/index.js', use: ['spf'] }]),
       {
         name: 'mailauth strict',

@@ -1,6 +1,6 @@
 import type { encode } from './encode.js';
 import * as Streams from '@portable/streams';
-import { createEncoder, type Encoder } from './encoder.js';
+import { createEncoder } from './encoder.js';
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
@@ -28,7 +28,7 @@ export declare namespace EncoderStream {
  */
 export class EncoderStream extends TransformStream<encode.Row, Uint8Array<ArrayBuffer>> {
   constructor(options: EncoderStream.Options = {}) {
-    const encoder = createEncoder(options) satisfies Encoder;
+    const encoder = createEncoder(options);
     const utf8 = new TextEncoder();
     super(
       Streams.abortable(

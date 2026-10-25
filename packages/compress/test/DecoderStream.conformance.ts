@@ -135,6 +135,11 @@ describe('DecoderStream', () => {
 });
 
 describe('DecoderStream maxBytes', () => {
+  test('throws a RangeError for a negative or NaN limit', () => {
+    expect(() => new Compress.DecoderStream({ maxBytes: -1 })).toThrow(RangeError);
+    expect(() => new Compress.DecoderStream({ maxBytes: Number.NaN })).toThrow(RangeError);
+  });
+
   test('fails past the limit and cancels the input', async () => {
     const compressed = await Compress.encode(randomBytes(5_000_000, 11));
     let cancelled: unknown;

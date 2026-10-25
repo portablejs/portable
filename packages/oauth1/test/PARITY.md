@@ -107,4 +107,4 @@ The RFC 5849 examples are in `rfc5849.conformance.ts`. They omit `oauth_version`
 | node-oauth [#64](https://github.com/ciaranj/node-oauth/issues/64): PLAINTEXT signature encoding | `known node-oauth issues > the PLAINTEXT signature is percent-encoded in the header (#64)` |
 | node-oauth [#174](https://github.com/ciaranj/node-oauth/issues/174) (open): `Object.prototype` additions break signing | `known node-oauth issues > Object.prototype properties do not change the signature (#174)` |
 | node-oauth [#353](https://github.com/ciaranj/node-oauth/issues/353): multipart bodies | `known node-oauth issues > a multipart body is not signed` |
-| WebCrypto imports only PKCS #8, and OpenSSL writes `RSA PRIVATE KEY` (PKCS #1) | `RSA-SHA1 > signs with a PKCS #1 PEM key` |
+| WebCrypto imports only PKCS #8, and OpenSSL writes `RSA PRIVATE KEY` (PKCS #1) | `RSA-SHA1 > signs with a PKCS #1 PEM key`. `WebCrypto.importPem` reads the key, and its own tests cover more PEM forms. |

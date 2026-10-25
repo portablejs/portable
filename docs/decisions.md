@@ -2,11 +2,77 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## What a review pass fixes
+
+- **Options:** fix every finding a review reports; fix only findings above a threshold, and stop when a pass reports none; limit passes to polish, or also review the design of each package and of the family.
+- **Trade-offs:** a reviewer always finds something. Without a threshold, repeated passes fix inputs no caller sends, and one pass can undo the choice an earlier pass made, so the passes never end. A review limited to polish would keep a weak design for as long as the packages are used, and the packages are meant to be used for many years, so changing an API costs least before the first release.
+- **Chosen:** a pass fixes, in this order of priority: wrong behavior a caller can hit; an API or package design that makes common use harder, slower or larger than it needs to be, compared with the best library for the job and with the platform API; an API that a coming platform or TypeScript feature, such as `Symbol.asyncDispose` or Temporal, would force to change in a breaking way; a break from a rule in AGENTS.md or a decision in this file; docs, READMEs or JSDoc that disagree with the code; code or prose that can be shorter or simpler without losing a fact, a reason or a test; and two packages that do the same thing in different ways. A redesign or a rewrite is in scope when it fixes one of these. It skips inputs that don't come up in real use, renames and rewrites that only swap one acceptable form for another, and new packages, which are listed for a person to choose from instead. A pass may change an entry in this file when it has a reason the entry didn't weigh, and it rewrites the entry with that reason. It doesn't undo a change an earlier pass made unless the change broke something. Passes stop when one finds nothing to fix.
+
+## PEM import is public in `@portable/web-crypto`
+
+- **Options:** keep the copies in dkim and oauth1; move one to `@portable/web-crypto/internal`; make it a public `WebCrypto.importPem`.
+- **Trade-offs:** WebCrypto imports only DER, and RSA only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` writes PKCS #1. Anyone who signs a JWT or a request with a key file ends up writing this code, so it fits next to `importSeed` and `publicKeyOf`. Both copies matched only `PRIVATE KEY` and `RSA PRIVATE KEY`, without public keys or text before the block. A public function has to choose its usages and errors for every algorithm, not one per package.
+- **Chosen:** `WebCrypto.importPem(algorithm, pem, { extractable, usages, signal })`. It takes the algorithm first like `importSeed`, reads the first of the four key blocks, and gives default usages for the signing, RSA-OAEP and key-agreement algorithms. Any other algorithm needs `usages`. A malformed block rejects with `InvalidInputError`, and an SEC 1 EC key, an encrypted key or a certificate rejects with `UnsupportedError`. dkim tries RSA, then Ed25519, instead of reading the PKCS #8 OID. `pkcs1ToSpki` is exported from `./internal` for dkim's DNS keys.
+
+## `Sse.connect` takes `attempts`
+
+- **Options:** keep `reconnectIf` only; add `attempts` with the meaning `WebSockets.connect` gives it.
+- **Trade-offs:** without a cap, the only way to stop after a few tries is a counter inside `reconnectIf`. Timers and websockets already take `attempts`, and `attempts: 3` should mean the same thing in all three packages.
+- **Chosen:** `attempts`, default `Infinity`, at least 1, counting the first try. An accepted response resets the count, and the end of its body counts as a failure, so `attempts: 1` never reconnects. When it is used up, `reconnectIf` isn't called, and the stream errors with the last error, or closes after a normal end.
+
+## One dispose helper in `@portable/errors/internal`
+
+- **Options:** keep a copy in each of queue, rpc, smtp, timers and websockets; move one to a shared package's `./internal` entry.
+- **Trade-offs:** the copies had drifted. smtp's type had another name, and disposing a queue left running tasks' promises pending, while aborting its `signal` rejected them. errors is the only package that queue, rpc, smtp, timers and websockets all depend on already or can depend on without a cycle.
+- **Chosen:** `withDispose`, `withAsyncDispose`, `asyncDisposeSymbol`, `DisposeMethod` and `AsyncDisposeMethod` in `@portable/errors/internal`. Disposing a queue, a WebSockets pair or an rpc remote does what aborting the `signal` it was created with does, with an `AbortError`, and settles when the teardown is done, so a queue rejects running tasks at once on disposal. Disposing an `Smtp.Client` calls `close()`, and disposing a debounced function calls `cancel()`. Safari has no `Symbol.asyncDispose`, so there these objects are torn down by aborting the `signal`, or with `close()` for `Smtp.Client` and `cancel()` for a debounced function.
+
+## Instants are converted by `@portable/timers`
+
+- **Options:** a converter copied into each package; one in `@portable/errors/internal`; `Timers.Instant` and a converter in `@portable/timers/internal`.
+- **Trade-offs:** ten packages take an instant, and mail had its own `Mail.Instant`. A copy per package lets each one check for `epochMilliseconds` differently, as mail did with `instanceof Date`, which fails for a `Date` from another realm. errors holds error classes, while timers already holds the time types `Delay` and `Backoff`, and its only dependency is errors, so no package gets a dependency cycle.
+- **Chosen:** `Timers.Instant` is the public type. `toEpochMilliseconds` and `toDate` in `@portable/timers/internal` read `epochMilliseconds` when it is a number and otherwise call `Date.prototype.getTime`, which works across realms. They throw a `TypeError` for any other value, and a `RangeError` for a time outside the range of `Date`, such as an invalid `Date` or a NaN `epochMilliseconds`. Before that check was shared, webhooks accepted any timestamp when `now` was invalid, because a NaN skew is never larger than the tolerance, and each of the other packages checked or skipped it in its own way. Only mail re-exports the type, because its `date` is a field of `Mail.Message`. A value a package passes to caller code, such as rate-limit's `Store` `now` or a webhooks `Scheme`'s `timestamp`, stays `Date`.
+
+## Package manifests are checked by a test
+
+- **Options:** review each `package.json` by hand; a lint rule over JSON files; a test that reads every package's manifest, test package, changeset and README.
+- **Trade-offs:** pnpm links every workspace package into every other, so a source import of a `@portable/*` package missing from `dependencies` passes the type checks and every test, and fails only when someone installs the published package. Pass 1 found exif importing `@portable/streams` without listing it. The field order, the `exports` shape and the README's first lines were also checked only by reading them. oxlint has no rule for `package.json`, and a test can resolve imports with `ts.preProcessFile` and compare them with the manifest.
+- **Chosen:** `tools/lint/src/packages.test.ts`. For each package it checks the field order of `packages/mail/package.json`, the published fields, that `exports` has one entry per file in `src/exports/` with the `src`, `types` and `default` paths, that `dependencies` is exactly the `@portable/*` packages the source imports (types included, because the declaration files import them too), each as `workspace:*`, that `test/package.json` is a private `@portable/<name>-test` package, that `.changeset/<name>-initial.md` exists, and that the README starts with the package name and the runtimes sentence, has a "Why use this over" section, and is linked from the root README. smtp's description and README list the runtimes with a TCP socket API instead, because browsers have none.
+
+## Long-lived objects have `Symbol.asyncDispose` where the runtime has it
+
+- **Options:** a `close()` method only; `close()` plus `[Symbol.asyncDispose]` set behind a check for the symbol; wait until every supported runtime has the symbol; a polyfill of the symbol.
+- **Trade-offs:** Chrome 134, Firefox 141, Node 24, Deno and Bun have `Symbol.asyncDispose` and `await using`, and Safari 26 doesn't. With the key, `await using client = await Smtp.connect(options)` closes the client when the block exits, even when it throws, which today takes a `try`/`finally` around every use. Adding the key later wouldn't break callers, but until then, code in runtimes that have the symbol would keep writing the `finally`. A polyfill patches a global, which the runtime baseline forbids. A type that always declares `[Symbol.asyncDispose]` fails to compile in a project whose TypeScript lib doesn't declare the symbol, unless the project sets `skipLibCheck`. A type that reads the key from `SymbolConstructor` resolves to no key in that project, and to the method in a project whose lib declares the symbol. Package code can't use `using` itself, because with `target` ES2022 `tsc` turns it into calls to tslib helpers. `importHelpers` with no tslib installed fails the build, and that failure is the check we want.
+- **Chosen:** an object that holds a socket, timer, listener or running task is torn down by `close()` or by aborting the `signal` it was created with. smtp's `signal` only limits connecting, so `Smtp.Client` has `close()`. Where `Symbol.asyncDispose` exists, the object has `[Symbol.asyncDispose]()` with the same teardown, and a sync teardown such as a debounced function's `cancel` uses `Symbol.dispose`. The key's type is read from `SymbolConstructor`, so it appears only when the caller's lib declares the symbol. `DisposableStack`, `AsyncDisposableStack` and `SuppressedError` are restricted globals in package code until Safari has them. The helper that sets the key is in `@portable/errors/internal` (see "One dispose helper in `@portable/errors/internal`").
+
+## Instants accept Temporal, and results stay `Date`
+
+- **Options:** `Date` only; `Date | Temporal.Instant`; `Date | { readonly epochMilliseconds: number }`; results as `Temporal.Instant`.
+- **Trade-offs:** Chrome 144, Firefox 139, Node 26 and Deno have Temporal, and Safari doesn't. With `Date` only, code that uses Temporal has to wrap every `now` or `expiresAt` in `new Date(instant.epochMilliseconds)`. Naming `Temporal.Instant` in a type needs TypeScript's `esnext.temporal` lib, and a project without that lib gets a type error in our declaration files. An object type with `epochMilliseconds` needs no lib, and both `Temporal.Instant` and `Temporal.ZonedDateTime` fit it, while a `Date` doesn't have the property, so a package can tell the two apart without `instanceof`, which fails for a `Date` from another realm. Widening an option's type later doesn't break callers, but changing a result from `Date` to `Temporal.Instant` does, and a result has to work in Safari, so results stay `Date`. If a package later returns Temporal values, it will add a field or a function next to the `Date` one.
+- **Chosen:** instants in options have the type `Date | { readonly epochMilliseconds: number }`, converted to milliseconds by one shared helper (see "Instants are converted by `@portable/timers`"). Instants in results stay `Date`. `Exif.parseDate` returns a `Date` for a value with no time zone and reads it as UTC. A `Temporal.PlainDateTime` would describe that value exactly, so a Temporal variant would be a new function, not a change to `parseDate`.
+
+## `WebCrypto.Hash` stays the four SHA-1 and SHA-2 names
+
+- **Options:** add SHA-3 and other new hashes to `Hash`; give them a separate type.
+- **Trade-offs:** `Hash` is the parameter type of `Digest` and `Hmac`, which callers implement, often with a `Record<Hash, …>` of noble functions. Widening it would break those implementations, while widening the parameter of `WebCrypto.digest`, `hmac` and `hkdf` breaks no one.
+- **Chosen:** a separate type for new hashes, accepted by `digest`, `hmac` and `hkdf` once engines ship them. The `Hash` JSDoc says so.
+
+## `Png.decode` takes `maxPixels`
+
+- **Options:** no limit; `maxPixels` with no limit by default; a finite default such as sharp's 268,402,689 pixels.
+- **Trade-offs:** `rawSize` already rejects a header that claims more pixels than deflate's 1032:1 ratio allows, but a valid 1.2 MB file of a 1-bit 100000×100000 image still decodes to 40 GB of RGBA. A finite default would protect callers who don't read the docs, but it would reject some valid large images, the same trade-off as "Decoders that buffer input take a size limit, with no limit by default".
+- **Chosen:** `maxPixels`, defaulting to `Infinity`, checked against `width * height` when `IHDR` is read, before anything is decompressed or allocated. Going past it throws `Png.MaxPixelsError`, named after the option, which stores `maxPixels`.
+
+## `Csv.decode` types rows by the header names
+
+- **Options:** keep `Record<string, string>` for every header; type rows by an array `header` with `Record<name, string>`; also make the keys optional when `relaxColumnCount` is set; split `decode` into one function for arrays and one for objects, as AGENTS.md asks when an option changes the result type.
+- **Trade-offs:** with `Record<string, string>`, a misspelled column such as `row.emial` type-checks and reads `undefined`. Narrowing the type after the first release would break callers who index a row with a plain `string`, so the choice has to be made now. With `relaxColumnCount`, a short row leaves the missing keys out, so `Record<name, string>` would claim keys that aren't there. `header` already changed the row type before this, through a `const` generic, and `Csv.decode(text, { header: true })` is the form papaparse and csv-parse callers know. The AGENTS.md rule is there to prevent overloads keyed on an option's value. A generic inferred from the option has one signature, and its result type follows from the value the caller wrote.
+- **Chosen:** keep one `decode` and one `DecoderStream`, as an exception to the two-functions rule. When the call passes `header` as an array literal, the row type is `Record<name, string>`, and `relaxColumnCount: true` makes it `Partial`. `header: true`, a `string[]` variable, and a `relaxColumnCount` that is a plain `boolean` keep the wider or optional type.
+
 ## Byte inputs stay `Uint8Array` only
 
 - **Options:** keep `Uint8Array` as the only byte input, and throw a `TypeError` for anything else; accept any `ArrayBuffer`, `SharedArrayBuffer` or view, as `TextDecoder` does.
 - **Trade-offs:** if packages accepted any buffer or view, a caller could pass the `ArrayBuffer` from `crypto.subtle` without wrapping it in a `Uint8Array`. Most byte input comes from `response.bytes()` or `blob.bytes()`, which already return a `Uint8Array`. Given a buffer or a view, a package can't tell which of its bytes the caller meant. If a caller passes `view.buffer`, the package reads the whole buffer and not only the bytes in the view, and if a caller passes an `Int16Array` of audio samples, the package reads two bytes per sample in the platform's byte order. Neither mistake throws an error, so the caller gets a wrong result without any sign of it. When the caller writes the conversion, such as `new Uint8Array(view.buffer, view.byteOffset, view.byteLength)`, anyone reading the caller's code can see which bytes the package reads. Every package would also have to convert its input. `@noble/hashes` and ox also take only `Uint8Array`.
-- **Shared memory:** `assertUint8Array` rejects a bare `SharedArrayBuffer` as it rejects an `ArrayBuffer`, but accepts a `Uint8Array` over one. TypeScript types a plain `Uint8Array` as `Uint8Array<ArrayBufferLike>`, so a parameter that excluded shared memory would have to be typed `Uint8Array<ArrayBuffer>`, and a caller's variable typed `Uint8Array` would then fail to type-check. Another thread can change shared bytes while an async function or a stream reads them, so a caller who passes shared memory must not write to it until the function returns, its promise settles, or the stream has read the chunk. `crypto.subtle`, `Blob`, `fetch`, `CompressionStream` and `WebSocket.send` throw for shared memory, so packages pass bytes to them through `toBufferSource`, which copies a view of a `SharedArrayBuffer`.
+- **Shared memory:** `assertUint8Array` rejects a bare `SharedArrayBuffer` as it rejects an `ArrayBuffer`, but accepts a `Uint8Array` over one. TypeScript types a plain `Uint8Array` as `Uint8Array<ArrayBufferLike>`, so a parameter that excluded shared memory would have to be typed `Uint8Array<ArrayBuffer>`, and a caller's variable typed `Uint8Array` would then fail to type-check. Another thread can change shared bytes while an async function or a stream reads them, so if you pass shared memory, you must not write to it until the function returns, its promise settles, or the stream has read the chunk. `crypto.subtle`, `Blob`, `fetch`, `CompressionStream` and `WebSocket.send` throw for shared memory, so packages pass bytes to them through `toBufferSource`, which copies a view of a `SharedArrayBuffer`.
 - **Chosen:** `Uint8Array` only. `assertUint8Array` in `@portable/bytes/internal` throws a `TypeError` for any other value, so a JavaScript caller gets an error instead of a wrong result. Packages test for bytes with `isUint8Array` instead of `instanceof Uint8Array`, because `instanceof` returns false for a `Uint8Array` from another realm. A package can start accepting more types later without breaking callers, but if it stops accepting a type after a release, callers that pass that type break. A `Uint8Array` can still start partway into a larger buffer, so each package's `test/inputs.conformance.ts` passes one and checks that every function reads only the bytes in its range.
 
 ## Multi-member gzip decoding searches for each member's end
@@ -25,7 +91,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** lint rules for `@example` JSDoc, `is`/`has`/`can` names and positional booleans on every exported function; the same rules with a disable comment on each internal helper; a test that reads each package's entry points with the TypeScript checker.
 - **Trade-offs:** a lint rule sees one file, so it can't tell a public export from a helper that one module exports to another. The lint version reported 45 positional booleans, almost all in internal helpers such as image-size's `u16(input, offset, bigEndian)`, where an options object would add an allocation to every read. The test resolves `export *` and aliases and skips `./internal`, but it runs a TypeScript program over every package, which takes a few seconds.
-- **Chosen:** `tools/lint/src/publicApi.test.ts`. It allows the standard boolean names `contains`, `equal`, `is`, `needsRehash` and `timingSafeEqual`. Four internal helpers were renamed anyway (`canFitDns`, `isInNetwork`, `hasMacro`). The other conventions that hold in every file (`?: T | undefined`, `.js` imports, error `kind`, no enums, no `Symbol()`) are lint rules in `tools/lint/src/plugin.ts`.
+- **Chosen:** `tools/lint/src/publicApi.test.ts`. It allows the standard boolean names `contains`, `equal`, `is`, `needsRehash`, `timingSafeEqual` and `verify`. Internal helpers such as `canFitDns`, `isInNetwork` and `hasMacro` were renamed anyway. The other conventions that hold in every file (`?: T | undefined`, `.js` imports, error `kind`, no enums, no `Symbol()`) are lint rules in `tools/lint/src/plugin.ts`.
 
 ## `prefer-satisfies` allows annotations that widen on purpose
 
@@ -43,7 +109,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** add both; add `toBlob` only; add neither.
 - **Trade-offs:** `new Response(stream).blob()` reads only a `ReadableStream`, takes no limit or signal, and ran 1.7× slower than collecting the chunks into `new Blob(chunks)`. A `toResponse(source, init)` would only wrap `new Response(Streams.fromIterable(source), init)`, which adds an export without adding a behavior.
-- **Chosen:** `Streams.toBlob(source, { maxBytes, type, signal })`, with the same chunk rules as `toBytes`. A caller who needs a `Response` passes `fromIterable(source)` to `new Response`.
+- **Chosen:** `Streams.toBlob(source, { maxBytes, type, signal })`, with the same chunk rules as `toBytes`. To get a `Response`, pass `fromIterable(source)` to `new Response`.
 
 ## Bun and Deno run the conformance tests in CI without blocking
 
@@ -60,14 +126,14 @@ Decisions made while building the packages, with the options considered and the 
 ## Decoders that buffer input take a size limit, with no limit by default
 
 - **Options:** no limit; a limit that is off by default; a finite default such as 1 MiB.
-- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` buffered input until a line, value or header block ended, so untrusted input without a line break made the buffer grow without limit. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects a caller who doesn't read the docs, but any number we choose rejects some valid large record, and the three older packages would have needed the same breaking change.
-- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop. `MimeStream.DecoderStream` and `MimeStream.splitHeaders` dropped mailsplit's finite defaults (1 MiB of headers, 1,000 parts) for `Infinity`, so a caller who reads untrusted mail sets `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts`.
+- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` buffered input until a line, value or header block ended, so untrusted input without a line break made the buffer grow without limit. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects anyone who doesn't read the docs, but any number we choose rejects some valid large record, and the three older packages would have needed the same breaking change.
+- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop. `MimeStream.DecoderStream` and `MimeStream.splitHeaders` dropped mailsplit's finite defaults (1 MiB of headers, 1,000 parts) for `Infinity`, so if you read untrusted mail, you set `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts`.
 
 ## Every function that reads the clock takes `now`
 
 - **Options:** keep the per-package names (`signedAt` in dkim and arc, `timestamp` in oauth1 and webhooks, no option in rate-limit, spf and web-push); name the option after what it sets; call it `now` everywhere.
 - **Trade-offs:** `signedAt` says what the time is used for, but a test that fixes the clock had to know a different name in each package, and rate-limit, spf and web-push read `Date.now()` with no way to pass a time. The verifiers already called the option `now`.
-- **Chosen:** `now?: Date` on every function that reads the clock: `Dkim.sign`, `Arc.seal`, `OAuth1.sign`, `Webhooks.sign`, `Spf.check`, `WebPush.send` and `toRequest`, `RateLimit` `take` and `headers`. Instants are `Date` in options and results, so `RateLimit.Result.resetAt` is a `Date`. Durations are milliseconds unless the wire format sets the unit, so `Webhooks.verify`'s `tolerance` is now `300_000`, while `WebPush`'s `ttl` stays in seconds. The rdap bootstrap cache still reads `Date.now()`, because its expiry isn't visible to a caller.
+- **Chosen:** `now` on every function that reads the clock (it later also accepted a Temporal instant, as "Instants accept Temporal, and results stay `Date`" above describes): `Dkim.sign`, `Arc.seal`, `OAuth1.sign`, `Webhooks.sign`, `Spf.check`, `WebPush.send` and `toRequest`, `RateLimit` `take` and `headers`. Instants are `Date` in options and results, so `RateLimit.Result.resetAt` is a `Date`. Durations are milliseconds unless the wire format sets the unit, so `Webhooks.verify`'s `tolerance` is now `300_000`, while `WebPush`'s `ttl` stays in seconds. The rdap lookups also take `now`, which they compare with the time the bootstrap files were cached.
 - **`Timers.poll` lost its `timeout`.** `AbortSignal.timeout` already limits the whole call, and AGENTS.md allows a `timeout` option only when it limits one step of many, such as one retry attempt. `retry`, dns and websockets keep their per-attempt `timeout`.
 
 ## `attempts` counts the first try everywhere
@@ -92,12 +158,12 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** every `EncoderStream` and `*Stream()` function emits `Uint8Array`; they all emit `string`; each package picks.
 - **Trade-offs:** Base64, QuotedPrintable, Csv and Jsonl emitted strings, and Charset, MimeStream, Sse and Mail emitted bytes. A `Response` body or a socket's writable needs bytes, so a caller of the string encoders added a `TextEncoderStream`, and `@portable/mail` and `@portable/rpc` had code to handle both kinds of chunk. The platform's `TextEncoderStream` and `CompressionStream` emit bytes.
-- **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. Callers write the output to a body more often than they read it as text, so a caller who wants base64 text pipes the output through `TextDecoderStream`.
+- **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. Callers write the output to a body more often than they read it as text, so if you want base64 text, you pipe the output through `TextDecoderStream`.
 
 ## One `@portable/errors` package, branded with `Symbol.for`
 
 - **Options:** keep an `errors.ts` in each package; share the classes through an internal package; publish `@portable/errors`. For checks: `instanceof`; comparing `name` strings; a brand under a `Symbol.for` key.
-- **Trade-offs:** 26 packages defined about 55 classes, and classes with the same name had different constructors: `TruncatedError` took `(message?, options?)` in base64, `(options?)` in compress and nothing in exif, and `ResponseError` had three unrelated shapes. A caller who piped `Streams.limitBytes` into `Compress.DecoderStream` and then `Exif.parseStream` needed three checks for one condition. zile doesn't bundle, so an internal package would still be published and installed, and a public one lets callers check a kind from any package. `instanceof` fails when an app holds two copies of a package. Duplicates are more likely with our packages because `workspace:*` publishes exact versions, which npm can't dedupe. Comparing `name` matches any library that happens to use the same string.
+- **Trade-offs:** 26 packages defined about 55 classes, and classes with the same name had different constructors: `TruncatedError` took `(message?, options?)` in base64, `(options?)` in compress and nothing in exif, and `ResponseError` had three unrelated shapes. Piping `Streams.limitBytes` into `Compress.DecoderStream` and then `Exif.parseStream` meant three checks for one condition. zile doesn't bundle, so an internal package would still be published and installed, and a public one lets callers check a kind from any package. `instanceof` fails when an app holds two copies of a package. Duplicates are more likely with our packages because `workspace:*` publishes exact versions, which npm can't dedupe. Comparing `name` matches any library that happens to use the same string.
 - **Chosen:** a public `@portable/errors`. Each error stores the kinds of its class chain under `Symbol.for('portable.error')`, `Errors.is(error, 'MaxBytes')` reads it, and the classes' `Symbol.hasInstance` reads it too, so `instanceof Errors.MaxBytesError` matches every package's error and `instanceof Compress.MaxBytesError` matches only compress's, from any copy. The symbol key and the kind strings are a protocol that later versions must keep. An error with only a message takes `(message?, options?)`, as `Error` does, and one with other fields takes one object.
 
 ## The worker harness runs a stalled file again in WebKit
@@ -127,26 +193,26 @@ Decisions made while building the packages, with the options considered and the 
 ## Bad arguments throw `TypeError` or `RangeError`, bad data throws `InvalidInputError`
 
 - **Options:** `InvalidInputError` for everything, including options; built-in errors for everything the caller passes; built-in errors for arguments and options, and `InvalidInputError` for the data being processed.
-- **Trade-offs:** Most packages already threw `TypeError` and `RangeError` for options, and the platform does the same. A single `InvalidInputError` for both would make a caller who catches malformed messages also catch its own configuration mistakes. The packages disagreed at the edges: dkim threw `TypeError` for a PEM key that doesn't parse and oauth1 threw `InvalidInputError`; base64, csv, smtp, web-push and webhooks threw `TypeError` for an unknown or malformed option value while dkim, arc and mime-headers threw `RangeError`.
+- **Trade-offs:** Most packages already threw `TypeError` and `RangeError` for options, and the platform does the same. A single `InvalidInputError` for both would mean that catching malformed messages also catches your own configuration mistakes. The packages disagreed at the edges: dkim threw `TypeError` for a PEM key that doesn't parse and oauth1 threw `InvalidInputError`; base64, csv, smtp, web-push and webhooks threw `TypeError` for an unknown or malformed option value while dkim, arc and mime-headers threw `RangeError`.
 - **Chosen:** the third. `TypeError` for a wrong type or a missing value, `RangeError` for a right type with a value the function doesn't accept (including keys and secrets that don't parse), and `InvalidInputError` for malformed data. AGENTS.md states the rule. oauth1 no longer exports `InvalidInputError`, since its only use was a key that doesn't parse. jsonl and json-stream keep `JSON.stringify`'s `TypeError` for values it can't serialize.
 
 ## `maxBytes` counts bytes and `maxLength` counts string length
 
 - **Options:** keep each package's name; name every limit `maxLength`; name it by unit.
-- **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. A caller who knows `Streams.toBytes(stream, { maxBytes })` would guess wrong in compress.
+- **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. If you know `Streams.toBytes(stream, { maxBytes })`, you would guess wrong in compress.
 - **Chosen:** name it by unit. compress's option is now `maxBytes` and its error `Compress.MaxBytesError`, and AGENTS.md states the rule.
 
 ## Stream transforms use `Streams.abortable`, and promise helpers stay private
 
 - **Options:** keep a private copy of the 30-line transformer helper in each package; move it to a new shared or internal package; export it from streams.
 - **Trade-offs:** Nine packages had identical copies, and sse wrote the same logic out by hand. A separate shared package would add a package whose only job is one helper. Exporting it from streams makes it public API, and base64, charset, csv, json-stream, jsonl, lines, mime-stream, quoted-printable and sse now depend on streams, but streams is `sideEffects: false`, so their bundles take only `abortable`. Callers who write their own transforms can use it too. The promise helpers that race work against a signal (in dkim, dmarc, spf, timers, password, oauth1 and webhooks) only stop the caller from waiting, while the DNS query or the PBKDF2 keeps running, so a public "abortable promise" would claim more than it does.
-- **Chosen:** Kevin chose to export `Streams.abortable(transformer, { signal })` and to keep each promise helper private in the package that uses it.
+- **Chosen:** export `Streams.abortable(transformer, { signal })`, and keep the promise helper out of the public API. The seven private copies were replaced by one `abortable(work, signal)` in `@portable/timers/internal`, because timers already holds the helpers that wait, such as `sleep` and `poll`. bytes was the other candidate, but it has no code that handles a signal. dmarc and password depend on timers for it.
 
 ## arc reuses dkim through `@portable/dkim/internal`
 
 - **Options:** copy dkim's tag parser, canonicalization, key lookup and signing into arc; export them from dkim's main entry; add an `./internal` subpath export to dkim.
 - **Trade-offs:** A copy would drift from dkim, and the AMS is a DKIM signature with a different tag set, so we would have to make every fix twice. Exporting the helpers from the main entry would make them public API. Anyone can import a subpath, but its doc comment says it is not public and can change in any release.
-- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which pnpm publishes as the exact version, so a change to the internal modules is released together with arc.
+- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which pnpm publishes as the exact version, so a change to the internal modules is released together with arc. arc also has an `./internal` subpath, so that `MailAuth.authenticate` can split the message once and compute the body hashes for DKIM, the ARC-Message-Signature and the new seal in one pass. `Dkim.verify` and `Arc.verify` each split into a `planVerify` that returns the body hashes it needs and a `finish` step, and `Arc.seal` into `createSealer`. Before this, `authenticate` buffered the message and canonicalized and hashed the body three times. With one pass it takes less than half the time on a 250 KB message, reads a stream without buffering it, and rejects invalid seal options before it reads the message.
 - **Reviewed:** the consistency pass kept the subpath, because the alternatives are a copy that drifts or a public API nobody else needs. AGENTS.md now says when a package may add an `./internal` subpath and that only `@portable/*` packages import it.
 
 ## arc has only RFC 8617 behavior
@@ -171,7 +237,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** port all of mailauth's `authenticate`; port the SPF, DKIM, DMARC and ARC checks with Authentication-Results and sealing only.
 - **Trade-offs:** BIMI needs SVG Tiny PS validation and VMC certificate chains, each bigger than the rest of the package. Received-SPF repeats the `spf=` result that Authentication-Results already carries (RFC 8601 replaces it for new code). `trustReceived` takes the client address from a Received field, which any earlier hop can write, and an SMTP server always knows the real address.
-- **Chosen:** leave all three out. A caller who needs BIMI can call a BIMI library with `result.dmarc`.
+- **Chosen:** leave all three out. If you need BIMI, you can call a BIMI library with `result.dmarc`.
 
 ## `authenticate` reports a refused seal in `sealSkipReason`
 
@@ -201,14 +267,14 @@ Decisions made while building the packages, with the options considered and the 
 ## `Spf.check` rejects with `signal.reason`
 
 - **Options:** keep returning a `temperror` result when `signal` aborts; reject with `signal.reason`, as the `signal` rule in AGENTS.md says; return `temperror` only when the reason is a `TimeoutError` and reject otherwise.
-- **Trade-offs:** `temperror` on abort reads well for RFC 7208's time limit (section 4.6.4), but a caller that aborts because its client went away gets a result it has to throw away, and spf would stay the only package that doesn't reject. Branching on the reason's type makes `AbortSignal.timeout` and `AbortSignal.any([timeout, request.signal])` behave differently in ways a caller can't see from the types.
-- **Chosen:** reject with `signal.reason`. A caller that wants the RFC behavior catches the `TimeoutError` and reports `temperror`, as the README says. `check` also passes the signal to each resolver call as `{ signal }`, and `Dns.Resolver`'s methods now declare that optional argument, so `Dns.create()` cancels its in-flight `fetch` calls. `node:dns/promises` ignores the argument.
+- **Trade-offs:** `temperror` on abort reads well for RFC 7208's time limit (section 4.6.4), but if you abort because your client went away, you get a result you have to throw away, and spf would stay the only package that doesn't reject. Branching on the reason's type makes `AbortSignal.timeout` and `AbortSignal.any([timeout, request.signal])` behave differently in ways a caller can't see from the types.
+- **Chosen:** reject with `signal.reason`. To get the RFC behavior, catch the `TimeoutError` and report `temperror`, as the README says. `check` also passes the signal to each resolver call as `{ signal }`, and `Dns.Resolver`'s methods now declare that optional argument, so `Dns.create()` cancels its in-flight `fetch` calls. `node:dns/promises` ignores the argument.
 
 ## `Streams.fromIterable` and `toAsyncIterable` take no signal
 
 - **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors, the combinators and the transforms used with `pipeThrough`.
 - **Trade-offs:** `fromIterable` and `toAsyncIterable` return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels the source. `concat` and `merge` took their sources as rest parameters, which left no place for an options object. They now take an array, so an options object with `signal` can follow it, as in every other function that holds readers. The change breaks no one, because nothing is released yet.
-- **Chosen:** `toBytes`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform` and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
+- **Chosen:** `toBytes`, `toBlob`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform` and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
 
 ## `@portable/charset`'s root exports
 
@@ -223,7 +289,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Options:** keep `scheme: 'stripe'` strings with a branch per vendor; a scheme object with declarative fields (`encoding: 'hex'`, a header name, a prefix string) that the package interprets; a scheme object of plain functions.
 - **Trade-offs:** declarative fields are shorter to write, but every new vendor quirk becomes another field for us to interpret and maintain. Plain functions push hex or base64 decoding and the header format into each scheme, so a preset is about 20 lines instead of 5, but the package code doesn't change when a vendor does.
 - **Chosen:** plain functions. `parse(headers)` returns `{ signatures, timestamp?, id? }` with signatures as bytes and the timestamp as a `Date`, `payload({ id, timestamp, body })` returns the signed bytes or text, `headers({ signature, id, timestamp })` writes the headers for `sign`, and the optional `key(secret)` decodes a string secret. `verify` and `sign` keep the HMAC, the length check and constant-time compare, several secrets and the tolerance. We won't add vendors beyond the four presets, and the README shows how to write one.
-- **Presets are root exports,** `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github` and `Webhooks.slack`, not a `schemes` subpath. They are plain objects, so when code imports only `verify`, a bundler keeps `standard` (the default) and drops the other three, as a Rolldown build confirmed. The owner chose this.
+- **Presets are root exports,** `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github` and `Webhooks.slack`, not a `schemes` subpath. They are plain objects, so when code imports only `verify`, a bundler keeps `standard` (the default) and drops the other three, as a Rolldown build confirmed.
 - **Standard Webhooks is the default `scheme`,** because it is the one spec and Svix, Resend and Clerk use it. The `svix` scheme is gone: `standard` reads the `svix-` headers when the `webhook-` headers are missing.
 - **`sign` gives every scheme a `crypto.randomUUID()` id by default,** so the Standard Webhooks id changed from `msg_…` to a UUID, and GitHub signatures now come with an `x-github-delivery` header, as GitHub's own deliveries do.
 
@@ -264,8 +330,8 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 ## `WebCrypto.hmac` and `WebCrypto.hkdf` take key bytes, not a `CryptoKey`
 
 - **Options:** also accept an imported `CryptoKey` so a caller can reuse it; take bytes or a string only.
-- **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. A caller who reuses a key can call `crypto.subtle.sign` directly.
-- **Chosen:** bytes or a string only.
+- **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. If you reuse a key, you can call `crypto.subtle.sign` directly.
+- **Chosen:** bytes or a string only. `hmac` caches the keys it imports, so signing again with the same secret skips `importKey`, and there's no need to pass a `CryptoKey`.
 
 ## `@portable/rdap` API
 
@@ -306,12 +372,12 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 
 - **Options:** follow web-push and send whatever the caller gives; check against the RFC limits.
 - **Trade-offs:** push services must accept a 4096-byte body (RFC 8291 §4), which leaves 3993 bytes of payload, and FCM and Apple reject larger ones. An endpoint comes from a browser, so an `http:` endpoint either is a mistake or points the server at an internal address. Rejecting `http:` means a local test push service needs `https:` or a `fetch` that rewrites the URL.
-- **Chosen:** throw a `RangeError` for a larger payload and `InvalidInputError` for a non-`https:` endpoint.
+- **Chosen:** throw `InvalidInputError` for a non-`https:` endpoint, and `WebPush.MaxBytesError` (with `maxBytes` 3993) for a larger payload. Callers delete a subscription on `InvalidInputError`, so a payload error has to be a different class, or a long notification would delete valid subscriptions.
 
 ## `@portable/web-push` benchmarks against direct WebCrypto calls
 
 - **Options:** require being within 25% of web-push; compare with the same WebCrypto calls made directly and show web-push for reference.
-- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 3.5 times slower one at a time and 1.4 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
+- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 2.5 times slower one at a time and 1.2 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
 - **Chosen:** the 25% assertions compare with direct WebCrypto calls, and the README shows web-push's numbers.
 
 ## `@portable/rate-limit`: GCRA and a compare-and-set store
@@ -331,7 +397,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream` doesn't match what a caller expects after using `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them. `Jsonl.EncoderStream` is the transform for many values. For the name `encodeStream`, the `Stream` suffix rule now covers a function that returns a stream as well as one that reads one.
 - **Chosen:** `encodeStream(value)`. AGENTS.md now says the suffix marks a variant whose bytes or text are a stream, in either direction, so `parseStream` and `encodeStream` mirror each other.
 - **The reader is `DecoderStream`, not `ParserStream`,** because AGENTS.md keeps `parse` for packages that only read, and json-stream also writes. With the default `paths: ['$']` it emits every top-level value, as `Jsonl.DecoderStream` does for each line.
-- **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so a caller that treated `TypeError` as a bug in its own code also caught bad input.
+- **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so catching `TypeError` to find bugs in your own code also caught bad input.
 
 ## Build `@portable/bytes` instead of pointing to uint8array-extras
 
@@ -341,7 +407,7 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 
 - **Options:** keep `LineStream`; `Lines.DecoderStream`; `Lines.SplitterStream`.
 - **Trade-offs:** `LineStream` describes itself when read alone and echoes Deno's `TextLineStream`, but callers write `Lines.LineStream`, which repeats the package name. `SplitterStream` avoids that and still says what the transform does. `DecoderStream` gives every transform that turns bytes into values the same name, as `Base64`, `QuotedPrintable` and `Jsonl` already do, but it has no `EncoderStream` to pair with, and "decode" says less about a string input, which is only split.
-- **Chosen:** `Lines.DecoderStream`. A caller who has used `Jsonl.DecoderStream` can guess it, and the transform does decode: byte chunks go through `TextDecoder` with the `encoding` option. AGENTS.md now says a transform from bytes or text to values is a `DecoderStream`.
+- **Chosen:** `Lines.DecoderStream`. If you've used `Jsonl.DecoderStream`, you can guess it, and the transform does decode: byte chunks go through `TextDecoder` with the `encoding` option. AGENTS.md now says a transform from bytes or text to values is a `DecoderStream`.
 
 ## README package stats
 
@@ -352,18 +418,18 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 - **Slow libraries run fewer iterations.** stream-json takes 0.5 to 1.2 s per run, so its benchmark passes `{ iterations: 8 }`. The async-retry benchmark sets `minTimeout: 0` and `maxTimeout: 0`, because it always waits on `setTimeout`.
 - **Libraries the README names but the benchmarks leave out:** @microsoft/fetch-event-source uses `window` and `document`; better-sse and hono's SSE helper need a Node response or a Hono context; whoiser and whois-json speak WHOIS over TCP port 43; bottleneck schedules jobs and has no allow-or-deny call to compare with a rate limiter; dohjs takes no `fetch` to inject.
 - **Runtime dependencies count every package installed with the published package,** `@portable/*` included, by walking `dependencies` through `node_modules`.
-- **Coverage is no longer part of `pnpm readme`,** since the root README has no package table to show it.
+- **Coverage is no longer part of `pnpm readme`,** since the root README's package table has no coverage column.
 - **Bundle size is measured with Vite's `build` from `vite-plus`,** which bundles with rolldown, so no new dependency is needed. `scripts/bundle-size.ts` builds one entry per column from the column's `imports` in `scripts/readme-tables.ts`, which are the imports in the README's usage example or the library's equivalents. It runs from the package's `test/` directory, so it bundles the same upstream versions the tests install, and resolves `@portable/*` to the built `dist/`. The build uses Vite's browser conditions and `browser` fields and minifies the output, and the size is the gzip (level 6) of all output chunks. Node built-ins are left external and listed in the stats table, with `Buffer` when the output uses it. The size then leaves out whatever a browser polyfill would add. An optional peer such as `@noble/hashes` is counted only in the column that imports it.
 
 ## Crypto defaults to WebCrypto, with no `/core` entry
 
 This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
 
-- **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for a caller who wants noble.
+- **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for passing noble instead.
 - **Trade-offs:** noble HMAC-SHA256 adds about 3.0 kB gzipped to a browser bundle and needs an optional peer. Node's WebCrypto HMAC is about 7× slower than noble's. Export conditions avoid both costs but give each runtime different code, which tests in one runtime don't cover.
 - **Chosen:** WebCrypto everywhere, because it is the platform API and we expect Node's implementation to get faster. Neither package has a noble dependency or peer any more. `/core` existed to keep the noble default out of bundles, so it is gone, and the option is the only way to pass another function. A browser bundle of `verify` from webhooks is 4.7 kB gzipped, and of `sign` from oauth1 5.1 kB, neither with noble code.
 - **On Node:** a webhooks verification with the default is 1.6× faster than Stripe's `constructEventAsync` and about 1.8× slower than standardwebhooks. An oauth1 GET header is about 5× slower than oauth-1.0a with `node:crypto`. With noble passed in, both are faster than the library they replace. The benchmarks assert against the noble path where the upstream library hashes in JavaScript or `node:crypto`, and against the default where it uses WebCrypto.
-- **The webhooks CryptoKey cache stays.** It holds up to 16 imported keys and clears itself when full. Without it, a verification on Node was 2.9× slower, and an HMAC in Chromium took 12 µs instead of 6 µs.
+- **`WebCrypto.hmac` caches imported keys.** It holds up to 16 keys of at most 256 bytes, keyed by the hash and the key bytes, and clears the cache when it is full. The cache started in webhooks, where verifying without it was 2.9× slower on Node and an HMAC in Chromium took 12 µs instead of 6 µs. It moved into `WebCrypto.hmac` so that oauth1 and any other caller get it too, and webhooks now uses `WebCrypto.hmac` as its default.
 
 ## `@portable/mime-headers` API
 
@@ -392,8 +458,8 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 
 - **`sign(request, options)` returns a new signed `Request`; `authorization(request, options)` returns only the header value.** oauth-1.0a's `authorize` and `toHeader` were the alternatives. Inputs are `Request` objects, so `sign` signs exactly the URL and body that `fetch` sends, at about 10 µs per POST for reading the body.
 - **The option is `signatureMethod`, defaulting to HMAC-SHA1,** because `method` reads as the HTTP method. oauth-1.0a defaults to PLAINTEXT.
-- **The pluggable function is a hash (`digest`), and HMAC is built on it,** so one function serves the signature and the body hash and has the shape of noble's hashes and `crypto.subtle.digest`. It costs about 15 lines of HMAC code, checked against WebCrypto and `node:crypto`.
-- **The default is `crypto.subtle.digest`,** as for every package (see the decision above). On Node an HMAC takes about 60 µs with it and 8 µs with noble passed as `digest`.
+- **The pluggable functions are `hmac` (a `WebCrypto.Hmac`) for the signature and `digest` for the body hash,** as in every package that takes pluggable crypto.
+- **The defaults are `WebCrypto.hmac` and `WebCrypto.digest`,** as for every package (see the decision above).
 - **The signed form POST benchmark allows 50%.** Reading the body and building a second `Request` in undici costs more than oauth-1.0a's string handling, and hashing is not the gap.
 - **No HTTP client.** `fetch` follows redirects with the old signature, and the README shows how to re-sign.
 - **`timestamp` is a `Date`,** as in `Webhooks.sign` and every result in this repo. It was a number of seconds, so the same option name took different types in two packages a caller would use together.
@@ -401,7 +467,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 ## `@portable/webhooks` API
 
 - **One `verify(input, { scheme, secret })`,** not a function per provider, so there is one result type, one error class and one set of options. `sign` mirrors it and returns the provider's headers. The `scheme` string became a scheme object (see "Webhooks schemes are objects of functions").
-- **The default is WebCrypto `importKey` plus `sign`, with a cache of imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
+- **The default is `WebCrypto.hmac`, which caches imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
 - **`verify` returns `{ body, id, timestamp }` as text, not parsed JSON,** because Slack commands and GitHub form deliveries aren't JSON, and the `id` lets callers drop replays.
 - **One `VerificationError` with a `code`** (`missing-header`, `malformed-header`, `signature`, `timestamp`) instead of the shared error names, because every failure maps to the same 4xx. Mistakes in the call throw `TypeError` or `RangeError`. The signature is checked first, so `timestamp` always means a genuine but stale message.
 - **The tolerance applies in both directions,** while Stripe and Slack accept any future timestamp. No SHA-1 for GitHub, which always sends SHA-256.
@@ -416,7 +482,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 ## `@portable/json-stream` API
 
 - **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<Uint8Array>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: developers look for line-delimited JSON as its own problem, and its own package can use `DecoderStream` and `EncoderStream`, as the other codecs do. The package is named for JSON Lines (`.jsonl`), because OpenAI, Hugging Face and agent transcripts use that name. NDJSON is the older name, still used by the `ndjson` npm package and Elasticsearch. JSON Lines and NDJSON describe the same format.
-- **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
+- **No runtime dependency on `lines`, and only `Streams.abortable` from `streams`.** Splitting on `\n` inline is faster, and `encodeStream` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **The decoder builds each matched value with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. The decoder reports a syntax error inside a match when that value ends, not at the bad character.
 - **`encodeStream` always writes streams and async iterables as arrays.** No `cycle` option: a circular structure or a BigInt fails as in `JSON.stringify`.
@@ -427,7 +493,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Output is always 8-bit RGBA,** and `encode` takes `{ width, height, data }`, so a caller can pass a canvas `ImageData` or a decode result as is. 16-bit precision is lost, and there is no 16-bit or palette writing.
 - **No compression level option,** because `CompressionStream` has none. Callers set a level inside their own `deflate`.
 - **Rows are filtered by the smallest signed-byte sum,** as libpng does.
-- **The `DecompressionStream` decode benchmark allows 50%.** Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool, which adds 10 to 25 ms on a 1024×1024 image. With `node:zlib` our decoder is faster than pngjs (28 ms vs 40 ms).
+- **The `DecompressionStream` decode benchmark allows 50%.** Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool, which adds 10 to 25 ms on a 1024×1024 image. With `node:zlib` our decoder is faster than pngjs (28 ms vs 37 ms in the README table).
 - **Different from pngjs on purpose:** a `tRNS` pixel keeps its color with alpha 0, gray output uses BT.709 luma, bytes after `IEND` are ignored, and a header claiming more pixels than the data holds throws before allocating (pngjs tried to allocate 40 GB).
 
 ## `@portable/charset` API
@@ -454,7 +520,8 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Code tables and flag bits are internal.** Packets carry a `flags` object of booleans, and unnamed codes use RFC 3597 names (`TYPE65534`). An unknown name throws.
 - **TXT decodes to `Uint8Array[]`,** which keeps binary and DNS-SD data intact. `@portable/dns` can turn it into text.
 - **CAA `flags` keeps the whole byte** and SVCB/HTTPS stay raw bytes, so DNSSEC-signed data re-encodes exactly.
-- **No subpath for decode-only use:** encode and decode together are 6.6 kB minified and gzipped, and decode alone 5.7 kB.
+- **No subpath for decode-only use:** encode and decode together are 7.4 kB minified and gzipped.
+- **Addresses are parsed and formatted by `@portable/ip`.** `encode` passes each A, AAAA and CLIENT_SUBNET address to `Ip.parse` and wraps its error in `InvalidInputError` with the original as `cause`, so `010.0.0.1`, which `inet_aton` reads as octal 8, throws as it does everywhere else in the family. A zone throws too, because DNS can't carry one. `decode` formats addresses with `Ip.format`, so an IPv4-mapped address is `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends and as Node's `resolve6` writes it. Its own parser kept dns-packet at 7.0 kB, but the two parsers had already drifted apart: dns-packet read `010.0.0.1` as 10.0.0.1 and wrote mapped addresses in hex. `@portable/dns`, which already bundles ip, gets smaller.
 
 ## `@portable/quoted-printable` API
 
@@ -499,7 +566,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 ## No mapper argument in `Lines.DecoderStream`
 
 - **Options:** keep split2's `split2(mapper)`; leave mapping to another `TransformStream`.
-- **Trade-offs:** a mapper is shorter to write, but it is a second job inside a package meant for one, and `@portable/streams` will have `map()`.
+- **Trade-offs:** a mapper is shorter to write, but it is a second job inside a package meant for one, and `Streams.map()` does the same job.
 - **Chosen:** no mapper. The README shows the `TransformStream` equivalent.
 
 ## Empty lines are kept by default
@@ -563,7 +630,7 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 ## `Exif.StripStream` is a class
 
 - **Options:** a `StripStream` class; a `stripStream(options)` factory.
-- **Trade-offs:** AGENTS.md keeps lowercase factories for generic operators that take a function or a number, such as `Streams.map(fn)`. Stripping is a fixed transform named for what it does, like `TextDecoderStream` and `LineStream`.
+- **Trade-offs:** AGENTS.md keeps lowercase factories for generic operators that take a function or a number, such as `Streams.map(fn)`. Stripping is a fixed transform named for what it does, like `TextDecoderStream` and `CompressionStream`.
 - **Chosen:** `Exif.StripStream`, a `TransformStream` subclass.
 
 ## `Exif.strip` doesn't handle HEIC, AVIF or TIFF
@@ -582,8 +649,8 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 
 These were recorded as each package was built. Each package's README and PARITY.md have the details.
 
-- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hash` option takes an incremental hasher such as noble's `sha256.create()` for large messages.
-- **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` still reports an abort as `temperror` and should change to match.
+- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hasher` option takes an incremental hasher such as noble's `sha256.create()` for large messages.
+- **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` now does too (see "`Spf.check` rejects with `signal.reason`").
 - **dmarc** finds the organizational domain with the RFC 9989 DNS tree walk by default, and takes a public-suffix function as an option, so no suffix list ships with it. Its verb is `check`, as in spf, because a DMARC fail is a result and not an error. `from` is a domain, and the caller extracts it from the header.
 - **ip** `contains` treats an IPv4-mapped IPv6 address and the IPv4 address as the same, as Node's `BlockList` does, which is the safer choice for SSRF allowlists. `range` classifies addresses outside `2000::/3` as `reserved`. `parseCidr` clears host bits.
 - **random** throws `RangeError` for bad arguments, as dns and base64 do, and throws on reversed bounds instead of swapping them. `seeded` is xoshiro128** seeded with SplitMix64, and its output changes only in a major version.

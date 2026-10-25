@@ -69,7 +69,7 @@ An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` ho
 | --- | --- | --- |
 | `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
 | `signal` | | Cancels the lookup, including a bootstrap request no other lookup is waiting for. It rejects with `signal.reason`. |
-| `now` | the current time | The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. |
+| `now` | the current time | The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. A `Date` or a `Temporal.Instant`. |
 | `follow` | `true` | `Rdap.domain` only. Fetches the registrar's response when the registry links to it. |
 
 For a timeout, pass `signal: AbortSignal.timeout(5000)`.
@@ -106,7 +106,7 @@ Domain names go through `URL`'s IDNA conversion, then must have at least two lab
 | `Rdap.Autnum` | What `asn` returns. |
 | `Rdap.Entity` | A contact, with its jCard reduced to common fields. |
 | `Rdap.Events` | Registration, expiration and other dates, as `Date`s. |
-| `Rdap.Referral` | The registrar's RDAP server that a registry response points to. |
+| `Rdap.Referral` | The registrar's response that a registry response links to, or the error from fetching it. |
 
 ## Why use this over whoiser, whois-json and node-rdap
 
@@ -143,8 +143,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/rdap | node-rdap | `fetch` and `response.json()` |
 | --- | --- | --- | --- |
-| Minified and gzipped | 3.6 kB | 9.9 kB | built in |
-| Runtime dependencies | 0 | 5 | – |
+| Minified and gzipped | 4.9 kB | 9.9 kB | built in |
+| Runtime dependencies | 5 | 5 | – |
 | Node built-ins used | none | `Buffer`, `events`, `net` | none |
 | TypeScript types | included | included | – |
 | Version compared | – | 1.0.0 | – |

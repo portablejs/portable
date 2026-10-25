@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { abortable, toDate } from '@portable/timers/internal';
 import * as Dns from '@portable/dns';
 import { Failure, permerror, temperror } from './errors.js';
 import * as Ip from '@portable/ip';
@@ -18,14 +20,6 @@ import { hostToAscii } from '@portable/idna/internal';
  * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`,
  * `ENODATA` or `EBADNAME` (an invalid name) as an empty answer, and any other rejection as a
  * temporary DNS error.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as Spf from '@portable/spf';
- *
- * const resolver: Spf.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Pick<
   Dns.Resolver,
@@ -34,16 +28,6 @@ export type Resolver = Pick<
 
 /**
  * The outcome of an SPF check.
- *
- * @example
- * ```ts
- * import * as Spf from '@portable/spf';
- *
- * const spf: Spf.Result = await Spf.check({ ip, sender, helo }, { resolver });
- * if (spf.result === 'fail') {
- *   reject(`550 ${spf.explanation ?? 'SPF check failed'}`);
- * }
- * ```
  */
 export type Result = {
   /** The RFC 7208 result. */
@@ -90,8 +74,11 @@ export declare namespace check {
     resolver: Resolver;
     /** The checking host's name, for `%{r}` in explanations. @default 'unknown' */
     receiver?: string | undefined;
-    /** The time for `%{t}` in explanations. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time for `%{t}` in explanations, as a `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** Rejects with `signal.reason` and cancels the pending lookups when aborted. */
     signal?: AbortSignal | undefined;
   };
@@ -140,8 +127,8 @@ const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
  * reads the SPF record of the MAIL FROM domain, or of the HELO name when the sender is empty, and
  * evaluates it against the client's IP address, with the RFC's limits of 10 DNS-querying terms
  * and 2 void lookups. DNS failures give `temperror`, and broken records give `permerror`. The
- * promise rejects only for an `ip` that isn't an IP address, or with `signal.reason` when
- * `signal` aborts.
+ * promise rejects only for an `ip` that isn't an IP address or a `resolver` without the
+ * `Resolver` methods, or with `signal.reason` when `signal` aborts.
  *
  * @example
  * ```ts
@@ -161,8 +148,11 @@ export async function check(input: check.Input, options: check.Options): Promise
   }
   const address = parseIp(input.ip.trim());
   if (!address) {
-    throw new RangeError(`Spf.check: "${String(input.ip)}" is not an IP address`);
+    throw new RangeError(`Spf.check: "${input.ip}" is not an IP address`);
   }
+  assertResolver(options.resolver);
+  const now = toDate(options.now);
+  options.signal?.throwIfAborted();
   const client = Ip.unmap(address);
   const helo = stripDot(input.helo ?? '');
   const identity = input.sender ? 'mailfrom' : 'helo';
@@ -198,7 +188,7 @@ export async function check(input: check.Input, options: check.Options): Promise
       h: helo,
       c: Ip.format(client),
       r: options.receiver ?? 'unknown',
-      t: String(Math.floor((options.now ?? new Date()).getTime() / 1000)),
+      t: String(Math.floor(now.getTime() / 1000)),
     },
     asciiLocal: /^\p{ASCII}*$/u.test(local),
     lookups: 0,
@@ -219,6 +209,16 @@ export async function check(input: check.Input, options: check.Options): Promise
     };
   }
   return { ...base, ...outcome, lookups: ctx.lookups, voidLookups: ctx.voidLookups };
+}
+
+const resolverMethods = ['resolve4', 'resolve6', 'resolveMx', 'resolvePtr', 'resolveTxt'] as const;
+
+function assertResolver(resolver: Resolver): void {
+  for (const method of resolverMethods) {
+    if (typeof resolver?.[method] !== 'function') {
+      throw new TypeError(`Spf.check: options.resolver must have a ${method} method`);
+    }
+  }
 }
 
 async function evaluate(ctx: Context, domain: string, included: boolean): Promise<Outcome> {
@@ -500,23 +500,6 @@ async function query<key extends keyof Answers>(
       error,
     );
   }
-}
-
-function abortable<value>(
-  promise: Promise<value>,
-  signal: AbortSignal | undefined,
-): Promise<value> {
-  if (!signal) {
-    return promise;
-  }
-  if (signal.aborted) {
-    return Promise.reject(signal.reason);
-  }
-  return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason);
-    signal.addEventListener('abort', onAbort, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
-  });
 }
 
 function countLookup(ctx: Context): void {

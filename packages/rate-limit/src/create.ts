@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toEpochMilliseconds } from '@portable/timers/internal';
 import { memoryStore, type Store } from './store.js';
 
 /** The outcome of `take`. Durations are milliseconds. */
@@ -26,8 +28,8 @@ export declare namespace Limiter {
   type TakeOptions = {
     /** How much of the allowance this request uses. `0` reads the state without changing it, and a negative cost gives allowance back. @default 1 */
     cost?: number | undefined;
-    /** The time of the request. @default new Date() */
-    now?: Date | undefined;
+    /** The time of the request, as a `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
     signal?: AbortSignal | undefined;
   };
 }
@@ -84,18 +86,14 @@ export function create(options: create.Options): Limiter {
   return {
     async take(key, options = {}) {
       const { cost = 1, signal } = options;
-      const time = options.now?.getTime() ?? Date.now();
-      if (!Number.isFinite(time)) {
-        throw new RangeError('`now` must be a valid Date.');
-      }
+      const now = options.now === undefined ? Date.now() : toEpochMilliseconds(options.now);
       if (!Number.isFinite(cost)) {
         throw new RangeError(`\`cost\` must be a finite number, got ${cost}.`);
       }
       for (;;) {
         signal?.throwIfAborted();
-        const read = store.get(key, { now: new Date(time), signal });
+        const read = store.get(key, { now: new Date(now), signal });
         const stored = typeof read === 'object' ? await read : read;
-        const now = time;
         const base = stored === undefined ? now : Math.max(stored, now);
         const remaining = Math.max(0, Math.floor((now + tolerance - base) / interval));
         const arrival = Math.max(now, base + cost * interval);
@@ -126,7 +124,7 @@ export function create(options: create.Options): Limiter {
         const written = store.set(key, arrival, {
           expected: stored,
           ttl,
-          now: new Date(time),
+          now: new Date(now),
           signal,
         });
         if (typeof written === 'object' ? await written : written) {

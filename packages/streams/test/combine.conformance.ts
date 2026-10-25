@@ -318,6 +318,11 @@ describe('merge', () => {
 });
 
 describe('limitBytes', () => {
+  test('throws a RangeError for a negative or NaN limit', () => {
+    expect(() => limitBytes(-1)).toThrow(RangeError);
+    expect(() => limitBytes(Number.NaN)).toThrow(RangeError);
+  });
+
   test('passes chunks through unchanged up to the limit', async () => {
     const chunks = [encode('ab'), 'cd', encode('e')];
     expect(await collect(fromChunks(chunks).pipeThrough(limitBytes(5)))).toEqual(chunks);

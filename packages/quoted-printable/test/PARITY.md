@@ -4,7 +4,7 @@ Upstream suites: [libqp 3.0.1](https://github.com/nodemailer/libqp/tree/v3.0.1/t
 
 libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(encode(x), n)` is `encode(x, { lineLength: n })`. There is no separate `wrap()`, so a `wrap()` test is ported as an `encode()` of the bytes whose encoding is the string upstream wraps. A `wrap()` test of a string that `encode()` never produces has no equivalent, and its row says so.
 
-`fixtures/libqp-3.0.1.ts` is libqp 3.0.1's `src/libqp.ts`, copied as the oracle because 3.0.1 was published hours before this package and `minimumReleaseAge` refuses it. Replace it with the npm package once it is a day old. libqp 2.1.3 is installed from npm and compared where 3.0.1 did not change its output.
+The tests compare with libqp 3.0.1, installed from npm as `libqp3`. libqp 2.1.3 is installed as `libqp` and compared where 3.0.1 did not change its output.
 
 ## libqp `libqp-test.ts`
 

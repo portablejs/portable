@@ -549,3 +549,60 @@ describe('known upstream issues', () => {
     expect(count).toBe(100_000);
   });
 });
+
+const { asyncDispose } = Symbol as { asyncDispose?: symbol | undefined };
+const dispose = (queue: Queue.Queue) =>
+  (queue as unknown as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
+
+describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
+  test('rejects waiting and running tasks, as aborting signal does, and resolves once they settle', async () => {
+    const queue = Queue.create({ concurrency: 1 });
+    const own = new AbortController();
+    let settled = false;
+    let taskSignal: AbortSignal | undefined;
+    const running = queue.add(async ({ signal }) => {
+      taskSignal = signal;
+      await delay(20);
+      settled = true;
+    });
+    const withSignal = queue.add(() => 'never', { signal: own.signal });
+    const waiting = queue.add(() => 'never');
+    await flush();
+    const disposed = dispose(queue);
+    expect(taskSignal!.aborted).toBe(true);
+    expect(taskSignal!.reason).toMatchObject({ name: 'AbortError' });
+    await expect(running).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(withSignal).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(waiting).rejects.toMatchObject({ name: 'AbortError' });
+    expect(settled).toBe(false);
+    expect(queue.pending).toBe(1);
+    await disposed;
+    expect(settled).toBe(true);
+    expect(queue.pending).toBe(0);
+    await expect(queue.add(() => 1)).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  test('aborts the signal of a task that has its own signal', async () => {
+    const queue = Queue.create();
+    const own = new AbortController();
+    let taskSignal: AbortSignal | undefined;
+    const running = queue.add(
+      async ({ signal }) => {
+        taskSignal = signal;
+        await delay(5);
+        signal.throwIfAborted();
+      },
+      { signal: own.signal },
+    );
+    await flush();
+    const disposed = dispose(queue);
+    expect(taskSignal!.aborted).toBe(true);
+    await expect(running).rejects.toMatchObject({ name: 'AbortError' });
+    await disposed;
+    expect(own.signal.aborted).toBe(false);
+  });
+
+  test('resolves at once for an idle queue', async () => {
+    await expect(dispose(Queue.create())).resolves.toBeUndefined();
+  });
+});

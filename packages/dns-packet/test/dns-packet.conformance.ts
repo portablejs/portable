@@ -539,15 +539,26 @@ describe('known upstream issues', () => {
     expect(roundTripData('AAAA', '2001:db8:0:1:0:0:0:1')).toBe('2001:db8:0:1::1');
     expect(roundTripData('AAAA', '2001:db8:0:1:1:1:1:1')).toBe('2001:db8:0:1:1:1:1:1');
     expect(roundTripData('AAAA', '::')).toBe('::');
-    expect(roundTripData('AAAA', '::ffff:192.0.2.1')).toBe('::ffff:c000:201');
+    expect(roundTripData('AAAA', '::ffff:192.0.2.1')).toBe('::ffff:192.0.2.1');
+    expect(roundTripData('AAAA', '::ffff:c000:201')).toBe('::ffff:192.0.2.1');
+    expect(roundTripData('AAAA', '::c000:201')).toBe('::c000:201');
+    expect(roundTripData('AAAA', '::fffe:c000:201')).toBe('::fffe:c000:201');
     expect(roundTripData('AAAA', 'FE80::ABCD')).toBe('fe80::abcd');
   });
 
   test('invalid IP addresses are rejected instead of encoded as garbage', () => {
-    for (const ip of ['1.2.3', '1.2.3.256', 'a.b.c.d', '', '300.1.1.1']) {
+    for (const ip of ['1.2.3', '1.2.3.256', 'a.b.c.d', '', '300.1.1.1', '010.0.0.1', '1.2.3.00']) {
       expect(() => roundTripData('A', ip)).toThrow(InvalidInputError);
     }
-    for (const ip of ['1::2::3', '1:2:3:4:5:6:7:8:9', 'g::1', '::1.2.3', '1:2:3:4:5:6:7']) {
+    for (const ip of [
+      '1::2::3',
+      '1:2:3:4:5:6:7:8:9',
+      'g::1',
+      '::1.2.3',
+      '1:2:3:4:5:6:7',
+      '::ffff:010.0.0.1',
+      'fe80::1%eth0',
+    ]) {
       expect(() => roundTripData('AAAA', ip)).toThrow(InvalidInputError);
     }
   });

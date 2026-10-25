@@ -289,6 +289,14 @@ describe('recorded responses give the same results as node:dns/promises', () => 
   });
 });
 
+test('an IPv4-mapped AAAA record gives the same text as node:dns/promises', async () => {
+  const name = 'example.org';
+  const result = await compare('resolve6', name, () => ({
+    answers: [record(name, 'AAAA', '::ffff:192.0.2.1')],
+  }));
+  expect(result).toEqual({ value: ['::ffff:192.0.2.1'] });
+});
+
 describe('deliberate differences from node:dns/promises', () => {
   const N = 'example.org';
 

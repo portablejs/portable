@@ -154,7 +154,7 @@ bl's tests are almost all about `BufferList`, a random-access list of buffers (`
 | --- | --- | --- |
 | write nothing, should get empty buffer | `bl > write nothing, should get empty buffer` | |
 | unicode string | `bl > unicode string` | |
-| test String appendage | `bl > test String appendage` | |
+| test String appendage | `bl > String appendage` | |
 | test Number appendage | `concat-stream > rejects number chunks` | Deliberate. |
 | should emit finish; destroy no pipe; destroy with error; destroy with pipe … (×4); handle error | doesn't apply | Node stream lifecycle. Errors are covered by `get-stream: ReadableStream > rejects with the error of an errored ReadableStream`. |
 

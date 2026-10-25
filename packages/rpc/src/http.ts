@@ -1,6 +1,7 @@
 import * as Errors from '@portable/errors';
 import * as Jsonl from '@portable/jsonl';
 import { createClient } from './client.js';
+import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
 import { createServer, error, noop } from './server.js';
@@ -104,7 +105,9 @@ type Batch = {
 
 /**
  * Connects to an API served by `handler`, or any JSON-RPC server that accepts POST requests. Calls
- * made in the same tick are sent as one batch request.
+ * made in the same tick are sent as one batch request. Where the runtime has
+ * `Symbol.asyncDispose`, the remote's `[Symbol.asyncDispose]()` aborts every request and rejects
+ * waiting calls with an `AbortError` `DOMException`, as aborting `signal` does.
  *
  * @example
  * ```ts
@@ -115,9 +118,17 @@ type Batch = {
  * await api.add(1, 2);
  * ```
  */
-export function http<api>(url: string | URL, options: http.Options = {}): Remote<api> {
-  const { fetch = (request: Request) => globalThis.fetch(request), signal } = options;
+export function http<api>(
+  url: string | URL,
+  options: http.Options = {},
+): Remote<api> & AsyncDisposeMethod {
+  const { fetch = (request: Request) => globalThis.fetch(request) } = options;
+  const disposer = new AbortController();
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, disposer.signal])
+    : disposer.signal;
   const batches = new Map<Id, Batch>();
+  const posting = new Set<AbortController>();
   let queued: Batch | undefined;
 
   const send = (message: Message): Promise<void> | void => {
@@ -181,13 +192,17 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
   async function post(batch: Batch) {
     queued = undefined;
     const { messages, controller, pending } = batch;
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+    }
+    posting.add(controller);
     try {
       const response = await fetch(
         new Request(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
           body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
-          signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+          signal: controller.signal,
         }),
       );
       if (!response.ok) {
@@ -211,26 +226,38 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
         client.fail(id, new TransportError('The response has no result for this call.'));
       }
     } catch (e) {
-      const reason = signal?.aborted ? signal.reason : e;
+      const reason = signal.aborted ? signal.reason : e;
       for (const id of pending) {
         client.fail(id, reason);
       }
-      if (!controller.signal.aborted || signal?.aborted) {
+      if (!controller.signal.aborted || signal.aborted) {
         throw reason;
       }
     } finally {
+      posting.delete(controller);
       for (const id of pending) {
         batches.delete(id);
       }
     }
   }
 
-  if (signal?.aborted) {
+  if (signal.aborted) {
     client.close(signal.reason);
   } else {
-    signal?.addEventListener('abort', () => client.close(signal.reason), { once: true });
+    signal.addEventListener(
+      'abort',
+      () => {
+        for (const controller of posting) {
+          controller.abort(signal.reason);
+        }
+        client.close(signal.reason);
+      },
+      { once: true },
+    );
   }
-  return remote(client);
+  return remote(client, '', async () => {
+    disposer.abort(new DOMException('The connection was disposed.', 'AbortError'));
+  });
 }
 
 function isStreamStart(

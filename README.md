@@ -2,41 +2,45 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
+Each package is small, uses only web-standard APIs such as Web Streams, `Uint8Array`, `fetch` and `crypto.subtle`, and runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+. Install only the packages you use:
+
+```sh
+npm install @portable/streams
+```
+
 ### Examples
 
 Stream an OpenAI transcript to a file:
 
 ```ts
-import * as Jsonl from '@portable/jsonl'
-import * as Sse from '@portable/sse'
-import * as Streams from '@portable/streams'
-
-const transcript: WritableStream = ... // a file
+import * as Jsonl from '@portable/jsonl';
+import * as Sse from '@portable/sse';
+import * as Streams from '@portable/streams';
 
 const response = await fetch('https://api.openai.com/v1/chat/completions', {
   method: 'POST',
   headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
   body: JSON.stringify({ model, messages, stream: true }),
-})
+});
+// `transcript` is a WritableStream<Uint8Array> that writes to a file.
 await response.body!
   .pipeThrough(new Sse.DecoderStream())
   .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .pipeThrough(new Jsonl.EncoderStream())
-  .pipeTo(transcript)
+  .pipeTo(transcript);
 ```
 
 Strip photo metadata (GPS, camera, dates) before uploading:
 
 ```ts
-import * as Exif from '@portable/exif'
-import * as ImageSize from '@portable/image-size'
+import * as Exif from '@portable/exif';
+import * as ImageSize from '@portable/image-size';
 
-const file: File = ... // from a file input or a drop
-
-const photo = Exif.strip(new Uint8Array(await file.arrayBuffer()))
-const { width, height } = ImageSize.parse(photo)
-await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo })
+// `file` is a JPEG, PNG or WebP File from a file input or a drop.
+const photo = Exif.strip(new Uint8Array(await file.arrayBuffer()));
+const { width, height } = ImageSize.parse(photo);
+await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo });
 ```
 
 ### Packages
@@ -84,7 +88,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 </tbody>
 <tbody>
 <tr><th colspan="2" align="left">Crypto and auth</th></tr>
-<tr><td><a href="packages/web-crypto"><code>@portable/web-crypto</code></a></td><td>Bytes-in, bytes-out helpers over <code>crypto.subtle</code>: digests, HMAC, HKDF, Ed25519 and X25519 keys from seeds, and ECDSA signature conversion.</td></tr>
+<tr><td><a href="packages/web-crypto"><code>@portable/web-crypto</code></a></td><td>Bytes-in, bytes-out helpers over <code>crypto.subtle</code>: digests, HMAC, HKDF, Ed25519 and X25519 keys from seeds, keys from PEM text, and ECDSA signature conversion.</td></tr>
 <tr><td><a href="packages/password"><code>@portable/password</code></a></td><td>Hashes and verifies passwords with PBKDF2 on WebCrypto.</td></tr>
 <tr><td><a href="packages/webhooks"><code>@portable/webhooks</code></a></td><td>Verifies and signs webhooks from Standard Webhooks senders, Stripe, GitHub, Slack and other HMAC-SHA256 senders.</td></tr>
 <tr><td><a href="packages/oauth1"><code>@portable/oauth1</code></a></td><td>Signs OAuth 1.0a requests.</td></tr>
@@ -100,7 +104,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tbody>
 <tr><th colspan="2" align="left">Images</th></tr>
 <tr><td><a href="packages/image-size"><code>@portable/image-size</code></a></td><td>Reads an image's type and dimensions from its header, from bytes or a stream.</td></tr>
-<tr><td><a href="packages/exif"><code>@portable/exif</code></a></td><td>Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and removes it.</td></tr>
+<tr><td><a href="packages/exif"><code>@portable/exif</code></a></td><td>Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and strips it from JPEG, PNG and WebP.</td></tr>
 <tr><td><a href="packages/png"><code>@portable/png</code></a></td><td>Decodes PNG files to RGBA pixels and encodes pixels as PNG.</td></tr>
 </tbody>
 <tbody>
@@ -110,6 +114,22 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tr><td><a href="packages/rate-limit"><code>@portable/rate-limit</code></a></td><td>Rate limiting per key with GCRA, in memory, Workers KV, a Durable Object or Redis over HTTP.</td></tr>
 </tbody>
 </table>
+
+### How the packages work
+
+Every package follows the same conventions, so once you've used one, you know how the others work:
+
+- Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and call `Csv.decode` or `new Csv.DecoderStream()`.
+- Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. Functions that take text also take its bytes.
+- A streaming transform is a `TransformStream` that you pass to `pipeThrough`, as with `TextDecoderStream`.
+- Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers and nested streams underneath, and rejects with `signal.reason`, as `fetch` does.
+- An object that stays open, such as an SMTP client, a queue or a WebSocket, has a `close()` method or closes when you abort its `signal`, and works with `await using` where the runtime has `Symbol.asyncDispose`.
+- Options that take a time, such as `now`, accept a `Date` or a `Temporal.Instant`. Times in results are `Date` objects.
+- Errors extend the classes in `@portable/errors`. `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
+
+### Runtimes
+
+The tests run in Chromium, Firefox, WebKit, Node 24 and 26, Deno and Bun, and a check of every package runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124 and Safari 17.4 or later. Ed25519 signatures, in `@portable/web-crypto`, `@portable/dkim`, `@portable/arc` and `@portable/mail-auth`, need Chrome 137 and Firefox 129, and X25519 keys in `@portable/web-crypto` need Chrome 133 and Firefox 130. `@portable/smtp` needs a TCP socket API, so it runs in Workers, Deno, Bun and Node but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
 
 ### License
 

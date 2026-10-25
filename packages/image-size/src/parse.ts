@@ -166,8 +166,8 @@ export function parse(bytes: Uint8Array): Size {
 export declare namespace parseStream {
   type Options = {
     /**
-     * Most bytes to read. Once this many are buffered, the stream is cancelled and the image is
-     * measured from them, as image-size's `imageSizeFromFile` does with the first 512 KiB.
+     * The most bytes to buffer. If the dimensions aren't in the first `maxBytes` bytes,
+     * `parseStream` cancels the stream and rejects with `MaxBytesError`.
      * @default 524288
      */
     maxBytes?: number | undefined;
@@ -198,7 +198,9 @@ export async function parseStream(
   options: parseStream.Options = {},
 ): Promise<Size> {
   const { maxBytes = 512 * 1024, signal } = options;
-  signal?.throwIfAborted();
+  if (!(maxBytes >= 0)) {
+    throw new RangeError('`maxBytes` must be a number >= 0.');
+  }
   const reader = stream.getReader();
   const abort = () => reader.cancel(signal!.reason).catch(() => {});
   signal?.addEventListener('abort', abort, { once: true });
@@ -206,6 +208,7 @@ export async function parseStream(
   let length = 0;
   let needed = 1;
   try {
+    signal?.throwIfAborted();
     for (;;) {
       const { done, value } = await reader.read();
       signal?.throwIfAborted();
@@ -241,6 +244,6 @@ export async function parseStream(
     }
   } finally {
     signal?.removeEventListener('abort', abort);
-    reader.cancel().catch(() => {});
+    reader.cancel(signal?.reason).catch(() => {});
   }
 }

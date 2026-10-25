@@ -6,11 +6,12 @@ import * as Errors from '@portable/errors';
  * @example
  * ```ts
  * import * as Lines from '@portable/lines';
+ * import * as Streams from '@portable/streams';
  *
- * const reader = response.body!.pipeThrough(new Lines.DecoderStream({ maxLength: 10_000 })).getReader();
+ * const lines = response.body!.pipeThrough(new Lines.DecoderStream({ maxLength: 10_000 }));
  * try {
- *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *     console.log(r.value);
+ *   for await (const line of Streams.toAsyncIterable(lines)) {
+ *     console.log(line);
  *   }
  * } catch (error) {
  *   if (error instanceof Lines.MaxLengthError) {

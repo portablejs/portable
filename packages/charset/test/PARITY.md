@@ -14,8 +14,8 @@ Besides the ported cases, `charset.oracle.test.ts` compares every code point of 
 | should not detect 'constructor' as encoding when _codecDataCache is defined | `labels > load > rejects unknown labels and the replacement encoding with UnsupportedError` | There is no cache to poison. That test also calls `load('constructor')`. |
 | Return values are of correct types | `encode > encode > returns a Uint8Array` | |
 | Internal encodings all correctly encoded/decoded | `encode > encode > encodes UTF-8 and UTF-16LE text that decodes back to the input` | `binary`, `base64` and `hex` are not charsets. See API changes. |
-| Base64 correctly encoded/decoded | not applicable | Use `Uint8Array.prototype.toBase64`. |
-| Hex correctly encoded/decoded | not applicable | Use `Uint8Array.prototype.toHex`. |
+| Base64 correctly encoded/decoded | not applicable | Use `@portable/base64`. |
+| Hex correctly encoded/decoded | not applicable | Use `Bytes.toHex` from `@portable/bytes`. |
 | Latin1 correctly encoded/decoded | `encode > encode > encodes Latin-1 text with the latin1 label` | `latin1` is windows-1252, as in WHATWG. |
 | Convert to string, not buffer (utf8 used) | not applicable | Decoding. |
 | Throws on unknown encodings | `labels > load > rejects unknown labels and the replacement encoding with UnsupportedError` | |
@@ -116,7 +116,7 @@ Each has a test here. The oracle accepts iconv-lite's differing bytes only for t
 | Surrogate pairs split across stream chunks (#282). | `encode > EncoderStream > surrogate pairs split across chunks` |
 | ISO-2022-JP is not supported by iconv-lite. | `charsets > ISO-2022-JP > *` and `encode > unmappable characters > in ISO-2022-JP ...` |
 
-The upstream issue tracker was not reachable from this session, so the list comes from the changelog, the issue numbers cited in upstream tests, and the oracle comparison.
+The list comes from iconv-lite's changelog, the issue numbers cited in its tests, and the oracle comparison. iconv-lite's issue tracker hasn't been searched yet.
 
 ## API changes
 

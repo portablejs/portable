@@ -46,12 +46,12 @@ await Dkim.verify(message, { resolver: dns });
 | --- | --- | --- |
 | `domain` | required | The signing domain (`d=`). A U-label domain is written as its A-label. |
 | `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
-| `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. |
+| `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. A PEM string is imported on every call, so to sign many messages, import it once with `WebCrypto.importPem` from `@portable/web-crypto`. |
 | `headers` | mailauth's list, from `From` to `BIMI-Selector` | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times, so listing a name more often than the message has it over-signs it, and a field of that name added later breaks the signature (RFC 6376 section 8.15). |
 | `canonicalization` | `'relaxed/relaxed'` | `'relaxed/relaxed'`, `'relaxed/simple'`, `'simple/relaxed'` or `'simple/simple'`. |
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
-| `now` | `new Date()` | The signature time (`t=`). |
-| `expiresAt` | none | The expiry (`x=`). It must be at least one second after `now`. |
+| `now` | `new Date()` | The signature time (`t=`). A `Date` or a `Temporal.Instant`. |
+| `expiresAt` | none | The expiry (`x=`), a `Date` or a `Temporal.Instant`. It must be at least one second after `now`. |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
 
@@ -64,7 +64,7 @@ await Dkim.verify(message, { resolver: dns });
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check `x=` against. |
+| `now` | `new Date()` | The time to check `x=` against. A `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |
@@ -82,6 +82,7 @@ There is no default resolver, so you decide which servers see the lookups. It tr
 | `identity` | The `i=` value decoded, with its domain as an A-label, or `@` and the domain when there is no `i=`. For `header.i`. |
 | `signature` | `b=` without whitespace, for `header.b` (RFC 6008). |
 | `reason` | Why the result is not `pass`, such as `body hash did not verify` or `no key`. |
+| `cause` | The resolver's error behind a `temperror`. |
 | `testing` | The key has `t=y`: the domain is testing DKIM, and a pass should count as unsigned mail. |
 | `bodyLength` | The `l=` value, when there is one. |
 | `unsignedBodyBytes` | With `l=`, how many canonicalized body bytes follow the signed part. Anyone could have added them. |
@@ -124,7 +125,7 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 - It follows the RFCs by default. mailauth's default mode accepts signatures that RFC 6376 rejects, such as a missing `v=`, a duplicate tag or rsa-sha1, and mailauth follows the RFC only with `strict: true`. mailauth's strict mode accepts the signatures `sign` makes, `verify` accepts the signatures of mailauth and nodemailer, and the two verifiers agree on 12 kinds of changed message.
 - It refuses what it can't sign safely. nodemailer silently removes tag delimiters from the domain and sends the message unsigned when the key is unusable. `sign` throws for both.
 - It has no dependencies outside `@portable/*`. mailauth pulls in libmime, punycode.js, tldts, joi and more.
-- It verifies faster. In one run in Node, it verified a 250 KB message 170 times a second, against 35 for mailauth's strict mode, and signed it 56 times a second, against 54 for mailauth and 62 for nodemailer.
+- It verifies faster. In Node it verifies a 250 KB message about three times as fast as mailauth, and signs it about as fast as nodemailer, as the table below shows.
 
 <!-- bench:start -->
 | | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
@@ -137,11 +138,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 18 kB | 448 kB | 4.4 kB | built in |
-| Runtime dependencies | 5 | 38 | 0 | – |
+| Minified and gzipped | 19 kB | 449 kB | 4.4 kB | built in |
+| Runtime dependencies | 10 | 38 | 0 | – |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | `Buffer`, `crypto`, `fs`, `path`, `stream` | Node only |
 | TypeScript types | included | included | none | – |
-| Version compared | – | 7.3.0 | 10.1.2 | – |
+| Version compared | – | 7.3.0 | 10.2.1 | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

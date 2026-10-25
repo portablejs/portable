@@ -526,6 +526,22 @@ describe('bootstrap cache', () => {
     expect(urls.filter((url) => url === iana)).toHaveLength(2);
   });
 
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const { fetch, urls } = server();
+    const start = Date.UTC(2030, 0, 1);
+    await Rdap.domain('sidn.nl', { fetch, now: { epochMilliseconds: start } });
+    await Rdap.domain('sidn.nl', {
+      fetch,
+      now: { epochMilliseconds: start + 24 * 60 * 60 * 1000 - 1 },
+    });
+    expect(urls.filter((url) => url === iana)).toHaveLength(1);
+    await Rdap.domain('sidn.nl', {
+      fetch,
+      now: { epochMilliseconds: start + 24 * 60 * 60 * 1000 },
+    });
+    expect(urls.filter((url) => url === iana)).toHaveLength(2);
+  });
+
   test('keeps a separate cache for each fetch function', async () => {
     const one = server();
     const two = server();
@@ -603,6 +619,29 @@ describe('cancellation', () => {
     controller.abort('stop');
     expect(await rejection(promise)).toBe('stop');
     expect(requests[0]!.signal.aborted).toBe(true);
+  });
+
+  test('a lookup that starts right after the abort fetches the bootstrap file again', async () => {
+    const { fetch: inner, requests } = server();
+    const fetch = (request: Request) =>
+      requests.length === 0
+        ? new Promise<Response>((_, reject) => {
+            requests.push(request);
+            request.signal.addEventListener('abort', () => reject(request.signal.reason));
+          })
+        : inner(request);
+    const controller = new AbortController();
+    const first = Rdap.domain('sidn.nl', { fetch, signal: controller.signal });
+    await vi.waitFor(() => expect(requests).toHaveLength(1));
+    controller.abort('stop');
+    const second = Rdap.domain('sidn.nl', { fetch });
+    expect(await rejection(first)).toBe('stop');
+    expect((await second).name).toBe('sidn.nl');
+    expect(requests.map((request) => request.url)).toEqual([
+      iana,
+      iana,
+      'https://rdap.sidn.nl/domain/sidn.nl',
+    ]);
   });
 
   test('aborting one of two lookups waiting for a bootstrap file leaves the other running', async () => {

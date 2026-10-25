@@ -1,37 +1,23 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Bytes from '@portable/bytes';
 import type * as Dns from '@portable/dns';
 import { toBinary } from './internal/bytes.js';
 import type { Hash, Hasher } from '@portable/web-crypto';
-import { bodyHashKey, hashBody } from './internal/digest.js';
-import { parseFields } from './internal/header.js';
+import { type BodyDigest, bodyHashKey, hashBody, type Plan } from './internal/digest.js';
+import { type Field, parseFields } from './internal/header.js';
 import { type Message, splitMessage } from './internal/message.js';
-import { check, fetchKey, type KeyRecord, prepare } from './internal/signature.js';
+import { assertResolver, check, fetchKey, type KeyRecord, prepare } from './internal/signature.js';
 
 /**
  * The DNS lookup DKIM needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
  * object with `resolveTxt`. `verify` treats a rejection with `code` `ENOTFOUND`, `ENODATA` or
  * `EBADNAME` as no key, and any other rejection as a temporary DNS error.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as Dkim from '@portable/dkim';
- *
- * const resolver: Dkim.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt'>;
 
 /**
  * The outcome of one DKIM-Signature field.
- *
- * @example
- * ```ts
- * import * as Dkim from '@portable/dkim';
- *
- * const results: Dkim.Result[] = await Dkim.verify(message, { resolver });
- * const passed = results.filter((r) => r.result === 'pass' && !r.testing).map((r) => r.domain);
- * ```
  */
 export type Result = {
   /** The RFC 8601 result. */
@@ -66,8 +52,8 @@ export declare namespace verify {
   type Options = {
     /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver;
-    /** The time to check `x=` against. @default new Date() */
-    now?: Date | undefined;
+    /** The time to check `x=` against, as a `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined;
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
@@ -102,22 +88,27 @@ export declare namespace verify {
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result[]> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options;
-  if (typeof resolver?.resolveTxt !== 'function') {
-    throw new TypeError('options.resolver must have a resolveTxt method.');
-  }
-  signal?.throwIfAborted();
-  const { header, body } = await splitMessage(message);
-  const fields = parseFields(toBinary(header));
+  assertResolver(options.resolver);
+  const now = toDate(options.now);
+  const { header, body } = await splitMessage(message, options.signal);
+  const plan = planVerify(parseFields(toBinary(header)), { ...options, now });
+  const digests = await hashBody(body, plan.requests, options.hasher);
+  options.signal?.throwIfAborted();
+  return plan.finish(digests);
+}
+
+/**
+ * Reads the DKIM-Signature fields, starts the key lookups and returns the body hashes the
+ * signatures need, with the step that checks them once the body is hashed. `MailAuth.authenticate`
+ * uses it to hash the body once for DKIM, ARC and the seal.
+ */
+export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result[]> {
+  const { resolver, minKeyBits = 1024, signal } = options;
+  const now = toDate(options.now);
   const signatures = fields
     .filter((field) => field.name === 'dkim-signature')
     .map((field) => prepare(field, now));
   const pending = signatures.filter((signature) => !signature.outcome);
-  if (pending.length === 0) {
-    await body.cancel();
-    return signatures.map((signature) => signature.result);
-  }
-
   const keys = new Map<string, Promise<KeyRecord>>();
   for (const { keyName } of pending) {
     if (keys.has(keyName)) {
@@ -127,41 +118,35 @@ export async function verify(message: Message, options: verify.Options): Promise
     key.catch(() => {});
     keys.set(keyName, key);
   }
-  const stop = () => void body.cancel().catch(() => {});
-  signal?.addEventListener('abort', stop, { once: true });
-  const digests = await hashBody(
-    body,
-    pending.map((signature) => signature.body),
-    hasher,
-  ).finally(() => signal?.removeEventListener('abort', stop));
-  signal?.throwIfAborted();
 
-  return Promise.all(
-    signatures.map(async (signature) => {
-      if (signature.outcome) {
-        return signature.result;
-      }
-      const { result } = signature;
-      const digest = digests.get(bodyHashKey(signature.body))!;
-      const { length } = signature.body;
-      if (length !== undefined) {
-        result.bodyLength = length;
-        result.unsignedBodyBytes = Math.max(0, digest.total - length);
-      }
-      const outcome =
-        length !== undefined && length > digest.total
-          ? { result: 'neutral' as const, reason: 'l= is longer than the body' }
-          : !Bytes.equal(digest.digest, signature.bodyHash)
-            ? { result: 'fail' as const, reason: 'body hash did not verify' }
-            : await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits);
-      result.result = outcome.result;
-      if (outcome.reason) {
-        result.reason = outcome.reason;
-      }
-      if ('cause' in outcome) {
-        result.cause = outcome.cause;
-      }
-      return result;
-    }),
-  );
+  const finish = (digests: ReadonlyMap<string, BodyDigest>) =>
+    Promise.all(
+      signatures.map(async (signature) => {
+        if (signature.outcome) {
+          return signature.result;
+        }
+        const { result } = signature;
+        const digest = digests.get(bodyHashKey(signature.body))!;
+        const { length } = signature.body;
+        if (length !== undefined) {
+          result.bodyLength = length;
+          result.unsignedBodyBytes = Math.max(0, digest.total - length);
+        }
+        const outcome =
+          length !== undefined && length > digest.total
+            ? { result: 'neutral' as const, reason: 'l= is longer than the body' }
+            : !Bytes.equal(digest.digest, signature.bodyHash)
+              ? { result: 'fail' as const, reason: 'body hash did not verify' }
+              : await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits);
+        result.result = outcome.result;
+        if (outcome.reason) {
+          result.reason = outcome.reason;
+        }
+        if ('cause' in outcome) {
+          result.cause = outcome.cause;
+        }
+        return result;
+      }),
+    );
+  return { requests: pending.map((signature) => signature.body), finish };
 }

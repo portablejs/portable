@@ -6,15 +6,6 @@ export type Name = Exclude<CharsetName, 'replacement'>;
 /**
  * A charset that `encode` and `EncoderStream` can write. Import one from the subpath for its
  * family, such as `shiftJis` from `@portable/charset/shift_jis`, or get one by label with `load`.
- *
- * @example
- * ```ts
- * import * as Charset from '@portable/charset';
- * import { shiftJis } from '@portable/charset/shift_jis';
- *
- * shiftJis.name; // 'Shift_JIS'
- * Charset.encode('日本', shiftJis); // Uint8Array [0x93, 0xfa, 0x96, 0x7b]
- * ```
  */
 export type Charset = {
   /** The WHATWG Encoding Standard name. */

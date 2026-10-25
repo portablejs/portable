@@ -45,13 +45,13 @@ describe('encoded words', () => {
     each(1, (next) => {
       const input = randomText(next, 80);
       for (const encoding of ['Q', 'B'] as const) {
-        const maxLength = pick(next, [false, 13, 20, 30, 52, 75] as const);
+        const maxLength = pick(next, [Infinity, 13, 20, 30, 52, 75] as const);
         const encoded = encodeWord(input, { wordEncoding: encoding, wordLength: maxLength });
         const ok =
           encodedWords.test(encoded) &&
           decodeWords(encoded) === input &&
           encodeWord(utf8(input), { wordEncoding: encoding, wordLength: maxLength }) === encoded &&
-          (maxLength === false ||
+          (maxLength === Infinity ||
             input === '' ||
             encoded.split(' ').every((word) => {
               const decoded = decodeWords(word);
@@ -76,7 +76,7 @@ describe('encoded words', () => {
       for (const encoding of ['Q', 'B'] as const) {
         const encoded = encodeWord(input, {
           wordEncoding: encoding,
-          wordLength: pick(next, [false, 20, 40] as const),
+          wordLength: pick(next, [Infinity, 20, 40] as const),
         });
         if (decodeWords(encoded) !== wellFormed(input)) {
           failures.push({ input, encoded });
@@ -92,7 +92,7 @@ describe('encoded words', () => {
       const input = words(next, 10, ['ascii', 'specials', 'latin', 'cjk', 'astral', 'controls']);
       const encoded = encodeWords(input, {
         wordEncoding: pick(next, ['Q', 'B'] as const),
-        wordLength: pick(next, [false, 40] as const),
+        wordLength: pick(next, [Infinity, 40] as const),
       });
       const plain = /^[ -~\t]*$/.test(input) && !/=\?|\?=/.test(input);
       if (

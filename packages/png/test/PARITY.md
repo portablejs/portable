@@ -9,7 +9,7 @@ Upstream suite: [pngjs](https://github.com/pngjs/pngjs) 7.0.0 `test/*-spec.js` a
 
 ## API changes
 
-pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four functions, designed for the shared [API conventions](../../../../AGENTS.md#api-conventions). Each pngjs test maps to the test for the same case below.
+pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four functions, designed for the shared [API conventions](../../../AGENTS.md#api-conventions). Each pngjs test maps to the test for the same case below.
 
 | pngjs | @portable/png | Why |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four fu
 | `checkCRC` | `checkCrc` | |
 | `filterType: -1` or a number | `filter`: a filter, or a list to choose from per row | pngjs's types allow a list but its code throws for one. |
 | `bgColor` | `background` | |
-| `deflateLevel`, `deflateStrategy`, `deflateChunkSize`, `deflateFactory` | `deflate` | `CompressionStream` has no settings, so a caller who wants a level passes a zlib function. |
+| `deflateLevel`, `deflateStrategy`, `deflateChunkSize`, `deflateFactory` | `deflate` | `CompressionStream` has no settings, so to choose a level, pass a zlib function. |
 | `inputColorType`, `inputHasAlpha`, `bitDepth: 16` on write | not supported | Input is always 8-bit RGBA, the form `decode` returns and canvas `ImageData` holds. |
 | `skipRescale` | not supported | `data` is always 8-bit RGBA. |
 | `bitblt`, `adjustGamma` | not supported | Pixel manipulation, not PNG coding. |
@@ -88,6 +88,7 @@ pngjs's issue tracker couldn't be read from this environment (GitHub's API and p
 | Non-square interlaced images decoded wrongly (fixed in 1.0.1). PngSuite's interlaced files are all square. | `known upstream issues > decodes interlaced images of every small width and height` |
 | Interlaced images are inflated with no output limit, so a small IDAT can expand to far more than the image needs. | `known upstream issues > stops at the image size when IDAT inflates to more data than the image needs` |
 | pngjs sizes its inflate buffer from IHDR alone. A 100000x100000 RGBA header with 19 bytes of IDAT makes it allocate 40 GB and throw `RangeError: Failed to allocate memory`. A header just small enough to allocate would use that memory for nothing. | `known upstream issues > rejects a header that claims more pixels than the data can hold, before allocating` |
+| pngjs has no limit on image size, so a valid 1.2 MB file of a 1-bit 100000x100000 image decodes to 40 GB of RGBA. `maxPixels` rejects it from IHDR. | `decode > throws MaxPixelsError for a huge header with little data` |
 | A palette index past the end of PLTE. pngjs throws, and some decoders read outside the palette. | `known upstream issues > rejects a palette index past the end of PLTE` |
 | `tRNS` pixels lose their color, and grayscale output averages the channels. | See the oracle section above, and `decode > makes the tRNS color fully transparent and keeps its value`, `encode > writes grayscale as BT.709 luma, blended onto white` |
 

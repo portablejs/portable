@@ -1,6 +1,6 @@
 # Test parity
 
-This package replaces the SMTP client of [nodemailer](https://github.com/nodemailer/nodemailer) (MIT-0): `lib/smtp-connection` and `lib/smtp-transport`. Its tests at v10.1.7 (`test/smtp-connection/*` and `test/smtp-transport/*`) were read as the list of cases. The oracle and benchmark compare with nodemailer 10.1.2, the newest release older than the workspace's `minimumReleaseAge`.
+This package replaces the SMTP client of [nodemailer](https://github.com/nodemailer/nodemailer) (MIT-0): `lib/smtp-connection` and `lib/smtp-transport`. Its tests at v10.1.7 (`test/smtp-connection/*` and `test/smtp-transport/*`) were read as the list of cases. The oracle and benchmark compare with nodemailer 10.2.1.
 
 Test files:
 

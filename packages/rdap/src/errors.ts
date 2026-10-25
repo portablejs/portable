@@ -66,8 +66,7 @@ export class NotFoundError extends Errors.ResponseError {
 
 /**
  * Thrown when an RDAP server or IANA answers with an HTTP error other than 404, or with a body that
- * isn't a JSON object of the expected class. When `fetch` rejects, the lookup rejects with the
- * same error.
+ * isn't a JSON object. When `fetch` rejects, the lookup rejects with the same error.
  *
  * @example
  * ```ts
@@ -86,7 +85,10 @@ export class ResponseError extends Errors.ResponseError {
   static override readonly kind: string = 'Rdap.ResponseError';
   /** The URL that sent the response. */
   readonly url: string;
-  /** The parsed JSON body, such as an RDAP error object with `errorCode` and `title`, when there was one. */
+  /**
+   * The parsed JSON body, such as an RDAP error object with `errorCode` and `title`, when there was
+   * one.
+   */
   declare readonly body: unknown;
 
   constructor(options: Errors.ResponseError.Options & { url: string }) {

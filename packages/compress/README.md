@@ -54,7 +54,7 @@ The platform reports every failure as a `TypeError`. The error's `cause` holds i
 
 ## Why use this over pako, fflate and node:zlib
 
-pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (14 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` runs only in Node and Bun.
+pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` runs only in Node and Bun.
 
 - `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and fflate allocates its output from the length field, so a forged length gives truncated output (fflate #161, #181).
 - `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).
@@ -62,7 +62,7 @@ pako and fflate implement deflate in JavaScript, although every runtime already 
 - `decode` reads every member of a multi-member gzip file, such as BGZF or `cat a.gz b.gz`. fflate returns only the first member (fflate #102), and `DecompressionStream` throws.
 - `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and each chunk pays the decompressor's and every later stage's per-chunk cost. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
 
-`gunzip` has the fastest single run of the JavaScript options, but a worse mean: Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at the speed of the `crc-32` package (0.66 / 0.77). `node:zlib`'s is native code.
+In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at about the speed of the `crc-32` package, and `node:zlib`'s runs in native code.
 
 <!-- bench:start -->
 | | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
@@ -76,8 +76,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.3 kB | 13 kB | 12 kB | 1.1 kB | built in | built in |
-| Runtime dependencies | 0 | 0 | 0 | 0 | – | – |
+| Minified and gzipped | 2.4 kB | 13 kB | 12 kB | 1.1 kB | built in | built in |
+| Runtime dependencies | 2 | 0 | 0 | 0 | – | – |
 | Node built-ins used | none | none | none | none | Node only | none |
 | TypeScript types | included | included | included | included | – | – |
 | Version compared | – | 3.0.2 | 0.8.3 | 1.2.2 | – | – |

@@ -45,7 +45,7 @@ const sentence = (count: number) =>
 const subjects = Array.from({ length: 200 }, () => sentence(12));
 const qSubjects = subjects.map((subject) => encodeWords(subject));
 const bWords = subjects.map((subject) =>
-  encodeWord(subject, { wordEncoding: 'B', wordLength: false }),
+  encodeWord(subject, { wordEncoding: 'B', wordLength: Infinity }),
 );
 const bPayloads = bWords.map((word) => word.slice('=?UTF-8?B?'.length, -2));
 const longHeader = 'Subject: ' + sentence(2000).replace(/[^\x20-\x7e]/g, 'x');
@@ -144,7 +144,7 @@ describe('encoded words', () => {
     const result = await bench.compare(
       bench('@portable/mime-headers', () => {
         for (const subject of subjects) {
-          encodeWord(subject, { wordEncoding: 'B', wordLength: false });
+          encodeWord(subject, { wordEncoding: 'B', wordLength: Infinity });
         }
       }),
       bench('libmime 5.4.9', () => {
@@ -163,7 +163,7 @@ describe('encoded words', () => {
         delta: 0.25,
       });
     }
-    expect(sink).toBe(encodeWord(subjects.at(-1)!, { wordEncoding: 'B', wordLength: false }));
+    expect(sink).toBe(encodeWord(subjects.at(-1)!, { wordEncoding: 'B', wordLength: Infinity }));
   });
 });
 
@@ -249,7 +249,7 @@ describe('addresses', () => {
       bench('@portable/mime-headers', () => {
         parseAddresses(addressList);
       }),
-      bench('addressparser (nodemailer 10.1.2)', () => {
+      bench('addressparser (nodemailer 10.2.1)', () => {
         addressparser(addressList);
       }),
       bench('email-addresses 5.0.0', () => {
@@ -257,7 +257,7 @@ describe('addresses', () => {
       }),
     );
     for (const upstream of [
-      'addressparser (nodemailer 10.1.2)',
+      'addressparser (nodemailer 10.2.1)',
       'email-addresses 5.0.0',
     ] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
@@ -271,11 +271,11 @@ describe('addresses', () => {
       bench('@portable/mime-headers', () => {
         parseMailboxes(addressList);
       }),
-      bench('addressparser (nodemailer 10.1.2)', () => {
+      bench('addressparser (nodemailer 10.2.1)', () => {
         addressparser(addressList, { flatten: true });
       }),
     );
-    expect(result.get('addressparser (nodemailer 10.1.2)')).not.toBeFasterThan(
+    expect(result.get('addressparser (nodemailer 10.2.1)')).not.toBeFasterThan(
       result.get('@portable/mime-headers'),
       { delta: 0.25 },
     );

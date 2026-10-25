@@ -58,7 +58,7 @@ export function seeded(seed: number): Seeded {
   };
   return {
     int: (min, max) => internal.int(next, min, max),
-    float: () => ((next() >>> 11) * 4294967296 + next()) / 9007199254740992,
+    float: () => internal.float(next),
     string(length, { alphabet = internal.urlAlphabet } = {}) {
       internal.assertLength(length);
       return internal.string(next, fill, length, internal.alphabet(alphabet));

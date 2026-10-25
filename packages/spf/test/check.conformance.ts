@@ -119,9 +119,11 @@ describe('Spf.check', () => {
 
   test('rejects with the reason for a signal that has already aborted', async () => {
     const reason = new Error('stop');
-    await expect(
-      check(withRecord('v=spf1 +all'), {}, { signal: AbortSignal.abort(reason) }),
-    ).rejects.toBe(reason);
+    for (const sender of ['user@example.test', 'user@invalid']) {
+      await expect(
+        check(withRecord('v=spf1 +all'), { sender }, { signal: AbortSignal.abort(reason) }),
+      ).rejects.toBe(reason);
+    }
   });
 
   test('gives temperror for a resolver that throws synchronously or rejects with a non-error', async () => {
@@ -135,6 +137,18 @@ describe('Spf.check', () => {
     for (const resolver of [throwing, rejecting]) {
       const result = await Spf.check({ ip: '192.0.2.1', sender: 'a@example.test' }, { resolver });
       expect(result.result).toBe('temperror');
+    }
+  });
+
+  test('rejects a resolver without a lookup method, instead of giving temperror', async () => {
+    const { resolveMx: _, ...partial } = zoneResolver(withRecord('v=spf1 +all'));
+    for (const resolver of [undefined, {}, partial]) {
+      await expect(
+        Spf.check(
+          { ip: '192.0.2.1', sender: 'a@example.test' },
+          { resolver: resolver as unknown as Spf.Resolver },
+        ),
+      ).rejects.toThrow(TypeError);
     }
   });
 
@@ -456,6 +470,23 @@ describe('macro-test.js', () => {
     });
     const now = new Date(1_700_000_000_900);
     expect((await check(zone, {}, { now })).explanation).toBe('1700000000');
+  });
+
+  test('expands %{t} from a now that is an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const zone = withRecord('v=spf1 -all exp=explain.example.test', {
+      'explain.example.test': { TXT: ['%{t}'] },
+    });
+    const now = { epochMilliseconds: 1_700_000_000_900 };
+    expect((await check(zone, {}, { now })).explanation).toBe('1700000000');
+  });
+
+  test('rejects an invalid now, even for a sender whose domain is not a domain name', async () => {
+    const now = 'yesterday' as unknown as Date;
+    for (const sender of ['user@example.test', 'user@invalid']) {
+      await expect(check(withRecord('v=spf1 +all'), { sender }, { now })).rejects.toThrow(
+        TypeError,
+      );
+    }
   });
 });
 

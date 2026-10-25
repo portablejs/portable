@@ -5,17 +5,15 @@ import {
   bytesOf,
   nameLength,
   need,
+  parseAddress,
   putBytes,
-  putIPv4,
-  putIPv6,
   putName,
   putString,
   putText,
   putU16,
   putU32,
   putU8,
-  readIPv4,
-  readIPv6,
+  readAddress,
   readName,
   readString,
   readText,
@@ -45,9 +43,12 @@ type KeyData = { flags: number; algorithm: number; key: Uint8Array };
  * TXT strings are always `Uint8Array`.
  */
 export type RecordData = {
-  /** An IPv4 address, such as `'192.0.2.1'`. */
+  /** An IPv4 address, such as `'192.0.2.1'`, without leading zeros. */
   A: string;
-  /** An IPv6 address. Decoded addresses are formatted as RFC 5952 recommends. */
+  /**
+   * An IPv6 address. Decoded addresses are formatted as RFC 5952 recommends, with an IPv4-mapped
+   * address as `::ffff:192.0.2.1`.
+   */
   AAAA: string;
   CNAME: string;
   DNAME: string;
@@ -117,13 +118,13 @@ export type DecodedRecordData = Omit<RecordData, 'TXT'> & { TXT: Uint8Array[] };
 
 const address = (size: 4 | 16): Codec<string, string> => ({
   length: () => size,
-  write: size === 4 ? putIPv4 : putIPv6,
+  write: (w, ip) => putBytes(w, parseAddress(ip, size === 4 ? 4 : 6)),
   read(r, end) {
     if (end - r.offset !== size) {
       throw new InvalidInputError(`An address record must hold ${size} bytes.`);
     }
     r.offset += size;
-    return size === 4 ? readIPv4(r.bytes, end - 4) : readIPv6(r.bytes, end - 16);
+    return readAddress(r.bytes, end - size, size);
   },
 });
 
@@ -525,8 +526,6 @@ export type EdnsOption =
       data: Uint8Array;
     };
 
-const isIPv6 = (ip: string) => typeof ip === 'string' && ip.includes(':');
-
 export function ednsOptionLength(option: EdnsOption): number {
   switch (option.code) {
     case 'CLIENT_SUBNET':
@@ -551,17 +550,11 @@ export function putEdnsOption(w: Writer, option: EdnsOption): void {
   putU16(w, optionCodes.value(option.code));
   switch (option.code) {
     case 'CLIENT_SUBNET': {
-      const v6 = isIPv6(option.ip);
+      const full = parseAddress(option.ip);
+      const v6 = full.length === 16;
       const prefix = option.sourcePrefixLength;
-      if (prefix > (v6 ? 128 : 32)) {
+      if (prefix > full.length * 8) {
         throw new InvalidInputError(`CLIENT_SUBNET prefix ${prefix} is too long.`);
-      }
-      const full = new Uint8Array(16);
-      const target = { bytes: full, offset: 0, start: 0, names: undefined };
-      if (v6) {
-        putIPv6(target, option.ip);
-      } else {
-        putIPv4(target, option.ip);
       }
       const length = Math.ceil(prefix / 8);
       const sent = full.slice(0, length);
@@ -623,7 +616,7 @@ function readOptionBody(r: Reader, code: OptionCode, end: number): EdnsOption {
       }
       const full = new Uint8Array(size);
       full.set(rest(r, end));
-      const ip = size === 4 ? readIPv4(full, 0) : readIPv6(full, 0);
+      const ip = readAddress(full, 0, size);
       return { code, ip, sourcePrefixLength, scopePrefixLength };
     }
     case 'TCP_KEEPALIVE':

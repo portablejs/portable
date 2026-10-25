@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vite-plus/test';
 import { attempt, byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz';
 import * as WebCrypto from '@portable/web-crypto';
+import rsaPkcs8 from './fixtures/pem/rsa-pkcs8.pem.txt?raw';
 
 const data = new TextEncoder().encode('hello');
 const key = new TextEncoder().encode('key');
@@ -31,6 +32,15 @@ describe('byte inputs', () => {
       const der = WebCrypto.rawToDerEcdsa(toByteForm(raw, form));
       expect(der).toEqual(WebCrypto.rawToDerEcdsa(raw));
       expect(WebCrypto.derToRawEcdsa(toByteForm(der, form))).toEqual(raw);
+      const pem = new TextEncoder().encode(rsaPkcs8);
+      const rsa = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
+      const imported = await WebCrypto.importPem(rsa, toByteForm(pem, form), { extractable: true });
+      expect(await crypto.subtle.exportKey('jwk', imported)).toEqual(
+        await crypto.subtle.exportKey(
+          'jwk',
+          await WebCrypto.importPem(rsa, rsaPkcs8, { extractable: true }),
+        ),
+      );
     });
   }
 });
@@ -45,6 +55,7 @@ describe('rejected byte inputs', () => {
       await expect(attempt(() => WebCrypto.importSeed('X25519', v))).rejects.toThrow(TypeError);
       await expect(attempt(() => WebCrypto.rawToDerEcdsa(v))).rejects.toThrow(TypeError);
       await expect(attempt(() => WebCrypto.derToRawEcdsa(v))).rejects.toThrow(TypeError);
+      await expect(attempt(() => WebCrypto.importPem('Ed25519', v))).rejects.toThrow(TypeError);
     });
   }
 });

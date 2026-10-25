@@ -21,7 +21,7 @@ Test files:
 | --- | --- | --- |
 | autnum.test.ts: should return json for valid ASN | `asn > ARIN: AS15169` | |
 | autnum.test.ts: should throw error for an ASN with no registry | `asn > rejects a reserved number with UnsupportedError` | |
-| autnum.test.ts: should throw a validation error for an impossible ASN | `asn > rejects what is not an AS number with InvalidInputError, without a request` | Also 2^32, `NaN` and a string. |
+| autnum.test.ts: should throw a validation error for an impossible ASN | `asn > rejects what is not an AS number with InvalidInputError, without a request`, `asn > throws a TypeError for a value that is not a number` | The test also covers 2^32 and `NaN`. A string throws a `TypeError`. |
 | client.test.ts: domain rejects an invalid FQDN without touching the network | `names > rejects malformed names with InvalidInputError, without a request` | |
 | client.test.ts: domain rejects when no RDAP server is known for the tld | `names > rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file` | |
 | client.test.ts: domain rejects when the RDAP server responds with an error status | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | 404 has its own error class. |
@@ -42,7 +42,7 @@ Test files:
 | domain.test.ts: should return error for invalid TLD | `names > rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file` | Same names: `example.badger`, `example.invalid`. |
 | domain.test.ts: should return error for non-existant domain | `names > rejects an unregistered name with NotFoundError` | |
 | domain.test.ts: should return error for invalid FQDN | `names > rejects malformed names with InvalidInputError, without a request` | |
-| errors.test.ts: every error is an RdapError and an Error | `error names are namespaced by the package` | Errors extend `Error` directly, as AGENTS.md requires. There is no base class. |
+| errors.test.ts: every error is an RdapError and an Error | `error names are namespaced by the package` | Each error extends its class in `@portable/errors`, as AGENTS.md requires. There is no rdap base class. |
 | errors.test.ts: each subclass is distinguishable from the others | `names`, `responses` and `asn` tests | Each asserts the specific class. |
 | errors.test.ts: reports its own class as the name | `error names are namespaced by the package` | |
 | errors.test.ts: carries the detail a caller needs to act on | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | `url`, `status` and `body`. |

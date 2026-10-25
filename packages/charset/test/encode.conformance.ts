@@ -166,6 +166,15 @@ describe('byte order mark', () => {
   test('is written for empty input', () => {
     expect(hex(Charset.encode('', utf16le, { bom: true }))).toBe('fffe');
   });
+
+  test('is dropped from the start of UTF-8 byte input', async () => {
+    const input = new Uint8Array([0xef, 0xbb, 0xbf, 0x61]);
+    expect(hex(Charset.encode(input, windows1251))).toBe('61');
+    expect(hex(Charset.encode(input, utf16le, { bom: true }))).toBe('fffe6100');
+    expect(hex(await encodeStream([input.subarray(0, 2), input.subarray(2)], windows1251))).toBe(
+      '61',
+    );
+  });
 });
 
 describe('UTF-16', () => {

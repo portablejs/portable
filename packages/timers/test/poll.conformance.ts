@@ -266,6 +266,18 @@ describe('signal', () => {
     await vi.advanceTimersByTimeAsync(150);
   });
 
+  test('handles the rejection of a check that aborts the signal itself', async () => {
+    const controller = new AbortController();
+    const polling = Timers.poll(
+      () => {
+        controller.abort(aborted);
+        return Promise.reject(new Error('check failed'));
+      },
+      { signal: controller.signal },
+    );
+    await expect(polling).rejects.toBe(aborted);
+  });
+
   test('resolves when a check returns a value while a signal is passed', async () => {
     const controller = new AbortController();
     expect(

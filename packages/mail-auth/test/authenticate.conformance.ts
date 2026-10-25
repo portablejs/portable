@@ -1,4 +1,5 @@
 import * as Arc from '@portable/arc';
+import * as Dkim from '@portable/dkim';
 import * as MailAuth from '@portable/mail-auth';
 import { describe, expect, test } from 'vite-plus/test';
 import {
@@ -464,9 +465,123 @@ describe('input', () => {
     ).rejects.toBe(reason);
   });
 
+  test('hashes a relaxed body once for DKIM, ARC and the seal', async () => {
+    const zone = { 'test._domainkey.example.com': { TXT: [await rsaRecord()] } };
+    const { privateKey } = await key('rsa');
+    const dkimSigned = await signed(buildMessage({ from: 'user@example.com' }), 'example.com');
+    const input =
+      (await Arc.seal(dkimSigned, {
+        domain: 'example.com',
+        selector: 'test',
+        privateKey,
+        authResults: 'mx.example.org; dkim=pass header.d=example.com',
+      })) + dkimSigned;
+    let hashers = 0;
+    const hasher = () => {
+      hashers++;
+      const chunks: Uint8Array[] = [];
+      return {
+        update: (data: Uint8Array) => chunks.push(data.slice()),
+        digest: async () => {
+          const whole = new Uint8Array(chunks.flatMap((chunk) => [...chunk]));
+          return new Uint8Array(await crypto.subtle.digest('SHA-256', whole));
+        },
+      };
+    };
+    const result = await authenticate(input, zone, {
+      hasher,
+      seal: { domain: 'example.com', selector: 'test', privateKey },
+    });
+    expect(result.dkim[0]!.result).toBe('pass');
+    expect(result.arc.result).toBe('pass');
+    expect(result.headers).toMatch(/^ARC-Seal: i=2; a=rsa-sha256; t=\d+; cv=pass;/);
+    expect(hashers).toBe(1);
+  });
+
+  test('rejects invalid seal options before reading the message', async () => {
+    let pulls = 0;
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          pulls++;
+          controller.enqueue(encode(message));
+          controller.close();
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    await expect(
+      authenticate(
+        stream,
+        {},
+        { seal: { domain: 'example.com', selector: 'test', privateKey: '' } },
+      ),
+    ).rejects.toBeInstanceOf(RangeError);
+    expect(pulls).toBe(0);
+  });
+
+  test('rejects a resolver without one of the lookup methods before reading the message', async () => {
+    const { resolveCname: _, ...partial } = zoneResolver({});
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('Subject: no From field\r\n\r\nbody\r\n'));
+        c.close();
+      },
+    });
+    await expect(
+      MailAuth.authenticate(stream, {
+        ...envelope,
+        resolver: partial as unknown as MailAuth.Resolver,
+      }),
+    ).rejects.toThrow(TypeError);
+    expect(stream.locked).toBe(false);
+  });
+
   test('throws a RangeError for an ip that is not an IP address', async () => {
     await expect(authenticate(message, {}, { ip: 'mail.example.com' })).rejects.toBeInstanceOf(
       RangeError,
     );
+  });
+});
+
+describe('now', () => {
+  test('checks signature expiry against an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const signature = await Dkim.sign(message, {
+      domain: 'mail.example.com',
+      selector: 'test',
+      privateKey: (await key('rsa')).privateKey,
+      now: new Date('2024-01-01T00:00:00Z'),
+      expiresAt: new Date('2024-01-02T00:00:00Z'),
+    });
+    const zone = { 'test._domainkey.mail.example.com': { TXT: [await rsaRecord()] } };
+    const at = async (now: MailAuth.authenticate.Options['now']) =>
+      (await authenticate(signature + message, zone, { now })).dkim[0]!.result;
+    const before = Date.UTC(2024, 0, 1, 12);
+    const after = Date.UTC(2024, 0, 3);
+    expect(await at({ epochMilliseconds: before })).toBe('pass');
+    expect(await at(new Date(before))).toBe('pass');
+    expect(await at({ epochMilliseconds: after })).toBe(await at(new Date(after)));
+    expect(await at({ epochMilliseconds: after })).not.toBe('pass');
+  });
+
+  test('is the time for %{t} in an SPF explanation', async () => {
+    const zone = {
+      'mail.example.com': { TXT: ['v=spf1 -all exp=exp.mail.example.com'] },
+      'exp.mail.example.com': { TXT: ['%{t}'] },
+    };
+    const now = { epochMilliseconds: 1_700_000_000_900 };
+    expect((await authenticate(message, zone, { now })).spf.explanation).toBe('1700000000');
+  });
+
+  test('rejects an invalid now without reading the message', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode(message));
+        c.close();
+      },
+    });
+    const now = 'yesterday' as unknown as Date;
+    await expect(authenticate(stream, {}, { now })).rejects.toThrow(TypeError);
+    expect(stream.locked).toBe(false);
   });
 });

@@ -204,6 +204,22 @@ describe('abortable', () => {
     expect(await Streams.toArray(stream.readable)).toEqual([0, 2, 4, -1]);
   });
 
+  test('calls the methods of a transformer class with the transformer as this', async () => {
+    class Doubler {
+      factor = 2;
+      transform(chunk: number, controller: TransformStreamDefaultController<number>) {
+        controller.enqueue(chunk * this.factor);
+      }
+    }
+    const stream = new TransformStream<number, number>(
+      Streams.abortable(new Doubler(), { signal: new AbortController().signal }),
+    );
+    const writer = stream.writable.getWriter();
+    void writer.write(1);
+    void writer.close();
+    expect(await Streams.toArray(stream.readable)).toEqual([2]);
+  });
+
   test('an abort after the stream ends has no effect', async () => {
     const controller = new AbortController();
     const stream = new TransformStream(Streams.abortable({}, { signal: controller.signal }));
@@ -211,6 +227,41 @@ describe('abortable', () => {
     controller.abort(new Error('late'));
     expect(await Streams.toArray(stream.readable)).toEqual([]);
   });
+
+  function countListeners(signal: AbortSignal): { count: number } {
+    const listeners = { count: 0 };
+    const add = signal.addEventListener.bind(signal);
+    const remove = signal.removeEventListener.bind(signal);
+    signal.addEventListener = (...args: Parameters<typeof add>) => {
+      listeners.count++;
+      add(...args);
+    };
+    signal.removeEventListener = (...args: Parameters<typeof remove>) => {
+      listeners.count--;
+      remove(...args);
+    };
+    return listeners;
+  }
+
+  for (const [name, transform] of [
+    [
+      'throws',
+      () => {
+        throw new Error('bad chunk');
+      },
+    ],
+    ['rejects', () => Promise.reject(new Error('bad chunk'))],
+  ] as const) {
+    test(`removes its listener when the transformer ${name}`, async () => {
+      const signal = new AbortController().signal;
+      const listeners = countListeners(signal);
+      const stream = new TransformStream(Streams.abortable({ transform }, { signal }));
+      const reading = stream.readable.getReader().read();
+      await expect(stream.writable.getWriter().write(1)).rejects.toThrow('bad chunk');
+      await expect(reading).rejects.toThrow('bad chunk');
+      expect(listeners.count).toBe(0);
+    });
+  }
 
   test('cancelling the stream calls the cancel of the transformer', async () => {
     let cancelled: unknown;

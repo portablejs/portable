@@ -35,7 +35,8 @@
   "dependencies": {
     "@portable/dns": "workspace:*",
     "@portable/idna": "workspace:*",
-    "@portable/spf": "workspace:*"
+    "@portable/spf": "workspace:*",
+    "@portable/timers": "workspace:*"
   },
   "exports": {
     ".": {

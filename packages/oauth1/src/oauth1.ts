@@ -1,9 +1,11 @@
+import type { Instant } from '@portable/timers';
+import { abortable, toDate } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import * as Bytes from '@portable/bytes';
 import * as WebCrypto from '@portable/web-crypto';
 import { rsaSha1 } from './crypto.js';
 import { UnsupportedError } from './errors.js';
-import { race, readBody } from './race.js';
+import { readBody } from './readBody.js';
 import {
   type Pair,
   joinPairs,
@@ -71,10 +73,11 @@ export declare namespace authorization {
     /** `oauth_nonce`. Set it only in tests. @default 32 random hex digits */
     nonce?: string | undefined;
     /**
-     * The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests.
+     * The time sent as `oauth_timestamp`, in whole seconds, as a `Date` or a `Temporal.Instant`.
+     * Set it only in tests.
      * @default new Date()
      */
-    now?: Date | undefined;
+    now?: Instant | undefined;
   };
 }
 
@@ -107,7 +110,7 @@ const utf8 = new TextEncoder();
  * ```
  *
  * @throws {UnsupportedError} For an unknown `signatureMethod`.
- * @throws {RangeError} For an RSA private key that can't be used.
+ * @throws {RangeError} For an RSA private key that can't be used, or an invalid `now`.
  */
 export async function authorization(
   request: Request,
@@ -115,12 +118,13 @@ export async function authorization(
 ): Promise<string> {
   const { signal } = options;
   signal?.throwIfAborted();
+  const fields = protocolFields(options);
   const form = isForm(request);
   const body =
     (form || options.bodyHash) && hasBody(request)
       ? await readBody(request.clone(), signal)
       : undefined;
-  const pairs = await race(protocolParameters(request, form, body, options), signal);
+  const pairs = await abortable(protocolParameters(request, form, body, fields, options), signal);
   return header(pairs, options.realm);
 }
 
@@ -146,17 +150,18 @@ export async function authorization(
  * ```
  *
  * @throws {UnsupportedError} For an unknown `signatureMethod`.
- * @throws {RangeError} For an RSA private key that can't be used.
+ * @throws {RangeError} For an RSA private key that can't be used, or an invalid `now`.
  */
 export async function sign(request: Request, options: sign.Options): Promise<Request> {
   const { placement = 'header', signal } = options;
   signal?.throwIfAborted();
+  const fields = protocolFields(options);
   const form = isForm(request);
   const body =
     (form || options.bodyHash || placement === 'query') && hasBody(request)
       ? await readBody(request, signal)
       : undefined;
-  const pairs = await race(protocolParameters(request, form, body, options), signal);
+  const pairs = await abortable(protocolParameters(request, form, body, fields, options), signal);
 
   if (placement === 'query') {
     const url = new URL(request.url);
@@ -199,16 +204,24 @@ function isForm(request: Request): boolean {
   return type?.split(';')[0]!.trim().toLowerCase() === 'application/x-www-form-urlencoded';
 }
 
-async function protocolParameters(
-  request: Request,
-  form: boolean,
-  body: Uint8Array<ArrayBuffer> | undefined,
-  options: authorization.Options,
-): Promise<Pair[]> {
+type ProtocolFields = { signatureMethod: SignatureMethod; timestamp: string };
+
+function protocolFields(options: authorization.Options): ProtocolFields {
   const signatureMethod = options.signatureMethod ?? 'HMAC-SHA1';
   if (!methods.has(signatureMethod)) {
     throw new UnsupportedError(`Unsupported signature method: ${String(signatureMethod)}`);
   }
+  const seconds = Math.floor(toDate(options.now).getTime() / 1000);
+  return { signatureMethod, timestamp: String(seconds) };
+}
+
+async function protocolParameters(
+  request: Request,
+  form: boolean,
+  body: Uint8Array<ArrayBuffer> | undefined,
+  { signatureMethod, timestamp }: ProtocolFields,
+  options: authorization.Options,
+): Promise<Pair[]> {
   const { callback, digest = WebCrypto.digest, hmac = WebCrypto.hmac, token, verifier } = options;
   const hash = (signatureMethod === 'HMAC-SHA256' ? 'SHA-256' : 'SHA-1') satisfies WebCrypto.Hash;
 
@@ -216,7 +229,7 @@ async function protocolParameters(
     ['oauth_consumer_key', percentEncode(options.consumer.key)],
     ['oauth_nonce', percentEncode(options.nonce ?? randomNonce())],
     ['oauth_signature_method', signatureMethod],
-    ['oauth_timestamp', String(Math.floor((options.now ?? new Date()).getTime() / 1000))],
+    ['oauth_timestamp', timestamp],
     ['oauth_version', '1.0'],
   ] satisfies Pair[];
   if (token !== undefined) {

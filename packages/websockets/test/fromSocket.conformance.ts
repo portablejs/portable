@@ -117,3 +117,19 @@ describe('fromSocket', () => {
     await expect(writable.getWriter().write('x')).rejects.toBe(error);
   });
 });
+
+const { asyncDispose } = Symbol as { asyncDispose?: symbol | undefined };
+
+describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
+  test('closes the socket with 1000 and fails both streams', async () => {
+    const socket = new FakeWebSocket('wss://example.com');
+    socket.accept();
+    const duplex = WebSockets.fromSocket(socket);
+    await (duplex as unknown as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
+    expect(socket.closedWith).toEqual({ code: 1000, reason: undefined });
+    expect(await errorOf(duplex.readable.getReader().read())).toMatchObject({ name: 'AbortError' });
+    expect(await errorOf(duplex.writable.getWriter().write('x'))).toMatchObject({
+      name: 'AbortError',
+    });
+  });
+});

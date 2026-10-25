@@ -55,6 +55,9 @@ export async function parseStream(
   options: parseStream.Options = {},
 ): Promise<Metadata> {
   const { maxBytes = 16 * 1024 * 1024, signal } = options;
+  if (!(maxBytes >= 0)) {
+    throw new RangeError('`maxBytes` must be a number >= 0.');
+  }
   const reader = stream.getReader();
   const source = createSource(reader, maxBytes, signal);
   const abort = () => reader.cancel(signal!.reason).catch(() => {});
@@ -85,7 +88,7 @@ export async function parseStream(
     throw new UnsupportedError();
   } finally {
     signal?.removeEventListener('abort', abort);
-    reader.cancel().catch(() => {});
+    reader.cancel(signal?.reason).catch(() => {});
   }
 }
 

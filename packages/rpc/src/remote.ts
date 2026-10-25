@@ -1,16 +1,20 @@
 import type { Client } from './client.js';
+import { asyncDisposeSymbol } from '@portable/errors/internal';
 import type { Params } from './types.js';
 
 type Target = { client: Pick<Client, 'request' | 'notify'>; method: string };
 
 const targetKey = Symbol.for('portable.rpc.target');
 
-export function remote(client: Target['client'], method = ''): any {
+export function remote(client: Target['client'], method = '', dispose?: () => Promise<void>): any {
   const children = new Map<string, unknown>();
   const proxy = new Proxy(function () {}, {
     get(_, key) {
       if (key === targetKey) {
         return { client, method };
+      }
+      if (key === asyncDisposeSymbol && dispose) {
+        return dispose;
       }
       if (typeof key !== 'string' || key === 'then') {
         return undefined;

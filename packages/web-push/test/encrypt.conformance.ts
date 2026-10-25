@@ -92,12 +92,15 @@ describe('encrypt', () => {
     expect(await decrypt(body, agent)).toEqual(payload);
   });
 
-  test('rejects a payload one byte over the limit', async () => {
+  test('rejects a payload one byte over the limit with MaxBytesError', async () => {
     const agent = await userAgent();
     const payload = new Uint8Array(WebPush.maxPayloadBytes + 1);
-    await expect(WebPush.encrypt({ subscription: agent.subscription, payload })).rejects.toThrow(
-      WebPush.InvalidInputError,
+    const error = await WebPush.encrypt({ subscription: agent.subscription, payload }).catch(
+      (error: unknown) => error,
     );
+    expect(error).toBeInstanceOf(WebPush.MaxBytesError);
+    expect(error).not.toBeInstanceOf(WebPush.InvalidInputError);
+    expect((error as WebPush.MaxBytesError).maxBytes).toBe(WebPush.maxPayloadBytes);
   });
 
   test('uses a new salt and server key for every message', async () => {

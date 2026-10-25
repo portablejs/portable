@@ -60,9 +60,6 @@ export function authorization(audience: string, vapid: Vapid, date: Date): Promi
   const { subject, publicKey, privateKey } = vapid;
   assertSubject(subject);
   const now = Math.floor(date.getTime() / 1000);
-  if (!Number.isFinite(now)) {
-    throw new RangeError('`now` must be a valid Date.');
-  }
   const id = `${audience} ${subject} ${publicKey} ${privateKey}`;
   const cached = tokens.get(id);
   if (cached && now >= cached.issued && now - cached.issued < 60 * 60) {
@@ -157,7 +154,12 @@ function readVapidKey(key: unknown, name: string, length: number): Uint8Array {
   if (!/^[\w-]+$/.test(key)) {
     throw new RangeError(`vapid.${name} must be base64url without padding`);
   }
-  const bytes = Base64.decode(key, { alphabet: 'base64url' });
+  let bytes: Uint8Array;
+  try {
+    bytes = Base64.decode(key, { alphabet: 'base64url' });
+  } catch (cause) {
+    throw new RangeError(`vapid.${name} must be base64url without padding`, { cause });
+  }
   if (bytes.length !== length) {
     throw new RangeError(`vapid.${name} must be ${length} bytes`);
   }

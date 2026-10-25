@@ -41,7 +41,7 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 
 ## ecdsa-sig-formatter `fuzz/happy.js` and `benchmarks/`
 
-`fuzz/happy.js` signs random messages with OpenSSL and checks that DER converts to JOSE and back unchanged. `round trips > <curve> signatures from crypto.subtle verify after a round trip through DER` does the same with WebCrypto signatures in every runtime, and the oracle test converts 500 node:crypto signatures per curve in each direction and compares with ecdsa-sig-formatter and @noble/curves. `benchmarks/der-to-jose.js` and `jose-to-der.js` are in `crypto.bench.ts`.
+`fuzz/happy.js` signs random messages with OpenSSL and checks that DER converts to JOSE and back unchanged. `round trips > <curve> signatures from crypto.subtle verify after a round trip through DER` does the same with WebCrypto signatures in every runtime, and the oracle test converts 500 node:crypto signatures per curve in each direction and compares with ecdsa-sig-formatter and @noble/curves. `web-crypto.bench.ts` covers upstream's `benchmarks/der-to-jose.js` and `jose-to-der.js`.
 
 ## RFC vectors
 
@@ -59,6 +59,10 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 ## Wycheproof
 
 `Wycheproof > <curve> with <hash>` converts every signature with `derToRawEcdsa` and verifies the result with `crypto.subtle.verify`. Every valid case must convert, convert back to the same DER, and verify. Every case flagged `BerEncodedSignature`, `InvalidEncoding` or `MissingZero` must throw `InvalidInputError`. Every other invalid case must throw or fail to verify.
+
+## `importPem`
+
+`importPem` replaces the PEM parsing that dkim and oauth1 each had, so its cases are theirs: a PKCS #8 and a PKCS #1 RSA private key, text that is not PEM, bad base64 and a block too short to be a key. `fixtures/pem/` holds node-oauth's RSA key pair from `tests/oauthtests.js` (MIT, Ciaran Jessup) as `rsa-pkcs1.pem.txt` and `rsa-spki.pem.txt`, the same key as PKCS #8 in `rsa-pkcs8.pem.txt` and as a PKCS #1 public key in `rsa-pkcs1-public.pem.txt` (written by `openssl rsa -RSAPublicKey_out`), and a P-256 key in SEC 1 form in `ec-sec1.pem.txt` (written by `openssl ecparam -genkey -noout`), which `importPem` rejects with `UnsupportedError`. `pem.conformance.ts` also checks CRLF line breaks, text and a certificate before the key, Ed25519, ECDSA and ECDH keys exported by `crypto.subtle`, the default usages and an encrypted PEM block.
 
 ## Known upstream issues
 

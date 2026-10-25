@@ -3,10 +3,10 @@ import type { DecoderStream } from './DecoderStream.js';
 import { createParser } from './parser.js';
 
 export declare namespace decode {
-  type Options<header extends DecoderStream.Header = DecoderStream.Header> = Omit<
-    DecoderStream.Options<header>,
-    'signal'
-  >;
+  type Options<
+    header extends DecoderStream.Header = DecoderStream.Header,
+    relax extends boolean = boolean,
+  > = Omit<DecoderStream.Options<header, relax>, 'signal'>;
 }
 
 /**
@@ -27,18 +27,21 @@ export declare namespace decode {
  * @throws {TruncatedError} When the input ends inside a quoted field.
  * @throws {MaxLengthError} When a row is longer than `maxLength`.
  */
-export function decode<const header extends DecoderStream.Header = false>(
+export function decode<
+  const header extends DecoderStream.Header = false,
+  relax extends boolean = false,
+>(
   input: string | Uint8Array,
-  options: decode.Options<header> = {},
-): DecoderStream.Row<header>[] {
+  options: decode.Options<header, relax> = {},
+): DecoderStream.Row<header, relax>[] {
   const text =
     typeof input === 'string'
       ? input
       : new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true }).decode(
           assertUint8Array(input),
         );
-  const rows: DecoderStream.Row<header>[] = [];
-  const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header>));
+  const rows: DecoderStream.Row<header, relax>[] = [];
+  const parser = createParser(options, (row) => rows.push(row as DecoderStream.Row<header, relax>));
   parser.write(text);
   parser.end();
   return rows;

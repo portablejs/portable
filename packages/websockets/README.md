@@ -9,6 +9,7 @@ npm install @portable/websockets
 ```
 
 ```ts
+import * as Streams from '@portable/streams';
 import * as WebSockets from '@portable/websockets';
 
 const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
@@ -25,10 +26,12 @@ const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
 const writer = writable.getWriter();
 await writer.write(JSON.stringify({ subscribe: 'prices' }));
 
-for await (const message of readable) {
+for await (const message of Streams.toAsyncIterable(readable)) {
   console.log(message);
 }
 ```
+
+`Streams.toAsyncIterable` from `@portable/streams` iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const message of readable)` also works.
 
 The namespace is `WebSockets`, so it doesn't shadow the global `WebSocket`.
 
@@ -77,6 +80,8 @@ How the streams end:
 
 - `writable.close()` waits for queued writes, closes the socket with 1000, and ends `readable` once the close completes.
 - `readable.cancel()`, `writable.abort()` and `signal` close the socket with 1000 and fail the other stream.
+- `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
+- In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
 - A final close with 1000, 1001 or 1005 ends `readable`. Any other final close fails it with a `CloseError` carrying `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
 ### Messages can be lost during a drop
@@ -107,7 +112,7 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 | Type | Description |
 | --- | --- |
-| `WebSockets.Duplex` | `{ readable, writable }`, what `connect` and `fromSocket` return. |
+| `WebSockets.Duplex` | `{ readable, writable }`, what `connect` and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
 | `WebSockets.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
@@ -124,7 +129,7 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - Close codes such as 1008 are final by default, so a client the server rejected doesn't reconnect in a loop.
 - A URL function that throws counts as a failed attempt. websocket-ts stopped reconnecting permanently.
 - Closing a `ws` client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
-- Throughput matches reconnecting-websocket. Echoing 1000 messages of 100 bytes through a local server took 46 ms on average with `connect`, 44 ms with reconnecting-websocket and 34 ms with a bare `WebSocket` on Node 24, on a machine busy enough that runs varied by ±15%. A server echoing through `fromSocket` took 50 ms against 60 ms with `ws` listeners.
+- Echoing 1,000 messages of 100 bytes through a local server on Node 24 runs within 5% of a bare `WebSocket` with `connect`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
 
 <!-- bench:start -->
 | | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
@@ -136,8 +141,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.4 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
-| Runtime dependencies | 0 | 0 | 1 | 0 | 0 | – |
+| Minified and gzipped | 3.1 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
+| Runtime dependencies | 3 | 0 | 1 | 0 | 0 | – |
 | Node built-ins used | none | none | none | none | none | none |
 | TypeScript types | included | included | included | included | `@types/ws` | – |
 | Version compared | – | 4.4.0 | 1.3.0 | 3.0.0 | 8.22.0 | – |

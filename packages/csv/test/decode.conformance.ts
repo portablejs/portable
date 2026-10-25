@@ -1,5 +1,5 @@
 import { fromIterable, toArray } from '@portable/streams';
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
 import * as Csv from '@portable/csv';
 import {
   bom,
@@ -360,6 +360,11 @@ describe('csv-parse', () => {
       }
       expect(() => Csv.decode('a', { quote: '' })).toThrow(RangeError);
     });
+
+    test('rejects a negative or NaN maxLength', () => {
+      expect(() => Csv.decode('a', { maxLength: -1 })).toThrow(RangeError);
+      expect(() => new Csv.DecoderStream({ maxLength: Number.NaN })).toThrow(RangeError);
+    });
   });
 
   describe('line breaks', () => {
@@ -512,6 +517,13 @@ describe('csv-parse', () => {
         expect.stringMatching(/Row 4\b/),
       );
     });
+
+    test('gives the number of the first row that was read, after skipped lines', async () => {
+      expect(await decodeError('\n\na,b\nc')).toHaveProperty(
+        'message',
+        'Row 4 has 1 fields, but row 3 has 2.',
+      );
+    });
   });
 
   describe('maxLength', () => {
@@ -528,6 +540,32 @@ describe('csv-parse', () => {
         ['1234'],
       ]);
     });
+  });
+});
+
+describe('row types', () => {
+  test('an array of names types the row keys', () => {
+    const rows = Csv.decode('1,a@b.c\n', { header: ['id', 'email'] });
+    expectTypeOf(rows).toEqualTypeOf<Record<'id' | 'email', string>[]>();
+    expect(rows).toEqual([{ id: '1', email: 'a@b.c' }]);
+  });
+
+  test('relaxColumnCount makes the named keys optional', () => {
+    const rows = Csv.decode('1\n', { header: ['id', 'email'], relaxColumnCount: true });
+    expectTypeOf(rows).toEqualTypeOf<Partial<Record<'id' | 'email', string>>[]>();
+    expect(rows).toEqual([{ id: '1' }]);
+  });
+
+  test('header: true and a string[] of names give string keys', () => {
+    const names = ['id'] satisfies string[];
+    expectTypeOf(Csv.decode('id\n1\n', { header: true })).toEqualTypeOf<Record<string, string>[]>();
+    expectTypeOf(Csv.decode('1\n', { header: names })).toEqualTypeOf<Record<string, string>[]>();
+    expectTypeOf(Csv.decode('1\n')).toEqualTypeOf<string[][]>();
+  });
+
+  test('DecoderStream types its rows the same way', () => {
+    const stream = new Csv.DecoderStream({ header: ['id'], relaxColumnCount: true });
+    expectTypeOf(stream.readable).toEqualTypeOf<ReadableStream<Partial<Record<'id', string>>>>();
   });
 });
 

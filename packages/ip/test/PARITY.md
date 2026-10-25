@@ -108,7 +108,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | isLoopback(): 127.0.0.1, 127.8.8.8, 8.8.8.8, ::1 | `ip > detects loopback addresses` | |
 | isLoopback(): fe80::1, :: | `ip > detects loopback addresses` | Deliberate: `linkLocal` and `unspecified`. |
 | address(): every test | skipped | Reads the machine's network interfaces, which no web runtime exposes. |
-| toLong(): should respond with a int | skipped | `DataView.getUint32` covers it. See the README. |
+| toLong(): should respond with a int | skipped | `DataView.getUint32` covers it. |
 | fromLong(): should repond with ipv4 address | skipped | `DataView.setUint32` and `fromBytes` cover it. |
 | should return true for octal, hexadecimal and long representations (7 tests) | `ip > rejects octal, hex and integer loopback forms instead of guessing` | Deliberate: these throw. |
 | should return false for "192.168.1.1" | `ip > detects loopback addresses` | |

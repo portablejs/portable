@@ -40,7 +40,8 @@
     "@portable/errors": "workspace:*",
     "@portable/idna": "workspace:*",
     "@portable/mime-headers": "workspace:*",
-    "@portable/quoted-printable": "workspace:*"
+    "@portable/quoted-printable": "workspace:*",
+    "@portable/timers": "workspace:*"
   },
   "exports": {
     ".": {

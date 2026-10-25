@@ -64,7 +64,7 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 
 `'?'` is the default because iconv-lite writes `?`, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 
-Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
+Text input can be a string or a `Uint8Array` of UTF-8. A UTF-8 byte order mark at the start of byte input is dropped, as `TextDecoder` drops it, so it isn't encoded as a character. Pass `bom: true` to write the output charset's own byte order mark. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
 
 ## Decoding
 
@@ -79,10 +79,10 @@ Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encod
 
 ## Why use this over iconv-lite
 
-iconv-lite looks charsets up by name in one registry, so a bundle includes every table. In this package, each charset family is its own entry point, decoding is left to `TextDecoder`, and the package has no dependencies.
+iconv-lite looks charsets up by name in one registry, so a bundle includes every table. In this package, each charset family is its own entry point, decoding is left to `TextDecoder`, and the package depends only on other `@portable/*` packages.
 
 - `encode` from the root is 1.0 kB gzipped, and one single-byte charset adds 0.6 kB. The gb18030 table is 17 kB gzipped, against 32 kB in iconv-lite.
-- Encoding 230 kB of Japanese text to Shift_JIS was about 2× faster than iconv-lite, and 380 kB of Cyrillic text to windows-1251 ran at the same speed. UTF-8 is slightly slower than `TextEncoder`, so call `TextEncoder` when you only need UTF-8.
+- Encoding 230 kB of Japanese text to Shift_JIS was about 2.4× faster than iconv-lite, and 380 kB of Cyrillic text to windows-1251 ran at the same speed. UTF-8 is slightly slower than `TextEncoder`, so call `TextEncoder` when you only need UTF-8.
 - The output follows the WHATWG tables, so browsers decode it back to the same text. iconv-lite writes U+FFFD as a byte that several single-byte charsets leave undefined, writes four-byte sequences in GBK that GBK decoders reject, and writes lone surrogates raw in UTF-16.
 - `EncoderStream` encodes a surrogate pair split across chunks as one character (iconv-lite #282), and a prototype key such as `constructor` is not a charset label (iconv-lite #328).
 - ISO-2022-JP can be encoded. iconv-lite doesn't support it.
@@ -98,8 +98,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/charset | iconv-lite | `TextEncoder` |
 | --- | --- | --- | --- |
-| Minified and gzipped | 13 kB | 153 kB | built in |
-| Runtime dependencies | 0 | 1 | – |
+| Minified and gzipped | 14 kB | 153 kB | built in |
+| Runtime dependencies | 3 | 1 | – |
 | Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none |
 | TypeScript types | included | included | – |
 | Version compared | – | 0.7.3 | – |
@@ -113,5 +113,5 @@ Differences to check when you switch from iconv-lite:
 - iconv-lite writes a byte order mark for the `utf-16` label by default. Here the `utf-16` label maps to UTF-16LE, which is written without one unless you pass `bom: true`.
 - Characters that a charset only decodes are unmappable when encoding, as WHATWG specifies: HKSCS in Big5, JIS X 0212 in EUC-JP and the IBM duplicates in the NEC rows of Shift_JIS. They still decode with `TextDecoder`.
 - iconv-lite writes `?` for the C1 controls that the windows-125x tables map. `encode` writes the bytes the WHATWG tables give them.
-- iconv-lite's `base64`, `hex`, `binary` and `ucs2` codecs have no equivalent. Use `Uint8Array.prototype.toBase64` and `toHex`, `TextEncoder` and `utf16le`.
+- iconv-lite's `base64`, `hex`, `binary` and `ucs2` codecs aren't charsets, so this package doesn't have them. Use `@portable/base64` for `base64`, `Bytes.toHex` from `@portable/bytes` for `hex`, and `utf16le` for `ucs2`. `binary` maps each byte to the character with the same code, which `String.fromCharCode` and `charCodeAt` already do.
 - cp437, cp850 and the other DOS and IBM code pages, UTF-7, UTF-32 and CESU-8 are not supported yet.

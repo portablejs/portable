@@ -1,6 +1,10 @@
 import { run, toBufferSource } from './internal.js';
 
-/** A hash algorithm, named as WebCrypto names it. */
+/**
+ * A hash algorithm, by its WebCrypto name. The `@portable/*` packages call a `Digest` or `Hmac`
+ * function only with these names. If WebCrypto adds a hash later, such as SHA-3, it will get its
+ * own type, so a `switch` over `Hash` in your code still compiles.
+ */
 export type Hash = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512';
 
 /**
@@ -69,7 +73,9 @@ export declare namespace hmac {
 }
 
 /**
- * Computes an HMAC (RFC 2104) of `data` with `key`. Strings are read as UTF-8.
+ * Computes an HMAC (RFC 2104) of `data` with `key`. Strings are read as UTF-8. The imported
+ * `CryptoKey` is cached for up to 16 keys of at most 256 bytes, so signing again with the same
+ * secret skips `importKey`.
  *
  * @example
  * ```ts
@@ -85,18 +91,38 @@ export function hmac(
   options: hmac.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   return run(options.signal, async () => {
-    const raw = toBufferSource(key);
-    // WebCrypto refuses empty HMAC keys. HMAC pads the key with zero bytes to the block size, so a
-    // single zero byte gives the same result.
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      raw.length === 0 ? new Uint8Array(1) : raw,
-      { name: 'HMAC', hash },
-      false,
-      ['sign'],
-    );
+    const cryptoKey = await hmacKey(hash, toBufferSource(key));
     return new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, toBufferSource(data)));
   });
+}
+
+// importKey takes about two thirds of the time of an HMAC on Node, and callers usually sign with
+// the same few secrets, such as a webhook secret or an OAuth consumer secret.
+const hmacKeys = new Map<string, Promise<CryptoKey>>();
+
+function hmacKey(hash: Hash, raw: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
+  const id = raw.length <= 256 ? hash + ' ' + String.fromCharCode(...raw) : undefined;
+  const cached = id === undefined ? undefined : hmacKeys.get(id);
+  if (cached) {
+    return cached;
+  }
+  // WebCrypto refuses empty HMAC keys. HMAC pads the key with zero bytes to the block size, so a
+  // single zero byte gives the same result.
+  const cryptoKey = crypto.subtle.importKey(
+    'raw',
+    raw.length === 0 ? new Uint8Array(1) : raw,
+    { name: 'HMAC', hash },
+    false,
+    ['sign'],
+  );
+  if (id !== undefined) {
+    if (hmacKeys.size >= 16) {
+      hmacKeys.clear();
+    }
+    hmacKeys.set(id, cryptoKey);
+    cryptoKey.catch(() => hmacKeys.delete(id));
+  }
+  return cryptoKey;
 }
 
 const hashLengths: Record<Hash, number> = {

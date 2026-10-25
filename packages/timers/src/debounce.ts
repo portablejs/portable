@@ -1,10 +1,14 @@
+import { type DisposeMethod, withDispose } from '@portable/errors/internal';
+
 const maxTimeout = 2 ** 31 - 1;
 
 /**
  * A debounced or throttled function. Calls that arrive while an invocation is waiting share it,
- * and each one returns a promise of that invocation's result.
+ * and each one returns a promise of that invocation's result. Where the runtime has
+ * `Symbol.dispose`, `[Symbol.dispose]()` calls `cancel()`, so a function declared with `using`
+ * drops its waiting invocation when the scope ends.
  */
-export type Debounced<args extends unknown[], result, self = unknown> = {
+export type Debounced<args extends unknown[], result, self = unknown> = DisposeMethod & {
   (this: self, ...args: args): Promise<Awaited<result>>;
   /**
    * Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`.
@@ -170,8 +174,9 @@ export function debounce<args extends unknown[], result, self = unknown>(
     return promise;
   }
 
-  return Object.defineProperties(debounced, {
-    cancel: { value: () => cancel() },
+  const drop = () => cancel();
+  return Object.defineProperties(withDispose(debounced, drop), {
+    cancel: { value: drop },
     flush: {
       value: () => {
         if (timer === undefined) {

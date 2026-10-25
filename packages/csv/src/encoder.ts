@@ -1,5 +1,6 @@
 import type { encode } from './encode.js';
 import { InvalidInputError } from './errors.js';
+import { assertCharacter } from './parser.js';
 
 export type Encoder = {
   row(row: encode.Row): string;
@@ -18,11 +19,9 @@ export function createEncoder(options: encode.Options): Encoder {
     newline = '\r\n',
     quote = '"',
   } = options;
-  if (delimiter.length !== 1 || delimiter === '\r' || delimiter === '\n') {
-    throw new RangeError('delimiter must be one character other than CR or LF.');
-  }
-  if (quote !== false && (quote.length !== 1 || quote === '\r' || quote === '\n')) {
-    throw new RangeError('quote must be one character other than CR or LF.');
+  assertCharacter('delimiter', delimiter);
+  if (quote !== false) {
+    assertCharacter('quote', quote);
   }
   if (delimiter === quote) {
     throw new RangeError('delimiter and quote must differ.');
@@ -49,6 +48,9 @@ export function createEncoder(options: encode.Options): Encoder {
     ) {
       text = String(value);
     } else if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) {
+        throw new InvalidInputError("Can't encode an invalid Date as a CSV field.");
+      }
       text = value.toISOString();
     } else {
       throw new InvalidInputError(`Can't encode a value of type ${typeof value} as a CSV field.`);

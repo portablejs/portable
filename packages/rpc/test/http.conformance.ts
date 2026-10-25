@@ -244,3 +244,42 @@ describe('http', () => {
     expect(await sum).toBe(3);
   });
 });
+
+const { asyncDispose } = Symbol as { asyncDispose?: symbol | undefined };
+
+describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
+  test('aborts requests and rejects waiting and later calls with an AbortError', async () => {
+    let requestSignal: AbortSignal | undefined;
+    const remote = Rpc.http<typeof api>(url, {
+      fetch: (request) => {
+        requestSignal = request.signal;
+        return new Promise((_, reject) =>
+          request.signal.addEventListener('abort', () => reject(request.signal.reason)),
+        );
+      },
+    });
+    const call = remote.add(1, 2);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (remote as unknown as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
+    await expect(call).rejects.toMatchObject({ name: 'AbortError' });
+    expect(requestSignal!.aborted).toBe(true);
+    await expect(remote.add(1, 2)).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
+  test('also aborts a notification in flight, and its notify rejects', async () => {
+    let requestSignal: AbortSignal | undefined;
+    const remote = Rpc.http<{ log(text: string): void }>(url, {
+      fetch: (request) => {
+        requestSignal = request.signal;
+        return new Promise((_, reject) =>
+          request.signal.addEventListener('abort', () => reject(request.signal.reason)),
+        );
+      },
+    });
+    const sent = Rpc.notify(remote.log, ['page loaded']);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await (remote as unknown as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
+    expect(requestSignal!.aborted).toBe(true);
+    await expect(sent).rejects.toMatchObject({ name: 'AbortError' });
+  });
+});

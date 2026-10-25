@@ -1,14 +1,10 @@
 import * as MimeHeaders from '@portable/mime-headers';
+import { isMostlyLatin } from './body.js';
 import { InvalidInputError } from './errors.js';
 import { hostToAscii } from '@portable/idna/internal';
 
 /**
  * One mailbox. Without a `name`, only the address is written.
- *
- * @example
- * ```ts
- * const mailbox: Mail.Mailbox = { name: 'Mari Tamm', address: 'mari@example.com' };
- * ```
  */
 export type Mailbox = {
   readonly name?: string | undefined;
@@ -18,12 +14,6 @@ export type Mailbox = {
 /**
  * The recipients or senders of one header: an address list as text, a `Mailbox`, or a list of
  * either.
- *
- * @example
- * ```ts
- * const to: Mail.Addresses = ['Mari <mari@example.com>', { name: 'Jaan', address: 'jaan@example.com' }];
- * const cc: Mail.Addresses = 'Team: a@example.com, b@example.com;';
- * ```
  */
 export type Addresses = string | Mailbox | readonly (string | Mailbox)[];
 
@@ -34,7 +24,7 @@ export type Envelope = {
   /**
    * Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups.
    */
-  to: string[];
+  to: readonly string[];
 };
 
 type Entry = MimeHeaders.Mailbox | MimeHeaders.Group;
@@ -105,19 +95,8 @@ export function format(
     .join(', ');
 }
 
-/** Q keeps mostly Latin text readable, and B is shorter for everything else. */
 export function wordEncoding(text: string): MimeHeaders.WordEncoding {
-  let latin = 0;
-  let other = 0;
-  for (let i = 0; i < text.length; i++) {
-    const code = text.charCodeAt(i);
-    if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
-      latin++;
-    } else if (code >= 0x80 || (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d)) {
-      other++;
-    }
-  }
-  return other < latin ? 'Q' : 'B';
+  return isMostlyLatin(text) ? 'Q' : 'B';
 }
 
 export function mailboxes(input: Addresses | undefined): MimeHeaders.Mailbox[] {

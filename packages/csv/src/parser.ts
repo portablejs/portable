@@ -32,11 +32,15 @@ export function createParser(
   if (delimiter === quote) {
     throw new RangeError('delimiter and quote must differ.');
   }
+  if (!(maxLength >= 0)) {
+    throw new RangeError('`maxLength` must be a number >= 0.');
+  }
   const delimiterCode = delimiter.charCodeAt(0);
   const quoteCode = quote === false ? -1 : quote.charCodeAt(0);
 
   let names = typeof header === 'boolean' ? undefined : assertNames(header);
   let expected = names ? names.length : -1;
+  let firstRow = 0;
   let rowCount = 0;
   let state = fieldStart;
   let row: string[] = [];
@@ -55,9 +59,10 @@ export function createParser(
     }
     if (expected === -1) {
       expected = fields.length;
+      firstRow = rowCount;
     } else if (fields.length !== expected && !relaxColumnCount) {
       throw new InvalidInputError(
-        `Row ${rowCount} has ${fields.length} fields, but ${names ? 'the header' : 'row 1'} has ${expected}.`,
+        `Row ${rowCount} has ${fields.length} fields, but ${names ? 'the header' : `row ${firstRow}`} has ${expected}.`,
       );
     }
     emit(names ? toObject(names, fields) : fields);
@@ -204,7 +209,7 @@ function indexOf(text: string, search: string, from: number): number {
   return index === -1 ? text.length : index;
 }
 
-function assertCharacter(option: string, value: string): void {
+export function assertCharacter(option: string, value: string): void {
   if (value.length !== 1 || value === '\r' || value === '\n') {
     throw new RangeError(`${option} must be one character other than CR or LF.`);
   }

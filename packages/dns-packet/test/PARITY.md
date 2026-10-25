@@ -54,8 +54,8 @@ GitHub's issue tracker couldn't be reached from the session that wrote this pack
 | CVE-2021-23386: before 5.2.2, `encodingLength` and `encode` disagreed for some names, and `Buffer.allocUnsafe` sent uninitialized memory. | Names are checked before any bytes are allocated, and buffers are zero-filled. | an invalid name throws before any bytes are produced |
 | The mDNS QU bit in a question decodes as class `UNKNOWN_32769`. | `qu: true` and class `IN` | the mDNS QU bit is decoded as qu |
 | RDLENGTH is ignored for most types: an A record with RDLENGTH 5 reads 4 bytes and leaves the decoder out of step. | `InvalidInputError` when the data doesn't fill RDLENGTH exactly | RDLENGTH is checked against the record data |
-| IPv6 addresses compress the first run of zero groups, not the longest. | RFC 5952 formatting | IPv6 addresses are formatted as RFC 5952 recommends |
-| Invalid IPv4 text such as `300.1.1.1` is encoded without a check. | `InvalidInputError` | invalid IP addresses are rejected |
+| IPv6 addresses compress the first run of zero groups, not the longest, and IPv4-mapped addresses decode as `::ffff:c000:201`. | RFC 5952 formatting, with mapped addresses as `::ffff:192.0.2.1` | IPv6 addresses are formatted as RFC 5952 recommends |
+| Invalid IPv4 text such as `300.1.1.1` is encoded without a check, and `010.0.0.1` is encoded as 10.0.0.1, although `inet_aton` reads it as 8.0.0.1. | `InvalidInputError`, from the `Ip.parse` rules of `@portable/ip` | invalid IP addresses are rejected |
 | An unknown type or class name, such as `AAA`, is encoded as 0. | `InvalidInputError` | unknown type and class names are rejected |
 | `encode` adds empty sections to the caller's packet and overwrites CAA `flags`. | Input isn't modified. | encode does not modify its input |
 | `streamDecode` throws a `RangeError` on fewer than 2 bytes. | `TruncatedError` | TCP framing with fewer than 2 bytes throws TruncatedError |

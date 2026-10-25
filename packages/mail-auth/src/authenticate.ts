@@ -1,38 +1,28 @@
-import { isUint8Array } from '@portable/bytes/internal';
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Arc from '@portable/arc';
+import { createSealer, planVerify as planArc } from '@portable/arc/internal';
 import * as Dkim from '@portable/dkim';
+import {
+  hashBody,
+  parseFields,
+  planVerify as planDkim,
+  splitMessage,
+  toBinary,
+} from '@portable/dkim/internal';
 import * as Dmarc from '@portable/dmarc';
 import * as Spf from '@portable/spf';
-import * as Streams from '@portable/streams';
 import { author, type SkipReason } from './internal/author.js';
 import { assertAuthservId, formatResults } from './internal/results.js';
 
 /**
  * The DNS lookups SPF, DKIM, DMARC and ARC need: a `Dns.Resolver` from `@portable/dns`,
  * `node:dns/promises`, or a plain object with these methods.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as MailAuth from '@portable/mail-auth';
- *
- * const resolver: MailAuth.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver;
 
 /**
  * What `authenticate` found, and the header fields to add to the message.
- *
- * @example
- * ```ts
- * import * as MailAuth from '@portable/mail-auth';
- *
- * const result: MailAuth.Result = await MailAuth.authenticate(message, options);
- * if (result.dmarc?.disposition === 'reject') {
- *   reject('550 5.7.1 Rejected by DMARC policy');
- * }
- * ```
  */
 export type Result = {
   /** The SPF result for the MAIL FROM address, or the HELO name for a bounce. */
@@ -88,8 +78,11 @@ export declare namespace authenticate {
     sender?: string | undefined;
     /** Seals the message with an ARC set that records these results. */
     seal?: Seal | undefined;
-    /** The time to check DKIM and ARC signature expiry against. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF
+     * explanations, as a `Date` or a `Temporal.Instant`. @default new Date()
+     */
+    now?: Instant | undefined;
     /** RSA keys shorter than this give DKIM `policy` and fail the ARC chain. @default 1024 */
     minKeyBits?: number | undefined;
     /**
@@ -140,22 +133,31 @@ export async function authenticate(
   message: Dkim.Message,
   options: authenticate.Options,
 ): Promise<Result> {
-  const { resolver, ip, helo, sender, seal, now, minKeyBits, hasher, signal } = options;
+  const { resolver, ip, helo, sender, minKeyBits, hasher, signal } = options;
   const authservId = assertAuthservId(options.authservId);
+  assertResolver(resolver);
+  const now = toDate(options.now);
   signal?.throwIfAborted();
-  const bytes =
-    typeof message === 'string'
-      ? new TextEncoder().encode(message)
-      : isUint8Array(message)
-        ? message
-        : await Streams.toBytes(message, { signal });
-  const verifyOptions = { resolver, now, minKeyBits, hasher, signal };
+  const sealer = options.seal && (await createSealer(options.seal));
+  const spfCheck = Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, now, signal });
+  spfCheck.catch(() => {});
+  const { header, body } = await splitMessage(message, signal);
+  const fields = parseFields(toBinary(header));
+  const verifyOptions = { resolver, now, minKeyBits, signal };
+  const dkimPlan = planDkim(fields, verifyOptions);
+  const arcPlan = planArc(fields, verifyOptions);
+  const digests = await hashBody(
+    body,
+    [...dkimPlan.requests, ...arcPlan.requests, ...(sealer ? [sealer.request] : [])],
+    hasher,
+  );
+  signal?.throwIfAborted();
   const [spf, dkim, arc] = await Promise.all([
-    Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal }),
-    Dkim.verify(bytes, verifyOptions),
-    Arc.verify(bytes, verifyOptions),
+    spfCheck,
+    dkimPlan.finish(digests),
+    arcPlan.finish(digests),
   ]);
-  const from = author(bytes);
+  const from = author(header);
   const dmarc =
     'domain' in from
       ? await Dmarc.check(
@@ -172,16 +174,10 @@ export async function authenticate(
     authResults,
     headers: `Authentication-Results: ${authResults}\r\n`,
   };
-  if (seal) {
+  if (sealer) {
     try {
-      const fields = await Arc.seal(bytes, {
-        ...seal,
-        authResults,
-        chainValidation: arc.result,
-        hasher,
-        signal,
-      });
-      result.headers = fields + result.headers;
+      const sign = sealer.prepare(fields, authResults, arc.result);
+      result.headers = (await sign(digests)) + result.headers;
     } catch (error) {
       if (!(error instanceof Arc.InvalidInputError)) {
         throw error;
@@ -190,4 +186,21 @@ export async function authenticate(
     }
   }
   return result;
+}
+
+const resolverMethods = [
+  'resolveTxt',
+  'resolve4',
+  'resolve6',
+  'resolveMx',
+  'resolvePtr',
+  'resolveCname',
+] as const;
+
+function assertResolver(resolver: Resolver): void {
+  for (const method of resolverMethods) {
+    if (typeof resolver?.[method] !== 'function') {
+      throw new TypeError(`options.resolver must have a ${method} method.`);
+    }
+  }
 }

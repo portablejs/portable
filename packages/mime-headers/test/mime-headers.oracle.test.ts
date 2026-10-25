@@ -18,7 +18,7 @@ import {
 } from '@portable/mime-headers';
 import { pick, random, randomText } from './utils.js';
 
-// Compares this package with libmime 5.4.9, nodemailer 10.1.2's addressparser and
+// Compares this package with libmime 5.4.9, nodemailer 10.2.1's addressparser and
 // email-addresses 5.0.0 on generated well-formed input. Where the output may differ by design
 // (see "Differences" in the README), the test compares what each side decodes back instead.
 // Neither addressparser nor email-addresses decodes encoded words in names, so their names are
@@ -47,7 +47,7 @@ describe('encoded words', () => {
       const input = randomText(next, 80);
       const encoding = pick(next, ['Q', 'B'] as const);
       const maxLength = pick(next, [0, 20, 52, 75]);
-      const ours = encodeWord(input, { wordEncoding: encoding, wordLength: maxLength || false });
+      const ours = encodeWord(input, { wordEncoding: encoding, wordLength: maxLength || Infinity });
       const theirs = libmime.encodeWord(input, encoding, maxLength);
       const skip = encoding === 'B' && maxLength > 0 && splitsAstral(input);
       if (libmime.decodeWords(ours) !== input || (!skip && decodeWords(theirs) !== input)) {
@@ -63,7 +63,7 @@ describe('encoded words', () => {
       // libmime writes a trailing space in a Q word as "=20", and this package as "_".
       const input = randomText(next, 80).trimEnd();
       const encoding = pick(next, ['Q', 'B'] as const);
-      const ours = encodeWord(input, { wordEncoding: encoding, wordLength: false });
+      const ours = encodeWord(input, { wordEncoding: encoding, wordLength: Infinity });
       if (ours !== libmime.encodeWord(input, encoding)) {
         failures.push({ input, encoding, ours });
       }

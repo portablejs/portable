@@ -5,7 +5,7 @@ import libqp2 from 'libqp';
 import quotedPrintable from 'quoted-printable';
 import { describe, expect, test } from 'vite-plus/test';
 import { decode, encode, DecoderStream, EncoderStream } from '@portable/quoted-printable';
-import * as libqp3 from './fixtures/libqp-3.0.1.js';
+import * as libqp3 from 'libqp3';
 import { collect, fromChunks, random, split } from './utils.js';
 
 const next = random(42);

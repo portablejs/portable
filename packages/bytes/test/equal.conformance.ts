@@ -72,10 +72,8 @@ for (const compare of [Bytes.equal, Bytes.timingSafeEqual]) {
 describe('known upstream issues', () => {
   test("uint8array-extras: an ArrayBuffer is rejected, because a subarray's buffer holds more bytes than the view", () => {
     const view = new Uint8Array([9, 1, 2]).subarray(1);
-    const compareWithBuffer = () =>
-      // @ts-expect-error
-      Bytes.equal(view, view.buffer);
-    expect(compareWithBuffer).toBeTypeOf('function');
+    // @ts-expect-error
+    expect(() => Bytes.equal(view, view.buffer)).toThrow(TypeError);
   });
 
   test('node:crypto: timingSafeEqual returns false for different lengths instead of throwing', () => {

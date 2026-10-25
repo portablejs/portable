@@ -1,6 +1,6 @@
 # @portable/streams
 
-Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+, including browsers that lack `ReadableStream.from` and `for await` over a stream.
+Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body).
 
@@ -103,7 +103,7 @@ const lines = Streams.transform(async function* (source: AsyncIterable<string>) 
 
 ## Cancel your own TransformStream
 
-`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends or is cancelled, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv and the other Portable packages use it to support their `signal` option.
+`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends, is cancelled, or fails because the transformer threw, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv and the other Portable packages use it to support their `signal` option.
 
 ```ts
 class UpperCaseStream extends TransformStream<string, string> {
@@ -127,9 +127,9 @@ class UpperCaseStream extends TransformStream<string, string> {
 
 ## Why use this over get-stream, concat-stream and merge2
 
-The libraries above were written for Node streams. This package reads web streams with `getReader()`, so it works in every runtime listed above, and it has no dependencies.
+The libraries above were written for Node streams. This package reads web streams with `getReader()`, so it works in every runtime listed above, and it has no dependencies outside `@portable/*`.
 
-- `toBytes` collected 6.8 MB of web stream chunks about 6× faster than get-stream, and about 2× faster than `Response.arrayBuffer()`. `toBlob` ran about 1.7× faster than `Response.blob()`, and `toText` ran at the same speed as get-stream.
+- `toBytes` collected 6.8 MB of web stream chunks about 7.6× faster than get-stream, and about 1.4× faster than `Response.arrayBuffer()`. `toBlob` ran about 1.7× faster than `Response.blob()`, and `toText` ran at the same speed as get-stream.
 - `maxBytes` cancels the source as soon as the limit is crossed. get-stream's `maxBuffer` kept buffering ([get-stream #42](https://github.com/sindresorhus/get-stream/issues/42)), and raw-body's limit became `NaN` for `ArrayBuffer` chunks, which turned it off.
 - An error in any source of `concat` or `merge` errors the output and cancels the other sources. merge-stream and merge2 didn't propagate errors ([merge-stream #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7)), and concat-stream never called back when the stream errored ([concat-stream #50](https://github.com/max-mapper/concat-stream/issues/50)).
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
@@ -150,8 +150,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.4 kB | 2.1 kB | 15 kB | 2.0 kB | 0.9 kB | 4.8 kB | 1.2 kB | 0.8 kB | 25 kB | built in |
-| Runtime dependencies | 1 | 2 | 7 | 0 | 1 | 7 | 0 | 0 | 10 | – |
+| Minified and gzipped | 1.7 kB | 2.1 kB | 15 kB | 2.0 kB | 0.9 kB | 4.8 kB | 1.2 kB | 0.8 kB | 25 kB | built in |
+| Runtime dependencies | 2 | 2 | 7 | 0 | 1 | 7 | 0 | 0 | 10 | – |
 | Node built-ins used | none | `Buffer` | `buffer`, `events`, `util` | `buffer`, `stream` | none | `Buffer`, `async_hooks` | `stream` | `stream` | `buffer`, `events` | none |
 | TypeScript types | included | included | `@types/concat-stream` | included | `@types/stream-to-array` | included | `@types/merge2` | `@types/merge-stream` | included | – |
 | Version compared | – | 9.0.1 | 2.0.0 | 7.0.12 | 2.3.0 | 4.0.0 | 1.4.1 | 2.0.0 | 5.0.11 | – |

@@ -54,11 +54,14 @@ export function chunked<value extends string | Uint8Array>(input: value, size: n
   return chunks;
 }
 
-export function decodeStream<const header extends Csv.DecoderStream.Header = false>(
+export function decodeStream<
+  const header extends Csv.DecoderStream.Header = false,
+  relax extends boolean = false,
+>(
   chunks: readonly (string | Uint8Array)[],
-  options?: Csv.DecoderStream.Options<header>,
-): Promise<Csv.DecoderStream.Row<header>[]> {
-  return toArray(fromIterable(chunks).pipeThrough(new Csv.DecoderStream<header>(options)));
+  options?: Csv.DecoderStream.Options<header, relax>,
+): Promise<Csv.DecoderStream.Row<header, relax>[]> {
+  return toArray(fromIterable(chunks).pipeThrough(new Csv.DecoderStream<header, relax>(options)));
 }
 
 export async function encodeStream(
@@ -78,18 +81,21 @@ export async function encodeStream(
  * Decodes `text` with `decode`, then with `DecoderStream` fed one character at a time and in random
  * chunks of text and of bytes. Fails if any result differs from the first, and returns it.
  */
-export async function decodeAll<const header extends Csv.DecoderStream.Header = false>(
+export async function decodeAll<
+  const header extends Csv.DecoderStream.Header = false,
+  relax extends boolean = false,
+>(
   text: string,
-  options?: Csv.DecoderStream.Options<header>,
-): Promise<Csv.DecoderStream.Row<header>[]> {
-  const expected = Csv.decode<header>(text, options);
+  options?: Csv.DecoderStream.Options<header, relax>,
+): Promise<Csv.DecoderStream.Row<header, relax>[]> {
+  const expected = Csv.decode<header, relax>(text, options);
   const bytes = encodeUtf8(text);
   const runs = [
-    decodeStream<header>([text], options),
-    decodeStream<header>(chunked(text, 1), options),
-    decodeStream<header>(chunked(bytes, 1), options),
-    decodeStream<header>(randomChunks(text, 1), options),
-    decodeStream<header>(randomChunks(bytes, 2), options),
+    decodeStream<header, relax>([text], options),
+    decodeStream<header, relax>(chunked(text, 1), options),
+    decodeStream<header, relax>(chunked(bytes, 1), options),
+    decodeStream<header, relax>(randomChunks(text, 1), options),
+    decodeStream<header, relax>(randomChunks(bytes, 2), options),
   ];
   for (const run of runs) {
     const rows = await run;

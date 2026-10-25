@@ -46,7 +46,7 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 | --- | --- | --- |
 | `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
 | `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
-| `now` | `new Date()` | The time for `%{t}` in explanations. |
+| `now` | `new Date()` | The time for `%{t}` in explanations. A `Date` or a `Temporal.Instant`. |
 | `signal` | none | Rejects with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
 There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.
@@ -55,7 +55,7 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 ## Result
 
-`check` resolves to a plain object. It rejects only for an invalid `ip`.
+`check` resolves to a plain object. It rejects only for an invalid `ip` or a `resolver` without one of the five methods, or with `signal.reason` when `signal` aborts.
 
 | Field | Description |
 | --- | --- |
@@ -66,6 +66,7 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 | `record` | The SPF record that gave the result. After `redirect=`, the record of the redirect target. |
 | `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text. |
 | `reason` | Why the result is `none`, `temperror` or `permerror`, such as `More than 10 DNS-querying terms`. |
+| `cause` | The resolver's error behind a `temperror`. |
 | `lookups` | DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
 | `voidLookups` | Lookups that found no records. |
 
@@ -93,13 +94,14 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 | Type | Description |
 | --- | --- |
 | `Spf.Resolver` | `Pick<Dns.Resolver, 'resolve4' \| 'resolve6' \| 'resolveMx' \| 'resolvePtr' \| 'resolveTxt'>`, the lookups `check` needs. |
+| `Spf.Result` | What `check` resolves to, as above. `Spf.Result.Code` is the type of `result`. |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
 - It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and RFC behavior needs `strict: true`. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
-- It has no dependencies of its own. mailauth pulls in joi, ipaddr.js, libmime and more for SPF.
-- It is faster. On a record with nested includes and a fake resolver, it runs 11,000 to 13,000 checks a second in Node, against 9,000 for mailauth's default mode and 7,000 for its strict mode.
+- It has no dependencies outside `@portable/*`. mailauth depends on joi, ipaddr.js, libmime and more for SPF.
+- It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 
 <!-- bench:start -->
 | | @portable/spf | mailauth | mailauth, strict mode |
@@ -110,8 +112,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/spf | mailauth | mailauth, strict mode |
 | --- | --- | --- | --- |
-| Minified and gzipped | 13 kB | 442 kB | 442 kB |
-| Runtime dependencies | 3 | 38 | 38 |
+| Minified and gzipped | 15 kB | 442 kB | 442 kB |
+| Runtime dependencies | 9 | 38 | 38 |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
 | TypeScript types | included | included | included |
 | Version compared | – | 7.3.0 | 7.3.0 |

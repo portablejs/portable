@@ -5,3 +5,4 @@
 export * from '../internal/crc32.js';
 export * from '../internal/toBufferSource.js';
 export * from '../internal/uint8Array.js';
+export * from '../internal/utf8Chunks.js';

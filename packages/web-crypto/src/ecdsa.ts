@@ -22,7 +22,7 @@ export declare namespace derToRawEcdsa {
  * ```ts
  * import * as WebCrypto from '@portable/web-crypto';
  *
- * const raw = WebCrypto.derToRawEcdsa(assertion.signature);
+ * const raw = WebCrypto.derToRawEcdsa(new Uint8Array(assertion.signature));
  * await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, publicKey, raw, signedData);
  * ```
  */

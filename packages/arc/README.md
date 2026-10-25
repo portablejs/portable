@@ -38,6 +38,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `result` | `'pass'`, `'fail'` or `'none'` (no ARC fields). It is the `arc=` result of Authentication-Results and the `cv=` value for the next seal. |
 | `instance` | The highest instance on the message's ARC fields, 0 when there are none. |
 | `reason` | Why the result is `fail`, such as `i=1 ams body hash did not verify` or `i=2 as no key`. |
+| `cause` | The resolver's error when a key lookup failed. |
 | `sets` | On `pass`, each set from `i=1` to the newest, with the sealer's `domain` and `selector` and its `authResults`, the ARC-Authentication-Results text after `i=`. Empty otherwise. |
 
 A receiver uses `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
@@ -52,7 +53,7 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) {
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. |
+| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. A `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
@@ -71,7 +72,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `now` | `new Date()` | The time (`t=`) of both signatures. |
+| `now` | `new Date()` | The time (`t=`) of both signatures. A `Date` or a `Temporal.Instant`. |
 | `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
@@ -84,14 +85,16 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 | Type | Description |
 | --- | --- |
 | `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
-| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason` and `sets`, as above. |
+| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause` and `sets`, as above. |
+| `Arc.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from `@portable/dkim`. |
+| `Arc.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:stream` and Buffers, so it doesn't run in Workers or a browser.
 - It follows RFC 8617 by default. mailauth's default mode accepts ARC-Seal syntax errors, instances such as `i=0x1`, and an ARC-Message-Signature without `c=` signed relaxed/relaxed, as the ARC drafts did. mailauth follows the RFC only with `strict: true`. This package always follows the RFC, and it gives mailauth's strict result on every message of ValiMail's ARC test suite and on 11 altered copies of chains it seals.
 - Sealing is explicit. `seal` requires `chainValidation` once a chain exists, and it throws for options that would produce a set no validator accepts, such as an instance with a gap, instead of producing that set with a warning.
-- It verifies faster. In one run in Node, it verified a 250 KB message with two ARC sets 372 times a second, against 251 for mailauth's strict mode, and sealed it 229 times a second, against 207.
+- It verifies faster. In Node it verifies a 250 KB message with two ARC sets about one and a half times as fast as mailauth, and seals it a little faster, as the table below shows.
 - It has no dependencies outside `@portable/*`.
 
 <!-- bench:start -->
@@ -105,8 +108,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/arc | mailauth | `node:crypto`, hashing and signing only |
 | --- | --- | --- | --- |
-| Minified and gzipped | 19 kB | 448 kB | built in |
-| Runtime dependencies | 6 | 38 | – |
+| Minified and gzipped | 20 kB | 449 kB | built in |
+| Runtime dependencies | 11 | 38 | – |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | Node only |
 | TypeScript types | included | included | – |
 | Version compared | – | 7.3.0 | – |

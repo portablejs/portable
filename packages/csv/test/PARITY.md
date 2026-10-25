@@ -99,7 +99,7 @@ Options we leave out, and why, so the rows below can point here:
 | option.quote.ts: empty value | `quote > reads empty quoted values` | |
 | option.quote.ts: values containing quotes …, only containing quotes … | `quote > reads doubled quotes` | |
 | option.quote.ts: line breaks inside quotes | `quote > reads line breaks inside quotes` | |
-| option.quote.ts: disabled if empty, if null, if false | `quote > reads quotes as text when quote is false` | `quote: ''` throws `TypeError`, and `false` disables quoting. |
+| option.quote.ts: disabled if empty, if null, if false | `quote > reads quotes as text when quote is false` | `quote: ''` throws `RangeError`, and `false` disables quoting. |
 | option.quote.ts: with columns | `quote > reads quoted fields with header` | |
 | option.quote.ts: when unclosed | `quote > throws TruncatedError when a quoted field is not closed` | |
 | option.quote.ts: when followed by a character | `quote > throws InvalidInputError for text after a closing quote` | |
@@ -144,7 +144,7 @@ Options we leave out, and why, so the rows below can point here:
 | api.write.js: throw error if not writable | skipped | Writing after close is rejected by the platform's `WritableStream`. |
 | api.write.js: write invalid record null / true | `csv-stringify > fails the stream for a value it cannot encode` | |
 | api.write.js: input array / object immutable (3) | `csv-stringify > does not change its input` | |
-| api.sync.js (4) | `csv-stringify > encodes arrays`, `encodes objects with a header array`, `csv-stringify > throws TypeError for a value it cannot encode` | |
+| api.sync.js (4) | `csv-stringify > encodes arrays`, `encodes objects with a header array`, `csv-stringify > throws InvalidInputError for a value it cannot encode` | |
 | api.types.sync.ts, api.types.ts (22), types.coffee | skipped | Type-level tests. `pnpm check:types` checks ours. |
 | api.web_stream.js | `EncoderStream` tests | |
 | option.bom.js, option.bom.ts (8) | `csv-stringify > bom > starts the output with a byte order mark when set` | |
@@ -162,7 +162,7 @@ Options we leave out, and why, so the rows below can point here:
 | option.record_delimiter.js, option.record_delimiter.ts (10) | `csv-stringify > newline > …` | Only `'\r\n'` and `'\n'`. |
 | options.js | skipped | Option normalization. |
 | samples.js | skipped | Example scripts. |
-| types.js: should map date to getTime, true boolean value to 1, object to its json representation | `known upstream issues > booleans are written as 'true' and 'false' …`, `… a Date is written as ISO 8601 …`, `csv-stringify > throws TypeError for a value it cannot encode` | Deliberate differences. |
+| types.js: should map date to getTime, true boolean value to 1, object to its json representation | `known upstream issues > booleans are written as 'true' and 'false' …`, `… a Date is written as ISO 8601 …`, `csv-stringify > throws InvalidInputError for a value it cannot encode` | Deliberate differences. |
 
 ## papaparse
 
@@ -189,7 +189,7 @@ Options we leave out, and why, so the rows below can point here:
 | Mixed slash n and slash r should choose first as precident | same name | Deliberate difference: CR ends a row wherever it appears, so `f\rg` is two rows. papaparse uses only the first line break it sees. |
 | Row with too few fields, Row with too many fields | same names | Throw by default. With `relaxColumnCount`, a short row leaves keys out and extra fields are dropped. papaparse keeps extras in `__parsed_extra`. |
 | Header rows are transformed when transformHeader function is provided, transformHeader accepts and optional index attribute | skipped | Header renaming. |
-| Bad delimiter (\n), Multi-character delimiter | same names | Throw `TypeError`. |
+| Bad delimiter (\n), Multi-character delimiter | same names | Throw `RangeError`. |
 | Multi-character delimiter (length 2) with quoted field, Callback delimiter | skipped | Multi-character delimiters. |
 | Dynamic typing … (10), Custom transform … (3) | `known upstream issues > values are never converted …`; `Dynamic typing doesn't convert other types` | Type conversion. |
 | Blank line at beginning, Blank line in middle, Blank lines at end | same names | Skipped by default. |
@@ -239,7 +239,7 @@ Options we leave out, and why, so the rows below can point here:
 | Empty input, Empty input with columns and disabled header | `RFC 4180 > writes nothing for no rows` | |
 | Custom quote character (single quote), Custom quoteChar escapes and quotes embedded quoteChar | `csv-stringify > quote > quotes with a custom character and doubles it inside fields` | |
 | Date objects are exported in its ISO representation, … with an expanded year | `csv-stringify > writes a Date as ISO 8601` | |
-| Invalid Date objects are exported as an empty field | `Invalid Date objects throw RangeError` | Deliberate difference: an invalid `Date` throws, as `toISOString()` does. |
+| Invalid Date objects are exported as an empty field | `Invalid Date objects throw InvalidInputError` | Deliberate difference: an invalid `Date` throws, because it has no ISO 8601 form. |
 | Returns without empty rows when skipEmptyLines is true / 'greedy' (4), Skips single-cell rows …, Does not skip single-cell rows containing 0 | skipped | No row filtering on encode. `RFC 4180 > writes a row of one empty field as ""` covers what a null cell becomes. |
 | Returns empty rows … when skipEmptyLines is false (3) | `Returns empty rows when empty rows are passed` | |
 | Use different escapeChar, Custom quoteChar with custom escapeChar … | skipped | Escape characters. |

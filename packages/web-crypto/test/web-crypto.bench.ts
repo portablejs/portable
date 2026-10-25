@@ -7,6 +7,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { derToJose, joseToDer } from 'ecdsa-sig-formatter';
 import { expect, test } from 'vite-plus/test';
 import * as WebCrypto from '@portable/web-crypto';
+import rsaPkcs8 from './fixtures/pem/rsa-pkcs8.pem.txt?raw';
 
 // node:crypto and @noble/hashes are synchronous and skip WebCrypto's per-call promise and copy,
 // so on Node they beat any crypto.subtle call on small input. They are measured for reference.
@@ -214,6 +215,26 @@ test('rawToDerEcdsa converts a P-256 signature within 25% of @noble/curves', asy
     }),
   );
   expect(result.get('@noble/curves')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
+    delta: 0.25,
+  });
+});
+
+test('importPem imports a PKCS #8 RSA key within 25% of decoding it by hand', async ({ bench }) => {
+  const rsa = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
+  const result = await bench.compare(
+    bench('@portable/web-crypto', async () => {
+      await WebCrypto.importPem(rsa, rsaPkcs8);
+    }),
+    bench('crypto.subtle', async () => {
+      const base64 = rsaPkcs8.replace(/-----[^-]+-----|\s/g, '');
+      const der = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+      await crypto.subtle.importKey('pkcs8', der, rsa, false, ['sign']);
+    }),
+    bench('node:crypto', () => {
+      nodeCrypto.createPrivateKey(rsaPkcs8);
+    }),
+  );
+  expect(result.get('crypto.subtle')).not.toBeFasterThan(result.get('@portable/web-crypto'), {
     delta: 0.25,
   });
 });

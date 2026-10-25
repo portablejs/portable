@@ -26,6 +26,12 @@ describe('message headers', () => {
     expect(field(raw, 'Date')).toBe('Sat, 21 Jun 2014 10:52:44 +0000');
   });
 
+  test('an instant with epochMilliseconds, such as a Temporal.Instant, is written in UTC', async () => {
+    const instant = { epochMilliseconds: Date.UTC(2014, 5, 21, 10, 52, 44) };
+    const raw = await compose({ text: 'x', date: instant });
+    expect(field(raw, 'Date')).toBe('Sat, 21 Jun 2014 10:52:44 +0000');
+  });
+
   test('an invalid Date throws', () => {
     expect(() => Mail.encodeStream({ date: new Date('nope') })).toThrow(Mail.InvalidInputError);
   });

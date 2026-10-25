@@ -1,6 +1,7 @@
-import { isUint8Array, toBufferSource } from '@portable/bytes/internal';
+import * as Bytes from '@portable/bytes';
+import { isUint8Array } from '@portable/bytes/internal';
 import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
-import { concat } from './bytes.js';
+import { assertMaxBytes, concat } from './bytes.js';
 import type { Format } from './codec.js';
 import { MaxBytesError, classify } from './errors.js';
 
@@ -40,6 +41,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
   constructor(options: DecoderStream.Options = {}) {
     super();
     const { format = 'gzip', maxBytes = Infinity, signal } = options;
+    assertMaxBytes(maxBytes);
     const native = new DecompressionStream(format);
     const writer = native.writable.getWriter();
     const reader = native.readable.getReader();
@@ -85,7 +87,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
     const writeQueue = async () => {
       try {
         while (queue.length > 0) {
-          const chunk = queue.length === 1 ? toBufferSource(queue[0]!) : concat(queue, queued);
+          const chunk = concat(queue);
           queue = [];
           queued = 0;
           await writer.write(chunk);
@@ -106,10 +108,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           throw stop(new TypeError('Expected a Uint8Array chunk.'));
         }
         if (checkTrailer) {
-          tail =
-            chunk.byteLength >= 4
-              ? chunk.slice(-4)
-              : concat([tail, chunk], tail.byteLength + chunk.byteLength).slice(-4);
+          tail = chunk.byteLength >= 4 ? chunk.slice(-4) : Bytes.concat([tail, chunk]).slice(-4);
         }
         queue.push(chunk);
         queued += chunk.byteLength;

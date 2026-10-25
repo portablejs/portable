@@ -6,7 +6,7 @@ import MailComposer from 'nodemailer/lib/mail-composer';
 import { describe, expect, test } from 'vite-plus/test';
 import { boundary, fixed } from './utils.js';
 
-// Compares Mail.encodeStream with nodemailer 10.1.2's MailComposer on generated messages. nodemailer's
+// Compares Mail.encodeStream with nodemailer's MailComposer on generated messages. nodemailer's
 // boundary is `--_NmP-<baseBoundary>-Part_<n>`, so baseBoundary 'test' gives the boundary these
 // tests pass to Mail.encodeStream. The generator avoids the differences listed in PARITY.md.
 // libqp may break a quoted-printable line that already fits, so quoted-printable bodies are

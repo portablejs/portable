@@ -22,9 +22,9 @@ Streams read a `fetch` body and write a `Response` body:
 
 ```ts
 const response = await fetch('https://example.com/users.csv');
-const reader = response.body!.pipeThrough(new Csv.DecoderStream({ header: true })).getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.email);
+const rows = response.body!.pipeThrough(new Csv.DecoderStream({ header: true }));
+for await (const row of Streams.toAsyncIterable(rows)) {
+  console.log(row.email);
 }
 
 const body = Streams.fromIterable(users)
@@ -36,7 +36,12 @@ return new Response(body, { headers: { 'content-type': 'text/csv' } });
 
 `Csv.decode(input, options)` takes a `string` or a `Uint8Array` and returns every row. `new Csv.DecoderStream(options)` is a `TransformStream<Uint8Array | string, Row>` that emits one row per chunk, and gives the same rows however the input is split.
 
-A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values are never converted: `02134` stays `'02134'`.
+A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values are never converted: `02134` stays `'02134'`. When `header` is an array of names written in the call, TypeScript types the row by those names, and with `relaxColumnCount: true` each key is optional, because a short row leaves the missing keys out:
+
+```ts
+const rows = Csv.decode(text, { header: ['id', 'email'] });
+// rows: Record<'id' | 'email', string>[], so a misspelled column such as rows[0].emial fails to type-check
+```
 
 - A quoted field may hold the delimiter, doubled quotes (`""`) and line breaks.
 - CRLF, LF and CR each end a row. A final line break is optional and adds no row.
@@ -63,13 +68,13 @@ A row is a `string[]`, or a `Record<string, string>` when `header` is set. Value
 | `Csv.TruncatedError` | The input ends inside a quoted field. |
 | `Csv.MaxLengthError` | A row is longer than `maxLength`, which the error stores. |
 
-A bad option, such as a two-character delimiter, throws `RangeError`.
+A bad option, such as a two-character delimiter or a negative `maxLength`, throws `RangeError`.
 
 ## Encoding
 
 `Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
 
-A row is an array of values or an object keyed by column name. Strings are written as they are, numbers, booleans and bigints with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Anything else throws `InvalidInputError`, as does an array row after object rows.
+A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Any other value throws `InvalidInputError`. So does an invalid `Date`, and so does an object row after array rows, unless `header` is an array.
 
 A field is quoted only when it holds the delimiter, the quote, CR or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 
@@ -85,7 +90,7 @@ A field is quoted only when it holds the delimiter, the quote, CR or LF, and a r
 
 ## Why use this over csv-parse, papaparse and fast-csv
 
-csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies.
+csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
 
 The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
 
@@ -101,8 +106,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/csv | csv-parse or csv-stringify | papaparse | fast-csv |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.1 kB | 10 kB | 7.0 kB | 6.9 kB |
-| Runtime dependencies | 0 | 1 | 0 | 1 |
+| Minified and gzipped | 2.5 kB | 10 kB | 7.0 kB | 6.9 kB |
+| Runtime dependencies | 3 | 1 | 0 | 1 |
 | Node built-ins used | none | `Buffer` | none | `Buffer`, `fs`, `stream`, `string_decoder`, `util` |
 | TypeScript types | included | included | `@types/papaparse` | included |
 | Version compared | – | 7.0.3 | 5.7.0 | 5.0.8 |
@@ -129,7 +134,7 @@ Other differences to check when you switch:
 - papaparse with `header: true` accepts rows whose field count differs from the header's. `decode` throws `InvalidInputError` for them unless you pass `relaxColumnCount: true`.
 - csv-parse's `cast`, papaparse's `dynamicTyping` and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from `@portable/streams`.
 - papaparse guesses the delimiter by default. Here the delimiter is `,` unless you pass `delimiter`.
-- Comments, trimming, csv-parse's `from` and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or cancel the reader to stop early.
+- Comments, trimming, csv-parse's `from` and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or leave the loop early, which cancels the stream.
 - Delimiters longer than one character and escape characters other than `""` are not supported.
 - csv-stringify's `quoted` and papaparse's `quotes` force quoting, which is not supported. Fields are quoted only when they need it.
 - csv-stringify reads nested column paths such as `columns: ['a.b']`. Flatten the rows before you pass them to `encode`.

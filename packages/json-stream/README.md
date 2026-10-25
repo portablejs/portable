@@ -2,7 +2,7 @@
 
 Streams JSON in and out: values selected by JSONPath from one large document, and JSON text written from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify) and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use [`@portable/jsonl`](../jsonl).
+Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify) and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use `@portable/jsonl`.
 
 ```sh
 npm install @portable/json-stream
@@ -12,11 +12,9 @@ npm install @portable/json-stream
 import * as JsonStream from '@portable/json-stream';
 
 const response = await fetch('https://example.com/_all_docs');
-const reader = response
-  .body!.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'] }))
-  .getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.value);
+const matches = response.body!.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'] }));
+for await (const { value } of Streams.toAsyncIterable(matches)) {
+  console.log(value);
 }
 ```
 
@@ -51,10 +49,10 @@ The text matches what `JSON.stringify` gives for the resolved tree. A circular s
 
 ## Why use this over JSONStream, stream-json and json-stream-stringify
 
-Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies.
+Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies outside `@portable/*`.
 
 - `DecoderStream` selected the rows of a 3 MB document about 2.3× faster than JSONStream. It builds only the matched values, so memory use depends on the size of a match. JSONStream keeps the parents of every match and runs out of memory on large files (JSONStream #32, #101).
-- `encodeStream` ran at the same speed as json-stream-stringify on a 3 MB object, and about 1.2× faster on rows from an async iterable.
+- `encodeStream` ran at the same speed as json-stream-stringify on a 3 MB object, and about 1.3× faster on rows from an async iterable.
 - Invalid JSON fails the stream. JSONStream ends quietly on `{"]` (JSONStream #145) and accepts a trailing comma, and stream-json can miss invalid JSON or hang (stream-json #104).
 - `null` matches are emitted. JSONStream drops them.
 - `encodeStream` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
@@ -74,8 +72,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/json-stream | JSONStream | stream-json | stream-json, web streams | json-stream-stringify | `JSON.parse` or `JSON.stringify` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.6 kB | 3.9 kB | 10 kB | 9.0 kB | 2.8 kB | built in |
-| Runtime dependencies | 0 | 2 | 1 | 1 | 0 | – |
+| Minified and gzipped | 3.3 kB | 3.9 kB | 10 kB | 9.0 kB | 2.8 kB | built in |
+| Runtime dependencies | 3 | 2 | 1 | 1 | 0 | – |
 | Node built-ins used | none | `Buffer`, `stream` | `stream`, `string_decoder` | `string_decoder` | `stream` | none |
 | TypeScript types | included | none | included | included | included | – |
 | Version compared | – | 1.3.5 | 3.7.0 | 3.7.0 | 3.1.7 | – |

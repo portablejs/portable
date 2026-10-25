@@ -4,6 +4,12 @@ import { MaxLengthError, ResponseError } from './errors.js';
 
 export declare namespace connect {
   type Options = {
+    /**
+     * How many attempts in a row, counting the first, may fail before `connect` stops
+     * reconnecting. The stream then errors with the last error, or closes if the last response
+     * ended normally. An accepted response resets the count. @default Infinity
+     */
+    attempts?: number | undefined;
     /** Wait before each reconnect, until the server sends a `retry` field. @default { initial: 1000, max: 30_000 } */
     delay?: Timers.Delay | undefined;
     /** Sends each request. Pass a wrapper to change a request before it is sent. @default globalThis.fetch */
@@ -18,10 +24,11 @@ export declare namespace connect {
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
     maxLength?: number | undefined;
     /**
-     * Called after a connection ends, with the error and `{ attempt }`, where `attempt` is the
-     * number of reconnects since the last accepted response. `error` is `undefined` when the
-     * response ended normally. Return `false` to stop reconnecting: the stream then closes if
-     * `error` is `undefined`, and errors with `error` otherwise.
+     * Called after a connection ends while `attempts` isn't used up, with the error and
+     * `{ attempt }`, where `attempt` is the number of reconnects since the last accepted response.
+     * `error` is `undefined` when the response ended normally. Return `false` to stop
+     * reconnecting. The stream then closes if `error` is `undefined`, and errors with `error`
+     * otherwise.
      * @default (error) => !(error instanceof Sse.ResponseError || error instanceof Sse.MaxLengthError)
      */
     reconnectIf?:
@@ -46,6 +53,7 @@ export declare namespace connect {
  * @example
  * ```ts
  * import * as Sse from '@portable/sse';
+ * import * as Streams from '@portable/streams';
  *
  * const request = new Request('https://example.com/events', {
  *   method: 'POST',
@@ -59,9 +67,8 @@ export declare namespace connect {
  *   },
  *   signal: AbortSignal.timeout(60_000),
  * });
- * const reader = events.getReader();
- * for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *   console.log(r.value.data);
+ * for await (const event of Streams.toAsyncIterable(events)) {
+ *   console.log(event.data);
  * }
  * ```
  */
@@ -70,6 +77,7 @@ export function connect(
   options: connect.Options = {},
 ): ReadableStream<Event> {
   const {
+    attempts = Infinity,
     delay = { initial: 1000, max: 30_000 },
     fetch = globalThis.fetch,
     idleTimeout = Infinity,
@@ -77,6 +85,9 @@ export function connect(
     reconnectIf = reconnectByDefault,
     signal,
   } = options;
+  if (!(attempts >= 1)) {
+    throw new RangeError(`attempts must be a number of at least 1, got ${attempts}.`);
+  }
   if (!(idleTimeout > 0)) {
     throw new RangeError(`idleTimeout must be a positive number, got ${idleTimeout}.`);
   }
@@ -174,7 +185,7 @@ export function connect(
         current = undefined;
         parser.end();
         attempt++;
-        if (!(await reconnectIf(error, { attempt }))) {
+        if (attempt >= attempts || !(await reconnectIf(error, { attempt }))) {
           if (error === undefined) {
             return controller.close();
           }

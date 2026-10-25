@@ -1,3 +1,5 @@
+import { abortable } from './abortable.js';
+
 const maxTimeout = 2 ** 31 - 1;
 
 type Scheduler = {
@@ -61,26 +63,5 @@ function wait(ms: number, signal: AbortSignal | undefined): Promise<void> {
       resolve();
     }, ms);
     signal?.addEventListener('abort', onAbort, { once: true });
-  });
-}
-
-export function abortable<value>(promise: PromiseLike<value>, signal: AbortSignal): Promise<value> {
-  return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason);
-    promise.then(
-      (value) => {
-        signal.removeEventListener('abort', onAbort);
-        resolve(value);
-      },
-      (error: unknown) => {
-        signal.removeEventListener('abort', onAbort);
-        reject(error);
-      },
-    );
-    if (signal.aborted) {
-      onAbort();
-    } else {
-      signal.addEventListener('abort', onAbort, { once: true });
-    }
   });
 }

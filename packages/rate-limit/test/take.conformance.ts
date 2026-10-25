@@ -111,6 +111,20 @@ describe('take', () => {
     await expect(limiter.take('a', { now: new Date(Number.NaN) })).rejects.toThrow(RangeError);
   });
 
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const run = async (now: RateLimit.Limiter.TakeOptions['now']) => {
+      const limiter = RateLimit.create({ limit: 2, period: 1000 });
+      return [
+        await limiter.take('a', { now }),
+        await limiter.take('a', { now }),
+        await limiter.take('a', { now }),
+      ];
+    };
+    const epochMilliseconds = Date.UTC(2030, 0, 1);
+    expect(await run({ epochMilliseconds })).toEqual(await run(new Date(epochMilliseconds)));
+    await expect(run({ epochMilliseconds: Number.NaN })).rejects.toThrow(RangeError);
+  });
+
   test('resetAt is when the allowance is full again', async () => {
     const limiter = RateLimit.create({ limit: 4, period: 1000 });
     await takeMany(limiter, 'a', 3);

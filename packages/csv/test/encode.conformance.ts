@@ -186,7 +186,7 @@ describe('csv-stringify', () => {
       expect(() => Csv.encode([['a']], { header: true })).toThrow(TypeError);
     });
 
-    test('throws InvalidInputError for an array row after object rows', () => {
+    test('throws InvalidInputError for an object row after array rows', () => {
       expect(() => Csv.encode([{ a: 1 }, ['x']], { header: true })).not.toThrow();
       expect(() => Csv.encode([['x'], { a: 1 }])).toThrow(Csv.InvalidInputError);
     });
@@ -301,8 +301,8 @@ describe('papaparse', () => {
       expect(await encodeAll(objects, { header: false })).toBe('a,b,c\r\nd,e,f\r\n');
     });
 
-    test('Invalid Date objects throw RangeError', () => {
-      expect(() => Csv.encode([[new Date(Number.NaN)]])).toThrow(RangeError);
+    test('Invalid Date objects throw InvalidInputError', () => {
+      expect(() => Csv.encode([[new Date(Number.NaN)]])).toThrow(Csv.InvalidInputError);
     });
 
     test('Returns empty rows when empty rows are passed', async () => {

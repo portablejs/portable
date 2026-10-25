@@ -1,5 +1,6 @@
 import { isUint8Array } from '@portable/bytes/internal';
 import * as Base64 from '@portable/base64';
+import { type AsyncDisposeMethod, withAsyncDispose } from '@portable/errors/internal';
 import { CommandError, type Rejection } from './errors.js';
 import { DataStream, encodeData } from './DataStream.js';
 import { createReader, type Reader, type Reply } from './reader.js';
@@ -49,15 +50,19 @@ export type Mail = {
 /** The outcome of a send that reached at least one recipient. */
 export type Result = {
   /** Recipients the server accepted, in the order given. */
-  accepted: string[];
+  accepted: readonly string[];
   /** Recipients the server refused, with their replies. */
-  rejected: Rejection[];
+  rejected: readonly Rejection[];
   /** The server's reply to the end of the message, such as `'250 2.0.0 Ok: queued as 4F3C2'`. */
   response: string;
 };
 
-/** An open SMTP session, from `Smtp.connect`. Calls run one at a time, in the order they are made. */
-export type Client = {
+/**
+ * An open SMTP session, from `Smtp.connect`. Calls run one at a time, in the order they are made.
+ * Where the runtime has `Symbol.asyncDispose`, `await using` calls `close()` at the end of the
+ * block.
+ */
+export type Client = AsyncDisposeMethod & {
   /** Whether the connection is encrypted. */
   readonly secure: boolean;
   /** The extension lines of the EHLO reply, such as `'SIZE 35882577'`. Empty after a HELO fallback. */
@@ -70,7 +75,10 @@ export type Client = {
 
 export declare namespace Client {
   type SendOptions = {
-    /** Aborting rejects with `signal.reason` and closes the connection. */
+    /**
+     * Aborting rejects with `signal.reason` and cancels a message stream. A send that has started
+     * also closes the connection, and a send still waiting for earlier calls is skipped.
+     */
     signal?: AbortSignal | undefined;
   };
   type CloseOptions = {
@@ -107,7 +115,7 @@ type Session = {
   read(command: string): Promise<Reply>;
   write(text: string, command: string): Promise<void>;
   writeBytes(bytes: Uint8Array, command: string): Promise<void>;
-  pipe(stream: ReadableStream<Uint8Array>): Promise<void>;
+  pipe(stream: ReadableStream<Uint8Array>, signal: AbortSignal | undefined): Promise<void>;
   upgrade(): Promise<void>;
   destroy(): void;
   readonly closed: boolean;
@@ -158,10 +166,14 @@ function createSession(first: Socket): Session {
         });
       }
     },
-    async pipe(stream) {
+    async pipe(stream, signal) {
       writer.releaseLock();
       try {
-        await stream.pipeThrough(new DataStream()).pipeTo(socket.writable, { preventClose: true });
+        await stream.pipeThrough(new DataStream()).pipeTo(socket.writable, {
+          preventClose: true,
+          preventAbort: true,
+          ...(signal && { signal }),
+        });
       } catch (cause) {
         session.destroy();
         throw new CommandError({
@@ -283,14 +295,13 @@ function sizeLimit(extensions: readonly string[]): number {
  * import * as Smtp from '@portable/smtp';
  * import { connect } from 'cloudflare:sockets';
  *
- * const client = await Smtp.connect({
+ * await using client = await Smtp.connect({
  *   connect,
  *   host: 'smtp.example.com',
  *   auth: { user: 'me@example.com', pass: env.SMTP_PASSWORD },
  *   signal: AbortSignal.timeout(10_000),
  * });
  * const result = await client.send({ from: 'me@example.com', to: ['you@example.com'], message });
- * await client.close();
  * ```
  */
 export async function connect(options: connect.Options): Promise<Client> {
@@ -510,7 +521,7 @@ function createClient(
     }
   };
 
-  const transaction = async (mail: Mail): Promise<Result> => {
+  const transaction = async (mail: Mail, signal: AbortSignal | undefined): Promise<Result> => {
     const recipients = typeof mail.to === 'string' ? [mail.to] : [...mail.to];
     if (recipients.length === 0) {
       throw new CommandError({ code: 'EENVELOPE', message: 'No recipients', command: 'RCPT TO' });
@@ -712,7 +723,7 @@ function createClient(
     if (data) {
       await session.writeBytes(data, 'DATA');
     } else {
-      await session.pipe(message as ReadableStream<Uint8Array>);
+      await session.pipe(message as ReadableStream<Uint8Array>, signal);
     }
 
     if (!lmtp) {
@@ -755,11 +766,19 @@ function createClient(
     return { accepted: delivered, rejected, response };
   };
 
-  return {
+  const client = {
     secure: tls,
     extensions,
     send(mail, options = {}) {
-      return enqueue(async () => {
+      const { signal } = options;
+      const cancel = (reason: unknown) => {
+        if (mail.message instanceof ReadableStream) {
+          mail.message.cancel(reason).catch(() => {});
+        }
+      };
+      let started = false;
+      const result = enqueue(async () => {
+        started = true;
         sending = false;
         try {
           if (session.closed) {
@@ -769,13 +788,30 @@ function createClient(
               command: 'MAIL FROM',
             });
           }
-          return await guard(session, options.signal, () => transaction(mail));
+          return await guard(session, signal, () => transaction(mail, signal));
         } catch (error) {
-          if (!sending && mail.message instanceof ReadableStream) {
-            mail.message.cancel(error).catch(() => {});
+          if (!sending) {
+            cancel(error);
           }
           throw error;
         }
+      });
+      if (!signal) {
+        return result;
+      }
+      return new Promise<Result>((resolve, reject) => {
+        const onAbort = () => {
+          if (!started) {
+            cancel(signal.reason);
+            reject(signal.reason);
+          }
+        };
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort, { once: true });
+        }
+        result.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
       });
     },
     close(options = {}) {
@@ -792,11 +828,12 @@ function createClient(
         session.destroy();
       });
     },
-  };
+  } satisfies Omit<Client, keyof AsyncDisposeMethod>;
+  return withAsyncDispose(client, () => client.close());
 }
 
 export declare namespace send {
-  /** The same options as `connect`. */
+  /** The same options as `connect`, except that `signal` limits the whole call. */
   type Options = connect.Options;
 }
 

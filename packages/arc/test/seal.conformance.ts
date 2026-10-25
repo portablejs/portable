@@ -320,6 +320,13 @@ describe('authResults', () => {
 });
 
 describe('options', () => {
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const now = Date.UTC(2024, 0, 1);
+    expect(await seal(baseMessage, { now: { epochMilliseconds: now } })).toBe(
+      await seal(baseMessage, { now: new Date(now) }),
+    );
+  });
+
   test('refuses a short RSA key, a bad domain or selector and a bad date', async () => {
     await expect(seal(baseMessage, { privateKey: (await keyPair('small')).pem })).rejects.toThrow(
       RangeError,
@@ -343,6 +350,25 @@ describe('options', () => {
   test('rejects with the reason of an aborted signal', async () => {
     const reason = new Error('stop');
     await expect(seal(baseMessage, { signal: AbortSignal.abort(reason) })).rejects.toBe(reason);
+  });
+
+  test('rejects with the reason and cancels the message when the signal aborts the header read', async () => {
+    const controller = new AbortController();
+    let cancelled = false;
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n'));
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const pending = Arc.seal(message, await options({ signal: controller.signal }));
+    const reason = new Error('stop');
+    setTimeout(() => controller.abort(reason), 10);
+    await expect(pending).rejects.toBe(reason);
+    expect(cancelled).toBe(true);
   });
 
   test('the result verifies with a resolver for the published key', async () => {

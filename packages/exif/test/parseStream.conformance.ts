@@ -130,6 +130,12 @@ describe('parseStream', () => {
     expect((error as Exif.MaxBytesError).maxBytes).toBe(1024);
   });
 
+  test('throws RangeError for a negative or NaN maxBytes', async () => {
+    const stream = () => new ReadableStream<Uint8Array>();
+    await expect(Exif.parseStream(stream(), { maxBytes: -1 })).rejects.toThrow(RangeError);
+    await expect(Exif.parseStream(stream(), { maxBytes: Number.NaN })).rejects.toThrow(RangeError);
+  });
+
   test('throws MaxBytesError when an HEIF file puts more than maxBytes of mdat before meta', async () => {
     const box = (type: string, data: Uint8Array) =>
       concat(u32be(data.length + 8), ascii(type), data);

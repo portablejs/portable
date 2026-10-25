@@ -240,6 +240,12 @@ describe('corrupt input', () => {
 });
 
 describe('maxBytes', () => {
+  test('rejects a negative or NaN limit with a RangeError', async () => {
+    const compressed = await Compress.encode('hello');
+    await expect(Compress.decode(compressed, { maxBytes: -1 })).rejects.toThrow(RangeError);
+    await expect(Compress.decode(compressed, { maxBytes: Number.NaN })).rejects.toThrow(RangeError);
+  });
+
   test('rejects output past the limit', async () => {
     const compressed = await Compress.encode(new Uint8Array(1_000_000));
     const error = await Compress.decode(compressed, { maxBytes: 999_999 }).catch((e) => e);

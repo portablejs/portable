@@ -1,3 +1,4 @@
+import type { Instant } from '@portable/timers';
 import { NotFoundError, ResponseError } from './errors.js';
 
 export type Fetch = (request: Request) => Promise<Response>;
@@ -9,7 +10,7 @@ export type Json = { json: Record<string, unknown>; response: Response };
 export type Context = {
   fetch: Fetch;
   signal: AbortSignal | undefined;
-  now: Date | undefined;
+  now: Instant | undefined;
 };
 
 export async function request(url: string, { fetch, signal }: Context): Promise<Json> {

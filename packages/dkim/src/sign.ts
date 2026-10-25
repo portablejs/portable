@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import { fromBinary, toBinary } from './internal/bytes.js';
 import type { Hash, Hasher } from '@portable/web-crypto';
@@ -51,10 +53,10 @@ export declare namespace sign {
     canonicalization?: `${Canonicalization}/${Canonicalization}` | undefined;
     /** The agent or user identifier (`i=`), such as `user@example.com` or `@mail.example.com`. */
     identity?: string | undefined;
-    /** The signature time (`t=`). @default new Date() */
-    now?: Date | undefined;
-    /** The expiry (`x=`). It must be after `now`. */
-    expiresAt?: Date | undefined;
+    /** The signature time (`t=`), as a `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
+    /** The expiry (`x=`), as a `Date` or a `Temporal.Instant`. It must be after `now`. */
+    expiresAt?: Instant | undefined;
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hasher?: ((hash: Hash) => Hasher) | undefined;
     /** Stops reading the message, and rejects with `signal.reason`. */
@@ -93,7 +95,6 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const {
     headers = defaultHeaders,
     canonicalization = 'relaxed/relaxed',
-    now = new Date(),
     expiresAt,
     hasher,
     signal,
@@ -109,8 +110,9 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const names = assertHeaders(headers);
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain);
-  const timestamp = seconds('now', now);
-  const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', expiresAt);
+  const timestamp = seconds('now', toDate(options.now));
+  const expiration =
+    expiresAt === undefined ? undefined : seconds('expiresAt', toDate(expiresAt, 'expiresAt'));
   if (expiration !== undefined && expiration <= timestamp) {
     throw new RangeError('expiresAt must be at least a second after now.');
   }
@@ -125,7 +127,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     Canonicalization,
   ];
 
-  const split = await splitMessage(message);
+  const split = await splitMessage(message, signal);
   const fields = parseFields(toBinary(split.header));
   const selected = selectForSigning(fields, names);
   if (!selected.some((field) => field.name === 'from')) {
@@ -133,11 +135,7 @@ export async function sign(message: Message, options: sign.Options): Promise<str
     throw new InvalidInputError('The message has no From field to sign.');
   }
   const request = { canonicalization: bodyCanonicalization } satisfies BodyHash;
-  const cancel = () => void split.body.cancel().catch(() => {});
-  signal?.addEventListener('abort', cancel, { once: true });
-  const digests = await hashBody(split.body, [request], hasher).finally(() =>
-    signal?.removeEventListener('abort', cancel),
-  );
+  const digests = await hashBody(split.body, [request], hasher);
   signal?.throwIfAborted();
   const bodyHash = Base64.encode(digests.get(bodyHashKey(request))!.digest);
 

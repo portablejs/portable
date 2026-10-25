@@ -1,6 +1,7 @@
-import { assertUint8Array } from '@portable/bytes/internal';
-import { createUtf8Encoder, encodeUtf8 } from './utf8.js';
+import { assertUint8Array, createUtf8Encoder } from '@portable/bytes/internal';
 import * as Streams from '@portable/streams';
+
+const textEncoder = new TextEncoder();
 
 export declare namespace encode {
   type Options = {
@@ -33,7 +34,7 @@ export declare namespace encode {
  * ```
  */
 export function encode(input: Uint8Array | string, options: encode.Options = {}): string {
-  const bytes = typeof input === 'string' ? encodeUtf8(input) : assertUint8Array(input);
+  const bytes = typeof input === 'string' ? textEncoder.encode(input) : assertUint8Array(input);
   return createEncoder(options).write(bytes, true);
 }
 
@@ -52,20 +53,19 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
   constructor(options: EncoderStream.Options = {}) {
     const encoder = createEncoder(options);
     const utf8 = createUtf8Encoder();
-    const ascii = new TextEncoder();
     super(
       Streams.abortable(
         {
           transform(chunk, controller) {
             const output = encoder.write(utf8.write(chunk), false);
             if (output !== '') {
-              controller.enqueue(ascii.encode(output));
+              controller.enqueue(textEncoder.encode(output));
             }
           },
           flush(controller) {
             const output = encoder.write(utf8.flush(), true);
             if (output !== '') {
-              controller.enqueue(ascii.encode(output));
+              controller.enqueue(textEncoder.encode(output));
             }
           },
         },
@@ -105,7 +105,7 @@ const kind = /* @__PURE__ */ (() => {
   return table;
 })();
 
-const hexDigits = new TextEncoder().encode('0123456789ABCDEF');
+const hexDigits = textEncoder.encode('0123456789ABCDEF');
 
 const hexValue = /* @__PURE__ */ (() => {
   const table = new Int8Array(256).fill(-1);

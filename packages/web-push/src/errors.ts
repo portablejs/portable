@@ -24,6 +24,30 @@ export class InvalidInputError extends Errors.InvalidInputError {
 }
 
 /**
+ * Thrown when a payload is longer than `maxPayloadBytes`, before anything is encrypted or sent.
+ * The subscription is still valid, so send a shorter payload, such as an id the service worker
+ * uses to fetch the rest.
+ *
+ * @example
+ * ```ts
+ * import * as WebPush from '@portable/web-push';
+ *
+ * try {
+ *   await WebPush.send({ subscription, payload, vapid });
+ * } catch (error) {
+ *   if (error instanceof WebPush.MaxBytesError) {
+ *     await WebPush.send({ subscription, payload: JSON.stringify({ id }), vapid });
+ *   } else {
+ *     throw error;
+ *   }
+ * }
+ * ```
+ */
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'WebPush.MaxBytesError';
+}
+
+/**
  * Thrown by `send` when the push service answers with a status other than 2xx, 404 or 410, such
  * as 400 for a bad VAPID token, 413 for a payload that is too large, or 429 when rate limited.
  *

@@ -10,11 +10,12 @@ npm install @portable/lines
 
 ```ts
 import * as Lines from '@portable/lines';
+import * as Streams from '@portable/streams';
 
 const response = await fetch('https://example.com/access.log');
-const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value);
+const lines = response.body!.pipeThrough(new Lines.DecoderStream());
+for await (const line of Streams.toAsyncIterable(lines)) {
+  console.log(line);
 }
 ```
 
@@ -24,7 +25,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) {
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. |
+| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. With the default or a string, a line that spans many chunks is split in linear time. Any other separator splits the unfinished line again for each chunk, so set `maxLength` when lines can be long. |
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. |
 | `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units. |
 | `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line. |
@@ -39,7 +40,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) {
 
 ## Why use this over split2 and byline
 
-split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies.
+split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies outside `@portable/*`.
 
 - It split 1.7 MB of text at the same speed as split2 in Node. `node:readline` was about 2× faster than both, but it exists only in Node.
 - `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.
@@ -57,8 +58,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/lines | split2 | byline | `node:readline` |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 0.7 kB | 1.1 kB | 1.2 kB | built in |
-| Runtime dependencies | 0 | 0 | 0 | – |
+| Minified and gzipped | 1.3 kB | 1.1 kB | 1.2 kB | built in |
+| Runtime dependencies | 3 | 0 | 0 | – |
 | Node built-ins used | none | `stream`, `string_decoder` | `Buffer`, `stream`, `timers`, `util` | Node only |
 | TypeScript types | included | `@types/split2` | `@types/byline` | – |
 | Version compared | – | 4.2.0 | 5.0.0 | – |

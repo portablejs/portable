@@ -1,3 +1,4 @@
+import { toEpochMilliseconds } from '@portable/timers/internal';
 import * as Address from './address.js';
 import { ResponseError } from './errors.js';
 import { type Context, type Fetch, type Json, request } from './request.js';
@@ -68,7 +69,7 @@ function index({ json, response }: Json, url: string): Index {
 }
 
 function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
-  const time = now?.getTime() ?? Date.now();
+  const time = now === undefined ? Date.now() : toEpochMilliseconds(now);
   if (signal?.aborted) {
     return Promise.reject(signal.reason);
   }
@@ -89,11 +90,13 @@ function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
       controller,
     } satisfies Entry;
     const cache = entries;
-    created.index.catch(() => {
+    const forget = () => {
       if (cache.get(kind) === created) {
         cache.delete(kind);
       }
-    });
+    };
+    created.index.catch(forget);
+    controller.signal.addEventListener('abort', forget, { once: true });
     entries.set(kind, (entry = created));
   }
   return wait(entry, signal);

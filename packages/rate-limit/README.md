@@ -53,7 +53,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 | Option | Default | Description |
 | --- | --- | --- |
 | `cost` | `1` | How much of the allowance the request uses, such as its size. `0` reads the state without changing it. A negative cost gives allowance back, up to `burst`. |
-| `now` | `new Date()` | The time of the request, for tests or for a clock other than the system's. |
+| `now` | `new Date()` | The time of the request, for tests or for a clock other than the system's. A `Date` or a `Temporal.Instant`. |
 | `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
 
 ### `Result`
@@ -91,7 +91,7 @@ type Store = {
 };
 ```
 
-`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
+`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so if your store expires keys itself, it can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
 
 Several limiters can share a store. Give each one its own key prefix, such as `login:${ip}`, unless they should share the allowance.
 
@@ -203,14 +203,14 @@ const store: RateLimit.Store = {
 
 ## Why use this over rate-limiter-flexible, limiter and bottleneck
 
-rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a two-method store, so any storage that can compare and set one number works, and it has no dependencies.
+rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a store with two methods, so you can use any storage that can compare and set one number, and it has no dependencies outside `@portable/*`.
 
 - rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
 - `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.
 - `take` resolves with `allowed: false` for a denied request. rate-limiter-flexible rejects the promise with a `RateLimiterRes`, which is not an `Error`, so a denial and a Redis outage arrive in the same `catch`.
 - rate-limiter-flexible's memory store sets one timer per key to delete it. `memoryStore()` sets none, so a limiter with many keys doesn't hold a timer for each.
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
-- On Node, `take` with the memory store ran within 10% of `RateLimiterMemory.consume` on allowed requests over 1000 keys (0.41 µs against 0.38 µs per call), and 4× faster on denied requests (0.21 µs against 0.90 µs), because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket was 4× faster than an `await`ed `take`.
+- On Node, `take` with the memory store runs about 15% slower than `RateLimiterMemory.consume` on allowed requests over 1,000 keys, and about 5× faster on denied requests, because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket is about 6× faster than an `await`ed `take`. The benchmark table below has the numbers.
 - rate-limiter-flexible's `duration` is in seconds, and limiter's `interval` also takes names such as `'second'`. `period` is always in milliseconds, so `duration: 1` becomes `period: 1000`.
 - `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
 - `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
@@ -232,8 +232,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/rate-limit | rate-limiter-flexible | limiter |
 | --- | --- | --- | --- |
-| Minified and gzipped | 1.0 kB | 17 kB | 1.4 kB |
-| Runtime dependencies | 0 | 0 | 0 |
+| Minified and gzipped | 1.2 kB | 17 kB | 1.4 kB |
+| Runtime dependencies | 2 | 0 | 0 |
 | Node built-ins used | none | `Buffer`, `cluster`, `crypto` | none |
 | TypeScript types | included | included | included |
 | Version compared | – | 11.2.3 | 4.1.0 |

@@ -1,13 +1,6 @@
 /**
  * A Domain Owner Assessment Policy (RFC 9989 section 4.7): what the domain owner asks a receiver to
  * do with mail that fails DMARC.
- *
- * @example
- * ```ts
- * import * as Dmarc from '@portable/dmarc';
- *
- * const policy: Dmarc.Policy = 'quarantine';
- * ```
  */
 export type Policy = 'none' | 'quarantine' | 'reject';
 
@@ -15,14 +8,6 @@ export type Policy = 'none' | 'quarantine' | 'reject';
  * A DMARC Policy Record, with the defaults of RFC 9989 section 4.7 filled in. Invalid tag values
  * are replaced by their defaults, and unknown and historic tags such as `pct` and `ri` are left
  * out.
- *
- * @example
- * ```ts
- * import * as Dmarc from '@portable/dmarc';
- *
- * const { record } = await Dmarc.check({ from: 'example.com' }, { resolver });
- * record?.rua; // ['mailto:dmarc@example.com']
- * ```
  */
 export type Record = {
   /** The TXT record as published, with its strings joined. */

@@ -8,15 +8,12 @@ export type SkipReason =
 
 export type Author = { domain: string } | { skip: SkipReason };
 
-const CR = 0x0d;
-const LF = 0x0a;
-
 /**
  * The Author Domain (RFC 9989 section 3.2.10). DMARC needs exactly one From field with one
- * domain (section 5.3.1).
+ * domain (section 5.3.1). `header` is the header section without the empty line that ends it.
  */
-export function author(message: Uint8Array): Author {
-  const fields = MimeHeaders.parseHeaders(headerSection(message)).filter(
+export function author(header: Uint8Array): Author {
+  const fields = MimeHeaders.parseHeaders(header).filter(
     (field) => field.name.toLowerCase() === 'from',
   );
   if (fields.length === 0) {
@@ -49,17 +46,4 @@ export function author(message: Uint8Array): Author {
     return { skip: 'multiple-author-domains' };
   }
   return { domain: [...domains][0]! };
-}
-
-function headerSection(message: Uint8Array): Uint8Array {
-  if (message[0] === LF || (message[0] === CR && message[1] === LF)) {
-    return message.subarray(0, 0);
-  }
-  for (let i = message.indexOf(LF); i >= 0; i = message.indexOf(LF, i + 1)) {
-    const next = message[i + 1] === CR ? i + 2 : i + 1;
-    if (message[next] === LF) {
-      return message.subarray(0, i + 1);
-    }
-  }
-  return message;
 }

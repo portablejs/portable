@@ -19,7 +19,8 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 - No `onComment`, `onError` or `reset()`. Comments and unknown fields are ignored, as `EventSource` ignores them.
 - `maxLength` applies to every line and to the `data` of one event, so the same input fails the same way however it is chunked. eventsource-parser's `maxBufferSize` counts only the unfinished line and the data, and drops lines that can't become a field without counting them.
 - A rejected response is left unread on `ResponseError.response`, so a caller can read the error body. The `eventsource` polyfill aborts it.
-- `connect` sends no `cache: 'no-store'`. Cloudflare Workers rejected the `cache` option until 2024 and still needs a compatibility flag for it. A caller who wants it sets it on the `Request`.
+- `connect` takes `attempts`, which limits failed attempts in a row as `WebSockets.connect` and `Timers.retry` do (C > when to stop > attempts …). `EventSource` and the `eventsource` polyfill reconnect without a limit, and fetch-event-source stops only when `onerror` throws.
+- `connect` sends no `cache: 'no-store'`. Cloudflare Workers rejected the `cache` option until 2024 and still needs a compatibility flag for it. If you want it, set it on the `Request`.
 
 ## eventsource-parser
 

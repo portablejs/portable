@@ -12,13 +12,16 @@ Read events from any response, such as a streaming LLM API:
 
 ```ts
 import * as Sse from '@portable/sse';
+import * as Streams from '@portable/streams';
 
 const response = await fetch('https://api.example.com/v1/chat', { method: 'POST', headers, body });
-const reader = response.body!.pipeThrough(new Sse.DecoderStream()).getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.data);
+const events = response.body!.pipeThrough(new Sse.DecoderStream());
+for await (const event of Streams.toAsyncIterable(events)) {
+  console.log(event.data);
 }
 ```
+
+`Streams.toAsyncIterable` from `@portable/streams` iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const event of events)` also works.
 
 Keep a stream open the way `EventSource` does, with your own method, headers and body:
 
@@ -81,11 +84,12 @@ Each attempt sends a clone of `request`, so a POST body is sent again on every r
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` stops reconnecting, as in `WebSockets.connect` and `Timers.retry`. An accepted response resets the count, and the end of its body counts as the first failure, so `attempts: 1` never reconnects. When the count is used up, the stream errors with the last error, or closes if the last response ended normally. A value below 1 throws a `RangeError`. |
 | `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `({ attempt, error }) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from `@portable/timers`, and an invalid one throws a `RangeError`. |
 | `fetch` | `globalThis.fetch` | Sends each `Request`. A wrapper can change the request first, such as setting a fresh token. |
 | `idleTimeout` | `Infinity` | How long to wait, in ms, for the response headers and then for each chunk of the body. If no data arrives in that time, `connect` aborts the request and handles the attempt as a failed connection with a `TimeoutError` `DOMException`, so by default it reconnects. Keep-alive comment lines from the server also restart the wait. Set it a little above the server's keep-alive interval, so a stalled connection reconnects and a quiet but healthy one doesn't. |
 | `maxLength` | `Infinity` | As in `DecoderStream`. |
-| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends. `error` is `undefined` when the response ended normally. Return `false` to stop reconnecting: the stream then closes if `error` is `undefined`, and errors with `error` otherwise. |
+| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends while `attempts` isn't used up. `error` is `undefined` when the response ended normally. Return `false` to stop reconnecting: the stream then closes if `error` is `undefined`, and errors with `error` otherwise. |
 | `signal` | | Fails the stream with `signal.reason`. |
 
 By default `connect` reconnects after every error except `ResponseError` and `MaxLengthError`, and after a response that ends normally. For a request you don't want repeated, such as an LLM completion, pass `reconnectIf: () => false`. To also retry a 5xx response:
@@ -102,12 +106,14 @@ Sse.connect(request, {
 | --- | --- |
 | `Sse.Event` | An event read from a stream, as `EventSource` would dispatch it. |
 | `Sse.Message` | A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. |
+| `Sse.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
+| `Sse.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
 ## Why use this over eventsource-parser, eventsource and fetch-event-source
 
-eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies.
+eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies outside `@portable/*`.
 
-- On Node 24, `DecoderStream` decoded bytes faster than `TextDecoderStream` piped into eventsource-parser's `EventSourceParserStream`: 1.4× on one LLM token event per chunk, 1.7× on 2 to 16 byte chunks, 1.6× on a 1 MB line in 128-byte chunks, and at the same speed on 16 KB chunks. `connect` read a mocked response 1.5× faster than `fetch` with the same pair. `decode` on one complete string is the exception: it ran at 0.67 to 0.74× the speed of eventsource-parser's `createParser().feed` on short events, and at the same speed on the 1 MB line. See `test/*.bench.ts`.
+- On Node 24, `DecoderStream` decoded bytes faster than `TextDecoderStream` piped into eventsource-parser's `EventSourceParserStream`: 1.4× on one LLM token event per chunk, 1.7× on 2 to 16 byte chunks, 1.6× on a 1 MB line in 128-byte chunks, and at the same speed on 16 KB chunks. `connect` read a mocked response 1.5× faster than `fetch` with the same pair. The exception is `decode` on one complete string, which ran at about two thirds of the speed of eventsource-parser's `createParser().feed` on short events, and at the same speed on the 1 MB line. See `test/*.bench.ts`.
 - Events carry the values `EventSource` gives: `event` defaults to `'message'`, and `id` is the last event ID, so an `id` from a block without data isn't lost. eventsource-parser reports `id` only on the block that set it.
 - fetch-event-source dispatches a block without `data` as an empty message, accepts `text/event-streaming` as a content type, retries an HTTP error forever, and uses `window` and `document`, so it fails in Workers and Node. It also ignores a signal that is already aborted.
 - The `eventsource` polyfill can't send a body without a custom `fetch`. Its issue #326 reports events lost on mixed CRLF and LF line breaks, which `test/DecoderStream.conformance.ts` covers.
@@ -132,8 +138,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/sse | eventsource-parser | eventsource | Hand-written with web APIs |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.2 kB | 1.9 kB | 3.6 kB | built in |
-| Runtime dependencies | 0 | 0 | 1 | – |
+| Minified and gzipped | 1.8 kB | 1.9 kB | 3.6 kB | built in |
+| Runtime dependencies | 4 | 0 | 1 | – |
 | Node built-ins used | none | none | none | none |
 | TypeScript types | included | included | included | – |
 | Version compared | – | 4.1.2 | 5.1.3 | – |

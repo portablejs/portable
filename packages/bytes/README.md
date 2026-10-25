@@ -81,8 +81,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/bytes | uint8array-extras | Node `Buffer` or `node:crypto` |
 | --- | --- | --- | --- |
-| Minified and gzipped | 0.9 kB | 0.7 kB | built in |
-| Runtime dependencies | 0 | 0 | – |
+| Minified and gzipped | 1.3 kB | 0.7 kB | built in |
+| Runtime dependencies | 1 | 0 | – |
 | Node built-ins used | none | none | Node only |
 | TypeScript types | included | included | – |
 | Version compared | – | 1.6.0 | – |

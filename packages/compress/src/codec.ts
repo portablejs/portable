@@ -1,6 +1,6 @@
 import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
-import { concat } from './bytes.js';
+import { assertMaxBytes, concat } from './bytes.js';
 import { MaxBytesError, TruncatedError, classify } from './errors.js';
 
 /** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
@@ -33,17 +33,8 @@ export async function encode(
   const { format = 'gzip', signal } = options;
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : assertUint8Array(data);
   const chunks: Uint8Array[] = [];
-  let length = 0;
-  await run(
-    bytes,
-    new CompressionStream(format),
-    (chunk) => {
-      chunks.push(chunk);
-      length += chunk.byteLength;
-    },
-    signal,
-  );
-  return concat(chunks, length);
+  await run(bytes, new CompressionStream(format), (chunk) => chunks.push(chunk), signal);
+  return concat(chunks);
 }
 
 export declare namespace decode {
@@ -75,6 +66,7 @@ export async function decode(
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', maxBytes = Infinity, signal } = options;
   assertUint8Array(data);
+  assertMaxBytes(maxBytes);
   const chunks: Uint8Array[] = [];
   let length = 0;
   const decodeAll = (input: Uint8Array) =>
@@ -100,7 +92,7 @@ export async function decode(
         chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
       );
     }
-    return concat(chunks, length);
+    return concat(chunks);
   } catch (error) {
     if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) {
       throw error;
@@ -184,7 +176,7 @@ export async function decode(
     throw firstError;
   }
   await decodeAll(data.subarray(offset));
-  return concat(chunks, length);
+  return concat(chunks);
 }
 
 function nextMember(data: Uint8Array, from: number): number {

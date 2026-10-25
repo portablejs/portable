@@ -41,11 +41,19 @@
     "dist",
     "src"
   ],
+  "dependencies": {
+    "@portable/errors": "workspace:*"
+  },
   "exports": {
     ".": {
       "src": "./src/exports/index.ts",
       "types": "./dist/exports/index.d.ts",
       "default": "./dist/exports/index.js"
+    },
+    "./internal": {
+      "src": "./src/exports/internal.ts",
+      "types": "./dist/exports/internal.d.ts",
+      "default": "./dist/exports/internal.js"
     }
   },
   "main": "./dist/exports/index.js",

@@ -1,6 +1,6 @@
 import * as Bytes from '@portable/bytes';
 import { toBufferSource } from '@portable/bytes/internal';
-import { byteLength, toUint8Array } from './bytes.js';
+import { assertMaxBytes, byteLength, toUint8Array } from './bytes.js';
 import { MaxBytesError } from './errors.js';
 import { type Source, forEach } from './source.js';
 
@@ -30,6 +30,7 @@ export async function toBytes(
   options: toBytes.Options = {},
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { maxBytes = Infinity, signal } = options;
+  assertMaxBytes(maxBytes);
   const chunks: Uint8Array[] = [];
   let length = 0;
   await forEach(
@@ -72,6 +73,7 @@ export async function toBlob(
   options: toBlob.Options = {},
 ): Promise<Blob> {
   const { maxBytes = Infinity, signal, type = '' } = options;
+  assertMaxBytes(maxBytes);
   const chunks: BlobPart[] = [];
   let length = 0;
   await forEach(
@@ -118,6 +120,7 @@ export async function toText(
   options: toText.Options = {},
 ): Promise<string> {
   const { encoding = 'utf-8', maxBytes = Infinity, signal } = options;
+  assertMaxBytes(maxBytes);
   const decoder = new TextDecoder(encoding);
   let text = '';
   let decoding = false;

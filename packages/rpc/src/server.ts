@@ -60,6 +60,7 @@ export function createServer(
 ): Server {
   const { flow, request } = options;
   const calls = new Map<Id, Call>();
+  const notifications = new Set<Call>();
 
   async function handle(message: unknown): Promise<void> {
     if (!Array.isArray(message)) {
@@ -120,7 +121,9 @@ export function createServer(
       wake: undefined,
       cancel: undefined,
     } satisfies Call;
-    if (!notification) {
+    if (notification) {
+      notifications.add(call);
+    } else {
       calls.set(id, call);
     }
     try {
@@ -154,6 +157,10 @@ export function createServer(
       }
       calls.delete(id);
       return { jsonrpc: '2.0', id, error: toErrorObject(e) };
+    } finally {
+      if (notification) {
+        notifications.delete(call);
+      }
     }
   }
 
@@ -226,10 +233,11 @@ export function createServer(
   }
 
   function close(reason?: unknown) {
-    for (const call of calls.values()) {
+    for (const call of [...calls.values(), ...notifications]) {
       stop(call, reason);
     }
     calls.clear();
+    notifications.clear();
   }
 
   return { handle, close };

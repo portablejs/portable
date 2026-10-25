@@ -32,7 +32,7 @@ const examples = Object.entries(sources).flatMap(([file, source]) =>
 );
 
 test('finds encode examples in every module that has one', () => {
-  expect(new Set(examples.map(([file]) => file)).size).toBe(12);
+  expect(new Set(examples.map(([file]) => file)).size).toBe(11);
 });
 
 test.each(examples)('%s: %s', async (_, call, bytes) => {

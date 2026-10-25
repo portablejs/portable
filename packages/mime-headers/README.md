@@ -39,7 +39,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `encodeWord(text, options?)` | text | all of it as encoded words |
 | `encodeWords(text, options?)` | text | the text, with the part that needs it as encoded words |
 | `decodeWords(text)` | a header value | the value with its encoded words decoded |
-| `fold(line, options?)` | a header line | the line with CRLF and whitespace where it is too long |
+| `fold(line, options?)` | a header line | the line with a CRLF inserted before whitespace where it is too long |
 | `unfold(text)` | folded text | the text with every CRLF before whitespace removed |
 | `parseHeaders(text, options?)` | a header block | `Header[]`, `{ name, value }` in order, unfolded |
 | `parseValue(text)` | a value such as `text/plain; charset=utf-8` | `Value`, `{ value, params }` |
@@ -61,7 +61,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | `'Q'` keeps ASCII readable, `'B'` is base64. |
-| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. With `false`, the text is written as one encoded word whatever its length. |
+| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text is split into several words, and no character is split across two words. With `Infinity`, the text is written as one encoded word whatever its length. |
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
 | `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
@@ -71,20 +71,26 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 | Type | Description |
 | --- | --- |
+| `MimeHeaders.Address` | One entry of an address list: a `Mailbox` or a `Group`. |
+| `MimeHeaders.Mailbox` | `{ name, address }`. `address` is `''` when the entry has no address. |
+| `MimeHeaders.Group` | `{ name, group }`, a named group of mailboxes. |
+| `MimeHeaders.Header` | `{ name, value }`, one header field from `parseHeaders`. |
+| `MimeHeaders.Value` | `{ value, params }`, a header value with parameters. |
+| `MimeHeaders.CharsetEncoder` | `{ name, encode(text) }`, the charset that encoded words are written in. `encode` is called once per word, so the bytes from each call must decode on their own. |
 | `MimeHeaders.WordEncoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
 
 ## Why use this over libmime, addressparser and email-addresses
 
-It has no dependencies, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. One address parser covers what addressparser and email-addresses each do: a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
+It has no dependencies outside `@portable/*`, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. `parseAddresses` replaces both addressparser and email-addresses, with a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
 
-- In the benchmarks on Node 24, `parseAddresses` was 2× faster than addressparser and about 50× faster than email-addresses (25× in strict mode). `fold` was 7× faster than libmime's `foldLines`, `parseHeaders` 3.5× faster than `decodeHeaders`, `encodeWords` 3× faster and `formatValue` 2× faster. `decodeWords`, `parseValue` and `encodeWord` were 1.1 to 1.3× faster. `Buffer` and `TextDecoder` decode a single B word 3.7× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
-- `parseAddresses` reads an address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, as the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.1.2 still moves a quoted display name that contains "@" into the address.
+- In the benchmarks on Node 24, `parseAddresses` was 2.4× faster than addressparser and 56× faster than email-addresses (24× in strict mode). Against libmime, `fold` was 7.7× faster than `foldLines` and `parseHeaders` was 3.7× faster than `decodeHeaders`, while `encodeWords` was 2.7× faster and `formatValue` was 2.2× faster. `decodeWords` was 1.9× faster on Q words and 1.4× faster on B words, and `parseValue` was 1.5× faster. `encodeWord` wrote B words as fast as libmime. `Buffer` and `TextDecoder` decode a single B word 3× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
+- `parseAddresses` reads an address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, as the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.2.1 still moves a quoted display name that contains "@" into the address.
 - `parseAddresses` never takes the address from a comment: `(evil@evil.com) Name <good@good.com>` parses to `good@good.com`. nodemailer fixed this in 10.1.4.
 - `encodeWords` encodes text that looks like an encoded word, so a reader can't decode a subject the sender didn't encode. libmime 5.5.1 leaves it as is.
 - `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
-- Every function runs in linear time on hostile input. The tests check 43 adversarial inputs.
-- libmime's `encodeWord` writes one word unless given a length, and `encodeWord` limits words to 75 characters by default. Pass `wordLength: false` where you passed libmime a length of 0.
+- Every function runs in linear time on hostile input, and the tests check this with 45 adversarial inputs.
+- libmime's `encodeWord` writes one word unless you give it a length, but this package's `encodeWord` limits words to 75 characters by default. If you passed libmime a length of 0, pass `wordLength: Infinity`.
 - In a Q word, `encodeWord` writes a trailing space as `_`, where libmime writes `=20`.
 - `encodeWords` encodes words that contain control characters. libmime leaves them as they are.
 - libmime's `encodeWords` takes bytes in another charset, and `encodeWords` reads a `Uint8Array` as UTF-8, so decode such bytes with `TextDecoder` first.
@@ -119,11 +125,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 7.9 kB | 258 kB | 2.6 kB | 3.1 kB | built in |
-| Runtime dependencies | 2 | 5 | 0 | 0 | – |
+| Minified and gzipped | 8.1 kB | 258 kB | 3.6 kB | 3.1 kB | built in |
+| Runtime dependencies | 4 | 5 | 0 | 0 | – |
 | Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none | none | Node only |
 | TypeScript types | included | none | none | included | – |
-| Version compared | – | 5.4.9 | 10.1.2 | 5.0.0 | – |
+| Version compared | – | 5.4.9 | 10.2.1 | 5.0.0 | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

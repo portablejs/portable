@@ -7,7 +7,8 @@ import {
   neverAborted,
   withTimeout,
 } from './Delay.js';
-import { abortable, sleep } from './sleep.js';
+import { abortable } from './abortable.js';
+import { sleep } from './sleep.js';
 
 export declare namespace retry {
   type Options = {

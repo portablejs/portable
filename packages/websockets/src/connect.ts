@@ -6,7 +6,8 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
-  assertOutgoing,
+  disposedError,
+  toOutgoing,
   assertSize,
   queueLimit,
   drained,
@@ -15,6 +16,7 @@ import {
   timeout as startTimer,
   toMessage,
 } from './Socket.js';
+import { withAsyncDispose } from '@portable/errors/internal';
 import { CloseError, MaxBufferedError } from './errors.js';
 
 export declare namespace connect {
@@ -69,7 +71,7 @@ export declare namespace connect {
      * Sends a message on this connection now, ahead of queued writes. Throws once the connection
      * has closed.
      */
-    send: (message: string | Uint8Array<ArrayBuffer>) => void;
+    send: (message: string | Uint8Array) => void;
     /**
      * Messages received while `open` runs. Messages that `open` doesn't read go to `readable` once
      * `open` returns or cancels this stream.
@@ -88,7 +90,7 @@ export declare namespace connect {
   /** An application-level ping, for servers that close idle connections or drop them silently. */
   type Heartbeat = {
     /** The message to send. */
-    ping: string | Uint8Array<ArrayBuffer>;
+    ping: string | Uint8Array;
     /** Returns `true` for the reply. Replies are not passed to `readable`. */
     pong: (message: Message) => boolean;
     /** Time between pings, in ms. */
@@ -120,6 +122,7 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  *
  * @example
  * ```ts
+ * import * as Streams from '@portable/streams';
  * import * as WebSockets from '@portable/websockets';
  *
  * const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
@@ -129,7 +132,7 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  * });
  * const writer = writable.getWriter();
  * await writer.write('hello');
- * for await (const message of readable) {
+ * for await (const message of Streams.toAsyncIterable(readable)) {
  *   console.log(message);
  * }
  * ```
@@ -161,8 +164,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   if (heartbeat) {
     assertSize('heartbeat.interval', heartbeat.interval, 1);
     assertSize('heartbeat.timeout', heartbeat.timeout ?? heartbeat.interval, 1);
-    assertOutgoing(heartbeat.ping);
   }
+  const ping = heartbeat && toOutgoing(heartbeat.ping);
   const protocolList = typeof protocols === 'string' ? protocols : protocols && [...protocols];
 
   let readableController!: ReadableStreamDefaultController<Message>;
@@ -343,11 +346,11 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         },
         { highWaterMark: 0 },
       );
-      const send = (message: string | Uint8Array<ArrayBuffer>) => {
+      const send = (message: string | Uint8Array) => {
         if (outcome || socket.readyState !== OPEN) {
           throw new DOMException('The WebSocket is not open.', 'InvalidStateError');
         }
-        socket.send(assertOutgoing(message));
+        socket.send(toOutgoing(message));
       };
       const handshakeDone = Promise.resolve().then(() =>
         open({ send, messages, signal: attempt.signal }),
@@ -378,12 +381,12 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     notify();
 
     if (heartbeat) {
-      const { ping, interval, timeout: wait = interval } = heartbeat;
+      const { interval, timeout: wait = interval } = heartbeat;
       pingTimer = setInterval(() => {
         if (socket.readyState !== OPEN) {
           return;
         }
-        socket.send(ping);
+        socket.send(ping!);
         pongTimer ??= startTimer(
           () =>
             attempt.abort(
@@ -439,8 +442,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     }
   }
 
-  const write = (chunk: string | Uint8Array<ArrayBuffer>): Promise<void> | undefined => {
-    assertOutgoing(chunk);
+  const write = (input: string | Uint8Array): Promise<void> | undefined => {
+    const chunk = toOutgoing(input);
     if (stop.signal.aborted) {
       throw failure;
     }
@@ -470,7 +473,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     { highWaterMark: queueLimit(maxBuffered), size: messageSize },
   );
 
-  const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({
+  const writable = new WritableStream<string | Uint8Array>({
     start(controller) {
       writableController = controller;
     },
@@ -502,5 +505,5 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     signal?.addEventListener('abort', onAbort);
     void run();
   }
-  return { readable, writable };
+  return withAsyncDispose({ readable, writable }, async () => finish(disposedError(), false));
 }

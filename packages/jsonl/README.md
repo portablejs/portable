@@ -10,11 +10,12 @@ npm install @portable/jsonl
 
 ```ts
 import * as Jsonl from '@portable/jsonl';
+import * as Streams from '@portable/streams';
 
 const response = await fetch('https://example.com/events.ndjson');
-const reader = response.body!.pipeThrough(new Jsonl.DecoderStream()).getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value);
+const events = response.body!.pipeThrough(new Jsonl.DecoderStream());
+for await (const event of Streams.toAsyncIterable(events)) {
+  console.log(event);
 }
 ```
 
@@ -38,11 +39,11 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 | `maxLength` | `Infinity` | Longest line, in UTF-16 code units, line ending excluded. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Set it when the input comes from outside the program. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-## Why use this over ndjson
+## Why use this over ndjson and stream-json
 
-ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they read a `fetch` body and write a `Response` body in any JavaScript runtime, and the package has no dependencies.
+ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they read a `fetch` body and write a `Response` body in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
 
-- Decoding 20,000 rows ran at the same speed as ndjson, and encoding them was about 1.5× faster.
+- Decoding 20,000 rows ran about 1.1× faster than ndjson, and encoding them about 1.5× faster. stream-json's `jsonl/Stringer` encoded them about 1.3× faster than `EncoderStream`.
 - A `null` line is emitted as `null`. In ndjson a `null` line ends the stream, because Node object streams treat `null` as the end (ndjson #6).
 - `EncoderStream` ends every line with `\n`. ndjson uses `os.EOL`, so on Windows it writes `\r\n`.
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
@@ -60,8 +61,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 0.5 kB | 13 kB | 3.5 kB | built in |
-| Runtime dependencies | 0 | 9 | 1 | – |
+| Minified and gzipped | 1.2 kB | 13 kB | 3.5 kB | built in |
+| Runtime dependencies | 3 | 9 | 1 | – |
 | Node built-ins used | none | `buffer`, `events`, `os`, `string_decoder`, `util` | `stream`, `string_decoder` | none |
 | TypeScript types | included | `@types/ndjson` | included | – |
 | Version compared | – | 2.0.0 | 3.7.0 | – |

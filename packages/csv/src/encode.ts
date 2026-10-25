@@ -44,7 +44,7 @@ export declare namespace encode {
  * ```
  *
  * @throws {InvalidInputError} When `quote` is `false` and a field needs quoting, a value isn't an
- * `encode.Value`, or an array row follows object rows.
+ * `encode.Value` or is an invalid `Date`, or an object row follows array rows and `header` isn't an array.
  * @throws {TypeError} When `header` is `true` with array rows.
  * @throws {RangeError} When `delimiter`, `quote` or `newline` isn't allowed.
  */

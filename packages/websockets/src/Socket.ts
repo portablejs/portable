@@ -1,14 +1,22 @@
-import { assertUint8Array } from '@portable/bytes/internal';
+import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as Timers from '@portable/timers';
+import type { AsyncDisposeMethod } from '@portable/errors/internal';
+
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>;
 
-/** The readable and writable sides of a WebSocket. */
-export type Duplex = {
+/**
+ * The readable and writable sides of a WebSocket. Where the runtime has `Symbol.asyncDispose`,
+ * `[Symbol.asyncDispose]()` closes the socket with code 1000, stops reconnecting, and fails both
+ * streams with an `AbortError` `DOMException`, as aborting `signal` does, so a connection declared
+ * with `await using` is closed when the scope ends. Without the symbol, abort `signal` to close it,
+ * even while a reader or writer holds a lock.
+ */
+export type Duplex = AsyncDisposeMethod & {
   /** Received messages. */
   readable: ReadableStream<Message>;
   /** Messages to send. */
-  writable: WritableStream<string | Uint8Array<ArrayBuffer>>;
+  writable: WritableStream<string | Uint8Array>;
 };
 
 /** The part of the platform `WebSocket` this package uses. Any object with this shape works. */
@@ -55,11 +63,8 @@ export function toMessage(data: unknown): Message {
   throw new TypeError('Expected a string or ArrayBuffer message. Set binaryType to "arraybuffer".');
 }
 
-export function assertOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
-  if (typeof message !== 'string') {
-    assertUint8Array(message);
-  }
-  return message as string | Uint8Array<ArrayBuffer>;
+export function toOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
+  return typeof message === 'string' ? message : toBufferSource(assertUint8Array(message));
 }
 
 export const messageSize = (message: Message): number =>
@@ -89,6 +94,9 @@ export function queueLimit(maxBuffered: number): number {
 
 export const closedError = (): DOMException =>
   new DOMException('The WebSocket is closed.', 'InvalidStateError');
+
+export const disposedError = (): DOMException =>
+  new DOMException('The WebSocket streams were disposed.', 'AbortError');
 
 export const cancelledError = (): DOMException =>
   new DOMException('The WebSocket streams were cancelled.', 'AbortError');

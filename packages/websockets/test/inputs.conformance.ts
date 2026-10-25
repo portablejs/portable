@@ -34,6 +34,42 @@ describe('byte inputs', () => {
   }
 });
 
+describe.skipIf(typeof SharedArrayBuffer === 'undefined')('shared memory', () => {
+  const shared = () => {
+    const bytes = new Uint8Array(new SharedArrayBuffer(data.length));
+    bytes.set(data);
+    return bytes;
+  };
+
+  test('fromSocket sends a copy of a Uint8Array over a SharedArrayBuffer', async () => {
+    const socket = new FakeWebSocket('wss://example.com');
+    socket.accept();
+    const { writable } = WebSockets.fromSocket(socket);
+    await writable.getWriter().write(shared());
+    expect(socket.sent).toEqual([data]);
+    expect((socket.sent[0] as Uint8Array).buffer).toBeInstanceOf(ArrayBuffer);
+  });
+
+  test('connect sends a copy of a Uint8Array over a SharedArrayBuffer', async () => {
+    const server = new FakeServer();
+    const { writable } = WebSockets.connect('wss://example.com', {
+      WebSocket: server.WebSocket,
+      delay: 0,
+      open: ({ send }) => send(shared()),
+      heartbeat: { ping: shared(), pong: () => true, interval: 10 },
+    });
+    const socket = await server.accept();
+    const writer = writable.getWriter();
+    await writer.write(shared());
+    await until(() => socket.sent.length >= 3);
+    for (const sent of socket.sent.slice(0, 3)) {
+      expect(sent).toEqual(data);
+      expect((sent as Uint8Array).buffer).toBeInstanceOf(ArrayBuffer);
+    }
+    await writer.abort();
+  });
+});
+
 describe('rejected byte inputs', () => {
   for (const [name, value] of Object.entries(rejectedByteForms)) {
     test(`throws a TypeError for ${name}`, async () => {

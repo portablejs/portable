@@ -1,3 +1,4 @@
+import { abortable } from '@portable/timers/internal';
 import * as Dns from '@portable/dns';
 import type * as Spf from '@portable/spf';
 import { canExist, parseDomain } from './domain.js';
@@ -9,29 +10,11 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
  * or `EBADNAME` as no records, and any other rejection as a temporary DNS error. `resolve4` and
  * `resolveCname` are called only to find out whether a subdomain exists, for a record with an
  * `np` tag.
- *
- * @example
- * ```ts
- * import * as Dns from '@portable/dns';
- * import * as Dmarc from '@portable/dmarc';
- *
- * const resolver: Dmarc.Resolver = Dns.create();
- * ```
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>;
 
 /**
  * The outcome of a DMARC check.
- *
- * @example
- * ```ts
- * import * as Dmarc from '@portable/dmarc';
- *
- * const dmarc: Dmarc.Result = await Dmarc.check({ from, spf, dkim }, { resolver });
- * if (dmarc.disposition === 'reject') {
- *   reject('550 5.7.1 Rejected by DMARC policy');
- * }
- * ```
  */
 export type Result = {
   /** The DMARC result, as Authentication-Results reports it (RFC 8601). */
@@ -70,14 +53,6 @@ export declare namespace Result {
 /**
  * An authenticated identifier and whether it aligns with the From domain. Only a `pass` result can
  * align.
- *
- * @example
- * ```ts
- * import * as Dmarc from '@portable/dmarc';
- *
- * const { dkim } = await Dmarc.check({ from, dkim: signatures }, { resolver });
- * const aligned: Dmarc.Alignment[] = dkim.filter((signature) => signature.aligned);
- * ```
  */
 export type Alignment = {
   /** The SPF domain or the signature's `d=` domain, normalized like `Result.domain`. */
@@ -148,7 +123,8 @@ const maxAlignmentWalks = 10;
  * Checks a message against the DMARC policy of its From domain (RFC 9989, which replaces RFC
  * 7489). It finds the policy record with a DNS tree walk and checks whether a passing SPF result or
  * DKIM signature is aligned with the From domain. DNS failures give `temperror`, and a From domain
- * that isn't a domain name gives `permerror`. The promise rejects only when `signal` aborts.
+ * that isn't a domain name gives `permerror`. The promise rejects only for a `resolver` without the
+ * `Resolver` methods, or with `signal.reason` when `signal` aborts.
  *
  * @example
  * ```ts
@@ -167,6 +143,7 @@ const maxAlignmentWalks = 10;
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
+  assertResolver(options.resolver);
   options.signal?.throwIfAborted();
   const author = parseDomain(input.from);
   const domain = author.kind === 'name' ? author.name : input.from.trim().toLowerCase();
@@ -318,6 +295,16 @@ export async function check(input: check.Input, options: check.Options): Promise
   };
 }
 
+const resolverMethods = ['resolveTxt', 'resolve4', 'resolveCname'] as const;
+
+function assertResolver(resolver: Resolver): void {
+  for (const method of resolverMethods) {
+    if (typeof resolver?.[method] !== 'function') {
+      throw new TypeError(`options.resolver must have a ${method} method.`);
+    }
+  }
+}
+
 const strength: { [params in Policy]: number } = { none: 0, quarantine: 1, reject: 2 };
 
 function identifier(value: string): string {
@@ -409,7 +396,9 @@ function lookup(ctx: Context, domain: string): Promise<Parsed | undefined> {
   if (!answer) {
     const name = `_dmarc.${domain}`;
     answer = canExist(name)
-      ? query(ctx, `TXT lookup of ${name}`, () => ctx.resolver.resolveTxt(name)).then((answer) => {
+      ? query(ctx, `TXT lookup of ${name}`, () =>
+          ctx.resolver.resolveTxt(name, { signal: ctx.signal }),
+        ).then((answer) => {
           const records = 'value' in answer ? answer.value : [];
           const texts = records.map((strings) => strings.join('').trimEnd()).filter(isDmarc);
           return texts.length === 1 ? parseRecord(texts[0]!) : undefined;
@@ -425,7 +414,9 @@ async function exists(ctx: Context, domain: string): Promise<boolean> {
   if (!canExist(domain)) {
     return false;
   }
-  const a = await query(ctx, `A lookup of ${domain}`, () => ctx.resolver.resolve4(domain));
+  const a = await query(ctx, `A lookup of ${domain}`, () =>
+    ctx.resolver.resolve4(domain, { signal: ctx.signal }),
+  );
   if ('value' in a || a.empty === 'ENODATA') {
     return true;
   }
@@ -433,7 +424,7 @@ async function exists(ctx: Context, domain: string): Promise<boolean> {
     return false;
   }
   const cname = await query(ctx, `CNAME lookup of ${domain}`, () =>
-    ctx.resolver.resolveCname(domain),
+    ctx.resolver.resolveCname(domain, { signal: ctx.signal }),
   );
   return 'value' in cname && cname.value.length > 0;
 }
@@ -446,7 +437,8 @@ async function query<value>(
   try {
     return { value: await abortable(Promise.resolve().then(run), ctx.signal) };
   } catch (error) {
-    if (error instanceof TempError || ctx.signal?.aborted) {
+    ctx.signal?.throwIfAborted();
+    if (error instanceof TempError) {
       throw error;
     }
     const code =
@@ -458,21 +450,4 @@ async function query<value>(
       cause: error,
     });
   }
-}
-
-function abortable<value>(
-  promise: Promise<value>,
-  signal: AbortSignal | undefined,
-): Promise<value> {
-  if (!signal) {
-    return promise;
-  }
-  if (signal.aborted) {
-    return Promise.reject(signal.reason);
-  }
-  return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason);
-    signal.addEventListener('abort', onAbort, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
-  });
 }

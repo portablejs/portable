@@ -52,7 +52,7 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 | `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` holds the limit. |
 
-`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret or a Standard Webhooks secret that isn't base64 throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
+`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret, a Standard Webhooks secret that isn't base64, or an invalid `now` throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
 The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
 
@@ -64,9 +64,9 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one. |
 | `tolerance` | `300_000` | `verify` only. Largest difference between the signed timestamp and `now`, in milliseconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
 | `maxBytes` | `Infinity` | `verify` only. The longest `Request` body to read, in bytes. A longer body throws `MaxBytesError` and is cancelled. Set it when `verify` reads requests from the internet. |
-| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. |
+| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. A `Date` or a `Temporal.Instant`. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
-| `hmac` | `crypto.subtle` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
+| `hmac` | `WebCrypto.hmac` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 
 ### Schemes
@@ -124,9 +124,9 @@ This package won't add schemes beyond these four. The built-in ones in [`src/sch
 
 ## Crypto
 
-`verify` and `sign` compute HMAC-SHA256 with `crypto.subtle`, which every supported runtime has, so the package has no dependency for it. WebCrypto is async, but `verify` already has to await the request body. Imported keys are cached for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
+`verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package needs no dependency outside `@portable/*` for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
-On Node, WebCrypto's HMAC is about 7× slower than `@noble/hashes`. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
+On Node, `verify` is about 3 times faster with `@noble/hashes` than with WebCrypto's HMAC. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
 
 ```ts
 import { hmac } from '@noble/hashes/hmac.js';
@@ -144,6 +144,7 @@ const { body } = await Webhooks.verify(request, {
 
 | Type | Description |
 | --- | --- |
+| `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes, or UTF-8 encoding does if the scheme has no `key`. A `Uint8Array` is used as the raw key. |
 | `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
 | `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
 
@@ -156,7 +157,7 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 - A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
 - Stripe's `constructEvent` takes `tolerance` in seconds, and `verify` takes it in milliseconds, so Stripe's `300` becomes `tolerance: 300_000`. Stripe's `tolerance: 0` turns the check off, and here `0` requires the exact second and `Infinity` turns the check off.
-- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes `timestamp` as a `Date`.
+- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date` or a `Temporal.Instant`.
 - A timestamp must be an integer number of seconds. standardwebhooks and Stripe read `123abc` as `123` with `parseInt`.
 - `@octokit/webhooks-methods`'s `verify` returns `false` for a bad signature. `Webhooks.verify` throws instead.
 - Stripe and standardwebhooks parse the JSON body for you. `verify` returns the text, because Slack and GitHub can send form-encoded bodies.
@@ -176,8 +177,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/webhooks | @portable/webhooks with @noble/hashes | standardwebhooks | svix | stripe, `constructEventAsync` | stripe, `constructEvent` | @octokit/webhooks-methods, web build | @octokit/webhooks-methods, Node build | @slack/bolt | `crypto.subtle` by hand | `node:crypto` by hand |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 4.5 kB | 7.4 kB | 4.6 kB | 4.5 kB | 30 kB | 30 kB | 0.4 kB | 0.4 kB | 1.3 kB | built in | built in |
-| Runtime dependencies | 2 | 3 | 2 | 3 | 0 | 0 | 0 | 0 | 98 | – | – |
+| Minified and gzipped | 5.2 kB | 8.0 kB | 4.6 kB | 4.5 kB | 30 kB | 30 kB | 0.4 kB | 0.4 kB | 1.3 kB | built in | built in |
+| Runtime dependencies | 6 | 7 | 2 | 3 | 0 | 0 | 0 | 0 | 98 | – | – |
 | Node built-ins used | none | none | `Buffer` | `Buffer` | `Buffer` | `Buffer` | none | none | `crypto` | none | Node only |
 | TypeScript types | included | included | included | included | included | included | included | included | included | – | – |
 | Version compared | – | – | 1.1.1 | 2.8.0 | 23.0.0 | 23.0.0 | 6.0.0 | 6.0.0 | 5.1.0 | – | – |
@@ -185,4 +186,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, WebCrypto's HMAC is several times slower than a JavaScript one, so pass `@noble/hashes` as `hmac` there if verification speed matters. Browsers and Workers have fast WebCrypto, so the default is fine.
+The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. WebCrypto HMAC is fast in browsers and Workers, so you can keep the default there.

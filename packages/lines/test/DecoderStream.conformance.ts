@@ -161,6 +161,11 @@ describe('DecoderStream', () => {
     expect(await split(['a\r'])).toEqual(['a\r']);
   });
 
+  test('rejects a negative or NaN maxLength with a RangeError', () => {
+    expect(() => new Lines.DecoderStream({ maxLength: -1 })).toThrow(RangeError);
+    expect(() => new Lines.DecoderStream({ maxLength: Number.NaN })).toThrow(RangeError);
+  });
+
   test('resumes after a skipped overflow that ends the stream', async () => {
     expect(await split(['a\n12345'], { maxLength: 2, overflow: 'skip' })).toEqual(['a']);
   });

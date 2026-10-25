@@ -116,46 +116,46 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | --- | --- | --- |
 | waits for condition | `poll > results > waits for an async check` | |
 | rejects if condition throws | `poll > results > rejects with the error a check throws, without another check` | |
-| rejects if condition returns non-boolean | `poll > results > resolves with ... which is not undefined` | Deliberate difference: any value other than `undefined` ends the poll. |
-| timeout rejects with TimeoutError | `poll > timeout > rejects with a TimeoutError DOMException when the time passes` | A `DOMException`, not p-wait-for's own `TimeoutError` class. |
+| rejects if condition returns non-boolean | `poll > results > resolves with %j, which is not undefined` | Deliberate difference: any value other than `undefined` ends the poll. |
+| timeout rejects with TimeoutError | `poll > a timeout signal > rejects with its TimeoutError when the time passes` | `poll` has no `timeout` option. `AbortSignal.timeout` rejects with a `TimeoutError` `DOMException`, not p-wait-for's own `TimeoutError` class. |
 | timeout has a default message | skipped | The message is the `DOMException`'s. |
 | timeout with custom error message | skipped | No `message` option. Catch and rethrow. |
 | timeout with custom error object | skipped | Same. |
 | timeout with fallback function | skipped | No `fallback`. Use `.catch()`. |
 | timeout with fallback function when `before` is false | skipped | No `fallback` or `before`. |
 | timeout with custom error message when `before` is false | skipped | Same. |
-| stops checking after timeout | `poll > timeout > stops checking after the timeout` | |
+| stops checking after timeout | `poll > a timeout signal > stops checking after the timeout` | |
 | before option delays first check | skipped | No `before`. Call `sleep` first. |
 | resolveWith returns custom value | `poll > results > resolves with the first value that is not undefined` | |
 | aborts when signal is aborted | `poll > signal > rejects with signal.reason when aborted between checks` | |
 | handles pre-aborted signal | `poll > signal > does not check when the signal is already aborted` | |
 | stops checking after abort | `poll > signal > rejects with signal.reason when aborted between checks` | |
-| signal and timeout work together | `poll > signal > an abort before the timeout wins` | |
+| signal and timeout work together | skipped | No `timeout` option. Combine signals with `AbortSignal.any`. |
 | resolves with signal when condition becomes true | `poll > signal > resolves when a check returns a value while a signal is passed` | |
-| resolveWith works with timeout | `poll > timeout > resolves with a value found before the timeout` | |
+| resolveWith works with timeout | `poll > a timeout signal > resolves with a value found before the timeout` | |
 | resolveWith works with signal | `poll > signal > resolves when a check returns a value while a signal is passed` | |
 | interval is respected | `poll > delay > waits the given number of ms between checks` | |
 | handles async condition that resolves false multiple times | `poll > results > keeps polling an async check that resolves undefined` | |
-| cleanup happens on successful resolution | `listeners > after 200 polls that succeed`, `poll > timers > leaves no timer after success with a timeout and a signal` | |
+| cleanup happens on successful resolution | `listeners > after 200 polls that succeed`, `poll > timers > leaves no timer after success with a signal` | |
 | cleanup happens on error | `listeners > after a poll check throws`, `poll > timers > leaves no timer after a check throws` | |
-| throws on invalid timeout.milliseconds | skipped | `timeout` is a number. |
-| throws on negative interval | `poll > delay > rejects a negative number with a RangeError` | |
-| throws on NaN interval | `poll > delay > rejects a NaN number with a RangeError` | |
-| throws on Infinity interval | skipped | Deliberate difference: `delay: Infinity` is allowed and waits until the timeout or an abort. |
-| throws on negative timeout | `poll > timeout > rejects a negative timeout with a RangeError` | |
-| throws on NaN timeout | `poll > timeout > rejects a negative timeout with a RangeError` | The same check rejects `NaN`. |
-| throws on negative timeout.milliseconds | skipped | `timeout` is a number. |
+| throws on invalid timeout.milliseconds | skipped | No `timeout` option. |
+| throws on negative interval | `poll > delay > rejects %s with a RangeError` | |
+| throws on NaN interval | `poll > delay > rejects %s with a RangeError` | |
+| throws on Infinity interval | skipped | Deliberate difference: `delay: Infinity` is allowed and waits until the signal aborts. |
+| throws on negative timeout | skipped | No `timeout` option. |
+| throws on NaN timeout | skipped | Same. |
+| throws on negative timeout.milliseconds | skipped | Same. |
 | throws on NaN timeout.milliseconds | skipped | Same. |
 | handles fallback errors gracefully | skipped | No `fallback`. |
-| handles null condition return value | `poll > results > resolves with null, which is not undefined` | Deliberate difference: `null` is a value. |
+| handles null condition return value | `poll > results > resolves with %j, which is not undefined` | Deliberate difference: `null` is a value. |
 | handles undefined condition return value | `poll > results > resolves with the first value that is not undefined` | `undefined` keeps polling. |
 | handles promise rejection in condition | `poll > results > rejects with the error an async check rejects with` | |
-| works with zero interval | `poll > delay > with 0, still lets timers run between checks so a timeout can fire` | |
-| resolveWith with falsy values | `poll > results > resolves with 0 / "" / false / null` | |
+| works with zero interval | `poll > delay > with 0, still lets timers run between checks so a timeout signal can fire` | |
+| resolveWith with falsy values | `poll > results > resolves with %j, which is not undefined` | |
 | multiple simultaneous waits with same condition | `poll > results > runs several polls on one check function` | |
 | signal abort reason is preserved | `poll > signal > rejects with signal.reason when aborted between checks` | |
-| condition can return truthy non-boolean values that get rejected | `poll > results > resolves with 42 / "truthy string" / []` | Deliberate difference. |
-| timeout with Infinity milliseconds never times out | `poll > timeout > with Infinity never times out` | |
+| condition can return truthy non-boolean values that get rejected | `poll > results > resolves with %j, which is not undefined` | Deliberate difference. |
+| timeout with Infinity milliseconds never times out | skipped | No `timeout` option. Without a `signal`, `poll` never times out. |
 | fallback returns undefined works | skipped | No `fallback`. |
 | before false delays first check exactly | skipped | No `before`. |
 | abort before first check | `poll > signal > does not check when the signal is already aborted` | |
@@ -167,13 +167,13 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | timeout message as string | skipped | Same. |
 | removes the abort listener once each poll settles | `listeners > after 200 polls that succeed` | |
 | abort rejects while the condition is pending | `poll > signal > rejects with signal.reason while a check is pending, without calling it again` | |
-| timeout rejects while the condition is pending | `poll > timeout > rejects while a check is pending, and aborts its signal` | |
+| timeout rejects while the condition is pending | `poll > a timeout signal > rejects while a check is pending, and aborts its signal` | |
 | timeout fallback runs while the condition is pending | skipped | No `fallback`. |
 | a condition that settles after abort is not called again | `poll > signal > rejects with signal.reason while a check is pending, without calling it again` | |
 | a condition that rejects after abort does not cause an unhandled rejection | `poll > signal > ignores a check that rejects after the abort` | Vitest fails the run on an unhandled rejection in Node and Chromium. |
-| timeout and signal together settle the wait while the condition is pending | `poll > signal > a timeout before the abort wins` | |
+| timeout and signal together settle the wait while the condition is pending | `poll > a timeout signal > rejects while a check is pending, and aborts its signal` | No `timeout` option, so one signal covers both. |
 | abort during the initial `before: false` delay never calls the condition | skipped | No `before`. |
-| a condition that throws `undefined` rejects with it when a timeout is set | `poll > results > rejects with undefined when a check throws undefined and a timeout is set` | |
+| a condition that throws `undefined` rejects with it when a timeout is set | `poll > results > rejects with undefined when a check throws undefined and a signal is set` | |
 
 ## lodash debounce
 
@@ -201,7 +201,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | subsequent calls should return the result of the first call | `throttle > lodash throttle > calls in the first window resolve with the leading result, later ones with the trailing` | Deliberate difference, as for `debounce`. |
 | should clear timeout when `func` is called | `debounce > lodash debounce and throttle > throttle leaves no timer after the wait, cancel or abort` | |
 | should not trigger a trailing call when invoked once | `throttle > lodash throttle > does not make a trailing call when called once` | |
-| should trigger a call when invoked repeatedly (with and without `leading: false`) | `throttle > lodash throttle > calls fn more than once when called repeatedly, leading: true / false` | |
+| should trigger a call when invoked repeatedly (with and without `leading: false`) | `throttle > lodash throttle > calls fn more than once when called repeatedly, leading: ${leading}` | |
 | should trigger a second throttled call as soon as possible | `throttle > lodash throttle > makes a second call as soon as possible with leading: false` | |
 | should apply default options | `throttle > lodash throttle > applies the default options` | |
 | should support a `leading` option | `throttle > lodash throttle > leading: false waits for the trailing call` | |
@@ -325,8 +325,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | p-retry checks the signal only between attempts, so an abort during a slow attempt waits for that attempt. p-retry #97 was the same problem during the delay, fixed in December 2025. | The call rejects with `signal.reason` at once, and the attempt's own `signal` aborts too. | `retry > signal > rejects with signal.reason when aborted while an attempt is pending`, `retry > signal > aborts the attempt signal when the caller aborts` |
 | async-retry's `bail()` rejects the promise but doesn't stop the operation, so a later throw schedules more calls in the background (async-retry #69). | `retryIf` returning `false` ends the loop. | `retry > retryIf > stops further calls to fn once it returns false` |
 | None of the four libraries limits a single attempt, so a request that hangs stops the retries. | `timeout` aborts the attempt's `signal` and retries. | `retry > timeout > fails an attempt that ignores its signal and rejects with the TimeoutError last` |
-| `setTimeout` fires after 1 ms for delays of 2³¹ ms or more. p-retry with a large `factor` and no `maxTimeout`, and p-wait-for with a long `interval`, then retry or check in a tight loop. delay works around it with unlimited-timeout. | `sleep` waits in steps of at most 2³¹ − 1 ms. | `sleep > sleep > does not fire early for delays past the 32-bit setTimeout limit`, `oracle > sleep matches delay > resolves after 2147483653 ms` |
-| p-wait-for's `timeout` uses `AbortSignal.timeout`, whose timer runs to the end after the poll succeeds and can't be faked in tests. | The deadline timer is cleared when the poll settles. | `poll > timers > leaves no timer after success with a timeout and a signal` |
+| `setTimeout` fires after 1 ms for delays of 2³¹ ms or more. p-retry with a large `factor` and no `maxTimeout`, and p-wait-for with a long `interval`, then retry or check in a tight loop. delay works around it with unlimited-timeout. | `sleep` waits in steps of at most 2³¹ − 1 ms. | `sleep > sleep > does not fire early for delays past the 32-bit setTimeout limit`, `oracle > sleep matches delay > resolves after ${ms} ms` |
 | p-retry once left its abort listener on the signal after it finished (p-retry #71). | Listeners are removed when each call settles. | `listeners > after retry succeeds, with and without a timeout` |
 | lodash `debounce` and `throttle` read `Date.now()`. When the system clock jumps forward, `throttle` invokes again on the next call. | Time is read from `performance.now()`, which doesn't jump. | `debounce > lodash debounce and throttle > throttle is not invoked early when the system clock jumps forward` |
 | lodash.debounce 4.0.8, the standalone package, restarts its timer in a tight loop with `maxWait` below `ms` without clearing the old one, so it invokes at other times than lodash 4.18. | Matches lodash 4.18. | `oracle > lodash.debounce and lodash.throttle 4.x > lodash.debounce 4.0.8 invokes at other times when maxWait is below ms, and lodash 4.18 does not` |

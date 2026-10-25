@@ -46,12 +46,12 @@ Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts
 | Keep an overlong body line free of a spurious CR | `message-splitter > never ends a body with the CR of the line break before a delimiter` | |
 | Keep parsing siblings after a nested inline message closes | `message-splitter > keeps reading parts after a nested embedded message ends` | |
 | Split line-dense input without a setImmediate per line | `message-splitter > reads a body of 100,000 empty lines` | Upstream counts event loop turns. `DecoderStream` handles each chunk in one synchronous call and finds line breaks with `indexOf`, so only the result applies. |
-| Yield to the event loop while splitting a large chunk | skipped | `DecoderStream` handles a chunk in one call and never schedules work. A caller who wants smaller steps writes smaller chunks. |
+| Yield to the event loop while splitting a large chunk | skipped | `DecoderStream` handles a chunk in one call and never schedules work. To get smaller steps, write smaller chunks. |
 | Close unterminated nested multiparts on an outer boundary | `message-splitter > closes unterminated nested multiparts on an outer delimiter` | Checks `part.parent` instead of IMAP part numbers, which this package doesn't compute. |
 
 ## headers-test.js
 
-mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the `headers` chunk keeps the bytes, `part.headers` lists the fields, and a caller who wants other headers enqueues other bytes. The tests of editing and rebuilding have no counterpart, because nothing here rebuilds a header block.
+mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the `headers` chunk keeps the bytes, `part.headers` lists the fields, and to send other headers, you enqueue other bytes. The tests of editing and rebuilding have no counterpart, because nothing here rebuilds a header block.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |

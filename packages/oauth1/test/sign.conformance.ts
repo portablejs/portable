@@ -56,6 +56,19 @@ describe('sign()', () => {
     expect(await signed.text()).toBe(tweetBody);
   });
 
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const sign = (now: OAuth1.sign.Options['now']) =>
+      OAuth1.sign(new Request('https://example.com/a'), {
+        consumer: { key: 'k', secret: 's' },
+        nonce: 'n',
+        now,
+        placement: 'query',
+      });
+    const signed = await sign({ epochMilliseconds: 1_000 });
+    expect(signed.url).toBe((await sign(new Date(1_000))).url);
+    expect(signed.url).toContain('oauth_timestamp=1&');
+  });
+
   test('placement "query" on a URL without a query', async () => {
     const signed = await OAuth1.sign(new Request('https://example.com/a'), {
       consumer: { key: 'k', secret: 's' },
@@ -78,6 +91,20 @@ describe('sign()', () => {
     );
     expect(await signed.text()).toBe('text');
     expect(parseHeader(signed.headers.get('authorization')!).oauth_body_hash).toBeDefined();
+  });
+
+  test('rejects an invalid now or signature method without reading the body', async () => {
+    const cases = [
+      [{ ...twitter, now: new Date(NaN) }, RangeError],
+      [{ ...twitter, now: { epochMilliseconds: NaN } }, RangeError],
+      [{ ...twitter, signatureMethod: 'RSA-SHA256' as never }, OAuth1.UnsupportedError],
+    ] as const;
+    for (const [options, error] of cases) {
+      const request = new Request(tweetUrl, form(tweetBody));
+      await expect(OAuth1.sign(request, options)).rejects.toThrow(error);
+      expect(request.bodyUsed).toBe(false);
+      expect(await request.text()).toBe(tweetBody);
+    }
   });
 });
 

@@ -15,19 +15,20 @@ portable/
 │  └─ README.md
 ├─ tools/
 │  ├─ fuzz/                fuzz(), which runs fast-check properties for the fuzz tests
-│  ├─ lint/                the portable oxlint plugin and the public API test
+│  ├─ lint/                the portable oxlint plugin and the public API and package.json tests
 │  ├─ worker/              runs the conformance tests in a browser Web Worker
 │  └─ workers/             bundles every package into one Worker for workerd
 ├─ scripts/                bench, bundle size and README table scripts
+├─ site/                   the docs site, built with Vocs from the READMEs and JSDoc
 ├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
-├─ .github/workflows/      CI (verify.yml)
+├─ .github/workflows/      CI (verify.yml) and the docs site (docs.yml, docs-preview.yml)
 ├─ .vite-hooks/            git hooks
 ├─ AGENTS.md               rules for agents and contributors (CLAUDE.md imports it)
 ├─ vite.config.ts          format, lint, staged-file and test config
 ├─ tsconfig.base.json
-├─ tsconfig.test.json      type-checks every package's test/ directory
+├─ tsconfig.test.json      type-checks every package's test/ directory and tools/
 └─ pnpm-workspace.yaml
 ```
 
@@ -50,13 +51,13 @@ pnpm 11 manages the workspace. Every shared dev dependency has one version in th
 oxlint rejects what the types allow but the runtimes don't share:
 
 - `no-restricted-imports` rejects `node:*` and the bare Node built-in names.
-- `no-restricted-globals` rejects `Buffer`, `process`, `global`, `require`, `__dirname`, `window`, `document`, `navigator` and `localStorage`.
+- `no-restricted-globals` rejects `Buffer`, `process`, `global`, `require`, `__dirname`, `window`, `document`, `navigator` and `localStorage`, and also `DisposableStack`, `AsyncDisposableStack` and `SuppressedError`, which Safari 26 doesn't have.
 
 Both rules are off for `*.oracle.test.ts` and `*.bench.ts`, which run in Node to compare against Node libraries.
 
 ## Runtime baseline
 
-Packages run on ES2022 and on the web APIs listed below. We don't ship polyfills, and a package never patches a global. An app that has to support older browsers adds polyfills itself, for example with core-js. Vite, esbuild and `tsc` rewrite newer syntax for older targets but never add a missing API, so the app's build doesn't add polyfills either. ox, viem, hono and jose don't ship polyfills either: each documents the oldest runtimes it supports and leaves polyfills to the app. A polyfill patches a global when its module loads, so a package that contained one couldn't declare `"sideEffects": false`, and a bundler that trusts the flag would drop the polyfill.
+Packages run on ES2022 and on the web APIs listed below. We don't ship polyfills, and a package never patches a global. If an app has to support older browsers, it needs to add polyfills itself, for example with core-js. Vite, esbuild and `tsc` rewrite newer syntax for older targets but never add a missing API, so the app's build doesn't add polyfills either. ox, viem, hono and jose don't ship polyfills either: each documents the oldest runtimes it supports and leaves polyfills to the app. A polyfill patches a global when its module loads, so a package that contained one couldn't declare `"sideEffects": false`, and a bundler that trusts the flag would drop the polyfill.
 
 For each ES version, the table gives the share of global browser usage that comes from browsers supporting all of its features, and the first Chrome, Firefox and Safari versions that support them. The data is from caniuse-lite 1.0.30001817 and @mdn/browser-compat-data 8.1.6 as of October 2026. No ES version can reach more than 96.7%, because caniuse counts the remaining usage, from Opera Mini, UC Browser, QQ Browser, Internet Explorer and browsers it doesn't track, as supporting none of them. The rows don't count top-level await, because no package uses it and MDN lists Safari support before 27 as partial.
 
@@ -75,15 +76,17 @@ Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so ev
 
 | API | Packages | Usage share | Chrome | Firefox | Safari |
 | --- | --- | --- | --- | --- | --- |
-| `AbortSignal.timeout` | dkim, dmarc, dns, mail-auth, rpc, smtp, spf, sse, timers | 96.1% | 103 | 100 | 16 |
+| `crypto.randomUUID` | webhooks | 96.4% | 92 | 95 | 15.4 |
+| `AbortSignal.timeout` | none (the examples pass it as `signal`) | 96.1% | 103 | 100 | 16 |
 | `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
+| `Response.json` | rpc | 95.3% | 105 | 115 | 17 |
 | `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
 | WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
 | WebCrypto Ed25519 | arc, dkim, web-crypto | 89.8% | 137 | 129 | 17 |
 
-Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
+Browsers define `crypto.randomUUID` only in a secure context (HTTPS or `localhost`), so on a plain HTTP page `Webhooks.sign` needs an `id`. Chrome 103 to 123 abort an `AbortSignal.timeout` signal with an `AbortError` instead of a `TimeoutError`, so MDN lists full support only from Chrome 124, which lowers the usage share to 92.2%. Node 22 and later, Cloudflare Workers, Deno and Bun have every API in both tables.
 
-A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, and timers uses `scheduler.wait`. Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
+A package can use an API newer than this baseline if it checks whether the runtime has the API and runs its own code when it doesn't. It must not patch a global to add the API. base64 and bytes use `Uint8Array.prototype.toBase64` and `toHex` this way, streams uses `ReadableStream.from`, timers uses `scheduler.wait`, and queue, rpc, smtp, timers and websockets set `[Symbol.asyncDispose]` or `[Symbol.dispose]` only where the symbol exists (Chrome 134, Firefox 141 and Node 24, but not Safari 26). No package calls Temporal: an option that takes an instant reads `epochMilliseconds`, so it accepts a `Temporal.Instant` in runtimes that have one and a `Date` in Safari, which has no Temporal. Package code doesn't use `for await` over a `ReadableStream`, because the browsers that support it account for only 75.5% of global usage.
 
 ## Building
 
@@ -121,7 +124,7 @@ The `browser` project uses Vitest browser mode with Playwright and runs Chromium
 
 The conformance tests don't run in Workers yet, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Instead, `pnpm test:workers` runs `tools/workers/src/run.ts`, which bundles every entry point of every package into one Worker and runs it in workerd through Miniflare. Loading the bundle fails if a module creates an `AbortController`, sets a timer or generates random values at the top level, because workerd refuses those outside a handler. The Worker's `fetch` handler then runs the checks in `tools/workers/src/checks.ts`. Each check calls one package with input that makes it use its platform APIs, such as `CompressionStream`, `crypto.subtle`, `MessageChannel` and `WebSocketPair`. Miniflare runs workerd without the limits of a deployed Worker, such as the 100,000-iteration cap on PBKDF2.
 
-Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream. Chromium 141 has neither, which made the first browser run of `@portable/lines` fail.
+Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream, because Chromium has no `ReadableStream.from` and Safari before 27 has neither. The missing `ReadableStream.from` made the first browser run of `@portable/lines` fail in Chromium 141.
 
 ### Parity with the replaced library
 
@@ -138,13 +141,13 @@ Each package has a `test/<name>.fuzz.conformance.ts` with [fast-check](https://f
 Each package has a benchmark that runs it against the library it replaces, and against the platform API where one exists. Vitest 5's `bench.compare` runs the candidates in one test, and the test fails if the original library is more than 25% faster:
 
 ```ts
-const result = await bench.compare(bench('@portable/lines', ...), bench('split2', ...))
-expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), { delta: 0.25 })
+const result = await bench.compare(bench('@portable/lines', ...), bench('split2', ...));
+expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), { delta: 0.25 });
 ```
 
 Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIST=1`. With it set, `vite.config.ts` drops the `src` condition and lets Node load each package's `dist/` directly, because Vitest wraps every call between source modules in a getter, which slowed source benchmarks by up to 2×. The git hooks don't run benchmarks, because timing on a laptop varies too much to block a push.
 
-`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. `pnpm readme` writes no tables for a package without an entry there, so add one for each new package. The root README's package list, grouped by category, is edited by hand.
+`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. `pnpm readme` writes no tables for a package without an entry there, so add one for each new package. The root README's package list, grouped by category, is edited by hand, and `site/scripts/gen.mjs` reads it to build the docs site's home page and sidebar.
 
 ## Git hooks
 
@@ -153,13 +156,15 @@ Git hooks run the checks before each commit and push. `pnpm install` installs th
 | Hook | Runs |
 | --- | --- |
 | pre-commit | `vp staged`, which runs `vp check --fix` on staged files |
-| pre-push | `tsc -b`, then the Node tests affected by changes since `origin/main` (`vitest --changed`) |
+| pre-push | `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
 
 Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `pnpm changeset:publish` runs them before every release. `git push --no-verify` skips the hooks.
 
 ## CI
 
-`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `tsc -b` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs don't fail the run yet, because of the runtime bugs listed in docs/papercuts.md. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. That job doesn't fail the run either, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. CI doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `pnpm check:types` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs don't fail the run yet, because of the runtime bugs listed in docs/papercuts.md. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. That job doesn't fail the run either, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. `verify.yml` doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+
+Two more workflows build the docs site with `pnpm --filter @portable/site build`. `docs.yml` publishes it to GitHub Pages on every push to `main`. `docs-preview.yml` publishes a preview to here.now for a pull request with the `preview` label, and updates it on each later push to that pull request.
 
 The tests that compare the base64 and hex fallbacks with the native API run only where the runtime has `Uint8Array.toBase64` and `fromHex`. Node 26 has them and Node 24 doesn't, so CI tests both versions. CI doesn't test Node 22, because `engines` requires Node 24 and because Node 22's `DecompressionStream` ignores bytes after the end of a compressed stream, which makes `Compress.decode` accept trailing data.
 
@@ -187,9 +192,9 @@ type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuf
 type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promise<Uint8Array> };
 ```
 
-Each package takes only the one it needs, under an option with the type's name: `@portable/oauth1` takes `hmac` and `digest`, `@portable/webhooks` takes `hmac`, and `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take `hasher`, a function that takes the hash name and returns a `Hasher`. They re-export the type, so a caller doesn't need to install `@portable/web-crypto`. None of them imports a crypto library or lists one as a dependency, and none has a `/core` entry, because the WebCrypto default imports no library, and a caller who wants another implementation passes it in the option.
+Each package takes only the one it needs, under an option with the type's name: `@portable/oauth1` takes `hmac` and `digest`, `@portable/webhooks` takes `hmac`, and `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take `hasher`, a function that takes the hash name and returns a `Hasher`. They re-export the type, so a caller doesn't need to install `@portable/web-crypto`. None of them imports a crypto library or lists one as a dependency, and none has a `/core` entry, because the WebCrypto default imports no library, and if you want another implementation, you pass it in the option.
 
-WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC is about 7× slower than noble's. We expect Node's WebCrypto to get faster. Until then, a README shows the noble version of the option for a caller who verifies or signs many messages on Node, or who needs a sync result.
+WebCrypto is the default because every supported runtime has it and it adds nothing to a bundle. noble's HMAC-SHA256 is about 3.0 kB gzipped in a browser bundle. The cost is speed on Node, where WebCrypto's HMAC-SHA256 of 1 KB is about 4.6× slower than noble's, as the `@portable/web-crypto` benchmark table shows. We expect Node's WebCrypto to get faster. Until then, the READMEs show how to pass noble instead, for code that signs or verifies many messages on Node or needs a sync result.
 
 A package needs noble only where WebCrypto can't do the job, such as an incremental or streaming hash, because `crypto.subtle.digest` takes the whole input at once. A DKIM body hash over a stream is one case. Such a package takes noble as an optional peer dependency or requires the caller to pass the function.
 

@@ -21,7 +21,8 @@ export declare namespace encode {
 }
 
 /**
- * Encodes text into bytes in the given charset. Bytes are read as UTF-8 text.
+ * Encodes text into bytes in the given charset. Bytes are read as UTF-8 text, and a UTF-8 byte
+ * order mark at their start is dropped.
  *
  * Lone surrogates are encoded as U+FFFD, as `TextEncoder` does.
  *

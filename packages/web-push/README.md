@@ -55,12 +55,13 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 | `maxPayloadBytes` | `3993`, the largest payload in bytes. |
 | `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413 or 429. It has `status`, the whole `response` and its `body` as text. |
 | `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
+| `MaxBytesError` | Thrown when the payload is longer than `maxPayloadBytes`, before anything is sent. Its `maxBytes` property is `3993`. The subscription is still valid. |
 
 `payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
 
 `subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
 
-A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too. A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
+A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, a `ttl` that isn't a non-negative integer, or an invalid `now`.
 
 ### Options
 
@@ -72,7 +73,7 @@ A payload longer than `maxPayloadBytes` is rejected with `InvalidInputError` too
 | `ttl` | `2419200` (four weeks) | Seconds the push service keeps the message for an offline browser. `0` means deliver now or drop it. |
 | `urgency` | not sent | `'very-low'`, `'low'`, `'normal'` or `'high'`. Push services may hold back low-urgency messages to save battery. |
 | `topic` | not sent | Up to 32 base64url characters. A new message with the same topic replaces an undelivered one. |
-| `now` | `new Date()` | The VAPID token expires 12 hours after this time. |
+| `now` | `new Date()` | The VAPID token expires 12 hours after this time. A `Date` or a `Temporal.Instant`. |
 | `fetch` | `globalThis.fetch` | `send` only. Called with the `Request`. Pass one to add retries, logging or a proxy. |
 | `signal` | none | Cancels the encryption and the `fetch`. Rejects with `signal.reason`. |
 | `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Only for test vectors: reusing either for two messages weakens the encryption. |
@@ -83,12 +84,15 @@ The JWT in the `Authorization` header expires 12 hours after it is signed. `send
 
 | Type | Description |
 | --- | --- |
+| `WebPush.Subscription` | `{ endpoint, expirationTime?, keys? }`, the `subscription` option, as `PushSubscription.toJSON()` returns it. |
+| `WebPush.Keys` | `{ p256dh, auth }`, each a base64url or base64 string or a `Uint8Array`. |
+| `WebPush.Urgency` | `'very-low' \| 'low' \| 'normal' \| 'high'`, the `urgency` option. |
 | `WebPush.VapidKeys` | `{ publicKey, privateKey }` as base64url strings, as `generateVapidKeys` returns them. |
 | `WebPush.Vapid` | The `vapid` option: `VapidKeys` and a `subject`. |
 
 ## Why use this over web-push
 
-It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server can send notifications. It has one dependency, `@portable/base64`, where web-push has five, including an ASN.1 library and an HTTPS proxy agent.
+It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a Worker or from a Deno or Bun server. It depends only on four other `@portable/*` packages, where web-push has five dependencies, including an ASN.1 library and an HTTPS proxy agent.
 
 - `send` returns `{ kind: 'gone' }` for a 404 or 410, so you can tell an expired subscription from a failed send without checking status codes yourself.
 - Payloads over 3993 bytes are rejected before sending. web-push has no limit, and http_ece splits a payload over about 4079 bytes into several records, which push services reject.
@@ -120,8 +124,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/web-push | web-push | The same WebCrypto calls by hand |
 | --- | --- | --- | --- |
-| Minified and gzipped | 4.6 kB | 32 kB | built in |
-| Runtime dependencies | 2 | 16 | – |
+| Minified and gzipped | 5.6 kB | 32 kB | built in |
+| Runtime dependencies | 5 | 16 | – |
 | Node built-ins used | none | `assert`, `buffer`, `crypto`, `http`, `https`, `net`, `stream`, `tls`, `url`, `util` | none |
 | TypeScript types | included | `@types/web-push` | – |
 | Version compared | – | 3.6.7 | – |
@@ -129,4 +133,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
+On Node, web-push is about 2.5 times faster at encrypting one message and 1.2 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 11 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.

@@ -206,6 +206,9 @@ export default defineConfig({
         { name: 'document', message: 'Not available in every runtime.' },
         { name: 'navigator', message: 'Not available in every runtime.' },
         { name: 'localStorage', message: 'Not available in every runtime.' },
+        { name: 'DisposableStack', message: 'Safari 26 has no explicit resource management.' },
+        { name: 'AsyncDisposableStack', message: 'Safari 26 has no explicit resource management.' },
+        { name: 'SuppressedError', message: 'Safari 26 has no explicit resource management.' },
       ],
     },
     overrides: [
@@ -217,6 +220,8 @@ export default defineConfig({
           'tools/lint/src/publicApi.test.ts',
           'tools/lint/src/forAwait.test.ts',
           'tools/lint/src/examples.test.ts',
+          'tools/lint/src/packages.test.ts',
+          'tools/lint/src/prose.test.ts',
         ],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },

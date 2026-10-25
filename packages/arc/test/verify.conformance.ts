@@ -403,6 +403,27 @@ describe('the newest ARC-Message-Signature (RFC 8617 section 4.1.2)', () => {
     expect((await check(message)).reason).toBe('i=1 ams signature expired');
     expect((await check(message, records, { now: new Date(1_500_000) })).result).toBe('pass');
   });
+
+  test('checks x= against an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const { message } = await singleSet({ amsOptions: { extraTags: 't=1000; x=2000; ' } });
+    const instant = await check(message, records, { now: { epochMilliseconds: 1_500_000 } });
+    expect(instant).toEqual(await check(message, records, { now: new Date(1_500_000) }));
+    expect(instant.result).toBe('pass');
+  });
+
+  test('rejects an invalid now without reading the message', async () => {
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n\r\n'));
+        c.close();
+      },
+    });
+    const now = 'yesterday' as unknown as Date;
+    await expect(Arc.verify(message, { resolver: resolverFrom(records), now })).rejects.toThrow(
+      TypeError,
+    );
+    expect(message.locked).toBe(false);
+  });
 });
 
 describe('instance values (RFC 8617 section 3.9)', () => {
@@ -602,6 +623,28 @@ describe('cancellation', () => {
         signal: AbortSignal.abort(reason),
       }),
     ).rejects.toBe(reason);
+  });
+
+  test('rejects with the reason and cancels the message when the signal aborts the header read', async () => {
+    const controller = new AbortController();
+    let cancelled = false;
+    const message = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('From: a@example.com\r\n'));
+      },
+      pull: () => new Promise<void>(() => {}),
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const pending = Arc.verify(message, {
+      resolver: resolverFrom(records),
+      signal: controller.signal,
+    });
+    const reason = new Error('stop');
+    setTimeout(() => controller.abort(reason), 10);
+    await expect(pending).rejects.toBe(reason);
+    expect(cancelled).toBe(true);
   });
 
   test('stops a pending key lookup', async () => {

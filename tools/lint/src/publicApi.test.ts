@@ -81,14 +81,16 @@ function check(): string[] {
       const name = `${prefix} ${exported.name}`;
       const isValue = (symbol.flags & ts.SymbolFlags.Value) !== 0;
       const docs = ts.displayPartsToString(symbol.getDocumentationComment(checker)).trim();
-      const tags = symbol.getJsDocTags(checker).map((tag) => tag.name);
+      const tags = new Set(symbol.getJsDocTags(checker).map((tag) => tag.name));
       if (!isValue && !(symbol.flags & ts.SymbolFlags.Type)) {
         continue;
       }
       if (!docs) {
         problems.push(`${name}: no JSDoc`);
-      } else if (isValue && !tags.includes('example')) {
+      } else if (isValue && !tags.has('example')) {
         problems.push(`${name}: no @example`);
+      } else if (!isValue && tags.has('example')) {
+        problems.push(`${name}: @example on a type`);
       }
       if (!(symbol.flags & (ts.SymbolFlags.Function | ts.SymbolFlags.Variable))) {
         continue;

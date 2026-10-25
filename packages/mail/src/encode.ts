@@ -1,7 +1,9 @@
+import type { Instant } from '@portable/timers';
+import { toEpochMilliseconds } from '@portable/timers/internal';
 import { isUint8Array } from '@portable/bytes/internal';
 import * as Bytes from '@portable/bytes';
 import * as MimeHeaders from '@portable/mime-headers';
-import { type Addresses, format, parse, wordEncoding } from './addresses.js';
+import { type Addresses, format, mailboxes, parse, wordEncoding } from './addresses.js';
 import {
   type Body,
   type Content,
@@ -15,21 +17,11 @@ import { InvalidInputError } from './errors.js';
 
 /**
  * Extra header fields, by name. A list writes one field per value, in order.
- *
- * @example
- * ```ts
- * const headers: Mail.HeaderFields = { 'List-Unsubscribe': '<https://example.com/u/1>', Keywords: ['a', 'b'] };
- * ```
  */
 export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
 
 /**
  * An alternative body, such as a calendar invitation next to the text and HTML.
- *
- * @example
- * ```ts
- * const invite: Mail.Part = { contentType: 'text/calendar; charset=utf-8; method=REQUEST', content: ics };
- * ```
  */
 export type Part = {
   readonly content: Content;
@@ -45,12 +37,6 @@ export type Part = {
 
 /**
  * A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`.
- *
- * @example
- * ```ts
- * const logo: Mail.Attachment = { content: pngBytes, contentType: 'image/png', cid: 'logo' };
- * const report: Mail.Attachment = { content: file, filename: 'report.pdf' };
- * ```
  */
 export type Attachment = {
   readonly content: Content;
@@ -73,11 +59,6 @@ export type Attachment = {
 /**
  * A message to encode. Every field is optional, and a message with no body gets an empty
  * text body.
- *
- * @example
- * ```ts
- * const message: Mail.Message = { from: 'mari@example.com', to: 'jaan@example.com', subject: 'Tere', text: 'Tere!' };
- * ```
  */
 export type Message = {
   readonly from?: Addresses | undefined;
@@ -92,8 +73,11 @@ export type Message = {
   readonly subject?: string | undefined;
   /** `Message-ID`, with or without angle brackets. @default a random id at the `From` domain */
   readonly messageId?: string | undefined;
-  /** @default the time `encodeStream` is called */
-  readonly date?: Date | string | undefined;
+  /**
+   * A `Date`, or an instant such as a `Temporal.Instant` or `Temporal.ZonedDateTime`, written in
+   * UTC. A string is written as given. @default the time `encodeStream` is called
+   */
+  readonly date?: Instant | string | undefined;
   /** Plain text body. */
   readonly text?: Content | undefined;
   /** AMP for Email body, placed between the text and the HTML. */
@@ -110,9 +94,9 @@ export type Message = {
 export declare namespace encodeStream {
   type Options = {
     /**
-     * Start of every multipart boundary. Each boundary is this prefix followed by the number of
-     * its multipart part, counted from 1 in the order the parts are written. Up to 60 characters
-     * from RFC 2046's `bchars`.
+     * The prefix of every multipart boundary, up to 60 characters from RFC 2046's `bchars`. Each
+     * boundary is this prefix followed by the position of its multipart among all parts, counted
+     * from 1 in the order the parts are written.
      * @default `'=_'` and 16 random hex digits and `'_'`, which no base64 or quoted-printable line
      * can contain
      */
@@ -160,7 +144,7 @@ type Context = {
   /** Content streams not read yet, cancelled when the output is cancelled or fails. */
   readonly streams: Set<ReadableStream<Uint8Array>>;
   id: number;
-  reader: ReadableStreamDefaultReader<Uint8Array | string> | undefined;
+  reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   cancelled: boolean;
 };
 
@@ -192,7 +176,7 @@ type Context = {
  * await new Response(raw).text();
  * ```
  *
- * @throws {InvalidInputError} When an address, header, content type or file name can't be
+ * @throws {InvalidInputError} When an address, header, content type, file name or date can't be
  * written.
  * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
  * stream is locked or given twice.
@@ -298,8 +282,7 @@ function msgId(value: string): string {
 function references(value: string | readonly string[]): string {
   const ids: string[] = [];
   for (const entry of typeof value === 'string' ? [value] : value) {
-    // oxlint-disable-next-line no-control-regex
-    const line = entry.replace(lineBreaks, ' ').replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '');
+    const line = entry.replace(lineBreaks, ' ').replace(controls, '');
     const lastClose = line.lastIndexOf('>');
     let joined = '';
     for (let i = 0; i < line.length; i++) {
@@ -320,9 +303,15 @@ function references(value: string | readonly string[]): string {
   return ids.join(' ');
 }
 
-function date(value: Date): string {
-  if (Number.isNaN(value.getTime())) {
-    throw new InvalidInputError('date is an invalid Date.');
+function date(input: Instant): string {
+  let value: Date;
+  try {
+    value = new Date(toEpochMilliseconds(input, 'date'));
+  } catch (cause) {
+    if (!(cause instanceof RangeError)) {
+      throw cause;
+    }
+    throw new InvalidInputError('date is an invalid Date.', { cause });
   }
   return value.toUTCString().replace('GMT', '+0000');
 }
@@ -364,8 +353,7 @@ function messageFields(
   if (message.subject) {
     fields.push(fold('Subject', text(message.subject, charset)));
   }
-  const from = message.from === undefined ? [] : parse(message.from);
-  const first = from.flatMap((entry) => ('group' in entry ? entry.group : [entry]))[0];
+  const first = mailboxes(message.from)[0];
   const domain = first ? first.address.slice(first.address.lastIndexOf('@') + 1) : 'localhost';
   fields.push(
     fold(

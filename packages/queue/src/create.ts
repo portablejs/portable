@@ -1,14 +1,21 @@
+import { type AsyncDisposeMethod, withAsyncDispose } from '@portable/errors/internal';
+
 /** What a task receives when it starts. */
 export type Context = {
-  /** Aborts when the task's `signal` or the queue's `signal` aborts. */
+  /** Aborts when the task's `signal` or the queue's `signal` aborts, or when the queue is disposed. */
   signal: AbortSignal;
 };
 
 /** A function the queue calls when a slot is free. It can return a value or a promise. */
 export type Task<value> = (context: Context) => value | PromiseLike<value>;
 
-/** A queue made by `create`. */
-export type Queue = {
+/**
+ * A queue made by `create`. Where the runtime has `Symbol.asyncDispose`,
+ * `[Symbol.asyncDispose]()` does what aborting the queue's `signal` does, with an `AbortError`
+ * `DOMException`, and resolves once running tasks have settled, so
+ * `await using queue = Queue.create()` leaves no task running after the scope ends.
+ */
+export type Queue = AsyncDisposeMethod & {
   /**
    * Adds a task and resolves or rejects with its result. Rejects with the abort reason when
    * `options.signal` or the queue's `signal` aborts, and with an `AbortError` `DOMException` when
@@ -73,12 +80,6 @@ type Entry = {
 
 type State = 'waiting' | 'running' | 'settled';
 
-let never: AbortSignal | undefined;
-
-// Workers refuses to create an AbortController at the top level of a module.
-function neverAborted(): AbortSignal {
-  return (never ??= new AbortController().signal);
-}
 const noop = () => {};
 const maxDelay = 2 ** 31 - 1;
 
@@ -97,7 +98,7 @@ const maxDelay = 2 ** 31 - 1;
  * ```
  */
 export function create(options: create.Options = {}): Queue {
-  const { interval = 0, intervalCap = Infinity, signal: queueSignal } = options;
+  const { interval = 0, intervalCap = Infinity, signal } = options;
   let concurrency = assertLimit('concurrency', options.concurrency ?? Infinity);
   assertLimit('intervalCap', intervalCap);
   if (!(interval >= 0 && interval < Infinity)) {
@@ -115,7 +116,22 @@ export function create(options: create.Options = {}): Queue {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>();
 
-  queueSignal?.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true });
+  const disposer = new AbortController();
+  const queueSignal = signal ? AbortSignal.any([signal, disposer.signal]) : disposer.signal;
+  const running = new Set<Entry>();
+  queueSignal.addEventListener(
+    'abort',
+    () => {
+      removeWaiting(queueSignal.reason);
+      for (const entry of running) {
+        if (entry.state === 'running') {
+          entry.state = 'settled';
+          entry.reject(queueSignal.reason);
+        }
+      }
+    },
+    { once: true },
+  );
 
   function watch(entry: Entry, signal: AbortSignal | undefined) {
     if (entry.watched === signal) {
@@ -246,8 +262,7 @@ export function create(options: create.Options = {}): Queue {
   function start(entry: Entry) {
     pending++;
     entry.state = 'running';
-    const { signal } = entry.context;
-    watch(entry, signal === never ? undefined : signal);
+    running.add(entry);
     entry.begin();
   }
 
@@ -273,6 +288,7 @@ export function create(options: create.Options = {}): Queue {
 
   function finish(entry: Entry, value?: unknown, failed?: boolean) {
     pending--;
+    running.delete(entry);
     if (entry.watched) {
       unwatch(entry);
     }
@@ -316,7 +332,7 @@ export function create(options: create.Options = {}): Queue {
     entry.reject(reason);
   }
 
-  return {
+  const queue = {
     add<value>(task: Task<value>, addOptions: Queue.AddOptions = {}): Promise<value> {
       const { priority = 0, signal } = addOptions;
       if (typeof priority !== 'number') {
@@ -325,7 +341,7 @@ export function create(options: create.Options = {}): Queue {
       if (Number.isNaN(priority)) {
         throw new RangeError('Expected `priority` to be a number, got NaN.');
       }
-      if (queueSignal?.aborted) {
+      if (queueSignal.aborted) {
         return Promise.reject(queueSignal.reason);
       }
       if (signal?.aborted) {
@@ -334,7 +350,7 @@ export function create(options: create.Options = {}): Queue {
       const entry: Entry = {
         task,
         priority,
-        context: { signal: combine(queueSignal, signal) },
+        context: signal ? combined(queueSignal, signal) : { signal: queueSignal },
         watched: undefined,
         resolve: noop,
         reject: noop,
@@ -355,11 +371,11 @@ export function create(options: create.Options = {}): Queue {
       drain();
       return promise;
     },
-    idle() {
+    idle(): Promise<void> {
       if (size === 0 && pending === 0) {
         return Promise.resolve();
       }
-      return new Promise((resolve) => idleWaiters.push(resolve));
+      return new Promise<void>((resolve) => idleWaiters.push(resolve));
     },
     pause() {
       paused = true;
@@ -388,6 +404,10 @@ export function create(options: create.Options = {}): Queue {
       drain();
     },
   };
+  return withAsyncDispose(queue, () => {
+    disposer.abort(new DOMException('The queue was disposed.', 'AbortError'));
+    return queue.idle();
+  });
 }
 
 /**
@@ -415,11 +435,24 @@ export function assertLimit(name: string, value: number): number {
   return value;
 }
 
-function combine(a: AbortSignal | undefined, b: AbortSignal | undefined): AbortSignal {
-  if (a && b) {
-    return AbortSignal.any([a, b]);
-  }
-  return a ?? b ?? neverAborted();
+type LazyContext = { queue: AbortSignal; task: AbortSignal; combined: AbortSignal | undefined };
+
+// Most tasks never read `signal`, so the combined signal is created on first read.
+const lazyContext = {
+  get signal(): AbortSignal {
+    const self = this as unknown as LazyContext;
+    return (self.combined ??= AbortSignal.any([self.queue, self.task]));
+  },
+};
+
+// This builds the context with `Object.create` because an object literal with a `__proto__` key
+// made each `add` with a `signal` about 30% slower in V8.
+function combined(queue: AbortSignal, task: AbortSignal): Context {
+  const context = Object.create(lazyContext) as LazyContext;
+  context.queue = queue;
+  context.task = task;
+  context.combined = undefined;
+  return context as unknown as Context;
 }
 
 export function isThenable(value: unknown): value is PromiseLike<unknown> {

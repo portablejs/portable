@@ -1,4 +1,5 @@
 import { isUint8Array } from '@portable/bytes/internal';
+import * as Ip from '@portable/ip';
 import { InvalidInputError, TruncatedError } from './errors.js';
 
 export type Reader = { readonly bytes: Uint8Array; offset: number };
@@ -338,8 +339,8 @@ export function putName(w: Writer, name: string, compress: boolean): void {
 
 /**
  * Reads a label as text, escaping `.` and `\` as RFC 1035 presentation format does. A label that
- * isn't valid UTF-8 has its bytes outside printable ASCII escaped as `\DDD`, so encoding the name writes the same
- * bytes back.
+ * isn't valid UTF-8 has its bytes outside printable ASCII escaped as `\DDD`, so encoding the name
+ * writes the same bytes back.
  */
 function readLabel(b: Uint8Array, start: number, end: number): string {
   let text = '';
@@ -428,110 +429,29 @@ export function readName(r: Reader, end: number): string {
   return name === '' ? '.' : name;
 }
 
-export function putIPv4(w: Writer, ip: string): void {
-  const parts = typeof ip === 'string' ? ip.split('.') : [];
-  if (parts.length !== 4) {
-    throw new InvalidInputError(`Invalid IPv4 address "${ip}".`);
-  }
-  for (const part of parts) {
-    if (!/^\d{1,3}$/.test(part) || Number(part) > 255) {
-      throw new InvalidInputError(`Invalid IPv4 address "${ip}".`);
-    }
-    putU8(w, Number(part));
-  }
-}
-
-export function readIPv4(b: Uint8Array, o: number): string {
-  return `${b[o]}.${b[o + 1]}.${b[o + 2]}.${b[o + 3]}`;
-}
-
-function parseIPv6(ip: string): number[] | undefined {
-  if (typeof ip !== 'string') {
-    return undefined;
-  }
-  const halves = ip.split('::');
-  if (halves.length > 2) {
-    return undefined;
-  }
-  const groups = (half: string): number[] | undefined => {
-    if (half === '') {
-      return [];
-    }
-    const words: number[] = [];
-    const parts = half.split(':');
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i]!;
-      if (i === parts.length - 1 && part.includes('.')) {
-        const v4 = new Uint8Array(4);
-        try {
-          putIPv4({ bytes: v4, offset: 0, start: 0, names: undefined }, part);
-        } catch {
-          return undefined;
-        }
-        words.push((v4[0]! << 8) | v4[1]!, (v4[2]! << 8) | v4[3]!);
-      } else if (/^[0-9a-f]{1,4}$/i.test(part)) {
-        words.push(Number.parseInt(part, 16));
-      } else {
-        return undefined;
-      }
-    }
-    return words;
-  };
-  const head = groups(halves[0]!);
-  const tail = halves.length === 2 ? groups(halves[1]!) : [];
-  if (!head || !tail) {
-    return undefined;
-  }
-  const missing = 8 - head.length - tail.length;
-  if (halves.length === 2 ? missing < 1 : missing !== 0) {
-    return undefined;
-  }
-  return [...head, ...Array<number>(missing).fill(0), ...tail];
-}
-
-export function putIPv6(w: Writer, ip: string): void {
-  const words = parseIPv6(ip);
-  if (!words) {
-    throw new InvalidInputError(`Invalid IPv6 address "${ip}".`);
-  }
-  for (const word of words) {
-    putU16(w, word);
-  }
-}
-
 /**
- * Formats an IPv6 address as RFC 5952 recommends: lowercase, with the longest run of two or more
- * zero groups replaced by `::`.
+ * Parses an address with `Ip.parse`, which rejects IPv4 numbers with leading zeros and other
+ * spellings that different parsers read as different addresses. An address with a zone ID throws,
+ * because DNS has no field for one.
  */
-export function readIPv6(b: Uint8Array, o: number): string {
-  const words: number[] = [];
-  for (let i = 0; i < 16; i += 2) {
-    words.push((b[o + i]! << 8) | b[o + i + 1]!);
+export function parseAddress(ip: string, version?: 4 | 6): Uint8Array {
+  let address: Ip.Address;
+  try {
+    address = Ip.parse(ip);
+  } catch (cause) {
+    throw new InvalidInputError(`Invalid IP address "${ip}".`, { cause });
   }
-  let bestStart = -1;
-  let bestLength = 1;
-  for (let i = 0; i < 8;) {
-    if (words[i] !== 0) {
-      i++;
-      continue;
-    }
-    let j = i;
-    while (j < 8 && words[j] === 0) {
-      j++;
-    }
-    if (j - i > bestLength) {
-      bestStart = i;
-      bestLength = j - i;
-    }
-    i = j;
+  if (address.version === 6 && address.zone !== undefined) {
+    throw new InvalidInputError(`IP address "${ip}" has a zone.`);
   }
-  const hex = (from: number, to: number) =>
-    words
-      .slice(from, to)
-      .map((word) => word.toString(16))
-      .join(':');
-  if (bestStart === -1) {
-    return hex(0, 8);
+  if (version !== undefined && address.version !== version) {
+    throw new InvalidInputError(`Invalid IPv${version} address "${ip}".`);
   }
-  return `${hex(0, bestStart)}::${hex(bestStart + bestLength, 8)}`;
+  return address.bytes;
+}
+
+/** Formats 4 or 16 bytes at `o` with `Ip.format`, so IPv6 follows RFC 5952. */
+export function readAddress(b: Uint8Array, o: number, size: 4 | 16): string {
+  const bytes = b.subarray(o, o + size);
+  return Ip.format(size === 4 ? { version: 4, bytes } : { version: 6, bytes });
 }

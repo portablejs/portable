@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import { encrypt, type Subscription } from './encrypt.js';
 import { InvalidInputError, ResponseError } from './errors.js';
 import { authorization, parseUrl, type Vapid } from './vapid.js';
@@ -28,8 +30,11 @@ export declare namespace toRequest {
      * latest. Up to 32 base64url characters.
      */
     topic?: string | undefined;
-    /** The time the VAPID token's expiry is counted from. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time the VAPID token's expiry is counted from, as a `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** Cancels the encryption and, through the `Request`, the `fetch`. */
     signal?: AbortSignal | undefined;
   };
@@ -50,9 +55,9 @@ export declare namespace toRequest {
  *
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
- * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed.
- * @throws {RangeError} When `ttl` isn't a non-negative integer, or the payload is longer than
- * `maxPayloadBytes`.
+ * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
+ * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed, `ttl` isn't a
+ * non-negative integer, or `now` is an invalid time.
  */
 export async function toRequest(options: toRequest.Options): Promise<Request> {
   const { subscription, payload, ttl = 2419200, urgency, topic, signal } = options;
@@ -69,6 +74,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
   if (topic !== undefined && !/^[\w-]{1,32}$/.test(topic)) {
     throw new RangeError('topic must be 1 to 32 base64url characters');
   }
+  const now = toDate(options.now);
 
   const headers = new Headers({ ttl: String(ttl) });
   if (urgency) {
@@ -83,10 +89,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
     headers.set('content-encoding', 'aes128gcm');
     headers.set('content-type', 'application/octet-stream');
   }
-  headers.set(
-    'authorization',
-    await authorization(endpoint.origin, options.vapid, options.now ?? new Date()),
-  );
+  headers.set('authorization', await authorization(endpoint.origin, options.vapid, now));
   signal?.throwIfAborted();
   return new Request(endpoint, {
     method: 'POST',
@@ -132,6 +135,7 @@ export declare namespace send {
  * @throws {ResponseError} When the push service answers with a status other than 2xx, 404 or 410.
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
+ * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
  * @throws {RangeError} When an option is malformed.
  * @throws {TypeError} When `fetch` rejects.
  */

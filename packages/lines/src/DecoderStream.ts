@@ -16,7 +16,7 @@ export declare namespace DecoderStream {
     signal?: AbortSignal | undefined;
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined;
-    /** Longest partial line to buffer while waiting for a separator. @default Infinity */
+    /** The longest line, in UTF-16 code units, not counting the separator. @default Infinity */
     maxLength?: number | undefined;
     /**
      * What to do with a line longer than `maxLength`: fail the stream, or drop the line and
@@ -31,15 +31,19 @@ export declare namespace DecoderStream {
   };
 }
 
+const lineBreak = /\r?\n/;
+
 /**
  * A `TransformStream` that decodes bytes into lines of text, or splits text into lines.
  *
  * @example
  * ```ts
  * import * as Lines from '@portable/lines';
+ * import * as Streams from '@portable/streams';
  *
  * const response = await fetch('https://example.com/log.txt');
- * for await (const line of response.body!.pipeThrough(new Lines.DecoderStream())) {
+ * const lines = response.body!.pipeThrough(new Lines.DecoderStream());
+ * for await (const line of Streams.toAsyncIterable(lines)) {
  *   console.log(line);
  * }
  * ```
@@ -50,9 +54,12 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       encoding = 'utf-8',
       maxLength = Infinity,
       overflow = 'error',
-      separator = /\r?\n/,
+      separator = lineBreak,
       skipEmpty = false,
     } = options;
+    if (!(maxLength >= 0)) {
+      throw new RangeError('`maxLength` must be a number >= 0.');
+    }
     const decoder = new TextDecoder(encoding);
     const splitLines = (text: string) =>
       typeof separator === 'string' ? text.split(separator) : text.split(separator);
@@ -60,6 +67,16 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     // toward `maxLength`, and that part is kept when an overflowing line is dropped.
     const slack = typeof separator === 'string' ? Math.max(separator.length - 1, 0) : 0;
     const tail = (text: string) => (slack === 0 ? '' : text.slice(-slack));
+    // Splitting `partial + text` again for every chunk of a long line takes quadratic time, so
+    // `canSplit` checks first whether the new text can end the line. `end` holds the last `slack`
+    // characters of `partial`, because slicing the joined string would copy all of it.
+    let end = '';
+    const canSplit = (text: string) =>
+      separator === lineBreak
+        ? text.includes('\n')
+        : typeof separator === 'string'
+          ? (end + text).includes(separator)
+          : true;
     let partial = '';
     // A trailing CR may be the first half of a CRLF split across chunks, so it is held back.
     let cr = false;
@@ -90,12 +107,20 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
               text = '\r' + text;
             }
             cr = text.endsWith('\r');
-            const lines = splitLines(partial + (cr ? text.slice(0, -1) : text));
-            partial = lines.pop()!;
+            const body = cr ? text.slice(0, -1) : text;
+            let lines: string[] = [];
+            if (canSplit(body)) {
+              lines = splitLines(partial + body);
+              partial = lines.pop()!;
+              end = tail(partial);
+            } else {
+              partial += body;
+              end = tail(end + body);
+            }
 
             if (overflowed) {
               if (lines.length === 0) {
-                partial = tail(partial);
+                partial = end;
                 return;
               }
               lines.shift();
@@ -110,7 +135,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
                 throw new MaxLengthError({ maxLength });
               }
               overflowed = true;
-              partial = tail(partial);
+              partial = end;
             }
           },
           flush(controller) {

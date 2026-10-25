@@ -52,6 +52,15 @@ The type of the remote comes from the server's code, so there is no schema or co
 | `methods` | | `connect` only: methods the other side can call over the same transport. |
 | `signal` | | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
 
+Where the runtime has `Symbol.asyncDispose`, the remote from `connect` or `http` also closes with `await using`, as if `signal` aborted with an `AbortError` `DOMException`:
+
+```ts
+await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type: 'module' })));
+await worker.add(1, 2);
+```
+
+Disposing closes the connection but not what carries it, so the worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method named by a symbol can't be called remotely, so the key never hides one of your methods. In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to close the remote, which does the same teardown.
+
 ### Options per call
 
 Arguments and options don't share a list, so a method's last argument is never mistaken for options. `Rpc.call` takes the method, its params and the options:
@@ -276,8 +285,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/rpc | birpc | comlink | penpal | json-rpc-2.0 |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 3.1 kB | 1.3 kB | 1.7 kB | 2.3 kB | 4.0 kB |
-| Runtime dependencies | 1 | 0 | 0 | 0 | 0 |
+| Minified and gzipped | 3.5 kB | 1.3 kB | 1.7 kB | 2.3 kB | 4.0 kB |
+| Runtime dependencies | 4 | 0 | 0 | 0 | 0 |
 | Node built-ins used | none | none | none | none | none |
 | TypeScript types | included | included | included | included | included |
 | Version compared | – | 4.2.0 | 4.4.2 | 8.0.1 | 1.8.1 |
@@ -286,7 +295,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 <!-- bench:end -->
 
 Structured-cloning a nested object costs more in Node than cloning one JSON string, so the JSON codec is faster than the identity codec (14,400/s for the 2 KB record) and than the libraries that clone. birpc and comlink have no streamed results, so the stream row compares with the server pushing each value without waiting, which has no backpressure.
-
 
 - One package covers workers, iframes, popups, WebSockets and HTTP, with the same API on each. comlink and post-me cover `postMessage`, penpal covers windows and workers, birpc takes callbacks for any channel, and json-rpc-2.0 has no transport.
 - The wire format is JSON-RPC 2.0, so the server also answers clients written in other languages, and the client talks to LSP and MCP servers.

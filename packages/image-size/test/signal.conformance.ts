@@ -24,11 +24,18 @@ describe('signal', () => {
     expect(cancelled).toBe(reason);
   });
 
-  test('an aborted signal rejects at once', async () => {
+  test('an aborted signal rejects at once and cancels the stream', async () => {
     const reason = new Error('stop');
-    const stream = new ReadableStream<Uint8Array>({ pull: () => new Promise(() => {}) });
+    let cancelled: unknown;
+    const stream = new ReadableStream<Uint8Array>({
+      pull: () => new Promise(() => {}),
+      cancel: (r) => {
+        cancelled = r;
+      },
+    });
     await expect(ImageSize.parseStream(stream, { signal: AbortSignal.abort(reason) })).rejects.toBe(
       reason,
     );
+    expect(cancelled).toBe(reason);
   });
 });

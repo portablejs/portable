@@ -41,7 +41,7 @@ const result = await MailAuth.authenticate(message, {
 const forwarded = result.headers + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. `authenticate` reads a stream into memory once, because DKIM, ARC and the seal each read the message. Pipe the stream through `Streams.limitBytes` from `@portable/streams` to cap its size. Bare LF line ends are read as CRLF.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from `@portable/streams` to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
 
 ## Options
 
@@ -53,7 +53,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `helo` | none | The HELO or EHLO name. |
 | `sender` | none | The MAIL FROM address. Empty or missing for a bounce, which makes SPF check the HELO name. |
 | `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
-| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against. |
+| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against, and for `%{t}` in SPF explanations. A `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
 | `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](../dmarc/README.md#options). |
@@ -102,14 +102,19 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 | --- | --- |
 | `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
 | `MailAuth.Result` | What `authenticate` resolves to, as above. |
+| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from `@portable/dkim`. |
+| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os` and Buffers.
 - It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
 - It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a reader that splits the field on semicolons.
-- It authenticates and seals a short message faster: 445 times a second against 303 for mailauth's strict mode in one run in Node, and about the same, 243 against 251, for a 250 KB message with a DKIM signature and an ARC set.
+- It authenticates and seals a short message faster than mailauth's strict mode in Node, and authenticates a 250 KB message with a DKIM signature and an ARC set about as fast, as the table below shows.
 - It has no dependencies outside `@portable/*`.
+
+Differences to check when you switch from mailauth:
+
 - mailauth's `mta` defaults to `os.hostname()`, and `authservId` has no default, so pass it.
 - mailauth's `resolver` is a function of `(name, type)`. Here `resolver` is an object with `resolveTxt` and the other methods, such as `node:dns/promises`.
 - mailauth's `strict` and `rejectRsaSha1` options have no equivalent, because this package always behaves as if both were set: an rsa-sha1 signature gives DKIM `policy`.
@@ -129,8 +134,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/mail-auth | mailauth |
 | --- | --- | --- |
-| Minified and gzipped | 32 kB | 715 kB |
-| Runtime dependencies | 11 | 38 |
+| Minified and gzipped | 32 kB | 775 kB |
+| Runtime dependencies | 15 | 38 |
 | Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` |
 | TypeScript types | included | included |
 | Version compared | – | 7.3.0 |

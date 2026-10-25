@@ -8,11 +8,11 @@ Fixtures:
 - `*.exif`: exif-reader (MIT, Devon Govett and others).
 - Everything else: exifr's `test/fixtures` (MIT, Mike Kovařík). `orientation-f*t.jpg` were `orientation/f*t.jpg`. `heic-iphone7-head.heic` and `heic-single-head.heic` are the first 32768 and 2048 bytes of `heic-iphone7.heic` and `heic-single.heic`, which keeps the repo small and tests reading only the start of a file.
 
-Test names below are `describe > test` in `parse.conformance.ts` or `parseDate.conformance.ts`.
+Test names below are `describe > test` in `parse.conformance.ts`, `parseDate.conformance.ts` or `exif.fuzz.conformance.ts`.
 
 ## API changes
 
-The package is designed fresh, so no exif-parser call has a one-to-one replacement. The README's migration table lists the equivalents.
+The package is designed fresh, so no exif-parser call has a one-to-one replacement. The table below lists the equivalents.
 
 | exif-parser | @portable/exif | Why |
 | --- | --- | --- |
@@ -54,8 +54,8 @@ The package is designed fresh, so no exif-parser call has a one-to-one replaceme
 | should read little endian data | `exif-reader > reads little-endian data` | |
 | should error when missing Exif tag | `exif-reader > throws UnsupportedError for data that is not EXIF` | |
 | should error when missing byte order marker | `exif-reader > throws InvalidInputError without a byte order mark` | |
-| fuzz: randomly mutated tetons, IMG_0774, pngWithExif, non_ascii | `exif-reader > fuzzing > parses or rejects randomly mutated *` | 300 seeded runs each, plus `starfish.jpg`. Only our three error classes may be thrown. |
-| fuzz: randomly truncated (same four fixtures) | `exif-reader > fuzzing > parses or rejects randomly truncated *` | |
+| fuzz: randomly mutated tetons, IMG_0774, pngWithExif, non_ascii | `parse > returns or throws a documented error for a mutated *` | 300 runs each by default (three times `FUZZ_RUNS`), plus `starfish.jpg`. Only our three error classes may be thrown. |
+| fuzz: randomly truncated (same four fixtures) | `parse > returns or throws a documented error for a truncated *` | |
 
 ## exifr
 

@@ -1,9 +1,11 @@
+import type { Instant } from '@portable/timers';
+import { abortable, toDate } from '@portable/timers/internal';
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, isUint8Array, toBufferSource } from '@portable/bytes/internal';
-import type { Hmac } from '@portable/web-crypto';
+import * as WebCrypto from '@portable/web-crypto';
 import { VerificationError } from './errors.js';
 import { utf8 } from './internal.js';
-import { race, readBody } from './race.js';
+import { readBody } from './readBody.js';
 import { type Scheme, standard } from './schemes.js';
 
 /**
@@ -22,10 +24,10 @@ export declare namespace verify {
     /** The signing secret. Pass several while rotating secrets. Any one of them may match. */
     secret: Secret | readonly Secret[];
     /**
-     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and about 7 times faster
-     * on Node. @default `crypto.subtle` HMAC
+     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and several times faster
+     * on Node. @default WebCrypto.hmac
      */
-    hmac?: Hmac | undefined;
+    hmac?: WebCrypto.Hmac | undefined;
     /**
      * Largest allowed difference between the signed timestamp and `now`, in milliseconds, in
      * either direction. Timestamps are whole seconds, so the difference is too. `Infinity` turns
@@ -33,8 +35,11 @@ export declare namespace verify {
      * @default 300000 (five minutes)
      */
     tolerance?: number | undefined;
-    /** The time to compare the signed timestamp with. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time to compare the signed timestamp with, as a `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /**
      * The longest body `verify` reads from a `Request`, in bytes. A longer body throws
      * `MaxBytesError`. @default Infinity
@@ -76,7 +81,7 @@ export declare namespace verify {
  *
  * @throws {VerificationError} When a header is missing or malformed, no signature matches, or
  * the timestamp is outside `tolerance`.
- * @throws {RangeError} When a secret is empty or not valid base64.
+ * @throws {RangeError} When a secret is empty or not valid base64, or `now` is an invalid time.
  * @throws {TypeError} When the scheme isn't a scheme object, or the body isn't a string or
  * `Uint8Array`.
  */
@@ -86,12 +91,12 @@ export async function verify(
 ): Promise<verify.ReturnType> {
   const {
     scheme = standard,
-    hmac = hmacSha256,
+    hmac = WebCrypto.hmac,
     tolerance = 300_000,
-    now = new Date(),
     maxBytes = Infinity,
     signal,
   } = options;
+  const now = toDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   if (!(tolerance >= 0)) {
@@ -135,7 +140,7 @@ export async function verify(
   const content = bytes(scheme.payload({ id, timestamp, body }));
   let match = false;
   for (const key of keys) {
-    const expected = await race(hmac('SHA-256', key, content), signal);
+    const expected = await abortable(hmac('SHA-256', key, content), signal);
     for (const signature of signed.signatures) {
       if (Bytes.timingSafeEqual(signature, expected)) {
         match = true;
@@ -168,12 +173,15 @@ export declare namespace sign {
     /** The signing secret. */
     secret: Secret;
     /**
-     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and about 7 times faster
-     * on Node. @default `crypto.subtle` HMAC
+     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and several times faster
+     * on Node. @default WebCrypto.hmac
      */
-    hmac?: Hmac | undefined;
-    /** The time to sign. Schemes without a timestamp ignore it. @default new Date() */
-    now?: Date | undefined;
+    hmac?: WebCrypto.Hmac | undefined;
+    /**
+     * The time to sign, as a `Date` or a `Temporal.Instant`. Schemes without a timestamp ignore it.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
     id?: string | undefined;
     /** Rejects with `signal.reason` when aborted. */
@@ -194,26 +202,21 @@ export declare namespace sign {
  * await fetch('https://example.com/webhooks', { method: 'POST', body, headers });
  * ```
  *
- * @throws {RangeError} When the secret is empty or not valid base64.
+ * @throws {RangeError} When the secret is empty or not valid base64, or `now` is an invalid time.
  * @throws {TypeError} When the scheme isn't a scheme object.
  */
 export async function sign(
   body: string | Uint8Array,
   options: sign.Options,
 ): Promise<Record<string, string>> {
-  const {
-    scheme = standard,
-    hmac = hmacSha256,
-    now: timestamp = new Date(),
-    id = crypto.randomUUID(),
-    signal,
-  } = options;
+  const { scheme = standard, hmac = WebCrypto.hmac, id = crypto.randomUUID(), signal } = options;
+  const timestamp = toDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   const key = keyOf(scheme, options.secret);
   const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : assertUint8Array(body);
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }));
-  const signature = await race(hmac('SHA-256', key, content), signal);
+  const signature = await abortable(hmac('SHA-256', key, content), signal);
   return scheme.headers({ signature, id, timestamp });
 }
 
@@ -241,36 +244,6 @@ function bytes(content: Uint8Array | string): Uint8Array<ArrayBuffer> {
     return utf8.encode(content);
   }
   return toBufferSource(content);
-}
-
-async function hmacSha256(
-  _hash: 'SHA-256',
-  key: Uint8Array<ArrayBuffer>,
-  data: Uint8Array<ArrayBuffer>,
-): Promise<Uint8Array> {
-  return new Uint8Array(await crypto.subtle.sign('HMAC', await importKey(key), data));
-}
-
-// importKey takes two thirds of the time of an HMAC on Node, and a server verifies every webhook
-// with the same one or two secrets.
-const cryptoKeys = new Map<string, Promise<CryptoKey>>();
-
-function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
-  const id = key.length <= 256 ? String.fromCharCode(...key) : undefined;
-  const cached = id === undefined ? undefined : cryptoKeys.get(id);
-  if (cached) {
-    return cached;
-  }
-  const cryptoKey = crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
-    'sign',
-  ]);
-  if (id !== undefined) {
-    if (cryptoKeys.size >= 16) {
-      cryptoKeys.clear();
-    }
-    cryptoKeys.set(id, cryptoKey);
-  }
-  return cryptoKey;
 }
 
 const utf8Decoder = new TextDecoder();

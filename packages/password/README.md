@@ -76,7 +76,7 @@ Password.needsRehash(stored, options); // false
 
 `node:crypto` and pbkdf2 give you a key derivation function, and the rest is up to you: a salt, a storage format, a constant-time compare, a plan for raising the iterations. pbkdf2-password adds a salt but defaults to 10,000 SHA-1 iterations and returns the salt and hash separately, and none of them compare. This package does all of it with one string and runs where `node:crypto` doesn't.
 
-- It hashes at the same speed as `node:crypto`'s `pbkdf2`: about 620 ms per hash at 600,000 iterations for both on the benchmark machine, because both call OpenSSL. `verify` measured the same as `pbkdf2` plus `timingSafeEqual`.
+- It hashes at the same speed as `node:crypto`'s `pbkdf2`: about 110 ms per hash at 600,000 iterations for both on the benchmark machine, because both call OpenSSL. `verify` took as long as `pbkdf2` followed by `timingSafeEqual`.
 - The stored string records the digest and iterations, so `needsRehash` can tell you when to upgrade a hash and `verify` keeps reading old ones.
 - The compare is constant time. A `===` on hex or base64 strings, common in hand-written code, leaks how many leading characters matched.
 - The string format is the one passlib and Rust's `pbkdf2` crate use, so Python and Rust services can share a users table with a JavaScript one.
@@ -121,8 +121,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/password | pbkdf2 | pbkdf2-password | `node:crypto` | `crypto.subtle` |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 3.5 kB | 22 kB | 1.5 kB | built in | built in |
-| Runtime dependencies | 2 | 43 | 2 | – | – |
+| Minified and gzipped | 4.2 kB | 22 kB | 1.5 kB | built in | built in |
+| Runtime dependencies | 5 | 43 | 2 | – | – |
 | Node built-ins used | none | `buffer`, `events`, `util` | `Buffer`, `crypto` | Node only | none |
 | TypeScript types | included | included | none | – | – |
 | Version compared | – | 3.1.7 | 1.2.1 | – | – |

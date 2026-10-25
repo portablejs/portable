@@ -163,6 +163,7 @@ The returned function also has:
 | `cancel()` | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call nobody awaits doesn't raise an unhandled rejection. Later calls work as usual. |
 | `flush()` | Runs the waiting invocation now and returns a promise of its result. Resolves with `undefined` when nothing waits. For `throttle`, and for `debounce` with `maxWait`, the window counts from the flushed invocation, as in lodash: a call before the window ends runs when it ends, and `pending` stays `true` until then. |
 | `pending` | `true` while the function waits out `ms` after a call. |
+| `[Symbol.dispose]()` | Calls `cancel()`, so `using save = Timers.debounce(...)` drops the waiting invocation when the scope ends. It exists only where the runtime has `Symbol.dispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
 
 ## Delays
 
@@ -194,12 +195,13 @@ next({ attempt: 3 }); // 4000
 | `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
 | `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
 | `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
+| `Timers.Instant` | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. A `Temporal.Instant` or `Temporal.ZonedDateTime` fits it. |
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 
-These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies.
+These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies outside `@portable/*`.
 
-- Ten attempts with no delay take 10 µs on Node, against 17 µs with p-retry. With a `signal` they take 17 µs, against 19 µs.
+- Ten attempts with no delay run about twice as fast as with p-retry on Node. With a `signal`, the two run at the same speed.
 - An abort settles the call at once, also while an attempt is running. p-retry waits for the running attempt to settle first.
 - `timeout` gives each attempt a deadline through its `signal`. None of the four libraries limits a single attempt.
 - `retry` and `poll` remove every timer and abort listener they create when the call settles.
@@ -221,8 +223,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/timers | p-retry | async-retry | p-wait-for | delay | lodash.debounce | lodash.throttle | throttle-debounce | p-debounce | `setTimeout` or `try`/`catch` by hand |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.7 kB | 1.8 kB | 1.7 kB | 0.9 kB | 0.9 kB | 1.1 kB | 1.2 kB | 0.5 kB | 0.7 kB | built in |
-| Runtime dependencies | 0 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 | – |
+| Minified and gzipped | 1.8 kB | 1.8 kB | 1.7 kB | 0.9 kB | 0.9 kB | 1.1 kB | 1.2 kB | 0.5 kB | 0.7 kB | built in |
+| Runtime dependencies | 1 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 | – |
 | Node built-ins used | none | none | none | none | none | none | none | none | none | none |
 | TypeScript types | included | included | `@types/async-retry` | included | included | `@types/lodash.debounce` | `@types/lodash.throttle` | `@types/throttle-debounce` | included | – |
 | Version compared | – | 8.0.1 | 1.3.3 | 7.0.0 | 7.0.0 | 4.0.8 | 4.1.1 | 5.0.2 | 6.0.0 | – |
@@ -248,7 +250,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `signal` cancels the waiting invocation and disables the function, so it can be tied to a component's or request's lifetime.
 - Time is read from `performance.now()`. lodash reads `Date.now()`, so `throttle` invokes again at once when the system clock jumps forward.
 - lodash.debounce 4.0.8, the standalone package, leaves a timer behind in a tight loop when `maxWait` is below `ms`, and invokes at other times than lodash 4.18. The oracle tests show the difference.
-- A burst of 1000 calls runs at 13.1k bursts per second on Node, against 15.4k for lodash.debounce, 4.2k for throttle-debounce and 2.5k for p-debounce. `throttle` runs at 11.9k, against 14.8k for lodash.throttle and 3.5k for throttle-debounce.
+- A burst of 1,000 calls through `debounce` or `throttle` runs 10 to 15% slower than lodash on Node, and 3 to 5 times faster than throttle-debounce and p-debounce. The benchmark table above has the numbers.
 - `cancel()` and `flush()` work as in lodash, except that calls dropped by `cancel` reject with an `AbortError` and `flush` returns a promise.
 - p-debounce's `pDebounce.promise(fn)` has no equivalent, because it limits concurrency rather than time.
 - throttle-debounce takes the delay first, as in `throttle(delay, fn)`. `Timers.throttle` and `Timers.debounce` take the function first: `Timers.throttle(fn, delay)`.

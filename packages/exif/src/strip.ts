@@ -1,5 +1,6 @@
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, crc32 } from '@portable/bytes/internal';
+import * as Streams from '@portable/streams';
 import { InvalidInputError, UnsupportedError } from './errors.js';
 import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js';
 import { readTiff } from './tiff.js';
@@ -26,7 +27,8 @@ export declare namespace strip {
  * byte of the image data is copied unchanged.
  *
  * @throws {UnsupportedError} The input is not a JPEG, PNG or WebP file.
- * @throws {InvalidInputError} A JPEG has something other than a marker between its segments.
+ * @throws {InvalidInputError} A JPEG has something other than a marker between its segments, or
+ * a segment length below 2.
  *
  * @example
  * ```ts
@@ -63,35 +65,31 @@ export declare namespace StripStream {
  * import * as Exif from '@portable/exif';
  *
  * const [stored, inspected] = request.body!.tee();
- * await bucket.put(key, stored.pipeThrough(new Exif.StripStream()));
- * const exif = await Exif.parseStream(inspected);
+ * const [, exif] = await Promise.all([
+ *   bucket.put(key, stored.pipeThrough(new Exif.StripStream())),
+ *   Exif.parseStream(inspected),
+ * ]);
  * ```
  */
 export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
   constructor(options: StripStream.Options = {}) {
-    const { signal } = options;
     let stripper: Stripper;
-    let abort: (() => void) | undefined;
-    super({
-      start(controller) {
-        stripper = createStripper(options, (part) => controller.enqueue(part));
-        if (!signal) {
-          return;
-        }
-        signal.throwIfAborted();
-        abort = () => controller.error(signal.reason);
-        signal.addEventListener('abort', abort, { once: true });
-      },
-      transform(chunk) {
-        stripper.push(assertUint8Array(chunk));
-      },
-      flush() {
-        if (abort) {
-          signal!.removeEventListener('abort', abort);
-        }
-        stripper.close();
-      },
-    });
+    super(
+      Streams.abortable(
+        {
+          start(controller) {
+            stripper = createStripper(options, (part) => controller.enqueue(part));
+          },
+          transform(chunk) {
+            stripper.push(assertUint8Array(chunk));
+          },
+          flush() {
+            stripper.close();
+          },
+        },
+        options,
+      ),
+    );
   }
 }
 

@@ -29,15 +29,13 @@ Cloudflare Workers can't connect to port 25, so use a submission port (587 or 46
 To send several messages over one connection, open a client:
 
 ```ts
-const client = await Smtp.connect({ connect, host: 'smtp.example.com', auth });
-try {
-  for (const mail of outbox) {
-    await client.send(mail);
-  }
-} finally {
-  await client.close();
+await using client = await Smtp.connect({ connect, host: 'smtp.example.com', auth });
+for (const mail of outbox) {
+  await client.send(mail);
 }
 ```
+
+`await using` sends QUIT and closes the connection when the block ends, even if a send throws. Without it, call `client.close()` in a `finally` block.
 
 ## Sockets
 
@@ -192,15 +190,17 @@ Sends one message and resolves with `{ accepted, rejected, response }`. It resol
 
 The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO and DATA in one write. It declares BODY=8BITMIME whenever the server offers it, and SMTPUTF8 when an address is not ASCII. An address with a control character or an angle bracket is rejected before anything is sent.
 
-When a stream message isn't sent, because the envelope was refused or the connection failed, the stream is cancelled.
+When a stream message isn't sent in full, because the envelope was refused, the connection failed or the signal aborted, the stream is cancelled.
+
+Aborting `signal` rejects with `signal.reason`. A send that has started also closes the connection, because the server may be partway through the message. A send still waiting for earlier calls rejects at once, and the connection stays open.
 
 ### `client.close({ signal })`
 
-Waits for queued sends, sends QUIT and closes the socket. It never rejects.
+Waits for queued sends, sends QUIT and closes the socket. It never rejects. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
 
 ### `Smtp.send(mail, options)`
 
-Connects with `options`, sends one message and closes the connection.
+Connects with `options`, sends one message and closes the connection. Here `signal` limits the whole call.
 
 ### `Smtp.CommandError`
 
@@ -221,13 +221,14 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `EPROTOCOL` | The greeting wasn't 220, EHLO and HELO were refused, or a reply was malformed or over 1 MiB. |
 | `ETLS` | STARTTLS was not offered or was refused, or the TLS handshake failed. |
 | `EAUTH` | Login failed, no supported method was offered, or AUTH over plaintext without `allowInsecureAuth`. |
-| `EENVELOPE` | The sender or every recipient was refused, or the server can't honor SMTPUTF8 or REQUIRETLS. |
-| `EMESSAGE` | DATA was refused, the message is over the SIZE limit, the server refused the message, or the message stream errored. |
+| `EENVELOPE` | An address is invalid, the server refused the sender, every recipient or DATA, or the server can't honor SMTPUTF8 or REQUIRETLS. |
+| `EMESSAGE` | The message is over the SIZE limit, the message stream errored, or the server refused the message after DATA. |
 
 ## Types
 
 | Type | Description |
 | --- | --- |
+| `Smtp.Client` | An open session from `connect`: `send`, `close` and `[Symbol.asyncDispose]`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
 | `Smtp.Mail` | A message and its envelope, as `send` takes them. |
 | `Smtp.Result` | The outcome of a send that reached at least one recipient. |
 | `Smtp.Rejection` | A recipient the server refused, with its reply. |
@@ -239,7 +240,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 
 ## Why use this over nodemailer
 
-- It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies.
+- It runs in Cloudflare Workers and Deno as well as Node, and has no dependencies outside `@portable/*`.
 - STARTTLS is required unless you pass `secure: 'off'`. nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set.
 - Credentials are never sent over plaintext unless `allowInsecureAuth` is set, and never skipped: nodemailer sends the message unauthenticated when the server doesn't advertise AUTH, unless `forceAuth` is set.
 - Bare CR and bare LF are converted to CRLF before dot-stuffing, so a message can't smuggle an end of DATA. An oracle test checks that the output is byte-identical to nodemailer's.
@@ -258,11 +259,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/smtp | nodemailer |
 | --- | --- | --- |
-| Minified and gzipped | 4.4 kB | 14 kB |
-| Runtime dependencies | 0 | 0 |
+| Minified and gzipped | 6.1 kB | 15 kB |
+| Runtime dependencies | 4 | 0 |
 | Node built-ins used | none | `Buffer`, `crypto`, `dns`, `events`, `fs`, `http`, `https`, `net`, `os`, `stream`, `tls`, `url`, `util`, `zlib` |
 | TypeScript types | included | none |
-| Version compared | – | 10.1.2 |
+| Version compared | – | 10.2.1 |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

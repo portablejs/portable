@@ -86,6 +86,40 @@ describe('hmac', () => {
     );
   });
 
+  test('gives the RFC 4231 result when the same key is used again with another hash', async () => {
+    const vector = hmacRfc4231[1]!;
+    const key = fromHex(vector.key);
+    const data = fromHex(vector.data);
+    expect(toHex(await WebCrypto.hmac('SHA-256', key, data))).toBe(vector.sha256);
+    expect(toHex(await WebCrypto.hmac('SHA-512', key, data))).toBe(vector.sha512);
+    expect(toHex(await WebCrypto.hmac('SHA-256', key, data))).toBe(vector.sha256);
+  });
+
+  test('uses the current bytes of a key that changed after an earlier call', async () => {
+    const vector = hmacRfc4231[1]!;
+    const key = fromHex(vector.key);
+    const data = fromHex(vector.data);
+    const before = await WebCrypto.hmac('SHA-256', key, data);
+    key[0]! ^= 1;
+    const after = await WebCrypto.hmac('SHA-256', key, data);
+    expect(after).not.toEqual(before);
+    key[0]! ^= 1;
+    expect(toHex(await WebCrypto.hmac('SHA-256', key, data))).toBe(vector.sha256);
+  });
+
+  test('gives correct results for more keys than it caches, and for long keys', async () => {
+    const vector = hmacRfc4231[1]!;
+    const data = fromHex(vector.data);
+    for (let i = 0; i < 40; i++) {
+      await WebCrypto.hmac('SHA-256', `key ${i}`, data);
+    }
+    expect(toHex(await WebCrypto.hmac('SHA-256', fromHex(vector.key), data))).toBe(vector.sha256);
+    const long = new Uint8Array(300).fill(0xaa);
+    expect(await WebCrypto.hmac('SHA-256', long, data)).toEqual(
+      await WebCrypto.hmac('SHA-256', long, data),
+    );
+  });
+
   test('uses only the bytes subarrays cover', async () => {
     const key = encode('key');
     const data = encode('data');

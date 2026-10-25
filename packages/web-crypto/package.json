@@ -1,6 +1,6 @@
 {
   "name": "@portable/web-crypto",
-  "description": "Compute digests, HMAC and HKDF, derive Ed25519 and X25519 keys from seeds, and convert ECDSA signature formats over WebCrypto, with bytes in and out, in any JavaScript runtime.",
+  "description": "Compute digests, HMAC and HKDF, derive Ed25519 and X25519 keys from seeds, import PEM keys, and convert ECDSA signature formats over WebCrypto, with bytes in and out, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
@@ -45,6 +45,11 @@
       "src": "./src/exports/index.ts",
       "types": "./dist/exports/index.d.ts",
       "default": "./dist/exports/index.js"
+    },
+    "./internal": {
+      "src": "./src/exports/internal.ts",
+      "types": "./dist/exports/internal.d.ts",
+      "default": "./dist/exports/internal.js"
     }
   },
   "main": "./dist/exports/index.js",

@@ -257,6 +257,14 @@ describe('truncated input', () => {
       type: 'jpg',
     });
   });
+
+  test('throws RangeError for a negative or NaN maxBytes', async () => {
+    const stream = () => new ReadableStream<Uint8Array>();
+    await expect(ImageSize.parseStream(stream(), { maxBytes: -1 })).rejects.toThrow(RangeError);
+    await expect(ImageSize.parseStream(stream(), { maxBytes: Number.NaN })).rejects.toThrow(
+      RangeError,
+    );
+  });
 });
 
 describe('prefixes and corrupt headers', () => {

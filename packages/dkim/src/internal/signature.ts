@@ -1,3 +1,4 @@
+import { abortable } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import * as Dns from '@portable/dns';
 import type { Resolver, Result } from '../verify.js';
@@ -194,7 +195,7 @@ const isCanonicalization = (name: string): name is Canonicalization =>
 
 export function decodeBase64(text: string): Uint8Array<ArrayBuffer> | undefined {
   try {
-    return new Uint8Array(Base64.decode(text));
+    return Base64.decode(text);
   } catch {
     return undefined;
   }
@@ -279,6 +280,12 @@ export async function verifyData(
     : { result: 'fail', reason: 'signature did not verify' };
 }
 
+export function assertResolver(resolver: Resolver): void {
+  if (typeof resolver?.resolveTxt !== 'function') {
+    throw new TypeError('options.resolver must have a resolveTxt method.');
+  }
+}
+
 export async function fetchKey(
   resolver: Resolver,
   name: string,
@@ -286,7 +293,7 @@ export async function fetchKey(
 ): Promise<KeyRecord> {
   let records: string[][];
   try {
-    records = await abortable(resolver.resolveTxt(name), signal);
+    records = await abortable(resolver.resolveTxt(name, { signal }), signal);
   } catch (error) {
     if (signal?.aborted) {
       throw signal.reason;
@@ -344,21 +351,4 @@ function parseKeyRecord(text: string): KeyRecord {
     return permerror('invalid public key');
   }
   return { data: der, type, hashes: list('h'), flags: list('t') ?? [] };
-}
-
-export function abortable<value>(
-  promise: Promise<value>,
-  signal: AbortSignal | undefined,
-): Promise<value> {
-  if (!signal) {
-    return promise;
-  }
-  if (signal.aborted) {
-    return Promise.reject(signal.reason);
-  }
-  return new Promise((resolve, reject) => {
-    const abort = () => reject(signal.reason);
-    signal.addEventListener('abort', abort, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
-  });
 }

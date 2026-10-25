@@ -39,6 +39,7 @@
     "@portable/dns": "workspace:*",
     "@portable/errors": "workspace:*",
     "@portable/idna": "workspace:*",
+    "@portable/timers": "workspace:*",
     "@portable/web-crypto": "workspace:*"
   },
   "exports": {

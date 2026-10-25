@@ -1,5 +1,5 @@
 import { abortable } from './abortable.js';
-import { byteLength } from './bytes.js';
+import { assertMaxBytes, byteLength } from './bytes.js';
 import { MaxBytesError } from './errors.js';
 import { fromIterable } from './iterable.js';
 import { type Source, assertSource, isReadableStream } from './source.js';
@@ -193,6 +193,7 @@ export function limitBytes<chunk extends Uint8Array | string>(
   maxBytes: number,
   options: limitBytes.Options = {},
 ): TransformStream<chunk, chunk> {
+  assertMaxBytes(maxBytes);
   let length = 0;
   return new TransformStream<chunk, chunk>(
     abortable(
