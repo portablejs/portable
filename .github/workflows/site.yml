@@ -1,5 +1,5 @@
 # Builds the docs site and publishes it to GitHub Pages on every push to main.
-name: Docs
+name: Site
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
+      name: site
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment

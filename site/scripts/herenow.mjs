@@ -23,7 +23,7 @@ const files = walk(dir).map((p) => ({ path: relative(dir, p), size: statSync(p).
 const headers = {
   'content-type': 'application/json',
   'X-HereNow-Client': process.env.GITHUB_ACTIONS
-    ? 'github-actions/docs-preview'
+    ? 'github-actions/site-preview'
     : 'claude-code/direct-api',
 };
 

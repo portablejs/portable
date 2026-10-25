@@ -23,7 +23,7 @@ portable/
 ├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
-├─ .github/workflows/      CI (verify.yml) and the docs site (docs.yml, docs-preview.yml)
+├─ .github/workflows/      CI (verify.yml) and the docs site (site.yml, site-preview.yml)
 ├─ .vite-hooks/            git hooks
 ├─ AGENTS.md               rules for agents and contributors (CLAUDE.md imports it)
 ├─ vite.config.ts          format, lint, staged-file and test config
@@ -164,7 +164,7 @@ Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `
 
 `.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `pnpm check:types` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs don't fail the run yet, because of the runtime bugs listed in docs/papercuts.md. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. That job doesn't fail the run either, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. `verify.yml` doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
 
-Two more workflows build the docs site with `pnpm --filter @portable/site build`. `docs.yml` publishes it to GitHub Pages on every push to `main`. `docs-preview.yml` publishes a preview to here.now for a pull request with the `preview` label, and updates it on each later push to that pull request.
+Two more workflows build the docs site with `pnpm --filter @portable/site build`. `site.yml` publishes it to GitHub Pages on every push to `main`. `site-preview.yml` publishes a preview to here.now for a pull request with the `preview` label, and updates it on each later push to that pull request.
 
 The tests that compare the base64 and hex fallbacks with the native API run only where the runtime has `Uint8Array.toBase64` and `fromHex`. Node 26 has them and Node 24 doesn't, so CI tests both versions. CI doesn't test Node 22, because `engines` requires Node 24 and because Node 22's `DecompressionStream` ignores bytes after the end of a compressed stream, which makes `Compress.decode` accept trailing data.
 

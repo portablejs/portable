@@ -1,5 +1,5 @@
 # Publishes a preview of the docs site to here.now for each pull request, and records it as a GitHub deployment so
-# the pull request shows a "View deployment" link. Every pull request deploys to the one `docs preview` environment, so
+# the pull request shows a "View deployment" link. Every pull request deploys to the one `site preview` environment, so
 # the repository's Deployments list shows one entry for all previews instead of one per pull request.
 #
 # Previews are anonymous here.now sites, which expire 24 hours after they are created. The site's slug and claim
@@ -9,7 +9,7 @@
 # Actions minutes are billed, so the job runs only on pull requests with the `preview` label. Adding the label
 # publishes a preview, and each later push updates it. On other pull requests the job is skipped, which uses no
 # minutes.
-name: Docs preview
+name: Site preview
 
 on:
   pull_request:
@@ -20,7 +20,7 @@ permissions:
   deployments: write
 
 concurrency:
-  group: docs-preview-${{ github.event.pull_request.number }}
+  group: site-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -43,15 +43,15 @@ jobs:
       - uses: actions/cache/restore@v6
         with:
           path: site/.herenow.json
-          key: docs-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          restore-keys: docs-preview-${{ github.event.pull_request.number }}-
+          key: site-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          restore-keys: site-preview-${{ github.event.pull_request.number }}-
       - id: publish
         working-directory: site
         run: node scripts/herenow.mjs .herenow.json
       - uses: actions/cache/save@v6
         with:
           path: site/.herenow.json
-          key: docs-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: site-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - uses: actions/github-script@v9
         env:
@@ -61,7 +61,7 @@ jobs:
             const { data: deployment } = await github.rest.repos.createDeployment({
               ...context.repo,
               ref: context.payload.pull_request.head.sha,
-              environment: 'docs preview',
+              environment: 'site preview',
               description: 'Docs preview on here.now',
               auto_merge: false,
               required_contexts: [],
