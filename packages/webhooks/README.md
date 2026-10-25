@@ -166,22 +166,41 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 ### Performance
 
 <!-- bench:start -->
-| | @portable/webhooks | @portable/webhooks with @noble/hashes | standardwebhooks | svix | stripe, `constructEventAsync` | stripe, `constructEvent` | @octokit/webhooks-methods, web build | @octokit/webhooks-methods, Node build | @slack/bolt | `crypto.subtle` by hand | `node:crypto` by hand |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Verify a Standard Webhook | 17,900 | 59,300 | 47,400 | 59,200 | – | – | – | – | – | – | – |
-| Verify a Stripe webhook | 17,500 | 55,800 | – | – | 13,500 | 102,000 | – | – | – | – | – |
-| Verify a GitHub webhook | 19,300 | 67,700 | – | – | – | – | 16,800 | 232,000 | – | – | 240,000 |
-| Verify a Slack request | 19,100 | 60,700 | – | – | – | – | – | – | 87,400 | 19,000 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Verify a Standard Webhook | @portable/webhooks with @noble/hashes | 59,300 | 3.3× faster | ████████████ |
+|  | svix | 59,200 | 3.3× faster | ████████████ |
+|  | standardwebhooks | 47,400 | 2.6× faster | █████████▋ |
+|  | **@portable/webhooks** | 17,900 |  | ███▋ |
+| Verify a Stripe webhook | stripe, `constructEvent` | 102,000 | 5.8× faster | ████████████ |
+|  | @portable/webhooks with @noble/hashes | 55,800 | 3.2× faster | ██████▋ |
+|  | **@portable/webhooks** | 17,500 |  | ██ |
+|  | stripe, `constructEventAsync` | 13,500 | 1.3× slower | █▋ |
+| Verify a GitHub webhook | `node:crypto` by hand | 240,000 | 12× faster | ████████████ |
+|  | @octokit/webhooks-methods, Node build | 232,000 | 12× faster | ███████████▋ |
+|  | @portable/webhooks with @noble/hashes | 67,700 | 3.5× faster | ███▍ |
+|  | **@portable/webhooks** | 19,300 |  | █ |
+|  | @octokit/webhooks-methods, web build | 16,800 | 1.1× slower | ▉ |
+| Verify a Slack request | @slack/bolt | 87,400 | 4.6× faster | ████████████ |
+|  | @portable/webhooks with @noble/hashes | 60,700 | 3.2× faster | ████████▍ |
+|  | **@portable/webhooks** | 19,100 |  | ██▋ |
+|  | `crypto.subtle` by hand | 19,000 | same | ██▋ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/webhooks, and the bars are scaled to the fastest library.
 
-| | @portable/webhooks | @portable/webhooks with @noble/hashes | standardwebhooks | svix | stripe, `constructEventAsync` | stripe, `constructEvent` | @octokit/webhooks-methods, web build | @octokit/webhooks-methods, Node build | @slack/bolt | `crypto.subtle` by hand | `node:crypto` by hand |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 5.2 kB | 8.0 kB | 4.6 kB | 4.5 kB | 30 kB | 30 kB | 0.4 kB | 0.4 kB | 1.3 kB | built in | built in |
-| Runtime dependencies | 6 | 7 | 2 | 3 | 0 | 0 | 0 | 0 | 98 | – | – |
-| Node built-ins used | none | none | `Buffer` | `Buffer` | `Buffer` | `Buffer` | none | none | `crypto` | none | Node only |
-| TypeScript types | included | included | included | included | included | included | included | included | included | – | – |
-| Version compared | – | – | 1.1.1 | 2.8.0 | 23.0.0 | 23.0.0 | 6.0.0 | 6.0.0 | 5.1.0 | – | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/webhooks | – | 5.2 kB | 6 | none | included |
+| @portable/webhooks with @noble/hashes | – | 8.0 kB | 7 | none | included |
+| standardwebhooks | 1.1.1 | 4.6 kB | 2 | `Buffer` | included |
+| svix | 2.8.0 | 4.5 kB | 3 | `Buffer` | included |
+| stripe, `constructEventAsync` | 23.0.0 | 30 kB | 0 | `Buffer` | included |
+| stripe, `constructEvent` | 23.0.0 | 30 kB | 0 | `Buffer` | included |
+| @octokit/webhooks-methods, web build | 6.0.0 | 0.4 kB | 0 | none | included |
+| @octokit/webhooks-methods, Node build | 6.0.0 | 0.4 kB | 0 | none | included |
+| @slack/bolt | 5.1.0 | 1.3 kB | 98 | `crypto` | included |
+| `crypto.subtle` by hand | – | built in | – | none | – |
+| `node:crypto` by hand | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

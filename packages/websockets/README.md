@@ -132,20 +132,26 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - On Node 24, echoing 1,000 messages of 100 bytes through a local server with `connect` runs within 5% of a bare `WebSocket`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
 
 <!-- bench:start -->
-| | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Echo 1,000 messages through a local server | 105 | 93.5 | 83.1 | 104 | – | 109 |
-| Echo 1,000 messages on the server | 94.0 | – | – | – | 97.7 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Echo 1,000 messages through a local server | `WebSocket` | 109 | same | ████████████ |
+|  | **@portable/websockets** | 105 |  | ███████████▌ |
+|  | websocket-ts | 104 | same | ███████████▌ |
+|  | reconnecting-websocket | 93.5 | 1.1× slower | ██████████▎ |
+|  | partysocket | 83.1 | 1.3× slower | █████████▏ |
+| Echo 1,000 messages on the server | ws | 97.7 | same | ████████████ |
+|  | **@portable/websockets** | 94.0 |  | ███████████▌ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/websockets, and the bars are scaled to the fastest library.
 
-| | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |
-| --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 3.1 kB | 2.6 kB | 2.8 kB | 1.8 kB | 0.5 kB | built in |
-| Runtime dependencies | 3 | 0 | 1 | 0 | 0 | – |
-| Node built-ins used | none | none | none | none | none | none |
-| TypeScript types | included | included | included | included | `@types/ws` | – |
-| Version compared | – | 4.4.0 | 1.3.0 | 3.0.0 | 8.22.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/websockets | – | 3.1 kB | 3 | none | included |
+| reconnecting-websocket | 4.4.0 | 2.6 kB | 0 | none | included |
+| partysocket | 1.3.0 | 2.8 kB | 1 | none | included |
+| websocket-ts | 3.0.0 | 1.8 kB | 0 | none | included |
+| ws | 8.22.0 | 0.5 kB | 0 | none | `@types/ws` |
+| `WebSocket` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -132,22 +132,27 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 The benchmarks serve recorded responses from memory. node-rdap returns the response JSON as it is, so its numbers measure only `response.json()`.
 
 <!-- bench:start -->
-| | @portable/rdap | node-rdap | `fetch` and `response.json()` |
-| --- | ---: | ---: | ---: |
-| Look up google.com (Verisign response) | 37,800 | 46,400 | 51,500 |
-| Look up google.com and follow the registrar referral | 15,700 | 17,600 | – |
-| Look up a RIPE network with 16 entities | 10,500 | 11,800 | 12,800 |
-| Look up an ARIN AS number | 25,000 | 28,100 | 28,700 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Look up google.com (Verisign response) | `fetch` and `response.json()` | 51,500 | 1.4× faster | ████████████ |
+|  | node-rdap | 46,400 | 1.2× faster | ██████████▊ |
+|  | **@portable/rdap** | 37,800 |  | ████████▊ |
+| Look up google.com and follow the registrar referral | node-rdap | 17,600 | 1.1× faster | ████████████ |
+|  | **@portable/rdap** | 15,700 |  | ██████████▊ |
+| Look up a RIPE network with 16 entities | `fetch` and `response.json()` | 12,800 | 1.2× faster | ████████████ |
+|  | node-rdap | 11,800 | 1.1× faster | ███████████▏ |
+|  | **@portable/rdap** | 10,500 |  | █████████▉ |
+| Look up an ARIN AS number | `fetch` and `response.json()` | 28,700 | 1.1× faster | ████████████ |
+|  | node-rdap | 28,100 | 1.1× faster | ███████████▊ |
+|  | **@portable/rdap** | 25,000 |  | ██████████▌ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rdap, and the bars are scaled to the fastest library.
 
-| | @portable/rdap | node-rdap | `fetch` and `response.json()` |
-| --- | --- | --- | --- |
-| Minified and gzipped | 4.9 kB | 9.9 kB | built in |
-| Runtime dependencies | 5 | 5 | – |
-| Node built-ins used | none | `Buffer`, `events`, `net` | none |
-| TypeScript types | included | included | – |
-| Version compared | – | 1.0.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/rdap | – | 4.9 kB | 5 | none | included |
+| node-rdap | 1.0.0 | 9.9 kB | 5 | `Buffer`, `events`, `net` | included |
+| `fetch` and `response.json()` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

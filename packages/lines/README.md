@@ -50,19 +50,21 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 - byline splits on every Unicode line break by default. Pass `separator: /\r\n|[\n\v\f\r\x85\u2028\u2029]/` for the same result.
 
 <!-- bench:start -->
-| | @portable/lines | split2 | byline | `node:readline` |
-| --- | ---: | ---: | ---: | ---: |
-| Split 1.7 MB into lines | 82.8 | 84.6 | 40.7 | 165 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Split 1.7 MB into lines | `node:readline` | 165 | 2.0× faster | ████████████ |
+|  | split2 | 84.6 | same | ██████▏ |
+|  | **@portable/lines** | 82.8 |  | ██████ |
+|  | byline | 40.7 | 2.0× slower | ███ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/lines, and the bars are scaled to the fastest library.
 
-| | @portable/lines | split2 | byline | `node:readline` |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.3 kB | 1.1 kB | 1.2 kB | built in |
-| Runtime dependencies | 3 | 0 | 0 | – |
-| Node built-ins used | none | `stream`, `string_decoder` | `Buffer`, `stream`, `timers`, `util` | Node only |
-| TypeScript types | included | `@types/split2` | `@types/byline` | – |
-| Version compared | – | 4.2.0 | 5.0.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/lines | – | 1.3 kB | 3 | none | included |
+| split2 | 4.2.0 | 1.1 kB | 0 | `stream`, `string_decoder` | `@types/split2` |
+| byline | 5.0.0 | 1.2 kB | 0 | `Buffer`, `stream`, `timers`, `util` | `@types/byline` |
+| `node:readline` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -112,20 +112,21 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 - An empty part between two delimiters is reported as a part. mailsplit reports nothing for it.
 
 <!-- bench:start -->
-| | @portable/mime-stream | mailsplit | `TransformStream` copy |
-| --- | ---: | ---: | ---: |
-| Split and join 1.5 MB of mail | 745 | 126 | 13,600 |
-| Read the header block of 1.5 MB of mail | 17,000 | 126 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Split and join 1.5 MB of mail | `TransformStream` copy | 13,600 | 18× faster | ████████████ |
+|  | **@portable/mime-stream** | 745 |  | ▋ |
+|  | mailsplit | 126 | 5.9× slower | ▏ |
+| Read the header block of 1.5 MB of mail | **@portable/mime-stream** | 17,000 |  | ████████████ |
+|  | mailsplit | 126 | 130× slower | ▏ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-stream, and the bars are scaled to the fastest library.
 
-| | @portable/mime-stream | mailsplit | `TransformStream` copy |
-| --- | --- | --- | --- |
-| Minified and gzipped | 5.5 kB | 263 kB | built in |
-| Runtime dependencies | 5 | 6 | – |
-| Node built-ins used | none | `buffer`, `path`, `stream`, `string_decoder` | none |
-| TypeScript types | included | included | – |
-| Version compared | – | 5.4.23 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/mime-stream | – | 5.5 kB | 5 | none | included |
+| mailsplit | 5.4.23 | 263 kB | 6 | `buffer`, `path`, `stream`, `string_decoder` | included |
+| `TransformStream` copy | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

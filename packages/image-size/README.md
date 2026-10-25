@@ -81,25 +81,29 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 - image-size needs a PNM file's width and height on one line, separated by one space, and returns `NaN` for dimensions that aren't numbers. `parse` reads them across lines with comments between them, and throws `InvalidInputError` for dimensions that aren't numbers.
 
 <!-- bench:start -->
-| | @portable/image-size | image-size |
-| --- | ---: | ---: |
-| Read the size of a 730 KB JPEG from a stream | 88,700 | 1,250 |
-| Read the size of a 730 KB JPEG | 6,840,000 | 1,800 |
-| Read the size of a PNG | 2,590,000 | 439,000 |
-| Read the size of a HEIC image | 201,000 | 56,600 |
-| Read the size of a WebP image | 2,470,000 | 347,000 |
-| Read the size of an SVG | 550,000 | 86,500 |
-| Read the size of a TIFF | 8,530,000 | 24,000 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Read the size of a 730 KB JPEG from a stream | **@portable/image-size** | 88,700 |  | ████████████ |
+|  | image-size | 1,250 | 71× slower | ▏ |
+| Read the size of a 730 KB JPEG | **@portable/image-size** | 6,840,000 |  | ████████████ |
+|  | image-size | 1,800 | 3,800× slower | ▏ |
+| Read the size of a PNG | **@portable/image-size** | 2,590,000 |  | ████████████ |
+|  | image-size | 439,000 | 5.9× slower | ██ |
+| Read the size of a HEIC image | **@portable/image-size** | 201,000 |  | ████████████ |
+|  | image-size | 56,600 | 3.6× slower | ███▍ |
+| Read the size of a WebP image | **@portable/image-size** | 2,470,000 |  | ████████████ |
+|  | image-size | 347,000 | 7.1× slower | █▋ |
+| Read the size of an SVG | **@portable/image-size** | 550,000 |  | ████████████ |
+|  | image-size | 86,500 | 6.4× slower | █▉ |
+| Read the size of a TIFF | **@portable/image-size** | 8,530,000 |  | ████████████ |
+|  | image-size | 24,000 | 360× slower | ▏ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/image-size, and the bars are scaled to the fastest library.
 
-| | @portable/image-size | image-size |
-| --- | --- | --- |
-| Minified and gzipped | 5.3 kB | 4.6 kB |
-| Runtime dependencies | 2 | 0 |
-| Node built-ins used | none | none |
-| TypeScript types | included | included |
-| Version compared | – | 2.0.4 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/image-size | – | 5.3 kB | 2 | none | included |
+| image-size | 2.0.4 | 4.6 kB | 0 | none | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

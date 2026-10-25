@@ -128,21 +128,25 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 - It verifies faster. In Node it verifies a 250 KB message about three times as fast as mailauth, and signs it about as fast as nodemailer, as the table below shows.
 
 <!-- bench:start -->
-| | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
-| --- | ---: | ---: | ---: | ---: |
-| Sign a 250 KB message | 287 | 133 | 328 | 1,680 |
-| Verify a 250 KB message | 403 | 133 | – | – |
-| Sign and verify a short message | 501 | 550 | – | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Sign a 250 KB message | `node:crypto`, hash and sign only | 1,680 | 5.9× faster | ████████████ |
+|  | nodemailer | 328 | 1.1× faster | ██▍ |
+|  | **@portable/dkim** | 287 |  | ██ |
+|  | mailauth | 133 | 2.2× slower | █ |
+| Verify a 250 KB message | **@portable/dkim** | 403 |  | ████████████ |
+|  | mailauth | 133 | 3.0× slower | ████ |
+| Sign and verify a short message | mailauth | 550 | 1.1× faster | ████████████ |
+|  | **@portable/dkim** | 501 |  | ██████████▉ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dkim, and the bars are scaled to the fastest library.
 
-| | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 19 kB | 449 kB | 4.4 kB | built in |
-| Runtime dependencies | 10 | 38 | 0 | – |
-| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | `Buffer`, `crypto`, `fs`, `path`, `stream` | Node only |
-| TypeScript types | included | included | none | – |
-| Version compared | – | 7.3.0 | 10.2.1 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/dkim | – | 19 kB | 10 | none | included |
+| mailauth | 7.3.0 | 449 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | included |
+| nodemailer | 10.2.1 | 4.4 kB | 0 | `Buffer`, `crypto`, `fs`, `path`, `stream` | none |
+| `node:crypto`, hash and sign only | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

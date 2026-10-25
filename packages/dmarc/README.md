@@ -99,19 +99,17 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 - It is a little faster. In the benchmark below, each run checks a subdomain that inherits its parent's record, with relaxed alignment and three identifiers, in Node with an in-memory resolver.
 
 <!-- bench:start -->
-| | @portable/dmarc | mailauth, strict mode |
-| --- | ---: | ---: |
-| Check a subdomain with relaxed alignment | 24,600 | 18,900 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Check a subdomain with relaxed alignment | **@portable/dmarc** | 24,600 |  | ████████████ |
+|  | mailauth, strict mode | 18,900 | 1.3× slower | █████████▎ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dmarc, and the bars are scaled to the fastest library.
 
-| | @portable/dmarc | mailauth, strict mode |
-| --- | --- | --- |
-| Minified and gzipped | 17 kB | 446 kB |
-| Runtime dependencies | 10 | 38 |
-| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
-| TypeScript types | included | included |
-| Version compared | – | 7.3.0 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/dmarc | – | 17 kB | 10 | none | included |
+| mailauth, strict mode | 7.3.0 | 446 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

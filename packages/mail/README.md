@@ -155,21 +155,21 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 - nodemailer accepts a backslash in a domain, and this package throws for it.
 
 <!-- bench:start -->
-| | @portable/mail | nodemailer |
-| --- | ---: | ---: |
-| Encode 100 text and HTML messages | 89.6 | 30.1 |
-| Encode a message with a 1 MB attachment | 218 | 337 |
-| Encode a message with a 4 MB attachment from a stream | 66.6 | 77.0 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Encode 100 text and HTML messages | **@portable/mail** | 89.6 |  | ████████████ |
+|  | nodemailer | 30.1 | 3.0× slower | ████ |
+| Encode a message with a 1 MB attachment | nodemailer | 337 | 1.5× faster | ████████████ |
+|  | **@portable/mail** | 218 |  | ███████▊ |
+| Encode a message with a 4 MB attachment from a stream | nodemailer | 77.0 | 1.2× faster | ████████████ |
+|  | **@portable/mail** | 66.6 |  | ██████████▍ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail, and the bars are scaled to the fastest library.
 
-| | @portable/mail | nodemailer |
-| --- | --- | --- |
-| Minified and gzipped | 13 kB | 39 kB |
-| Runtime dependencies | 8 | 0 |
-| Node built-ins used | none | `Buffer`, `crypto`, `dns`, `fs`, `http`, `https`, `net`, `os`, `path`, `stream`, `url`, `util`, `zlib` |
-| TypeScript types | included | none |
-| Version compared | – | 10.2.1 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/mail | – | 13 kB | 8 | none | included |
+| nodemailer | 10.2.1 | 39 kB | 0 | `Buffer`, `crypto`, `dns`, `fs`, `http`, `https`, `net`, `os`, `path`, `stream`, `url`, `util`, `zlib` | none |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

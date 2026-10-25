@@ -65,22 +65,34 @@ pako and fflate implement deflate in JavaScript, although every runtime already 
 In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at about the speed of the `crc-32` package, and `node:zlib`'s runs in native code.
 
 <!-- bench:start -->
-| | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Gzip 1 MB of text | 42.3 | 21.7 | 22.8 | – | 46.3 | – |
-| Gunzip 1 MB of text | 181 | 135 | 228 | – | 523 | – |
-| Gunzip a stream of 1 KiB chunks | 111 | – | 54.7 | – | 113 | 96.7 |
-| CRC-32 of 1 MB | 1,290 | – | – | 1,410 | 4,250 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Gzip 1 MB of text | `node:zlib` | 46.3 | 1.1× faster | ████████████ |
+|  | **@portable/compress** | 42.3 |  | ███████████ |
+|  | fflate | 22.8 | 1.9× slower | █████▉ |
+|  | pako | 21.7 | 1.9× slower | █████▋ |
+| Gunzip 1 MB of text | `node:zlib` | 523 | 2.9× faster | ████████████ |
+|  | fflate | 228 | 1.3× faster | █████▎ |
+|  | **@portable/compress** | 181 |  | ████▏ |
+|  | pako | 135 | 1.3× slower | ███▏ |
+| Gunzip a stream of 1 KiB chunks | `node:zlib` | 113 | same | ████████████ |
+|  | **@portable/compress** | 111 |  | ███████████▊ |
+|  | `DecompressionStream` | 96.7 | 1.1× slower | ██████████▎ |
+|  | fflate | 54.7 | 2.0× slower | █████▊ |
+| CRC-32 of 1 MB | `node:zlib` | 4,250 | 3.3× faster | ████████████ |
+|  | crc-32 | 1,410 | 1.1× faster | ████ |
+|  | **@portable/compress** | 1,290 |  | ███▋ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/compress, and the bars are scaled to the fastest library.
 
-| | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
-| --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.4 kB | 13 kB | 12 kB | 1.1 kB | built in | built in |
-| Runtime dependencies | 2 | 0 | 0 | 0 | – | – |
-| Node built-ins used | none | none | none | none | Node only | none |
-| TypeScript types | included | included | included | included | – | – |
-| Version compared | – | 3.0.2 | 0.8.3 | 1.2.2 | – | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/compress | – | 2.4 kB | 2 | none | included |
+| pako | 3.0.2 | 13 kB | 0 | none | included |
+| fflate | 0.8.3 | 12 kB | 0 | none | included |
+| crc-32 | 1.2.2 | 1.1 kB | 0 | none | included |
+| `node:zlib` | – | built in | – | Node only | – |
+| `DecompressionStream` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

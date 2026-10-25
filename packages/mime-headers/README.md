@@ -108,28 +108,41 @@ It has no dependencies outside `@portable/*`, takes and returns plain strings an
 - email-addresses returns `local` and `domain` fields, and `parseAddresses` returns only `address`, so split it at its last `@`. There is no IDN conversion: `user@münchen.de` stays as written.
 
 <!-- bench:start -->
-| | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Decode 200 Q-encoded subjects | 1,130 | 602 | – | – | – |
-| Decode 200 B-encoded words | 2,470 | 1,810 | – | – | 7,530 |
-| Encode 200 subjects | 1,720 | 631 | – | – | – |
-| Encode 200 subjects as B words | 7,320 | 7,600 | – | – | 3,450 |
-| Fold a 2,000-word header | 79,200 | 10,300 | – | – | – |
-| Parse 200 folded headers | 18,100 | 4,930 | – | – | – |
-| Parse 200 header values with parameters | 1,330 | 864 | – | – | – |
-| Format 200 header values with parameters | 1,880 | 837 | – | – | – |
-| Parse 500 addresses | 2,070 | – | 861 | 36.8 | – |
-| Parse 500 addresses in strict mode | 969 | – | – | 41.0 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Decode 200 Q-encoded subjects | **@portable/mime-headers** | 1,130 |  | ████████████ |
+|  | libmime | 602 | 1.9× slower | ██████▍ |
+| Decode 200 B-encoded words | Node `Buffer` and `TextDecoder` | 7,530 | 3.0× faster | ████████████ |
+|  | **@portable/mime-headers** | 2,470 |  | ███▉ |
+|  | libmime | 1,810 | 1.4× slower | ██▉ |
+| Encode 200 subjects | **@portable/mime-headers** | 1,720 |  | ████████████ |
+|  | libmime | 631 | 2.7× slower | ████▍ |
+| Encode 200 subjects as B words | libmime | 7,600 | same | ████████████ |
+|  | **@portable/mime-headers** | 7,320 |  | ███████████▌ |
+|  | Node `Buffer` and `TextDecoder` | 3,450 | 2.1× slower | █████▌ |
+| Fold a 2,000-word header | **@portable/mime-headers** | 79,200 |  | ████████████ |
+|  | libmime | 10,300 | 7.7× slower | █▌ |
+| Parse 200 folded headers | **@portable/mime-headers** | 18,100 |  | ████████████ |
+|  | libmime | 4,930 | 3.7× slower | ███▎ |
+| Parse 200 header values with parameters | **@portable/mime-headers** | 1,330 |  | ████████████ |
+|  | libmime | 864 | 1.5× slower | ███████▊ |
+| Format 200 header values with parameters | **@portable/mime-headers** | 1,880 |  | ████████████ |
+|  | libmime | 837 | 2.2× slower | █████▍ |
+| Parse 500 addresses | **@portable/mime-headers** | 2,070 |  | ████████████ |
+|  | addressparser | 861 | 2.4× slower | █████ |
+|  | email-addresses | 36.8 | 56× slower | ▎ |
+| Parse 500 addresses in strict mode | **@portable/mime-headers** | 969 |  | ████████████ |
+|  | email-addresses | 41.0 | 24× slower | ▌ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-headers, and the bars are scaled to the fastest library.
 
-| | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
-| --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 8.1 kB | 258 kB | 3.6 kB | 3.1 kB | built in |
-| Runtime dependencies | 4 | 5 | 0 | 0 | – |
-| Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none | none | Node only |
-| TypeScript types | included | none | none | included | – |
-| Version compared | – | 5.4.9 | 10.2.1 | 5.0.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/mime-headers | – | 8.1 kB | 4 | none | included |
+| libmime | 5.4.9 | 258 kB | 5 | `buffer`, `stream`, `string_decoder` | none |
+| addressparser | 10.2.1 | 3.6 kB | 0 | none | none |
+| email-addresses | 5.0.0 | 3.1 kB | 0 | none | included |
+| Node `Buffer` and `TextDecoder` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

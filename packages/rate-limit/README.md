@@ -221,22 +221,23 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
 
 <!-- bench:start -->
-| | @portable/rate-limit | rate-limiter-flexible | limiter |
-| --- | ---: | ---: | ---: |
-| 10 rounds of `take` on 1,000 keys | 184 | 218 | – |
-| `take` of a denied request | 4,210 | 891 | – |
-| 1,000 × `take` on one key | 2,910 | – | 16,800 |
-| Build the rate-limit headers | 1,440 | – | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| 10 rounds of `take` on 1,000 keys | rate-limiter-flexible | 218 | 1.2× faster | ████████████ |
+|  | **@portable/rate-limit** | 184 |  | ██████████▏ |
+| `take` of a denied request | **@portable/rate-limit** | 4,210 |  | ████████████ |
+|  | rate-limiter-flexible | 891 | 4.7× slower | ██▌ |
+| 1,000 × `take` on one key | limiter | 16,800 | 5.8× faster | ████████████ |
+|  | **@portable/rate-limit** | 2,910 |  | ██▏ |
+| Build the rate-limit headers | **@portable/rate-limit** | 1,440 |  | ████████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rate-limit, and the bars are scaled to the fastest library.
 
-| | @portable/rate-limit | rate-limiter-flexible | limiter |
-| --- | --- | --- | --- |
-| Minified and gzipped | 1.2 kB | 17 kB | 1.4 kB |
-| Runtime dependencies | 2 | 0 | 0 |
-| Node built-ins used | none | `Buffer`, `cluster`, `crypto` | none |
-| TypeScript types | included | included | included |
-| Version compared | – | 11.2.3 | 4.1.0 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/rate-limit | – | 1.2 kB | 2 | none | included |
+| rate-limiter-flexible | 11.2.3 | 17 kB | 0 | `Buffer`, `cluster`, `crypto` | included |
+| limiter | 4.1.0 | 1.4 kB | 0 | none | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

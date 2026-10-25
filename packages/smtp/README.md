@@ -142,20 +142,19 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 The benchmarks send to a server on localhost that answers at once.
 
 <!-- bench:start -->
-| | @portable/smtp | nodemailer |
-| --- | ---: | ---: |
-| Send 10 small messages over one connection | 1,360 | 1,200 |
-| Send a 1 MB message | 63.3 | 51.9 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Send 10 small messages over one connection | **@portable/smtp** | 1,360 |  | ████████████ |
+|  | nodemailer | 1,200 | 1.1× slower | ██████████▋ |
+| Send a 1 MB message | **@portable/smtp** | 63.3 |  | ████████████ |
+|  | nodemailer | 51.9 | 1.2× slower | █████████▉ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/smtp, and the bars are scaled to the fastest library.
 
-| | @portable/smtp | nodemailer |
-| --- | --- | --- |
-| Minified and gzipped | 6.1 kB | 15 kB |
-| Runtime dependencies | 4 | 0 |
-| Node built-ins used | none | `Buffer`, `crypto`, `dns`, `events`, `fs`, `http`, `https`, `net`, `os`, `stream`, `tls`, `url`, `util`, `zlib` |
-| TypeScript types | included | none |
-| Version compared | – | 10.2.1 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/smtp | – | 6.1 kB | 4 | none | included |
+| nodemailer | 10.2.1 | 15 kB | 0 | `Buffer`, `crypto`, `dns`, `events`, `fs`, `http`, `https`, `net`, `os`, `stream`, `tls`, `url`, `util`, `zlib` | none |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

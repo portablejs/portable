@@ -146,24 +146,34 @@ smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` po
 - `FrameDecoderStream` checks `maxBytes` as soon as it reads the length, so a peer can't make it buffer a large frame before the check. Its default is `Infinity`, while it-length-prefixed rejects frames over 4 MB by default, so set `maxBytes` when the input comes from the network.
 
 <!-- bench:start -->
-| | @portable/binary | smart-buffer | varint | @bufbuild/protobuf | it-length-prefixed | `DataView` and `TextDecoder` |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Write 1,000 mixed records | 6,250 | 1,110 | – | – | – | – |
-| Read 1,000 mixed records | 8,630 | 878 | – | – | – | 1,390 |
-| Encode 10,000 varints | 4,740 | – | 255 | 4,370 | – | – |
-| Decode 10,000 varints | 18,600 | – | 492 | 15,600 | – | – |
-| Split 2,000 frames from a stream | 575 | – | – | – | 1,080 | – |
-| Write 2,000 frames to a stream | 305 | – | – | – | 456 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Write 1,000 mixed records | **@portable/binary** | 6,250 |  | ████████████ |
+|  | smart-buffer | 1,110 | 5.6× slower | ██▏ |
+| Read 1,000 mixed records | **@portable/binary** | 8,630 |  | ████████████ |
+|  | `DataView` and `TextDecoder` | 1,390 | 6.2× slower | █▉ |
+|  | smart-buffer | 878 | 9.8× slower | █▎ |
+| Encode 10,000 varints | **@portable/binary** | 4,740 |  | ████████████ |
+|  | @bufbuild/protobuf | 4,370 | 1.1× slower | ███████████▏ |
+|  | varint | 255 | 19× slower | ▋ |
+| Decode 10,000 varints | **@portable/binary** | 18,600 |  | ████████████ |
+|  | @bufbuild/protobuf | 15,600 | 1.2× slower | ██████████▏ |
+|  | varint | 492 | 38× slower | ▍ |
+| Split 2,000 frames from a stream | it-length-prefixed | 1,080 | 1.9× faster | ████████████ |
+|  | **@portable/binary** | 575 |  | ██████▍ |
+| Write 2,000 frames to a stream | it-length-prefixed | 456 | 1.5× faster | ████████████ |
+|  | **@portable/binary** | 305 |  | ████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/binary, and the bars are scaled to the fastest library.
 
-| | @portable/binary | smart-buffer | varint | @bufbuild/protobuf | it-length-prefixed | `DataView` and `TextDecoder` |
-| --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 4.7 kB | 3.1 kB | 0.8 kB | 3.4 kB | 3.0 kB | built in |
-| Runtime dependencies | 3 | 0 | 0 | 0 | 6 | – |
-| Node built-ins used | none | `buffer` | none | none | none | none |
-| TypeScript types | included | included | `@types/varint` | included | included | – |
-| Version compared | – | 4.2.0 | 6.0.0 | 2.16.0 | 11.0.1 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/binary | – | 4.7 kB | 3 | none | included |
+| smart-buffer | 4.2.0 | 3.1 kB | 0 | `buffer` | included |
+| varint | 6.0.0 | 0.8 kB | 0 | none | `@types/varint` |
+| @bufbuild/protobuf | 2.16.0 | 3.4 kB | 0 | none | included |
+| it-length-prefixed | 11.0.1 | 3.0 kB | 6 | none | included |
+| `DataView` and `TextDecoder` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

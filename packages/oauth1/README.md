@@ -106,20 +106,24 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 ### Performance
 
 <!-- bench:start -->
-| | @portable/oauth1 | @portable/oauth1 with @noble/hashes | oauth-1.0a | oauth |
-| --- | ---: | ---: | ---: | ---: |
-| Sign a GET request | 7,210 | 47,700 | 41,600 | 25,800 |
-| Sign a form POST | 6,110 | 26,200 | 30,000 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Sign a GET request | @portable/oauth1 with @noble/hashes | 47,700 | 6.6× faster | ████████████ |
+|  | oauth-1.0a | 41,600 | 5.8× faster | ██████████▌ |
+|  | oauth | 25,800 | 3.6× faster | ██████▌ |
+|  | **@portable/oauth1** | 7,210 |  | █▉ |
+| Sign a form POST | oauth-1.0a | 30,000 | 4.9× faster | ████████████ |
+|  | @portable/oauth1 with @noble/hashes | 26,200 | 4.3× faster | ██████████▌ |
+|  | **@portable/oauth1** | 6,110 |  | ██▌ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/oauth1, and the bars are scaled to the fastest library.
 
-| | @portable/oauth1 | @portable/oauth1 with @noble/hashes | oauth-1.0a | oauth |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 5.3 kB | 8.0 kB | 1.7 kB | 5.2 kB |
-| Runtime dependencies | 6 | 7 | 0 | 0 |
-| Node built-ins used | none | none | none | `Buffer`, `crypto`, `http`, `https`, `querystring`, `url` |
-| TypeScript types | included | included | included | none |
-| Version compared | – | – | 2.2.6 | 0.10.2 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/oauth1 | – | 5.3 kB | 6 | none | included |
+| @portable/oauth1 with @noble/hashes | – | 8.0 kB | 7 | none | included |
+| oauth-1.0a | 2.2.6 | 1.7 kB | 0 | none | included |
+| oauth | 0.10.2 | 5.2 kB | 0 | `Buffer`, `crypto`, `http`, `https`, `querystring`, `url` | none |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

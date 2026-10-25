@@ -114,20 +114,22 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 - It is an ES module with no dependencies outside `@portable/*`, and its tests run in Deno and Bun as well as Node.
 
 <!-- bench:start -->
-| | @portable/sockets | @arrowood.dev/socket | node:net |
-| --- | ---: | ---: | ---: |
-| Echo 16 MB over TCP on localhost | 36.5 | 33.9 | 41.1 |
-| Open and close a connection on localhost | 15,300 | 13,500 | 24,200 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Echo 16 MB over TCP on localhost | node:net | 41.1 | 1.1× faster | ████████████ |
+|  | **@portable/sockets** | 36.5 |  | ██████████▋ |
+|  | @arrowood.dev/socket | 33.9 | 1.1× slower | █████████▉ |
+| Open and close a connection on localhost | node:net | 24,200 | 1.6× faster | ████████████ |
+|  | **@portable/sockets** | 15,300 |  | ███████▋ |
+|  | @arrowood.dev/socket | 13,500 | 1.1× slower | ██████▊ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/sockets, and the bars are scaled to the fastest library.
 
-| | @portable/sockets | @arrowood.dev/socket | node:net |
-| --- | --- | --- | --- |
-| Minified and gzipped | 1.5 kB | 1.3 kB | built in |
-| Runtime dependencies | 2 | 0 | – |
-| Node built-ins used | `net`, `tls` | `net`, `stream`, `tls` | Node only |
-| TypeScript types | included | included | – |
-| Version compared | – | 0.2.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/sockets | – | 1.5 kB | 2 | `net`, `tls` | included |
+| @arrowood.dev/socket | 0.2.0 | 1.3 kB | 0 | `net`, `stream`, `tls` | included |
+| node:net | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

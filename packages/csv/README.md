@@ -95,22 +95,32 @@ csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streamin
 The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
 
 <!-- bench:start -->
-| | @portable/csv | csv-parse or csv-stringify | papaparse | fast-csv |
-| --- | ---: | ---: | ---: | ---: |
-| Decode 5,000 rows from a string | 401 | 56.3 | 219 | 25.0 |
-| Decode a 500 kB stream | 312 | 47.5 | 145 | 28.7 |
-| Encode 5,000 rows to a string | 419 | 61.7 | 141 | 61.3 |
-| Encode a stream of 5,000 rows | 128 | 64.3 | – | 90.8 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Decode 5,000 rows from a string | **@portable/csv** | 401 |  | ████████████ |
+|  | papaparse | 219 | 1.8× slower | ██████▌ |
+|  | csv-parse or csv-stringify | 56.3 | 7.1× slower | █▋ |
+|  | fast-csv | 25.0 | 16× slower | ▊ |
+| Decode a 500 kB stream | **@portable/csv** | 312 |  | ████████████ |
+|  | papaparse | 145 | 2.2× slower | █████▋ |
+|  | csv-parse or csv-stringify | 47.5 | 6.6× slower | █▉ |
+|  | fast-csv | 28.7 | 11× slower | █▏ |
+| Encode 5,000 rows to a string | **@portable/csv** | 419 |  | ████████████ |
+|  | papaparse | 141 | 3.0× slower | ████ |
+|  | csv-parse or csv-stringify | 61.7 | 6.8× slower | █▊ |
+|  | fast-csv | 61.3 | 6.8× slower | █▊ |
+| Encode a stream of 5,000 rows | **@portable/csv** | 128 |  | ████████████ |
+|  | fast-csv | 90.8 | 1.4× slower | ████████▌ |
+|  | csv-parse or csv-stringify | 64.3 | 2.0× slower | ██████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/csv, and the bars are scaled to the fastest library.
 
-| | @portable/csv | csv-parse or csv-stringify | papaparse | fast-csv |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.5 kB | 10 kB | 7.0 kB | 6.9 kB |
-| Runtime dependencies | 3 | 1 | 0 | 1 |
-| Node built-ins used | none | `Buffer` | none | `Buffer`, `fs`, `stream`, `string_decoder`, `util` |
-| TypeScript types | included | included | `@types/papaparse` | included |
-| Version compared | – | 7.0.3 | 5.7.0 | 5.0.8 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/csv | – | 2.5 kB | 3 | none | included |
+| csv-parse or csv-stringify | 7.0.3 | 10 kB | 1 | `Buffer` | included |
+| papaparse | 5.7.0 | 7.0 kB | 0 | none | `@types/papaparse` |
+| fast-csv | 5.0.8 | 6.9 kB | 1 | `Buffer`, `fs`, `stream`, `string_decoder`, `util` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
