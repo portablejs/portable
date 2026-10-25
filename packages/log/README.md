@@ -127,7 +127,7 @@ Writes a record as the default output does: the namespace in a color picked from
 - **Debug output is visible in Chrome.** debug writes with `console.debug`, which Chrome hides unless the Verbose level is on.
 - **One build for every runtime.** debug's Node build imports `tty`, `util` and `supports-color`, so a Cloudflare Worker or a bundler that ignores the `browser` field gets Node code.
 - **Timestamps instead of `+Nms`.** debug prints the time since a namespace's previous call, which doesn't help when several namespaces or processes log at once. `time: true` prints an ISO 8601 timestamp.
-- **Smaller and faster.** The bundle is 1.2 kB gzipped against debug's 2.7 kB. In Node, an enabled debug call written as text runs 7 to 10 times as fast as debug's, and a disabled call is as fast as loglevel's and faster than debug's.
+- **Smaller and faster.** The bundle is 1.3 kB gzipped against debug's 2.7 kB. In Node, an enabled debug call written as text runs 7 to 10 times as fast as debug's, and a disabled call is as fast as loglevel's and faster than debug's.
 - **Other outputs without replacing debug's `log` function.** `subscribe` receives each call as a record with its level, namespace, arguments and properties, so a subscriber can send errors to a reporting service while the console output stays.
 
 When switching from debug, note these differences:
