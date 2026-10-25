@@ -16,7 +16,7 @@ export declare namespace DecoderStream {
     signal?: AbortSignal | undefined;
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined;
-    /** Longest partial line to buffer while waiting for a separator. @default Infinity */
+    /** Longest line, in UTF-16 code units, separator excluded. @default Infinity */
     maxLength?: number | undefined;
     /**
      * What to do with a line longer than `maxLength`: fail the stream, or drop the line and
@@ -53,6 +53,9 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       separator = /\r?\n/,
       skipEmpty = false,
     } = options;
+    if (!(maxLength >= 0)) {
+      throw new RangeError('`maxLength` must be a number >= 0.');
+    }
     const decoder = new TextDecoder(encoding);
     const splitLines = (text: string) =>
       typeof separator === 'string' ? text.split(separator) : text.split(separator);

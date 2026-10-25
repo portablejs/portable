@@ -47,3 +47,9 @@ function utf8Length(text: string): number {
 }
 
 const isLowSurrogate = (code: number) => code >= 0xdc00 && code < 0xe000;
+
+export function assertMaxBytes(maxBytes: number): void {
+  if (!(maxBytes >= 0)) {
+    throw new RangeError('`maxBytes` must be a number >= 0.');
+  }
+}

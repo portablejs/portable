@@ -43,8 +43,7 @@ export function abortable<input, output>(
   }
   let onAbort = () => {};
   const done = () => signal.removeEventListener('abort', onAbort);
-  return {
-    ...transformer,
+  const wrapped: abortable.Transformer<input, output> = {
     start(controller) {
       if (signal.aborted) {
         return controller.error(signal.reason);
@@ -62,4 +61,8 @@ export function abortable<input, output>(
       return transformer.cancel?.(reason);
     },
   };
+  if (transformer.transform) {
+    wrapped.transform = (chunk, controller) => transformer.transform!(chunk, controller);
+  }
+  return wrapped;
 }

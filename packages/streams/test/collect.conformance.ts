@@ -329,6 +329,14 @@ describe('MaxBytesError', () => {
     await expect(toText(['a'], { maxBytes: 0 })).rejects.toThrow(MaxBytesError);
   });
 
+  test('rejects a negative or NaN maxBytes with a RangeError', async () => {
+    for (const maxBytes of [-1, Number.NaN]) {
+      await expect(toBytes([], { maxBytes })).rejects.toThrow(RangeError);
+      await expect(toBlob([], { maxBytes })).rejects.toThrow(RangeError);
+      await expect(toText([], { maxBytes })).rejects.toThrow(RangeError);
+    }
+  });
+
   test('allows a source of exactly maxBytes', async () => {
     expect(await toBytes([new Uint8Array(2), new Uint8Array(1)], { maxBytes: 3 })).toHaveLength(3);
   });

@@ -1,6 +1,6 @@
 import { isUint8Array, toBufferSource } from '@portable/bytes/internal';
 import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
-import { concat } from './bytes.js';
+import { assertMaxBytes, concat } from './bytes.js';
 import type { Format } from './codec.js';
 import { MaxBytesError, classify } from './errors.js';
 
@@ -40,6 +40,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
   constructor(options: DecoderStream.Options = {}) {
     super();
     const { format = 'gzip', maxBytes = Infinity, signal } = options;
+    assertMaxBytes(maxBytes);
     const native = new DecompressionStream(format);
     const writer = native.writable.getWriter();
     const reader = native.readable.getReader();

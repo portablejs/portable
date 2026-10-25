@@ -29,6 +29,7 @@ describe('byte inputs', () => {
   for (const [name, value] of Object.entries({
     null: null,
     undefined: undefined,
+    string: '00ff',
   })) {
     test(`throws a TypeError for ${name}`, () => {
       expect(() => Bytes.toHex(value as never)).toThrow(TypeError);

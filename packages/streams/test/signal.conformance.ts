@@ -204,6 +204,22 @@ describe('abortable', () => {
     expect(await Streams.toArray(stream.readable)).toEqual([0, 2, 4, -1]);
   });
 
+  test('calls the methods of a transformer class with the transformer as this', async () => {
+    class Doubler {
+      factor = 2;
+      transform(chunk: number, controller: TransformStreamDefaultController<number>) {
+        controller.enqueue(chunk * this.factor);
+      }
+    }
+    const stream = new TransformStream<number, number>(
+      Streams.abortable(new Doubler(), { signal: new AbortController().signal }),
+    );
+    const writer = stream.writable.getWriter();
+    void writer.write(1);
+    void writer.close();
+    expect(await Streams.toArray(stream.readable)).toEqual([2]);
+  });
+
   test('an abort after the stream ends has no effect', async () => {
     const controller = new AbortController();
     const stream = new TransformStream(Streams.abortable({}, { signal: controller.signal }));

@@ -1,6 +1,6 @@
 import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
-import { concat } from './bytes.js';
+import { assertMaxBytes, concat } from './bytes.js';
 import { MaxBytesError, TruncatedError, classify } from './errors.js';
 
 /** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
@@ -75,6 +75,7 @@ export async function decode(
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { format = 'gzip', maxBytes = Infinity, signal } = options;
   assertUint8Array(data);
+  assertMaxBytes(maxBytes);
   const chunks: Uint8Array[] = [];
   let length = 0;
   const decodeAll = (input: Uint8Array) =>
