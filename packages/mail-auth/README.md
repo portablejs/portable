@@ -102,6 +102,8 @@ Values that aren't a token or an address are quoted, comments keep their parenth
 | --- | --- |
 | `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
 | `MailAuth.Result` | What `authenticate` resolves to, as above. |
+| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from `@portable/dkim`. |
+| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
 
 ## Why use this over mailauth
 

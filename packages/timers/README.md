@@ -250,7 +250,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `signal` cancels the waiting invocation and disables the function, so it can be tied to a component's or request's lifetime.
 - Time is read from `performance.now()`. lodash reads `Date.now()`, so `throttle` invokes again at once when the system clock jumps forward.
 - lodash.debounce 4.0.8, the standalone package, leaves a timer behind in a tight loop when `maxWait` is below `ms`, and invokes at other times than lodash 4.18. The oracle tests show the difference.
-- A burst of 1,000 calls through `debounce` or `throttle` runs about 10% slower than lodash on Node, and 3 to 5 times faster than throttle-debounce and p-debounce. The benchmark table above has the numbers.
+- A burst of 1,000 calls through `debounce` or `throttle` runs 10 to 15% slower than lodash on Node, and 3 to 5 times faster than throttle-debounce and p-debounce. The benchmark table above has the numbers.
 - `cancel()` and `flush()` work as in lodash, except that calls dropped by `cancel` reject with an `AbortError` and `flush` returns a promise.
 - p-debounce's `pDebounce.promise(fn)` has no equivalent, because it limits concurrency rather than time.
 - throttle-debounce takes the delay first, as in `throttle(delay, fn)`. `Timers.throttle` and `Timers.debounce` take the function first: `Timers.throttle(fn, delay)`.

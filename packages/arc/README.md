@@ -86,6 +86,8 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 | --- | --- |
 | `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
 | `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause` and `sets`, as above. |
+| `Arc.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from `@portable/dkim`. |
+| `Arc.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
 
 ## Why use this over mailauth
 

@@ -106,6 +106,8 @@ Sse.connect(request, {
 | --- | --- |
 | `Sse.Event` | An event read from a stream, as `EventSource` would dispatch it. |
 | `Sse.Message` | A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. |
+| `Sse.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
+| `Sse.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
 ## Why use this over eventsource-parser, eventsource and fetch-event-source
 
