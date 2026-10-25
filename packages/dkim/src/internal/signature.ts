@@ -1,3 +1,4 @@
+import { abortable } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import * as Dns from '@portable/dns';
 import type { Resolver, Result } from '../verify.js';
@@ -350,21 +351,4 @@ function parseKeyRecord(text: string): KeyRecord {
     return permerror('invalid public key');
   }
   return { data: der, type, hashes: list('h'), flags: list('t') ?? [] };
-}
-
-export function abortable<value>(
-  promise: Promise<value>,
-  signal: AbortSignal | undefined,
-): Promise<value> {
-  if (!signal) {
-    return promise;
-  }
-  if (signal.aborted) {
-    return Promise.reject(signal.reason);
-  }
-  return new Promise((resolve, reject) => {
-    const abort = () => reject(signal.reason);
-    signal.addEventListener('abort', abort, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
-  });
 }

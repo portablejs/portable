@@ -1,3 +1,4 @@
+import { abortable } from '@portable/timers/internal';
 import { assertUint8Array } from '@portable/bytes/internal';
 import * as Base64 from '@portable/base64';
 import * as Bytes from '@portable/bytes';
@@ -58,10 +59,8 @@ export async function hash(
   assertIterations(iterations);
   const salt = crypto.getRandomValues(new Uint8Array(saltLength));
   const bytes = toBytes(password, maxBytes);
-  const derived = await abortable(
-    () => derive(bytes, salt, iterations, 'SHA-256', hashLength),
-    signal,
-  );
+  signal?.throwIfAborted();
+  const derived = await abortable(derive(bytes, salt, iterations, 'SHA-256', hashLength), signal);
   const b64 = (bytes: Uint8Array) => Base64.encode(bytes, { omitPadding: true });
   return `$pbkdf2-sha256$i=${iterations}$${b64(salt)}$${b64(derived)}`;
 }
@@ -106,8 +105,9 @@ export async function verify(
   const parsed = parse(stored);
   const bytes = toBytes(password, maxBytes);
   const { salt, iterations, digest } = parsed;
+  signal?.throwIfAborted();
   const derived = await abortable(
-    () => derive(bytes, salt, iterations, digest, parsed.hash.length),
+    derive(bytes, salt, iterations, digest, parsed.hash.length),
     signal,
   );
   return Bytes.timingSafeEqual(derived, parsed.hash);
@@ -287,21 +287,4 @@ async function deriveWithHmac(
     offset += t.length;
   }
   return out;
-}
-
-function abortable<value>(
-  start: () => Promise<value>,
-  signal: AbortSignal | undefined,
-): Promise<value> {
-  if (!signal) {
-    return start();
-  }
-  signal.throwIfAborted();
-  return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason);
-    signal.addEventListener('abort', onAbort, { once: true });
-    start()
-      .then(resolve, reject)
-      .finally(() => signal.removeEventListener('abort', onAbort));
-  });
 }

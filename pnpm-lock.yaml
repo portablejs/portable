@@ -348,6 +348,9 @@ importers:
       '@portable/spf':
         specifier: workspace:*
         version: link:../spf
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/dmarc/test:
     devDependencies:
@@ -953,6 +956,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/password/test:
     devDependencies:

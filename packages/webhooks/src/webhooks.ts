@@ -1,11 +1,11 @@
 import type { Instant } from '@portable/timers';
-import { toDate } from '@portable/timers/internal';
+import { abortable, toDate } from '@portable/timers/internal';
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, isUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as WebCrypto from '@portable/web-crypto';
 import { VerificationError } from './errors.js';
 import { utf8 } from './internal.js';
-import { race, readBody } from './race.js';
+import { readBody } from './readBody.js';
 import { type Scheme, standard } from './schemes.js';
 
 /**
@@ -140,7 +140,7 @@ export async function verify(
   const content = bytes(scheme.payload({ id, timestamp, body }));
   let match = false;
   for (const key of keys) {
-    const expected = await race(hmac('SHA-256', key, content), signal);
+    const expected = await abortable(hmac('SHA-256', key, content), signal);
     for (const signature of signed.signatures) {
       if (Bytes.timingSafeEqual(signature, expected)) {
         match = true;
@@ -216,7 +216,7 @@ export async function sign(
   const key = keyOf(scheme, options.secret);
   const bytesOfBody = typeof body === 'string' ? utf8.encode(body) : assertUint8Array(body);
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }));
-  const signature = await race(hmac('SHA-256', key, content), signal);
+  const signature = await abortable(hmac('SHA-256', key, content), signal);
   return scheme.headers({ signature, id, timestamp });
 }
 

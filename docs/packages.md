@@ -27,14 +27,15 @@ Each line lists the `@portable/*` packages a package depends on, from its `packa
 ```
 L3  mail-auth     → arc, dkim, dmarc, spf, mime-headers, timers
     arc           → dkim, base64, bytes, timers
-    dmarc         → spf, dns, idna
+    dmarc         → spf, dns, idna, timers
     spf           → dns, idna, ip, timers
 L2  dkim          → dns, idna, web-crypto, base64, bytes, timers
     mail          → mime-headers, quoted-printable, idna, base64, bytes, timers
     dns           → dns-packet, idna, ip, base64
     oauth1, webhooks → web-crypto, base64, bytes, timers
     web-push      → base64, bytes, timers
-    password, smtp → base64, bytes
+    password      → base64, bytes, timers
+    smtp          → base64, bytes
     rdap          → idna, ip, timers
 L1  mime-stream   → mime-headers, bytes, streams
     mime-headers  → base64, bytes
@@ -140,14 +141,14 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | `@portable/dkim` | DKIM sign and verify with RSA and Ed25519 keys on WebCrypto. The body hash uses `crypto.subtle.digest` by default, or an incremental hasher such as noble's `sha256.create()`. DNS goes through an injected resolver. | `base64`, `bytes`, `dns`, `idna`, `timers`, `web-crypto` | DKIM in mailauth, nodemailer's DKIM signer |
 | `@portable/webhooks` | Verify and sign webhooks: Standard Webhooks plus Stripe, GitHub and Slack schemes, or any HMAC-SHA256 sender, with timing-safe compare and a replay window. | `base64`, `bytes`, `timers`, `web-crypto` | standardwebhooks, svix's `Webhook`, Stripe's `constructEvent`, @octokit/webhooks-methods, @slack/bolt's request verification |
 | `@portable/oauth1` | OAuth 1.0a request signing (HMAC-SHA1, HMAC-SHA256, RSA-SHA1, PLAINTEXT) producing `Headers` or a signed `Request`. | `base64`, `bytes`, `timers`, `web-crypto` | oauth-1.0a, oauth |
-| `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | `base64`, `bytes` | node:crypto `pbkdf2`, pbkdf2, pbkdf2-password, hand-written hash formats |
+| `@portable/password` | Password `hash`, `verify` and `needsRehash` with PBKDF2-SHA256 on WebCrypto, stored in the PHC string format. | `base64`, `bytes`, `timers` | node:crypto `pbkdf2`, pbkdf2, pbkdf2-password, hand-written hash formats |
 
 ### L3: suites
 
 | Package | Purpose | Depends on | Replaces |
 | --- | --- | --- | --- |
 | `@portable/spf` | Evaluate SPF for a sender IP and domain, with RFC 7208 lookup limits. | `dns`, `idna`, `ip`, `timers` | mailauth's SPF module |
-| `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `dns`, `idna`, `spf` | mailauth's DMARC module |
+| `@portable/dmarc` | Resolve and evaluate DMARC policy and alignment from SPF and DKIM results. The organizational domain comes from a DNS tree walk (RFC 9989) by default, or from a passed-in public-suffix function such as tldts. | `dns`, `idna`, `spf`, `timers` | mailauth's DMARC module |
 | `@portable/arc` | ARC seal and verify (RFC 8617), with RFC behavior only. Reuses dkim's canonicalization and signing through `@portable/dkim/internal`. | `base64`, `bytes`, `dkim`, `timers` | mailauth's ARC parts |
 | `@portable/mail-auth` | One `authenticate(message, { resolver, ip, helo, sender, authservId })` that returns SPF, DKIM, DMARC and ARC results, writes Authentication-Results, and can ARC-seal the message. No BIMI. This package is the reason for the project: mailauth (3.5M) is the only complete implementation, and it runs only in Node. | `arc`, `dkim`, `dmarc`, `mime-headers`, `spf`, `timers` | mailauth's `authenticate` |
 

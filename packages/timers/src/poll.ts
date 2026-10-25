@@ -1,5 +1,6 @@
 import { backoff, call, type Context, type Delay, neverAborted } from './Delay.js';
-import { abortable, sleep } from './sleep.js';
+import { abortable } from './abortable.js';
+import { sleep } from './sleep.js';
 
 export declare namespace poll {
   type Options = {
@@ -39,7 +40,7 @@ export async function poll<value>(
   signal?.throwIfAborted();
   for (let attempt = 1; ; attempt++) {
     const result = call(fn, { attempt, signal: signal ?? neverAborted() });
-    const value = await (signal ? abortable(result, signal) : result);
+    const value = await abortable(result, signal);
     if (value !== undefined) {
       return value;
     }

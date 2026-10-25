@@ -1,5 +1,5 @@
 import type { Instant } from '@portable/timers';
-import { toDate } from '@portable/timers/internal';
+import { abortable, toDate } from '@portable/timers/internal';
 import * as Dns from '@portable/dns';
 import { Failure, permerror, temperror } from './errors.js';
 import * as Ip from '@portable/ip';
@@ -499,23 +499,6 @@ async function query<key extends keyof Answers>(
       error,
     );
   }
-}
-
-function abortable<value>(
-  promise: Promise<value>,
-  signal: AbortSignal | undefined,
-): Promise<value> {
-  if (!signal) {
-    return promise;
-  }
-  if (signal.aborted) {
-    return Promise.reject(signal.reason);
-  }
-  return new Promise((resolve, reject) => {
-    const onAbort = () => reject(signal.reason);
-    signal.addEventListener('abort', onAbort, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
-  });
 }
 
 function countLookup(ctx: Context): void {

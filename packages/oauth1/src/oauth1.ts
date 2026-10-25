@@ -1,11 +1,11 @@
 import type { Instant } from '@portable/timers';
-import { toDate } from '@portable/timers/internal';
+import { abortable, toDate } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import * as Bytes from '@portable/bytes';
 import * as WebCrypto from '@portable/web-crypto';
 import { rsaSha1 } from './crypto.js';
 import { UnsupportedError } from './errors.js';
-import { race, readBody } from './race.js';
+import { readBody } from './readBody.js';
 import {
   type Pair,
   joinPairs,
@@ -124,7 +124,7 @@ export async function authorization(
     (form || options.bodyHash) && hasBody(request)
       ? await readBody(request.clone(), signal)
       : undefined;
-  const pairs = await race(protocolParameters(request, form, body, fields, options), signal);
+  const pairs = await abortable(protocolParameters(request, form, body, fields, options), signal);
   return header(pairs, options.realm);
 }
 
@@ -161,7 +161,7 @@ export async function sign(request: Request, options: sign.Options): Promise<Req
     (form || options.bodyHash || placement === 'query') && hasBody(request)
       ? await readBody(request, signal)
       : undefined;
-  const pairs = await race(protocolParameters(request, form, body, fields, options), signal);
+  const pairs = await abortable(protocolParameters(request, form, body, fields, options), signal);
 
   if (placement === 'query') {
     const url = new URL(request.url);
