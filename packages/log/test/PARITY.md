@@ -9,7 +9,7 @@ Upstream suites: [debug 4.4.3 `test.js`](https://github.com/debug-js/debug/blob/
 | passes a basic sanity check | `loggers > methods work when detached from the logger` |
 | allows namespaces to be a non-string value | Doesn't apply. `enable` takes a string, and TypeScript rejects `enable(true)`. |
 | honors global debug namespace enable calls | `patterns > a matching pattern enables every level`, `patterns match as in debug` (oracle) |
-| uses custom log function | `subscribe` and `console > Log.console writes a changed record`. A caller replaces the output with `enable(undefined, { console: false })` and `subscribe` instead of setting `log.log`. |
+| uses custom log function | `subscribe` and `console > Log.console writes a changed record`. To replace the output, call `enable(undefined, { console: false })` and `subscribe` instead of setting `log.log`. |
 | extend namespace > should extend namespace | `loggers > extend appends to the namespace with a colon` |
 | extend namespace > should extend namespace with custom delimiter | Not built. `extend` always joins with `:`, and `create('foo--bar')` makes the same namespace. |
 | extend namespace > should extend namespace with empty delimiter | Not built, as above. |
@@ -36,7 +36,7 @@ Upstream suites: [debug 4.4.3 `test.js`](https://github.com/debug-js/debug/blob/
 | debug writes to `console.debug` in browsers, which Chrome hides unless the Verbose level is on. | `debug` and `info` calls go to `console.log` and `console.info`. | `console > uses the method for the level and colors the namespace with %c` |
 | debug's Node build imports `tty` and `util`, which breaks in Cloudflare Workers and in bundlers that ignore the `browser` field. | One build that uses only `console` and `setInterval`, plus `localStorage`, `process.env` and `import.meta.env` when they exist. | Lint forbids `node:*` imports in `src/`. |
 | debug's `+Nms` suffix shows the time since the previous call of the same namespace, which doesn't help when reading logs from several processes. | No suffix. `time: true` prefixes an ISO 8601 timestamp. | `console > time prefixes an ISO 8601 timestamp` |
-| debug writes everything to stderr in Node, so a caller can't tell levels apart in the output. | Each level writes with its own `console` method, so `warn` and `error` go to stderr and `debug` and `info` go to stdout in Node. | `console > uses the method for the level and colors the namespace with %c` |
+| debug writes everything to stderr in Node, so you can't separate levels by stream. | Each level writes with its own `console` method, so `warn` and `error` go to stderr and `debug` and `info` go to stdout in Node. | `console > uses the method for the level and colors the namespace with %c` |
 | debug's color is picked from a fixed list of 6 colors (76 with `supports-color`), so namespaces often share one. | A hue from 0 to 359 picked from a hash of the namespace. | None. The color is not checked beyond its CSS. |
 | debug accepts any `DEBUG` value because it has no levels. Our patterns can contain an unknown level, such as `app=trace`. | `enable` throws a `RangeError`. At startup an invalid `DEBUG` or `localStorage.debug` value is ignored, as if no patterns were set. A later invalid change to `localStorage.debug` is ignored, and the previous patterns stay. | `patterns > an unknown level throws a RangeError and keeps the previous patterns`, `ignores an invalid value until it is fixed` in `live.browser.test.ts` |
 

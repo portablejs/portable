@@ -88,7 +88,7 @@ const off = levels.length;
 const fallback = levels.indexOf('warn');
 const empty = Object.freeze({}) satisfies Properties;
 
-// An app can load two copies of this package, and both must follow the same patterns and
+// If two copies of this package are loaded, both must follow the same patterns and
 // subscribers, so the state is kept on `globalThis` under a registered symbol.
 const key = Symbol.for('portable.log/1');
 const state: State = ((globalThis as { [key]?: State | undefined })[key] ??= {
@@ -331,7 +331,7 @@ export function enable(patterns: string | undefined, options: enable.Options = {
 
 /**
  * Turns off every namespace at every level, warnings and errors included, and returns the
- * patterns that were in effect, so a caller can restore them with `enable`.
+ * patterns that were in effect, so `enable` can restore them.
  *
  * @example
  * ```ts

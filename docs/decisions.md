@@ -17,7 +17,7 @@ Decisions made while building the packages, with the options considered and the 
 ## `@portable/log` keeps its state on `globalThis`
 
 - **Options:** module-level variables; one object stored under `Symbol.for('portable.log/1')` on `globalThis`.
-- **Trade-offs:** An app can load two copies of the package, as AGENTS.md describes for `workspace:*` dependencies. With module-level state, `Log.enable` and `Log.subscribe` from one copy would not reach loggers created by the other. A shared object means a later release that changes the state's shape must use a new key.
+- **Trade-offs:** Two copies of the package can be installed in one app, as AGENTS.md describes for `workspace:*` dependencies. With module-level state, `Log.enable` and `Log.subscribe` from one copy would not reach loggers created by the other. A shared object means a later release that changes the state's shape must use a new key.
 - **Chosen:** the shared object. The key ends in `/1` so a release with a different shape can use `/2`.
 
 ## What a review pass fixes

@@ -104,7 +104,7 @@ export default {
 
 ### `Log.format(record)`
 
-Returns a record's arguments as one line of text, replacing format specifiers as Node's `util.format` does, except that objects are written with `JSON.stringify` instead of `util.inspect`. Errors are written as their stack. It doesn't include the namespace, level, time or properties, so a subscriber adds the ones it wants.
+Returns a record's arguments as one line of text, replacing format specifiers as Node's `util.format` does, except that objects are written with `JSON.stringify` instead of `util.inspect`. Errors are written as their stack. It doesn't include the namespace, level, time or properties, so add the ones you need in your subscriber.
 
 ### `Log.console(record)`
 
@@ -128,7 +128,7 @@ Writes a record as the default output does: the namespace in a color picked from
 - **One build for every runtime.** debug's Node build imports `tty`, `util` and `supports-color`, so a Cloudflare Worker or a bundler that ignores the `browser` field gets Node code.
 - **Timestamps instead of `+Nms`.** debug prints the time since a namespace's previous call, which doesn't help when several namespaces or processes log at once. `time: true` prints an ISO 8601 timestamp.
 - **Smaller and faster.** The bundle is 1.3 kB gzipped against debug's 2.7 kB. In Node, an enabled debug call written as text runs 7 to 10 times as fast as debug's, and a disabled call is as fast as loglevel's and faster than debug's.
-- **Other outputs without replacing debug's `log` function.** `subscribe` receives each call as a record with its level, namespace, arguments and properties, so a subscriber can send errors to a reporting service while the console output stays.
+- **Other outputs without replacing debug's `log` function.** `subscribe` receives each call as a record with its level, namespace, arguments and properties, so you can send errors to a reporting service from a subscriber and keep the console output.
 
 When switching from debug, note these differences:
 

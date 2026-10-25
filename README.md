@@ -113,6 +113,10 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tr><td><a href="packages/timers"><code>@portable/timers</code></a></td><td>Sleep, retry, poll, debounce and throttle, all cancellable with an <code>AbortSignal</code>.</td></tr>
 <tr><td><a href="packages/rate-limit"><code>@portable/rate-limit</code></a></td><td>Rate limiting per key with GCRA, in memory, Workers KV, a Durable Object or Redis over HTTP.</td></tr>
 </tbody>
+<tbody>
+<tr><th colspan="2" align="left">Logging</th></tr>
+<tr><td><a href="packages/log"><code>@portable/log</code></a></td><td>Logs by namespace and level, with debug's <code>DEBUG</code> patterns, updated without a reload.</td></tr>
+</tbody>
 </table>
 
 ### How the packages work
