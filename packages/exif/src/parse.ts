@@ -30,8 +30,8 @@ export type Metadata = Ifds & {
 
 /**
  * Reads EXIF metadata from a JPEG, TIFF, PNG, WebP, HEIC or AVIF file, or from raw EXIF data that
- * starts with `Exif\0\0` or a TIFF header. The input can be just the start of the file: tags
- * with values past the end of the input are left out.
+ * starts with `Exif\0\0` or a TIFF header. The input can be just the start of the file: a tag is
+ * left out if its values lie past the end of the input.
  *
  * @example
  * ```ts

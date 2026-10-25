@@ -3,7 +3,10 @@ import { InvalidInputError, UnsupportedError } from './errors.js';
 import { type FilterType, filterRows } from './filter.js';
 import * as zlib from './zlib.js';
 
-/** 8-bit RGBA pixels, four bytes per pixel, row by row from the top left. A decoded image or a canvas `ImageData` fits. */
+/**
+ * 8-bit RGBA pixels, four bytes per pixel, row by row from the top left. A decoded image or a
+ * canvas `ImageData` can be passed as is.
+ */
 export type RgbaImage = {
   width: number;
   height: number;
@@ -14,11 +17,15 @@ export type RgbaImage = {
 
 export declare namespace encode {
   type Options = {
-    /** Color type to write: 0 grayscale, 2 RGB, 4 grayscale with alpha, 6 RGBA. Gray is the BT.709 luma of each pixel. @default 6 */
+    /**
+     * Color type to write: 0 grayscale, 2 RGB, 4 grayscale with alpha, 6 RGBA. Gray is the BT.709
+     * luma of each pixel. @default 6
+     */
     colorType?: 0 | 2 | 4 | 6 | undefined;
     /**
      * Filter for every row, or the filters to choose from per row. With more than one, each row
-     * gets the filter whose output has the smallest sum of absolute values. @default [0, 1, 2, 3, 4]
+     * gets the filter whose output has the smallest sum of absolute values.
+     * @default [0, 1, 2, 3, 4]
      */
     filter?: FilterType | readonly FilterType[] | undefined;
     /**
@@ -26,7 +33,10 @@ export declare namespace encode {
      * @default white
      */
     background?: { red: number; green: number; blue: number } | undefined;
-    /** Compresses to zlib format. Set it to choose a compression level. @default `CompressionStream('deflate')` */
+    /**
+     * Compresses to zlib format. Set it to choose a compression level.
+     * @default `CompressionStream('deflate')`
+     */
     deflate?: ((data: Uint8Array) => Uint8Array | Promise<Uint8Array>) | undefined;
     /** Rejects with `signal.reason` when aborted, and stops compressing. */
     signal?: AbortSignal | undefined;
@@ -41,7 +51,8 @@ export declare namespace encodeSync {
 }
 
 /**
- * Encodes 8-bit RGBA pixels as a PNG file. Compresses with `CompressionStream` unless you pass `deflate`.
+ * Encodes 8-bit RGBA pixels as a PNG file. Compresses with `CompressionStream` unless you pass
+ * `deflate`.
  *
  * @example
  * ```ts

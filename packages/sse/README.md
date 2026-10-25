@@ -48,7 +48,7 @@ What the decoder and `connect` produce, with the same values `EventSource` gives
 | --- | --- | --- |
 | `event` | `string` | The block's `event` field, or `'message'`. |
 | `data` | `string` | The block's `data` fields joined with `\n`. |
-| `id` | `string \| undefined` | The last event ID. It keeps the last `id` field's value until another `id` field changes it, and is `undefined` until the stream sends one. |
+| `id` | `string \| undefined` | The last event ID: the value of the most recent `id` field in the stream, or `undefined` if the stream hasn't sent one. |
 | `retry` | `number \| undefined` | A reconnection time from a `retry` field that arrived since the previous event. |
 
 A block without a `data` field is not an event, but its `id` and `retry` still apply.
@@ -105,7 +105,7 @@ Sse.connect(request, {
 | Type | Description |
 | --- | --- |
 | `Sse.Event` | An event read from a stream, as `EventSource` would dispatch it. |
-| `Sse.Message` | A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. |
+| `Sse.Message` | A message to write to an event stream. Every field is optional, so you can pass an `Sse.Event`. |
 | `Sse.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
 | `Sse.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
@@ -114,11 +114,11 @@ Sse.connect(request, {
 eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies outside `@portable/*`.
 
 - On Node 24, `DecoderStream` decoded bytes 1.4× faster than `TextDecoderStream` piped into eventsource-parser's `EventSourceParserStream` on one LLM token event per chunk, 1.7× faster on 2 to 16 byte chunks and 1.6× faster on a 1 MB line in 128-byte chunks, and ran at the same speed on 16 KB chunks. `connect` read a mocked response 1.5× faster than `fetch` with the same pair. The exception is `decode` on one complete string, which ran at about two thirds of the speed of eventsource-parser's `createParser().feed` on short events, and at the same speed on the 1 MB line. See `test/*.bench.ts`.
-- Events carry the values `EventSource` gives: `event` defaults to `'message'`, and `id` is the last event ID, so an `id` from a block without data isn't lost. eventsource-parser reports `id` only on the block that set it.
+- Events have the values that `EventSource` gives: `event` defaults to `'message'`, and `id` is the last event ID, so an `id` from a block without data isn't lost. eventsource-parser reports `id` only on the block that set it.
 - fetch-event-source dispatches a block without `data` as an empty message, accepts `text/event-streaming` as a content type, retries an HTTP error forever, and uses `window` and `document`, so it fails in Workers and Node. It also ignores a signal that is already aborted.
 - The `eventsource` polyfill can't send a body without a custom `fetch`. Its issue #326 reports events lost on mixed CRLF and LF line breaks, which `test/DecoderStream.conformance.ts` covers.
 - better-sse writes multi-line `data` as one `data:` line, so every line after the first is lost, and strips trailing line breaks.
-- `maxLength` gives the same result however the input is chunked.
+- With `maxLength`, the result is the same however the input is chunked.
 
 `test/PARITY.md` maps every upstream test to ours and lists the upstream bugs this package handles differently.
 

@@ -53,7 +53,7 @@ The report is read from the network while you read the message, so a large attac
 | `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. |
 | `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. |
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
-| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value writes one field per value. |
+| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value is written as one field per value. |
 
 `Content` is a `string`, `Uint8Array`, `Blob` (including `File`) or `ReadableStream<Uint8Array>`. A `File` gives the attachment its file name and a `Blob` its content type.
 
@@ -65,7 +65,7 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each one appends its number, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
+| `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each boundary is this value followed by the number of its multipart, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
 | `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
 | `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |

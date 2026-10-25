@@ -9,8 +9,8 @@ export type Event = {
   /** The block's `data` fields, joined with `\n`. */
   data: string;
   /**
-   * The last event ID, as in `MessageEvent.lastEventId`. It keeps the value of the last `id` field
-   * until another `id` field changes it, and is `undefined` until the stream sends one.
+   * The last event ID, as in `MessageEvent.lastEventId`: the value of the most recent `id` field
+   * in the stream, or `undefined` if the stream hasn't sent one.
    */
   id?: string | undefined;
   /**

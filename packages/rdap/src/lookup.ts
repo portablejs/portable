@@ -22,11 +22,11 @@ type Shared = {
    * @default globalThis.fetch
    */
   fetch?: Fetch | undefined;
-  /** Cancels the lookup. It rejects with `signal.reason`, as `fetch` does. */
+  /** Aborting rejects the lookup with `signal.reason`, as `fetch` does. */
   signal?: AbortSignal | undefined;
   /**
-   * The current time, as a `Date` or a `Temporal.Instant`. `lookup` compares it with the time the
-   * bootstrap files were cached to decide whether they have expired.
+   * The current time, as a `Date` or a `Temporal.Instant`. Each lookup compares it with the time
+   * the bootstrap files were cached to decide whether they have expired.
    */
   now?: Instant | undefined;
 };
@@ -35,7 +35,7 @@ export declare namespace domain {
   type Options = Shared & {
     /**
      * Fetches the registrar's response when the registry links to it, and takes the contacts from
-     * it. A failed referral doesn't fail the lookup: `referral.error` holds the error.
+     * it. A failed referral doesn't fail the lookup: `referral.error` is set to the error.
      * @default true
      */
     follow?: boolean | undefined;

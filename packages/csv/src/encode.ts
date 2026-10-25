@@ -26,14 +26,14 @@ export declare namespace encode {
     header?: boolean | readonly string[] | undefined;
     /** Line break written after every row. @default '\r\n' */
     newline?: '\r\n' | '\n' | undefined;
-    /** Quote character, or `false` to never quote, which throws on a field that needs quoting. @default '"' */
+    /** Quote character, or `false` to never quote, so a field that needs quoting throws. @default '"' */
     quote?: string | false | undefined;
   };
 }
 
 /**
- * Encodes rows as CSV text. A field is quoted only when it holds the delimiter, the quote or a line
- * break, and quotes inside it are doubled. Every row, including the last, ends with `newline`.
+ * Encodes rows as CSV text. A field is quoted only when it contains the delimiter, the quote or a
+ * line break, and quotes inside it are doubled. Every row, including the last, ends with `newline`.
  *
  * @example
  * ```ts

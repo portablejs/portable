@@ -118,7 +118,7 @@ function tablesFor(alphabet: Alphabet): Tables {
 
 const ascii = new TextDecoder();
 
-// Below this many bytes, string concatenation beats filling a buffer and decoding it.
+// Below this many bytes, string concatenation is faster than filling a buffer and decoding it.
 const smallInput = 600;
 
 export function encodeFallback(

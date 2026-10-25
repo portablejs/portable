@@ -151,7 +151,7 @@ Differences to check when you switch:
 
 - mailauth's `resolver` is one `(name, type)` function. `verify` takes an object with a `resolveTxt` method, such as `node:dns/promises`.
 - mailauth reports problems with the key record as `neutral`, and `verify` reports them as `permerror`.
-- mailauth's `status.aligned` and `headerFrom` have no equivalent, because alignment is DMARC's job (`@portable/dmarc`). Neither have `info` and `mimeStructureStart`.
+- mailauth's `status.aligned` and `headerFrom` have no equivalent, because alignment is DMARC's job (`@portable/dmarc`). `info` and `mimeStructureStart` have none either.
 - mailauth's `dkimSign` and nodemailer's `keys` sign with several keys in one call. Call `sign` once per key and prepend each field.
 - mailauth's `dkimSign` reports problems in `errors` and `warnings`. `sign` throws instead.
 - mailauth's `maxBodyLength` has no equivalent, because `l=` lets anyone append to the body.

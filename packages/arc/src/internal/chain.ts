@@ -24,7 +24,7 @@ export const isArcField = (field: Field): boolean => Object.hasOwn(short, field.
 const value = (field: Field): string => field.raw.slice(field.raw.indexOf(':') + 1);
 
 /**
- * The instance as RFC 8617 section 3.9 writes it, 1 to 50 in one or two digits. An
+ * The instance as RFC 8617 section 3.9 defines it, 1 to 50 in one or two digits. An
  * ARC-Authentication-Results field starts with it (section 4.1.1), and the other two have it as
  * the `i=` tag.
  */

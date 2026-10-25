@@ -37,8 +37,8 @@ type Branch<chunk> = {
  * An error in the source errors every branch. Aborting `signal` errors every branch with its
  * reason and cancels the source.
  *
- * Branches receive the same chunk objects, as with `ReadableStream.prototype.tee()`, so a
- * branch must copy a chunk (`chunk.slice()`) before changing it.
+ * Branches receive the same chunk objects, as with `ReadableStream.prototype.tee()`, so copy a
+ * chunk (`chunk.slice()`) before you change it in one branch.
  *
  * @example
  * ```ts

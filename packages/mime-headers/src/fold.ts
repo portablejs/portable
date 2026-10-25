@@ -102,8 +102,8 @@ export type Header = {
 export declare namespace parseHeaders {
   type Options = {
     /**
-     * Longest header block, in UTF-16 code units, up to the end of its last line. A longer block
-     * throws `MaxLengthError`. @default Infinity
+     * Longest header block, in UTF-16 code units, up to the end of its last line. `parseHeaders`
+     * throws `MaxLengthError` for a longer block. @default Infinity
      */
     maxLength?: number | undefined;
   };
@@ -113,7 +113,7 @@ export declare namespace parseHeaders {
  * Splits a header block into fields. Reading stops at the first empty line, so a whole message can
  * be passed in, and the body isn't read. Each value is unfolded, with the whitespace around it
  * removed, and its encoded words are left as they are, because whether to decode them depends on
- * the field. Names keep their case, and a line without a colon is skipped.
+ * the field. The case of each name is kept, and a line without a colon is skipped.
  *
  * @example
  * ```ts

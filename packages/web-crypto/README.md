@@ -48,15 +48,15 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA and Ed25519, `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP, and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required and a missing one throws a `RangeError`. |
 | `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'` or `'P-521'`. It sets the width of `r` and `s` in the output. |
 
-The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, a raw signature or seed has the wrong length, a key is not an extractable private key, or a PEM string has no key block, isn't valid base64 or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` for a PEM block it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't fit the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.
+The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, a raw signature or seed has the wrong length, a key is not an extractable private key, or a PEM string has no key block, isn't valid base64 or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` when the PEM block is of a kind it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't match the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
 | `WebCrypto.Hash` | `'SHA-1' \| 'SHA-256' \| 'SHA-384' \| 'SHA-512'`, the algorithm names WebCrypto uses. |
-| `WebCrypto.Digest` | `(hash, data) => bytes`, sync or async. `@portable/oauth1` takes one as `digest`, and `WebCrypto.digest` fits it. |
-| `WebCrypto.Hmac` | `(hash, key, data) => bytes`, sync or async. `@portable/webhooks` takes one as `hmac`, and `WebCrypto.hmac` fits it. |
+| `WebCrypto.Digest` | `(hash, data) => bytes`, sync or async. `@portable/oauth1` takes one as `digest`, and `WebCrypto.digest` has this type. |
+| `WebCrypto.Hmac` | `(hash, key, data) => bytes`, sync or async. `@portable/webhooks` takes one as `hmac`, and `WebCrypto.hmac` has this type. |
 | `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take a function that returns one as `hasher`. |
 | `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa`. |
 | `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
@@ -70,7 +70,7 @@ Each helper replaces a few lines you would otherwise write yourself, and handles
 - WebCrypto refuses an empty HMAC key. HMAC pads the key with zero bytes, so `hmac` uses a single zero byte, which gives the result RFC 2104 defines.
 - If you call `crypto.subtle` yourself, you usually import the HMAC key on every call, and `importKey` takes about two thirds of the time of an HMAC on Node. `hmac` keeps up to 16 imported keys, so signing again with the same secret, such as a webhook secret, skips the import.
 - WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.
-- WebCrypto has no PEM import, and imports RSA keys only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` and many key files use PKCS #1 (`RSA PRIVATE KEY`). The usual workaround is a regex that strips the armor, which often misses CRLF line breaks or text before the block, and which still fails on PKCS #1. `importPem` reads both forms and wraps PKCS #1 in the structure WebCrypto takes.
+- WebCrypto has no PEM import, and imports RSA keys only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` and many key files use PKCS #1 (`RSA PRIVATE KEY`). If you strip the armor yourself, the usual regex often misses CRLF line breaks or text before the block, and the key still fails to import if it is PKCS #1. `importPem` reads both forms and wraps PKCS #1 in the structure WebCrypto takes.
 - WebAuthn and OpenSSL produce DER ECDSA signatures, while `crypto.subtle.verify` and JWS take raw `r || s`, and WebCrypto has no function that converts between them.
 
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 15 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
@@ -105,4 +105,4 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `derToRawEcdsa` throws `WebCrypto.InvalidInputError` for a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE. ecdsa-sig-formatter's `derToJose` accepts it.
 - `derToRawEcdsa` also rejects an INTEGER with a leading zero it does not need, an empty INTEGER or a negative INTEGER, which `derToJose` accepts.
 - `derToRawEcdsa` rejects an INTEGER one byte longer than the curve allows, if its top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
-- Strict DER gives each signature one encoding, so if you deduplicate signatures or use them as identifiers, no one can pass you a second encoding of a signature you already have.
+- Strict DER gives each signature one encoding, so if you deduplicate signatures or use them as identifiers, a second encoding of a signature you already have is rejected.

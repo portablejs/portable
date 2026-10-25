@@ -25,7 +25,7 @@ export default {
 };
 ```
 
-A limiter allows `limit` requests per `period` for each key. Allowance comes back continuously, one request every `period / limit` milliseconds, and a key with no recent requests can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
+A limiter allows `limit` requests per `period` for each key. The allowance refills continuously, one request every `period / limit` milliseconds, and a key with no recent requests can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
 
 ## API
 
@@ -43,7 +43,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 | --- | --- | --- |
 | `limit` | required | Requests allowed per `period`, on average. A positive integer. |
 | `period` | required | Length of the period, in milliseconds. |
-| `burst` | `limit` | Requests allowed at once after a quiet spell. `burst: 1` spaces requests `period / limit` apart. |
+| `burst` | `limit` | Requests allowed at once after a time with no requests. `burst: 1` spaces requests `period / limit` apart. |
 | `store` | `memoryStore()` | Where the limiter keeps its state. |
 
 `create` throws a `RangeError` for a `limit` or `burst` that isn't a positive integer, or a `period` that isn't a positive finite number.
@@ -53,18 +53,18 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 | Option | Default | Description |
 | --- | --- | --- |
 | `cost` | `1` | How much of the allowance the request uses, such as its size. `0` reads the state without changing it. A negative cost gives allowance back, up to `burst`. |
-| `now` | `new Date()` | The time of the request, for tests or for a clock other than the system's. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time of the request, as a `Date` or a `Temporal.Instant`, for tests or for a clock other than the system's. |
 | `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
 
 ### `Result`
 
 | Field | Description |
 | --- | --- |
-| `allowed` | Whether the request fits. |
+| `allowed` | Whether the request was allowed. |
 | `limit`, `period` | The limiter's options, for `headers`. |
-| `remaining` | How many more requests of cost 1 fit right now. |
+| `remaining` | How many more requests of cost 1 would be allowed right now. |
 | `resetAt` | The `Date` at which `remaining` is back to `burst`. |
-| `retryAfter` | Milliseconds until the same request would fit. `0` when allowed, and `Infinity` when `cost` is larger than `burst`. |
+| `retryAfter` | Milliseconds until the same request would be allowed. `0` when allowed, and `Infinity` when `cost` is larger than `burst`. |
 
 ### `headers`
 
@@ -73,7 +73,7 @@ RateLimit.headers(result);
 // { 'RateLimit-Policy': '"default";q=100;w=60', RateLimit: '"default";r=0;t=3', 'Retry-After': '3' }
 ```
 
-`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. For an allowed request, `t` is the number of seconds until the allowance is full again. For a denied request, `t` is `retryAfter`, so `Retry-After` never ends before `t`, as the IETF RateLimit header draft requires. All times round up to whole seconds. Pass `{ name }` to change the policy name from `"default"`, and `{ now }` to count `t` from a time other than the current one. `Retry-After` is left out when `retryAfter` is `Infinity`.
+`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. For an allowed request, `t` is the number of seconds until the allowance is full again. For a denied request, `t` is `retryAfter`, so `Retry-After` never ends before `t`, as the IETF RateLimit header draft requires. All times are rounded up to whole seconds. Pass `{ name }` to change the policy name from `"default"`, and `{ now }` to count `t` from a time other than the current one. `Retry-After` is left out when `retryAfter` is `Infinity`.
 
 ## Stores
 
@@ -91,7 +91,7 @@ type Store = {
 };
 ```
 
-`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so if your store expires keys itself, it can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
+`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key's value is still `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so if your store expires keys itself, it can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
 
 Several limiters can share a store. Give each one its own key prefix, such as `login:${ip}`, unless they should share the allowance.
 
@@ -207,7 +207,7 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 
 - rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
 - `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.
-- `take` resolves with `allowed: false` for a denied request. rate-limiter-flexible rejects the promise with a `RateLimiterRes`, which is not an `Error`, so a denial and a Redis outage arrive in the same `catch`.
+- `take` resolves with `allowed: false` for a denied request. rate-limiter-flexible rejects the promise with a `RateLimiterRes`, which is not an `Error`, so the same `catch` receives a denial and a Redis outage.
 - rate-limiter-flexible's memory store sets one timer per key to delete it. `memoryStore()` sets none, so a limiter with many keys doesn't hold a timer for each.
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
 - On Node, `take` with the memory store runs about 15% slower than `RateLimiterMemory.consume` on allowed requests over 1,000 keys, and about 5× faster on denied requests, because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket is about 6× faster than an `await`ed `take`. The benchmark table below has the numbers.
@@ -216,7 +216,7 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which isn't a rate.
 - rate-limiter-flexible's `msBeforeNext` is set for allowed and denied requests. `retryAfter` is `0` for an allowed request, so compute the time until the allowance is full from `resetAt`.
 - rate-limiter-flexible's `reward`, `get` and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0` or with `cost: -burst`.
-- rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first denies.
+- rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first one denies a request.
 - The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
 - bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
 

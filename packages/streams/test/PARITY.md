@@ -9,8 +9,8 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | Upstream | Ours | Why |
 | --- | --- | --- |
 | `getStream`, `getStreamAsBuffer`, `getStreamAsArrayBuffer`, `getStreamAsArray` | `toText`, `toBytes`, `toArray`, plus `toJson` | One verb per result type. `toBytes` returns a `Uint8Array` whose `.buffer` is an exactly sized `ArrayBuffer`. |
-| `maxBuffer` (characters for text, elements for arrays) | `maxBytes`, always in bytes, and no limit on `toArray` | A limit on untrusted input is about memory, which is bytes. Object streams come from code the caller controls. |
-| `MaxBufferError`, `error.bufferedData` | `MaxBytesError` with `maxBytes`, and no partial data | Keeping partial data on the error holds up to `maxBytes` in memory after the caller has given up on it. |
+| `maxBuffer` (characters for text, elements for arrays) | `maxBytes`, always in bytes, and no limit on `toArray` | A limit on untrusted input is about memory, which is bytes. Object streams come from code you control. |
+| `MaxBufferError`, `error.bufferedData` | `MaxBytesError` with `maxBytes`, and no partial data | If the error kept the partial data, up to `maxBytes` would stay in memory after the read has failed. |
 | Chunks of `ArrayBuffer`, `DataView`, any typed array | `Uint8Array` or `string` only, and anything else is a `TypeError` | AGENTS.md: bytes are `Uint8Array`. A `Uint16Array` chunk in a byte stream is almost always a bug. |
 | concat-stream's `encoding` option and type inference from the first chunk | Pick the collector | The result type no longer depends on what the stream happens to send first. |
 | `merge2(a, [b, c])`, `merge2().add()`, `{ end: false }` | `concat(a, merge(b, c))` | Two functions that compose. Web streams can't gain sources after construction. |
@@ -84,7 +84,7 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | `array.js` array stream | `concat-stream > array stream` | `toArray` keeps each chunk, and `.flat()` joins arrays. |
 | `buffer.js` buffer stream | `concat-stream > buffer stream` | |
 | `buffer.js` buffer mixed writes | `concat-stream > buffer mixed writes`, `> rejects number chunks` | Number and number-array chunks are rejected. See known issues. |
-| `infer.js` type inference works as expected | doesn't apply | No inference. The caller picks the collector. |
+| `infer.js` type inference works as expected | doesn't apply | No inference. You pick the collector. |
 | `nothing.js` no callback stream | doesn't apply | No callback. |
 | `nothing.js` no encoding set, no data | `concat-stream > no encoding set, no data` | |
 | `nothing.js` encoding set to string, no data | `concat-stream > encoding set to string, no data` | |
@@ -233,7 +233,7 @@ The map and filter cases map to `map`, `filter`, `tap` and `batch`, and stateful
 | [merge-stream #26](https://github.com/grncdr/merge-stream/issues/26): never ended with no sources. | `merge()` and `concat()` with no sources close at once. | `merge > with no sources is empty`, `concat > with no sources is empty` |
 | [merge-stream #13, #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7): errors were not propagated. | An error in any source errors the output and cancels the other sources. | `merge-stream > propagates errors`, `concat > an error in one source cancels the sources not yet read` |
 | [merge-stream #28](https://github.com/grncdr/merge-stream/issues/28), [merge2 #25](https://github.com/teambition/merge2/issues/25): output order surprised users. | `concat` keeps source order, and `merge` is documented to pass chunks on in arrival order. | `concat > joins streams, iterables and async iterables in order`, `merge > passes chunks on in the order they arrive` |
-| through2's async-generator transform needed Node `drain` and a queue of 16 chunks for backpressure. | `transform` pulls one output per read and the input waits for the generator. | `through2: web > asyncgenWritableBackpressure`, `> asyncgenReaderBackpressure` |
+| through2's async-generator transform needed Node `drain` and a queue of 16 chunks for backpressure. | `transform` pulls one output per read, and reads the input only as fast as the generator consumes it. | `through2: web > asyncgenWritableBackpressure`, `> asyncgenReaderBackpressure` |
 
 ## Benchmarks
 

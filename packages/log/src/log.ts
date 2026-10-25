@@ -31,7 +31,7 @@ export type Logger = {
   error: (...args: readonly unknown[]) => void;
   /** Returns a logger for `namespace:suffix` with the same properties. */
   extend: (suffix: string) => Logger;
-  /** Returns a logger with the same namespace whose records also carry `properties`. */
+  /** Returns a logger with the same namespace whose records also include `properties`. */
   with: (properties: Properties) => Logger;
   /** Whether a call at `level` would log with the current patterns. */
   isEnabled: (level: Level) => boolean;

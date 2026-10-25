@@ -18,14 +18,14 @@ Tests load fixtures with `import.meta.glob(..., { query: '?url&inline' })`, whic
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Invalid images, one test per file in `specs/images/invalid` | `invalid images > <path>` | Upstream checks for a `TypeError` with `Invalid <format>`. Our test checks for `InvalidInputError`. |
-| non-existent file | not applicable | There is no file API. Callers open the file and pass its stream. |
+| non-existent file | not applicable | There is no file API. Open the file and pass its stream. |
 
 ## `specs/others.spec.ts`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Invalid invocation > passing buffer for tiff | `invalid images > a TIFF cut off before its first IFD is truncated` | Upstream throws "Invalid Tiff. Missing tags" for the first 2048 bytes. The IFD lies past them, so `parse` throws `TruncatedError`. |
-| Invalid invocation > for a disabled image type | not applicable | `disableTypes` is global mutable state. Callers check `size.type` instead. |
+| Invalid invocation > for a disabled image type | not applicable | `disableTypes` is global mutable state. Check `size.type` instead. |
 | .types property | not applicable | The list is the `ImageSize.Type` union, which the type checker enforces. |
 
 ## `specs/fs-close.spec.ts`
@@ -75,7 +75,7 @@ These test internal byte helpers. Our tests cover the formats that use them inst
 
 ## Known upstream issues
 
-Bugs and gaps in image-size 2.0.4 found by reading its source and running it on crafted headers. The issue tracker couldn't be read from this environment. Each row has a test that would fail with image-size's behavior, and the oracle test lists the fixture it affects (`sample-multi.heic`) with the correct expectation.
+We found these bugs and gaps in image-size 2.0.4 by reading its source and running it on crafted headers, because we couldn't reach its issue tracker. Each row has a test that would fail with image-size's behavior. One issue affects a fixture, `sample-multi.heic`, and the oracle test expects the correct size for it.
 
 | Issue | Test |
 | --- | --- |
@@ -85,7 +85,7 @@ Bugs and gaps in image-size 2.0.4 found by reading its source and running it on 
 | JPEG: the Exif IFD0 is assumed to start 8 bytes into the TIFF header instead of at the offset the header stores. | `JPEG > follows the IFD0 offset in the Exif header instead of assuming 8` |
 | JPEG: a frame header past the bytes read fails ("Corrupt JPG, exceeded buffer limits"), and `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs. | `parseStream > reads only the header of a large JPEG, then cancels the stream`, `truncated input > throws MaxBytesError with the limit when maxBytes is reached first` |
 | TIFF: tags are read past the IFD's entry count until a zero tag, so data after the IFD can overwrite width and height. | `TIFF > reads only the entries the IFD declares` |
-| TIFF: the result carries an undocumented `compression` field. | `valid images > valid/tiff/*` (results equal `{ width, height, type }`) |
+| TIFF: the result has an undocumented `compression` field. | `valid images > valid/tiff/*` (results equal `{ width, height, type }`) |
 | ICNS: entries that aren't icons (`TOC `, `icnV`, `name`) are listed with `width: undefined`, and when one comes first the result's width is `undefined`. | `ICNS > skips entries that are not icons, such as the table of contents` |
 | ICNS: a cut-off file returns only the icons found so far, so the largest can be missing. | `ICNS > throws TruncatedError when the entries run past the input` |
 | HEIF: the clean aperture (`clap`) is applied by subtracting its width denominator from the width, and its height is ignored. `sample-multi.heic` reports a 63×64 second image whose aperture is 16×64. | `HEIF > applies the clean aperture to the primary image`, oracle `valid/heif/sample-multi.heic` |

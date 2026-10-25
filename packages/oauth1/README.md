@@ -28,7 +28,7 @@ const response = await fetch(
 The signature covers what the server will see, because it is computed from the `Request` itself:
 
 - The method is upper-cased. The URL is normalized by the `URL` parser: scheme and host are lowercased, the default port is dropped, an empty path becomes `/` and the fragment is ignored.
-- Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Bytes that aren't UTF-8 keep their value.
+- Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Percent-encoded bytes that aren't UTF-8 are re-encoded unchanged.
 - JSON, multipart and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
 
 ## Options
@@ -83,8 +83,8 @@ await OAuth1.sign(request, { consumer, token, hmac });
 | `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
 | `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
 | `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
-| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
-| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
 
 ## Why use this over oauth-1.0a and node-oauth
 

@@ -67,7 +67,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
 }
 
 /**
- * Thrown by `parseStream` when it has read `maxBytes` and the dimensions still aren't in them.
+ * Thrown by `parseStream` when it has read `maxBytes` bytes without finding the dimensions.
  * Raise `maxBytes`, or treat the image as too large to measure.
  *
  * @example

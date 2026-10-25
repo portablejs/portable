@@ -2,7 +2,7 @@
 
 Upstream suite: the DMARC tests of [mailauth](https://github.com/postalsys/mailauth) 7.3.1 (MIT), `test/dmarc/*.js`, plus the DMARC cases in `test/tools/tools-test.js` (`getAlignment`), `test/tools/rfc-compliance-test.js` (`toALabel`, `isHostNameDomain`) and `test/mailauth-test.js`. No fixtures were copied, because every case builds its own zone.
 
-The ported tests are in `check.conformance.ts`, in a `describe` block named after the upstream file, and run in Node and Chromium. `check.oracle.test.ts` compares the result, the policy, the policy domain and the first aligned SPF and DKIM identifier with mailauth 7.3.0's `dmarc()` in strict mode, on 400 random zones and on U-label From domains. 7.3.1 was published less than a day ago, so `minimumReleaseAge` refuses it. Its DMARC code differs from 7.3.0 only in From header parsing, which this package doesn't do.
+The ported tests are in `check.conformance.ts`, in a `describe` block named after the upstream file, and run in Node and Chromium. `check.oracle.test.ts` compares the result, the policy, the policy domain and the first aligned SPF and DKIM identifier with mailauth 7.3.0's `dmarc()` in strict mode, on 400 random zones and on U-label From domains. 7.3.1 was less than a day old when these tests were written, so `minimumReleaseAge` refused it. Its DMARC code differs from 7.3.0 only in From header parsing, which this package doesn't do.
 
 mailauth has a default mode that case-folds tag names, uses the last of duplicate tags, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. `check` follows the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
 
@@ -37,7 +37,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | Edge cases > Should handle headerFrom without @ symbol | Not applicable: the input is always a domain. |
 | Should handle headerFrom array with single element | Not applicable: no From header parsing. |
 | Should evaluate several From addresses in the same domain | several From addresses in one domain: the caller passes the domain once (case and trailing dot) |
-| Should return false for From addresses in different domains | Not applicable: the caller decides what to do with several Author Domains (RFC 9989 section 5.3.1). |
+| Should return false for From addresses in different domains | Not applicable: you decide what to do with several Author Domains (RFC 9989 section 5.3.1). |
 | Should handle IDN domains | IDN domains in A-label form |
 | Should handle domains with string DKIM/SPF entries | Not applicable: identifiers are `{ result, domain }` objects. |
 | Should include ARC result in comment when provided | Not applicable: no Authentication-Results comment. `@portable/mail-auth` adds the ARC result. |
@@ -56,7 +56,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | C1 > Should use the mailbox domain of an obs-route address | Not applicable: From address parsing. |
 | C1 > Should apply the policy through authenticate() | Not applicable: `authenticate()` is in `@portable/mail-auth`. |
 | H6 > Should evaluate mailboxes that share one domain | Edge cases > several From addresses in one domain |
-| H6 > Should report why evaluation is not possible, keeping the false response | Not applicable: several Author Domains are found by the caller. |
+| H6 > Should report why evaluation is not possible, keeping the false response | Not applicable: finding several Author Domains is left to you. |
 | H6 > Should evaluate through authenticate() | Not applicable: `authenticate()`. |
 | I3 > Should not query "_dmarc." for an empty domain | I3: no query for an empty domain (the result is `permerror`) |
 | F4 > Should fail an identifier that has no parent in common with the author domain | F4: an identifier with no common parent fails when the author walk fails |
@@ -261,6 +261,6 @@ These cases come from mailauth's issue tracker, read through its GitHub search p
 | #142: a tag name without `=` overrode a valid tag. Fixed in mailauth. | A fragment without `=` is ignored. | get-dmarc-record-test.js > ignores a fragment without "=" or without a name |
 | #143: strict mode accepted whitespace before `v=DMARC1`. Fixed in strict mode, but the default mode still accepts it. | Always rejected (RFC 9989 section 4.10 step 2). | ignores a record with whitespace before v=DMARC1 |
 | The default mode uses the last of duplicate tags and case-folds tag names. | A duplicate tag invalidates the record and an upper case tag name is unknown (RFC 6376 section 3.2). | dmarc-fixes-test.js > F7 tests |
-| `dmarc()` returns `false`, not a result, for a From domain that isn't a domain name. | `permerror` with a `reason`, so the caller always gets a result. | I3: no query for an empty domain; rejects a domain with a control, format or space character |
+| `dmarc()` returns `false`, not a result, for a From domain that isn't a domain name. | `permerror` with a `reason`, so `check` always resolves to a result. | I3: no query for an empty domain; rejects a domain with a control, format or space character |
 | mailauth walks above the From domain on every message with a record, even when every identifier is identical to the From domain, which costs a `_dmarc.<tld>` query. RFC 9989 section 4.10.2 says that walk isn't needed. | The walk runs only when a relaxed alignment check needs it. | known upstream issues > no tree walk above the From domain when every identifier is identical to it |
 | mailauth queries whether the From domain exists whenever the record has `np`, even when `np` equals the policy that applies anyway. | No query in that case. | known upstream issues > no existence query when np is the policy that applies anyway |

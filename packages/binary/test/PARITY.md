@@ -49,7 +49,7 @@ smart-buffer's suite is grouped by `describe` block, and the rows below follow t
 | encode multiple byte with zero first byte | `writer > varint > writes unsigned varints` | |
 | big integers | `reader > varint > reads unsigned varints` (up to `Number.MAX_SAFE_INTEGER`) | |
 | fuzz test - big | `fuzz > a number varint and a bigint varint write the same bytes` | |
-| encodingLength | `fuzz > reads back every sequence of values the writer wrote` | `varintLength` is private. The writer's `length` after each write checks it. |
+| encodingLength | `fuzz > reads back every sequence of values the writer wrote` | `varintLength` is private. The test checks it through the writer's `length` after each write. |
 | buffer too short | `reader > varint > throws TruncatedError for a varint cut off at the end` | |
 | buffer too long | `reader > varint > throws InvalidInputError for a varint longer than 10 bytes` | |
 

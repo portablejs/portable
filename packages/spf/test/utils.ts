@@ -3,7 +3,10 @@ import * as Spf from '@portable/spf';
 import { parseAllDocuments } from 'yaml';
 import suite from './fixtures/rfc7208-tests.yml?raw';
 
-/** A string instead of records rejects every lookup of that type with that `code`. */
+/**
+ * If the value is a string instead of records, every lookup of that type rejects with the string
+ * as its `code`.
+ */
 export type Records = {
   TXT?: readonly (string | readonly string[])[] | string | undefined;
   A?: readonly string[] | string | undefined;

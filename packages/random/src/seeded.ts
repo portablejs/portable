@@ -19,7 +19,7 @@ export type Seeded = {
 /**
  * Returns the package's functions backed by a deterministic generator, so the same `seed` gives the
  * same results in every runtime. Use it for tests and reproducible simulations. It is not for
- * secrets: anyone who sees a few outputs can predict the rest.
+ * secrets: a few outputs are enough to predict the rest.
  *
  * The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend.
  * Its first 32-bit outputs match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from

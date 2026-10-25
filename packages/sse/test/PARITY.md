@@ -14,11 +14,11 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 ## Deliberate differences
 
 - `event` is `'message'` when the block has no `event` field, as in `MessageEvent.type`. eventsource-parser gives `undefined`.
-- `id` is the last event ID, as in `MessageEvent.lastEventId`: it keeps its value until another `id` field changes it, so an `id` from a block without data applies to later events. eventsource-parser reports an `id` only on the block that set it, plus `onId`. The oracle test converts its output with `onId`.
+- `id` is the last event ID, as in `MessageEvent.lastEventId`: each event has the value of the most recent `id` field, so an `id` from a block without data applies to later events. eventsource-parser reports an `id` only on the block that set it, plus `onId`. The oracle test converts its output with `onId`.
 - `retry` is reported on the next event, because a `retry` field usually comes in a block without data. eventsource-parser has `onRetry` instead.
 - No `onComment`, `onError` or `reset()`. Comments and unknown fields are ignored, as `EventSource` ignores them.
 - `maxLength` applies to every line and to the `data` of one event, so the same input fails the same way however it is chunked. eventsource-parser's `maxBufferSize` counts only the unfinished line and the data, and drops lines that can't become a field without counting them.
-- A rejected response is left unread on `ResponseError.response`, so a caller can read the error body. The `eventsource` polyfill aborts it.
+- A rejected response is left unread on `ResponseError.response`, so you can read the error body. The `eventsource` polyfill aborts it.
 - `connect` takes `attempts`, which limits failed attempts in a row as `WebSockets.connect` and `Timers.retry` do (C > when to stop > attempts …). `EventSource` and the `eventsource` polyfill reconnect without a limit, and fetch-event-source stops only when `onerror` throws.
 - `connect` sends no `cache: 'no-store'`. Cloudflare Workers rejected the `cache` option until 2024 and still needs a compatibility flag for it. If you want it, set it on the `Request`.
 
@@ -65,7 +65,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 | skips onError when the stream is invalid but not newline-terminated (through `reset()`) | D > eventsource-parser > a body that is not an event stream gives no events | No `onError`. |
 | skips onError when ... (through `reset()` with `consume: false`) | D > eventsource-parser > a body that is not an event stream gives no events | |
 | skips onError when an invalid line was discarded before reset({consume: true}) | skipped | No `reset({ consume })`. |
-| calls onError when the stream is invalid (through newline) | D > eventsource-parser > a body that is not an event stream gives no events | No `onError`. The events are what a caller sees. |
+| calls onError when the stream is invalid (through newline) | D > eventsource-parser > a body that is not an event stream gives no events | No `onError`. The test checks the events instead. |
 | calls onError when the stream is invalid (no field separator) | D > eventsource-parser > a body that is not an event stream gives no events | |
 | maxBufferSize: discards unterminated unknown fields without buffering | D > maxLength > applies to every line, including complete ones in one chunk | Deliberately different, see above. |
 | maxBufferSize: discards invalid lines as soon as their field name cannot become valid | D > maxLength > applies to every line, including complete ones in one chunk | Deliberately different. |
@@ -114,7 +114,7 @@ Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventLis
 | passes `no-store` to `fetch`, avoiding cache | skipped | Deliberately different, see above. |
 | can handle unicode data correctly | D > eventsource-parser > reads multi-byte text | |
 | can use `es.onopen` / `es.onerror` / `es.onmessage` ..., nulling it unsubscribes (4 tests) | skipped | No handlers. |
-| `es.onmessage` does not fire for non-`message` events | D > WPT eventsource > format-field-event | Callers filter on `event`. |
+| `es.onmessage` does not fire for non-`message` events | D > WPT eventsource > format-field-event | Filter on `event` instead. |
 | can redeclare `es.onopen` / `es.onerror` / `es.onmessage` (3 tests) | skipped | No handlers. |
 | on-handlers fire in registration order relative to `addEventListener` | skipped | No handlers. |
 | message event contains correct properties | C > connect > reads events from the response | `origin`, `timeStamp` and `cancelable` belong to DOM events. |
@@ -194,7 +194,7 @@ Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 ad
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| Check streamSSE Response | E > hono streamSSE > writes event, data lines and id | Response headers are the caller's. |
+| Check streamSSE Response | E > hono streamSSE > writes event, data lines and id | You set the response headers yourself. |
 | Check streamSSE Response if aborted by client | E > known upstream issues > cancelling the output cancels the source, as hono’s onAbort reports | |
 | Check streamSSE Response if aborted by abort signal | E > encode > the signal fails the stream with its reason and cancels the source | |
 | Should include retry in the SSE message | E > hono streamSSE > writes retry | |
@@ -257,7 +257,7 @@ Tests of the `EventSource` object, document realms, workers and browser networki
 | eventsource-parser #18: the last event is lost when the stream ends without a blank line | Kept as in the spec and `EventSource`: an unfinished event is dropped. | D > WPT eventsource > format-data-before-final-empty-line: an event without its blank line is dropped |
 | fetch-event-source: a block without `data` is dispatched as a message with empty data | No event without a `data` field. | D > fetch-event-source > a block without data is not an event |
 | fetch-event-source: `content-type` checked with `startsWith`, so `text/event-streaming` passes | The MIME essence is compared. | C > when to stop > checks the content type %j |
-| fetch-event-source #79: repeats the request forever on an HTTP error | A non-200 response fails the stream unless `reconnectIf` says otherwise. | C > when to stop > a %i response fails the stream with ResponseError, without reconnecting |
+| fetch-event-source #79: repeats the request forever on an HTTP error | A non-200 response fails the stream unless `reconnectIf` returns `true`. | C > when to stop > a %i response fails the stream with ResponseError, without reconnecting |
 | fetch-event-source #88: unbounded buffer | `maxLength`. | D > maxLength > fails when an unfinished line grows past it |
 | fetch-event-source #98: an already aborted signal doesn't abort | Rejects with `signal.reason` before any request. | C > cancelling > an aborted signal fails the stream before any request |
 | fetch-event-source #87, #100: abort during a retry wait is lost, and abort fires no callback | The signal stops the wait and fails the stream with its reason. | C > cancelling > the signal stops a wait between attempts |
@@ -267,4 +267,4 @@ Tests of the `EventSource` object, document realms, workers and browser networki
 
 ## Benchmarks
 
-eventsource-parser's `bench/parse.bench.ts` runs mitata over its fixture generators. `DecoderStream.bench.ts` compares `DecoderStream` with `TextDecoderStream` plus `EventSourceParserStream`, and a hand-written decoder, on LLM-style events, named events, small chunks and a 1 MB line. It also compares `decode` with `createParser().feed` on the whole text. Each fails if eventsource-parser is more than 25% faster.
+eventsource-parser's `bench/parse.bench.ts` runs mitata over its fixture generators. `DecoderStream.bench.ts` compares `DecoderStream` with `TextDecoderStream` plus `EventSourceParserStream`, and a hand-written decoder, on LLM-style events, named events, small chunks and a 1 MB line. It also compares `decode` with `createParser().feed` on the whole text. Each stream benchmark fails if eventsource-parser is more than 25% faster, and the `decode` comparison has no such check.

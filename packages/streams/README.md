@@ -85,7 +85,7 @@ await Promise.all([
 | `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise, and chunks stay in order. |
 | `batch(size, { signal })` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
 
-Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. Aborting the `signal` of `concat` or `merge` errors the output with `signal.reason` and cancels every source. `fromIterable` and `toAsyncIterable` take no signal: cancel the stream they return, or pass `signal` to the `pipeTo` that reads it.
+Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. Aborting the `signal` of `concat` or `merge` errors the output with `signal.reason` and cancels every source. `fromIterable` and `toAsyncIterable` take no signal. Cancel the stream that `fromIterable` returns, or pass `signal` to the `pipeTo` that reads it, and leave a `toAsyncIterable` loop early to cancel its stream.
 
 ```ts
 const lines = Streams.transform(async function* (source: AsyncIterable<string>) {
@@ -206,7 +206,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 - `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`, and `toArray` has no limit.
 - raw-body's `limit` accepts a string such as `'1mb'`. `maxBytes` takes a number of bytes, such as `1_000_000`.
-- get-stream's `MaxBufferError` carries the data read so far in `bufferedData`. A collector that fails has already cancelled its source and dropped what it read, so its errors carry no data.
+- get-stream's `MaxBufferError` stores the data read so far in `bufferedData`. A collector that fails has already cancelled its source and dropped what it read, so its errors don't include that data.
 - Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView` and other typed arrays, and concat-stream accepted numbers.
 - Arrays and other iterables are valid sources. get-stream rejected them.
 - merge2 called with several arguments, as in `merge2(a, b, c)`, reads the sources one after another, which is `concat`. `merge` reads them at the same time.

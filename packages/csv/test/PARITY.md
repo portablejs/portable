@@ -5,7 +5,7 @@ Upstream suites:
 - [csv-parse 7.0.3 `test/`](https://github.com/adaltas/node-csv/tree/master/packages/csv-parse/test), every `.ts` and `.js` file.
 - [csv-stringify 6.9.0 `test/`](https://github.com/adaltas/node-csv/tree/master/packages/csv-stringify/test), by file.
 - [papaparse 5.7.0 `tests/test-cases.js` and `tests/node-tests.js`](https://github.com/mholt/PapaParse/tree/master/tests).
-- [csv-spectrum 2.0.0](https://github.com/max-mapper/csv-spectrum), which csv-parse's `spectrum.js` runs. Its CSV and JSON files are copied into `fixtures/spectrum/` (BSD-2-Clause, Max Ogden). `location_coordinates.json` is corrected to the phone number its CSV holds (csv-spectrum #20, the reason csv-parse skips it).
+- [csv-spectrum 2.0.0](https://github.com/max-mapper/csv-spectrum), which csv-parse's `spectrum.js` runs. Its CSV and JSON files are copied into `fixtures/spectrum/` (BSD-2-Clause, Max Ogden). `location_coordinates.json` is corrected to the phone number its CSV contains (csv-spectrum #20, the reason csv-parse skips it).
 
 fast-csv is compared in the benchmark only. Its tests cover the same RFC 4180 cases through a Node stream API.
 
@@ -15,9 +15,9 @@ Options we leave out, and why, so the rows below can point here:
 
 - **Type conversion** (csv-parse `cast`, `cast_date`; papaparse `dynamicTyping`, `transform`): values stay strings. Map rows with `Streams.map` or `Array.prototype.map`.
 - **Row hooks and selection** (csv-parse `on_record`, `on_skip`, `objname`, `from`, `to`, `from_line`, `to_line`, `skip_records_with_error`, `skip_records_with_empty_values`; papaparse `preview`, `step`, `chunk`, `skipFirstNLines`, pause and resume): filter or stop reading the stream instead. Cancelling the reader stops the parse.
-- **Trimming** (csv-parse `trim`, `ltrim`, `rtrim`; papaparse `skipEmptyLines: 'greedy'`): RFC 4180 keeps spaces. Trim in a map.
+- **Trimming** (csv-parse `trim`, `ltrim`, `rtrim`; papaparse `skipEmptyLines: 'greedy'`): under RFC 4180, spaces are part of the field. Trim in a map.
 - **Comments** (csv-parse `comment`, `comment_no_infix`; papaparse `comments`): not part of RFC 4180. Filter rows instead.
-- **Escape characters other than a doubled quote** (csv-parse `escape`; papaparse `escapeChar`): RFC 4180 escapes a quote by doubling it.
+- **Escape characters other than a doubled quote** (csv-parse `escape`; papaparse `escapeChar`): in RFC 4180, a quote is escaped by doubling it.
 - **Multi-character delimiters, record delimiters and quotes, and delimiter guessing** (csv-parse `delimiter` arrays, `record_delimiter`, `delimiter_auto`, `quote: '$$'`; papaparse `delimitersToGuess`, `newline`): `delimiter` and `quote` are one character, and CRLF, LF and CR always end a row.
 - **Header renaming and grouping** (csv-parse `columns` functions and `false` entries, `group_columns_by_name`, `ignore_last_delimiters`; papaparse `transformHeader`): rename keys in a map, or pass `header` as an array.
 - **Parse metadata** (csv-parse `info`, `raw`, `info.*`; papaparse `meta`, `errors`, cursor positions): errors are thrown, and rows are plain arrays or objects.
@@ -35,7 +35,7 @@ Options we leave out, and why, so the rows below can point here:
 | api.stream.destroy.ts (3) | `DecoderStream > cancelling the output cancels the source` | |
 | api.stream.events.ts (7) | `csv-parse > fails the stream when the source fails`, `quote > throws InvalidInputError for text after a closing quote` | Node stream events. Errors fail the stream once. |
 | api.stream.finished.ts (3) | `csv-parse > decodes generated rows piped from a stream`, `fails the stream when the source fails` | |
-| api.stream.iterator.ts (2) | `DecoderStream > cancelling the output cancels the source` | Stopping early is cancelling the reader. |
+| api.stream.iterator.ts (2) | `DecoderStream > cancelling the output cancels the source` | To stop early, cancel the reader. |
 | api.stream.pipe.ts: piping in and reading out, piping in and callback out | `csv-parse > decodes generated rows piped from a stream` | |
 | api.stream.pipe.ts: catch source error | `csv-parse > fails the stream when the source fails` | |
 | api.stream.pipe.ts: handle empty string | `RFC 4180 > emits nothing for empty input` | |
@@ -50,7 +50,7 @@ Options we leave out, and why, so the rows below can point here:
 | api.web_stream.js, api.web_stream.ts (4) | `DecoderStream` tests, `csv-parse > fails the stream when the source fails` | |
 | info.bytes.ts, info.bytes_records.ts, info.comment_lines.js, info.empty_lines.js, info.invalid_field_length.js, info.records.js (23) | skipped | Parse metadata. |
 | info.lines.ts: count lines, count no line, count empty lines, should count sparse empty lines | skipped | Parse metadata. |
-| info.lines.ts: should display correct line number when … (4) | `quote > names the row of the error`, `skipEmpty > counts skipped lines in row numbers` | The error gives the row, which equals the line when no quoted field holds a line break. The opening-quote case is not an error here. |
+| info.lines.ts: should display correct line number when … (4) | `quote > names the row of the error`, `skipEmpty > counts skipped lines in row numbers` | The error gives the row, which equals the line when no quoted field contains a line break. The opening-quote case is not an error here. |
 | option.bom.js: validate | skipped | No `bom` option: a leading BOM is always dropped. |
 | option.bom.ts: preserve bom if not defined, preserve BOM if false | `bom > drops a leading byte order mark` | Deliberate difference: csv-parse keeps the BOM by default. |
 | option.bom.ts: with column option with bom `true` / `false` | `bom > drops the byte order mark from the first column name` | |
@@ -81,7 +81,7 @@ Options we leave out, and why, so the rows below can point here:
 | option.delimiter_auto.ts (9), utils.delimiter_discover.js (4) | skipped | Delimiter guessing. |
 | option.encoding.js: integer throw invalid encoding; option.encoding.ts: boolean true / false, null return buffer | skipped | `encoding` is a `TextDecoder` label, and output is always text. An unknown label throws `RangeError` from `TextDecoder`. |
 | option.encoding.ts: with delimiter, with escape equals quote | `encoding > decodes UTF-16LE bytes` | |
-| option.encoding.ts: utf16le auto detected, … with quote, … with delimiter | `encoding > drops a UTF-16LE byte order mark`, `delimiter > splits on any one character` | UTF-16 is decoded when `encoding` says so, but not detected from the BOM. |
+| option.encoding.ts: utf16le auto detected, … with quote, … with delimiter | `encoding > drops a UTF-16LE byte order mark`, `delimiter > splits on any one character` | UTF-16 is decoded when `encoding` is a UTF-16 label, but not detected from the BOM. |
 | option.encoding.ts: utf16le auto detected with escape, with record_delimiter | skipped | Escape characters, record delimiters. |
 | option.escape.js, option.escape.ts (14) | `quote > reads doubled quotes` | Escape characters: only the doubled quote. |
 | option.from.js, option.from.ts, option.from_line.js, option.from_line.ts, option.to.js, option.to.ts, option.to_line.js, option.to_line.ts (44) | skipped | Row selection. The quoted-line cases in them are covered by `quote > reads line breaks inside quotes`. |
@@ -89,7 +89,7 @@ Options we leave out, and why, so the rows below can point here:
 | option.ignore_last_delimiters.js, option.ignore_last_delimiters.ts (7) | skipped | Header renaming. |
 | option.info.js, option.info.ts (7), option.raw.js, option.raw.ts (6) | skipped | Parse metadata. |
 | option.ltrim.js, option.ltrim.ts, option.rtrim.js, option.rtrim.ts, option.trim.js, option.trim.ts (45) | `RFC 4180 > keeps spaces in unquoted fields`, `papaparse > Parse Tests > Quoted fields with spaces after closing quote` | Trimming. Spaces after a closing quote are skipped, as rtrim and papaparse do. |
-| option.max_record_size.js, option.max_record_size.ts: validation | skipped | `maxLength` takes any number, and `Infinity` is the default. |
+| option.max_record_size.js, option.max_record_size.ts: validation | `delimiter > rejects a negative or NaN maxLength` | `maxLength` takes any number from 0 to `Infinity`, the default. |
 | option.max_record_size.ts: field exceed limit | `maxLength > throws MaxLengthError for a row longer than maxLength` | `maxLength` bounds the row, not one field. |
 | option.objname.js, option.objname.ts (14) | skipped | Row hooks. The prototype cases (#479) are covered by `header > stores a __proto__ column as an own property`. |
 | option.on_record.js, option.on_record.ts, option.on_skip.js, option.on_skip.ts (14) | skipped | Row hooks. |
@@ -187,7 +187,7 @@ Options we leave out, and why, so the rows below can point here:
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Mixed slash n and slash r should choose first as precident | same name | Deliberate difference: CR ends a row wherever it appears, so `f\rg` is two rows. papaparse uses only the first line break it sees. |
-| Row with too few fields, Row with too many fields | same names | Throw by default. With `relaxColumnCount`, a short row leaves keys out and extra fields are dropped. papaparse keeps extras in `__parsed_extra`. |
+| Row with too few fields, Row with too many fields | same names | Throw by default. With `relaxColumnCount`, the missing keys of a short row are left out and extra fields are dropped. papaparse keeps extras in `__parsed_extra`. |
 | Header rows are transformed when transformHeader function is provided, transformHeader accepts and optional index attribute | skipped | Header renaming. |
 | Bad delimiter (\n), Multi-character delimiter | same names | Throw `RangeError`. |
 | Multi-character delimiter (length 2) with quoted field, Callback delimiter | skipped | Multi-character delimiters. |
@@ -203,7 +203,7 @@ Options we leave out, and why, so the rows below can point here:
 | Custom escape character in the middle, at the end, not used for escaping | skipped | Escape characters. |
 | Header row with preceding comment | skipped | Comments. |
 | Parsing with skipEmptyLines set to 'greedy' | skipped | Trimming. |
-| Parsing with skipEmptyLines set to 'greedy' with quotes and delimiters as content | same name | Its rows hold content, so the default `skipEmpty` gives the same result. |
+| Parsing with skipEmptyLines set to 'greedy' with quotes and delimiters as content | same name | Its rows aren't empty, so the default `skipEmpty` gives the same result. |
 | Skip First N number of lines … (5) | skipped | Row selection. |
 | Issue 1024: renamedHeaders returned for simple duplicate headers | `Core Parser Tests > Duplicated header names` | |
 | downloadTimeout throws …, downloadTimeout is coerced … | skipped | Network input. |
@@ -219,7 +219,7 @@ Options we leave out, and why, so the rows below can point here:
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| Pause and resume works (#636), … for chunks with NetworkStreamer / FileStreamer / StringStreamer | `DecoderStream > gives the same rows for random byte chunks` | Back-pressure is the stream's. |
+| Pause and resume works (#636), … for chunks with NetworkStreamer / FileStreamer / StringStreamer | `DecoderStream > gives the same rows for random byte chunks` | The stream handles back-pressure. |
 | Duplicate values in a data row are not renamed after resume (#998), Empty trailing fields stay empty after resume (#985), Data is correctly parsed with steps when there are empty values, Quoted line breaks near chunk boundaries are handled, Step functions can abort parsing | same names | |
 | Complete is called …, Step is called …, Data is correctly parsed with steps (5), Step exposes …, Chunk … (6), Step functions can pause / resume / abort workers, Complete is called after aborting, beforeFirstChunk … (2), downloadTimeout … (2), transformHeader is called exactly once …, Data is correctly parsed with chunks and duplicated headers | `DecoderStream` tests | papaparse's callback API. Reading the stream replaces the step callback, and cancelling it replaces abort. |
 | Should correctly guess custom delimiter …, Should still correctly guess default delimiters … | skipped | Delimiter guessing. |
@@ -254,8 +254,8 @@ Options we leave out, and why, so the rows below can point here:
 | synchronously parsed CSV should be correctly parsed | `csv-parse > decodes a string` | |
 | asynchronously parsed CSV, asynchronously parsed streaming CSV, piped streaming CSV should be correctly parsed | `DecoderStream > gives the same rows for random byte chunks` | |
 | piped streaming CSV should be correctly parsed when header is true | `Custom Tests > Data is correctly parsed with steps when there are empty values` | |
-| reports the correct row number on FieldMismatch errors | `relaxColumnCount > throws InvalidInputError by default when a row has a different field count` | The error names the row. papaparse reports the error and continues, but `decode` throws unless `relaxColumnCount` is set. |
-| Pause and resume works (#636), should support pausing and resuming on same tick / asynchronously when streaming | `DecoderStream > gives the same rows for random byte chunks` | Back-pressure is the stream's. |
+| reports the correct row number on FieldMismatch errors | `relaxColumnCount > throws InvalidInputError by default when a row has a different field count` | The error message gives the row number. papaparse reports the error and continues, but `decode` throws unless `relaxColumnCount` is set. |
+| Pause and resume works (#636), should support pausing and resuming on same tick / asynchronously when streaming | `DecoderStream > gives the same rows for random byte chunks` | The stream handles back-pressure. |
 | handles errors in beforeFirstChunk, in chunk, in step | `csv-parse > fails the stream when the source fails` | Callback API. An error in a later stage fails the pipe. |
 | handles utf-8 BOM encoded files | `bom > drops a leading byte order mark` | |
 

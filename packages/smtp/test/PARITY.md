@@ -36,11 +36,11 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | does not accumulate separate replies towards the cap | `connect > reading replies > does not count separate replies toward the limit` | |
 | close() during DNS resolution | `connect > connecting > does not open a socket when the signal is already aborted` | There is no DNS step. The `connect` function opens the socket. |
 | sets the public destroyed flag | Not applicable | There is no `destroyed` flag. A send after a close rejects with ECONNECTION (`send > signals and closing > reports a send after the server closed an idle connection`). |
-| errors the reset() callback on a destroyed connection | Not applicable | No `reset()`. A failed transaction sends RSET itself. |
+| errors the reset() callback on a destroyed connection | Not applicable | No `reset()`. After a failed transaction, the client sends RSET itself. |
 | no duplicate error listener after `_onConnect` | Not applicable | Internal to nodemailer's event handling. |
 | does not drop an incomplete multiline response at the queue front | `connect > reading replies > *` | Replies are read one at a time, in order. |
 | Version test | Not applicable | |
-| Security: sanitize CRLF, bare CR and LF in name; clean name unchanged; injected commands via name | `connect > connecting > rejects a name with CR or LF before connecting` | Rejected with a TypeError instead of cleaned up (GHSA-vvjj-xcjg-gr5g). |
+| Security: sanitize CRLF, bare CR and LF in name; clean name unchanged; injected commands via name | `connect > connecting > rejects a name with CR or LF before connecting` | The name is rejected with a `RangeError` instead of cleaned up (GHSA-vvjj-xcjg-gr5g). |
 | decodes UTF-8 in error and success replies | `send > sending > decodes a UTF-8 reply`, `auth > AUTH replies > reports a refused PLAIN login ...` | |
 | falls back when reply bytes are not valid UTF-8 | `send > sending > keeps the bytes of a reply that is not UTF-8` | Each byte is read as Latin-1. |
 | multi-line UTF-8 EHLO reply | `connect > EHLO and HELO > reads a UTF-8 EHLO reply and still finds the extensions` | |
@@ -61,7 +61,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | should login | `smtp-server > TLS and authentication > upgrades with STARTTLS and logs in with PLAIN` | |
 | should return error for invalid login | `smtp-server > TLS and authentication > reports a wrong password with code 535` | |
 | missing credentials, incomplete credentials | Not applicable | TypeScript requires `user` with `pass` or `accessToken`. |
-| xoauth2: login with string, with object | `auth > AUTH XOAUTH2 > sends the user and bearer token in one command`, `smtp-server > TLS and authentication > logs in with XOAUTH2` | Only a token string. The caller fetches tokens. |
+| xoauth2: login with string, with object | `auth > AUTH XOAUTH2 > sends the user and bearer token in one command`, `smtp-server > TLS and authentication > logs in with XOAUTH2` | `accessToken` is only a string. Fetch the token yourself. |
 | xoauth2: invalid token, object fails, invalid response | `auth > AUTH XOAUTH2 > answers the error challenge with an empty line and reports the failure` | |
 | custom login: login, login without pass | Not applicable | No custom auth handlers. |
 | Send without PIPELINING: only valid recipients | `send > pipelining > reports accepted and refused recipients without PIPELINING`, `smtp-server > plaintext > sends to the accepted recipients only, with and without PIPELINING` | |
@@ -82,7 +82,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | secure connection by default on port 465 | `connect > connecting > uses implicit TLS on port 465 and STARTTLS on other ports by default` | |
-| derives the EHLO name from the machine hostname | `connect > connecting > uses an address literal as the EHLO name by default` | No hostname API, so `[127.0.0.1]`. |
+| derives the EHLO name from the machine hostname | `connect > connecting > uses an address literal as the EHLO name by default` | There is no hostname API, so the default `name` is `[127.0.0.1]`. |
 | connect() on a destroyed connection, login() and send() report ECONNECTION | `send > signals and closing > reports a send after the server closed an idle connection` | `connect` returns a new client each time. |
 | send() rejects an empty message | `DataStream > termination > terminates an empty message with only the dot line` | An empty message is sent. |
 | refuses commands once half-closed, closes instead of writing when destroyed, ignores late events after close() | `send > signals and closing > *` | |
@@ -132,15 +132,15 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | --- | --- | --- |
 | connection-lifecycle: keeps extensions but not AUTH when opportunisticTLS falls back | Not applicable | No opportunistic mode. |
 | connection-lifecycle: TLS handshake the server never completes | `tls > STARTTLS > reports a failed TLS handshake`, signals | |
-| connection-lifecycle: plaintext after the STARTTLS response | `tls > STARTTLS > discards plaintext sent after the STARTTLS reply ...` | Discarded silently. There is no logger. |
+| connection-lifecycle: plaintext after the STARTTLS response | `tls > STARTTLS > discards plaintext sent after the STARTTLS reply ...` | The plaintext is discarded without a log message, because there is no logger. |
 | connection-lifecycle: destroys the socket when the server never closes | `send > signals and closing > close() sends QUIT and closes the socket`, `close() stops waiting for the QUIT reply when its signal aborts` | |
 | connection-lifecycle: logs the error message as is | Not applicable | No logger. |
-| connection-lifecycle: DNS lookup in the timeout, system error code, greeting timeout, keepalive and Nagle, IPv6 fallback, connectionTimeout (7 tests) | Not applicable | Belongs to the `connect` function. The Node adapter in `@portable/sockets/node` turns Nagle off. Every wait is bounded by the caller's signal. |
+| connection-lifecycle: DNS lookup in the timeout, system error code, greeting timeout, keepalive and Nagle, IPv6 fallback, connectionTimeout (7 tests) | Not applicable | Belongs to the `connect` function. The Node adapter in `@portable/sockets/node` turns Nagle off. The `signal` option limits every wait. |
 | connection-lifecycle: ends without an error when the server closes an idle connection | `send > signals and closing > reports a send after the server closed an idle connection` | |
 | connection-lifecycle: 421 to RCPT TO with and without PIPELINING | `send > pipelining > ends the session on a 421 reply to RCPT TO ${mode} PIPELINING` | |
 | connection-lifecycle: keeps the error code of the command a 421 answered | `auth > AUTH replies > treats a 421 reply to AUTH as the server closing` | Deliberate difference: every 421 is ECONNECTION. |
 | connection-lifecycle: refuses a second connect() | Not applicable | `connect` returns a new client. |
-| connection-lifecycle: STARTTLS and greeting against connectionTimeout | `connect > connecting > rejects with the signal reason ...` | One signal covers the whole connect. |
+| connection-lifecycle: STARTTLS and greeting against connectionTimeout | `connect > connecting > rejects with the signal reason ...` | One signal limits the whole connect. |
 | message-release: destroys the stream when every recipient is refused | `send > DATA > cancels the message stream when every recipient is refused` | |
 | message-release: destroys the stream when the connection closes during DATA | `send > DATA > reports a server that drops the connection while the message is in flight` | |
 | message-release: closes an attachment file | Not applicable | No files. |
@@ -163,14 +163,14 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | oauth2-listener-leak, oauth2-provision (3 tests) | Not applicable | No token fetching. |
 | Anonymous: version, wellknown data | Not applicable | No well-known service list. |
 | Anonymous: fail envelope | `send > envelope validation > *` | |
-| Anonymous: not fail auth, fail auth with forceAuth | `auth > method selection > tries AUTH PLAIN when the server advertises no AUTH`, `fails when the server refuses AUTH it did not advertise` | Credentials always mean AUTH, as with `forceAuth`. |
+| Anonymous: not fail auth, fail auth with forceAuth | `auth > method selection > tries AUTH PLAIN when the server advertises no AUTH`, `fails when the server refuses AUTH it did not advertise` | With credentials set, the client always sends AUTH, as with `forceAuth`. |
 | Anonymous: send mail | `send > signals and closing > Smtp.send connects, sends and quits` | |
 | Anonymous: recover unexpected close during transmission | `smtp-server > plaintext > reports a server that closes the connection during DATA` | |
 | verify (6 tests) | `connect > connecting > *`, `smtp-server > TLS and authentication > reports a wrong password with code 535` | Calling `connect` and then `close` takes the place of `verify`. |
-| Authenticated: login and send, through a proxied socket | `smtp-server > TLS and authentication > *` | Proxies are a `connect` function. |
+| Authenticated: login and send, through a proxied socket | `smtp-server > TLS and authentication > *` | A proxy goes in the `connect` function. |
 | behavior: getSocket error (2 tests) | `connect > connecting > reports a connect function that throws` | |
 | behavior: ECONNECTION before the greeting (2 tests) | `connect > connecting > reports a server that drops the connection before the greeting` | |
-| behavior: callback error thrown by the caller, logging (3 tests) | Not applicable | Promises and no logger. |
+| behavior: callback error thrown by the caller, logging (3 tests) | Not applicable | The API uses promises and has no logger. |
 | behavior: DSN, REQUIRETLS | `send > extensions > *` | |
 | behavior: envelope from the message addresses | Not applicable | `@portable/mail` builds the envelope. |
 | behavior: accepted and rejected of a partial envelope | `send.oracle > reports the same recipients as nodemailer > a partly refused envelope` | |
@@ -185,18 +185,18 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 - **GHSA-c7w3-x93f-qmm8** (CRLF in `size`). `size` must be a safe non-negative integer.
 - **GHSA-6vj9-mwq6-2f5v** (a DNS cache reused the TLS server name). Doesn't apply: there is no DNS step.
 - **STARTTLS command injection** (CVE-2011-0411 class). Bytes after the 220 reply to STARTTLS are dropped before the TLS handshake.
-- **SMTP smuggling.** Bare CR and bare LF become CRLF before dot-stuffing, so `\r.\r` and `\n.\n` cannot end DATA. The oracle covers a smuggling attempt byte for byte.
-- **Opportunistic TLS.** nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set. Here STARTTLS is required unless the caller passes `secure: 'off'`.
-- **Credentials over plaintext.** nodemailer sends them when the server asks. Here that needs `allowInsecureAuth`.
-- **AUTH skipped silently.** nodemailer skips AUTH when the server does not advertise it unless `forceAuth` is set, and the mail is then sent unauthenticated. Here credentials always mean AUTH.
+- **SMTP smuggling.** Bare CR and bare LF become CRLF before dot-stuffing, so `\r.\r` and `\n.\n` cannot end DATA. The oracle compares a smuggling attempt byte for byte.
+- **Opportunistic TLS.** nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set. Here STARTTLS is required unless you pass `secure: 'off'`.
+- **Credentials over plaintext.** nodemailer sends them when the server asks. Here that requires `allowInsecureAuth`.
+- **AUTH skipped silently.** nodemailer skips AUTH when the server does not advertise it unless `forceAuth` is set, and the mail is then sent unauthenticated. Here the client always sends AUTH when credentials are set.
 - **8-bit content without BODY=8BITMIME.** nodemailer declares it only with `use8BitMime`, so strict servers refuse 8-bit messages. Here it is declared whenever the server offers it.
 - **DSN ORCPT.** nodemailer applies one ORCPT to every recipient (issue #1374). ORCPT is not supported.
-- **421 error codes.** nodemailer keeps the stage code (EAUTH, EENVELOPE) for a 421. Here a 421 is always ECONNECTION, so a caller can retry on a fresh connection.
+- **421 error codes.** nodemailer keeps the stage code (EAUTH, EENVELOPE) for a 421. Here a 421 is always ECONNECTION, so one check of `code` tells you to retry on a new connection.
 - **Empty message.** nodemailer refuses it. Here it is sent as `.\r\n`.
 
 ## Benchmarks
 
-`send.bench.ts` with the Node adapter on localhost against a server that answers at once. Upstream's `SMTPConnection` runs on the same server. The machine had a load average of about 50 during the runs, so the error is ±10–35%.
+`send.bench.ts` runs with the Node adapter on localhost, against a server that answers at once. Upstream's `SMTPConnection` runs on the same server. The machine had a load average of about 50 during the runs, so the error is ±10–35%.
 
 | Case | `@portable/smtp` | nodemailer |
 | --- | --- | --- |

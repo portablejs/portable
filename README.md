@@ -78,7 +78,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 </tbody>
 <tbody>
 <tr><th colspan="2" align="left">DNS and networking</th></tr>
-<tr><td><a href="packages/dns"><code>@portable/dns</code></a></td><td>Looks up DNS records over DNS-over-HTTPS, behind a resolver interface that <code>node:dns/promises</code> also fits.</td></tr>
+<tr><td><a href="packages/dns"><code>@portable/dns</code></a></td><td>Looks up DNS records over DNS-over-HTTPS, behind a resolver interface that <code>node:dns/promises</code> also matches.</td></tr>
 <tr><td><a href="packages/dns-packet"><code>@portable/dns-packet</code></a></td><td>Encodes and decodes DNS messages in wire format.</td></tr>
 <tr><td><a href="packages/ip"><code>@portable/ip</code></a></td><td>Parses, formats, compares and classifies IPv4 and IPv6 addresses and CIDR blocks.</td></tr>
 <tr><td><a href="packages/rdap"><code>@portable/rdap</code></a></td><td>Looks up who holds a domain name, an IP address or an AS number over RDAP.</td></tr>
@@ -124,8 +124,8 @@ Every package follows the same conventions, so once you've used one, you know ho
 - Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and call `Csv.decode` or `new Csv.DecoderStream()`.
 - Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. Functions that take text also take its bytes.
 - A streaming transform is a `TransformStream` that you pass to `pipeThrough`, as with `TextDecoderStream`.
-- Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers and nested streams underneath, and rejects with `signal.reason`, as `fetch` does.
-- An object that stays open, such as an SMTP client, a queue or a WebSocket, has a `close()` method or closes when you abort its `signal`, and works with `await using` where the runtime has `Symbol.asyncDispose`.
+- Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers and nested streams underneath, and the call rejects with `signal.reason`, as `fetch` does.
+- An object that stays open, such as an SMTP client, a queue or a WebSocket, has a `close()` method, a `signal` option that closes it, or both. It works with `await using` where the runtime has `Symbol.asyncDispose`.
 - Options that take a time, such as `now`, accept a `Date` or a `Temporal.Instant`. Times in results are `Date` objects.
 - Errors extend the classes in `@portable/errors`. `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
 

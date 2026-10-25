@@ -11,7 +11,7 @@ const ndjson = 'application/x-ndjson';
 
 /**
  * Answers calls to `methods` over HTTP. The returned function answers a POST of a JSON-RPC request or batch. The
- * response is JSON, or, when a method returns a stream, newline-delimited messages that carry the
+ * response is JSON, or, when a method returns a stream, newline-delimited messages that contain the
  * stream's values as they are produced. Methods wrapped with `withContext` get the `Request`, and
  * their `signal` aborts when the client disconnects.
  *

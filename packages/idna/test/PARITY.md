@@ -16,7 +16,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 | Upstream column | Covered by | Notes |
 | --- | --- | --- |
 | toUnicode and toUnicodeStatus | `IdnaTestV2.txt > toUnicode with strict: true matches toUnicode` | All 6396 lines. `X4_2` is ignored, as the file's header allows. |
-| toUnicode with the strict-only status codes removed | `IdnaTestV2.txt > toUnicode matches toUnicode, ignoring the errors that only strict checks` | The header lets an implementation that turns CheckHyphens, UseSTD3ASCIIRules or VerifyDnsLength off ignore `V2`, `V3`, `U1` and `A4_*`. |
+| toUnicode with the strict-only status codes removed | `IdnaTestV2.txt > toUnicode matches toUnicode, ignoring the errors that only strict checks` | The header allows ignoring `V2`, `V3`, `U1` and `A4_*` when CheckHyphens, UseSTD3ASCIIRules or VerifyDnsLength is off. |
 | toAsciiN and toAsciiNStatus | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | All 6396 lines. |
 | toAsciiT and toAsciiTStatus | skipped | Transitional processing is deprecated by UTS #46 and the URL Standard doesn't use it. See the README. |
 
@@ -24,7 +24,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| `unicode.js` IdnaTestV2.txt, toASCII nontransitional | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | tr46 allows itself to fail where the file expects success. `toAscii` matches every line exactly. |
+| `unicode.js` IdnaTestV2.txt, toASCII nontransitional | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | tr46's test accepts a failure where the file expects success. `toAscii` matches every line exactly. |
 | `unicode.js` IdnaTestV2.txt, toASCII transitional | skipped | Transitional processing isn't supported. |
 | `unicode.js` IdnaTestV2.txt, toUnicode | `IdnaTestV2.txt > toUnicode with strict: true matches toUnicode` | |
 | `std3ASCIIRules.js` STD3 range (a-z, 0-9) | `tr46: ToASCII with useSTD3ASCIIRules > keeps a-z and 0-9` | |
@@ -45,7 +45,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 | `punycode.ucs2.encode` (7 cases), does not mutate argument array | skipped | `String.fromCodePoint(...codePoints)` does this. |
 | `punycode.decode` throws RangeError: Illegal input >= 0x80 | `punycode.js: decode > rejects a non-basic code point before the delimiter` | `decode` is internal, and the tests import it by path. |
 | `punycode.decode` throws RangeError: Overflow | `punycode.js: decode > rejects a non-basic code point after the delimiter` | The upstream name is wrong: `\x81` is rejected as an invalid digit. `rejects a delta that overflows` covers overflow. |
-| `punycode.decode` (24 strings) | `punycode.js: decode > <description>` | One test per string. Russian is decoded without mixed-case annotation, as upstream. |
+| `punycode.decode` (24 strings) | `punycode.js: decode > <description>` | One test per string. Russian is decoded without mixed-case annotation, as upstream does. |
 | `punycode.decode` handles uppercase Z | `punycode.js: decode > handles uppercase Z` | |
 | `punycode.decode` throws RangeError: Invalid input | `punycode.js: decode > rejects a character that is not a base-36 digit` | |
 | `punycode.encode` (24 strings) | `punycode.js: encode > <description>` | |
@@ -63,7 +63,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 
 | Issue | Test |
 | --- | --- |
-| punycode.js decodes `xn--google-` to `google`, so a Punycode label can display as a different ASCII name. tr46 returns `google` with `error: true`, which callers who read only `domain` miss. | `known upstream issues > a Punycode label that decodes to ASCII is rejected, so xn--google- never displays as google` |
+| punycode.js decodes `xn--google-` to `google`, so a Punycode label can display as a different ASCII name. tr46 returns `google` with `error: true`, and if you read only `domain`, you miss the error. | `known upstream issues > a Punycode label that decodes to ASCII is rejected, so xn--google- never displays as google` |
 | punycode.js decodes `xn--a` to U+0080, a control character. | `known upstream issues > a Punycode label that decodes to a control character is rejected` |
 | punycode.js [#105](https://github.com/mathiasbynens/punycode.js/issues/105): `toUnicode('XN--BER-SKA.COM')` is returned unchanged, and `toASCII('ÜBER.COM')` keeps the uppercase. | `uppercase XN-- labels are decoded`, `a Punycode label that encodes an uppercase letter is rejected`, `uppercase input is lowercased before encoding, as browsers do` |
 | punycode.js [#145](https://github.com/mathiasbynens/punycode.js/issues/145) and tr46 [#35](https://github.com/jsdom/tr46/issues/35): an emoji with U+FE0F VARIATION SELECTOR-16 encodes differently from the same emoji without it. UTS #46 ignores U+FE0F. | `known upstream issues > a variation selector is ignored` |

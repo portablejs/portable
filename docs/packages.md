@@ -4,7 +4,7 @@
 
 ## Philosophy
 
-The packages are small and do one thing each, like much of npm's most-used code, and are closest to Remix v3 (`remix-run/remix`, about 50 packages, most with no outside dependencies, layered on each other and re-exported by one `remix` package).
+The packages are small and each does one thing, like much of npm's most-used code. The project most like Portable is Remix v3 (`remix-run/remix`, about 50 packages, most with no outside dependencies, layered on each other and re-exported by one `remix` package).
 
 1. **One package per problem.** A package solves a problem a developer would name: "split a stream into lines", "compose an email", "verify DKIM". It is not one function (no `is-odd`) and it is not a grab bag. As a rough test, code under about 50 lines with no edge cases worth a test suite is an internal helper. If its README needs two unrelated "what it's for" headings, it is two packages.
 2. **Compose upward.** A higher package builds on Portable packages in lower layers, and the dependency graph is a strict layer DAG (§Layers). Remix's `response` builds on `headers`, `mime` and `html-template` this way, and our `mail` builds on `mime-headers`, `base64` and `quoted-printable`.
@@ -123,7 +123,7 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | `@portable/rpc` | Typed JSON-RPC 2.0 over `MessagePort`, windows, WebSocket and HTTP, with streaming results. | `jsonl` | comlink, penpal, post-me, birpc, json-rpc-2.0, tRPC (simple cases) |
 | `@portable/idna` | UTS #46 `toUnicode` and `toAscii` for domain names. The platform's `URL` only converts to ASCII. | (none) | punycode, tr46 |
 | `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | `bytes`, `streams` | ndjson 10.5M, the `jsonl` modules of stream-json |
-| `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. Other charsets come from a `charset` option, which `@portable/charset` encoders fit. | `base64`, `bytes` | libmime 37M, addressparser, email-addresses |
+| `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. Other charsets come from a `charset` option, which accepts the `@portable/charset` encoders. | `base64`, `bytes` | libmime 37M, addressparser, email-addresses |
 | `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `bytes`, `mime-headers`, `streams` | mailsplit 2.7M |
 | `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | `bytes` | image-size 133M |
 | `@portable/exif` | EXIF/TIFF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF, and stripping it from JPEG, PNG and WebP. | `bytes`, `streams` | exif-parser 17M |
@@ -136,10 +136,10 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 | Package | Purpose | Depends on | Replaces / fills |
 | --- | --- | --- | --- |
 | `@portable/mail` | Compose a raw RFC 5322 message as a `ReadableStream`: text/html alternatives, attachments, inline images, custom headers. No transport. | `base64`, `bytes`, `idna`, `mime-headers`, `quoted-printable`, `timers` | nodemailer's MailComposer |
-| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape (`cloudflare:sockets` and `@portable/sockets/node` fit): STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | `base64`, `bytes`, `sockets` | nodemailer's SMTP transport, smtp-connection |
+| `@portable/smtp` | SMTP client (RFC 5321) over an injected socket in the WinterTC Sockets API shape, such as one from `cloudflare:sockets` or `@portable/sockets/node`: STARTTLS, AUTH, PIPELINING, streaming dot-stuffing, per-recipient results. | `base64`, `bytes`, `sockets` | nodemailer's SMTP transport, smtp-connection |
 | `@portable/web-push` | Send Web Push messages with aes128gcm encryption (RFC 8291) and VAPID (RFC 8292) on WebCrypto and `fetch`. | `base64`, `bytes`, `timers` | web-push |
 | `@portable/rdap` | RDAP lookups for domains, IPs and ASNs with IANA bootstrap and normalized results. | `idna`, `ip`, `timers` | whoiser, whois-json, node-rdap |
-| `@portable/dns` | DNS lookups in runtimes without a DNS API: `resolveTxt`, `resolveMx` and the other `node:dns/promises` methods over DNS-over-HTTPS, behind a resolver interface that `node:dns/promises` also fits. | `base64`, `dns-packet`, `idna`, `ip` | node:dns/promises where it doesn't exist, tangerine, dohjs |
+| `@portable/dns` | DNS lookups in runtimes without a DNS API: `resolveTxt`, `resolveMx` and the other `node:dns/promises` methods over DNS-over-HTTPS, behind a resolver interface that `node:dns/promises` also matches. | `base64`, `dns-packet`, `idna`, `ip` | node:dns/promises where it doesn't exist, tangerine, dohjs |
 | `@portable/dkim` | DKIM sign and verify with RSA and Ed25519 keys on WebCrypto. The body hash uses `crypto.subtle.digest` by default, or an incremental hasher such as noble's `sha256.create()`. DNS goes through an injected resolver. | `base64`, `bytes`, `dns`, `idna`, `timers`, `web-crypto` | DKIM in mailauth, nodemailer's DKIM signer |
 | `@portable/webhooks` | Verify and sign webhooks: Standard Webhooks plus Stripe, GitHub and Slack schemes, or any HMAC-SHA256 sender, with timing-safe compare and a replay window. | `base64`, `bytes`, `timers`, `web-crypto` | standardwebhooks, svix's `Webhook`, Stripe's `constructEvent`, @octokit/webhooks-methods, @slack/bolt's request verification |
 | `@portable/oauth1` | OAuth 1.0a request signing (HMAC-SHA1, HMAC-SHA256, RSA-SHA1, PLAINTEXT) producing `Headers` or a signed `Request`. | `base64`, `bytes`, `timers`, `web-crypto` | oauth-1.0a, oauth |

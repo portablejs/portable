@@ -1,7 +1,9 @@
 import * as Streams from '@portable/streams';
 import { InvalidInputError } from './errors.js';
 
-/** A message to write to an event stream. Every field is optional, and an `Sse.Event` fits. */
+/**
+ * A message to write to an event stream. Every field is optional, so you can pass an `Sse.Event`.
+ */
 export type Message = {
   /** Event type. Must not contain CR or LF. */
   event?: string | undefined;

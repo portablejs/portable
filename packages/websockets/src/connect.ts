@@ -307,7 +307,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
 
     socket.addEventListener('message', onMessage);
     socket.addEventListener('close', onClose);
-    // Keep an error listener after teardown: the `ws` package throws an error event with no listener.
+    // Keep an error listener after teardown: the `ws` package throws if an error event has no
+    // listener.
     socket.addEventListener('error', () => {});
     stop.signal.addEventListener('abort', onStop);
     attempt.signal.addEventListener('abort', () => {

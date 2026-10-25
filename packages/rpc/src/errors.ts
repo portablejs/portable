@@ -6,8 +6,8 @@ export declare namespace RemoteError {
 }
 
 /**
- * A JSON-RPC error. A client rejects with it when the remote answers with an error, and a method
- * throws it to send a chosen `code` and `data`. Any other error a method throws is sent with code
+ * A JSON-RPC error. A call rejects with it when the remote answers with an error. Throw it from a
+ * method to send a chosen `code` and `data`. Any other error a method throws is sent with code
  * `-32603` and its `message`.
  *
  * @example
@@ -46,7 +46,7 @@ export class RemoteError extends Errors.BaseError {
 
 /**
  * The error that waiting calls reject with when the transport closes or fails, or when an HTTP
- * request fails. `cause` holds the underlying error, which is an `Errors.ResponseError` for a failed HTTP response.
+ * request fails. `cause` is the underlying error, which is an `Errors.ResponseError` for a failed HTTP response.
  *
  * @example
  * ```ts

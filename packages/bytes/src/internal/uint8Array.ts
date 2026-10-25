@@ -12,8 +12,8 @@ export function isUint8Array(value: unknown): value is Uint8Array {
 
 /**
  * Returns `value` if it is a `Uint8Array`, and throws a `TypeError` otherwise. Packages call it on
- * byte input that TypeScript types as `Uint8Array`, so a JavaScript caller who passes an
- * `ArrayBuffer` or another view gets an error instead of a wrong result.
+ * byte input that TypeScript types as `Uint8Array`, so passing an `ArrayBuffer` or another view
+ * from JavaScript throws an error instead of giving a wrong result.
  */
 export function assertUint8Array(value: unknown): Uint8Array {
   if (isUint8Array(value)) {

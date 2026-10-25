@@ -21,7 +21,7 @@ exif.imageSize; // { width: 4032, height: 3024 }
 exif.thumbnail?.bytes; // Uint8Array of the embedded JPEG thumbnail
 ```
 
-The input can be a whole file or only its start. In a JPEG the EXIF data is in the first 64 KB. Tags whose values lie past the end of the input are left out, and `thumbnail.bytes` is `undefined` if the thumbnail lies past the end.
+The input can be a whole file or only its start. In a JPEG the EXIF data is in the first 64 KB. A tag is left out if its values lie past the end of the input, and `thumbnail.bytes` is `undefined` if the thumbnail lies past the end.
 
 ## `Exif.parse(bytes)`
 
@@ -35,7 +35,7 @@ Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chun
 | `interop` | `Tags` | Interoperability IFD tags. |
 | `ifd1` | `Tags` | Thumbnail tags. |
 | `latitude`, `longitude` | `number \| undefined` | Decimal degrees, negative for south and west. Set when both coordinates are present. |
-| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. From the JPEG SOF segment, TIFF `ImageWidth` and `ImageHeight`, PNG `IHDR`, the WebP header, or the HEIF `ispe` property of the primary item. |
+| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment, TIFF `ImageWidth` and `ImageHeight`, PNG `IHDR`, the WebP header, or the HEIF `ispe` property of the primary item. |
 | `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail that IFD1 points to. `offset` is its position in the input. `bytes` is a view into the input. |
 
 A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html). A tag without a name is keyed by its id, such as `'0xC4A5'`. When an IFD holds a tag twice, the first one is kept.
@@ -77,7 +77,7 @@ How far it reads depends on where the format stores the metadata:
 | JPEG | The Exif APP1 segment and the frame header, or the first start-of-scan marker if there is no EXIF. That is the first 30 KB of the 329 KB `starfish.jpg` fixture. | The APP1 segment, at most 64 KB. |
 | PNG | The `eXIf` chunk. It may come after the image data, so a PNG without EXIF is read to `IEND`. | The `eXIf` chunk. Other chunks are skipped. |
 | WebP | The `EXIF` chunk and the size. The `EXIF` chunk usually follows the image data, so most WebP files are read to the end. | The `EXIF` chunk. Other chunks are skipped. |
-| HEIC, AVIF | The `Exif` item that the `meta` box locates. | Everything before the end of `meta`, then the `Exif` item. A file with `mdat` before `meta` holds its whole `mdat`. |
+| HEIC, AVIF | The `Exif` item that the `meta` box locates. | Everything before the end of `meta`, then the `Exif` item. If `mdat` comes before `meta`, that includes the whole `mdat`. |
 | TIFF, raw EXIF | The last IFD or thumbnail byte that the IFDs reference. Many TIFF writers put IFD0 after the image strips, so expect to read the whole file. | Everything read. |
 
 | Option | Default | Description |
@@ -109,7 +109,7 @@ What is removed:
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `keepOrientation` | `true` | Write back an EXIF block that holds only the `Orientation` tag, when the original has one from 2 to 8, so that viewers and resizers still rotate the image. It takes the place of the original EXIF block. |
+| `keepOrientation` | `true` | If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag in place of the original block, so that viewers and resizers still rotate the image. |
 | `keepColorProfile` | `true` | Keep the ICC profile. |
 | `signal` | none | `StripStream` only. Aborting errors the stream with `signal.reason`. |
 
@@ -121,7 +121,7 @@ In a JPEG, everything from the first start-of-scan marker on is copied unchanged
 
 ## `Exif.parseDate(value, options?)`
 
-Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 8601 form `'2004-09-04T23:39:06-08:00'` into a `Date`. It takes a tag value as `parse` returns it, so you can pass a tag that may be missing. Returns `undefined` for anything else, including a missing tag, a value that isn't a string, and the `'0000:00:00 00:00:00'` cameras write when their clock is unset.
+Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 8601 form `'2004-09-04T23:39:06-08:00'` into a `Date`. It takes a tag value as `parse` returns it, so you can pass a tag that may be missing. Returns `undefined` for anything else, including a missing tag, a value that isn't a string, and the `'0000:00:00 00:00:00'` that cameras write when their clock is unset.
 
 | Option | Default | Description |
 | --- | --- | --- |

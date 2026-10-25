@@ -29,7 +29,7 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 
 `encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
 
-`decode()` removes whitespace at the end of each line and soft line breaks (`=` before CRLF, LF or the end), and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
+`decode()` removes soft line breaks (`=` before CRLF, LF or the end) and whitespace at the end of each line, and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
 
 Both streams produce the same bytes as the functions however the input is chunked, including when a chunk boundary splits an escape, a CRLF, a whitespace run or a surrogate pair.
 
@@ -59,7 +59,7 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - libqp's `Encoder` counts `inputBytes` and `outputBytes`, and `EncoderStream` doesn't. Count chunks in a `TransformStream` of your own.
 - quoted-printable escapes every CR and LF and keeps every line within 75 characters. `encode` keeps line breaks, escapes a lone CR or LF only with `binary: true`, and allows 76.
 - quoted-printable's `decode` also treats `=` before a lone CR as a soft line break. RFC 2045 and libqp don't, and neither does `decode`.
-- The libqp 2.x `Encoder` left a hyphen after a lone CR unescaped, so the hyphen starts a line once a relay turns the CR into CRLF. `encode` follows libqp 3, which escapes it.
+- The libqp 2.x `Encoder` left a hyphen after a lone CR unescaped, so the hyphen would start a line if a relay turned the CR into CRLF. `encode` follows libqp 3, which escapes it.
 
 <!-- bench:start -->
 | | @portable/quoted-printable | libqp | quoted-printable |

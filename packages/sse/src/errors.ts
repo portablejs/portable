@@ -27,7 +27,7 @@ export class MaxLengthError extends Errors.MaxLengthError {
 }
 
 /**
- * Thrown by `connect` for a response that isn't an event stream.
+ * Thrown by `connect` when the response isn't an event stream.
  *
  * @example
  * ```ts
@@ -48,7 +48,7 @@ export class ResponseError extends Errors.ResponseError {
 }
 
 /**
- * Thrown by `encode` and `EncoderStream` for a field that can't be written.
+ * Thrown by `encode` and `EncoderStream` when a field can't be written.
  *
  * @example
  * ```ts

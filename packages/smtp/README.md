@@ -60,7 +60,7 @@ Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TL
 | `host` | Required | The server's host name. |
 | `port` | 465 when `secure` is `'on'`, otherwise 587 | |
 | `secure` | `'on'` for port 465, otherwise `'starttls'` | `'on'` starts TLS right away. `'starttls'` requires the server to offer STARTTLS and fails if it doesn't. `'off'` never encrypts. |
-| `auth` | None | `{ user, pass }` for AUTH PLAIN, or LOGIN when the server offers only LOGIN. Set `method: 'LOGIN'` to force it. `{ user, accessToken }` for XOAUTH2. |
+| `auth` | None | Pass `{ user, pass }` for AUTH PLAIN, or LOGIN when the server offers only LOGIN, and set `method: 'LOGIN'` to force LOGIN. Pass `{ user, accessToken }` for XOAUTH2. |
 | `allowInsecureAuth` | `false` | Send credentials over an unencrypted connection. Without it, AUTH requires TLS. |
 | `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF makes `connect` reject with a `RangeError`. |
 | `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
@@ -77,7 +77,7 @@ Sends one message and resolves with `{ accepted, rejected, response }`. It resol
 | `from` | The envelope sender. `''` sends `MAIL FROM:<>`, as bounces do. |
 | `to` | One recipient or an array. |
 | `message` | The raw message as a `string`, `Uint8Array` or `ReadableStream<Uint8Array>`. Bare CR and bare LF become CRLF, and lines starting with a dot get a second dot. |
-| `size` | The message size for the SIZE extension. Computed for strings and bytes. A message over the server's limit fails before MAIL FROM. |
+| `size` | The message size for the SIZE extension. `send` computes it for strings and bytes. A message over the server's limit fails before MAIL FROM. |
 | `dsn` | `{ ret, envid, notify }`: RFC 3461 delivery status notification parameters, sent when the server offers DSN. |
 | `requireTls` | Ask the server to relay only over TLS (RFC 8689). Fails before MAIL FROM if the connection isn't encrypted or the server doesn't offer REQUIRETLS. |
 
@@ -106,14 +106,14 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `responseCode` | The reply code, such as `550`. |
 | `enhancedCode` | The RFC 3463 code, such as `'5.1.1'`. |
 | `response` | The server's whole reply. |
-| `rejected` | When every recipient was refused, each one with its reply. |
+| `rejected` | Set when every recipient was refused: each recipient with its reply. |
 
 | `code` | Meaning |
 | --- | --- |
 | `ECONNECTION` | The socket failed to open or closed early, or the server replied 421 to any command. Retry on a new connection. |
 | `EPROTOCOL` | The greeting wasn't 220, EHLO and HELO were refused, or a reply was malformed or over 1 MiB. |
 | `ETLS` | STARTTLS was not offered or was refused, or the TLS handshake failed. |
-| `EAUTH` | Login failed, no supported method was offered, or AUTH over plaintext without `allowInsecureAuth`. |
+| `EAUTH` | Login failed, no supported method was offered, or AUTH would have been sent over plaintext without `allowInsecureAuth`. |
 | `EENVELOPE` | An address is invalid, the server refused the sender, every recipient or DATA, or the server can't honor SMTPUTF8 or REQUIRETLS. |
 | `EMESSAGE` | The message is over the SIZE limit, the message stream errored, or the server refused the message after DATA. |
 
@@ -136,7 +136,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 - STARTTLS is required unless you pass `secure: 'off'`. nodemailer continues in plaintext when STARTTLS fails unless `requireTLS` is set.
 - Credentials are never sent over plaintext unless `allowInsecureAuth` is set, and never skipped: nodemailer sends the message unauthenticated when the server doesn't advertise AUTH, unless `forceAuth` is set.
 - Bare CR and bare LF are converted to CRLF before dot-stuffing, so a message can't smuggle an end of DATA. An oracle test checks that the output is byte-identical to nodemailer's.
-- Every 421 reply is `ECONNECTION`, so one check covers "retry later on a new connection".
+- Every 421 reply is `ECONNECTION`, so a single check of `code` finds every reply that means "retry later on a new connection".
 - 8-bit messages are declared with BODY=8BITMIME without an extra option.
 
 The benchmarks send to a server on localhost that answers at once.

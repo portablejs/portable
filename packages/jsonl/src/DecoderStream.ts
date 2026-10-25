@@ -15,9 +15,9 @@ export declare namespace DecoderStream {
      */
     invalid?: 'error' | 'skip' | undefined;
     /**
-     * Longest line, in UTF-16 code units, line ending excluded. A longer line fails the stream with
-     * `MaxLengthError` as soon as it grows past the limit, so a line without a newline can't use
-     * unbounded memory. @default Infinity
+     * Longest line, in UTF-16 code units, line ending excluded. The stream fails with
+     * `MaxLengthError` as soon as a line grows past the limit, so a line without a newline can't
+     * use unbounded memory. @default Infinity
      */
     maxLength?: number | undefined;
   };

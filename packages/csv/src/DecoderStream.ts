@@ -9,7 +9,7 @@ export declare namespace DecoderStream {
   /**
    * A row as `string[]`, or as an object keyed by column name when `header` is set. With an array
    * of names, the keys are those names, and with `relaxColumnCount` each key is optional, because
-   * a short row leaves the missing keys out.
+   * the missing keys of a short row are left out.
    */
   type Row<header extends Header = false, relax extends boolean = false> = header extends false
     ? string[]
@@ -35,8 +35,7 @@ export declare namespace DecoderStream {
     /** Drop lines with no characters instead of reading each as a row with one empty field. @default true */
     skipEmpty?: boolean | undefined;
     /**
-     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
-     * cancel the source.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
   };
@@ -44,7 +43,7 @@ export declare namespace DecoderStream {
 
 /**
  * A `TransformStream` that decodes CSV bytes or text into rows. A row is a `string[]`, or an
- * object keyed by column name when `header` is set. Quoted fields may hold delimiters, doubled
+ * object keyed by column name when `header` is set. Quoted fields may contain delimiters, doubled
  * quotes and line breaks. Rows end in CRLF, LF or CR, and a leading byte order mark is dropped.
  * The output is the same however the input is split into chunks.
  *

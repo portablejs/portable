@@ -40,7 +40,7 @@ type Cidr = { address: Address; prefix: number };
 | `canParse(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string. |
 | `format(address)` | Text: dotted decimal for IPv4, RFC 5952 for IPv6, with `%zone` if present. |
 | `fromBytes(bytes)` | An `Address` built from a copy of 4 or 16 bytes. Throws `InvalidInputError` for any other length. |
-| `compare(a, b)` | A negative number, zero or a positive number: IPv4 before IPv6, then by bytes, then by zone. Fits `Array.prototype.sort`. |
+| `compare(a, b)` | A negative number, zero or a positive number: IPv4 before IPv6, then by bytes, then by zone. Pass it to `Array.prototype.sort`. |
 | `unmap(address)` | The IPv4 address inside an IPv4-mapped address (`::ffff:192.0.2.1`), and any other address unchanged. |
 | `toIpv6(address)` | The IPv4-mapped form of an IPv4 address, and an IPv6 address unchanged. |
 | `reverseName(address)` | The PTR lookup name under `in-addr.arpa` or `ip6.arpa`. |
@@ -59,7 +59,7 @@ IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `:
 
 ### Ranges
 
-`range` uses the block names of the IANA IPv4 and IPv6 Special-Purpose Address Registries. Check `unmap(address)` rather than `address` when the address may be IPv4-mapped, because `::ffff:127.0.0.1` returns `'ipv4Mapped'`, not `'loopback'`. To refuse internal destinations, allow only `'unicast'`.
+`range` uses the block names of the IANA IPv4 and IPv6 Special-Purpose Address Registries. Check `unmap(address)` rather than `address` when the address may be IPv4-mapped, because `range('::ffff:127.0.0.1')` returns `'ipv4Mapped'`, not `'loopback'`. To refuse internal destinations, allow only `'unicast'`.
 
 | Range | IPv4 | IPv6 |
 | --- | --- | --- |

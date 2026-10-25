@@ -55,9 +55,9 @@ test(
         zlib.gunzipSync(gzipped);
       }),
     );
-    // Node's DecompressionStream hands each 16 KiB of output through the libuv thread pool, so
+    // Node's DecompressionStream passes each 16 KiB of output through the libuv thread pool, so
     // on a busy machine its mean is up to 1.6x fflate's synchronous JavaScript, although its
-    // fastest run beats both libraries.
+    // fastest run is faster than both libraries.
     expect(result.get('pako')).not.toBeFasterThan(result.get('@portable/compress'), {
       delta: 0.5,
     });

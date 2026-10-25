@@ -82,8 +82,8 @@ export declare namespace check {
     resolver: Resolver;
     /**
      * Returns the organizational domain of a domain from a public suffix list, as tldts'
-     * `getDomain` does, and switches from RFC 9989's DNS tree walk to RFC 7489's lookups. A
-     * missing result means the domain is its own organizational domain.
+     * `getDomain` does. Passing it switches `check` from RFC 9989's DNS tree walk to RFC 7489's
+     * lookups. A missing result means the domain is its own organizational domain.
      */
     organizationalDomain?: ((domain: string) => string | null | undefined) | undefined;
     /** Stops the check, such as `AbortSignal.timeout(10_000)`. The promise rejects with `signal.reason`. */

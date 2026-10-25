@@ -50,7 +50,7 @@ export declare namespace encrypt {
      * @default a new key pair from `crypto.subtle.generateKey`
      */
     keyPair?: CryptoKeyPair | undefined;
-    /** Cancels the encryption. It rejects with `signal.reason`. */
+    /** Aborting it cancels the encryption, and the call rejects with `signal.reason`. */
     signal?: AbortSignal | undefined;
   };
 }

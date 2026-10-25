@@ -13,7 +13,8 @@ export async function formatSnippets(md) {
       const formatted = await format(code, { ...options, parser });
       out = out.replace(block, '```' + lang + meta + '\n' + formatted + '```');
     } catch {
-      // Snippets that aren't valid code on their own, such as fragments with `...`, stay as written.
+      // Prettier can't parse a snippet that isn't valid code on its own, such as a fragment with
+      // `...`, so the snippet is left as written.
     }
   }
   return out;

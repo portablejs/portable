@@ -19,7 +19,7 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 | --- | --- | --- |
 | main | `random > string > uses only and every character of the hex alphabet` | crypto-random-string defaults to hex. We default to the 64 URL-safe characters. |
 | hex | `random > string > uses only and every character of the hex alphabet` | |
-| base64 | `random > string > uses only and every character of the base64 alphabet` | The pattern excludes `=`, which covers the padding check. |
+| base64 | `random > string > uses only and every character of the base64 alphabet` | The test's pattern excludes `=`, so it also checks that there is no padding. |
 | url-safe | `random > string > uses only and every character of the url-safe alphabet` | |
 | numeric | `random > string > uses only and every character of the numeric alphabet` | |
 | distinguishable | `random > string > uses only and every character of the distinguishable alphabet` | |
@@ -44,7 +44,7 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 | changes ID length | `random > string > returns the requested length` | |
 | generates large IDs | `random > string > returns the requested length` | |
 | generates IDs bigger than pool size | `random > string > returns the requested length` | Uses 70,000 characters, as upstream does. |
-| accepts string | `random > string > throws a RangeError for a length that is not a non-negative integer` | Deliberate difference: a string length throws. Coercing it is what let `"0"` loop forever in nanoid ([#381](https://github.com/ai/nanoid/issues/381)). |
+| accepts string | `random > string > throws a RangeError for a length that is not a non-negative integer` | Deliberate difference: a string length throws. nanoid coerced it, which let `"0"` loop forever ([#381](https://github.com/ai/nanoid/issues/381)). |
 | has no collisions | `random > string > returns a different string on each call` | |
 | avoids pool pollution, infinite loop | `random > string > keeps working after rejecting a length` | `2.1` throws instead of being truncated. |
 | throws on negative or too big ID length | `random > string > throws a RangeError for a length that is not a non-negative integer` | The too-big half is skipped: a length past the engine's string limit fails with the engine's own `RangeError`, after it runs out of memory or time, which differs by runtime. |
@@ -128,5 +128,5 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 | More than 65,536 characters throws. | crypto-random-string | Any alphabet size works. | `oracle > known upstream issues > crypto-random-string rejects more than 65,536 characters; string accepts them` |
 | A duplicated `j` in the url-safe alphabet made it twice as likely ([crypto-random-string#9](https://github.com/sindresorhus/crypto-random-string/issues/9)). | crypto-random-string | A repeated character is picked more often, as documented. The alphabets in our tests are checked to have no duplicates. | `random > string > uses only and every character of the … alphabet` |
 | Seeds that repeat a pattern, such as `'sf'` and `'sfsf'`, give the same sequence ([seedrandom#63](https://github.com/davidbau/seedrandom/issues/63)). | seedrandom | Seeds are integers, and SplitMix64 maps each 64-bit seed to a different state. | `oracle > known upstream issues > seedrandom gives the same sequence for seeds that repeat a pattern; seeded does not`, `random > seeded > gives distinct sequences for seeds that differ only in high bits` |
-| The same seed gave different results in different browsers ([seedrandom#59](https://github.com/davidbau/seedrandom/issues/59), [seedrandom#73](https://github.com/davidbau/seedrandom/issues/73)). | seedrandom | Only 32-bit integer arithmetic and one `BigInt` seeding step. | `seeded > reference vectors` and `random > seeded > returns the same sequence in every runtime`, which run in Node and Chromium |
+| The same seed gave different results in different browsers ([seedrandom#59](https://github.com/davidbau/seedrandom/issues/59), [seedrandom#73](https://github.com/davidbau/seedrandom/issues/73)). | seedrandom | The generator uses only 32-bit integer arithmetic and one `BigInt` seeding step. | `seeded > reference vectors` and `random > seeded > returns the same sequence in every runtime`, which run in Node and Chromium |
 | `xorshift7` initialization has flaws ([seedrandom#84](https://github.com/davidbau/seedrandom/issues/84)). | seedrandom | xoshiro128** is seeded with SplitMix64, as its authors recommend. | `seeded > reference vectors` |

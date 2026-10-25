@@ -30,7 +30,7 @@ for (const answer of packet.answers) {
 }
 ```
 
-Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS and PTR, and an object for the rest. Types without a codec here, such as SVCB and HTTPS, carry their raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.
+Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS and PTR, and an object for the rest. For a type without a codec here, such as SVCB or HTTPS, `data` is the raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.
 
 Supported types: A, AAAA, CAA, CDNSKEY, CDS, CNAME, DNAME, DNSKEY, DS, HINFO, MX, NAPTR, NS, NSEC, NSEC3, NULL, OPT, PTR, RP, RRSIG, SOA, SRV, SSHFP, TLSA and TXT.
 
@@ -44,7 +44,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `compress` | `false` | Compress repeated names with pointers. Saves space in responses. Queries rarely gain anything from it. |
+| `compress` | `false` | Compress repeated names with pointers. This saves space in responses, but queries rarely gain anything from it. |
 | `framing` | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS. |
 
 `decode(bytes, options)`:

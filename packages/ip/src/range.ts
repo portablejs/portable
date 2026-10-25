@@ -100,8 +100,8 @@ const ipv6 = table([
 /**
  * Returns the special-purpose block the address is in, or `'unicast'` for an ordinary public
  * address. To reject internal destinations before a server-side request (SSRF), allow only
- * `'unicast'`. An IPv4-mapped address returns `'ipv4Mapped'`, so pass it through `unmap` first to
- * classify the IPv4 address inside.
+ * `'unicast'`. It returns `'ipv4Mapped'` for an IPv4-mapped address, so pass the address through
+ * `unmap` first to classify the IPv4 address inside.
  *
  * @example
  * ```ts

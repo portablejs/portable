@@ -50,7 +50,7 @@ error instanceof Compress.MaxBytesError; // only compress's, from any copy of co
 
 An error with only a message takes `(message?, options?)`, as `Error` does. An error with other fields takes one object.
 
-A package defines each error it throws as a subclass of one of these classes:
+Each `@portable/*` package defines the errors it throws as subclasses of these classes:
 
 ```ts
 export class MaxBytesError extends Errors.MaxBytesError {

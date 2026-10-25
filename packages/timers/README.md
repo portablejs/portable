@@ -55,7 +55,7 @@ Calls `fn` until it returns without throwing and resolves with its value. When t
 | `attempts` | `3` | Total number of calls, including the first. `Infinity` retries until success or abort. |
 | `delay` | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays). |
 | `retryIf` | retry every error | `(error, { attempt }) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
-| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number and the wait in ms. Use it for logging. If it returns a promise, the next attempt waits for it, and if it throws, `retry` rejects with that error. |
+| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number and the wait in ms. Use it for logging. If it returns a promise, `retry` awaits it before the wait starts, and if it throws, `retry` rejects with that error. |
 | `timeout` | `Infinity` | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error. |
 | `signal` | | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running. |
 
@@ -160,7 +160,7 @@ The returned function also has:
 
 | Member | Description |
 | --- | --- |
-| `cancel()` | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call nobody awaits doesn't raise an unhandled rejection. Later calls work as usual. |
+| `cancel()` | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call whose promise isn't awaited doesn't raise an unhandled rejection. Later calls work as usual. |
 | `flush()` | Runs the waiting invocation now and returns a promise of its result. Resolves with `undefined` when nothing waits. For `throttle`, and for `debounce` with `maxWait`, the window counts from the flushed invocation, as in lodash: a call before the window ends runs when it ends, and `pending` stays `true` until then. |
 | `pending` | `true` while the function waits out `ms` after a call. |
 | `[Symbol.dispose]()` | Calls `cancel()`, so `using save = Timers.debounce(...)` drops the waiting invocation when the scope ends. It exists only where the runtime has `Symbol.dispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
@@ -195,11 +195,11 @@ next({ attempt: 3 }); // 4000
 | `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
 | `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
 | `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
-| `Timers.Instant` | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. A `Temporal.Instant` or `Temporal.ZonedDateTime` fits it. |
+| `Timers.Instant` | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. You can pass a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 
-These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies outside `@portable/*`.
+Each of these libraries does one job, with its own option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies outside `@portable/*`.
 
 - Ten attempts with no delay run about twice as fast as with p-retry on Node. With a `signal`, the two run at the same speed.
 - An abort settles the call at once, also while an attempt is running. p-retry waits for the running attempt to settle first.

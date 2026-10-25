@@ -43,7 +43,7 @@ Test vectors come from those suites (MIT), except the Slack example request, whi
 | constructEvent: should return an Event instance from a valid JSON payload and valid signature header | `stripe > verifies a known header and returns the body` | |
 | constructEvent: payload and header with type Buffer | `stripe > verifies a body given as bytes` | A header is always a string in `Headers`. |
 | constructEvent: payload and header with type Uint8Array | `stripe > verifies a body given as bytes` | |
-| constructEvent: should raise a JSON error from invalid JSON payload | `stripe > returns a body that is not JSON, for the caller to parse` | `verify` doesn't parse, so the caller's `JSON.parse` throws. |
+| constructEvent: should raise a JSON error from invalid JSON payload | `stripe > returns a body that is not JSON, for the caller to parse` | `verify` doesn't parse, so your own `JSON.parse` throws. |
 | constructEvent: invalid signature header (unable to extract) | `stripe > rejects a header that does not have the expected format` | |
 | constructEvent: no webhook payload was provided | `stripe > returns a body that is not JSON, for the caller to parse` | An empty body is signed content like any other. Standard Webhooks allows it too (`standard > returns an empty body`). |
 | constructEvent: should error if you pass a signature which is an array | skipped | Headers are read from `Headers` or a string record, so there is no array form. |

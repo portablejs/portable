@@ -5,13 +5,13 @@ import { labels } from './tables/labels.js';
  * Returns the WHATWG Encoding Standard name for a charset label, or `undefined` for an unknown
  * label. Accepts every WHATWG label and every iconv-lite name for the same charsets. Leading
  * and trailing ASCII whitespace, case, punctuation and a trailing year such as `:1988` are
- * ignored. A label with any other character, such as NUL or a no-break space, returns
- * `undefined`.
+ * ignored. It returns `undefined` for a label with any other character, such as NUL or a
+ * no-break space.
  *
  * Where iconv-lite disagrees with WHATWG, the WHATWG mapping is used: `latin1`, `ascii` and
- * `iso-8859-1` are `windows-1252`, and `gb2312` is `GBK`. Labels mapped to the replacement
- * encoding, such as `iso-2022-kr`, return `undefined`, because the replacement encoding has no
- * encoder. This package can encode a label exactly when `normalizeLabel` returns a name.
+ * `iso-8859-1` are `windows-1252`, and `gb2312` is `GBK`. It returns `undefined` for a label
+ * mapped to the replacement encoding, such as `iso-2022-kr`, because the replacement encoding has
+ * no encoder. This package can encode a label exactly when `normalizeLabel` returns a name.
  *
  * @example
  * ```ts

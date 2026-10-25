@@ -51,9 +51,9 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `authservId` | required | The authserv-id that starts Authentication-Results, usually this server's host name in A-label form (RFC 8601 section 2.5). It must be an RFC 2045 token, so a value such as `mx.example; dkim=pass` throws a `RangeError`. |
 | `ip` | required | The SMTP client's IPv4 or IPv6 address. |
 | `helo` | none | The HELO or EHLO name. |
-| `sender` | none | The MAIL FROM address. Empty or missing for a bounce, which makes SPF check the HELO name. |
+| `sender` | none | The MAIL FROM address. For a bounce, it is empty or missing, and SPF checks the HELO name instead. |
 | `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
-| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against, and for `%{t}` in SPF explanations. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
 | `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](../dmarc/README.md#options). |
@@ -94,7 +94,7 @@ Authentication-Results: mx.example.net;
 - `arc` reports `smtp.remote-ip` (RFC 8617 section 6). On a pass, the comment repeats what the newest sealer recorded. The sealer's text is untrusted, so only keyword results and host-name domains are copied from it.
 - `dmarc` reports the applied policy as `policy.dmarc` and the From domain as `header.from` (RFC 9989 section 9.1), and is left out when `dmarcSkipReason` is set.
 
-Values that aren't a token or an address are quoted, comments keep their parentheses balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender or HELO name contains.
+Values that aren't a token or an address are quoted, the parentheses in each comment are balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender or HELO name contains.
 
 ## Types
 

@@ -44,8 +44,8 @@ export function equal(a: Uint8Array, b: Uint8Array): boolean {
  * Whether two byte arrays hold the same bytes, in time that depends only on their length. Use it
  * to compare a secret, such as a signature or a token, with a value an attacker sent.
  *
- * Arrays of different lengths return `false` at once, so the length itself isn't secret. That
- * holds for a signature or a hash, whose length is fixed by the algorithm.
+ * It returns `false` at once for arrays of different lengths, so it doesn't hide the length. The
+ * algorithm fixes the length of a signature or a hash, so that length isn't secret.
  *
  * @example
  * ```ts

@@ -5,7 +5,7 @@ export { fc };
 const env = import.meta.env as Record<string, string | undefined>;
 
 /**
- * Runs per property. `FUZZ_RUNS` sets it, and `pnpm fuzz` loads `.env.fuzz`, which raises it.
+ * The number of runs per property. `FUZZ_RUNS` sets it, and `pnpm fuzz` loads `.env.fuzz`, which raises it.
  *
  * @example
  * FUZZ_RUNS=5000 vp test run --project node lines.fuzz
@@ -154,7 +154,7 @@ const edit = fc.record({
 
 /**
  * Copies of `original` with up to 8 bytes set, inserted or deleted, and sometimes cut short.
- * `within` keeps the edits in the first `within` bytes, such as the metadata ahead of a JPEG's
+ * `within` limits the edits to the first `within` bytes, such as the metadata ahead of a JPEG's
  * image data.
  *
  * @example

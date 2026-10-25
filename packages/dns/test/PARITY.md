@@ -1,6 +1,6 @@
 # Test parity
 
-This package replaces three things, and each one's tests were read as a list of cases:
+This package replaces three things, and we used the tests of each as the list of cases to cover:
 
 - `node:dns/promises`: the `test/parallel/test-dns-*` and `test/internet/test-dns-*` files of [Node](https://github.com/nodejs/node) (MIT) at `main` in October 2026.
 - [tangerine](https://github.com/forwardemail/nodejs-dns-over-https-tangerine) 2.1.3 `test/test.js` (MIT), a DNS-over-HTTPS resolver with Node's `Resolver` API.
@@ -87,7 +87,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | reverse | `recorded responses` | `1.1.1.1` is `one.one.one.one`. |
 | timeout | `timeouts and cancellation > an endpoint that does not answer within timeout is ETIMEOUT` | |
 | supports got HTTP library | `endpoints`, every test | The `fetch` option takes any function with `fetch`'s signature. |
-| creates default cache, default cache supports ttl, supports redis cache, decoding of cached Buffers | Not applicable | No cache. GET requests with ID 0 can be cached by an HTTP cache, and `query()` returns TTLs for callers who keep their own. |
+| creates default cache, default cache supports ttl, supports redis cache, decoding of cached Buffers | Not applicable | No cache. GET requests with ID 0 can be cached by an HTTP cache, and `query()` returns TTLs if you keep your own cache. |
 | resolveCert | Not applicable | Use `query(name, 'TYPE37')`. |
 | resolveTlsa | Not applicable | Use `query(name, 'TLSA')`. |
 | spoofPacket (5 tests) | Not applicable | Tests pass their own `fetch` or a fake `Resolver` instead. |
@@ -132,7 +132,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | tangerine logs a truncated response and returns its partial data. | `server failures > a truncated response is EBADRESP, and the data in it is not used` |
 | tangerine returns an SOA array when there are several records, and one object otherwise. | `resolveSoa returns one object ...` |
 | tangerine leaked an `AbortController` per lookup (tangerine #12). | No set of controllers is kept. Each attempt clears its timer when it finishes. |
-| `AbortSignal.timeout` holds its signal weakly in Node. A `fetch` that never settles can be garbage collected along with the timer, and the lookup never settles. Found here while writing the timeout test. | `timeouts and cancellation > an endpoint that does not answer within timeout is ETIMEOUT` |
+| `AbortSignal.timeout` holds its signal weakly in Node. A `fetch` that never settles can be garbage collected along with the timer, and the lookup never settles. We found this while writing the timeout test. | `timeouts and cancellation > an endpoint that does not answer within timeout is ETIMEOUT` |
 | dohjs encodes GET queries as standard base64, so `+` and `/` appear in the URL. | `requests > encodes the query as base64url, never with +, / or =` |
 | dohjs decodes the body of any HTTP status as DNS. @sagi.io/dns-over-https resolves HTTP errors as strings instead of rejecting, and decodes only the first `data` chunk. | `server failures > an HTTP error status is EBADRESP ...` |
 | dohjs and @sagi.io/dns-over-https use a response for another question, such as one from a misconfigured cache, as the answer. | `server failures > a response to another question is EBADRESP` |

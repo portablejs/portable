@@ -25,10 +25,10 @@ export declare namespace retry {
       | ((error: unknown, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
       | undefined;
     /**
-     * Called after `retryIf` decides to retry and before the wait, with the error and
+     * Called before each retry's wait, after `retryIf` returns `true`, with the error and
      * `{ attempt, delay }`: the number of the attempt that threw it, and the wait in ms. Use it to
-     * log retries. If `onRetry` returns a promise, the next attempt waits for it. If `onRetry`
-     * throws, `retry` rejects with that error.
+     * log retries. If `onRetry` returns a promise, `retry` awaits it before the wait starts. If
+     * `onRetry` throws, `retry` rejects with that error.
      */
     onRetry?: ((error: unknown, retry: retry.Retry) => void | PromiseLike<void>) | undefined;
     /**

@@ -294,7 +294,7 @@ function pointTo(w: Writer, names: Map<string, number>, suffix: string): boolean
 
 /**
  * Writes a domain name. With `compress`, a suffix written earlier in the message is replaced by a
- * pointer to it. `nameLength` must have checked the name first.
+ * pointer to it. Call `nameLength` on the name first to check it.
  */
 export function putName(w: Writer, name: string, compress: boolean): void {
   const names = compress ? w.names : undefined;

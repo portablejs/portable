@@ -8,7 +8,7 @@ Test files:
 - `node.fuzz.conformance.test.ts` echoes random bytes, split into random writes in each byte form, over TCP and TLS, with and without `allowHalfOpen`.
 - `node.oracle.test.ts` sends the same writes through @arrowood.dev/socket and this package and compares the echoed bytes, and checks the upstream issues below.
 - `node.bench.ts` compares a 16 MB echo and opening a connection with @arrowood.dev/socket and `node:net`.
-- The `sockets` check in `tools/workers/src/checks.ts` checks that `connect` from `cloudflare:sockets` fits `Sockets.Connect` and echoes bytes through it in workerd.
+- The `sockets` check in `tools/workers/src/checks.ts` checks that `connect` from `cloudflare:sockets` matches `Sockets.Connect` and echoes bytes through it in workerd.
 
 Test names below are `file > describe > test`, with the file's suffix left out.
 
@@ -20,9 +20,9 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | `connect('host:port')` parses a string address, with port 443 by default | Not applicable | `Sockets.Connect` takes `{ hostname, port }`, which is what drivers pass. A string throws a `TypeError`. |
 | `readable` and `writable` from `Duplex.toWeb` | `node.conformance > connect > sends and receives bytes…`, `carries 4 MB unchanged in both directions`, `node.fuzz.conformance > *` | |
 | `allowHalfOpen`, default `true` | `node.conformance > half-close > *` | The option is required here. Upstream's default is the opposite of the Sockets API's. |
-| `closed` resolves on a clean close and rejects with a `SocketError` on an error | `node.conformance > errors and close > *` | Rejects with Node's error, which keeps its `code`. |
+| `closed` resolves on a clean close and rejects with a `SocketError` on an error | `node.conformance > errors and close > *` | Ours rejects with Node's error and its `code`. |
 | `close()` calls `end()` and returns `closed` | `node.conformance > errors and close > close() closes both sides even if the peer never ends its side`, `close() returns the closed promise` | `close()` destroys the socket. See below. |
-| `startTls()` throws unless `secureTransport` is `'starttls'`, and on a second call | `node.conformance > startTls > throws unless…`, `throws when called twice, or on the upgraded socket` | Throws a `TypeError`, as upstream's `SocketError` is one. |
+| `startTls()` throws unless `secureTransport` is `'starttls'`, and on a second call | `node.conformance > startTls > throws unless…`, `throws when called twice, or on the upgraded socket` | Ours throws a `TypeError`, and upstream's `SocketError` is also a `TypeError`. |
 | `startTls()` returns a TLS socket over the same connection | `node.conformance > startTls > upgrades an open connection, and the old socket stops working` | |
 | No `opened` | `node.conformance > connect > opens a TCP connection and resolves opened with the addresses`, `node.conformance > errors and close > a refused connection rejects opened…` | Added, as the Sockets API specifies. |
 | No `upgraded` | `node.conformance > startTls > upgrades an open connection…` | Added. |

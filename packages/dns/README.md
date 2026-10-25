@@ -18,7 +18,7 @@ const dmarc = records.map((chunks) => chunks.join('')).find((text) => text.start
 
 ## Bring your own resolver
 
-`Dns.Resolver` is a type listing the lookups that SPF, DMARC and DKIM need, with Node's method names and result shapes. The resolver from `create` fits it, and so do `node:dns/promises` and `new Resolver()` from it:
+`Dns.Resolver` is a type listing the lookups that SPF, DMARC and DKIM need, with Node's method names and result shapes. The resolver from `create` matches it, and so do `node:dns/promises` and a `new Resolver()` from that module:
 
 ```ts
 import * as Dns from '@portable/dns';
@@ -54,7 +54,7 @@ Each method takes `{ signal }` as a last argument. When the signal aborts, the m
 
 When the answer holds a CNAME chain, the records of the requested type at the end of the chain are returned. Records owned by names outside the chain are ignored. The root name is returned as `''`, so a null MX (RFC 7505) is `{ exchange: '', priority: 0 }`, as in Node.
 
-Names with non-ASCII characters are converted to punycode with the IDNA 2008 rules that `URL` uses, so `straße.de` is sent as `xn--strae-oqa.de`. A lookup of a name ending in `.onion` rejects with `ENOTFOUND` without sending a request, as RFC 7686 asks.
+Names with non-ASCII characters are converted to punycode with the IDNA 2008 rules that `URL` uses, so `straße.de` is sent as `xn--strae-oqa.de`. A lookup of a name ending in `.onion` rejects with `ENOTFOUND` without sending a request, as RFC 7686 recommends.
 
 ## Options
 
@@ -100,7 +100,7 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 
 | Type | Description |
 | --- | --- |
-| `Dns.Resolver` | One method per lookup, with Node's names and result shapes. The resolver from `create` and `node:dns/promises` both fit it. |
+| `Dns.Resolver` | One method per lookup, with Node's names and result shapes. The resolver from `create` and `node:dns/promises` both match it. |
 | `Dns.Resolver.CallOptions` | The options each lookup takes: `signal`. |
 | `Dns.DohResolver` | The type of the object `create` returns: a `Resolver` with `query`. |
 | `Dns.MxRecord` | `{ exchange, priority }`, from `resolveMx`. |

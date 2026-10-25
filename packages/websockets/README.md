@@ -82,7 +82,7 @@ How the streams end:
 - `readable.cancel()`, `writable.abort()` and `signal` close the socket with 1000 and fail the other stream.
 - `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
 - In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
-- A final close with 1000, 1001 or 1005 ends `readable`. Any other final close fails it with a `CloseError` carrying `code` and `reason`. `writable` fails with the `CloseError` in both cases.
+- A final close with 1000, 1001 or 1005 ends `readable`. Any other final close fails it with a `CloseError` that stores `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
 ### Messages can be lost during a drop
 
@@ -102,7 +102,7 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 | Error | When |
 | --- | --- |
-| `WebSockets.CloseError` | The connection closed permanently. `code` and `reason` hold the close event's values. |
+| `WebSockets.CloseError` | The connection closed permanently. `code` and `reason` store the close event's values. |
 | `WebSockets.MaxBufferedError` | Received messages exceeded `maxBuffered`, stored in `maxBuffered`. |
 | `TimeoutError` (`DOMException`) | `attempts` is used up, and the last attempt timed out while opening or while waiting for a heartbeat reply. |
 | `TypeError` | No `WebSocket` class was found. |
@@ -154,6 +154,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - reconnecting-websocket's `reconnect()` has no equivalent. Use `heartbeat` to replace a dead connection, or close the connection and call `connect` again.
 - Binary messages always arrive as `Uint8Array`, as if `binaryType` were `'arraybuffer'`, and the option can't be changed.
 - websocket-ts's `RingQueue` has no equivalent. Writes wait at `maxQueued` instead of dropping the oldest message.
-- A close with 1000, 1002, 1003, 1007, 1008, 1009 or 1010 from the server is final unless `reconnectIf` says otherwise. reconnecting-websocket and partysocket reconnect after any close they didn't start.
+- A close with 1000, 1002, 1003, 1007, 1008, 1009 or 1010 from the server is final unless `reconnectIf` returns `true`. reconnecting-websocket and partysocket reconnect after any close they didn't start.
 - The first connection opens at once. reconnecting-websocket waited for the reconnect delay before it ([#91](https://github.com/pladaria/reconnecting-websocket/issues/91)).
 - The attempt count resets when `open` finishes. reconnecting-websocket resets it only after the connection has stayed open for `minUptime`.

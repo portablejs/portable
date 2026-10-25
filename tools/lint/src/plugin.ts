@@ -1,7 +1,7 @@
 import type { RuleTester } from 'oxlint/plugins-dev';
 
 // oxlint loads this file with Node, which can't resolve a relative `.js` import to a `.ts` file,
-// so the rules live here instead of in their own modules.
+// so the rules are defined here instead of in their own modules.
 
 type Rule = Parameters<RuleTester['run']>[1];
 type ClassNode = Parameters<
@@ -179,8 +179,8 @@ const typeParameterName = {
 
 /**
  * Reports an optional property whose type leaves out `undefined`, such as `foo?: string`. With
- * `exactOptionalPropertyTypes`, that property rejects an explicit `undefined`, so a caller can't
- * pass `{ signal: options.signal }` through when `options.signal` is optional.
+ * `exactOptionalPropertyTypes`, TypeScript rejects an explicit `undefined` for it, so a caller
+ * can't pass `{ signal: options.signal }` through when `options.signal` is optional.
  */
 const optionalUndefined = {
   meta: {

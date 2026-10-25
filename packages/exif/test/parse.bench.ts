@@ -8,7 +8,8 @@ import { chunked, fixture, tracked } from './utils.js';
 const jpeg = await fixture('starfish.jpg');
 const buffer = Buffer.from(jpeg);
 
-// exif-reader takes the APP1 segment, which a caller finds in the JPEG first, as sharp does.
+// exif-reader takes only the APP1 segment, so the benchmark finds it in the JPEG first, as sharp
+// does.
 function app1(bytes: Buffer): Buffer {
   for (let i = 2; i + 4 <= bytes.length;) {
     const length = bytes.readUInt16BE(i + 2);

@@ -6,8 +6,8 @@ const textEncoder = new TextEncoder();
 /**
  * Decodes quoted-printable (RFC 2045 section 6.7) into bytes. A string is read as UTF-8.
  *
- * Whitespace at the end of a line and soft line breaks (`=` followed by CRLF, LF or the end of the
- * input) are removed, and `=XX` escapes with upper- or lowercase hex digits are decoded. Anything
+ * Soft line breaks (`=` followed by CRLF, LF or the end of the input) and whitespace at the end of
+ * a line are removed, and `=XX` escapes with upper- or lowercase hex digits are decoded. Anything
  * else, including a malformed escape, is copied as is. Decoding never throws.
  *
  * @example

@@ -36,7 +36,7 @@ if (await Password.verify(password, stored)) {
 `verify` resolves to `false` for a wrong password and rejects for a bad `stored` string. It reads:
 
 - the PHC format `hash` writes: `$pbkdf2-sha256$i=600000$<salt>$<hash>`, with an optional `l=<length>` after the iterations, as Rust's `pbkdf2` crate can write it;
-- [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.pbkdf2_digest.html)'s `pbkdf2_sha256`, `pbkdf2_sha512` and `pbkdf2_sha1` (`$pbkdf2$`), which write the iterations without `i=` and `.` instead of `+`.
+- [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.pbkdf2_digest.html)'s `pbkdf2_sha256`, `pbkdf2_sha512` and `pbkdf2_sha1` (`$pbkdf2$`), whose strings have the iterations without `i=` and use `.` instead of `+`.
 
 The hash length comes from the stored string, so a 20-byte or 64-byte hash from another tool verifies too.
 
@@ -79,7 +79,7 @@ Password.needsRehash(stored, options); // false
 - It hashes at the same speed as `node:crypto`'s `pbkdf2`: about 110 ms per hash at 600,000 iterations for both on the benchmark machine, because both call OpenSSL. `verify` took as long as `pbkdf2` followed by `timingSafeEqual`.
 - The stored string records the digest and iterations, so `needsRehash` can tell you when to upgrade a hash and `verify` keeps reading old ones.
 - The compare is constant time. A `===` on hex or base64 strings, common in hand-written code, leaks how many leading characters matched.
-- The string format is the one passlib and Rust's `pbkdf2` crate use, so Python and Rust services can share a users table with a JavaScript one.
+- The string format is the PHC format that Rust's `pbkdf2` crate uses, and `verify` also reads passlib's format, so a JavaScript service can read the hashes in a users table it shares with Rust and Python services.
 - Passwords are normalized to NFC. passlib and `node:crypto` hash the code units they're given, so the same password typed on two keyboards can fail to verify.
 - A password over 4096 bytes is rejected with `MaxBytesError`, as in passlib, before any hashing.
 - An unknown algorithm name throws `UnsupportedError`. pbkdf2 3.1.2 and earlier, in browsers, returned an all-zero key for algorithm names it didn't recognize, such as `'SHA256'`, so every password gave the same key (CVE-2025-6545).

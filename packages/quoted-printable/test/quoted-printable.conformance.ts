@@ -46,8 +46,8 @@ describe('encode()', () => {
   });
 
   test('CRLF', () => {
-    // quoted-printable escapes every CR and LF. Here line breaks are kept unless `binary` is set,
-    // and `binary` keeps a CRLF pair, which a transport can't change, and escapes a lone CR or LF.
+    // quoted-printable escapes every CR and LF. Here line breaks are kept. With `binary`, a lone CR
+    // or LF is escaped, and a CRLF pair is still kept, because a transport can't change it.
     expect(encode('foo\r\nbar')).toBe('foo\r\nbar');
     expect(encode('foo\r\nbar', { binary: true })).toBe('foo\r\nbar');
     expect(encode('foo\rbar\n', { binary: true })).toBe('foo=0Dbar=0A');
@@ -55,7 +55,7 @@ describe('encode()', () => {
 
   test('exactly 73 to 77 characters of which the last one is "="', () => {
     // For 74 characters, quoted-printable breaks the line because it keeps every line, even the
-    // last, within 75. RFC 2045 allows 76 on a line without a soft line break, as libqp does.
+    // last, within 75. RFC 2045 allows 76 on a line without a soft line break, and so does libqp.
     expect(encode(x(72) + '=')).toBe(x(72) + '=3D');
     expect(encode(x(73) + '=')).toBe(x(73) + '=3D');
     expect(encode(x(74) + '=')).toBe(x(74) + '=\r\n=3D');

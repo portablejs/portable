@@ -16,7 +16,7 @@ export type Body = {
 /**
  * Splits a message at the first empty line (RFC 5322 section 2.1). Every bare LF becomes CRLF
  * first, in the header section and the body, because messages stored on disk often use LF and
- * DKIM hashes CRLF line ends. `header` holds the header fields with the CRLF that ends the last
+ * DKIM hashes CRLF line ends. `header` contains the header fields with the CRLF that ends the last
  * one, and without the empty line. A message that starts with an empty line has no header
  * fields, and one without an empty line has no body. When `signal` aborts, the stream is cancelled
  * and the pending read, in the header section or the body, rejects with `signal.reason`.

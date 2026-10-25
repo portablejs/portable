@@ -10,7 +10,10 @@ export declare namespace connect {
      * ended normally. An accepted response resets the count. @default Infinity
      */
     attempts?: number | undefined;
-    /** Wait before each reconnect, until the server sends a `retry` field. @default { initial: 1000, max: 30_000 } */
+    /**
+     * The wait before each reconnect, used until the server sends a `retry` field.
+     * @default { initial: 1000, max: 30_000 }
+     */
     delay?: Timers.Delay | undefined;
     /** Sends each request. Pass a wrapper to change a request before it is sent. @default globalThis.fetch */
     fetch?: ((request: Request) => Promise<Response>) | undefined;
@@ -47,7 +50,7 @@ export declare namespace connect {
  *
  * Each attempt sends a clone of `request`, so a request body is sent again on every reconnect,
  * and a `fetch` wrapper can change the headers of each attempt.
- * A 204 response closes the stream. Any other status than 200, or a content type other than
+ * A 204 response closes the stream. Any status other than 200, or a content type other than
  * `text/event-stream`, fails it with `ResponseError`.
  *
  * @example

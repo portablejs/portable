@@ -85,7 +85,7 @@ Calls `fn(item, { index, signal })` on every item of `input`, at most `concurren
 
 ### `Queue.once(fn, { cache })`
 
-Returns a function that calls `fn` once and gives every caller the same promise. After a rejection the next call calls `fn` again. With `cache: false`, only callers that arrive while `fn` is running share its result, which suits a token refresh.
+Returns a function that calls `fn` once and gives every caller the same promise. After a rejection the next call calls `fn` again. With `cache: false`, only calls made while `fn` is running share its result, which suits a token refresh.
 
 Invalid arguments, such as `concurrency: 0` or a `NaN` priority, throw a `RangeError` at once.
 
@@ -122,7 +122,7 @@ const response = await Timers.retry(
 );
 ```
 
-A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(5000) })`, which also counts the time the task waits. To time only the run, combine the signals inside the task: `AbortSignal.any([signal, AbortSignal.timeout(5000)])`.
+To time out a single task, call `queue.add(task, { signal: AbortSignal.timeout(5000) })`. That timeout also counts the time the task waits. To time only the run, combine the signals inside the task: `AbortSignal.any([signal, AbortSignal.timeout(5000)])`.
 
 ## Types
 
@@ -136,12 +136,12 @@ A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(50
 
 They run in browsers too, but they are four packages with four APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies outside `@portable/*`.
 
-- **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 0.8 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.6 µs against p-queue's 3.6 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 0.7 µs for p-map and 0.8 µs for p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
+- **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 0.8 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.6 µs against p-queue's 3.6 µs, because the queue adds one listener to a shared signal, not one per task. `map` costs about 0.1 µs per item against 0.7 µs for p-map and 0.8 µs for p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
 - **An aborted running task keeps its slot.** p-queue frees the slot when a running task's signal aborts, while the task may still be running, so more than `concurrency` tasks can run at once.
 - **`clear()` rejects the removed tasks** with an `AbortError`. p-limit's `clearQueue()` leaves their promises pending forever unless `rejectOnClear` is set.
 - **`map` stops in-flight work.** After the first error, or when `signal` aborts, the `signal` passed to each running call aborts. p-map gives the mapper no signal, so after the first error the other calls run to the end unless you create your own `AbortController` and pass its signal to them.
 - **The rate limit is a sliding window** measured with `performance.now()`. p-queue's default fixed windows let twice `intervalCap` tasks start around a boundary, and its use of `Date.now()` stalls the queue if the clock goes back.
-- **Tasks run in the async context of their `add` call**, as in p-limit and p-queue, so `AsyncLocalStorage` values carry over in Node.
+- **Tasks run in the async context of their `add` call**, as in p-limit and p-queue, so in Node a task reads the same `AsyncLocalStorage` values as the code that called `add`.
 - p-limit's `limit(fn, a, b)` passes the extra arguments to `fn`. The function from `Queue.limit` takes only a task, so write `limit(() => fn(a, b))`.
 - p-queue's `autoStart: false` has no equivalent. Call `pause()` after `create` and `resume()` to start.
 - p-queue's `timeout` option has no equivalent. Pass `signal: AbortSignal.timeout(ms)` to `add`, or use `Timers.retry` with `timeout`.

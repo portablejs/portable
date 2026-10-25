@@ -78,7 +78,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 
 With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed is sealed with `i=1` and `cv=fail`.
 
-`seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't fit the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal says `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
+`seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't match the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal has `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
 
 ## Types
 
@@ -122,7 +122,7 @@ Differences to check when you switch from mailauth:
 - mailauth's `arc.status.comment` also holds a comment for a pass. `reason` is set only for failures, and `@portable/mail-auth` builds the pass comment (`i=1 spf=pass dkim=pass`).
 - mailauth parses `arc.authenticationResults`. Each entry of `sets` holds `authResults` as text.
 - mailauth's `arc.signature` has no equivalent. A failing ARC-Message-Signature is described in `reason`.
-- mailauth's `arc.status.shouldSeal` has no equivalent. `seal` throws `Arc.InvalidInputError` when the newest seal says `cv=fail`.
+- mailauth's `arc.status.shouldSeal` has no equivalent. `seal` throws `Arc.InvalidInputError` when the newest seal has `cv=fail`.
 - mailauth's `sealMessage` resolves to a `Buffer`, and `seal` resolves to a string.
 - mailauth's `seal.i` has no equivalent. The instance is always one more than the highest on the message.
 - mailauth's `seal.bodyHash` and `seal.headers` let it seal without the message. `seal` always reads the message.

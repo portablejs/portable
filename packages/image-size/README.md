@@ -22,7 +22,7 @@ const { width, height, type } = await ImageSize.parseStream(response.body!);
 
 ### `parse(bytes: Uint8Array): Size`
 
-Returns the size of the image in `bytes`. The bytes only have to cover the header.
+Returns the size of the image in `bytes`. The bytes need to include only the header.
 
 ### `parseStream(stream: ReadableStream<Uint8Array>, options?): Promise<Size>`
 

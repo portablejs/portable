@@ -1,7 +1,7 @@
 // Publishes dist/public to here.now as an anonymous site, which expires 24 hours after it is created.
 // Usage: node scripts/herenow.mjs [state.json]
-// The state file stores the site's slug, claim token, and expiry. When it holds a site that has more than an hour
-// left, the script updates that site. Otherwise it creates a new one, and then writes the new site to the file.
+// The state file stores the site's slug, claim token, and expiry. If that site expires in more than
+// an hour, the script updates it. Otherwise it creates a new site and writes it to the file.
 // In GitHub Actions the site URL is written to the step outputs.
 import {
   appendFileSync,

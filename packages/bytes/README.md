@@ -52,7 +52,7 @@ new Uint8Array(arrayBuffer);
 new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 ```
 
-A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk, or the function may read some bytes before the write and some after.
+A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles or the stream has read the chunk. Otherwise the function may read some bytes before the write and some after.
 
 ## Why use this over uint8array-extras and node:crypto
 

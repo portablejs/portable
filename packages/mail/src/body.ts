@@ -10,8 +10,8 @@ import * as QuotedPrintable from '@portable/quoted-printable';
 export type Content = string | Uint8Array | Blob | ReadableStream<Uint8Array>;
 
 /**
- * How a part's bytes are written. `7bit` and `8bit` write them as they are, with line breaks
- * turned into CRLF.
+ * How a part's bytes are written. With `7bit` and `8bit`, the bytes are written as they are, with
+ * line breaks turned into CRLF.
  */
 export type TransferEncoding = 'base64' | 'quoted-printable' | '7bit' | '8bit';
 

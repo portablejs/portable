@@ -213,7 +213,7 @@ describe('create matches p-queue', () => {
 
 // p-throttle's strict mode spaces saturated calls `interval / limit` apart, so it can start a call
 // later than the window requires. The test checks that every call starts no later than with
-// p-throttle and that no window holds more than `limit` starts.
+// p-throttle and that no window has more than `limit` starts.
 describe('rate limit keeps p-throttle strict mode guarantee', () => {
   for (const [limit, interval] of [
     [1, 20],

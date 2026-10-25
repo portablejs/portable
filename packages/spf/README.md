@@ -46,8 +46,8 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 | --- | --- | --- |
 | `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
 | `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
-| `now` | `new Date()` | The time for `%{t}` in explanations. A `Date` or a `Temporal.Instant`. |
-| `signal` | none | Rejects with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
+| `now` | `new Date()` | The time for `%{t}` in explanations, as a `Date` or a `Temporal.Instant`. |
+| `signal` | none | Aborting rejects `check` with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
 There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.
 
@@ -63,12 +63,12 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 | `domain` | The domain whose policy was checked. A non-ASCII domain is converted to its A-label form. |
 | `identity` | `'mailfrom'`, or `'helo'` when the sender was empty. With `domain`, it gives `smtp.mailfrom` or `smtp.helo` for Authentication-Results. |
 | `mechanism` | The term that matched, as written in the record, such as `include:_spf.example.com` or `-all`. Missing when nothing matched. |
-| `record` | The SPF record that gave the result. After `redirect=`, the record of the redirect target. |
+| `record` | The SPF record that gave the result. After a `redirect=`, it is the record of the redirect target. |
 | `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text. |
 | `reason` | Why the result is `none`, `temperror` or `permerror`, such as `More than 10 DNS-querying terms`. |
 | `cause` | The resolver's error behind a `temperror`. |
-| `lookups` | DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
-| `voidLookups` | Lookups that found no records. |
+| `lookups` | The number of DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
+| `voidLookups` | The number of lookups that found no records. |
 
 ## Limits
 
@@ -98,8 +98,8 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 
 ## Why use this over mailauth
 
-- It runs anywhere. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
-- It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and RFC behavior needs `strict: true`. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
+- It runs in browsers and Workers as well as Node. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
+- It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and you need `strict: true` to get RFC behavior. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
 - It has no dependencies outside `@portable/*`. mailauth depends on joi, ipaddr.js, libmime and more for SPF.
 - It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 

@@ -9,16 +9,16 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | Issue | How we handle it | Test |
 | --- | --- | --- |
 | p-queue [#217](https://github.com/sindresorhus/p-queue/issues/217): aborting 10,000 waiting tasks that share a signal overflows the stack. | Aborting marks the task removed in O(1), and the queue skips removed tasks when it starts the next one. | `known upstream issues > aborting 10,000 waiting tasks with one signal neither overflows the stack nor hangs`, `known upstream issues > clearing 10,000 waiting tasks does not overflow the stack` |
-| p-queue [#219](https://github.com/sindresorhus/p-queue/issues/219), [#241](https://github.com/sindresorhus/p-queue/issues/241): an aborted signal didn't remove a waiting task or reject its promise. | Removed and rejected with `signal.reason` at once. | `signal > aborting while the task waits removes it and rejects with the reason` |
+| p-queue [#219](https://github.com/sindresorhus/p-queue/issues/219), [#241](https://github.com/sindresorhus/p-queue/issues/241): an aborted signal didn't remove a waiting task or reject its promise. | The task is removed, and its promise rejects with `signal.reason` at once. | `signal > aborting while the task waits removes it and rejects with the reason` |
 | p-queue [#239](https://github.com/sindresorhus/p-queue/issues/239), p-limit `clearQueue()`: cleared tasks' promises stayed pending forever. | `clear()` always rejects them with an `AbortError`, and marks the promises handled. | `p-limit > clear removes the waiting tasks and rejects them with an AbortError`, `idle, pause and clear > an ignored promise of a removed task is not an unhandled rejection` |
 | p-queue [#237](https://github.com/sindresorhus/p-queue/issues/237): `idle` never fires when the queue never had a task. | `idle()` resolves at once. | `idle, pause and clear > idle resolves at once for a queue that never had a task` |
-| p-queue [#255](https://github.com/sindresorhus/p-queue/issues/255): adding tasks from a listener exceeds the concurrency. | No listeners. A task added from inside a running task waits for a slot. | `add > a task added from inside a running task waits for a free slot` |
+| p-queue [#255](https://github.com/sindresorhus/p-queue/issues/255): adding tasks from a listener exceeds the concurrency. | There are no listeners. A task added from inside a running task waits for a slot. | `add > a task added from inside a running task waits for a free slot` |
 | p-queue: aborting a running task frees its slot while the task may still run, so more than `concurrency` tasks run. | The slot stays taken until the task settles. `add` still rejects at once. | `signal > an aborted running task keeps its slot until it settles` |
-| p-queue: fixed windows let `2 × intervalCap` tasks start around a window boundary unless the caller sets `strict: true`. | The rate limit is always a sliding window. | `rate limit > has no burst at a window boundary` |
-| p-queue: the rate limit uses `Date.now()`, so a clock that goes back stalls the queue (documented in its options). | `performance.now()`, which never goes back. | Not testable without moving the system clock. |
+| p-queue: fixed windows let `2 × intervalCap` tasks start around a window boundary unless `strict: true` is set. | The rate limit is always a sliding window. | `rate limit > has no burst at a window boundary` |
+| p-queue: the rate limit uses `Date.now()`, so a clock that goes back stalls the queue (documented in its options). | The window is measured with `performance.now()`, which never goes back. | Not testable without moving the system clock. |
 | p-queue: an `interval` above 2³¹−1 ms made `setTimeout` fire every 1 ms (now rejected). | The timer waits in steps of at most 2³¹−1 ms and rechecks the window. | `rate limit > waits out an interval longer than the timer limit instead of firing early` |
 | p-limit [#110](https://github.com/sindresorhus/p-limit/issues/110): `limit.map` left unhandled rejections when the iterable threw. | Every call's promise has a handler. | `map errors > an iterable that throws after its first items leaves no unhandled rejection` |
-| p-limit [#91](https://github.com/sindresorhus/p-limit/issues/91): a task that awaits another task on the same limit deadlocks at `concurrency: 1`. | Same behavior, because waiting for a free slot is the point of the limit. The README says to give nested work its own queue. | None |
+| p-limit [#91](https://github.com/sindresorhus/p-limit/issues/91): a task that awaits another task on the same limit deadlocks at `concurrency: 1`. | We keep this behavior, because the limit exists to make tasks wait for a free slot. The README says to give nested work its own queue. | None |
 | p-map [#42](https://github.com/sindresorhus/p-map/issues/42): with high concurrency, `stopOnError` doesn't stop the calls already started. | The `signal` passed to each running call aborts on the first error. | `map errors > aborts the signal of calls still running after the first error` |
 | p-map [#75](https://github.com/sindresorhus/p-map/issues/75): abort listeners leaked. | The listener is removed when `map` settles. | `map signal > removes its abort listener when it resolves or rejects` |
 | p-map: an iterator whose `next()` returns a non-object hung the run. | Rejects with a `TypeError`. | `map > rejects when next() returns something that is not an object` |
@@ -29,16 +29,16 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 - `map` doesn't call `return()` on an iterator whose `next()` threw, as `for...of` doesn't. With an already aborted signal it never opens the iterator, so there is nothing to close.
 - Invalid arguments throw at once instead of rejecting the returned promise.
 - After a task settles, the next task counts in `pending` at once and its function runs one microtask later, in the async context of its `add` call.
-- The rate limit starts a task as soon as the sliding window has room. p-throttle's strict mode spaces saturated calls `interval / limit` apart, so the oracle checks that every call starts no later than with p-throttle and that no window holds more than `limit` starts.
+- The rate limit starts a task as soon as the sliding window has room. p-throttle's strict mode spaces saturated calls `interval / limit` apart, so the oracle checks that every call starts no later than with p-throttle and that no window has more than `limit` starts.
 
 ## Not built
 
-- **events.** No events. The queue is a plain object, not an `EventTarget`. Each `add()` promise reports its own task.
+- **events.** No events. The queue is a plain object, not an `EventTarget`. Each `add()` promise settles with its own task's result or error.
 - **timeout.** No `timeout` option. Pass `signal: AbortSignal.timeout(ms)` to `add`, or use `Timers.retry` with `timeout` inside the task (README).
 - **addAll.** No `addAll()`. Use `Promise.all(tasks.map((task) => queue.add(task)))`.
 - **setPriority.** No task ids or `setPriority()`. Abort the waiting task and add it again with the new priority.
 - **onEmpty.** No `onEmpty()`. `size` reads the waiting count, and `idle()` waits for waiting and running tasks.
-- **onSizeLessThan.** No `onSizeLessThan()`. `Queue.map` reads its input only as slots free up, which is the backpressure case it serves.
+- **onSizeLessThan.** No `onSizeLessThan()`. It is mostly used for backpressure, and `Queue.map` reads its input only as slots free up.
 - **onPendingZero.** No `onPendingZero()`. `idle()` waits for waiting and running tasks.
 - **onError.** No `onError()`. Each `add()` promise rejects with its own task's error.
 - **rate-limit state.** No `isRateLimited`, `onRateLimit()` or `onRateLimitCleared()`. The queue exposes `size` and `pending` only.
@@ -65,8 +65,8 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | propagates async execution context properly | `oracle > limit matches p-limit > a task runs in the async context of its call` | Node only, because it uses `AsyncLocalStorage`. |
 | non-promise returning function | `p-limit > accepts a task that returns a value instead of a promise` |  |
 | continues after sync throw | `p-limit > a task that throws synchronously rejects, and the next task still runs` |  |
-| accepts additional arguments | skipped | `limit(task)` passes the task a context, not extra arguments. A closure passes them. |
-| shared context with a limited provider helper | skipped | Extra arguments, as above. The counts it checks are covered by `p-limit > counts running and waiting tasks`. |
+| accepts additional arguments | skipped | `limit(task)` passes the task a context, not extra arguments. Pass them through a closure. |
+| shared context with a limited provider helper | skipped | Passes extra arguments, as above. The counts it checks are covered by `p-limit > counts running and waiting tasks`. |
 | does not ignore errors | `p-limit > rejects with the error of the failing task` |  |
 | runs all tasks asynchronously | `` p-limit > starts each task after `add` returns `` |  |
 | activeCount and pendingCount properties | `p-limit > counts running and waiting tasks` |  |
@@ -89,7 +89,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | change concurrency to bigger value | `p-limit > raising the concurrency starts waiting tasks at once` |  |
 | limitFunction() | skipped | No `limitFunction`. Write `(...args) => limit(() => fn(...args))`. |
 | clearQueue rejects pending promises when enabled | `p-limit > clear removes the waiting tasks and rejects them with an AbortError` |  |
-| limitFunction exposes clearQueue | skipped | No `limitFunction`. `create` returns `clear`. |
+| limitFunction exposes clearQueue | skipped | No `limitFunction`. The queue from `create` has `clear()`. |
 
 ### p-queue 10.0.0 `test/basic.ts`
 
@@ -298,7 +298,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | carryover mode with no backlog does not report limited | skipped | Not built: fixed windows |
 | priority validation in add rejects non-number values without adding the task | `add > throws on a priority that is not a number` | Different: `add` throws a `RangeError` at once instead of returning a rejected promise. |
 | timeout up to the maximum timer delay is accepted, and a larger one is rejected instead of timing out at once | skipped | Not built: timeout |
-| interval above the maximum timer delay is rejected instead of resetting every 1 ms | `rate limit > waits out an interval longer than the timer limit instead of firing early` | Different: accepted and waited out in steps. |
+| interval above the maximum timer delay is rejected instead of resetting every 1 ms | `rate limit > waits out an interval longer than the timer limit instead of firing early` | Different: the interval is accepted, and the timer waits it out in steps. |
 | a rejected `NaN` priority does not change the order of the other tasks | `add > a rejected priority does not change the order of the other tasks` |  |
 | setPriority validates input, and a rejected priority keeps the order | skipped | Not built: setPriority |
 | setPriority with the current priority still throws for a running task | skipped | Not built: setPriority |
@@ -363,7 +363,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | strict mode rate limit events | skipped | Not built: rate-limit state |
 | strict mode isRateLimited property | skipped | Not built: rate-limit state |
 | strict mode with pause/start | `rate limit > pausing while rate-limited, then resuming, still limits` |  |
-| strict mode throws error with interval=0 | `rate limit > interval 0 turns rate limiting off` | There is no `strict` flag, so nothing to reject. |
+| strict mode throws error with interval=0 | `rate limit > interval 0 turns rate limiting off` | There is no `strict` flag, so there is nothing to reject. |
 | strict mode with priority | `rate limit > starts the higher priority task first when a slot frees` |  |
 | strict mode with onRateLimit() | skipped | Not built: rate-limit state |
 | strict mode with carryoverIntervalCount | skipped | Not built: fixed windows |

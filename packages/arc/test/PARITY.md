@@ -17,7 +17,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 
 | Upstream | Here |
 | --- | --- |
-| ARC Validation Suite, 10 groups, 171 cases | `suite.conformance.ts` › "ARC validation suite", every case. As in mailauth's strict mode, `ams_fields_h_empty` and `ams_fields_c_na` expect `fail` where the draft suite expects `pass`: an empty `h=` and a missing `c=` follow RFC 6376 under RFC 8617 section 4.1.2. |
+| ARC Validation Suite, 10 groups, 171 cases | `suite.conformance.ts` › "ARC validation suite", every case. As in mailauth's strict mode, `ams_fields_h_empty` and `ams_fields_c_na` expect `fail` where the draft suite expects `pass`: RFC 8617 section 4.1.2 gives the AMS the DKIM-Signature rules of RFC 6376, which reject an empty `h=` and read a missing `c=` as simple/simple. |
 | lax mode skips `as_format_tags_sc`, `as_format_tags_key_case`, `as_format_tags_dup`, `as_format_inv_tag_key` | Not skipped: there is no lax mode, and all four fail as the suite expects. |
 | ARC Signing Suite, 2 groups, 17 cases | `suite.conformance.ts` › "ARC signing suite": seals each message with the suite's key, time and header list and the `cv=` that `verify` found, compares `bh=`, `cv=` and `i=` with the suite's ARC set, then checks that `verify` gives `pass`, or `fail` for a `cv=fail` set. A case with no expected set must throw `Arc.InvalidInputError`. The suite's key records contain line breaks from the YAML, which the test resolver removes. |
 
@@ -46,7 +46,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | does not seal a chain whose newest seal is cv=fail | › "refuses a chain whose newest seal is cv=fail" |
 | seals a broken chain with cv=fail as the next instance | › "seals a broken chain with cv=fail as the next instance, covering only the new set" |
 | does not claim cv=pass over an unparseable chain | › "refuses cv=pass over a chain whose sets cannot be read" |
-| refuses an instance that already exists; refuses instances 0, 51, 1.5, "x"; seals a gap only in lax mode | Not applicable: there is no instance option. The instance always follows the highest on the message. |
+| refuses an instance that already exists; refuses instances 0, 51, 1.5, "x"; seals a gap only in lax mode | Not applicable: there is no instance option. The instance is always one more than the highest on the message. |
 | seals a cv value that does not fit the instance only in lax mode | › "must be none for the first set and only for the first set" (always refused) |
 | passes the strict option to the AMS signer (512-bit key) | › "refuses a short RSA key, a bad domain or selector and a bad date" |
 | does not add a 51st set | › "refuses a 51st set" |
@@ -92,7 +92,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | keeps an explicit instance as given | Not applicable: no instance option. |
 | authenticate() seals a broken chain with cv=fail; a new message with cv=none | `@portable/mail-auth`'s tests. |
 | seals a chain with a missing AAR, a missing newest ARC-Seal, a duplicate ARC field, a failing signature with cv=fail | › "seals a chain with a missing ARC-Authentication-Results with cv=fail as i=3" and the other three |
-| does not seal a broken chain whose newest seal says cv=fail | › "refuses a chain whose newest seal is cv=fail" |
+| does not seal a broken chain whose newest seal has cv=fail | › "refuses a chain whose newest seal is cv=fail" |
 | refuses 10 kinds of invalid authResults | › "refuses a CRLF that starts a new header field" and the other nine |
 | accepts a value folded with CRLF and whitespace | › "accepts a value folded with CRLF and whitespace, and writes it as given" |
 

@@ -6,7 +6,7 @@ Fixtures:
 
 - `starfish.jpg`, `test.jpg`: exif-parser (MIT, Bruno Windels and Daniel Leinich).
 - `*.exif`: exif-reader (MIT, Devon Govett and others).
-- Everything else: exifr's `test/fixtures` (MIT, Mike Kovařík). `orientation-f*t.jpg` were `orientation/f*t.jpg`. `heic-iphone7-head.heic` and `heic-single-head.heic` are the first 32768 and 2048 bytes of `heic-iphone7.heic` and `heic-single.heic`, which keeps the repo small and tests reading only the start of a file.
+- Everything else: exifr's `test/fixtures` (MIT, Mike Kovařík). `orientation-f*t.jpg` were `orientation/f*t.jpg`. `heic-iphone7-head.heic` and `heic-single-head.heic` are the first 32768 and 2048 bytes of `heic-iphone7.heic` and `heic-single.heic`. The short copies keep the repo small and test reading only the start of a file.
 
 Test names below are `describe > test` in `parse.conformance.ts`, `parseDate.conformance.ts` or `exif.fuzz.conformance.ts`.
 
@@ -18,9 +18,9 @@ The package is designed fresh, so no exif-parser call has a one-to-one replaceme
 | --- | --- | --- |
 | `create(buffer).parse()` with six `enable*` flags | `Exif.parse(bytes)`, no options | Each flag turned off work that costs little or reshaped the output. One output shape is easier to document and test. |
 | `result.tags`, one object for every IFD, keeping the first tag of each name | `ifd0`, `ifd1`, `exif`, `gps`, `interop` objects | In one object the thumbnail's `Orientation` is reported as the image's when the image has none (exif-parser #30), and interop tags collide with GPS tag ids. |
-| `enableTagNames(false)` arrays of `{ section, type, value }` | none | Unknown tags keep their hex id as the key, such as `'0xC4A5'`. |
+| `enableTagNames(false)` arrays of `{ section, type, value }` | none | Unknown tags are keyed by their hex id, such as `'0xC4A5'`. |
 | Dates as Unix seconds, read as UTC | Strings, and `Exif.parseDate(value, { offset })` returns a `Date` | EXIF dates have no time zone. Seconds were mistaken for milliseconds (exif-parser #40), and the UTC reading was reported as wrong (#14, #23). |
-| `GPSLatitude` replaced by decimal degrees | `gps.GPSLatitude` stays `[d, m, s]`, and `latitude` and `longitude` are added | Callers see the stored value and the converted one. |
+| `GPSLatitude` replaced by decimal degrees | `gps.GPSLatitude` stays `[d, m, s]`, and `latitude` and `longitude` are added | You get both the stored value and the converted one. |
 | Binary tags dropped unless `enableBinaryFields(true)` | Always included as `Uint8Array` views | A view costs no copy. |
 | Pointer tags `ThumbnailOffset`, `ThumbnailLength` and `Compression` hidden by default | Kept in `ifd1` | Only the three IFD pointers (`ExifOffset`, `GPSInfo`, `InteropOffset`) are left out, since their offsets mean nothing to a caller. |
 | `getImageSize()`, `hasThumbnail()`, `getThumbnailOffset()`, `getThumbnailLength()`, `getThumbnailBuffer()`, `getThumbnailSize()` | `imageSize`, `thumbnail.{offset,length,bytes}` | Results are plain objects. `getThumbnailSize()` is `Exif.parse(thumbnail.bytes).imageSize`. |
@@ -41,7 +41,7 @@ The package is designed fresh, so no exif-parser call has a one-to-one replaceme
 | test-jpeg: getSizeFromSOFSection | `exif-parser > reads the size from the SOF segment` | |
 | test-jpeg: getSectionName | skipped | Tests a private helper that names JPEG markers. Nothing a caller sees depends on the names. |
 | test-simplify: castDateValues | `exif-parser > parses DateTimeOriginal, CreateDate and ModifyDate values` | |
-| (no test) GPS degrees, thumbnail | `exif-parser > reads GPS coordinates as signed decimal degrees`, `exif-parser > finds the thumbnail` | Behavior in the README without a test upstream. |
+| (no test) GPS degrees, thumbnail | `exif-parser > reads GPS coordinates as signed decimal degrees`, `exif-parser > finds the thumbnail` | exif-parser's README describes this, but it has no test for it. |
 
 ## exif-reader
 
@@ -107,11 +107,11 @@ exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks and maker notes, has pick and
 | exif-parser #17: `Invalid format: 0` thrown for an unknown tag type | `known upstream issues > exif-parser #17: a tag with format 0 is skipped instead of failing the parse` |
 | exif-parser #41: TIFF files are not supported | `known upstream issues > exif-parser #41: TIFF files are read` |
 | exif-parser #14, #23, #40: dates as UTC seconds | `parseDate > applies the offset option` and the `exif-parser` date tests |
-| exif-parser #31: `imageSize` undefined when the SOF segment is past the bytes passed in | `parse > keeps the tags whose values lie before the end of the input` checks `imageSize` is `undefined` then, as the README documents |
+| exif-parser #31: `imageSize` undefined when the SOF segment is past the bytes passed in | `parse > keeps the tags whose values lie before the end of the input` checks that `imageSize` is `undefined` in that case, as the README documents |
 | exif-parser (no issue): SSHORT and SLONG read as unsigned | `known upstream issues > exif-parser: SSHORT and SLONG values are signed` |
 | exif-parser (no issue): Exif IFD tags filed under the interop section | `known upstream issues > exif-parser: Exif IFD tags are not reported as interop tags` |
 | exif-parser (no issue): any APP1 segment parsed as Exif | `known upstream issues > exif-parser: an APP1 segment that is not Exif, such as XMP, is skipped` |
 
 ## Oracle
 
-`parse.oracle.test.ts` compares every tag, by IFD and name, with exif-parser on each JPEG fixture and on each TIFF and `.exif` fixture wrapped in a JPEG, both whole and cut to the 65,635 bytes exif-parser's README suggests. It also compares `imageSize`, the thumbnail, `DateTimeOriginal` and `CreateDate` through `parseDate`, and the coordinates when both reference tags are present. Two exif-parser behaviors are normalized first, so the test doesn't lock them in: its Exif and interop tags share one section and are compared as one, and tags it returns as `undefined` because their value lies outside the data are dropped, as `parse` drops them.
+`parse.oracle.test.ts` compares every tag, by IFD and name, with exif-parser on each JPEG fixture and on each TIFF and `.exif` fixture wrapped in a JPEG, both whole and cut to the 65,635 bytes exif-parser's README suggests. It also compares `imageSize`, the thumbnail, `DateTimeOriginal` and `CreateDate` through `parseDate`, and the coordinates when both reference tags are present. Two exif-parser behaviors are normalized first, so the test doesn't lock them in: its Exif and interop tags share one section and are compared as one, and when it returns a tag as `undefined` because the value lies outside the data, the tag is dropped, as `parse` drops it.

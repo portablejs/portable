@@ -59,7 +59,7 @@ To match one package's error and nothing else, use `instanceof` with that packag
 
 ## Read the server's response
 
-A `ResponseError` keeps the whole `Response` in `response`, so you can read the response headers. `status` is the HTTP status:
+A `ResponseError` stores the whole `Response` in `response`, so you can read the response headers. `status` is the HTTP status:
 
 ```ts
 import * as Errors from '@portable/errors';

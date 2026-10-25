@@ -166,8 +166,8 @@ describe('groups (RFC 6854)', () => {
 });
 
 describe('is_email', () => {
-  // The fixture writes control characters as their U+2400 symbols. Like email-addresses, a
-  // domain that starts or ends with "-" is valid: RFC 5322 allows it, only DNS doesn't.
+  // The fixture writes control characters as their U+2400 symbols. As in email-addresses, a
+  // domain that starts or ends with "-" is valid: RFC 5322 allows it, and only DNS doesn't.
   const control = (text: string) =>
     text.replace(/[\u2400-\u241f]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x2400));
   // RFC 6532 adds UTF-8 to VCHAR, so "\©" is a valid quoted-pair. email-addresses runs these

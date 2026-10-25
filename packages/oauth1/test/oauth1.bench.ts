@@ -35,7 +35,7 @@ const nobleHmac = ((algorithm, key, data) =>
   hmac(algorithm === 'SHA-1' ? sha1 : sha256, key, data)) satisfies OAuth1.Hmac;
 
 // oauth-1.0a is given node:crypto's HMAC, and Node's WebCrypto HMAC is several times slower than
-// a JavaScript one, so the assertions compare it with `hmac` set to @noble/hashes. The WebCrypto
+// a JavaScript one, so the assertions set this package's `hmac` to @noble/hashes. The WebCrypto
 // default is measured for reference.
 
 test('Authorization header for a GET request within 25% of oauth-1.0a', async ({ bench }) => {

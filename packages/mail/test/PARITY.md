@@ -1,6 +1,6 @@
 # Parity with nodemailer
 
-`@portable/mail` replaces nodemailer's `MailComposer` (`src/mail-composer`) and `MimeNode` (`src/mime-node`), version 10.1.7. Each upstream test below maps to the test here that covers the same case, or gives the reason it doesn't apply. Many `MimeNode` tests exercise its tree-editing API or Node-specific options, which this package doesn't have: callers describe a message as one object and `Mail.encodeStream` builds the tree.
+`@portable/mail` replaces nodemailer's `MailComposer` (`src/mail-composer`) and `MimeNode` (`src/mime-node`), version 10.1.7. Each upstream test below maps to the test here that covers the same case, or gives the reason it doesn't apply. Many `MimeNode` tests exercise its tree-editing API or Node-specific options, which this package doesn't have: you describe a message as one object and `Mail.encodeStream` builds the tree.
 
 Our test files:
 
@@ -24,7 +24,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should use Mixed structure with text and attachment | structure: text and one attachment make multipart/mixed |
 | should use Mixed structure with multiple attachments | structure: several attachments make multipart/mixed |
 | should create Alternative structure with text and html | structure: text and html make multipart/alternative, text first |
-| should create Alternative structure with text, watchHtml and html | Not applicable: `watchHtml` is not supported. Apple Watch reads `text/watch-html` from `alternatives`, which structure: alternatives go after html covers. |
+| should create Alternative structure with text, watchHtml and html | Not applicable: `watchHtml` is not supported. Apple Watch reads a `text/watch-html` part, which you can pass in `alternatives`, as `structure: alternatives go after html` tests. |
 | should create Alternative structure with text, amp and html | structure: amp goes between text and html |
 | should create Alternative structure with text, icalEvent and html | structure: a calendar invitation is an alternative and an attachment |
 | should create Alternative structure using encoded icalEvent | structure: a calendar invitation is an alternative and an attachment. There is no `icalEvent` option. The README shows the alternative plus attachment recipe. |
@@ -65,7 +65,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should not load raw message from file if disableFileAccess is set | Not applicable: no `raw`, no file access. |
 | should not load raw message from url if disableUrlAccess is set | Not applicable: no `raw`, no URL fetching. |
 | should create an empty text node when there is no content | structure: a message without a body has an empty text part; an empty text or html string counts as no body |
-| should force the transfer encoding of text nodes with the encoding option | Not applicable: no message-wide `encoding` option. A part's `transferEncoding` covers it: structure: a part given as an alternative can force its transfer encoding |
+| should force the transfer encoding of text nodes with the encoding option | Not applicable: no message-wide `encoding` option. Set a part's `transferEncoding` instead: structure: a part given as an alternative can force its transfer encoding |
 | should nest the related node in the mixed node when there is no text alternative | structure: html and cid images with other attachments nest multipart/related in multipart/mixed |
 | should map an http path of an attachment to an href | Not applicable: no `path` or `href`. |
 | should derive the attachment filename from a Windows path | Not applicable: no `path`. body: a File gives the filename and content type |
@@ -347,13 +347,13 @@ Each row is a nodemailer behavior that this package handles differently, with th
 | 10.1.7 encodes a `"` in a subject as an encoded word, which makes the subject unreadable in clients that don't decode it. | Quotes stay as they are. They are allowed in unstructured text. | headers: quotes in a subject stay readable |
 | Text that only looks like an encoded word (`=?x?q?y?=`) is written raw, and a client decodes it. | It is encoded, so the reader sees the text that was given. | headers: a subject that reads as an encoded word is encoded |
 | `message/rfc822` attachments default to `Content-Disposition: inline`, so some clients render the forwarded message in the body. | They default to `attachment`, like every other attachment without a cid. | body: message/rfc822 is 8bit and keeps non-ASCII text |
-| `path` and `href` read files and fetch URLs, which needs `disableFileAccess` and `disableUrlAccess` to be safe with untrusted input. | Content is a value or a stream the caller opened. | Not tested: the options don't exist. |
+| `path` and `href` read files and fetch URLs, so untrusted input is safe only with `disableFileAccess` and `disableUrlAccess` set. | Content is a value or a stream you opened. | Not tested: the options don't exist. |
 
 ## Differences
 
 These are deliberate and documented in the README. The oracle test's generator avoids them.
 
-- Header names keep the caller's case. nodemailer capitalizes each word (`X-Processed`), which is the same for the names most callers write.
+- Header names keep the caller's case. nodemailer capitalizes each word (`X-Processed`), which leaves most header names in use unchanged.
 - An address name over about 40 bytes is encoded in words of up to 75 characters, as `@portable/mime-headers` writes them, where nodemailer uses 52.
 - A file name holding `"` is written as a quoted string with `\"` in `filename` instead of RFC 2231 encoding.
 - An A-label domain beside a non-ASCII local part (`jõser@xn--jgeva-dua.ee`) is kept as given. nodemailer decodes it to UTF-8, which needs a Punycode decoder, and WinterTC has none.
