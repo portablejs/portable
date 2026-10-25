@@ -31,9 +31,9 @@ In Node, `node:dns/promises` works as the resolver.
 
 | Field | Description |
 | --- | --- |
-| `from` | The domain of the RFC5322.From address. U-labels are converted to A-labels. Extracting it is the caller's job: when the From header has no address, or addresses in more than one domain, RFC 9989 section 5.3.1 says DMARC doesn't apply. |
+| `from` | The domain of the RFC5322.From address. U-labels are converted to A-labels. You extract it yourself, because when the From header has no address or has addresses in more than one domain, RFC 9989 section 5.3.1 says DMARC doesn't apply. |
 | `spf` | The SPF result of the MAIL FROM identity, as `Spf.check` returns it. Only `result` and `domain` are read. For a bounce, `Spf.check` checks the HELO name, which RFC 7208 section 2.4 makes the MAIL FROM identity. |
-| `dkim` | One `{ result, domain }` per DKIM signature: the verification result and the `d=` domain. Only `'pass'` counts, so a richer DKIM result object fits as is. |
+| `dkim` | One `{ result, domain }` per DKIM signature: the verification result and the `d=` domain. Only `'pass'` counts, so you can pass a richer DKIM result object, such as one from `Dkim.verify`, as it is. |
 
 ## Options
 
@@ -85,7 +85,7 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 | Type | Description |
 | --- | --- |
 | `Dmarc.Resolver` | `Pick<Dns.Resolver, 'resolveTxt' \| 'resolve4' \| 'resolveCname'>`, the lookups `check` needs. |
-| `Dmarc.Record` | A parsed DMARC record, as `Result.record` holds it. |
+| `Dmarc.Record` | A parsed DMARC record, the type of `Result.record`. |
 | `Dmarc.Policy` | `'none' \| 'quarantine' \| 'reject'`. |
 | `Dmarc.Alignment` | One SPF or DKIM identifier and whether it aligns with the From domain. |
 
@@ -123,7 +123,7 @@ Differences to check when you switch from mailauth:
 - mailauth's `dkimDomains` takes only passing signatures, with an `underSized` flag. `dkim` takes every signature and reports the alignment of each, so check a signature's `l=` tag yourself.
 - mailauth's `resolver` is one `(name, type)` function. `check` takes an object with `resolveTxt`, `resolve4` and `resolveCname`, such as `node:dns/promises`.
 - mailauth's `arcResult` has no equivalent. `@portable/mail-auth` adds the ARC result to the comment of its `dmarc=` result.
-- mailauth's `result.domain`, the organizational domain, is not reported. `policyDomain` gives the domain that holds the record.
+- mailauth's `result.domain`, the organizational domain, is not reported. `policyDomain` gives the domain whose `_dmarc` record applies.
 - mailauth gives `temperror` when the resolver times out. A `signal` such as `AbortSignal.timeout(ms)` makes `check` reject instead.
 - mailauth's `status.header`, `info` and `warnings` have no equivalent. `@portable/mail-auth` builds the Authentication-Results field.
 - `pct` and `ri` are not reported, because RFC 9989 made them historic.

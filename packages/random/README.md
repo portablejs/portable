@@ -1,6 +1,6 @@
 # @portable/random
 
-Unbiased random integers, floats, strings, shuffles and bytes from `crypto.getRandomValues`, plus a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Draws unbiased random integers, floats, strings, shuffles and bytes from `crypto.getRandomValues`, and has a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [random-int](https://www.npmjs.com/package/random-int), [crypto-random-string](https://www.npmjs.com/package/crypto-random-string), [nanoid](https://www.npmjs.com/package/nanoid)'s `customAlphabet`, [seedrandom](https://www.npmjs.com/package/seedrandom), and [lodash](https://www.npmjs.com/package/lodash)'s `random`, `sample` and `shuffle`.
 
@@ -27,9 +27,9 @@ random.int(1, 6); // the same number on every run, in every runtime
 
 | Function | Returns |
 | --- | --- |
-| `int(min, max)` | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can hold up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`. |
+| `int(min, max)` | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can include up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`. |
 | `float()` | A number from 0 up to but not including 1, made from 53 random bits. |
-| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21 characters hold 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
+| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21 characters have 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
 | `shuffle(array)` | A shuffled copy of `array`. Every order is equally likely. |
 | `pick(array)` | A random element of `array`. |
 | `bytes(length)` | A new `Uint8Array` of random bytes, with no 65,536-byte limit. |
@@ -45,7 +45,7 @@ Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound
 
 ### Seeded generator
 
-`Random.seeded(seed)` is for tests and reproducible simulations. It is not for secrets: anyone who sees a few outputs can predict the rest.
+`Random.seeded(seed)` is for tests and reproducible simulations. It is not for secrets: a few outputs are enough to predict the rest.
 
 The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend. Its 32-bit outputs, which `seeded(seed).bytes(n)` returns least significant byte first, match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`, and a negative seed is read as its 64-bit two's complement. The generator uses 32-bit integer arithmetic only, so a seed gives the same values in every runtime. The values for a seed change only in a major version.
 
@@ -59,7 +59,7 @@ xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 
 
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom and lodash
 
-These libraries each cover part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator, crypto-random-string and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
+Each of these libraries does part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator, crypto-random-string and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
 
 - `int` throws on fractional bounds. `randomInteger(1.5, 3.5)` can return 1 or 4.
 - `int` throws when `min > max` or a bound is not a safe integer. random-int and lodash swap reversed bounds, and `_.random(2 ** 60, 2 ** 62)` returns integers that aren't safe.

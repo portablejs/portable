@@ -28,7 +28,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | #encodeWords > should treat U+0080 as a char that needs encoding | `encodeWords() > treats U+0080 as a character that needs encoding` | |
 | #encodeWords > should encode Ascii range | `encodeWords() > encodes the ASCII range between non-ASCII words` | |
 | #encodeWords > should encode using base64 | `encodeWords() > encodes using base64` | |
-| #encodeWords > should accept fromCharset as third argument | `encodeWords() > takes bytes as UTF-8` | There is no `fromCharset`: bytes are read as UTF-8, and other input is decoded by the caller with `TextDecoder`. |
+| #encodeWords > should accept fromCharset as third argument | `encodeWords() > takes bytes as UTF-8` | There is no `fromCharset`: bytes are read as UTF-8, so decode bytes in another charset with `TextDecoder` first. |
 | #encodeWords > should leave pure ascii input unchanged | `encodeWords() > leaves pure ASCII input unchanged` | |
 | #encodeWords > should end the encoded part with the last word that has non ascii characters | same name | |
 | #encodeWords > should encode a long non ascii word in linear time | `encodeWords() > encodes a long non-ASCII word`, `linear-time.bench.ts > encodeWords() of hostile text` | |

@@ -68,7 +68,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | reconnecting: reconnect() immediately after close() does not dispatch a duplicate close event | skipped | No `reconnect()`. |
 | reconnecting: warns when send() is called after close() | `connect > closing > cancelling readable closes the socket and stops reconnecting` | A write after closing rejects instead of being queued forever. |
 | reconnecting: messages sent after close() are delivered after reconnect(), and the warning resets | skipped | No `reconnect()`. |
-| reconnecting: reconnect() works after maxRetries has been exhausted | skipped | No `reconnect()`. After `attempts`, the streams fail and the caller calls `connect` again. |
+| reconnecting: reconnect() works after maxRetries has been exhausted | skipped | No `reconnect()`. After `attempts`, the streams fail and you call `connect` again. |
 | reconnecting-node: pass WebSocket via options | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` | Passes the `ws` package's class. |
 | partysocket: throws if host or room is not set; room is updated after updateProperties | skipped | PartyKit URLs. Pass a URL function. |
 | partysocket-url (53 tests: host, room, party, path, prefix, query, id, name validation, protocols, option pass-through) | skipped | PartyKit URL building. `connect` takes a URL or a function that returns one. |
@@ -132,7 +132,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | Getter/setter: InstantReconnect (2 tests) | `connect > reconnecting > passes the failure count and error to a delay function` | `delay: ({ attempt }) => (attempt === 1 ? 0 : 1000)` gives an instant first retry. |
 | Getter/setter: Backoff (2 tests) | `connect > reconnecting > waits the backoff cap when jitter is off` | |
 | Getter/setter: Listeners | skipped | No listeners. |
-| Getter/setter: ClosedByUser (3 tests) | `connect > closing > writable.close() sends queued writes, then closes with 1000 for good`, `connect > reconnecting > reconnects after a dropped connection` | A close by the caller is final, and one by the server is not. |
+| Getter/setter: ClosedByUser (3 tests) | `connect > closing > writable.close() sends queued writes, then closes with 1000 for good`, `connect > reconnecting > reconnects after a dropped connection` | A close from this side is final, and a close from the server is not. |
 | Getter/setter: LastConnection (3 tests) | skipped | No connection timestamps. |
 | Getter/setter: UnderlyingWebsocket (4 tests) | skipped | The socket is private. Use `fromSocket` to manage a socket yourself. |
 | Getter/setter: ReadyState, BufferedAmount, Extensions (5 tests) | skipped | No getters. |
@@ -175,7 +175,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | exhausted_reconnect: maxRetries of zero exhausts on the first disconnect | `connect > reconnecting > gives up with the last error when attempts is 1` | |
 | initial_failure_recovery (3 tests) | `connect > reconnecting > a successful connection resets the attempt count`, `server > connect against a ws server > reconnects after the server restarts on the same port` | |
 | instant_reconnect: skip the backoff only for the first retry | `connect > reconnecting > passes the failure count and error to a delay function` | |
-| lifecycle_reentrancy (6 tests: close or reconnect from close, retry, error, open and reconnect listeners) | `connect > open > closes the socket and reconnects when it throws, keeping queued writes`, `connect > closing > the signal closes the socket with 1000 and fails both streams` | There are no listeners to re-enter. `open` throwing and aborting the signal are the two ways a caller interrupts a connection. |
+| lifecycle_reentrancy (6 tests: close or reconnect from close, retry, error, open and reconnect listeners) | `connect > open > closes the socket and reconnects when it throws, keeping queued writes`, `connect > closing > the signal closes the socket with 1000 and fails both streams` | There are no listeners to re-enter. Throwing from `open` and aborting the signal are the two ways to interrupt a connection. |
 | listener_exception (7 tests) | `connect > open > closes the socket and reconnects when it throws, keeping queued writes` | `open` is the only callback, and a throw from it reconnects. |
 | listener_options (11 tests) | skipped | No listeners. |
 | remove_listener (6 tests) | skipped | No listeners. |
@@ -185,7 +185,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 
 ## Benchmarks
 
-None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messages of 100 bytes through a local `ws` server with `connect`, reconnecting-websocket and a bare `WebSocket`, and a server that echoes through `fromSocket` against one that uses `ws` listeners.
+None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messages of 100 bytes through a local `ws` server with `connect`, reconnecting-websocket, partysocket, websocket-ts and a bare `WebSocket`, and compares a server that echoes through `fromSocket` with one that uses `ws` listeners. The benchmark fails if any of the three libraries, or the `ws` listeners, is more than 25% faster.
 
 ## Known upstream issues
 
@@ -195,10 +195,10 @@ None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messa
 | reconnecting-websocket [#197](https://github.com/pladaria/reconnecting-websocket/issues/197): closing a `ws` client that is still connecting emits an error event with no listener, which crashes Node. | An error listener stays on every socket. | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` |
 | reconnecting-websocket [#170](https://github.com/pladaria/reconnecting-websocket/issues/170): a close event from an old socket arriving after a reconnect could close the new one. | Listeners are removed from a socket when its connection ends. | `connect > sending and receiving > ignores events from a replaced socket` |
 | reconnecting-websocket [#98](https://github.com/pladaria/reconnecting-websocket/issues/98): no heartbeat, so a silently dropped connection stays open. | `heartbeat` option. | `connect > heartbeat > reconnects when no pong arrives in time`, `server > connect against a ws server > the heartbeat replaces a connection whose server stopped answering` |
-| reconnecting-websocket and partysocket flush queued messages in the `open` event, before the app can authenticate. | Queued writes wait for `open` to finish. | `connect > open > holds queued writes until it resolves` |
+| reconnecting-websocket and partysocket flush queued messages in the `open` event, before your code can authenticate. | Queued writes wait for `open` to finish. | `connect > open > holds queued writes until it resolves` |
 | reconnecting-websocket and partysocket queue without limit by default, and drop messages past `maxEnqueuedMessages`. | The queue holds `maxQueued` writes, then the writer waits. | `connect > writes while disconnected > wait once maxQueued writes are queued` |
 | partysocket: `send()` after `close()` queues the message forever (it now logs a warning). | Writes after closing reject. | `connect > closing > cancelling readable closes the socket and stops reconnecting` |
-| partysocket [#252](https://github.com/cloudflare/partykit/issues/252): `reconnect()` did nothing after `maxRetries`. | The streams fail with the last error, so the caller sees that it gave up. | `connect > reconnecting > gives up with the last error when attempts is %i` |
+| partysocket [#252](https://github.com/cloudflare/partykit/issues/252): `reconnect()` did nothing after `maxRetries`. | The streams fail with the last error, so you can see that `connect` gave up. | `connect > reconnecting > gives up with the last error when attempts is %i` |
 | websocket-ts: a URL function that throws on a retry stopped reconnecting permanently. | The attempt counts as failed and the next one runs after `delay`. | `connect > connecting > retries when the URL function throws` |
 | websocket-ts: a delay above 2^31 - 1 ms overflowed `setTimeout` and retried at once. | Delays are capped at 2^31 - 1 ms. | `connect > reconnecting > caps a delay longer than the timer limit instead of retrying at once` |
 | websocket-ts: draining the buffer re-added messages forever when an `open` listener closed the socket. | The queue is sent only while the socket is open, and the rest waits for the next connection. | `connect > writes while disconnected > are not sent on a socket that is closing` |

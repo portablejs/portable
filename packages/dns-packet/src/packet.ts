@@ -89,7 +89,7 @@ export type OptRecord = {
   extendedRcode?: number | undefined;
   /** @default 0 */
   version?: number | undefined;
-  /** DO: the sender wants DNSSEC records. */
+  /** DO: ask the server to include DNSSEC records. */
   dnssecOk?: boolean | undefined;
   options?: readonly EdnsOption[] | undefined;
 };
@@ -232,8 +232,8 @@ function putRecord(w: Writer, record: ResourceRecord): void {
 export declare namespace encode {
   type Options = {
     /**
-     * Replace repeated names with pointers to their first copy (RFC 1035 section 4.1.4). Applies
-     * to owner names and to names inside NS, CNAME, PTR, MX and SOA records.
+     * Replace repeated names with pointers to their first copy (RFC 1035 section 4.1.4). It
+     * applies to owner names and to names inside NS, CNAME, PTR, MX and SOA records.
      * @default false
      */
     compress?: boolean | undefined;

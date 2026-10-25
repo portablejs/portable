@@ -215,7 +215,8 @@ export const checks: Record<string, (env: Env) => Promise<void> | void> = {
   },
   log() {
     const records: string[] = [];
-    Log.enable('app:*', { console: false });
+    Log.configure({ console: false });
+    Log.enable('app:*');
     Log.subscribe((record) => records.push(Log.format(record)));
     Log.create('app:db').debug('connected to %s', 'db');
     equal(records, ['connected to db']);

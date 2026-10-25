@@ -4,11 +4,11 @@ description: Check the kind of an error from any package with Errors.is.
 
 # Errors
 
-Every package throws a subclass of one of the classes in [`errors`](/packages/errors), so a single check works on errors from any package:
+Every package that throws its own errors subclasses one of the classes in [`errors`](/packages/errors), so a single check works on errors from any package:
 
 | Class | Thrown when |
 | --- | --- |
-| `InvalidInputError` | The data that the function reads, decodes, or verifies is malformed. |
+| `InvalidInputError` | The data that the function reads, decodes, encodes, or verifies is malformed. |
 | `TruncatedError` | The input ended before a value was complete. |
 | `UnsupportedError` | The input is valid, but the package doesn't handle it. |
 | `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. |
@@ -59,7 +59,7 @@ To match one package's error and nothing else, use `instanceof` with that packag
 
 ## Read the server's response
 
-A `ResponseError` keeps the whole `Response` in `response`, so you can read the response headers. `status` is the HTTP status:
+A `ResponseError` stores the whole `Response` in `response`, so you can read the response headers. `status` is the HTTP status:
 
 ```ts
 import * as Errors from '@portable/errors';
@@ -98,7 +98,7 @@ try {
 
 ## Match errors across two copies of a package
 
-An app can end up with two copies of a package, for example when the app needs version 2 and one of its dependencies needs version 1. With most libraries, `instanceof` then fails for an error that the other copy threw, because each copy defines its own class. `@portable/*` packages depend on each other at exact versions, so two copies are more common with them than with most libraries.
+Your app can end up with two copies of a package, for example when it needs version 2 and one of its dependencies needs version 1. With most libraries, `instanceof` then fails for an error that the other copy threw, because each copy defines its own class. `@portable/*` packages depend on each other at exact versions, so two copies are more common with them than with most libraries.
 
 Each error stores its kind, and the kinds of its parent classes, under `Symbol.for('portable.error')`, which is the same symbol in every copy. `Errors.is` reads that property, and the classes define `Symbol.hasInstance` to read it too, so `Errors.is` and `instanceof` both work whichever copy threw the error.
 

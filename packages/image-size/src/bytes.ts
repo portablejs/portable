@@ -56,7 +56,7 @@ export function u64(input: Uint8Array, offset: number, bigEndian: boolean): numb
 
 /**
  * Whether the bytes at `offset` spell `text`. Returns `false` as soon as one byte differs, and
- * asks for more input only when every byte present matches.
+ * throws `NeedMore` only when every byte present matches.
  */
 export function startsWith(input: Uint8Array, offset: number, text: string): boolean {
   const available = Math.min(text.length, input.length - offset);

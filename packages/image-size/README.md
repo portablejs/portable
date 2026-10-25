@@ -22,7 +22,7 @@ const { width, height, type } = await ImageSize.parseStream(response.body!);
 
 ### `parse(bytes: Uint8Array): Size`
 
-Returns the size of the image in `bytes`. The bytes only have to cover the header.
+Returns the size of the image in `bytes`. The bytes need to include only the header.
 
 ### `parseStream(stream: ReadableStream<Uint8Array>, options?): Promise<Size>`
 
@@ -71,8 +71,8 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 - `parse` read `large.jpg` about 3,800× faster than image-size, and was 3.6 to 360× faster on the PNG, HEIC, WebP, SVG and TIFF fixtures.
 - Input that ends early gives `TruncatedError`. image-size throws a `RangeError` from `DataView`.
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
-- Lossless and arithmetic-coded JPEGs are read, which image-size rejects, and there is no global `disableTypes` state shared by every caller in the process.
-- image-size throws a `TypeError` for an unsupported file type. `parse` throws `UnsupportedError` instead, and `TruncatedError` or `InvalidInputError` for a broken file, so a `catch` that checks for `TypeError` has to check for these errors instead.
+- `parse` reads lossless and arithmetic-coded JPEGs, which image-size rejects. There is no global `disableTypes` setting, so no other module in the process can turn off a format for you.
+- image-size throws a `TypeError` for an unsupported file type. `parse` throws `UnsupportedError` instead, and `TruncatedError` or `InvalidInputError` for a broken file, so if your `catch` checks for `TypeError`, check for these errors instead.
 - image-size skips the JPEG marker right after the start-of-image marker without reading it, so it misses a frame header there, and it assumes the Exif IFD0 starts 8 bytes into the TIFF header. `parse` reads that marker and follows the IFD0 offset the header stores.
 - image-size lists every HEIF `ispe` property in `images`, which for a tiled photo means every tile. `parse` returns no `images` list for HEIF files, and it detects animated AVIF (`avis`), which image-size doesn't.
 - image-size reads TIFF tags past the IFD's entry count until it finds a zero tag, so data after the IFD can overwrite the width and height, and it returns an undocumented `compression` field. `parse` reads only the entries the first IFD declares and returns no `compression` field.

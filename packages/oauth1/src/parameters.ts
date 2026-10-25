@@ -65,8 +65,8 @@ function hexValue(byte: number): number {
 
 /**
  * Reads `application/x-www-form-urlencoded` bytes into percent-encoded pairs (RFC 5849
- * §3.4.1.3). Decoding and encoding work on bytes, so a value that isn't UTF-8 keeps its original
- * bytes.
+ * §3.4.1.3). Decoding and encoding work on bytes, so the original bytes of a value that isn't
+ * UTF-8 are kept.
  */
 export function parseForm(bytes: Uint8Array, pairs: Pair[]): void {
   let start = 0;

@@ -34,9 +34,9 @@ export declare namespace decode {
  * Base64.decode('YQ==\r\nYg==', { mode: 'mime' }); // the bytes of 'ab'
  * ```
  *
- * @throws {InvalidInputError} When `'loose'` or `'strict'` mode finds a character or padding
- * that is not allowed.
- * @throws {TruncatedError} When `'loose'` or `'strict'` mode finds the input ending inside a group.
+ * @throws {InvalidInputError} In `'loose'` or `'strict'` mode, for a character or padding that
+ * is not allowed.
+ * @throws {TruncatedError} In `'loose'` or `'strict'` mode, when the input ends inside a group.
  */
 export function decode(
   input: string | Uint8Array,

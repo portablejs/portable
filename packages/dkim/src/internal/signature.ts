@@ -240,7 +240,8 @@ export async function check(
 
 /**
  * Checks that the key suits the algorithm and verifies `value` over `data` with it. `subdomain`
- * says the identity is in a subdomain of the signing domain, which a key with `t=s` forbids.
+ * is true when the identity is in a subdomain of the signing domain, which a key with `t=s`
+ * forbids.
  */
 export async function verifyData(
   record: KeyRecord,

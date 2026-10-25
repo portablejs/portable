@@ -8,8 +8,8 @@ import { readTiff } from './tiff.js';
 export declare namespace strip {
   type Options = {
     /**
-     * Write back an EXIF block that holds only the `Orientation` tag, when the original has one
-     * other than 1, so that viewers and resizers still rotate the image.
+     * If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag in
+     * place of the original block, so that viewers and resizers still rotate the image.
      * @default true
      */
     keepOrientation?: boolean | undefined;

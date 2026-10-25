@@ -4,7 +4,7 @@ description: Collect, transform, split, and decompress Web Streams, with size li
 
 # Streams
 
-Packages that read or write large data use Web Streams: the `ReadableStream`, `WritableStream`, and `TransformStream` classes that `fetch` uses. You can pipe a `fetch` body through these transforms, and a transform that emits bytes, such as `Compress.DecoderStream`, can be a `Response` body.
+Packages that read or write large data use Web Streams: the `ReadableStream`, `WritableStream`, and `TransformStream` classes that `fetch` uses. You can pipe a `fetch` body through these transforms, and the output of a transform that emits bytes, such as `Compress.DecoderStream`, can be a `Response` body.
 
 - [`streams`](/packages/streams) collects a stream into bytes, text, or JSON with a size limit. It also has transforms such as `map`, `filter`, and `batch`.
 - [`lines`](/packages/lines) splits bytes or text into lines.
@@ -58,4 +58,4 @@ await lines.pipeTo(
 );
 ```
 
-With `maxBytes`, the decoder fails with `MaxBytesError` once the output passes 1 GB, so a small file that decompresses to many gigabytes can't exhaust memory.
+With `maxBytes`, the decoder fails with `MaxBytesError` once the output exceeds 1 GB, so a small file that decompresses to many gigabytes can't exhaust memory.

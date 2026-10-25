@@ -712,7 +712,7 @@ function buildName(tokens: readonly Token[]): { text: string; comments: string }
 }
 
 /**
- * Joins an unquoted display name that a comma split into entries, as in
+ * Joins an unquoted display name that was split into entries at a comma, as in
  * `Joe Foo, PhD <joe@example.com>`: an entry with only a name is joined to a following entry that
  * has both a name and an address.
  */

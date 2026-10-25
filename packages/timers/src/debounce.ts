@@ -187,8 +187,8 @@ export function debounce<args extends unknown[], result, self = unknown>(
         if (!maxing) {
           trailingEdge();
         } else if (trailing && lastCall) {
-          // The timer keeps running, so the `maxWait` window counts from this invocation and a
-          // call before it ends runs when it ends.
+          // The timer keeps running, so the `maxWait` window counts from this invocation, and a
+          // call made before the window ends runs when it ends.
           invoke(performance.now());
         } else {
           lastCall = undefined;

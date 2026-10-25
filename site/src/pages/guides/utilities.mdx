@@ -5,7 +5,7 @@ description: Compare bytes, check error kinds, and generate random values.
 # Utilities
 
 - [`bytes`](/packages/bytes) converts `Uint8Array`s to and from hex, joins them, and compares them, with `timingSafeEqual` for secrets.
-- [`errors`](/packages/errors) holds the error classes that every package throws, and `Errors.is`, which checks an error's kind even when an app has two copies of a package. The [errors guide](/guides/errors) shows how to use them.
+- [`errors`](/packages/errors) holds the error classes that every package throws, and `Errors.is`, which checks an error's kind even when two copies of a package are installed. The [errors guide](/guides/errors) shows how to use them.
 - [`random`](/packages/random) gives unbiased random integers, strings, and shuffles from `crypto.getRandomValues`, and a seeded generator for tests.
 
 ## Check a signature in constant time

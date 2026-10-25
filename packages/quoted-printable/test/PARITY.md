@@ -73,7 +73,7 @@ The tests compare with libqp 3.0.1, installed from npm as `libqp3`. libqp 2.1.3 
 | Encoder > wraps lines at a custom length | same name | |
 | Encoder > does not wrap with lineLength false | same name | |
 | Encoder > keeps the stream options | `EncoderStream > rejects an invalid line length` | `highWaterMark` is a queuing strategy at `pipeThrough`, and options are not exposed as a property. |
-| Encoder > counts input and output bytes | skipped | No `inputBytes`/`outputBytes` counters. A caller can count chunks with a `TransformStream` of its own. |
+| Encoder > counts input and output bytes | skipped | No `inputBytes`/`outputBytes` counters. Count chunks with a `TransformStream` of your own. |
 | Encoder > produces the same output however the input is split | same name | Also with line breaks at 76 and 5. |
 | Encoder > encodes whitespace at the end of the input | same name | |
 | Encoder > wraps held back whitespace with the line it ends | same name | |
@@ -88,7 +88,7 @@ The tests compare with libqp 3.0.1, installed from npm as `libqp3`. libqp 2.1.3 
 | Decoder > decodes a stream | `DecoderStream > decodes a stream` | |
 | Decoder > decodes string chunks | same name | |
 | Decoder > produces no output for empty input | same name | |
-| Decoder > decodes the same however the input is split | same name | Input extended with an escape split by a soft break and a trailing `=\r=`. |
+| Decoder > decodes the same however the input is split | same name | The input is extended with an escape split by a soft break and a trailing `=\r=`. |
 | Decoder > keeps the stream options | skipped | Node `highWaterMark`. |
 | Decoder > counts input and output bytes | skipped | No counters, as for the encoder. |
 | Round trips > round trips text through the streams | `round trips > round trips text through the streams` | |
@@ -117,7 +117,7 @@ The tests compare with libqp 3.0.1, installed from npm as `libqp3`. libqp 2.1.3 
 | wrap() > never splits an escape sequence | same name | |
 | wrap() > never splits a UTF-8 char when ... | `... > never splits a UTF-8 character when ...` | |
 | Encoder > without wrapping, produces the same output as encode() however the input is split | `streams > the encoder stream without line breaks matches encode() ...` | |
-| Encoder > with wrapping, round trips any bytes into well-formed lines | `streams > the encoder stream with line breaks matches encode() ...` | Same test checks round trip and form. |
+| Encoder > with wrapping, round trips any bytes into well-formed lines | `streams > the encoder stream with line breaks matches encode() ...` | The same test checks the round trip and the form. |
 | Encoder > with wrapping, produces the same output as wrap() and encode() however the input is split | `streams > the encoder stream with line breaks matches encode() ...` | |
 | Encoder > with binary, keeps only CRLF pairs literal and does not depend on the chunking | `streams > the binary encoder stream ...` | |
 | Encoder > counts the bytes it reads and writes | skipped | No counters. |
@@ -130,8 +130,8 @@ Differential tests against libqp 2.1.3. `quoted-printable.oracle.test.ts` covers
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| encode() produces the same output | `matches libqp 2.1.3 ... > encode() without line breaks` | Same hyphen-after-CR adjustment as upstream. |
-| decode() produces the same output for Buffers and strings | `decode() matches libqp > quoted-printable-like input`, `... > ASCII strings` | Non-ASCII strings differ on purpose (UTF-8). |
+| encode() produces the same output | `matches libqp 2.1.3 ... > encode() without line breaks` | The test adjusts for a hyphen after a CR, as upstream does. |
+| decode() produces the same output for Buffers and strings | `decode() matches libqp > quoted-printable-like input`, `... > ASCII strings` | Non-ASCII strings differ on purpose, because we read them as UTF-8. |
 | wrap() produces the same output for ASCII input, but for needless soft breaks | `encode() matches libqp 3.0.1 wrap(encode()) > random bytes at every line length` | Compared with 3.0.1, which has the fix. |
 | wrap() produces the same output for text unless 2.1.3 split a char ... | `... > random text with multi-byte characters and whitespace` | As above. |
 | the Encoder produces the same output for input written at once | `streams match libqp 3.0.1 ... > EncoderStream` | |
@@ -149,7 +149,7 @@ Differential tests against libqp 2.1.3. `quoted-printable.oracle.test.ts` covers
 | encode() of every byte value | `encode() of every byte value` | |
 | the Encoder with one byte chunks | `the encoder stream with one-byte chunks` | |
 | the Encoder with one large chunk of whitespace | `the encoder stream with one large chunk of whitespace` | |
-| the Decoder with one byte chunks | `the decoder stream with one-byte chunks` | Plus a whitespace run split into one-byte chunks, which was quadratic in our first draft. |
+| the Decoder with one byte chunks | `the decoder stream with one-byte chunks` | The test also splits a whitespace run into one-byte chunks, which took quadratic time in our first draft. |
 
 ## libqp `package/package-test.ts` and `package/types-consumer-test.ts`
 
@@ -166,7 +166,7 @@ Skipped. They test libqp's dual CommonJS and ES module build, its old deep impor
 | encode: Trailing space | `encode() > trailing space` | |
 | encode: Trailing tab | `encode() > trailing tab` | |
 | encode: CRLF | `encode() > CRLF` | Deliberate difference: upstream escapes every CR and LF. We keep line breaks, and `binary: true` escapes only a lone CR or LF. |
-| encode: Exactly 73 to 77 chars, last one `=` | `encode() > exactly 73 to 77 characters of which the last one is "="` | 74 characters differs: upstream keeps every line, even the last, within 75, and RFC 2045 allows 76. |
+| encode: Exactly 73 to 77 chars, last one `=` | `encode() > exactly 73 to 77 characters of which the last one is "="` | The 74-character case differs: upstream keeps every line, even the last, within 75, and RFC 2045 allows 76. |
 | encode: Exactly 73 to 77 chars, last one a space | `encode() > exactly 73 to 77 characters of which the last one is a space` | |
 | encode: UTF-8 can be used for non-ASCII symbols | `encode() > UTF-8 can be used for non-ASCII symbols` | Upstream splits the emoji's escapes across a soft break, and we move the whole sequence to the next line. |
 | encode: Invalid input (RangeError above U+00FF) | `encode() > encodes a string as UTF-8 instead of rejecting characters above U+00FF` | Strings are text, encoded as UTF-8. |
@@ -177,7 +177,7 @@ Skipped. They test libqp's dual CommonJS and ES module build, its old deep impor
 | decode: Soft line break example from the RFC | `decode() > soft line break example from the RFC` | |
 | decode: UTF-8 can be used for non-ASCII symbols | `decode() > UTF-8 can be used for non-ASCII symbols` | |
 
-upstream's `decode()` also removes `=` before a lone CR. We follow RFC 2045 and libqp: a soft line break is `=` before CRLF, LF or the end of the input.
+quoted-printable's `decode()` also removes `=` before a lone CR. We follow RFC 2045 and libqp: a soft line break is `=` before CRLF, LF or the end of the input.
 
 ## Known upstream issues
 

@@ -9,7 +9,7 @@ Upstream suites: [debug 4.4.3 `test.js`](https://github.com/debug-js/debug/blob/
 | passes a basic sanity check | `loggers > methods work when detached from the logger` |
 | allows namespaces to be a non-string value | Doesn't apply. `enable` takes a string, and TypeScript rejects `enable(true)`. |
 | honors global debug namespace enable calls | `patterns > a matching pattern enables every level`, `patterns match as in debug` (oracle) |
-| uses custom log function | `subscribe` and `console > Log.console writes a changed record`. To replace the output, call `enable(undefined, { console: false })` and `subscribe` instead of setting `log.log`. |
+| uses custom log function | `subscribe` and `console > Log.console writes a changed record`. To replace the output, call `configure({ console: false })` and `subscribe` instead of setting `log.log`. |
 | extend namespace > should extend namespace | `loggers > extend appends to the namespace with a colon` |
 | extend namespace > should extend namespace with custom delimiter | Not built. `extend` always joins with `:`, and `create('foo--bar')` makes the same namespace. |
 | extend namespace > should extend namespace with empty delimiter | Not built, as above. |

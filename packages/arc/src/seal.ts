@@ -133,7 +133,7 @@ export type Sealer = {
   /**
    * Checks that the message can be sealed with `cv=chainValidation`, and returns the step that
    * signs the new set once the body is hashed. Throws `InvalidInputError` for a message that must
-   * not be sealed, and a `TypeError` or `RangeError` for a `chainValidation` that doesn't fit it.
+   * not be sealed, and a `TypeError` or `RangeError` for a `chainValidation` that doesn't match it.
    * `authResults` must already be checked.
    */
   prepare: (

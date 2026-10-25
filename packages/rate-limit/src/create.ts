@@ -4,7 +4,7 @@ import { memoryStore, type Store } from './store.js';
 
 /** The outcome of `take`. Durations are milliseconds. */
 export type Result = {
-  /** Whether the request fits in the limit. A denied request consumes nothing. */
+  /** Whether the limit allows the request. A denied request consumes nothing. */
   allowed: boolean;
   /** The `limit` the limiter was created with. */
   limit: number;
@@ -49,7 +49,7 @@ export declare namespace create {
 
 /**
  * Creates a rate limiter that allows `limit` requests per `period` for each key, with the generic
- * cell rate algorithm (GCRA). Allowance comes back continuously, one request every
+ * cell rate algorithm (GCRA). The allowance refills continuously, one request every
  * `period / limit` milliseconds, up to `burst`.
  *
  * @example

@@ -19,7 +19,7 @@ export type Vapid = VapidKeys & {
 
 export declare namespace generateVapidKeys {
   type Options = {
-    /** Cancels the key generation. It rejects with `signal.reason`. */
+    /** Aborting it cancels the key generation, and the call rejects with `signal.reason`. */
     signal?: AbortSignal | undefined;
   };
 }

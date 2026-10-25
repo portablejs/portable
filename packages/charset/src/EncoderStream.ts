@@ -7,8 +7,7 @@ import * as Streams from '@portable/streams';
 export declare namespace EncoderStream {
   type Options = encode.Options & {
     /**
-     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
-     * cancel the source.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
   };

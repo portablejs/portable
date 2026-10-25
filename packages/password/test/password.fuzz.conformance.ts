@@ -47,8 +47,8 @@ test('a changed hash verifies to a boolean or throws a documented error', async 
     fc.asyncProperty(
       mutated(stored)
         .map((bytes) => decoder.decode(bytes))
-        // `verify` runs as many iterations as the stored hash says, and a mutated hash can say
-        // billions, so this drops counts of four or more digits to keep each run fast.
+        // `verify` runs as many iterations as the stored hash specifies, and a mutated hash can
+        // specify billions, so this drops counts of four or more digits to keep each run fast.
         .filter((text) => !/(?:i=|\$)\d{4}/.test(text)),
       async (text) => {
         const verified = await outcomeAsync(errors, () => Password.verify('password', text));

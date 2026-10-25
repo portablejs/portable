@@ -21,7 +21,7 @@ export async function inflate(
     if (rejected === -1 || signal?.aborted) {
       throw error;
     }
-    // Bun and Deno fail a write that holds bytes after the end of the zlib stream and drop that
+    // Bun and Deno fail a write that contains bytes after the end of the zlib stream and drop that
     // write's output, while Node and browsers keep it. `inflate` then decodes the data again and
     // writes the failed piece one byte at a time, so only the writes after the end of the stream
     // fail and every byte before it is decoded.

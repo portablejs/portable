@@ -5,7 +5,7 @@ description: "Use for \"prose review\", \"review the writing\", or before finish
 
 # Prose review
 
-A separate reviewer agent reads the prose a change adds or edits and checks it against the Writing section of `AGENTS.md`. It reads no code and edits no files. The author decides which rewrites to take.
+A separate reviewer agent reads the prose a change adds or edits and checks it against the Writing section of `AGENTS.md`. It edits no files, and it reads code only to find the actor in a comment. The author decides which rewrites to take.
 
 ## Step 1, Collect the prose
 

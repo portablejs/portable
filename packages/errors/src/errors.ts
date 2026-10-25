@@ -10,8 +10,8 @@ function isBranded(value: unknown): value is Branded {
 
 /**
  * The base class of every error that `@portable/*` packages throw. Each error stores the `kind` of
- * its own class and of each superclass under `Symbol.for('portable.error')`. An app loads two
- * copies of a package when it depends on one version and one of its dependencies requires
+ * its own class and of each superclass under `Symbol.for('portable.error')`. Two copies of a
+ * package are installed when your app depends on one version and one of its dependencies requires
  * another. `Symbol.for` returns the same symbol in both copies, so `instanceof` and `is` still
  * recognize an error from the other copy.
  *

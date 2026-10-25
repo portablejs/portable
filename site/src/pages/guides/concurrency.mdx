@@ -8,7 +8,7 @@ Every timer, retry, and queue in these packages takes an `AbortSignal`. Pass `re
 
 - [`queue`](/packages/queue) limits how many async tasks run at once, with priorities.
 - [`timers`](/packages/timers) has sleep, retry, poll, debounce, and throttle.
-- [`rate-limit`](/packages/rate-limit) limits requests per key, in memory, Workers KV, a Durable Object, or Redis over HTTP.
+- [`rate-limit`](/packages/rate-limit) limits requests per key and stores its state in memory, Workers KV, a Durable Object, or Redis over HTTP.
 
 ## Fetch many URLs with a concurrency limit and retries
 

@@ -29,7 +29,8 @@ export type CharsetEncoder = {
 };
 
 /**
- * `'Q'` keeps ASCII letters and digits readable. `'B'` is base64 and shorter for non-Latin text.
+ * In `'Q'` words, ASCII letters and digits stay readable. `'B'` is base64 and shorter for non-Latin
+ * text.
  */
 export type WordEncoding = 'Q' | 'B';
 
@@ -42,7 +43,8 @@ export declare namespace encodeWord {
     /**
      * Longest encoded word, `=?` and `?=` included. Longer text is split into several words that
      * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
-     * longer when the limit is too small for it. `Infinity` writes one word. @default 75
+     * longer when the limit is too small for it. With `Infinity`, the text is written as one word.
+     * @default 75
      */
     wordLength?: number | undefined;
   };

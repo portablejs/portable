@@ -77,7 +77,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
 
 export declare namespace EncoderStream {
   type Options = encode.Options & {
-    /** Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. */
+    /** Aborting errors the stream with `signal.reason` and cancels the source piped into it. */
     signal?: AbortSignal | undefined;
   };
 }
@@ -130,8 +130,8 @@ const outputDecoder = new TextDecoder();
 type Encoder = { write: (bytes: Uint8Array, final: boolean) => string };
 
 // Produces the output of libqp 3.0.1's `wrap(encode(input), lineLength)`, one byte at a time so
-// that a stream can stop anywhere. libqp decides each soft line break from the first `lineLength`
-// characters of the rest of the line, so a line is broken as soon as it holds more than that.
+// that a stream can stop anywhere. libqp places each soft line break by looking at the first
+// `lineLength` characters of the rest of the line, so a line is broken as soon as it is longer.
 // The unfinished line stays at the end of `out` until it is complete.
 function createEncoder(options: encode.Options): Encoder {
   const { binary = false, lineLength: lineLengthOption = 76 } = options;
@@ -147,7 +147,8 @@ function createEncoder(options: encode.Options): Encoder {
   const out = new Uint8Array(OUTPUT_CHUNK + (wrap ? lineLengthOption : 0) + 64);
   let o = 0;
   let lineStart = 0;
-  // Whether the current line follows a soft line break. A hyphen that starts it is then escaped.
+  // Whether the current line follows a soft line break. If it does, a hyphen at its start is
+  // escaped.
   let afterSoftBreak = false;
   let previous = -1;
   let held = -1;
@@ -173,7 +174,7 @@ function createEncoder(options: encode.Options): Encoder {
   };
 
   // Moves the escapes of a multi-byte UTF-8 sequence at the end of a line to the next line,
-  // unless they are all the line holds.
+  // unless the line has nothing else.
   const trimUtf8Sequence = (end: number) => {
     let cut = end;
     while (cut - 3 >= lineStart && out[cut - 3] === EQUALS) {

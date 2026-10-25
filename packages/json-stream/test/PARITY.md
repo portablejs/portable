@@ -7,7 +7,7 @@ Upstream suites:
 - [json-stream-stringify 3.1.7 `test-src/JsonStreamStringify.spec.ts`](https://github.com/Faleij/json-stream-stringify/blob/master/test-src/JsonStreamStringify.spec.ts).
 - [@worker-tools/json-stream `test/`](https://github.com/worker-tools/json-stream/tree/master/test).
 
-Test names below are the `describe > test` names in `DecoderStream.conformance.ts` (P) and `encodeStream.conformance.ts` (E). NDJSON moved to `@portable/jsonl`, whose `PARITY.md` maps the ndjson suite and stream-json's JSON Lines tests.
+Test names below are the `describe > test` names in `DecoderStream.conformance.ts` (P) and `encodeStream.conformance.ts` (E). NDJSON is in `@portable/jsonl`, whose `PARITY.md` maps the ndjson suite and stream-json's JSON Lines tests.
 
 ## JSONStream
 
@@ -26,7 +26,7 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 | issues.js #66 | P `JSONStream > fails on malformed input` | |
 | issues.js #81 | P `JSONStream > parses a nested key without error` | |
 | keys.js keys via string, keys via array | P `JSONStream > reports the key of each match` | `$*` and `{emitKey: true}` are the last element of `path`. |
-| keys.js path via array | P `JSONStream > reports the key of each match` | Every match carries its `path`. |
+| keys.js path via array | P `JSONStream > reports the key of each match` | Every match includes its `path`. |
 | keys.js advanced keys | P `JSONStream > reports keys of nested matches` | |
 | keys.js parent keys | P `JSONStream > emits a top-level key once with its value` | |
 | map.js map function, filter function | skipped | No mapper. Pipe the output through a `TransformStream` or `Streams.map` and `Streams.filter`. |
@@ -116,7 +116,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | pick: objects string filter | P `stream-json > picks one value by path` | |
 | pick: objects regexp filter | P `stream-json > picks values by several paths` | A RegExp over the joined path becomes a list of JSONPaths. |
 | pick: objects empty filter | P `stream-json > picks nothing for a path that matches nothing` | |
-| pick: objects once | P `DecoderStream > cancelling the output cancels the input` | Read one match, then cancel. |
+| pick: objects once | P `DecoderStream > cancelling the output cancels the input` | The test reads one match, then cancels. |
 | pick: array, object | P `stream-json > streams the elements of a picked array and the members of a picked object` | |
 | pick: with global RegExp flag | skipped | RegExp filters aren't supported. |
 | pick: maxDepth (4 tests) | P `stream-json > parses a document nested 100,000 levels deep` | The parser keeps its stack in arrays, so depth costs memory, not call stack, and there is no limit to configure. |
@@ -146,7 +146,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | stringer: special symbols, control characters with useValues | E `stream-json > writes special characters as JSON.stringify does` | |
 | jsonc parser, stringer, verifier (90 tests), file jsonc (6 tests) | skipped | JSONC (comments and trailing commas) is a different format. |
 | parseFile, stringerToFile, verifyFile (17 tests) | skipped | `node:fs` helpers. |
-| batch (6 tests), emitter (2 tests), drain (6 tests), pipe (4 tests), withParser (1 test), main source test | skipped | Node stream plumbing and stream-chain helpers. `Streams.batch` covers batching. |
+| batch (6 tests), emitter (2 tests), drain (6 tests), pipe (4 tests), withParser (1 test), main source test | skipped | Node stream plumbing and stream-chain helpers. Use `Streams.batch` for batching. |
 | browser-safety (3 tests), subpath exports (6 tests) | skipped | Packaging checks. Our lint rules reject Node APIs in `src/`. |
 | property tests: chunk boundaries do not change the token stream | P `DecoderStream > gives the same matches for every way of splitting the bytes` | |
 | property tests: parser → assembler round-trips against JSON.parse | oracle `DecoderStream matches JSONStream > random document <n>` | |
@@ -169,10 +169,10 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | json-stream-stringify #47: a stream that isn't the first property produces invalid JSON. | E `known upstream issues > writes a stream that is not the first property as valid JSON (json-stream-stringify #47)` |
 | json-stream-stringify #28: empty keys are dropped. | E `known upstream issues > writes keys that are empty strings (json-stream-stringify #28)` |
 | json-stream-stringify #34, #4: empty arrays and repeated references are reported as circular. | E `known upstream issues > does not report empty arrays as circular (json-stream-stringify #34)`, `json-stream-stringify > writes a repeated, non-circular reference each time` |
-| json-stream-stringify #7: a trailing comma when the replacer drops the last key. | E `known upstream issues > writes no trailing comma when the replacer drops the last key (json-stream-stringify #7)` |
+| json-stream-stringify #7: the output has a trailing comma when the replacer drops the last key. | E `known upstream issues > writes no trailing comma when the replacer drops the last key (json-stream-stringify #7)` |
 | json-stream-stringify #1: a promise returned by the replacer is not resolved. | E `known upstream issues > resolves a promise returned by the replacer (json-stream-stringify #1)` |
 | json-stream-stringify #36: the stream hangs on a source that has already ended. | E `known upstream issues > writes a stream that has already closed as an empty array (json-stream-stringify #36)` |
 | json-stream-stringify #41, #43: items of large object-mode streams are lost. | E `known upstream issues > writes a large array of streamed objects without losing any (json-stream-stringify #41, #43)` |
 | @worker-tools/json-stream: cancelling the output doesn't stop a source that is waiting for data. | E `encodeStream > cancelling the output cancels a nested stream that is waiting for data` |
 
-The oracle tests avoid `null` values when comparing with JSONStream, because of the issue above, and give it valid JSON only.
+The oracle tests pass JSONStream only valid JSON with no `null` values, because JSONStream drops null matches.

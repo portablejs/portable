@@ -44,8 +44,8 @@ export function abortable<input, output>(
   }
   let onAbort = () => {};
   const done = () => signal.removeEventListener('abort', onAbort);
-  // A transformer that throws or rejects errors the stream without calling flush or cancel, so the
-  // listener is removed here too.
+  // If the transformer throws or rejects, the stream errors without calling flush or cancel, so
+  // the listener is removed here too.
   const fail = (error: unknown): never => {
     done();
     throw error;

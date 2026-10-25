@@ -2,4 +2,4 @@
 '@portable/smtp': minor
 ---
 
-Added `connect` and `send`, an SMTP and LMTP client over an injected socket with the shape of the WinterTC Sockets API, as a replacement for nodemailer's SMTP transport and smtp-connection. `Client.close()` ends the session, and where the runtime has `Symbol.asyncDispose`, `await using client = await Smtp.connect(options)` closes it at the end of the scope.
+Initial release. `Smtp.connect` and `Smtp.send` send mail over SMTP or LMTP, with STARTTLS, AUTH, PIPELINING and per-recipient results. They open the socket with a `connect` function of type `Sockets.Connect`, such as `connect` from `cloudflare:sockets` or `@portable/sockets/node`. `client.close()` ends the session, and where the runtime has `Symbol.asyncDispose`, `await using client = await Smtp.connect(options)` closes it at the end of the scope. Replaces nodemailer's SMTP transport and smtp-connection.

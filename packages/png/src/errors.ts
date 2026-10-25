@@ -1,6 +1,7 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown by `decode` when the file ends early: before `IEND`, inside a chunk, or with less image data than the image needs.
+ * Thrown by `decode` when the file ends early: before `IEND`, inside a chunk, or with less image
+ * data than the image needs.
  *
  * @example
  * ```ts

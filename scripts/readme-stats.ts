@@ -99,7 +99,7 @@ function findPackage(from: string, name: string): string | undefined {
 
 const packageJson = (dir: string) => readJson<PackageJson>(join(dir, 'package.json'))!;
 
-/** Every package installed with the column's imports, not counting the first one itself. */
+/** Counts the packages installed with the column's imports, not counting the imported package. */
 function dependencyCount(testDir: string, column: Column): number | undefined {
   const seen = new Set<string>();
   const queue = column.imports!.map(({ from }) => [testDir, packageName(from)]) satisfies [

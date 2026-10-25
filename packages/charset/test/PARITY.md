@@ -2,7 +2,7 @@
 
 Upstream suite: [iconv-lite 0.7.3 `test/`](https://github.com/pillarjs/iconv-lite/tree/v0.7.3/test). This package only encodes, so decode-only tests map to "not applicable: decoding is `TextDecoder`". Test names below are `file > describe > test`.
 
-Besides the ported cases, `charset.oracle.test.ts` compares every code point of every charset, and 20 random strings with unmappable characters per charset, against iconv-lite. Each difference must match a reason in `explain()`, and every reason is listed under "Known upstream issues" or "API changes" below. `roundtrip.conformance.ts` checks that every code point we encode decodes back with `TextDecoder`, which runs in Chromium for all charsets and in Node for those where its ICU decoder agrees with WHATWG.
+Besides the ported cases, `charset.oracle.test.ts` compares every code point of every charset, and 20 random strings with unmappable characters per charset, against iconv-lite. Each difference must match a reason in `explain()`, and every reason is listed under "Known upstream issues" or "API changes" below. `roundtrip.conformance.ts` checks that every code point we encode decodes back with `TextDecoder`. The check runs in Chromium for every charset, and in Node for the charsets where Node's ICU decoder agrees with WHATWG.
 
 ## main-test.js
 

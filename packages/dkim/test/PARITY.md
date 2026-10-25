@@ -27,7 +27,7 @@ Every case of the `cases` table is in `verify.conformance.ts` under "RFC complia
 | a signature with a hash the key h= tag does not list | neutral | permerror | Key record problem. |
 | a key that is not meant for email | neutral | permerror | Key record problem. |
 | a subdomain i= with a key that has t=s | neutral | permerror | Key record problem. |
-| a key with a duplicate tag | neutral, `invalid public key` | permerror, `key syntax error` | A duplicate tag makes the record invalid (RFC 6376 section 3.2), whatever `p=` holds. |
+| a key with a duplicate tag | neutral, `invalid public key` | permerror, `key syntax error` | A duplicate tag makes the record invalid (RFC 6376 section 3.2), whatever `p=` contains. |
 | a key with v= that is not the first tag, v=dkim1, v=DKIM 1 | neutral | permerror | Key record problem. |
 | an ed25519 key without k= | neutral, `unknown key type` | permerror, `inappropriate key algorithm` | `k=` defaults to `rsa`, so the key type is known and doesn't match `a=`. |
 | an rsa signature with an ed25519 key, an ed25519-sha256 signature with an RSA key | neutral | permerror | Key record problem. |
@@ -44,7 +44,7 @@ The other `describe` blocks:
 | A d= that is not a host name (7 separators) | `d= values that are not host names` |
 | Alignment with the From header field | Not applicable. Alignment is DMARC's job and belongs to `@portable/dmarc`. |
 | EAI: look up the key of a U-label d= under its A-label | `EAI (RFC 8616)` |
-| EAI: report A-labels in strict mode | Same test. The result always holds A-labels. |
+| EAI: report A-labels in strict mode | Same test. The result always contains A-labels. |
 | rejectRsaSha1 (2 tests) | rsa-sha1 is always `policy`, as the rsa-sha1 cases check. |
 | Body length: report the content after l=0 as unsigned | `body length (l=)` |
 | Body length: an l= larger than the canonicalized body | Same, with the reason `l= is longer than the body`. mailauth reports `signature syntax error` without looking up the key. `verify` looks up keys while it reads the body, and checks `l=` after hashing it. |
@@ -60,7 +60,7 @@ The other `describe` blocks:
 | Upstream test | Here |
 | --- | --- |
 | Failed signing output (6 tests) | `sign` throws instead of returning `errors`, so there is no partial output. Missing keys, domains and selectors are in `options` and `private keys`. ARC and `DkimSignStream` don't apply. |
-| Sign with rsa-sha1 (default mode) | rsa-sha1 is not offered: `a=` follows the key type. |
+| Sign with rsa-sha1 (default mode) | rsa-sha1 is not offered: the key type sets `a=`. |
 | Sign with an RSA key under 1024 bits (default mode) | Refused with a `RangeError`, as strict mode does. |
 | Refuse ed25519-sha1 | Not applicable, there is no algorithm option. |
 | Sign with ed25519-sha256 | `the signature field` |
@@ -106,11 +106,11 @@ The other `describe` blocks:
 | Upstream test | Here |
 | --- | --- |
 | `dkim-test.ts`: sign message (byte by byte, LF line endings) | `canonicalization.conformance.ts`: the same `bh=`. nodemailer's 768-bit key is refused, so `b=` differs. |
-| `dkim-test.ts`: large messages with and without a cache directory, as Buffer and String, cache errors and permissions | Not applicable: the body is hashed as it streams, and nothing is written to disk. |
+| `dkim-test.ts`: large messages with and without a cache directory, as Buffer and String, cache errors and permissions | Not applicable: nothing is written to disk. The canonicalized body is kept in memory unless you pass an incremental `hasher`. |
 | `dkim-test.ts`: unsupported hash algorithm | Not applicable, there is no hash algorithm option. |
 | `dkim-test.ts`: DKIM signatures verified by mailauth (12 messages, no body, changed body, changed header) | `sign.conformance.ts > messages`, verified by `verify` and the reference verifier, and in `dkim.oracle.test.ts` by mailauth. |
 | `message-parser-test.ts` (header and body split, chunk boundaries, LF, header bytes, keys, folding) | `line endings`, `messages` and `header smuggling` |
-| `message-parser-test.ts`: unfold a deeply folded header, trim a field name with a long blank run | `canonicalization.conformance.ts > linear time` |
+| `message-parser-test.ts`: unfold a deeply folded header, trim a field name with a long blank run | `canonicalization.conformance.ts > adversarial input` and `linear-time.bench.ts > linear time` |
 | `relaxed-body-test.ts` | `relaxed body canonicalization` |
 | `sign-test.ts`: relaxed headers, skip fields | `header canonicalization`. There is no skip list: `headers` lists what to sign. |
 | `sign-test.ts`: an unusable key returns false | `private keys`, as a `TypeError` |
@@ -136,8 +136,8 @@ Each is tested where listed.
 | mailauth: header canonicalization treated every Unicode space as whitespace. | `relaxed does not accept a no-break space`, and nodemailer's 8-bit and ideographic-space messages. |
 | mailauth: lines that start with other whitespace were separate fields, so a reader could show text the signature didn't cover. | `header smuggling` |
 | mailauth: a message without a body could not be signed. | `messages` |
-| nodemailer GHSA-39m8-27wv-hr27: unfolding was quadratic in continuation lines. | `linear time`: 40,000 continuation lines cost at most 8 times what 10,000 do. |
-| nodemailer: trimming a field name was quadratic in a blank run. | `linear time`, up to 256 KiB of spaces. |
+| nodemailer GHSA-39m8-27wv-hr27: unfolding was quadratic in continuation lines. | `linear time`: 40,000 continuation lines take at most 8 times as long as 10,000. |
+| nodemailer: trimming a field name was quadratic in a blank run. | `linear time`, up to 1 MiB of spaces. |
 | nodemailer: control characters and tag delimiters in the domain and selector were silently removed, so the signature was for a different domain than the caller passed. | Refused with a `RangeError`. |
 | nodemailer: an unusable key made `sign` return `false`, and the message was sent unsigned. | Throws a `TypeError`. |
 
@@ -145,5 +145,5 @@ Each is tested where listed.
 
 - Problems with the key record give `permerror`, not `neutral`: no key, a revoked key, key syntax, an unknown version or type, a key not for email, a hash the key doesn't allow, a key type that doesn't match `a=`, `t=s` with a subdomain `i=`, and a key that doesn't import. RFC 8601 section 2.7.1 defines `permerror` as "a permanent error ... such as an absent or invalid key record", and `neutral` as a signature that couldn't be processed.
 - rsa-sha1 and RSA keys under 1024 bits give `policy`, in every mode. `sign` refuses both.
-- Results hold the domain, selector and `i=` domain as A-labels.
+- Results contain the domain, selector and `i=` domain as A-labels.
 - `verify` has no lenient mode, and no `rejectRsaSha1`, `strict` or `minBitLength` options. `minKeyBits` replaces `minBitLength`.

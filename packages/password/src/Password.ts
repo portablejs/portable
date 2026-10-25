@@ -115,7 +115,7 @@ export async function verify(
 
 export declare namespace needsRehash {
   type Options = {
-    /** Iterations a current hash has at least. @default 600000 */
+    /** The fewest iterations a hash can have without needing a rehash. @default 600000 */
     iterations?: number | undefined;
   };
 }

@@ -29,8 +29,9 @@ function reference(patterns: readonly string[], ns: string): boolean {
 test('enabled agrees with a regex reference for any patterns and namespace', () => {
   fuzz(
     fc.property(fc.array(pattern, { maxLength: 4 }), namespace, (patterns, ns) => {
-      Log.enable(patterns.join(','), { console: false });
-      expect(Log.create(ns).isEnabled()).toBe(reference(patterns, ns));
+      Log.configure({ console: false });
+      Log.enable(patterns.join(','));
+      expect(Log.create(ns).isEnabled('debug')).toBe(reference(patterns, ns));
     }),
   );
 });
@@ -38,7 +39,7 @@ test('enabled agrees with a regex reference for any patterns and namespace', () 
 test('enable either accepts a pattern string or throws a RangeError', () => {
   fuzz(
     fc.property(fc.string({ maxLength: 30 }), (text) => {
-      outcome([RangeError], () => Log.enable(text, { console: false }));
+      outcome([RangeError], () => Log.enable(text));
     }),
   );
 });

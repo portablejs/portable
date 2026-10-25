@@ -13,7 +13,8 @@ const files = dirs.flatMap((dir) =>
     .map((name) => ({ name, bytes: new Uint8Array(readFileSync(new URL(name, dir))) })),
 );
 
-// pngjs's stream parser, its main API. PNG.sync.read also rejects files with bytes after IEND.
+// Decodes with pngjs's stream parser, its main API. PNG.sync.read would also reject files with
+// bytes after IEND.
 function viaPngjs(bytes: Uint8Array) {
   return new Promise<(Metadata & { data: Buffer; gamma: number }) | undefined>((resolve) => {
     let metadata: Metadata;

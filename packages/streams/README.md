@@ -60,7 +60,7 @@ Sources are streams, async iterables or iterables. An error in one source errors
 - It reads the source only as fast as the slowest branch. Once a branch holds `highWaterMark` unread chunks, `tee` stops reading the source until that branch reads, so the fastest branch is at most that far ahead. The platform's `tee()` keeps reading and buffers without limit for a branch that isn't read. `highWaterMark` defaults to 16 chunks. With `unit: 'bytes'` it counts bytes, as `maxBytes` does, and defaults to 65536.
 - Cancelling a branch removes it, and `tee` then reads only as fast as the slowest remaining branch. The source is cancelled when every branch is cancelled, with the reason from the last one. The platform's `tee()` does the same, with both reasons in an array.
 
-An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, reading one branch to the end before reading the next stops after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
+An error in the source errors every branch. Aborting `signal` errors every branch with `signal.reason` and cancels the source. Branches receive the same chunk objects, as with the platform's `tee()` on a stream that isn't a byte stream, so copy a chunk with `chunk.slice()` before changing it. Because of the limit, if you read one branch to the end before you read the next, that read stalls after `highWaterMark` chunks. Read the branches at the same time, or pass `highWaterMark: Infinity`.
 
 ```ts
 const upload = (await request.formData()).get('file') as File;
@@ -85,7 +85,7 @@ await Promise.all([
 | `map(fn, { signal })`, `filter(fn, { signal })`, `tap(fn, { signal })` | `TransformStream`s that call `fn(chunk, index)`. `fn` may return a promise, and chunks stay in order. |
 | `batch(size, { signal })` | A `TransformStream` that groups chunks into arrays of `size`, with a shorter last array. |
 
-Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. Aborting the `signal` of `concat` or `merge` errors the output with `signal.reason` and cancels every source. `fromIterable` and `toAsyncIterable` take no signal: cancel the stream they return, or pass `signal` to the `pipeTo` that reads it.
+Aborting `signal` errors a transform with `signal.reason`, and `pipeThrough` then cancels its source. Aborting the `signal` of `concat` or `merge` errors the output with `signal.reason` and cancels every source. `fromIterable` and `toAsyncIterable` take no signal. Cancel the stream that `fromIterable` returns, or pass `signal` to the `pipeTo` that reads it, and leave a `toAsyncIterable` loop early to cancel its stream.
 
 ```ts
 const lines = Streams.transform(async function* (source: AsyncIterable<string>) {
@@ -120,7 +120,7 @@ class UpperCaseStream extends TransformStream<string, string> {
 
 ## Convert Node streams
 
-`@portable/streams/node` converts a Node `Readable` to a `ReadableStream`, so web stream APIs and the other Portable packages can read the output of a Node library. It imports `node:stream`, so it runs in Node, Bun and Deno, and not in browsers or Cloudflare Workers.
+`@portable/streams/node` converts a Node `Readable` to a `ReadableStream`, so web stream APIs and the other Portable packages can read the output of a Node library. It imports `node:stream`, so it runs in Deno, Bun and Node, and not in browsers or Cloudflare Workers.
 
 ```ts
 import { createReadStream } from 'node:fs';
@@ -169,7 +169,7 @@ The libraries above were written for Node streams. This package reads web stream
 - `maxBytes` cancels the source as soon as the limit is crossed. get-stream's `maxBuffer` kept buffering ([get-stream #42](https://github.com/sindresorhus/get-stream/issues/42)), and raw-body's limit became `NaN` for `ArrayBuffer` chunks, which turned it off.
 - An error in any source of `concat` or `merge` errors the output and cancels the other sources. merge-stream and merge2 didn't propagate errors ([merge-stream #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7)), and concat-stream never called back when the stream errored ([concat-stream #50](https://github.com/max-mapper/concat-stream/issues/50)).
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
-- The collectors reject a number chunk with a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
+- The collectors reject a number chunk with a `TypeError`. In concat-stream, a number chunk exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
 
 ### Compared with `Readable.toWeb`
 
@@ -206,7 +206,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 - `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`, and `toArray` has no limit.
 - raw-body's `limit` accepts a string such as `'1mb'`. `maxBytes` takes a number of bytes, such as `1_000_000`.
-- get-stream's `MaxBufferError` carries the data read so far in `bufferedData`. A collector that fails has already cancelled its source and dropped what it read, so its errors carry no data.
+- get-stream's `MaxBufferError` stores the data read so far in `bufferedData`. A collector that fails has already cancelled its source and dropped what it read, so its errors don't include that data.
 - Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView` and other typed arrays, and concat-stream accepted numbers.
 - Arrays and other iterables are valid sources. get-stream rejected them.
 - merge2 called with several arguments, as in `merge2(a, b, c)`, reads the sources one after another, which is `concat`. `merge` reads them at the same time.

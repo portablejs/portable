@@ -2,7 +2,7 @@
 
 Upstream suite: [dns-packet 5.6.1 `test.js`](https://github.com/mafintosh/dns-packet/blob/master/test.js) (MIT, Mathias Buus). Every case is covered in `dns-packet.conformance.ts` with this package's API. The "unpack" bytes and the RFC 4034 NSEC sample come from that file.
 
-`fixtures/responses.json` holds 48 real responses captured from Cloudflare (`cloudflare-dns.com`) and Google (`dns.google`) over DNS-over-HTTPS, with EDNS and the DO bit set. They cover A, AAAA, MX, TXT, NS, SOA, CAA, SRV, PTR, CNAME chains, DNSKEY, DS, RRSIG, NSEC, NSEC3, TLSA, SSHFP, NAPTR, HTTPS, HINFO (RFC 8482 ANY answers) and NXDOMAIN responses, most with compressed names.
+`fixtures/responses.json` holds 48 real responses captured from Cloudflare (`cloudflare-dns.com`) and Google (`dns.google`) over DNS-over-HTTPS, with EDNS and the DO bit set. They include A, AAAA, MX, TXT, NS, SOA, CAA, SRV, PTR, CNAME chains, DNSKEY, DS, RRSIG, NSEC, NSEC3, TLSA, SSHFP, NAPTR, HTTPS, HINFO (RFC 8482 ANY answers) and NXDOMAIN responses, most with compressed names.
 
 ## Upstream tests
 
@@ -44,7 +44,7 @@ Upstream's `testEncoder` helper encodes a value, decodes it, re-encodes it, and 
 
 ## Known upstream issues
 
-GitHub's issue tracker couldn't be reached from the session that wrote this package, so this list comes from reading dns-packet's source, its changelog and commit history, and its CVE. Each item has a test under `known upstream issues` in `dns-packet.conformance.ts`, and the oracle tests compare around them instead of locking them in.
+We couldn't reach GitHub's issue tracker while writing this package, so this list comes from reading dns-packet's source, its changelog and commit history, and its CVE. Each item has a test under `known upstream issues` in `dns-packet.conformance.ts`, and the oracle tests normalize or leave out the affected input instead of locking the upstream behavior in.
 
 | Upstream behavior | Our behavior | Test |
 | --- | --- | --- |

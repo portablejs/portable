@@ -15,13 +15,13 @@ export declare namespace parseDate {
 }
 
 /**
- * Parses an EXIF date such as `'2013:05:10 15:21:35'` into a `Date`. Takes a tag value as `parse`
- * returns it, so a missing tag or a value that isn't a string returns `undefined`. EXIF dates have
- * no time zone, so pass the matching `OffsetTime*` tag as the `offset` option (`'+02:00'`).
- * Without one, the date is read as UTC, so `getUTCHours()` and the other `getUTC*` methods return
- * the time the camera recorded. Also accepts the ISO 8601 form `'2004-09-04T23:39:06-08:00'` that some
- * writers use. Returns `undefined` for anything else, including the all-zero dates that cameras
- * write when the clock is unset.
+ * Parses an EXIF date such as `'2013:05:10 15:21:35'` into a `Date`. It takes a tag value as
+ * `parse` returns it, and returns `undefined` for a missing tag or a value that isn't a string.
+ * EXIF dates have no time zone, so pass the matching `OffsetTime*` tag as the `offset` option
+ * (`'+02:00'`). Without one, the date is read as UTC, so `getUTCHours()` and the other `getUTC*`
+ * methods return the time the camera recorded. It also accepts the ISO 8601 form
+ * `'2004-09-04T23:39:06-08:00'` that some writers use. It returns `undefined` for anything else,
+ * including the all-zero dates that cameras write when their clock is unset.
  *
  * @example
  * ```ts

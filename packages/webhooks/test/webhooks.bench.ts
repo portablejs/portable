@@ -14,7 +14,7 @@ import { octokitWeb } from './octokit-web.js';
 // than WebCrypto or JavaScript HMAC, so they are measured for reference only. The 25% assertions
 // compare against libraries and native calls that use WebCrypto or a JavaScript HMAC.
 // standardwebhooks hashes in JavaScript, and Node's WebCrypto HMAC is about 7 times slower than a
-// JavaScript one, so it is compared with `hmac` set to @noble/hashes.
+// JavaScript one, so the comparison with standardwebhooks sets `hmac` to @noble/hashes.
 
 const stripe = new Stripe('sk_test_bench');
 const secret = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';

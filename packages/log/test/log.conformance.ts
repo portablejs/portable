@@ -7,7 +7,8 @@ let controller: AbortController;
 beforeEach(() => {
   records = [];
   controller = new AbortController();
-  Log.enable('', { console: false });
+  Log.configure({ console: false });
+  Log.enable('');
   Log.subscribe((record) => records.push(record), { signal: controller.signal });
 });
 
@@ -53,16 +54,20 @@ describe('patterns', () => {
 
   test('spaces and commas separate patterns, and regex characters match literally', () => {
     Log.enable('a.b  c+d,');
-    expect(Log.create('a.b').isEnabled()).toBe(true);
-    expect(Log.create('axb').isEnabled()).toBe(false);
-    expect(Log.create('c+d').isEnabled()).toBe(true);
+    expect(Log.create('a.b').isEnabled('debug')).toBe(true);
+    expect(Log.create('axb').isEnabled('debug')).toBe(false);
+    expect(Log.create('c+d').isEnabled('debug')).toBe(true);
   });
 
   test('an unknown level throws a RangeError and keeps the previous patterns', () => {
     Log.enable('app');
     expect(() => Log.enable('app=verbose')).toThrow(RangeError);
     expect(() => Log.enable('app=')).toThrow(RangeError);
-    expect(Log.create('app').isEnabled()).toBe(true);
+    expect(Log.create('app').isEnabled('debug')).toBe(true);
+  });
+
+  test('patterns that are not a string throw a TypeError', () => {
+    expect(() => Log.enable(undefined as unknown as string)).toThrow(TypeError);
   });
 });
 
@@ -76,20 +81,20 @@ describe('disable', () => {
     Log.enable('test,abc*,-abc');
     const previous = Log.disable();
     expect(previous).toBe('test,abc*,-abc');
-    expect(Log.create('abcd').isEnabled()).toBe(false);
+    expect(Log.create('abcd').isEnabled('debug')).toBe(false);
     Log.enable(previous);
-    expect(Log.create('abcd').isEnabled()).toBe(true);
-    expect(Log.create('abc').isEnabled()).toBe(false);
+    expect(Log.create('abcd').isEnabled('debug')).toBe(true);
+    expect(Log.create('abc').isEnabled('debug')).toBe(false);
   });
 });
 
 describe('loggers', () => {
   test('isEnabled follows later enable calls', () => {
     const log = Log.create('app');
-    expect(log.isEnabled()).toBe(false);
+    expect(log.isEnabled('debug')).toBe(false);
     expect(log.isEnabled('warn')).toBe(true);
     Log.enable('app=info');
-    expect(log.isEnabled()).toBe(false);
+    expect(log.isEnabled('debug')).toBe(false);
     expect(log.isEnabled('info')).toBe(true);
     Log.enable('');
     expect(log.isEnabled('info')).toBe(false);
@@ -163,7 +168,8 @@ describe('withContext', () => {
       },
       getStore: () => store,
     } satisfies Log.ContextStorage;
-    Log.enable('*', { context: storage });
+    Log.configure({ context: storage });
+    Log.enable('*');
     const log = Log.create('app').with({ a: 1 });
     const result = Log.withContext({ requestId: 7 }, () => {
       Log.withContext({ step: 'b' }, () => log.debug('inside'));
@@ -219,7 +225,8 @@ describe('console', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      Log.enable('*', { console: true });
+      Log.configure({ console: true });
+      Log.enable('*');
       Log.create('app:db').debug('connected to %s', 'db');
       Log.create('app:db').with({ id: 1 }).warn({ slow: true });
       expect(log).toHaveBeenCalledWith(
@@ -236,7 +243,7 @@ describe('console', () => {
         { id: 1 },
       );
     } finally {
-      Log.enable(undefined, { console: false });
+      Log.configure({ console: false });
       log.mockRestore();
       warn.mockRestore();
     }
@@ -245,11 +252,12 @@ describe('console', () => {
   test('time prefixes an ISO 8601 timestamp', () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
     try {
-      Log.enable('*', { console: true, time: true });
+      Log.configure({ console: true, time: true });
+      Log.enable('*');
       Log.create('app').info('x');
       expect(info.mock.calls[0]?.[0]).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z %capp%c x$/);
     } finally {
-      Log.enable(undefined, { console: false, time: false });
+      Log.configure({ console: false, time: false });
       info.mockRestore();
     }
   });

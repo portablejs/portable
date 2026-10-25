@@ -100,8 +100,8 @@ export const encode = (text: string): Uint8Array => new TextEncoder().encode(tex
 export const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
 
 /**
- * Builds a gzip member that keeps `data` in stored (uncompressed) deflate blocks, so the bytes of
- * `data` appear unchanged inside the member.
+ * Builds a gzip member with `data` in stored (uncompressed) deflate blocks, so the bytes of `data`
+ * appear unchanged inside the member.
  */
 export function storedGzip(data: Uint8Array): Uint8Array {
   const bytes = [0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, 0, 0xff];

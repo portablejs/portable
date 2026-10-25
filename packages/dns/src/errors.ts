@@ -1,7 +1,7 @@
 import * as Errors from '@portable/errors';
 export declare namespace QueryError {
   /**
-   * The error codes of `node:dns`, so code that checks `error.code` works with either resolver.
+   * The error codes of `node:dns`, so a check of `error.code` works with either resolver.
    * When every endpoint fails, the code describes the last endpoint's failure.
    *
    * - `ENOTFOUND`: the name doesn't exist (NXDOMAIN).
@@ -78,7 +78,7 @@ const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME']);
  * Whether a lookup failed because there are no records to return: the name doesn't exist
  * (`ENOTFOUND`), has no records of the type (`ENODATA`), or can't be a DNS name (`EBADNAME`). It
  * reads `code`, so it works for a `QueryError` from any copy of this package and for errors from
- * `node:dns/promises`. Any other failure is temporary, and a caller can retry it.
+ * `node:dns/promises`. Any other failure is temporary and can be retried.
  *
  * @example
  * ```ts

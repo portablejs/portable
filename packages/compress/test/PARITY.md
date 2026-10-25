@@ -16,7 +16,7 @@ Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master
 | Inflate windowBits 8 to 15 | oracle `decodes what pako compresses > every window size` | windowBits 8 is written as 9 by zlib, so the test starts at 9. |
 | Inflate strategy (5 tests) | oracle `decodes what pako compresses > every strategy` | |
 | Inflate with dictionary (6 tests) | skipped | No dictionary in `DecompressionStream`. |
-| Deflate vs canonical zlib snapshots and vs node.js zlib (defaults, levels, windowBits, memLevel, strategy, raw, dictionary) | oracle `matches node:zlib > our output decodes with node:zlib` and `compresses within 5% of zlib` | These compare pako's bytes with zlib's. Our bytes come from the platform's zlib, so the test checks that node:zlib reads them and that they are no larger than zlib's output. |
+| Deflate vs canonical zlib snapshots and vs node.js zlib (defaults, levels, windowBits, memLevel, strategy, raw, dictionary) | oracle `matches node:zlib > our output decodes with node:zlib` and `compresses within 5% of zlib` | These compare pako's bytes with zlib's. Our bytes come from the platform's zlib, so the test checks that node:zlib reads them and that they are at most 5% larger than zlib's output. |
 
 ## pako `chunks.test.mjs`
 

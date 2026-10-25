@@ -4,8 +4,8 @@ import * as WebPush from '@portable/web-push';
 import { base64url, fromBase64url, userAgent } from './utils.js';
 
 // web-push encrypts and signs with node:crypto's synchronous C++ calls. Node runs each WebCrypto
-// call on its thread pool, and the 9 calls an encryption makes cost about 50 µs each in thread
-// handoffs alone, so web-push is about 3.5 times faster on one message at a time and about 1.4
+// call on its thread pool, and the 11 calls an encryption makes cost about 50 µs each in thread
+// handoffs alone, so web-push is about 2.5 times faster on one message at a time and about 1.2
 // times faster on many concurrent messages. It is measured for reference. The 25% assertions
 // compare with the same WebCrypto calls made directly, with no validation or encoding.
 

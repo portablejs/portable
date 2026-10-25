@@ -30,9 +30,13 @@ describe('patterns match as in debug', () => {
     '*:db',
     'a*:q*',
   ])('%j', (patterns) => {
-    Log.enable(patterns, { console: false });
+    Log.configure({ console: false });
+    Log.enable(patterns);
     createDebug.enable(patterns);
-    const ours = namespaces.map((namespace) => [namespace, Log.create(namespace).isEnabled()]);
+    const ours = namespaces.map((namespace) => [
+      namespace,
+      Log.create(namespace).isEnabled('debug'),
+    ]);
     const theirs = namespaces.map((namespace) => [namespace, createDebug.enabled(namespace)]);
     expect(ours).toEqual(theirs);
   });

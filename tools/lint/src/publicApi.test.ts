@@ -20,6 +20,14 @@ const allowedBooleanNames = new Set([
   'verify',
 ]);
 
+// Functions that may take an optional positional or one that accepts `undefined`: `crc32` copies
+// the signature of `zlib.crc32`, and `parseDate` takes a tag value as `Exif.parse` returns it,
+// which is `undefined` when the tag is missing.
+const allowedOptionalPositionals = new Set([
+  '@portable/compress crc32',
+  '@portable/exif parseDate',
+]);
+
 type Entry = { name: string; subpath: string; file: string };
 
 function entries(): Entry[] {
@@ -104,7 +112,25 @@ function check(): string[] {
         continue;
       }
       for (const signature of type.getCallSignatures()) {
-        for (const parameter of signature.getParameters()) {
+        const parameters = signature.getParameters();
+        for (const [index, parameter] of parameters.entries()) {
+          if (index === parameters.length - 1 && parameter.name === 'options') {
+            continue;
+          }
+          const node = parameter.valueDeclaration;
+          const parameterType = checker.getTypeOfSymbolAtLocation(parameter, declaration);
+          const types = parameterType.isUnion() ? parameterType.types : [parameterType];
+          if (
+            ((node && ts.isParameter(node) && (node.questionToken || node.initializer)) ||
+              types.some((part) => part.flags & ts.TypeFlags.Undefined)) &&
+            !allowedOptionalPositionals.has(name)
+          ) {
+            problems.push(
+              `${name}: positional \`${parameter.name}\` is optional or accepts undefined`,
+            );
+          }
+        }
+        for (const parameter of parameters) {
           const parameterType = checker.getTypeOfSymbolAtLocation(parameter, declaration);
           const types = parameterType.isUnion() ? parameterType.types : [parameterType];
           const nonUndefined = types.filter((part) => !(part.flags & ts.TypeFlags.Undefined));
@@ -137,6 +163,6 @@ function check(): string[] {
   return [...new Set(problems)].sort();
 }
 
-test('public exports have JSDoc, boolean names and no positional booleans', () => {
+test('public exports have JSDoc, boolean names, and no positional booleans or optional positionals', () => {
   expect(check()).toEqual([]);
 }, 120_000);

@@ -15,7 +15,8 @@ export function decodeQuery(request: Request): DnsPacket.DecodedPacket {
 
 /**
  * What a fake server sends back. A packet is encoded as a response to the question, and its
- * fields replace the defaults. `'hang'` never answers, until the request is aborted.
+ * fields replace the defaults. With `'hang'`, the server doesn't answer until the request is
+ * aborted.
  */
 export type Reply = DnsPacket.Packet | Uint8Array<ArrayBuffer> | Response | Error | 'hang';
 

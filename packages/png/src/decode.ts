@@ -32,8 +32,8 @@ export declare namespace decode {
     /** Verify the CRC of every chunk. @default true */
     checkCrc?: boolean | undefined;
     /**
-     * The most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
-     * anything is decompressed or allocated.
+     * The most pixels (`width * height`) to decode. For a larger image, `decode` throws
+     * `MaxPixelsError` before anything is decompressed or allocated.
      * @default Infinity
      */
     maxPixels?: number | undefined;
@@ -49,8 +49,8 @@ export declare namespace decodeSync {
     /** Verify the CRC of every chunk. @default true */
     checkCrc?: boolean | undefined;
     /**
-     * The most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
-     * anything is decompressed or allocated.
+     * The most pixels (`width * height`) to decode. For a larger image, `decodeSync` throws
+     * `MaxPixelsError` before anything is decompressed or allocated.
      * @default Infinity
      */
     maxPixels?: number | undefined;
@@ -60,7 +60,8 @@ export declare namespace decodeSync {
 }
 
 /**
- * Decodes a PNG file to 8-bit RGBA pixels. Decompresses with `DecompressionStream` unless you pass `inflate`.
+ * Decodes a PNG file to 8-bit RGBA pixels. Decompresses with `DecompressionStream` unless you pass
+ * `inflate`.
  *
  * @example
  * ```ts

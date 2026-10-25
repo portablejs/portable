@@ -45,7 +45,7 @@ let textNext = 0;
 
 /**
  * Returns a random integer from `min` to `max`, both included. `min` and `max` must be safe integers,
- * and the range can hold up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`.
+ * and the range can include up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`.
  *
  * Every integer in the range is equally likely. When a random value is at or above the largest
  * multiple of the range size, `int` draws a new one instead of reducing it with a modulo.
@@ -91,9 +91,9 @@ export declare namespace string {
 /**
  * Returns a random string of `length` characters, each picked with equal chance from `alphabet`.
  * The default alphabet is the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21
- * characters hold 126 random bits, as in a nanoid.
+ * characters have 126 random bits, as in a nanoid.
  *
- * `alphabet` is split into code points, so it can hold emoji. A character listed
+ * `alphabet` is split into code points, so it can include emoji. A character listed
  * twice is picked twice as often.
  *
  * @example

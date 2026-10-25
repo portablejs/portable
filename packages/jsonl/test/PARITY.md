@@ -26,13 +26,13 @@ Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 | --- | --- | --- |
 | stringer: json streaming objects, json streaming primitives | `stream-json jsonl > encodes several values read back from lines` | |
 | jsonl parser: len=1, 2, 3, 5, 10, len=5 quant=3, len=10 quant=7 | `stream-json jsonl > decodes <n> lines from <size>-character chunks` | |
-| jsonl parser: file | `ndjson > decodes the ndjson fixture` | Reads a gzipped file with `node:fs`. |
+| jsonl parser: file | `ndjson > decodes the ndjson fixture` | Upstream reads a gzipped file with `node:fs`. |
 | jsonl stringer: single, multiple | `stream-json jsonl > encodes one value…`, `encodes several values…` | |
 | jsonl stringer: default separator | `stream-json jsonl > separates values with \n` | |
 | jsonl stringer: custom separator | skipped | NDJSON lines end in `\n`. |
 | jsonl parser: invalid JSON at end, in middle | `stream-json jsonl > fails on an invalid last line`, `fails on an invalid line in the middle, naming the line` | |
 | jsonl parser: skip errors | `stream-json jsonl > skips invalid lines in the middle and at the end` | |
-| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | Only `'error'` and `'skip'`. To recover lines yourself, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse`. |
+| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | `invalid` takes only `'error'` and `'skip'`. To recover lines yourself, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse`. |
 
 ## Known upstream issues
 
@@ -40,6 +40,6 @@ Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 | --- | --- |
 | ndjson #6: a `null` line ends the stream, because Node object streams treat `null` as the end. | `known upstream issues > emits a null line instead of ending the stream (ndjson #6)` |
 | ndjson reports a whitespace-only line as invalid. | `known upstream issues > skips whitespace-only lines, which ndjson reports as invalid` |
-| ndjson ends lines with `os.EOL`, so Windows writes `\r\n`. | `known upstream issues > ends lines with \n on every platform (ndjson uses os.EOL)` |
+| ndjson ends lines with `os.EOL`, so it writes `\r\n` on Windows. | `known upstream issues > ends lines with \n on every platform (ndjson uses os.EOL)` |
 
 The oracle tests compare `DecoderStream` with `ndjson.parse()` on randomly chunked input, and `EncoderStream` with `ndjson.stringify()` on values without circular references. The encoder comparison is skipped on Windows because of the `os.EOL` issue above.

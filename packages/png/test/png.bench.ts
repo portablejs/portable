@@ -11,9 +11,10 @@ const bytes = new Uint8Array(file);
 const image = Png.decodeSync(bytes, { inflate: inflateSync });
 const pngjsImage = PNG.sync.read(file);
 
-// Node's DecompressionStream hands zlib to the thread pool one 16 KiB output chunk at a time,
-// about 190 round trips for this image, which costs 10 to 25 ms depending on load. Our own code
-// is measured through node:zlib and held to 25%. The DecompressionStream path is held to 50%.
+// Node's DecompressionStream sends zlib work to the thread pool one 16 KiB output chunk at a time,
+// about 190 round trips for this image, which costs 10 to 25 ms depending on load. Our own code is
+// measured through node:zlib and must stay within 25% of pngjs, and the DecompressionStream path
+// within 50%.
 test('decodes a 1024x1024 PNG within 25% of pngjs', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/png (DecompressionStream)', async () => {

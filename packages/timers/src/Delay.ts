@@ -34,7 +34,7 @@ export type Backoff = {
 export type Context = {
   /** The attempt number, starting at 1. */
   attempt: number;
-  /** Aborts when the caller's `signal` aborts or the `timeout` passes. Pass it to `fetch`. */
+  /** Aborts when the `signal` option aborts or the `timeout` passes. Pass it to `fetch`. */
   signal: AbortSignal;
 };
 

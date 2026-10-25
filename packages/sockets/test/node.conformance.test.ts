@@ -1,5 +1,5 @@
-// The Node adapter's conformance tests. They need node:net servers, so they run in Node, Bun and
-// Deno but not in browsers: the file name ends in `.test.ts`, which the browser project skips, and
+// The Node adapter's conformance tests. They need node:net servers, so they run in Deno, Bun and
+// Node but not in browsers: the file name ends in `.test.ts`, which the browser project skips, and
 // contains `conformance`, which `pnpm test:bun` and `pnpm test:deno` select.
 import { byteForms, rejectedByteForms, toByteForm } from '@portable/fuzz';
 import type * as Sockets from '@portable/sockets';

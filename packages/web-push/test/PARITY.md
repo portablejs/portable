@@ -29,7 +29,7 @@ The RFC 8291 Appendix A vector is in `encrypt.conformance.ts` ("encrypts the exa
 | generate vapid keys with padding (mocks a 27-byte private key) | Same test, run 50 times. WebCrypto exports `d` as a JWK field, which RFC 7518 §6.2.2.1 fixes at 32 bytes, so there is no short key to pad. The upstream mock tests web-push's padding code, which we don't have. |
 | generate new vapid keys between calls | generateVapidKeys > returns a new key pair on every call |
 | bad input: no arguments; audience only; no keys; no private key | VAPID Authorization header > rejects a missing vapid option, > rejects an empty private key |
-| bad input: audience `'Not a URL'`, audience object | send > rejects an endpoint that is not a URL, > an object endpoint. The audience comes from the endpoint, so the caller can't pass a bad one. |
+| bad input: audience `'Not a URL'`, audience object | send > rejects an endpoint that is not a URL, > an object endpoint. The audience comes from the endpoint, so you can't pass a bad one. |
 | bad input: http: and ftp: subjects, `'Some Random String'`, object subject | VAPID Authorization header > rejects an http: subject, an ftp: subject, a subject that is not a URL, an object subject |
 | bad input: public key `'Example key'`, `Buffer.alloc(5)` | > rejects a public key that is not base64url, an object public key |
 | bad input: private key `'Example Key'`, `Buffer.alloc(5)` | > rejects a private key that is not base64url, an object private key |
@@ -63,7 +63,7 @@ The RFC 8291 Appendix A vector is in `encrypt.conformance.ts` ("encrypts the exa
 | userPublicKey too long or too short; userAuth too short | encrypt > rejects … p256dh one byte too long, one byte too short, auth of 15 bytes |
 | payload isn't a string or buffer | send > rejects a payload that is not a string or bytes |
 | invalid `vapid` option (instead of `vapidDetails`) | Covered by types: `vapid` is the option and is required. VAPID Authorization header > rejects a missing vapid option. |
-| duplicated headers | Not applicable: no `headers` option. Callers who need extra headers use `toRequest` and set them on the `Request`. |
+| duplicated headers | Not applicable: no `headers` option. To add headers, call `toRequest` and set them on the `Request`. |
 | invalid agent; ignore agent if proxy defined; proxy option; proxy as object; agent option | Not applicable: no `agent` or `proxy`. Pass a `fetch` that uses one. |
 | Extra headers (TTL, Topic, Urgency) | send > sends ttl, sends urgency, sends a topic |
 | Audience contains port with aes128gcm | VAPID Authorization header > keeps a non-default port in the audience |
@@ -115,10 +115,10 @@ Runs a real Chrome and Firefox, subscribes, sends through Google's and Mozilla's
 | Issue | Ours |
 | --- | --- |
 | Node only: `crypto.createECDH`, `https.request` and `Buffer` fail on Cloudflare Workers ([#718](https://github.com/web-push-libs/web-push/issues/718)), and Deno payloads failed to decrypt in Chrome ([#904](https://github.com/web-push-libs/web-push/issues/904)). | Only WebCrypto and `fetch`. Every conformance test also runs in Chromium. |
-| No way to tell a gone subscription from other errors. Callers check `statusCode` themselves ([#885](https://github.com/web-push-libs/web-push/issues/885)). | send > returns gone for status 404 and 410 |
+| No way to tell a gone subscription from other errors, so you have to check `statusCode` yourself ([#885](https://github.com/web-push-libs/web-push/issues/885)). | send > returns gone for status 404 and 410 |
 | No payload size check. http_ece splits a payload over about 4079 bytes into several records, which no push service accepts, and FCM and Apple reject bodies over 4096 bytes. | encrypt > accepts 3993 bytes as one 4096-byte record, > rejects a payload one byte over the limit with MaxBytesError |
 | `TTL: NaN` and fractions pass the `< 0` check and are sent, and Apple answers `BadTtl`. Before PR #492, `TTL: 0` became the four-week default ([#284](https://github.com/web-push-libs/web-push/issues/284)). | send > rejects ttl -1, 1.5, NaN, Infinity, '60'; > sends ttl 0 |
-| `mailto: user@example.com` with a space passes validation and Apple rejects the token ([#939](https://github.com/web-push-libs/web-push/issues/939)). The localhost warning reads `URL.hostname`, which is empty for `mailto:`. | VAPID Authorization header > rejects a mailto: subject with a space. A localhost subject is accepted, as upstream, and the README says Apple rejects it. |
+| `mailto: user@example.com` with a space passes validation and Apple rejects the token ([#939](https://github.com/web-push-libs/web-push/issues/939)). The localhost warning reads `URL.hostname`, which is empty for `mailto:`. | VAPID Authorization header > rejects a mailto: subject with a space. A localhost subject is accepted, as upstream, and the JSDoc of `Vapid.subject` says Apple rejects it. |
 | A new JWT for every message. Apple asks senders not to refresh tokens more than once an hour. | VAPID Authorization header > reuses a token for the same origin and keys |
 | A token signed with mismatched VAPID keys is sent, and the push service rejects it ([#679](https://github.com/web-push-libs/web-push/issues/679)). | VAPID Authorization header > rejects a private key that belongs to another public key |
 | `p256dh` is checked only for length, so a key off the curve fails deep inside OpenSSL ([#292](https://github.com/web-push-libs/web-push/issues/292)), and `Buffer.from(…, 'base64url')` skips characters outside the alphabet. `auth` longer than 16 bytes is accepted. | encrypt > rejects … p256dh not on the curve, compressed, with characters outside base64, auth of 17 bytes |

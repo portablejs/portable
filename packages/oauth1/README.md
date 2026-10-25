@@ -28,7 +28,7 @@ const response = await fetch(
 The signature covers what the server will see, because it is computed from the `Request` itself:
 
 - The method is upper-cased. The URL is normalized by the `URL` parser: scheme and host are lowercased, the default port is dropped, an empty path becomes `/` and the fragment is ignored.
-- Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Bytes that aren't UTF-8 keep their value.
+- Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Percent-encoded bytes that aren't UTF-8 are re-encoded unchanged.
 - JSON, multipart and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
 
 ## Options
@@ -83,8 +83,8 @@ await OAuth1.sign(request, { consumer, token, hmac });
 | `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
 | `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
 | `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
-| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
-| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. OAuth 1.0a passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
 
 ## Why use this over oauth-1.0a and node-oauth
 
@@ -101,7 +101,7 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 - The header separator is always `", "` and the nonce is always 32 hex digits, so oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.
 - If you overrode oauth-1.0a's `getTimeStamp`, which returns seconds, pass `now: new Date(seconds * 1000)` instead, because `now` takes a `Date` or a `Temporal.Instant`.
 - oauth-1.0a can put the protocol parameters in a form body. This package puts them only in the `Authorization` header, or in the URL with `placement: 'query'`.
-- The package has no HTTP client. `fetch` follows redirects with the same `Authorization` header, whose signature covers the old URL, where node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
+- The package has no HTTP client. On a same-origin redirect, `fetch` sends the same `Authorization` header, whose signature covers the old URL, and on a cross-origin redirect it drops the header. node-oauth signs the request again for the new URL. To do the same, pass `redirect: 'manual'` and sign a new request for the `Location`.
 
 ### Performance
 

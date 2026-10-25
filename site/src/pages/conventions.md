@@ -34,7 +34,7 @@ Functions take and return bytes as `Uint8Array`, never `ArrayBuffer` or another 
 
 ## Options
 
-A function takes the value it acts on as a positional argument and its settings in one optional `options` object, which comes last. A function that mirrors a platform function, such as `Compress.crc32(data, previous)`, copies that function's signature. No function takes a positional boolean.
+A function takes the value it acts on as a positional argument and its settings in one optional `options` object, which comes last. A function whose inputs have distinct roles takes them in one object instead, such as `WebPush.send({ subscription, payload, vapid })`. A function that mirrors a platform function, such as `Compress.crc32(data, previous)`, copies that function's signature. No function takes a positional boolean.
 
 ## Times
 
@@ -46,7 +46,7 @@ Every async function and every stream takes `signal?: AbortSignal` in its option
 
 ## Connections and other long-lived objects
 
-Some objects keep running after the call that created them returns. An SMTP client stops when you call its `close()` method, and a debounced function when you call `cancel()`. A queue and a WebSocket from `WebSockets.connect` stop when you abort the `signal` you passed when you created them. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Node 24, Deno and Bun), the object also works with `await using`, which stops it when the block exits:
+Some objects keep running after the call that created them returns. An SMTP client stops when you call its `close()` method, and a debounced function when you call `cancel()`. A queue and a WebSocket from `WebSockets.connect` stop when you abort the `signal` you passed when you created them. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Deno, Bun and Node 24), the object also works with `await using`, which stops it when the block exits:
 
 ```ts
 import { connect } from 'cloudflare:sockets';
@@ -70,7 +70,7 @@ Functions throw errors instead of returning them.
 
 Each error's `name` starts with the package's namespace, such as `Lines.MaxLengthError`.
 
-Every error class extends a class from [`errors`](/packages/errors). `Errors.is(error, 'MaxBytes')` matches any package's `MaxBytesError`, even when an app has two copies of the package.
+Every error class extends a class from [`errors`](/packages/errors). `Errors.is(error, 'MaxBytes')` matches any package's `MaxBytesError`, even when two copies of the package are installed.
 
 ## Results
 

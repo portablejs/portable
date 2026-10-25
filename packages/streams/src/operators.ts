@@ -103,7 +103,7 @@ export declare namespace tap {
 
 /**
  * A `TransformStream` that calls `fn(chunk, index)` for each chunk and passes the chunk on
- * unchanged. If `fn` returns a promise, the chunk waits for it.
+ * unchanged. If `fn` returns a promise, the chunk is passed on once it resolves.
  *
  * @example
  * ```ts

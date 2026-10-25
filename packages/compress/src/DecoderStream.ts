@@ -21,8 +21,7 @@ export declare namespace DecoderStream {
     /** Fail with `MaxBytesError` and cancel the input once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined;
     /**
-     * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
-     * cancel the source.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
   };
@@ -31,7 +30,7 @@ export declare namespace DecoderStream {
 /**
  * A `TransformStream` that decompresses with `DecompressionStream`, adding a `maxBytes` limit and
  * the package's error classes. Input chunks that arrive while the decompressor is busy are joined
- * into one write, so small network chunks don't each pay the decompressor's per-chunk cost.
+ * into one write, so each small network chunk doesn't add the decompressor's per-chunk cost.
  *
  * @example
  * ```ts

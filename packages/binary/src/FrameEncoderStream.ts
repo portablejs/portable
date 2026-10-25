@@ -7,8 +7,7 @@ import { assertPrefix, maxFrameBytes, prefixLength, writePrefix, type Prefix } f
 export declare namespace FrameEncoderStream {
   type Options = {
     /**
-     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
-     * from.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
     /** How each frame stores its length. @default 'varint' */

@@ -1,7 +1,7 @@
 /**
  * Where a limiter keeps one number per key. `get` returns the stored number, or `undefined` for a
- * missing or expired key. `set` writes `value` only if the key still holds `expected`, and returns
- * whether it wrote. Either method may return a promise.
+ * missing or expired key. `set` writes `value` only if the key's value is still `expected`, and
+ * returns whether it wrote. Either method may return a promise.
  */
 export type Store = {
   get(key: string, options: Store.GetOptions): Store.MaybePromise<number | undefined>;

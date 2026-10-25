@@ -2,16 +2,15 @@ import { assertUint8Array } from '@portable/bytes/internal';
 import * as Streams from '@portable/streams';
 import { MaxLengthError } from './errors.js';
 /**
- * Splits text into lines. A string matches literally, and anything with `[Symbol.split]`, such as a
- * `RegExp`, is used as is.
+ * The separator `DecoderStream` splits lines at. A string is matched literally, and anything with
+ * `[Symbol.split]`, such as a `RegExp`, is used as is.
  */
 export type Separator = string | { [Symbol.split](text: string, limit?: number): string[] };
 
 export declare namespace DecoderStream {
   type Options = {
     /**
-     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
-     * from.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
     /** Text encoding of byte chunks, as a `TextDecoder` label. @default 'utf-8' */
@@ -63,8 +62,8 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     const decoder = new TextDecoder(encoding);
     const splitLines = (text: string) =>
       typeof separator === 'string' ? text.split(separator) : text.split(separator);
-    // The end of `partial` may be the start of a string separator, so that much of it doesn't count
-    // toward `maxLength`, and that part is kept when an overflowing line is dropped.
+    // The end of `partial` may be the start of a string separator, so its last `slack` characters
+    // don't count toward `maxLength` and are kept when an overflowing line is dropped.
     const slack = typeof separator === 'string' ? Math.max(separator.length - 1, 0) : 0;
     const tail = (text: string) => (slack === 0 ? '' : text.slice(-slack));
     // Splitting `partial + text` again for every chunk of a long line takes quadratic time, so

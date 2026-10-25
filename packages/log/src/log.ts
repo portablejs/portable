@@ -16,7 +16,10 @@ export type Record = {
   properties: Properties;
 };
 
-/** A logger made by `create`. Its methods don't use `this`, so they can be passed around alone. */
+/**
+ * A logger made by `create`. Its methods don't use `this`, so you can destructure them or pass one
+ * as a callback.
+ */
 export type Logger = {
   /** Logs at debug level. Off unless a pattern enables the namespace. */
   debug: (...args: readonly unknown[]) => void;
@@ -28,16 +31,16 @@ export type Logger = {
   error: (...args: readonly unknown[]) => void;
   /** Returns a logger for `namespace:suffix` with the same properties. */
   extend: (suffix: string) => Logger;
-  /** Returns a logger with the same namespace whose records also carry `properties`. */
+  /** Returns a logger with the same namespace whose records also include `properties`. */
   with: (properties: Properties) => Logger;
-  /** Whether a call at `level` would log with the current patterns. Defaults to `'debug'`. */
-  isEnabled: (level?: Level) => boolean;
+  /** Whether a call at `level` would log with the current patterns. */
+  isEnabled: (level: Level) => boolean;
   readonly namespace: string;
 };
 
 /**
- * Storage for `withContext`. Node's `AsyncLocalStorage` has this shape, and so does
- * `AsyncLocalStorage` in Bun, Deno and Cloudflare Workers with `nodejs_compat`.
+ * Storage for `withContext`. `AsyncLocalStorage` has this shape in Cloudflare Workers with
+ * `nodejs_compat`, Deno, Bun and Node.
  */
 export type ContextStorage = {
   run: <result>(store: Properties, fn: () => result) => result;
@@ -48,6 +51,11 @@ export declare namespace enable {
   type Options = {
     /** Also writes the patterns to `localStorage.debug`, so they apply after a reload. @default false */
     persist?: boolean | undefined;
+  };
+}
+
+export declare namespace configure {
+  type Options = {
     /** Writes enabled calls to `console`. Set to `false` to log only through `subscribe`. @default true */
     console?: boolean | undefined;
     /** Prefixes console output with an ISO 8601 timestamp. @default false */
@@ -213,7 +221,7 @@ function hue(namespace: string): number {
  *
  * @example
  * ```ts
- * Log.enable(undefined, { console: false });
+ * Log.configure({ console: false });
  * Log.subscribe((record) => Log.console({ ...record, properties: redact(record.properties) }));
  * ```
  */
@@ -276,7 +284,7 @@ function make(namespace: string, properties: Properties): Logger {
     error: (...args) => emit(3, args),
     extend: (suffix) => make(`${namespace}:${suffix}`, properties),
     with: (more) => make(namespace, { ...properties, ...more }),
-    isEnabled: (level = 'debug') => isEnabled(levels.indexOf(level)),
+    isEnabled: (level) => isEnabled(levels.indexOf(level)),
     namespace,
   };
 }
@@ -298,19 +306,37 @@ export function create(namespace: string): Logger {
 
 /**
  * Sets which namespaces log, with debug's pattern syntax plus an optional minimum level:
- * `app:*,-app:noisy,lib:*=warn`. Pass `undefined` to keep the current patterns and change only
- * options. Throws a `RangeError` for an unknown level.
+ * `app:*,-app:noisy,lib:*=warn`. Throws a `RangeError` for an unknown level.
  *
  * @example
  * ```ts
- * Log.enable('app:*', { time: true });
+ * Log.enable('app:*,-app:noisy');
  * ```
  */
-export function enable(patterns: string | undefined, options: enable.Options = {}): void {
-  start();
-  if (patterns !== undefined) {
-    apply(patterns);
+export function enable(patterns: string, options: enable.Options = {}): void {
+  if (typeof patterns !== 'string') {
+    throw new TypeError('patterns must be a string.');
   }
+  start();
+  apply(patterns);
+  if (!options.persist || !state.storage) {
+    return;
+  }
+  try {
+    state.storage.setItem('debug', patterns);
+    state.stored = patterns;
+  } catch {}
+}
+
+/**
+ * Sets how enabled calls are written. It changes only the options you pass.
+ *
+ * @example
+ * ```ts
+ * Log.configure({ time: true });
+ * ```
+ */
+export function configure(options: configure.Options): void {
   if (options.console !== undefined) {
     state.console = options.console;
   }
@@ -320,13 +346,6 @@ export function enable(patterns: string | undefined, options: enable.Options = {
   if (options.context !== undefined) {
     state.context = options.context;
   }
-  if (patterns === undefined || !options.persist || !state.storage) {
-    return;
-  }
-  try {
-    state.storage.setItem('debug', patterns);
-    state.stored = patterns;
-  } catch {}
 }
 
 /**
@@ -368,7 +387,7 @@ export function subscribe(
 
 /**
  * Runs `fn` with `properties` added to every record logged during the call, including records from
- * loggers created elsewhere. Needs a `context` storage passed to `enable`. Without one it just
+ * loggers created elsewhere. Needs a `context` storage passed to `configure`. Without one it just
  * calls `fn`.
  *
  * @example

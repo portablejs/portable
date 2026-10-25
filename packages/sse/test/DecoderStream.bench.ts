@@ -60,7 +60,7 @@ async function drain<chunk>(stream: ReadableStream<chunk>): Promise<number> {
   return count;
 }
 
-// What a caller writes without a library: buffer the text, split events on a blank line and
+// The code you would write without a library: buffer the text, split events on a blank line and
 // keep the `data:` lines. It handles only LF line breaks, and splitting the whole buffer on
 // every chunk makes a long line quadratic, so it doesn't run on the 1 MB fixture.
 class HandWrittenStream extends TransformStream<Uint8Array, { event: string; data: string }> {

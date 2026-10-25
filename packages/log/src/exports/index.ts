@@ -1,5 +1,6 @@
 export { format } from '../format.js';
 export {
+  configure,
   type ContextStorage,
   create,
   disable,

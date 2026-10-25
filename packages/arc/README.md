@@ -8,7 +8,7 @@ Replaces the ARC parts of [mailauth](https://www.npmjs.com/package/mailauth).
 npm install @portable/arc @portable/dns
 ```
 
-A forwarder, such as a mailing list, validates the chain that arrived and seals the message with the result before it changes the message:
+If you forward mail, as a mailing list does, verify the chain that arrived and seal the message with the result before you change it:
 
 ```ts
 import * as Arc from '@portable/arc';
@@ -41,7 +41,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `cause` | The resolver's error when a key lookup failed. |
 | `sets` | On `pass`, each set from `i=1` to the newest, with the sealer's `domain` and `selector` and its `authResults`, the ARC-Authentication-Results text after `i=`. Empty otherwise. |
 
-A receiver uses `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
+Use `sets` to decide whether to trust what an intermediary recorded. ARC proves who sealed each set, not that the sealer told the truth, so only read `authResults` of a sealer you trust:
 
 ```ts
 const google = arc.result === 'pass' && arc.sets.find((set) => set.domain === 'google.com');
@@ -53,12 +53,12 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) {
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
 
-The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, as every ARC failure is permanent (RFC 8617 section 5.2).
+The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, because every ARC failure is permanent (RFC 8617 section 5.2).
 
 ## Sealing
 
@@ -72,13 +72,13 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `now` | `new Date()` | The time (`t=`) of both signatures. A `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time (`t=`) of both signatures, as a `Date` or a `Temporal.Instant`. |
 | `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 
 With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a broken chain is sealed as failed and stays failed. A message whose ARC fields are all malformed is sealed with `i=1` and `cv=fail`.
 
-`seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't fit the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal says `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
+`seal` throws a `TypeError` or `RangeError` for invalid options, such as an `authResults` with a line break that is not folding or a `chainValidation` that doesn't match the message (`pass` or `fail` on a message without ARC fields, `none` on one with them, `pass` on one whose ARC fields are all malformed). It throws `Arc.InvalidInputError` for a message it must not seal: one without a From field, one whose newest ARC-Seal has `cv=fail`, one that already has 50 sets, or a `cv=pass` seal over sets that can't be read.
 
 ## Types
 
@@ -122,7 +122,7 @@ Differences to check when you switch from mailauth:
 - mailauth's `arc.status.comment` also holds a comment for a pass. `reason` is set only for failures, and `@portable/mail-auth` builds the pass comment (`i=1 spf=pass dkim=pass`).
 - mailauth parses `arc.authenticationResults`. Each entry of `sets` holds `authResults` as text.
 - mailauth's `arc.signature` has no equivalent. A failing ARC-Message-Signature is described in `reason`.
-- mailauth's `arc.status.shouldSeal` has no equivalent. `seal` throws `Arc.InvalidInputError` when the newest seal says `cv=fail`.
+- mailauth's `arc.status.shouldSeal` has no equivalent. `seal` throws `Arc.InvalidInputError` when the newest seal has `cv=fail`.
 - mailauth's `sealMessage` resolves to a `Buffer`, and `seal` resolves to a string.
 - mailauth's `seal.i` has no equivalent. The instance is always one more than the highest on the message.
 - mailauth's `seal.bodyHash` and `seal.headers` let it seal without the message. `seal` always reads the message.

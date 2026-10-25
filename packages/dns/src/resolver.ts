@@ -24,8 +24,8 @@ export type SoaRecord = {
 
 /**
  * A certification authority authorization, as `resolveCaa` returns it. `critical` is the whole
- * flags byte (128 when the issuer-critical bit is set), and the tag is the key of the value. A tag
- * not listed here is still set on the object.
+ * flags byte (128 when the issuer-critical bit is set), and each value is stored under its tag. A
+ * tag not listed here is set on the object too.
  */
 export type CaaRecord = {
   critical: number;

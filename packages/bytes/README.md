@@ -1,6 +1,6 @@
 # @portable/bytes
 
-Hex encoding, concatenation and comparison for `Uint8Array`. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
+Converts `Uint8Array`s to and from hex, concatenates them and compares them, with a constant-time comparison for secrets. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces the hex, concat and equality functions of [uint8array-extras](https://www.npmjs.com/package/uint8array-extras), and `crypto.timingSafeEqual` from `node:crypto`.
 
@@ -52,13 +52,13 @@ new Uint8Array(arrayBuffer);
 new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 ```
 
-A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk, or the function may read some bytes before the write and some after.
+A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles or the stream has read the chunk. Otherwise the function may read some bytes before the write and some after.
 
 ## Why use this over uint8array-extras and node:crypto
 
 - `node:crypto` exists only in Node, Deno and Bun. This package runs in browsers and Workers too.
-- `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so every caller has to check the length first or catch the error.
-- `fromHex` throws `Bytes.InvalidInputError`, which a caller can tell apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
+- `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so you have to check the length first or catch the error.
+- `fromHex` throws `Bytes.InvalidInputError`, so you can tell it apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
 - Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, and passing `view.buffer` by mistake reads every byte of the buffer, not only the view's.
 
 Node's `Buffer` methods are C++ and are faster on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.

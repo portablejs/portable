@@ -14,7 +14,7 @@ afterAll(() => {
 test('reads process.env.DEBUG when the first logger is created', async () => {
   env.DEBUG = 'app:*,-app:noisy';
   const Log = await import('@portable/log');
-  expect(Log.create('app:db').isEnabled()).toBe(true);
+  expect(Log.create('app:db').isEnabled('debug')).toBe(true);
   expect(Log.create('app:noisy').isEnabled('error')).toBe(false);
   expect(Log.disable()).toBe('app:*,-app:noisy');
 });

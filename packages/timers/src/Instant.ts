@@ -1,5 +1,5 @@
 /**
- * A point in time that an option such as `now` or `expiresAt` accepts: a `Date`, or any object
+ * A point in time, as passed to an option such as `now` or `expiresAt`: a `Date`, or any object
  * with `epochMilliseconds`, such as a `Temporal.Instant` or `Temporal.ZonedDateTime`.
  */
 export type Instant = Date | { readonly epochMilliseconds: number };

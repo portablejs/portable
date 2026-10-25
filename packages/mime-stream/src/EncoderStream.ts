@@ -10,8 +10,7 @@ export declare namespace EncoderStream {
 
   type Options = {
     /**
-     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
-     * from.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
   };

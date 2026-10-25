@@ -44,7 +44,7 @@ There is no compression level option and no dictionary, because `CompressionStre
 | `InvalidInputError` | The input is malformed, fails its checksum, or has bytes after its end. |
 | `MaxBytesError` | The output grew past `maxBytes`. Its `maxBytes` property holds the limit. |
 
-The platform reports every failure as a `TypeError`. The error's `cause` holds it.
+The platform reports every failure as a `TypeError`, and each of these errors stores that `TypeError` as its `cause`.
 
 ## Types
 
@@ -54,13 +54,13 @@ The platform reports every failure as a `TypeError`. The error's `cause` holds i
 
 ## Why use this over pako, fflate and node:zlib
 
-pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` runs only in Node and Bun.
+pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` doesn't run in browsers, and Cloudflare Workers need the `nodejs_compat` flag for it.
 
 - `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and fflate allocates its output from the length field, so a forged length gives truncated output (fflate #161, #181).
 - `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).
 - `decode` and `DecoderStream` throw `TruncatedError` for truncated input instead of returning partial output, and `InvalidInputError` for a bad trailer, in every runtime. Deno's `DecompressionStream` returns partial output for a cut-short deflate stream and reports a bad gzip trailer as input that ended early, so on Deno they check the end of the stream and the trailer themselves.
 - `decode` reads every member of a multi-member gzip file, such as BGZF or `cat a.gz b.gz`. fflate returns only the first member (fflate #102), and `DecompressionStream` throws.
-- `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and each chunk pays the decompressor's and every later stage's per-chunk cost. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
+- `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and every chunk adds the per-chunk cost of the decompressor and of each later stage. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
 
 In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at about the speed of the `crc-32` package, and `node:zlib`'s runs in native code.
 

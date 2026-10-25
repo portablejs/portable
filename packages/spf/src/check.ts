@@ -38,17 +38,17 @@ export type Result = {
   identity: 'mailfrom' | 'helo';
   /** The term that matched, as written in the record, such as `include:_spf.example.com`. */
   mechanism?: string | undefined;
-  /** The SPF record that gave the result. After `redirect=`, the record of the redirect target. */
+  /** The SPF record that gave the result. After a `redirect=`, it is the target's record. */
   record?: string | undefined;
-  /** The domain owner's `exp=` text. Set only for `fail`. It is third-party text. */
+  /** The text of the domain owner's `exp=` modifier, set only for `fail`. Treat it as untrusted. */
   explanation?: string | undefined;
   /** Why the result is `none`, `temperror` or `permerror`. */
   reason?: string | undefined;
   /** The resolver's error behind a `temperror`. */
   cause?: unknown;
-  /** DNS-querying terms evaluated. More than 10 gives `permerror`. */
+  /** The number of DNS-querying terms evaluated. More than 10 gives `permerror`. */
   lookups: number;
-  /** Lookups that found no records. More than 2 gives `permerror`. */
+  /** The number of lookups that found no records. More than 2 gives `permerror`. */
   voidLookups: number;
 };
 
@@ -61,8 +61,8 @@ export declare namespace check {
     /** The SMTP client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address is checked as IPv4. */
     ip: string;
     /**
-     * The MAIL FROM address. Empty or missing for a bounce, and then the HELO name is checked
-     * instead.
+     * The MAIL FROM address. It is empty or missing for a bounce, and then the HELO name is
+     * checked instead.
      */
     sender?: string | undefined;
     /** The HELO or EHLO name. */
@@ -79,7 +79,7 @@ export declare namespace check {
      * @default new Date()
      */
     now?: Instant | undefined;
-    /** Rejects with `signal.reason` and cancels the pending lookups when aborted. */
+    /** Aborting rejects `check` with `signal.reason` and cancels the pending lookups. */
     signal?: AbortSignal | undefined;
   };
 }

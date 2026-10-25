@@ -1,7 +1,7 @@
 // Writes .bench/sizes.json: for each column of each package's tables in scripts/readme-tables.ts,
-// the imports a caller uses, bundled for the browser, minified and gzipped, and the Node built-ins
-// the bundle needs. Our packages are bundled from `dist/`, so run `pnpm build` first. Pass package
-// names to measure only those and keep the other entries.
+// the gzipped size of the imports a caller uses, bundled for the browser and minified, and the Node
+// built-ins the bundle needs. Our packages are bundled from `dist/`, so run `pnpm build` first.
+// Pass package names to measure only those and keep the other entries.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { isBuiltin } from 'node:module';
 import { resolve } from 'node:path';

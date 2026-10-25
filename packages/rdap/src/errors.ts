@@ -32,8 +32,7 @@ export class UnsupportedError extends Errors.UnsupportedError {
 
 /**
  * Thrown when the RDAP server answers 404 Not Found: the domain isn't registered, or no network
- * or AS number record covers the query. `response` holds the 404 response, with its body
- * cancelled.
+ * or AS number record covers the query. `response` is the 404 response, with its body cancelled.
  *
  * @example
  * ```ts

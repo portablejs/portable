@@ -13,7 +13,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | throws useful error message when non-error is thrown | `retry > attempts > rethrows a non-Error value unchanged` | Deliberate difference: p-retry wraps it in a `TypeError`. |
 | no retry on TypeError | `retry > attempts > retries a TypeError` | Deliberate difference. See known issues. |
 | shouldRetry is not called for non-network TypeError | `retry > attempts > retries a TypeError` | Same difference. |
-| async shouldRetry respects maxRetryTime after callback | `retry > signal > stops during an async retryIf` | No `maxRetryTime`. A caller `signal` limits the whole call. |
+| async shouldRetry respects maxRetryTime after callback | `retry > signal > stops during an async retryIf` | No `maxRetryTime`. The `signal` option limits the whole call. |
 | does not retry non-network TypeError when shouldConsumeRetry returns false | skipped | No `shouldConsumeRetry`, and TypeErrors are retried. |
 | throws on invalid callback options | skipped | The option types reject a non-function. |
 | retry on TypeError - failed to fetch | `retry > attempts > resolves with a Response from fetch-like code` | |
@@ -57,7 +57,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | throws on NaN retries | `retry > attempts > rejects attempts: NaN with a RangeError` | |
 | throws on fractional retries | `retry > attempts > rejects attempts: 1.5 with a RangeError` | Also checks that `fn` isn't called. |
 | handles zero retries | `retry > attempts > makes one attempt with attempts: 1` | `attempts: 0` is a `RangeError`. |
-| onFailedAttempt still called when retries is zero | `retry > retryIf > is not called after the last attempt` | Deliberate difference: `retryIf` decides whether to retry, so it isn't asked when no attempt is left. |
+| onFailedAttempt still called when retries is zero | `retry > retryIf > is not called after the last attempt` | Deliberate difference: `retryIf` is called only before a retry, so it isn't called when no attempt is left. |
 | invalid numeric options throw | `retry > delay > rejects ... with a RangeError`, `retry > timeout > rejects a negative timeout with a RangeError` | |
 | factor <= 0 is treated as 1 (stable delays) | `retry > delay > rejects a factor of 0 with a RangeError` | Deliberate difference: a bad option is a programming mistake. |
 | unsupported `forever` option throws | skipped | No such option. |
@@ -108,7 +108,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | resolution can be aborted with an AbortSignal if a value is passed | skipped | No `value` option. |
 | rejects with AbortError if AbortSignal is already aborted | `sleep > sleep > rejects at once when the signal is already aborted` | |
 | returns a promise that is resolved in a random range of time | skipped | No `rangeDelay`. The README shows `sleep(min + Math.random() * (max - min))`. |
-| can create a new instance with fixed timeout methods | `sleep > sleep with scheduler.wait > uses scheduler.wait when the runtime has it` | `createDelay` lets callers swap the timer functions. Here the runtime's `scheduler.wait` is used when present. |
+| can create a new instance with fixed timeout methods | `sleep > sleep with scheduler.wait > uses scheduler.wait when the runtime has it` | `createDelay` lets you swap the timer functions. Here the runtime's `scheduler.wait` is used when present. |
 
 ## p-wait-for
 
@@ -148,7 +148,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | throws on NaN timeout.milliseconds | skipped | Same. |
 | handles fallback errors gracefully | skipped | No `fallback`. |
 | handles null condition return value | `poll > results > resolves with %j, which is not undefined` | Deliberate difference: `null` is a value. |
-| handles undefined condition return value | `poll > results > resolves with the first value that is not undefined` | `undefined` keeps polling. |
+| handles undefined condition return value | `poll > results > resolves with the first value that is not undefined` | Polling continues while `fn` returns `undefined`. |
 | handles promise rejection in condition | `poll > results > rejects with the error an async check rejects with` | |
 | works with zero interval | `poll > delay > with 0, still lets timers run between checks so a timeout signal can fire` | |
 | resolveWith with falsy values | `poll > results > resolves with %j, which is not undefined` | |
@@ -171,7 +171,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | timeout fallback runs while the condition is pending | skipped | No `fallback`. |
 | a condition that settles after abort is not called again | `poll > signal > rejects with signal.reason while a check is pending, without calling it again` | |
 | a condition that rejects after abort does not cause an unhandled rejection | `poll > signal > ignores a check that rejects after the abort` | Vitest fails the run on an unhandled rejection in Node and Chromium. |
-| timeout and signal together settle the wait while the condition is pending | `poll > a timeout signal > rejects while a check is pending, and aborts its signal` | No `timeout` option, so one signal covers both. |
+| timeout and signal together settle the wait while the condition is pending | `poll > a timeout signal > rejects while a check is pending, and aborts its signal` | No `timeout` option. Pass one signal from `AbortSignal.any` for both. |
 | abort during the initial `before: false` delay never calls the condition | skipped | No `before`. |
 | a condition that throws `undefined` rejects with it when a timeout is set | `poll > results > rejects with undefined when a check throws undefined and a signal is set` | |
 
@@ -320,7 +320,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 
 | Issue | Our behavior | Test |
 | --- | --- | --- |
-| p-retry never retries a `TypeError` unless its message is on is-network-error's list. Chrome's failed dynamic `import()` isn't on it (p-retry #85), and undici's network errors weren't either until p-retry #72. | Every error is retried unless `retryIf` says no. | `retry > attempts > retries a TypeError` |
+| p-retry never retries a `TypeError` unless its message is on is-network-error's list. Chrome's failed dynamic `import()` isn't on it (p-retry #85), and undici's network errors weren't either until p-retry #72. | Every error is retried unless `retryIf` returns `false`. | `retry > attempts > retries a TypeError` |
 | p-retry wraps a thrown non-Error in a new `TypeError`, so the caller never sees the original value. | Rethrown unchanged. | `retry > attempts > rethrows a non-Error value unchanged` |
 | p-retry checks the signal only between attempts, so an abort during a slow attempt waits for that attempt. p-retry #97 was the same problem during the delay, fixed in December 2025. | The call rejects with `signal.reason` at once, and the attempt's own `signal` aborts too. | `retry > signal > rejects with signal.reason when aborted while an attempt is pending`, `retry > signal > aborts the attempt signal when the caller aborts` |
 | async-retry's `bail()` rejects the promise but doesn't stop the operation, so a later throw schedules more calls in the background (async-retry #69). | `retryIf` returning `false` ends the loop. | `retry > retryIf > stops further calls to fn once it returns false` |
@@ -329,7 +329,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | p-retry once left its abort listener on the signal after it finished (p-retry #71). | Listeners are removed when each call settles. | `listeners > after retry succeeds, with and without a timeout` |
 | lodash `debounce` and `throttle` read `Date.now()`. When the system clock jumps forward, `throttle` invokes again on the next call. | Time is read from `performance.now()`, which doesn't jump. | `debounce > lodash debounce and throttle > throttle is not invoked early when the system clock jumps forward` |
 | lodash.debounce 4.0.8, the standalone package, restarts its timer in a tight loop with `maxWait` below `ms` without clearing the old one, so it invokes at other times than lodash 4.18. | Matches lodash 4.18. | `oracle > lodash.debounce and lodash.throttle 4.x > lodash.debounce 4.0.8 invokes at other times when maxWait is below ms, and lodash 4.18 does not` |
-| lodash returns the previous invocation's result and throttle-debounce returns nothing, so a caller can't wait for the invocation its call was folded into. | Each call returns a promise of that invocation's result. | `debounce > promises > every call in a burst resolves with the one invocation` |
+| lodash returns the previous invocation's result and throttle-debounce returns nothing, so you can't wait for the invocation that a call was folded into. | Each call returns a promise of that invocation's result. | `debounce > promises > every call in a burst resolves with the one invocation` |
 | throttle-debounce's `cancel()` disables the function permanently, unlike lodash's `cancel()`. | `.cancel()` drops the waiting invocation, and an abort disables the function. | `debounce > throttle-debounce debounce > a cancel in the middle of a burst drops only the waiting invocation` |
 
 ## Oracle tests
@@ -338,10 +338,10 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 
 `debounce.oracle.test.ts` runs seeded random schedules of calls, `flush` and `cancel` against ours and lodash 4.18 under fake timers, and compares the time and argument of every invocation. It covers `ms` of 0, 10, 32 and 100, seven option sets for `debounce` and three for `throttle`, and they match exactly. The same schedules match lodash.debounce and lodash.throttle 4.x where `maxWait` is at least `ms`. Against p-debounce, every call resolves with the same value, with `before` on and off.
 
-`debounce.fuzz.oracle.test.ts` runs the same comparison with fast-check. Each run picks an `ms` up to 100 and random `leading`, `trailing` and `maxWait` settings, and `fc.commands` generates a sequence of calls, `flush`, `cancel` and clock advances. After each step the test checks that both functions have made the same invocations. Its first runs found that our `flush` started a new window, so `throttle(fn, 10)` called again 5 ms after a flush ran at 15, while lodash counts the window from the flushed invocation and runs it at 10. `flush` now keeps the window, and the conformance tests under `flush keeps the maxWait window` hold those cases.
+`debounce.fuzz.oracle.test.ts` runs the same comparison with fast-check. Each run picks an `ms` up to 100 and random `leading`, `trailing` and `maxWait` settings, and `fc.commands` generates a sequence of calls, `flush`, `cancel` and clock advances. After each step the test checks that both functions have made the same invocations. Its first runs found that our `flush` started a new window, so `throttle(fn, 10)` called again 5 ms after a flush ran at 15, while lodash counts the window from the flushed invocation and runs it at 10. `flush` now keeps the window, and the conformance tests under `flush keeps the maxWait window` check those cases.
 
 ## Benchmarks
 
-None of the upstream packages has a benchmark. `retry.bench.ts` measures overhead per attempt: ten attempts with no delay, against p-retry with `minTimeout: 0` and a plain try/catch loop, with and without a `signal`. It fails if p-retry is more than 25% faster.
+None of the upstream packages has a benchmark. `retry.bench.ts` measures overhead per attempt: ten attempts with no delay, against p-retry with `minTimeout: 0`, async-retry and a plain try/catch loop, and again with a `signal` against p-retry. It fails if p-retry or async-retry is more than 25% faster. `poll.bench.ts` compares `poll` with p-wait-for, and `sleep` with delay and `setTimeout`, and fails if p-wait-for or delay is more than 25% faster.
 
 `debounce.bench.ts` measures a burst of 1000 calls followed by `flush`, against lodash.debounce, lodash.throttle, throttle-debounce and p-debounce. It fails if lodash is more than 25% faster.

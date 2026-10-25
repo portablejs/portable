@@ -22,8 +22,8 @@ export class InvalidInputError extends Errors.InvalidInputError {
 }
 
 /**
- * Thrown by `importPem` for a valid PEM block it doesn't import, such as an `EC PRIVATE KEY`, a
- * certificate or an encrypted key.
+ * Thrown by `importPem` when the PEM block is valid but of a kind it doesn't import, such as an
+ * `EC PRIVATE KEY`, a certificate or an encrypted key.
  *
  * @example
  * ```ts

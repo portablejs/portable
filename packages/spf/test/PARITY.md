@@ -258,7 +258,7 @@ Every test is in `rfc7208.conformance.ts`, as `<scenario> > <test> (<spec>)`, an
 | exp-txt-macro-char | 7.1/20 | fail |  |
 | domain-name-truncation | 7.1/25 | fail |  |
 | v-macro-ip4 | 7.1/6 | fail |  |
-| v-macro-ip6 | 7.1/6 | fail | Explanation compared ignoring case: the suite writes the `%{i}` nibbles in upper case, and RFC 7208 section 7.4 writes them in lower case. |
+| v-macro-ip6 | 7.1/6 | fail | The explanation is compared ignoring case: the suite writes the `%{i}` nibbles in upper case, and RFC 7208 section 7.4 writes them in lower case. |
 | undef-macro | 7.1/6 | permerror |  |
 | p-macro-ip4-novalid | 7.1/22 | fail |  |
 | p-macro-ip4-valid | 7.1/22 | fail |  |
@@ -345,7 +345,7 @@ The macro function is private, so these tests read the expanded name from the `e
 | Should evaluate a record with "-" between two other delimiters | `macro-test.js > evaluates a record with "-" between two other delimiters` | |
 | Should read every digit of the transformer | `macro-test.js > reads every digit of the transformer` | |
 | Should URL escape a byte below 0x10 with two hex digits | `macro-test.js > URL-escapes a byte below 0x10 with two hex digits` | |
-| Should take the domain of a sender with an empty local-part | `macro-test.js > takes the domain of a sender with an empty local-part, and postmaster as its local-part` | mailauth's macro function expands `%{l}` to `''` here, but its check substitutes `postmaster` first, as RFC 7208 section 4.3 says. So do we. |
+| Should take the domain of a sender with an empty local-part | `macro-test.js > takes the domain of a sender with an empty local-part, and postmaster as its local-part` | mailauth's macro function expands `%{l}` to `''` here, but its check substitutes `postmaster` first, as RFC 7208 section 4.3 says, and so does `Spf.check`. |
 | Should expand %{t} to the current time in seconds | `macro-test.js > expands %{t} to the current time in seconds` | |
 
 ### limited-resolver-test.js
@@ -355,7 +355,7 @@ The macro function is private, so these tests read the expanded name from the `e
 | Should allow up to 10 DNS lookups | `limited-resolver-test.js > allows 10 DNS-querying terms, not counting the first TXT lookup` | |
 | Should return permerror when exceeding 10 DNS lookups | `limited-resolver-test.js > gives permerror for the 11th DNS-querying term` | |
 | Should report lookup count and limit in result | `limited-resolver-test.js > reports the lookup count` | The limit is fixed at 10, so it isn't reported. |
-| Should support custom maxResolveCount | skipped | No option for other limits. The RFC fixes them, and a receiver that raises them accepts records other receivers reject. |
+| Should support custom maxResolveCount | skipped | No option for other limits. The RFC fixes them, and raising them would accept records that other receivers reject. |
 | Should count ENOTFOUND as void lookup | `limited-resolver-test.js > counts ENOTFOUND and ENODATA as void lookups` | |
 | Should count ENODATA as void lookup | `limited-resolver-test.js > counts ENOTFOUND and ENODATA as void lookups` | |
 | Should return permerror when exceeding void lookup limit | `limited-resolver-test.js > gives permerror for the third void lookup` | |
@@ -404,11 +404,11 @@ mailauth queries A and AAAA together and uses the other family to decide whether
 | ptr lookup counting (6 tests) | `ptr lookup counting (RFC 7208 4.6.4)`, one test each | The `%{p}` test uses `a` terms, whose non-matching answers are not void. mailauth's fake resolver answers `exists` with an empty array and doesn't count it as void, but RFC 7208 does. |
 | %{p} macro: "unknown" without a validated name, prefers a subdomain, skips a name that doesn't validate | `%{p} macro (RFC 7208 7.3)`, one test each | |
 | Should render "unknown" in macro() without a validated name | `%{p} macro (RFC 7208 7.3) > expands to "unknown" when there is no validated name` | |
-| Syntax validation: 16 invalid records | `Syntax validation (RFC 7208 4.6) > gives permerror for "<record>", even after the matching term` | Plus duplicate `redirect=` and a lone `%`. The default-mode half of each upstream test does not apply. |
+| Syntax validation: 16 invalid records | `Syntax validation (RFC 7208 4.6) > gives permerror for "<record>", even after the matching term` | Our tests also cover a duplicate `redirect=` and a lone `%`. The default-mode half of each upstream test does not apply. |
 | Should not add warnings for a valid record | `Syntax validation (RFC 7208 4.6) > accepts a valid record that uses every kind of term` | We have no warnings, only the strict result. |
 | Should keep a syntax error before the matching term a permerror in both modes | `Syntax validation (RFC 7208 4.6) > gives permerror for "v=spf1 ip4:192.0.2.1 ip4:192.0.2.300 -all", even after the matching term` | |
 | Macro syntax errors: the reason for `%{z}` and `50%` | `Syntax validation (RFC 7208 4.6)` rows for those records | Our `reason` wording differs. |
-| Modifiers (4 tests) | `Modifiers (RFC 7208 6)`, one test each | Plus redirect beside `all`, and a redirect target without a record. |
+| Modifiers (4 tests) | `Modifiers (RFC 7208 6)`, one test each | Our tests also cover a redirect beside `all`, and a redirect target without a record. |
 | Trailing dots (8 tests) | `Trailing dots (RFC 7208 7.3)`, one test each | The null MX test also covers an exchange of `''`, as `Dns.create` and Node return it. |
 | Fully qualified identities (5 tests) | `Fully qualified identities (RFC 7208 4.3)`, one test each | We don't build a Received-SPF header, so its half of the first test does not apply. |
 | PTR DNS errors (4 tests) | `PTR DNS errors (RFC 7208 5.5)`, one test each | |
@@ -418,24 +418,24 @@ mailauth queries A and AAAA together and uses the other family to decide whether
 | Should give permerror for an EBADNAME resolver error in the default mode | `Invalid names after macro expansion (RFC 7208 4.8) > does not match a term whose name the resolver rejects as EBADNAME` | Different on purpose. When the resolver rejects a name, the term doesn't match, which is also what strict mode does when it rejects a name itself. `Dns.create` rejects names that are valid for SPF, such as `%{L}`'s `%2B`, so permerror would fail working records. |
 | Uppercase macros (4 tests) | `Uppercase macros (RFC 7208 7.3)`, one test each | "Should keep the lenient transformer handling by default" is covered by the permerror rows for `%{d0}`, `%{d2x}` and `%{dr2}`. |
 | Should split the sender at the last "@" | `Quoted local-part with "@" (RFC 5321 4.1.2) > splits the sender at the last "@"` | |
-| Client IP address: IPv4-mapped (3), not mapped (3), IPv4-compatible network | `Client IP address (RFC 7208 4.1, 5)`, one test each | Plus `%{c}` formatting. |
-| Should return temperror for the client IP (5 values) | `Spf.check > throws a TypeError for an ip that is not an IP address` | Different on purpose: a bad `ip` is a mistake in the call, so it throws. |
+| Client IP address: IPv4-mapped (3), not mapped (3), IPv4-compatible network | `Client IP address (RFC 7208 4.1, 5)`, one test each | Our tests also cover `%{c}` formatting. |
+| Should return temperror for the client IP (5 values) | `Spf.check > throws a RangeError for an ip that is not an IP address` | Different on purpose: a bad `ip` is a mistake in the call, so `check` rejects. |
 | ip4 and ip6 mechanisms (7 tests) | `ip4 and ip6 mechanisms (RFC 7208 5.6)`, one test each | |
 | Void lookups: MX hosts, NODATA for the client family, repeated query, below the limit | `Void lookups (RFC 7208 4.6.4)`, one test each | |
 | Should use an explicit limit of 0 | skipped | No option for other limits. |
-| Record selection (3 tests) | `Record selection (RFC 7208 4.5)`, one test each | Plus case, two records, and non-SPF TXT records. |
+| Record selection (3 tests) | `Record selection (RFC 7208 4.5)`, one test each | Our tests also cover case, two records, and non-SPF TXT records. |
 | Received-SPF header (4 tests) | skipped | We don't build headers, and `@portable/mail-auth` writes Authentication-Results instead of Received-SPF. |
 | Authentication-Results ptypes (6 tests) | skipped | We don't build headers. `identity` and `domain` say which `smtp.mailfrom` or `smtp.helo` to report. |
-| Should return temperror when maxElapsedTime is exceeded | `Spf.check > rejects with the reason and aborts the lookup when the signal aborts before the DNS answers` | Pass `signal: AbortSignal.timeout(ms)`. The check rejects with its `TimeoutError`, which the caller reports as `temperror`, because every package in this repo rejects with `signal.reason` on abort. |
+| Should return temperror when maxElapsedTime is exceeded | `Spf.check > rejects with the reason and aborts the lookup when the signal aborts before the DNS answers` | Pass `signal: AbortSignal.timeout(ms)`. `check` then rejects with its `TimeoutError`, because every package in this repo rejects with `signal.reason` on abort, and you report that as `temperror`. |
 | Should return temperror when a DNS query never completes | `Spf.check > rejects with the reason and aborts the lookup when the signal aborts before the DNS answers` | As above. |
-| Should not limit the time by default | `spf-verify-test.js` and others | No signal means no limit. |
-| Explanation (13 tests) | `Explanation (RFC 7208 6.2)`, one test each | Plus a test that explanation lookups don't count toward the limits. |
+| Should not limit the time by default | `spf-verify-test.js` and others | Without a signal, there is no time limit. |
+| Explanation (13 tests) | `Explanation (RFC 7208 6.2)`, one test each | Our tests also check that explanation lookups don't count toward the limits. |
 
 ### syntax-test.js
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| stripRootDot: Should remove a single trailing dot only | `Fully qualified identities (RFC 7208 4.3)` | Through the check: one trailing dot is removed, `example.test..` gives none. |
+| stripRootDot: Should remove a single trailing dot only | `Fully qualified identities (RFC 7208 4.3)` | Tested through `check`: one trailing dot is removed, and `example.test..` gives none. |
 
 ## Known upstream issues
 
@@ -454,7 +454,7 @@ From mailauth's issue tracker and from reading its source. Each has a test in `c
 | [#157](https://github.com/postalsys/mailauth/issues/157), [#158](https://github.com/postalsys/mailauth/issues/158): limit options and error text. | No limit options. Every error has a `reason` (`Spf.check > reports why the result is none, temperror or permerror`). |
 | [#87](https://github.com/postalsys/mailauth/issues/87): a Workers resolver returned TXT records with quotes. | Not ours to fix: the resolver must return each record's strings, as `Dns.create` does. The test shows the strings are joined with nothing between them. |
 | [#49](https://github.com/postalsys/mailauth/issues/49): a UDP-only resolver dropped records from truncated answers. | Not ours to fix. `Dns.create` uses DNS-over-HTTPS, which has no truncation. No test. |
-| mailauth returns temperror for a missing or invalid client IP. | We throw a `TypeError`, because the caller passed something that isn't an address (`Spf.check > throws a TypeError for an ip that is not an IP address`). |
+| mailauth returns temperror for a missing or invalid client IP. | `check` rejects with a `RangeError` for a string that isn't an IP address and a `TypeError` for a missing one, because the call itself is wrong (`Spf.check > throws a RangeError for an ip that is not an IP address`). |
 | mailauth treats a resolver's empty array as a non-void answer. | An empty array is an empty answer, so it counts as void, as `ENODATA` does (`known upstream issues > counts an empty array from the resolver as a void lookup`). |
 | mailauth's `EBADNAME` gives permerror in the default mode. | A name the resolver rejects doesn't match (`Invalid names after macro expansion`). |
 

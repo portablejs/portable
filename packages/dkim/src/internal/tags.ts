@@ -3,10 +3,10 @@ const tagValue =
   /^(?:[\x21-\x3a\x3c-\x7e\x80-\xff]+(?:(?:[ \t]|\r\n[ \t])+[\x21-\x3a\x3c-\x7e\x80-\xff]+)*)?$/;
 
 /**
- * Reads a tag-list (RFC 6376 section 3.2) from binary text. Names are case-sensitive and values
- * keep their inner whitespace. `valid` is false for anything outside the grammar, including a
- * repeated tag, and `tags` then holds what could be read. Bytes above 0x7F are allowed in values
- * for UTF-8 domain names (RFC 8616).
+ * Reads a tag-list (RFC 6376 section 3.2) from binary text. Names are case-sensitive, and
+ * whitespace inside a value is kept. `valid` is false for anything outside the grammar, including
+ * a repeated tag, and `tags` then contains the tags that could be read. Bytes above 0x7F are
+ * allowed in values for UTF-8 domain names (RFC 8616).
  */
 export function parseTags(text: string): { tags: Map<string, string>; valid: boolean } {
   const tags = new Map<string, string>();

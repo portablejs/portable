@@ -2,7 +2,7 @@
 export type Address = { hostname: string; port: number };
 
 /**
- * The options a `Connect` receives. A driver passes both, because the type of `connect` in
+ * The options a `Connect` receives. Both are required, because the type of `connect` in
  * `@cloudflare/workers-types` requires `allowHalfOpen`.
  */
 export type Options = {
@@ -26,7 +26,7 @@ export type Info = {
 
 /**
  * A TCP connection with the shape of the WinterTC Sockets API. The socket that `connect` from
- * `cloudflare:sockets` returns fits it as it is.
+ * `cloudflare:sockets` returns matches it as it is.
  */
 export type Socket = {
   /** The bytes the peer sends. It closes when the peer ends its side. */
@@ -51,6 +51,6 @@ export type Socket = {
 
 /**
  * Opens a TCP connection. `connect` from `cloudflare:sockets` and `connect` from
- * `@portable/sockets/node` both fit this type.
+ * `@portable/sockets/node` both match this type.
  */
 export type Connect = (address: Address, options: Options) => Socket;

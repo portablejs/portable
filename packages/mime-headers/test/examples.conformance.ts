@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vite-plus/test';
 import * as MimeHeaders from '@portable/mime-headers';
 
-// The examples in the JSDoc and the README, so the documented results stay true.
+// Checks the results shown in the JSDoc and README examples.
 
 describe('JSDoc examples', () => {
   test('encodeWord', () => {

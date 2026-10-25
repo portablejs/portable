@@ -37,8 +37,8 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 | BurstyRateLimiter: do not consume from burst limiter if the first rejects with an error; reject with burst limiter error | `store errors > reject take with the error from get`, `store errors > reject take with the error from set` | |
 | BurstyRateLimiter: combined msBeforeNext, returns points, null if key does not exist, msBeforeNext=0 if not set | `take > resetAt is when the allowance is full again`, `take > starts each key with a full allowance` | |
 | RateLimiterStoreAbstract: delete in-memory blocked keys | skipped | No in-memory block cache in front of the store. |
-| RateLimiterQueue (21 tests) | skipped | No queue. A Worker can't keep a request waiting while others are served, so the caller waits `retryAfter` itself. |
-| RateLimiterMemoryPersistence, RLWrapperBlackAndWhite, RLWrapperTimeouts, RateLimiterUnion, RateLimiterInsuredAbstract, ExpressBruteFlexible, RateLimiterCompatibleAbstract | skipped | Wrappers and integrations outside the limiter. An allow list is an `if` before `take`, and a union is several `take` calls. |
+| RateLimiterQueue (21 tests) | skipped | No queue. A Worker can't keep a request waiting while others are served, so `take` returns `retryAfter` instead of waiting. |
+| RateLimiterMemoryPersistence, RLWrapperBlackAndWhite, RLWrapperTimeouts, RateLimiterUnion, RateLimiterInsuredAbstract, ExpressBruteFlexible, RateLimiterCompatibleAbstract | skipped | These are wrappers and integrations outside the limiter. An allow list is an `if` before `take`, and a union is several `take` calls. |
 
 ## limiter
 
@@ -60,12 +60,12 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 | supports fractional counts and intervals | `cost > accepts fractional costs`, `options > accepts a fractional period` | |
 | does not corrupt balances when a finite interval produces an infinite rate; computes finite waits for very small inputs | skipped | Time comes from `Date.now()` in whole milliseconds. `take > allows exactly limit requests in one millisecond when period / limit is not a whole number` covers the float handling. |
 | caps long delays instead of overflowing platform timers | skipped | No timers. |
-| matches an integer reference model across competing hierarchical requests | `take.oracle.test.ts` | Compared with `TokenBucket` itself, without parents. |
+| matches an integer reference model across competing hierarchical requests | `take.oracle.test.ts` | The oracle compares with `TokenBucket` itself, without parents. |
 | rechecks capacity consumed by synchronous callers while an async request waits | `concurrent takes > retry a take whose compare-and-set lost, and decide again on the new value` | |
 | getWaitTime does not consume or reserve tokens | `cost > a cost of 0 reads the state without changing it` | |
 | waits for the interval even when the bucket has refilled (#25, #61) | `take > gives allowance back continuously, one request per period / limit` | limiter's `RateLimiter` adds a fixed interval on top of the bucket. We have only the continuous refill. |
 | includes refill time when an interval has expired | `take > returns the time until the next request fits for a denied request` | |
-| rounds fractional waits up and validates impossible requests | `take > allows the request once retryAfter has passed, and not a millisecond sooner`, `cost > denies a cost larger than burst forever` | `retryAfter` is a whole number of milliseconds, `Infinity` for a cost that can't fit. |
+| rounds fractional waits up and validates impossible requests | `take > allows the request once retryAfter has passed, and not a millisecond sooner`, `cost > denies a cost larger than burst forever` | `retryAfter` is a whole number of milliseconds, or `Infinity` for a cost larger than `burst`. |
 | drains the reported 5,000-request backlog in FIFO order with one timer (#85) | skipped | No waiting. |
 
 ## bottleneck
@@ -84,7 +84,7 @@ Bottleneck is a job scheduler. Its concurrency, priority, batching, grouping, re
 
 ## Our own tests
 
-`store.conformance.ts` tests the store contract: races between 100 takes on a store with random delays, two limiters sharing a store, a lost compare-and-set, a store without compare-and-set (to show why the contract asks for it), store errors, what `take` writes, and `memoryStore` expiry and sweeping. `headers.conformance.ts` tests the header fields against the draft's syntax. `take.conformance.ts > signal` tests cancellation.
+`store.conformance.ts` tests the store contract: races between 100 takes on a store with random delays, two limiters sharing a store, a lost compare-and-set, a store without compare-and-set (to show why the contract requires it), store errors, what `take` writes, and `memoryStore` expiry and sweeping. `headers.conformance.ts` tests the header fields against the draft's syntax. `take.conformance.ts > signal` tests cancellation.
 
 ## Known upstream issues
 
@@ -92,7 +92,7 @@ Bottleneck is a job scheduler. Its concurrency, priority, batching, grouping, re
 | --- | --- | --- |
 | rate-limiter-flexible's fixed window lets a client make `2 × points` requests across a window boundary. | GCRA has no windows. | `take > allows no second burst across what would be a fixed-window boundary` |
 | rate-limiter-flexible adds the points of a rejected `consume` to the counter, so retrying keeps a client blocked. | A denied request takes nothing. | `take > a denied request consumes nothing` |
-| rate-limiter-flexible rejects a denied `consume` with a `RateLimiterRes`, which isn't an `Error`, so a denial and a store failure share a `catch`. | `take` resolves with `allowed: false` and rejects only for errors. | `store errors > reject take with the error from get` |
+| rate-limiter-flexible rejects a denied `consume` with a `RateLimiterRes`, which isn't an `Error`, so the same `catch` receives a denial and a store failure. | `take` resolves with `allowed: false` and rejects only for errors. | `store errors > reject take with the error from get` |
 | rate-limiter-flexible's memory store sets a `setTimeout` per key. | `memoryStore` sweeps on write and sets no timers. | `memoryStore > keeps live keys while sweeping expired ones` |
 | limiter's `TokenBucket` starts empty, so a fresh process makes its first callers wait. | Every key starts with `burst`. | `take > starts each key with a full allowance` |
-| limiter's `RateLimiter` waits for a fixed interval to end even after the bucket refilled (#25, #61). | Allowance comes back continuously. | `take > gives allowance back continuously, one request per period / limit` |
+| limiter's `RateLimiter` waits for a fixed interval to end even after the bucket refilled (#25, #61). | The allowance refills continuously. | `take > gives allowance back continuously, one request per period / limit` |

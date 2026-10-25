@@ -6,8 +6,7 @@ import * as Streams from '@portable/streams';
 export declare namespace DecoderStream {
   type Options = {
     /**
-     * Errors the stream with `signal.reason` when aborted, which cancels the source it is piped
-     * from.
+     * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
     signal?: AbortSignal | undefined;
     /**
@@ -18,9 +17,9 @@ export declare namespace DecoderStream {
      */
     paths?: readonly string[] | undefined;
     /**
-     * Longest matched value, in UTF-16 code units of its JSON text. The stream holds a matched value's
-     * text until the value ends, so a longer one fails the stream with `MaxLengthError` as soon as
-     * it grows past the limit. Values outside `paths` are never held and don't count.
+     * Longest matched value, in UTF-16 code units of its JSON text. The stream holds a matched
+     * value's text until the value ends, and fails with `MaxLengthError` as soon as that text grows
+     * past the limit. Values outside `paths` are never held and don't count.
      * @default Infinity
      */
     maxLength?: number | undefined;

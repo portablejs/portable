@@ -31,7 +31,7 @@ export function toBytes(chunk: unknown, encoding: BufferEncoding | null): Uint8A
   throw new TypeError(`Expected a Uint8Array or a string chunk, got ${describe(chunk)}.`);
 }
 
-/** Converts a chunk that an object-mode Node stream reads: bytes become a plain `Uint8Array`. */
+/** Converts a chunk read from an object-mode Node stream: bytes become a plain `Uint8Array`. */
 export function toValue(chunk: unknown): unknown {
   return isUint8Array(chunk) ? toPlain(chunk) : chunk;
 }

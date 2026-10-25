@@ -10,8 +10,8 @@ import * as WebCrypto from '@portable/web-crypto';
 import rsaPkcs8 from './fixtures/pem/rsa-pkcs8.pem.txt?raw';
 
 // node:crypto and @noble/hashes are synchronous and skip WebCrypto's per-call promise and copy,
-// so on Node they beat any crypto.subtle call on small input. They are measured for reference.
-// The 25% assertions compare each helper with the crypto.subtle calls it replaces.
+// so on Node they are faster than any crypto.subtle call on small input. They are measured for
+// reference. The 25% assertions compare each helper with the crypto.subtle calls it replaces.
 
 const body = new Uint8Array(nodeCrypto.randomBytes(1024));
 const large = new Uint8Array(nodeCrypto.randomBytes(1024 * 1024));

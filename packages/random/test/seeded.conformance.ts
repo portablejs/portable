@@ -75,7 +75,7 @@ describe('reference vectors', () => {
   });
 
   // `Xoshiro128StarStar::seed_from_u64(seed)` and eight `next_u32()` calls, run with rand_xoshiro
-  // 0.8.1 from github.com/rust-random/rngs. A negative seed is its 64-bit two's complement.
+  // 0.8.1 from github.com/rust-random/rngs. A negative seed is read as its 64-bit two's complement.
   const rust = [
     [
       0,

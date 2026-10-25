@@ -19,8 +19,9 @@ import {
 import { pick, random, randomText } from './utils.js';
 
 // Compares this package with libmime 5.4.9, nodemailer 10.2.1's addressparser and
-// email-addresses 5.0.0 on generated well-formed input. Where the output may differ by design
-// (see "Differences" in the README), the test compares what each side decodes back instead.
+// email-addresses 5.0.0 on generated well-formed input. Where the output may differ by design (see
+// "Why use this over libmime, addressparser and email-addresses" in the README), the test
+// compares what each side decodes back instead.
 // Neither addressparser nor email-addresses decodes encoded words in names, so their names are
 // passed through libmime.decodeWords before the comparison.
 

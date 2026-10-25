@@ -4,7 +4,7 @@ import { expect, test } from 'vite-plus/test';
 import { findMadeUpActor } from './prose.js';
 
 // Rejects prose built around a made-up actor (see `findMadeUpActor`) in Markdown and source. The
-// rows of the table in AGENTS.md quote the pattern without quotes, so they are skipped.
+// rows of the table in AGENTS.md contain the pattern without quotes, so the test skips them.
 
 const root = join(import.meta.dirname, '../../..');
 

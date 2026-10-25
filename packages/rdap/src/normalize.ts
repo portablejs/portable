@@ -19,8 +19,8 @@ export type Entity = {
 };
 
 /**
- * The events most callers need. Each one is `undefined` when the response doesn't have it or
- * its date is unreadable.
+ * The registration, expiration and last-changed dates. Each one is `undefined` when the response
+ * doesn't have the event or its date is unreadable.
  */
 export type Events = {
   registration: Date | undefined;

@@ -16,7 +16,7 @@ import {
 import { InvalidInputError } from './errors.js';
 
 /**
- * Extra header fields, by name. A list writes one field per value, in order.
+ * Extra header fields, by name. A list value is written as one field per value, in order.
  */
 export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
 
@@ -154,9 +154,9 @@ type Context = {
  * `cid` go into `multipart/related` beside the HTML, and other attachments into
  * `multipart/mixed`. Blob and stream content is read as the result is read.
  *
- * `encodeStream` throws on mistakes in the message before it reads any content. A content stream that
- * fails errors the result, and cancelling the result cancels every content stream not yet read to
- * the end.
+ * `encodeStream` throws on mistakes in the message before it reads any content. A content stream
+ * that fails errors the result, and cancelling the result cancels every content stream not yet
+ * read to the end.
  *
  * @example
  * ```ts

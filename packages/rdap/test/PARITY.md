@@ -26,7 +26,7 @@ Test files:
 | client.test.ts: domain rejects when no RDAP server is known for the tld | `names > rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file` | |
 | client.test.ts: domain rejects when the RDAP server responds with an error status | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | 404 has its own error class. |
 | client.test.ts: domain requests the expected url and returns the parsed body | `recorded responses > Verisign without follow: one request, and the registry entities` | `raw` is the parsed body. The oracle compares it with node-rdap's. |
-| client.test.ts: domain trims and lowercases the domain | `names > sends Unicode names in A-labels, and keeps the unicodeName from the server` | Lowercased, yes. Surrounding spaces are rejected instead of trimmed, so a caller sees a typo. |
+| client.test.ts: domain trims and lowercases the domain | `names > sends Unicode names in A-labels, and keeps the unicodeName from the server` | The name is lowercased, but surrounding spaces are rejected instead of trimmed, so a typo shows up as an error. |
 | client.test.ts: ip routes an IPv4 address to the IPv4 cache | `ip > ARIN: 8.8.8.8 with its CIDR and the nested abuse contact` | Checks that `ipv4.json` is fetched. |
 | client.test.ts: ip routes an IPv6 address to the IPv6 cache | `ip > RIPE: IPv4 and IPv6` | |
 | client.test.ts: ip throws when the registry answers with an error status | `ip > rejects an address with no record with NotFoundError` | |
@@ -49,7 +49,7 @@ Test files:
 | errors.test.ts: preserves the underlying failure on cause | `responses > passes a rejected fetch through unchanged` | The `fetch` error itself is the rejection, so there is nothing to unwrap. |
 | errors.test.ts: throws a registry error carrying the parsed error body | `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | |
 | errors.test.ts: still throws a registry error when the server sends no body | `responses > rejects an HTTP error with no body with ResponseError` | |
-| errors.test.ts: treats a malformed success body as a network error | `responses > rejects a body that is not a JSON object with ResponseError` | Also a JSON array and `null`. |
+| errors.test.ts: treats a malformed success body as a network error | `responses > rejects a body that is not a JSON object with ResponseError` | The test also checks a JSON array and `null`. |
 | errors.test.ts: does not re-wrap an error it raised itself | `bootstrap cache > prefers an https URL, uses an http-only one, and skips services without a URL` | An empty service list gives `UnsupportedError`, not a wrapped one. |
 | ip.test.ts: should return json for valid IPv4 address | `ip > ARIN: 8.8.8.8 ...`, `ip > APNIC: 1.1.1.1` | |
 | ip.test.ts: should return json for valid IPv6 address | `ip > RIPE: IPv4 and IPv6` | |
@@ -57,14 +57,14 @@ Test files:
 | ip.test.ts: should not reach the network for an invalid address | `ip > rejects malformed addresses with InvalidInputError, without a request` | |
 | ip.test.ts: should throw error if an RDAP server cannot be found | `ip > rejects an address no registry serves with UnsupportedError` | `127.0.0.1` and three more. |
 | lookups.test.ts: nameserver (5 tests) | Not applicable | No `nameserver()`. A domain result lists its nameservers. |
-| lookups.test.ts: entity (10 tests) | Not applicable | No `entity()`. Entities come flattened inside each result, with `raw` for their `self` links. |
+| lookups.test.ts: entity (10 tests) | Not applicable | No `entity()`. Each result has its entities flattened, and `raw` has their `self` links. |
 | cache/tests/asn.test.ts: fetches the list on a cold lookup and strips a trailing slash | `asn > matches range ends inclusively, and single numbers` | A base URL without a slash gets one. |
 | cache/tests/asn.test.ts: leaves a server without a trailing slash alone | `asn > matches range ends inclusively, and single numbers` | `https://b.example` becomes `https://b.example/autnum/200`. |
 | cache/tests/asn.test.ts: matches the range boundaries inclusively | `asn > matches range ends inclusively, and single numbers` | |
-| cache/tests/asn.test.ts: serves a repeat lookup / an unseen number from cache | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | The cache holds whole files, so every kind of lookup behaves the same. |
+| cache/tests/asn.test.ts: serves a repeat lookup / an unseen number from cache | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | The cache stores whole files, so every kind of lookup behaves the same. |
 | cache/tests/asn.test.ts: returns null when no range contains the number | `asn > matches range ends inclusively, and single numbers` | |
 | cache/tests/asn.test.ts: returns null when a matching range has no server recorded | `bootstrap cache > prefers an https URL, uses an http-only one, and skips services without a URL` | |
-| cache/tests/asn.test.ts: reset() and flush() | `bootstrap cache > fetches the bootstrap file again after 24 hours`, `bootstrap cache > keeps a separate cache for each fetch function` | No `reset` or `flush`: a new `fetch` starts empty. |
+| cache/tests/asn.test.ts: reset() and flush() | `bootstrap cache > fetches the bootstrap file again after 24 hours`, `bootstrap cache > keeps a separate cache for each fetch function` | No `reset` or `flush`: a new `fetch` function starts with an empty cache. |
 | cache/tests/dns.test.ts: fetches the list on a cold lookup / leaves a server alone | `bootstrap cache > prefers an https URL, uses an http-only one, and skips services without a URL` | |
 | cache/tests/dns.test.ts: serves a repeat lookup from cache | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | |
 | cache/tests/dns.test.ts: caches every tld in the list | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | `.com`, `.nl` and `.uk` with one request. |
@@ -88,13 +88,13 @@ Test files:
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| whoisAsn(): reserved ASN | `asn > rejects a reserved number with UnsupportedError` | Skipped upstream. AS 0, 23456 and 4294967295. |
+| whoisAsn(): reserved ASN | `asn > rejects a reserved number with UnsupportedError` | The upstream test is skipped. Ours checks AS 0, 23456 and 4294967295. |
 | whoisAsn(): AS15169 | `asn > ARIN: AS15169` | `ASName` is `name`. |
 | whoisAsn(): AS13335 | `asn > RIPE: AS3333` | A second RIR instead of a second ARIN number. |
-| Basic domain WHOIS: google.com | `recorded responses > Verisign: follows the referral to MarkMonitor ...` | Registry handle `2138514_DOMAIN_COM-VRSN`, and the expiration date from the registry. |
+| Basic domain WHOIS: google.com | `recorded responses > Verisign: follows the referral to MarkMonitor ...` | It checks the registry handle `2138514_DOMAIN_COM-VRSN` and the expiration date from the registry. |
 | Basic domain WHOIS: cloudflare.com with the host option | Not applicable | No `host`. A custom `fetch` can rewrite the URL. |
 | Basic domain WHOIS: javascript.tm from the TLD server | `recorded responses > SIDN: a ccTLD with no expiration event and no referral` | A ccTLD that answers itself, with no registrar referral. |
-| Domain WHOIS parsing: testä.de with an umlaut (issue #93) | `names > sends Unicode names in A-labels ...`, `names > rejects a TLD with no RDAP server ...` | `.de` has no RDAP server, so `münchen.com` covers the umlaut. |
+| Domain WHOIS parsing: testä.de with an umlaut (issue #93) | `names > sends Unicode names in A-labels ...`, `names > rejects a TLD with no RDAP server ...` | `.de` has no RDAP server, so the test uses `münchen.com` for the umlaut. |
 | Domain WHOIS parsing: netflix.io, goo.gl registrar WHOIS server | `recorded responses > PIR: .org follows the referral to MarkMonitor` | The referral link replaces the `Registrar WHOIS Server` field. |
 | Domain WHOIS parsing: google.eu, google.nl, jprs.jp, ownit.nyc, google.bz, google.lc, google.vc name servers | `recorded responses > SIDN ...`, `recorded responses > Nominet ...` | RDAP returns a `nameservers` array, so there is no per-registry parsing to test. |
 | Domain WHOIS parsing: mañana.com and XN--MAANA-PTA.COM | `names > sends Unicode names in A-labels ...` | `münchen.com` in four spellings. |

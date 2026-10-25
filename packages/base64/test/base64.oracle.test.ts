@@ -49,8 +49,8 @@ describe('matches Buffer', () => {
 });
 
 describe('matches libbase64', () => {
-  // libbase64 before 1.4.0 encodes a plain Uint8Array as its comma-separated byte values, so it
-  // gets a Buffer.
+  // libbase64 before 1.4.0 encodes a plain Uint8Array as its comma-separated byte values, so the
+  // test passes it a Buffer.
   test('encode with MIME line wrapping', () => {
     for (const [seed, length] of lengths.entries()) {
       const data = randomBytes(length, seed);

@@ -18,7 +18,7 @@ export type Digest = (
 
 /**
  * Computes an HMAC of `data` with `key` and `hash`, sync or async. Packages that sign with HMAC
- * take one as their `hmac` option. `WebCrypto.hmac` fits this type, and so does a wrapper around
+ * take one as their `hmac` option. `WebCrypto.hmac` has this type, and so does a wrapper around
  * `@noble/hashes`, which is sync and faster on Node.
  */
 export type Hmac = (
@@ -96,8 +96,8 @@ export function hmac(
   });
 }
 
-// importKey takes about two thirds of the time of an HMAC on Node, and callers usually sign with
-// the same few secrets, such as a webhook secret or an OAuth consumer secret.
+// importKey takes about two thirds of the time of an HMAC on Node, and most signing reuses the
+// same few secrets, such as a webhook secret or an OAuth consumer secret.
 const hmacKeys = new Map<string, Promise<CryptoKey>>();
 
 function hmacKey(hash: Hash, raw: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {

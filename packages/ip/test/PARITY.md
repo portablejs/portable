@@ -50,7 +50,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | validates IPv6 addresses in CIDR notation | `ipaddr.js > rejects malformed CIDR text` | Deliberate: `2001:db8:F53A::1%z/64` is rejected. |
 | parses IPv6 in different formats | `ipaddr.js > parses IPv6 in different notations` | Deliberate: `::8.8.8.8` is `::808:808`, not `::ffff:808:808`. |
 | barfs at invalid IPv6 | `ipaddr.js > rejects malformed IPv6 with InvalidInputError` | |
-| throws a descriptive error when parsing a malformed IPv6 address | `ipaddr.js > rejects malformed IPv6 with InvalidInputError` | The error class is the contract, not the message. |
+| throws a descriptive error when parsing a malformed IPv6 address | `ipaddr.js > rejects malformed IPv6 with InvalidInputError` | The test checks the error class, not the message. |
 | matches IPv6 CIDR correctly | `ipaddr.js > matches IPv6 CIDR blocks` | |
 | parses IPv6 CIDR correctly | `ipaddr.js > matches IPv6 CIDR blocks`, `rejects malformed CIDR text` | |
 | converts between IPv4-mapped IPv6 addresses and IPv4 addresses | `ipaddr.js > converts between IPv4 and IPv4-mapped IPv6` | |
@@ -108,8 +108,8 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | isLoopback(): 127.0.0.1, 127.8.8.8, 8.8.8.8, ::1 | `ip > detects loopback addresses` | |
 | isLoopback(): fe80::1, :: | `ip > detects loopback addresses` | Deliberate: `linkLocal` and `unspecified`. |
 | address(): every test | skipped | Reads the machine's network interfaces, which no web runtime exposes. |
-| toLong(): should respond with a int | skipped | `DataView.getUint32` covers it. |
-| fromLong(): should repond with ipv4 address | skipped | `DataView.setUint32` and `fromBytes` cover it. |
+| toLong(): should respond with a int | skipped | Use `DataView.getUint32` instead. |
+| fromLong(): should repond with ipv4 address | skipped | Use `DataView.setUint32` and `fromBytes` instead. |
 | should return true for octal, hexadecimal and long representations (7 tests) | `ip > rejects octal, hex and integer loopback forms instead of guessing` | Deliberate: these throw. |
 | should return false for "192.168.1.1" | `ip > detects loopback addresses` | |
 
@@ -134,7 +134,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | ip #159: `isV4Format('999.999.999.999')` is `true`; ip #135: `isV6Format` accepts IPv4 | `known upstream issues > 999.999.999.999 is not an address, and IPv4 is not IPv6` | |
 | ip #134: `isPrivate` misses `198.18.0.0/15` | `known upstream issues > 198.18.0.0/15 is benchmarking, not public` | |
 | ipaddr.js #213: `::ffff:0177.0.0.1` reads as `177.0.0.1` while `0177.0.0.1` reads as `127.0.0.1` | `known upstream issues > the IPv4 part of an IPv6 address may not have leading zeros` | Both throw. |
-| ipaddr.js parses `::8.8.8.8` as `::ffff:8.8.8.8` | `known upstream issues > ::a.b.c.d is IPv4-compatible, not IPv4-mapped` | Bytes as written, with range `reserved`. |
+| ipaddr.js parses `::8.8.8.8` as `::ffff:8.8.8.8` | `known upstream issues > ::a.b.c.d is IPv4-compatible, not IPv4-mapped` | The bytes are kept as written, and the range is `reserved`. |
 | ipaddr.js #165, #162: `match` throws for an address of the other version | `known upstream issues > matching across versions returns false instead of throwing` | |
 | ipaddr.js #179, #182: `1.1` and other short forms are valid | `ipaddr.js > rejects the octal, hex, integer and short IPv4 forms` | |
 | ipaddr.js reports IPv6 outside `2000::/3`, such as `4000::1`, as `unicast` | `range > names every IANA special-purpose IPv6 block` | `reserved`. |
