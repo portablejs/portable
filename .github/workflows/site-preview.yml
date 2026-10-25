@@ -6,31 +6,52 @@
 # token are kept in the Actions cache, which only this pull request's runs can read, so later pushes update the same
 # site until it is about to expire.
 #
-# Actions minutes are billed, so the job runs only on pull requests with the `preview` label. Adding the label
-# publishes a preview, and each later push updates it. On other pull requests the job is skipped, which uses no
-# minutes.
+# Actions minutes are billed, so a pull request event runs the job only if the pull request has the `preview` label.
+# Adding the label publishes a preview, and each later push updates it. On other pull requests the job is skipped, and
+# a skipped job uses no minutes. The "Publish site preview" button in .github/pr-buttons.yml dispatches this workflow
+# on a pull request's head branch to publish or update the preview once, without the label.
 name: Site preview
 
 on:
   pull_request:
     types: [labeled, synchronize]
+  workflow_dispatch:
 
 permissions:
   contents: read
   deployments: write
+  pull-requests: read
 
 concurrency:
-  group: site-preview-${{ github.event.pull_request.number }}
+  group: site-preview-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   preview:
     # Pull requests from forks get a read-only token, so they can't create deployments.
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'preview')
+      github.event_name == 'workflow_dispatch' || (
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(github.event.pull_request.labels.*.name, 'preview')
+      )
     runs-on: ubuntu-latest
     steps:
+      # A dispatched run has no pull request in its event payload, so this step looks up the open pull request for the branch.
+      - id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -z "$NUMBER" ]; then
+            NUMBER=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --state open --json number --jq '.[0].number')
+          fi
+          if [ -z "$NUMBER" ]; then
+            echo "::error::No open pull request has the head branch $GITHUB_REF_NAME."
+            exit 1
+          fi
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
@@ -43,24 +64,25 @@ jobs:
       - uses: actions/cache/restore@v6
         with:
           path: site/.herenow.json
-          key: site-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}
-          restore-keys: site-preview-${{ github.event.pull_request.number }}-
+          key: site-preview-${{ steps.pr.outputs.number }}-${{ github.run_id }}
+          restore-keys: site-preview-${{ steps.pr.outputs.number }}-
       - id: publish
         working-directory: site
         run: node scripts/herenow.mjs .herenow.json
       - uses: actions/cache/save@v6
         with:
           path: site/.herenow.json
-          key: site-preview-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: site-preview-${{ steps.pr.outputs.number }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - uses: actions/github-script@v9
         env:
           URL: ${{ steps.publish.outputs.url }}
+          SHA: ${{ steps.pr.outputs.sha }}
         with:
           script: |
             const { data: deployment } = await github.rest.repos.createDeployment({
               ...context.repo,
-              ref: context.payload.pull_request.head.sha,
+              ref: process.env.SHA,
               environment: 'site preview',
               description: 'Docs preview on here.now',
               auto_merge: false,
