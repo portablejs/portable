@@ -49,7 +49,7 @@ In Node, `node:dns/promises` works as the resolver.
 
 ## Result
 
-`check` resolves to a plain object. It rejects only when `signal` aborts.
+`check` resolves to a plain object. It rejects with a `TypeError` for a `resolver` without one of the three methods, and otherwise only when `signal` aborts.
 
 | Field | Description |
 | --- | --- |

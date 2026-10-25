@@ -83,6 +83,15 @@ describe('Dmarc.check', () => {
     });
   });
 
+  test('rejects a resolver without a lookup method, instead of giving temperror', async () => {
+    const { resolveCname: _, ...partial } = zoneResolver(reject);
+    for (const resolver of [undefined, {}, partial]) {
+      await expect(
+        Dmarc.check({ from: 'example.com' }, { resolver: resolver as unknown as Dmarc.Resolver }),
+      ).rejects.toThrow(TypeError);
+    }
+  });
+
   test('rejects with the reason of an aborted signal', async () => {
     const reason = new Error('stop');
     for (const from of ['example.com', 'not a domain']) {

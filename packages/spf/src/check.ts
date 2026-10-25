@@ -127,8 +127,8 @@ const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
  * reads the SPF record of the MAIL FROM domain, or of the HELO name when the sender is empty, and
  * evaluates it against the client's IP address, with the RFC's limits of 10 DNS-querying terms
  * and 2 void lookups. DNS failures give `temperror`, and broken records give `permerror`. The
- * promise rejects only for an `ip` that isn't an IP address, or with `signal.reason` when
- * `signal` aborts.
+ * promise rejects only for an `ip` that isn't an IP address or a `resolver` without the
+ * `Resolver` methods, or with `signal.reason` when `signal` aborts.
  *
  * @example
  * ```ts
@@ -150,6 +150,8 @@ export async function check(input: check.Input, options: check.Options): Promise
   if (!address) {
     throw new RangeError(`Spf.check: "${input.ip}" is not an IP address`);
   }
+  assertResolver(options.resolver);
+  const now = toDate(options.now);
   const client = Ip.unmap(address);
   const helo = stripDot(input.helo ?? '');
   const identity = input.sender ? 'mailfrom' : 'helo';
@@ -185,7 +187,7 @@ export async function check(input: check.Input, options: check.Options): Promise
       h: helo,
       c: Ip.format(client),
       r: options.receiver ?? 'unknown',
-      t: String(Math.floor(toDate(options.now).getTime() / 1000)),
+      t: String(Math.floor(now.getTime() / 1000)),
     },
     asciiLocal: /^\p{ASCII}*$/u.test(local),
     lookups: 0,
@@ -206,6 +208,16 @@ export async function check(input: check.Input, options: check.Options): Promise
     };
   }
   return { ...base, ...outcome, lookups: ctx.lookups, voidLookups: ctx.voidLookups };
+}
+
+const resolverMethods = ['resolve4', 'resolve6', 'resolveMx', 'resolvePtr', 'resolveTxt'] as const;
+
+function assertResolver(resolver: Resolver): void {
+  for (const method of resolverMethods) {
+    if (typeof resolver?.[method] !== 'function') {
+      throw new TypeError(`Spf.check: options.resolver must have a ${method} method`);
+    }
+  }
 }
 
 async function evaluate(ctx: Context, domain: string, included: boolean): Promise<Outcome> {

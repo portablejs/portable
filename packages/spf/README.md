@@ -55,7 +55,7 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 ## Result
 
-`check` resolves to a plain object. It rejects only for an invalid `ip`, or with `signal.reason` when `signal` aborts.
+`check` resolves to a plain object. It rejects only for an invalid `ip` or a `resolver` without one of the five methods, or with `signal.reason` when `signal` aborts.
 
 | Field | Description |
 | --- | --- |

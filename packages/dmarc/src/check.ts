@@ -122,7 +122,8 @@ const maxAlignmentWalks = 10;
  * Checks a message against the DMARC policy of its From domain (RFC 9989, which replaces RFC
  * 7489). It finds the policy record with a DNS tree walk and checks whether a passing SPF result or
  * DKIM signature is aligned with the From domain. DNS failures give `temperror`, and a From domain
- * that isn't a domain name gives `permerror`. The promise rejects only when `signal` aborts.
+ * that isn't a domain name gives `permerror`. The promise rejects only for a `resolver` without the
+ * `Resolver` methods, or with `signal.reason` when `signal` aborts.
  *
  * @example
  * ```ts
@@ -141,6 +142,7 @@ const maxAlignmentWalks = 10;
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {
+  assertResolver(options.resolver);
   options.signal?.throwIfAborted();
   const author = parseDomain(input.from);
   const domain = author.kind === 'name' ? author.name : input.from.trim().toLowerCase();
@@ -290,6 +292,16 @@ export async function check(input: check.Input, options: check.Options): Promise
     dkim,
     ...(result === 'temperror' && failure(errors)),
   };
+}
+
+const resolverMethods = ['resolveTxt', 'resolve4', 'resolveCname'] as const;
+
+function assertResolver(resolver: Resolver): void {
+  for (const method of resolverMethods) {
+    if (typeof resolver?.[method] !== 'function') {
+      throw new TypeError(`options.resolver must have a ${method} method.`);
+    }
+  }
 }
 
 const strength: { [params in Policy]: number } = { none: 0, quarantine: 1, reject: 2 };

@@ -138,6 +138,18 @@ describe('Spf.check', () => {
     }
   });
 
+  test('rejects a resolver without a lookup method, instead of giving temperror', async () => {
+    const { resolveMx: _, ...partial } = zoneResolver(withRecord('v=spf1 +all'));
+    for (const resolver of [undefined, {}, partial]) {
+      await expect(
+        Spf.check(
+          { ip: '192.0.2.1', sender: 'a@example.test' },
+          { resolver: resolver as unknown as Spf.Resolver },
+        ),
+      ).rejects.toThrow(TypeError);
+    }
+  });
+
   test('accepts node:dns-shaped records split into several strings', async () => {
     const zone = { 'example.test': { TXT: [['v=spf1 ip4:192.0.2.1', ' -all']] } };
     expect(await resultOf(zone)).toBe('pass');
@@ -464,6 +476,15 @@ describe('macro-test.js', () => {
     });
     const now = { epochMilliseconds: 1_700_000_000_900 };
     expect((await check(zone, {}, { now })).explanation).toBe('1700000000');
+  });
+
+  test('rejects an invalid now, even for a sender whose domain is not a domain name', async () => {
+    const now = 'yesterday' as unknown as Date;
+    for (const sender of ['user@example.test', 'user@invalid']) {
+      await expect(check(withRecord('v=spf1 +all'), { sender }, { now })).rejects.toThrow(
+        TypeError,
+      );
+    }
   });
 });
 

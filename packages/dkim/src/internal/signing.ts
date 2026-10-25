@@ -71,9 +71,6 @@ export function assertHeaders(headers: readonly string[]): string[] {
 }
 
 export function seconds(option: string, date: Date): number {
-  if (!(date instanceof Date)) {
-    throw new TypeError(`options.${option} must be a Date.`);
-  }
   const time = Math.floor(date.getTime() / 1000);
   if (!(time >= 0 && time < 1e12)) {
     throw new RangeError(
