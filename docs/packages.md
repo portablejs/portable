@@ -49,8 +49,8 @@ L1  mime-stream   → mime-headers, bytes, streams
     idna
 L0  base64, charset, lines, quoted-printable → bytes, streams
     ip, streams, web-crypto → bytes
-    bytes, queue, random, timers
-    errors        (every package except dmarc, mail-auth, quoted-printable, random and rate-limit depends on it for its error classes or its dispose helpers)
+    bytes, log, queue, random, timers
+    errors        (every package except dmarc, log, mail-auth, quoted-printable, random and rate-limit depends on it for its error classes or its dispose helpers)
 ```
 
 ### L0: primitives (no dependencies, apart from `bytes` and `streams`)
@@ -65,6 +65,7 @@ L0  base64, charset, lines, quoted-printable → bytes, streams
 | `@portable/bytes` | `toHex`/`fromHex` (native where present, strict parsing), `concat`, `equal` and `timingSafeEqual`. Other packages use it instead of private copies. | uint8array-extras (these functions), `crypto.timingSafeEqual` from `node:crypto` |
 | `@portable/random` | Unbiased `int`, `float`, `string` from an alphabet, `shuffle` and `pick` over `crypto.getRandomValues`, and `seeded(seed)` with the same API for tests. | random-int, crypto-random-string, nanoid's `customAlphabet`, seedrandom, lodash's `random`, `sample` and `shuffle` |
 | `@portable/ip` | IPv4 and IPv6 parse and format (strict about leading zeros), CIDR matching, special-purpose range classification, and reverse-DNS names. `spf`, `dns` and `dns-packet` use it. | ip, ipaddr.js, is-ip, ip-cidr, cidr-tools, ip-range-check |
+| `@portable/log` | Namespaced logging with `debug`, `info`, `warn` and `error` levels, turned on with debug's `DEBUG` patterns from an environment variable or `localStorage`. A change to `localStorage.debug` applies without a reload, and `subscribe` sends records to other outputs. | debug |
 | `@portable/queue` | In-memory concurrency control: a queue with `concurrency`, a rate limit (`interval`, `intervalCap`) and pause/resume, `limit`, `map` and `once`, cancellable with `AbortSignal`. | p-limit, p-queue, p-map, p-throttle |
 | `@portable/web-crypto` | Helpers over `crypto.subtle` that take and return `Uint8Array`: `digest`, `hmac`, `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, `publicKeyOf`, keys from PEM text with `importPem`, and ECDSA signatures between DER and raw `r \|\| s`. | ecdsa-sig-formatter, hand-written WebCrypto wrappers |
 | `@portable/errors` | The error classes that every package's errors extend, and `Errors.is`, which matches an error's kind across two copies of a package. Its `./internal` entry holds the dispose helpers for long-lived objects. | none (shared by the family) |

@@ -21,6 +21,7 @@
     "@portable/json-stream": "workspace:*",
     "@portable/jsonl": "workspace:*",
     "@portable/lines": "workspace:*",
+    "@portable/log": "workspace:*",
     "@portable/mail": "workspace:*",
     "@portable/mail-auth": "workspace:*",
     "@portable/mime-headers": "workspace:*",

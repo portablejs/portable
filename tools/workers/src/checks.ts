@@ -20,6 +20,7 @@ import * as Ip from '@portable/ip';
 import * as JsonStream from '@portable/json-stream';
 import * as Jsonl from '@portable/jsonl';
 import * as Lines from '@portable/lines';
+import * as Log from '@portable/log';
 import * as Mail from '@portable/mail';
 import * as MailAuth from '@portable/mail-auth';
 import * as MimeHeaders from '@portable/mime-headers';
@@ -189,6 +190,13 @@ export const checks: Record<string, () => Promise<void> | void> = {
   },
   async lines() {
     equal(await through(['a\r', '\nb\nc'], new Lines.DecoderStream()), ['a', 'b', 'c']);
+  },
+  log() {
+    const records: string[] = [];
+    Log.enable('app:*', { console: false });
+    Log.subscribe((record) => records.push(Log.format(record)));
+    Log.create('app:db').debug('connected to %s', 'db');
+    equal(records, ['connected to db']);
   },
   async mail() {
     const raw = await Streams.toText(
