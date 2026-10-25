@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { findMadeUpActor } from './prose.ts';
 
-const lines = readFileSync(process.argv[2], 'utf8')
+const lines = readFileSync(process.argv[2]!, 'utf8')
   .split('\n')
   .filter((line) => !line.startsWith('#'));
 const found = lines.map(findMadeUpActor).filter((phrase) => phrase !== undefined);
