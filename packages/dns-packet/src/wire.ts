@@ -338,8 +338,8 @@ export function putName(w: Writer, name: string, compress: boolean): void {
 
 /**
  * Reads a label as text, escaping `.` and `\` as RFC 1035 presentation format does. A label that
- * isn't valid UTF-8 has its bytes outside printable ASCII escaped as `\DDD`, so encoding the name writes the same
- * bytes back.
+ * isn't valid UTF-8 has its bytes outside printable ASCII escaped as `\DDD`, so encoding the name
+ * writes the same bytes back.
  */
 function readLabel(b: Uint8Array, start: number, end: number): string {
   let text = '';

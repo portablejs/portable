@@ -106,7 +106,7 @@ Domain names go through `URL`'s IDNA conversion, then must have at least two lab
 | `Rdap.Autnum` | What `asn` returns. |
 | `Rdap.Entity` | A contact, with its jCard reduced to common fields. |
 | `Rdap.Events` | Registration, expiration and other dates, as `Date`s. |
-| `Rdap.Referral` | The registrar's RDAP server that a registry response points to. |
+| `Rdap.Referral` | The registrar's response that a registry response links to, or the error from fetching it. |
 
 ## Why use this over whoiser, whois-json and node-rdap
 

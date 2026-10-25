@@ -70,15 +70,15 @@ The next endpoint is tried after a network error, a timeout, an HTTP error statu
 
 ## Errors
 
-Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch`, `cause` holds the original error. When the DoH server answered with an error status, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`.
+Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch`, `cause` holds the original error. When the DoH server answered with an error status, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`. When every endpoint fails, `code` describes the last endpoint's failure.
 
 | `code` | Meaning |
 | --- | --- |
 | `ENOTFOUND` | The name doesn't exist (NXDOMAIN). `reverse` also uses it when there is no PTR record. |
 | `ENODATA` | The name exists, but has no records of that type. |
-| `ESERVFAIL`, `EREFUSED`, `ENOTIMP`, `EFORMERR` | Every endpoint answered with that response code. |
+| `ESERVFAIL`, `EREFUSED`, `ENOTIMP`, `EFORMERR` | The endpoint answered with that response code. |
 | `EBADRESP` | The response was malformed, truncated, for another question, not HTTP 2xx, or had another response code. |
-| `ETIMEOUT` | No endpoint answered within `timeout`. |
+| `ETIMEOUT` | The endpoint didn't answer within `timeout`. |
 | `ECONNREFUSED` | `fetch` rejected. |
 | `EBADNAME` | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.` and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
 | `EINVAL` | `reverse` was given something that isn't an IP address. |

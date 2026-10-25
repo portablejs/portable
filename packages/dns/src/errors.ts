@@ -2,12 +2,14 @@ import * as Errors from '@portable/errors';
 export declare namespace QueryError {
   /**
    * The error codes of `node:dns`, so code that checks `error.code` works with either resolver.
+   * When every endpoint fails, the code describes the last endpoint's failure.
    *
    * - `ENOTFOUND`: the name doesn't exist (NXDOMAIN).
    * - `ENODATA`: the name exists but has no records of the requested type.
-   * - `ESERVFAIL`, `EREFUSED`, `ENOTIMP`, `EFORMERR`: every endpoint answered with that response code.
-   * - `EBADRESP`: the response was malformed, truncated, for another question, or not HTTP 2xx.
-   * - `ETIMEOUT`: no endpoint answered within `timeout`.
+   * - `ESERVFAIL`, `EREFUSED`, `ENOTIMP`, `EFORMERR`: the endpoint answered with that response code.
+   * - `EBADRESP`: the response was malformed, truncated, for another question, not HTTP 2xx, or had
+   *   another response code.
+   * - `ETIMEOUT`: the endpoint didn't answer within `timeout`.
    * - `ECONNREFUSED`: `fetch` rejected, as it does when the network or the endpoint is down.
    * - `EBADNAME`: the name can't be written as a DNS name.
    * - `EINVAL`: `reverse` was given something that isn't an IP address.

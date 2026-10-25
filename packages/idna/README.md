@@ -55,8 +55,8 @@ The result equals `new URL('http://' + domain).hostname` with three exceptions. 
 punycode only converts the Punycode encoding of each label. It doesn't map uppercase or compatibility characters and doesn't check the result, so `punycode.toUnicode('xn--google-')` returns `google`, and `punycode.toASCII('ÜBER.COM')` returns `xn--BER-ska.COM`, which no browser produces. tr46 implements UTS #46, but needs punycode, which prints a deprecation warning on Node 21 and later.
 
 - All 6396 cases in Unicode's `IdnaTestV2.txt` 18.0.0 pass in Node and Chromium, and so do WPT's URL tests for IDNA. The output equals tr46 7.0.0's on those cases and 20,000 random domains.
-- It is 15 kB minified and gzipped with both functions, against 63 kB for tr46 with punycode. The tables are generated from the Unicode data files by `scripts/generate.ts`.
-- `toUnicode` on 10 hostnames was 6.6× as fast as tr46 and as fast as punycode, which does no mapping or validation. `toAscii` was 5.9× as fast as tr46 and as fast as punycode. `new URL()` is about 1.4× faster than `toAscii` in Node, where it runs in C++.
+- It is 16 kB minified and gzipped with both functions, against 64 kB for tr46 with punycode. The tables are generated from the Unicode data files by `scripts/generate.ts`.
+- `toUnicode` on 10 hostnames was 6.8× as fast as tr46 and as fast as punycode, which does no mapping or validation. `toAscii` was 5.8× as fast as tr46 and as fast as punycode. `new URL()` is about 1.2× faster than `toAscii` in Node, where it runs in C++.
 - `toAscii` and `toUnicode` take O(n log n) time on long labels. punycode and tr46 take about 15 s to encode a 40,000-character label, as Python's idna did before CVE-2024-3651.
 - Both functions throw errors instead of returning them. tr46's `toUnicode` returns `{ domain, error }`, and code that reads only `domain` displays `xn--google-` as `google`.
 - tr46's `toASCII` returns `null` for an invalid domain, where `toAscii` throws `InvalidInputError`.

@@ -1,6 +1,6 @@
 # @portable/ip
 
-Parses, formats, compares and classifies IPv4 and IPv6 addresses and CIDR blocks. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+, with no dependencies.
+Parses, formats, compares and classifies IPv4 and IPv6 addresses and CIDR blocks. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 Replaces [ip](https://www.npmjs.com/package/ip), [ipaddr.js](https://www.npmjs.com/package/ipaddr.js), [is-ip](https://www.npmjs.com/package/is-ip), [ip-cidr](https://www.npmjs.com/package/ip-cidr), [cidr-tools](https://www.npmjs.com/package/cidr-tools) and [ip-range-check](https://www.npmjs.com/package/ip-range-check) for parsing, validation, CIDR matching and classification.
 

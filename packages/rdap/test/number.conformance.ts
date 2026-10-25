@@ -218,12 +218,18 @@ describe('asn', () => {
 
   test('rejects what is not an AS number with InvalidInputError, without a request', async () => {
     const { fetch, urls } = server();
-    for (const number of [-1, 1.5, 2 ** 32, Number.NaN, Infinity, '15169' as never]) {
+    for (const number of [-1, 1.5, 2 ** 32, Number.NaN, Infinity]) {
       expect({ input: number, error: await rejection(Rdap.asn(number, { fetch })) }).toEqual({
         input: number,
         error: expect.any(Rdap.InvalidInputError),
       });
     }
+    expect(urls).toEqual([]);
+  });
+
+  test('throws a TypeError for a value that is not a number', async () => {
+    const { fetch, urls } = server();
+    expect(await rejection(Rdap.asn('15169' as never, { fetch }))).toBeInstanceOf(TypeError);
     expect(urls).toEqual([]);
   });
 });

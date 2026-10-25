@@ -16,15 +16,17 @@ import { hostToAscii } from '@portable/idna/internal';
 
 type Shared = {
   /**
-   * The function that sends each `Request`. Pass one to add headers, set a
-   * timeout, route through a proxy, or mock responses. Bootstrap files are cached separately for
-   * each `fetch` function.
+   * The function that sends each `Request`. Pass one to add headers, set a timeout, route through
+   * a proxy, or mock responses. Bootstrap files are cached separately for each `fetch` function.
    * @default globalThis.fetch
    */
   fetch?: Fetch | undefined;
   /** Cancels the lookup. It rejects with `signal.reason`, as `fetch` does. */
   signal?: AbortSignal | undefined;
-  /** The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. */
+  /**
+   * The current time, which a lookup compares with the time the bootstrap files were cached to
+   * decide whether they have expired.
+   */
   now?: Date | undefined;
 };
 
@@ -165,6 +167,9 @@ export async function ip(address: string, options: ip.Options = {}): Promise<Net
 export async function asn(number: number, options: asn.Options = {}): Promise<Autnum> {
   const { fetch = defaultFetch, signal, now } = options;
   const context = { fetch, signal, now } satisfies Context;
+  if (typeof number !== 'number') {
+    throw new TypeError('The AS number must be a number');
+  }
   if (!Number.isInteger(number) || number < 0 || number > 0xffffffff) {
     throw new InvalidInputError(`Not an AS number: ${number}`);
   }
