@@ -206,7 +206,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** keep a private copy of the 30-line transformer helper in each package; move it to a new shared or internal package; export it from streams.
 - **Trade-offs:** Nine packages had identical copies, and sse wrote the same logic out by hand. A separate shared package would add a package whose only job is one helper. Exporting it from streams makes it public API, and base64, charset, csv, json-stream, jsonl, lines, mime-stream, quoted-printable and sse now depend on streams, but streams is `sideEffects: false`, so their bundles take only `abortable`. Callers who write their own transforms can use it too. The promise helpers that race work against a signal (in dkim, dmarc, spf, timers, password, oauth1 and webhooks) only stop the caller from waiting, while the DNS query or the PBKDF2 keeps running, so a public "abortable promise" would claim more than it does.
-- **Chosen:** export `Streams.abortable(transformer, { signal })`, and keep each promise helper private in the package that uses it.
+- **Chosen:** export `Streams.abortable(transformer, { signal })`, and keep the promise helper out of the public API. The seven private copies were replaced by one `abortable(work, signal)` in `@portable/timers/internal`, because timers already holds the helpers that wait, such as `sleep` and `poll`. bytes was the other candidate, but it has no code that handles a signal. dmarc and password depend on timers for it.
 
 ## arc reuses dkim through `@portable/dkim/internal`
 
