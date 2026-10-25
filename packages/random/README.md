@@ -59,7 +59,7 @@ xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 
 
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom, and lodash
 
-Each of these libraries does part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator, crypto-random-string, and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
+Each of these libraries does part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator; crypto-random-string and nanoid only make strings; and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
 
 - `int` throws on fractional bounds. `randomInteger(1.5, 3.5)` can return 1 or 4.
 - `int` throws when `min > max` or a bound is not a safe integer. random-int and lodash swap reversed bounds, and `_.random(2 ** 60, 2 ** 62)` returns integers that aren't safe.

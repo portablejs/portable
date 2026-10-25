@@ -59,7 +59,7 @@ Each returns a plain object. These fields are on all three:
 | `entities` | `readonly Entity[]` | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list. |
 | `raw` | `Record<string, unknown>` | The response JSON, for fields such as `secureDNS`, `remarks`, and `notices`. |
 
-An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists RDAP roles such as `registrar`, `registrant`, `administrative`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`, the first `tel` that isn't a fax, with its `tel:` prefix removed, and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
+An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists RDAP roles such as `registrar`, `registrant`, `administrative`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`; the first `tel` that isn't a fax, with its `tel:` prefix removed; and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
 
 `Rdap.domain` also returns `name` (A-labels, lowercased), `unicodeName`, `nameservers` (lowercased, without trailing dots) and `referral`. `Rdap.ip` returns `name`, `version` (4 or 6), `startAddress`, `endAddress`, `cidrs`, `type`, `country`, and `parentHandle`. `Rdap.asn` returns `name`, `start`, `end`, `type`, and `country`.
 

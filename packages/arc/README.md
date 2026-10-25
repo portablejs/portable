@@ -68,7 +68,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | --- | --- | --- |
 | `domain` | required | The sealing domain (`d=`). A U-label domain is written as its A-label. |
 | `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
-| `privateKey` | required | A `CryptoKey`, a PEM `PRIVATE KEY`, or `RSA PRIVATE KEY`, or a JWK, as `Dkim.sign` takes it. The key type sets `a=`. Passing an imported `CryptoKey` saves about 1 ms per call in Node. |
+| `privateKey` | required | A `CryptoKey`, a JWK, or a PEM `PRIVATE KEY` or `RSA PRIVATE KEY`, as `Dkim.sign` takes it. The key type sets `a=`. Passing an imported `CryptoKey` saves about 1 ms per call in Node. |
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To, and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |

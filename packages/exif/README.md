@@ -35,7 +35,7 @@ Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chun
 | `interop` | `Tags` | Interoperability IFD tags. |
 | `ifd1` | `Tags` | Thumbnail tags. |
 | `latitude`, `longitude` | `number \| undefined` | Decimal degrees, negative for south and west. Set when both coordinates are present. |
-| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment, TIFF `ImageWidth`, and `ImageHeight`, PNG `IHDR`, the WebP header, or the HEIF `ispe` property of the primary item. |
+| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment; the TIFF `ImageWidth` and `ImageHeight` tags; PNG `IHDR`; the WebP header; or the HEIF `ispe` property of the primary item. |
 | `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail that IFD1 points to. `offset` is its position in the input. `bytes` is a view into the input. |
 
 A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html). A tag without a name is keyed by its id, such as `'0xC4A5'`. When an IFD holds a tag twice, the first one is kept.
