@@ -621,6 +621,29 @@ describe('cancellation', () => {
     expect(requests[0]!.signal.aborted).toBe(true);
   });
 
+  test('a lookup that starts right after the abort fetches the bootstrap file again', async () => {
+    const { fetch: inner, requests } = server();
+    const fetch = (request: Request) =>
+      requests.length === 0
+        ? new Promise<Response>((_, reject) => {
+            requests.push(request);
+            request.signal.addEventListener('abort', () => reject(request.signal.reason));
+          })
+        : inner(request);
+    const controller = new AbortController();
+    const first = Rdap.domain('sidn.nl', { fetch, signal: controller.signal });
+    await vi.waitFor(() => expect(requests).toHaveLength(1));
+    controller.abort('stop');
+    const second = Rdap.domain('sidn.nl', { fetch });
+    expect(await rejection(first)).toBe('stop');
+    expect((await second).name).toBe('sidn.nl');
+    expect(requests.map((request) => request.url)).toEqual([
+      iana,
+      iana,
+      'https://rdap.sidn.nl/domain/sidn.nl',
+    ]);
+  });
+
   test('aborting one of two lookups waiting for a bootstrap file leaves the other running', async () => {
     let release = () => {};
     const { fetch: inner, requests } = server();

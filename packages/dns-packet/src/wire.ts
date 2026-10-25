@@ -434,7 +434,7 @@ export function readName(r: Reader, end: number): string {
  * spellings that programs read differently. A zone throws, because DNS can't carry one.
  */
 export function parseAddress(ip: string, version?: 4 | 6): Uint8Array {
-  let address: Ip.Address | undefined;
+  let address: Ip.Address;
   try {
     address = Ip.parse(ip);
   } catch (cause) {

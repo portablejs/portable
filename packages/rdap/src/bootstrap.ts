@@ -90,11 +90,13 @@ function load(kind: Kind, { fetch, signal, now }: Context): Promise<Index> {
       controller,
     } satisfies Entry;
     const cache = entries;
-    created.index.catch(() => {
+    const forget = () => {
       if (cache.get(kind) === created) {
         cache.delete(kind);
       }
-    });
+    };
+    created.index.catch(forget);
+    controller.signal.addEventListener('abort', forget, { once: true });
     entries.set(kind, (entry = created));
   }
   return wait(entry, signal);

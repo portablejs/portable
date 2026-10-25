@@ -93,7 +93,7 @@ IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `:
 | `reserved` | `240.0.0.0/4` | everything outside `2000::/3` not named above |
 | `unicast` | every other address | every other address in `2000::/3` |
 
-When blocks overlap, `range` returns the most specific one, so `2001:db8::1` is `documentation`, not `ietfProtocolAssignments`.
+When blocks overlap, `range` returns the most specific one, so `2001:2::1` is `benchmarking`, not `ietfProtocolAssignments`.
 
 ### IPv4-mapped addresses
 
@@ -113,8 +113,8 @@ A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` tre
 
 ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). The package is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.
 
-- Parsing eight mixed addresses took about 1.3 µs, 13 times faster than ipaddr.js and 2 times faster than Node's `net.isIP`, which only validates.
-- Parsing an address and checking it against a CIDR block was 12 times faster than ipaddr.js and 1.7 times faster than Node's `BlockList.check`.
+- Parsing eight mixed addresses took about 1.3 µs, 12 times faster than ipaddr.js and 2.3 times faster than Node's `net.isIP`, which only validates.
+- Parsing an address and checking it against a CIDR block was 11 times faster than ipaddr.js and 1.5 times faster than Node's `BlockList.check`.
 - `contains` returns `false` for a block of the other IP version. ipaddr.js's `match` throws.
 - `range` names come from the IANA registries. ipaddr.js reports `100:0:0:1::/64` and every IPv6 address outside `2000::/3` that it doesn't name, such as `4000::1`, as `unicast`, and ip's `isPrivate` misses `198.18.0.0/15`.
 - The IPv4 part of an IPv6 address can't have leading zeros. ipaddr.js reads `::ffff:0177.0.0.1` as `177.0.0.1` and `0177.0.0.1` as `127.0.0.1`.
