@@ -461,6 +461,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/streams':
+        specifier: workspace:*
+        version: link:../streams
 
   packages/exif/test:
     devDependencies:
