@@ -36,13 +36,17 @@ Functions take and return bytes as `Uint8Array`, never `ArrayBuffer` or another 
 
 A function takes the value it acts on as a positional argument and its settings in one optional `options` object, which comes last. A function that mirrors a platform function, such as `Compress.crc32(data, previous)`, copies that function's signature. No function takes a positional boolean.
 
+## Times
+
+Durations are in milliseconds unless the protocol sets the unit, as Web Push does for `ttl` in seconds. An option that takes a point in time, such as `now` or `expiresAt`, accepts a `Date` or any object with `epochMilliseconds`, such as a `Temporal.Instant`. Times in results are `Date` objects, because Safari has no Temporal yet.
+
 ## Cancellation
 
 Every async function and every stream takes `signal?: AbortSignal` in its options. When the signal aborts, a function rejects with `signal.reason`, as `fetch` does, and a stream errors with it and cancels its source. The abort also stops the work the function started: its `fetch` calls, timers, readers, and nested streams. For a timeout, pass `AbortSignal.timeout(ms)`.
 
 ## Connections and other long-lived objects
 
-An object that keeps running after the call that created it, such as an SMTP client, a queue or a debounced function, stops when you call its `close()` method, or when you abort the `signal` you passed when you created it if it has no `close()`. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Node 24, Deno and Bun), the object also works with `await using`, which stops it when the block exits:
+Some objects keep running after the call that created them returns. An SMTP client stops when you call its `close()` method, and a debounced function when you call `cancel()`. A queue and a WebSocket from `WebSockets.connect` stop when you abort the `signal` you passed when you created them. Where the runtime has `Symbol.asyncDispose` (Chrome 134, Firefox 141, Node 24, Deno and Bun), the object also works with `await using`, which stops it when the block exits:
 
 ```ts
 import { connect } from 'cloudflare:sockets';

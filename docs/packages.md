@@ -76,7 +76,7 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 | --- | --- |
 | `fromIterable(iterable)` | `ReadableStream` from any `Iterable` or `AsyncIterable` (arrays, generators, async generators). Pull-based, so it respects backpressure; cancelling the stream calls the iterator's `return()` so `finally` blocks in generators run. |
 | `toAsyncIterable(stream)` | Async iterator over a `ReadableStream`. Breaking out of `for await` cancels the stream (or, with `{ preventCancel: true }`, just releases the lock). |
-| `transform(async function* (source) { ... })` | Build a `TransformStream` from an async generator that reads `source` and `yield`s output, which is the shortest way to write a stateful transform. Errors and cancellation propagate both ways. |
+| `transform(async function* (source) { ... })` | Build a `{ readable, writable }` pair for `pipeThrough` from an async generator that reads `source` and `yield`s output, which is the shortest way to write a stateful transform. Errors and cancellation propagate both ways. |
 | `map`, `filter`, `tap`, `batch(n)` | Small `TransformStream` factories for the through2 cases. |
 | `toArray`, `toBytes`, `toBlob`, `toText`, `toJson` | Collectors, which accept a stream or any async iterable. |
 

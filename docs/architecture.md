@@ -124,7 +124,7 @@ The `browser` project uses Vitest browser mode with Playwright and runs Chromium
 
 The conformance tests don't run in Workers yet, because `@cloudflare/vitest-pool-workers` supports Vitest 4 and Vite+ ships Vitest 5. Instead, `pnpm test:workers` runs `tools/workers/src/run.ts`, which bundles every entry point of every package into one Worker and runs it in workerd through Miniflare. Loading the bundle fails if a module creates an `AbortController`, sets a timer or generates random values at the top level, because workerd refuses those outside a handler. The Worker's `fetch` handler then runs the checks in `tools/workers/src/checks.ts`. Each check calls one package with input that makes it use its platform APIs, such as `CompressionStream`, `crypto.subtle`, `MessageChannel` and `WebSocketPair`. Miniflare runs workerd without the limits of a deployed Worker, such as the 100,000-iteration cap on PBKDF2.
 
-Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream. Chromium 141 has neither, which made the first browser run of `@portable/lines` fail.
+Test helpers build and read streams by hand instead of using `ReadableStream.from` or `for await` over a stream, because Chromium has no `ReadableStream.from` and Safari before 27 has neither. The missing `ReadableStream.from` made the first browser run of `@portable/lines` fail in Chromium 141.
 
 ### Parity with the replaced library
 

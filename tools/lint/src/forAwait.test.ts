@@ -3,9 +3,9 @@ import { join, relative } from 'node:path';
 import ts from 'typescript';
 import { expect, test } from 'vite-plus/test';
 
-// Safari has no `ReadableStream.prototype[Symbol.asyncIterator]`, so `for await` over a stream
-// throws there, while `for await` over a generator or an array works in every browser. A lint
-// rule sees only syntax and can't tell the two apart, so this test reads package code with the
+// Safari before 27 has no `ReadableStream.prototype[Symbol.asyncIterator]`, so `for await` over a
+// stream throws there, while `for await` over a generator or an array works in every browser. A
+// lint rule sees only syntax and can't tell the two apart, so this test reads package code with the
 // TypeScript checker and reports a `for await` only when the value can be a `ReadableStream`.
 
 const root = join(import.meta.dirname, '../../..');

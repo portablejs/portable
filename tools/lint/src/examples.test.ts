@@ -4,11 +4,11 @@ import ts from 'typescript';
 import { expect, test } from 'vite-plus/test';
 
 // Type-checks every TypeScript example a reader might copy: the code blocks in the site's pages and
-// the package READMEs, and the JSDoc `@example` blocks in package source. Examples leave out the
-// code around them, such as the `request` of a fetch handler, so when an example uses a name it
-// doesn't import or declare, the test declares it: a missing `@portable/*` namespace is imported,
-// a capitalized name becomes a class with `any` members, and any other name gets its type from
-// `conventional` or `any`.
+// the root and package READMEs, and the JSDoc `@example` blocks in package source. Examples leave
+// out the code around them, such as the `request` of a fetch handler, so when an example uses a
+// name it doesn't import or declare, the test declares it: a missing `@portable/*` namespace is
+// imported, a capitalized name becomes a class with `any` members, and any other name gets its
+// type from `conventional` or `any`.
 
 const root = join(import.meta.dirname, '../../..');
 
@@ -54,6 +54,7 @@ function examples(list: readonly Package[]): Example[] {
     ...walk(join(root, 'site/src/pages'), /\.mdx?$/).filter(
       (file) => !file.includes('/pages/packages/'),
     ),
+    join(root, 'README.md'),
     ...list.map((pkg) => join(pkg.dir, 'README.md')).filter((file) => existsSync(file)),
   ];
   for (const file of markdown) {
