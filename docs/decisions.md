@@ -690,3 +690,22 @@ These were recorded as each package was built. Each package's README and PARITY.
 ## Retry callbacks take an `{ attempt }` object
 
 `retryIf`, `onRetry`, the reconnecting clients' `reconnectIf` and a `delay` function all receive the attempt number in an object: `retryIf(error, { attempt })`, `onRetry(error, { attempt, delay })`, `reconnectIf(close, { attempt })` and `delay({ attempt, error })`. Before, `retryIf` and the sse `reconnectIf` took the number as a positional, `onRetry` took an object, websockets' `reconnectIf` took no number, and a `delay` function took `error` as an optional positional because `poll` has no error to pass. An object lets a callback get a new field later without breaking callers. Every `reconnectIf` can now return a promise, as `retryIf` could.
+
+## `@portable/streams/node` is a plain subpath export
+
+- **Options:** export `./node` only under the `node` condition, as packages.md planned; a plain `./node` export with `src`, `types` and `default`, like every other entry.
+- **Trade-offs:** With only a `node` condition, a browser or Workers bundle that imports the entry fails to resolve it, which gives a clearer error than a missing `node:stream`. But zile adds a `default` condition to every export when it publishes, so the published package would have one anyway, and `tools/lint/src/packages.test.ts` requires the same three conditions for every entry. Bun and Deno resolve `node:stream` either way.
+- **Chosen:** a plain export. The module JSDoc and the README say it runs in Node, Bun and Deno, and `tools/workers/src/run.ts` leaves `./node` entries out of the Worker bundle.
+
+## `NodeStreams.toWeb` and `toWebObjects` are two functions
+
+- **Options:** one `toWeb` that returns `ReadableStream<unknown>`; one `toWeb` with a type parameter for the chunk type; `toWeb` for bytes and `toWebObjects` for object mode.
+- **Trade-offs:** A `Readable` doesn't declare its chunk type or whether it is in object mode, so one function can't type its result from its argument. `unknown` makes every byte stream need a cast before `pipeThrough(new TextDecoderStream())`, and a type parameter that appears only in the result lets the caller pick any chunk type without a check, so it is no safer than a cast. AGENTS.md says to write two functions when the result type would change.
+- **Chosen:** two functions. `toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>` and errors with a `TypeError` for a chunk that isn't bytes or a string. `toWebObjects` returns `ReadableStream<unknown>`. `fromWeb`, `fromWebWritable` and `fromWebTransform` take `objectMode` options instead, because their result is a Node stream whatever the mode. `toWebTransform` returns a byte readable side, and its JSDoc shows how to build the pair for an object-mode `Duplex` from `toWebObjects` and `toWebWritable`.
+
+## `NodeStreams` wraps a `Buffer` without copying it
+
+- **Options:** copy every `Buffer` chunk, as `Readable.toWeb` does; copy only a `Buffer` that shares its `ArrayBuffer` with others; wrap the `Buffer`'s memory in a plain `Uint8Array`.
+- **Trade-offs:** A small `Buffer` shares Node's pool, which is 64 KiB in Node 24, so transferring a chunk's `ArrayBuffer` detaches the other buffers in the pool. Copying the pooled ones avoids that, but in Node 24 a 4 KB `Buffer` is pooled, and copying made `fromWebWritable` take about twice as long as `Writable.fromWeb`. The `Buffer` that the Node stream passes to `NodeStreams` already shares the pool, so a `Uint8Array` over its memory shares nothing that the `Buffer` didn't.
+- **Chosen:** a `Uint8Array` over the same memory, and a copy only for a `SharedArrayBuffer`. The README says not to transfer a chunk's `ArrayBuffer`.
+

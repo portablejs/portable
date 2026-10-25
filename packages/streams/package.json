@@ -23,7 +23,8 @@
     "merge2",
     "through2",
     "async-iterable",
-    "readablestream"
+    "readablestream",
+    "node-streams"
   ],
   "engines": {
     "node": ">=24"
@@ -41,6 +42,11 @@
       "src": "./src/exports/index.ts",
       "types": "./dist/exports/index.d.ts",
       "default": "./dist/exports/index.js"
+    },
+    "./node": {
+      "src": "./src/exports/node.ts",
+      "types": "./dist/exports/node.d.ts",
+      "default": "./dist/exports/node.js"
     }
   },
   "main": "./dist/exports/index.js",

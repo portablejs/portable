@@ -226,6 +226,12 @@ export default defineConfig({
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },
       {
+        // @portable/streams/node converts between Node streams and web streams, so it is the one
+        // entry of any package that imports node:*. Its tests run only in Node.
+        files: ['packages/streams/src/node/**', 'packages/streams/test/node.test.ts'],
+        rules: { 'no-restricted-imports': 'off' },
+      },
+      {
         files: ['vite.config.ts', 'site/vocs.config.ts', 'tools/lint/src/plugin.ts'],
         rules: { 'import/no-default-export': 'off' },
       },

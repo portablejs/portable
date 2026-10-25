@@ -15,8 +15,7 @@ The packages are small and do one thing each, like much of npm's most-used code,
 7. **Don't rebuild existing web-standard packages.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
 8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. We still publish and version each `@portable/*` package on its own.
 
-9. **`/node` entrypoints where Node helps (deferred; low priority, not in the first builds).** The main entry of every package is web-standard only. A package may add a `/node` subpath, exported under the `node` condition, when Node has something better or users need a bridge. It is the only code allowed to import `node:*` (oxlint override on `src/node/**`), it never changes the main API, and no other Portable package imports it. Current candidates:
-   - `streams/node`: conversion between Node streams and web streams (below).
+9. **`/node` entrypoints where Node helps.** The main entry of every package is web-standard only. A package may add a `./node` subpath when Node has a better API, or to convert between Node and web types. It is the only code allowed to import `node:*` (an oxlint override on that package's `src/node/**`), it never changes the main API, and no other Portable package imports it. `streams/node` exists and is described below. The other candidates:
    - `dns/node`: a resolver backed by `node:dns/promises`, so Node users skip DNS-over-HTTPS.
    - `png/node`: sync inflate/deflate via `node:zlib`, so Node users get a sync API without adding fflate.
 
@@ -83,14 +82,16 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 | `map`, `filter`, `tap`, `batch(n)` | Small `TransformStream` factories for the through2 cases. |
 | `toArray`, `toBytes`, `toBlob`, `toText`, `toJson` | Collectors, which accept a stream or any async iterable. |
 
-**Node interop (deferred, low priority)** will go in one subpath, `@portable/streams/node`, as ox ships `ox/node`. It is the only place in the repo allowed to import `node:*` (an oxlint override scoped to `src/node/**`), the package exports it only under the `node` condition, and nothing else in the family imports it:
+**Node interop** is in one subpath, `@portable/streams/node`, as ox ships `ox/node`. Its `src/node/**` is the only code in the package allowed to import `node:*`, and no other Portable package imports it. It's a plain `./node` export, without a `node` condition ([decision](decisions.md#portablestreamsnode-is-a-plain-subpath-export)):
 
 | Function | Does |
 | --- | --- |
-| `toWeb(readable)` / `fromWeb(stream)` | Converts between a Node `Readable` and a `ReadableStream<Uint8Array>`, built on `Readable.toWeb` / `Readable.fromWeb` but fixing their gaps: `Buffer` and string chunks normalized to plain `Uint8Array`, object mode handled, errors and destroy/cancel propagated both ways. |
-| `toWebWritable(writable)` / `fromWebWritable(stream)` | Converts between a Node `Writable` and a `WritableStream`. |
-| `toWebTransform(duplex)` / `fromWebTransform(transform)` | Converts between a Node `Transform` or `Duplex` and a `TransformStream`, so an existing through2-style transform can be dropped into `pipeThrough`. |
-| `pipeToNodeResponse(stream, res)` | Write a web stream into an `http.ServerResponse` with backpressure, for people mid-migration. |
+| `toWeb(readable)` / `toWebObjects(readable)` | Converts a Node `Readable` of bytes to a `ReadableStream<Uint8Array>`, or an object-mode one to a `ReadableStream<unknown>`. `Buffer` chunks become plain `Uint8Array`s, and strings from `setEncoding` are encoded back to their bytes. The `Readable` is read only when the stream is read. Errors, `destroy()` and cancel propagate in both directions. |
+| `fromWeb(stream, { objectMode })` | Converts a `ReadableStream` to a Node `Readable`. |
+| `toWebWritable(writable)` / `fromWebWritable(stream, { objectMode })` | Converts between a Node `Writable` and a `WritableStream`. |
+| `toWebTransform(duplex)` / `fromWebTransform(pair, { readableObjectMode, writableObjectMode })` | Converts between a Node `Transform` or `Duplex` and a `{ readable, writable }` pair, so an existing through2-style transform can go in `pipeThrough`, and a `TransformStream` in `pipeline()`. |
+
+Every function takes `signal`. There's no `pipeToNodeResponse(stream, res)`, because `stream.pipeTo(NodeStreams.toWebWritable(res))` does the same.
 
 The portable half needs no special support: a Node `Readable` is already an async iterable, so `fromIterable(nodeReadable)` works everywhere.
 
