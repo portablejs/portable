@@ -83,7 +83,7 @@ The limits of RFC 7208 section 4.6.4 are fixed:
 
 ## Macros
 
-All of RFC 7208 section 7 is supported: `%{s}`, `%{l}`, `%{o}`, `%{d}`, `%{i}`, `%{p}`, `%{v}`, `%{h}`, and `%{c}`, `%{r}`, and `%{t}` in explanations, with digit, `r`, and delimiter transformers, URL escaping for upper-case letters, and `%%`, `%_`, and `%-`.
+All of RFC 7208 section 7 is supported: `%{s}`, `%{l}`, `%{o}`, `%{d}`, `%{i}`, `%{p}`, `%{v}`, and `%{h}`; `%{c}`, `%{r}`, and `%{t}` in explanations; digit, `r`, and delimiter transformers; URL escaping for upper-case letters; and `%%`, `%_`, and `%-`.
 
 RFC 7208 says `%{p}` SHOULD NOT be used: it is slow and the client controls its PTR records. It works as the RFC describes, preferring a validated name equal to or under the current domain, then any validated name, then `unknown`.
 

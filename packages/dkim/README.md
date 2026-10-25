@@ -92,7 +92,7 @@ There is no default resolver, so you decide which servers see the lookups. `veri
 | `pass` | The body hash and the signature verify. |
 | `fail` | The body hash or the signature doesn't verify. |
 | `policy` | rsa-sha1, or an RSA key shorter than `minKeyBits`. |
-| `neutral` | The signature can't be processed: a syntax error, a missing tag, an unknown version, algorithm, or canonicalization, an `i=` outside `d=`, a `From` field that isn't signed, an `l=` longer than the body, or an expired signature. |
+| `neutral` | The signature can't be processed: a syntax error; a missing tag; an unknown version, algorithm, or canonicalization; an `i=` outside `d=`; a `From` field that isn't signed; an `l=` longer than the body; or an expired signature. |
 | `permerror` | The key record: no key, a key that is revoked or invalid, a syntax error, an unknown key version or type, a key not for email, or a key that doesn't allow the signature's algorithm or `i=`. |
 | `temperror` | The key lookup failed. |
 

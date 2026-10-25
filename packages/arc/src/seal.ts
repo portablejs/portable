@@ -43,7 +43,7 @@ export declare namespace seal {
     selector: string;
     /**
      * An RSA key of at least 1024 bits or an Ed25519 key, in any form `Dkim.sign` takes: a
-     * `CryptoKey`, a PEM `PRIVATE KEY`, or `RSA PRIVATE KEY`, or a JWK. The key type sets `a=`.
+     * `CryptoKey`, a JWK, or a PEM `PRIVATE KEY` or `RSA PRIVATE KEY`. The key type sets `a=`.
      */
     privateKey: CryptoKey | string | JsonWebKey;
     /**

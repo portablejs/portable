@@ -68,7 +68,7 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 | `encoding` | Format | Used by |
 | --- | --- | --- |
-| `'unsigned'` | LEB128 | protobuf `uint32`, `uint64`, and `int64`, Minecraft VarInt, and VarLong, WebAssembly `u32` |
+| `'unsigned'` | LEB128 | protobuf `uint32`, `uint64`, and `int64`; Minecraft VarInt and VarLong; WebAssembly `u32` |
 | `'zigzag'` | 0, -1, 1, -2 stored as 0, 1, 2, 3 | protobuf `sint32` and `sint64` |
 | `'signed'` | SLEB128 | WebAssembly `i32` and `i64`, DWARF |
 

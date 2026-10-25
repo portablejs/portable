@@ -314,7 +314,7 @@ Not from penpal, found while porting: a `BroadcastChannel` doesn't buffer, so ca
 
 Each one is asserted in `packages/rpc/test/rpc.oracle.test.ts` (describe "server follows the spec where JSONRPCServer does not", and "client sends the same bytes as JSONRPCClient"). Both outputs are pinned, so a change on either side fails the test. Upstream output is `JSON.stringify(await server.receiveJSON(text))`. Ours is the exact text written to a transport and the body of `Rpc.handler`'s response.
 
-Everything else compared byte for byte is identical, including key order: single requests, by-name, and positional params, nested `a.b` methods, unknown methods, `toString`/`__proto__`, string/number/fractional/negative/null ids, results of every JSON type, `undefined` as `null`, `RemoteError` vs `JSONRPCErrorException` with code and data (including falsy data), parse errors, empty batch, batches with two or more responses, duplicate ids, notifications, and 300 seeded random messages and batches.
+Everything else compared byte for byte is identical, including key order: single requests, by-name params, positional params, nested `a.b` methods, unknown methods, `toString`/`__proto__`, string/number/fractional/negative/null ids, results of every JSON type, `undefined` as `null`, `RemoteError` vs `JSONRPCErrorException` with code and data (including falsy data), parse errors, empty batch, batches with two or more responses, duplicate ids, notifications, and 300 seeded random messages and batches.
 
 ### Server
 

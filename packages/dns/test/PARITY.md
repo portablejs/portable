@@ -13,7 +13,7 @@ Test files:
 - `resolver.conformance.ts` runs in Node and browsers against a mocked `fetch`.
 - `resolver.oracle.test.ts` runs a UDP DNS server on localhost, points `node:dns/promises` at it, and gives Node and this package the same answers. It covers random records of every type, every error response code, odd names, reverse lookups, and the recorded responses, and then tests each deliberate difference on its own.
 - `resolver.network.test.ts` queries Cloudflare and Google for real. It is skipped unless `DNS_NETWORK=1` is set.
-- `fixtures/responses.json` holds 58 responses recorded from `cloudflare-dns.com` and `dns.google` in October 2026, for 29 questions. They include long TXT records split into strings, CNAME chains, NXDOMAIN, NODATA, a null MX, and SRV, and PTR records.
+- `fixtures/responses.json` holds 58 responses recorded from `cloudflare-dns.com` and `dns.google` in October 2026, for 29 questions. They include long TXT records split into strings, CNAME chains, NXDOMAIN, NODATA, a null MX, and SRV and PTR records.
 
 Node's internet tests and tangerine's tests query live servers. Here their cases run against recorded or generated responses, and the live test covers a few of them again.
 
