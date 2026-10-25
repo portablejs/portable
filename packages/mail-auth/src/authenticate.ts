@@ -1,9 +1,16 @@
-import { isUint8Array } from '@portable/bytes/internal';
 import * as Arc from '@portable/arc';
+import { createSealer, planVerify as planArc } from '@portable/arc/internal';
 import * as Dkim from '@portable/dkim';
+import {
+  assertResolver,
+  hashBody,
+  parseFields,
+  planVerify as planDkim,
+  splitMessage,
+  toBinary,
+} from '@portable/dkim/internal';
 import * as Dmarc from '@portable/dmarc';
 import * as Spf from '@portable/spf';
-import * as Streams from '@portable/streams';
 import { author, type SkipReason } from './internal/author.js';
 import { assertAuthservId, formatResults } from './internal/results.js';
 
@@ -122,22 +129,30 @@ export async function authenticate(
   message: Dkim.Message,
   options: authenticate.Options,
 ): Promise<Result> {
-  const { resolver, ip, helo, sender, seal, now, minKeyBits, hasher, signal } = options;
+  const { resolver, ip, helo, sender, now, minKeyBits, hasher, signal } = options;
   const authservId = assertAuthservId(options.authservId);
+  assertResolver(resolver);
   signal?.throwIfAborted();
-  const bytes =
-    typeof message === 'string'
-      ? new TextEncoder().encode(message)
-      : isUint8Array(message)
-        ? message
-        : await Streams.toBytes(message, { signal });
-  const verifyOptions = { resolver, now, minKeyBits, hasher, signal };
+  const sealer = options.seal && (await createSealer(options.seal));
+  const spfCheck = Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal });
+  spfCheck.catch(() => {});
+  const { header, body } = await splitMessage(message, signal);
+  const fields = parseFields(toBinary(header));
+  const verifyOptions = { resolver, now, minKeyBits, signal };
+  const dkimPlan = planDkim(fields, verifyOptions);
+  const arcPlan = planArc(fields, verifyOptions);
+  const digests = await hashBody(
+    body,
+    [...dkimPlan.requests, ...arcPlan.requests, ...(sealer ? [sealer.request] : [])],
+    hasher,
+  );
+  signal?.throwIfAborted();
   const [spf, dkim, arc] = await Promise.all([
-    Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal }),
-    Dkim.verify(bytes, verifyOptions),
-    Arc.verify(bytes, verifyOptions),
+    spfCheck,
+    dkimPlan.finish(digests),
+    arcPlan.finish(digests),
   ]);
-  const from = author(bytes);
+  const from = author(header);
   const dmarc =
     'domain' in from
       ? await Dmarc.check(
@@ -154,16 +169,10 @@ export async function authenticate(
     authResults,
     headers: `Authentication-Results: ${authResults}\r\n`,
   };
-  if (seal) {
+  if (sealer) {
     try {
-      const fields = await Arc.seal(bytes, {
-        ...seal,
-        authResults,
-        chainValidation: arc.result,
-        hasher,
-        signal,
-      });
-      result.headers = fields + result.headers;
+      const sign = sealer.prepare(fields, authResults, arc.result);
+      result.headers = (await sign(digests)) + result.headers;
     } catch (error) {
       if (!(error instanceof Arc.InvalidInputError)) {
         throw error;

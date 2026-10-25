@@ -1,7 +1,9 @@
 import * as Bytes from '@portable/bytes';
 import type * as Dkim from '@portable/dkim';
 import {
+  assertResolver,
   binaryToText,
+  type BodyDigest,
   bodyHashKey,
   check,
   decodeBase64,
@@ -17,6 +19,7 @@ import {
   type Message,
   parseFields,
   parseTags,
+  type Plan,
   prepare,
   signedData,
   splitMessage,
@@ -122,12 +125,21 @@ const sealTags = ['a', 'b', 'cv', 'd', 's'];
  * ```
  */
 export async function verify(message: Message, options: verify.Options): Promise<Result> {
-  const { resolver, now = new Date(), minKeyBits = 1024, hasher, signal } = options;
-  if (typeof resolver?.resolveTxt !== 'function') {
-    throw new TypeError('options.resolver must have a resolveTxt method.');
-  }
-  const { header, body } = await splitMessage(message, signal);
-  const fields = parseFields(toBinary(header));
+  assertResolver(options.resolver);
+  const { header, body } = await splitMessage(message, options.signal);
+  const plan = planVerify(parseFields(toBinary(header)), options);
+  const digests = await hashBody(body, plan.requests, options.hasher);
+  options.signal?.throwIfAborted();
+  return plan.finish(digests);
+}
+
+/**
+ * Checks the chain's structure and every check that needs no key, starts the key lookups and
+ * returns the body hash the newest ARC-Message-Signature needs, with the step that checks the
+ * signatures once the body is hashed. A chain that fails before that needs no body hash.
+ */
+export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result> {
+  const { resolver, now = new Date(), minKeyBits = 1024, signal } = options;
   const { instance } = newest(fields);
   const failed = (reason: string, cause?: unknown): Result => ({
     result: 'fail',
@@ -136,43 +148,43 @@ export async function verify(message: Message, options: verify.Options): Promise
     ...(cause !== undefined && { cause }),
     sets: [],
   });
-  const stop = async (result: Result): Promise<Result> => {
-    await body.cancel();
-    return result;
-  };
+  const done = (result: Result): Plan<Result> => ({
+    requests: [],
+    finish: () => Promise.resolve(result),
+  });
 
   if (!fields.some(isArcField)) {
-    return stop({ result: 'none', instance: 0, sets: [] });
+    return done({ result: 'none', instance: 0, sets: [] });
   }
   const sets = readChain(fields);
   if (typeof sets === 'string') {
-    return stop(failed(sets));
+    return done(failed(sets));
   }
   const last = sets.at(-1)!;
   if (chainValidation(last.seal) === 'fail') {
-    return stop(failed(`i=${last.instance} has cv=fail`));
+    return done(failed(`i=${last.instance} has cv=fail`));
   }
   for (const set of sets) {
     const expected = set.instance === 1 ? 'none' : 'pass';
     const cv = chainValidation(set.seal);
     if (cv !== expected) {
-      return stop(failed(`i=${set.instance} has cv=${cv ?? ''} instead of cv=${expected}`));
+      return done(failed(`i=${set.instance} has cv=${cv ?? ''} instead of cv=${expected}`));
     }
   }
   const seals: Seal[] = [];
   for (const set of sets) {
     const seal = prepareSeal(set);
     if (typeof seal === 'string') {
-      return stop(failed(seal));
+      return done(failed(seal));
     }
     seals.push(seal);
   }
   const signature = prepare(last.signature, now, 'arc');
   if (signature.outcome) {
-    return stop(failed(`i=${last.instance} ams ${signature.outcome.reason}`));
+    return done(failed(`i=${last.instance} ams ${signature.outcome.reason}`));
   }
   if (signature.names.includes('arc-seal')) {
-    return stop(failed(`i=${last.instance} ams signs ARC-Seal`));
+    return done(failed(`i=${last.instance} ams signs ARC-Seal`));
   }
 
   const keys = new Map<string, Promise<KeyRecord>>();
@@ -184,47 +196,48 @@ export async function verify(message: Message, options: verify.Options): Promise
     key.catch(() => {});
     keys.set(keyName, key);
   }
-  const digests = await hashBody(body, [signature.body], hasher);
-  signal?.throwIfAborted();
 
-  const digest = digests.get(bodyHashKey(signature.body))!;
-  const { length } = signature.body;
-  if (length !== undefined && length > digest.total) {
-    return failed(`i=${last.instance} ams l= is longer than the body`);
-  }
-  if (!Bytes.equal(digest.digest, signature.bodyHash)) {
-    return failed(`i=${last.instance} ams body hash did not verify`);
-  }
-  const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits);
-  if (outcome.result !== 'pass') {
-    return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause);
-  }
-
-  for (let i = seals.length - 1; i >= 0; i--) {
-    const seal = seals[i]!;
-    const covered: Field[] = [];
-    for (const set of sets.slice(0, i)) {
-      covered.push(set.results, set.signature, set.seal);
+  const finish = async (digests: ReadonlyMap<string, BodyDigest>): Promise<Result> => {
+    const digest = digests.get(bodyHashKey(signature.body))!;
+    const { length } = signature.body;
+    if (length !== undefined && length > digest.total) {
+      return failed(`i=${last.instance} ams l= is longer than the body`);
     }
-    covered.push(seal.set.results, seal.set.signature);
-    const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'));
-    const record = await keys.get(seal.keyName)!;
-    const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits);
+    if (!Bytes.equal(digest.digest, signature.bodyHash)) {
+      return failed(`i=${last.instance} ams body hash did not verify`);
+    }
+    const outcome = await check(signature, fields, await keys.get(signature.keyName)!, minKeyBits);
     if (outcome.result !== 'pass') {
-      return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause);
+      return failed(`i=${last.instance} ams ${outcome.reason}`, outcome.cause);
     }
-  }
 
-  return {
-    result: 'pass',
-    instance,
-    sets: seals.map(({ set, domain, selector }) => ({
-      instance: set.instance,
-      domain,
-      selector,
-      authResults: authResultsOf(set.results),
-    })),
+    for (let i = seals.length - 1; i >= 0; i--) {
+      const seal = seals[i]!;
+      const covered: Field[] = [];
+      for (const set of sets.slice(0, i)) {
+        covered.push(set.results, set.signature, set.seal);
+      }
+      covered.push(seal.set.results, seal.set.signature);
+      const data = fromBinary(signedData(covered, seal.set.seal.raw, 'relaxed'));
+      const record = await keys.get(seal.keyName)!;
+      const outcome = await verifyData(record, seal.type, seal.value, data, minKeyBits);
+      if (outcome.result !== 'pass') {
+        return failed(`i=${seal.set.instance} as ${outcome.reason}`, outcome.cause);
+      }
+    }
+
+    return {
+      result: 'pass',
+      instance,
+      sets: seals.map(({ set, domain, selector }) => ({
+        instance: set.instance,
+        domain,
+        selector,
+        authResults: authResultsOf(set.results),
+      })),
+    };
   };
+  return { requests: [signature.body], finish };
 }
 
 /** Checks an ARC-Seal's tags (RFC 8617 section 4.1.3) before any key is looked up. */

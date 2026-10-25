@@ -11,3 +11,4 @@ export * from '../internal/names.js';
 export * from '../internal/signature.js';
 export * from '../internal/signing.js';
 export * from '../internal/tags.js';
+export { planVerify } from '../verify.js';

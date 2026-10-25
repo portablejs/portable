@@ -2,6 +2,9 @@ import * as Base64 from '@portable/base64';
 import type * as Dkim from '@portable/dkim';
 import {
   appendValue,
+  type BodyDigest,
+  type BodyHash,
+  bodyHashKey,
   casedName,
   assertHeaders,
   normalizeName,
@@ -102,16 +105,56 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders];
  * ```
  */
 export async function seal(message: Message, options: seal.Options): Promise<string> {
-  const { headers = arcDefaultHeaders, now = new Date(), hasher, signal } = options;
+  const { chainValidation, hasher, signal } = options;
+  const sealer = await createSealer(options);
+  const authResults = normalizeAuthResults(options.authResults);
+  if (chainValidation !== undefined && !statuses.has(chainValidation)) {
+    throw new RangeError('options.chainValidation must be none, pass or fail.');
+  }
+  const split = await splitMessage(message, signal);
+  let sign: (digests: ReadonlyMap<string, BodyDigest>) => Promise<string>;
+  try {
+    sign = sealer.prepare(parseFields(toBinary(split.header)), authResults, chainValidation);
+  } catch (error) {
+    await split.body.cancel();
+    throw error;
+  }
+  const digests = await hashBody(split.body, [sealer.request], hasher);
+  signal?.throwIfAborted();
+  return sign(digests);
+}
+
+/** A checked sealing domain, selector, header list, time and imported key. */
+export type Sealer = {
+  /** The body hash the ARC-Message-Signature needs. */
+  request: BodyHash;
+  /**
+   * Checks that the message can be sealed with `cv=chainValidation`, and returns the step that
+   * signs the new set once the body is hashed. Throws `InvalidInputError` for a message that must
+   * not be sealed, and a `TypeError` or `RangeError` for a `chainValidation` that doesn't fit it.
+   * `authResults` must already be checked.
+   */
+  prepare: (
+    fields: readonly Field[],
+    authResults: string,
+    chainValidation: Result.Code | undefined,
+  ) => (digests: ReadonlyMap<string, BodyDigest>) => Promise<string>;
+};
+
+const request = { canonicalization: 'relaxed' } satisfies BodyHash;
+
+/**
+ * Checks the options that don't depend on the message and imports the key, so
+ * `MailAuth.authenticate` can reject invalid seal options before it reads the message.
+ */
+export async function createSealer(
+  options: Pick<seal.Options, 'domain' | 'selector' | 'privateKey' | 'headers' | 'now'>,
+): Promise<Sealer> {
+  const { headers = arcDefaultHeaders, now = new Date() } = options;
   const domain = normalizeName('domain', options.domain, isDomainName);
   const selector = normalizeName('selector', options.selector, isSelector);
   if (!canFitDns(`${selector}._domainkey.${domain}`)) {
     throw new RangeError('The key name <selector>._domainkey.<domain> is too long for DNS.');
-  }
-  const authResults = normalizeAuthResults(options.authResults);
-  const { chainValidation } = options;
-  if (chainValidation !== undefined && !statuses.has(chainValidation)) {
-    throw new RangeError('options.chainValidation must be none, pass or fail.');
   }
   const names = assertHeaders(headers).filter((name) => !unsigned.has(lowerAscii(name)));
   const timestamp = seconds('now', now);
@@ -121,103 +164,97 @@ export async function seal(message: Message, options: seal.Options): Promise<str
     throw new RangeError('RSA keys shorter than 1024 bits are not allowed (RFC 8301 section 3.2).');
   }
 
-  const split = await splitMessage(message, signal);
-  const refuse = async (error: Error): Promise<never> => {
-    await split.body.cancel();
-    throw error;
+  return {
+    request,
+    prepare: (fields, authResults, chainValidation) => {
+      const top = newest(fields);
+      if (top.cv === 'fail') {
+        throw new InvalidInputError(
+          `The newest ARC-Seal (i=${top.instance}) has cv=fail, so it can't be sealed again.`,
+        );
+      }
+      if (top.instance >= maxInstance) {
+        throw new InvalidInputError(
+          `The message has ${top.instance} ARC sets, the most RFC 8617 allows.`,
+        );
+      }
+      const instance = top.instance + 1;
+      const chained = fields.some(isArcField);
+      const cv = chainValidation ?? (chained ? undefined : 'none');
+      if (cv === undefined) {
+        throw new TypeError(
+          'options.chainValidation is required for a message that has ARC fields.',
+        );
+      }
+      if (chained === (cv === 'none') || (cv === 'pass' && instance === 1)) {
+        throw new RangeError(
+          cv === 'none'
+            ? `cv=none is only for a message without ARC fields (this set is i=${instance}).`
+            : `cv=${cv} needs an ARC chain, and the message has ${chained ? 'no valid ARC set' : 'none'}.`,
+        );
+      }
+      const covered: Field[] = [];
+      if (cv === 'pass') {
+        const chain = readChain(fields);
+        if (typeof chain === 'string') {
+          throw new InvalidInputError(`cv=pass needs an intact ARC chain: ${chain}.`);
+        }
+        for (const set of chain) {
+          covered.push(set.results, set.signature, set.seal);
+        }
+      }
+      const selected = selectForSigning(
+        fields.filter((field) => !isArcField(field) && field.name !== 'authentication-results'),
+        names,
+      );
+      if (!selected.some((field) => field.name === 'from')) {
+        throw new InvalidInputError('The message has no From field to sign.');
+      }
+
+      return async (digests) => {
+        const bodyHash = Base64.encode(digests.get(bodyHashKey(request))!.digest);
+        const algorithm = `a=${type}-sha256;`;
+        const signedNames = [...selected.map(casedName), ...overSigned(names, selected)];
+        const signaturePrefix = fold('ARC-Message-Signature', [
+          `i=${instance};`,
+          algorithm,
+          'c=relaxed/relaxed;',
+          `d=${domain};`,
+          `s=${selector};`,
+          `t=${timestamp};`,
+          ...signedNames.map(
+            (name, i) => `${i === 0 ? 'h=' : ''}${name}${i === signedNames.length - 1 ? ';' : ':'}`,
+          ),
+          `bh=${bodyHash};`,
+          'b=',
+        ]);
+        const signature = appendValue(
+          signaturePrefix,
+          Base64.encode(
+            await signData(key, type, fromBinary(signedData(selected, signaturePrefix, 'relaxed'))),
+          ),
+        );
+        const results = `ARC-Authentication-Results: i=${instance}; ${authResults}`;
+        const sealCovered = [...covered, field(results), field(signature)];
+        const sealPrefix = fold('ARC-Seal', [
+          `i=${instance};`,
+          algorithm,
+          `t=${timestamp};`,
+          `cv=${cv};`,
+          `d=${domain};`,
+          `s=${selector};`,
+          'b=',
+        ]);
+        const sealed = appendValue(
+          sealPrefix,
+          Base64.encode(
+            await signData(key, type, fromBinary(signedData(sealCovered, sealPrefix, 'relaxed'))),
+          ),
+        );
+        return `${sealed}\r\n${signature}\r\n${results}\r\n`;
+      };
+    },
   };
-  const fields = parseFields(toBinary(split.header));
-  const top = newest(fields);
-  if (top.cv === 'fail') {
-    return refuse(
-      new InvalidInputError(
-        `The newest ARC-Seal (i=${top.instance}) has cv=fail, so it can't be sealed again.`,
-      ),
-    );
-  }
-  if (top.instance >= maxInstance) {
-    return refuse(
-      new InvalidInputError(`The message has ${top.instance} ARC sets, the most RFC 8617 allows.`),
-    );
-  }
-  const instance = top.instance + 1;
-  const chained = fields.some(isArcField);
-  const cv = chainValidation ?? (chained ? undefined : 'none');
-  if (cv === undefined) {
-    return refuse(
-      new TypeError('options.chainValidation is required for a message that has ARC fields.'),
-    );
-  }
-  if (chained === (cv === 'none') || (cv === 'pass' && instance === 1)) {
-    return refuse(
-      new RangeError(
-        cv === 'none'
-          ? `cv=none is only for a message without ARC fields (this set is i=${instance}).`
-          : `cv=${cv} needs an ARC chain, and the message has ${chained ? 'no valid ARC set' : 'none'}.`,
-      ),
-    );
-  }
-  const covered: Field[] = [];
-  if (cv === 'pass') {
-    const chain = readChain(fields);
-    if (typeof chain === 'string') {
-      return refuse(new InvalidInputError(`cv=pass needs an intact ARC chain: ${chain}.`));
-    }
-    for (const set of chain) {
-      covered.push(set.results, set.signature, set.seal);
-    }
-  }
-  const selected = selectForSigning(
-    fields.filter((field) => !isArcField(field) && field.name !== 'authentication-results'),
-    names,
-  );
-  if (!selected.some((field) => field.name === 'from')) {
-    return refuse(new InvalidInputError('The message has no From field to sign.'));
-  }
-
-  const digests = await hashBody(split.body, [{ canonicalization: 'relaxed' }], hasher);
-  signal?.throwIfAborted();
-  const bodyHash = Base64.encode([...digests.values()][0]!.digest);
-
-  const algorithm = `a=${type}-sha256;`;
-  const signedNames = [...selected.map(casedName), ...overSigned(names, selected)];
-  const signaturePrefix = fold('ARC-Message-Signature', [
-    `i=${instance};`,
-    algorithm,
-    'c=relaxed/relaxed;',
-    `d=${domain};`,
-    `s=${selector};`,
-    `t=${timestamp};`,
-    ...signedNames.map(
-      (name, i) => `${i === 0 ? 'h=' : ''}${name}${i === signedNames.length - 1 ? ';' : ':'}`,
-    ),
-    `bh=${bodyHash};`,
-    'b=',
-  ]);
-  const signature = appendValue(
-    signaturePrefix,
-    Base64.encode(
-      await signData(key, type, fromBinary(signedData(selected, signaturePrefix, 'relaxed'))),
-    ),
-  );
-  const results = `ARC-Authentication-Results: i=${instance}; ${authResults}`;
-  covered.push(field(results), field(signature));
-  const sealPrefix = fold('ARC-Seal', [
-    `i=${instance};`,
-    algorithm,
-    `t=${timestamp};`,
-    `cv=${cv};`,
-    `d=${domain};`,
-    `s=${selector};`,
-    'b=',
-  ]);
-  const sealed = appendValue(
-    sealPrefix,
-    Base64.encode(
-      await signData(key, type, fromBinary(signedData(covered, sealPrefix, 'relaxed'))),
-    ),
-  );
-  return `${sealed}\r\n${signature}\r\n${results}\r\n`;
 }
 
 const field = (text: string): Field => ({

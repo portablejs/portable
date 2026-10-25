@@ -30,6 +30,12 @@ export type BodyDigest = {
 export const bodyHashKey = (request: BodyHash): string =>
   `${request.canonicalization}:${request.length ?? ''}`;
 
+/** Work that needs body hashes: the hashes to compute, and the step that uses them. */
+export type Plan<result> = {
+  requests: readonly BodyHash[];
+  finish: (digests: ReadonlyMap<string, BodyDigest>) => Promise<result>;
+};
+
 type Pass = { canonicalizer: Canonicalizer; sinks: Sink[]; total: number };
 
 export async function hashBody(
@@ -37,6 +43,10 @@ export async function hashBody(
   requests: readonly BodyHash[],
   createHash: (hash: Hash) => Hasher = webCryptoHash,
 ): Promise<Map<string, BodyDigest>> {
+  if (requests.length === 0) {
+    await body.cancel();
+    return new Map();
+  }
   const passes = new Map<Canonicalization, Pass>();
   const hashes = new Map<string, { pass: Pass; hash: Hasher }>();
   for (const request of requests) {

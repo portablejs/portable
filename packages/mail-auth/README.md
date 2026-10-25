@@ -41,7 +41,7 @@ const result = await MailAuth.authenticate(message, {
 const forwarded = result.headers + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. `authenticate` reads a stream into memory once, because DKIM, ARC and the seal each read the message. Pipe the stream through `Streams.limitBytes` from `@portable/streams` to cap its size. Bare LF line ends are read as CRLF.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, and the `hasher` option takes an incremental hash instead. Pipe a stream through `Streams.limitBytes` from `@portable/streams` to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
 
 ## Options
 

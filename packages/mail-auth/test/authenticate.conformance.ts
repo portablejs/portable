@@ -464,6 +464,61 @@ describe('input', () => {
     ).rejects.toBe(reason);
   });
 
+  test('hashes a relaxed body once for DKIM, ARC and the seal', async () => {
+    const zone = { 'test._domainkey.example.com': { TXT: [await rsaRecord()] } };
+    const { privateKey } = await key('rsa');
+    const dkimSigned = await signed(buildMessage({ from: 'user@example.com' }), 'example.com');
+    const input =
+      (await Arc.seal(dkimSigned, {
+        domain: 'example.com',
+        selector: 'test',
+        privateKey,
+        authResults: 'mx.example.org; dkim=pass header.d=example.com',
+      })) + dkimSigned;
+    let hashers = 0;
+    const hasher = () => {
+      hashers++;
+      const chunks: Uint8Array[] = [];
+      return {
+        update: (data: Uint8Array) => chunks.push(data.slice()),
+        digest: async () => {
+          const whole = new Uint8Array(chunks.flatMap((chunk) => [...chunk]));
+          return new Uint8Array(await crypto.subtle.digest('SHA-256', whole));
+        },
+      };
+    };
+    const result = await authenticate(input, zone, {
+      hasher,
+      seal: { domain: 'example.com', selector: 'test', privateKey },
+    });
+    expect(result.dkim[0]!.result).toBe('pass');
+    expect(result.arc.result).toBe('pass');
+    expect(result.headers).toMatch(/^ARC-Seal: i=2; a=rsa-sha256; t=\d+; cv=pass;/);
+    expect(hashers).toBe(1);
+  });
+
+  test('rejects invalid seal options before reading the message', async () => {
+    let pulls = 0;
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          pulls++;
+          controller.enqueue(encode(message));
+          controller.close();
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    await expect(
+      authenticate(
+        stream,
+        {},
+        { seal: { domain: 'example.com', selector: 'test', privateKey: '' } },
+      ),
+    ).rejects.toBeInstanceOf(RangeError);
+    expect(pulls).toBe(0);
+  });
+
   test('throws a RangeError for an ip that is not an IP address', async () => {
     await expect(authenticate(message, {}, { ip: 'mail.example.com' })).rejects.toBeInstanceOf(
       RangeError,

@@ -35,6 +35,12 @@ export async function splitMessage(
     if (!chunk) {
       return { header: header.subarray(0, length), body: { read: next, cancel: source.cancel } };
     }
+    if (length === 0) {
+      const end = findEmptyLine(chunk, 0, chunk.length);
+      if (end >= 0) {
+        return split(chunk.subarray(0, end), chunk.subarray(end + 2), next, source.cancel);
+      }
+    }
     if (length + chunk.length > header.length) {
       const grown = new Uint8Array(Math.max(header.length * 2, length + chunk.length));
       grown.set(header.subarray(0, length));
@@ -46,23 +52,31 @@ export async function splitMessage(
     if (end < 0) {
       continue;
     }
-    const rest = header.slice(end + 2, length);
-    let pending: Uint8Array | undefined = rest.length > 0 ? rest : undefined;
-    return {
-      header: header.subarray(0, end),
-      body: {
-        read() {
-          if (!pending) {
-            return next();
-          }
-          const chunk = pending;
-          pending = undefined;
-          return Promise.resolve(chunk);
-        },
-        cancel: source.cancel,
-      },
-    };
+    return split(header.subarray(0, end), header.slice(end + 2, length), next, source.cancel);
   }
+}
+
+function split(
+  header: Uint8Array,
+  rest: Uint8Array,
+  next: () => Promise<Uint8Array | undefined>,
+  cancel: () => Promise<void>,
+): { header: Uint8Array; body: Body } {
+  let pending: Uint8Array | undefined = rest.length > 0 ? rest : undefined;
+  return {
+    header,
+    body: {
+      read() {
+        if (!pending) {
+          return next();
+        }
+        const chunk = pending;
+        pending = undefined;
+        return Promise.resolve(chunk);
+      },
+      cancel,
+    },
+  };
 }
 
 function findEmptyLine(bytes: Uint8Array, from: number, to: number): number {

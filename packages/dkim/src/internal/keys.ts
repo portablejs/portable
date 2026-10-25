@@ -48,7 +48,7 @@ async function importKey(input: CryptoKey | string | JsonWebKey): Promise<Crypto
     if (!pem) {
       throw new RangeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block.');
     }
-    const der = new Uint8Array(Base64.decode(pem[2]!));
+    const der = Base64.decode(pem[2]!);
     if (pem[1]) {
       return crypto.subtle.importKey('pkcs8', pkcs1ToPkcs8(der), rsa, false, ['sign']);
     }

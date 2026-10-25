@@ -194,7 +194,7 @@ const isCanonicalization = (name: string): name is Canonicalization =>
 
 export function decodeBase64(text: string): Uint8Array<ArrayBuffer> | undefined {
   try {
-    return new Uint8Array(Base64.decode(text));
+    return Base64.decode(text);
   } catch {
     return undefined;
   }
@@ -277,6 +277,12 @@ export async function verifyData(
   return verified
     ? { result: 'pass', reason: '' }
     : { result: 'fail', reason: 'signature did not verify' };
+}
+
+export function assertResolver(resolver: Resolver): void {
+  if (typeof resolver?.resolveTxt !== 'function') {
+    throw new TypeError('options.resolver must have a resolveTxt method.');
+  }
 }
 
 export async function fetchKey(
