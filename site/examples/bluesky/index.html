@@ -61,6 +61,8 @@
         border-bottom: 1px solid var(--line);
       }
       h1 {
+        display: flex;
+        align-items: center;
         font-size: 16px;
         margin: 0;
       }
@@ -74,13 +76,13 @@
       .brand img {
         height: 1cap;
       }
-      .brand .divider {
+      h1 .divider {
         width: 1px;
         height: 1.1em;
-        margin: 0 6px;
+        margin: 0 14px;
         background: var(--line);
       }
-      .brand .page {
+      h1 .page {
         font-weight: 500;
         color: var(--dim);
       }
@@ -254,10 +256,8 @@
       <section class="stage">
         <header>
           <h1>
-            <a class="brand" href="/"
-              ><img src="/logo-dark.svg" alt="" />Portable<span class="divider"></span
-              ><span class="page">Bluesky stream</span></a
-            >
+            <a class="brand" href="/"><img src="/logo-dark.svg" alt="" />Portable</a
+            ><span class="divider"></span><span class="page">Bluesky stream</span>
           </h1>
           <span id="status" class="pill wait">connecting</span>
           <span class="stat"><b id="rate">0</b> posts/s</span
