@@ -146,7 +146,7 @@ function toMdx(md) {
           return part
             .replace(/[{}]/g, (c) => '\\' + c)
             .replace(
-              /<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd|table|thead|tbody|tr|th|td|code|svg|rect)\b|!--)/g,
+              /<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd|table|thead|tbody|tr|th|td|code|svg|rect|div)\b|!--)/g,
               '&lt;',
             );
         })
