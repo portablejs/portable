@@ -445,8 +445,13 @@ const lazyContext = {
   },
 };
 
+// A `__proto__` key in an object literal made each `add` with a `signal` about 30% slower in V8.
 function combined(queue: AbortSignal, task: AbortSignal): Context {
-  return { __proto__: lazyContext, queue, task, combined: undefined } as unknown as Context;
+  const context = Object.create(lazyContext) as LazyContext;
+  context.queue = queue;
+  context.task = task;
+  context.combined = undefined;
+  return context as unknown as Context;
 }
 
 export function isThenable(value: unknown): value is PromiseLike<unknown> {

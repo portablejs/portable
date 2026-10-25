@@ -128,6 +128,7 @@ export function http<api>(
     ? AbortSignal.any([options.signal, disposer.signal])
     : disposer.signal;
   const batches = new Map<Id, Batch>();
+  const posting = new Set<AbortController>();
   let queued: Batch | undefined;
 
   const send = (message: Message): Promise<void> | void => {
@@ -191,13 +192,17 @@ export function http<api>(
   async function post(batch: Batch) {
     queued = undefined;
     const { messages, controller, pending } = batch;
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+    }
+    posting.add(controller);
     try {
       const response = await fetch(
         new Request(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
           body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
-          signal: AbortSignal.any([signal, controller.signal]),
+          signal: controller.signal,
         }),
       );
       if (!response.ok) {
@@ -229,6 +234,7 @@ export function http<api>(
         throw reason;
       }
     } finally {
+      posting.delete(controller);
       for (const id of pending) {
         batches.delete(id);
       }
@@ -238,7 +244,16 @@ export function http<api>(
   if (signal.aborted) {
     client.close(signal.reason);
   } else {
-    signal.addEventListener('abort', () => client.close(signal.reason), { once: true });
+    signal.addEventListener(
+      'abort',
+      () => {
+        for (const controller of posting) {
+          controller.abort(signal.reason);
+        }
+        client.close(signal.reason);
+      },
+      { once: true },
+    );
   }
   return remote(client, '', async () => {
     disposer.abort(new DOMException('The connection was disposed.', 'AbortError'));
