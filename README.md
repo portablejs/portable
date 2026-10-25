@@ -2,7 +2,7 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
-The web's missing standard library as a set of fast, lightweight, composable packages. Write your code once and run it in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+The web's missing standard library: fast, lightweight, composable packages, so you can write your code once and run it in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 ### Examples
 
