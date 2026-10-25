@@ -63,7 +63,7 @@ export class MaxBytesError extends Errors.MaxBytesError {
 | Type | Description |
 | --- | --- |
 | `Kinds` | Maps each kind accepted by `is` to its class. |
-| `InvalidInputError.Options`, `MaxBytesError.Options`, `MaxLengthError.Options`, `ResponseError.Options` | The constructor options. |
+| `InvalidInputError.Options`, `TruncatedError.Options`, `MaxBytesError.Options`, `MaxLengthError.Options`, `ResponseError.Options` | The constructor options. |
 
 ## Why use this over a hand-written error class
 

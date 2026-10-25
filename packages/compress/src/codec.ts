@@ -33,17 +33,8 @@ export async function encode(
   const { format = 'gzip', signal } = options;
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : assertUint8Array(data);
   const chunks: Uint8Array[] = [];
-  let length = 0;
-  await run(
-    bytes,
-    new CompressionStream(format),
-    (chunk) => {
-      chunks.push(chunk);
-      length += chunk.byteLength;
-    },
-    signal,
-  );
-  return concat(chunks, length);
+  await run(bytes, new CompressionStream(format), (chunk) => chunks.push(chunk), signal);
+  return concat(chunks);
 }
 
 export declare namespace decode {
@@ -101,7 +92,7 @@ export async function decode(
         chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
       );
     }
-    return concat(chunks, length);
+    return concat(chunks);
   } catch (error) {
     if (format !== 'gzip' || error instanceof MaxBytesError || signal?.aborted) {
       throw error;
@@ -185,7 +176,7 @@ export async function decode(
     throw firstError;
   }
   await decodeAll(data.subarray(offset));
-  return concat(chunks, length);
+  return concat(chunks);
 }
 
 function nextMember(data: Uint8Array, from: number): number {

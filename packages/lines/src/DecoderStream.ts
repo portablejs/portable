@@ -31,6 +31,8 @@ export declare namespace DecoderStream {
   };
 }
 
+const lineBreak = /\r?\n/;
+
 /**
  * A `TransformStream` that decodes bytes into lines of text, or splits text into lines.
  *
@@ -50,7 +52,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
       encoding = 'utf-8',
       maxLength = Infinity,
       overflow = 'error',
-      separator = /\r?\n/,
+      separator = lineBreak,
       skipEmpty = false,
     } = options;
     if (!(maxLength >= 0)) {
@@ -63,6 +65,16 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
     // toward `maxLength`, and that part is kept when an overflowing line is dropped.
     const slack = typeof separator === 'string' ? Math.max(separator.length - 1, 0) : 0;
     const tail = (text: string) => (slack === 0 ? '' : text.slice(-slack));
+    // Splitting `partial + text` again for every chunk of a long line takes quadratic time, so
+    // `canSplit` checks first whether the new text can end the line. `end` holds the last `slack`
+    // characters of `partial`, because slicing the joined string would copy all of it.
+    let end = '';
+    const canSplit = (text: string) =>
+      separator === lineBreak
+        ? text.includes('\n')
+        : typeof separator === 'string'
+          ? (end + text).includes(separator)
+          : true;
     let partial = '';
     // A trailing CR may be the first half of a CRLF split across chunks, so it is held back.
     let cr = false;
@@ -93,12 +105,20 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
               text = '\r' + text;
             }
             cr = text.endsWith('\r');
-            const lines = splitLines(partial + (cr ? text.slice(0, -1) : text));
-            partial = lines.pop()!;
+            const body = cr ? text.slice(0, -1) : text;
+            let lines: string[] = [];
+            if (canSplit(body)) {
+              lines = splitLines(partial + body);
+              partial = lines.pop()!;
+              end = tail(partial);
+            } else {
+              partial += body;
+              end = tail(end + body);
+            }
 
             if (overflowed) {
               if (lines.length === 0) {
-                partial = tail(partial);
+                partial = end;
                 return;
               }
               lines.shift();
@@ -113,7 +133,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, string> 
                 throw new MaxLengthError({ maxLength });
               }
               overflowed = true;
-              partial = tail(partial);
+              partial = end;
             }
           },
           flush(controller) {

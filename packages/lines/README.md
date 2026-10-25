@@ -24,7 +24,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) {
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. |
+| `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. With the default or a string, a line that spans many chunks is split in linear time. Any other separator splits the unfinished line again for each chunk, so set `maxLength` when lines can be long. |
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. |
 | `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units. |
 | `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`, `'skip'` drops the line. |

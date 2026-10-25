@@ -83,6 +83,13 @@ export class InvalidInputError extends BaseError {
   }
 }
 
+export declare namespace TruncatedError {
+  type Options = ErrorOptions & {
+    /** How much input arrived, in bytes or characters as the package documents. */
+    offset?: number | undefined;
+  };
+}
+
 /**
  * Thrown when input ends before a value is complete.
  *
@@ -105,7 +112,7 @@ export class TruncatedError extends BaseError {
   /** How much input arrived, when the package knows. */
   readonly offset: number | undefined;
 
-  constructor(message?: string, options: InvalidInputError.Options = {}) {
+  constructor(message?: string, options: TruncatedError.Options = {}) {
     super(message, options);
     this.offset = options.offset;
   }

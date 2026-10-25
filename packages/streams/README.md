@@ -103,7 +103,7 @@ const lines = Streams.transform(async function* (source: AsyncIterable<string>) 
 
 ## Cancel your own TransformStream
 
-`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends or is cancelled, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv and the other Portable packages use it to support their `signal` option.
+`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends, is cancelled, or fails because the transformer threw, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv and the other Portable packages use it to support their `signal` option.
 
 ```ts
 class UpperCaseStream extends TransformStream<string, string> {

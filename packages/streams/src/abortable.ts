@@ -13,7 +13,8 @@ export declare namespace abortable {
 /**
  * Wraps a transformer so that aborting `signal` errors its `TransformStream` with `signal.reason`.
  * Erroring the stream makes `pipeThrough` cancel the source. The listener is removed when the
- * stream ends or is cancelled. Without a signal, the transformer is returned unchanged.
+ * stream ends, is cancelled, or fails because the transformer threw. Without a signal, the
+ * transformer is returned unchanged.
  *
  * @example
  * ```ts
@@ -43,6 +44,14 @@ export function abortable<input, output>(
   }
   let onAbort = () => {};
   const done = () => signal.removeEventListener('abort', onAbort);
+  // A transformer that throws or rejects errors the stream without calling flush or cancel, so the
+  // listener is removed here too.
+  const fail = (error: unknown): never => {
+    done();
+    throw error;
+  };
+  const settle = (result: void | PromiseLike<void>) =>
+    result === undefined ? result : Promise.resolve(result).catch(fail);
   const wrapped: abortable.Transformer<input, output> = {
     start(controller) {
       if (signal.aborted) {
@@ -50,7 +59,11 @@ export function abortable<input, output>(
       }
       onAbort = () => controller.error(signal.reason);
       signal.addEventListener('abort', onAbort, { once: true });
-      return transformer.start?.(controller);
+      try {
+        return settle(transformer.start?.(controller));
+      } catch (error) {
+        return fail(error);
+      }
     },
     flush(controller) {
       done();
@@ -62,7 +75,13 @@ export function abortable<input, output>(
     },
   };
   if (transformer.transform) {
-    wrapped.transform = (chunk, controller) => transformer.transform!(chunk, controller);
+    wrapped.transform = (chunk, controller) => {
+      try {
+        return settle(transformer.transform!(chunk, controller));
+      } catch (error) {
+        return fail(error);
+      }
+    };
   }
   return wrapped;
 }

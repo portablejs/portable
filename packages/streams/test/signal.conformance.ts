@@ -228,6 +228,41 @@ describe('abortable', () => {
     expect(await Streams.toArray(stream.readable)).toEqual([]);
   });
 
+  function countListeners(signal: AbortSignal): { count: number } {
+    const listeners = { count: 0 };
+    const add = signal.addEventListener.bind(signal);
+    const remove = signal.removeEventListener.bind(signal);
+    signal.addEventListener = (...args: Parameters<typeof add>) => {
+      listeners.count++;
+      add(...args);
+    };
+    signal.removeEventListener = (...args: Parameters<typeof remove>) => {
+      listeners.count--;
+      remove(...args);
+    };
+    return listeners;
+  }
+
+  for (const [name, transform] of [
+    [
+      'throws',
+      () => {
+        throw new Error('bad chunk');
+      },
+    ],
+    ['rejects', () => Promise.reject(new Error('bad chunk'))],
+  ] as const) {
+    test(`removes its listener when the transformer ${name}`, async () => {
+      const signal = new AbortController().signal;
+      const listeners = countListeners(signal);
+      const stream = new TransformStream(Streams.abortable({ transform }, { signal }));
+      const reading = stream.readable.getReader().read();
+      await expect(stream.writable.getWriter().write(1)).rejects.toThrow('bad chunk');
+      await expect(reading).rejects.toThrow('bad chunk');
+      expect(listeners.count).toBe(0);
+    });
+  }
+
   test('cancelling the stream calls the cancel of the transformer', async () => {
     let cancelled: unknown;
     const stream = new TransformStream(
