@@ -73,7 +73,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** keep the per-package names (`signedAt` in dkim and arc, `timestamp` in oauth1 and webhooks, no option in rate-limit, spf and web-push); name the option after what it sets; call it `now` everywhere.
 - **Trade-offs:** `signedAt` says what the time is used for, but a test that fixes the clock had to know a different name in each package, and rate-limit, spf and web-push read `Date.now()` with no way to pass a time. The verifiers already called the option `now`.
-- **Chosen:** `now?: Date` on every function that reads the clock: `Dkim.sign`, `Arc.seal`, `OAuth1.sign`, `Webhooks.sign`, `Spf.check`, `WebPush.send` and `toRequest`, `RateLimit` `take` and `headers`. Instants are `Date` in options and results, so `RateLimit.Result.resetAt` is a `Date`. Durations are milliseconds unless the wire format sets the unit, so `Webhooks.verify`'s `tolerance` is now `300_000`, while `WebPush`'s `ttl` stays in seconds. The rdap bootstrap cache still reads `Date.now()`, because its expiry isn't visible to a caller.
+- **Chosen:** `now?: Date` on every function that reads the clock: `Dkim.sign`, `Arc.seal`, `OAuth1.sign`, `Webhooks.sign`, `Spf.check`, `WebPush.send` and `toRequest`, `RateLimit` `take` and `headers`. Instants are `Date` in options and results, so `RateLimit.Result.resetAt` is a `Date`. Durations are milliseconds unless the wire format sets the unit, so `Webhooks.verify`'s `tolerance` is now `300_000`, while `WebPush`'s `ttl` stays in seconds. The rdap lookups also take `now`, which they compare with the time the bootstrap files were cached.
 - **`Timers.poll` lost its `timeout`.** `AbortSignal.timeout` already limits the whole call, and AGENTS.md allows a `timeout` option only when it limits one step of many, such as one retry attempt. `retry`, dns and websockets keep their per-attempt `timeout`.
 
 ## `attempts` counts the first try everywhere
@@ -312,7 +312,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 
 - **Options:** follow web-push and send whatever the caller gives; check against the RFC limits.
 - **Trade-offs:** push services must accept a 4096-byte body (RFC 8291 §4), which leaves 3993 bytes of payload, and FCM and Apple reject larger ones. An endpoint comes from a browser, so an `http:` endpoint either is a mistake or points the server at an internal address. Rejecting `http:` means a local test push service needs `https:` or a `fetch` that rewrites the URL.
-- **Chosen:** throw a `RangeError` for a larger payload and `InvalidInputError` for a non-`https:` endpoint.
+- **Chosen:** throw `InvalidInputError` for a larger payload and for a non-`https:` endpoint, because both are malformed input under the error rule in AGENTS.md.
 
 ## `@portable/web-push` benchmarks against direct WebCrypto calls
 
@@ -398,8 +398,8 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 
 - **`sign(request, options)` returns a new signed `Request`; `authorization(request, options)` returns only the header value.** oauth-1.0a's `authorize` and `toHeader` were the alternatives. Inputs are `Request` objects, so `sign` signs exactly the URL and body that `fetch` sends, at about 10 µs per POST for reading the body.
 - **The option is `signatureMethod`, defaulting to HMAC-SHA1,** because `method` reads as the HTTP method. oauth-1.0a defaults to PLAINTEXT.
-- **The pluggable function is a hash (`digest`), and HMAC is built on it,** so one function serves the signature and the body hash and has the shape of noble's hashes and `crypto.subtle.digest`. It costs about 15 lines of HMAC code, checked against WebCrypto and `node:crypto`.
-- **The default is `crypto.subtle.digest`,** as for every package (see the decision above). On Node an HMAC takes about 60 µs with it and 8 µs with noble passed as `digest`.
+- **The pluggable functions are `hmac` (a `WebCrypto.Hmac`) for the signature and `digest` for the body hash,** as in every package that takes pluggable crypto.
+- **The defaults are `WebCrypto.hmac` and `WebCrypto.digest`,** as for every package (see the decision above).
 - **The signed form POST benchmark allows 50%.** Reading the body and building a second `Request` in undici costs more than oauth-1.0a's string handling, and hashing is not the gap.
 - **No HTTP client.** `fetch` follows redirects with the old signature, and the README shows how to re-sign.
 - **`timestamp` is a `Date`,** as in `Webhooks.sign` and every result in this repo. It was a number of seconds, so the same option name took different types in two packages a caller would use together.
