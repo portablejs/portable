@@ -27,6 +27,10 @@ Then add this instruction, because without it a reviewer swaps words and keeps t
 
 > Check the structure of each sentence before its words. When the actor matters and the sentence hides it, make the actor the subject. A passive such as "is treated as body content" is fine when the actor is obvious. Then look for clauses in an unnatural order, such as "a CR that no LF follows", and rewrite them the way a person would say them: "a CR without a following LF". A rewrite that keeps the original sentence's shape and only replaces words is not a fix. Read the code around a comment when you need it to find the actor, but review only the prose.
 
+Then add this one, because the made-up actor is the pattern reviews have missed most often:
+
+> Flag every sentence built around a made-up actor, such as "an app that supports older browsers adds its own" or "a caller who wants a few tries writes a counter", including in commit messages and the PR title and body. Rewrite it to talk to the reader ("if you support older browsers, add them yourself") or to name the real thing that acts.
+
 Don't paste the code or the rest of the diff into the prompt. The reviewer opens the code around a comment only to find the actor, so it still reads the prose as a reader of the docs does and notices a sentence that only makes sense if you know the code.
 
 ## Step 3, Apply

@@ -1,16 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vite-plus/test';
+import { findMadeUpActor } from '../../../scripts/prose.js';
 
-// Rejects prose built around a made-up actor, such as "an app that supports older browsers adds
-// its own" or "a caller who wants a few tries writes a counter". Say "if you support older
-// browsers, add them yourself" instead. Text in double quotes is skipped, so a rule can quote the
-// pattern, and so are the rows of the table in AGENTS.md, which quote it without quotes.
+// Rejects prose built around a made-up actor (see `findMadeUpActor`) in Markdown and source. The
+// rows of the table in AGENTS.md quote the pattern without quotes, so they are skipped.
 
 const root = join(import.meta.dirname, '../../..');
-
-const pattern =
-  /\b(?:an?|any|each|every) (?:app|application|caller|user|program|developer|consumer)s? (?:that|who) /i;
 
 function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -31,7 +27,7 @@ const files = [
   ...['docs', '.changeset', 'packages', 'scripts', 'site/src', 'tools'].flatMap((dir) =>
     walk(join(root, dir)),
   ),
-].filter((file) => file !== import.meta.filename);
+].filter((file) => file !== join(root, 'scripts/prose.ts'));
 
 test('no prose describes a made-up app, caller or user', () => {
   const found: string[] = [];
@@ -43,9 +39,9 @@ test('no prose describes a made-up app, caller or user', () => {
         if (agents && line.startsWith('|')) {
           return;
         }
-        const match = pattern.exec(line.replaceAll(/"[^"]*"/g, ''));
-        if (match) {
-          found.push(`${relative(root, file)}:${index + 1}: ${match[0]}`);
+        const phrase = findMadeUpActor(line);
+        if (phrase) {
+          found.push(`${relative(root, file)}:${index + 1}: ${phrase}`);
         }
       });
   }
