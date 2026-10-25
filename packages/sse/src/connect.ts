@@ -193,8 +193,6 @@ export function connect(
   });
 }
 
-const maxTimeout = 2 ** 31 - 1;
-
 async function withTimeout<value>(
   promise: Promise<value>,
   ms: number,
@@ -203,21 +201,16 @@ async function withTimeout<value>(
   if (ms === Infinity) {
     return promise;
   }
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => {
-        const error = new DOMException(`No data within ${ms} ms.`, 'TimeoutError');
-        onTimeout(error);
-        reject(error);
-      },
-      Math.min(ms, maxTimeout),
-    );
+  const stop = new AbortController();
+  const timeout = Timers.sleep(ms, { signal: stop.signal }).then(() => {
+    const error = new DOMException(`No data within ${ms} ms.`, 'TimeoutError');
+    onTimeout(error);
+    throw error;
   });
   try {
     return await Promise.race([promise, timeout]);
   } finally {
-    clearTimeout(timer);
+    stop.abort();
   }
 }
 
