@@ -4,7 +4,7 @@ import { buffer } from 'node:stream/consumers';
 import libqp2Module from 'libqp';
 import { describe, expect, test } from 'vite-plus/test';
 import { decode, encode } from '@portable/quoted-printable';
-import * as libqp from './fixtures/libqp-3.0.1.js';
+import * as libqp from 'libqp3';
 import {
   decodeStream,
   encodeStream,

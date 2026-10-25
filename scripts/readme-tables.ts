@@ -650,7 +650,7 @@ export const tables: Record<string, Table> = {
   'quoted-printable': {
     columns: [
       ours('quoted-printable', ['encode', 'decode', 'EncoderStream', 'DecoderStream']),
-      { name: 'libqp 3.0.1', header: 'libqp', imports: [{ from: 'libqp' }] },
+      { name: 'libqp 3.0.1', header: 'libqp', imports: [{ from: 'libqp3' }] },
       lib('quoted-printable'),
     ],
     rows: [
