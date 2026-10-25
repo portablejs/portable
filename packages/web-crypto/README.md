@@ -28,7 +28,7 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | Function | Returns | Description |
 | --- | --- | --- |
 | `digest(hash, data, options?)` | `Promise<Uint8Array>` | Hashes `data`. A string is hashed as UTF-8. |
-| `hmac(hash, key, data, options?)` | `Promise<Uint8Array>` | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key is accepted. |
+| `hmac(hash, key, data, options?)` | `Promise<Uint8Array>` | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key is accepted. The imported `CryptoKey` is cached for up to 16 keys of at most 256 bytes. |
 | `hkdf(hash, key, options?)` | `Promise<Uint8Array>` | HKDF (RFC 5869) extract and expand. |
 | `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. |
 | `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH or RSA private key. |
@@ -64,6 +64,7 @@ Each helper replaces a few lines that apps write by hand, and handles a trap tho
 - In TypeScript 5.9 and later, a plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`, which `crypto.subtle` doesn't accept as a `BufferSource`. Hand-written code adds `.slice()` or a cast at every call. These functions take any `Uint8Array`, copy it only when its buffer is not an `ArrayBuffer` (a `SharedArrayBuffer`, for example), and return `Uint8Array<ArrayBuffer>`.
 - `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. These functions take a `Uint8Array` and read only the bytes the view covers.
 - WebCrypto refuses an empty HMAC key. HMAC pads the key with zero bytes, so `hmac` uses a single zero byte, which gives the result RFC 2104 defines.
+- Hand-written code imports the HMAC key on every call, and `importKey` takes about two thirds of the time of an HMAC on Node. `hmac` keeps the last 16 imported keys, so signing again with the same secret, such as a webhook secret, skips the import.
 - WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.
 - WebAuthn and OpenSSL produce DER ECDSA signatures, and `crypto.subtle.verify` and JWS take raw `r || s`.
 

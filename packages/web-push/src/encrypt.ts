@@ -1,7 +1,7 @@
 import { assertUint8Array, isUint8Array } from '@portable/bytes/internal';
 import * as Base64 from '@portable/base64';
 import * as Bytes from '@portable/bytes';
-import { InvalidInputError } from './errors.js';
+import { InvalidInputError, MaxBytesError } from './errors.js';
 
 /**
  * A push subscription as `PushSubscription.toJSON()` returns it in the browser. Keys are base64url
@@ -70,7 +70,8 @@ export declare namespace encrypt {
  * ```
  *
  * @throws {InvalidInputError} When the subscription has no keys, `p256dh` isn't a P-256 public
- * key, `auth` isn't 16 bytes, or the payload is longer than `maxPayloadBytes`.
+ * key, or `auth` isn't 16 bytes.
+ * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
  * @throws {RangeError} When `salt` isn't 16 bytes.
  */
 export async function encrypt(options: encrypt.Options): Promise<Uint8Array<ArrayBuffer>> {
@@ -79,9 +80,10 @@ export async function encrypt(options: encrypt.Options): Promise<Uint8Array<Arra
   const { userPublicKey, auth } = readKeys(subscription);
   const plaintext = toBytes(payload);
   if (plaintext.length > maxPayloadBytes) {
-    throw new InvalidInputError(
-      `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
-    );
+    throw new MaxBytesError({
+      maxBytes: maxPayloadBytes,
+      message: `Payload is ${plaintext.length} bytes, more than the ${maxPayloadBytes} bytes Web Push allows`,
+    });
   }
   const salt = options.salt
     ? new Uint8Array(assertUint8Array(options.salt))

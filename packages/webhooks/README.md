@@ -66,7 +66,7 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | `maxBytes` | `Infinity` | `verify` only. The longest `Request` body to read, in bytes. A longer body throws `MaxBytesError` and is cancelled. Set it when `verify` reads requests from the internet. |
 | `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
-| `hmac` | `crypto.subtle` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
+| `hmac` | `WebCrypto.hmac` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
 
 ### Schemes
@@ -124,7 +124,7 @@ This package won't add schemes beyond these four. The built-in ones in [`src/sch
 
 ## Crypto
 
-`verify` and `sign` compute HMAC-SHA256 with `crypto.subtle`, which every supported runtime has, so the package has no dependency for it. WebCrypto is async, but `verify` already has to await the request body. Imported keys are cached for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
+`verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package has no dependency outside the family for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
 On Node, WebCrypto's HMAC is about 7× slower than `@noble/hashes`. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
 

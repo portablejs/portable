@@ -26,15 +26,15 @@ test('the user agent decrypts what encrypt writes', async () => {
   );
 });
 
-test('a payload over maxPayloadBytes throws InvalidInputError', async () => {
+test('a payload over maxPayloadBytes throws MaxBytesError', async () => {
   await fuzz(
     fc.asyncProperty(fc.integer({ min: 1, max: 100 }), async (extra) => {
       const payload = new Uint8Array(WebPush.maxPayloadBytes + extra);
       expect(
-        await outcomeAsync([WebPush.InvalidInputError], () =>
+        await outcomeAsync([WebPush.MaxBytesError], () =>
           WebPush.encrypt({ subscription: agent.subscription, payload }),
         ),
-      ).toEqual({ error: WebPush.InvalidInputError });
+      ).toEqual({ error: WebPush.MaxBytesError });
     }),
     { scale: 0.2 },
   );

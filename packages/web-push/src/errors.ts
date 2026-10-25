@@ -2,8 +2,7 @@ import * as Errors from '@portable/errors';
 /**
  * Thrown when a subscription can't be used: its endpoint isn't an `https:` URL, `p256dh` isn't a P-256
  * public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that
- * fails this way. A payload longer than `maxPayloadBytes` throws it too, so check the payload's
- * length first if you delete subscriptions on this error.
+ * fails this way.
  *
  * @example
  * ```ts
@@ -22,6 +21,30 @@ import * as Errors from '@portable/errors';
  */
 export class InvalidInputError extends Errors.InvalidInputError {
   static override readonly kind: string = 'WebPush.InvalidInputError';
+}
+
+/**
+ * Thrown when a payload is longer than `maxPayloadBytes`, before anything is encrypted or sent.
+ * The subscription is still valid, so send a shorter payload, such as an id the service worker
+ * uses to fetch the rest.
+ *
+ * @example
+ * ```ts
+ * import * as WebPush from '@portable/web-push';
+ *
+ * try {
+ *   await WebPush.send({ subscription, payload, vapid });
+ * } catch (error) {
+ *   if (error instanceof WebPush.MaxBytesError) {
+ *     await WebPush.send({ subscription, payload: JSON.stringify({ id }), vapid });
+ *   } else {
+ *     throw error;
+ *   }
+ * }
+ * ```
+ */
+export class MaxBytesError extends Errors.MaxBytesError {
+  static override readonly kind: string = 'WebPush.MaxBytesError';
 }
 
 /**

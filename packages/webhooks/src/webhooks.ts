@@ -1,6 +1,6 @@
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, isUint8Array, toBufferSource } from '@portable/bytes/internal';
-import type { Hmac } from '@portable/web-crypto';
+import * as WebCrypto from '@portable/web-crypto';
 import { VerificationError } from './errors.js';
 import { utf8 } from './internal.js';
 import { race, readBody } from './race.js';
@@ -23,9 +23,9 @@ export declare namespace verify {
     secret: Secret | readonly Secret[];
     /**
      * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and about 7 times faster
-     * on Node. @default `crypto.subtle` HMAC
+     * on Node. @default WebCrypto.hmac
      */
-    hmac?: Hmac | undefined;
+    hmac?: WebCrypto.Hmac | undefined;
     /**
      * Largest allowed difference between the signed timestamp and `now`, in milliseconds, in
      * either direction. Timestamps are whole seconds, so the difference is too. `Infinity` turns
@@ -86,7 +86,7 @@ export async function verify(
 ): Promise<verify.ReturnType> {
   const {
     scheme = standard,
-    hmac = hmacSha256,
+    hmac = WebCrypto.hmac,
     tolerance = 300_000,
     now = new Date(),
     maxBytes = Infinity,
@@ -169,9 +169,9 @@ export declare namespace sign {
     secret: Secret;
     /**
      * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and about 7 times faster
-     * on Node. @default `crypto.subtle` HMAC
+     * on Node. @default WebCrypto.hmac
      */
-    hmac?: Hmac | undefined;
+    hmac?: WebCrypto.Hmac | undefined;
     /** The time to sign. Schemes without a timestamp ignore it. @default new Date() */
     now?: Date | undefined;
     /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
@@ -203,7 +203,7 @@ export async function sign(
 ): Promise<Record<string, string>> {
   const {
     scheme = standard,
-    hmac = hmacSha256,
+    hmac = WebCrypto.hmac,
     now: timestamp = new Date(),
     id = crypto.randomUUID(),
     signal,
@@ -241,36 +241,6 @@ function bytes(content: Uint8Array | string): Uint8Array<ArrayBuffer> {
     return utf8.encode(content);
   }
   return toBufferSource(content);
-}
-
-async function hmacSha256(
-  _hash: 'SHA-256',
-  key: Uint8Array<ArrayBuffer>,
-  data: Uint8Array<ArrayBuffer>,
-): Promise<Uint8Array> {
-  return new Uint8Array(await crypto.subtle.sign('HMAC', await importKey(key), data));
-}
-
-// importKey takes two thirds of the time of an HMAC on Node, and a server verifies every webhook
-// with the same one or two secrets.
-const cryptoKeys = new Map<string, Promise<CryptoKey>>();
-
-function importKey(key: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
-  const id = key.length <= 256 ? String.fromCharCode(...key) : undefined;
-  const cached = id === undefined ? undefined : cryptoKeys.get(id);
-  if (cached) {
-    return cached;
-  }
-  const cryptoKey = crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, [
-    'sign',
-  ]);
-  if (id !== undefined) {
-    if (cryptoKeys.size >= 16) {
-      cryptoKeys.clear();
-    }
-    cryptoKeys.set(id, cryptoKey);
-  }
-  return cryptoKey;
 }
 
 const utf8Decoder = new TextDecoder();

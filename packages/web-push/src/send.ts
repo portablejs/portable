@@ -49,7 +49,8 @@ export declare namespace toRequest {
  * ```
  *
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
- * subscription's keys are missing or malformed or the payload is longer than `maxPayloadBytes`.
+ * subscription's keys are missing or malformed.
+ * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
  * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed, or `ttl` isn't a
  * non-negative integer.
  */
@@ -130,7 +131,8 @@ export declare namespace send {
  *
  * @throws {ResponseError} When the push service answers with a status other than 2xx, 404 or 410.
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
- * subscription's keys are missing or malformed or the payload is longer than `maxPayloadBytes`.
+ * subscription's keys are missing or malformed.
+ * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
  * @throws {RangeError} When an option is malformed.
  * @throws {TypeError} When `fetch` rejects.
  */

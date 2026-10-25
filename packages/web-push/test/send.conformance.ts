@@ -204,6 +204,20 @@ describe('send', () => {
   test('rejects a payload that is not a string or bytes', async () => {
     await expect(sent([] as never)).rejects.toThrow(TypeError);
   });
+
+  test('rejects a payload over maxPayloadBytes with MaxBytesError, not InvalidInputError', async () => {
+    const service = pushService();
+    const payload = new Uint8Array(WebPush.maxPayloadBytes + 1);
+    const error = await WebPush.send({
+      subscription: agent.subscription,
+      payload,
+      vapid,
+      fetch: service.fetch,
+    }).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(WebPush.MaxBytesError);
+    expect(error).not.toBeInstanceOf(WebPush.InvalidInputError);
+    expect(service.requests).toHaveLength(0);
+  });
 });
 
 describe('toRequest', () => {
