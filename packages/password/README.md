@@ -118,13 +118,13 @@ async function check(user: User, password: string): Promise<boolean> {
 <tr><td>pbkdf2</td><td align="right">9.26</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td><code>node:crypto</code></td><td align="right">9.23</td><td>same</td><td><img src="../../assets/bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><td><code>crypto.subtle</code></td><td align="right">9.23</td><td>same</td><td><img src="../../assets/bar.svg" width="159" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/password</strong></td><td align="right">8.88</td><td></td><td><img src="../../assets/bar-ours.svg" width="153" height="12" alt="" /></td></tr>
+<tr><td>@portable/password</td><td align="right">8.88</td><td></td><td><img src="../../assets/bar.svg" width="153" height="12" alt="" /></td></tr>
 <tr><td>pbkdf2-password</td><td align="right">8.69</td><td>same</td><td><img src="../../assets/bar.svg" width="150" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Verify a password with 600,000 iterations</th></tr>
-<tr><td><strong>@portable/password</strong></td><td align="right">9.33</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/password</td><td align="right">9.33</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td><code>node:crypto</code></td><td align="right">8.95</td><td>same</td><td><img src="../../assets/bar.svg" width="153" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Check whether a stored hash needs a rehash</th></tr>
-<tr><td><strong>@portable/password</strong></td><td align="right">603,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/password</td><td align="right">603,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

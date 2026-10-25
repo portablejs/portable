@@ -146,10 +146,10 @@ The benchmarks send to a server on localhost that answers at once.
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Send 10 small messages over one connection</th></tr>
-<tr><td><strong>@portable/smtp</strong></td><td align="right">1,360</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/smtp</td><td align="right">1,360</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>nodemailer</td><td align="right">1,200</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="141" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Send a 1 MB message</th></tr>
-<tr><td><strong>@portable/smtp</strong></td><td align="right">63.3</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/smtp</td><td align="right">63.3</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>nodemailer</td><td align="right">51.9</td><td>1.2× slower</td><td><img src="../../assets/bar.svg" width="131" height="12" alt="" /></td></tr>
 </tbody>
 </table>

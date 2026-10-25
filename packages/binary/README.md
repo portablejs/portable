@@ -150,26 +150,26 @@ smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` po
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Write 1,000 mixed records</th></tr>
-<tr><td><strong>@portable/binary</strong></td><td align="right">6,250</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">6,250</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>smart-buffer</td><td align="right">1,110</td><td>5.6× slower</td><td><img src="../../assets/bar.svg" width="28" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read 1,000 mixed records</th></tr>
-<tr><td><strong>@portable/binary</strong></td><td align="right">8,630</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">8,630</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td><code>DataView</code> and <code>TextDecoder</code></td><td align="right">1,390</td><td>6.2× slower</td><td><img src="../../assets/bar.svg" width="26" height="12" alt="" /></td></tr>
 <tr><td>smart-buffer</td><td align="right">878</td><td>9.8× slower</td><td><img src="../../assets/bar.svg" width="16" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 10,000 varints</th></tr>
-<tr><td><strong>@portable/binary</strong></td><td align="right">4,740</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">4,740</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>@bufbuild/protobuf</td><td align="right">4,370</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="148" height="12" alt="" /></td></tr>
 <tr><td>varint</td><td align="right">255</td><td>19× slower</td><td><img src="../../assets/bar.svg" width="9" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode 10,000 varints</th></tr>
-<tr><td><strong>@portable/binary</strong></td><td align="right">18,600</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">18,600</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>@bufbuild/protobuf</td><td align="right">15,600</td><td>1.2× slower</td><td><img src="../../assets/bar.svg" width="134" height="12" alt="" /></td></tr>
 <tr><td>varint</td><td align="right">492</td><td>38× slower</td><td><img src="../../assets/bar.svg" width="4" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Split 2,000 frames from a stream</th></tr>
 <tr><td>it-length-prefixed</td><td align="right">1,080</td><td>1.9× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/binary</strong></td><td align="right">575</td><td></td><td><img src="../../assets/bar-ours.svg" width="85" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">575</td><td></td><td><img src="../../assets/bar.svg" width="85" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Write 2,000 frames to a stream</th></tr>
 <tr><td>it-length-prefixed</td><td align="right">456</td><td>1.5× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/binary</strong></td><td align="right">305</td><td></td><td><img src="../../assets/bar-ours.svg" width="107" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">305</td><td></td><td><img src="../../assets/bar.svg" width="107" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

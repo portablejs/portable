@@ -127,31 +127,31 @@ eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Decode 2,000 LLM token events, one per chunk</th></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">365</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">365</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>Hand-written with web APIs</td><td align="right">280</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="123" height="12" alt="" /></td></tr>
 <tr><td>eventsource-parser</td><td align="right">252</td><td>1.4× slower</td><td><img src="../../assets/bar.svg" width="110" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode named events in 16 KB chunks</th></tr>
 <tr><td>eventsource-parser</td><td align="right">1,380</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">1,370</td><td></td><td><img src="../../assets/bar-ours.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">1,370</td><td></td><td><img src="../../assets/bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><td>Hand-written with web APIs</td><td align="right">794</td><td>1.7× slower</td><td><img src="../../assets/bar.svg" width="92" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode events in 2 to 16 byte chunks</th></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">560</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">560</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>Hand-written with web APIs</td><td align="right">500</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="143" height="12" alt="" /></td></tr>
 <tr><td>eventsource-parser</td><td align="right">332</td><td>1.7× slower</td><td><img src="../../assets/bar.svg" width="95" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode a 1 MB data line in 128-byte chunks</th></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">81.3</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">81.3</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>eventsource-parser</td><td align="right">52.4</td><td>1.6× slower</td><td><img src="../../assets/bar.svg" width="103" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode 2,000 LLM token events from one string</th></tr>
 <tr><td>eventsource-parser</td><td align="right">8,300</td><td>1.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">5,120</td><td></td><td><img src="../../assets/bar-ours.svg" width="99" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">5,120</td><td></td><td><img src="../../assets/bar.svg" width="99" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode LLM token events</th></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">12,100</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">12,100</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>Hand-written with web APIs</td><td align="right">5,400</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="71" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode LLM token events through <code>EncoderStream</code></th></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">235</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">235</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>Hand-written with web APIs</td><td align="right">201</td><td>1.2× slower</td><td><img src="../../assets/bar.svg" width="137" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Connect and read 2,000 events</th></tr>
-<tr><td><strong>@portable/sse</strong></td><td align="right">346</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/sse</td><td align="right">346</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>eventsource-parser</td><td align="right">225</td><td>1.5× slower</td><td><img src="../../assets/bar.svg" width="104" height="12" alt="" /></td></tr>
 <tr><td>eventsource</td><td align="right">189</td><td>1.8× slower</td><td><img src="../../assets/bar.svg" width="87" height="12" alt="" /></td></tr>
 </tbody>

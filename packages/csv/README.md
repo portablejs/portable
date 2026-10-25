@@ -99,22 +99,22 @@ The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Decode 5,000 rows from a string</th></tr>
-<tr><td><strong>@portable/csv</strong></td><td align="right">401</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/csv</td><td align="right">401</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>papaparse</td><td align="right">219</td><td>1.8× slower</td><td><img src="../../assets/bar.svg" width="87" height="12" alt="" /></td></tr>
 <tr><td>csv-parse or csv-stringify</td><td align="right">56.3</td><td>7.1× slower</td><td><img src="../../assets/bar.svg" width="22" height="12" alt="" /></td></tr>
 <tr><td>fast-csv</td><td align="right">25.0</td><td>16× slower</td><td><img src="../../assets/bar.svg" width="10" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode a 500 kB stream</th></tr>
-<tr><td><strong>@portable/csv</strong></td><td align="right">312</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/csv</td><td align="right">312</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>papaparse</td><td align="right">145</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="74" height="12" alt="" /></td></tr>
 <tr><td>csv-parse or csv-stringify</td><td align="right">47.5</td><td>6.6× slower</td><td><img src="../../assets/bar.svg" width="24" height="12" alt="" /></td></tr>
 <tr><td>fast-csv</td><td align="right">28.7</td><td>11× slower</td><td><img src="../../assets/bar.svg" width="15" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 5,000 rows to a string</th></tr>
-<tr><td><strong>@portable/csv</strong></td><td align="right">419</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/csv</td><td align="right">419</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>papaparse</td><td align="right">141</td><td>3.0× slower</td><td><img src="../../assets/bar.svg" width="54" height="12" alt="" /></td></tr>
 <tr><td>csv-parse or csv-stringify</td><td align="right">61.7</td><td>6.8× slower</td><td><img src="../../assets/bar.svg" width="24" height="12" alt="" /></td></tr>
 <tr><td>fast-csv</td><td align="right">61.3</td><td>6.8× slower</td><td><img src="../../assets/bar.svg" width="23" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a stream of 5,000 rows</th></tr>
-<tr><td><strong>@portable/csv</strong></td><td align="right">128</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/csv</td><td align="right">128</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>fast-csv</td><td align="right">90.8</td><td>1.4× slower</td><td><img src="../../assets/bar.svg" width="114" height="12" alt="" /></td></tr>
 <tr><td>csv-parse or csv-stringify</td><td align="right">64.3</td><td>2.0× slower</td><td><img src="../../assets/bar.svg" width="80" height="12" alt="" /></td></tr>
 </tbody>

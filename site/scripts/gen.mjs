@@ -1,6 +1,6 @@
 // Generates the package pages, sidebar and home page data from the repo READMEs.
 // Usage: node scripts/gen.mjs [path to portable repo, default: the repo this site is in]
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { api } from './api.mjs';
@@ -60,11 +60,6 @@ groups.push({ title: 'Utilities', items: [take('bytes'), take('errors'), take('r
 const descriptions = new Map(
   groups.flatMap((group) => group.items).map((item) => [item.name, item.description]),
 );
-// Matches the basePath in vocs.config.ts.
-const basePath = process.env.DOCS_BASE_PATH ?? '';
-for (const file of ['bar.svg', 'bar-ours.svg']) {
-  copyFileSync(join(repo, 'assets', file), join('public', file));
-}
 const out = 'src/pages/packages';
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
@@ -89,8 +84,12 @@ for (const name of seen) {
         .replace(/<code>/g, '<code data-v="true">')
         .replace(/ colspan=/g, ' colSpan=')}</div>`,
   );
-  // The benchmark bars are images of assets/bar*.svg, which the site serves from public/.
-  md = md.replace(/src="\.\.\/\.\.\/assets\/(bar[\w-]*\.svg)"/g, `src="${basePath}/$1"`);
+  // The README draws each bar as an image of assets/bar.svg, which can't take the page's text color.
+  // On the site the bar is an inline SVG, so `currentColor` is the text color in light and dark mode.
+  md = md.replace(
+    /<img src="\.\.\/\.\.\/assets\/bar\.svg" width="(\d+)" height="(\d+)" alt="" \/>/g,
+    '<svg width="$1" height="$2" aria-hidden="true"><rect width="100%" height="100%" fill="currentColor" /></svg>',
+  );
   md = md.replace(
     /`((?:[^`\n\\]|\\.)*?\\`(?:[^`\n\\]|\\.)*?)`(?=[^`]|$)/g,
     (_, inner) => '`` ' + inner.replace(/\\`/g, '`') + ' ``',
@@ -147,7 +146,7 @@ function toMdx(md) {
           return part
             .replace(/[{}]/g, (c) => '\\' + c)
             .replace(
-              /<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd|table|thead|tbody|tr|th|td|code|strong)\b|!--)/g,
+              /<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd|table|thead|tbody|tr|th|td|code|svg|rect)\b|!--)/g,
               '&lt;',
             );
         })

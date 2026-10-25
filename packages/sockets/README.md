@@ -119,11 +119,11 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 <tbody>
 <tr><th colspan="4" align="left">Echo 16 MB over TCP on localhost</th></tr>
 <tr><td>node:net</td><td align="right">41.1</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/sockets</strong></td><td align="right">36.5</td><td></td><td><img src="../../assets/bar-ours.svg" width="142" height="12" alt="" /></td></tr>
+<tr><td>@portable/sockets</td><td align="right">36.5</td><td></td><td><img src="../../assets/bar.svg" width="142" height="12" alt="" /></td></tr>
 <tr><td>@arrowood.dev/socket</td><td align="right">33.9</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="132" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Open and close a connection on localhost</th></tr>
 <tr><td>node:net</td><td align="right">24,200</td><td>1.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/sockets</strong></td><td align="right">15,300</td><td></td><td><img src="../../assets/bar-ours.svg" width="101" height="12" alt="" /></td></tr>
+<tr><td>@portable/sockets</td><td align="right">15,300</td><td></td><td><img src="../../assets/bar.svg" width="101" height="12" alt="" /></td></tr>
 <tr><td>@arrowood.dev/socket</td><td align="right">13,500</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="89" height="12" alt="" /></td></tr>
 </tbody>
 </table>

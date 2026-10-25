@@ -122,15 +122,15 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 <tbody>
 <tr><th colspan="4" align="left">Decode a 1024×1024 PNG</th></tr>
 <tr><td>pngjs</td><td align="right">26.7</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/png</strong></td><td align="right">21.5</td><td></td><td><img src="../../assets/bar-ours.svg" width="129" height="12" alt="" /></td></tr>
+<tr><td>@portable/png</td><td align="right">21.5</td><td></td><td><img src="../../assets/bar.svg" width="129" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode a 1024×1024 PNG with <code>decodeSync</code> and <code>node:zlib</code></th></tr>
-<tr><td><strong>@portable/png</strong></td><td align="right">35.9</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/png</td><td align="right">35.9</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>pngjs</td><td align="right">26.7</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="119" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a 1024×1024 PNG at zlib level 6</th></tr>
-<tr><td><strong>@portable/png</strong></td><td align="right">6.84</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/png</td><td align="right">6.84</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>pngjs</td><td align="right">5.94</td><td>1.2× slower</td><td><img src="../../assets/bar.svg" width="139" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a 1024×1024 PNG at level 9 with <code>Z_RLE</code>, through <code>node:zlib</code></th></tr>
-<tr><td><strong>@portable/png</strong></td><td align="right">13.1</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/png</td><td align="right">13.1</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>pngjs</td><td align="right">9.84</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="120" height="12" alt="" /></td></tr>
 </tbody>
 </table>

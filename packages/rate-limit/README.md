@@ -226,15 +226,15 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 <tbody>
 <tr><th colspan="4" align="left">10 rounds of <code>take</code> on 1,000 keys</th></tr>
 <tr><td>rate-limiter-flexible</td><td align="right">218</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/rate-limit</strong></td><td align="right">184</td><td></td><td><img src="../../assets/bar-ours.svg" width="135" height="12" alt="" /></td></tr>
+<tr><td>@portable/rate-limit</td><td align="right">184</td><td></td><td><img src="../../assets/bar.svg" width="135" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left"><code>take</code> of a denied request</th></tr>
-<tr><td><strong>@portable/rate-limit</strong></td><td align="right">4,210</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/rate-limit</td><td align="right">4,210</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>rate-limiter-flexible</td><td align="right">891</td><td>4.7× slower</td><td><img src="../../assets/bar.svg" width="34" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>take</code> on one key</th></tr>
 <tr><td>limiter</td><td align="right">16,800</td><td>5.8× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/rate-limit</strong></td><td align="right">2,910</td><td></td><td><img src="../../assets/bar-ours.svg" width="28" height="12" alt="" /></td></tr>
+<tr><td>@portable/rate-limit</td><td align="right">2,910</td><td></td><td><img src="../../assets/bar.svg" width="28" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Build the rate-limit headers</th></tr>
-<tr><td><strong>@portable/rate-limit</strong></td><td align="right">1,440</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/rate-limit</td><td align="right">1,440</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

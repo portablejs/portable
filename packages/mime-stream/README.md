@@ -117,10 +117,10 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 <tbody>
 <tr><th colspan="4" align="left">Split and join 1.5 MB of mail</th></tr>
 <tr><td><code>TransformStream</code> copy</td><td align="right">13,600</td><td>18× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/mime-stream</strong></td><td align="right">745</td><td></td><td><img src="../../assets/bar-ours.svg" width="9" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-stream</td><td align="right">745</td><td></td><td><img src="../../assets/bar.svg" width="9" height="12" alt="" /></td></tr>
 <tr><td>mailsplit</td><td align="right">126</td><td>5.9× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the header block of 1.5 MB of mail</th></tr>
-<tr><td><strong>@portable/mime-stream</strong></td><td align="right">17,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-stream</td><td align="right">17,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>mailsplit</td><td align="right">126</td><td>130× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 </tbody>
 </table>

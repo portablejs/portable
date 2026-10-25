@@ -85,25 +85,25 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Read the size of a 730 KB JPEG from a stream</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">88,700</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">88,700</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">1,250</td><td>71× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a 730 KB JPEG</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">6,840,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">6,840,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">1,800</td><td>3,800× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a PNG</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">2,590,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">2,590,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">439,000</td><td>5.9× slower</td><td><img src="../../assets/bar.svg" width="27" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a HEIC image</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">201,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">201,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">56,600</td><td>3.6× slower</td><td><img src="../../assets/bar.svg" width="45" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a WebP image</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">2,470,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">2,470,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">347,000</td><td>7.1× slower</td><td><img src="../../assets/bar.svg" width="22" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of an SVG</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">550,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">550,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">86,500</td><td>6.4× slower</td><td><img src="../../assets/bar.svg" width="25" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a TIFF</th></tr>
-<tr><td><strong>@portable/image-size</strong></td><td align="right">8,530,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">8,530,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>image-size</td><td align="right">24,000</td><td>360× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 </tbody>
 </table>

@@ -81,37 +81,37 @@ Each benchmark makes 1,000 calls per sample.
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">1,000 × <code>int(1, 100)</code></th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">105,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">105,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>random-int</td><td align="right">9,180</td><td>11× slower</td><td><img src="../../assets/bar.svg" width="14" height="12" alt="" /></td></tr>
 <tr><td>lodash</td><td align="right">8,670</td><td>12× slower</td><td><img src="../../assets/bar.svg" width="13" height="12" alt="" /></td></tr>
 <tr><td><code>node:crypto</code></td><td align="right">5,130</td><td>20× slower</td><td><img src="../../assets/bar.svg" width="8" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>int</code> over 2^53 integers</th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">31,200</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">31,200</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>random-int</td><td align="right">8,080</td><td>3.9× slower</td><td><img src="../../assets/bar.svg" width="41" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>float()</code></th></tr>
 <tr><td><code>Math.random</code> or <code>crypto.getRandomValues</code></td><td align="right">70,000</td><td>1.3× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">54,400</td><td></td><td><img src="../../assets/bar-ours.svg" width="124" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">54,400</td><td></td><td><img src="../../assets/bar.svg" width="124" height="12" alt="" /></td></tr>
 <tr><td>lodash</td><td align="right">2,480</td><td>22× slower</td><td><img src="../../assets/bar.svg" width="6" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>string(21)</code></th></tr>
 <tr><td>nanoid</td><td align="right">29,200</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">26,400</td><td></td><td><img src="../../assets/bar-ours.svg" width="145" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">26,400</td><td></td><td><img src="../../assets/bar.svg" width="145" height="12" alt="" /></td></tr>
 <tr><td>crypto-random-string</td><td align="right">315</td><td>84× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>string(12)</code> from 36 characters</th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">29,200</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">29,200</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>nanoid</td><td align="right">26,900</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="147" height="12" alt="" /></td></tr>
 <tr><td>crypto-random-string</td><td align="right">344</td><td>85× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>shuffle</code> of 52 elements</th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">1,970</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">1,970</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>lodash</td><td align="right">1,120</td><td>1.8× slower</td><td><img src="../../assets/bar.svg" width="91" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>pick</code></th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">85,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">85,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>lodash</td><td align="right">8,740</td><td>9.7× slower</td><td><img src="../../assets/bar.svg" width="16" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>bytes(32)</code></th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">9,230</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">9,230</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>nanoid</td><td align="right">549</td><td>17× slower</td><td><img src="../../assets/bar.svg" width="10" height="12" alt="" /></td></tr>
 <tr><td><code>Math.random</code> or <code>crypto.getRandomValues</code></td><td align="right">478</td><td>19× slower</td><td><img src="../../assets/bar.svg" width="8" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">1,000 × <code>seeded(1).float()</code></th></tr>
-<tr><td><strong>@portable/random</strong></td><td align="right">57,700</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">57,700</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>seedrandom</td><td align="right">20,100</td><td>2.9× slower</td><td><img src="../../assets/bar.svg" width="56" height="12" alt="" /></td></tr>
 </tbody>
 </table>

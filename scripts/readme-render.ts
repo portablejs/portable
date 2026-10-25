@@ -30,11 +30,11 @@ const barWidth = 160;
  * An image of a one-pixel SVG stretched to a width in pixels for `hz` against the fastest result, at
  * least 2. Block characters such as `█` leave gaps between them and render at different heights in
  * different fonts, and GitHub strips `data:` URLs and inline `<svg>`, so the bar is a file in
- * `assets/`. Our package's bar uses the accent color.
+ * `assets/`.
  */
-function bar(hz: number, fastest: number, ours: boolean): string {
+function bar(hz: number, fastest: number): string {
   const width = Math.max(2, Math.round((hz / fastest) * barWidth));
-  return `<img src="../../assets/bar${ours ? '-ours' : ''}.svg" width="${width}" height="12" alt="" />`;
+  return `<img src="../../assets/bar.svg" width="${width}" height="12" alt="" />`;
 }
 
 /** How `hz` compares with `ours`, such as "1.9× slower", with a no-break space so the cell doesn't wrap. */
@@ -77,10 +77,9 @@ export function benchTable(ours: string, benchmarks: readonly Benchmark[]): stri
     const fastest = sorted[0].hz;
     const baseline = results.find(({ library }) => library === ours)?.hz;
     for (const { library, hz } of sorted) {
-      const name = library === ours ? `<strong>${html(library)}</strong>` : html(library);
       const compared = library === ours || baseline === undefined ? '' : relative(hz, baseline);
       lines.push(
-        `<tr><td>${name}</td><td align="right">${opsPerSecond(hz)}</td><td>${compared}</td><td>${bar(hz, fastest, library === ours)}</td></tr>`,
+        `<tr><td>${html(library)}</td><td align="right">${opsPerSecond(hz)}</td><td>${compared}</td><td>${bar(hz, fastest)}</td></tr>`,
       );
     }
   }

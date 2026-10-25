@@ -112,37 +112,37 @@ It has no dependencies outside `@portable/*`, takes and returns plain strings an
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Decode 200 Q-encoded subjects</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">1,130</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">1,130</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">602</td><td>1.9× slower</td><td><img src="../../assets/bar.svg" width="85" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode 200 B-encoded words</th></tr>
 <tr><td>Node <code>Buffer</code> and <code>TextDecoder</code></td><td align="right">7,530</td><td>3.0× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">2,470</td><td></td><td><img src="../../assets/bar-ours.svg" width="52" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">2,470</td><td></td><td><img src="../../assets/bar.svg" width="52" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">1,810</td><td>1.4× slower</td><td><img src="../../assets/bar.svg" width="38" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 200 subjects</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">1,720</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">1,720</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">631</td><td>2.7× slower</td><td><img src="../../assets/bar.svg" width="59" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 200 subjects as B words</th></tr>
 <tr><td>libmime</td><td align="right">7,600</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">7,320</td><td></td><td><img src="../../assets/bar-ours.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">7,320</td><td></td><td><img src="../../assets/bar.svg" width="154" height="12" alt="" /></td></tr>
 <tr><td>Node <code>Buffer</code> and <code>TextDecoder</code></td><td align="right">3,450</td><td>2.1× slower</td><td><img src="../../assets/bar.svg" width="73" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Fold a 2,000-word header</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">79,200</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">79,200</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">10,300</td><td>7.7× slower</td><td><img src="../../assets/bar.svg" width="21" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Parse 200 folded headers</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">18,100</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">18,100</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">4,930</td><td>3.7× slower</td><td><img src="../../assets/bar.svg" width="44" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Parse 200 header values with parameters</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">1,330</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">1,330</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">864</td><td>1.5× slower</td><td><img src="../../assets/bar.svg" width="104" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Format 200 header values with parameters</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">1,880</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">1,880</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>libmime</td><td align="right">837</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="71" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Parse 500 addresses</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">2,070</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">2,070</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>addressparser</td><td align="right">861</td><td>2.4× slower</td><td><img src="../../assets/bar.svg" width="67" height="12" alt="" /></td></tr>
 <tr><td>email-addresses</td><td align="right">36.8</td><td>56× slower</td><td><img src="../../assets/bar.svg" width="3" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Parse 500 addresses in strict mode</th></tr>
-<tr><td><strong>@portable/mime-headers</strong></td><td align="right">969</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-headers</td><td align="right">969</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>email-addresses</td><td align="right">41.0</td><td>24× slower</td><td><img src="../../assets/bar.svg" width="7" height="12" alt="" /></td></tr>
 </tbody>
 </table>

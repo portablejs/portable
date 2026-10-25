@@ -134,14 +134,14 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 <tr><th colspan="4" align="left">Sign a 250 KB message</th></tr>
 <tr><td><code>node:crypto</code>, hash and sign only</td><td align="right">1,680</td><td>5.9× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>nodemailer</td><td align="right">328</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="31" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/dkim</strong></td><td align="right">287</td><td></td><td><img src="../../assets/bar-ours.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>@portable/dkim</td><td align="right">287</td><td></td><td><img src="../../assets/bar.svg" width="27" height="12" alt="" /></td></tr>
 <tr><td>mailauth</td><td align="right">133</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="13" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Verify a 250 KB message</th></tr>
-<tr><td><strong>@portable/dkim</strong></td><td align="right">403</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/dkim</td><td align="right">403</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>mailauth</td><td align="right">133</td><td>3.0× slower</td><td><img src="../../assets/bar.svg" width="53" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Sign and verify a short message</th></tr>
 <tr><td>mailauth</td><td align="right">550</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/dkim</strong></td><td align="right">501</td><td></td><td><img src="../../assets/bar-ours.svg" width="146" height="12" alt="" /></td></tr>
+<tr><td>@portable/dkim</td><td align="right">501</td><td></td><td><img src="../../assets/bar.svg" width="146" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

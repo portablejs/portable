@@ -137,13 +137,13 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 <tbody>
 <tr><th colspan="4" align="left">Echo 1,000 messages through a local server</th></tr>
 <tr><td><code>WebSocket</code></td><td align="right">109</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/websockets</strong></td><td align="right">105</td><td></td><td><img src="../../assets/bar-ours.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>@portable/websockets</td><td align="right">105</td><td></td><td><img src="../../assets/bar.svg" width="154" height="12" alt="" /></td></tr>
 <tr><td>websocket-ts</td><td align="right">104</td><td>same</td><td><img src="../../assets/bar.svg" width="153" height="12" alt="" /></td></tr>
 <tr><td>reconnecting-websocket</td><td align="right">93.5</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="137" height="12" alt="" /></td></tr>
 <tr><td>partysocket</td><td align="right">83.1</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="122" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Echo 1,000 messages on the server</th></tr>
 <tr><td>ws</td><td align="right">97.7</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/websockets</strong></td><td align="right">94.0</td><td></td><td><img src="../../assets/bar-ours.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>@portable/websockets</td><td align="right">94.0</td><td></td><td><img src="../../assets/bar.svg" width="154" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

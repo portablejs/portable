@@ -56,7 +56,7 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 <tr><th colspan="4" align="left">Split 1.7 MB into lines</th></tr>
 <tr><td><code>node:readline</code></td><td align="right">165</td><td>2.0× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
 <tr><td>split2</td><td align="right">84.6</td><td>same</td><td><img src="../../assets/bar.svg" width="82" height="12" alt="" /></td></tr>
-<tr><td><strong>@portable/lines</strong></td><td align="right">82.8</td><td></td><td><img src="../../assets/bar-ours.svg" width="80" height="12" alt="" /></td></tr>
+<tr><td>@portable/lines</td><td align="right">82.8</td><td></td><td><img src="../../assets/bar.svg" width="80" height="12" alt="" /></td></tr>
 <tr><td>byline</td><td align="right">40.7</td><td>2.0× slower</td><td><img src="../../assets/bar.svg" width="39" height="12" alt="" /></td></tr>
 </tbody>
 </table>
