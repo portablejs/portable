@@ -72,6 +72,8 @@ For each ES version, the table gives the share of global browser usage that come
 
 Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so every version from ES2018 to ES2023 needs Safari 16.4. We chose ES2022 because packages already use its built-ins, such as `Array.prototype.at`, `Object.hasOwn` and the `cause` option of `Error`, and moving up from ES2021 costs 0.1%. No package uses an ES2023 API. With `lib` set to ES2022, `tsc` rejects `findLast`, `toSorted`, `Promise.withResolvers` and other newer built-ins in package code. Raise `target` and `lib` when a package needs one of them.
 
+The version table shows when each browser first shipped a feature, not whether its engine implements the feature correctly. [test262.fyi](https://test262.fyi/) runs the [test262](https://github.com/tc39/test262) conformance suite every day against current builds of V8 (Chrome, Cloudflare Workers, Deno and Node), JavaScriptCore (Safari and Bun) and SpiderMonkey (Firefox), and shows each engine's pass rate for every directory of the suite, such as `built-ins/Array/prototype/at`. Before you use a language feature or built-in for the first time, open its directory there, read the tests that fail in each engine, and check whether any of them covers a case your package depends on. For the first browser version with the feature, use MDN and caniuse, as the table above does. test262.fyi doesn't cover web APIs such as `CompressionStream` or `crypto.subtle`, so check those in the web API table below.
+
 `tsc` can't reject a web API that is too new, because TypeScript's DOM library declares every web API, however new. These are the newest ones packages use:
 
 | API | Packages | Usage share | Chrome | Firefox | Safari |
