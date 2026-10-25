@@ -2,4 +2,4 @@
 '@portable/base64': minor
 ---
 
-Added `encode`, `decode`, `EncoderStream` and `DecoderStream` for base64 and base64url with optional MIME line wrapping, as a replacement for libbase64, base64-js and js-base64.
+Initial release. `Base64.encode` and `Base64.decode` convert bytes to base64 and base64url and back, with optional MIME line wrapping, and `EncoderStream` and `DecoderStream` do the same on streams. They use the native `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them. Replaces libbase64, base64-js and js-base64.

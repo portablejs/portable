@@ -2,4 +2,4 @@
 '@portable/rate-limit': minor
 ---
 
-Added `create`, `headers` and `memoryStore`: GCRA rate limiting per key with a compare-and-set store, and the `RateLimit` and `RateLimit-Policy` header fields, as a replacement for rate-limiter-flexible, limiter and bottleneck's reservoir.
+Initial release. `RateLimit.create` limits requests per key with GCRA and a compare-and-set store, `memoryStore` keeps the state in memory, and `headers` returns the `RateLimit`, `RateLimit-Policy` and `Retry-After` header fields for a result. The README shows stores for Workers KV, a Durable Object and Redis over HTTP. Replaces rate-limiter-flexible, limiter and bottleneck's reservoir options.

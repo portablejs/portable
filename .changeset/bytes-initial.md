@@ -2,4 +2,4 @@
 '@portable/bytes': minor
 ---
 
-Added `toHex`, `fromHex`, `concat`, `equal` and `timingSafeEqual` for `Uint8Array`, as a replacement for the matching uint8array-extras functions and `crypto.timingSafeEqual` from `node:crypto`.
+Initial release. `Bytes.toHex` and `fromHex` convert a `Uint8Array` to hex and back, with the native methods where the runtime has them, `concat` joins byte arrays, and `equal` and `timingSafeEqual` compare them. Replaces the matching uint8array-extras functions and `crypto.timingSafeEqual` from `node:crypto`.
