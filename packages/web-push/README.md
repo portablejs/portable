@@ -61,7 +61,7 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 
 `subscription` has the shape of `PushSubscription.toJSON()`: `{ endpoint, keys: { p256dh, auth } }`. The keys may be base64url or standard base64, with or without padding, or a `Uint8Array`.
 
-A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, or a `ttl` that isn't a non-negative integer.
+A mistake in the call gives a `TypeError` for an option of the wrong type, and a `RangeError` for a malformed `vapid` key or subject, an unknown `urgency`, a `topic` that isn't base64url, a `ttl` that isn't a non-negative integer, or an invalid `now`.
 
 ### Options
 
@@ -133,4 +133,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, web-push is about 2.5 times faster at encrypting one message and 1.2 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
+On Node, web-push is about 2.5 times faster at encrypting one message and 1.2 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 11 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.

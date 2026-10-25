@@ -60,9 +60,6 @@ export function authorization(audience: string, vapid: Vapid, date: Date): Promi
   const { subject, publicKey, privateKey } = vapid;
   assertSubject(subject);
   const now = Math.floor(date.getTime() / 1000);
-  if (!Number.isFinite(now)) {
-    throw new RangeError('`now` must be a valid Date.');
-  }
   const id = `${audience} ${subject} ${publicKey} ${privateKey}`;
   const cached = tokens.get(id);
   if (cached && now >= cached.issued && now - cached.issued < 60 * 60) {

@@ -56,8 +56,8 @@ export declare namespace toRequest {
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
  * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
- * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed, or `ttl` isn't a
- * non-negative integer.
+ * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed, `ttl` isn't a
+ * non-negative integer, or `now` is an invalid time.
  */
 export async function toRequest(options: toRequest.Options): Promise<Request> {
   const { subscription, payload, ttl = 2419200, urgency, topic, signal } = options;
@@ -74,6 +74,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
   if (topic !== undefined && !/^[\w-]{1,32}$/.test(topic)) {
     throw new RangeError('topic must be 1 to 32 base64url characters');
   }
+  const now = toDate(options.now);
 
   const headers = new Headers({ ttl: String(ttl) });
   if (urgency) {
@@ -88,10 +89,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
     headers.set('content-encoding', 'aes128gcm');
     headers.set('content-type', 'application/octet-stream');
   }
-  headers.set(
-    'authorization',
-    await authorization(endpoint.origin, options.vapid, toDate(options.now)),
-  );
+  headers.set('authorization', await authorization(endpoint.origin, options.vapid, now));
   signal?.throwIfAborted();
   return new Request(endpoint, {
     method: 'POST',

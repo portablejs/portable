@@ -110,6 +110,15 @@ describe('send', () => {
     await expect(sent('hello', { topic })).rejects.toThrow(RangeError);
   });
 
+  test.for([new Date(NaN), { epochMilliseconds: NaN }])(
+    'rejects an invalid now before it encrypts',
+    async (now) => {
+      await expect(sent('hello', { now })).rejects.toThrow(RangeError);
+      const subscription = { endpoint: agent.subscription.endpoint };
+      await expect(sent('hello', { now, subscription })).rejects.toThrow(RangeError);
+    },
+  );
+
   test.for([200, 201, 202, 204])('returns sent for status %i', async (status) => {
     const { result } = await sent('hello', {}, status);
     expect(result).toEqual({ kind: 'sent', status });
