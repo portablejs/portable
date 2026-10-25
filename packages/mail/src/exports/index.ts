@@ -4,6 +4,7 @@ export {
   encodeStream,
   type Attachment,
   type HeaderFields,
+  type Instant,
   type Message,
   type Part,
 } from '../encode.js';

@@ -610,6 +610,29 @@ describe('signals and closing', () => {
     expect((await failure(client.send({ ...envelope, message }))).code).toBe('ECONNECTION');
   });
 
+  test('cancels a stalled message stream with the signal reason', async () => {
+    const server = fakeServer();
+    const client = await plain(server);
+    let cancelled: unknown;
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encode('Subject: test\r\n\r\n'));
+      },
+      pull: () => new Promise(() => {}),
+      cancel(reason) {
+        cancelled = reason;
+      },
+    });
+    const reason = new Error('Send timeout');
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(reason), 20);
+    await expect(
+      client.send({ ...envelope, message: stream }, { signal: controller.signal }),
+    ).rejects.toBe(reason);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(cancelled).toBe(reason);
+  });
+
   test('close() sends QUIT and closes the socket', async () => {
     const server = fakeServer();
     const client = await plain(server);
@@ -619,6 +642,18 @@ describe('signals and closing', () => {
     expect(server.closed).toBe(1);
     expect((await failure(client.send({ ...envelope, message }))).code).toBe('ECONNECTION');
   });
+
+  test.runIf(typeof Symbol.asyncDispose === 'symbol')(
+    'Symbol.asyncDispose sends QUIT and closes the socket, as await using does',
+    async () => {
+      const server = fakeServer();
+      const client = await plain(server);
+      await client.send({ ...envelope, message });
+      await client[Symbol.asyncDispose]();
+      expect(server.commands.at(-1)).toBe('QUIT');
+      expect(server.closed).toBe(1);
+    },
+  );
 
   test('close() waits for queued sends', async () => {
     const server = fakeServer();

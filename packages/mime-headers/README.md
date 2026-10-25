@@ -61,7 +61,7 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | `'Q'` keeps ASCII readable, `'B'` is base64. |
-| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. With `false`, the text is written as one encoded word whatever its length. |
+| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text becomes several words, each holding whole characters. With `Infinity`, the text is written as one encoded word whatever its length. |
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
 | `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
@@ -90,7 +90,7 @@ It has no dependencies, takes and returns plain strings and `Uint8Array`s, and d
 - `encodeWord` keeps every astral character whole when it splits B words. libmime 5.4.9 turns a character outside the emoji block into two U+FFFD.
 - `formatAddresses` encodes a CRLF in a name and refuses an address that would read back as something else, so a header can't be split into two.
 - Every function runs in linear time on hostile input. The tests check 45 adversarial inputs.
-- libmime's `encodeWord` writes one word unless given a length, and `encodeWord` limits words to 75 characters by default. Pass `wordLength: false` where you passed libmime a length of 0.
+- libmime's `encodeWord` writes one word unless given a length, and `encodeWord` limits words to 75 characters by default. Pass `wordLength: Infinity` where you passed libmime a length of 0.
 - In a Q word, `encodeWord` writes a trailing space as `_`, where libmime writes `=20`.
 - `encodeWords` encodes words that contain control characters. libmime leaves them as they are.
 - libmime's `encodeWords` takes bytes in another charset, and `encodeWords` reads a `Uint8Array` as UTF-8, so decode such bytes with `TextDecoder` first.

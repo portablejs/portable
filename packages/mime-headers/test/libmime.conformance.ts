@@ -13,7 +13,7 @@ import { latin1 } from './utils.js';
 // Ported from libmime 5.5.1 test/libmime-test.ts. libmime's encodeWord(text, 'Q', n) is
 // encodeWord(text, { wordLength: n }) here, foldLines(text, n) is fold(text, { lineLength: n }),
 // parseHeaderValue is parseValue, buildHeaderValue is formatValue, and decodeHeaders is
-// parseHeaders. libmime's maxLength 0 means no limit, which is `wordLength: false` here.
+// parseHeaders. libmime's maxLength 0 means no limit, which is `wordLength: Infinity` here.
 
 describe('encodeWord()', () => {
   test('encodes quoted-printable', () => {
@@ -61,8 +61,8 @@ describe('encodeWord()', () => {
     expect(decodeWords(encoded)).toBe('a�\u{1F600}b');
   });
 
-  test('writes a single word with wordLength false', () => {
-    expect(encodeWord('õ'.repeat(40), { wordLength: false }).split(' ')).toHaveLength(1);
+  test('writes a single word with wordLength Infinity', () => {
+    expect(encodeWord('õ'.repeat(40), { wordLength: Infinity }).split(' ')).toHaveLength(1);
   });
 });
 

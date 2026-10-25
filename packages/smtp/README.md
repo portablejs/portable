@@ -29,15 +29,13 @@ Cloudflare Workers can't connect to port 25, so use a submission port (587 or 46
 To send several messages over one connection, open a client:
 
 ```ts
-const client = await Smtp.connect({ connect, host: 'smtp.example.com', auth });
-try {
-  for (const mail of outbox) {
-    await client.send(mail);
-  }
-} finally {
-  await client.close();
+await using client = await Smtp.connect({ connect, host: 'smtp.example.com', auth });
+for (const mail of outbox) {
+  await client.send(mail);
 }
 ```
+
+`await using` sends QUIT and closes the connection when the block ends, even if a send throws. Without it, call `client.close()` in a `finally` block.
 
 ## Sockets
 
@@ -192,11 +190,11 @@ Sends one message and resolves with `{ accepted, rejected, response }`. It resol
 
 The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO and DATA in one write. It declares BODY=8BITMIME whenever the server offers it, and SMTPUTF8 when an address is not ASCII. An address with a control character or an angle bracket is rejected before anything is sent.
 
-When a stream message isn't sent, because the envelope was refused or the connection failed, the stream is cancelled.
+When a stream message isn't sent in full, because the envelope was refused, the connection failed or the signal aborted, the stream is cancelled.
 
 ### `client.close({ signal })`
 
-Waits for queued sends, sends QUIT and closes the socket. It never rejects.
+Waits for queued sends, sends QUIT and closes the socket. It never rejects. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
 
 ### `Smtp.send(mail, options)`
 
@@ -228,7 +226,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 
 | Type | Description |
 | --- | --- |
-| `Smtp.Client` | An open session from `connect`: `send` and `close`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
+| `Smtp.Client` | An open session from `connect`: `send`, `close` and `[Symbol.asyncDispose]`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
 | `Smtp.Mail` | A message and its envelope, as `send` takes them. |
 | `Smtp.Result` | The outcome of a send that reached at least one recipient. |
 | `Smtp.Rejection` | A recipient the server refused, with its reply. |

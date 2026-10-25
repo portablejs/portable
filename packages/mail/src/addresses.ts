@@ -24,7 +24,7 @@ export type Envelope = {
   /**
    * Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups.
    */
-  to: string[];
+  to: readonly string[];
 };
 
 type Entry = MimeHeaders.Mailbox | MimeHeaders.Group;

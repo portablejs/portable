@@ -38,7 +38,7 @@ The report is read from the network while the caller reads the message, so a lar
 | `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content. |
 | `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
 | `InvalidInputError` | Thrown for an address, header name, content type or file name that can't be written. |
-| `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope` | Types. |
+| `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types. |
 
 ### Message
 
@@ -49,7 +49,7 @@ The report is read from the network while the caller reads the message, so a lar
 | `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
 | `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain. |
 | `references` | `string \| string[]` | Message IDs separated by whitespace. |
-| `date` | `Date \| string` | Defaults to now. A `Date` is written as `Tue, 2 Jan 2024 03:04:05 +0000`. |
+| `date` | `Date \| Instant \| string` | Defaults to now. A `Date` or a `Temporal.Instant` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
 | `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. |
 | `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. |
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
@@ -122,6 +122,7 @@ Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, 
 | `Mail.HeaderFields` | Extra header fields by name, with a list for repeated fields. |
 | `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'` or `'base64'`. |
 | `Mail.Envelope` | `{ from, to }`, what `envelope` returns. |
+| `Mail.Instant` | `{ epochMilliseconds }`, which `Temporal.Instant` and `Temporal.ZonedDateTime` have. |
 
 ## Why use this over nodemailer
 

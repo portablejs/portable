@@ -71,8 +71,11 @@ export type Message = {
   readonly subject?: string | undefined;
   /** `Message-ID`, with or without angle brackets. @default a random id at the `From` domain */
   readonly messageId?: string | undefined;
-  /** @default the time `encodeStream` is called */
-  readonly date?: Date | string | undefined;
+  /**
+   * A `Date`, or an instant such as a `Temporal.Instant` or `Temporal.ZonedDateTime`, written in
+   * UTC. A string is written as given. @default the time `encodeStream` is called
+   */
+  readonly date?: Date | Instant | string | undefined;
   /** Plain text body. */
   readonly text?: Content | undefined;
   /** AMP for Email body, placed between the text and the HTML. */
@@ -298,7 +301,11 @@ function references(value: string | readonly string[]): string {
   return ids.join(' ');
 }
 
-function date(value: Date): string {
+/** Any object with `epochMilliseconds`, which `Temporal.Instant` and `Temporal.ZonedDateTime` have. */
+export type Instant = { readonly epochMilliseconds: number };
+
+function date(input: Date | Instant): string {
+  const value = input instanceof Date ? input : new Date(input.epochMilliseconds);
   if (Number.isNaN(value.getTime())) {
     throw new InvalidInputError('date is an invalid Date.');
   }

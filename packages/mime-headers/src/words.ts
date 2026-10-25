@@ -42,9 +42,9 @@ export declare namespace encodeWord {
     /**
      * Longest encoded word, `=?` and `?=` included. Longer text is split into several words that
      * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
-     * longer when the limit is too small for it. `false` writes one word. @default 75
+     * longer when the limit is too small for it. `Infinity` writes one word. @default 75
      */
-    wordLength?: number | false | undefined;
+    wordLength?: number | undefined;
   };
 }
 
@@ -65,7 +65,7 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
   if (encoding !== 'Q' && encoding !== 'B') {
     throw new RangeError(`Unknown wordEncoding ${String(encoding)}.`);
   }
-  if (wordLength !== false) {
+  if (wordLength !== Infinity) {
     assertLength('wordLength', wordLength);
   }
   const prefix = charset
@@ -73,10 +73,7 @@ export function encodeWord(input: string | Uint8Array, options: encodeWord.Optio
     : encoding === 'Q'
       ? '=?UTF-8?Q?'
       : '=?UTF-8?B?';
-  const budget =
-    wordLength === false
-      ? Infinity
-      : Math.max(wordLength - prefix.length - 2, encoding === 'Q' ? 12 : 4);
+  const budget = Math.max(wordLength - prefix.length - 2, encoding === 'Q' ? 12 : 4);
   const text = toText(input);
   const bytes = charset ? undefined : encodeUtf8Scratch(text);
   if (bytes && encoding === 'B' && Math.ceil(bytes.length / 3) * 4 <= budget) {

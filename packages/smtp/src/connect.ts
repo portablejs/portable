@@ -49,15 +49,27 @@ export type Mail = {
 /** The outcome of a send that reached at least one recipient. */
 export type Result = {
   /** Recipients the server accepted, in the order given. */
-  accepted: string[];
+  accepted: readonly string[];
   /** Recipients the server refused, with their replies. */
-  rejected: Rejection[];
+  rejected: readonly Rejection[];
   /** The server's reply to the end of the message, such as `'250 2.0.0 Ok: queued as 4F3C2'`. */
   response: string;
 };
 
-/** An open SMTP session, from `Smtp.connect`. Calls run one at a time, in the order they are made. */
-export type Client = {
+/**
+ * `[Symbol.asyncDispose]()` where the runtime and the caller's TypeScript lib define the symbol,
+ * otherwise nothing.
+ */
+type AsyncDisposable = SymbolConstructor extends { readonly asyncDispose: infer key extends symbol }
+  ? { [name in key]: () => Promise<void> }
+  : {};
+
+/**
+ * An open SMTP session, from `Smtp.connect`. Calls run one at a time, in the order they are made.
+ * Where the runtime has `Symbol.asyncDispose`, `await using` calls `close()` at the end of the
+ * block.
+ */
+export type Client = AsyncDisposable & {
   /** Whether the connection is encrypted. */
   readonly secure: boolean;
   /** The extension lines of the EHLO reply, such as `'SIZE 35882577'`. Empty after a HELO fallback. */
@@ -70,7 +82,7 @@ export type Client = {
 
 export declare namespace Client {
   type SendOptions = {
-    /** Aborting rejects with `signal.reason` and closes the connection. */
+    /** Aborting rejects with `signal.reason`, closes the connection and cancels a message stream. */
     signal?: AbortSignal | undefined;
   };
   type CloseOptions = {
@@ -107,7 +119,7 @@ type Session = {
   read(command: string): Promise<Reply>;
   write(text: string, command: string): Promise<void>;
   writeBytes(bytes: Uint8Array, command: string): Promise<void>;
-  pipe(stream: ReadableStream<Uint8Array>): Promise<void>;
+  pipe(stream: ReadableStream<Uint8Array>, signal: AbortSignal | undefined): Promise<void>;
   upgrade(): Promise<void>;
   destroy(): void;
   readonly closed: boolean;
@@ -158,10 +170,14 @@ function createSession(first: Socket): Session {
         });
       }
     },
-    async pipe(stream) {
+    async pipe(stream, signal) {
       writer.releaseLock();
       try {
-        await stream.pipeThrough(new DataStream()).pipeTo(socket.writable, { preventClose: true });
+        await stream.pipeThrough(new DataStream()).pipeTo(socket.writable, {
+          preventClose: true,
+          preventAbort: true,
+          ...(signal && { signal }),
+        });
       } catch (cause) {
         session.destroy();
         throw new CommandError({
@@ -283,14 +299,13 @@ function sizeLimit(extensions: readonly string[]): number {
  * import * as Smtp from '@portable/smtp';
  * import { connect } from 'cloudflare:sockets';
  *
- * const client = await Smtp.connect({
+ * await using client = await Smtp.connect({
  *   connect,
  *   host: 'smtp.example.com',
  *   auth: { user: 'me@example.com', pass: env.SMTP_PASSWORD },
  *   signal: AbortSignal.timeout(10_000),
  * });
  * const result = await client.send({ from: 'me@example.com', to: ['you@example.com'], message });
- * await client.close();
  * ```
  */
 export async function connect(options: connect.Options): Promise<Client> {
@@ -510,7 +525,7 @@ function createClient(
     }
   };
 
-  const transaction = async (mail: Mail): Promise<Result> => {
+  const transaction = async (mail: Mail, signal: AbortSignal | undefined): Promise<Result> => {
     const recipients = typeof mail.to === 'string' ? [mail.to] : [...mail.to];
     if (recipients.length === 0) {
       throw new CommandError({ code: 'EENVELOPE', message: 'No recipients', command: 'RCPT TO' });
@@ -712,7 +727,7 @@ function createClient(
     if (data) {
       await session.writeBytes(data, 'DATA');
     } else {
-      await session.pipe(message as ReadableStream<Uint8Array>);
+      await session.pipe(message as ReadableStream<Uint8Array>, signal);
     }
 
     if (!lmtp) {
@@ -755,7 +770,7 @@ function createClient(
     return { accepted: delivered, rejected, response };
   };
 
-  return {
+  const client = {
     secure: tls,
     extensions,
     send(mail, options = {}) {
@@ -769,7 +784,7 @@ function createClient(
               command: 'MAIL FROM',
             });
           }
-          return await guard(session, options.signal, () => transaction(mail));
+          return await guard(session, options.signal, () => transaction(mail, options.signal));
         } catch (error) {
           if (!sending && mail.message instanceof ReadableStream) {
             mail.message.cancel(error).catch(() => {});
@@ -792,7 +807,20 @@ function createClient(
         session.destroy();
       });
     },
-  };
+  } satisfies Omit<Client, keyof AsyncDisposable>;
+  return withAsyncDispose(client);
+}
+
+function withAsyncDispose<value extends { close(): Promise<void> }>(
+  value: value,
+): value & AsyncDisposable {
+  const key = (Symbol as { asyncDispose?: symbol | undefined }).asyncDispose;
+  if (key) {
+    Object.defineProperty(value, key, { value: () => value.close() });
+  }
+  // With a TypeScript lib that defines `Symbol.asyncDispose`, `AsyncDisposable` isn't empty.
+  // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
+  return value as value & AsyncDisposable;
 }
 
 export declare namespace send {
