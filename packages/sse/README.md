@@ -132,8 +132,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/sse | eventsource-parser | eventsource | Hand-written with web APIs |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.2 kB | 1.9 kB | 3.6 kB | built in |
-| Runtime dependencies | 0 | 0 | 1 | – |
+| Minified and gzipped | 1.7 kB | 1.9 kB | 3.6 kB | built in |
+| Runtime dependencies | 4 | 0 | 1 | – |
 | Node built-ins used | none | none | none | none |
 | TypeScript types | included | included | included | – |
 | Version compared | – | 4.1.2 | 5.1.3 | – |

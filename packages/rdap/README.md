@@ -143,8 +143,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/rdap | node-rdap | `fetch` and `response.json()` |
 | --- | --- | --- | --- |
-| Minified and gzipped | 3.6 kB | 9.9 kB | built in |
-| Runtime dependencies | 0 | 5 | – |
+| Minified and gzipped | 4.7 kB | 9.9 kB | built in |
+| Runtime dependencies | 4 | 5 | – |
 | Node built-ins used | none | `Buffer`, `events`, `net` | none |
 | TypeScript types | included | included | – |
 | Version compared | – | 1.0.0 | – |

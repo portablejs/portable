@@ -164,11 +164,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/mail | nodemailer |
 | --- | --- | --- |
-| Minified and gzipped | 13 kB | 38 kB |
-| Runtime dependencies | 4 | 0 |
+| Minified and gzipped | 13 kB | 39 kB |
+| Runtime dependencies | 7 | 0 |
 | Node built-ins used | none | `Buffer`, `crypto`, `dns`, `fs`, `http`, `https`, `net`, `os`, `path`, `stream`, `url`, `util`, `zlib` |
 | TypeScript types | included | none |
-| Version compared | – | 10.1.2 |
+| Version compared | – | 10.2.1 |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

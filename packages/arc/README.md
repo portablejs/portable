@@ -106,8 +106,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/arc | mailauth | `node:crypto`, hashing and signing only |
 | --- | --- | --- | --- |
-| Minified and gzipped | 19 kB | 448 kB | built in |
-| Runtime dependencies | 6 | 38 | – |
+| Minified and gzipped | 20 kB | 449 kB | built in |
+| Runtime dependencies | 10 | 38 | – |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | Node only |
 | TypeScript types | included | included | – |
 | Version compared | – | 7.3.0 | – |

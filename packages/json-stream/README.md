@@ -74,8 +74,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/json-stream | JSONStream | stream-json | stream-json, web streams | json-stream-stringify | `JSON.parse` or `JSON.stringify` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.6 kB | 3.9 kB | 10 kB | 9.0 kB | 2.8 kB | built in |
-| Runtime dependencies | 0 | 2 | 1 | 1 | 0 | – |
+| Minified and gzipped | 3.2 kB | 3.9 kB | 10 kB | 9.0 kB | 2.8 kB | built in |
+| Runtime dependencies | 3 | 2 | 1 | 1 | 0 | – |
 | Node built-ins used | none | `Buffer`, `stream` | `stream`, `string_decoder` | `string_decoder` | `stream` | none |
 | TypeScript types | included | none | included | included | included | – |
 | Version compared | – | 1.3.5 | 3.7.0 | 3.7.0 | 3.1.7 | – |

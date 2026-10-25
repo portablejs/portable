@@ -75,8 +75,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/quoted-printable | libqp | quoted-printable |
 | --- | --- | --- | --- |
-| Minified and gzipped | 2.1 kB | 1.9 kB | 1.1 kB |
-| Runtime dependencies | 0 | 0 | 1 |
+| Minified and gzipped | 2.3 kB | 1.9 kB | 1.1 kB |
+| Runtime dependencies | 3 | 0 | 1 |
 | Node built-ins used | none | `buffer`, `stream` | none |
 | TypeScript types | included | `@types/libqp` | `@types/quoted-printable` |
 | Version compared | – | 2.1.3 | 1.0.1 |

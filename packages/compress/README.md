@@ -76,8 +76,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/compress | pako | fflate | crc-32 | `node:zlib` | `DecompressionStream` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.3 kB | 13 kB | 12 kB | 1.1 kB | built in | built in |
-| Runtime dependencies | 0 | 0 | 0 | 0 | – | – |
+| Minified and gzipped | 2.4 kB | 13 kB | 12 kB | 1.1 kB | built in | built in |
+| Runtime dependencies | 2 | 0 | 0 | 0 | – | – |
 | Node built-ins used | none | none | none | none | Node only | none |
 | TypeScript types | included | included | included | included | – | – |
 | Version compared | – | 3.0.2 | 0.8.3 | 1.2.2 | – | – |

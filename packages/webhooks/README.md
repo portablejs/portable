@@ -177,8 +177,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/webhooks | @portable/webhooks with @noble/hashes | standardwebhooks | svix | stripe, `constructEventAsync` | stripe, `constructEvent` | @octokit/webhooks-methods, web build | @octokit/webhooks-methods, Node build | @slack/bolt | `crypto.subtle` by hand | `node:crypto` by hand |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 4.5 kB | 7.4 kB | 4.6 kB | 4.5 kB | 30 kB | 30 kB | 0.4 kB | 0.4 kB | 1.3 kB | built in | built in |
-| Runtime dependencies | 2 | 3 | 2 | 3 | 0 | 0 | 0 | 0 | 98 | – | – |
+| Minified and gzipped | 5.0 kB | 7.8 kB | 4.6 kB | 4.5 kB | 30 kB | 30 kB | 0.4 kB | 0.4 kB | 1.3 kB | built in | built in |
+| Runtime dependencies | 5 | 6 | 2 | 3 | 0 | 0 | 0 | 0 | 98 | – | – |
 | Node built-ins used | none | none | `Buffer` | `Buffer` | `Buffer` | `Buffer` | none | none | `crypto` | none | Node only |
 | TypeScript types | included | included | included | included | included | included | included | included | included | – | – |
 | Version compared | – | – | 1.1.1 | 2.8.0 | 23.0.0 | 23.0.0 | 6.0.0 | 6.0.0 | 5.1.0 | – | – |

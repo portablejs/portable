@@ -125,11 +125,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/mime-headers | libmime | addressparser | email-addresses | Node `Buffer` and `TextDecoder` |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 7.9 kB | 258 kB | 2.6 kB | 3.1 kB | built in |
-| Runtime dependencies | 2 | 5 | 0 | 0 | – |
+| Minified and gzipped | 8.1 kB | 258 kB | 3.6 kB | 3.1 kB | built in |
+| Runtime dependencies | 4 | 5 | 0 | 0 | – |
 | Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none | none | Node only |
 | TypeScript types | included | none | none | included | – |
-| Version compared | – | 5.4.9 | 10.1.2 | 5.0.0 | – |
+| Version compared | – | 5.4.9 | 10.2.1 | 5.0.0 | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

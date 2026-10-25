@@ -249,7 +249,7 @@ describe('addresses', () => {
       bench('@portable/mime-headers', () => {
         parseAddresses(addressList);
       }),
-      bench('addressparser (nodemailer 10.1.2)', () => {
+      bench('addressparser (nodemailer 10.2.1)', () => {
         addressparser(addressList);
       }),
       bench('email-addresses 5.0.0', () => {
@@ -257,7 +257,7 @@ describe('addresses', () => {
       }),
     );
     for (const upstream of [
-      'addressparser (nodemailer 10.1.2)',
+      'addressparser (nodemailer 10.2.1)',
       'email-addresses 5.0.0',
     ] as const) {
       expect(result.get(upstream)).not.toBeFasterThan(result.get('@portable/mime-headers'), {
@@ -271,11 +271,11 @@ describe('addresses', () => {
       bench('@portable/mime-headers', () => {
         parseMailboxes(addressList);
       }),
-      bench('addressparser (nodemailer 10.1.2)', () => {
+      bench('addressparser (nodemailer 10.2.1)', () => {
         addressparser(addressList, { flatten: true });
       }),
     );
-    expect(result.get('addressparser (nodemailer 10.1.2)')).not.toBeFasterThan(
+    expect(result.get('addressparser (nodemailer 10.2.1)')).not.toBeFasterThan(
       result.get('@portable/mime-headers'),
       { delta: 0.25 },
     );

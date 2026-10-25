@@ -60,8 +60,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 0.5 kB | 13 kB | 3.5 kB | built in |
-| Runtime dependencies | 0 | 9 | 1 | – |
+| Minified and gzipped | 1.1 kB | 13 kB | 3.5 kB | built in |
+| Runtime dependencies | 3 | 9 | 1 | – |
 | Node built-ins used | none | `buffer`, `events`, `os`, `string_decoder`, `util` | `stream`, `string_decoder` | none |
 | TypeScript types | included | `@types/ndjson` | included | – |
 | Version compared | – | 2.0.0 | 3.7.0 | – |

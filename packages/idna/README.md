@@ -90,7 +90,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | | @portable/idna | tr46 | punycode | `node:url` | `new URL()` |
 | --- | --- | --- | --- | --- | --- |
 | Minified and gzipped | 16 kB | 64 kB | 1.5 kB | built in | built in |
-| Runtime dependencies | 0 | 1 | 0 | – | – |
+| Runtime dependencies | 1 | 1 | 0 | – | – |
 | Node built-ins used | none | none | none | Node only | none |
 | TypeScript types | included | `@types/tr46` | `@types/punycode` | – | – |
 | Version compared | – | 7.0.0 | 2.3.1 | – | – |

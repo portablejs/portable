@@ -85,8 +85,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/web-crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.4 kB | 1.7 kB | 3.4 kB | 20 kB | built in | built in |
-| Runtime dependencies | 0 | 1 | 0 | 1 | – | – |
+| Minified and gzipped | 1.8 kB | 1.7 kB | 3.4 kB | 20 kB | built in | built in |
+| Runtime dependencies | 2 | 1 | 0 | 1 | – | – |
 | Node built-ins used | none | `buffer` | none | none | none | Node only |
 | TypeScript types | included | included | included | included | – | – |
 | Version compared | – | 1.0.11 | 2.4.0 | 2.4.0 | – | – |

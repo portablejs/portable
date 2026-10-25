@@ -150,8 +150,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.4 kB | 2.1 kB | 15 kB | 2.0 kB | 0.9 kB | 4.8 kB | 1.2 kB | 0.8 kB | 25 kB | built in |
-| Runtime dependencies | 1 | 2 | 7 | 0 | 1 | 7 | 0 | 0 | 10 | – |
+| Minified and gzipped | 1.7 kB | 2.1 kB | 15 kB | 2.0 kB | 0.9 kB | 4.8 kB | 1.2 kB | 0.8 kB | 25 kB | built in |
+| Runtime dependencies | 2 | 2 | 7 | 0 | 1 | 7 | 0 | 0 | 10 | – |
 | Node built-ins used | none | `Buffer` | `buffer`, `events`, `util` | `buffer`, `stream` | none | `Buffer`, `async_hooks` | `stream` | `stream` | `buffer`, `events` | none |
 | TypeScript types | included | included | `@types/concat-stream` | included | `@types/stream-to-array` | included | `@types/merge2` | `@types/merge-stream` | included | – |
 | Version compared | – | 9.0.1 | 2.0.0 | 7.0.12 | 2.3.0 | 4.0.0 | 1.4.1 | 2.0.0 | 5.0.11 | – |

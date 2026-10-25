@@ -136,8 +136,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/ip | ipaddr.js | ip | `node:net` |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.2 kB | 4.1 kB | 2.6 kB | built in |
-| Runtime dependencies | 0 | 0 | 0 | – |
+| Minified and gzipped | 2.4 kB | 4.1 kB | 2.6 kB | built in |
+| Runtime dependencies | 2 | 0 | 0 | – |
 | Node built-ins used | none | none | `buffer`, `os` | Node only |
 | TypeScript types | included | included | `@types/ip` | – |
 | Version compared | – | 2.5.0 | 2.0.1 | – |

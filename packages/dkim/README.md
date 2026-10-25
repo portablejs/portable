@@ -138,11 +138,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/dkim | mailauth | nodemailer | `node:crypto`, hash and sign only |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 18 kB | 448 kB | 4.4 kB | built in |
-| Runtime dependencies | 5 | 38 | 0 | – |
+| Minified and gzipped | 19 kB | 449 kB | 4.4 kB | built in |
+| Runtime dependencies | 9 | 38 | 0 | – |
 | Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | `Buffer`, `crypto`, `fs`, `path`, `stream` | Node only |
 | TypeScript types | included | included | none | – |
-| Version compared | – | 7.3.0 | 10.1.2 | – |
+| Version compared | – | 7.3.0 | 10.2.1 | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

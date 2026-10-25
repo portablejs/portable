@@ -121,8 +121,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/mime-stream | mailsplit | `TransformStream` copy |
 | --- | --- | --- | --- |
-| Minified and gzipped | 4.7 kB | 263 kB | built in |
-| Runtime dependencies | 3 | 6 | – |
+| Minified and gzipped | 5.4 kB | 263 kB | built in |
+| Runtime dependencies | 5 | 6 | – |
 | Node built-ins used | none | `buffer`, `path`, `stream`, `string_decoder` | none |
 | TypeScript types | included | included | – |
 | Version compared | – | 5.4.23 | – |

@@ -455,7 +455,7 @@ export const tables: Record<string, Table> = {
     columns: [
       ours('mail', ['encodeStream', 'envelope']),
       {
-        name: 'nodemailer 10.1.2',
+        name: 'nodemailer 10.2.1',
         header: 'nodemailer',
         imports: [{ from: 'nodemailer/lib/mail-composer' }],
       },
@@ -499,7 +499,7 @@ export const tables: Record<string, Table> = {
       ]),
       { name: 'libmime 5.4.9', header: 'libmime', imports: [{ from: 'libmime' }] },
       {
-        name: 'addressparser (nodemailer 10.1.2)',
+        name: 'addressparser (nodemailer 10.2.1)',
         header: 'addressparser',
         imports: [{ from: 'nodemailer/lib/addressparser' }],
       },

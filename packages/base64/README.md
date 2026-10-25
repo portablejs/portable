@@ -104,8 +104,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/base64 | base64-js | js-base64 | libbase64 | `Buffer` (Node) |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.9 kB | 1.1 kB | 1.6 kB | 1.8 kB | built in |
-| Runtime dependencies | 1 | 0 | 0 | 0 | – |
+| Minified and gzipped | 3.2 kB | 1.1 kB | 1.6 kB | 1.8 kB | built in |
+| Runtime dependencies | 3 | 0 | 0 | 0 | – |
 | Node built-ins used | none | none | none | `buffer`, `stream` | Node only |
 | TypeScript types | included | included | included | none | – |
 | Version compared | – | 1.5.1 | 3.9.4 | 1.3.3 | – |

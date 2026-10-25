@@ -166,8 +166,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/exif | exif-parser | exif-reader | exifr |
 | --- | --- | --- | --- | --- |
-| Minified and gzipped | 7.5 kB | 7.8 kB | 4.7 kB | 27 kB |
-| Runtime dependencies | 0 | 0 | 0 | 0 |
+| Minified and gzipped | 8.0 kB | 7.8 kB | 4.7 kB | 27 kB |
+| Runtime dependencies | 2 | 0 | 0 | 0 |
 | Node built-ins used | none | none | none | `Buffer` |
 | TypeScript types | included | none | included | included |
 | Version compared | – | 0.1.12 | 2.0.3 | 7.1.3 |

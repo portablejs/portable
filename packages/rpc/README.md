@@ -276,8 +276,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/rpc | birpc | comlink | penpal | json-rpc-2.0 |
 | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 3.1 kB | 1.3 kB | 1.7 kB | 2.3 kB | 4.0 kB |
-| Runtime dependencies | 1 | 0 | 0 | 0 | 0 |
+| Minified and gzipped | 3.3 kB | 1.3 kB | 1.7 kB | 2.3 kB | 4.0 kB |
+| Runtime dependencies | 4 | 0 | 0 | 0 | 0 |
 | Node built-ins used | none | none | none | none | none |
 | TypeScript types | included | included | included | included | included |
 | Version compared | – | 4.2.0 | 4.4.2 | 8.0.1 | 1.8.1 |

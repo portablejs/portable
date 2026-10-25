@@ -92,8 +92,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 | | @portable/dns-packet | dns-packet |
 | --- | --- | --- |
-| Minified and gzipped | 6.6 kB | 8.7 kB |
-| Runtime dependencies | 0 | 1 |
+| Minified and gzipped | 7.0 kB | 8.7 kB |
+| Runtime dependencies | 2 | 1 |
 | Node built-ins used | none | `buffer` |
 | TypeScript types | included | `@types/dns-packet` |
 | Version compared | – | 5.6.1 |
