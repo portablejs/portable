@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, isUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as WebCrypto from '@portable/web-crypto';
@@ -33,8 +35,11 @@ export declare namespace verify {
      * @default 300000 (five minutes)
      */
     tolerance?: number | undefined;
-    /** The time to compare the signed timestamp with. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time to compare the signed timestamp with. A `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /**
      * The longest body `verify` reads from a `Request`, in bytes. A longer body throws
      * `MaxBytesError`. @default Infinity
@@ -88,10 +93,10 @@ export async function verify(
     scheme = standard,
     hmac = WebCrypto.hmac,
     tolerance = 300_000,
-    now = new Date(),
     maxBytes = Infinity,
     signal,
   } = options;
+  const now = toDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   if (!(tolerance >= 0)) {
@@ -172,8 +177,11 @@ export declare namespace sign {
      * on Node. @default WebCrypto.hmac
      */
     hmac?: WebCrypto.Hmac | undefined;
-    /** The time to sign. Schemes without a timestamp ignore it. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time to sign. Schemes without a timestamp ignore it. A `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
     id?: string | undefined;
     /** Rejects with `signal.reason` when aborted. */
@@ -201,13 +209,8 @@ export async function sign(
   body: string | Uint8Array,
   options: sign.Options,
 ): Promise<Record<string, string>> {
-  const {
-    scheme = standard,
-    hmac = WebCrypto.hmac,
-    now: timestamp = new Date(),
-    id = crypto.randomUUID(),
-    signal,
-  } = options;
+  const { scheme = standard, hmac = WebCrypto.hmac, id = crypto.randomUUID(), signal } = options;
+  const timestamp = toDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   const key = keyOf(scheme, options.secret);

@@ -1,7 +1,6 @@
-import * as Base64 from '@portable/base64';
+import * as WebCrypto from '@portable/web-crypto';
 
 const algorithm = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' };
-const pem = /-----BEGIN (RSA )?PRIVATE KEY-----([^-]*)-----END \1?PRIVATE KEY-----/;
 
 export async function rsaSha1(
   privateKey: CryptoKey | string,
@@ -24,56 +23,9 @@ export async function rsaSha1(
 }
 
 async function importPem(text: string): Promise<CryptoKey> {
-  const match = pem.exec(text);
-  if (!match) {
-    throw new RangeError('Expected a PEM "PRIVATE KEY" or "RSA PRIVATE KEY" block');
-  }
-  let decoded: Uint8Array;
   try {
-    decoded = Base64.decode(match[2]!);
+    return await WebCrypto.importPem(algorithm, text, { usages: ['sign'] });
   } catch (cause) {
-    throw new RangeError('The PEM block is not valid base64', { cause });
+    throw new RangeError('privateKey is not a PEM RSA private key', { cause });
   }
-  const der = match[1] ? pkcs1ToPkcs8(decoded) : new Uint8Array(decoded);
-  try {
-    return await crypto.subtle.importKey('pkcs8', der, algorithm, false, ['sign']);
-  } catch (cause) {
-    throw new RangeError('The PEM block is not an RSA private key', { cause });
-  }
-}
-
-const rsaEncryption = [
-  0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
-];
-
-/**
- * WebCrypto imports only PKCS #8, so a PKCS #1 `RSA PRIVATE KEY` is wrapped in a PrivateKeyInfo.
- */
-function pkcs1ToPkcs8(pkcs1: Uint8Array): Uint8Array<ArrayBuffer> {
-  const octetString = [0x04, ...derLength(pkcs1.length)];
-  const contentLength = 3 + rsaEncryption.length + octetString.length + pkcs1.length;
-  const head = [
-    0x30,
-    ...derLength(contentLength),
-    0x02,
-    0x01,
-    0x00,
-    ...rsaEncryption,
-    ...octetString,
-  ];
-  const out = new Uint8Array(head.length + pkcs1.length);
-  out.set(head);
-  out.set(pkcs1, head.length);
-  return out;
-}
-
-function derLength(length: number): number[] {
-  if (length < 0x80) {
-    return [length];
-  }
-  const bytes: number[] = [];
-  for (let n = length; n > 0; n >>>= 8) {
-    bytes.unshift(n & 0xff);
-  }
-  return [0x80 | bytes.length, ...bytes];
 }

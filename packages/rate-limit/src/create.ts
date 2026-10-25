@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toEpochMilliseconds } from '@portable/timers/internal';
 import { memoryStore, type Store } from './store.js';
 
 /** The outcome of `take`. Durations are milliseconds. */
@@ -26,8 +28,8 @@ export declare namespace Limiter {
   type TakeOptions = {
     /** How much of the allowance this request uses. `0` reads the state without changing it, and a negative cost gives allowance back. @default 1 */
     cost?: number | undefined;
-    /** The time of the request. @default new Date() */
-    now?: Date | undefined;
+    /** The time of the request. A `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
     signal?: AbortSignal | undefined;
   };
 }
@@ -84,9 +86,9 @@ export function create(options: create.Options): Limiter {
   return {
     async take(key, options = {}) {
       const { cost = 1, signal } = options;
-      const now = options.now?.getTime() ?? Date.now();
+      const now = options.now === undefined ? Date.now() : toEpochMilliseconds(options.now);
       if (!Number.isFinite(now)) {
-        throw new RangeError('`now` must be a valid Date.');
+        throw new RangeError('`now` must be a valid Date or instant.');
       }
       if (!Number.isFinite(cost)) {
         throw new RangeError(`\`cost\` must be a finite number, got ${cost}.`);

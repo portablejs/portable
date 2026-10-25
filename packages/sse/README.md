@@ -81,11 +81,12 @@ Each attempt sends a clone of `request`, so a POST body is sent again on every r
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` stops reconnecting, as in `WebSockets.connect` and `Timers.retry`. An accepted response resets the count, and the end of its body counts as the first failure, so `attempts: 1` never reconnects. When the count is used up, the stream errors with the last error, or closes if the last response ended normally. A value below 1 throws a `RangeError`. |
 | `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `({ attempt, error }) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from `@portable/timers`, and an invalid one throws a `RangeError`. |
 | `fetch` | `globalThis.fetch` | Sends each `Request`. A wrapper can change the request first, such as setting a fresh token. |
 | `idleTimeout` | `Infinity` | How long to wait, in ms, for the response headers and then for each chunk of the body. If no data arrives in that time, `connect` aborts the request and handles the attempt as a failed connection with a `TimeoutError` `DOMException`, so by default it reconnects. Keep-alive comment lines from the server also restart the wait. Set it a little above the server's keep-alive interval, so a stalled connection reconnects and a quiet but healthy one doesn't. |
 | `maxLength` | `Infinity` | As in `DecoderStream`. |
-| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends. `error` is `undefined` when the response ended normally. Return `false` to stop reconnecting: the stream then closes if `error` is `undefined`, and errors with `error` otherwise. |
+| `reconnectIf` | see below | `(error, { attempt }) => boolean \| Promise<boolean>`, called after each connection ends while `attempts` isn't used up. `error` is `undefined` when the response ended normally. Return `false` to stop reconnecting: the stream then closes if `error` is `undefined`, and errors with `error` otherwise. |
 | `signal` | | Fails the stream with `signal.reason`. |
 
 By default `connect` reconnects after every error except `ResponseError` and `MaxLengthError`, and after a response that ends normally. For a request you don't want repeated, such as an LLM completion, pass `reconnectIf: () => false`. To also retry a 5xx response:

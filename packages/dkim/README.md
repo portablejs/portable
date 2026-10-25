@@ -46,12 +46,12 @@ await Dkim.verify(message, { resolver: dns });
 | --- | --- | --- |
 | `domain` | required | The signing domain (`d=`). A U-label domain is written as its A-label. |
 | `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
-| `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. |
+| `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. A PEM string is imported on every call, so to sign many messages, import it once with `WebCrypto.importPem` from `@portable/web-crypto`. |
 | `headers` | mailauth's list, from `From` to `BIMI-Selector` | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times, so listing a name more often than the message has it over-signs it, and a field of that name added later breaks the signature (RFC 6376 section 8.15). |
 | `canonicalization` | `'relaxed/relaxed'` | `'relaxed/relaxed'`, `'relaxed/simple'`, `'simple/relaxed'` or `'simple/simple'`. |
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
-| `now` | `new Date()` | The signature time (`t=`). |
-| `expiresAt` | none | The expiry (`x=`). It must be at least one second after `now`. |
+| `now` | `new Date()` | The signature time (`t=`). A `Date` or a `Temporal.Instant`. |
+| `expiresAt` | none | The expiry (`x=`), a `Date` or a `Temporal.Instant`. It must be at least one second after `now`. |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
 
@@ -64,7 +64,7 @@ await Dkim.verify(message, { resolver: dns });
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check `x=` against. |
+| `now` | `new Date()` | The time to check `x=` against. A `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message and the key lookups, and `verify` rejects with `signal.reason`. |

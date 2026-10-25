@@ -37,7 +37,8 @@
     "@portable/dkim": "workspace:*",
     "@portable/dmarc": "workspace:*",
     "@portable/mime-headers": "workspace:*",
-    "@portable/spf": "workspace:*"
+    "@portable/spf": "workspace:*",
+    "@portable/timers": "workspace:*"
   },
   "exports": {
     ".": {

@@ -2,8 +2,11 @@ import { InvalidInputError } from './errors.js';
 
 /** Thrown by a parser that read past the end of its input. `end` is how many bytes it needs. */
 export class NeedMore extends Error {
-  constructor(readonly end: number) {
+  readonly end: number;
+
+  constructor(end: number) {
     super();
+    this.end = end;
   }
 }
 

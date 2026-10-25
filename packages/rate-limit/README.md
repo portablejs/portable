@@ -53,7 +53,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 | Option | Default | Description |
 | --- | --- | --- |
 | `cost` | `1` | How much of the allowance the request uses, such as its size. `0` reads the state without changing it. A negative cost gives allowance back, up to `burst`. |
-| `now` | `new Date()` | The time of the request, for tests or for a clock other than the system's. |
+| `now` | `new Date()` | The time of the request, for tests or for a clock other than the system's. A `Date` or a `Temporal.Instant`. |
 | `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
 
 ### `Result`
@@ -91,7 +91,7 @@ type Store = {
 };
 ```
 
-`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
+`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
 
 Several limiters can share a store. Give each one its own key prefix, such as `login:${ip}`, unless they should share the allowance.
 

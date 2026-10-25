@@ -46,7 +46,7 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 | --- | --- | --- |
 | `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
 | `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
-| `now` | `new Date()` | The time for `%{t}` in explanations. |
+| `now` | `new Date()` | The time for `%{t}` in explanations. A `Date` or a `Temporal.Instant`. |
 | `signal` | none | Rejects with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
 There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.

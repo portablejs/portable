@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import { fromBinary, toBinary } from './internal/bytes.js';
 import type { Hash, Hasher } from '@portable/web-crypto';
@@ -51,10 +53,10 @@ export declare namespace sign {
     canonicalization?: `${Canonicalization}/${Canonicalization}` | undefined;
     /** The agent or user identifier (`i=`), such as `user@example.com` or `@mail.example.com`. */
     identity?: string | undefined;
-    /** The signature time (`t=`). @default new Date() */
-    now?: Date | undefined;
-    /** The expiry (`x=`). It must be after `now`. */
-    expiresAt?: Date | undefined;
+    /** The signature time (`t=`). A `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
+    /** The expiry (`x=`). It must be after `now`. A `Date` or a `Temporal.Instant`. */
+    expiresAt?: Instant | undefined;
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
     hasher?: ((hash: Hash) => Hasher) | undefined;
     /** Stops reading the message, and rejects with `signal.reason`. */
@@ -93,7 +95,6 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const {
     headers = defaultHeaders,
     canonicalization = 'relaxed/relaxed',
-    now = new Date(),
     expiresAt,
     hasher,
     signal,
@@ -109,8 +110,8 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const names = assertHeaders(headers);
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain);
-  const timestamp = seconds('now', now);
-  const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', expiresAt);
+  const timestamp = seconds('now', toDate(options.now));
+  const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', toDate(expiresAt));
   if (expiration !== undefined && expiration <= timestamp) {
     throw new RangeError('expiresAt must be at least a second after now.');
   }

@@ -1,3 +1,4 @@
+import type { Instant } from '@portable/timers';
 import * as Arc from '@portable/arc';
 import { createSealer, planVerify as planArc } from '@portable/arc/internal';
 import * as Dkim from '@portable/dkim';
@@ -77,8 +78,11 @@ export declare namespace authenticate {
     sender?: string | undefined;
     /** Seals the message with an ARC set that records these results. */
     seal?: Seal | undefined;
-    /** The time to check DKIM and ARC signature expiry against. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time to check DKIM and ARC signature expiry against. A `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** RSA keys shorter than this give DKIM `policy` and fail the ARC chain. @default 1024 */
     minKeyBits?: number | undefined;
     /**

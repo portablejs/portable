@@ -24,6 +24,9 @@ describe('headers', () => {
     const now = new Date(Date.UTC(2030, 0, 1));
     const result = await limiter.take('a', { cost: 5, now });
     expect(RateLimit.headers(result, { now }).RateLimit).toBe('"default";r=5;t=30');
+    expect(RateLimit.headers(result, { now: { epochMilliseconds: now.getTime() } })).toEqual(
+      RateLimit.headers(result, { now }),
+    );
   });
 
   test('adds Retry-After to a denied request, and sets t to the same delay', async () => {

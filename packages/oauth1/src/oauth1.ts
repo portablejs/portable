@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import * as Bytes from '@portable/bytes';
 import * as WebCrypto from '@portable/web-crypto';
@@ -71,10 +73,11 @@ export declare namespace authorization {
     /** `oauth_nonce`. Set it only in tests. @default 32 random hex digits */
     nonce?: string | undefined;
     /**
-     * The time sent as `oauth_timestamp`, in whole seconds. Set it only in tests.
+     * The time sent as `oauth_timestamp`, in whole seconds, as a `Date` or a `Temporal.Instant`. Set it
+     * only in tests.
      * @default new Date()
      */
-    now?: Date | undefined;
+    now?: Instant | undefined;
   };
 }
 
@@ -216,7 +219,7 @@ async function protocolParameters(
     ['oauth_consumer_key', percentEncode(options.consumer.key)],
     ['oauth_nonce', percentEncode(options.nonce ?? randomNonce())],
     ['oauth_signature_method', signatureMethod],
-    ['oauth_timestamp', String(Math.floor((options.now ?? new Date()).getTime() / 1000))],
+    ['oauth_timestamp', String(Math.floor(toDate(options.now).getTime() / 1000))],
     ['oauth_version', '1.0'],
   ] satisfies Pair[];
   if (token !== undefined) {

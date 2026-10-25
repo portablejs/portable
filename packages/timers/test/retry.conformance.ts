@@ -359,8 +359,11 @@ describe('delay', () => {
 
   test('a function can return a Retry-After value read from the error', async () => {
     class HttpError extends Error {
-      constructor(readonly response: Response) {
+      readonly response: Response;
+
+      constructor(response: Response) {
         super(`HTTP ${response.status}`);
+        this.response = response;
       }
     }
     const times: number[] = [];

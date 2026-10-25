@@ -64,7 +64,7 @@ The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-d
 | `secret` | required | The signing secret, as a string or raw key bytes. Pass an array while rotating secrets. `verify` accepts a signature from any of them, and `sign` takes one. |
 | `tolerance` | `300_000` | `verify` only. Largest difference between the signed timestamp and `now`, in milliseconds, in either direction. `Infinity` turns the check off. GitHub signs no timestamp. |
 | `maxBytes` | `Infinity` | `verify` only. The longest `Request` body to read, in bytes. A longer body throws `MaxBytesError` and is cancelled. Set it when `verify` reads requests from the internet. |
-| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. |
+| `now` | `new Date()` | In `verify`, the time to compare the signed timestamp with. In `sign`, the time to sign. A `Date` or a `Temporal.Instant`. |
 | `id` | `crypto.randomUUID()` | `sign` only. The delivery id for Standard Webhooks, and the `x-github-delivery` header for GitHub. |
 | `hmac` | `WebCrypto.hmac` | A function `(hash, key, data) => Uint8Array \| Promise<Uint8Array>` that computes an HMAC. Webhooks calls it with `'SHA-256'`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a `Request` body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
@@ -157,7 +157,7 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 - A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
 - Stripe's `constructEvent` takes `tolerance` in seconds, and `verify` takes it in milliseconds, so Stripe's `300` becomes `tolerance: 300_000`. Stripe's `tolerance: 0` turns the check off, and here `0` requires the exact second and `Infinity` turns the check off.
-- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date`.
+- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date` or a `Temporal.Instant`.
 - A timestamp must be an integer number of seconds. standardwebhooks and Stripe read `123abc` as `123` with `parseInt`.
 - `@octokit/webhooks-methods`'s `verify` returns `false` for a bad signature. `Webhooks.verify` throws instead.
 - Stripe and standardwebhooks parse the JSON body for you. `verify` returns the text, because Slack and GitHub can send form-encoded bodies.

@@ -87,6 +87,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/arc/test:
     devDependencies:
@@ -303,6 +306,9 @@ importers:
       '@portable/idna':
         specifier: workspace:*
         version: link:../idna
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
       '@portable/web-crypto':
         specifier: workspace:*
         version: link:../web-crypto
@@ -731,6 +737,9 @@ importers:
       '@portable/quoted-printable':
         specifier: workspace:*
         version: link:../quoted-printable
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/mail-auth:
     dependencies:
@@ -749,6 +758,9 @@ importers:
       '@portable/spf':
         specifier: workspace:*
         version: link:../spf
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/mail-auth/test:
     devDependencies:
@@ -899,6 +911,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
       '@portable/web-crypto':
         specifier: workspace:*
         version: link:../web-crypto
@@ -999,7 +1014,11 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
 
-  packages/queue: {}
+  packages/queue:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/queue/test:
     devDependencies:
@@ -1102,7 +1121,11 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5
 
-  packages/rate-limit: {}
+  packages/rate-limit:
+    dependencies:
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/rate-limit/test:
     devDependencies:
@@ -1136,6 +1159,9 @@ importers:
       '@portable/ip':
         specifier: workspace:*
         version: link:../ip
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/rdap/test:
     devDependencies:
@@ -1250,6 +1276,9 @@ importers:
       '@portable/ip':
         specifier: workspace:*
         version: link:../ip
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/spf/test:
     devDependencies:
@@ -1377,7 +1406,11 @@ importers:
         specifier: ^5.0.11
         version: 5.0.11
 
-  packages/timers: {}
+  packages/timers:
+    dependencies:
+      '@portable/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/timers/test:
     devDependencies:
@@ -1480,6 +1513,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/web-push/test:
     devDependencies:
@@ -1519,6 +1555,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
       '@portable/web-crypto':
         specifier: workspace:*
         version: link:../web-crypto

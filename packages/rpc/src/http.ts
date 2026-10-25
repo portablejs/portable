@@ -1,7 +1,7 @@
 import * as Errors from '@portable/errors';
 import * as Jsonl from '@portable/jsonl';
 import { createClient } from './client.js';
-import type { AsyncDisposeMethod } from './dispose.js';
+import type { AsyncDisposeMethod } from '@portable/errors/internal';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
 import { createServer, error, noop } from './server.js';

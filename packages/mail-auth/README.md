@@ -53,7 +53,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which i
 | `helo` | none | The HELO or EHLO name. |
 | `sender` | none | The MAIL FROM address. Empty or missing for a bounce, which makes SPF check the HELO name. |
 | `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
-| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against. |
+| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against. A `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
 | `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](../dmarc/README.md#options). |

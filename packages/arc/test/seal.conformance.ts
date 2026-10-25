@@ -320,6 +320,13 @@ describe('authResults', () => {
 });
 
 describe('options', () => {
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const now = Date.UTC(2024, 0, 1);
+    expect(await seal(baseMessage, { now: { epochMilliseconds: now } })).toBe(
+      await seal(baseMessage, { now: new Date(now) }),
+    );
+  });
+
   test('refuses a short RSA key, a bad domain or selector and a bad date', async () => {
     await expect(seal(baseMessage, { privateKey: (await keyPair('small')).pem })).rejects.toThrow(
       RangeError,

@@ -1,6 +1,7 @@
-import { fc, fuzz, mutated, outcome } from '@portable/fuzz';
+import { fc, fuzz, mutated, outcome, outcomeAsync } from '@portable/fuzz';
 import * as WebCrypto from '@portable/web-crypto';
 import { expect, test } from 'vite-plus/test';
+import rsaPkcs1 from './fixtures/pem/rsa-pkcs1.pem.txt?raw';
 
 const curves = { 'P-256': 32, 'P-384': 48, 'P-521': 66 } as const;
 const curve = fc.constantFrom(...(Object.keys(curves) as (keyof typeof curves)[]));
@@ -52,5 +53,17 @@ test('digest, hmac and hkdf give the same result for text and its UTF-8 bytes', 
       },
     ),
     { scale: 0.3 },
+  );
+});
+
+test('importPem rejects only with InvalidInputError or UnsupportedError for a changed PEM key', async () => {
+  const pem = new TextEncoder().encode(rsaPkcs1);
+  const rsa = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
+  await fuzz(
+    fc.asyncProperty(mutated(pem), async (bytes) => {
+      await outcomeAsync([WebCrypto.InvalidInputError, WebCrypto.UnsupportedError], () =>
+        WebCrypto.importPem(rsa, bytes),
+      );
+    }),
   );
 });

@@ -555,7 +555,7 @@ const dispose = (queue: Queue.Queue) =>
   (queue as unknown as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
 
 describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
-  test('rejects waiting tasks, aborts running ones and resolves once they settle', async () => {
+  test('rejects waiting and running tasks, as aborting signal does, and resolves once they settle', async () => {
     const queue = Queue.create({ concurrency: 1 });
     const own = new AbortController();
     let settled = false;
@@ -571,12 +571,13 @@ describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
     const disposed = dispose(queue);
     expect(taskSignal!.aborted).toBe(true);
     expect(taskSignal!.reason).toMatchObject({ name: 'AbortError' });
+    await expect(running).rejects.toMatchObject({ name: 'AbortError' });
     await expect(withSignal).rejects.toMatchObject({ name: 'AbortError' });
     await expect(waiting).rejects.toMatchObject({ name: 'AbortError' });
     expect(settled).toBe(false);
+    expect(queue.pending).toBe(1);
     await disposed;
     expect(settled).toBe(true);
-    await running;
     expect(queue.pending).toBe(0);
     await expect(queue.add(() => 1)).rejects.toMatchObject({ name: 'AbortError' });
   });

@@ -1,6 +1,6 @@
 import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as Timers from '@portable/timers';
-import type { AsyncDisposeMethod } from './dispose.js';
+import type { AsyncDisposeMethod } from '@portable/errors/internal';
 
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>;
@@ -9,7 +9,8 @@ export type Message = string | Uint8Array<ArrayBuffer>;
  * The readable and writable sides of a WebSocket. Where the runtime has `Symbol.asyncDispose`,
  * `[Symbol.asyncDispose]()` closes the socket with code 1000, stops reconnecting, and fails both
  * streams with an `AbortError` `DOMException`, as aborting `signal` does, so a connection declared
- * with `await using` is closed when the scope ends.
+ * with `await using` is closed when the scope ends. Without the symbol, abort `signal` to close it,
+ * even while a reader or writer holds a lock.
  */
 export type Duplex = AsyncDisposeMethod & {
   /** Received messages. */

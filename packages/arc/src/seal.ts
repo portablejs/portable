@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Base64 from '@portable/base64';
 import type * as Dkim from '@portable/dkim';
 import {
@@ -61,8 +63,8 @@ export declare namespace seal {
      * @default DKIM-Signature, Delivered-To and the fields `Dkim.sign` signs
      */
     headers?: readonly string[] | undefined;
-    /** The signature time (`t=`). @default new Date() */
-    now?: Date | undefined;
+    /** The signature time (`t=`). A `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
     /** Creates the body hash, as in `Dkim.sign`. @default buffers the body for `crypto.subtle.digest` */
     hasher?: ((hash: Dkim.Hash) => Dkim.Hasher) | undefined;
     /** Stops reading the message, and rejects with `signal.reason`. */
@@ -150,7 +152,8 @@ const request = { canonicalization: 'relaxed' } satisfies BodyHash;
 export async function createSealer(
   options: Pick<seal.Options, 'domain' | 'selector' | 'privateKey' | 'headers' | 'now'>,
 ): Promise<Sealer> {
-  const { headers = arcDefaultHeaders, now = new Date() } = options;
+  const { headers = arcDefaultHeaders } = options;
+  const now = toDate(options.now);
   const domain = normalizeName('domain', options.domain, isDomainName);
   const selector = normalizeName('selector', options.selector, isSelector);
   if (!canFitDns(`${selector}._domainkey.${domain}`)) {

@@ -4,8 +4,8 @@ export {
   encodeStream,
   type Attachment,
   type HeaderFields,
-  type Instant,
   type Message,
   type Part,
 } from '../encode.js';
 export { InvalidInputError } from '../errors.js';
+export type { Instant } from '@portable/timers';

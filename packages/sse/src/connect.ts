@@ -4,6 +4,12 @@ import { MaxLengthError, ResponseError } from './errors.js';
 
 export declare namespace connect {
   type Options = {
+    /**
+     * How many attempts in a row, counting the first, may fail before `connect` stops
+     * reconnecting. The stream then errors with the last error, or closes if the last response
+     * ended normally. An accepted response resets the count. @default Infinity
+     */
+    attempts?: number | undefined;
     /** Wait before each reconnect, until the server sends a `retry` field. @default { initial: 1000, max: 30_000 } */
     delay?: Timers.Delay | undefined;
     /** Sends each request. Pass a wrapper to change a request before it is sent. @default globalThis.fetch */
@@ -70,6 +76,7 @@ export function connect(
   options: connect.Options = {},
 ): ReadableStream<Event> {
   const {
+    attempts = Infinity,
     delay = { initial: 1000, max: 30_000 },
     fetch = globalThis.fetch,
     idleTimeout = Infinity,
@@ -77,6 +84,9 @@ export function connect(
     reconnectIf = reconnectByDefault,
     signal,
   } = options;
+  if (!(attempts >= 1)) {
+    throw new RangeError(`attempts must be a number of at least 1, got ${attempts}.`);
+  }
   if (!(idleTimeout > 0)) {
     throw new RangeError(`idleTimeout must be a positive number, got ${idleTimeout}.`);
   }
@@ -174,7 +184,7 @@ export function connect(
         current = undefined;
         parser.end();
         attempt++;
-        if (!(await reconnectIf(error, { attempt }))) {
+        if (attempt >= attempts || !(await reconnectIf(error, { attempt }))) {
           if (error === undefined) {
             return controller.close();
           }

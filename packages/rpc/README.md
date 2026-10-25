@@ -59,7 +59,7 @@ await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type:
 await worker.add(1, 2);
 ```
 
-Disposing closes the connection but not what carries it, so the worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method named by a symbol can't be called remotely, so the key never hides one of your methods.
+Disposing closes the connection but not what carries it, so the worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method named by a symbol can't be called remotely, so the key never hides one of your methods. In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to close the remote, which does the same teardown.
 
 ### Options per call
 

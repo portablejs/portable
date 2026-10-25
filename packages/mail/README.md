@@ -49,7 +49,7 @@ The report is read from the network while the caller reads the message, so a lar
 | `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
 | `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain. |
 | `references` | `string \| string[]` | Message IDs separated by whitespace. |
-| `date` | `Date \| Instant \| string` | Defaults to now. A `Date` or a `Temporal.Instant` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
+| `date` | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant` or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
 | `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. |
 | `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. |
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
@@ -122,7 +122,7 @@ Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, 
 | `Mail.HeaderFields` | Extra header fields by name, with a list for repeated fields. |
 | `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'` or `'base64'`. |
 | `Mail.Envelope` | `{ from, to }`, what `envelope` returns. |
-| `Mail.Instant` | `{ epochMilliseconds }`, which `Temporal.Instant` and `Temporal.ZonedDateTime` have. |
+| `Mail.Instant` | `Timers.Instant`: a `Date`, or any object with `epochMilliseconds`, such as a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
 
 ## Why use this over nodemailer
 

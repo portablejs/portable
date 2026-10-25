@@ -195,6 +195,7 @@ next({ attempt: 3 }); // 4000
 | `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
 | `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
 | `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
+| `Timers.Instant` | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. A `Temporal.Instant` or `Temporal.ZonedDateTime` fits it. |
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 

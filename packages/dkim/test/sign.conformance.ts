@@ -105,6 +105,20 @@ describe('the signature field', () => {
     expect(result!.result).toBe('pass');
   });
 
+  test('takes now and expiresAt as objects with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const now = Date.UTC(2026, 0, 1);
+    const expiresAt = Date.UTC(2026, 0, 2);
+    const fromDates = await Dkim.sign(
+      MSG,
+      base({ now: new Date(now), expiresAt: new Date(expiresAt) }),
+    );
+    const fromInstants = await Dkim.sign(
+      MSG,
+      base({ now: { epochMilliseconds: now }, expiresAt: { epochMilliseconds: expiresAt } }),
+    );
+    expect(fromInstants).toBe(fromDates);
+  });
+
   test('gives the same field whatever the chunking of the message', async () => {
     const options = base({ now: new Date(1e12) });
     const expected = await Dkim.sign(MSG, options);
@@ -433,7 +447,7 @@ describe('messages', () => {
     });
   }
 
-  for (const [title, input] of <[string, string][]>[
+  for (const [title, input] of [
     ['a message without From', 'Subject: s\r\n\r\nbody\r\n'],
     ['an input with no field that can be signed', 'X-Foo: bar'],
     ['an input that is not a message', 'Hello world, this is not a message'],
@@ -442,7 +456,7 @@ describe('messages', () => {
       'a message whose From follows a leading empty line (RFC 5322 section 2.1)',
       '\r\nFrom: fake@bank.example\r\n\r\nbody\r\n',
     ],
-  ]) {
+  ] satisfies [string, string][]) {
     test(`refuses ${title} with InvalidInputError`, async () => {
       const error = await Dkim.sign(input, base()).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(Dkim.InvalidInputError);

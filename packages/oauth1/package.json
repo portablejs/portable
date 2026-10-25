@@ -37,6 +37,7 @@
     "@portable/base64": "workspace:*",
     "@portable/bytes": "workspace:*",
     "@portable/errors": "workspace:*",
+    "@portable/timers": "workspace:*",
     "@portable/web-crypto": "workspace:*"
   },
   "exports": {

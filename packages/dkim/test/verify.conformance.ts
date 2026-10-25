@@ -1005,6 +1005,24 @@ describe('input', () => {
   });
 });
 
+describe('now', () => {
+  test('checks x= against an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const message = await std(' t=1000000000; x=1000000100;');
+    const at = async (now: Dkim.verify.Options['now']) => {
+      const { result } = await run(message, key(() => rsaRec)(), { now });
+      return [result.result, result.reason];
+    };
+    expect(await at({ epochMilliseconds: 1000000050_000 })).toEqual(['pass', undefined]);
+    expect(await at({ epochMilliseconds: 1000000050_000 })).toEqual(
+      await at(new Date(1000000050_000)),
+    );
+    expect(await at({ epochMilliseconds: 1000000200_000 })).toEqual([
+      'neutral',
+      'signature expired',
+    ]);
+  });
+});
+
 describe('the RFC 8463 example message', () => {
   test('passes both its Ed25519 and its RSA signature', async () => {
     const zone = JSON.parse(await fixtureText('rfc8463-dns.json')) as Record<

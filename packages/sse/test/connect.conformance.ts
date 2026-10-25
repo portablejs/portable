@@ -426,6 +426,41 @@ describe('when to stop', () => {
     expect(mock.cancelled).toBeGreaterThanOrEqual(1);
   });
 
+  test('attempts stops after that many failed attempts in a row and fails with the last error', async () => {
+    const errors = [new TypeError('one'), new TypeError('two'), new TypeError('three')];
+    const mock = mockFetch(errors);
+    await expect(
+      Streams.toArray(Sse.connect(url, { fetch: mock.fetch, delay: 0, attempts: 3 })),
+    ).rejects.toBe(errors[2]);
+    expect(mock.requests).toHaveLength(3);
+  });
+
+  test('attempts counts from the last accepted response', async () => {
+    const network = new TypeError('network error');
+    const mock = mockFetch([network, { chunks: ['data: a\n\n'] }, network, network]);
+    const reader = Sse.connect(url, { fetch: mock.fetch, delay: 0, attempts: 2 }).getReader();
+    expect((await reader.read()).value?.data).toBe('a');
+    await expect(reader.read()).rejects.toBe(network);
+    expect(mock.requests).toHaveLength(3);
+  });
+
+  test('attempts: 1 never reconnects, and closes the stream after a normal end', async () => {
+    const mock = mockFetch([{ chunks: ['data: a\n\n'] }]);
+    const reconnectIf = vi.fn<() => boolean>(() => true);
+    const events = await Streams.toArray(
+      Sse.connect(url, { fetch: mock.fetch, attempts: 1, reconnectIf }),
+    );
+    expect(datas(events)).toEqual(['a']);
+    expect(mock.requests).toHaveLength(1);
+    expect(reconnectIf).not.toHaveBeenCalled();
+  });
+
+  test('throws a RangeError for attempts below 1', () => {
+    for (const attempts of [0, -1, Number.NaN]) {
+      expect(() => Sse.connect(url, { attempts })).toThrow(RangeError);
+    }
+  });
+
   test('maxLength fails the stream without reconnecting', async () => {
     const mock = mockFetch([{ chunks: ['retry: 1\n', `data: ${'x'.repeat(32)}\n`] }]);
     await expect(

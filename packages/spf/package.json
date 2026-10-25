@@ -35,7 +35,8 @@
     "@portable/dns": "workspace:*",
     "@portable/errors": "workspace:*",
     "@portable/idna": "workspace:*",
-    "@portable/ip": "workspace:*"
+    "@portable/ip": "workspace:*",
+    "@portable/timers": "workspace:*"
   },
   "exports": {
     ".": {

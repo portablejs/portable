@@ -60,6 +60,10 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 
 `Wycheproof > <curve> with <hash>` converts every signature with `derToRawEcdsa` and verifies the result with `crypto.subtle.verify`. Every valid case must convert, convert back to the same DER, and verify. Every case flagged `BerEncodedSignature`, `InvalidEncoding` or `MissingZero` must throw `InvalidInputError`. Every other invalid case must throw or fail to verify.
 
+## `importPem`
+
+`importPem` replaces the PEM parsing that dkim and oauth1 each had, so its cases are theirs: a PKCS #8 and a PKCS #1 RSA private key, text that is not PEM, bad base64 and a block too short to be a key. `fixtures/pem/` holds node-oauth's RSA key pair from `tests/oauthtests.js` (MIT, Ciaran Jessup) as `rsa-pkcs1.pem.txt` and `rsa-spki.pem.txt`, the same key as PKCS #8 in `rsa-pkcs8.pem.txt` and as a PKCS #1 public key in `rsa-pkcs1-public.pem.txt` (written by `openssl rsa -RSAPublicKey_out`), and a P-256 key in SEC 1 form in `ec-sec1.pem.txt` (written by `openssl ecparam -genkey -noout`), which `importPem` rejects with `UnsupportedError`. `pem.conformance.ts` also checks CRLF line breaks, text and a certificate before the key, Ed25519, ECDSA and ECDH keys exported by `crypto.subtle`, the default usages and an encrypted PEM block.
+
 ## Known upstream issues
 
 | Issue | Covered by |

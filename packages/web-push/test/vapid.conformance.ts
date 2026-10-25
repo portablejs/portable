@@ -94,6 +94,16 @@ describe('VAPID Authorization header', () => {
     expect(jwt.claims.exp).toBe(1_700_000_000 + 12 * 60 * 60);
   });
 
+  test('counts the expiry from a now that is an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const request = await WebPush.toRequest({
+      subscription: { endpoint: freshEndpoint() },
+      vapid,
+      now: { epochMilliseconds: 1_700_000_000_000 },
+    });
+    const jwt = await verifyVapid(request.headers.get('authorization'));
+    expect(jwt.claims.exp).toBe(1_700_000_000 + 12 * 60 * 60);
+  });
+
   test('keeps a non-default port in the audience', async () => {
     const jwt = await verifyVapid(
       await authorizationFor({ endpoint: 'https://example.com:4242/life-universe-and-everything' }),

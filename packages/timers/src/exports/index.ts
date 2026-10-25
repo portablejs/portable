@@ -1,4 +1,5 @@
 export { type Attempt, type Backoff, backoff, type Context, type Delay } from '../Delay.js';
+export { type Instant } from '../Instant.js';
 export { debounce, type Debounced } from '../debounce.js';
 export { poll } from '../poll.js';
 export { retry } from '../retry.js';

@@ -1,11 +1,13 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import type { Result } from './create.js';
 
 export declare namespace headers {
   type Options = {
     /** The quota policy name in both fields. @default 'default' */
     name?: string | undefined;
-    /** The time `resetAt` is counted from. @default new Date() */
-    now?: Date | undefined;
+    /** The time `resetAt` is counted from. A `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
   };
 }
 
@@ -27,7 +29,8 @@ export declare namespace headers {
  * ```
  */
 export function headers(result: Result, options: headers.Options = {}): Record<string, string> {
-  const { name = 'default', now = new Date() } = options;
+  const { name = 'default' } = options;
+  const now = toDate(options.now);
   if (!/^[\x20-\x7e]*$/.test(name)) {
     throw new RangeError(`\`name\` must be printable ASCII, got ${JSON.stringify(name)}.`);
   }

@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import { encrypt, type Subscription } from './encrypt.js';
 import { InvalidInputError, ResponseError } from './errors.js';
 import { authorization, parseUrl, type Vapid } from './vapid.js';
@@ -28,8 +30,11 @@ export declare namespace toRequest {
      * latest. Up to 32 base64url characters.
      */
     topic?: string | undefined;
-    /** The time the VAPID token's expiry is counted from. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time the VAPID token's expiry is counted from. A `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** Cancels the encryption and, through the `Request`, the `fetch`. */
     signal?: AbortSignal | undefined;
   };
@@ -85,7 +90,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
   }
   headers.set(
     'authorization',
-    await authorization(endpoint.origin, options.vapid, options.now ?? new Date()),
+    await authorization(endpoint.origin, options.vapid, toDate(options.now)),
   );
   signal?.throwIfAborted();
   return new Request(endpoint, {

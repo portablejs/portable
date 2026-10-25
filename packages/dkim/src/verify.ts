@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Bytes from '@portable/bytes';
 import type * as Dns from '@portable/dns';
 import { toBinary } from './internal/bytes.js';
@@ -50,8 +52,8 @@ export declare namespace verify {
   type Options = {
     /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver;
-    /** The time to check `x=` against. @default new Date() */
-    now?: Date | undefined;
+    /** The time to check `x=` against. A `Date` or a `Temporal.Instant`. @default new Date() */
+    now?: Instant | undefined;
     /** RSA keys shorter than this give `policy` (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined;
     /** Creates the body hash. @default buffers the canonicalized body for `crypto.subtle.digest` */
@@ -100,7 +102,8 @@ export async function verify(message: Message, options: verify.Options): Promise
  * uses it to hash the body once for DKIM, ARC and the seal.
  */
 export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result[]> {
-  const { resolver, now = new Date(), minKeyBits = 1024, signal } = options;
+  const { resolver, minKeyBits = 1024, signal } = options;
+  const now = toDate(options.now);
   const signatures = fields
     .filter((field) => field.name === 'dkim-signature')
     .map((field) => prepare(field, now));

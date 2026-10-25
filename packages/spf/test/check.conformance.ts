@@ -457,6 +457,14 @@ describe('macro-test.js', () => {
     const now = new Date(1_700_000_000_900);
     expect((await check(zone, {}, { now })).explanation).toBe('1700000000');
   });
+
+  test('expands %{t} from a now that is an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const zone = withRecord('v=spf1 -all exp=explain.example.test', {
+      'explain.example.test': { TXT: ['%{t}'] },
+    });
+    const now = { epochMilliseconds: 1_700_000_000_900 };
+    expect((await check(zone, {}, { now })).explanation).toBe('1700000000');
+  });
 });
 
 describe('limited-resolver-test.js', () => {

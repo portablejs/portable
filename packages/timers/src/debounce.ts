@@ -1,4 +1,4 @@
-import { type DisposeMethod, withDispose } from './dispose.js';
+import { type DisposeMethod, withDispose } from '@portable/errors/internal';
 
 const maxTimeout = 2 ** 31 - 1;
 

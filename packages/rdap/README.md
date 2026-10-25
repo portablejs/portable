@@ -69,7 +69,7 @@ An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` ho
 | --- | --- | --- |
 | `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
 | `signal` | | Cancels the lookup, including a bootstrap request no other lookup is waiting for. It rejects with `signal.reason`. |
-| `now` | the current time | The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. |
+| `now` | the current time | The current time, which a lookup compares with the time the bootstrap files were cached to decide whether they have expired. A `Date` or a `Temporal.Instant`. |
 | `follow` | `true` | `Rdap.domain` only. Fetches the registrar's response when the registry links to it. |
 
 For a timeout, pass `signal: AbortSignal.timeout(5000)`.

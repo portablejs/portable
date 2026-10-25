@@ -1,5 +1,5 @@
 import type { Client } from './client.js';
-import { asyncDispose } from './dispose.js';
+import { asyncDisposeSymbol } from '@portable/errors/internal';
 import type { Params } from './types.js';
 
 type Target = { client: Pick<Client, 'request' | 'notify'>; method: string };
@@ -13,7 +13,7 @@ export function remote(client: Target['client'], method = '', dispose?: () => Pr
       if (key === targetKey) {
         return { client, method };
       }
-      if (key === asyncDispose && dispose) {
+      if (key === asyncDisposeSymbol && dispose) {
         return dispose;
       }
       if (typeof key !== 'string' || key === 'then') {

@@ -1,3 +1,5 @@
+import { type AsyncDisposeMethod, withAsyncDispose } from '@portable/errors/internal';
+
 /** What a task receives when it starts. */
 export type Context = {
   /** Aborts when the task's `signal` or the queue's `signal` aborts. */
@@ -9,8 +11,8 @@ export type Task<value> = (context: Context) => value | PromiseLike<value>;
 
 /**
  * A queue made by `create`. Where the runtime has `Symbol.asyncDispose`,
- * `[Symbol.asyncDispose]()` rejects waiting tasks and every later `add` with an `AbortError`
- * `DOMException`, aborts the `signal` of running tasks, and resolves once they have settled, so
+ * `[Symbol.asyncDispose]()` does what aborting the queue's `signal` does, with an `AbortError`
+ * `DOMException`, and resolves once running tasks have settled, so
  * `await using queue = Queue.create()` leaves no task running after the scope ends.
  */
 export type Queue = AsyncDisposeMethod & {
@@ -64,8 +66,6 @@ export declare namespace create {
   };
 }
 
-import { type AsyncDisposeMethod, withAsyncDispose } from './dispose.js';
-
 type Entry = {
   task: Task<unknown>;
   priority: number;
@@ -118,16 +118,15 @@ export function create(options: create.Options = {}): Queue {
 
   const disposer = new AbortController();
   const queueSignal = signal ? AbortSignal.any([signal, disposer.signal]) : disposer.signal;
-  // Only a `signal` from the caller rejects running tasks at once, so only then are they tracked.
-  const running = signal ? new Set<Entry>() : undefined;
-  queueSignal.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true });
-  signal?.addEventListener(
+  const running = new Set<Entry>();
+  queueSignal.addEventListener(
     'abort',
     () => {
-      for (const entry of running!) {
+      removeWaiting(queueSignal.reason);
+      for (const entry of running) {
         if (entry.state === 'running') {
           entry.state = 'settled';
-          entry.reject(signal.reason);
+          entry.reject(queueSignal.reason);
         }
       }
     },
@@ -263,7 +262,7 @@ export function create(options: create.Options = {}): Queue {
   function start(entry: Entry) {
     pending++;
     entry.state = 'running';
-    running?.add(entry);
+    running.add(entry);
     entry.begin();
   }
 
@@ -289,7 +288,7 @@ export function create(options: create.Options = {}): Queue {
 
   function finish(entry: Entry, value?: unknown, failed?: boolean) {
     pending--;
-    running?.delete(entry);
+    running.delete(entry);
     if (entry.watched) {
       unwatch(entry);
     }

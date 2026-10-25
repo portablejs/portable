@@ -79,6 +79,7 @@ How the streams end:
 - `writable.close()` waits for queued writes, closes the socket with 1000, and ends `readable` once the close completes.
 - `readable.cancel()`, `writable.abort()` and `signal` close the socket with 1000 and fail the other stream.
 - `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
+- In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
 - A final close with 1000, 1001 or 1005 ends `readable`. Any other final close fails it with a `CloseError` carrying `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
 ### Messages can be lost during a drop

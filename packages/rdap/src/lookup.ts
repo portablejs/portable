@@ -1,3 +1,4 @@
+import type { Instant } from '@portable/timers';
 import * as Address from './address.js';
 import * as Bootstrap from './bootstrap.js';
 import { InvalidInputError, UnsupportedError } from './errors.js';
@@ -25,9 +26,9 @@ type Shared = {
   signal?: AbortSignal | undefined;
   /**
    * The current time, which a lookup compares with the time the bootstrap files were cached to
-   * decide whether they have expired.
+   * decide whether they have expired. A `Date` or a `Temporal.Instant`.
    */
-  now?: Date | undefined;
+  now?: Instant | undefined;
 };
 
 export declare namespace domain {

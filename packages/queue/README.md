@@ -50,7 +50,7 @@ Returns a queue object.
 | `pending` | The number of running tasks. |
 | `paused` | Whether the queue is paused. |
 | `concurrency` | Read or set the limit. Raising it starts waiting tasks at once. |
-| `[Symbol.asyncDispose]()` | Rejects waiting tasks and every later `add` with an `AbortError` `DOMException`, aborts the `signal` of running tasks, and resolves once they have settled. Running tasks' promises settle with the tasks' own results. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
+| `[Symbol.asyncDispose]()` | Does what aborting the queue's `signal` does, with an `AbortError` `DOMException`: rejects waiting and running tasks and every later `add`, and aborts the `signal` of running tasks. It then resolves once the running tasks have settled. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
 
 The `signal` passed to a task aborts when the task's own `signal` or the queue's `signal` aborts, or when the queue is disposed. If the task is still waiting, it is removed. If it is running, `add` rejects with the abort reason at once, but the task keeps its slot until it settles, so no more than `concurrency` tasks ever run. Pass the signal on to `fetch` or whatever the task awaits so it stops early.
 
@@ -64,6 +64,8 @@ async function crawl(urls: string[]) {
   return await Promise.all(urls.map((url) => queue.add(({ signal }) => fetch(url, { signal }))));
 }
 ```
+
+In a runtime without `Symbol.asyncDispose`, such as Safari 26, create the queue with a `signal` and abort it to tear the queue down, then `await queue.idle()` to wait for running tasks to settle.
 
 A task added from inside a running task waits for a free slot like any other. If the outer task awaits it with `concurrency: 1`, both wait forever, so give nested work its own queue.
 

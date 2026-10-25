@@ -56,6 +56,19 @@ describe('sign()', () => {
     expect(await signed.text()).toBe(tweetBody);
   });
 
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const sign = (now: OAuth1.sign.Options['now']) =>
+      OAuth1.sign(new Request('https://example.com/a'), {
+        consumer: { key: 'k', secret: 's' },
+        nonce: 'n',
+        now,
+        placement: 'query',
+      });
+    const signed = await sign({ epochMilliseconds: 1_000 });
+    expect(signed.url).toBe((await sign(new Date(1_000))).url);
+    expect(signed.url).toContain('oauth_timestamp=1&');
+  });
+
   test('placement "query" on a URL without a query', async () => {
     const signed = await OAuth1.sign(new Request('https://example.com/a'), {
       consumer: { key: 'k', secret: 's' },

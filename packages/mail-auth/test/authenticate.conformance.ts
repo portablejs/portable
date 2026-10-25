@@ -1,4 +1,5 @@
 import * as Arc from '@portable/arc';
+import * as Dkim from '@portable/dkim';
 import * as MailAuth from '@portable/mail-auth';
 import { describe, expect, test } from 'vite-plus/test';
 import {
@@ -523,5 +524,26 @@ describe('input', () => {
     await expect(authenticate(message, {}, { ip: 'mail.example.com' })).rejects.toBeInstanceOf(
       RangeError,
     );
+  });
+});
+
+describe('now', () => {
+  test('checks signature expiry against an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const signature = await Dkim.sign(message, {
+      domain: 'mail.example.com',
+      selector: 'test',
+      privateKey: (await key('rsa')).privateKey,
+      now: new Date('2024-01-01T00:00:00Z'),
+      expiresAt: new Date('2024-01-02T00:00:00Z'),
+    });
+    const zone = { 'test._domainkey.mail.example.com': { TXT: [await rsaRecord()] } };
+    const at = async (now: MailAuth.authenticate.Options['now']) =>
+      (await authenticate(signature + message, zone, { now })).dkim[0]!.result;
+    const before = Date.UTC(2024, 0, 1, 12);
+    const after = Date.UTC(2024, 0, 3);
+    expect(await at({ epochMilliseconds: before })).toBe('pass');
+    expect(await at(new Date(before))).toBe('pass');
+    expect(await at({ epochMilliseconds: after })).toBe(await at(new Date(after)));
+    expect(await at({ epochMilliseconds: after })).not.toBe('pass');
   });
 });

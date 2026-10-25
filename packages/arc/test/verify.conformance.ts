@@ -403,6 +403,13 @@ describe('the newest ARC-Message-Signature (RFC 8617 section 4.1.2)', () => {
     expect((await check(message)).reason).toBe('i=1 ams signature expired');
     expect((await check(message, records, { now: new Date(1_500_000) })).result).toBe('pass');
   });
+
+  test('checks x= against an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const { message } = await singleSet({ amsOptions: { extraTags: 't=1000; x=2000; ' } });
+    const instant = await check(message, records, { now: { epochMilliseconds: 1_500_000 } });
+    expect(instant).toEqual(await check(message, records, { now: new Date(1_500_000) }));
+    expect(instant.result).toBe('pass');
+  });
 });
 
 describe('instance values (RFC 8617 section 3.9)', () => {

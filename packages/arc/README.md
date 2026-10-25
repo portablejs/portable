@@ -53,7 +53,7 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) {
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
-| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. |
+| `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against. A `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
@@ -72,7 +72,7 @@ The promise rejects only for invalid options, a failing message stream or an abo
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
 | `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
-| `now` | `new Date()` | The time (`t=`) of both signatures. |
+| `now` | `new Date()` | The time (`t=`) of both signatures. A `Date` or a `Temporal.Instant`. |
 | `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
 

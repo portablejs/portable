@@ -1,3 +1,5 @@
+import type { Instant } from '@portable/timers';
+import { toDate } from '@portable/timers/internal';
 import * as Bytes from '@portable/bytes';
 import type * as Dkim from '@portable/dkim';
 import {
@@ -81,8 +83,11 @@ export declare namespace verify {
   type Options = {
     /** Looks up the keys. Pass `Dns.create()` or `node:dns/promises`. */
     resolver: Resolver;
-    /** The time to check the ARC-Message-Signature's `x=` against. @default new Date() */
-    now?: Date | undefined;
+    /**
+     * The time to check the ARC-Message-Signature's `x=` against. A `Date` or a `Temporal.Instant`.
+     * @default new Date()
+     */
+    now?: Instant | undefined;
     /** RSA keys shorter than this fail the chain (RFC 8301 section 3.2). @default 1024 */
     minKeyBits?: number | undefined;
     /** Creates the body hash, as in `Dkim.verify`. @default buffers the body for `crypto.subtle.digest` */
@@ -139,7 +144,8 @@ export async function verify(message: Message, options: verify.Options): Promise
  * signatures once the body is hashed. A chain that fails before that needs no body hash.
  */
 export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result> {
-  const { resolver, now = new Date(), minKeyBits = 1024, signal } = options;
+  const { resolver, minKeyBits = 1024, signal } = options;
+  const now = toDate(options.now);
   const { instance } = newest(fields);
   const failed = (reason: string, cause?: unknown): Result => ({
     result: 'fail',

@@ -1,5 +1,6 @@
 import { isUint8Array } from '@portable/bytes/internal';
 import * as Base64 from '@portable/base64';
+import { type AsyncDisposeMethod, withAsyncDispose } from '@portable/errors/internal';
 import { CommandError, type Rejection } from './errors.js';
 import { DataStream, encodeData } from './DataStream.js';
 import { createReader, type Reader, type Reply } from './reader.js';
@@ -57,19 +58,11 @@ export type Result = {
 };
 
 /**
- * `[Symbol.asyncDispose]()` where the runtime and the caller's TypeScript lib define the symbol,
- * otherwise nothing.
- */
-type AsyncDisposable = SymbolConstructor extends { readonly asyncDispose: infer key extends symbol }
-  ? { [name in key]: () => Promise<void> }
-  : {};
-
-/**
  * An open SMTP session, from `Smtp.connect`. Calls run one at a time, in the order they are made.
  * Where the runtime has `Symbol.asyncDispose`, `await using` calls `close()` at the end of the
  * block.
  */
-export type Client = AsyncDisposable & {
+export type Client = AsyncDisposeMethod & {
   /** Whether the connection is encrypted. */
   readonly secure: boolean;
   /** The extension lines of the EHLO reply, such as `'SIZE 35882577'`. Empty after a HELO fallback. */
@@ -807,20 +800,8 @@ function createClient(
         session.destroy();
       });
     },
-  } satisfies Omit<Client, keyof AsyncDisposable>;
-  return withAsyncDispose(client);
-}
-
-function withAsyncDispose<value extends { close(): Promise<void> }>(
-  value: value,
-): value & AsyncDisposable {
-  const key = (Symbol as { asyncDispose?: symbol | undefined }).asyncDispose;
-  if (key) {
-    Object.defineProperty(value, key, { value: () => value.close() });
-  }
-  // With a TypeScript lib that defines `Symbol.asyncDispose`, `AsyncDisposable` isn't empty.
-  // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
-  return value as value & AsyncDisposable;
+  } satisfies Omit<Client, keyof AsyncDisposeMethod>;
+  return withAsyncDispose(client, () => client.close());
 }
 
 export declare namespace send {

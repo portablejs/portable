@@ -526,6 +526,22 @@ describe('bootstrap cache', () => {
     expect(urls.filter((url) => url === iana)).toHaveLength(2);
   });
 
+  test('takes now as an object with epochMilliseconds, such as a Temporal.Instant', async () => {
+    const { fetch, urls } = server();
+    const start = Date.UTC(2030, 0, 1);
+    await Rdap.domain('sidn.nl', { fetch, now: { epochMilliseconds: start } });
+    await Rdap.domain('sidn.nl', {
+      fetch,
+      now: { epochMilliseconds: start + 24 * 60 * 60 * 1000 - 1 },
+    });
+    expect(urls.filter((url) => url === iana)).toHaveLength(1);
+    await Rdap.domain('sidn.nl', {
+      fetch,
+      now: { epochMilliseconds: start + 24 * 60 * 60 * 1000 },
+    });
+    expect(urls.filter((url) => url === iana)).toHaveLength(2);
+  });
+
   test('keeps a separate cache for each fetch function', async () => {
     const one = server();
     const two = server();

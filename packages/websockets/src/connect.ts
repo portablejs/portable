@@ -16,7 +16,7 @@ import {
   timeout as startTimer,
   toMessage,
 } from './Socket.js';
-import { withAsyncDispose } from './dispose.js';
+import { withAsyncDispose } from '@portable/errors/internal';
 import { CloseError, MaxBufferedError } from './errors.js';
 
 export declare namespace connect {
