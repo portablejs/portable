@@ -1,4 +1,4 @@
-import { isUint8Array } from '@portable/bytes/internal';
+import { assertUint8Array } from '@portable/bytes/internal';
 /** The standard alphabet with `+` and `/`, or the URL-safe one with `-` and `_` (RFC 4648). */
 export type Alphabet = 'base64' | 'base64url';
 
@@ -43,13 +43,7 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 const utf8 = new TextEncoder();
 
 export function toBytes(input: Uint8Array | string): Uint8Array {
-  if (typeof input === 'string') {
-    return utf8.encode(input);
-  }
-  if (isUint8Array(input)) {
-    return input;
-  }
-  throw new TypeError('Expected a Uint8Array or a string.');
+  return typeof input === 'string' ? utf8.encode(input) : assertUint8Array(input);
 }
 
 type NativeToBase64 = (

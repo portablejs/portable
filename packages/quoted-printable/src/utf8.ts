@@ -1,3 +1,4 @@
+import * as Bytes from '@portable/bytes';
 import { assertUint8Array } from '@portable/bytes/internal';
 const textEncoder = new TextEncoder();
 
@@ -18,10 +19,7 @@ export function createUtf8Encoder(): {
         }
         const pending = encodeUtf8(highSurrogate);
         highSurrogate = '';
-        const joined = new Uint8Array(pending.length + chunk.length);
-        joined.set(pending);
-        joined.set(chunk, pending.length);
-        return joined;
+        return Bytes.concat([pending, chunk]);
       }
       let text = highSurrogate + chunk;
       highSurrogate = '';

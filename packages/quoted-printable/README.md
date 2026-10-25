@@ -24,8 +24,8 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 | --- | --- | --- |
 | `encode(input, options?)` | `Uint8Array` or `string` (encoded as UTF-8) | `string` |
 | `decode(input)` | `string` (read as UTF-8) or `Uint8Array` | `Uint8Array` |
-| `EncoderStream(options?)` | a `TransformStream<Uint8Array \| string, Uint8Array>` that emits ASCII bytes | |
-| `DecoderStream(options?)` | a `TransformStream<string \| Uint8Array, Uint8Array>` | |
+| `new EncoderStream(options?)` | `Uint8Array` or `string` chunks | a `TransformStream` that emits the encoded text as ASCII bytes |
+| `new DecoderStream(options?)` | `string` or `Uint8Array` chunks | a `TransformStream` that emits the decoded bytes |
 
 `encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
 
@@ -39,15 +39,15 @@ Both streams produce the same bytes as the functions however the input is chunke
 | --- | --- | --- |
 | `lineLength` | `76` | Longest line, not counting the line break. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
 | `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
-| `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+| `signal` | none | `EncoderStream` and `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`DecoderStream` takes `signal` too, and no other option.
+`DecoderStream` takes no other option.
 
 ## Why use this over libqp and quoted-printable
 
 Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams and no dependencies. The bugs below are fixed in libqp 3, but libqp 2.x and quoted-printable still have them.
 
-- Encoding 512 KB of text was about 1.3× faster than libqp 3.0.1 and 3× faster than quoted-printable. Decoding 256 KB of random bytes was about 3× faster than libqp.
+- Encoding 512 KB of text was about 1.2× faster than libqp 3.0.1 and 3× faster than quoted-printable. Decoding 256 KB of random bytes was about 3× faster than libqp.
 - `encode` escapes a hyphen that would start a line, so no line of the body can read as a MIME boundary. libqp before 2.1.3 could start a line with `--`.
 - `EncoderStream` output doesn't depend on how the input is chunked, and a soft line break never splits a UTF-8 sequence. libqp before 3.0.0 got both wrong, and quoted-printable still splits UTF-8 sequences.
 - `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.

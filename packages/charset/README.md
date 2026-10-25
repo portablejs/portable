@@ -113,5 +113,5 @@ Differences to check when you switch from iconv-lite:
 - iconv-lite writes a byte order mark for the `utf-16` label by default. Here the `utf-16` label maps to UTF-16LE, which is written without one unless you pass `bom: true`.
 - Characters that a charset only decodes are unmappable when encoding, as WHATWG specifies: HKSCS in Big5, JIS X 0212 in EUC-JP and the IBM duplicates in the NEC rows of Shift_JIS. They still decode with `TextDecoder`.
 - iconv-lite writes `?` for the C1 controls that the windows-125x tables map. `encode` writes the bytes the WHATWG tables give them.
-- iconv-lite's `base64`, `hex`, `binary` and `ucs2` codecs have no equivalent. Use `Uint8Array.prototype.toBase64` and `toHex`, `TextEncoder` and `utf16le`.
+- iconv-lite's `base64`, `hex`, `binary` and `ucs2` codecs have no equivalent. Use `@portable/base64`, `Bytes.toHex` from `@portable/bytes`, `TextEncoder` and `utf16le`.
 - cp437, cp850 and the other DOS and IBM code pages, UTF-7, UTF-32 and CESU-8 are not supported yet.
