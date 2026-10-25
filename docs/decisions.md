@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## What a review pass fixes
+
+- **Options:** fix every finding a review reports; fix only findings above a threshold, and stop when a pass reports none.
+- **Trade-offs:** a reviewer always finds something. Without a threshold, repeated passes fix inputs no caller sends, and one pass can undo the choice an earlier pass made, so the passes never end.
+- **Chosen:** a pass fixes, in this order of priority: wrong behavior a caller can hit; a break from a rule in AGENTS.md or a decision in this file; docs, READMEs or JSDoc that disagree with the code; code or prose that can be shorter or simpler without losing a fact, a reason or a test; and two packages that do the same thing in different ways. It skips inputs that don't come up in real use, renames and rewrites that only swap one acceptable form for another, and new features. It doesn't reverse an entry in this file or a change an earlier pass made, unless the change broke something. A finding that needs one of those goes to a person instead. Passes stop when one finds nothing to fix.
+
 ## Byte inputs stay `Uint8Array` only
 
 - **Options:** keep `Uint8Array` as the only byte input, and throw a `TypeError` for anything else; accept any `ArrayBuffer`, `SharedArrayBuffer` or view, as `TextDecoder` does.
