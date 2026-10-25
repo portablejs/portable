@@ -154,22 +154,32 @@ They run in browsers too, but they are four packages with four APIs, and they ha
 - p-throttle's strict mode spaces saturated calls `interval / limit` apart. The queue starts a call as soon as the window has room.
 
 <!-- bench:start -->
-| | @portable/queue | p-limit | p-queue | p-map | `Promise.all`, no limit |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Run 1,000 tasks, 10 at a time, with `Queue.create` | 2,200 | – | 478 | – | 14,500 |
-| Run 1,000 tasks, 10 at a time, with `Queue.limit` | 2,150 | 1,250 | – | – | 14,500 |
-| Run 1,000 tasks with priorities and a signal | 1,590 | – | 277 | – | – |
-| Map 1,000 items, 10 at a time | 10,100 | 1,190 | – | 1,360 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Run 1,000 tasks, 10 at a time, with `Queue.create` | `Promise.all`, no limit | 14,500 | 6.6× faster | ████████████████ |
+|  | **@portable/queue** | 2,200 |  | ██ |
+|  | p-queue | 478 | 4.6× slower | █ |
+| | | | | |
+| Run 1,000 tasks, 10 at a time, with `Queue.limit` | `Promise.all`, no limit | 14,500 | 6.7× faster | ████████████████ |
+|  | **@portable/queue** | 2,150 |  | ██ |
+|  | p-limit | 1,250 | 1.7× slower | █ |
+| | | | | |
+| Run 1,000 tasks with priorities and a signal | **@portable/queue** | 1,590 |  | ████████████████ |
+|  | p-queue | 277 | 5.7× slower | ███ |
+| | | | | |
+| Map 1,000 items, 10 at a time | **@portable/queue** | 10,100 |  | ████████████████ |
+|  | p-map | 1,360 | 7.4× slower | ██ |
+|  | p-limit | 1,190 | 8.5× slower | ██ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/queue, and the bars are scaled to the fastest library.
 
-| | @portable/queue | p-limit | p-queue | p-map | `Promise.all`, no limit |
-| --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.3 kB | 1.0 kB | 3.5 kB | 2.1 kB | built in |
-| Runtime dependencies | 1 | 1 | 0 | 0 | – |
-| Node built-ins used | none | none | none | none | none |
-| TypeScript types | included | included | included | included | – |
-| Version compared | – | 7.3.3 | 10.0.0 | 7.1.1 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/queue | – | 2.3 kB | 1 | none | included |
+| p-limit | 7.3.3 | 1.0 kB | 1 | none | included |
+| p-queue | 10.0.0 | 3.5 kB | 0 | none | included |
+| p-map | 7.1.1 | 2.1 kB | 0 | none | included |
+| `Promise.all`, no limit | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

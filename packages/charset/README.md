@@ -88,21 +88,25 @@ iconv-lite looks charsets up by name in one registry, so a bundle includes every
 - ISO-2022-JP can be encoded. iconv-lite doesn't support it.
 
 <!-- bench:start -->
-| | @portable/charset | iconv-lite | `TextEncoder` |
-| --- | ---: | ---: | ---: |
-| Encode 380 kB of Cyrillic text to windows-1251 | 725 | 736 | – |
-| Encode 230 kB of Japanese text to Shift_JIS | 870 | 363 | – |
-| Encode 610 kB of text to UTF-8 | 425 | 435 | 453 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Encode 380 kB of Cyrillic text to windows-1251 | iconv-lite | 736 | same | ████████████████ |
+|  | **@portable/charset** | 725 |  | ████████████████ |
+| | | | | |
+| Encode 230 kB of Japanese text to Shift_JIS | **@portable/charset** | 870 |  | ████████████████ |
+|  | iconv-lite | 363 | 2.4× slower | ███████ |
+| | | | | |
+| Encode 610 kB of text to UTF-8 | `TextEncoder` | 453 | 1.1× faster | ████████████████ |
+|  | iconv-lite | 435 | same | ███████████████ |
+|  | **@portable/charset** | 425 |  | ███████████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/charset, and the bars are scaled to the fastest library.
 
-| | @portable/charset | iconv-lite | `TextEncoder` |
-| --- | --- | --- | --- |
-| Minified and gzipped | 14 kB | 153 kB | built in |
-| Runtime dependencies | 3 | 1 | – |
-| Node built-ins used | none | `buffer`, `stream`, `string_decoder` | none |
-| TypeScript types | included | included | – |
-| Version compared | – | 0.7.3 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/charset | – | 14 kB | 3 | none | included |
+| iconv-lite | 0.7.3 | 153 kB | 1 | `buffer`, `stream`, `string_decoder` | included |
+| `TextEncoder` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

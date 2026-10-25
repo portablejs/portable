@@ -104,19 +104,19 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 - It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 
 <!-- bench:start -->
-| | @portable/spf | mailauth | mailauth, strict mode |
-| --- | ---: | ---: | ---: |
-| Check a record with nested includes | 20,500 | 9,280 | 7,660 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Check a record with nested includes | **@portable/spf** | 20,500 |  | ████████████████ |
+|  | mailauth | 9,280 | 2.2× slower | ███████ |
+|  | mailauth, strict mode | 7,660 | 2.7× slower | ██████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/spf, and the bars are scaled to the fastest library.
 
-| | @portable/spf | mailauth | mailauth, strict mode |
-| --- | --- | --- | --- |
-| Minified and gzipped | 15 kB | 442 kB | 442 kB |
-| Runtime dependencies | 9 | 38 | 38 |
-| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` |
-| TypeScript types | included | included | included |
-| Version compared | – | 7.3.0 | 7.3.0 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/spf | – | 15 kB | 9 | none | included |
+| mailauth | 7.3.0 | 442 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included |
+| mailauth, strict mode | 7.3.0 | 442 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `os`, `stream`, `string_decoder` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

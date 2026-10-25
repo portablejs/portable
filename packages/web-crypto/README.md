@@ -76,26 +76,53 @@ Each helper replaces a few lines you would otherwise write yourself, and handles
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 15 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
 
 <!-- bench:start -->
-| | @portable/web-crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| SHA-256 of 1 KB | 27,900 | – | 136,000 | – | 28,900 | 429,000 |
-| SHA-256 of 1 MB | 928 | – | 170 | – | 958 | – |
-| HMAC-SHA256 of 1 KB | 18,500 | – | 84,700 | – | 18,400 | 271,000 |
-| Derive 32 bytes with HKDF | 17,300 | – | 113,000 | – | 18,200 | 215,000 |
-| Import an Ed25519 seed | 15,600 | – | – | 2,920 | 16,500 | – |
-| Read the public key of a P-256 key | 20,500 | – | – | – | 19,000 | 1,240,000 |
-| Convert a DER ECDSA signature to raw | 4,900,000 | 818,000 | – | 361,000 | – | – |
-| Convert a raw ECDSA signature to DER | 1,620,000 | 2,250,000 | – | 253,000 | – | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| SHA-256 of 1 KB | `node:crypto` | 429,000 | 15× faster | ████████████████ |
+|  | @noble/hashes | 136,000 | 4.9× faster | █████ |
+|  | `crypto.subtle` by hand | 28,900 | same | █ |
+|  | **@portable/web-crypto** | 27,900 |  | █ |
+| | | | | |
+| SHA-256 of 1 MB | `crypto.subtle` by hand | 958 | same | ████████████████ |
+|  | **@portable/web-crypto** | 928 |  | ███████████████ |
+|  | @noble/hashes | 170 | 5.5× slower | ███ |
+| | | | | |
+| HMAC-SHA256 of 1 KB | `node:crypto` | 271,000 | 15× faster | ████████████████ |
+|  | @noble/hashes | 84,700 | 4.6× faster | █████ |
+|  | **@portable/web-crypto** | 18,500 |  | █ |
+|  | `crypto.subtle` by hand | 18,400 | same | █ |
+| | | | | |
+| Derive 32 bytes with HKDF | `node:crypto` | 215,000 | 12× faster | ████████████████ |
+|  | @noble/hashes | 113,000 | 6.5× faster | ████████ |
+|  | `crypto.subtle` by hand | 18,200 | 1.1× faster | █ |
+|  | **@portable/web-crypto** | 17,300 |  | █ |
+| | | | | |
+| Import an Ed25519 seed | `crypto.subtle` by hand | 16,500 | 1.1× faster | ████████████████ |
+|  | **@portable/web-crypto** | 15,600 |  | ███████████████ |
+|  | @noble/curves | 2,920 | 5.3× slower | ███ |
+| | | | | |
+| Read the public key of a P-256 key | `node:crypto` | 1,240,000 | 60× faster | ████████████████ |
+|  | **@portable/web-crypto** | 20,500 |  | █ |
+|  | `crypto.subtle` by hand | 19,000 | 1.1× slower | █ |
+| | | | | |
+| Convert a DER ECDSA signature to raw | **@portable/web-crypto** | 4,900,000 |  | ████████████████ |
+|  | ecdsa-sig-formatter | 818,000 | 6.0× slower | ███ |
+|  | @noble/curves | 361,000 | 14× slower | █ |
+| | | | | |
+| Convert a raw ECDSA signature to DER | ecdsa-sig-formatter | 2,250,000 | 1.4× faster | ████████████████ |
+|  | **@portable/web-crypto** | 1,620,000 |  | ████████████ |
+|  | @noble/curves | 253,000 | 6.4× slower | ██ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/web-crypto, and the bars are scaled to the fastest library.
 
-| | @portable/web-crypto | ecdsa-sig-formatter | @noble/hashes | @noble/curves | `crypto.subtle` by hand | `node:crypto` |
-| --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.7 kB | 1.7 kB | 3.4 kB | 20 kB | built in | built in |
-| Runtime dependencies | 2 | 1 | 0 | 1 | – | – |
-| Node built-ins used | none | `buffer` | none | none | none | Node only |
-| TypeScript types | included | included | included | included | – | – |
-| Version compared | – | 1.0.11 | 2.4.0 | 2.4.0 | – | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/web-crypto | – | 2.7 kB | 2 | none | included |
+| ecdsa-sig-formatter | 1.0.11 | 1.7 kB | 1 | `buffer` | included |
+| @noble/hashes | 2.4.0 | 3.4 kB | 0 | none | included |
+| @noble/curves | 2.4.0 | 20 kB | 1 | none | included |
+| `crypto.subtle` by hand | – | built in | – | none | – |
+| `node:crypto` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

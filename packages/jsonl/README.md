@@ -52,20 +52,26 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse` yourself.
 
 <!-- bench:start -->
-| | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
-| --- | ---: | ---: | ---: | ---: |
-| Decode 20,000 rows | 38.6 | 34.3 | 27.8 | 44.5 |
-| Encode 20,000 rows | 29.2 | 19.0 | 38.7 | 79.3 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Decode 20,000 rows | `JSON.parse` or `JSON.stringify` | 44.5 | 1.2× faster | ████████████████ |
+|  | **@portable/jsonl** | 38.6 |  | ██████████████ |
+|  | ndjson | 34.3 | 1.1× slower | ████████████ |
+|  | stream-json | 27.8 | 1.4× slower | ██████████ |
+| | | | | |
+| Encode 20,000 rows | `JSON.parse` or `JSON.stringify` | 79.3 | 2.7× faster | ████████████████ |
+|  | stream-json | 38.7 | 1.3× faster | ████████ |
+|  | **@portable/jsonl** | 29.2 |  | ██████ |
+|  | ndjson | 19.0 | 1.5× slower | ████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/jsonl, and the bars are scaled to the fastest library.
 
-| | @portable/jsonl | ndjson | stream-json | `JSON.parse` or `JSON.stringify` |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.2 kB | 13 kB | 3.5 kB | built in |
-| Runtime dependencies | 3 | 9 | 1 | – |
-| Node built-ins used | none | `buffer`, `events`, `os`, `string_decoder`, `util` | `stream`, `string_decoder` | none |
-| TypeScript types | included | `@types/ndjson` | included | – |
-| Version compared | – | 2.0.0 | 3.7.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/jsonl | – | 1.2 kB | 3 | none | included |
+| ndjson | 2.0.0 | 13 kB | 9 | `buffer`, `events`, `os`, `string_decoder`, `util` | `@types/ndjson` |
+| stream-json | 3.7.0 | 3.5 kB | 1 | `stream`, `string_decoder` | included |
+| `JSON.parse` or `JSON.stringify` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

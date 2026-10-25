@@ -62,24 +62,36 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - The libqp 2.x `Encoder` left a hyphen after a lone CR unescaped, so the hyphen would start a line if a relay turned the CR into CRLF. `encode` follows libqp 3, which escapes it.
 
 <!-- bench:start -->
-| | @portable/quoted-printable | libqp | quoted-printable |
-| --- | ---: | ---: | ---: |
-| Encode 512 KB of text | 106 | 90.6 | 38.2 |
-| Encode 256 KB of random bytes | 155 | 132 | – |
-| Encode a 512 KB text stream in 16 KB chunks | 97.0 | 94.2 | – |
-| Decode the encoded 512 KB of text | 97.8 | 86.3 | 34.3 |
-| Decode the encoded 256 KB of random bytes | 255 | 76.3 | 19.0 |
-| Decode the encoded text as a stream | 105 | 78.1 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Encode 512 KB of text | **@portable/quoted-printable** | 106 |  | ████████████████ |
+|  | libqp | 90.6 | 1.2× slower | ██████████████ |
+|  | quoted-printable | 38.2 | 2.8× slower | ██████ |
+| | | | | |
+| Encode 256 KB of random bytes | **@portable/quoted-printable** | 155 |  | ████████████████ |
+|  | libqp | 132 | 1.2× slower | ██████████████ |
+| | | | | |
+| Encode a 512 KB text stream in 16 KB chunks | **@portable/quoted-printable** | 97.0 |  | ████████████████ |
+|  | libqp | 94.2 | same | ████████████████ |
+| | | | | |
+| Decode the encoded 512 KB of text | **@portable/quoted-printable** | 97.8 |  | ████████████████ |
+|  | libqp | 86.3 | 1.1× slower | ██████████████ |
+|  | quoted-printable | 34.3 | 2.9× slower | ██████ |
+| | | | | |
+| Decode the encoded 256 KB of random bytes | **@portable/quoted-printable** | 255 |  | ████████████████ |
+|  | libqp | 76.3 | 3.3× slower | █████ |
+|  | quoted-printable | 19.0 | 13× slower | █ |
+| | | | | |
+| Decode the encoded text as a stream | **@portable/quoted-printable** | 105 |  | ████████████████ |
+|  | libqp | 78.1 | 1.3× slower | ████████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/quoted-printable, and the bars are scaled to the fastest library.
 
-| | @portable/quoted-printable | libqp | quoted-printable |
-| --- | --- | --- | --- |
-| Minified and gzipped | 2.3 kB | 1.8 kB | 1.1 kB |
-| Runtime dependencies | 3 | 0 | 1 |
-| Node built-ins used | none | `Buffer`, `stream` | none |
-| TypeScript types | included | included | `@types/quoted-printable` |
-| Version compared | – | 3.0.1 | 1.0.1 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/quoted-printable | – | 2.3 kB | 3 | none | included |
+| libqp | 3.0.1 | 1.8 kB | 0 | `Buffer`, `stream` | included |
+| quoted-printable | 1.0.1 | 1.1 kB | 1 | none | `@types/quoted-printable` |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

@@ -80,20 +80,28 @@ The URL Standard runs UTS #46 for hosts, but implementations lag behind it. On `
 `toAscii` and `toUnicode` use their own tables, so they give one answer everywhere.
 
 <!-- bench:start -->
-| | @portable/idna | tr46 | punycode | `node:url` | `new URL()` |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Convert 10 hostnames to Unicode | 87,400 | 12,900 | 76,700 | 79,000 | – |
-| Convert 10 domains to ASCII | 84,200 | 14,500 | 79,200 | 79,900 | 102,000 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Convert 10 hostnames to Unicode | **@portable/idna** | 87,400 |  | ████████████████ |
+|  | `node:url` | 79,000 | 1.1× slower | ██████████████ |
+|  | punycode | 76,700 | 1.1× slower | ██████████████ |
+|  | tr46 | 12,900 | 6.8× slower | ██ |
+| | | | | |
+| Convert 10 domains to ASCII | `new URL()` | 102,000 | 1.2× faster | ████████████████ |
+|  | **@portable/idna** | 84,200 |  | █████████████ |
+|  | `node:url` | 79,900 | 1.1× slower | █████████████ |
+|  | punycode | 79,200 | 1.1× slower | ████████████ |
+|  | tr46 | 14,500 | 5.8× slower | ██ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/idna, and the bars are scaled to the fastest library.
 
-| | @portable/idna | tr46 | punycode | `node:url` | `new URL()` |
-| --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 16 kB | 64 kB | 1.5 kB | built in | built in |
-| Runtime dependencies | 1 | 1 | 0 | – | – |
-| Node built-ins used | none | none | none | Node only | none |
-| TypeScript types | included | `@types/tr46` | `@types/punycode` | – | – |
-| Version compared | – | 7.0.0 | 2.3.1 | – | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/idna | – | 16 kB | 1 | none | included |
+| tr46 | 7.0.0 | 64 kB | 1 | none | `@types/tr46` |
+| punycode | 2.3.1 | 1.5 kB | 0 | none | `@types/punycode` |
+| `node:url` | – | built in | – | Node only | – |
+| `new URL()` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

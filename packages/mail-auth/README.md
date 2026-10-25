@@ -125,20 +125,20 @@ Differences to check when you switch from mailauth:
 - mailauth's BIMI check (`result.bimi`), `result.receivedChain` and `dkim2` aren't supported.
 
 <!-- bench:start -->
-| | @portable/mail-auth | mailauth |
-| --- | ---: | ---: |
-| Authenticate a 250 KB message with a DKIM signature and an ARC set | 246 | 238 |
-| Authenticate and seal a short message | 433 | 323 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Authenticate a 250 KB message with a DKIM signature and an ARC set | **@portable/mail-auth** | 246 |  | ████████████████ |
+|  | mailauth | 238 | same | ███████████████ |
+| | | | | |
+| Authenticate and seal a short message | **@portable/mail-auth** | 433 |  | ████████████████ |
+|  | mailauth | 323 | 1.3× slower | ████████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail-auth, and the bars are scaled to the fastest library.
 
-| | @portable/mail-auth | mailauth |
-| --- | --- | --- |
-| Minified and gzipped | 32 kB | 775 kB |
-| Runtime dependencies | 15 | 38 |
-| Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` |
-| TypeScript types | included | included |
-| Version compared | – | 7.3.0 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/mail-auth | – | 32 kB | 15 | none | included |
+| mailauth | 7.3.0 | 775 kB | 38 | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

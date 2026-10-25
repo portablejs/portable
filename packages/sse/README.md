@@ -123,26 +123,44 @@ eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source
 `test/PARITY.md` maps every upstream test to ours and lists the upstream bugs this package handles differently.
 
 <!-- bench:start -->
-| | @portable/sse | eventsource-parser | eventsource | Hand-written with web APIs |
-| --- | ---: | ---: | ---: | ---: |
-| Decode 2,000 LLM token events, one per chunk | 365 | 252 | – | 280 |
-| Decode named events in 16 KB chunks | 1,370 | 1,380 | – | 794 |
-| Decode events in 2 to 16 byte chunks | 560 | 332 | – | 500 |
-| Decode a 1 MB data line in 128-byte chunks | 81.3 | 52.4 | – | – |
-| Decode 2,000 LLM token events from one string | 5,120 | 8,300 | – | – |
-| Encode LLM token events | 12,100 | – | – | 5,400 |
-| Encode LLM token events through `EncoderStream` | 235 | – | – | 201 |
-| Connect and read 2,000 events | 346 | 225 | 189 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Decode 2,000 LLM token events, one per chunk | **@portable/sse** | 365 |  | ████████████████ |
+|  | Hand-written with web APIs | 280 | 1.3× slower | ████████████ |
+|  | eventsource-parser | 252 | 1.4× slower | ███████████ |
+| | | | | |
+| Decode named events in 16 KB chunks | eventsource-parser | 1,380 | same | ████████████████ |
+|  | **@portable/sse** | 1,370 |  | ████████████████ |
+|  | Hand-written with web APIs | 794 | 1.7× slower | █████████ |
+| | | | | |
+| Decode events in 2 to 16 byte chunks | **@portable/sse** | 560 |  | ████████████████ |
+|  | Hand-written with web APIs | 500 | 1.1× slower | ██████████████ |
+|  | eventsource-parser | 332 | 1.7× slower | █████████ |
+| | | | | |
+| Decode a 1 MB data line in 128-byte chunks | **@portable/sse** | 81.3 |  | ████████████████ |
+|  | eventsource-parser | 52.4 | 1.6× slower | ██████████ |
+| | | | | |
+| Decode 2,000 LLM token events from one string | eventsource-parser | 8,300 | 1.6× faster | ████████████████ |
+|  | **@portable/sse** | 5,120 |  | ██████████ |
+| | | | | |
+| Encode LLM token events | **@portable/sse** | 12,100 |  | ████████████████ |
+|  | Hand-written with web APIs | 5,400 | 2.2× slower | ███████ |
+| | | | | |
+| Encode LLM token events through `EncoderStream` | **@portable/sse** | 235 |  | ████████████████ |
+|  | Hand-written with web APIs | 201 | 1.2× slower | ██████████████ |
+| | | | | |
+| Connect and read 2,000 events | **@portable/sse** | 346 |  | ████████████████ |
+|  | eventsource-parser | 225 | 1.5× slower | ██████████ |
+|  | eventsource | 189 | 1.8× slower | █████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/sse, and the bars are scaled to the fastest library.
 
-| | @portable/sse | eventsource-parser | eventsource | Hand-written with web APIs |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.8 kB | 1.9 kB | 3.6 kB | built in |
-| Runtime dependencies | 4 | 0 | 1 | – |
-| Node built-ins used | none | none | none | none |
-| TypeScript types | included | included | included | – |
-| Version compared | – | 4.1.2 | 5.1.3 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/sse | – | 1.8 kB | 4 | none | included |
+| eventsource-parser | 4.1.2 | 1.9 kB | 0 | none | included |
+| eventsource | 5.1.3 | 3.6 kB | 1 | none | included |
+| Hand-written with web APIs | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

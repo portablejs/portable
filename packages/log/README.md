@@ -149,22 +149,42 @@ When switching from debug, note these differences:
 - In Node, debug writes everything to stderr. Here `warn` and `error` go to stderr, and `debug` and `info` to stdout. To send everything to stderr, call `Log.configure({ console: false })` and subscribe with `(record) => console.error(Log.format(record))`.
 
 <!-- bench:start -->
-| | @portable/log | debug | loglevel | consola | @logtape/logtape | pino |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| A debug call while debug output is off | 23,000,000 | 19,800,000 | 22,600,000 | 18,900,000 | 10,300,000 | 17,700,000 |
-| A debug call with a format string, written as text | 3,040,000 | 408,000 | 1,970,000 | 671,000 | 194,000 | 658,000 |
-| A debug call with an object, written as text | 2,370,000 | 249,000 | 668,000 | 691,000 | 257,000 | 629,000 |
-| Create a logger and extend it | 3,970,000 | 242,000 | – | – | – | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| A debug call while debug output is off | **@portable/log** | 23,000,000 |  | ████████████████ |
+|  | loglevel | 22,600,000 | same | ████████████████ |
+|  | debug | 19,800,000 | 1.2× slower | ██████████████ |
+|  | consola | 18,900,000 | 1.2× slower | █████████████ |
+|  | pino | 17,700,000 | 1.3× slower | ████████████ |
+|  | @logtape/logtape | 10,300,000 | 2.2× slower | ███████ |
+| | | | | |
+| A debug call with a format string, written as text | **@portable/log** | 3,040,000 |  | ████████████████ |
+|  | loglevel | 1,970,000 | 1.5× slower | ██████████ |
+|  | consola | 671,000 | 4.5× slower | ████ |
+|  | pino | 658,000 | 4.6× slower | ███ |
+|  | debug | 408,000 | 7.5× slower | ██ |
+|  | @logtape/logtape | 194,000 | 16× slower | █ |
+| | | | | |
+| A debug call with an object, written as text | **@portable/log** | 2,370,000 |  | ████████████████ |
+|  | consola | 691,000 | 3.4× slower | █████ |
+|  | loglevel | 668,000 | 3.5× slower | █████ |
+|  | pino | 629,000 | 3.8× slower | ████ |
+|  | @logtape/logtape | 257,000 | 9.2× slower | ██ |
+|  | debug | 249,000 | 9.5× slower | ██ |
+| | | | | |
+| Create a logger and extend it | **@portable/log** | 3,970,000 |  | ████████████████ |
+|  | debug | 242,000 | 16× slower | █ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.80GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.80GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/log, and the bars are scaled to the fastest library.
 
-| | @portable/log | debug | loglevel | consola | @logtape/logtape | pino |
-| --- | --- | --- | --- | --- | --- | --- |
-| Minified and gzipped | 1.3 kB | 2.7 kB | 1.6 kB | 2.4 kB | 13 kB | 5.2 kB |
-| Runtime dependencies | 0 | 1 | 0 | 0 | 0 | 12 |
-| Node built-ins used | none | none | none | none | none | none |
-| TypeScript types | included | `@types/debug` | included | included | included | included |
-| Version compared | – | 4.4.3 | 1.9.2 | 3.4.2 | 2.4.2 | 10.4.0 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/log | – | 1.3 kB | 0 | none | included |
+| debug | 4.4.3 | 2.7 kB | 1 | none | `@types/debug` |
+| loglevel | 1.9.2 | 1.6 kB | 0 | none | included |
+| consola | 3.4.2 | 2.4 kB | 0 | none | included |
+| @logtape/logtape | 2.4.2 | 13 kB | 0 | none | included |
+| pino | 10.4.0 | 5.2 kB | 12 | none | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

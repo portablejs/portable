@@ -82,21 +82,23 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 - Encoding a DNS-over-HTTPS query was about 3.4 times faster than dns-packet, and encoding or decoding 48 captured responses about 2 times faster.
 
 <!-- bench:start -->
-| | @portable/dns-packet | dns-packet |
-| --- | ---: | ---: |
-| Decode 48 captured responses | 10,000 | 4,560 |
-| Encode 48 captured responses | 5,970 | 3,070 |
-| Encode a DNS-over-HTTPS query | 1,820,000 | 528,000 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Decode 48 captured responses | **@portable/dns-packet** | 10,000 |  | ████████████████ |
+|  | dns-packet | 4,560 | 2.2× slower | ███████ |
+| | | | | |
+| Encode 48 captured responses | **@portable/dns-packet** | 5,970 |  | ████████████████ |
+|  | dns-packet | 3,070 | 1.9× slower | ████████ |
+| | | | | |
+| Encode a DNS-over-HTTPS query | **@portable/dns-packet** | 1,820,000 |  | ████████████████ |
+|  | dns-packet | 528,000 | 3.4× slower | █████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns-packet, and the bars are scaled to the fastest library.
 
-| | @portable/dns-packet | dns-packet |
-| --- | --- | --- |
-| Minified and gzipped | 7.4 kB | 8.7 kB |
-| Runtime dependencies | 3 | 1 |
-| Node built-ins used | none | `buffer` |
-| TypeScript types | included | `@types/dns-packet` |
-| Version compared | – | 5.6.1 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/dns-packet | – | 7.4 kB | 3 | none | included |
+| dns-packet | 5.6.1 | 8.7 kB | 1 | `buffer` | `@types/dns-packet` |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

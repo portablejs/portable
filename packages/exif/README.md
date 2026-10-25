@@ -157,20 +157,23 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)` and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
 
 <!-- bench:start -->
-| | @portable/exif | exif-parser | exif-reader | exifr |
-| --- | ---: | ---: | ---: | ---: |
-| Parse a 329 KB phone JPEG | 203,000 | 61,500 | 80,400 | 18,000 |
-| Parse a phone JPEG from a stream | 36,700 | – | – | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Parse a 329 KB phone JPEG | **@portable/exif** | 203,000 |  | ████████████████ |
+|  | exif-reader | 80,400 | 2.5× slower | ██████ |
+|  | exif-parser | 61,500 | 3.3× slower | █████ |
+|  | exifr | 18,000 | 11× slower | █ |
+| | | | | |
+| Parse a phone JPEG from a stream | **@portable/exif** | 36,700 |  | ████████████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/exif, and the bars are scaled to the fastest library.
 
-| | @portable/exif | exif-parser | exif-reader | exifr |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 8.0 kB | 7.8 kB | 4.7 kB | 27 kB |
-| Runtime dependencies | 3 | 0 | 0 | 0 |
-| Node built-ins used | none | none | none | `Buffer` |
-| TypeScript types | included | none | included | included |
-| Version compared | – | 0.1.12 | 2.0.3 | 7.1.3 |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/exif | – | 8.0 kB | 3 | none | included |
+| exif-parser | 0.1.12 | 7.8 kB | 0 | none | none |
+| exif-reader | 2.0.3 | 4.7 kB | 0 | none | included |
+| exifr | 7.1.3 | 27 kB | 0 | `Buffer` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

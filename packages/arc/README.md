@@ -98,21 +98,25 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 - It has no dependencies outside `@portable/*`.
 
 <!-- bench:start -->
-| | @portable/arc | mailauth | `node:crypto`, hashing and signing only |
-| --- | ---: | ---: | ---: |
-| Verify a 250 KB message with two ARC sets | 411 | 252 | – |
-| Seal a 250 KB message | 223 | 191 | 988 |
-| Seal and verify a short message | 272 | 288 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Verify a 250 KB message with two ARC sets | **@portable/arc** | 411 |  | ████████████████ |
+|  | mailauth | 252 | 1.6× slower | ██████████ |
+| | | | | |
+| Seal a 250 KB message | `node:crypto`, hashing and signing only | 988 | 4.4× faster | ████████████████ |
+|  | **@portable/arc** | 223 |  | ████ |
+|  | mailauth | 191 | 1.2× slower | ███ |
+| | | | | |
+| Seal and verify a short message | mailauth | 288 | 1.1× faster | ████████████████ |
+|  | **@portable/arc** | 272 |  | ███████████████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/arc, and the bars are scaled to the fastest library.
 
-| | @portable/arc | mailauth | `node:crypto`, hashing and signing only |
-| --- | --- | --- | --- |
-| Minified and gzipped | 20 kB | 449 kB | built in |
-| Runtime dependencies | 11 | 38 | – |
-| Node built-ins used | none | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | Node only |
-| TypeScript types | included | included | – |
-| Version compared | – | 7.3.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/arc | – | 20 kB | 11 | none | included |
+| mailauth | 7.3.0 | 449 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | included |
+| `node:crypto`, hashing and signing only | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

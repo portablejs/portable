@@ -119,21 +119,27 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 - Each lookup clears its timer when it finishes. tangerine leaked an `AbortController` per lookup (tangerine #12).
 
 <!-- bench:start -->
-| | @portable/dns | tangerine | `node:dns/promises` over local UDP |
-| --- | ---: | ---: | ---: |
-| Resolve the TXT records of gmail.com | 47,300 | 37,800 | 19,800 |
-| Resolve the MX records of gmail.com | 56,900 | 36,200 | 16,300 |
-| Resolve the A records of www.microsoft.com | 52,700 | 36,800 | 19,800 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Resolve the TXT records of gmail.com | **@portable/dns** | 47,300 |  | ████████████████ |
+|  | tangerine | 37,800 | 1.3× slower | █████████████ |
+|  | `node:dns/promises` over local UDP | 19,800 | 2.4× slower | ███████ |
+| | | | | |
+| Resolve the MX records of gmail.com | **@portable/dns** | 56,900 |  | ████████████████ |
+|  | tangerine | 36,200 | 1.6× slower | ██████████ |
+|  | `node:dns/promises` over local UDP | 16,300 | 3.5× slower | █████ |
+| | | | | |
+| Resolve the A records of www.microsoft.com | **@portable/dns** | 52,700 |  | ████████████████ |
+|  | tangerine | 36,800 | 1.4× slower | ███████████ |
+|  | `node:dns/promises` over local UDP | 19,800 | 2.7× slower | ██████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns, and the bars are scaled to the fastest library.
 
-| | @portable/dns | tangerine | `node:dns/promises` over local UDP |
-| --- | --- | --- | --- |
-| Minified and gzipped | 10 kB | 556 kB | built in |
-| Runtime dependencies | 7 | 87 | – |
-| Node built-ins used | none | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `process`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | Node only |
-| TypeScript types | included | included | – |
-| Version compared | – | 2.1.3 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/dns | – | 10 kB | 7 | none | included |
+| tangerine | 2.1.3 | 556 kB | 87 | `assert`, `async_hooks`, `buffer`, `console`, `crypto`, `diagnostics_channel`, `dns`, `events`, `fs`, `http`, `http2`, `https`, `net`, `os`, `path`, `perf_hooks`, `process`, `querystring`, `sqlite`, `stream`, `string_decoder`, `timers`, `tls`, `url`, `util`, `worker_threads`, `zlib` | included |
+| `node:dns/promises` over local UDP | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

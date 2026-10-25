@@ -5,6 +5,14 @@
 import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { Size } from './bundle-size.ts';
+import {
+  type Benchmark,
+  benchNote,
+  benchTable,
+  type Stats,
+  statsNote,
+  statsTable,
+} from './readme-render.ts';
 import { type Column, type Row, type Table, tables } from './readme-tables.ts';
 
 type BenchTask = { name: string; throughput: { mean: number } };
@@ -32,14 +40,6 @@ const sizes = readJson<Record<string, Record<string, Size>>>('.bench/sizes.json'
 
 const header = (column: Column) => column.header ?? column.name;
 
-function opsPerSecond(hz: number): string {
-  if (hz < 100) {
-    return hz.toPrecision(3);
-  }
-  const step = 10 ** (Math.floor(Math.log10(hz)) - 2);
-  return (Math.round(hz / step) * step).toLocaleString('en-US');
-}
-
 function taskFor(row: Row, column: Column): string | null {
   if (row.tasks && column.name in row.tasks) {
     return row.tasks[column.name]!;
@@ -47,17 +47,13 @@ function taskFor(row: Row, column: Column): string | null {
   return column.name;
 }
 
-function benchTable(name: string, table: Table): string | undefined {
+function benchmarks(name: string, table: Table): Benchmark[] | undefined {
   const report = readJson<BenchReport>(`.bench/${name}.json`);
   if (!report) {
     return undefined;
   }
   const tests = report.testResults.flatMap((file) => file.assertionResults);
-  const lines = [
-    `| | ${table.columns.map(header).join(' | ')} |`,
-    `| --- |${' ---: |'.repeat(table.columns.length)}`,
-  ];
-  for (const row of table.rows) {
+  return table.rows.map((row) => {
     const test = tests.find(({ fullName }) =>
       typeof row.test === 'string' ? fullName.includes(row.test) : row.test.test(fullName),
     );
@@ -65,17 +61,16 @@ function benchTable(name: string, table: Table): string | undefined {
       console.warn(`${name}: no test matches ${row.test} for "${row.label}"`);
     }
     const tasks = test?.benchmarks?.flatMap((benchmark) => benchmark.tasks) ?? [];
-    const cells = table.columns.map((column) => {
+    const results = table.columns.flatMap((column) => {
       const task = taskFor(row, column);
       const hz = task && tasks.find((candidate) => candidate.name === task)?.throughput.mean;
-      return hz ? opsPerSecond(hz) : '–';
+      return hz ? [{ library: header(column), hz }] : [];
     });
-    if (test && cells[0] === '–') {
+    if (test && !results.some(({ library }) => library === header(table.columns[0]))) {
       console.warn(`${name}: "${row.label}" has no result for us`);
     }
-    lines.push(`| ${row.label} | ${cells.join(' | ')} |`);
-  }
-  return lines.join('\n');
+    return { label: row.label, results };
+  });
 }
 
 const packageName = (specifier: string) =>
@@ -154,84 +149,54 @@ function versionOf(testDir: string, column: Column): string {
 
 const kB = (gzip: number) => `${(gzip / 1000).toFixed(gzip < 10_000 ? 1 : 0)} kB`;
 
-function statsTable(name: string, table: Table): string {
+function stats(name: string, table: Table): Stats[] {
   const testDir = resolve(`packages/${name}/test`);
   const measured = sizes[name] ?? {};
-  const cell = (column: Column, library: () => string, platform: Record<'node' | 'web', string>) =>
-    column.imports ? library() : platform[column.platform ?? 'web'];
-  const rows = [
-    [
-      'Minified and gzipped',
-      (column) =>
-        cell(
-          column,
-          () => {
-            const size = measured[column.name];
-            if (!size) {
-              return 'not measured';
-            }
-            return 'error' in size ? 'does not bundle' : kB(size.gzip);
-          },
-          { node: 'built in', web: 'built in' },
-        ),
-    ],
-    [
-      'Runtime dependencies',
-      (column) =>
-        cell(column, () => String(dependencyCount(testDir, column) ?? '–'), {
-          node: '–',
-          web: '–',
-        }),
-    ],
-    [
-      'Node built-ins used',
-      (column) =>
-        cell(
-          column,
-          () => {
-            const size = measured[column.name];
-            if (!size || 'error' in size) {
-              return '–';
-            }
-            return size.builtins.length
-              ? size.builtins.map((builtin) => `\`${builtin}\``).join(', ')
-              : 'none';
-          },
-          { node: 'Node only', web: 'none' },
-        ),
-    ],
-    [
-      'TypeScript types',
-      (column) => cell(column, () => typesOf(testDir, column), { node: '–', web: '–' }),
-    ],
-    [
-      'Version compared',
-      (column) => cell(column, () => versionOf(testDir, column), { node: '–', web: '–' }),
-    ],
-  ] satisfies [string, (column: Column) => string][];
-  return [
-    `| | ${table.columns.map(header).join(' | ')} |`,
-    `| --- |${' --- |'.repeat(table.columns.length)}`,
-    ...rows.map(([label, value]) => `| ${label} | ${table.columns.map(value).join(' | ')} |`),
-  ].join('\n');
+  return table.columns.map((column) => {
+    if (!column.imports) {
+      return {
+        library: header(column),
+        version: '–',
+        size: 'built in',
+        dependencies: '–',
+        builtins: column.platform === 'node' ? 'Node only' : 'none',
+        types: '–',
+      };
+    }
+    const size = measured[column.name];
+    return {
+      library: header(column),
+      version: versionOf(testDir, column),
+      size: !size ? 'not measured' : 'error' in size ? 'does not bundle' : kB(size.gzip),
+      dependencies: String(dependencyCount(testDir, column) ?? '–'),
+      builtins:
+        !size || 'error' in size
+          ? '–'
+          : size.builtins.length
+            ? size.builtins.map((builtin) => `\`${builtin}\``).join(', ')
+            : 'none',
+      types: typesOf(testDir, column),
+    };
+  });
 }
 
 function block(name: string, table: Table): string | undefined {
-  const bench = benchTable(name, table);
-  if (!bench) {
+  const results = benchmarks(name, table);
+  if (!results) {
     return undefined;
   }
   const runtime = machine
     ? `Node ${machine.node.replace(/^v/, '')}, on ${machine.cpu} (${machine.cores} cores)`
     : 'Node';
+  const ours = header(table.columns[0]);
   return [
-    bench,
+    benchTable(ours, results),
     '',
-    `Operations per second from \`pnpm bench\`, higher is better, in ${runtime}. A dash means the library has no equivalent.`,
+    benchNote(ours, runtime),
     '',
-    statsTable(name, table),
+    statsTable(stats(name, table)),
     '',
-    'Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.',
+    statsNote,
   ].join('\n');
 }
 

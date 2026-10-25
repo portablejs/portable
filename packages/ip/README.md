@@ -126,21 +126,29 @@ ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and
 - Node's `isIP` accepts a zone that contains `:`, and `parse` rejects it.
 
 <!-- bench:start -->
-| | @portable/ip | ipaddr.js | ip | `node:net` |
-| --- | ---: | ---: | ---: | ---: |
-| Parse 8 addresses | 796,000 | 65,100 | 112,000 | 350,000 |
-| Check 8 addresses against a CIDR block | 683,000 | 63,700 | – | 441,000 |
-| Tell public from internal addresses, 8 of them | 517,000 | 46,700 | 196,000 | – |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Parse 8 addresses | **@portable/ip** | 796,000 |  | ████████████████ |
+|  | `node:net` | 350,000 | 2.3× slower | ███████ |
+|  | ip | 112,000 | 7.1× slower | ██ |
+|  | ipaddr.js | 65,100 | 12× slower | █ |
+| | | | | |
+| Check 8 addresses against a CIDR block | **@portable/ip** | 683,000 |  | ████████████████ |
+|  | `node:net` | 441,000 | 1.5× slower | ██████████ |
+|  | ipaddr.js | 63,700 | 11× slower | █ |
+| | | | | |
+| Tell public from internal addresses, 8 of them | **@portable/ip** | 517,000 |  | ████████████████ |
+|  | ip | 196,000 | 2.6× slower | ██████ |
+|  | ipaddr.js | 46,700 | 11× slower | █ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/ip, and the bars are scaled to the fastest library.
 
-| | @portable/ip | ipaddr.js | ip | `node:net` |
-| --- | --- | --- | --- | --- |
-| Minified and gzipped | 2.4 kB | 4.1 kB | 2.6 kB | built in |
-| Runtime dependencies | 2 | 0 | 0 | – |
-| Node built-ins used | none | none | `buffer`, `os` | Node only |
-| TypeScript types | included | included | `@types/ip` | – |
-| Version compared | – | 2.5.0 | 2.0.1 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/ip | – | 2.4 kB | 2 | none | included |
+| ipaddr.js | 2.5.0 | 4.1 kB | 0 | none | included |
+| ip | 2.0.1 | 2.6 kB | 0 | `buffer`, `os` | `@types/ip` |
+| `node:net` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

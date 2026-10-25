@@ -64,28 +64,53 @@ A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from an
 Node's `Buffer` methods are C++ and are faster on large input. In runtimes that have `Uint8Array.prototype.toHex` and `Uint8Array.fromHex`, `toHex` and `fromHex` call those instead of the JavaScript fallback measured here.
 
 <!-- bench:start -->
-| | @portable/bytes | uint8array-extras | Node `Buffer` or `node:crypto` |
-| --- | ---: | ---: | ---: |
-| Hex-encode 32 bytes | 3,650,000 | 3,150,000 | 7,480,000 |
-| Hex-encode 1 MiB | 312 | 35.9 | 4,910 |
-| Hex-decode 32 bytes | 4,300,000 | 1,410,000 | 2,560,000 |
-| Hex-decode 1 MiB | 152 | 23.4 | 901 |
-| Compare 32 bytes | 13,500,000 | 6,350,000 | 3,320,000 |
-| Compare 1 MiB | 3,820 | 850 | 28,300 |
-| Compare 32 bytes in constant time | 16,300,000 | – | 3,010,000 |
-| Compare 1 MiB in constant time | 4,470 | – | 1,150 |
-| Join 4 × 64 KiB | 38,700 | 35,600 | 50,100 |
-| Join 100 × 32 bytes | 341,000 | 130,000 | 335,000 |
+| Benchmark | Library | Ops/s | Relative | |
+| --- | --- | ---: | --- | --- |
+| Hex-encode 32 bytes | Node `Buffer` or `node:crypto` | 7,480,000 | 2.0× faster | ████████████████ |
+|  | **@portable/bytes** | 3,650,000 |  | ████████ |
+|  | uint8array-extras | 3,150,000 | 1.2× slower | ███████ |
+| | | | | |
+| Hex-encode 1 MiB | Node `Buffer` or `node:crypto` | 4,910 | 16× faster | ████████████████ |
+|  | **@portable/bytes** | 312 |  | █ |
+|  | uint8array-extras | 35.9 | 8.7× slower | █ |
+| | | | | |
+| Hex-decode 32 bytes | **@portable/bytes** | 4,300,000 |  | ████████████████ |
+|  | Node `Buffer` or `node:crypto` | 2,560,000 | 1.7× slower | ██████████ |
+|  | uint8array-extras | 1,410,000 | 3.0× slower | █████ |
+| | | | | |
+| Hex-decode 1 MiB | Node `Buffer` or `node:crypto` | 901 | 5.9× faster | ████████████████ |
+|  | **@portable/bytes** | 152 |  | ███ |
+|  | uint8array-extras | 23.4 | 6.5× slower | █ |
+| | | | | |
+| Compare 32 bytes | **@portable/bytes** | 13,500,000 |  | ████████████████ |
+|  | uint8array-extras | 6,350,000 | 2.1× slower | ████████ |
+|  | Node `Buffer` or `node:crypto` | 3,320,000 | 4.1× slower | ████ |
+| | | | | |
+| Compare 1 MiB | Node `Buffer` or `node:crypto` | 28,300 | 7.4× faster | ████████████████ |
+|  | **@portable/bytes** | 3,820 |  | ██ |
+|  | uint8array-extras | 850 | 4.5× slower | █ |
+| | | | | |
+| Compare 32 bytes in constant time | **@portable/bytes** | 16,300,000 |  | ████████████████ |
+|  | Node `Buffer` or `node:crypto` | 3,010,000 | 5.4× slower | ███ |
+| | | | | |
+| Compare 1 MiB in constant time | **@portable/bytes** | 4,470 |  | ████████████████ |
+|  | Node `Buffer` or `node:crypto` | 1,150 | 3.9× slower | ████ |
+| | | | | |
+| Join 4 × 64 KiB | Node `Buffer` or `node:crypto` | 50,100 | 1.3× faster | ████████████████ |
+|  | **@portable/bytes** | 38,700 |  | ████████████ |
+|  | uint8array-extras | 35,600 | 1.1× slower | ███████████ |
+| | | | | |
+| Join 100 × 32 bytes | **@portable/bytes** | 341,000 |  | ████████████████ |
+|  | Node `Buffer` or `node:crypto` | 335,000 | same | ████████████████ |
+|  | uint8array-extras | 130,000 | 2.6× slower | ██████ |
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). A dash means the library has no equivalent.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/bytes, and the bars are scaled to the fastest library.
 
-| | @portable/bytes | uint8array-extras | Node `Buffer` or `node:crypto` |
-| --- | --- | --- | --- |
-| Minified and gzipped | 1.3 kB | 0.7 kB | built in |
-| Runtime dependencies | 1 | 0 | – |
-| Node built-ins used | none | none | Node only |
-| TypeScript types | included | included | – |
-| Version compared | – | 1.6.0 | – |
+| Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
+| --- | --- | ---: | ---: | --- | --- |
+| @portable/bytes | – | 1.3 kB | 1 | none | included |
+| uint8array-extras | 1.6.0 | 0.7 kB | 0 | none | included |
+| Node `Buffer` or `node:crypto` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

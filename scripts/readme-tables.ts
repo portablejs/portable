@@ -940,7 +940,7 @@ export const tables: Record<string, Table> = {
       lib('lodash.throttle'),
       lib('throttle-debounce'),
       lib('p-debounce'),
-      web('Platform', '`setTimeout` or `try`/`catch` by hand'),
+      web('Platform', '`setTimeout` or `try`/`catch`'),
     ],
     rows: [
       {
