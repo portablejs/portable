@@ -759,3 +759,9 @@ These were recorded as each package was built. Each package's README and PARITY.
 - **Options:** copy every `Buffer` chunk, as `Readable.toWeb` does; copy only a `Buffer` that shares its `ArrayBuffer` with others; wrap the `Buffer`'s memory in a plain `Uint8Array`.
 - **Trade-offs:** A small `Buffer` shares Node's pool, which is 64 KiB in Node 24, so transferring a chunk's `ArrayBuffer` detaches the other buffers in the pool. Copying the pooled ones avoids that, but in Node 24 a 4 KB `Buffer` is pooled, so most chunks of a typical stream would be copied. The `Buffer` that the Node stream passes to `NodeStreams` already shares the pool, so a `Uint8Array` over its memory shares nothing that the `Buffer` didn't.
 - **Chosen:** a `Uint8Array` over the same memory, and a copy only for a `SharedArrayBuffer`. The README says not to transfer a chunk's `ArrayBuffer`.
+
+## The site preview has a pull request button and keeps the `preview` label
+
+- **Options:** keep only the `preview` label; replace the label with a `workflow_dispatch` button from GitHub PR Buttons; keep the label and add the button.
+- **Trade-offs:** The label publishes a preview and then updates it on every push, which costs a run per push for as long as the label stays on. A button publishes once per click and doesn't need the label, but a later push doesn't update the preview. A dispatched run has no pull request in its payload, so the workflow looks up the open pull request for the branch and uses its number in the cache key and its head commit in the deployment. The verify workflow gets no button, because CI runs only for `main`.
+- **Chosen:** both. If a pull request needs only one preview, the "Publish site preview" button in `.github/pr-buttons.yml` publishes it without a run on every later push, and the label still keeps a preview up to date on each push.

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/frolic/github-pr-buttons/main/schema.json
+# The GitHub PR Buttons extension (https://github.com/frolic/github-pr-buttons) reads this file and shows each button
+# in the pull request sidebar. Each button dispatches a workflow on the pull request's head branch.
+
+buttons:
+  - label: Publish site preview
+    workflow: site-preview.yml
+    description: Builds the docs site and publishes a preview to here.now. Later pushes update the preview only if the pull request has the `preview` label.
+    paths:
+      - 'site/**'
+      - 'README.md'
+      - 'packages/*/package.json'
+      - 'packages/*/README.md'
+      - 'packages/*/src/**'
