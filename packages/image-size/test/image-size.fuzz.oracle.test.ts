@@ -28,6 +28,16 @@ test('parse gives the size image-size gives for a mutated image both accept', ()
         if (bytes[0] === 0x50 && !/[\t\n\r ]/.test(String.fromCharCode(bytes[2] ?? 0x20))) {
           return;
         }
+        // image-size reads the size of a Netpbm image other than PAM from the first line that
+        // doesn't start with `#`, splits that line at spaces and calls `parseInt` on each part, so
+        // it reads `1\t3 4` as 1 by 4 where parse reads 1 by 3. Headers are left out unless that
+        // line is two numbers separated by one space.
+        if (bytes[0] === 0x50 && bytes[1] !== 0x37) {
+          const lines = new TextDecoder().decode(bytes.subarray(3)).split(/[\r\n]+/);
+          if (!/^\d+ \d+$/.test(lines.find((line) => line[0] !== '#') ?? '')) {
+            return;
+          }
+        }
         const ours = outcome(errors, () => ImageSize.parse(bytes));
         let theirs: ImageSize.Size;
         try {
