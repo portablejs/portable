@@ -25,6 +25,13 @@ describe('toEpochMilliseconds', () => {
       expect(() => toEpochMilliseconds(value as never)).toThrow(TypeError);
     }
   });
+
+  test('throws a RangeError for an invalid Date or a time outside the range of Date', () => {
+    for (const value of [new Date(NaN), { epochMilliseconds: NaN }, { epochMilliseconds: 1e20 }]) {
+      expect(() => toEpochMilliseconds(value)).toThrow(RangeError);
+    }
+    expect(() => toDate(new Date(NaN), 'expiresAt')).toThrow('`expiresAt` must be');
+  });
 });
 
 describe('toDate', () => {

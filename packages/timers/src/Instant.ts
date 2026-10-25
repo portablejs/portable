@@ -6,25 +6,35 @@ export type Instant = Date | { readonly epochMilliseconds: number };
 
 /**
  * Returns the milliseconds since the Unix epoch of `instant`. It reads `epochMilliseconds` when the
- * value has it, and `getTime()` otherwise, which also works for a `Date` from another realm.
+ * value has it, and `getTime()` otherwise, which also works for a `Date` from another realm. It
+ * throws a `RangeError` that mentions the option `name` if the time is outside the range of `Date`,
+ * as it is for an invalid `Date`.
  */
-export function toEpochMilliseconds(instant: Instant): number {
+export function toEpochMilliseconds(instant: Instant, name = 'now'): number {
   const epochMilliseconds = (instant as { epochMilliseconds?: unknown } | null | undefined)
     ?.epochMilliseconds;
+  let time: number;
   if (typeof epochMilliseconds === 'number') {
-    return epochMilliseconds;
+    time = epochMilliseconds;
+  } else {
+    try {
+      time = Date.prototype.getTime.call(instant);
+    } catch (cause) {
+      throw new TypeError(`\`${name}\` must be a Date or an object with \`epochMilliseconds\`.`, {
+        cause,
+      });
+    }
   }
-  try {
-    return Date.prototype.getTime.call(instant);
-  } catch (cause) {
-    throw new TypeError('Expected a Date or an object with `epochMilliseconds`.', { cause });
+  if (!(Math.abs(time) <= 8.64e15)) {
+    throw new RangeError(`\`${name}\` must be a valid Date or instant.`);
   }
+  return time;
 }
 
 /** Returns `instant` as a `Date`, or the current time when `instant` is `undefined`. */
-export function toDate(instant: Instant | undefined): Date {
+export function toDate(instant: Instant | undefined, name = 'now'): Date {
   if (instant === undefined) {
     return new Date();
   }
-  return new Date(toEpochMilliseconds(instant));
+  return new Date(toEpochMilliseconds(instant, name));
 }

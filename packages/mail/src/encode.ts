@@ -304,9 +304,14 @@ function references(value: string | readonly string[]): string {
 }
 
 function date(input: Instant): string {
-  const value = new Date(toEpochMilliseconds(input));
-  if (Number.isNaN(value.getTime())) {
-    throw new InvalidInputError('date is an invalid Date.');
+  let value: Date;
+  try {
+    value = new Date(toEpochMilliseconds(input, 'date'));
+  } catch (cause) {
+    if (!(cause instanceof RangeError)) {
+      throw cause;
+    }
+    throw new InvalidInputError('date is an invalid Date.', { cause });
   }
   return value.toUTCString().replace('GMT', '+0000');
 }

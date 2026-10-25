@@ -87,9 +87,6 @@ export function create(options: create.Options): Limiter {
     async take(key, options = {}) {
       const { cost = 1, signal } = options;
       const now = options.now === undefined ? Date.now() : toEpochMilliseconds(options.now);
-      if (!Number.isFinite(now)) {
-        throw new RangeError('`now` must be a valid Date or instant.');
-      }
       if (!Number.isFinite(cost)) {
         throw new RangeError(`\`cost\` must be a finite number, got ${cost}.`);
       }

@@ -212,9 +212,6 @@ function protocolFields(options: authorization.Options): ProtocolFields {
     throw new UnsupportedError(`Unsupported signature method: ${String(signatureMethod)}`);
   }
   const seconds = Math.floor(toDate(options.now).getTime() / 1000);
-  if (!Number.isFinite(seconds)) {
-    throw new RangeError('`now` must be a valid Date or instant.');
-  }
   return { signatureMethod, timestamp: String(seconds) };
 }
 

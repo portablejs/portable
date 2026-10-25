@@ -111,7 +111,8 @@ export async function sign(message: Message, options: sign.Options): Promise<str
   const identity =
     options.identity === undefined ? undefined : encodeIdentity(options.identity, domain);
   const timestamp = seconds('now', toDate(options.now));
-  const expiration = expiresAt === undefined ? undefined : seconds('expiresAt', toDate(expiresAt));
+  const expiration =
+    expiresAt === undefined ? undefined : seconds('expiresAt', toDate(expiresAt, 'expiresAt'));
   if (expiration !== undefined && expiration <= timestamp) {
     throw new RangeError('expiresAt must be at least a second after now.');
   }

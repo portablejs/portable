@@ -96,7 +96,7 @@ export async function verify(
     maxBytes = Infinity,
     signal,
   } = options;
-  const now = validDate(options.now);
+  const now = toDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   if (!(tolerance >= 0)) {
@@ -210,7 +210,7 @@ export async function sign(
   options: sign.Options,
 ): Promise<Record<string, string>> {
   const { scheme = standard, hmac = WebCrypto.hmac, id = crypto.randomUUID(), signal } = options;
-  const timestamp = validDate(options.now);
+  const timestamp = toDate(options.now);
   signal?.throwIfAborted();
   assertScheme(scheme);
   const key = keyOf(scheme, options.secret);
@@ -218,14 +218,6 @@ export async function sign(
   const content = bytes(scheme.payload({ id, timestamp, body: bytesOfBody }));
   const signature = await race(hmac('SHA-256', key, content), signal);
   return scheme.headers({ signature, id, timestamp });
-}
-
-function validDate(instant: Instant | undefined): Date {
-  const date = toDate(instant);
-  if (Number.isNaN(date.getTime())) {
-    throw new RangeError('`now` must be a valid Date or instant.');
-  }
-  return date;
 }
 
 function assertScheme(scheme: Scheme): void {
