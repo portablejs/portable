@@ -27,7 +27,7 @@ export function Home() {
           and Node 24+.
         </p>
         <div className="home-cta">
-          <a href={`${base}getting-started`}>Get started</a>
+          <a href={`${base}getting-started`}>Get started &rarr;</a>
         </div>
       </section>
       {groups.map((group) => (

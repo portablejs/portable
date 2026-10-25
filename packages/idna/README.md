@@ -80,18 +80,22 @@ The URL Standard runs UTS #46 for hosts, but implementations lag behind it. On `
 `toAscii` and `toUnicode` use their own tables, so they give one answer everywhere.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Convert 10 hostnames to Unicode | **@portable/idna** | 87,400 |  | ████████████████ |
-|  | `node:url` | 79,000 | 1.1× slower | ██████████████ |
-|  | punycode | 76,700 | 1.1× slower | ██████████████ |
-|  | tr46 | 12,900 | 6.8× slower | ██ |
-| | | | | |
-| Convert 10 domains to ASCII | `new URL()` | 102,000 | 1.2× faster | ████████████████ |
-|  | **@portable/idna** | 84,200 |  | █████████████ |
-|  | `node:url` | 79,900 | 1.1× slower | █████████████ |
-|  | punycode | 79,200 | 1.1× slower | ████████████ |
-|  | tr46 | 14,500 | 5.8× slower | ██ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Convert 10 hostnames to Unicode</th></tr>
+<tr><td>@portable/idna</td><td align="right">87,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">79,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="145" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">76,700</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">12,900</td><td>6.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Convert 10 domains to ASCII</th></tr>
+<tr><td><code>new URL()</code></td><td align="right">102,000</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">84,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="132" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">79,900</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="125" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">79,200</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">14,500</td><td>5.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="23" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/idna, and the bars are scaled to the fastest library.
 

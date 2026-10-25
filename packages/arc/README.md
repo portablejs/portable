@@ -98,17 +98,21 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 - It has no dependencies outside `@portable/*`.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Verify a 250 KB message with two ARC sets | **@portable/arc** | 411 |  | ████████████████ |
-|  | mailauth | 252 | 1.6× slower | ██████████ |
-| | | | | |
-| Seal a 250 KB message | `node:crypto`, hashing and signing only | 988 | 4.4× faster | ████████████████ |
-|  | **@portable/arc** | 223 |  | ████ |
-|  | mailauth | 191 | 1.2× slower | ███ |
-| | | | | |
-| Seal and verify a short message | mailauth | 288 | 1.1× faster | ████████████████ |
-|  | **@portable/arc** | 272 |  | ███████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Verify a 250 KB message with two ARC sets</th></tr>
+<tr><td>@portable/arc</td><td align="right">411</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">252</td><td>1.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="98" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Seal a 250 KB message</th></tr>
+<tr><td><code>node:crypto</code>, hashing and signing only</td><td align="right">988</td><td>4.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/arc</td><td align="right">223</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="36" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">191</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="31" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Seal and verify a short message</th></tr>
+<tr><td>mailauth</td><td align="right">288</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/arc</td><td align="right">272</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="151" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/arc, and the bars are scaled to the fastest library.
 

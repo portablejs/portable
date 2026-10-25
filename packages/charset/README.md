@@ -88,17 +88,21 @@ iconv-lite looks charsets up by name in one registry, so a bundle includes every
 - ISO-2022-JP can be encoded. iconv-lite doesn't support it.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Encode 380 kB of Cyrillic text to windows-1251 | iconv-lite | 736 | same | ████████████████ |
-|  | **@portable/charset** | 725 |  | ████████████████ |
-| | | | | |
-| Encode 230 kB of Japanese text to Shift_JIS | **@portable/charset** | 870 |  | ████████████████ |
-|  | iconv-lite | 363 | 2.4× slower | ███████ |
-| | | | | |
-| Encode 610 kB of text to UTF-8 | `TextEncoder` | 453 | 1.1× faster | ████████████████ |
-|  | iconv-lite | 435 | same | ███████████████ |
-|  | **@portable/charset** | 425 |  | ███████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Encode 380 kB of Cyrillic text to windows-1251</th></tr>
+<tr><td>iconv-lite</td><td align="right">736</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/charset</td><td align="right">725</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="158" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 230 kB of Japanese text to Shift_JIS</th></tr>
+<tr><td>@portable/charset</td><td align="right">870</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>iconv-lite</td><td align="right">363</td><td>2.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="67" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 610 kB of text to UTF-8</th></tr>
+<tr><td><code>TextEncoder</code></td><td align="right">453</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>iconv-lite</td><td align="right">435</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>@portable/charset</td><td align="right">425</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="150" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/charset, and the bars are scaled to the fastest library.
 

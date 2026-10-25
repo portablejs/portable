@@ -112,14 +112,18 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 - An empty part between two delimiters is reported as a part. mailsplit reports nothing for it.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Split and join 1.5 MB of mail | `TransformStream` copy | 13,600 | 18× faster | ████████████████ |
-|  | **@portable/mime-stream** | 745 |  | █ |
-|  | mailsplit | 126 | 5.9× slower | █ |
-| | | | | |
-| Read the header block of 1.5 MB of mail | **@portable/mime-stream** | 17,000 |  | ████████████████ |
-|  | mailsplit | 126 | 130× slower | █ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Split and join 1.5 MB of mail</th></tr>
+<tr><td><code>TransformStream</code> copy</td><td align="right">13,600</td><td>18× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mime-stream</td><td align="right">745</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="9" height="12" alt="" /></td></tr>
+<tr><td>mailsplit</td><td align="right">126</td><td>5.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the header block of 1.5 MB of mail</th></tr>
+<tr><td>@portable/mime-stream</td><td align="right">17,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailsplit</td><td align="right">126</td><td>130× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-stream, and the bars are scaled to the fastest library.
 

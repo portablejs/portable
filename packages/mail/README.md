@@ -155,16 +155,20 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 - nodemailer accepts a backslash in a domain, and this package throws for it.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Encode 100 text and HTML messages | **@portable/mail** | 89.6 |  | ████████████████ |
-|  | nodemailer | 30.1 | 3.0× slower | █████ |
-| | | | | |
-| Encode a message with a 1 MB attachment | nodemailer | 337 | 1.5× faster | ████████████████ |
-|  | **@portable/mail** | 218 |  | ██████████ |
-| | | | | |
-| Encode a message with a 4 MB attachment from a stream | nodemailer | 77.0 | 1.2× faster | ████████████████ |
-|  | **@portable/mail** | 66.6 |  | ██████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Encode 100 text and HTML messages</th></tr>
+<tr><td>@portable/mail</td><td align="right">89.6</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">30.1</td><td>3.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="54" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode a message with a 1 MB attachment</th></tr>
+<tr><td>nodemailer</td><td align="right">337</td><td>1.5× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail</td><td align="right">218</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="104" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode a message with a 4 MB attachment from a stream</th></tr>
+<tr><td>nodemailer</td><td align="right">77.0</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail</td><td align="right">66.6</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="138" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail, and the bars are scaled to the fastest library.
 

@@ -128,18 +128,22 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 - It verifies faster. In Node it verifies a 250 KB message about three times as fast as mailauth, and signs it about as fast as nodemailer, as the table below shows.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Sign a 250 KB message | `node:crypto`, hash and sign only | 1,680 | 5.9× faster | ████████████████ |
-|  | nodemailer | 328 | 1.1× faster | ███ |
-|  | **@portable/dkim** | 287 |  | ███ |
-|  | mailauth | 133 | 2.2× slower | █ |
-| | | | | |
-| Verify a 250 KB message | **@portable/dkim** | 403 |  | ████████████████ |
-|  | mailauth | 133 | 3.0× slower | █████ |
-| | | | | |
-| Sign and verify a short message | mailauth | 550 | 1.1× faster | ████████████████ |
-|  | **@portable/dkim** | 501 |  | ███████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Sign a 250 KB message</th></tr>
+<tr><td><code>node:crypto</code>, hash and sign only</td><td align="right">1,680</td><td>5.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">328</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="31" height="12" alt="" /></td></tr>
+<tr><td>@portable/dkim</td><td align="right">287</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">133</td><td>2.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Verify a 250 KB message</th></tr>
+<tr><td>@portable/dkim</td><td align="right">403</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">133</td><td>3.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="53" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Sign and verify a short message</th></tr>
+<tr><td>mailauth</td><td align="right">550</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/dkim</td><td align="right">501</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="146" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dkim, and the bars are scaled to the fastest library.
 

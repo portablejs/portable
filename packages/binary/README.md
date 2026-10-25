@@ -146,28 +146,32 @@ smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` po
 - `FrameDecoderStream` checks `maxBytes` as soon as it reads the length, so a peer can't make it buffer a large frame before the check. Its default is `Infinity`, while it-length-prefixed rejects frames over 4 MB by default, so set `maxBytes` when the input comes from the network.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Write 1,000 mixed records | **@portable/binary** | 6,250 |  | ████████████████ |
-|  | smart-buffer | 1,110 | 5.6× slower | ███ |
-| | | | | |
-| Read 1,000 mixed records | **@portable/binary** | 8,630 |  | ████████████████ |
-|  | `DataView` and `TextDecoder` | 1,390 | 6.2× slower | ███ |
-|  | smart-buffer | 878 | 9.8× slower | ██ |
-| | | | | |
-| Encode 10,000 varints | **@portable/binary** | 4,740 |  | ████████████████ |
-|  | @bufbuild/protobuf | 4,370 | 1.1× slower | ███████████████ |
-|  | varint | 255 | 19× slower | █ |
-| | | | | |
-| Decode 10,000 varints | **@portable/binary** | 18,600 |  | ████████████████ |
-|  | @bufbuild/protobuf | 15,600 | 1.2× slower | █████████████ |
-|  | varint | 492 | 38× slower | █ |
-| | | | | |
-| Split 2,000 frames from a stream | it-length-prefixed | 1,080 | 1.9× faster | ████████████████ |
-|  | **@portable/binary** | 575 |  | █████████ |
-| | | | | |
-| Write 2,000 frames to a stream | it-length-prefixed | 456 | 1.5× faster | ████████████████ |
-|  | **@portable/binary** | 305 |  | ███████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Write 1,000 mixed records</th></tr>
+<tr><td>@portable/binary</td><td align="right">6,250</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>smart-buffer</td><td align="right">1,110</td><td>5.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="28" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read 1,000 mixed records</th></tr>
+<tr><td>@portable/binary</td><td align="right">8,630</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>DataView</code> and <code>TextDecoder</code></td><td align="right">1,390</td><td>6.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="26" height="12" alt="" /></td></tr>
+<tr><td>smart-buffer</td><td align="right">878</td><td>9.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="16" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 10,000 varints</th></tr>
+<tr><td>@portable/binary</td><td align="right">4,740</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@bufbuild/protobuf</td><td align="right">4,370</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="148" height="12" alt="" /></td></tr>
+<tr><td>varint</td><td align="right">255</td><td>19× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="9" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode 10,000 varints</th></tr>
+<tr><td>@portable/binary</td><td align="right">18,600</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@bufbuild/protobuf</td><td align="right">15,600</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="134" height="12" alt="" /></td></tr>
+<tr><td>varint</td><td align="right">492</td><td>38× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="4" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Split 2,000 frames from a stream</th></tr>
+<tr><td>it-length-prefixed</td><td align="right">1,080</td><td>1.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">575</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="85" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Write 2,000 frames to a stream</th></tr>
+<tr><td>it-length-prefixed</td><td align="right">456</td><td>1.5× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/binary</td><td align="right">305</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="107" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/binary, and the bars are scaled to the fastest library.
 

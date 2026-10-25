@@ -181,36 +181,35 @@ The libraries above were written for Node streams. This package reads web stream
 - `Readable.toWeb` returns a `ReadableStream<any>`. `NodeStreams.toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>`, and `toWebObjects` returns `ReadableStream<unknown>` for an object-mode `Readable`.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Collect 6.8 MB into bytes | bl | 973 | 1.4× faster | ████████████████ |
-|  | concat-stream | 933 | 1.3× faster | ███████████████ |
-|  | **@portable/streams** | 715 |  | ████████████ |
-|  | Web streams by hand | 504 | 1.4× slower | ████████ |
-|  | get-stream | 94.0 | 7.6× slower | ██ |
-| | | | | |
-| Collect 6.8 MB into bytes with a 10 MB limit | raw-body | 1,180 | 1.6× faster | ████████████████ |
-|  | **@portable/streams** | 751 |  | ██████████ |
-| | | | | |
-| Collect 6.8 MB into text | **@portable/streams** | 256 |  | ████████████████ |
-|  | get-stream | 248 | same | ████████████████ |
-|  | Web streams by hand | 181 | 1.4× slower | ███████████ |
-| | | | | |
-| Collect 100,000 objects into an array | stream-to-array | 76.1 | 2.0× faster | ████████████████ |
-|  | get-stream | 38.8 | same | ████████ |
-|  | **@portable/streams** | 38.7 |  | ████████ |
-| | | | | |
-| Merge 3 streams of 10,000 objects | merge2 | 228 | 4.8× faster | ████████████████ |
-|  | merge-stream | 219 | 4.6× faster | ███████████████ |
-|  | **@portable/streams** | 47.9 |  | ███ |
-|  | Web streams by hand | 26.5 | 1.8× slower | ██ |
-| | | | | |
-| Map 30,000 objects | through2 | 189 | 4.2× faster | ████████████████ |
-|  | Web streams by hand | 46.2 | same | ████ |
-|  | **@portable/streams** | 45.3 |  | ████ |
-| | | | | |
-| Split 6.8 MB into 3 branches | **@portable/streams** | 803 |  | ████████████████ |
-|  | Web streams by hand | 683 | 1.2× slower | ██████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Collect 6.8 MB into bytes</th></tr>
+<tr><td>bl</td><td align="right">973</td><td>1.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>concat-stream</td><td align="right">933</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">715</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="118" height="12" alt="" /></td></tr>
+<tr><td>get-stream</td><td align="right">94.0</td><td>7.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="15" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Collect 6.8 MB into bytes with a 10 MB limit</th></tr>
+<tr><td>raw-body</td><td align="right">1,180</td><td>1.6× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">751</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="102" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Collect 6.8 MB into text</th></tr>
+<tr><td>@portable/streams</td><td align="right">256</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>get-stream</td><td align="right">248</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="155" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Collect 100,000 objects into an array</th></tr>
+<tr><td>stream-to-array</td><td align="right">76.1</td><td>2.0× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>get-stream</td><td align="right">38.8</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="82" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">38.7</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="81" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Merge 3 streams of 10,000 objects</th></tr>
+<tr><td>merge2</td><td align="right">228</td><td>4.8× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>merge-stream</td><td align="right">219</td><td>4.6× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">47.9</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="34" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Map 30,000 objects</th></tr>
+<tr><td>through2</td><td align="right">189</td><td>4.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">45.3</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="38" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Split 6.8 MB into 3 branches</th></tr>
+<tr><td>@portable/streams</td><td align="right">803</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/streams, and the bars are scaled to the fastest library.
 
@@ -225,7 +224,6 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | merge2 | 1.4.1 | 1.2 kB | 0 | `stream` | `@types/merge2` |
 | merge-stream | 2.0.0 | 0.8 kB | 0 | `stream` | `@types/merge-stream` |
 | through2 | 5.0.11 | 25 kB | 10 | `buffer`, `events` | included |
-| Web streams by hand | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

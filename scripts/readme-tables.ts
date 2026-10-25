@@ -221,7 +221,6 @@ export const tables: Record<string, Table> = {
         { from: '@noble/curves/ed25519.js', use: ['ed25519'] },
         { from: '@noble/curves/nist.js', use: ['p256'] },
       ]),
-      web('crypto.subtle', '`crypto.subtle` by hand'),
       node('node:crypto', '`node:crypto`'),
     ],
     rows: [
@@ -897,35 +896,29 @@ export const tables: Record<string, Table> = {
       lib('merge2'),
       lib('merge-stream'),
       lib('through2'),
-      web('Platform', 'Web streams by hand'),
     ],
     rows: [
       {
         label: 'Collect 6.8 MB into bytes',
         test: 'collects 6.8 MB into bytes within',
-        tasks: { Platform: 'Response.arrayBuffer()' },
       },
       { label: 'Collect 6.8 MB into bytes with a 10 MB limit', test: 'with a 10 MB limit' },
       {
         label: 'Collect 6.8 MB into text',
         test: 'collects 6.8 MB into text',
-        tasks: { Platform: 'Response.text()' },
       },
       { label: 'Collect 100,000 objects into an array', test: 'collects 100,000 objects' },
       {
         label: 'Merge 3 streams of 10,000 objects',
         test: 'merges 3 streams',
-        tasks: { Platform: 'hand-written merge' },
       },
       {
         label: 'Map 30,000 objects',
         test: 'maps 30,000 objects',
-        tasks: { Platform: 'TransformStream' },
       },
       {
         label: 'Split 6.8 MB into 3 branches',
         test: 'into 3 branches',
-        tasks: { Platform: 'chained tee()' },
       },
     ],
   },
@@ -940,20 +933,18 @@ export const tables: Record<string, Table> = {
       lib('lodash.throttle'),
       lib('throttle-debounce'),
       lib('p-debounce'),
-      web('Platform', '`setTimeout` or `try`/`catch`'),
     ],
     rows: [
       {
         label: 'Retry 10 attempts',
         test: 'retry overhead per attempt without a signal',
-        tasks: { Platform: 'try/catch loop' },
       },
       {
         label: 'Retry 10 attempts with a signal',
         test: 'retry overhead per attempt with a signal',
       },
       { label: 'Poll until the 10th check succeeds', test: 'polls until the 10th check' },
-      { label: 'Sleep for 1 ms', test: 'sleeps for 1 ms', tasks: { Platform: 'setTimeout' } },
+      { label: 'Sleep for 1 ms', test: 'sleeps for 1 ms' },
       { label: 'Debounce a burst of 1,000 calls', test: 'debounced calls' },
       { label: 'Throttle a burst of 1,000 calls', test: 'throttled calls' },
     ],
@@ -962,7 +953,6 @@ export const tables: Record<string, Table> = {
     columns: [
       ours('web-push', ['generateVapidKeys', 'send']),
       { name: 'web-push (node:crypto)', header: 'web-push', imports: [{ from: 'web-push' }] },
-      web('WebCrypto', 'The same WebCrypto calls by hand'),
     ],
     rows: [
       { label: 'Encrypt a 186-byte payload', test: /^encrypts a \d+-byte payload/ },
@@ -1011,8 +1001,6 @@ export const tables: Record<string, Table> = {
           { from: '@slack/bolt/dist/receivers/verify-request.js', use: ['verifySlackRequest'] },
         ],
       },
-      web('crypto.subtle', '`crypto.subtle` by hand'),
-      node('node:crypto', '`node:crypto` by hand'),
     ],
     rows: [
       { label: 'Verify a Standard Webhook', test: 'Standard Webhook' },
@@ -1020,12 +1008,10 @@ export const tables: Record<string, Table> = {
       {
         label: 'Verify a GitHub webhook',
         test: 'verifies a GitHub webhook',
-        tasks: { 'node:crypto': 'node:crypto createHmac' },
       },
       {
         label: 'Verify a Slack request',
         test: 'verifies a Slack request',
-        tasks: { 'crypto.subtle': 'crypto.subtle importKey and verify' },
       },
     ],
   },

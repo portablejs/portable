@@ -132,16 +132,20 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - On Node 24, echoing 1,000 messages of 100 bytes through a local server with `connect` runs within 5% of a bare `WebSocket`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Echo 1,000 messages through a local server | `WebSocket` | 109 | same | ████████████████ |
-|  | **@portable/websockets** | 105 |  | ███████████████ |
-|  | websocket-ts | 104 | same | ███████████████ |
-|  | reconnecting-websocket | 93.5 | 1.1× slower | ██████████████ |
-|  | partysocket | 83.1 | 1.3× slower | ████████████ |
-| | | | | |
-| Echo 1,000 messages on the server | ws | 97.7 | same | ████████████████ |
-|  | **@portable/websockets** | 94.0 |  | ███████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Echo 1,000 messages through a local server</th></tr>
+<tr><td><code>WebSocket</code></td><td align="right">109</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/websockets</td><td align="right">105</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>websocket-ts</td><td align="right">104</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><td>reconnecting-websocket</td><td align="right">93.5</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="137" height="12" alt="" /></td></tr>
+<tr><td>partysocket</td><td align="right">83.1</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="122" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Echo 1,000 messages on the server</th></tr>
+<tr><td>ws</td><td align="right">97.7</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/websockets</td><td align="right">94.0</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="154" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/websockets, and the bars are scaled to the fastest library.
 
