@@ -1,7 +1,8 @@
-import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
+import { assertUint8Array, crc32, toBufferSource } from '@portable/bytes/internal';
 import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
 import { assertMaxBytes, concat } from './bytes.js';
-import { MaxBytesError, TruncatedError, classify } from './errors.js';
+import { InvalidInputError, MaxBytesError, TruncatedError, classify } from './errors.js';
+import { assertHeader, checksTrailerAtClose, rawHeader, trailer, trailerCheck } from './gzip.js';
 
 /** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
 export type Format = 'gzip' | 'deflate' | 'deflate-raw';
@@ -67,30 +68,49 @@ export async function decode(
   const { format = 'gzip', maxBytes = Infinity, signal } = options;
   assertUint8Array(data);
   assertMaxBytes(maxBytes);
+  if (format === 'gzip') {
+    assertHeader(data, 0);
+  }
   const chunks: Uint8Array[] = [];
   let length = 0;
-  const decodeAll = (input: Uint8Array) =>
-    run(
-      input,
-      new DecompressionStream(format),
-      (chunk) => {
-        length += chunk.byteLength;
-        if (length > maxBytes) {
-          throw new MaxBytesError({ maxBytes });
+  const decodeAll = async (input: Uint8Array) => {
+    try {
+      await run(
+        input,
+        new DecompressionStream(format),
+        (chunk) => {
+          length += chunk.byteLength;
+          if (length > maxBytes) {
+            throw new MaxBytesError({ maxBytes });
+          }
+          chunks.push(chunk);
+        },
+        signal,
+      );
+    } catch (error) {
+      if (format === 'gzip' && error instanceof TruncatedError && (await checksTrailerAtClose())) {
+        const check = trailerCheck();
+        check.write(input);
+        if (await check.isInvalid()) {
+          throw new InvalidInputError('Compressed input is invalid.', { cause: error.cause });
         }
-        chunks.push(chunk);
-      },
-      signal,
-    );
+      }
+      throw error;
+    }
+  };
 
   let firstError: unknown;
   try {
     await decodeAll(data);
-    if (format === 'deflate' && (await needsTrailerCheck())) {
-      assertTrailer(
-        data,
-        chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
-      );
+    if (format !== 'gzip' && (await needsTrailerCheck())) {
+      if (format === 'deflate') {
+        assertTrailer(
+          data,
+          chunks.reduce((checksum, chunk) => adler32(chunk, checksum), 1),
+        );
+      } else {
+        await assertRawEnd(data, chunks, signal);
+      }
     }
     return concat(chunks);
   } catch (error) {
@@ -177,6 +197,28 @@ export async function decode(
   }
   await decodeAll(data.subarray(offset));
   return concat(chunks);
+}
+
+/**
+ * Throws `TruncatedError` if the raw deflate stream in `data` is cut short. `decode` calls it only
+ * on runtimes whose `DecompressionStream('deflate-raw')` returns partial output for a cut-short
+ * stream instead of failing. Deno's gzip decoder does notice a cut-short deflate stream, so this
+ * decodes `data` again inside a gzip member whose trailer holds the CRC-32 and length of `output`.
+ */
+async function assertRawEnd(
+  data: Uint8Array,
+  output: readonly Uint8Array[],
+  signal: AbortSignal | undefined,
+): Promise<void> {
+  const crc = output.reduce((sum, chunk) => crc32(chunk, sum), 0);
+  const length = output.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const member = concat([rawHeader, data, trailer(crc, length)]);
+  try {
+    await run(member, new DecompressionStream('gzip'), () => {}, signal);
+  } catch (error) {
+    signal?.throwIfAborted();
+    throw new TruncatedError('Compressed input ended early.', { cause: error });
+  }
 }
 
 function nextMember(data: Uint8Array, from: number): number {

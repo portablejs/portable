@@ -1,5 +1,5 @@
 import * as Rpc from '@portable/rpc';
-import { describe, expect, onTestFinished, test } from 'vite-plus/test';
+import { afterAll, beforeAll, describe, expect, onTestFinished, test } from 'vite-plus/test';
 import { communicationContract } from './contract.js';
 import { codecOf, createMethods, servePort, type Methods } from './fixtures/methods.js';
 import { settle } from './utils.js';
@@ -12,6 +12,16 @@ function channel() {
   });
   return { port1, port2 };
 }
+
+// Deno 2.9 tears down its BroadcastChannel subscription some time after the last open channel
+// closes. A channel created before the teardown still uses the old subscription, so its
+// `postMessage` throws `TypeError: expected i32`. This channel stays open for the whole file, so closing each test's
+// channels never closes the last one.
+let keepOpen: BroadcastChannel | undefined;
+beforeAll(() => {
+  keepOpen = new BroadcastChannel(`rpc-keep-open-${crypto.randomUUID()}`);
+});
+afterAll(() => keepOpen?.close());
 
 function broadcastChannels() {
   const name = `rpc-${crypto.randomUUID()}`;
