@@ -179,7 +179,16 @@ export function debounce<args extends unknown[], result, self = unknown>(
         }
         batch ??= deferred();
         const { promise } = batch;
-        trailingEdge();
+        if (!maxing) {
+          trailingEdge();
+        } else if (trailing && lastCall) {
+          // The timer keeps running, so the `maxWait` window counts from this invocation and a
+          // call before it ends runs when it ends.
+          invoke(performance.now());
+        } else {
+          lastCall = undefined;
+          settle();
+        }
         return promise;
       },
     },

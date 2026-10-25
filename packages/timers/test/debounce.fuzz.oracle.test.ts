@@ -58,13 +58,7 @@ const advance = fc.nat(250).map((ms): Command => ({
   toString: () => `advance ${ms} ms`,
 }));
 
-// lodash's `flush` doesn't clear its timer, so with `maxWait`, a call after a flush can invoke
-// `fn` `maxWait` after the flush, while ours invokes it `ms` after the call. Those runs leave out
-// `flush`.
-const commands = (withFlush: boolean) =>
-  fc.commands(withFlush ? [call, flush, cancel, advance] : [call, cancel, advance], {
-    maxCommands: 40,
-  });
+const commands = fc.commands([call, flush, cancel, advance], { maxCommands: 40 });
 
 // lodash reads `maxWait: undefined` as `maxWait: ms`, so a run without `maxWait` omits the key.
 const settings = fc
@@ -76,22 +70,16 @@ const settings = fc
 
 test('debounce invokes fn at the times and with the arguments lodash 4.18 does', async () => {
   await fuzz(
-    fc.asyncProperty(
-      fc.nat(100),
-      settings.chain((options) =>
-        fc.tuple(fc.constant(options), commands(options.maxWait === undefined)),
-      ),
-      async (ms, [options, commands]) => {
-        await fc.asyncModelRun(
-          () => ({
-            model: side((fn) => lodashDebounce(fn, ms, options)),
-            real: side((fn) => Timers.debounce(fn, ms, options)),
-          }),
-          commands,
-        );
-        vi.clearAllTimers();
-      },
-    ),
+    fc.asyncProperty(fc.nat(100), settings, commands, async (ms, options, commands) => {
+      await fc.asyncModelRun(
+        () => ({
+          model: side((fn) => lodashDebounce(fn, ms, options)),
+          real: side((fn) => Timers.debounce(fn, ms, options)),
+        }),
+        commands,
+      );
+      vi.clearAllTimers();
+    }),
   );
 });
 
@@ -100,7 +88,7 @@ test('throttle invokes fn at the times and with the arguments lodash 4.18 does',
     fc.asyncProperty(
       fc.nat(100),
       settings,
-      commands(false),
+      commands,
       async (ms, { leading, trailing }, commands) => {
         await fc.asyncModelRun(
           () => ({
