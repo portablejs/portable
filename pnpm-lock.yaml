@@ -396,6 +396,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/ip':
+        specifier: workspace:*
+        version: link:../ip
 
   packages/dns-packet/test:
     devDependencies:

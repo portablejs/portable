@@ -557,6 +557,7 @@ describe('known upstream issues', () => {
       '::1.2.3',
       '1:2:3:4:5:6:7',
       '::ffff:010.0.0.1',
+      'fe80::1%eth0',
     ]) {
       expect(() => roundTripData('AAAA', ip)).toThrow(InvalidInputError);
     }
