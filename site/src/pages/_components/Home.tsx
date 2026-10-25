@@ -22,9 +22,8 @@ export function Home() {
         </header>
         <h1>Web-standard building blocks for any JavaScript runtime.</h1>
         <p>
-          Fast, lightweight packages for what your runtime doesn't ship, like CSV, SSE, and DKIM, so
-          you can write code once and know it'll work in browsers, Cloudflare Workers, Node 24+,
-          Bun, and Deno.
+          The web's missing standard library as a set of fast, lightweight, composable packages.
+          Write your code once and run it in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
         </p>
         <div className="home-cta">
           <a href={`${base}getting-started`}>Get started &rarr;</a>
