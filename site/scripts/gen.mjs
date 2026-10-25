@@ -88,7 +88,7 @@ for (const name of seen) {
   // On the site the bar is an inline SVG, so `currentColor` is the text color in light and dark mode.
   md = md.replace(
     /<img src="\.\.\/\.\.\/assets\/bar\.svg" width="(\d+)" height="(\d+)" alt="" \/>/g,
-    '<svg width="$1" height="$2" aria-hidden="true"><rect width="100%" height="100%" fill="currentColor" /></svg>',
+    '<svg width="$1" height="$2" aria-hidden="true"><rect width="100%" height="100%" fill="currentColor" fill-opacity="0.4" /></svg>',
   );
   md = md.replace(
     /`((?:[^`\n\\]|\\.)*?\\`(?:[^`\n\\]|\\.)*?)`(?=[^`]|$)/g,
