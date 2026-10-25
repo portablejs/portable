@@ -1,5 +1,6 @@
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, crc32 } from '@portable/bytes/internal';
+import * as Streams from '@portable/streams';
 import { InvalidInputError, UnsupportedError } from './errors.js';
 import { exifHeader, pngSignature, riff, startsWith, u16be, u32be, webp } from './parse.js';
 import { readTiff } from './tiff.js';
@@ -70,30 +71,23 @@ export declare namespace StripStream {
  */
 export class StripStream extends TransformStream<Uint8Array, Uint8Array> {
   constructor(options: StripStream.Options = {}) {
-    const { signal } = options;
     let stripper: Stripper;
-    let abort = () => {};
-    const done = () => signal?.removeEventListener('abort', abort);
-    const transformer = {
-      start(controller: TransformStreamDefaultController<Uint8Array>) {
-        stripper = createStripper(options, (part) => controller.enqueue(part));
-        if (!signal) {
-          return;
-        }
-        signal.throwIfAborted();
-        abort = () => controller.error(signal.reason);
-        signal.addEventListener('abort', abort, { once: true });
-      },
-      transform(chunk: Uint8Array) {
-        stripper.push(assertUint8Array(chunk));
-      },
-      flush() {
-        done();
-        stripper.close();
-      },
-      cancel: done,
-    };
-    super(transformer);
+    super(
+      Streams.abortable(
+        {
+          start(controller) {
+            stripper = createStripper(options, (part) => controller.enqueue(part));
+          },
+          transform(chunk) {
+            stripper.push(assertUint8Array(chunk));
+          },
+          flush() {
+            stripper.close();
+          },
+        },
+        options,
+      ),
+    );
   }
 }
 
