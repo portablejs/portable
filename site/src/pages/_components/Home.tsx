@@ -35,10 +35,7 @@ export function Home() {
           {group.items.map((item) => (
             <a className="home-row" key={item.name} href={`${base}packages/${item.name}`}>
               <span className="home-name">{item.name}</span>
-              <p>
-                {code(item.description)}
-                {item.replaces && <small>Replaces {code(item.replaces)}</small>}
-              </p>
+              <p>{code(item.description)}</p>
             </a>
           ))}
         </section>
