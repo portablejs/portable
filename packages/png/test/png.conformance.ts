@@ -328,6 +328,37 @@ describe('decode', () => {
     const inflate = (data: Uint8Array) => unzlibSync(data).subarray(0, 100);
     await expect(Png.decode(bytes, { inflate })).rejects.toThrow(Png.TruncatedError);
   });
+
+  test('throws MaxPixelsError for an image larger than maxPixels, before inflating', async () => {
+    const bytes = fixture('pngsuite/basn0g08.png');
+    let inflated = 0;
+    const inflate = (data: Uint8Array) => {
+      inflated++;
+      return unzlibSync(data);
+    };
+    await expect(Png.decode(bytes, { inflate, maxPixels: 1023 })).rejects.toMatchObject({
+      name: 'Png.MaxPixelsError',
+      maxPixels: 1023,
+    });
+    expect(() => Png.decodeSync(bytes, { inflate, maxPixels: 1023 })).toThrow(Png.MaxPixelsError);
+    expect(inflated).toBe(0);
+    expect(Png.decodeSync(bytes, { inflate, maxPixels: 1024 }).width).toBe(32);
+  });
+
+  test('throws MaxPixelsError for a huge header with little data', async () => {
+    const huge = { width: 100000, height: 100000, depth: 1, colorType: 0 };
+    await expect(
+      Png.decode(buildPng(huge, zlibSync(new Uint8Array(10))), { maxPixels: 50_000_000 }),
+    ).rejects.toThrow(Png.MaxPixelsError);
+  });
+
+  test('throws RangeError for a negative or NaN maxPixels', async () => {
+    const bytes = fixture('pngsuite/basn0g08.png');
+    await expect(Png.decode(bytes, { maxPixels: -1 })).rejects.toThrow(RangeError);
+    expect(() => Png.decodeSync(bytes, { inflate: unzlibSync, maxPixels: NaN })).toThrow(
+      RangeError,
+    );
+  });
 });
 
 describe('encode', () => {

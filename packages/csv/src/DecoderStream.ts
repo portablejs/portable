@@ -6,12 +6,20 @@ export declare namespace DecoderStream {
   /** `true` reads column names from the first row. An array gives the names for input with no header row. */
   type Header = boolean | readonly string[];
 
-  /** A row as `string[]`, or as an object keyed by column name when `header` is set. */
-  type Row<header extends Header = false> = header extends false
+  /**
+   * A row as `string[]`, or as an object keyed by column name when `header` is set. With an array
+   * of names, the keys are those names, and with `relaxColumnCount` each key is optional, because
+   * a short row leaves the missing keys out.
+   */
+  type Row<header extends Header = false, relax extends boolean = false> = header extends false
     ? string[]
-    : Record<string, string>;
+    : header extends readonly (infer name extends string)[]
+      ? [relax] extends [false]
+        ? Record<name, string>
+        : Partial<Record<name, string>>
+      : Record<string, string>;
 
-  type Options<header extends Header = Header> = {
+  type Options<header extends Header = Header, relax extends boolean = boolean> = {
     /** Field separator, one character. Use `'\t'` for TSV. @default ',' */
     delimiter?: string | undefined;
     /** Text encoding of byte input, as a `TextDecoder` label. @default 'utf-8' */
@@ -23,7 +31,7 @@ export declare namespace DecoderStream {
     /** Quote character, one character, or `false` to read quotes as ordinary text. @default '"' */
     quote?: string | false | undefined;
     /** Accept rows whose field count differs from the first row's or the header's. @default false */
-    relaxColumnCount?: boolean | undefined;
+    relaxColumnCount?: relax | undefined;
     /** Drop lines with no characters instead of reading each as a row with one empty field. @default true */
     skipEmpty?: boolean | undefined;
     /**
@@ -54,8 +62,9 @@ export declare namespace DecoderStream {
  */
 export class DecoderStream<
   const header extends DecoderStream.Header = false,
-> extends TransformStream<Uint8Array | string, DecoderStream.Row<header>> {
-  constructor(options: DecoderStream.Options<header> = {}) {
+  relax extends boolean = false,
+> extends TransformStream<Uint8Array | string, DecoderStream.Row<header, relax>> {
+  constructor(options: DecoderStream.Options<header, relax> = {}) {
     const decoder = new TextDecoder(options.encoding ?? 'utf-8', { ignoreBOM: true });
     let parser: Parser;
     super(
@@ -63,7 +72,7 @@ export class DecoderStream<
         {
           start(controller) {
             parser = createParser(options, (row) =>
-              controller.enqueue(row as DecoderStream.Row<header>),
+              controller.enqueue(row as DecoderStream.Row<header, relax>),
             );
           },
           transform(chunk) {

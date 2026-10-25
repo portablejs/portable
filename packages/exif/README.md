@@ -121,17 +121,17 @@ In a JPEG, everything from the first start-of-scan marker on is copied unchanged
 
 ## `Exif.parseDate(value, options?)`
 
-Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 8601 form `'2004-09-04T23:39:06-08:00'` into a `Date`. Returns `undefined` for anything else, including the `'0000:00:00 00:00:00'` cameras write when their clock is unset.
+Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 8601 form `'2004-09-04T23:39:06-08:00'` into a `Date`. It takes a tag value as `parse` returns it, so you can pass a tag that may be missing. Returns `undefined` for anything else, including a missing tag, a value that isn't a string, and the `'0000:00:00 00:00:00'` cameras write when their clock is unset.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `offset` | none | UTC offset such as `'+02:00'`, used when `value` has none. Pass the matching `OffsetTimeOriginal`, `OffsetTimeDigitized` or `OffsetTime` tag. |
+| `offset` | none | UTC offset such as `'+02:00'`, used when `value` has none. Pass the matching `OffsetTimeOriginal`, `OffsetTimeDigitized` or `OffsetTime` tag as it is. A missing tag or a value that isn't an offset is ignored. |
 
 Without an offset the date is read as UTC, so `getUTCHours()` and the other `getUTC*` methods return the time the camera recorded.
 
 ```ts
 const { exif } = Exif.parse(bytes);
-const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) });
+const taken = Exif.parseDate(exif.DateTimeOriginal, { offset: exif.OffsetTimeOriginal });
 ```
 
 ## Types
@@ -167,7 +167,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | | @portable/exif | exif-parser | exif-reader | exifr |
 | --- | --- | --- | --- | --- |
 | Minified and gzipped | 8.0 kB | 7.8 kB | 4.7 kB | 27 kB |
-| Runtime dependencies | 2 | 0 | 0 | 0 |
+| Runtime dependencies | 3 | 0 | 0 | 0 |
 | Node built-ins used | none | none | none | `Buffer` |
 | TypeScript types | included | none | included | included |
 | Version compared | – | 0.1.12 | 2.0.3 | 7.1.3 |

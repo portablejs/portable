@@ -1,6 +1,6 @@
 import * as Bytes from '@portable/bytes';
 import { assertUint8Array, crc32 } from '@portable/bytes/internal';
-import { InvalidInputError, TruncatedError, UnsupportedError } from './errors.js';
+import { InvalidInputError, MaxPixelsError, TruncatedError, UnsupportedError } from './errors.js';
 import { unfilter } from './filter.js';
 import * as zlib from './zlib.js';
 
@@ -31,6 +31,12 @@ export declare namespace decode {
   type Options = {
     /** Verify the CRC of every chunk. @default true */
     checkCrc?: boolean | undefined;
+    /**
+     * Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
+     * anything is decompressed or allocated.
+     * @default Infinity
+     */
+    maxPixels?: number | undefined;
     /** Decompresses zlib data. @default `DecompressionStream('deflate')` */
     inflate?: ((data: Uint8Array) => Uint8Array | Promise<Uint8Array>) | undefined;
     /** Rejects with `signal.reason` when aborted, and stops decompressing. */
@@ -42,6 +48,12 @@ export declare namespace decodeSync {
   type Options = {
     /** Verify the CRC of every chunk. @default true */
     checkCrc?: boolean | undefined;
+    /**
+     * Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before
+     * anything is decompressed or allocated.
+     * @default Infinity
+     */
+    maxPixels?: number | undefined;
     /** Decompresses zlib data, such as `unzlibSync` from fflate. */
     inflate: (data: Uint8Array) => Uint8Array;
   };
@@ -57,11 +69,13 @@ export declare namespace decodeSync {
  * const response = await fetch('https://example.com/image.png');
  * const { width, height, data } = await Png.decode(await response.bytes());
  * ```
+ *
+ * @throws {MaxPixelsError} When `width * height` is more than `maxPixels`.
  */
 export async function decode(bytes: Uint8Array, options: decode.Options = {}): Promise<Decoded> {
-  const { checkCrc = true, inflate, signal } = options;
+  const { checkCrc = true, inflate, maxPixels, signal } = options;
   signal?.throwIfAborted();
-  const png = parse(assertUint8Array(bytes), checkCrc);
+  const png = parse(assertUint8Array(bytes), checkCrc, maxPixels);
   const size = rawSize(png);
   let raw: Uint8Array;
   try {
@@ -84,10 +98,12 @@ export async function decode(bytes: Uint8Array, options: decode.Options = {}): P
  *
  * const { width, height, data } = Png.decodeSync(bytes, { inflate: unzlibSync });
  * ```
+ *
+ * @throws {MaxPixelsError} When `width * height` is more than `maxPixels`.
  */
 export function decodeSync(bytes: Uint8Array, options: decodeSync.Options): Decoded {
-  const { checkCrc = true, inflate } = options;
-  const png = parse(assertUint8Array(bytes), checkCrc);
+  const { checkCrc = true, inflate, maxPixels } = options;
+  const png = parse(assertUint8Array(bytes), checkCrc, maxPixels);
   let raw: Uint8Array;
   try {
     raw = inflate(png.idat);
@@ -129,7 +145,10 @@ const depthsByColorType: Record<number, readonly number[]> = {
 
 const channelsByColorType = [1, 0, 3, 1, 2, 0, 4] as const;
 
-function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
+function parse(bytes: Uint8Array, checkCrc: boolean, maxPixels = Infinity): Parsed {
+  if (!(maxPixels >= 0)) {
+    throw new RangeError('maxPixels must be a number >= 0.');
+  }
   if (bytes.length < 8 || signature.some((byte, i) => bytes[i] !== byte)) {
     throw new InvalidInputError('Invalid PNG signature.');
   }
@@ -171,6 +190,9 @@ function parse(bytes: Uint8Array, checkCrc: boolean): Parsed {
         throw new InvalidInputError('IHDR chunk has the wrong length.');
       }
       header = readHeader(view, start);
+      if (header.width * header.height > maxPixels) {
+        throw new MaxPixelsError({ maxPixels });
+      }
     } else if (type === IDAT) {
       idat.push(bytes.subarray(start, end));
     } else if (type === IEND) {

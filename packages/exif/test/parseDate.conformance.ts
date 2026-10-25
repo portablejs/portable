@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test';
 import * as Exif from '@portable/exif';
+import { fixture } from './utils.js';
 
 const seconds = (date: Date | undefined) => date && date.getTime() / 1000;
 
@@ -74,5 +75,25 @@ describe('parseDate', () => {
     expect(Exif.parseDate('    :  :     :  :  ')).toBeUndefined();
     expect(Exif.parseDate('2019:02:30 10:00:00')).toBeUndefined();
     expect(Exif.parseDate('2019:10:20 24:00:00')).toBeUndefined();
+  });
+
+  test('takes tag values from parse as they are', async () => {
+    const { exif } = Exif.parse(await fixture('heic-iphone7-head.heic'));
+    const taken = Exif.parseDate(exif.DateTimeOriginal, { offset: exif.OffsetTimeOriginal });
+    const local = Exif.parseDate(exif.DateTimeOriginal);
+    expect(taken).toBeInstanceOf(Date);
+    expect(local!.getTime() - taken!.getTime()).toBe(2 * 3600 * 1000);
+  });
+
+  test('returns undefined for a missing tag or a value that is not a string', () => {
+    expect(Exif.parseDate(undefined)).toBeUndefined();
+    expect(Exif.parseDate(20191020)).toBeUndefined();
+    expect(Exif.parseDate(new Uint8Array([0x32]))).toBeUndefined();
+  });
+
+  test('ignores an offset that is missing or not a string', () => {
+    const utc = new Date('2019-10-20T18:34:30Z');
+    expect(Exif.parseDate('2019:10:20 18:34:30', { offset: undefined })).toEqual(utc);
+    expect(Exif.parseDate('2019:10:20 18:34:30', { offset: [2, 0] })).toEqual(utc);
   });
 });

@@ -36,7 +36,12 @@ return new Response(body, { headers: { 'content-type': 'text/csv' } });
 
 `Csv.decode(input, options)` takes a `string` or a `Uint8Array` and returns every row. `new Csv.DecoderStream(options)` is a `TransformStream<Uint8Array | string, Row>` that emits one row per chunk, and gives the same rows however the input is split.
 
-A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values are never converted: `02134` stays `'02134'`.
+A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values are never converted: `02134` stays `'02134'`. When `header` is an array of names written in the call, TypeScript types the row by those names, and with `relaxColumnCount: true` each key is optional, because a short row leaves the missing keys out:
+
+```ts
+const rows = Csv.decode(text, { header: ['id', 'email'] });
+// rows: Record<'id' | 'email', string>[], so a misspelled column such as rows[0].emial fails to type-check
+```
 
 - A quoted field may hold the delimiter, doubled quotes (`""`) and line breaks.
 - CRLF, LF and CR each end a row. A final line break is optional and adds no row.

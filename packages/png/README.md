@@ -46,6 +46,7 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. Both functio
 | --- | --- | --- |
 | `inflate` | `DecompressionStream('deflate')` | Decompresses zlib data. Required for `decodeSync`. `decode` also accepts an async function. |
 | `checkCrc` | `true` | Verify each chunk's CRC. The zlib checksum is always verified by the inflate function. |
+| `maxPixels` | `Infinity` | Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` as soon as `IHDR` is read, before anything is decompressed or allocated. Set it when you decode untrusted files. |
 | `signal` | none | `decode` only. Aborting rejects with `signal.reason` and stops the default decompression. |
 
 `Decoded` is a plain object:
@@ -85,8 +86,9 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 | `TruncatedError` | The file ends before `IEND` or inside a chunk, or holds less image data than its header describes. |
 | `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length or a `width` or `height` that isn't a positive integer, and a `RangeError` for an invalid `filter`. |
 | `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
+| `MaxPixelsError` | The image has more pixels than `maxPixels`, which the error stores as `maxPixels`. |
 
-Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.UnsupportedError`.
+Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError` and `Png.MaxPixelsError`. A bad `maxPixels`, such as a negative number, throws a `RangeError`.
 
 ## Types
 
@@ -101,6 +103,7 @@ Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError` and `Png.Unsuppo
 pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies.
 
 - A header that claims more pixels than the data can hold throws `TruncatedError` before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB and throw a `RangeError`.
+- A valid file can still be small and decode to a huge image: a 1-bit 100000×100000 image compresses to about 1.2 MB and decodes to 40 GB of RGBA. `maxPixels` rejects it from the header, as sharp's `limitInputPixels` does. pngjs has no limit.
 - Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.4× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool.
 - Encoding with `CompressionStream` was about as fast as pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
 - A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
