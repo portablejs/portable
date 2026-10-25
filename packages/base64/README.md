@@ -89,41 +89,45 @@ One package does what the three did separately: base64 and base64url, MIME line 
 Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64's `encode` and `decode` call `Buffer`, which is C++.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Encode 1 MB | libbase64 | 5,000 | 11× faster | ████████████████ |
-|  | `Buffer` (Node) | 4,740 | 11× faster | ███████████████ |
-|  | **@portable/base64** | 435 |  | █ |
-|  | js-base64 | 148 | 2.9× slower | █ |
-|  | base64-js | 55.1 | 7.9× slower | █ |
-| | | | | |
-| Encode 1 MB in 76-column lines | libbase64 | 554 | 1.3× faster | ████████████████ |
-|  | **@portable/base64** | 435 |  | █████████████ |
-| | | | | |
-| Decode 1 MB | `Buffer` (Node) | 5,450 | 21× faster | ████████████████ |
-|  | libbase64 | 4,210 | 17× faster | ████████████ |
-|  | **@portable/base64** | 255 |  | █ |
-|  | base64-js | 239 | 1.1× slower | █ |
-|  | js-base64 | 22.4 | 11× slower | █ |
-| | | | | |
-| Decode 1 MB of MIME base64 | libbase64 | 3,900 | 18× faster | ████████████████ |
-|  | **@portable/base64** | 219 |  | █ |
-| | | | | |
-| Encode 32 bytes | **@portable/base64** | 3,450,000 |  | ████████████████ |
-|  | js-base64 | 2,420,000 | 1.4× slower | ███████████ |
-|  | `Buffer` (Node) | 2,370,000 | 1.5× slower | ███████████ |
-|  | base64-js | 1,050,000 | 3.3× slower | █████ |
-| | | | | |
-| Decode 32 bytes | **@portable/base64** | 3,110,000 |  | ████████████████ |
-|  | base64-js | 2,750,000 | 1.1× slower | ██████████████ |
-|  | `Buffer` (Node) | 2,360,000 | 1.3× slower | ████████████ |
-|  | js-base64 | 1,130,000 | 2.8× slower | ██████ |
-| | | | | |
-| Encode a 1 MB stream in 76-column lines | **@portable/base64** | 413 |  | ████████████████ |
-|  | libbase64 | 394 | same | ███████████████ |
-| | | | | |
-| Decode a 1 MB stream of MIME base64 | **@portable/base64** | 233 |  | ████████████████ |
-|  | libbase64 | 183 | 1.3× slower | █████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Encode 1 MB</th></tr>
+<tr><td>libbase64</td><td align="right">5,000</td><td>11× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">4,740</td><td>11× faster</td><td><img src="../../assets/bar.svg" width="152" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">435</td><td></td><td><img src="../../assets/bar-ours.svg" width="14" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">148</td><td>2.9× slower</td><td><img src="../../assets/bar.svg" width="5" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">55.1</td><td>7.9× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 1 MB in 76-column lines</th></tr>
+<tr><td>libbase64</td><td align="right">554</td><td>1.3× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">435</td><td></td><td><img src="../../assets/bar-ours.svg" width="126" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode 1 MB</th></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">5,450</td><td>21× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">4,210</td><td>17× faster</td><td><img src="../../assets/bar.svg" width="124" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">255</td><td></td><td><img src="../../assets/bar-ours.svg" width="7" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">239</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="7" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">22.4</td><td>11× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode 1 MB of MIME base64</th></tr>
+<tr><td>libbase64</td><td align="right">3,900</td><td>18× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">219</td><td></td><td><img src="../../assets/bar-ours.svg" width="9" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 32 bytes</th></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">3,450,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">2,420,000</td><td>1.4× slower</td><td><img src="../../assets/bar.svg" width="112" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">2,370,000</td><td>1.5× slower</td><td><img src="../../assets/bar.svg" width="110" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">1,050,000</td><td>3.3× slower</td><td><img src="../../assets/bar.svg" width="49" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode 32 bytes</th></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">3,110,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">2,750,000</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="141" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">2,360,000</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="121" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">1,130,000</td><td>2.8× slower</td><td><img src="../../assets/bar.svg" width="58" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode a 1 MB stream in 76-column lines</th></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">413</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">394</td><td>same</td><td><img src="../../assets/bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode a 1 MB stream of MIME base64</th></tr>
+<tr><td><strong>@portable/base64</strong></td><td align="right">233</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">183</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="126" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/base64, and the bars are scaled to the fastest library.
 

@@ -104,11 +104,15 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 - It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Check a record with nested includes | **@portable/spf** | 20,500 |  | ████████████████ |
-|  | mailauth | 9,280 | 2.2× slower | ███████ |
-|  | mailauth, strict mode | 7,660 | 2.7× slower | ██████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Check a record with nested includes</th></tr>
+<tr><td><strong>@portable/spf</strong></td><td align="right">20,500</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">9,280</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="72" height="12" alt="" /></td></tr>
+<tr><td>mailauth, strict mode</td><td align="right">7,660</td><td>2.7× slower</td><td><img src="../../assets/bar.svg" width="60" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/spf, and the bars are scaled to the fastest library.
 

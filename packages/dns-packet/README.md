@@ -82,16 +82,20 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 - Encoding a DNS-over-HTTPS query was about 3.4 times faster than dns-packet, and encoding or decoding 48 captured responses about 2 times faster.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Decode 48 captured responses | **@portable/dns-packet** | 10,000 |  | ████████████████ |
-|  | dns-packet | 4,560 | 2.2× slower | ███████ |
-| | | | | |
-| Encode 48 captured responses | **@portable/dns-packet** | 5,970 |  | ████████████████ |
-|  | dns-packet | 3,070 | 1.9× slower | ████████ |
-| | | | | |
-| Encode a DNS-over-HTTPS query | **@portable/dns-packet** | 1,820,000 |  | ████████████████ |
-|  | dns-packet | 528,000 | 3.4× slower | █████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Decode 48 captured responses</th></tr>
+<tr><td><strong>@portable/dns-packet</strong></td><td align="right">10,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>dns-packet</td><td align="right">4,560</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="73" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 48 captured responses</th></tr>
+<tr><td><strong>@portable/dns-packet</strong></td><td align="right">5,970</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>dns-packet</td><td align="right">3,070</td><td>1.9× slower</td><td><img src="../../assets/bar.svg" width="82" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode a DNS-over-HTTPS query</th></tr>
+<tr><td><strong>@portable/dns-packet</strong></td><td align="right">1,820,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>dns-packet</td><td align="right">528,000</td><td>3.4× slower</td><td><img src="../../assets/bar.svg" width="46" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns-packet, and the bars are scaled to the fastest library.
 

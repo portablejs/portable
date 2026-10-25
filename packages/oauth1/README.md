@@ -106,16 +106,20 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 ### Performance
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Sign a GET request | @portable/oauth1 with @noble/hashes | 47,700 | 6.6× faster | ████████████████ |
-|  | oauth-1.0a | 41,600 | 5.8× faster | ██████████████ |
-|  | oauth | 25,800 | 3.6× faster | █████████ |
-|  | **@portable/oauth1** | 7,210 |  | ██ |
-| | | | | |
-| Sign a form POST | oauth-1.0a | 30,000 | 4.9× faster | ████████████████ |
-|  | @portable/oauth1 with @noble/hashes | 26,200 | 4.3× faster | ██████████████ |
-|  | **@portable/oauth1** | 6,110 |  | ███ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Sign a GET request</th></tr>
+<tr><td>@portable/oauth1 with @noble/hashes</td><td align="right">47,700</td><td>6.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>oauth-1.0a</td><td align="right">41,600</td><td>5.8× faster</td><td><img src="../../assets/bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td>oauth</td><td align="right">25,800</td><td>3.6× faster</td><td><img src="../../assets/bar.svg" width="87" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/oauth1</strong></td><td align="right">7,210</td><td></td><td><img src="../../assets/bar-ours.svg" width="24" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Sign a form POST</th></tr>
+<tr><td>oauth-1.0a</td><td align="right">30,000</td><td>4.9× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/oauth1 with @noble/hashes</td><td align="right">26,200</td><td>4.3× faster</td><td><img src="../../assets/bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/oauth1</strong></td><td align="right">6,110</td><td></td><td><img src="../../assets/bar-ours.svg" width="33" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/oauth1, and the bars are scaled to the fastest library.
 

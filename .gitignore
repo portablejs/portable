@@ -9,3 +9,5 @@ coverage
 site/src/pages/packages
 site/src/packages.json
 site/.herenow.json
+site/public/bar.svg
+site/public/bar-ours.svg

@@ -119,19 +119,23 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 - Each lookup clears its timer when it finishes. tangerine leaked an `AbortController` per lookup (tangerine #12).
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Resolve the TXT records of gmail.com | **@portable/dns** | 47,300 |  | ████████████████ |
-|  | tangerine | 37,800 | 1.3× slower | █████████████ |
-|  | `node:dns/promises` over local UDP | 19,800 | 2.4× slower | ███████ |
-| | | | | |
-| Resolve the MX records of gmail.com | **@portable/dns** | 56,900 |  | ████████████████ |
-|  | tangerine | 36,200 | 1.6× slower | ██████████ |
-|  | `node:dns/promises` over local UDP | 16,300 | 3.5× slower | █████ |
-| | | | | |
-| Resolve the A records of www.microsoft.com | **@portable/dns** | 52,700 |  | ████████████████ |
-|  | tangerine | 36,800 | 1.4× slower | ███████████ |
-|  | `node:dns/promises` over local UDP | 19,800 | 2.7× slower | ██████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Resolve the TXT records of gmail.com</th></tr>
+<tr><td><strong>@portable/dns</strong></td><td align="right">47,300</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>tangerine</td><td align="right">37,800</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="128" height="12" alt="" /></td></tr>
+<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">19,800</td><td>2.4× slower</td><td><img src="../../assets/bar.svg" width="67" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Resolve the MX records of gmail.com</th></tr>
+<tr><td><strong>@portable/dns</strong></td><td align="right">56,900</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>tangerine</td><td align="right">36,200</td><td>1.6× slower</td><td><img src="../../assets/bar.svg" width="102" height="12" alt="" /></td></tr>
+<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">16,300</td><td>3.5× slower</td><td><img src="../../assets/bar.svg" width="46" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Resolve the A records of www.microsoft.com</th></tr>
+<tr><td><strong>@portable/dns</strong></td><td align="right">52,700</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>tangerine</td><td align="right">36,800</td><td>1.4× slower</td><td><img src="../../assets/bar.svg" width="112" height="12" alt="" /></td></tr>
+<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">19,800</td><td>2.7× slower</td><td><img src="../../assets/bar.svg" width="60" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns, and the bars are scaled to the fastest library.
 

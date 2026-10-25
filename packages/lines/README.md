@@ -50,12 +50,16 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 - byline splits on every Unicode line break by default. Pass `separator: /\r\n|[\n\v\f\r\x85\u2028\u2029]/` for the same result.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Split 1.7 MB into lines | `node:readline` | 165 | 2.0× faster | ████████████████ |
-|  | split2 | 84.6 | same | ████████ |
-|  | **@portable/lines** | 82.8 |  | ████████ |
-|  | byline | 40.7 | 2.0× slower | ████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Split 1.7 MB into lines</th></tr>
+<tr><td><code>node:readline</code></td><td align="right">165</td><td>2.0× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>split2</td><td align="right">84.6</td><td>same</td><td><img src="../../assets/bar.svg" width="82" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/lines</strong></td><td align="right">82.8</td><td></td><td><img src="../../assets/bar-ours.svg" width="80" height="12" alt="" /></td></tr>
+<tr><td>byline</td><td align="right">40.7</td><td>2.0× slower</td><td><img src="../../assets/bar.svg" width="39" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/lines, and the bars are scaled to the fastest library.
 

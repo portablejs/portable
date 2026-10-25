@@ -132,22 +132,26 @@ whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers 
 The benchmarks serve recorded responses from memory. node-rdap returns the response JSON as it is, so its numbers measure only `response.json()`.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Look up google.com (Verisign response) | `fetch` and `response.json()` | 51,500 | 1.4× faster | ████████████████ |
-|  | node-rdap | 46,400 | 1.2× faster | ██████████████ |
-|  | **@portable/rdap** | 37,800 |  | ████████████ |
-| | | | | |
-| Look up google.com and follow the registrar referral | node-rdap | 17,600 | 1.1× faster | ████████████████ |
-|  | **@portable/rdap** | 15,700 |  | ██████████████ |
-| | | | | |
-| Look up a RIPE network with 16 entities | `fetch` and `response.json()` | 12,800 | 1.2× faster | ████████████████ |
-|  | node-rdap | 11,800 | 1.1× faster | ███████████████ |
-|  | **@portable/rdap** | 10,500 |  | █████████████ |
-| | | | | |
-| Look up an ARIN AS number | `fetch` and `response.json()` | 28,700 | 1.1× faster | ████████████████ |
-|  | node-rdap | 28,100 | 1.1× faster | ████████████████ |
-|  | **@portable/rdap** | 25,000 |  | ██████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Look up google.com (Verisign response)</th></tr>
+<tr><td><code>fetch</code> and <code>response.json()</code></td><td align="right">51,500</td><td>1.4× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>node-rdap</td><td align="right">46,400</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="144" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/rdap</strong></td><td align="right">37,800</td><td></td><td><img src="../../assets/bar-ours.svg" width="117" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Look up google.com and follow the registrar referral</th></tr>
+<tr><td>node-rdap</td><td align="right">17,600</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/rdap</strong></td><td align="right">15,700</td><td></td><td><img src="../../assets/bar-ours.svg" width="143" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Look up a RIPE network with 16 entities</th></tr>
+<tr><td><code>fetch</code> and <code>response.json()</code></td><td align="right">12,800</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>node-rdap</td><td align="right">11,800</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="148" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/rdap</strong></td><td align="right">10,500</td><td></td><td><img src="../../assets/bar-ours.svg" width="131" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Look up an ARIN AS number</th></tr>
+<tr><td><code>fetch</code> and <code>response.json()</code></td><td align="right">28,700</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>node-rdap</td><td align="right">28,100</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="157" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/rdap</strong></td><td align="right">25,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="139" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rdap, and the bars are scaled to the fastest library.
 

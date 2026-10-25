@@ -142,13 +142,17 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 The benchmarks send to a server on localhost that answers at once.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Send 10 small messages over one connection | **@portable/smtp** | 1,360 |  | ████████████████ |
-|  | nodemailer | 1,200 | 1.1× slower | ██████████████ |
-| | | | | |
-| Send a 1 MB message | **@portable/smtp** | 63.3 |  | ████████████████ |
-|  | nodemailer | 51.9 | 1.2× slower | █████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Send 10 small messages over one connection</th></tr>
+<tr><td><strong>@portable/smtp</strong></td><td align="right">1,360</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">1,200</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="141" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Send a 1 MB message</th></tr>
+<tr><td><strong>@portable/smtp</strong></td><td align="right">63.3</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">51.9</td><td>1.2× slower</td><td><img src="../../assets/bar.svg" width="131" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/smtp, and the bars are scaled to the fastest library.
 

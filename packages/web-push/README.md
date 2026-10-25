@@ -113,23 +113,23 @@ It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a 
 ### Performance
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Encrypt a 186-byte payload | web-push | 4,280 | 2.5× faster | ████████████████ |
-|  | The same WebCrypto calls by hand | 1,790 | 1.1× faster | ███████ |
-|  | **@portable/web-push** | 1,680 |  | ██████ |
-| | | | | |
-| Encrypt 64 payloads at once | web-push | 67.3 | 1.2× faster | ████████████████ |
-|  | **@portable/web-push** | 57.4 |  | ██████████████ |
-|  | The same WebCrypto calls by hand | 53.7 | 1.1× slower | █████████████ |
-| | | | | |
-| Sign a VAPID JWT | The same WebCrypto calls by hand | 11,100 | 1.3× faster | ████████████████ |
-|  | web-push | 10,200 | 1.2× faster | ███████████████ |
-|  | **@portable/web-push** | 8,230 |  | ████████████ |
-| | | | | |
-| Build a push request | web-push | 2,770 | 1.8× faster | ████████████████ |
-|  | **@portable/web-push** | 1,500 |  | █████████ |
-|  | The same WebCrypto calls by hand | 1,310 | 1.1× slower | ████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Encrypt a 186-byte payload</th></tr>
+<tr><td>web-push</td><td align="right">4,280</td><td>2.5× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/web-push</strong></td><td align="right">1,680</td><td></td><td><img src="../../assets/bar-ours.svg" width="63" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encrypt 64 payloads at once</th></tr>
+<tr><td>web-push</td><td align="right">67.3</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/web-push</strong></td><td align="right">57.4</td><td></td><td><img src="../../assets/bar-ours.svg" width="136" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Sign a VAPID JWT</th></tr>
+<tr><td>web-push</td><td align="right">10,200</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/web-push</strong></td><td align="right">8,230</td><td></td><td><img src="../../assets/bar-ours.svg" width="129" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Build a push request</th></tr>
+<tr><td>web-push</td><td align="right">2,770</td><td>1.8× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/web-push</strong></td><td align="right">1,500</td><td></td><td><img src="../../assets/bar-ours.svg" width="87" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/web-push, and the bars are scaled to the fastest library.
 
@@ -137,7 +137,6 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/web-push | – | 5.6 kB | 5 | none | included |
 | web-push | 3.6.7 | 32 kB | 16 | `assert`, `buffer`, `crypto`, `http`, `https`, `net`, `stream`, `tls`, `url`, `util` | `@types/web-push` |
-| The same WebCrypto calls by hand | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

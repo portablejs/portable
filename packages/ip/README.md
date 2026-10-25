@@ -126,20 +126,24 @@ ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and
 - Node's `isIP` accepts a zone that contains `:`, and `parse` rejects it.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Parse 8 addresses | **@portable/ip** | 796,000 |  | ████████████████ |
-|  | `node:net` | 350,000 | 2.3× slower | ███████ |
-|  | ip | 112,000 | 7.1× slower | ██ |
-|  | ipaddr.js | 65,100 | 12× slower | █ |
-| | | | | |
-| Check 8 addresses against a CIDR block | **@portable/ip** | 683,000 |  | ████████████████ |
-|  | `node:net` | 441,000 | 1.5× slower | ██████████ |
-|  | ipaddr.js | 63,700 | 11× slower | █ |
-| | | | | |
-| Tell public from internal addresses, 8 of them | **@portable/ip** | 517,000 |  | ████████████████ |
-|  | ip | 196,000 | 2.6× slower | ██████ |
-|  | ipaddr.js | 46,700 | 11× slower | █ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Parse 8 addresses</th></tr>
+<tr><td><strong>@portable/ip</strong></td><td align="right">796,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:net</code></td><td align="right">350,000</td><td>2.3× slower</td><td><img src="../../assets/bar.svg" width="70" height="12" alt="" /></td></tr>
+<tr><td>ip</td><td align="right">112,000</td><td>7.1× slower</td><td><img src="../../assets/bar.svg" width="23" height="12" alt="" /></td></tr>
+<tr><td>ipaddr.js</td><td align="right">65,100</td><td>12× slower</td><td><img src="../../assets/bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Check 8 addresses against a CIDR block</th></tr>
+<tr><td><strong>@portable/ip</strong></td><td align="right">683,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:net</code></td><td align="right">441,000</td><td>1.5× slower</td><td><img src="../../assets/bar.svg" width="103" height="12" alt="" /></td></tr>
+<tr><td>ipaddr.js</td><td align="right">63,700</td><td>11× slower</td><td><img src="../../assets/bar.svg" width="15" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Tell public from internal addresses, 8 of them</th></tr>
+<tr><td><strong>@portable/ip</strong></td><td align="right">517,000</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>ip</td><td align="right">196,000</td><td>2.6× slower</td><td><img src="../../assets/bar.svg" width="61" height="12" alt="" /></td></tr>
+<tr><td>ipaddr.js</td><td align="right">46,700</td><td>11× slower</td><td><img src="../../assets/bar.svg" width="14" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/ip, and the bars are scaled to the fastest library.
 

@@ -114,15 +114,19 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 - It is an ES module with no dependencies outside `@portable/*`, and its tests run in Deno and Bun as well as Node.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Echo 16 MB over TCP on localhost | node:net | 41.1 | 1.1× faster | ████████████████ |
-|  | **@portable/sockets** | 36.5 |  | ██████████████ |
-|  | @arrowood.dev/socket | 33.9 | 1.1× slower | █████████████ |
-| | | | | |
-| Open and close a connection on localhost | node:net | 24,200 | 1.6× faster | ████████████████ |
-|  | **@portable/sockets** | 15,300 |  | ██████████ |
-|  | @arrowood.dev/socket | 13,500 | 1.1× slower | █████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Echo 16 MB over TCP on localhost</th></tr>
+<tr><td>node:net</td><td align="right">41.1</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/sockets</strong></td><td align="right">36.5</td><td></td><td><img src="../../assets/bar-ours.svg" width="142" height="12" alt="" /></td></tr>
+<tr><td>@arrowood.dev/socket</td><td align="right">33.9</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="132" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Open and close a connection on localhost</th></tr>
+<tr><td>node:net</td><td align="right">24,200</td><td>1.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/sockets</strong></td><td align="right">15,300</td><td></td><td><img src="../../assets/bar-ours.svg" width="101" height="12" alt="" /></td></tr>
+<tr><td>@arrowood.dev/socket</td><td align="right">13,500</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="89" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/sockets, and the bars are scaled to the fastest library.
 

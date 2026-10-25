@@ -166,28 +166,30 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 ### Performance
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Verify a Standard Webhook | @portable/webhooks with @noble/hashes | 59,300 | 3.3× faster | ████████████████ |
-|  | svix | 59,200 | 3.3× faster | ████████████████ |
-|  | standardwebhooks | 47,400 | 2.6× faster | █████████████ |
-|  | **@portable/webhooks** | 17,900 |  | █████ |
-| | | | | |
-| Verify a Stripe webhook | stripe, `constructEvent` | 102,000 | 5.8× faster | ████████████████ |
-|  | @portable/webhooks with @noble/hashes | 55,800 | 3.2× faster | █████████ |
-|  | **@portable/webhooks** | 17,500 |  | ███ |
-|  | stripe, `constructEventAsync` | 13,500 | 1.3× slower | ██ |
-| | | | | |
-| Verify a GitHub webhook | `node:crypto` by hand | 240,000 | 12× faster | ████████████████ |
-|  | @octokit/webhooks-methods, Node build | 232,000 | 12× faster | ███████████████ |
-|  | @portable/webhooks with @noble/hashes | 67,700 | 3.5× faster | █████ |
-|  | **@portable/webhooks** | 19,300 |  | █ |
-|  | @octokit/webhooks-methods, web build | 16,800 | 1.1× slower | █ |
-| | | | | |
-| Verify a Slack request | @slack/bolt | 87,400 | 4.6× faster | ████████████████ |
-|  | @portable/webhooks with @noble/hashes | 60,700 | 3.2× faster | ███████████ |
-|  | **@portable/webhooks** | 19,100 |  | ███ |
-|  | `crypto.subtle` by hand | 19,000 | same | ███ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Verify a Standard Webhook</th></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">59,300</td><td>3.3× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>svix</td><td align="right">59,200</td><td>3.3× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>standardwebhooks</td><td align="right">47,400</td><td>2.6× faster</td><td><img src="../../assets/bar.svg" width="128" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/webhooks</strong></td><td align="right">17,900</td><td></td><td><img src="../../assets/bar-ours.svg" width="48" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Verify a Stripe webhook</th></tr>
+<tr><td>stripe, <code>constructEvent</code></td><td align="right">102,000</td><td>5.8× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">55,800</td><td>3.2× faster</td><td><img src="../../assets/bar.svg" width="88" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/webhooks</strong></td><td align="right">17,500</td><td></td><td><img src="../../assets/bar-ours.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>stripe, <code>constructEventAsync</code></td><td align="right">13,500</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="21" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Verify a GitHub webhook</th></tr>
+<tr><td>@octokit/webhooks-methods, Node build</td><td align="right">232,000</td><td>12× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">67,700</td><td>3.5× faster</td><td><img src="../../assets/bar.svg" width="47" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/webhooks</strong></td><td align="right">19,300</td><td></td><td><img src="../../assets/bar-ours.svg" width="13" height="12" alt="" /></td></tr>
+<tr><td>@octokit/webhooks-methods, web build</td><td align="right">16,800</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="12" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Verify a Slack request</th></tr>
+<tr><td>@slack/bolt</td><td align="right">87,400</td><td>4.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">60,700</td><td>3.2× faster</td><td><img src="../../assets/bar.svg" width="111" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/webhooks</strong></td><td align="right">19,100</td><td></td><td><img src="../../assets/bar-ours.svg" width="35" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/webhooks, and the bars are scaled to the fastest library.
 
@@ -202,8 +204,6 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | @octokit/webhooks-methods, web build | 6.0.0 | 0.4 kB | 0 | none | included |
 | @octokit/webhooks-methods, Node build | 6.0.0 | 0.4 kB | 0 | none | included |
 | @slack/bolt | 5.1.0 | 1.3 kB | 98 | `crypto` | included |
-| `crypto.subtle` by hand | – | built in | – | none | – |
-| `node:crypto` by hand | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

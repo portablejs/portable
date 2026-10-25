@@ -21,16 +21,13 @@ test('polls until the 10th check succeeds within 25% of p-wait-for', async ({ be
   });
 });
 
-test('sleeps for 1 ms within 25% of delay and setTimeout', async ({ bench }) => {
+test('sleeps for 1 ms within 25% of delay', async ({ bench }) => {
   const result = await bench.compare(
     bench('@portable/timers', async () => {
       await Timers.sleep(1);
     }),
     bench('delay', async () => {
       await delay(1);
-    }),
-    bench('setTimeout', async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1));
     }),
   );
   expect(result.get('delay')).not.toBeFasterThan(result.get('@portable/timers'), {

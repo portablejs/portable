@@ -221,18 +221,22 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| 10 rounds of `take` on 1,000 keys | rate-limiter-flexible | 218 | 1.2× faster | ████████████████ |
-|  | **@portable/rate-limit** | 184 |  | ██████████████ |
-| | | | | |
-| `take` of a denied request | **@portable/rate-limit** | 4,210 |  | ████████████████ |
-|  | rate-limiter-flexible | 891 | 4.7× slower | ███ |
-| | | | | |
-| 1,000 × `take` on one key | limiter | 16,800 | 5.8× faster | ████████████████ |
-|  | **@portable/rate-limit** | 2,910 |  | ███ |
-| | | | | |
-| Build the rate-limit headers | **@portable/rate-limit** | 1,440 |  | ████████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">10 rounds of <code>take</code> on 1,000 keys</th></tr>
+<tr><td>rate-limiter-flexible</td><td align="right">218</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/rate-limit</strong></td><td align="right">184</td><td></td><td><img src="../../assets/bar-ours.svg" width="135" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left"><code>take</code> of a denied request</th></tr>
+<tr><td><strong>@portable/rate-limit</strong></td><td align="right">4,210</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>rate-limiter-flexible</td><td align="right">891</td><td>4.7× slower</td><td><img src="../../assets/bar.svg" width="34" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>take</code> on one key</th></tr>
+<tr><td>limiter</td><td align="right">16,800</td><td>5.8× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/rate-limit</strong></td><td align="right">2,910</td><td></td><td><img src="../../assets/bar-ours.svg" width="28" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Build the rate-limit headers</th></tr>
+<tr><td><strong>@portable/rate-limit</strong></td><td align="right">1,440</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rate-limit, and the bars are scaled to the fastest library.
 

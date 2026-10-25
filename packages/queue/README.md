@@ -154,22 +154,26 @@ They run in browsers too, but they are four packages with four APIs, and they ha
 - p-throttle's strict mode spaces saturated calls `interval / limit` apart. The queue starts a call as soon as the window has room.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Run 1,000 tasks, 10 at a time, with `Queue.create` | `Promise.all`, no limit | 14,500 | 6.6× faster | ████████████████ |
-|  | **@portable/queue** | 2,200 |  | ██ |
-|  | p-queue | 478 | 4.6× slower | █ |
-| | | | | |
-| Run 1,000 tasks, 10 at a time, with `Queue.limit` | `Promise.all`, no limit | 14,500 | 6.7× faster | ████████████████ |
-|  | **@portable/queue** | 2,150 |  | ██ |
-|  | p-limit | 1,250 | 1.7× slower | █ |
-| | | | | |
-| Run 1,000 tasks with priorities and a signal | **@portable/queue** | 1,590 |  | ████████████████ |
-|  | p-queue | 277 | 5.7× slower | ███ |
-| | | | | |
-| Map 1,000 items, 10 at a time | **@portable/queue** | 10,100 |  | ████████████████ |
-|  | p-map | 1,360 | 7.4× slower | ██ |
-|  | p-limit | 1,190 | 8.5× slower | ██ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Run 1,000 tasks, 10 at a time, with <code>Queue.create</code></th></tr>
+<tr><td><code>Promise.all</code>, no limit</td><td align="right">14,500</td><td>6.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/queue</strong></td><td align="right">2,200</td><td></td><td><img src="../../assets/bar-ours.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>p-queue</td><td align="right">478</td><td>4.6× slower</td><td><img src="../../assets/bar.svg" width="5" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Run 1,000 tasks, 10 at a time, with <code>Queue.limit</code></th></tr>
+<tr><td><code>Promise.all</code>, no limit</td><td align="right">14,500</td><td>6.7× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><strong>@portable/queue</strong></td><td align="right">2,150</td><td></td><td><img src="../../assets/bar-ours.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>p-limit</td><td align="right">1,250</td><td>1.7× slower</td><td><img src="../../assets/bar.svg" width="14" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Run 1,000 tasks with priorities and a signal</th></tr>
+<tr><td><strong>@portable/queue</strong></td><td align="right">1,590</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-queue</td><td align="right">277</td><td>5.7× slower</td><td><img src="../../assets/bar.svg" width="28" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Map 1,000 items, 10 at a time</th></tr>
+<tr><td><strong>@portable/queue</strong></td><td align="right">10,100</td><td></td><td><img src="../../assets/bar-ours.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-map</td><td align="right">1,360</td><td>7.4× slower</td><td><img src="../../assets/bar.svg" width="22" height="12" alt="" /></td></tr>
+<tr><td>p-limit</td><td align="right">1,190</td><td>8.5× slower</td><td><img src="../../assets/bar.svg" width="19" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/queue, and the bars are scaled to the fastest library.
 
