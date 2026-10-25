@@ -274,17 +274,18 @@
         <p>
           This page has no server. It reads Bluesky's public
           <a href="https://github.com/bluesky-social/jetstream">Jetstream</a> WebSocket, which sends
-          every new post as JSON, with two
-          <a href="https://github.com/portablejs/portable">Portable</a> packages:
-          <code>@portable/websockets</code> and <code>@portable/streams</code>. The same code runs
-          in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+          every new post as JSON, with two <a href="/">Portable</a> packages:
+          <a href="/packages/websockets">@portable/websockets</a> and
+          <a href="/packages/streams">@portable/streams</a>. The same code runs in browsers,
+          Cloudflare Workers, Node 24+, Bun, and Deno.
         </p>
 
         <h3>Subscribe from a cursor</h3>
         <p>
-          Every event has a <code>time_us</code> cursor. <code>WebSockets.connect</code> calls the
-          URL function before every attempt, so a dropped connection resumes from the last post seen
-          instead of skipping what was posted in between.
+          Every event has a <code>time_us</code> cursor.
+          <a href="/packages/websockets#connecturl-options"><code>WebSockets.connect</code></a>
+          calls the URL function before every attempt, so a dropped connection resumes from the last
+          post seen instead of skipping what was posted in between.
         </p>
         <pre><code>import * as Streams from '@portable/streams';
 import * as WebSockets from '@portable/websockets';
@@ -306,9 +307,14 @@ function subscribe(signal?: AbortSignal): ReadableStream&lt;string | Uint8Array&
 
         <h3>Pipe messages into posts</h3>
         <p>
-          The socket's <code>readable</code> is a web <code>ReadableStream</code>, so it pipes
-          through transforms like any other stream. <code>Streams.toAsyncIterable</code> loops over
-          it in every runtime, including browsers that can't iterate a stream with
+          The socket's <code>readable</code> is a web
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream"
+            ><code>ReadableStream</code></a
+          >, so it pipes through transforms like any other stream.
+          <a href="/packages/streams#bridge-streams-and-iterables"
+            ><code>Streams.toAsyncIterable</code></a
+          >
+          loops over it in every runtime, including browsers that can't iterate a stream with
           <code>for await</code> yet.
         </p>
         <pre><code>const posts = subscribe()
