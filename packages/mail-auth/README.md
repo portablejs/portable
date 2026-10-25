@@ -129,11 +129,11 @@ Differences to check when you switch from mailauth:
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Authenticate a 250 KB message with a DKIM signature and an ARC set</th></tr>
-<tr><td>@portable/mail-auth</td><td align="right">246</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>mailauth</td><td align="right">238</td><td>same</td><td><img src="../../assets/bar.svg" width="155" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail-auth</td><td align="right">246</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">238</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="155" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Authenticate and seal a short message</th></tr>
-<tr><td>@portable/mail-auth</td><td align="right">433</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>mailauth</td><td align="right">323</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="119" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail-auth</td><td align="right">433</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">323</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="119" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

@@ -102,15 +102,15 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Verify a 250 KB message with two ARC sets</th></tr>
-<tr><td>@portable/arc</td><td align="right">411</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>mailauth</td><td align="right">252</td><td>1.6× slower</td><td><img src="../../assets/bar.svg" width="98" height="12" alt="" /></td></tr>
+<tr><td>@portable/arc</td><td align="right">411</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">252</td><td>1.6× slower</td><td><img src="https://portablejs.com/bar.svg" width="98" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Seal a 250 KB message</th></tr>
-<tr><td><code>node:crypto</code>, hashing and signing only</td><td align="right">988</td><td>4.4× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/arc</td><td align="right">223</td><td></td><td><img src="../../assets/bar.svg" width="36" height="12" alt="" /></td></tr>
-<tr><td>mailauth</td><td align="right">191</td><td>1.2× slower</td><td><img src="../../assets/bar.svg" width="31" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code>, hashing and signing only</td><td align="right">988</td><td>4.4× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/arc</td><td align="right">223</td><td></td><td><img src="https://portablejs.com/bar.svg" width="36" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">191</td><td>1.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="31" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Seal and verify a short message</th></tr>
-<tr><td>mailauth</td><td align="right">288</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/arc</td><td align="right">272</td><td></td><td><img src="../../assets/bar.svg" width="151" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">288</td><td>1.1× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/arc</td><td align="right">272</td><td></td><td><img src="https://portablejs.com/bar.svg" width="151" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

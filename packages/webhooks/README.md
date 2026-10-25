@@ -170,24 +170,24 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Verify a Standard Webhook</th></tr>
-<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">59,300</td><td>3.3× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>svix</td><td align="right">59,200</td><td>3.3× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>standardwebhooks</td><td align="right">47,400</td><td>2.6× faster</td><td><img src="../../assets/bar.svg" width="128" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks</td><td align="right">17,900</td><td></td><td><img src="../../assets/bar.svg" width="48" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">59,300</td><td>3.3× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>svix</td><td align="right">59,200</td><td>3.3× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>standardwebhooks</td><td align="right">47,400</td><td>2.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="128" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks</td><td align="right">17,900</td><td></td><td><img src="https://portablejs.com/bar.svg" width="48" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Verify a Stripe webhook</th></tr>
-<tr><td>stripe, <code>constructEvent</code></td><td align="right">102,000</td><td>5.8× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">55,800</td><td>3.2× faster</td><td><img src="../../assets/bar.svg" width="88" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks</td><td align="right">17,500</td><td></td><td><img src="../../assets/bar.svg" width="27" height="12" alt="" /></td></tr>
-<tr><td>stripe, <code>constructEventAsync</code></td><td align="right">13,500</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="21" height="12" alt="" /></td></tr>
+<tr><td>stripe, <code>constructEvent</code></td><td align="right">102,000</td><td>5.8× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">55,800</td><td>3.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="88" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks</td><td align="right">17,500</td><td></td><td><img src="https://portablejs.com/bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>stripe, <code>constructEventAsync</code></td><td align="right">13,500</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="21" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Verify a GitHub webhook</th></tr>
-<tr><td>@octokit/webhooks-methods, Node build</td><td align="right">232,000</td><td>12× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">67,700</td><td>3.5× faster</td><td><img src="../../assets/bar.svg" width="47" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks</td><td align="right">19,300</td><td></td><td><img src="../../assets/bar.svg" width="13" height="12" alt="" /></td></tr>
-<tr><td>@octokit/webhooks-methods, web build</td><td align="right">16,800</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="12" height="12" alt="" /></td></tr>
+<tr><td>@octokit/webhooks-methods, Node build</td><td align="right">232,000</td><td>12× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">67,700</td><td>3.5× faster</td><td><img src="https://portablejs.com/bar.svg" width="47" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks</td><td align="right">19,300</td><td></td><td><img src="https://portablejs.com/bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><td>@octokit/webhooks-methods, web build</td><td align="right">16,800</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="12" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Verify a Slack request</th></tr>
-<tr><td>@slack/bolt</td><td align="right">87,400</td><td>4.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">60,700</td><td>3.2× faster</td><td><img src="../../assets/bar.svg" width="111" height="12" alt="" /></td></tr>
-<tr><td>@portable/webhooks</td><td align="right">19,100</td><td></td><td><img src="../../assets/bar.svg" width="35" height="12" alt="" /></td></tr>
+<tr><td>@slack/bolt</td><td align="right">87,400</td><td>4.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks with @noble/hashes</td><td align="right">60,700</td><td>3.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="111" height="12" alt="" /></td></tr>
+<tr><td>@portable/webhooks</td><td align="right">19,100</td><td></td><td><img src="https://portablejs.com/bar.svg" width="35" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

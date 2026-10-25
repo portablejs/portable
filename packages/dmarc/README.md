@@ -103,8 +103,8 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Check a subdomain with relaxed alignment</th></tr>
-<tr><td>@portable/dmarc</td><td align="right">24,600</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>mailauth, strict mode</td><td align="right">18,900</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="123" height="12" alt="" /></td></tr>
+<tr><td>@portable/dmarc</td><td align="right">24,600</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth, strict mode</td><td align="right">18,900</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="123" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

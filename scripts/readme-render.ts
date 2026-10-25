@@ -29,12 +29,12 @@ const barWidth = 160;
 /**
  * An image of a one-pixel SVG stretched to a width in pixels for `hz` against the fastest result, at
  * least 2. Block characters such as `█` leave gaps between them and render at different heights in
- * different fonts, and GitHub strips `data:` URLs and inline `<svg>`, so the bar is a file in
- * `assets/`.
+ * different fonts, and GitHub strips `data:` URLs and inline `<svg>`, so the bar is a file on the
+ * docs site. An absolute URL works on GitHub, npm and JSR, which resolve relative paths differently.
  */
 function bar(hz: number, fastest: number): string {
   const width = Math.max(2, Math.round((hz / fastest) * barWidth));
-  return `<img src="../../assets/bar.svg" width="${width}" height="12" alt="" />`;
+  return `<img src="https://portablejs.com/bar.svg" width="${width}" height="12" alt="" />`;
 }
 
 /** How `hz` compares with `ours`, such as "1.9× slower", with a no-break space so the cell doesn't wrap. */

@@ -214,27 +214,27 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Retry 10 attempts</th></tr>
-<tr><td>@portable/timers</td><td align="right">98,400</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>p-retry</td><td align="right">52,700</td><td>1.9× slower</td><td><img src="../../assets/bar.svg" width="86" height="12" alt="" /></td></tr>
-<tr><td>async-retry</td><td align="right">98.0</td><td>1,000× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">98,400</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-retry</td><td align="right">52,700</td><td>1.9× slower</td><td><img src="https://portablejs.com/bar.svg" width="86" height="12" alt="" /></td></tr>
+<tr><td>async-retry</td><td align="right">98.0</td><td>1,000× slower</td><td><img src="https://portablejs.com/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Retry 10 attempts with a signal</th></tr>
-<tr><td>p-retry</td><td align="right">53,700</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/timers</td><td align="right">53,200</td><td></td><td><img src="../../assets/bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>p-retry</td><td align="right">53,700</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">53,200</td><td></td><td><img src="https://portablejs.com/bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Poll until the 10th check succeeds</th></tr>
-<tr><td>@portable/timers</td><td align="right">98.7</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>p-wait-for</td><td align="right">98.1</td><td>same</td><td><img src="../../assets/bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">98.7</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-wait-for</td><td align="right">98.1</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Sleep for 1 ms</th></tr>
-<tr><td>@portable/timers</td><td align="right">1,200</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>delay</td><td align="right">951</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="127" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">1,200</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>delay</td><td align="right">951</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="127" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Debounce a burst of 1,000 calls</th></tr>
-<tr><td>lodash.debounce</td><td align="right">15,400</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/timers</td><td align="right">13,700</td><td></td><td><img src="../../assets/bar.svg" width="142" height="12" alt="" /></td></tr>
-<tr><td>throttle-debounce</td><td align="right">4,260</td><td>3.2× slower</td><td><img src="../../assets/bar.svg" width="44" height="12" alt="" /></td></tr>
-<tr><td>p-debounce</td><td align="right">2,800</td><td>4.9× slower</td><td><img src="../../assets/bar.svg" width="29" height="12" alt="" /></td></tr>
+<tr><td>lodash.debounce</td><td align="right">15,400</td><td>1.1× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">13,700</td><td></td><td><img src="https://portablejs.com/bar.svg" width="142" height="12" alt="" /></td></tr>
+<tr><td>throttle-debounce</td><td align="right">4,260</td><td>3.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="44" height="12" alt="" /></td></tr>
+<tr><td>p-debounce</td><td align="right">2,800</td><td>4.9× slower</td><td><img src="https://portablejs.com/bar.svg" width="29" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Throttle a burst of 1,000 calls</th></tr>
-<tr><td>lodash.throttle</td><td align="right">15,300</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/timers</td><td align="right">13,000</td><td></td><td><img src="../../assets/bar.svg" width="136" height="12" alt="" /></td></tr>
-<tr><td>throttle-debounce</td><td align="right">3,530</td><td>3.7× slower</td><td><img src="../../assets/bar.svg" width="37" height="12" alt="" /></td></tr>
+<tr><td>lodash.throttle</td><td align="right">15,300</td><td>1.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">13,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="136" height="12" alt="" /></td></tr>
+<tr><td>throttle-debounce</td><td align="right">3,530</td><td>3.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="37" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

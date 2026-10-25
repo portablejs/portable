@@ -159,14 +159,14 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Encode 100 text and HTML messages</th></tr>
-<tr><td>@portable/mail</td><td align="right">89.6</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>nodemailer</td><td align="right">30.1</td><td>3.0× slower</td><td><img src="../../assets/bar.svg" width="54" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail</td><td align="right">89.6</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">30.1</td><td>3.0× slower</td><td><img src="https://portablejs.com/bar.svg" width="54" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a message with a 1 MB attachment</th></tr>
-<tr><td>nodemailer</td><td align="right">337</td><td>1.5× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/mail</td><td align="right">218</td><td></td><td><img src="../../assets/bar.svg" width="104" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">337</td><td>1.5× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail</td><td align="right">218</td><td></td><td><img src="https://portablejs.com/bar.svg" width="104" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a message with a 4 MB attachment from a stream</th></tr>
-<tr><td>nodemailer</td><td align="right">77.0</td><td>1.2× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/mail</td><td align="right">66.6</td><td></td><td><img src="../../assets/bar.svg" width="138" height="12" alt="" /></td></tr>
+<tr><td>nodemailer</td><td align="right">77.0</td><td>1.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/mail</td><td align="right">66.6</td><td></td><td><img src="https://portablejs.com/bar.svg" width="138" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

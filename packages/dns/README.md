@@ -123,17 +123,17 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Resolve the TXT records of gmail.com</th></tr>
-<tr><td>@portable/dns</td><td align="right">47,300</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>tangerine</td><td align="right">37,800</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="128" height="12" alt="" /></td></tr>
-<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">19,800</td><td>2.4× slower</td><td><img src="../../assets/bar.svg" width="67" height="12" alt="" /></td></tr>
+<tr><td>@portable/dns</td><td align="right">47,300</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>tangerine</td><td align="right">37,800</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="128" height="12" alt="" /></td></tr>
+<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">19,800</td><td>2.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="67" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Resolve the MX records of gmail.com</th></tr>
-<tr><td>@portable/dns</td><td align="right">56,900</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>tangerine</td><td align="right">36,200</td><td>1.6× slower</td><td><img src="../../assets/bar.svg" width="102" height="12" alt="" /></td></tr>
-<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">16,300</td><td>3.5× slower</td><td><img src="../../assets/bar.svg" width="46" height="12" alt="" /></td></tr>
+<tr><td>@portable/dns</td><td align="right">56,900</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>tangerine</td><td align="right">36,200</td><td>1.6× slower</td><td><img src="https://portablejs.com/bar.svg" width="102" height="12" alt="" /></td></tr>
+<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">16,300</td><td>3.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="46" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Resolve the A records of www.microsoft.com</th></tr>
-<tr><td>@portable/dns</td><td align="right">52,700</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>tangerine</td><td align="right">36,800</td><td>1.4× slower</td><td><img src="../../assets/bar.svg" width="112" height="12" alt="" /></td></tr>
-<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">19,800</td><td>2.7× slower</td><td><img src="../../assets/bar.svg" width="60" height="12" alt="" /></td></tr>
+<tr><td>@portable/dns</td><td align="right">52,700</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>tangerine</td><td align="right">36,800</td><td>1.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="112" height="12" alt="" /></td></tr>
+<tr><td><code>node:dns/promises</code> over local UDP</td><td align="right">19,800</td><td>2.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="60" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

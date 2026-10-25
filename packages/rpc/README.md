@@ -275,33 +275,33 @@ The benchmarks run over a `MessageChannel` with the default JSON codec.
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Make one call at a time over a <code>MessageChannel</code></th></tr>
-<tr><td>@portable/rpc</td><td align="right">114,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>penpal</td><td align="right">89,700</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="126" height="12" alt="" /></td></tr>
-<tr><td>birpc</td><td align="right">86,900</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="122" height="12" alt="" /></td></tr>
-<tr><td>comlink</td><td align="right">64,500</td><td>1.8× slower</td><td><img src="../../assets/bar.svg" width="91" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">114,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>penpal</td><td align="right">89,700</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="126" height="12" alt="" /></td></tr>
+<tr><td>birpc</td><td align="right">86,900</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="122" height="12" alt="" /></td></tr>
+<tr><td>comlink</td><td align="right">64,500</td><td>1.8× slower</td><td><img src="https://portablejs.com/bar.svg" width="91" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Make 100 concurrent calls</th></tr>
-<tr><td>@portable/rpc</td><td align="right">1,720</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>birpc</td><td align="right">1,290</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="120" height="12" alt="" /></td></tr>
-<tr><td>penpal</td><td align="right">1,150</td><td>1.5× slower</td><td><img src="../../assets/bar.svg" width="107" height="12" alt="" /></td></tr>
-<tr><td>comlink</td><td align="right">834</td><td>2.1× slower</td><td><img src="../../assets/bar.svg" width="78" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">1,720</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>birpc</td><td align="right">1,290</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="120" height="12" alt="" /></td></tr>
+<tr><td>penpal</td><td align="right">1,150</td><td>1.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="107" height="12" alt="" /></td></tr>
+<tr><td>comlink</td><td align="right">834</td><td>2.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="78" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Send 100 notifications and a call</th></tr>
-<tr><td>@portable/rpc</td><td align="right">3,250</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>birpc</td><td align="right">3,020</td><td>1.1× slower</td><td><img src="../../assets/bar.svg" width="149" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">3,250</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>birpc</td><td align="right">3,020</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="149" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Stream 1,000 items</th></tr>
-<tr><td>birpc</td><td align="right">212</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/rpc</td><td align="right">193</td><td></td><td><img src="../../assets/bar.svg" width="146" height="12" alt="" /></td></tr>
-<tr><td>comlink</td><td align="right">76.9</td><td>2.5× slower</td><td><img src="../../assets/bar.svg" width="58" height="12" alt="" /></td></tr>
+<tr><td>birpc</td><td align="right">212</td><td>1.1× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">193</td><td></td><td><img src="https://portablejs.com/bar.svg" width="146" height="12" alt="" /></td></tr>
+<tr><td>comlink</td><td align="right">76.9</td><td>2.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="58" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Send a 2 KB record</th></tr>
-<tr><td>@portable/rpc</td><td align="right">23,400</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>birpc</td><td align="right">14,100</td><td>1.7× slower</td><td><img src="../../assets/bar.svg" width="96" height="12" alt="" /></td></tr>
-<tr><td>comlink</td><td align="right">13,700</td><td>1.7× slower</td><td><img src="../../assets/bar.svg" width="94" height="12" alt="" /></td></tr>
-<tr><td>penpal</td><td align="right">12,300</td><td>1.9× slower</td><td><img src="../../assets/bar.svg" width="84" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">23,400</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>birpc</td><td align="right">14,100</td><td>1.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="96" height="12" alt="" /></td></tr>
+<tr><td>comlink</td><td align="right">13,700</td><td>1.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="94" height="12" alt="" /></td></tr>
+<tr><td>penpal</td><td align="right">12,300</td><td>1.9× slower</td><td><img src="https://portablejs.com/bar.svg" width="84" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Make one call over HTTP</th></tr>
-<tr><td>json-rpc-2.0</td><td align="right">17,200</td><td>same</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/rpc</td><td align="right">17,100</td><td></td><td><img src="../../assets/bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>json-rpc-2.0</td><td align="right">17,200</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">17,100</td><td></td><td><img src="https://portablejs.com/bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Send a batch of 10 calls over HTTP</th></tr>
-<tr><td>json-rpc-2.0</td><td align="right">23,000</td><td>1.1× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/rpc</td><td align="right">20,800</td><td></td><td><img src="../../assets/bar.svg" width="145" height="12" alt="" /></td></tr>
+<tr><td>json-rpc-2.0</td><td align="right">23,000</td><td>1.1× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/rpc</td><td align="right">20,800</td><td></td><td><img src="https://portablejs.com/bar.svg" width="145" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

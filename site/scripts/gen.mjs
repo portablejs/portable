@@ -84,10 +84,10 @@ for (const name of seen) {
         .replace(/<code>/g, '<code data-v="true">')
         .replace(/ colspan=/g, ' colSpan=')}</div>`,
   );
-  // The README draws each bar as an image of assets/bar.svg, which can't take the page's text color.
+  // The README draws each bar as an image of bar.svg on the docs site, which can't take the page's text color.
   // On the site the bar is an inline SVG, so `currentColor` is the text color in light and dark mode.
   md = md.replace(
-    /<img src="\.\.\/\.\.\/assets\/bar\.svg" width="(\d+)" height="(\d+)" alt="" \/>/g,
+    /<img src="https:\/\/portablejs\.com\/bar\.svg" width="(\d+)" height="(\d+)" alt="" \/>/g,
     '<svg width="$1" height="$2" aria-hidden="true"><rect width="100%" height="100%" fill="currentColor" fill-opacity="0.4" /></svg>',
   );
   md = md.replace(

@@ -86,14 +86,14 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Decode 48 captured responses</th></tr>
-<tr><td>@portable/dns-packet</td><td align="right">10,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>dns-packet</td><td align="right">4,560</td><td>2.2× slower</td><td><img src="../../assets/bar.svg" width="73" height="12" alt="" /></td></tr>
+<tr><td>@portable/dns-packet</td><td align="right">10,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>dns-packet</td><td align="right">4,560</td><td>2.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="73" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 48 captured responses</th></tr>
-<tr><td>@portable/dns-packet</td><td align="right">5,970</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>dns-packet</td><td align="right">3,070</td><td>1.9× slower</td><td><img src="../../assets/bar.svg" width="82" height="12" alt="" /></td></tr>
+<tr><td>@portable/dns-packet</td><td align="right">5,970</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>dns-packet</td><td align="right">3,070</td><td>1.9× slower</td><td><img src="https://portablejs.com/bar.svg" width="82" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a DNS-over-HTTPS query</th></tr>
-<tr><td>@portable/dns-packet</td><td align="right">1,820,000</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>dns-packet</td><td align="right">528,000</td><td>3.4× slower</td><td><img src="../../assets/bar.svg" width="46" height="12" alt="" /></td></tr>
+<tr><td>@portable/dns-packet</td><td align="right">1,820,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>dns-packet</td><td align="right">528,000</td><td>3.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="46" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

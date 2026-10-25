@@ -110,14 +110,14 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Sign a GET request</th></tr>
-<tr><td>@portable/oauth1 with @noble/hashes</td><td align="right">47,700</td><td>6.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>oauth-1.0a</td><td align="right">41,600</td><td>5.8× faster</td><td><img src="../../assets/bar.svg" width="140" height="12" alt="" /></td></tr>
-<tr><td>oauth</td><td align="right">25,800</td><td>3.6× faster</td><td><img src="../../assets/bar.svg" width="87" height="12" alt="" /></td></tr>
-<tr><td>@portable/oauth1</td><td align="right">7,210</td><td></td><td><img src="../../assets/bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>@portable/oauth1 with @noble/hashes</td><td align="right">47,700</td><td>6.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>oauth-1.0a</td><td align="right">41,600</td><td>5.8× faster</td><td><img src="https://portablejs.com/bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td>oauth</td><td align="right">25,800</td><td>3.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="87" height="12" alt="" /></td></tr>
+<tr><td>@portable/oauth1</td><td align="right">7,210</td><td></td><td><img src="https://portablejs.com/bar.svg" width="24" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Sign a form POST</th></tr>
-<tr><td>oauth-1.0a</td><td align="right">30,000</td><td>4.9× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/oauth1 with @noble/hashes</td><td align="right">26,200</td><td>4.3× faster</td><td><img src="../../assets/bar.svg" width="140" height="12" alt="" /></td></tr>
-<tr><td>@portable/oauth1</td><td align="right">6,110</td><td></td><td><img src="../../assets/bar.svg" width="33" height="12" alt="" /></td></tr>
+<tr><td>oauth-1.0a</td><td align="right">30,000</td><td>4.9× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/oauth1 with @noble/hashes</td><td align="right">26,200</td><td>4.3× faster</td><td><img src="https://portablejs.com/bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td>@portable/oauth1</td><td align="right">6,110</td><td></td><td><img src="https://portablejs.com/bar.svg" width="33" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

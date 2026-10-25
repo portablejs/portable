@@ -66,18 +66,18 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Select the rows of a 3 MB document</th></tr>
-<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">55.8</td><td>2.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/json-stream</td><td align="right">21.1</td><td></td><td><img src="../../assets/bar.svg" width="61" height="12" alt="" /></td></tr>
-<tr><td>JSONStream</td><td align="right">9.02</td><td>2.3× slower</td><td><img src="../../assets/bar.svg" width="26" height="12" alt="" /></td></tr>
-<tr><td>stream-json</td><td align="right">1.94</td><td>11× slower</td><td><img src="../../assets/bar.svg" width="6" height="12" alt="" /></td></tr>
-<tr><td>stream-json, web streams</td><td align="right">0.816</td><td>26× slower</td><td><img src="../../assets/bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">55.8</td><td>2.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/json-stream</td><td align="right">21.1</td><td></td><td><img src="https://portablejs.com/bar.svg" width="61" height="12" alt="" /></td></tr>
+<tr><td>JSONStream</td><td align="right">9.02</td><td>2.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="26" height="12" alt="" /></td></tr>
+<tr><td>stream-json</td><td align="right">1.94</td><td>11× slower</td><td><img src="https://portablejs.com/bar.svg" width="6" height="12" alt="" /></td></tr>
+<tr><td>stream-json, web streams</td><td align="right">0.816</td><td>26× slower</td><td><img src="https://portablejs.com/bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a 3 MB object</th></tr>
-<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">124</td><td>5.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>json-stream-stringify</td><td align="right">22.2</td><td>same</td><td><img src="../../assets/bar.svg" width="29" height="12" alt="" /></td></tr>
-<tr><td>@portable/json-stream</td><td align="right">22.0</td><td></td><td><img src="../../assets/bar.svg" width="28" height="12" alt="" /></td></tr>
+<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">124</td><td>5.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>json-stream-stringify</td><td align="right">22.2</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="29" height="12" alt="" /></td></tr>
+<tr><td>@portable/json-stream</td><td align="right">22.0</td><td></td><td><img src="https://portablejs.com/bar.svg" width="28" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode rows from an async iterable</th></tr>
-<tr><td>@portable/json-stream</td><td align="right">99.6</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>json-stream-stringify</td><td align="right">79.5</td><td>1.3× slower</td><td><img src="../../assets/bar.svg" width="128" height="12" alt="" /></td></tr>
+<tr><td>@portable/json-stream</td><td align="right">99.6</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>json-stream-stringify</td><td align="right">79.5</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="128" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

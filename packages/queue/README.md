@@ -158,20 +158,20 @@ They run in browsers too, but they are four packages with four APIs, and they ha
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Run 1,000 tasks, 10 at a time, with <code>Queue.create</code></th></tr>
-<tr><td><code>Promise.all</code>, no limit</td><td align="right">14,500</td><td>6.6× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/queue</td><td align="right">2,200</td><td></td><td><img src="../../assets/bar.svg" width="24" height="12" alt="" /></td></tr>
-<tr><td>p-queue</td><td align="right">478</td><td>4.6× slower</td><td><img src="../../assets/bar.svg" width="5" height="12" alt="" /></td></tr>
+<tr><td><code>Promise.all</code>, no limit</td><td align="right">14,500</td><td>6.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/queue</td><td align="right">2,200</td><td></td><td><img src="https://portablejs.com/bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>p-queue</td><td align="right">478</td><td>4.6× slower</td><td><img src="https://portablejs.com/bar.svg" width="5" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Run 1,000 tasks, 10 at a time, with <code>Queue.limit</code></th></tr>
-<tr><td><code>Promise.all</code>, no limit</td><td align="right">14,500</td><td>6.7× faster</td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/queue</td><td align="right">2,150</td><td></td><td><img src="../../assets/bar.svg" width="24" height="12" alt="" /></td></tr>
-<tr><td>p-limit</td><td align="right">1,250</td><td>1.7× slower</td><td><img src="../../assets/bar.svg" width="14" height="12" alt="" /></td></tr>
+<tr><td><code>Promise.all</code>, no limit</td><td align="right">14,500</td><td>6.7× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/queue</td><td align="right">2,150</td><td></td><td><img src="https://portablejs.com/bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>p-limit</td><td align="right">1,250</td><td>1.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="14" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Run 1,000 tasks with priorities and a signal</th></tr>
-<tr><td>@portable/queue</td><td align="right">1,590</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>p-queue</td><td align="right">277</td><td>5.7× slower</td><td><img src="../../assets/bar.svg" width="28" height="12" alt="" /></td></tr>
+<tr><td>@portable/queue</td><td align="right">1,590</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-queue</td><td align="right">277</td><td>5.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="28" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Map 1,000 items, 10 at a time</th></tr>
-<tr><td>@portable/queue</td><td align="right">10,100</td><td></td><td><img src="../../assets/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>p-map</td><td align="right">1,360</td><td>7.4× slower</td><td><img src="../../assets/bar.svg" width="22" height="12" alt="" /></td></tr>
-<tr><td>p-limit</td><td align="right">1,190</td><td>8.5× slower</td><td><img src="../../assets/bar.svg" width="19" height="12" alt="" /></td></tr>
+<tr><td>@portable/queue</td><td align="right">10,100</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-map</td><td align="right">1,360</td><td>7.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="22" height="12" alt="" /></td></tr>
+<tr><td>p-limit</td><td align="right">1,190</td><td>8.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="19" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 
