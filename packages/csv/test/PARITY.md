@@ -239,7 +239,7 @@ Options we leave out, and why, so the rows below can point here:
 | Empty input, Empty input with columns and disabled header | `RFC 4180 > writes nothing for no rows` | |
 | Custom quote character (single quote), Custom quoteChar escapes and quotes embedded quoteChar | `csv-stringify > quote > quotes with a custom character and doubles it inside fields` | |
 | Date objects are exported in its ISO representation, … with an expanded year | `csv-stringify > writes a Date as ISO 8601` | |
-| Invalid Date objects are exported as an empty field | `Invalid Date objects throw RangeError` | Deliberate difference: an invalid `Date` throws, as `toISOString()` does. |
+| Invalid Date objects are exported as an empty field | `Invalid Date objects throw InvalidInputError` | Deliberate difference: an invalid `Date` throws, because it has no ISO 8601 form. |
 | Returns without empty rows when skipEmptyLines is true / 'greedy' (4), Skips single-cell rows …, Does not skip single-cell rows containing 0 | skipped | No row filtering on encode. `RFC 4180 > writes a row of one empty field as ""` covers what a null cell becomes. |
 | Returns empty rows … when skipEmptyLines is false (3) | `Returns empty rows when empty rows are passed` | |
 | Use different escapeChar, Custom quoteChar with custom escapeChar … | skipped | Escape characters. |

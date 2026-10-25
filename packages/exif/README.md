@@ -82,7 +82,7 @@ How far it reads depends on where the format stores the metadata:
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `16777216` (16 MiB) | Most bytes of the stream to hold in memory at once. Skipped bytes don't count. |
+| `maxBytes` | `16777216` (16 MiB) | Most bytes of the stream to hold in memory at once. Skipped bytes don't count. A negative or `NaN` value throws a `RangeError`. |
 | `signal` | none | An `AbortSignal`. Aborting rejects with `signal.reason` and cancels the stream. |
 
 Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesError` when it would need to hold more than `maxBytes`. The error's `maxBytes` property holds the limit. An error from the stream itself is passed on unchanged.
@@ -146,7 +146,7 @@ const taken = Exif.parseDate(exif.DateTimeOriginal, { offset: exif.OffsetTimeOri
 
 exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies outside `@portable/*`.
 
-- Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 10× faster than exifr.
+- Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 11× faster than exifr.
 - `parse` skips the bad tags in damaged data and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
 - Tags are grouped by IFD, so the thumbnail's `Orientation` is never reported as the image's (exif-parser #30).
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.

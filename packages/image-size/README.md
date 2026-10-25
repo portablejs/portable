@@ -30,7 +30,7 @@ Reads `stream` until the size is known, then cancels it.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. |
+| `maxBytes` | `524288` | Most bytes to buffer. When the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. A negative or `NaN` value throws a `RangeError`. |
 | `signal` | none | Aborting rejects with `signal.reason` and cancels the stream. |
 
 ### `Size`
@@ -67,8 +67,8 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 
 `parseStream` reads a `fetch` body or a `File` only up to the header and then cancels it, in any JavaScript runtime. The package has no dependencies outside `@portable/*`.
 
-- `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 60× slower, and image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
-- `parse` read `large.jpg` about 400× faster than image-size, and was 2.5 to 55× faster on the PNG, HEIC, WebP, SVG and TIFF fixtures.
+- `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 70× slower, and image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
+- `parse` read `large.jpg` about 3,800× faster than image-size, and was 3.6 to 360× faster on the PNG, HEIC, WebP, SVG and TIFF fixtures.
 - Input that ends early gives `TruncatedError`. image-size throws a `RangeError` from `DataView`.
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - Lossless and arithmetic-coded JPEGs are read, which image-size rejects, and there is no global `disableTypes` state shared by every caller in the process.

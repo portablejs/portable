@@ -48,6 +48,9 @@ export function createEncoder(options: encode.Options): Encoder {
     ) {
       text = String(value);
     } else if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) {
+        throw new InvalidInputError("Can't encode an invalid Date as a CSV field.");
+      }
       text = value.toISOString();
     } else {
       throw new InvalidInputError(`Can't encode a value of type ${typeof value} as a CSV field.`);

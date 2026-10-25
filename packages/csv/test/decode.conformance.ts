@@ -360,6 +360,11 @@ describe('csv-parse', () => {
       }
       expect(() => Csv.decode('a', { quote: '' })).toThrow(RangeError);
     });
+
+    test('rejects a negative or NaN maxLength', () => {
+      expect(() => Csv.decode('a', { maxLength: -1 })).toThrow(RangeError);
+      expect(() => new Csv.DecoderStream({ maxLength: Number.NaN })).toThrow(RangeError);
+    });
   });
 
   describe('line breaks', () => {

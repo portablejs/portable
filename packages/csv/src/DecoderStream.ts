@@ -51,12 +51,12 @@ export declare namespace DecoderStream {
  * @example
  * ```ts
  * import * as Csv from '@portable/csv';
+ * import * as Streams from '@portable/streams';
  *
  * const response = await fetch('https://example.com/users.csv');
  * const rows = response.body!.pipeThrough(new Csv.DecoderStream({ header: true }));
- * const reader = rows.getReader();
- * for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *   console.log(r.value.email);
+ * for await (const row of Streams.toAsyncIterable(rows)) {
+ *   console.log(row.email);
  * }
  * ```
  */

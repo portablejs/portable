@@ -65,8 +65,10 @@ export declare namespace StripStream {
  * import * as Exif from '@portable/exif';
  *
  * const [stored, inspected] = request.body!.tee();
- * await bucket.put(key, stored.pipeThrough(new Exif.StripStream()));
- * const exif = await Exif.parseStream(inspected);
+ * const [, exif] = await Promise.all([
+ *   bucket.put(key, stored.pipeThrough(new Exif.StripStream())),
+ *   Exif.parseStream(inspected),
+ * ]);
  * ```
  */
 export class StripStream extends TransformStream<Uint8Array, Uint8Array> {

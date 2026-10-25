@@ -22,9 +22,9 @@ Streams read a `fetch` body and write a `Response` body:
 
 ```ts
 const response = await fetch('https://example.com/users.csv');
-const reader = response.body!.pipeThrough(new Csv.DecoderStream({ header: true })).getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.email);
+const rows = response.body!.pipeThrough(new Csv.DecoderStream({ header: true }));
+for await (const row of Streams.toAsyncIterable(rows)) {
+  console.log(row.email);
 }
 
 const body = Streams.fromIterable(users)
@@ -68,13 +68,13 @@ const rows = Csv.decode(text, { header: ['id', 'email'] });
 | `Csv.TruncatedError` | The input ends inside a quoted field. |
 | `Csv.MaxLengthError` | A row is longer than `maxLength`, which the error stores. |
 
-A bad option, such as a two-character delimiter, throws `RangeError`.
+A bad option, such as a two-character delimiter or a negative `maxLength`, throws `RangeError`.
 
 ## Encoding
 
 `Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
 
-A row is an array of values or an object keyed by column name. Strings are written as they are, numbers, booleans and bigints with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Anything else throws `InvalidInputError`, as does an object row after array rows unless `header` is an array.
+A row is an array of values or an object keyed by column name. Strings are written as they are, numbers, booleans and bigints with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Anything else throws `InvalidInputError`, as do an invalid `Date` and an object row after array rows unless `header` is an array.
 
 A field is quoted only when it holds the delimiter, the quote, CR or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 
@@ -134,7 +134,7 @@ Other differences to check when you switch:
 - papaparse with `header: true` accepts rows whose field count differs from the header's. `decode` throws `InvalidInputError` for them unless you pass `relaxColumnCount: true`.
 - csv-parse's `cast`, papaparse's `dynamicTyping` and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from `@portable/streams`.
 - papaparse guesses the delimiter by default. Here the delimiter is `,` unless you pass `delimiter`.
-- Comments, trimming, csv-parse's `from` and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or cancel the reader to stop early.
+- Comments, trimming, csv-parse's `from` and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or leave the loop early, which cancels the stream.
 - Delimiters longer than one character and escape characters other than `""` are not supported.
 - csv-stringify's `quoted` and papaparse's `quotes` force quoting, which is not supported. Fields are quoted only when they need it.
 - csv-stringify reads nested column paths such as `columns: ['a.b']`. Flatten the rows before you pass them to `encode`.

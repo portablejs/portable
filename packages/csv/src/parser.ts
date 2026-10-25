@@ -32,6 +32,9 @@ export function createParser(
   if (delimiter === quote) {
     throw new RangeError('delimiter and quote must differ.');
   }
+  if (!(maxLength >= 0)) {
+    throw new RangeError('`maxLength` must be a number >= 0.');
+  }
   const delimiterCode = delimiter.charCodeAt(0);
   const quoteCode = quote === false ? -1 : quote.charCodeAt(0);
 

@@ -198,6 +198,9 @@ export async function parseStream(
   options: parseStream.Options = {},
 ): Promise<Size> {
   const { maxBytes = 512 * 1024, signal } = options;
+  if (!(maxBytes >= 0)) {
+    throw new RangeError('`maxBytes` must be a number >= 0.');
+  }
   const reader = stream.getReader();
   const abort = () => reader.cancel(signal!.reason).catch(() => {});
   signal?.addEventListener('abort', abort, { once: true });
