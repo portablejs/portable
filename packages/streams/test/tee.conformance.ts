@@ -158,6 +158,22 @@ describe('tee', () => {
     await reader.cancel();
   });
 
+  test('reads the source in step with every branch with highWaterMark: 0', async () => {
+    const source = counting();
+    const [fast, slow] = tee(source.stream, 2, { highWaterMark: 0 });
+    const received = drain(fast!);
+    await delay(20);
+    expect(source.pulls).toBe(0);
+
+    const reader = slow!.getReader();
+    expect(await reader.read()).toEqual({ done: false, value: 1 });
+    await delay(20);
+    expect(received).toEqual([1]);
+    await reader.cancel();
+    await delay(20);
+    expect(received).toHaveLength(50);
+  });
+
   test('defaults highWaterMark to 16 chunks', async () => {
     const source = counting();
     const [fast, slow] = tee(source.stream, 2);

@@ -89,7 +89,7 @@ export function tee<chunk>(
     }
     let wanted = false;
     for (const branch of active) {
-      if (branch.queued >= highWaterMark) {
+      if (!branch.waiting && branch.queued >= highWaterMark) {
         return;
       }
       wanted ||= branch.waiting;
