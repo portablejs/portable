@@ -34,7 +34,7 @@ const barWidth = 160;
  */
 function bar(hz: number, fastest: number): string {
   const width = Math.max(2, Math.round((hz / fastest) * barWidth));
-  return `<img src="https://portablejs.com/bar.svg" width="${width}" height="12" alt="" />`;
+  return `<img src="https://portablejs.com/readme/benchmark-bar.svg" width="${width}" height="12" alt="" />`;
 }
 
 /** How `hz` compares with `ours`, such as "1.9× slower", with a no-break space so the cell doesn't wrap. */

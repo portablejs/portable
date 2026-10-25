@@ -68,43 +68,43 @@ Node's `Buffer` methods are C++ and are faster on large input. In runtimes that 
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Hex-encode 32 bytes</th></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">7,480,000</td><td>2.0× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/bytes</td><td align="right">3,650,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="78" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">3,150,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="67" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">7,480,000</td><td>2.0× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">3,650,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="78" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">3,150,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="67" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Hex-encode 1 MiB</th></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">4,910</td><td>16× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/bytes</td><td align="right">312</td><td></td><td><img src="https://portablejs.com/bar.svg" width="10" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">35.9</td><td>8.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">4,910</td><td>16× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">312</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="10" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">35.9</td><td>8.7× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Hex-decode 32 bytes</th></tr>
-<tr><td>@portable/bytes</td><td align="right">4,300,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">2,560,000</td><td>1.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="95" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">1,410,000</td><td>3.0× slower</td><td><img src="https://portablejs.com/bar.svg" width="52" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">4,300,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">2,560,000</td><td>1.7× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="95" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">1,410,000</td><td>3.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="52" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Hex-decode 1 MiB</th></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">901</td><td>5.9× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/bytes</td><td align="right">152</td><td></td><td><img src="https://portablejs.com/bar.svg" width="27" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">23.4</td><td>6.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="4" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">901</td><td>5.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">152</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">23.4</td><td>6.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="4" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Compare 32 bytes</th></tr>
-<tr><td>@portable/bytes</td><td align="right">13,500,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">6,350,000</td><td>2.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="75" height="12" alt="" /></td></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">3,320,000</td><td>4.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="39" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">13,500,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">6,350,000</td><td>2.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="75" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">3,320,000</td><td>4.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="39" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Compare 1 MiB</th></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">28,300</td><td>7.4× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/bytes</td><td align="right">3,820</td><td></td><td><img src="https://portablejs.com/bar.svg" width="22" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">850</td><td>4.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="5" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">28,300</td><td>7.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">3,820</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="22" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">850</td><td>4.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="5" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Compare 32 bytes in constant time</th></tr>
-<tr><td>@portable/bytes</td><td align="right">16,300,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">3,010,000</td><td>5.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="30" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">16,300,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">3,010,000</td><td>5.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="30" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Compare 1 MiB in constant time</th></tr>
-<tr><td>@portable/bytes</td><td align="right">4,470</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">1,150</td><td>3.9× slower</td><td><img src="https://portablejs.com/bar.svg" width="41" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">4,470</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">1,150</td><td>3.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="41" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Join 4 × 64 KiB</th></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">50,100</td><td>1.3× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/bytes</td><td align="right">38,700</td><td></td><td><img src="https://portablejs.com/bar.svg" width="124" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">35,600</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="114" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">50,100</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">38,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">35,600</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="114" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Join 100 × 32 bytes</th></tr>
-<tr><td>@portable/bytes</td><td align="right">341,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">335,000</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="157" height="12" alt="" /></td></tr>
-<tr><td>uint8array-extras</td><td align="right">130,000</td><td>2.6× slower</td><td><img src="https://portablejs.com/bar.svg" width="61" height="12" alt="" /></td></tr>
+<tr><td>@portable/bytes</td><td align="right">341,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>Node <code>Buffer</code> or <code>node:crypto</code></td><td align="right">335,000</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="157" height="12" alt="" /></td></tr>
+<tr><td>uint8array-extras</td><td align="right">130,000</td><td>2.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="61" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

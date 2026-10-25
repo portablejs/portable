@@ -84,16 +84,16 @@ The URL Standard runs UTS #46 for hosts, but implementations lag behind it. On `
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Convert 10 hostnames to Unicode</th></tr>
-<tr><td>@portable/idna</td><td align="right">87,400</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><code>node:url</code></td><td align="right">79,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="145" height="12" alt="" /></td></tr>
-<tr><td>punycode</td><td align="right">76,700</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="140" height="12" alt="" /></td></tr>
-<tr><td>tr46</td><td align="right">12,900</td><td>6.8× slower</td><td><img src="https://portablejs.com/bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">87,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">79,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="145" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">76,700</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">12,900</td><td>6.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="24" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Convert 10 domains to ASCII</th></tr>
-<tr><td><code>new URL()</code></td><td align="right">102,000</td><td>1.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/idna</td><td align="right">84,200</td><td></td><td><img src="https://portablejs.com/bar.svg" width="132" height="12" alt="" /></td></tr>
-<tr><td><code>node:url</code></td><td align="right">79,900</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="125" height="12" alt="" /></td></tr>
-<tr><td>punycode</td><td align="right">79,200</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="124" height="12" alt="" /></td></tr>
-<tr><td>tr46</td><td align="right">14,500</td><td>5.8× slower</td><td><img src="https://portablejs.com/bar.svg" width="23" height="12" alt="" /></td></tr>
+<tr><td><code>new URL()</code></td><td align="right">102,000</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">84,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="132" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">79,900</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="125" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">79,200</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">14,500</td><td>5.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="23" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

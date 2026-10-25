@@ -108,9 +108,9 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Check a record with nested includes</th></tr>
-<tr><td>@portable/spf</td><td align="right">20,500</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>mailauth</td><td align="right">9,280</td><td>2.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="72" height="12" alt="" /></td></tr>
-<tr><td>mailauth, strict mode</td><td align="right">7,660</td><td>2.7× slower</td><td><img src="https://portablejs.com/bar.svg" width="60" height="12" alt="" /></td></tr>
+<tr><td>@portable/spf</td><td align="right">20,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">9,280</td><td>2.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="72" height="12" alt="" /></td></tr>
+<tr><td>mailauth, strict mode</td><td align="right">7,660</td><td>2.7× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="60" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

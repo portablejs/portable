@@ -117,17 +117,17 @@ It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a 
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Encrypt a 186-byte payload</th></tr>
-<tr><td>web-push</td><td align="right">4,280</td><td>2.5× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-push</td><td align="right">1,680</td><td></td><td><img src="https://portablejs.com/bar.svg" width="63" height="12" alt="" /></td></tr>
+<tr><td>web-push</td><td align="right">4,280</td><td>2.5× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-push</td><td align="right">1,680</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="63" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encrypt 64 payloads at once</th></tr>
-<tr><td>web-push</td><td align="right">67.3</td><td>1.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-push</td><td align="right">57.4</td><td></td><td><img src="https://portablejs.com/bar.svg" width="136" height="12" alt="" /></td></tr>
+<tr><td>web-push</td><td align="right">67.3</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-push</td><td align="right">57.4</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="136" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Sign a VAPID JWT</th></tr>
-<tr><td>web-push</td><td align="right">10,200</td><td>1.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-push</td><td align="right">8,230</td><td></td><td><img src="https://portablejs.com/bar.svg" width="129" height="12" alt="" /></td></tr>
+<tr><td>web-push</td><td align="right">10,200</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-push</td><td align="right">8,230</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="129" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Build a push request</th></tr>
-<tr><td>web-push</td><td align="right">2,770</td><td>1.8× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-push</td><td align="right">1,500</td><td></td><td><img src="https://portablejs.com/bar.svg" width="87" height="12" alt="" /></td></tr>
+<tr><td>web-push</td><td align="right">2,770</td><td>1.8× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-push</td><td align="right">1,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="87" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

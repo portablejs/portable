@@ -153,29 +153,29 @@ When switching from debug, note these differences:
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">A debug call while debug output is off</th></tr>
-<tr><td>@portable/log</td><td align="right">23,000,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>loglevel</td><td align="right">22,600,000</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="157" height="12" alt="" /></td></tr>
-<tr><td>debug</td><td align="right">19,800,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="138" height="12" alt="" /></td></tr>
-<tr><td>consola</td><td align="right">18,900,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="131" height="12" alt="" /></td></tr>
-<tr><td>pino</td><td align="right">17,700,000</td><td>1.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="123" height="12" alt="" /></td></tr>
-<tr><td>@logtape/logtape</td><td align="right">10,300,000</td><td>2.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="72" height="12" alt="" /></td></tr>
+<tr><td>@portable/log</td><td align="right">23,000,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>loglevel</td><td align="right">22,600,000</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="157" height="12" alt="" /></td></tr>
+<tr><td>debug</td><td align="right">19,800,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="138" height="12" alt="" /></td></tr>
+<tr><td>consola</td><td align="right">18,900,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="131" height="12" alt="" /></td></tr>
+<tr><td>pino</td><td align="right">17,700,000</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="123" height="12" alt="" /></td></tr>
+<tr><td>@logtape/logtape</td><td align="right">10,300,000</td><td>2.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="72" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">A debug call with a format string, written as text</th></tr>
-<tr><td>@portable/log</td><td align="right">3,040,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>loglevel</td><td align="right">1,970,000</td><td>1.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="104" height="12" alt="" /></td></tr>
-<tr><td>consola</td><td align="right">671,000</td><td>4.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="35" height="12" alt="" /></td></tr>
-<tr><td>pino</td><td align="right">658,000</td><td>4.6× slower</td><td><img src="https://portablejs.com/bar.svg" width="35" height="12" alt="" /></td></tr>
-<tr><td>debug</td><td align="right">408,000</td><td>7.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="21" height="12" alt="" /></td></tr>
-<tr><td>@logtape/logtape</td><td align="right">194,000</td><td>16× slower</td><td><img src="https://portablejs.com/bar.svg" width="10" height="12" alt="" /></td></tr>
+<tr><td>@portable/log</td><td align="right">3,040,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>loglevel</td><td align="right">1,970,000</td><td>1.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="104" height="12" alt="" /></td></tr>
+<tr><td>consola</td><td align="right">671,000</td><td>4.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="35" height="12" alt="" /></td></tr>
+<tr><td>pino</td><td align="right">658,000</td><td>4.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="35" height="12" alt="" /></td></tr>
+<tr><td>debug</td><td align="right">408,000</td><td>7.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="21" height="12" alt="" /></td></tr>
+<tr><td>@logtape/logtape</td><td align="right">194,000</td><td>16× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="10" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">A debug call with an object, written as text</th></tr>
-<tr><td>@portable/log</td><td align="right">2,370,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>consola</td><td align="right">691,000</td><td>3.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="47" height="12" alt="" /></td></tr>
-<tr><td>loglevel</td><td align="right">668,000</td><td>3.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="45" height="12" alt="" /></td></tr>
-<tr><td>pino</td><td align="right">629,000</td><td>3.8× slower</td><td><img src="https://portablejs.com/bar.svg" width="42" height="12" alt="" /></td></tr>
-<tr><td>@logtape/logtape</td><td align="right">257,000</td><td>9.2× slower</td><td><img src="https://portablejs.com/bar.svg" width="17" height="12" alt="" /></td></tr>
-<tr><td>debug</td><td align="right">249,000</td><td>9.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="17" height="12" alt="" /></td></tr>
+<tr><td>@portable/log</td><td align="right">2,370,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>consola</td><td align="right">691,000</td><td>3.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="47" height="12" alt="" /></td></tr>
+<tr><td>loglevel</td><td align="right">668,000</td><td>3.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="45" height="12" alt="" /></td></tr>
+<tr><td>pino</td><td align="right">629,000</td><td>3.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="42" height="12" alt="" /></td></tr>
+<tr><td>@logtape/logtape</td><td align="right">257,000</td><td>9.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="17" height="12" alt="" /></td></tr>
+<tr><td>debug</td><td align="right">249,000</td><td>9.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="17" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Create a logger and extend it</th></tr>
-<tr><td>@portable/log</td><td align="right">3,970,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>debug</td><td align="right">242,000</td><td>16× slower</td><td><img src="https://portablejs.com/bar.svg" width="10" height="12" alt="" /></td></tr>
+<tr><td>@portable/log</td><td align="right">3,970,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>debug</td><td align="right">242,000</td><td>16× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="10" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

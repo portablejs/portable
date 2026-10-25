@@ -185,29 +185,29 @@ The libraries above were written for Node streams. This package reads web stream
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Collect 6.8 MB into bytes</th></tr>
-<tr><td>bl</td><td align="right">973</td><td>1.4× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>concat-stream</td><td align="right">933</td><td>1.3× faster</td><td><img src="https://portablejs.com/bar.svg" width="153" height="12" alt="" /></td></tr>
-<tr><td>@portable/streams</td><td align="right">715</td><td></td><td><img src="https://portablejs.com/bar.svg" width="118" height="12" alt="" /></td></tr>
-<tr><td>get-stream</td><td align="right">94.0</td><td>7.6× slower</td><td><img src="https://portablejs.com/bar.svg" width="15" height="12" alt="" /></td></tr>
+<tr><td>bl</td><td align="right">973</td><td>1.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>concat-stream</td><td align="right">933</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">715</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="118" height="12" alt="" /></td></tr>
+<tr><td>get-stream</td><td align="right">94.0</td><td>7.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="15" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Collect 6.8 MB into bytes with a 10 MB limit</th></tr>
-<tr><td>raw-body</td><td align="right">1,180</td><td>1.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/streams</td><td align="right">751</td><td></td><td><img src="https://portablejs.com/bar.svg" width="102" height="12" alt="" /></td></tr>
+<tr><td>raw-body</td><td align="right">1,180</td><td>1.6× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">751</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="102" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Collect 6.8 MB into text</th></tr>
-<tr><td>@portable/streams</td><td align="right">256</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>get-stream</td><td align="right">248</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="155" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">256</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>get-stream</td><td align="right">248</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="155" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Collect 100,000 objects into an array</th></tr>
-<tr><td>stream-to-array</td><td align="right">76.1</td><td>2.0× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>get-stream</td><td align="right">38.8</td><td>same</td><td><img src="https://portablejs.com/bar.svg" width="82" height="12" alt="" /></td></tr>
-<tr><td>@portable/streams</td><td align="right">38.7</td><td></td><td><img src="https://portablejs.com/bar.svg" width="81" height="12" alt="" /></td></tr>
+<tr><td>stream-to-array</td><td align="right">76.1</td><td>2.0× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>get-stream</td><td align="right">38.8</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="82" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">38.7</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="81" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Merge 3 streams of 10,000 objects</th></tr>
-<tr><td>merge2</td><td align="right">228</td><td>4.8× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>merge-stream</td><td align="right">219</td><td>4.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="154" height="12" alt="" /></td></tr>
-<tr><td>@portable/streams</td><td align="right">47.9</td><td></td><td><img src="https://portablejs.com/bar.svg" width="34" height="12" alt="" /></td></tr>
+<tr><td>merge2</td><td align="right">228</td><td>4.8× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>merge-stream</td><td align="right">219</td><td>4.6× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="154" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">47.9</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="34" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Map 30,000 objects</th></tr>
-<tr><td>through2</td><td align="right">189</td><td>4.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/streams</td><td align="right">45.3</td><td></td><td><img src="https://portablejs.com/bar.svg" width="38" height="12" alt="" /></td></tr>
+<tr><td>through2</td><td align="right">189</td><td>4.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">45.3</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="38" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Split 6.8 MB into 3 branches</th></tr>
-<tr><td>@portable/streams</td><td align="right">803</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/streams</td><td align="right">803</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

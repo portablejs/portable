@@ -56,15 +56,15 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Decode 20,000 rows</th></tr>
-<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">44.5</td><td>1.2× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/jsonl</td><td align="right">38.6</td><td></td><td><img src="https://portablejs.com/bar.svg" width="139" height="12" alt="" /></td></tr>
-<tr><td>ndjson</td><td align="right">34.3</td><td>1.1× slower</td><td><img src="https://portablejs.com/bar.svg" width="123" height="12" alt="" /></td></tr>
-<tr><td>stream-json</td><td align="right">27.8</td><td>1.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="100" height="12" alt="" /></td></tr>
+<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">44.5</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/jsonl</td><td align="right">38.6</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="139" height="12" alt="" /></td></tr>
+<tr><td>ndjson</td><td align="right">34.3</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="123" height="12" alt="" /></td></tr>
+<tr><td>stream-json</td><td align="right">27.8</td><td>1.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="100" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 20,000 rows</th></tr>
-<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">79.3</td><td>2.7× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>stream-json</td><td align="right">38.7</td><td>1.3× faster</td><td><img src="https://portablejs.com/bar.svg" width="78" height="12" alt="" /></td></tr>
-<tr><td>@portable/jsonl</td><td align="right">29.2</td><td></td><td><img src="https://portablejs.com/bar.svg" width="59" height="12" alt="" /></td></tr>
-<tr><td>ndjson</td><td align="right">19.0</td><td>1.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="38" height="12" alt="" /></td></tr>
+<tr><td><code>JSON.parse</code> or <code>JSON.stringify</code></td><td align="right">79.3</td><td>2.7× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>stream-json</td><td align="right">38.7</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="78" height="12" alt="" /></td></tr>
+<tr><td>@portable/jsonl</td><td align="right">29.2</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="59" height="12" alt="" /></td></tr>
+<tr><td>ndjson</td><td align="right">19.0</td><td>1.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="38" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

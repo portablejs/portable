@@ -80,34 +80,34 @@ The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchr
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">SHA-256 of 1 KB</th></tr>
-<tr><td><code>node:crypto</code></td><td align="right">429,000</td><td>15× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@noble/hashes</td><td align="right">136,000</td><td>4.9× faster</td><td><img src="https://portablejs.com/bar.svg" width="51" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-crypto</td><td align="right">27,900</td><td></td><td><img src="https://portablejs.com/bar.svg" width="10" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">429,000</td><td>15× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">136,000</td><td>4.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="51" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">27,900</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="10" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">SHA-256 of 1 MB</th></tr>
-<tr><td>@portable/web-crypto</td><td align="right">928</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@noble/hashes</td><td align="right">170</td><td>5.5× slower</td><td><img src="https://portablejs.com/bar.svg" width="29" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">928</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">170</td><td>5.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="29" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">HMAC-SHA256 of 1 KB</th></tr>
-<tr><td><code>node:crypto</code></td><td align="right">271,000</td><td>15× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@noble/hashes</td><td align="right">84,700</td><td>4.6× faster</td><td><img src="https://portablejs.com/bar.svg" width="50" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-crypto</td><td align="right">18,500</td><td></td><td><img src="https://portablejs.com/bar.svg" width="11" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">271,000</td><td>15× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">84,700</td><td>4.6× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="50" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">18,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="11" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Derive 32 bytes with HKDF</th></tr>
-<tr><td><code>node:crypto</code></td><td align="right">215,000</td><td>12× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@noble/hashes</td><td align="right">113,000</td><td>6.5× faster</td><td><img src="https://portablejs.com/bar.svg" width="84" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-crypto</td><td align="right">17,300</td><td></td><td><img src="https://portablejs.com/bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">215,000</td><td>12× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">113,000</td><td>6.5× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="84" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">17,300</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="13" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Import an Ed25519 seed</th></tr>
-<tr><td>@portable/web-crypto</td><td align="right">15,600</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@noble/curves</td><td align="right">2,920</td><td>5.3× slower</td><td><img src="https://portablejs.com/bar.svg" width="30" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">15,600</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/curves</td><td align="right">2,920</td><td>5.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="30" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the public key of a P-256 key</th></tr>
-<tr><td><code>node:crypto</code></td><td align="right">1,240,000</td><td>60× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-crypto</td><td align="right">20,500</td><td></td><td><img src="https://portablejs.com/bar.svg" width="3" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">1,240,000</td><td>60× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">20,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="3" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Convert a DER ECDSA signature to raw</th></tr>
-<tr><td>@portable/web-crypto</td><td align="right">4,900,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>ecdsa-sig-formatter</td><td align="right">818,000</td><td>6.0× slower</td><td><img src="https://portablejs.com/bar.svg" width="27" height="12" alt="" /></td></tr>
-<tr><td>@noble/curves</td><td align="right">361,000</td><td>14× slower</td><td><img src="https://portablejs.com/bar.svg" width="12" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">4,900,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>ecdsa-sig-formatter</td><td align="right">818,000</td><td>6.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>@noble/curves</td><td align="right">361,000</td><td>14× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="12" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Convert a raw ECDSA signature to DER</th></tr>
-<tr><td>ecdsa-sig-formatter</td><td align="right">2,250,000</td><td>1.4× faster</td><td><img src="https://portablejs.com/bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/web-crypto</td><td align="right">1,620,000</td><td></td><td><img src="https://portablejs.com/bar.svg" width="115" height="12" alt="" /></td></tr>
-<tr><td>@noble/curves</td><td align="right">253,000</td><td>6.4× slower</td><td><img src="https://portablejs.com/bar.svg" width="18" height="12" alt="" /></td></tr>
+<tr><td>ecdsa-sig-formatter</td><td align="right">2,250,000</td><td>1.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">1,620,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="115" height="12" alt="" /></td></tr>
+<tr><td>@noble/curves</td><td align="right">253,000</td><td>6.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="18" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 
