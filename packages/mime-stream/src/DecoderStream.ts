@@ -87,11 +87,12 @@ export declare namespace DecoderStream {
  * @example
  * ```ts
  * import * as MimeStream from '@portable/mime-stream';
+ * import * as Streams from '@portable/streams';
  *
- * const reader = response.body!.pipeThrough(new MimeStream.DecoderStream()).getReader();
- * for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *   if (r.value.type === 'headers') {
- *     console.log(r.value.part.contentType);
+ * const chunks = response.body!.pipeThrough(new MimeStream.DecoderStream());
+ * for await (const chunk of Streams.toAsyncIterable(chunks)) {
+ *   if (chunk.type === 'headers') {
+ *     console.log(chunk.part.contentType);
  *   }
  * }
  * ```

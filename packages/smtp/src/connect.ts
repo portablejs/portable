@@ -75,7 +75,10 @@ export type Client = AsyncDisposeMethod & {
 
 export declare namespace Client {
   type SendOptions = {
-    /** Aborting rejects with `signal.reason`, closes the connection and cancels a message stream. */
+    /**
+     * Aborting rejects with `signal.reason` and cancels a message stream. A send that has started
+     * also closes the connection, and a send still waiting for earlier calls is skipped.
+     */
     signal?: AbortSignal | undefined;
   };
   type CloseOptions = {
@@ -767,7 +770,15 @@ function createClient(
     secure: tls,
     extensions,
     send(mail, options = {}) {
-      return enqueue(async () => {
+      const { signal } = options;
+      const cancel = (reason: unknown) => {
+        if (mail.message instanceof ReadableStream) {
+          mail.message.cancel(reason).catch(() => {});
+        }
+      };
+      let started = false;
+      const result = enqueue(async () => {
+        started = true;
         sending = false;
         try {
           if (session.closed) {
@@ -777,13 +788,30 @@ function createClient(
               command: 'MAIL FROM',
             });
           }
-          return await guard(session, options.signal, () => transaction(mail, options.signal));
+          return await guard(session, signal, () => transaction(mail, signal));
         } catch (error) {
-          if (!sending && mail.message instanceof ReadableStream) {
-            mail.message.cancel(error).catch(() => {});
+          if (!sending) {
+            cancel(error);
           }
           throw error;
         }
+      });
+      if (!signal) {
+        return result;
+      }
+      return new Promise<Result>((resolve, reject) => {
+        const onAbort = () => {
+          if (!started) {
+            cancel(signal.reason);
+            reject(signal.reason);
+          }
+        };
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort, { once: true });
+        }
+        result.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
       });
     },
     close(options = {}) {
@@ -805,7 +833,7 @@ function createClient(
 }
 
 export declare namespace send {
-  /** The same options as `connect`. */
+  /** The same options as `connect`, except that `signal` limits the whole call. */
   type Options = connect.Options;
 }
 

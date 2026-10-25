@@ -633,6 +633,26 @@ describe('signals and closing', () => {
     expect(cancelled).toBe(reason);
   });
 
+  test('a queued send rejects with the signal reason without waiting for the send before it', async () => {
+    const server = fakeServer({ DATA_END: false });
+    const client = await plain(server);
+    const first = new AbortController();
+    const sent = client.send({ ...envelope, message }, { signal: first.signal });
+    const queued = tracked(['Subject: queued\r\n\r\n']);
+    const reason = new Error('Queued send timeout');
+    const controller = new AbortController();
+    const waiting = client.send(
+      { ...envelope, message: queued.stream },
+      { signal: controller.signal },
+    );
+    controller.abort(reason);
+    await expect(waiting).rejects.toBe(reason);
+    expect(queued.cancelled()).toBe(reason);
+    expect(server.closed).toBe(0);
+    first.abort(new Error('done'));
+    await expect(sent).rejects.toThrow('done');
+  });
+
   test('close() sends QUIT and closes the socket', async () => {
     const server = fakeServer();
     const client = await plain(server);

@@ -192,13 +192,15 @@ The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO and DA
 
 When a stream message isn't sent in full, because the envelope was refused, the connection failed or the signal aborted, the stream is cancelled.
 
+Aborting `signal` rejects with `signal.reason`. A send that has started also closes the connection, because the server may be partway through the message. A send still waiting for earlier calls rejects at once, and the connection stays open.
+
 ### `client.close({ signal })`
 
 Waits for queued sends, sends QUIT and closes the socket. It never rejects. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
 
 ### `Smtp.send(mail, options)`
 
-Connects with `options`, sends one message and closes the connection.
+Connects with `options`, sends one message and closes the connection. Here `signal` limits the whole call.
 
 ### `Smtp.CommandError`
 

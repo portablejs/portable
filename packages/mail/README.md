@@ -132,7 +132,7 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 - Line breaks in `7bit` and `8bit` bodies are written as CRLF. Without its `newline` option, nodemailer writes a bare LF as is, which is how SMTP smuggling starts.
 - An invalid address, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
 - `encodeStream` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
-- Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so a reader sees the subject the sender wrote. Quotes in a subject stay readable, but nodemailer 10.1.7 encodes them.
+- Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so a reader sees the subject the sender wrote. Quotes in a subject stay readable, but nodemailer 10.2.1 encodes them.
 - A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.
 - `Message` has no `path` or `href` field, so untrusted input can't make the composer read a file or fetch a URL. Pass `(await fetch(url)).body` or a `File` instead.
 - Cancelling the output cancels every content stream that hasn't been read, and a failing stream errors the output and cancels the rest.
