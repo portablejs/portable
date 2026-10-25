@@ -2,11 +2,7 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
-Each package is small, uses only web-standard APIs such as Web Streams, `Uint8Array`, `fetch` and `crypto.subtle`, and runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+. Install only the packages you use:
-
-```sh
-npm install @portable/streams
-```
+Each package is small, uses only web-standard APIs such as Web Streams, `Uint8Array`, `fetch` and `crypto.subtle`, and runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
 ### Examples
 

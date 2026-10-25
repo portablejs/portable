@@ -28,7 +28,6 @@ export function Home() {
         </p>
         <div className="home-cta">
           <a href={`${base}getting-started`}>Get started</a>
-          <code>npm i @portable/streams</code>
         </div>
       </section>
       {groups.map((group) => (

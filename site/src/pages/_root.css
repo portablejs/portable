@@ -79,17 +79,10 @@
 }
 .home-cta {
   margin-top: 32px;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  flex-wrap: wrap;
 }
 .home-cta a {
   font-weight: 600;
   border-bottom: 2px solid var(--vocs-color-accent);
-}
-.home-cta code {
-  color: var(--vocs-text-color-secondary);
 }
 .home h2 {
   font-size: 16px;
