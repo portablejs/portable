@@ -18,7 +18,7 @@ const key = await WebCrypto.hkdf('SHA-256', sharedSecret, { info: 'my app v1', l
 const { privateKey, publicKey } = await WebCrypto.importSeed('Ed25519', seed);
 const rsaKey = await WebCrypto.importPem({ name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, pem);
 
-const raw = WebCrypto.derToRawEcdsa(assertion.signature);
+const raw = WebCrypto.derToRawEcdsa(new Uint8Array(assertion.signature));
 await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, raw, signedData);
 ```
 
