@@ -2,6 +2,24 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## `@portable/log` reads `process.env.DEBUG` and polls `localStorage`
+
+- **Options:** read patterns only from `enable()`; also read `localStorage.debug`, `process.env.DEBUG` and `import.meta.env`, as debug does. For a change to `localStorage.debug` made in the same tab: no detection, a check of the time on every log call, or a 1 second interval.
+- **Trade-offs:** The package rules forbid `process`, but `DEBUG=app:* node server.js` is how most debug users turn logging on. Reading `globalThis.process?.env` uses no Node API and does nothing where `process` doesn't exist. Browsers fire `storage` only in other tabs. Checking the time on every call cost about 40 ns per call in a prototype, and a disabled call costs less than that. AGENTS.md asks for a `signal` on anything that holds a timer, but the interval runs for the life of the page and takes no `signal`.
+- **Chosen:** read all three sources, and in a browser, listen for `storage` and check `localStorage.debug` once a second. `localStorage` is read only when `document` exists, so Node, Bun, Deno and Workers hold no timer. Deno has a `localStorage` too, but it persists across runs and would override `DEBUG`.
+
+## `@portable/log` loggers are objects with one method per level
+
+- **Options:** a callable logger like debug's, `log('x')`, plus `log.warn` and `log.error`; an object with `debug`, `info`, `warn` and `error` methods. For debug-level output: `console.debug` or `console.log`.
+- **Trade-offs:** A callable logger is shorter to migrate to, but a bare `log()` call hides its level. Chrome hides `console.debug` unless its Verbose level is on, which is one of the complaints about debug, and `console.log` prints at the Info level in browsers.
+- **Chosen:** an object with a method for each level, so every call states its level. `debug` calls go to `console.log`, and `warn` and `error` print when no pattern matches, so a library's warnings are visible without setup.
+
+## `@portable/log` keeps its state on `globalThis`
+
+- **Options:** module-level variables; one object stored under `Symbol.for('portable.log/1')` on `globalThis`.
+- **Trade-offs:** An app can load two copies of the package, as AGENTS.md describes for `workspace:*` dependencies. With module-level state, `Log.enable` and `Log.subscribe` from one copy would not reach loggers created by the other. A shared object means a later release that changes the state's shape must use a new key.
+- **Chosen:** the shared object. The key ends in `/1` so a release with a different shape can use `/2`.
+
 ## What a review pass fixes
 
 - **Options:** fix every finding a review reports; fix only findings above a threshold, and stop when a pass reports none; limit passes to polish, or also review the design of each package and of the family.

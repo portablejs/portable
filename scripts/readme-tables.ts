@@ -451,6 +451,26 @@ export const tables: Record<string, Table> = {
     ],
     rows: [{ label: 'Split 1.7 MB into lines', test: 'splits 1.7 MB' }],
   },
+  log: {
+    columns: [
+      ours('log', ['create', 'enable']),
+      lib('debug'),
+      lib('loglevel'),
+      lib('consola', [{ from: 'consola', use: ['createConsola'] }]),
+      lib('@logtape/logtape', [{ from: '@logtape/logtape', use: ['configureSync', 'getLogger'] }]),
+      lib('pino'),
+    ],
+    rows: [
+      { label: 'A debug call while debug output is off', test: 'a disabled debug call' },
+      { label: 'A debug call with a format string, written as text', test: 'with a format string' },
+      { label: 'A debug call with an object, written as text', test: 'with an object' },
+      {
+        label: 'Create a logger and extend it',
+        test: 'creating and extending a logger',
+        tasks: { loglevel: null, consola: null, '@logtape/logtape': null, pino: null },
+      },
+    ],
+  },
   mail: {
     columns: [
       ours('mail', ['encodeStream', 'envelope']),
