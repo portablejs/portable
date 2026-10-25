@@ -3,7 +3,6 @@ import groups from './src/packages.json' with { type: 'json' };
 
 const guides = [
   ['streams', 'Streams'],
-  ['errors', 'Errors'],
   ['encodings', 'Encodings'],
   ['data-formats', 'Text and data formats'],
   ['email', 'Email'],
@@ -13,6 +12,7 @@ const guides = [
   ['images', 'Images'],
   ['concurrency', 'Concurrency and timing'],
   ['utilities', 'Utilities'],
+  ['errors', 'Errors'],
 ];
 
 // GitHub Pages serves the site from /portable, and previews serve it from the root.
