@@ -73,8 +73,8 @@ export declare namespace authorization {
     /** `oauth_nonce`. Set it only in tests. @default 32 random hex digits */
     nonce?: string | undefined;
     /**
-     * The time sent as `oauth_timestamp`, in whole seconds, as a `Date` or a `Temporal.Instant`. Set it
-     * only in tests.
+     * The time sent as `oauth_timestamp`, in whole seconds, as a `Date` or a `Temporal.Instant`.
+     * Set it only in tests.
      * @default new Date()
      */
     now?: Instant | undefined;

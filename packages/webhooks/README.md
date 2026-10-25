@@ -126,7 +126,7 @@ This package won't add schemes beyond these four. The built-in ones in [`src/sch
 
 `verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package has no dependency outside the family for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
-On Node, WebCrypto's HMAC is about 7× slower than `@noble/hashes`. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
+On Node, `verify` is about 3 times faster with `@noble/hashes` than with WebCrypto's HMAC. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
 
 ```ts
 import { hmac } from '@noble/hashes/hmac.js';

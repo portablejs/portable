@@ -30,7 +30,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
  * import * as WebCrypto from '@portable/web-crypto';
  *
  * try {
- *   await WebCrypto.importPem('ECDSA', pem);
+ *   await WebCrypto.importPem({ name: 'ECDSA', namedCurve: 'P-256' }, pem);
  * } catch (error) {
  *   if (error instanceof WebCrypto.UnsupportedError) {
  *     console.log('Convert the key to PKCS #8 with `openssl pkcs8 -topk8 -nocrypt`.');

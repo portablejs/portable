@@ -92,7 +92,7 @@ The JWT in the `Authorization` header expires 12 hours after it is signed. `send
 
 ## Why use this over web-push
 
-It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server can send notifications. It has one dependency, `@portable/base64`, where web-push has five, including an ASN.1 library and an HTTPS proxy agent.
+It runs anywhere WebCrypto and `fetch` do, so a Worker or a Deno or Bun server can send notifications. It depends only on four other `@portable/*` packages, where web-push has five dependencies, including an ASN.1 library and an HTTPS proxy agent.
 
 - `send` returns `{ kind: 'gone' }` for a 404 or 410, so you can tell an expired subscription from a failed send without checking status codes yourself.
 - Payloads over 3993 bytes are rejected before sending. web-push has no limit, and http_ece splits a payload over about 4079 bytes into several records, which push services reject.
@@ -133,4 +133,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-On Node, web-push is about 3.5 times faster at encrypting one message and 1.4 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
+On Node, web-push is about 2.5 times faster at encrypting one message and 1.2 times faster at encrypting many at once. Node runs each WebCrypto call on its thread pool, and an encryption makes 9 calls, while web-push makes synchronous `node:crypto` calls that block the event loop for their duration. Building a request is faster than encrypting plus signing because the token is reused.
