@@ -35,7 +35,7 @@ export function Home() {
           <h2>{group.title}</h2>
           {group.items.map((item) => (
             <a className="home-row" key={item.name} href={`${base}packages/${item.name}`}>
-              <code>{item.name}</code>
+              <span className="home-name">{item.name}</span>
               <p>
                 {code(item.description)}
                 {item.replaces && <small>Replaces {code(item.replaces)}</small>}

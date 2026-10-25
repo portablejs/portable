@@ -86,7 +86,8 @@
 }
 .home h2 {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;
+  color: var(--vocs-text-color-muted);
   margin: 56px 0 8px;
   padding: 0;
   border: 0;
@@ -98,11 +99,11 @@
   padding: 12px 0;
   border-top: 1px solid var(--vocs-border-color-secondary);
 }
-.home-row > code {
-  font-size: 15px;
-  color: var(--vocs-text-color-link);
+.home-row > .home-name {
+  font-weight: 600;
+  color: var(--vocs-text-color-heading);
 }
-.home-row:hover > code {
+.home-row:hover > .home-name {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
