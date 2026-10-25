@@ -96,9 +96,8 @@ function writesMember(identifier: unknown): boolean {
  * symbol`, an exported constant, whose annotation is its public type, and an object that the
  * code later adds properties to or that refers to itself. It also allows one on a type with an
  * index signature, such as `Record<string, number>`, because the code looks up keys with any
- * string, and one on an
- * empty collection, such as `const chunks: Uint8Array[] = []`, because `[] satisfies Uint8Array[]`
- * infers `never[]` and the first `push` fails to type-check.
+ * string, and one on an empty collection, such as `const chunks: Uint8Array[] = []`, because
+ * `[] satisfies Uint8Array[]` infers `never[]` and the first `push` fails to type-check.
  */
 const preferSatisfies = {
   meta: {

@@ -236,8 +236,6 @@ function block(name: string, table: Table): string | undefined {
 const start = '<!-- bench:start -->';
 const end = '<!-- bench:end -->';
 const markers = new RegExp(`${start}[\\s\\S]*?${end}`);
-const sizeMarkers = /<!-- size:start -->[\s\S]*?<!-- size:end -->/;
-const oldSizeLine = /\n*<!-- size:start -->[\s\S]*?<!-- size:end -->\n*/;
 
 for (const [name, table] of Object.entries(tables)) {
   const path = `packages/${name}/README.md`;
@@ -254,8 +252,6 @@ for (const [name, table] of Object.entries(tables)) {
   let text = readFileSync(path, 'utf8');
   if (markers.test(text)) {
     text = text.replace(markers, () => replacement);
-  } else if (sizeMarkers.test(text)) {
-    text = text.replace(sizeMarkers, () => replacement);
   } else {
     const why = text.search(/^## Why/m);
     if (why < 0) {
@@ -266,6 +262,5 @@ for (const [name, table] of Object.entries(tables)) {
     const at = next < 0 ? text.length : why + 1 + next;
     text = `${text.slice(0, at).trimEnd()}\n\n${replacement}\n\n${text.slice(at)}`;
   }
-  text = text.replace(oldSizeLine, '\n\n');
   writeFileSync(path, text);
 }

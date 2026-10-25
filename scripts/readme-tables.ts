@@ -53,7 +53,7 @@ const webhooks = ours('webhooks', ['verify', 'stripe', 'VerificationError']);
 export const tables: Record<string, Table> = {
   arc: {
     columns: [
-      ours('arc', ['seal', 'verify'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('arc', ['seal', 'verify'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [
         { from: 'mailauth/lib/arc/index.js', use: ['arc', 'sealMessage'] },
         { from: 'mailauth/lib/dkim/verify.js', use: ['dkimVerify'] },
@@ -249,7 +249,7 @@ export const tables: Record<string, Table> = {
   },
   dkim: {
     columns: [
-      ours('dkim', ['sign', 'verify'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('dkim', ['sign', 'verify'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [
         { from: 'mailauth/lib/dkim/sign.js', use: ['dkimSign'] },
         { from: 'mailauth/lib/dkim/verify.js', use: ['dkimVerify'] },
@@ -269,7 +269,7 @@ export const tables: Record<string, Table> = {
         'dmarc',
         ['check'],
         [
-          { from: '@portable/dns', use: ['createResolver'] },
+          { from: '@portable/dns', use: ['create'] },
           { from: '@portable/spf', use: ['check'] },
         ],
       ),
@@ -286,7 +286,7 @@ export const tables: Record<string, Table> = {
   },
   dns: {
     columns: [
-      ours('dns', ['createResolver']),
+      ours('dns', ['create']),
       lib('tangerine'),
       node('node:dns/promises over local UDP', '`node:dns/promises` over local UDP'),
     ],
@@ -471,7 +471,7 @@ export const tables: Record<string, Table> = {
   },
   'mail-auth': {
     columns: [
-      ours('mail-auth', ['authenticate'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('mail-auth', ['authenticate'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [{ from: 'mailauth', use: ['authenticate'] }]),
     ],
     rows: [
@@ -743,7 +743,7 @@ export const tables: Record<string, Table> = {
   },
   rpc: {
     columns: [
-      ours('rpc', ['serve', 'port']),
+      ours('rpc', ['connect', 'provide', 'port']),
       lib('birpc', [{ from: 'birpc', use: ['createBirpc'] }]),
       lib('comlink', [{ from: 'comlink', use: ['expose', 'wrap'] }]),
       lib('penpal', [{ from: 'penpal', use: ['connect', 'PortMessenger'] }]),
@@ -782,7 +782,7 @@ export const tables: Record<string, Table> = {
   },
   spf: {
     columns: [
-      ours('spf', ['check'], [{ from: '@portable/dns', use: ['createResolver'] }]),
+      ours('spf', ['check'], [{ from: '@portable/dns', use: ['create'] }]),
       lib('mailauth', [{ from: 'mailauth/lib/spf/index.js', use: ['spf'] }]),
       {
         name: 'mailauth strict',

@@ -2,41 +2,45 @@
 
 Web-standard building blocks for any JavaScript runtime.
 
+Each package is small, uses only web-standard APIs such as Web Streams, `Uint8Array`, `fetch` and `crypto.subtle`, and runs unchanged in browsers, Cloudflare Workers, Deno, Bun and Node 24+. Install only the packages you use:
+
+```sh
+npm install @portable/streams
+```
+
 ### Examples
 
 Stream an OpenAI transcript to a file:
 
 ```ts
-import * as Jsonl from '@portable/jsonl'
-import * as Sse from '@portable/sse'
-import * as Streams from '@portable/streams'
-
-const transcript: WritableStream = ... // a file
+import * as Jsonl from '@portable/jsonl';
+import * as Sse from '@portable/sse';
+import * as Streams from '@portable/streams';
 
 const response = await fetch('https://api.openai.com/v1/chat/completions', {
   method: 'POST',
   headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
   body: JSON.stringify({ model, messages, stream: true }),
-})
+});
+// `transcript` is a WritableStream<Uint8Array> that writes to a file.
 await response.body!
   .pipeThrough(new Sse.DecoderStream())
   .pipeThrough(Streams.filter((event) => event.data !== '[DONE]'))
   .pipeThrough(Streams.map((event) => JSON.parse(event.data)))
   .pipeThrough(new Jsonl.EncoderStream())
-  .pipeTo(transcript)
+  .pipeTo(transcript);
 ```
 
 Strip photo metadata (GPS, camera, dates) before uploading:
 
 ```ts
-import * as Exif from '@portable/exif'
-import * as ImageSize from '@portable/image-size'
+import * as Exif from '@portable/exif';
+import * as ImageSize from '@portable/image-size';
 
-const file: File = ... // from a file input or a drop
-
-const photo = Exif.strip(new Uint8Array(await file.arrayBuffer()))
-const { width, height } = ImageSize.parse(photo)
-await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo })
+// `file` is a JPEG, PNG or WebP File from a file input or a drop.
+const photo = Exif.strip(new Uint8Array(await file.arrayBuffer()));
+const { width, height } = ImageSize.parse(photo);
+await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: photo });
 ```
 
 ### Packages
@@ -100,7 +104,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 <tbody>
 <tr><th colspan="2" align="left">Images</th></tr>
 <tr><td><a href="packages/image-size"><code>@portable/image-size</code></a></td><td>Reads an image's type and dimensions from its header, from bytes or a stream.</td></tr>
-<tr><td><a href="packages/exif"><code>@portable/exif</code></a></td><td>Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and removes it.</td></tr>
+<tr><td><a href="packages/exif"><code>@portable/exif</code></a></td><td>Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and strips it from JPEG, PNG and WebP.</td></tr>
 <tr><td><a href="packages/png"><code>@portable/png</code></a></td><td>Decodes PNG files to RGBA pixels and encodes pixels as PNG.</td></tr>
 </tbody>
 <tbody>

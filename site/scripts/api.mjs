@@ -7,7 +7,15 @@ import { fileURLToPath } from 'node:url';
 const repo = resolve(process.argv[2] ?? fileURLToPath(new URL('../..', import.meta.url)));
 const ts = createRequire(join(repo, 'package.json'))('typescript');
 
-const pascal = (s) => s.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase());
+// The namespace that the README imports the package as. Capitalizing each word of the name would
+// give `Oauth1` and `Websockets` instead of `OAuth1` and `WebSockets`.
+const namespaceOf = (name) => {
+  const readme = readFileSync(join(repo, 'packages', name, 'README.md'), 'utf8');
+  return (
+    readme.match(new RegExp(`import \\* as (\\w+) from '@portable/${name}'`))?.[1] ??
+    name.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())
+  );
+};
 const printer = ts.createPrinter({ removeComments: true });
 
 export function api(name) {
@@ -23,7 +31,7 @@ export function api(name) {
     lib: ['lib.esnext.d.ts', 'lib.dom.d.ts'],
   });
   const checker = program.getTypeChecker();
-  const ns = pascal(name);
+  const ns = namespaceOf(name);
   let md = `# @portable/${name}\n\n`;
   for (const [i, file] of files.entries()) {
     const sub = entries[i][0];

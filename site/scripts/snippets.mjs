@@ -2,7 +2,7 @@
 // the repo's, so docs snippets fit the page without scrolling sideways.
 import { format } from 'prettier';
 
-const options = { singleQuote: true, semi: false, trailingComma: 'all', printWidth: 72 };
+const options = { singleQuote: true, semi: true, trailingComma: 'all', printWidth: 72 };
 
 export async function formatSnippets(md) {
   const blocks = [...md.matchAll(/^```(ts|js|tsx)([^\n]*)\n([\s\S]*?)^```$/gm)];

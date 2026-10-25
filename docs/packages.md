@@ -10,7 +10,7 @@ The packages are small and do one thing each, like much of npm's most-used code,
 2. **Compose upward.** A higher package builds on Portable packages in lower layers, and the dependency graph is a strict layer DAG (§Layers). Remix's `response` builds on `headers`, `mime` and `html-template` this way, and our `mail` builds on `mime-headers`, `base64` and `quoted-printable`.
 3. **No dependencies outside the family.** The one exception is crypto: it defaults to WebCrypto and is pluggable, and a package that needs an incremental hash takes `@noble/hashes` as an optional peer.
 4. **Web standards are the API.** Inputs and outputs are `Uint8Array`, `string`, `ReadableStream`, `Request`/`Response`, `Headers`, `Blob`/`File`. Streaming transforms are `TransformStream` subclasses used like the platform's own (`stream.pipeThrough(new Lines.DecoderStream())`, as with `TextDecoderStream` and Deno's `TextLineStream`). Where a platform type is close, extend it rather than invent one, as Remix's `SuperHeaders extends Headers` does.
-5. **A small, stable API before 1.0.** Each package documents what it does not do and has a "Replaces X" migration table in its README.
+5. **A small, stable API before 1.0.** Each package documents what it does not do. Its README names the libraries it replaces and, under "Why use this over", what a caller switching from them could miss.
 6. **Same coverage as what we replace.** A package that replaces a popular library solves the same problem with its own API and implementation, and covers every case that library's tests cover, with a `PARITY.md` mapping each upstream test to ours or to the reason it doesn't apply (details in [architecture.md](architecture.md#parity-with-the-replaced-library)). We port upstream benchmarks too, and benchmark every package against the library it replaces ([architecture.md](architecture.md#benchmarks)). It reaches 1.0 only when those tests and the oracle tests both pass and performance is comparable or better.
 7. **Don't rebuild existing web-standard packages.** If Remix, noble, jose, fflate or another web-standard package already does it well, we point to it (§Not building).
 8. **One umbrella package for discovery.** `portable` (unscoped, currently unclaimed on npm) re-exports every package as a subpath (`portable/lines`, `portable/mail`), exactly like `remix/headers`. We still publish and version each `@portable/*` package on its own.
@@ -25,7 +25,7 @@ The packages are small and do one thing each, like much of npm's most-used code,
 Each line lists the `@portable/*` packages a package depends on, from its `package.json`. Nothing depends on a higher layer.
 
 ```
-L3  mail-auth     → arc, dkim, dmarc, spf, mime-headers, streams
+L3  mail-auth     → arc, dkim, dmarc, spf, mime-headers, bytes, streams
     arc           → dkim, base64, bytes
     dmarc         → spf, dns, idna
     spf           → dns, idna, ip
@@ -38,16 +38,15 @@ L2  dkim          → dns, idna, web-crypto, base64, bytes
 L1  mime-stream   → mime-headers, bytes, streams
     mime-headers  → base64, bytes
     rpc           → jsonl
-    sse           → timers, streams
-    websockets    → timers
+    sse           → timers, bytes, streams
+    websockets    → timers, bytes
     compress, exif, image-size, png → bytes
-    csv, json-stream, jsonl → streams
+    csv, json-stream, jsonl → bytes, streams
     idna
-L0  base64        → bytes, streams
-    charset, lines, quoted-printable → streams
-    streams, web-crypto → bytes
-    bytes, dns-packet, ip, queue, random, rate-limit, timers
-    errors        (every package that throws depends on it)
+L0  base64, charset, lines, quoted-printable → bytes, streams
+    dns-packet, ip, streams, web-crypto → bytes
+    bytes, queue, random, rate-limit, timers
+    errors        (every package with its own error classes depends on it)
 ```
 
 ### L0: primitives (no dependencies, apart from `bytes` and `streams`)
@@ -92,31 +91,34 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 The portable half needs no special support: a Node `Readable` is already an async iterable, so `fromIterable(nodeReadable)` works everywhere.
 
 ```ts
-import { fromIterable, transform, toText } from '@portable/streams';
+import * as Streams from '@portable/streams';
 
-async function* rows() { yield 'a'; yield 'b'; }
+async function* rows() {
+  yield 'a';
+  yield 'b';
+}
 
-const upper = transform(async function* (source) {
+const upper = Streams.transform(async function* (source: AsyncIterable<string>) {
   for await (const chunk of source) {
     yield chunk.toUpperCase();
   }
 });
 
-await toText(fromIterable(rows()).pipeThrough(upper)); // 'AB'
+await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 ```
 
 ### L1: formats (built on L0)
 
 | Package | Purpose | Depends on | Replaces |
 | --- | --- | --- | --- |
-| `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and `encodeStream`, which walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | `streams` | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
-| `@portable/websockets` | A reconnecting WebSocket client as one `readable`/`writable` pair that spans reconnects, with an `open` hook for handshakes, a queue for writes made while disconnected, backpressure, and `fromSocket` for server-side sockets. | `timers` | reconnecting-websocket, partysocket, websocket-ts |
-| `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `timers`, `streams` | eventsource-parser, eventsource, @microsoft/fetch-event-source, the event writers in better-sse and hono |
-| `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | `streams` | csv-parse, csv-stringify, papaparse, fast-csv |
+| `@portable/json-stream` | Streaming JSON: a streaming parser that emits values at selected paths from one large JSON document, and `encodeStream`, which walks an object tree containing promises, async iterables, streams or thunks, writing JSON as far as it can and pausing at each unresolved value, for output any JSON parser can read. For typed, out-of-order streaming, use turbo-stream (§Not building). | `bytes`, `streams` | JSONStream 53M, stream-json 45M, json-stream-stringify, @worker-tools/json-stream |
+| `@portable/websockets` | A reconnecting WebSocket client as one `readable`/`writable` pair that spans reconnects, with an `open` hook for handshakes, a queue for writes made while disconnected, backpressure, and `fromSocket` for server-side sockets. | `bytes`, `timers` | reconnecting-websocket, partysocket, websocket-ts |
+| `@portable/sse` | Server-sent events: `DecoderStream` and `EncoderStream`, and `connect(request)`, a reconnecting client that returns a stream and accepts any `Request` (POST, headers). | `bytes`, `streams`, `timers` | eventsource-parser, eventsource, @microsoft/fetch-event-source, the event writers in better-sse and hono |
+| `@portable/csv` | RFC 4180 CSV and TSV decode and encode, as functions and as `DecoderStream`/`EncoderStream`, with a `maxLength` guard. | `bytes`, `streams` | csv-parse, csv-stringify, papaparse, fast-csv |
 | `@portable/compress` | One-shot gzip, deflate and deflate-raw on `CompressionStream`, a `maxBytes` cap on decompression against zip bombs, larger output chunks than `DecompressionStream`'s 4 KB, and `crc32`. | `bytes` | pako and fflate (one-shot use), node:zlib's sync helpers |
 | `@portable/rpc` | Typed JSON-RPC 2.0 over `MessagePort`, windows, WebSocket and HTTP, with streaming results. | `jsonl` | comlink, penpal, post-me, birpc, json-rpc-2.0, tRPC (simple cases) |
 | `@portable/idna` | UTS #46 `toUnicode` and `toAscii` for domain names. The platform's `URL` only converts to ASCII. | (none) | punycode, tr46 |
-| `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | `streams` | ndjson 10.5M, the `jsonl` modules of stream-json |
+| `@portable/jsonl` | JSON Lines (NDJSON) decode and encode streams: `new Jsonl.DecoderStream()` parses one value per line, and `new Jsonl.EncoderStream()` writes one per line. | `bytes`, `streams` | ndjson 10.5M, the `jsonl` modules of stream-json |
 | `@portable/mime-headers` | Email header values: fold/unfold (RFC 5322), encoded-words (RFC 2047), parameter encoding (RFC 2231), address list parse/format. Other charsets come from a `charset` option, which `@portable/charset` encoders fit. | `base64`, `bytes` | libmime 37M, addressparser, email-addresses |
 | `@portable/mime-stream` | Walk a MIME message as a stream of parts (headers + body chunks) and write it back out, for in-flight transforms such as stripping attachments or hashing bodies. Full parsing to objects stays with postal-mime. | `bytes`, `mime-headers`, `streams` | mailsplit 2.7M |
 | `@portable/image-size` | Image type and dimensions from header bytes or a stream, reading only what it needs. | `bytes` | image-size 133M |

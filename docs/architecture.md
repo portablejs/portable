@@ -19,15 +19,16 @@ portable/
 │  ├─ worker/              runs the conformance tests in a browser Web Worker
 │  └─ workers/             bundles every package into one Worker for workerd
 ├─ scripts/                bench, bundle size and README table scripts
+├─ site/                   the docs site, built with Vocs from the READMEs and JSDoc
 ├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
-├─ .github/workflows/      CI (verify.yml)
+├─ .github/workflows/      CI (verify.yml) and the docs site (docs.yml, docs-preview.yml)
 ├─ .vite-hooks/            git hooks
 ├─ AGENTS.md               rules for agents and contributors (CLAUDE.md imports it)
 ├─ vite.config.ts          format, lint, staged-file and test config
 ├─ tsconfig.base.json
-├─ tsconfig.test.json      type-checks every package's test/ directory
+├─ tsconfig.test.json      type-checks every package's test/ directory and tools/
 └─ pnpm-workspace.yaml
 ```
 
@@ -75,7 +76,7 @@ Safari added regex lookbehind, the last ES2018 feature it lacked, in 16.4, so ev
 
 | API | Packages | Usage share | Chrome | Firefox | Safari |
 | --- | --- | --- | --- | --- | --- |
-| `AbortSignal.timeout` | dkim, dmarc, dns, mail-auth, rpc, smtp, spf, sse, timers | 96.1% | 103 | 100 | 16 |
+| `AbortSignal.timeout` | none (the examples pass it as `signal`) | 96.1% | 103 | 100 | 16 |
 | `CompressionStream('deflate-raw')` | compress | 96.0% | 103 | 113 | 16.4 |
 | `AbortSignal.any` | dns, queue, rpc, sse | 93.3% | 116 | 124 | 17.4 |
 | WebCrypto X25519 | web-crypto | 90.5% | 133 | 130 | 17 |
@@ -144,7 +145,7 @@ expect(result.get('split2')).not.toBeFasterThan(result.get('@portable/lines'), {
 
 Run them with `pnpm bench`, which builds every package first and sets `BENCH_DIST=1`. With it set, `vite.config.ts` drops the `src` condition and lets Node load each package's `dist/` directly, because Vitest wraps every call between source modules in a getter, which slowed source benchmarks by up to 2×. The git hooks don't run benchmarks, because timing on a laptop varies too much to block a push.
 
-`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. `pnpm readme` writes no tables for a package without an entry there, so add one for each new package. The root README's package list, grouped by category, is edited by hand.
+`scripts/bench.ts` runs one package's benchmarks at a time and waits while the load average is above 4 (`BENCH_MAX_LOAD`), so packages don't compete for the CPU. It saves each package's Vitest JSON report in `.bench/`. `pnpm readme` then measures bundle sizes and writes a benchmark table and a stats table between `<!-- bench:start -->` and `<!-- bench:end -->` in each package README. `scripts/readme-tables.ts` lists the columns (our package, the replaced libraries and a platform API) and maps each row to a benchmark test. `pnpm readme` writes no tables for a package without an entry there, so add one for each new package. The root README's package list, grouped by category, is edited by hand, and `site/scripts/gen.mjs` reads it to build the docs site's home page and sidebar.
 
 ## Git hooks
 
@@ -153,13 +154,15 @@ Git hooks run the checks before each commit and push. `pnpm install` installs th
 | Hook | Runs |
 | --- | --- |
 | pre-commit | `vp staged`, which runs `vp check --fix` on staged files |
-| pre-push | `tsc -b`, then the Node tests affected by changes since `origin/main` (`vitest --changed`) |
+| pre-push | `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
 
 Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `pnpm changeset:publish` runs them before every release. `git push --no-verify` skips the hooks.
 
 ## CI
 
-`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `tsc -b` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs don't fail the run yet, because of the runtime bugs listed in docs/papercuts.md. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. That job doesn't fail the run either, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. CI doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `pnpm check:types` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs don't fail the run yet, because of the runtime bugs listed in docs/papercuts.md. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. That job doesn't fail the run either, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. `verify.yml` doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+
+Two more workflows build the docs site with `pnpm --filter @portable/site build`. `docs.yml` publishes it to GitHub Pages on every push to `main`. `docs-preview.yml` publishes a preview to here.now for a pull request with the `preview` label, and updates it on each later push to that pull request.
 
 The tests that compare the base64 and hex fallbacks with the native API run only where the runtime has `Uint8Array.toBase64` and `fromHex`. Node 26 has them and Node 24 doesn't, so CI tests both versions. CI doesn't test Node 22, because `engines` requires Node 24 and because Node 22's `DecompressionStream` ignores bytes after the end of a compressed stream, which makes `Compress.decode` accept trailing data.
 

@@ -31,7 +31,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** lint rules for `@example` JSDoc, `is`/`has`/`can` names and positional booleans on every exported function; the same rules with a disable comment on each internal helper; a test that reads each package's entry points with the TypeScript checker.
 - **Trade-offs:** a lint rule sees one file, so it can't tell a public export from a helper that one module exports to another. The lint version reported 45 positional booleans, almost all in internal helpers such as image-size's `u16(input, offset, bigEndian)`, where an options object would add an allocation to every read. The test resolves `export *` and aliases and skips `./internal`, but it runs a TypeScript program over every package, which takes a few seconds.
-- **Chosen:** `tools/lint/src/publicApi.test.ts`. It allows the standard boolean names `contains`, `equal`, `is`, `needsRehash` and `timingSafeEqual`. Four internal helpers were renamed anyway (`canFitDns`, `isInNetwork`, `hasMacro`). The other conventions that hold in every file (`?: T | undefined`, `.js` imports, error `kind`, no enums, no `Symbol()`) are lint rules in `tools/lint/src/plugin.ts`.
+- **Chosen:** `tools/lint/src/publicApi.test.ts`. It allows the standard boolean names `contains`, `equal`, `is`, `needsRehash`, `timingSafeEqual` and `verify`. Internal helpers such as `canFitDns`, `isInNetwork` and `hasMacro` were renamed anyway. The other conventions that hold in every file (`?: T | undefined`, `.js` imports, error `kind`, no enums, no `Symbol()`) are lint rules in `tools/lint/src/plugin.ts`.
 
 ## `prefer-satisfies` allows annotations that widen on purpose
 
@@ -146,7 +146,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** keep a private copy of the 30-line transformer helper in each package; move it to a new shared or internal package; export it from streams.
 - **Trade-offs:** Nine packages had identical copies, and sse wrote the same logic out by hand. A separate shared package would add a package whose only job is one helper. Exporting it from streams makes it public API, and base64, charset, csv, json-stream, jsonl, lines, mime-stream, quoted-printable and sse now depend on streams, but streams is `sideEffects: false`, so their bundles take only `abortable`. Callers who write their own transforms can use it too. The promise helpers that race work against a signal (in dkim, dmarc, spf, timers, password, oauth1 and webhooks) only stop the caller from waiting, while the DNS query or the PBKDF2 keeps running, so a public "abortable promise" would claim more than it does.
-- **Chosen:** Kevin chose to export `Streams.abortable(transformer, { signal })` and to keep each promise helper private in the package that uses it.
+- **Chosen:** export `Streams.abortable(transformer, { signal })`, and keep each promise helper private in the package that uses it.
 
 ## arc reuses dkim through `@portable/dkim/internal`
 
@@ -214,7 +214,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors, the combinators and the transforms used with `pipeThrough`.
 - **Trade-offs:** `fromIterable` and `toAsyncIterable` return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels the source. `concat` and `merge` took their sources as rest parameters, which left no place for an options object. They now take an array, so an options object with `signal` can follow it, as in every other function that holds readers. The change breaks no one, because nothing is released yet.
-- **Chosen:** `toBytes`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform` and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
+- **Chosen:** `toBytes`, `toBlob`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform` and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
 
 ## `@portable/charset`'s root exports
 
@@ -229,7 +229,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Options:** keep `scheme: 'stripe'` strings with a branch per vendor; a scheme object with declarative fields (`encoding: 'hex'`, a header name, a prefix string) that the package interprets; a scheme object of plain functions.
 - **Trade-offs:** declarative fields are shorter to write, but every new vendor quirk becomes another field for us to interpret and maintain. Plain functions push hex or base64 decoding and the header format into each scheme, so a preset is about 20 lines instead of 5, but the package code doesn't change when a vendor does.
 - **Chosen:** plain functions. `parse(headers)` returns `{ signatures, timestamp?, id? }` with signatures as bytes and the timestamp as a `Date`, `payload({ id, timestamp, body })` returns the signed bytes or text, `headers({ signature, id, timestamp })` writes the headers for `sign`, and the optional `key(secret)` decodes a string secret. `verify` and `sign` keep the HMAC, the length check and constant-time compare, several secrets and the tolerance. We won't add vendors beyond the four presets, and the README shows how to write one.
-- **Presets are root exports,** `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github` and `Webhooks.slack`, not a `schemes` subpath. They are plain objects, so when code imports only `verify`, a bundler keeps `standard` (the default) and drops the other three, as a Rolldown build confirmed. The owner chose this.
+- **Presets are root exports,** `Webhooks.standard`, `Webhooks.stripe`, `Webhooks.github` and `Webhooks.slack`, not a `schemes` subpath. They are plain objects, so when code imports only `verify`, a bundler keeps `standard` (the default) and drops the other three, as a Rolldown build confirmed.
 - **Standard Webhooks is the default `scheme`,** because it is the one spec and Svix, Resend and Clerk use it. The `svix` scheme is gone: `standard` reads the `svix-` headers when the `webhook-` headers are missing.
 - **`sign` gives every scheme a `crypto.randomUUID()` id by default,** so the Standard Webhooks id changed from `msg_…` to a UUID, and GitHub signatures now come with an `x-github-delivery` header, as GitHub's own deliveries do.
 
@@ -358,7 +358,7 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 - **Slow libraries run fewer iterations.** stream-json takes 0.5 to 1.2 s per run, so its benchmark passes `{ iterations: 8 }`. The async-retry benchmark sets `minTimeout: 0` and `maxTimeout: 0`, because it always waits on `setTimeout`.
 - **Libraries the README names but the benchmarks leave out:** @microsoft/fetch-event-source uses `window` and `document`; better-sse and hono's SSE helper need a Node response or a Hono context; whoiser and whois-json speak WHOIS over TCP port 43; bottleneck schedules jobs and has no allow-or-deny call to compare with a rate limiter; dohjs takes no `fetch` to inject.
 - **Runtime dependencies count every package installed with the published package,** `@portable/*` included, by walking `dependencies` through `node_modules`.
-- **Coverage is no longer part of `pnpm readme`,** since the root README has no package table to show it.
+- **Coverage is no longer part of `pnpm readme`,** since the root README's package table has no coverage column.
 - **Bundle size is measured with Vite's `build` from `vite-plus`,** which bundles with rolldown, so no new dependency is needed. `scripts/bundle-size.ts` builds one entry per column from the column's `imports` in `scripts/readme-tables.ts`, which are the imports in the README's usage example or the library's equivalents. It runs from the package's `test/` directory, so it bundles the same upstream versions the tests install, and resolves `@portable/*` to the built `dist/`. The build uses Vite's browser conditions and `browser` fields and minifies the output, and the size is the gzip (level 6) of all output chunks. Node built-ins are left external and listed in the stats table, with `Buffer` when the output uses it. The size then leaves out whatever a browser polyfill would add. An optional peer such as `@noble/hashes` is counted only in the column that imports it.
 
 ## Crypto defaults to WebCrypto, with no `/core` entry
@@ -422,7 +422,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 ## `@portable/json-stream` API
 
 - **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<Uint8Array>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: developers look for line-delimited JSON as its own problem, and its own package can use `DecoderStream` and `EncoderStream`, as the other codecs do. The package is named for JSON Lines (`.jsonl`), because OpenAI, Hugging Face and agent transcripts use that name. NDJSON is the older name, still used by the `ndjson` npm package and Elasticsearch. JSON Lines and NDJSON describe the same format.
-- **No runtime dependency on `lines` or `streams`.** Splitting on `\n` inline is faster, and `encode` needs its own pull source so cancelling can interrupt a pending read.
+- **No runtime dependency on `lines`, and only `Streams.abortable` from `streams`.** Splitting on `\n` inline is faster, and `encodeStream` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **The decoder builds each matched value with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. The decoder reports a syntax error inside a match when that value ends, not at the bad character.
 - **`encodeStream` always writes streams and async iterables as arrays.** No `cycle` option: a circular structure or a BigInt fails as in `JSON.stringify`.
@@ -505,7 +505,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 ## No mapper argument in `Lines.DecoderStream`
 
 - **Options:** keep split2's `split2(mapper)`; leave mapping to another `TransformStream`.
-- **Trade-offs:** a mapper is shorter to write, but it is a second job inside a package meant for one, and `@portable/streams` will have `map()`.
+- **Trade-offs:** a mapper is shorter to write, but it is a second job inside a package meant for one, and `Streams.map()` does the same job.
 - **Chosen:** no mapper. The README shows the `TransformStream` equivalent.
 
 ## Empty lines are kept by default
@@ -569,7 +569,7 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 ## `Exif.StripStream` is a class
 
 - **Options:** a `StripStream` class; a `stripStream(options)` factory.
-- **Trade-offs:** AGENTS.md keeps lowercase factories for generic operators that take a function or a number, such as `Streams.map(fn)`. Stripping is a fixed transform named for what it does, like `TextDecoderStream` and `LineStream`.
+- **Trade-offs:** AGENTS.md keeps lowercase factories for generic operators that take a function or a number, such as `Streams.map(fn)`. Stripping is a fixed transform named for what it does, like `TextDecoderStream` and `CompressionStream`.
 - **Chosen:** `Exif.StripStream`, a `TransformStream` subclass.
 
 ## `Exif.strip` doesn't handle HEIC, AVIF or TIFF
@@ -588,8 +588,8 @@ Vitest's default `forceRerunTriggers` includes `**/package.json`, so `vp test ru
 
 These were recorded as each package was built. Each package's README and PARITY.md have the details.
 
-- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hash` option takes an incremental hasher such as noble's `sha256.create()` for large messages.
-- **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` still reports an abort as `temperror` and should change to match.
+- **dkim** buffers the canonicalized body and calls `crypto.subtle.digest` once. The `hasher` option takes an incremental hasher such as noble's `sha256.create()` for large messages.
+- **dkim and dmarc** reject with `signal.reason` on abort. `Spf.check` now does too (see "`Spf.check` rejects with `signal.reason`").
 - **dmarc** finds the organizational domain with the RFC 9989 DNS tree walk by default, and takes a public-suffix function as an option, so no suffix list ships with it. Its verb is `check`, as in spf, because a DMARC fail is a result and not an error. `from` is a domain, and the caller extracts it from the header.
 - **ip** `contains` treats an IPv4-mapped IPv6 address and the IPv4 address as the same, as Node's `BlockList` does, which is the safer choice for SSRF allowlists. `range` classifies addresses outside `2000::/3` as `reserved`. `parseCidr` clears host bits.
 - **random** throws `RangeError` for bad arguments, as dns and base64 do, and throws on reversed bounds instead of swapping them. `seeded` is xoshiro128** seeded with SplitMix64, and its output changes only in a major version.

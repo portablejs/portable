@@ -45,13 +45,13 @@ All packages follow the same [conventions](/conventions) for names, options, err
 With a bundler, import the package as in the example above. Without one, import it from esm.sh in a module script:
 
 ```js
-import * as Streams from 'https://esm.sh/@portable/streams'
+import * as Streams from 'https://esm.sh/@portable/streams';
 ```
 
 esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You don't need an import map.
 
 ## Runtimes
 
-The tests run in Chromium, Firefox, WebKit, workerd, Deno, Bun, and Node.
+The tests run in Chromium, Firefox, WebKit, Deno, Bun, and Node, and a check of every package runs in workerd, the Cloudflare Workers runtime.
 
 `@portable/smtp` needs a TCP socket API, so it doesn't run in browsers.
