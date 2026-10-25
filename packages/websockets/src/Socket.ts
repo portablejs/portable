@@ -1,4 +1,4 @@
-import { assertUint8Array } from '@portable/bytes/internal';
+import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as Timers from '@portable/timers';
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>;
@@ -55,11 +55,8 @@ export function toMessage(data: unknown): Message {
   throw new TypeError('Expected a string or ArrayBuffer message. Set binaryType to "arraybuffer".');
 }
 
-export function assertOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
-  if (typeof message !== 'string') {
-    assertUint8Array(message);
-  }
-  return message as string | Uint8Array<ArrayBuffer>;
+export function toOutgoing(message: unknown): string | Uint8Array<ArrayBuffer> {
+  return typeof message === 'string' ? message : toBufferSource(assertUint8Array(message));
 }
 
 export const messageSize = (message: Message): number =>

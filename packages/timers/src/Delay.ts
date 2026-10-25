@@ -2,8 +2,8 @@ import { sleep } from './sleep.js';
 
 /**
  * How long to wait before the next attempt: a fixed number of milliseconds, exponential backoff, or a
- * function that takes the number of the attempt that just finished and, in `retry`, the error it
- * threw.
+ * function that takes `{ attempt, error }`: the number of the attempt that just finished and, in
+ * `retry`, the error it threw.
  */
 export type Delay = number | Backoff | ((attempt: Attempt) => number);
 

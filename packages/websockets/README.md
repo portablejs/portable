@@ -25,8 +25,9 @@ const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
 const writer = writable.getWriter();
 await writer.write(JSON.stringify({ subscribe: 'prices' }));
 
-for await (const message of readable) {
-  console.log(message);
+const reader = readable.getReader();
+for (let r = await reader.read(); !r.done; r = await reader.read()) {
+  console.log(r.value);
 }
 ```
 
@@ -124,7 +125,7 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - Close codes such as 1008 are final by default, so a client the server rejected doesn't reconnect in a loop.
 - A URL function that throws counts as a failed attempt. websocket-ts stopped reconnecting permanently.
 - Closing a `ws` client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
-- Throughput matches reconnecting-websocket. Echoing 1000 messages of 100 bytes through a local server took 46 ms on average with `connect`, 44 ms with reconnecting-websocket and 34 ms with a bare `WebSocket` on Node 24, on a machine busy enough that runs varied by ±15%. A server echoing through `fromSocket` took 50 ms against 60 ms with `ws` listeners.
+- Echoing 1,000 messages of 100 bytes through a local server on Node 24 runs within 5% of a bare `WebSocket` with `connect`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
 
 <!-- bench:start -->
 | | @portable/websockets | reconnecting-websocket | partysocket | websocket-ts | ws | `WebSocket` |

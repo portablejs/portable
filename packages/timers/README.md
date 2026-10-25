@@ -199,7 +199,7 @@ next({ attempt: 3 }); // 4000
 
 These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies.
 
-- Ten attempts with no delay take 10 µs on Node, against 17 µs with p-retry. With a `signal` they take 17 µs, against 19 µs.
+- Ten attempts with no delay run about twice as fast as with p-retry on Node. With a `signal`, the two run at the same speed.
 - An abort settles the call at once, also while an attempt is running. p-retry waits for the running attempt to settle first.
 - `timeout` gives each attempt a deadline through its `signal`. None of the four libraries limits a single attempt.
 - `retry` and `poll` remove every timer and abort listener they create when the call settles.
@@ -248,7 +248,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `signal` cancels the waiting invocation and disables the function, so it can be tied to a component's or request's lifetime.
 - Time is read from `performance.now()`. lodash reads `Date.now()`, so `throttle` invokes again at once when the system clock jumps forward.
 - lodash.debounce 4.0.8, the standalone package, leaves a timer behind in a tight loop when `maxWait` is below `ms`, and invokes at other times than lodash 4.18. The oracle tests show the difference.
-- A burst of 1000 calls runs at 13.1k bursts per second on Node, against 15.4k for lodash.debounce, 4.2k for throttle-debounce and 2.5k for p-debounce. `throttle` runs at 11.9k, against 14.8k for lodash.throttle and 3.5k for throttle-debounce.
+- A burst of 1,000 calls through `debounce` or `throttle` runs about 10% slower than lodash on Node, and 3 to 5 times faster than throttle-debounce and p-debounce. The benchmark table above has the numbers.
 - `cancel()` and `flush()` work as in lodash, except that calls dropped by `cancel` reject with an `AbortError` and `flush` returns a promise.
 - p-debounce's `pDebounce.promise(fn)` has no equivalent, because it limits concurrency rather than time.
 - throttle-debounce takes the delay first, as in `throttle(delay, fn)`. `Timers.throttle` and `Timers.debounce` take the function first: `Timers.throttle(fn, delay)`.

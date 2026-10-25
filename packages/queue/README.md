@@ -116,6 +116,7 @@ A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(50
 
 | Type | Description |
 | --- | --- |
+| `Queue.Queue` | The object `create` returns. |
 | `Queue.Task` | `(context) => value \| Promise<value>`, a function the queue runs. |
 | `Queue.Context` | `{ signal }`, what a task receives. The signal aborts when the task's or the queue's `signal` aborts. |
 
@@ -123,7 +124,7 @@ A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(50
 
 They run in browsers too, but they are three packages with three APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies.
 
-- **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 1 µs with p-limit and 4 µs with p-queue. With priorities and a shared `signal`, it is about 1 µs against p-queue's 14 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 1 µs for p-map and p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
+- **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 1 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.6 µs against p-queue's 3.6 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 1 µs for p-map and p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
 - **An aborted running task keeps its slot.** p-queue frees the slot when a running task's signal aborts, while the task may still be running, so more than `concurrency` tasks can run at once.
 - **`clear()` rejects the removed tasks** with an `AbortError`. p-limit's `clearQueue()` leaves their promises pending forever unless `rejectOnClear` is set.
 - **`map` stops in-flight work.** After the first error, or when `signal` aborts, the `signal` passed to each running call aborts. p-map gives the mapper no signal, so after the first error the other calls run to the end unless the caller wires up its own `AbortController`.

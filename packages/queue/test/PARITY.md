@@ -358,7 +358,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | --- | --- | --- |
 | strict mode enforces sliding window rate limiting | `rate limit > starts at most intervalCap tasks in any interval` |  |
 | strict mode vs fixed window timing | `rate limit > has no burst at a window boundary` |  |
-| strict mode with large intervalCap | `oracle > create matches p-queue (sliding-window rate limit, 5 per 30 ms)` |  |
+| strict mode with large intervalCap | `oracle > create matches p-queue > sliding-window rate limit, 5 per 30 ms, concurrency 1` |  |
 | strict mode with concurrency limit | `rate limit > works together with a concurrency limit` |  |
 | strict mode rate limit events | skipped | Not built: rate-limit state |
 | strict mode isRateLimited property | skipped | Not built: rate-limit state |
@@ -375,7 +375,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | strict mode with long-running tasks | `rate limit > works together with a concurrency limit` |  |
 | strict mode isSaturated property | skipped | Not built: rate-limit state |
 | strict mode multiple complete intervals | `rate limit > starts at most intervalCap tasks in any interval` |  |
-| strict mode precision timing | `rate limit > starts at most intervalCap tasks in any interval (exact start times under fake timers)` |  |
+| strict mode precision timing | `rate limit > starts at most intervalCap tasks in any interval` |  |
 | strict mode with concurrency: Infinity | `rate limit > starts at most intervalCap tasks in any interval` |  |
 | strict mode with timeout option | skipped | Not built: timeout |
 | strict mode rapid sequential adds | `rate limit > keeps the limit when many tasks are added over time` |  |
@@ -464,8 +464,8 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | all pMapSkips | skipped | Not built: pMapSkip |
 | all mappers should run when concurrency is infinite, even after stop-on-error happened | `` map > runs every call at once by default, and `map errors > aborts the signal of calls still running after the first error` `` |  |
 | asyncIterator - main | `map > maps an async iterable` |  |
-| asyncIterator - concurrency: 1 | `oracle > map matches p-map (async iterable input, concurrency 1)` |  |
-| asyncIterator - concurrency: 4 | `oracle > map matches p-map (async iterable input, concurrency 3)` |  |
+| asyncIterator - concurrency: 1 | `oracle > map matches p-map > async iterable input, concurrency 1` |  |
+| asyncIterator - concurrency: 4 | `oracle > map matches p-map > async iterable input, concurrency 3` |  |
 | asyncIterator - handles empty iterable | `map > resolves with an empty array for empty input` |  |
 | asyncIterator - async with concurrency: 2 (random time sequence) | `oracle > map matches p-map` |  |
 | asyncIterator - async with concurrency: 2 (problematic time sequence) | `oracle > map matches p-map` |  |
@@ -680,7 +680,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | pMap - `stopOnError: true` rejects with the first error in time, like `Promise.all` | `oracle > map matches p-map (first error)` |  |
 | pMap - after a rejection, a mapper that settles later does not pull more input, and the source is closed once | `map errors > stops reading the input and closes it after the first error` |  |
 | pMap - `stopOnError: false` reports element errors and mapper errors together, in input order | skipped | Items are passed to `fn` as they are, without awaiting them (`map > passes items to fn as they are, without awaiting them`). |
-| pMap - `stopOnError: false` with `concurrency: 1` still maps every element after an error | `oracle > map matches p-map (errors with stopOnError false, concurrency 1)` |  |
+| pMap - `stopOnError: false` with `concurrency: 1` still maps every element after an error | `oracle > map matches p-map > errors with stopOnError false, concurrency 1, plan ${seed}` |  |
 | pMap - `stopOnError: false` with skips and a stop around the errors | skipped | Not built: pMapSkip |
 | pMap - throwing `pMapSkip` or `pMapStop` is an error, not a skip or a stop | skipped | Not built: pMapStop |
 | pMap - rejects with a value that is not an `Error` as is | `map errors > keeps errors that are undefined or null when stopOnError is false` |  |

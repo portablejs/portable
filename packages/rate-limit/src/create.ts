@@ -84,8 +84,8 @@ export function create(options: create.Options): Limiter {
   return {
     async take(key, options = {}) {
       const { cost = 1, signal } = options;
-      const time = options.now?.getTime() ?? Date.now();
-      if (!Number.isFinite(time)) {
+      const now = options.now?.getTime() ?? Date.now();
+      if (!Number.isFinite(now)) {
         throw new RangeError('`now` must be a valid Date.');
       }
       if (!Number.isFinite(cost)) {
@@ -93,9 +93,8 @@ export function create(options: create.Options): Limiter {
       }
       for (;;) {
         signal?.throwIfAborted();
-        const read = store.get(key, { now: new Date(time), signal });
+        const read = store.get(key, { now: new Date(now), signal });
         const stored = typeof read === 'object' ? await read : read;
-        const now = time;
         const base = stored === undefined ? now : Math.max(stored, now);
         const remaining = Math.max(0, Math.floor((now + tolerance - base) / interval));
         const arrival = Math.max(now, base + cost * interval);
@@ -126,7 +125,7 @@ export function create(options: create.Options): Limiter {
         const written = store.set(key, arrival, {
           expected: stored,
           ttl,
-          now: new Date(time),
+          now: new Date(now),
           signal,
         });
         if (typeof written === 'object' ? await written : written) {

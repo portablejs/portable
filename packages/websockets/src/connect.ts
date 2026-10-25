@@ -6,7 +6,7 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
-  assertOutgoing,
+  toOutgoing,
   assertSize,
   queueLimit,
   drained,
@@ -129,8 +129,9 @@ const defaultReconnectIf = (event: connect.Close) => !finalCodes.has(event.code)
  * });
  * const writer = writable.getWriter();
  * await writer.write('hello');
- * for await (const message of readable) {
- *   console.log(message);
+ * const reader = readable.getReader();
+ * for (let r = await reader.read(); !r.done; r = await reader.read()) {
+ *   console.log(r.value);
  * }
  * ```
  */
@@ -161,8 +162,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
   if (heartbeat) {
     assertSize('heartbeat.interval', heartbeat.interval, 1);
     assertSize('heartbeat.timeout', heartbeat.timeout ?? heartbeat.interval, 1);
-    assertOutgoing(heartbeat.ping);
   }
+  const ping = heartbeat && toOutgoing(heartbeat.ping);
   const protocolList = typeof protocols === 'string' ? protocols : protocols && [...protocols];
 
   let readableController!: ReadableStreamDefaultController<Message>;
@@ -347,7 +348,7 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
         if (outcome || socket.readyState !== OPEN) {
           throw new DOMException('The WebSocket is not open.', 'InvalidStateError');
         }
-        socket.send(assertOutgoing(message));
+        socket.send(toOutgoing(message));
       };
       const handshakeDone = Promise.resolve().then(() =>
         open({ send, messages, signal: attempt.signal }),
@@ -378,12 +379,12 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     notify();
 
     if (heartbeat) {
-      const { ping, interval, timeout: wait = interval } = heartbeat;
+      const { interval, timeout: wait = interval } = heartbeat;
       pingTimer = setInterval(() => {
         if (socket.readyState !== OPEN) {
           return;
         }
-        socket.send(ping);
+        socket.send(ping!);
         pongTimer ??= startTimer(
           () =>
             attempt.abort(
@@ -439,8 +440,8 @@ export function connect(url: connect.Url, options: connect.Options = {}): Duplex
     }
   }
 
-  const write = (chunk: string | Uint8Array<ArrayBuffer>): Promise<void> | undefined => {
-    assertOutgoing(chunk);
+  const write = (input: string | Uint8Array<ArrayBuffer>): Promise<void> | undefined => {
+    const chunk = toOutgoing(input);
     if (stop.signal.aborted) {
       throw failure;
     }

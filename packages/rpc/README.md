@@ -287,7 +287,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Structured-cloning a nested object costs more in Node than cloning one JSON string, so the JSON codec is faster than the identity codec (14,400/s for the 2 KB record) and than the libraries that clone. birpc and comlink have no streamed results, so the stream row compares with the server pushing each value without waiting, which has no backpressure.
 
-
 - One package covers workers, iframes, popups, WebSockets and HTTP, with the same API on each. comlink and post-me cover `postMessage`, penpal covers windows and workers, birpc takes callbacks for any channel, and json-rpc-2.0 has no transport.
 - The wire format is JSON-RPC 2.0, so the server also answers clients written in other languages, and the client talks to LSP and MCP servers.
 - Async generators and `ReadableStream` results stream back with backpressure and cancellation. comlink needs a proxied callback per value, and birpc and penpal have no streams.

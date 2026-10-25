@@ -6,7 +6,7 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
-  assertOutgoing,
+  toOutgoing,
   assertSize,
   queueLimit,
   closedError,
@@ -138,8 +138,8 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     start(controller) {
       writableController = controller;
     },
-    write(chunk) {
-      assertOutgoing(chunk);
+    write(input) {
+      const chunk = toOutgoing(input);
       if (!done && socket.readyState === OPEN && socket.bufferedAmount <= highWaterMark) {
         return socket.send(chunk);
       }
