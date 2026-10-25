@@ -737,9 +737,6 @@ importers:
       '@portable/arc':
         specifier: workspace:*
         version: link:../arc
-      '@portable/bytes':
-        specifier: workspace:*
-        version: link:../bytes
       '@portable/dkim':
         specifier: workspace:*
         version: link:../dkim
@@ -752,9 +749,6 @@ importers:
       '@portable/spf':
         specifier: workspace:*
         version: link:../spf
-      '@portable/streams':
-        specifier: workspace:*
-        version: link:../streams
 
   packages/mail-auth/test:
     devDependencies:
