@@ -697,15 +697,20 @@ These were recorded as each package was built. Each package's README and PARITY.
 - **Trade-offs:** With only a `node` condition, a browser or Workers bundle that imports the entry fails to resolve it, which gives a clearer error than a missing `node:stream`. But zile adds a `default` condition to every export when it publishes, so the published package would have one anyway, and `tools/lint/src/packages.test.ts` requires the same three conditions for every entry. Bun and Deno resolve `node:stream` either way.
 - **Chosen:** a plain export. The module JSDoc and the README say it runs in Node, Bun and Deno, and `tools/workers/src/run.ts` leaves `./node` entries out of the Worker bundle.
 
+## `@portable/streams/node` has only `toWeb`'s two functions
+
+- **Options:** the full plan in packages.md, with `fromWeb`, `toWebWritable`, `fromWebWritable`, `toWebTransform`, `fromWebTransform` and `pipeToNodeResponse`; only the conversions that Node's built-ins get wrong.
+- **Trade-offs:** We built and benchmarked the full set first. On Node 24, `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` already follow backpressure and propagate errors, and the `fromWeb` functions take a `signal`. Our versions of the four besides `Duplex.toWeb` took up to 1.3× as long as Node's. Wrapping them would add API to keep stable without fixing anything that most uses need. `Readable.toWeb` has real gaps: it passes `setEncoding` strings through, reads 128 KB ahead of its reader, takes no `signal`, and returns `ReadableStream<any>`.
+- **Chosen:** use the platform where it works, as philosophy rule 7 says for existing packages. The entry has `toWeb` and `toWebObjects`, and the README points to `node:stream` for the rest. `pipeToNodeResponse` would be `stream.pipeTo(Writable.toWeb(res))`.
+
 ## `NodeStreams.toWeb` and `toWebObjects` are two functions
 
 - **Options:** one `toWeb` that returns `ReadableStream<unknown>`; one `toWeb` with a type parameter for the chunk type; `toWeb` for bytes and `toWebObjects` for object mode.
 - **Trade-offs:** A `Readable` doesn't declare its chunk type or whether it is in object mode, so one function can't type its result from its argument. `unknown` makes every byte stream need a cast before `pipeThrough(new TextDecoderStream())`, and a type parameter that appears only in the result lets the caller pick any chunk type without a check, so it is no safer than a cast. AGENTS.md says to write two functions when the result type would change.
-- **Chosen:** two functions. `toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>` and errors with a `TypeError` for a chunk that isn't bytes or a string. `toWebObjects` returns `ReadableStream<unknown>`. `fromWeb`, `fromWebWritable` and `fromWebTransform` take `objectMode` options instead, because their result is a Node stream whatever the mode. `toWebTransform` returns a byte readable side, and its JSDoc shows how to build the pair for an object-mode `Duplex` from `toWebObjects` and `toWebWritable`.
+- **Chosen:** two functions. `toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>` and errors with a `TypeError` for a chunk that isn't bytes or a string. `toWebObjects` returns `ReadableStream<unknown>`.
 
-## `NodeStreams` wraps a `Buffer` without copying it
+## `NodeStreams.toWeb` wraps a `Buffer` without copying it
 
 - **Options:** copy every `Buffer` chunk, as `Readable.toWeb` does; copy only a `Buffer` that shares its `ArrayBuffer` with others; wrap the `Buffer`'s memory in a plain `Uint8Array`.
-- **Trade-offs:** A small `Buffer` shares Node's pool, which is 64 KiB in Node 24, so transferring a chunk's `ArrayBuffer` detaches the other buffers in the pool. Copying the pooled ones avoids that, but in Node 24 a 4 KB `Buffer` is pooled, and copying made `fromWebWritable` take about twice as long as `Writable.fromWeb`. The `Buffer` that the Node stream passes to `NodeStreams` already shares the pool, so a `Uint8Array` over its memory shares nothing that the `Buffer` didn't.
+- **Trade-offs:** A small `Buffer` shares Node's pool, which is 64 KiB in Node 24, so transferring a chunk's `ArrayBuffer` detaches the other buffers in the pool. Copying the pooled ones avoids that, but in Node 24 a 4 KB `Buffer` is pooled, so most chunks of a typical stream would be copied. The `Buffer` that the Node stream passes to `NodeStreams` already shares the pool, so a `Uint8Array` over its memory shares nothing that the `Buffer` didn't.
 - **Chosen:** a `Uint8Array` over the same memory, and a copy only for a `SharedArrayBuffer`. The README says not to transfer a chunk's `ArrayBuffer`.
-

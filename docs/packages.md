@@ -82,16 +82,13 @@ The platform covers part of this: `ReadableStream.from()` and `for await (const 
 | `map`, `filter`, `tap`, `batch(n)` | Small `TransformStream` factories for the through2 cases. |
 | `toArray`, `toBytes`, `toBlob`, `toText`, `toJson` | Collectors, which accept a stream or any async iterable. |
 
-**Node interop** is in one subpath, `@portable/streams/node`, as ox ships `ox/node`. Its `src/node/**` is the only code in the package allowed to import `node:*`, and no other Portable package imports it. It's a plain `./node` export, without a `node` condition ([decision](decisions.md#portablestreamsnode-is-a-plain-subpath-export)):
+**Node interop** is in one subpath, `@portable/streams/node`, as ox ships `ox/node`. Its `src/node/**` is the only code in the package allowed to import `node:*`, and no other Portable package imports it. It's a plain `./node` export, without a `node` condition ([decision](decisions.md#portablestreamsnode-is-a-plain-subpath-export)). It has only the conversion that Node's built-ins lack ([decision](decisions.md#portablestreamsnode-has-only-towebs-two-functions)):
 
 | Function | Does |
 | --- | --- |
-| `toWeb(readable)` / `toWebObjects(readable)` | Converts a Node `Readable` of bytes to a `ReadableStream<Uint8Array>`, or an object-mode one to a `ReadableStream<unknown>`. `Buffer` chunks become plain `Uint8Array`s, and strings from `setEncoding` are encoded back to their bytes. The `Readable` is read only when the stream is read. Errors, `destroy()` and cancel propagate in both directions. |
-| `fromWeb(stream, { objectMode })` | Converts a `ReadableStream` to a Node `Readable`. |
-| `toWebWritable(writable)` / `fromWebWritable(stream, { objectMode })` | Converts between a Node `Writable` and a `WritableStream`. |
-| `toWebTransform(duplex)` / `fromWebTransform(pair, { readableObjectMode, writableObjectMode })` | Converts between a Node `Transform` or `Duplex` and a `{ readable, writable }` pair, so an existing through2-style transform can go in `pipeThrough`, and a `TransformStream` in `pipeline()`. |
+| `toWeb(readable)` / `toWebObjects(readable)` | Converts a Node `Readable` of bytes to a `ReadableStream<Uint8Array>`, or an object-mode one to a `ReadableStream<unknown>`. `Buffer` chunks become plain `Uint8Array`s, and strings from `setEncoding` are encoded back to their bytes. The `Readable` is read only when the stream is read. Errors, `destroy()` and cancel propagate in both directions, and both take `signal`. |
 
-Every function takes `signal`. There's no `pipeToNodeResponse(stream, res)`, because `stream.pipeTo(NodeStreams.toWebWritable(res))` does the same.
+For the other directions, `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` in `node:stream` already work.
 
 The portable half needs no special support: a Node `Readable` is already an async iterable, so `fromIterable(nodeReadable)` works everywhere.
 

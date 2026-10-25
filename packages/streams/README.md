@@ -2,7 +2,7 @@
 
 Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Deno, Bun and Node 24+.
 
-Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body). `@portable/streams/node` replaces `Readable.toWeb`, `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` from `node:stream`.
+Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body). `@portable/streams/node` replaces `Readable.toWeb` from `node:stream`.
 
 ```sh
 npm install @portable/streams
@@ -120,7 +120,7 @@ class UpperCaseStream extends TransformStream<string, string> {
 
 ## Convert Node streams
 
-`@portable/streams/node` converts between Node streams and web streams, so a Node library that reads or writes Node streams can work with web stream APIs and the other Portable packages. It imports `node:stream`, so it runs in Node, Bun and Deno, and not in browsers or Cloudflare Workers.
+`@portable/streams/node` converts a Node `Readable` to a `ReadableStream`, so web stream APIs and the other Portable packages can read the output of a Node library. It imports `node:stream`, so it runs in Node, Bun and Deno, and not in browsers or Cloudflare Workers.
 
 ```ts
 import { createReadStream } from 'node:fs';
@@ -133,22 +133,17 @@ const text = await Streams.toText(NodeStreams.toWeb(createReadStream('notes.txt'
 | --- | --- |
 | `toWeb(readable, { signal })` | A `ReadableStream` of plain `Uint8Array`s from a `Readable` of bytes. `Buffer` chunks become `Uint8Array`s, and the strings from a `Readable` with `setEncoding` are encoded back to the bytes they came from. Any other chunk errors the stream with a `TypeError`. |
 | `toWebObjects(readable, { signal })` | A `ReadableStream` of the values of an object-mode `Readable`, typed `unknown`. `Buffer` chunks become `Uint8Array`s. |
-| `fromWeb(stream, { objectMode, highWaterMark, signal })` | A `Readable` that reads from `stream`. Without `objectMode`, it takes `Uint8Array` and string chunks and destroys itself with a `TypeError` for any other chunk. With `objectMode`, it passes chunks through, and a `null` chunk destroys it with a `TypeError`, because `null` ends a Node stream. |
-| `toWebWritable(writable, { signal })` | A `WritableStream` that writes each chunk to `writable` unchanged. A write waits for `'drain'` when the `Writable`'s buffer is full, and closing the stream calls `end()` and resolves on `'finish'`. |
-| `fromWebWritable(stream, { objectMode, highWaterMark, signal })` | A `Writable` that writes to `stream`. Without `objectMode`, strings are encoded as UTF-8 and every chunk reaches `stream` as a plain `Uint8Array`. |
-| `toWebTransform(duplex, { signal })` | A `{ readable, writable }` pair for `pipeThrough` from a `Transform` or `Duplex` that outputs bytes, such as a `zlib` stream. For a `Duplex` that outputs objects, use `{ readable: NodeStreams.toWebObjects(duplex), writable: NodeStreams.toWebWritable(duplex) }`. |
-| `fromWebTransform(pair, { readableObjectMode, writableObjectMode, signal })` | A `Duplex` for `pipeline()` from a `TransformStream` or another `{ readable, writable }` pair. If the transform outputs values other than bytes, such as the strings from `TextDecoderStream`, set `readableObjectMode`. Without it, Node joins the strings into one byte stream. |
 
-Each conversion follows backpressure in both directions. `toWeb` reads from the `Readable` only when the stream's reader asks for a chunk, and `fromWeb` reads from the stream only when Node asks for more data. Errors also propagate in both directions. An error or a `destroy()` on the Node stream errors the web stream, and cancelling or aborting the web stream destroys the Node stream with the reason. An error on the web stream destroys the Node stream with that error, and destroying the Node stream cancels or aborts the web stream with the destroy error. Aborting `signal` does both: it errors the web stream with `signal.reason` and destroys the Node stream with it.
+Both read from the `Readable` only when the stream's reader asks for a chunk, so a slow reader pauses the `Readable`. An error or a `destroy()` on the `Readable` errors the stream, and cancelling the stream destroys the `Readable` with the cancel reason. Aborting `signal` errors the stream with `signal.reason` and destroys the `Readable` with it.
 
 A `Buffer` chunk becomes a `Uint8Array` over the same memory, so the conversion copies no bytes. A small `Buffer` and the `Uint8Array` made from it share Node's buffer pool with other buffers. Don't transfer the chunk's `ArrayBuffer`, because that detaches every other buffer in the pool.
 
-Keep the work in web streams and convert only where a Node API needs a Node stream, such as a file:
+For the other conversions, use the ones in `node:stream`: `Readable.fromWeb` for a `ReadableStream` that a Node API needs to read, `Writable.toWeb` and `Writable.fromWeb` for writables, and `Duplex.toWeb` and `Duplex.fromWeb` for transforms. Keep the work in web streams and convert only where a Node API needs a Node stream, such as a file:
 
 ```ts
 import { createWriteStream } from 'node:fs';
+import { Writable } from 'node:stream';
 import * as Csv from '@portable/csv';
-import * as NodeStreams from '@portable/streams/node';
 
 const response = await fetch('https://example.com/report.csv');
 await response.body!
@@ -156,7 +151,7 @@ await response.body!
   .pipeThrough(Streams.map((row: readonly string[]) => `${row.join('\t')}\n`))
   .pipeThrough(new TextEncoderStream())
   .pipeThrough(new CompressionStream('gzip'))
-  .pipeTo(NodeStreams.toWebWritable(createWriteStream('report.tsv.gz')));
+  .pipeTo(Writable.toWeb(createWriteStream('report.tsv.gz')));
 ```
 
 ## Types
@@ -176,17 +171,14 @@ The libraries above were written for Node streams. This package reads web stream
 - Collectors don't need async iteration over `ReadableStream`, which get-stream needed and Chrome lacked ([get-stream #116](https://github.com/sindresorhus/get-stream/issues/116)).
 - The collectors reject a number chunk with a `TypeError`. In concat-stream it exposed uninitialized `Buffer` memory ([concat-stream #57](https://github.com/max-mapper/concat-stream/issues/57)).
 
-### Compared with the conversions in `node:stream`
+### Compared with `Readable.toWeb`
 
-Node has `Readable.toWeb`, `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb`. On Node 24, `@portable/streams/node` differs from them in these ways:
+`@portable/streams/node` has only the conversion that Node doesn't already do well. Node's `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` follow backpressure and propagate errors, and in a benchmark on Node 24 they ran faster than our versions of them, so this package doesn't wrap them. On Node 24, `NodeStreams.toWeb` differs from `Readable.toWeb` in these ways:
 
 - `Readable.toWeb` passes the strings of a `Readable` with `setEncoding` through as strings, so a `ReadableStream` that should hold bytes holds hex or base64 text. `NodeStreams.toWeb` encodes them back to the original bytes.
-- `Readable.toWeb` read 128 KB from a `Readable` before anything read the stream. `NodeStreams.toWeb` reads from the `Readable` only when the stream is read, and it read 6.8 MB about 1.7× faster. `toWebTransform` ran a `PassThrough` about 1.2× faster than `Duplex.toWeb`.
-- `Readable.toWeb`, `Writable.toWeb` and `Duplex.toWeb` take no `signal`. Every `NodeStreams` function takes one, and aborting it stops both streams.
-- Node types every converted web stream as `ReadableStream<any>` or `WritableStream<any>`. `NodeStreams.toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>`, and `toWebObjects` returns `ReadableStream<unknown>` for an object-mode `Readable`.
-- `Readable.fromWeb` in object mode ends the `Readable` at a `null` chunk and drops the chunks after it. `NodeStreams.fromWeb` destroys the `Readable` with a `TypeError` instead.
-
-Node already covers the rest. `Readable.toWeb` returns plain `Uint8Array`s for a byte-mode `Readable`, and `Readable.fromWeb` and `Writable.fromWeb` take a `signal`. `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb` and `Duplex.fromWeb` were also faster: the `NodeStreams` functions that match them took up to 1.3× as long, and `fromWebTransform` was the slowest.
+- `Readable.toWeb` read 128 KB from a `Readable` before anything read the stream. `NodeStreams.toWeb` reads from the `Readable` only when the stream is read, and it read 6.8 MB about 1.7× faster.
+- `Readable.toWeb` takes no `signal`.
+- `Readable.toWeb` returns a `ReadableStream<any>`. `NodeStreams.toWeb` returns `ReadableStream<Uint8Array<ArrayBuffer>>`, and `toWebObjects` returns `ReadableStream<unknown>` for an object-mode `Readable`.
 
 <!-- bench:start -->
 | | @portable/streams | get-stream | concat-stream | bl | stream-to-array | raw-body | merge2 | merge-stream | through2 | Web streams by hand |
