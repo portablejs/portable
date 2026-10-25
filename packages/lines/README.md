@@ -10,11 +10,12 @@ npm install @portable/lines
 
 ```ts
 import * as Lines from '@portable/lines';
+import * as Streams from '@portable/streams';
 
 const response = await fetch('https://example.com/access.log');
-const reader = response.body!.pipeThrough(new Lines.DecoderStream()).getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value);
+const lines = response.body!.pipeThrough(new Lines.DecoderStream());
+for await (const line of Streams.toAsyncIterable(lines)) {
+  console.log(line);
 }
 ```
 
@@ -39,7 +40,7 @@ for (let r = await reader.read(); !r.done; r = await reader.read()) {
 
 ## Why use this over split2 and byline
 
-split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies.
+split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `TransformStream`, so it splits a `fetch` response body in any JavaScript runtime, and it has no dependencies outside `@portable/*`.
 
 - It split 1.7 MB of text at the same speed as split2 in Node. `node:readline` was about 2× faster than both, but it exists only in Node.
 - `maxLength` is checked on every line. split2 checks only the unfinished line at the end of each chunk, so whether it catches a long line depends on how the input was chunked.

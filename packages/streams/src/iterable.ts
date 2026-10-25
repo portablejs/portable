@@ -51,8 +51,8 @@ export declare namespace toAsyncIterable {
  *
  * for await (const chunk of Streams.toAsyncIterable(response.body!)) {
  *   if (done(chunk)) {
- *     break;
- *   } // cancels the response body
+ *     break; // cancels the response body
+ *   }
  * }
  * ```
  */

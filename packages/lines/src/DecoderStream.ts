@@ -39,9 +39,11 @@ const lineBreak = /\r?\n/;
  * @example
  * ```ts
  * import * as Lines from '@portable/lines';
+ * import * as Streams from '@portable/streams';
  *
  * const response = await fetch('https://example.com/log.txt');
- * for await (const line of response.body!.pipeThrough(new Lines.DecoderStream())) {
+ * const lines = response.body!.pipeThrough(new Lines.DecoderStream());
+ * for await (const line of Streams.toAsyncIterable(lines)) {
  *   console.log(line);
  * }
  * ```
