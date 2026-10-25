@@ -66,11 +66,23 @@
       }
       .brand {
         display: flex;
-        margin-right: -6px;
+        align-items: center;
+        gap: 8px;
+        color: inherit;
+        text-decoration: none;
       }
       .brand img {
-        width: 18px;
-        height: 18px;
+        height: 1cap;
+      }
+      .brand .divider {
+        width: 1px;
+        height: 1.1em;
+        margin: 0 6px;
+        background: var(--line);
+      }
+      .brand .page {
+        font-weight: 500;
+        color: var(--dim);
       }
       .pill {
         font-size: 12px;
@@ -241,8 +253,12 @@
     <div class="app">
       <section class="stage">
         <header>
-          <a class="brand" href="/"><img src="/logo-dark.svg" alt="Portable" /></a>
-          <h1>Portable · Bluesky stream</h1>
+          <h1>
+            <a class="brand" href="/"
+              ><img src="/logo-dark.svg" alt="" />Portable<span class="divider"></span
+              ><span class="page">Bluesky stream</span></a
+            >
+          </h1>
           <span id="status" class="pill wait">connecting</span>
           <span class="stat"><b id="rate">0</b> posts/s</span
           ><span class="stat"><b id="total">0</b> seen</span>
