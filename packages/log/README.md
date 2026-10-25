@@ -66,7 +66,7 @@ Replaces the patterns. Throws a `RangeError` when a pattern has an unknown level
 
 ### `Log.configure(options)`
 
-Changes how enabled calls are written. An option you leave out keeps its current value.
+Sets how enabled calls are written. It changes only the options you pass.
 
 | Option | Default | Description |
 | --- | --- | --- |

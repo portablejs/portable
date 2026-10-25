@@ -329,7 +329,7 @@ export function enable(patterns: string, options: enable.Options = {}): void {
 }
 
 /**
- * Changes how enabled calls are written. Options left out keep their current value.
+ * Sets how enabled calls are written. It changes only the options you pass.
  *
  * @example
  * ```ts

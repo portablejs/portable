@@ -4,8 +4,8 @@ Decisions made while building the packages, with the options considered and the 
 
 ## `Log.configure` sets the output options, and `Log.enable` takes only patterns
 
-- **Options:** keep `Log.enable(patterns, options)`, where `undefined` patterns keep the current ones so `Log.enable(undefined, { console: false })` changes only the output; require `patterns` and move `console`, `time` and `context` to a `Log.configure(options)`.
-- **Trade-offs:** AGENTS.md rules out a positional that accepts `undefined`, and `enable(undefined, …)` hides what the call does. `configure` adds one export, and switching from debug still needs only `enable`. `persist` stays on `enable`, because it writes the patterns. For the same reason, `log.isEnabled(level)` now requires its level instead of defaulting to `'debug'`.
+- **Options:** keep `Log.enable(patterns, options)`, which leaves the patterns unchanged when you pass `undefined`, so `Log.enable(undefined, { console: false })` changes only the output; require `patterns` and move `console`, `time` and `context` to a `Log.configure(options)`.
+- **Trade-offs:** AGENTS.md rules out a positional that accepts `undefined`, and `enable(undefined, …)` hides what the call does. `configure` adds one export, and switching from debug still needs only `enable`. `persist` stays on `enable`, because it writes the patterns. `log.isEnabled(level)` now requires its level instead of defaulting to `'debug'`, because an optional positional breaks the same rule.
 - **Chosen:** `Log.enable(patterns, { persist })` and `Log.configure({ console, time, context })`. `tools/lint/src/publicApi.test.ts` now also rejects an optional positional or one that accepts `undefined` in a public function, except `Compress.crc32`, which copies `zlib.crc32`, and `Exif.parseDate`, which takes a tag value that is `undefined` when the tag is missing.
 
 ## `@portable/sockets` has types and a Node adapter, with no default per runtime

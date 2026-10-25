@@ -85,7 +85,7 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` a
 
 Each method rejects with a `TypeError` for a name that isn't a string.
 
-`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA` or `EBADNAME`, which means the name has no records. It returns `false` for any other error, so treat that error as a temporary failure. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
+`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA` or `EBADNAME`, which means the name has no records. It returns `false` for any other error. Treat those errors as temporary failures. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
 
 ```ts
 const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {

@@ -113,7 +113,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 </tbody>
 <tbody>
 <tr><th colspan="2" align="left">Logging</th></tr>
-<tr><td><a href="packages/log"><code>@portable/log</code></a></td><td>Logs by namespace and level, turned on with debug's <code>DEBUG</code> patterns, which you can change without a reload.</td></tr>
+<tr><td><a href="packages/log"><code>@portable/log</code></a></td><td>Logs by namespace and level. Turn namespaces on with debug's <code>DEBUG</code> patterns, and change them without a reload.</td></tr>
 </tbody>
 </table>
 
@@ -131,7 +131,7 @@ Every package follows the same conventions, so once you've used one, you know ho
 
 ### Runtimes
 
-The tests run in Chromium, Firefox and WebKit, in Deno and Bun, and in Node 24 and 26, and a check of every package runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124 and Safari 17.4 or later. Ed25519 signatures, in `@portable/web-crypto`, `@portable/dkim`, `@portable/arc` and `@portable/mail-auth`, need Chrome 137 and Firefox 129, and X25519 keys in `@portable/web-crypto` need Chrome 133 and Firefox 130. `@portable/smtp` and `@portable/sockets` need a TCP socket API, so they run in Workers, Deno, Bun and Node but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
+The tests run in Chromium, Firefox, WebKit, Deno, Bun, Node 24 and Node 26. A check of every package also runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124 and Safari 17.4 or later. Ed25519 signatures, in `@portable/web-crypto`, `@portable/dkim`, `@portable/arc` and `@portable/mail-auth`, need Chrome 137 and Firefox 129, and X25519 keys in `@portable/web-crypto` need Chrome 133 and Firefox 130. `@portable/smtp` and `@portable/sockets` need a TCP socket API, so they run in Workers, Deno, Bun and Node but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
 
 ### License
 
