@@ -53,7 +53,7 @@ The tests compare with libqp 3.0.1, installed from npm as `libqp3`. libqp 2.1.3 
 | wrap() > starts the line after a hard line break with the full line length | same name | |
 | wrap() > cuts a UTF-8 sequence only at a lead byte and leaves invalid escapes in place | `soft line breaks > cuts a UTF-8 sequence only at a lead byte` | The invalid-escape half (`=Cz`) can't come out of `encode()`. |
 | wrap() > does not count a line break towards the line length | same name | |
-| wrap() > treats a missing, zero or invalid line length as 76 | `soft line breaks > uses 76 characters by default`, `... rejects a line length that is not an integer of at least 4` | Deliberate difference: 0, `NaN` and non-integers throw `RangeError` instead of meaning 76. |
+| wrap() > treats a missing, zero or invalid line length as 76 | `soft line breaks > uses 76 characters by default`, `... rejects a line length that is not an integer of at least 4` | Deliberate difference: 0, `NaN`, and non-integers throw `RangeError` instead of meaning 76. |
 | wrap() > raises a line length below 4 to 4 instead of looping forever | `soft line breaks > rejects a line length ...`, `... keeps every line within a line length of 4` | Below 4 throws `RangeError`. |
 | Hyphens > encode() escapes a hyphen that starts a line | `hyphens at the start of a line > escapes a hyphen that starts a line` | |
 | Hyphens > encode() keeps a hyphen inside a line | `... > keeps a hyphen inside a line` | |
@@ -162,7 +162,7 @@ Skipped. They test libqp's dual CommonJS and ES module build, its old deep impor
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | encode: Equals sign | `encode() > equals sign` | Different break position: we break after the last space in the final third of a line, as libqp does. Upstream cuts at exactly 75. |
-| encode: 76-char line limit | `encode() > 76-character line limit` | Asserts line length, the first line and the round trip, since break positions differ as above. |
+| encode: 76-char line limit | `encode() > 76-character line limit` | Asserts line length, the first line, and the round trip, since break positions differ as above. |
 | encode: Trailing space | `encode() > trailing space` | |
 | encode: Trailing tab | `encode() > trailing tab` | |
 | encode: CRLF | `encode() > CRLF` | Deliberate difference: upstream escapes every CR and LF. We keep line breaks, and `binary: true` escapes only a lone CR or LF. |
@@ -177,7 +177,7 @@ Skipped. They test libqp's dual CommonJS and ES module build, its old deep impor
 | decode: Soft line break example from the RFC | `decode() > soft line break example from the RFC` | |
 | decode: UTF-8 can be used for non-ASCII symbols | `decode() > UTF-8 can be used for non-ASCII symbols` | |
 
-quoted-printable's `decode()` also removes `=` before a lone CR. We follow RFC 2045 and libqp: a soft line break is `=` before CRLF, LF or the end of the input.
+quoted-printable's `decode()` also removes `=` before a lone CR. We follow RFC 2045 and libqp: a soft line break is `=` before CRLF, LF, or the end of the input.
 
 ## Known upstream issues
 
@@ -204,4 +204,4 @@ quoted-printable's `decode()` also removes `=` before a lone CR. We follow RFC 2
 
 ## Benchmarks
 
-Neither library has benchmarks. `quoted-printable.bench.ts` compares `encode()`, `decode()` and both streams with libqp 2.1.3, libqp 3.0.1 and quoted-printable on 512 KB of text and 256 KB of random bytes, and fails if any of them is more than 25% faster. There is no platform API for quoted-printable to compare with.
+Neither library has benchmarks. `quoted-printable.bench.ts` compares `encode()`, `decode()`, and both streams with libqp 2.1.3, libqp 3.0.1, and quoted-printable on 512 KB of text and 256 KB of random bytes, and fails if any of them is more than 25% faster. There is no platform API for quoted-printable to compare with.

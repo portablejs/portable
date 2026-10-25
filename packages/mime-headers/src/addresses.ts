@@ -658,7 +658,10 @@ function skipRoute(tokens: Token[], from: number, to: number): number {
   return from;
 }
 
-/** Whether tokens spell `word *("." word)`, the dot-atom or obs-local-part and obs-domain forms. */
+/**
+ * Whether tokens spell `word *("." word)`: the dot-atom form or the obs-local-part and obs-domain
+ * forms.
+ */
 function isWords(tokens: readonly Token[], atomsOnly = false): boolean {
   let expectWord = true;
   for (const token of tokens) {

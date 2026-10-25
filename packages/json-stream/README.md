@@ -2,7 +2,7 @@
 
 Streams JSON in and out: values selected by JSONPath from one large document, and JSON text written from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify) and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use `@portable/jsonl`.
+Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify), and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use `@portable/jsonl`.
 
 ```sh
 npm install @portable/json-stream
@@ -24,7 +24,7 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]` and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
+| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
 | `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
@@ -47,7 +47,7 @@ return new Response(body, { headers: { 'content-type': 'application/json' } });
 
 The text matches what `JSON.stringify` gives for the resolved tree. A circular structure or a `BigInt` fails the stream with a `TypeError`.
 
-## Why use this over JSONStream, stream-json and json-stream-stringify
+## Why use this over JSONStream, stream-json, and json-stream-stringify
 
 Those libraries are Node streams. This package does the same jobs with a `TransformStream` and a `ReadableStream`, and has no dependencies outside `@portable/*`.
 

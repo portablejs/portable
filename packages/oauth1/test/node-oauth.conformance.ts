@@ -204,7 +204,7 @@ describe('cases from the node-oauth test suite', () => {
     );
   });
 
-  test('GET, DELETE and a lowercase method are signed in upper case', async () => {
+  test('GET, DELETE, and a lowercase method are signed in upper case', async () => {
     for (const method of ['GET', 'DELETE', 'patch']) {
       expect(await signature(new Request('http://foo.com/blah', { method }), options)).toBe(
         await hmac(

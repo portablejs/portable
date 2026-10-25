@@ -96,7 +96,7 @@ describe('base64', () => {
 });
 
 describe('attachments', () => {
-  test('headers, name and filename', async () => {
+  test('headers, name, and filename', async () => {
     expect(
       await compose({
         text: 'abc',

@@ -2,7 +2,7 @@
 
 One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32, built on the platform's `CompressionStream` and `DecompressionStream`, so it ships no compression code of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces the one-shot use of [pako](https://www.npmjs.com/package/pako) and [fflate](https://www.npmjs.com/package/fflate), and `node:zlib`'s `gzipSync`, `gunzipSync`, `deflateSync`, `inflateSync` and `crc32`.
+Replaces the one-shot use of [pako](https://www.npmjs.com/package/pako) and [fflate](https://www.npmjs.com/package/fflate), and `node:zlib`'s `gzipSync`, `gunzipSync`, `deflateSync`, `inflateSync`, and `crc32`.
 
 ```sh
 npm install @portable/compress
@@ -31,7 +31,7 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 | Option | Default | Description |
 | --- | --- | --- |
 | `format` | `'gzip'` | The compressed format. |
-| `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. |
+| `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects, and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. |
 | `signal` | | When it aborts, `encode` and `decode` reject with `signal.reason`, and `DecoderStream` fails with it and cancels its input. |
 
 There is no compression level option and no dictionary, because `CompressionStream` has neither. To compress a stream, use the platform's `CompressionStream`.
@@ -52,7 +52,7 @@ The platform reports every failure as a `TypeError`, and each of these errors st
 | --- | --- |
 | `Compress.Format` | `'gzip'`, `'deflate'` (zlib) or `'deflate-raw'`. |
 
-## Why use this over pako, fflate and node:zlib
+## Why use this over pako, fflate, and node:zlib
 
 pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` doesn't run in browsers, and Cloudflare Workers need the `nodejs_compat` flag for it.
 
@@ -106,8 +106,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch:
 
-- pako, fflate and `node:zlib` have sync functions. Every function here is async, because `CompressionStream` is.
-- The `strategy` option of pako, fflate and `node:zlib` has no equivalent. Keep fflate if you need a level, a dictionary or a strategy.
+- pako, fflate, and `node:zlib` have sync functions. Every function here is async, because `CompressionStream` is.
+- The `strategy` option of pako, fflate, and `node:zlib` has no equivalent. Keep fflate if you need a level, a dictionary, or a strategy.
 - `node:zlib` and pako ignore bytes after the end of the data, including a second zlib stream and zero padding after a gzip member. `decode` and `DecoderStream` fail with `InvalidInputError` on them.
 - `zlib.createGunzip()` reads every gzip member. `DecoderStream` reads one, as `DecompressionStream` does, and fails with `InvalidInputError` on a second. `decode` reads them all.
 - pako decodes a zlib stream whose header declares a smaller window than the data uses. `decode` decodes it too in Chromium, and throws `InvalidInputError` in Node.

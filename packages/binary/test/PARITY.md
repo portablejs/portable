@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suites: [smart-buffer 4.2.0 `test/smartbuffer.test.ts`](https://github.com/JoshGlazebrook/smart-buffer/blob/master/test/smartbuffer.test.ts), [varint 6.0.0 `test.js`](https://github.com/chrisdickinson/varint/blob/master/test.js), and [it-length-prefixed 11.0.1 `test/decode.spec.ts` and `test/encode.spec.ts`](https://github.com/alanshaw/it-length-prefixed/tree/master/test). Test names below are `file > describe > test`, with `createReader.conformance.ts` shortened to `reader`, `createWriter.conformance.ts` to `writer`, `frames.conformance.ts` to `frames`, `binary.fuzz.conformance.ts` to `fuzz` and `binary.oracle.test.ts` to `oracle`.
+Upstream suites: [smart-buffer 4.2.0 `test/smartbuffer.test.ts`](https://github.com/JoshGlazebrook/smart-buffer/blob/master/test/smartbuffer.test.ts), [varint 6.0.0 `test.js`](https://github.com/chrisdickinson/varint/blob/master/test.js), and [it-length-prefixed 11.0.1 `test/decode.spec.ts` and `test/encode.spec.ts`](https://github.com/alanshaw/it-length-prefixed/tree/master/test). Test names below are `file > describe > test`, with `createReader.conformance.ts` shortened to `reader`, `createWriter.conformance.ts` to `writer`, `frames.conformance.ts` to `frames`, `binary.fuzz.conformance.ts` to `fuzz`, and `binary.oracle.test.ts` to `oracle`.
 
 ## smart-buffer
 

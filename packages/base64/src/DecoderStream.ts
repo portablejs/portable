@@ -13,7 +13,7 @@ export declare namespace DecoderStream {
 
 /**
  * A `TransformStream` that decodes base64 text or bytes. The output is the same as `decode` of all
- * the input at once, however the input is chunked, so line breaks, padding and groups of four
+ * the input at once, however the input is chunked, so line breaks, padding, and groups of four
  * characters can be split anywhere. Invalid input in `'loose'` or `'strict'` mode
  * errors the stream with an `InvalidInputError` or `TruncatedError`.
  *

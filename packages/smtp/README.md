@@ -64,7 +64,7 @@ Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TL
 | `allowInsecureAuth` | `false` | Send credentials over an unencrypted connection. Without it, AUTH requires TLS. |
 | `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF makes `connect` reject with a `RangeError`. |
 | `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
-| `signal` | None | Limits connecting, TLS and login. Aborting rejects with `signal.reason` and closes the socket. |
+| `signal` | None | Limits connecting, TLS, and login. Aborting rejects with `signal.reason` and closes the socket. |
 
 With `auth` set, the client always authenticates. If the server offers AUTH but neither PLAIN nor LOGIN, `connect` rejects with `EAUTH` without sending the password.
 
@@ -76,24 +76,24 @@ Sends one message and resolves with `{ accepted, rejected, response }`. It resol
 | --- | --- |
 | `from` | The envelope sender. `''` sends `MAIL FROM:<>`, as bounces do. |
 | `to` | One recipient or an array. |
-| `message` | The raw message as a `string`, `Uint8Array` or `ReadableStream<Uint8Array>`. Bare CR and bare LF become CRLF, and lines starting with a dot get a second dot. |
+| `message` | The raw message as a `string`, `Uint8Array`, or `ReadableStream<Uint8Array>`. Bare CR and bare LF become CRLF, and lines starting with a dot get a second dot. |
 | `size` | The message size for the SIZE extension. `send` computes it for strings and bytes. A message over the server's limit fails before MAIL FROM. |
 | `dsn` | `{ ret, envid, notify }`: RFC 3461 delivery status notification parameters, sent when the server offers DSN. |
 | `requireTls` | Ask the server to relay only over TLS (RFC 8689). Fails before MAIL FROM if the connection isn't encrypted or the server doesn't offer REQUIRETLS. |
 
 The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO and DATA in one write. It declares BODY=8BITMIME whenever the server offers it, and SMTPUTF8 when an address is not ASCII. An address with a control character or an angle bracket is rejected before anything is sent.
 
-When a stream message isn't sent in full, because the envelope was refused, the connection failed or the signal aborted, the stream is cancelled.
+When a stream message isn't sent in full, because the envelope was refused, the connection failed, or the signal aborted, the stream is cancelled.
 
 Aborting `signal` rejects with `signal.reason`. A send that has started also closes the connection, because the server may be partway through the message. A send still waiting for earlier calls rejects at once, and the connection stays open.
 
 ### `client.close({ signal })`
 
-Waits for queued sends, sends QUIT and closes the socket. It never rejects. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
+Waits for queued sends, sends QUIT, and closes the socket. It never rejects. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
 
 ### `Smtp.send(mail, options)`
 
-Connects with `options`, sends one message and closes the connection. Here `signal` limits the whole call.
+Connects with `options`, sends one message, and closes the connection. Here `signal` limits the whole call.
 
 ### `Smtp.CommandError`
 
@@ -101,7 +101,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 
 | Field | Description |
 | --- | --- |
-| `code` | `'ECONNECTION'`, `'EPROTOCOL'`, `'ETLS'`, `'EAUTH'`, `'EENVELOPE'` or `'EMESSAGE'`. |
+| `code` | `'ECONNECTION'`, `'EPROTOCOL'`, `'ETLS'`, `'EAUTH'`, `'EENVELOPE'`, or `'EMESSAGE'`. |
 | `command` | The command the server refused, such as `'RCPT TO'`, or `'CONNECT'`. |
 | `responseCode` | The reply code, such as `550`. |
 | `enhancedCode` | The RFC 3463 code, such as `'5.1.1'`. |
@@ -111,7 +111,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `code` | Meaning |
 | --- | --- |
 | `ECONNECTION` | The socket failed to open or closed early, or the server replied 421 to any command. Retry on a new connection. |
-| `EPROTOCOL` | The greeting wasn't 220, EHLO and HELO were refused, or a reply was malformed or over 1 MiB. |
+| `EPROTOCOL` | The greeting wasn't 220, the server refused both EHLO and HELO, or a reply was malformed or over 1 MiB. |
 | `ETLS` | STARTTLS was not offered or was refused, or the TLS handshake failed. |
 | `EAUTH` | Login failed, no supported method was offered, or AUTH would have been sent over plaintext without `allowInsecureAuth`. |
 | `EENVELOPE` | An address is invalid, the server refused the sender, every recipient or DATA, or the server can't honor SMTPUTF8 or REQUIRETLS. |
@@ -121,7 +121,7 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 
 | Type | Description |
 | --- | --- |
-| `Smtp.Client` | An open session from `connect`: `send`, `close` and `[Symbol.asyncDispose]`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
+| `Smtp.Client` | An open session from `connect`: `send`, `close`, and `[Symbol.asyncDispose]`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
 | `Smtp.Mail` | A message and its envelope, as `send` takes them. |
 | `Smtp.Result` | The outcome of a send that reached at least one recipient. |
 | `Smtp.Rejection` | A recipient the server refused, with its reply. |
@@ -166,11 +166,11 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 - `Smtp.send` and `client.send` send an empty message. nodemailer refuses it.
 - `Smtp.connect` throws a `RangeError` for a `name` that contains CR or LF. nodemailer removes the CR and LF instead.
-- nodemailer's `opportunisticTLS`, `logger` and `debug` options have no equivalent.
+- nodemailer's `opportunisticTLS`, `logger`, and `debug` options have no equivalent.
 - nodemailer refreshes an OAuth2 access token itself. `auth: { user, accessToken }` sends the token as given, so refresh it yourself before it expires.
 - CRAM-MD5 and custom `auth.type` handlers aren't supported, because WebCrypto has no MD5.
 - `mail.dsn` has no equivalent of nodemailer's `orcpt`.
 - nodemailer's `pool: true` has no equivalent. Keep a `Client` open and send several messages over it instead.
 - nodemailer's `proxy` and `getSocket` options have no equivalent. Open the tunnel in the `connect` function instead.
-- nodemailer's `info.rejected` is a list of address strings. `result.rejected` is a list of objects with `recipient`, `responseCode`, `enhancedCode` and `response`.
+- nodemailer's `info.rejected` is a list of address strings. `result.rejected` is a list of objects with `recipient`, `responseCode`, `enhancedCode`, and `response`.
 - The result has no `messageId` or `envelope`, which nodemailer returns in `info`.

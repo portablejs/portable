@@ -12,7 +12,7 @@ export type Message = {
    * dispatched.
    */
   data?: string | undefined;
-  /** Event ID, which the client sends back as `Last-Event-ID`. Must not contain CR, LF or NUL. */
+  /** Event ID, which the client sends back as `Last-Event-ID`. Must not contain CR, LF, or NUL. */
   id?: string | undefined;
   /** Reconnection time for the client, in milliseconds. Must be a non-negative integer. */
   retry?: number | undefined;

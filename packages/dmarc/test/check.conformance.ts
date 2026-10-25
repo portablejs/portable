@@ -14,7 +14,7 @@ import {
 const reject = withRecord('v=DMARC1; p=reject');
 
 describe('Dmarc.check', () => {
-  test('returns the result, policy, record and alignment of each identifier', async () => {
+  test('returns the result, policy, record, and alignment of each identifier', async () => {
     const result = await check(withRecord('v=DMARC1; p=quarantine; rua=mailto:d@example.com'), {
       from: 'example.com',
       spf: { result: 'pass', domain: 'bounce.other.test' },
@@ -64,7 +64,7 @@ describe('Dmarc.check', () => {
     }
   });
 
-  test('reports why the result is none, temperror or permerror', async () => {
+  test('reports why the result is none, temperror, or permerror', async () => {
     expect(await check({}, { from: 'example.com' })).toMatchObject({
       result: 'none',
       disposition: 'none',
@@ -501,7 +501,7 @@ describe('get-dmarc-record-test.js', () => {
       expect(log[0]).toBe('TXT _dmarc.example.com');
     });
 
-    test('no record for ENOTFOUND, ENODATA, EBADNAME or an empty answer', async () => {
+    test('no record for ENOTFOUND, ENODATA, EBADNAME, or an empty answer', async () => {
       for (const TXT of ['ENOTFOUND', 'ENODATA', 'EBADNAME', []]) {
         const zone = { '_dmarc.example.com': { TXT }, '_dmarc.com': { TXT } } satisfies Zone;
         expect((await check(zone, { from: 'example.com' })).result).toBe('none');
@@ -1275,7 +1275,7 @@ describe('author-domain-test.js and from-header-test.js', () => {
     });
   });
 
-  test('rejects a domain with a control, format or space character, without a query', async () => {
+  test('rejects a domain with a control, format, or space character, without a query', async () => {
     const chars = [0x200b, 0xad, 0x2060, 0x200e, 0x202e, 0, 0x1b, 0x7f, 0x85, 0x20, 0x3000];
     for (const char of chars.map((code) => String.fromCharCode(code))) {
       const log: Query[] = [];
@@ -1292,7 +1292,7 @@ describe('author-domain-test.js and from-header-test.js', () => {
     );
   });
 
-  test('rejects an address, a URL or an empty label instead of a domain', async () => {
+  test('rejects an address, a URL, or an empty label instead of a domain', async () => {
     for (const from of [
       'user@example.com',
       'example.com/x',

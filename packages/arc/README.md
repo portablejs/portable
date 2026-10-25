@@ -27,15 +27,15 @@ const fields = await Arc.seal(message, {
 const forwarded = fields + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM and DMARC, in one call.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. `@portable/mail-auth` does both, together with SPF, DKIM, and DMARC, in one call.
 
 ## Verifying
 
-`verify` follows RFC 8617 section 5.2: it checks the structure of every ARC set, the newest ARC-Message-Signature and every ARC-Seal from the newest to the oldest. It resolves to:
+`verify` follows RFC 8617 section 5.2: it checks the structure of every ARC set, the newest ARC-Message-Signature, and every ARC-Seal from the newest to the oldest. It resolves to:
 
 | Field | Description |
 | --- | --- |
-| `result` | `'pass'`, `'fail'` or `'none'` (no ARC fields). It is the `arc=` result of Authentication-Results and the `cv=` value for the next seal. |
+| `result` | `'pass'`, `'fail'`, or `'none'` (no ARC fields). It is the `arc=` result of Authentication-Results and the `cv=` value for the next seal. |
 | `instance` | The highest instance on the message's ARC fields, 0 when there are none. |
 | `reason` | Why the result is `fail`, such as `i=1 ams body hash did not verify` or `i=2 as no key`. |
 | `cause` | The resolver's error when a key lookup failed. |
@@ -62,16 +62,16 @@ The promise rejects only for invalid options, a failing message stream or an abo
 
 ## Sealing
 
-`seal` resolves to the three fields of the new set, ARC-Seal, ARC-Message-Signature and ARC-Authentication-Results, each ending in CRLF, to put above the message's other fields. The instance is one more than the highest on the message. The ARC-Message-Signature always uses relaxed/relaxed canonicalization, and lines are folded at 76 characters.
+`seal` resolves to the three fields of the new set, ARC-Seal, ARC-Message-Signature, and ARC-Authentication-Results, each ending in CRLF, to put above the message's other fields. The instance is one more than the highest on the message. The ARC-Message-Signature always uses relaxed/relaxed canonicalization, and lines are folded at 76 characters.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `domain` | required | The sealing domain (`d=`). A U-label domain is written as its A-label. |
 | `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
-| `privateKey` | required | A `CryptoKey`, a PEM `PRIVATE KEY` or `RSA PRIVATE KEY`, or a JWK, as `Dkim.sign` takes it. The key type sets `a=`. Passing an imported `CryptoKey` saves about 1 ms per call in Node. |
+| `privateKey` | required | A `CryptoKey`, a PEM `PRIVATE KEY`, or `RSA PRIVATE KEY`, or a JWK, as `Dkim.sign` takes it. The key type sets `a=`. Passing an imported `CryptoKey` saves about 1 ms per call in Node. |
 | `authResults` | required | The ARC-Authentication-Results payload: this server's authserv-id and its results, such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF and whitespace. |
 | `chainValidation` | `'none'` for a message without ARC fields | The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message has ARC fields. |
-| `headers` | DKIM-Signature, Delivered-To and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
+| `headers` | DKIM-Signature, Delivered-To, and the `Dkim.sign` defaults | The fields the ARC-Message-Signature signs. ARC fields and Authentication-Results are left out (RFC 8617 section 4.1.2). |
 | `now` | `new Date()` | The time (`t=`) of both signatures, as a `Date` or a `Temporal.Instant`. |
 | `hasher` | WebCrypto | Creates the body hash. |
 | `signal` | none | Stops reading the message. |
@@ -85,13 +85,13 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 | Type | Description |
 | --- | --- |
 | `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
-| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause` and `sets`, as above. |
+| `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause`, and `sets`, as above. |
 | `Arc.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from `@portable/dkim`. |
 | `Arc.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
 
 ## Why use this over mailauth
 
-- It runs anywhere. mailauth uses `node:crypto`, `node:stream` and Buffers, so it doesn't run in Workers or a browser.
+- It runs anywhere. mailauth uses `node:crypto`, `node:stream`, and Buffers, so it doesn't run in Workers or a browser.
 - It follows RFC 8617 by default. mailauth's default mode accepts ARC-Seal syntax errors, instances such as `i=0x1`, and an ARC-Message-Signature without `c=` signed relaxed/relaxed, as the ARC drafts did. mailauth follows the RFC only with `strict: true`. This package always follows the RFC, and it gives mailauth's strict result on every message of ValiMail's ARC test suite and on 11 altered copies of chains it seals.
 - Sealing is explicit. `seal` requires `chainValidation` once a chain exists, and it throws for options that would produce a set no validator accepts, such as an instance with a gap, instead of producing that set with a warning.
 - It verifies faster. In Node it verifies a 250 KB message with two ARC sets about one and a half times as fast as mailauth, and seals it a little faster, as the table below shows.
@@ -120,7 +120,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/arc | – | 20 kB | 11 | none | included |
 | mailauth | 7.3.0 | 449 kB | 38 | `buffer`, `crypto`, `dns`, `https`, `net`, `stream`, `string_decoder` | included |
-| `node:crypto`, hashing and signing only | – | built in | – | Node only | – |
+| `node:crypto`, hashing, and signing only | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
@@ -134,4 +134,4 @@ Differences to check when you switch from mailauth:
 - mailauth's `sealMessage` resolves to a `Buffer`, and `seal` resolves to a string.
 - mailauth's `seal.i` has no equivalent. The instance is always one more than the highest on the message.
 - mailauth's `seal.bodyHash` and `seal.headers` let it seal without the message. `seal` always reads the message.
-- mailauth accepts `cv: 'PASS'` in upper case. `chainValidation` takes only `'none'`, `'pass'` or `'fail'` in lower case, as `Arc.verify` returns them.
+- mailauth accepts `cv: 'PASS'` in upper case. `chainValidation` takes only `'none'`, `'pass'`, or `'fail'` in lower case, as `Arc.verify` returns them.

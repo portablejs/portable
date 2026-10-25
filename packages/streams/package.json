@@ -1,6 +1,6 @@
 {
   "name": "@portable/streams",
-  "description": "Collect, combine and bridge web streams and iterables, in any JavaScript runtime.",
+  "description": "Collect, combine, and bridge web streams and iterables, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

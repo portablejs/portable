@@ -1,6 +1,6 @@
 {
   "name": "@portable/sse",
-  "description": "Decode, encode and reconnect server-sent event streams, in any JavaScript runtime.",
+  "description": "Decode, encode, and reconnect server-sent event streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

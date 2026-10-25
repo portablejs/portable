@@ -1,6 +1,6 @@
 {
   "name": "@portable/oauth1",
-  "description": "Sign OAuth 1.0a requests (RFC 5849) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1 or PLAINTEXT, in any JavaScript runtime.",
+  "description": "Sign OAuth 1.0a requests (RFC 5849) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1, or PLAINTEXT, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

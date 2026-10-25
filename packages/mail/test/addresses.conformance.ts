@@ -12,7 +12,7 @@ const from = 'sender@example.com';
 const to = async (value: Mail.Addresses) => field(await compose({ to: value }), 'To');
 
 describe('address headers', () => {
-  test('strings, mailboxes and lists of both give the same header', async () => {
+  test('strings, mailboxes, and lists of both give the same header', async () => {
     const expected = 'Mari <mari@example.com>, b@example.com';
     expect(await to('Mari <mari@example.com>, b@example.com')).toBe(expected);
     expect(
@@ -160,7 +160,7 @@ describe('envelope', () => {
     );
   });
 
-  test('to lists To, Cc and Bcc once each, in order', () => {
+  test('to lists To, Cc, and Bcc once each, in order', () => {
     expect(
       Mail.envelope({
         from,

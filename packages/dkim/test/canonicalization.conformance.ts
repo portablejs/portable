@@ -72,7 +72,7 @@ describe('relaxed body canonicalization (RFC 6376 section 3.4.4)', () => {
     );
   });
 
-  test('hashes mailauth message1.eml as mailauth does, whole and byte by byte', async () => {
+  test('hashes mailauth message1.eml whole and byte by byte, as mailauth does', async () => {
     const message = await fixture('message1.eml');
     for (const chunkSize of [undefined, 1, 7]) {
       const field = await Dkim.sign(chunkSize ? stream(chunked(message, chunkSize)) : message, {

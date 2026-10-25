@@ -60,7 +60,7 @@ The socket has these members:
 | --- | --- |
 | `readable` | A `ReadableStream<Uint8Array>` of the bytes the peer sends. It closes when the peer ends its side and errors if the connection fails. Cancelling it discards incoming bytes and leaves the writable side open. |
 | `writable` | A `WritableStream<Uint8Array>` for the bytes to send. Closing it ends this side of the connection. A write after the connection closes rejects with a `TypeError`. |
-| `opened` | Resolves with `{ remoteAddress, localAddress }`, each as `host:port`, once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails. |
+| `opened` | Resolves with `{ remoteAddress, localAddress }` (each as `host:port`) once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails. |
 | `closed` | Resolves when the connection closes and rejects with the error if it fails. |
 | `close()` | Closes both sides at once, without waiting for the peer, and returns `closed`. Reads after it are done, and writes reject. |
 | `startTls()` | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket's `upgraded` becomes `true`, its readable closes, its writes reject and its `closed` resolves. It throws a `TypeError` for any other socket and on a second call. |
@@ -99,7 +99,7 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 | Type | Description |
 | --- | --- |
 | `Sockets.Connect` | `(address, options) => Socket`. Both `connect` from `cloudflare:sockets` and `connect` from `@portable/sockets/node` match this type. |
-| `Sockets.Socket` | A connection: `readable`, `writable`, `opened`, `closed`, `upgraded`, `close()` and `startTls()`. |
+| `Sockets.Socket` | A connection: `readable`, `writable`, `opened`, `closed`, `upgraded`, `close()`, and `startTls()`. |
 | `Sockets.Address` | `{ hostname, port }`. |
 | `Sockets.Options` | `{ secureTransport, allowHalfOpen }`. Both are required, because the `cloudflare:sockets` types require `allowHalfOpen`. |
 | `Sockets.Info` | What `opened` resolves with: `remoteAddress` and `localAddress`, where the runtime knows them. |

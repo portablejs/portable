@@ -10,7 +10,7 @@ The RFC 5849 examples are in `rfc5849.conformance.ts`. They omit `oauth_version`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| `twitter_sample_data.js` #getParameterString, #getBaseString, #getSigningKey, #getSignature, #authorize, #toHeader | `cases from the oauth-1.0a test suite > Twitter documentation example: base string, signing key, signature and header` | The base string, signing key and parameter string are private. The header holds the signature, which is wrong if any of them is. |
+| `twitter_sample_data.js` #getParameterString, #getBaseString, #getSigningKey, #getSignature, #authorize, #toHeader | `cases from the oauth-1.0a test suite > Twitter documentation example: base string, signing key, signature, and header` | The base string, signing key and parameter string are private. The header holds the signature, which is wrong if any of them is. |
 | `getParameterString.js` #getParameterStringEmptyGetParam | `known oauth-1.0a issues > "?&" adds no parameters` | Upstream signs `=` (an empty name) for `?&`. |
 | `oauth_body_hash.js` #getBodyHash with data as an object | `oauth_body_hash, from the oauth-1.0a test suite > a JSON body is hashed and not signed as parameters` | The body is a `Request` body, so the object is passed as its `JSON.stringify`. |
 | `oauth_body_hash.js` #getBodyHash with data as a string | `oauth_body_hash, from the oauth-1.0a test suite > a text body is hashed with SHA-1` | |
@@ -52,7 +52,7 @@ The RFC 5849 examples are in `rfc5849.conformance.ts`. They omit `oauth_version`
 | array out of the arguments hash: flatten arrays | `cases from the node-oauth test suite > parameters are sorted by name, then by value` | Repeated names come from the query string. |
 | ordering request parameters: by name | same | |
 | ordering request parameters: same name by value | same | |
-| normalising request parameters (RFC 5849 §3.4.1.3.2) | `RFC 5849 examples > §3.4.1: query, form body, duplicates, empty values and realm` | |
+| normalising request parameters (RFC 5849 §3.4.1.3.2) | `RFC 5849 examples > §3.4.1: query, form body, duplicates, empty values, and realm` | |
 | foo[bar] style url parameters | `cases from the node-oauth test suite > foo[bar] query names are signed as written` | |
 | signing a url: no token | `cases from the node-oauth test suite > signUrl: without a token` | The signature is in sorted position in the query, where node-oauth appends it last. |
 | signing a url: token | `cases from the node-oauth test suite > signUrl: with a token` | |
@@ -75,7 +75,7 @@ The RFC 5849 examples are in `rfc5849.conformance.ts`. They omit `oauth_version`
 | POST body string without content type | skipped | `Request` sends a string as `text/plain`, which is not signed. node-oauth labels it as a form but doesn't sign it either (#366). |
 | POST body string with content type | `known node-oauth issues > a form body given as a string is signed (#366)` | |
 | PUT: same cases as POST (7 tests) | `a binary body keeps its bytes and content type and is not signed` (POST and PUT), the rest as POST | |
-| DELETE: returns request, calls end | `cases from the node-oauth test suite > GET, DELETE and a lowercase method are signed in upper case` | Only the signed method applies. |
+| DELETE: returns request, calls end | `cases from the node-oauth test suite > GET, DELETE, and a lowercase method are signed in upper case` | Only the signed method applies. |
 | GET: returns request, calls end | same | |
 | Request with a callback: 200, 210, 301, 302 with and without Location, followRedirects true and false (12 tests) | skipped | No HTTP client. |
 | `sha1tests.js` HMAC-SHA1 of the oauth.net example | `RFC 5849 examples > OAuth Core 1.0 §A.5.2 example signature` | |

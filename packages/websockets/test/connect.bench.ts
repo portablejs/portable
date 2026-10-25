@@ -73,7 +73,7 @@ afterAll(async () => {
   await piped.close();
 });
 
-test(`echoes ${count} messages through a local server within 25% of reconnecting-websocket, partysocket and websocket-ts`, async ({
+test(`echoes ${count} messages through a local server within 25% of reconnecting-websocket, partysocket, and websocket-ts`, async ({
   bench,
 }) => {
   const result = await bench.compare(

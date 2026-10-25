@@ -71,7 +71,7 @@ describe('message structure', () => {
     );
   });
 
-  test('text, html and cid attachments nest multipart/related in multipart/alternative', async () => {
+  test('text, html, and cid attachments nest multipart/related in multipart/alternative', async () => {
     const raw = await compose({
       text: 'abc',
       html: 'def',

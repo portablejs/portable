@@ -53,7 +53,7 @@ export type Flags = {
   cd?: boolean | undefined;
 };
 
-/** A question: the name, type and class being looked up. */
+/** A question: the name, type, and class being looked up. */
 export type Question = {
   name: string;
   type: RecordType;
@@ -94,7 +94,7 @@ export type OptRecord = {
   options?: readonly EdnsOption[] | undefined;
 };
 
-/** A resource record in the answer, authority or additional section. */
+/** A resource record in the answer, authority, or additional section. */
 export type ResourceRecord =
   | { [key in KnownType]: Fields & { type: key; data: RecordData[key] } }[KnownType]
   | (Fields & { type: UnknownType; data: Uint8Array })
@@ -233,7 +233,7 @@ export declare namespace encode {
   type Options = {
     /**
      * Replace repeated names with pointers to their first copy (RFC 1035 section 4.1.4). It
-     * applies to owner names and to names inside NS, CNAME, PTR, MX and SOA records.
+     * applies to owner names and to names inside NS, CNAME, PTR, MX, and SOA records.
      * @default false
      */
     compress?: boolean | undefined;
@@ -247,7 +247,7 @@ export declare namespace encode {
 
 /**
  * Encodes a DNS message into its wire format, as sent over UDP or as a DNS-over-HTTPS body.
- * Throws `InvalidInputError` for a name, address or record that can't be encoded, and
+ * Throws `InvalidInputError` for a name, address, or record that can't be encoded, and
  * `UnsupportedError` for an EDNS option with no `data` and no built-in encoder.
  *
  * @example

@@ -47,7 +47,7 @@ describe('sending', () => {
     expect(server.messages).toEqual(['Subject: test\r\n\r\nhello']);
   });
 
-  test('sends a string, bytes and a stream as the same bytes', async () => {
+  test('sends a string, bytes, and a stream as the same bytes', async () => {
     const text = `Subject: test\n\n${'teretere, vana kere\n'.repeat(1023)}.dot line\n`;
     const server = fakeServer();
     const client = await plain(server);
@@ -698,7 +698,7 @@ describe('signals and closing', () => {
     expect(error.code).toBe('ECONNECTION');
   });
 
-  test('Smtp.send connects, sends and quits', async () => {
+  test('Smtp.send connects, sends, and quits', async () => {
     const server = fakeServer();
     const result = await Smtp.send(
       { ...envelope, message },

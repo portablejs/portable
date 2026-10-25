@@ -5,7 +5,7 @@ import varint from 'varint';
 import { expect, test } from 'vite-plus/test';
 import * as Binary from '@portable/binary';
 
-// 1,000 records shaped like a game packet: a varint id, two doubles, a float, a uint16 and a
+// 1,000 records shaped like a game packet: a varint id, two doubles, a float, a uint16, and a
 // short string.
 const count = 1000;
 const names = Array.from({ length: count }, (_, i) => `player-${i}`);

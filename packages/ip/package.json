@@ -1,6 +1,6 @@
 {
   "name": "@portable/ip",
-  "description": "Parse, format, compare and classify IPv4 and IPv6 addresses and CIDR blocks, in any JavaScript runtime.",
+  "description": "Parse, format, compare, and classify IPv4 and IPv6 addresses and CIDR blocks, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

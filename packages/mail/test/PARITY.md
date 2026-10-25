@@ -28,7 +28,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should create Alternative structure with text, amp and html | structure: amp goes between text and html |
 | should create Alternative structure with text, icalEvent and html | structure: a calendar invitation is an alternative and an attachment |
 | should create Alternative structure using encoded icalEvent | structure: a calendar invitation is an alternative and an attachment. There is no `icalEvent` option. The README shows the alternative plus attachment recipe. |
-| should create Alternative structure with text, html and cid attachment | structure: text, html and cid attachments nest multipart/related in multipart/alternative |
+| should create Alternative structure with text, html and cid attachment | structure: text, html, and cid attachments nest multipart/related in multipart/alternative |
 | should create Related structure with html and cid attachment | structure: html and cid attachments make multipart/related |
 | should create content node with only text | structure: only text is a single part |
 | should create content node with only an attachment | structure: only an attachment is a single part; oracle |
@@ -44,7 +44,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should use quoted-printable text encoding | Not applicable: there is no `textEncoding` option. body: mostly Latin text is quoted-printable |
 | should use base64 text encoding | Not applicable: there is no `textEncoding` option. body: mostly non-Latin text is base64 |
 | should keep BCC | headers: Bcc is left out unless keepBcc is set |
-| should set headers for attachment | body: headers, name and filename |
+| should set headers for attachment | body: headers, name, and filename |
 | should encode filename | body: filename table; a long non-ASCII filename is split into sections that each carry a star |
 | should keep plaintext for attachment | body: a given transfer encoding is kept |
 | should use default transfer encoding | body: application/octet-stream and base64 by default |
@@ -120,8 +120,8 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should strip line breaks from an explicit boundary parameter | body: a multipart content type throws |
 | should not emit a blank line before the boundary when base64 body length is an exact multiple of lineLength (regression #1810) | body: a body that fills its last line exactly has no empty line before the boundary |
 | should not emit a blank line before the internal boundary when an earlier sibling base64 body is an exact multiple of lineLength | body: a body that fills its last line exactly has no empty line before the boundary |
-| should build root with generated headers | headers: Date, Message-ID and MIME-Version are generated |
-| should not include bcc missing in output, but in envelope | headers: Bcc is left out unless keepBcc is set; addresses: to lists To, Cc and Bcc once each, in order |
+| should build root with generated headers | headers: Date, Message-ID, and MIME-Version are generated |
+| should not include bcc missing in output, but in envelope | headers: Bcc is left out unless keepBcc is set; addresses: to lists To, Cc, and Bcc once each, in order |
 | should include bcc missing in output and in envelope | headers: Bcc is left out unless keepBcc is set |
 | should use set envelope | Not applicable: no envelope override. A transport takes whatever envelope the caller gives it. |
 | should have unicode subject | headers: a unicode subject is one Q word |
@@ -151,21 +151,21 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should encode a quote in filename as a mime word | body: filename table. See differences: `filename` is a quoted string with `\"`. |
 | should not let an unpaired surrogate in filename inject a header parameter | body: an unpaired surrogate in a filename stays inside the parameter |
 | should detect content type from filename | Not applicable: no extension lookup. The content type comes from `contentType` or a Blob's `type`. The README points to `@remix-run/mime`. |
-| should convert address objects | addresses: strings, mailboxes and lists of both give the same header |
+| should convert address objects | addresses: strings, mailboxes, and lists of both give the same header |
 | should skip empty header | headers: empty values leave the header out |
 | should not process prepared headers | Not applicable: no prepared headers. headers: a long custom header is folded at whitespace |
 | should set default transfer encoding for application content | body: application/octet-stream and base64 by default |
 | should not set transfer encoding for multipart content | structure: every multipart test (no Content-Transfer-Encoding on multipart parts) |
 | should not set transfer encoding for message/ content | Different: message/\* gets `8bit`, as `MailComposer` sets it. body: message/rfc822 is 8bit and keeps non-ASCII text |
 | should use from domain for message-id | headers: a generated Message-ID uses the From domain |
-| should fallback to hostname for message-id | headers: Date, Message-ID and MIME-Version are generated (`@localhost`, since there is no hostname API) |
+| should fallback to hostname for message-id | headers: Date, Message-ID, and MIME-Version are generated (`@localhost`, since there is no hostname API) |
 
 ### `#getEnvelope`, `#messageId`, `#getAddresses`
 
 | Upstream test | Ours |
 | --- | --- |
 | should not carry a comment inside an angle-addr into the envelope | addresses: the recipients of … are … |
-| should get envelope | addresses: from is the first From address, else the first Sender address; to lists To, Cc and Bcc once each |
+| should get envelope | addresses: from is the first From address, else the first Sender address; to lists To, Cc, and Bcc once each |
 | should not let an own \_\_proto\_\_ key of an address inject an envelope recipient | addresses: an own \_\_proto\_\_ key cannot add a recipient |
 | should not let an own \_\_proto\_\_ key of an envelope mutate the prototype chain | Not applicable: no envelope input. |
 | should keep a custom envelope field that shares a name with an Object member | Not applicable: no envelope input. |
@@ -181,11 +181,11 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 
 | Upstream test | Ours |
 | --- | --- |
-| should normalize header key (`_parseAddresses`) | addresses: strings, mailboxes and lists of both give the same header |
+| should normalize header key (`_parseAddresses`) | addresses: strings, mailboxes, and lists of both give the same header |
 | should normalize an address parsed out of a string | addresses: the domain is lowercased and the local part is kept |
 | should normalize the addresses of a parsed group | addresses: a group is written with its members |
 | should not modify the address object it was given | addresses: a mailbox is not changed by encode |
-| should flatten arrays nested to any depth | Not applicable: `Addresses` is one level, a string or `Mailbox` or a list of them. |
+| should flatten arrays nested to any depth | Not applicable: `Addresses` nests only one level deep, as a string, a `Mailbox`, or a list of them. |
 | should not loop on an array that contains itself | Not applicable: no nested lists. |
 | should normalize header key (`_normalizeHeaderKey`) | Not applicable: header names keep the caller's case. See differences. |
 | should strip control chars from a header key | headers: the header name … throws because it is outside printable ASCII or holds a colon |
@@ -212,19 +212,19 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should keep tab separated references apart | headers: References are split at whitespace and each id gets angle brackets |
 | should format message-id | headers: Message-ID and In-Reply-To get angle brackets |
 | should strip control chars from message-id | headers: Message-ID and In-Reply-To get angle brackets |
-| should format addresses | addresses: strings, mailboxes and lists of both give the same header |
+| should format addresses | addresses: strings, mailboxes, and lists of both give the same header |
 | should keep domain as UTF-8 when local part is non-ASCII (`_encodeHeaderValue`) | addresses: a domain is kept as UTF-8 when the local part is not ASCII |
-| should convert address object to a string | addresses: strings, mailboxes and lists of both give the same header |
-| should keep ascii name as is | addresses: strings, mailboxes and lists of both give the same header |
+| should convert address object to a string | addresses: strings, mailboxes, and lists of both give the same header |
+| should keep ascii name as is | addresses: strings, mailboxes, and lists of both give the same header |
 | should encode single quote | Different: an apostrophe is an atext character and stays unquoted. Covered by mime-headers. |
 | should include name in quotes for special symbols | addresses: a name with specials is quoted |
 | should escape quotes | addresses: a name with specials is quoted; mime-headers `formatAddresses` tests |
 | should mime encode unicode names | addresses: each name gets its own Q or B encoding |
 | should keep domain as UTF-8 when local part is non-ASCII (`_convertAddresses`) | addresses: a domain is kept as UTF-8 when the local part is not ASCII |
-| should keep a plain address outside of angle brackets | addresses: strings, mailboxes and lists of both give the same header |
+| should keep a plain address outside of angle brackets | addresses: strings, mailboxes, and lists of both give the same header |
 | should wrap an address carrying a special into angle brackets | addresses: a quoted local part is kept (a quoted local part is unambiguous without brackets) |
 | should emit as many recipients as the envelope carries (security) | addresses: the header lists exactly the recipients of the envelope; the address … throws because it is not one addr-spec |
-| should dedupe against a prefilled unique list | addresses: to lists To, Cc and Bcc once each, in order |
+| should dedupe against a prefilled unique list | addresses: to lists To, Cc, and Bcc once each, in order |
 
 ### `#_normalizeAddress`
 
@@ -232,7 +232,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | --- | --- |
 | should split a domain literal off at the "@" in front of it | addresses: a domain literal is split off at the @ in front of it; the address `"a"@evil.com"@good.com` throws |
 | should punycode the domain when local part is ASCII | addresses: a domain is punycoded when the local part is ASCII |
-| should keep ASCII domain unchanged | addresses: strings, mailboxes and lists of both give the same header |
+| should keep ASCII domain unchanged | addresses: strings, mailboxes, and lists of both give the same header |
 | should not leave DEL in an address | addresses: the address … throws because it is not one addr-spec (control characters) |
 | should keep domain as UTF-8 when local part is non-ASCII | addresses: a domain is kept as UTF-8 when the local part is not ASCII |
 | should decode an already punycoded domain when local part is non-ASCII | Different: the A-label is kept. See differences. |
@@ -243,7 +243,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should re-quote a quoted local-part that lost its quotes in parsing (security) | addresses: an unquoted special or second @ in the local part throws |
 | should leave an intact quoted local-part untouched | addresses: a quoted local part is kept |
 | should escape quotes and backslashes when quoting a local-part | Different: an unquoted local part that needs quoting throws. Quoting is mime-headers' `formatAddresses`. |
-| should keep a bare dot-atom local-part unquoted | addresses: strings, mailboxes and lists of both give the same header |
+| should keep a bare dot-atom local-part unquoted | addresses: strings, mailboxes, and lists of both give the same header |
 | should quote local-part specials without touching SMTPUTF8 bytes | addresses: a domain is kept as UTF-8 when the local part is not ASCII |
 | should re-quote a local-part that only starts and ends with a quote (security) | addresses: the address … throws because it is not one addr-spec |
 | should re-quote a local-part whose closing quote is a quoted-pair (security) | addresses: the address … throws because it is not one addr-spec |
@@ -252,7 +252,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should keep an empty address empty | addresses: the address … throws because it is not one addr-spec (`""`) |
 | should quote a bare username that carries a special | addresses: a bare name is not an address |
 | should be idempotent | addresses: the header lists exactly the recipients of the envelope |
-| #\_generateMessageId: should generate uuid-looking message-id | headers: Date, Message-ID and MIME-Version are generated |
+| #\_generateMessageId: should generate uuid-looking message-id | headers: Date, Message-ID, and MIME-Version are generated |
 | should use default header keys | Not applicable: header names keep the caller's case. |
 | should use custom header keys | Not applicable: no `normalizeHeaderKey`. |
 
@@ -269,14 +269,14 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | #processFunc: should pipe through provided process function | Not applicable: no process function. |
 | Raw content: should return pregenerated content, …for a child node, …from a stream, should catch error from a raw stream 1, should catch error from a raw stream 2 | Not applicable: no `raw`. |
 
-### Recipient lists, comments and UTS #46
+### Recipient lists, comments, and UTS #46
 
 | Upstream test | Ours |
 | --- | --- |
 | should build an envelope for a large unique recipient list in linear time | addresses: 100,000 recipients finish within the test timeout |
 | should accept a recipient array past the argument limit | addresses: 100,000 recipients finish within the test timeout |
 | should stay linear when recipients are spread over many headers | addresses: 100,000 recipients finish within the test timeout |
-| should dedupe recipients across To, Cc and Bcc | addresses: to lists To, Cc and Bcc once each, in order |
+| should dedupe recipients across To, Cc and Bcc | addresses: to lists To, Cc, and Bcc once each, in order |
 | should dedupe a group against the addresses around it | addresses: a group is replaced by its members and deduped against the addresses around it |
 | should keep the rendered header list intact while deduping the envelope | addresses: the header keeps every entry while the envelope is deduped |
 | should deliver to the domain before a comment, not the text after it | addresses: the domain before a comment is used, not the text after it |
@@ -341,7 +341,7 @@ Each row is a nodemailer behavior that this package handles differently, with th
 | --- | --- | --- |
 | libqp's `wrap` breaks the last quoted-printable line at a space even when the line already fits, which adds a soft line break. | Lines are broken only past 76 characters. The decoded text is the same. | body: a line longer than 76 characters is quoted-printable with soft breaks |
 | A text body given as a `Buffer` is never `7bit`, because only strings are scanned. | A `Uint8Array` text body is scanned like a string. | body: bytes are read as UTF-8 text |
-| Without the `newline` option, a bare LF or CR in a `7bit` or `8bit` body is written as is. SMTP smuggling starts with a bare LF after a line ending. | Line breaks in `7bit`, `8bit` and text quoted-printable bodies become CRLF, including a CR and LF split across stream chunks. | body: line breaks in text become CRLF; a CR and LF split across stream chunks make one line break; an 8bit message with LF line endings is written with CRLF |
+| Without the `newline` option, a bare LF or CR in a `7bit` or `8bit` body is written as is. SMTP smuggling starts with a bare LF after a line ending. | Line breaks in `7bit`, `8bit`, and text quoted-printable bodies become CRLF, including a CR and LF split across stream chunks. | body: line breaks in text become CRLF; a CR and LF split across stream chunks make one line break; an 8bit message with LF line endings is written with CRLF |
 | An address that isn't valid, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, is quoted or kept so that something is sent. | It throws `Mail.InvalidInputError`, so the caller sees the mistake. | addresses: an unquoted special or second @ in the local part throws; a bare name is not an address |
 | A recipient made only of a comment, such as `(a@evil.com)`, is dropped silently. | It throws. | addresses: a comment that stands alone in … is not taken as a recipient |
 | 10.1.7 encodes a `"` in a subject as an encoded word, which makes the subject unreadable in clients that don't decode it. | Quotes stay as they are. They are allowed in unstructured text. | headers: quotes in a subject stay readable |

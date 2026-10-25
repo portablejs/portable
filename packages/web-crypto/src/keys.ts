@@ -80,7 +80,7 @@ export declare namespace publicKeyOf {
 }
 
 /**
- * Returns the public key of an extractable private key: Ed25519, X25519, ECDSA, ECDH or RSA. The
+ * Returns the public key of an extractable private key: Ed25519, X25519, ECDSA, ECDH, or RSA. The
  * public key can verify what the private key signs and encrypt what it decrypts.
  *
  * @example

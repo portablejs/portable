@@ -30,13 +30,13 @@ for (const answer of packet.answers) {
 }
 ```
 
-Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS and PTR, and an object for the rest. For a type without a codec here, such as SVCB or HTTPS, `data` is the raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.
+Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS, and PTR, and an object for the rest. For a type without a codec here, such as SVCB or HTTPS, `data` is the raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.
 
-Supported types: A, AAAA, CAA, CDNSKEY, CDS, CNAME, DNAME, DNSKEY, DS, HINFO, MX, NAPTR, NS, NSEC, NSEC3, NULL, OPT, PTR, RP, RRSIG, SOA, SRV, SSHFP, TLSA and TXT.
+Supported types: A, AAAA, CAA, CDNSKEY, CDS, CNAME, DNAME, DNSKEY, DS, HINFO, MX, NAPTR, NS, NSEC, NSEC3, NULL, OPT, PTR, RP, RRSIG, SOA, SRV, SSHFP, TLSA, and TXT.
 
 TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8. Decode them with `new TextDecoder().decode(bytes)` when you know they are text. Strings passed to `encode` are written as UTF-8.
 
-`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
+`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses, or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
 
 ## Options
 
@@ -57,7 +57,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 | Type | Description |
 | --- | --- |
-| `DnsPacket.Packet` | What `encode` takes: header fields, flags and the four record sections. |
+| `DnsPacket.Packet` | What `encode` takes: header fields, flags, and the four record sections. |
 | `DnsPacket.DecodedPacket` | What `decode` returns. Every field is present, and record data is decoded. |
 | `DnsPacket.Question` | `{ name, type, class?, qu? }`. `DecodedQuestion` is its decoded form. |
 | `DnsPacket.ResourceRecord` | A record to encode. `DecodedResourceRecord` is its decoded form. |
@@ -73,7 +73,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 ## Why use this over dns-packet
 
-dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 7.4 kB minified and gzipped. Addresses are parsed and formatted by [`@portable/ip`](https://www.npmjs.com/package/@portable/ip), so they follow the same rules as in the other `@portable/*` packages.
+dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses, and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 7.4 kB minified and gzipped. Addresses are parsed and formatted by [`@portable/ip`](https://www.npmjs.com/package/@portable/ip), so they follow the same rules as in the other `@portable/*` packages.
 
 - A label over 63 bytes, a TXT string over 255 bytes or an empty label throws `InvalidInputError`. dns-packet writes the first two with overflowing length bytes, and an empty label ends the name early.
 - Names are checked before any bytes are allocated, and buffers are zero-filled. dns-packet before 5.2.2 could send uninitialized memory (CVE-2021-23386).
@@ -109,15 +109,15 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Other differences to check when you switch:
 
-- dns-packet compresses names by default. `encode` compresses only with `compress: true`, and inside RDATA only the names of NS, CNAME, PTR, MX and SOA records, as RFC 3597 requires.
-- dns-packet's `encode(packet, buffer, offset)`, `encode.bytes` and `encodingLength` have no equivalent. `encode` returns a new `Uint8Array` of the exact size.
+- dns-packet compresses names by default. `encode` compresses only with `compress: true`, and inside RDATA only the names of NS, CNAME, PTR, MX, and SOA records, as RFC 3597 requires.
+- dns-packet's `encode(packet, buffer, offset)`, `encode.bytes`, and `encodingLength` have no equivalent. `encode` returns a new `Uint8Array` of the exact size.
 - dns-packet writes unnamed types and classes as `UNKNOWN_<n>`. This package writes them as `TYPE<n>` and `CLASS<n>`.
 - dns-packet reads the mDNS unicast-response bit as `class: 'UNKNOWN_32769'`. This package reads it as `qu: true` with `class: 'IN'`.
 - dns-packet accepts a string as TXT `data`. TXT `data` here is always an array, such as `['text']`.
 - dns-packet's CAA `issuerCritical` has no equivalent. `flags` holds the whole byte, so the critical flag is `flags: 128`.
-- dns-packet exports `rcodes`, `opcodes`, `types`, `classes` and `optioncodes`. This package exports none of them: packets use names such as `'NXDOMAIN'`, and unnamed values are written `RCODE<n>`, `OPCODE<n>` and `OPTION<n>`.
-- dns-packet encodes an unknown type, class, opcode, rcode or option name as 0. `encode` throws for it.
-- `\.`, `\\` and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so the label encodes back to the same bytes.
+- dns-packet exports `rcodes`, `opcodes`, `types`, `classes`, and `optioncodes`. This package exports none of them: packets use names such as `'NXDOMAIN'`, and unnamed values are written `RCODE<n>`, `OPCODE<n>`, and `OPTION<n>`.
+- dns-packet encodes an unknown type, class, opcode, rcode, or option name as 0. `encode` throws for it.
+- `\.`, `\\`, and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so the label encodes back to the same bytes.
 - `decode` checks that each EDNS option has the right length for its fields.
 - IPv6 addresses decode in RFC 5952 form, as `Ip.format` from `@portable/ip` writes them, so an IPv4-mapped address is `::ffff:192.0.2.1`. dns-packet writes `::ffff:c000:201`.
 - `encode` throws for an invalid address, an IPv6 zone such as `%eth0`, and an IPv4 address with a leading zero, such as `010.0.0.1`. dns-packet writes that address as 10.0.0.1, but `inet_aton` reads `010` as octal and gets 8.0.0.1.

@@ -6,7 +6,7 @@ import { type Digest, fromHex, parsePhc, phc, tamper, utf8 } from './utils.js';
 const fast = { iterations: 1000 };
 
 describe('hash', () => {
-  test('writes PBKDF2-SHA256 with 600,000 iterations, a 16-byte salt and a 32-byte hash', async () => {
+  test('writes PBKDF2-SHA256 with 600,000 iterations, a 16-byte salt, and a 32-byte hash', async () => {
     const stored = await Password.hash('hunter2');
     expect(stored).toMatch(/^\$pbkdf2-sha256\$i=600000\$[A-Za-z0-9+/]{22}\$[A-Za-z0-9+/]{43}$/);
     expect(await Password.verify('hunter2', stored)).toBe(true);

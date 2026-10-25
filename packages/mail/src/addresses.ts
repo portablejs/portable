@@ -22,7 +22,7 @@ export type Envelope = {
   /** The first `From` address, or the first `Sender` address when there is no `From`. */
   from: string;
   /**
-   * Every `To`, `Cc` and `Bcc` address once, in that order, with group members in place of groups.
+   * Every `To`, `Cc`, and `Bcc` address once, in that order, with group members in place of groups.
    */
   to: readonly string[];
 };

@@ -11,9 +11,9 @@ This package replaces three things, and we used the tests of each as the list of
 Test files:
 
 - `resolver.conformance.ts` runs in Node and browsers against a mocked `fetch`.
-- `resolver.oracle.test.ts` runs a UDP DNS server on localhost, points `node:dns/promises` at it, and gives Node and this package the same answers. It covers random records of every type, every error response code, odd names, reverse lookups and the recorded responses, and then tests each deliberate difference on its own.
+- `resolver.oracle.test.ts` runs a UDP DNS server on localhost, points `node:dns/promises` at it, and gives Node and this package the same answers. It covers random records of every type, every error response code, odd names, reverse lookups, and the recorded responses, and then tests each deliberate difference on its own.
 - `resolver.network.test.ts` queries Cloudflare and Google for real. It is skipped unless `DNS_NETWORK=1` is set.
-- `fixtures/responses.json` holds 58 responses recorded from `cloudflare-dns.com` and `dns.google` in October 2026, for 29 questions. They include long TXT records split into strings, CNAME chains, NXDOMAIN, NODATA, a null MX and SRV, and PTR records.
+- `fixtures/responses.json` holds 58 responses recorded from `cloudflare-dns.com` and `dns.google` in October 2026, for 29 questions. They include long TXT records split into strings, CNAME chains, NXDOMAIN, NODATA, a null MX, and SRV, and PTR records.
 
 Node's internet tests and tangerine's tests query live servers. Here their cases run against recorded or generated responses, and the live test covers a few of them again.
 
@@ -21,10 +21,10 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| test-dns.js: `setServers` with holes, invalid addresses and ports, `getServers` | `endpoints > rejects an empty endpoint list, a bad URL and a bad timeout` | Endpoints are URLs passed to `create`. There is no `setServers`. |
+| test-dns.js: `setServers` with holes, invalid addresses and ports, `getServers` | `endpoints > rejects an empty endpoint list, a bad URL, and a bad timeout` | Endpoints are URLs passed to `create`. There is no `setServers`. |
 | test-dns.js: `resolve` with a bad `rrtype` or no name | `requests > rejects a name that is not a string with a TypeError` | There is no `resolve(name, type)`. TypeScript checks the type passed to `query`. |
 | test-dns.js: `lookup` and `lookupService` argument checks | Not applicable | No `lookup` or `lookupService`: they use the hosts file and `getaddrinfo`. |
-| test-dns.js: `resolveMx('foo.onion')` is ENOTFOUND | `requests > answers ENOTFOUND for .onion names without a request (RFC 7686)` | Also checks `syscall`, `hostname` and `message`. |
+| test-dns.js: `resolveMx('foo.onion')` is ENOTFOUND | `requests > answers ENOTFOUND for .onion names without a request (RFC 7686)` | Also checks `syscall`, `hostname`, and `message`. |
 | test-dns.js: `resolveAny` with A, AAAA, MX, NS, PTR, SOA | `record types` and the oracle's random answers | No `resolveAny`, since public resolvers refuse ANY (RFC 8482). Each type is tested through its own method. |
 | test-dns.js: `resolve4`/`resolve6` with `{ ttl: true }` | `NXDOMAIN and NODATA > query returns TTLs and the AD flag` | `query()` returns each record's TTL. |
 | test-dns.js: `resolveSoa` with `serial` 3210987654 and `minttl` 3333333333 | `record types > resolveSoa returns one object and keeps 32-bit values above 2^31` | |
@@ -40,7 +40,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | test-dns-channel-cancel.js, test-dns-channel-cancel-promise.js, test-dns-cancel-reverse-lookup.js | `timeouts and cancellation > aborting the signal rejects with its reason ...` | An `AbortSignal` per call replaces `resolver.cancel()`, and the rejection is `signal.reason`, not ECANCELLED. |
 | test-dns-multi-channel.js | `endpoints > two resolvers keep their own endpoints and fetch` | |
 | test-dns-setserver-when-querying.js | Not applicable | Endpoints can't change after `create`. |
-| test-dns-get-server.js, test-dns-setservers-type-check.js, test-dns-setlocaladdress.js | Not applicable | No `getServers`, `setServers` or `setLocalAddress`. Endpoint URLs are checked by `new URL`. |
+| test-dns-get-server.js, test-dns-setservers-type-check.js, test-dns-setlocaladdress.js | Not applicable | No `getServers`, `setServers`, or `setLocalAddress`. Endpoint URLs are checked by `new URL`. |
 | test-dns-default-order-*.js, test-dns-set-default-order.js | Not applicable | Result order only applies to `lookup`. |
 | test-dns-lookup*.js, test-dns-lookupService*.js, test-dns-negative-zero.js | Not applicable | `lookup` and `lookupService`. |
 | test-dns-memory-error.js | Not applicable | An internal libuv error code. |

@@ -39,11 +39,11 @@ In Node, `node:dns/promises` works as the resolver.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4` and `resolveCname`. |
+| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`. |
 | `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
 | `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
 
-`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as no records, and any other rejection as a DNS error, which gives `temperror` unless the message passes anyway.
+`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as no records, and any other rejection as a DNS error, which gives `temperror` unless the message passes anyway.
 
 `resolve4` and `resolveCname` are called only when the record that applies has an `np` tag, to find out whether a subdomain exists. A name exists unless the `A` query gives `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
 
@@ -53,7 +53,7 @@ In Node, `node:dns/promises` works as the resolver.
 
 | Field | Description |
 | --- | --- |
-| `result` | `'pass'`, `'fail'`, `'none'`, `'temperror'` or `'permerror'`, as Authentication-Results reports it. |
+| `result` | `'pass'`, `'fail'`, `'none'`, `'temperror'`, or `'permerror'`, as Authentication-Results reports it. |
 | `domain` | The From domain that was checked, in lower case and A-label form. |
 | `policy` | The policy the domain owner asks for: `p` for the From domain's own record, otherwise `sp`, or `np` when the From domain doesn't exist. With `t=y` it is one level lower. Missing when no record applies. |
 | `disposition` | `policy` when the result is `fail`, and `'none'` otherwise. RFC 9989 section 5.3.6 says the policy can't be applied after a DNS error, so a `temperror` is left to you. |
@@ -61,7 +61,7 @@ In Node, `node:dns/promises` works as the resolver.
 | `record` | The record that applies, as `{ text, p, sp, np, adkim, aspf, t, psd, rua, ruf, fo }`, with invalid values replaced by their defaults. |
 | `spf` | `{ domain, aligned }` for the SPF result. Set when `spf` was passed. |
 | `dkim` | `{ domain, aligned }` for each signature, in the order they were passed. |
-| `reason` | Why the result is `none`, `temperror` or `permerror`. |
+| `reason` | Why the result is `none`, `temperror`, or `permerror`. |
 | `cause` | The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one lookup failed. |
 
 `none` means DMARC doesn't apply: there is no record, the record has no valid policy and no valid `rua`, or the From domain is an address literal. `permerror` means `from` isn't a domain name, such as an empty string or a domain with a space or an invisible character.
@@ -123,9 +123,9 @@ Differences to check when you switch from mailauth:
 - mailauth's `headerFrom` takes an address or an array of addresses. `from` takes the domain, so parse the From header first, for example with `@portable/mime-headers`.
 - mailauth returns `false` for a From header without exactly one domain. Decide that before calling `check`: a `from` that isn't a domain name gives `permerror`, and a domain literal gives `none`.
 - mailauth's `dkimDomains` takes only passing signatures, with an `underSized` flag. `dkim` takes every signature and reports the alignment of each, so check a signature's `l=` tag yourself.
-- mailauth's `resolver` is one `(name, type)` function. `check` takes an object with `resolveTxt`, `resolve4` and `resolveCname`, such as `node:dns/promises`.
+- mailauth's `resolver` is one `(name, type)` function. `check` takes an object with `resolveTxt`, `resolve4`, and `resolveCname`, such as `node:dns/promises`.
 - mailauth's `arcResult` has no equivalent. `@portable/mail-auth` adds the ARC result to the comment of its `dmarc=` result.
 - mailauth's `result.domain`, the organizational domain, is not reported. `policyDomain` gives the domain whose `_dmarc` record applies.
 - mailauth gives `temperror` when the resolver times out. A `signal` such as `AbortSignal.timeout(ms)` makes `check` reject instead.
-- mailauth's `status.header`, `info` and `warnings` have no equivalent. `@portable/mail-auth` builds the Authentication-Results field.
+- mailauth's `status.header`, `info`, and `warnings` have no equivalent. `@portable/mail-auth` builds the Authentication-Results field.
 - `pct` and `ri` are not reported, because RFC 9989 made them historic.

@@ -83,7 +83,7 @@ describe('record types', () => {
     ]);
   });
 
-  test('resolveNs, resolveCname and resolvePtr return names', async () => {
+  test('resolveNs, resolveCname, and resolvePtr return names', async () => {
     const { resolver } = resolverFor(({ name, type }) => ({
       answers: [record(name, type, `${type.toLowerCase()}.example.net`)],
     }));
@@ -581,7 +581,7 @@ describe('endpoints', () => {
     expect(new URL(two.requests[0]!.url).host).toBe('two.example');
   });
 
-  test('rejects an empty endpoint list, a bad URL and a bad timeout', () => {
+  test('rejects an empty endpoint list, a bad URL, and a bad timeout', () => {
     expect(() => create({ endpoints: [] })).toThrow(RangeError);
     expect(() => create({ endpoints: ['not a url'] })).toThrow(TypeError);
     for (const timeout of [0, -1, Number.NaN, 2 ** 31, Infinity]) {

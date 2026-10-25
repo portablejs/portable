@@ -1,6 +1,6 @@
 # @portable/mail-auth
 
-Checks a received message's SPF, DKIM, DMARC and ARC in one call, writes the results as an Authentication-Results header field (RFC 8601), and can ARC-seal the message with them. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Checks a received message's SPF, DKIM, DMARC, and ARC in one call, writes the results as an Authentication-Results header field (RFC 8601), and can ARC-seal the message with them. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces `authenticate` from [mailauth](https://www.npmjs.com/package/mailauth).
 
@@ -41,13 +41,13 @@ const result = await MailAuth.authenticate(message, {
 const forwarded = result.headers + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array` or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from `@portable/streams` to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC, and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from `@portable/streams` to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the DNS lookups: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveCname`. |
+| `resolver` | required | Answers the DNS lookups: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveCname`. |
 | `authservId` | required | The authserv-id that starts Authentication-Results, usually this server's host name in A-label form (RFC 8601 section 2.5). It must be an RFC 2045 token, so a value such as `mx.example; dkim=pass` throws a `RangeError`. |
 | `ip` | required | The SMTP client's IPv4 or IPv6 address. |
 | `helo` | none | The HELO or EHLO name. |
@@ -89,26 +89,26 @@ Authentication-Results: mx.example.net;
  dmarc=pass (p=REJECT arc=pass) policy.dmarc=reject header.from=example.com
 ```
 
-- `dkim` is `none` for an unsigned message, and otherwise one line per signature with `header.d`, `header.i`, `header.s`, `header.a` and the first 8 characters of `b=` as `header.b` (RFC 6008).
+- `dkim` is `none` for an unsigned message, and otherwise one line per signature with `header.d`, `header.i`, `header.s`, `header.a`, and the first 8 characters of `b=` as `header.b` (RFC 6008).
 - `spf` reports `smtp.mailfrom` with the MAIL FROM domain, or `smtp.helo` for a bounce.
 - `arc` reports `smtp.remote-ip` (RFC 8617 section 6). On a pass, the comment repeats what the newest sealer recorded. The sealer's text is untrusted, so only keyword results and host-name domains are copied from it.
 - `dmarc` reports the applied policy as `policy.dmarc` and the From domain as `header.from` (RFC 9989 section 9.1), and is left out when `dmarcSkipReason` is set.
 
-Values that aren't a token or an address are quoted, the parentheses in each comment are balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender or HELO name contains.
+Values that aren't a token or an address are quoted, the parentheses in each comment are balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender, or HELO name contains.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
+| `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC, and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
 | `MailAuth.Result` | What `authenticate` resolves to, as above. |
 | `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from `@portable/dkim`. |
 | `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
 
 ## Why use this over mailauth
 
-- It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os` and Buffers.
-- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
+- It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os`, and Buffers.
+- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC, and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
 - It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a parser that splits the field on semicolons.
 - It authenticates and seals a short message faster than mailauth's strict mode in Node, and authenticates a 250 KB message with a DKIM signature and an ARC set about as fast, as the table below shows.
 - It has no dependencies outside `@portable/*`.
@@ -121,7 +121,7 @@ Differences to check when you switch from mailauth:
 - mailauth's `headers` include a Received-SPF field, and `result.headers` doesn't.
 - mailauth sets `result.dmarc` to `false` when DMARC wasn't checked, and here `result.dmarc` is `undefined`.
 - mailauth's `trustReceived` isn't supported. Pass the address and HELO name from your SMTP server.
-- mailauth's `disableArc`, `disableDmarc` and `disableBimi` have no equivalent. To run one check, call `Arc.verify`, `Dmarc.check` or `Dkim.verify` directly.
+- mailauth's `disableArc`, `disableDmarc`, and `disableBimi` have no equivalent. To run one check, call `Arc.verify`, `Dmarc.check`, or `Dkim.verify` directly.
 - mailauth's BIMI check (`result.bimi`), `result.receivedChain` and `dkim2` aren't supported.
 
 <!-- bench:start -->

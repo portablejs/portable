@@ -7,7 +7,7 @@ Upstream: mailauth 7.3.1's [`test/arc/`](https://github.com/postalsys/mailauth/t
 `arc.oracle.test.ts` runs in Node and checks that:
 
 - `verify` gives mailauth's strict result on all 171 messages of ValiMail's validation suite;
-- on two-set chains sealed here over 12 generated messages, and on a chain from the reference sealer, `verify` and mailauth's strict mode agree after each of 11 changes, such as a changed body, a changed AAR, a removed seal or swapped instances;
+- on two-set chains sealed here over 12 generated messages, and on a chain from the reference sealer, `verify`, and mailauth's strict mode agree after each of 11 changes, such as a changed body, a changed AAR, a removed seal, or swapped instances;
 - mailauth's strict mode passes sets sealed here with RSA and Ed25519 keys;
 - chains that alternate between mailauth's `sealMessage` and `seal` pass in both, over four hops.
 
@@ -19,7 +19,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | --- | --- |
 | ARC Validation Suite, 10 groups, 171 cases | `suite.conformance.ts` › "ARC validation suite", every case. As in mailauth's strict mode, `ams_fields_h_empty` and `ams_fields_c_na` expect `fail` where the draft suite expects `pass`: RFC 8617 section 4.1.2 gives the AMS the DKIM-Signature rules of RFC 6376, which reject an empty `h=` and read a missing `c=` as simple/simple. |
 | lax mode skips `as_format_tags_sc`, `as_format_tags_key_case`, `as_format_tags_dup`, `as_format_inv_tag_key` | Not skipped: there is no lax mode, and all four fail as the suite expects. |
-| ARC Signing Suite, 2 groups, 17 cases | `suite.conformance.ts` › "ARC signing suite": seals each message with the suite's key, time and header list and the `cv=` that `verify` found, compares `bh=`, `cv=` and `i=` with the suite's ARC set, then checks that `verify` gives `pass`, or `fail` for a `cv=fail` set. A case with no expected set must throw `Arc.InvalidInputError`. The suite's key records contain line breaks from the YAML, which the test resolver removes. |
+| ARC Signing Suite, 2 groups, 17 cases | `suite.conformance.ts` › "ARC signing suite": seals each message with the suite's key, time, and header list and the `cv=` that `verify` found, compares `bh=`, `cv=`, and `i=` with the suite's ARC set, then checks that `verify` gives `pass`, or `fail` for a `cv=fail` set. A case with no expected set must throw `Arc.InvalidInputError`. The suite's key records contain line breaks from the YAML, which the test resolver removes. |
 
 ## arc-rfc-compliance-test.js
 
@@ -39,16 +39,16 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | upper case BH= in the AMS (strict: unknown tag) | › "reads an upper case BH= in the AMS as an unknown tag" |
 | ignores an unknown tag; reads an upper case H= as an unknown tag | › "ignores x9=abc on an ARC-Seal", "ignores H=from on an ARC-Seal" |
 | fails a chain whose newest AMS does not sign From | › "fails one whose h= does not include From" |
-| Sealing: cv=none for the first set | `seal.conformance.ts` › "writes ARC-Seal, ARC-Message-Signature and ARC-Authentication-Results with i=1 and cv=none" |
+| Sealing: cv=none for the first set | `seal.conformance.ts` › "writes ARC-Seal, ARC-Message-Signature, and ARC-Authentication-Results with i=1 and cv=none" |
 | requires a cv value when extending | › "is required when the message has ARC fields" |
-| reads the cv value case-insensitively | Deliberately different: `chainValidation` is `'none' \| 'pass' \| 'fail'`, the values `verify` returns, and › "must be none, pass or fail, in lower case" checks that `PASS` throws. |
-| refuses a cv that is not none, pass or fail | › "must be none, pass or fail, in lower case" |
+| reads the cv value case-insensitively | Deliberately different: `chainValidation` is `'none' \| 'pass' \| 'fail'`, the values `verify` returns, and › "must be none, pass, or fail, in lower case" checks that `PASS` throws. |
+| refuses a cv that is not none, pass or fail | › "must be none, pass, or fail, in lower case" |
 | does not seal a chain whose newest seal is cv=fail | › "refuses a chain whose newest seal is cv=fail" |
 | seals a broken chain with cv=fail as the next instance | › "seals a broken chain with cv=fail as the next instance, covering only the new set" |
 | does not claim cv=pass over an unparseable chain | › "refuses cv=pass over a chain whose sets cannot be read" |
 | refuses an instance that already exists; refuses instances 0, 51, 1.5, "x"; seals a gap only in lax mode | Not applicable: there is no instance option. The instance is always one more than the highest on the message. |
 | seals a cv value that does not fit the instance only in lax mode | › "must be none for the first set and only for the first set" (always refused) |
-| passes the strict option to the AMS signer (512-bit key) | › "refuses a short RSA key, a bad domain or selector and a bad date" |
+| passes the strict option to the AMS signer (512-bit key) | › "refuses a short RSA key, a bad domain, a bad selector, and a bad date" |
 | does not add a 51st set | › "refuses a 51st set" |
 | extends a chain that validates | › "extends a valid chain with cv=pass as the next instance" |
 | AMS without c= is simple/simple | `verify.conformance.ts` › "reads an AMS without c= as simple/simple" |
@@ -76,7 +76,7 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | Upstream | Here |
 | --- | --- |
 | Crafted Authentication-Results values (dotted keys, `toString` shadowing, `value=` parts, well-formed `header.i`) | Not applicable here: `verify` returns the AAR text and doesn't parse it into objects. `@portable/mail-auth` builds the `arc=pass` comment and has these cases. |
-| Public key failures: weak key, missing key, unparseable key | `verify.conformance.ts` › "reports a weak, a missing and an unusable key" |
+| Public key failures: weak key, missing key, unparseable key | `verify.conformance.ts` › "reports a weak, a missing, and an unusable key" |
 | Sealing failures: an AMS that can't be signed is not sealed, and no empty line is written | Not applicable: the key type sets the algorithm, and `seal` throws instead of returning partial fields. |
 | createSeal returns the instance of the created set | `seal.conformance.ts` › "seals one message repeatedly, each set over the last" |
 | createSeal returns no instance when no set was created | Not applicable: `seal` throws. |
@@ -111,5 +111,5 @@ ValiMail's [ARC test suite](https://github.com/ValiMail/arc_test_suite) (MIT, `f
 | [#161](https://github.com/postalsys/mailauth/issues/161): an `authResults` value with a bare line break started a new header field or ended the header block. | The 10 "refuses …" cases under `authResults`. |
 | [#162](https://github.com/postalsys/mailauth/issues/162): a malformed chain was sealed as a second `i=1`, or not at all. | "seals a broken chain with cv=fail as the next instance, covering only the new set" and the four "seals a chain with …" cases. |
 | A `d=` with `/` or `@` sent the key query to a zone the attacker controls. | The 19 "fails d=… without a key query" cases check that no key is looked up. |
-| Public key failures reported a bare `arc=fail` with no reason. | "reports a weak, a missing and an unusable key" checks each `reason`. |
+| Public key failures reported a bare `arc=fail` with no reason. | "reports a weak, a missing, and an unusable key" checks each `reason`. |
 | A seal over a chain with a failed AMS signing wrote an empty line into the header block. | `seal` signs nothing until every check passes, and either returns all three fields or throws. |

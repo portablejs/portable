@@ -12,7 +12,7 @@ import {
   parseValue,
 } from '@portable/mime-headers';
 
-// Bugs and advisories from the libmime, nodemailer and email-addresses changelogs and issue
+// Bugs and advisories from the libmime, nodemailer, and email-addresses changelogs and issue
 // trackers. Each test's name cites the upstream fix or report it covers, and PARITY.md lists
 // them under "Known upstream issues".
 
@@ -71,7 +71,7 @@ describe('addresses', () => {
 });
 
 describe('encoded words', () => {
-  test('utf-7, base64 and hex are not read as charsets (libmime 5.4.9)', () => {
+  test('utf-7, base64, and hex are not read as charsets (libmime 5.4.9)', () => {
     expect(decodeWords('=?utf-7?Q?+AGEAYgBj-?=')).toBe('+AGEAYgBj-');
     expect(decodeWords('=?base64?Q?YWJj?=')).toBe('YWJj');
     expect(decodeWords('=?hex?Q?616263?=')).toBe('616263');

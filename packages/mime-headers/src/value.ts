@@ -190,7 +190,7 @@ function percentDecode(text: string, out: number[]) {
  * ```
  *
  * @throws {InvalidInputError} When `value` contains a control character or a character outside
- * ASCII, or a parameter name isn't an RFC 2231 attribute (a token without `*`, `'` or `%`).
+ * ASCII, or a parameter name isn't an RFC 2231 attribute (a token without `*`, `'`, or `%`).
  */
 export function formatValue(input: Value): string {
   if (/[^\x20-\x7e]/.test(input.value)) {

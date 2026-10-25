@@ -15,7 +15,7 @@ export declare namespace encode {
     bom?: boolean | undefined;
     /** Field separator, one character. Use `'\t'` for TSV. @default ',' */
     delimiter?: string | undefined;
-    /** Prefix fields that start with `=`, `+`, `-`, `@`, tab or CR with `'` and quote them, so spreadsheets don't run them as formulas. @default false */
+    /** Prefix fields that start with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas. @default false */
     escapeFormulas?: boolean | undefined;
     /**
      * Write a header row. `true` takes the names from the first object row's keys. An array gives
@@ -32,7 +32,7 @@ export declare namespace encode {
 }
 
 /**
- * Encodes rows as CSV text. A field is quoted only when it contains the delimiter, the quote or a
+ * Encodes rows as CSV text. A field is quoted only when it contains the delimiter, the quote, or a
  * line break, and quotes inside it are doubled. Every row, including the last, ends with `newline`.
  *
  * @example
@@ -46,7 +46,7 @@ export declare namespace encode {
  * @throws {InvalidInputError} When `quote` is `false` and a field needs quoting, a value isn't an
  * `encode.Value` or is an invalid `Date`, or an object row follows array rows and `header` isn't an array.
  * @throws {TypeError} When `header` is `true` with array rows.
- * @throws {RangeError} When `delimiter`, `quote` or `newline` isn't allowed.
+ * @throws {RangeError} When `delimiter`, `quote`, or `newline` isn't allowed.
  */
 export function encode(rows: readonly encode.Row[], options: encode.Options = {}): string {
   const encoder = createEncoder(options);

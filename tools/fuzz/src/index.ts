@@ -153,7 +153,7 @@ const edit = fc.record({
 }) satisfies fc.Arbitrary<Edit>;
 
 /**
- * Copies of `original` with up to 8 bytes set, inserted or deleted, and sometimes cut short.
+ * Copies of `original` with up to 8 bytes set, inserted, or deleted, and sometimes cut short.
  * `within` limits the edits to the first `within` bytes, such as the metadata ahead of a JPEG's
  * image data.
  *
@@ -265,7 +265,7 @@ export function toByteForm(bytes: Uint8Array, form: ByteForm): Uint8Array<ArrayB
 
 /**
  * Values that a test passes in place of a `Uint8Array` to check that a function that takes bytes
- * throws a `TypeError`. Each one holds the numbers 1, 2 and 3.
+ * throws a `TypeError`. Each one holds the numbers 1, 2, and 3.
  */
 export const rejectedByteForms: Readonly<Record<string, unknown>> = {
   'an ArrayBuffer': new Uint8Array([1, 2, 3]).buffer,

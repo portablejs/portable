@@ -1,7 +1,7 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown when the domain name, IP address or AS number can't be looked up as given, such as
- * `example..com`, `999.1.1.1` or `-1`. No request is sent.
+ * Thrown when the domain name, IP address, or AS number can't be looked up as given, such as
+ * `example..com`, `999.1.1.1`, or `-1`. No request is sent.
  *
  * @example
  * ```ts

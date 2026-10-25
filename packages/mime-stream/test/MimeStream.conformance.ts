@@ -155,7 +155,7 @@ describe('DecoderStream', () => {
     expect(bodies(chunks)).toEqual(['inner', 'outer']);
   });
 
-  test('labels the preamble, delimiters and epilogue of a multipart', async () => {
+  test('labels the preamble, delimiters, and epilogue of a multipart', async () => {
     const chunks = await decode(
       'Content-Type: multipart/mixed; boundary=B\n\nThis is a preamble.\n--B\n\nbody\n--B--\nepilogue\n',
     );
@@ -223,7 +223,7 @@ describe('DecoderStream', () => {
 });
 
 describe('EncoderStream', () => {
-  test('rejects input that is not bytes, text or a chunk', async () => {
+  test('rejects input that is not bytes, text, or a chunk', async () => {
     const stream = fromIterable([42] as unknown as MimeStream.EncoderStream.Input[]);
     await expect(toBytes(stream.pipeThrough(new MimeStream.EncoderStream()))).rejects.toThrow(
       TypeError,

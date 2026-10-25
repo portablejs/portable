@@ -49,7 +49,7 @@ describe('ipaddr.js', () => {
     }
   });
 
-  test('rejects the octal, hex, integer and short IPv4 forms', () => {
+  test('rejects the octal, hex, integer, and short IPv4 forms', () => {
     for (const text of [
       '0xc0.168.1.1',
       '192.0250.1.1',
@@ -552,7 +552,7 @@ describe('ip', () => {
     expect(Ip.range('::')).toBe('unspecified');
   });
 
-  test('rejects octal, hex and integer loopback forms instead of guessing', () => {
+  test('rejects octal, hex, and integer loopback forms instead of guessing', () => {
     for (const text of [
       '0177.0.0.1',
       '0177.0.1',
@@ -617,7 +617,7 @@ describe('known upstream issues', () => {
     }
   });
 
-  test('CVE-2024-29415: octal, integer and odd IPv6 spellings of internal addresses', () => {
+  test('CVE-2024-29415: octal, integer, and odd IPv6 spellings of internal addresses', () => {
     for (const text of ['127.1', '01200034567', '012.1.2.3', '017700000001', '0177.0.0.1']) {
       expect([text, Ip.canParse(text)]).toEqual([text, false]);
     }

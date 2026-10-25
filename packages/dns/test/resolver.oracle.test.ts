@@ -52,7 +52,7 @@ const ours = create({
 
 type Method = Exclude<keyof Resolver, 'reverse'>;
 
-/** Node adds `type` to MX, SRV and CAA results, and the `Resolver` shapes leave it out. */
+/** Node adds `type` to MX, SRV, and CAA results, and the `Resolver` shapes leave it out. */
 function withoutType(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(withoutType);
@@ -327,7 +327,7 @@ describe('deliberate differences from node:dns/promises', () => {
     await expect(ours.resolveTxt(N)).rejects.toMatchObject({ code: 'ENODATA' });
   });
 
-  test('SOA refresh, retry and expire above 2^31 stay positive, where Node wraps them to negative numbers', async () => {
+  test('SOA refresh, retry, and expire above 2^31 stay positive, where Node wraps them to negative numbers', async () => {
     const big = 2 ** 31 + 1;
     const soa = {
       mname: 'a',

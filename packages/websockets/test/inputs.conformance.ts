@@ -16,7 +16,7 @@ describe('byte inputs', () => {
       expect((socket.sent[0] as Uint8Array).buffer).toBeInstanceOf(ArrayBuffer);
     });
 
-    test(`connect sends a ${form} from writable, open and the heartbeat`, async () => {
+    test(`connect sends a ${form} from writable, open, and the heartbeat`, async () => {
       const server = new FakeServer();
       const { writable } = WebSockets.connect('wss://example.com', {
         WebSocket: server.WebSocket,

@@ -3,20 +3,20 @@
 Upstream suites:
 
 - [punycode.js 2.3.1 `tests/tests.js`](https://github.com/mathiasbynens/punycode.js/blob/main/tests/tests.js). The test cases in `punycode.conformance.ts` are copied from it (MIT, Mathias Bynens).
-- [tr46 7.0.0 `test/`](https://github.com/jsdom/tr46/tree/main/test): `std3ASCIIRules.js`, `toascii.js`, `unicode.js` and `url-host-parsing.js`.
+- [tr46 7.0.0 `test/`](https://github.com/jsdom/tr46/tree/main/test): `std3ASCIIRules.js`, `toascii.js`, `unicode.js`, and `url-host-parsing.js`.
 - Unicode's [`IdnaTestV2.txt`](https://www.unicode.org/Public/18.0.0/idna/IdnaTestV2.txt), version 18.0.0, dated 2026-02-04. It is copied unchanged into `fixtures/` under the [Unicode License](https://www.unicode.org/license.txt).
 - WPT's [`url/resources/toascii.json` and `IdnaTestV2.json`](https://github.com/web-platform-tests/wpt/tree/master/url/resources), which tr46 runs. They are copied unchanged into `fixtures/` (BSD 3-Clause, web-platform-tests contributors). `IdnaTestV2.json` is generated from an `IdnaTestV2.txt` before 18.0.0 and still passes.
 
 `node:punycode` is the same code as punycode.js 2.1.0, so the punycode.js rows cover it.
 
-Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as the URL Standard's `beStrict` does. tr46 has a separate flag for each, and its tests set them in combinations our API can't express. Those rows say which of our modes covers the case.
+Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules, and VerifyDnsLength, as the URL Standard's `beStrict` does. tr46 has a separate flag for each, and its tests set them in combinations our API can't express. Those rows say which of our modes covers the case.
 
 ## Unicode IdnaTestV2.txt
 
 | Upstream column | Covered by | Notes |
 | --- | --- | --- |
 | toUnicode and toUnicodeStatus | `IdnaTestV2.txt > toUnicode with strict: true matches toUnicode` | All 6396 lines. `X4_2` is ignored, as the file's header allows. |
-| toUnicode with the strict-only status codes removed | `IdnaTestV2.txt > toUnicode matches toUnicode, ignoring the errors that only strict checks` | The header allows ignoring `V2`, `V3`, `U1` and `A4_*` when CheckHyphens, UseSTD3ASCIIRules or VerifyDnsLength is off. |
+| toUnicode with the strict-only status codes removed | `IdnaTestV2.txt > toUnicode matches toUnicode, ignoring the errors that only strict checks` | The header allows ignoring `V2`, `V3`, `U1`, and `A4_*` when CheckHyphens, UseSTD3ASCIIRules, or VerifyDnsLength is off. |
 | toAsciiN and toAsciiNStatus | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | All 6396 lines. |
 | toAsciiT and toAsciiTStatus | skipped | Transitional processing is deprecated by UTS #46 and the URL Standard doesn't use it. See the README. |
 
@@ -55,7 +55,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 | `punycode.toUnicode` does not convert names that don't start with `xn--` | `punycode.js: toUnicode > does not decode names that do not start with xn--, but lowercases them` | Different on purpose: UTS #46 maps uppercase to lowercase. |
 | `punycode.toASCII` (domains) | `punycode.js: toASCII > <description>` | |
 | `punycode.toASCII` Non-printable ASCII, U+007F, Email address | `punycode.js: toASCII > rejects characters that URL forbids in a host` | Different on purpose: these throw, as in `new URL()`. `encodes only the domain of an email address` covers the domain half. |
-| `punycode.toASCII` does not convert domain names that are already in ASCII | `punycode.js: toASCII > does not convert names that are already ASCII, but lowercases them`, `rejects ASCII names with characters that URL forbids in a host` | Different on purpose: the two names with a space, `$`, `<` or `>` throw, as in `new URL()`. |
+| `punycode.toASCII` does not convert domain names that are already in ASCII | `punycode.js: toASCII > does not convert names that are already ASCII, but lowercases them`, `rejects ASCII names with characters that URL forbids in a host` | Different on purpose: the two names with a space, `$`, `<`, or `>` throw, as in `new URL()`. |
 | `punycode.toASCII` supports IDNA2003 separators | `punycode.js: toASCII > supports <separator> as a separator` | |
 | No upstream test | `idna.oracle.test.ts > matches punycode.js 2.3.1` | Compares three 3000-character random labels in both directions, because our encoder and decoder use a different algorithm. |
 
@@ -79,4 +79,4 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules and VerifyDnsLength, as
 
 ## Benchmarks
 
-Neither upstream library has benchmarks. `idna.bench.ts` converts 10 typical hostnames with `toUnicode` and 10 domains with `toAscii`, against tr46, punycode.js, `node:url` and `new URL()`, and fails if tr46 or punycode.js is more than 25% faster.
+Neither upstream library has benchmarks. `idna.bench.ts` converts 10 typical hostnames with `toUnicode` and 10 domains with `toAscii`, against tr46, punycode.js, `node:url`, and `new URL()`, and fails if tr46 or punycode.js is more than 25% faster.

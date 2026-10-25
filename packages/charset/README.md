@@ -1,6 +1,6 @@
 # @portable/charset
 
-Encodes text into legacy charsets such as Shift_JIS, GBK, Big5 and windows-1251, and normalizes charset labels. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Encodes text into legacy charsets such as Shift_JIS, GBK, Big5, and windows-1251, and normalizes charset labels. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the encoding half of [iconv-lite](https://www.npmjs.com/package/iconv-lite). For decoding, use `TextDecoder`, which already supports every charset here.
 
@@ -59,7 +59,7 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 | Option | Default | Description |
 | --- | --- | --- |
 | `unmappable` | `'replace'` | What to write for a character the charset can't represent. `'replace'` writes `?`. `'html'` writes a numeric character reference such as `&#26085;`, as browsers do when submitting forms. `'error'` throws `UnsupportedError`. A function `(codePoint) => string` returns the text to write instead. |
-| `bom` | `false` | Write a byte order mark first. Only UTF-8, UTF-16LE and UTF-16BE have one. |
+| `bom` | `false` | Write a byte order mark first. Only UTF-8, UTF-16LE, and UTF-16BE have one. |
 | `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 `'replace'` is the default for three reasons: iconv-lite also writes `?`, one `?` replaces one character, and a `?` can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
@@ -68,7 +68,7 @@ Text input can be a string or a `Uint8Array` of UTF-8. A UTF-8 byte order mark a
 
 ## Decoding
 
-`TextDecoder` decodes every charset here. In browsers it follows the WHATWG standard exactly. Node's `TextDecoder` uses ICU, which differs from WHATWG for Big5, EUC-KR, ISO-2022-JP and Shift_JIS on rarely used code points, and some edge runtimes ship `TextDecoder` with UTF-8 and UTF-16 only. Check the runtime you deploy to if you decode legacy charsets there.
+`TextDecoder` decodes every charset here. In browsers it follows the WHATWG standard exactly. Node's `TextDecoder` uses ICU, which differs from WHATWG for Big5, EUC-KR, ISO-2022-JP, and Shift_JIS on rarely used code points, and some edge runtimes ship `TextDecoder` with UTF-8 and UTF-16 only. Check the runtime you deploy to if you decode legacy charsets there.
 
 ## Types
 
@@ -117,9 +117,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch from iconv-lite:
 
-- Labels follow WHATWG, as in browsers, so `latin1`, `ascii` and `iso-8859-1` map to windows-1252 and `gb2312` maps to GBK. `KOI8-U` is KOI8-RU, `x-mac-cyrillic` is the Ukrainian variant, and `macintosh` has € at 0xDB.
+- Labels follow WHATWG, as in browsers, so `latin1`, `ascii`, and `iso-8859-1` map to windows-1252 and `gb2312` maps to GBK. `KOI8-U` is KOI8-RU, `x-mac-cyrillic` is the Ukrainian variant, and `macintosh` has € at 0xDB.
 - iconv-lite writes a byte order mark for the `utf-16` label by default. Here the `utf-16` label maps to UTF-16LE, which is written without one unless you pass `bom: true`.
 - Characters that a charset only decodes are unmappable when encoding, as WHATWG specifies: HKSCS in Big5, JIS X 0212 in EUC-JP and the IBM duplicates in the NEC rows of Shift_JIS. They still decode with `TextDecoder`.
 - iconv-lite writes `?` for the C1 controls that the windows-125x tables map. `encode` writes the bytes the WHATWG tables give them.
-- iconv-lite's `base64`, `hex`, `binary` and `ucs2` codecs aren't charsets, so this package doesn't have them. Use `@portable/base64` for `base64`, `Bytes.toHex` from `@portable/bytes` for `hex`, and `utf16le` for `ucs2`. `binary` maps each byte to the character with the same code, which `String.fromCharCode` and `charCodeAt` already do.
-- cp437, cp850 and the other DOS and IBM code pages, UTF-7, UTF-32 and CESU-8 are not supported yet.
+- iconv-lite's `base64`, `hex`, `binary`, and `ucs2` codecs aren't charsets, so this package doesn't have them. Use `@portable/base64` for `base64`, `Bytes.toHex` from `@portable/bytes` for `hex`, and `utf16le` for `ucs2`. `binary` maps each byte to the character with the same code, which `String.fromCharCode` and `charCodeAt` already do.
+- cp437, cp850, and the other DOS and IBM code pages, UTF-7, UTF-32, and CESU-8 are not supported yet.

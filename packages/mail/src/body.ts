@@ -3,7 +3,7 @@ import * as Base64 from '@portable/base64';
 import * as QuotedPrintable from '@portable/quoted-printable';
 
 /**
- * A body or attachment: text (written as UTF-8), bytes, a `Blob` or `File`, or a stream of bytes
+ * A body or attachment: text (written as UTF-8), bytes, a `Blob`, or `File`, or a stream of bytes
  * such as `response.body`. Blobs and streams are read only while the message is read, so a
  * large attachment is never held in memory.
  */
@@ -88,7 +88,7 @@ function hasBareBreak(bytes: Uint8Array): boolean {
 }
 
 /**
- * Writes every CR, LF and CRLF as CRLF. `afterCr` says whether the previous chunk ended in CR,
+ * Writes every CR, LF, and CRLF as CRLF. `afterCr` says whether the previous chunk ended in CR,
  * whose CRLF was already written, so an LF that starts this chunk is part of that CRLF.
  */
 function toCrlfBytes(bytes: Uint8Array, afterCr: boolean): Uint8Array {

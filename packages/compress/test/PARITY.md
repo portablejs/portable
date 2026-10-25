@@ -1,10 +1,10 @@
 # Test parity
 
-Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master/test) and [fflate 0.8.3 `test/`](https://github.com/101arrowz/fflate/tree/master/test). Fixtures `blank.gif`, `lorem.txt`, `lorem_cat.jpeg`, `lorem_en_100k.txt`, `lorem_utf_100k.txt`, `utf8.zip`, `issue_78.bin`, `bad_wbits.deflate`, `bad_wbits.txt`, `gzip-joined.gz`, `gzip-joined-bgzip.gz` and `raw-*.deflate-raw` (pako's `samples_deflated_raw/*.compressed`) are copied from pako (MIT, Vitaly Puzrin and Andrei Tuputcyn).
+Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master/test) and [fflate 0.8.3 `test/`](https://github.com/101arrowz/fflate/tree/master/test). Fixtures `blank.gif`, `lorem.txt`, `lorem_cat.jpeg`, `lorem_en_100k.txt`, `lorem_utf_100k.txt`, `utf8.zip`, `issue_78.bin`, `bad_wbits.deflate`, `bad_wbits.txt`, `gzip-joined.gz`, `gzip-joined-bgzip.gz`, and `raw-*.deflate-raw` (pako's `samples_deflated_raw/*.compressed`) are copied from pako (MIT, Vitaly Puzrin, and Andrei Tuputcyn).
 
-`CompressionStream` has no compression level, window size, memory level, strategy, dictionary, flush mode or gzip header fields, so the upstream tests of those options have no counterpart in our API. Where the option changes the compressed bytes, the oracle test decodes pako's output with every value instead.
+`CompressionStream` has no compression level, window size, memory level, strategy, dictionary, flush mode, or gzip header fields, so the upstream tests of those options have no counterpart in our API. Where the option changes the compressed bytes, the oracle test decodes pako's output with every value instead.
 
-## pako `helpers.mjs`, `inflate_roundtrip.test.mjs` and `binary_compare.test.mjs`
+## pako `helpers.mjs`, `inflate_roundtrip.test.mjs`, and `binary_compare.test.mjs`
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -100,7 +100,7 @@ Upstream suites: [pako 3.0.2 `test/`](https://github.com/nodeca/pako/tree/master
 
 ## fflate
 
-fflate's tests download five files (a short string, Moby Dick and three BMP images) and run each library in a worker.
+fflate's tests download five files (a short string, Moby Dick, and three BMP images) and run each library in a worker.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -126,4 +126,4 @@ fflate's tests download five files (a short string, Moby Dick and three BMP imag
 
 ## Oracle tests
 
-`compress.oracle.test.ts` decodes what pako and fflate compress at every level, strategy, window size and memory level, and compares our output and checksums with node:zlib. `compress.fuzz.oracle.test.ts` compresses random data with node:zlib, mutates it, and checks that whenever `decode` returns bytes for gzip, deflate or raw deflate, zlib returns the same bytes. zlib accepts more input than `decode`, because it ignores bytes after the end of the data.
+`compress.oracle.test.ts` decodes what pako and fflate compress at every level, strategy, window size, and memory level, and compares our output and checksums with node:zlib. `compress.fuzz.oracle.test.ts` compresses random data with node:zlib, mutates it, and checks that whenever `decode` returns bytes for gzip, deflate, or raw deflate, zlib returns the same bytes. zlib accepts more input than `decode`, because it ignores bytes after the end of the data.

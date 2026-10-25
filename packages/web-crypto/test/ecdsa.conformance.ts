@@ -132,7 +132,7 @@ describe('round trips (ecdsa-sig-formatter)', () => {
 });
 
 describe('rawToDerEcdsa', () => {
-  test('writes the shortest DER for small, zero and high-bit integers', () => {
+  test('writes the shortest DER for small, zero, and high-bit integers', () => {
     const raw = new Uint8Array(64);
     raw[31] = 0x01;
     raw[32] = 0x80;
@@ -191,7 +191,7 @@ describe('Wycheproof', () => {
   const encodingFlags = new Set(['BerEncodedSignature', 'InvalidEncoding', 'MissingZero']);
 
   for (const [groups, namedCurve, hash] of suites) {
-    test(`${namedCurve} with ${hash}: valid signatures convert and verify, invalid ones throw or fail`, async () => {
+    test(`${namedCurve} with ${hash}: valid signatures convert and verify, and invalid ones throw or fail`, async () => {
       const wrong: string[] = [];
       let checked = 0;
       for (const group of groups) {

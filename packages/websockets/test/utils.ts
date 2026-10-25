@@ -5,7 +5,7 @@ type Data = string | Uint8Array<ArrayBuffer>;
 const event = <value extends object>(type: string, fields: value): Event & value =>
   Object.assign(new Event(type), fields);
 
-/** A WebSocket whose other side the test drives: `accept`, `receive`, `drop` and `fail`. */
+/** A WebSocket whose other side the test drives: `accept`, `receive`, `drop`, and `fail`. */
 export class FakeWebSocket extends EventTarget {
   readyState = 0;
   bufferedAmount = 0;

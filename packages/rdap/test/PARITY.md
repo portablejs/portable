@@ -38,14 +38,14 @@ Test files:
 | config.test.ts: gives up on a server that never responds | `cancellation > aborting during the lookup rejects with the reason and aborts the request` | A timeout is `signal: AbortSignal.timeout(ms)`. |
 | config.test.ts: reports the url and the budget that was exceeded | Not applicable | The rejection is the signal's `TimeoutError`. |
 | config.test.ts: honours a timeout changed after the module was loaded | Not applicable | No module-level timeout. |
-| domain.test.ts: should return json for valid domain | `recorded responses` (all six) | `.com`, `.org`, `.nl`, `.co.uk` and `.fr`. |
+| domain.test.ts: should return json for valid domain | `recorded responses` (all six) | `.com`, `.org`, `.nl`, `.co.uk`, and `.fr`. |
 | domain.test.ts: should return error for invalid TLD | `names > rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file` | Same names: `example.badger`, `example.invalid`. |
 | domain.test.ts: should return error for non-existant domain | `names > rejects an unregistered name with NotFoundError` | |
 | domain.test.ts: should return error for invalid FQDN | `names > rejects malformed names with InvalidInputError, without a request` | |
 | errors.test.ts: every error is an RdapError and an Error | `error names are namespaced by the package` | Each error extends its class in `@portable/errors`, as AGENTS.md requires. There is no rdap base class. |
-| errors.test.ts: each subclass is distinguishable from the others | `names`, `responses` and `asn` tests | Each asserts the specific class. |
+| errors.test.ts: each subclass is distinguishable from the others | `names`, `responses`, and `asn` tests | Each asserts the specific class. |
 | errors.test.ts: reports its own class as the name | `error names are namespaced by the package` | |
-| errors.test.ts: carries the detail a caller needs to act on | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | `url`, `status` and `body`. |
+| errors.test.ts: carries the detail a caller needs to act on | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | `url`, `status`, and `body`. |
 | errors.test.ts: preserves the underlying failure on cause | `responses > passes a rejected fetch through unchanged` | The `fetch` error itself is the rejection, so there is nothing to unwrap. |
 | errors.test.ts: throws a registry error carrying the parsed error body | `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | |
 | errors.test.ts: still throws a registry error when the server sends no body | `responses > rejects an HTTP error with no body with ResponseError` | |
@@ -67,7 +67,7 @@ Test files:
 | cache/tests/asn.test.ts: reset() and flush() | `bootstrap cache > fetches the bootstrap file again after 24 hours`, `bootstrap cache > keeps a separate cache for each fetch function` | No `reset` or `flush`: a new `fetch` function starts with an empty cache. |
 | cache/tests/dns.test.ts: fetches the list on a cold lookup / leaves a server alone | `bootstrap cache > prefers an https URL, uses an http-only one, and skips services without a URL` | |
 | cache/tests/dns.test.ts: serves a repeat lookup from cache | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | |
-| cache/tests/dns.test.ts: caches every tld in the list | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | `.com`, `.nl` and `.uk` with one request. |
+| cache/tests/dns.test.ts: caches every tld in the list | `bootstrap cache > fetches the bootstrap file once for every TLD in it` | `.com`, `.nl`, and `.uk` with one request. |
 | cache/tests/dns.test.ts: returns null for an unknown tld | `names > rejects a TLD with no RDAP server ...` | |
 | cache/tests/dns.test.ts: set() populates / does not overwrite | Not applicable | No `set()`. A custom `fetch` can serve any bootstrap file. |
 | cache/tests/dns.test.ts: flush() | `bootstrap cache > keeps a separate cache for each fetch function` | |
@@ -88,7 +88,7 @@ Test files:
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| whoisAsn(): reserved ASN | `asn > rejects a reserved number with UnsupportedError` | The upstream test is skipped. Ours checks AS 0, 23456 and 4294967295. |
+| whoisAsn(): reserved ASN | `asn > rejects a reserved number with UnsupportedError` | The upstream test is skipped. Ours checks AS 0, 23456, and 4294967295. |
 | whoisAsn(): AS15169 | `asn > ARIN: AS15169` | `ASName` is `name`. |
 | whoisAsn(): AS13335 | `asn > RIPE: AS3333` | A second RIR instead of a second ARIN number. |
 | Basic domain WHOIS: google.com | `recorded responses > Verisign: follows the referral to MarkMonitor ...` | It checks the registry handle `2138514_DOMAIN_COM-VRSN` and the expiration date from the registry. |
@@ -99,7 +99,7 @@ Test files:
 | Domain WHOIS parsing: google.eu, google.nl, jprs.jp, ownit.nyc, google.bz, google.lc, google.vc name servers | `recorded responses > SIDN ...`, `recorded responses > Nominet ...` | RDAP returns a `nameservers` array, so there is no per-registry parsing to test. |
 | Domain WHOIS parsing: mañana.com and XN--MAANA-PTA.COM | `names > sends Unicode names in A-labels ...` | `münchen.com` in four spellings. |
 | Domain WHOIS parsing: nic.gi registrar IANA ID | `recorded responses > Verisign without follow ...` | The registrar entity's handle is its IANA ID, `292`. |
-| Domain WHOIS parsing: nic.ua contacts of every type | `normalization > flattens jCard properties into the first value of each`, `recorded responses > AFNIC ...` | Registrant, administrative and technical entities. |
+| Domain WHOIS parsing: nic.ua contacts of every type | `normalization > flattens jCard properties into the first value of each`, `recorded responses > AFNIC ...` | Registrant, administrative, and technical entities. |
 | Domain WHOIS parsing: google.it, trabis.gov.tr dates and registrar | `recorded responses > Nominet ...`, `normalization > reads dates without a time zone as UTC ...` | RDAP dates are RFC 3339. A date without a zone is read as UTC instead of the machine's zone. |
 | Domain WHOIS parsing: google.fr dates, statuses, registrar, registrant | `recorded responses > AFNIC: a failed referral keeps the registry result and reports the error` | The same domain over RDAP: 4 statuses, registrant `dns-admin@google.com`. |
 | whoisIp(): invalid IPs | `ip > rejects malformed addresses with InvalidInputError, without a request` | `''`, `.`, `:`, `1`, `1.1.1.1.1`. |
@@ -114,7 +114,7 @@ Test files:
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| parseRawData: converts raw data into JS | `recorded responses > Verisign: follows the referral to MarkMonitor ...` | The same `google.com` fields from RDAP: dates, statuses, nameservers, registrar and registrant. |
+| parseRawData: converts raw data into JS | `recorded responses > Verisign: follows the referral to MarkMonitor ...` | The same `google.com` fields from RDAP: dates, statuses, nameservers, registrar, and registrant. |
 | parseRawData: no spaces after delimiters | Not applicable | Text parsing. |
 | parseRawData: IP Whois rawData when multiple records exist | `ip > RIPE: IPv4 and IPv6` | RDAP returns the most specific network as one object. |
 | real lookups | `recorded responses > Verisign ...` | |

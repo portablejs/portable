@@ -498,7 +498,7 @@ export const codecs: {
 export const unknown: Codec<Uint8Array, Uint8Array> = raw;
 
 /**
- * An EDNS option inside an OPT record. CLIENT_SUBNET, TCP_KEEPALIVE, PADDING and KEY_TAG have
+ * An EDNS option inside an OPT record. CLIENT_SUBNET, TCP_KEEPALIVE, PADDING, and KEY_TAG have
  * fields. For any other code, `data` holds the raw bytes.
  */
 export type EdnsOption =

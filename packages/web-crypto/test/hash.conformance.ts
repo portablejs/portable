@@ -156,7 +156,7 @@ describe('hkdf', () => {
     expect(await WebCrypto.hkdf('SHA-512', 'secret')).toHaveLength(64);
   });
 
-  test('reads string key, salt and info as UTF-8', async () => {
+  test('reads string key, salt, and info as UTF-8', async () => {
     expect(
       await WebCrypto.hkdf('SHA-256', 'key', { info: 'info', length: 16, salt: 'salt' }),
     ).toEqual(

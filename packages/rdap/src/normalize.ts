@@ -5,7 +5,7 @@
 export type Entity = {
   /** The registry's handle, such as `292` for MarkMonitor or `ZG39-ARIN`. */
   handle: string | undefined;
-  /** RDAP roles (RFC 9083 section 10.2.4), such as `registrar`, `registrant`, `abuse` or `technical`. */
+  /** RDAP roles (RFC 9083 section 10.2.4), such as `registrar`, `registrant`, `abuse`, or `technical`. */
   roles: readonly string[];
   /** The jCard `fn`: the formatted name of a person or organization. */
   name: string | undefined;
@@ -19,7 +19,7 @@ export type Entity = {
 };
 
 /**
- * The registration, expiration and last-changed dates. Each one is `undefined` when the response
+ * The registration, expiration, and last-changed dates. Each one is `undefined` when the response
  * doesn't have the event or its date is unreadable.
  */
 export type Events = {
@@ -46,11 +46,11 @@ export type Referral =
 
 /** A domain, as `Rdap.domain` returns it. */
 export type Domain = Common & {
-  /** The name in A-labels, lowercased and without a trailing dot. */
+  /** The name in lowercase A-labels, without a trailing dot. */
   name: string;
   /** The name in U-labels, when the server sent one. */
   unicodeName: string | undefined;
-  /** Host names, lowercased and without a trailing dot. */
+  /** Host names in lowercase, without a trailing dot. */
   nameservers: readonly string[];
   /** The registrar's response, when the registry linked to one and `follow` was on. */
   referral: Referral | undefined;
@@ -291,7 +291,7 @@ export function relatedLink(json: Json, self: string): string | undefined {
 /**
  * Adds the registrar's response. Entities come from the registrar, which has the contacts, plus
  * registry entities in roles the registrar has no entity for. All other fields stay as the
- * registry sent them, because the registry is the authority for status, dates and nameservers.
+ * registry sent them, because the registry is the authority for status, dates, and nameservers.
  */
 export function withReferral(result: Domain, url: string, json: Json): Domain {
   const theirs = entities(json.entities);

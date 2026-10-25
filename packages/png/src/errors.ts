@@ -43,7 +43,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
 
 /**
  * Thrown by `decode` for a valid file that uses something this package doesn't handle: an unknown
- * critical chunk, or a compression, filter or interlace method other than the ones PNG defines.
+ * critical chunk, or a compression, filter, or interlace method other than the ones PNG defines.
  *
  * @example
  * ```ts

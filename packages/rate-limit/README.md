@@ -1,8 +1,8 @@
 # @portable/rate-limit
 
-Rate limiting per key with the generic cell rate algorithm (GCRA) and a store you choose: memory, Workers KV, a Durable Object or Redis over HTTP. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Rate limiting per key with the generic cell rate algorithm (GCRA) and a store you choose: memory, Workers KV, a Durable Object, or Redis over HTTP. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [rate-limiter-flexible](https://www.npmjs.com/package/rate-limiter-flexible), [limiter](https://www.npmjs.com/package/limiter) and the reservoir options of [bottleneck](https://www.npmjs.com/package/bottleneck).
+Replaces [rate-limiter-flexible](https://www.npmjs.com/package/rate-limiter-flexible), [limiter](https://www.npmjs.com/package/limiter), and the reservoir options of [bottleneck](https://www.npmjs.com/package/bottleneck).
 
 ```sh
 npm install @portable/rate-limit
@@ -201,9 +201,9 @@ const store: RateLimit.Store = {
 | `RateLimit.Result` | What `take` resolves to. Durations are milliseconds. |
 | `RateLimit.Store` | Where a limiter keeps one number per key. See [Stores](#stores). |
 
-## Why use this over rate-limiter-flexible, limiter and bottleneck
+## Why use this over rate-limiter-flexible, limiter, and bottleneck
 
-rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a store with two methods, so you can use any storage that can compare and set one number, and it has no dependencies outside `@portable/*`.
+rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object, or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a store with two methods, so you can use any storage that can compare and set one number, and it has no dependencies outside `@portable/*`.
 
 - rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
 - `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.
@@ -215,7 +215,7 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
 - `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which isn't a rate.
 - rate-limiter-flexible's `msBeforeNext` is set for allowed and denied requests. `retryAfter` is `0` for an allowed request, so compute the time until the allowance is full from `resetAt`.
-- rate-limiter-flexible's `reward`, `get` and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0` or with `cost: -burst`.
+- rate-limiter-flexible's `reward`, `get`, and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0` or with `cost: -burst`.
 - rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first one denies a request.
 - The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
 - bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.

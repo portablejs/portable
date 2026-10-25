@@ -81,7 +81,7 @@ test('authenticate settles with well-formed fields for a changed signed and seal
   );
 });
 
-test('authenticate writes well-formed fields for any From field, sender and HELO name', async () => {
+test('authenticate writes well-formed fields for any From field, sender, and HELO name', async () => {
   const text = fc.string({
     unit: fc.oneof(
       fc.constantFrom('a', '@', '.', ' ', '(', ')', '\\', '"', ';', ':', ',', '<', '>', '=', 'é'),

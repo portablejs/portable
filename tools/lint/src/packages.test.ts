@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, test } from 'vite-plus/test';
 
-// Checks each package's package.json, test package, changeset and README against the rules in
+// Checks each package's package.json, test package, changeset, and README against the rules in
 // AGENTS.md "Package rules". A missing dependency passes every other check in the workspace,
 // because pnpm links every workspace package, and fails only when someone installs the published
 // package.

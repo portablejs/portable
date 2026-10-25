@@ -1,8 +1,8 @@
 # @portable/random
 
-Draws unbiased random integers, floats, strings, shuffles and bytes from `crypto.getRandomValues`, and has a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Draws unbiased random integers, floats, strings, shuffles, and bytes from `crypto.getRandomValues`, and has a seeded generator with the same functions for tests. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [random-int](https://www.npmjs.com/package/random-int), [crypto-random-string](https://www.npmjs.com/package/crypto-random-string), [nanoid](https://www.npmjs.com/package/nanoid)'s `customAlphabet`, [seedrandom](https://www.npmjs.com/package/seedrandom), and [lodash](https://www.npmjs.com/package/lodash)'s `random`, `sample` and `shuffle`.
+Replaces [random-int](https://www.npmjs.com/package/random-int), [crypto-random-string](https://www.npmjs.com/package/crypto-random-string), [nanoid](https://www.npmjs.com/package/nanoid)'s `customAlphabet`, [seedrandom](https://www.npmjs.com/package/seedrandom), and [lodash](https://www.npmjs.com/package/lodash)'s `random`, `sample`, and `shuffle`.
 
 ```sh
 npm install @portable/random
@@ -29,17 +29,17 @@ random.int(1, 6); // the same number on every run, in every runtime
 | --- | --- |
 | `int(min, max)` | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can include up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`. |
 | `float()` | A number from 0 up to but not including 1, made from 53 random bits. |
-| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21 characters have 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
+| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-`, and `_`, so 21 characters have 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
 | `shuffle(array)` | A shuffled copy of `array`. Every order is equally likely. |
 | `pick(array)` | A random element of `array`. |
 | `bytes(length)` | A new `Uint8Array` of random bytes, with no 65,536-byte limit. |
 | `seeded(seed)` | A `Random.Seeded` object with all of the functions above, drawing from a deterministic generator. `seed` is a safe integer. |
 
-Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound, `min > max`, a negative or fractional length, an empty alphabet, an empty array for `pick`, or a fractional seed. Nothing is coerced or swapped.
+Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound, `min > max`, a length that is negative or fractional, an empty alphabet, an empty array for `pick`, or a fractional seed. Nothing is coerced or swapped.
 
 ### Unbiased results
 
-`int`, `string`, `shuffle` and `pick` use rejection sampling. A random value at or above the largest multiple of the range size is discarded and drawn again, so every result comes from the same number of source values. Reducing the value with a modulo instead, as `Math.floor(Math.random() * n)` and `bytes[i] % n` do, makes some results more likely whenever `n` is not a power of two. The tests check every function with a chi-squared test over ranges that aren't powers of two.
+`int`, `string`, `shuffle`, and `pick` use rejection sampling. A random value at or above the largest multiple of the range size is discarded and drawn again, so every result comes from the same number of source values. Reducing the value with a modulo instead, as `Math.floor(Math.random() * n)` and `bytes[i] % n` do, makes some results more likely whenever `n` is not a power of two. The tests check every function with a chi-squared test over ranges that aren't powers of two.
 
 `crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each value is handed out once. Pooled values stay in memory until they are used, as in nanoid.
 
@@ -57,9 +57,9 @@ xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 
 | --- | --- |
 | `Random.Seeded` | The functions of `@portable/random`, drawing from a seeded generator, as `Random.seeded` returns them. |
 
-## Why use this over random-int, crypto-random-string, nanoid, seedrandom and lodash
+## Why use this over random-int, crypto-random-string, nanoid, seedrandom, and lodash
 
-Each of these libraries does part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator, crypto-random-string and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
+Each of these libraries does part of the job: random-int and lodash use `Math.random`, which is not a cryptographic generator, crypto-random-string, and nanoid only make strings, and seedrandom only makes floats. This package has one set of functions with a cryptographic source, and the same functions with a seeded source for tests.
 
 - `int` throws on fractional bounds. `randomInteger(1.5, 3.5)` can return 1 or 4.
 - `int` throws when `min > max` or a bound is not a safe integer. random-int and lodash swap reversed bounds, and `_.random(2 ** 60, 2 ** 62)` returns integers that aren't safe.

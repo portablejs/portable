@@ -109,7 +109,7 @@ export declare namespace connect {
     name?: string | undefined;
     /** Speak LMTP (RFC 2033): LHLO, and one reply per recipient after the message. @default false */
     lmtp?: boolean | undefined;
-    /** Limits connecting, the TLS handshake and authentication. Aborting rejects with `signal.reason`. */
+    /** Limits connecting, the TLS handshake, and authentication. Aborting rejects with `signal.reason`. */
     signal?: AbortSignal | undefined;
   };
 }
@@ -841,7 +841,7 @@ export declare namespace send {
 }
 
 /**
- * Connects, sends one message and closes the connection.
+ * Connects, sends one message, and closes the connection.
  *
  * @example
  * ```ts

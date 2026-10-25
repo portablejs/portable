@@ -1,4 +1,4 @@
-// oxlint-disable no-restricted-imports, no-restricted-globals -- Node-only helpers for the smtp-server, oracle and benchmark tests.
+// oxlint-disable no-restricted-imports, no-restricted-globals -- Node-only helpers for the smtp-server, oracle, and benchmark tests.
 import net from 'node:net';
 import { create } from '@portable/sockets/node';
 import type * as Smtp from '@portable/smtp';

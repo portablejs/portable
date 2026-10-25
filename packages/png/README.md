@@ -20,7 +20,7 @@ for (let i = 0; i < data.length; i += 4) {
 const bytes = await Png.encode({ width, height, data });
 ```
 
-`decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8 and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied.
+`decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8, and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied.
 
 ## Sync or async
 
@@ -55,7 +55,7 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. The function
 | --- | --- |
 | `width`, `height` | Pixels. |
 | `data` | `Uint8Array` of 8-bit RGBA, four bytes per pixel, row by row from the top left. |
-| `depth` | The file's bit depth: 1, 2, 4, 8 or 16. |
+| `depth` | The file's bit depth: 1, 2, 4, 8, or 16. |
 | `colorType` | The file's color type: 0 grayscale, 2 RGB, 3 palette, 4 grayscale with alpha, 6 RGBA. |
 | `interlace` | Whether the file is Adam7 interlaced. |
 | `alpha` | Whether the file has an alpha channel or a `tRNS` chunk. |
@@ -85,18 +85,18 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 | --- | --- |
 | `TruncatedError` | The file ends before `IEND` or inside a chunk, or holds less image data than its header describes. |
 | `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length or a `width` or `height` that isn't a positive integer, and a `RangeError` for an invalid `filter`. |
-| `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
+| `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter, or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
 | `MaxPixelsError` | The image has more pixels than `maxPixels`, which the error stores as `maxPixels`. |
 
-Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError` and `Png.MaxPixelsError`. A bad `maxPixels`, such as a negative number, throws a `RangeError`.
+Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError`, and `Png.MaxPixelsError`. A bad `maxPixels`, such as a negative number, throws a `RangeError`.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `Png.ColorType` | `0 \| 2 \| 3 \| 4 \| 6`: grayscale, RGB, palette, grayscale with alpha and RGBA. |
+| `Png.ColorType` | `0 \| 2 \| 3 \| 4 \| 6`: grayscale, RGB, palette, grayscale with alpha, and RGBA. |
 | `Png.BitDepth` | `1 \| 2 \| 4 \| 8 \| 16`, bits per sample, or per palette index for color type 3. |
-| `Png.FilterType` | `0 \| 1 \| 2 \| 3 \| 4`: none, sub, up, average and Paeth. |
+| `Png.FilterType` | `0 \| 1 \| 2 \| 3 \| 4`: none, sub, up, average, and Paeth. |
 
 ## Why use this over pngjs
 
@@ -112,7 +112,7 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 - `encode` computes gray as BT.709 luma. pngjs averages the channels.
 - The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs. pngjs's `deflateLevel` has no equivalent, so pass a `deflate` function to choose a level.
 - pngjs sets `gamma` to `0` when there is no `gAMA` chunk, and `decode` returns `gamma: undefined`.
-- Pixels are always 8-bit RGBA, so pngjs's `skipRescale`, `bitDepth: 16`, `inputColorType` and `inputHasAlpha` options have no equivalent. Neither do pngjs's `bitblt` and `adjustGamma`.
+- Pixels are always 8-bit RGBA, so pngjs's `skipRescale`, `bitDepth: 16`, `inputColorType`, and `inputHasAlpha` options have no equivalent. Neither do pngjs's `bitblt` and `adjustGamma`.
 
 ### Performance
 

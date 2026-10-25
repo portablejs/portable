@@ -50,7 +50,7 @@ for (const compare of [Bytes.equal, Bytes.timingSafeEqual]) {
       ).toBe(false);
     });
 
-    test('finds a difference at any position, length and alignment', () => {
+    test('finds a difference at any position, length, and alignment', () => {
       for (const length of [1, 3, 4, 63, 64, 65, 100, 1027]) {
         const bytes = randomBytes(length, length);
         for (const offsetA of [0, 1, 2, 3, 4]) {

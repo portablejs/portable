@@ -35,10 +35,10 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | should consider equal strings to be equal | `timingSafeEqual > identical arrays are equal` | |
 | should consider unequal strings to be unequal | `timingSafeEqual > arrays with different content are unequal` | |
 | TypedArrays with different lengths but equal byteLengths | `timingSafeEqual > compares only the bytes each subarray covers` | Inputs are `Uint8Array` only, so the case becomes different views of the same bytes. |
-| floating-point inputs compare bytes, not values | `timingSafeEqual > compares the bytes of other typed arrays, not their values` | Same NaN, `-0` and signaling NaN cases, through `Uint8Array` views. |
+| floating-point inputs compare bytes, not values | `timingSafeEqual > compares the bytes of other typed arrays, not their values` | Same NaN, `-0`, and signaling NaN cases, through `Uint8Array` views. |
 | throws `ERR_CRYPTO_TIMING_SAFE_EQUAL_LENGTH` for different lengths | `timingSafeEqual > arrays of different lengths are unequal` | Returns `false` instead, see "Known upstream issues". |
 | throws `ERR_INVALID_ARG_TYPE` for a string (2 tests) | `byte inputs > throws a TypeError for string` | `timingSafeEqual` throws a `TypeError` for anything that isn't a `Uint8Array`. |
-| V8 fast API path (`-fast.js`) | `timingSafeEqual > finds a difference at any position, length and alignment` | The upstream test checks that V8's optimized call gives the same results. Here the code that could give different results is the path that compares four bytes at a time, and this test drives it with lengths around 64 and unaligned views. |
+| V8 fast API path (`-fast.js`) | `timingSafeEqual > finds a difference at any position, length, and alignment` | The upstream test checks that V8's optimized call gives the same results. Here the code that could give different results is the path that compares four bytes at a time, and this test drives it with lengths around 64 and unaligned views. |
 
 ## Known upstream issues
 
@@ -55,4 +55,4 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 
 ## Benchmarks
 
-uint8array-extras' `benchmark.mjs` times each function on 1 MB of random bytes. `bytes.bench.ts` times `toHex`, `fromHex`, `equal` and `timingSafeEqual` at 32 bytes and 1 MiB and `concat` on 4 × 64 KiB and 100 × 32 bytes, against uint8array-extras, `node:crypto` and the matching `Buffer` method, and fails if uint8array-extras or `node:crypto` is more than 25% faster.
+uint8array-extras' `benchmark.mjs` times each function on 1 MB of random bytes. `bytes.bench.ts` times `toHex`, `fromHex`, `equal`, and `timingSafeEqual` at 32 bytes and 1 MiB and `concat` on 4 × 64 KiB and 100 × 32 bytes, against uint8array-extras, `node:crypto`, and the matching `Buffer` method, and fails if uint8array-extras or `node:crypto` is more than 25% faster.

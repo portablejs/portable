@@ -1,8 +1,8 @@
 # @portable/bytes
 
-Converts `Uint8Array`s to and from hex, concatenates them and compares them, with a constant-time comparison for secrets. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Converts `Uint8Array`s to and from hex, concatenates them, and compares them, with a constant-time comparison for secrets. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces the hex, concat and equality functions of [uint8array-extras](https://www.npmjs.com/package/uint8array-extras), and `crypto.timingSafeEqual` from `node:crypto`.
+Replaces the hex, concat, and equality functions of [uint8array-extras](https://www.npmjs.com/package/uint8array-extras), and `crypto.timingSafeEqual` from `node:crypto`.
 
 ```sh
 npm install @portable/bytes
@@ -24,7 +24,7 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 }
 ```
 
-`toHex` and `fromHex` call `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
+`toHex` and `fromHex` call `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
 
 ## API
 
@@ -37,7 +37,7 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 | `timingSafeEqual(a, b)` | Whether `a` and `b` hold the same bytes, in time that depends only on the length. Returns `false` for different lengths. |
 | `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. |
 
-`fromHex` follows `Uint8Array.fromHex` and throws for whitespace, a `0x` prefix and any other character that isn't a hex digit. The error message gives the position of the first bad character.
+`fromHex` follows `Uint8Array.fromHex` and throws for whitespace, a `0x` prefix, and any other character that isn't a hex digit. The error message gives the position of the first bad character.
 
 Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a value from the request. `equal` returns as soon as it finds a difference, so its timing shows an attacker how many leading bytes they guessed right. `timingSafeEqual` returns `false` at once for arrays of different lengths, so it doesn't hide the length. For a signature or a hash the algorithm fixes the length, so it isn't secret.
 
@@ -45,7 +45,7 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 
 ### Byte input
 
-Every `@portable/*` function that takes bytes accepts a `Uint8Array` or a Node `Buffer`, which is a subclass of `Uint8Array`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView` or another typed array. Given a buffer or a view, a function can't tell which of its bytes you meant: `view.buffer` also holds the bytes outside the view, and an `Int16Array` has two bytes per element in the platform's byte order. Convert the value to a `Uint8Array` yourself, so your code shows which bytes the function reads:
+Every `@portable/*` function that takes bytes accepts a `Uint8Array` or a Node `Buffer`, which is a subclass of `Uint8Array`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView`, or another typed array. Given a buffer or a view, a function can't tell which of its bytes you meant: `view.buffer` also holds the bytes outside the view, and an `Int16Array` has two bytes per element in the platform's byte order. Convert the value to a `Uint8Array` yourself, so your code shows which bytes the function reads:
 
 ```ts
 new Uint8Array(arrayBuffer);
@@ -56,7 +56,7 @@ A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from an
 
 ## Why use this over uint8array-extras and node:crypto
 
-- `node:crypto` exists only in Node, Deno and Bun. This package runs in browsers and Workers too.
+- `node:crypto` exists only in Node, Deno, and Bun. This package runs in browsers and Workers too.
 - `timingSafeEqual` returns `false` for different lengths. Node's throws a `RangeError`, so you have to check the length first or catch the error.
 - `fromHex` throws `Bytes.InvalidInputError`, so you can tell it apart from other errors. uint8array-extras throws a plain `Error`, and reports the position of the pair rather than of the bad character (`'0G'` gives position 0).
 - Inputs are `Uint8Array` only. uint8array-extras also takes an `ArrayBuffer`, and passing `view.buffer` by mistake reads every byte of the buffer, not only the view's.
@@ -122,4 +122,4 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 Differences to check when you switch from uint8array-extras:
 
 - `concatUint8Arrays` takes an optional `totalLength`. `concat` has no such argument, and its result is always as long as the chunks together.
-- uint8array-extras' string, base64, compare, `indexOf` and `getUintBE` functions have no equivalent here. Use [`@portable/base64`](../base64) for base64.
+- uint8array-extras' string, base64, compare, `indexOf`, and `getUintBE` functions have no equivalent here. Use [`@portable/base64`](../base64) for base64.

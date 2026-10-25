@@ -11,7 +11,7 @@ export declare namespace EncoderStream {
 /**
  * A `TransformStream` that encodes each value as one line of NDJSON: `JSON.stringify(value)`
  * followed by `\n`, as UTF-8 bytes. If `JSON.stringify` can't encode a value, such as `undefined`,
- * a function, a symbol, a `BigInt` or a circular structure, the stream fails with a `TypeError`
+ * a function, a symbol, a `BigInt`, or a circular structure, the stream fails with a `TypeError`
  * instead of dropping the line or writing a malformed one.
  *
  * @example

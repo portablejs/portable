@@ -99,7 +99,7 @@ describe('calls', () => {
 });
 
 describe('errors', () => {
-  test('rejects with RemoteError carrying the code, message and data the method threw', async () => {
+  test('rejects with RemoteError carrying the code, message, and data the method threw', async () => {
     const remote = pair({
       find(id: string) {
         throw new Rpc.RemoteError({ code: 404, message: 'No such user', data: { id } });

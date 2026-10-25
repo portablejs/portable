@@ -1,8 +1,8 @@
 # @portable/ip
 
-Parses, formats, compares and classifies IPv4 and IPv6 addresses and CIDR blocks. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Parses, formats, compares, and classifies IPv4 and IPv6 addresses and CIDR blocks. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [ip](https://www.npmjs.com/package/ip), [ipaddr.js](https://www.npmjs.com/package/ipaddr.js), [is-ip](https://www.npmjs.com/package/is-ip), [ip-cidr](https://www.npmjs.com/package/ip-cidr), [cidr-tools](https://www.npmjs.com/package/cidr-tools) and [ip-range-check](https://www.npmjs.com/package/ip-range-check) for parsing, validation, CIDR matching and classification.
+Replaces [ip](https://www.npmjs.com/package/ip), [ipaddr.js](https://www.npmjs.com/package/ipaddr.js), [is-ip](https://www.npmjs.com/package/is-ip), [ip-cidr](https://www.npmjs.com/package/ip-cidr), [cidr-tools](https://www.npmjs.com/package/cidr-tools), and [ip-range-check](https://www.npmjs.com/package/ip-range-check) for parsing, validation, CIDR matching, and classification.
 
 ```sh
 npm install @portable/ip
@@ -40,7 +40,7 @@ type Cidr = { address: Address; prefix: number };
 | `canParse(text, { version })` | Whether `parse` accepts `text`, optionally only for IPv4 or IPv6. Returns `false` for a non-string. |
 | `format(address)` | Text: dotted decimal for IPv4, RFC 5952 for IPv6, with `%zone` if present. |
 | `fromBytes(bytes)` | An `Address` built from a copy of 4 or 16 bytes. Throws `InvalidInputError` for any other length. |
-| `compare(a, b)` | A negative number, zero or a positive number: IPv4 before IPv6, then by bytes, then by zone. Pass it to `Array.prototype.sort`. |
+| `compare(a, b)` | A negative number, zero, or a positive number: IPv4 before IPv6, then by bytes, then by zone. Pass it to `Array.prototype.sort`. |
 | `unmap(address)` | The IPv4 address inside an IPv4-mapped address (`::ffff:192.0.2.1`), and any other address unchanged. |
 | `toIpv6(address)` | The IPv4-mapped form of an IPv4 address, and an IPv6 address unchanged. |
 | `reverseName(address)` | The PTR lookup name under `in-addr.arpa` or `ip6.arpa`. |
@@ -55,7 +55,7 @@ type Cidr = { address: Address; prefix: number };
 
 The WHATWG `URL` parser converts those spellings to dotted decimal, so `new URL('http://0x7f.1/').hostname` is `'127.0.0.1'`. Parse the `hostname` of a `URL`, after removing the brackets around an IPv6 host, rather than the raw text.
 
-IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `::`, which replaces at least one group, an optional dotted IPv4 address in the last 32 bits (also without leading zeros), and an optional zone of letters, digits, `.`, `_`, `~` and `-`.
+IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `::`, which replaces at least one group, an optional dotted IPv4 address in the last 32 bits (also without leading zeros), and an optional zone of letters, digits, `.`, `_`, `~`, and `-`.
 
 ### Ranges
 
@@ -97,7 +97,7 @@ When blocks overlap, `range` returns the most specific one, so `2001:2::1` is `b
 
 ### IPv4-mapped addresses
 
-A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` treats the two forms as one address, as Node's `BlockList` does, so `Ip.contains('127.0.0.0/8', '::ffff:7f00:1')` is `true`. `compare`, `range` and `reverseName` treat them as different addresses, so call `unmap` first. `format` writes mapped addresses in mixed notation, `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends.
+A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` treats the two forms as one address, as Node's `BlockList` does, so `Ip.contains('127.0.0.0/8', '::ffff:7f00:1')` is `true`. `compare`, `range`, and `reverseName` treat them as different addresses, so call `unmap` first. `format` writes mapped addresses in mixed notation, `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends.
 
 `::192.0.2.1` is an IPv4-compatible address, deprecated by RFC 4291, and is not treated as mapped. Its range is `'reserved'`.
 
@@ -105,13 +105,13 @@ A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` tre
 
 | Type | Description |
 | --- | --- |
-| `Ip.Address` | `{ version, bytes, zone? }`, an IPv4 or IPv6 address with its bytes in network order. |
-| `Ip.Cidr` | `{ address, prefix }`, a network address and its prefix length. |
+| `Ip.Address` | `{ version, bytes, zone? }`: an IPv4 or IPv6 address with its bytes in network order. |
+| `Ip.Cidr` | `{ address, prefix }`: a network address and its prefix length. |
 | `Ip.Range` | The name of the special-purpose block an address belongs to, from the IANA registries. |
 
 ## Why use this over ip or ipaddr.js
 
-ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). ip is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.
+ip's `isPublic` and `isPrivate` accepted octal, hex, and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). ip is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.
 
 - Parsing eight mixed addresses took about 1.3 µs, 12 times faster than ipaddr.js and 2.3 times faster than Node's `net.isIP`, which only validates.
 - Parsing an address and checking it against a CIDR block was 11 times faster than ipaddr.js and 1.5 times faster than Node's `BlockList.check`.

@@ -1,6 +1,6 @@
 {
   "name": "@portable/binary",
-  "description": "Reads and writes integers, varints, strings and length-prefixed frames in binary data, in any JavaScript runtime.",
+  "description": "Reads and writes integers, varints, strings, and length-prefixed frames in binary data, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

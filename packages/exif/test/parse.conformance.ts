@@ -259,7 +259,7 @@ describe('exif-reader', () => {
 });
 
 describe('exifr', () => {
-  test('reads IFD0, Exif, interop and IFD1 tags', async () => {
+  test('reads IFD0, Exif, interop, and IFD1 tags', async () => {
     const result = Exif.parse(await fixture('img_1771.jpg'));
     expect(result.ifd0.Model).toBe('Canon PowerShot S40');
     expect(result.exif.ApertureValue).toBe(4.65625);
@@ -428,7 +428,7 @@ describe('parse', () => {
     });
   }
 
-  test('reads the same tags from TIFF, Exif-prefixed, JPEG, PNG and WebP input', () => {
+  test('reads the same tags from TIFF, Exif-prefixed, JPEG, PNG, and WebP input', () => {
     const data = tiff(false);
     const expected = Exif.parse(data);
     const png = concat(

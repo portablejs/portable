@@ -1,4 +1,4 @@
-// Runs test files inside a dedicated worker with Vitest's own runner, `expect` and `vi`. Vitest's
+// Runs test files inside a dedicated worker with Vitest's own runner, `expect`, and `vi`. Vitest's
 // browser tester sets up the same worker state on the page, so this file copies that setup without
 // the RPC to the Vitest server, and posts the results back to the page instead.
 import type { RunnerTask, RunnerTestFile, SerializedConfig, TestError } from 'vite-plus/test';

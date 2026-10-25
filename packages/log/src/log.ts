@@ -349,7 +349,7 @@ export function configure(options: configure.Options): void {
 }
 
 /**
- * Turns off every namespace at every level, warnings and errors included, and returns the
+ * Turns off every namespace at every level, including warnings and errors, and returns the
  * patterns that were in effect, so `enable` can restore them.
  *
  * @example

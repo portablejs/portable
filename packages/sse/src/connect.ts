@@ -45,7 +45,7 @@ export declare namespace connect {
 /**
  * Opens an event stream with `fetch` and returns its events, reconnecting with `Last-Event-ID`
  * when the response ends or fails, as `EventSource` does. Unlike `EventSource`, the request can
- * have any method, headers and body, and the events are a `ReadableStream` that can be piped and
+ * have any method, headers, and body, and the events are a `ReadableStream` that can be piped and
  * cancelled. Cancelling it aborts the request in flight.
  *
  * Each attempt sends a clone of `request`, so a request body is sent again on every reconnect,

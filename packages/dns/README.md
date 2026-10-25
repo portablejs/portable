@@ -18,7 +18,7 @@ const dmarc = records.map((chunks) => chunks.join('')).find((text) => text.start
 
 ## Bring your own resolver
 
-`Dns.Resolver` is a type listing the lookups that SPF, DMARC and DKIM need, with Node's method names and result shapes. The resolver from `create` matches it, and so do `node:dns/promises` and a `new Resolver()` from that module:
+`Dns.Resolver` is a type listing the lookups that SPF, DMARC, and DKIM need, with Node's method names and result shapes. The resolver from `create` matches it, and so do `node:dns/promises` and a `new Resolver()` from that module:
 
 ```ts
 import * as Dns from '@portable/dns';
@@ -40,7 +40,7 @@ In tests, pass an object whose methods return fixed records.
 | Method | Returns |
 | --- | --- |
 | `resolve4(name)`, `resolve6(name)` | `string[]` of addresses. IPv6 is formatted as RFC 5952 recommends. |
-| `resolveTxt(name)` | `string[][]`: one array per record, holding its strings. Join them to read SPF, DKIM or DMARC. |
+| `resolveTxt(name)` | `string[][]`: one array per record, holding its strings. Join them to read SPF, DKIM, or DMARC. |
 | `resolveMx(name)` | `{ exchange, priority }[]` |
 | `resolveCname(name)`, `resolveNs(name)`, `resolvePtr(name)` | `string[]` |
 | `resolveSrv(name)` | `{ name, port, priority, weight }[]` |
@@ -48,7 +48,7 @@ In tests, pass an object whose methods return fixed records.
 | `resolveCaa(name)` | `{ critical, issue?, issuewild?, iodef?, ... }[]` |
 | `resolveNaptr(name)` | `{ flags, service, regexp, replacement, order, preference }[]` |
 | `reverse(ip)` | `string[]` of host names, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. |
-| `query(name, type)` | The whole decoded response as a [`@portable/dns-packet`](https://www.npmjs.com/package/@portable/dns-packet) `DecodedPacket`, with TTLs, the authority section and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
+| `query(name, type)` | The whole decoded response as a [`@portable/dns-packet`](https://www.npmjs.com/package/@portable/dns-packet) `DecodedPacket`, with TTLs, the authority section, and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
 
 Each method takes `{ signal }` as a last argument. When the signal aborts, the method rejects with `signal.reason`, as `fetch` does.
 
@@ -61,16 +61,16 @@ Names with non-ASCII characters are converted to punycode with the IDNA 2008 rul
 | Option | Default | Description |
 | --- | --- | --- |
 | `endpoints` | Cloudflare, then Google | DNS-over-HTTPS URLs, tried in order. |
-| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, use a proxy or mock responses. |
+| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, use a proxy, or mock responses. |
 | `timeout` | `5000` | Milliseconds to wait for each endpoint, including the response body. |
 
 Queries are GET requests with an ID of 0, as RFC 8484 recommends, so HTTP caches can store the responses and browsers send no CORS preflight. They set RD and AD, so the AD flag in `query()` results reports DNSSEC validation (RFC 6840 section 5.7).
 
-The next endpoint is tried after a network error, a timeout, an HTTP error status, a malformed or truncated response, a response to another question, and the response codes SERVFAIL, REFUSED, NOTIMP and FORMERR. NXDOMAIN and an empty answer are final.
+The next endpoint is tried after a network error, a timeout, an HTTP error status, a response that is malformed or truncated, a response to another question, and the response codes SERVFAIL, REFUSED, NOTIMP, and FORMERR. NXDOMAIN and an empty answer are final.
 
 ## Errors
 
-Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch`, `cause` holds the original error. When the DoH server answered with an error status, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`. When every endpoint fails, `code` describes the last endpoint's failure.
+Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname`, and `message` are the ones `node:dns/promises` uses, such as `queryTxt ENOTFOUND example.com`. When the failure came from `fetch`, `cause` holds the original error. When the DoH server answered with an error status, `cause` is an `Errors.ResponseError` whose `response` is the whole `Response`. When every endpoint fails, `code` describes the last endpoint's failure.
 
 | `code` | Meaning |
 | --- | --- |
@@ -80,12 +80,12 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname` a
 | `EBADRESP` | The response was malformed, truncated, for another question, not HTTP 2xx, or had another response code. |
 | `ETIMEOUT` | The endpoint didn't answer within `timeout`. |
 | `ECONNREFUSED` | `fetch` rejected. |
-| `EBADNAME` | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.` and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
+| `EBADNAME` | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.`, and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
 | `EINVAL` | `reverse` was given something that isn't an IP address. |
 
 Each method rejects with a `TypeError` for a name that isn't a string.
 
-`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA` or `EBADNAME`, which means the name has no records. It returns `false` for any other error. Treat those errors as temporary failures. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
+`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA`, or `EBADNAME`, which means the name has no records. It returns `false` for any other error. Treat those errors as temporary failures. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
 
 ```ts
 const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
@@ -109,7 +109,7 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 | `Dns.CaaRecord` | One record from `resolveCaa`. |
 | `Dns.NaptrRecord` | One record from `resolveNaptr`. |
 
-## Why use this over node:dns/promises, tangerine and dohjs
+## Why use this over node:dns/promises, tangerine, and dohjs
 
 `node:dns/promises` needs a DNS socket, which Cloudflare Workers and browsers don't have, and tangerine builds on Node's `Resolver`. This package needs only `fetch`.
 
@@ -152,7 +152,7 @@ Other differences to check when you switch from `node:dns/promises`:
 
 - Node's `resolver.cancel()` has no equivalent. Pass `{ signal }` to each call and abort it.
 - Node's `ttl: true` option has no equivalent. The records in `(await resolver.query(name, 'A')).answers` each have a `ttl`.
-- Node's `resolve(name, type)`, `resolveAny`, `resolveTlsa` and `resolveCert` have no equivalent. Call `query(name, type)`. Most public resolvers refuse ANY (RFC 8482).
+- Node's `resolve(name, type)`, `resolveAny`, `resolveTlsa`, and `resolveCert` have no equivalent. Call `query(name, type)`. Most public resolvers refuse ANY (RFC 8482).
 - Node's `lookup` and `lookupService` have no equivalent, because they read the hosts file and call `getaddrinfo`, which DNS-over-HTTPS can't do.
 - Node returns `[]` for a NOERROR answer that holds only a CNAME. This package rejects with `ENODATA`.
 - Node reports a response code it has no error for, such as YXDOMAIN, as `ENODATA`. This package reports it as `EBADRESP`.

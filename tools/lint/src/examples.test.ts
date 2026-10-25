@@ -332,7 +332,7 @@ function bracelessBodies(example: Example): string[] {
   return problems;
 }
 
-test('examples put braces around every if, else and loop body', () => {
+test('examples put braces around every if, else, and loop body', () => {
   expect(examples(packages()).flatMap(bracelessBodies)).toEqual([]);
 });
 

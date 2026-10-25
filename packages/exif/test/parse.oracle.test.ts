@@ -74,7 +74,7 @@ describe('matches exif-parser', () => {
       expect(ours(bytes)).toEqual(theirs(bytes));
     });
 
-    test(`image size, thumbnail, dates and coordinates of ${name}`, async () => {
+    test(`image size, thumbnail, dates, and coordinates of ${name}`, async () => {
       const bytes = await input(name);
       const result = Exif.parse(bytes);
       const expected = ExifParser.create(Buffer.from(bytes)).parse();

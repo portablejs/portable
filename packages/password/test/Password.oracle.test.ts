@@ -43,7 +43,7 @@ describe('hash matches node:crypto pbkdf2Sync', () => {
 describe('verify accepts what node:crypto and pbkdf2 compute', () => {
   const digests = ['sha1', 'sha256', 'sha512'] satisfies Digest[];
   for (const seed of [1, 2, 3]) {
-    test(`random salts, lengths and digests, seed ${seed}`, async () => {
+    test(`random salts, lengths, and digests, seed ${seed}`, async () => {
       const random = seededRandom(seed);
       for (let i = 0; i < 30; i++) {
         const password = randomPassword(random);

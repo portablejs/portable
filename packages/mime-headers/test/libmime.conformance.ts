@@ -232,7 +232,7 @@ describe('decodeWords()', () => {
     expect(decodeWords('=?UTF-8?Q?=C3=B5?= =?ISO-8859-13?Q?=F5?=')).toBe('õõ');
   });
 
-  test('reads the utf-7, base64 and hex codecs as UTF-8', () => {
+  test('reads the utf-7, base64, and hex codecs as UTF-8', () => {
     expect(decodeWords('=?utf-7?Q?+ADw-script+AD4-?=')).toBe('+ADw-script+AD4-');
     expect(decodeWords('=?UTF7?B?K0FEdy1zY3JpcHQrQUQ0LQ==?=')).toBe('+ADw-script+AD4-');
     expect(decodeWords('=?utf-7-imap?Q?&ADw-script&AD4-?=')).toBe('&ADw-script&AD4-');

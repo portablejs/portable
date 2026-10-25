@@ -40,7 +40,7 @@ function displayHost(hostname: string): string {
 
 ### `toAscii(domain, options?)`
 
-Follows the URL Standard's domain parser: ASCII input is lowercased, and other input goes through UTS #46 ToASCII, which maps, normalizes, validates and encodes each non-ASCII label as `xn--` Punycode. It throws `Idna.InvalidInputError` when the domain breaks a rule, when the result is empty, or when the result contains a character that URL forbids in a host, such as a space, `%`, `/` or `@`.
+Follows the URL Standard's domain parser: ASCII input is lowercased, and other input goes through UTS #46 ToASCII, which maps, normalizes, validates, and encodes each non-ASCII label as `xn--` Punycode. It throws `Idna.InvalidInputError` when the domain breaks a rule, when the result is empty, or when the result contains a character that URL forbids in a host, such as a space, `%`, `/`, or `@`.
 
 The result equals `new URL('http://' + domain).hostname` with three exceptions. `URL` parses a host that ends in a number as an IPv4 address (`0x7f.1` becomes `127.0.0.1`), and decodes percent-encoding. Neither is IDNA, and `toAscii` does neither. The third is that runtimes don't agree with each other or with the standard, as [Where `URL` isn't exact](#where-url-isnt-exact) shows.
 
@@ -48,7 +48,7 @@ The result equals `new URL('http://' + domain).hostname` with three exceptions. 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `strict` | `false` | Apply the STD 3 hostname rules: only `a-z`, `0-9` and `-` in a label, and no `-` at either end of a label or in its third and fourth positions. In `toAscii` it also checks DNS lengths: every label is 1 to 63 characters and the name at most 253, so a trailing dot throws. This is the URL Standard's `beStrict`, and what Unicode's conformance tests use. |
+| `strict` | `false` | Apply the STD 3 hostname rules: only `a-z`, `0-9`, and `-` in a label, and no `-` at either end of a label or in its third and fourth positions. In `toAscii` it also checks DNS lengths: every label is 1 to 63 characters and the name at most 253, so a trailing dot throws. This is the URL Standard's `beStrict`, and what Unicode's conformance tests use. |
 
 ## Why use this over punycode and tr46
 
@@ -62,7 +62,7 @@ punycode only converts the Punycode encoding of each label. It doesn't map upper
 - tr46's `toASCII` returns `null` for an invalid domain, where `toAscii` throws `InvalidInputError`.
 - Without `strict`, `toAscii` lowercases ASCII input without decoding it, as the URL Standard now specifies, so `toAscii('xn--b.com')` returns `'xn--b.com'` where tr46 returns `null`. `toUnicode` still throws for it.
 - tr46's `toASCII` returns `'a b'` for `'a b'`, but `toAscii` throws for a space and the other characters that URL forbids in a host.
-- tr46's `useSTD3ASCIIRules`, `checkHyphens` and `verifyDNSLength` are one option here: `strict: true` turns on all three.
+- tr46's `useSTD3ASCIIRules`, `checkHyphens`, and `verifyDNSLength` are one option here: `strict: true` turns on all three.
 - tr46's `checkBidi` and `checkJoiners` have no equivalent, because both checks always run, as in the URL Standard.
 - tr46's `transitionalProcessing` isn't supported, because UTS #46 deprecated it and browsers dropped it, so `faß.de` becomes `xn--fa-hia.de`, not `fass.de`.
 - tr46's `ignoreInvalidPunycode` isn't supported, because the URL Standard doesn't use it.

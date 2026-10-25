@@ -338,7 +338,7 @@ describe('signal', () => {
     expect(counted.listeners).toBe(0);
   });
 
-  test('the queue signal rejects waiting, running and later tasks', async () => {
+  test('the queue signal rejects waiting, running, and later tasks', async () => {
     const controller = new AbortController();
     const queue = Queue.create({ concurrency: 1, signal: controller.signal });
     let taskSignal: AbortSignal | undefined;
@@ -377,7 +377,7 @@ describe('signal', () => {
   });
 });
 
-describe('idle, pause and clear', () => {
+describe('idle, pause, and clear', () => {
   test('idle resolves when every task has settled', async () => {
     const queue = Queue.create({ concurrency: 2 });
     const done: number[] = [];

@@ -179,7 +179,7 @@ describe('routing matches node-rdap', () => {
     }
   });
 
-  test('random IPv6 addresses, inside and outside the bootstrap prefixes', async () => {
+  test('random IPv6 addresses inside and outside the bootstrap prefixes', async () => {
     const next = random(3);
     const word = () => (1 + Math.floor(next() * 0xffff)).toString(16);
     const prefixes = ipv6.services.flatMap(([keys]) => keys);

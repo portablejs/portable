@@ -37,7 +37,7 @@ export declare namespace fromSocket {
  * Wraps an existing WebSocket, such as one a server accepted, in a readable and a writable stream. It
  * never reconnects. Writes wait until the socket opens.
  *
- * The readable closes when the socket closes with code 1000, 1001 or 1005, and fails with a
+ * The readable closes when the socket closes with code 1000, 1001, or 1005, and fails with a
  * `CloseError` for any other code. The writable fails with a `CloseError` once the socket closes.
  *
  * @example

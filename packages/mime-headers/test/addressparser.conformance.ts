@@ -286,7 +286,7 @@ describe('addressparser', () => {
     );
   });
 
-  test('an unclosed quote, angle bracket or comment', () => {
+  test('an unclosed quote, angle bracket, or comment', () => {
     expect(parse('"unclosed@example.com')).toEqual([{ address: 'unclosed@example.com', name: '' }]);
     expect(parse('Name <user@example.com')).toEqual([
       { address: 'user@example.com', name: 'Name' },
@@ -296,7 +296,7 @@ describe('addressparser', () => {
     ]);
   });
 
-  test('empty input, whitespace and empty angle brackets', () => {
+  test('empty input, whitespace, and empty angle brackets', () => {
     expect(parse('')).toEqual([]);
     expect(parse('   ')).toEqual([]);
     expect(parse('<>')).toEqual([{ address: '', name: '' }]);
@@ -454,7 +454,7 @@ describe('nested groups are flattened into the outer one', () => {
 });
 
 describe('international addresses', () => {
-  test('Unicode, emoji and CJK display names', () => {
+  test('Unicode, emoji, and CJK display names', () => {
     expect(parse('Jüri Õunapuu <juri@example.com>')).toEqual([
       { name: 'Jüri Õunapuu', address: 'juri@example.com' },
     ]);
@@ -944,7 +944,7 @@ describe('comments after a quoted local part', () => {
 });
 
 describe('closers inside an angle address or a group', () => {
-  test('">" inside a quoted string, a comment or a domain literal does not close the angle address', () => {
+  test('">" inside a quoted string, a comment, or a domain literal does not close the angle address', () => {
     const [actual, expected] = parseCases([
       ['<"a@evil.com>"@good.com>', [{ address: '"a@evil.com>"@good.com', name: '' }]],
       ['<"a\\>"@good.com>', [{ address: '"a>"@good.com', name: '' }]],
@@ -1094,7 +1094,7 @@ describe('nested comments', () => {
 });
 
 describe('an unexpected "<" inside an angle address', () => {
-  test('inside a quoted string, a comment or a domain literal is kept', () => {
+  test('inside a quoted string, a comment, or a domain literal is kept', () => {
     const [actual, expected] = parseCases([
       ['<"a<b"@victim.com>', [{ address: '"a<b"@victim.com', name: '' }]],
       ['<"<"@good.com>', [{ address: '"<"@good.com', name: '' }]],

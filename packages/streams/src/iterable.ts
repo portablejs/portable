@@ -41,7 +41,7 @@ export declare namespace toAsyncIterable {
 
 /**
  * Returns an async iterator over a `ReadableStream`, for `for await` loops in runtimes whose
- * streams aren't async iterable yet. Leaving the loop early with `break`, `return` or a throw
+ * streams aren't async iterable yet. Leaving the loop early with `break`, `return`, or a throw
  * cancels the stream, or with `preventCancel: true` only releases its lock. Uses the
  * stream's own `values()` where the runtime has it.
  *
@@ -108,7 +108,7 @@ export function transform<input, output>(
 
 export declare namespace transform {
   type Options = {
-    /** Errors the output with `signal.reason`, cancels the input and ends the generator when aborted. */
+    /** Errors the output with `signal.reason`, cancels the input, and ends the generator when aborted. */
     signal?: AbortSignal | undefined;
   };
 }

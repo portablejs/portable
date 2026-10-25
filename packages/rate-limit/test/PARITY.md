@@ -1,8 +1,8 @@
 # Test parity
 
-Upstream suites: [rate-limiter-flexible 11.2.3 `test/`](https://github.com/animir/node-rate-limiter-flexible/tree/master/test), [limiter 4.1.0 `src/*.test.ts`](https://github.com/jhurliman/node-rate-limiter/tree/main/src) and the rate-limit parts of [bottleneck 2.19.5 `test/general.js` and `test/cluster.js`](https://github.com/SGrondin/bottleneck/tree/master/test). No fixtures are copied.
+Upstream suites: [rate-limiter-flexible 11.2.3 `test/`](https://github.com/animir/node-rate-limiter-flexible/tree/master/test), [limiter 4.1.0 `src/*.test.ts`](https://github.com/jhurliman/node-rate-limiter/tree/main/src), and the rate-limit parts of [bottleneck 2.19.5 `test/general.js` and `test/cluster.js`](https://github.com/SGrondin/bottleneck/tree/master/test). No fixtures are copied.
 
-`take.conformance.ts`, `store.conformance.ts` and `headers.conformance.ts` run in Node and Chromium. `take.oracle.test.ts` compares 24,000 random takes with limiter's `TokenBucket`, which is the same continuous model, in rates that are exact in binary. rate-limiter-flexible counts in fixed windows, so its output differs by design and there is no oracle against it.
+`take.conformance.ts`, `store.conformance.ts`, and `headers.conformance.ts` run in Node and Chromium. `take.oracle.test.ts` compares 24,000 random takes with limiter's `TokenBucket`, which is the same continuous model, in rates that are exact in binary. rate-limiter-flexible counts in fixed windows, so its output differs by design and there is no oracle against it.
 
 ## rate-limiter-flexible
 
@@ -70,7 +70,7 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 
 ## bottleneck
 
-Bottleneck is a job scheduler. Its concurrency, priority, batching, grouping, retries, events, job status and stop tests (`DLList.js`, `batcher.js`, `context.js`, `group.js`, `priority.js`, `promises.js`, `retries.js`, `states.js`, `stop.js` and most of `general.js` and `cluster.js`) belong to `@portable/queue`. These are the rate-limit tests:
+Bottleneck is a job scheduler. Its concurrency, priority, batching, grouping, retries, events, job status, and stop tests (`DLList.js`, `batcher.js`, `context.js`, `group.js`, `priority.js`, `promises.js`, `retries.js`, `states.js`, `stop.js`, and most of `general.js` and `cluster.js`) belong to `@portable/queue`. These are the rate-limit tests:
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |

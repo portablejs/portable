@@ -14,14 +14,14 @@ Test names below are `describe > test` in the conformance files: `decode.conform
 Options we leave out, and why, so the rows below can point here:
 
 - **Type conversion** (csv-parse `cast`, `cast_date`; papaparse `dynamicTyping`, `transform`): values stay strings. Map rows with `Streams.map` or `Array.prototype.map`.
-- **Row hooks and selection** (csv-parse `on_record`, `on_skip`, `objname`, `from`, `to`, `from_line`, `to_line`, `skip_records_with_error`, `skip_records_with_empty_values`; papaparse `preview`, `step`, `chunk`, `skipFirstNLines`, pause and resume): filter or stop reading the stream instead. Cancelling the reader stops the parse.
+- **Row hooks and selection** (csv-parse `on_record`, `on_skip`, `objname`, `from`, `to`, `from_line`, `to_line`, `skip_records_with_error`, `skip_records_with_empty_values`; papaparse `preview`, `step`, `chunk`, `skipFirstNLines`, pause, and resume): filter or stop reading the stream instead. Cancelling the reader stops the parse.
 - **Trimming** (csv-parse `trim`, `ltrim`, `rtrim`; papaparse `skipEmptyLines: 'greedy'`): under RFC 4180, spaces are part of the field. Trim in a map.
 - **Comments** (csv-parse `comment`, `comment_no_infix`; papaparse `comments`): not part of RFC 4180. Filter rows instead.
 - **Escape characters other than a doubled quote** (csv-parse `escape`; papaparse `escapeChar`): in RFC 4180, a quote is escaped by doubling it.
-- **Multi-character delimiters, record delimiters and quotes, and delimiter guessing** (csv-parse `delimiter` arrays, `record_delimiter`, `delimiter_auto`, `quote: '$$'`; papaparse `delimitersToGuess`, `newline`): `delimiter` and `quote` are one character, and CRLF, LF and CR always end a row.
+- **Multi-character delimiters, record delimiters, and quotes, and delimiter guessing** (csv-parse `delimiter` arrays, `record_delimiter`, `delimiter_auto`, `quote: '$$'`; papaparse `delimitersToGuess`, `newline`): `delimiter` and `quote` are one character, and CRLF, LF, and CR always end a row.
 - **Header renaming and grouping** (csv-parse `columns` functions and `false` entries, `group_columns_by_name`, `ignore_last_delimiters`; papaparse `transformHeader`): rename keys in a map, or pass `header` as an array.
 - **Parse metadata** (csv-parse `info`, `raw`, `info.*`; papaparse `meta`, `errors`, cursor positions): errors are thrown, and rows are plain arrays or objects.
-- **Node stream API** (events, `pipe`, `destroy`, `finished`, callbacks, `ResizableBuffer`, option normalization and snake_case options): `DecoderStream` is a `TransformStream`.
+- **Node stream API** (events, `pipe`, `destroy`, `finished`, callbacks, `ResizableBuffer`, option normalization, and snake_case options): `DecoderStream` is a `TransformStream`.
 - **Browser and network inputs** (papaparse `download`, `worker`, `File`, `beforeFirstChunk`): pass `fetch(url).body` or `file.stream()` to `DecoderStream`.
 
 ## csv-parse
@@ -30,7 +30,7 @@ Options we leave out, and why, so the rows below can point here:
 | --- | --- | --- |
 | api.arguments.js, api.arguments.ts (16) | `csv-parse > decodes a string`, `decodes bytes`; `DecoderStream` tests | Argument-count overloads of the Node API. `decode` takes input and options, and `DecoderStream` takes options. |
 | api.assert_error.ts (9) | skipped | Tests the suite's own assertion helper. |
-| api.error.ts (4) | skipped | Tests `CsvError` codes and context fields. Our errors are `InvalidInputError`, `TruncatedError` and `MaxLengthError`. |
+| api.error.ts (4) | skipped | Tests `CsvError` codes and context fields. Our errors are `InvalidInputError`, `TruncatedError`, and `MaxLengthError`. |
 | api.info.ts (4) | skipped | Parse metadata. |
 | api.stream.destroy.ts (3) | `DecoderStream > cancelling the output cancels the source` | |
 | api.stream.events.ts (7) | `csv-parse > fails the stream when the source fails`, `quote > throws InvalidInputError for text after a closing quote` | Node stream events. Errors fail the stream once. |
@@ -74,7 +74,7 @@ Options we leave out, and why, so the rows below can point here:
 | option.columns.ts: takes first line as argument, catch thrown errors | skipped | Header renaming. |
 | option.columns.ts: prototype replacement still reachable via columns path (#496) | `header > stores a __proto__ column as an own property` | |
 | option.comment.js, option.comment.ts, option.comment_no_infix.js, option.comment_no_infix.ts (15) | skipped | Comments. |
-| option.delimiter.js: validation; option.delimiter.ts: validation | `delimiter > rejects a delimiter that is empty, longer than one character, a line break or the quote` | |
+| option.delimiter.js: validation; option.delimiter.ts: validation | `delimiter > rejects a delimiter that is empty, longer than one character, a line break, or the quote` | |
 | option.delimiter.ts: default to comma, using default comma | `delimiter > defaults to a comma` | |
 | option.delimiter.ts: using tab | `delimiter > splits on a tab` | |
 | option.delimiter.ts: is compatible with buffer size, empty array create a single field, multiple chars …, using array of … (8) | skipped | Multi-character and multiple delimiters. |
@@ -156,7 +156,7 @@ Options we leave out, and why, so the rows below can point here:
 | option.escape_formulas.js, option.escape_formulas.ts (5) | `csv-stringify > escapeFormulas > …` | Unicode look-alike signs are not escaped, matching papaparse. |
 | option.header.js, option.header.ts (13) | `csv-stringify > header > …` | Nested columns are not supported. |
 | option.header_as_comment.ts (4) | skipped | Comments. |
-| option.quote.js, option.quote.ts (14) | `RFC 4180 > quotes only fields that hold the delimiter, a quote or a line break`, `csv-stringify > quote > …` | |
+| option.quote.js, option.quote.ts (14) | `RFC 4180 > quotes only fields that hold the delimiter, a quote, or a line break`, `csv-stringify > quote > …` | |
 | option.quote_record_delimiter.ts (9) | `known upstream issues > a lone LF or CR in a field is quoted with CRLF line breaks …` | A field with CR or LF is always quoted. |
 | option.quoted.ts, option.quoted_empty.ts, option.quoted_match.ts, option.quoted_string.ts (21) | skipped | No forced quoting. Only fields that need quotes get them, plus the one-empty-field row. |
 | option.record_delimiter.js, option.record_delimiter.ts (10) | `csv-stringify > newline > …` | Only `'\r\n'` and `'\n'`. |
@@ -280,10 +280,10 @@ Found by running each library on crafted input (`csv.oracle.test.ts` and a probe
 
 ## Oracle tests
 
-`csv.oracle.test.ts` compares `decode` and `DecoderStream` (random byte chunks) with csv-parse (`bom`, `relax_quotes` and `skip_empty_lines` set, which match RFC 4180 plus our defaults) and with papaparse (`skipEmptyLines`), on random rows built from delimiters, quotes, CR, LF, CRLF, spaces, tabs and multi-byte characters, plus csv-spectrum. It compares `encode` with csv-stringify (`\n` line breaks) and papaparse `unparse` (plus the final `\r\n`). Inputs where they disagree with RFC 4180 are left out: papaparse quotes fields with leading or trailing whitespace, and csv-stringify's custom record delimiters leave a lone LF bare.
+`csv.oracle.test.ts` compares `decode` and `DecoderStream` (random byte chunks) with csv-parse (`bom`, `relax_quotes`, and `skip_empty_lines` set, which match RFC 4180 plus our defaults) and with papaparse (`skipEmptyLines`), on random rows built from delimiters, quotes, CR, LF, CRLF, spaces, tabs, and multi-byte characters, plus csv-spectrum. It compares `encode` with csv-stringify (`\n` line breaks) and papaparse `unparse` (plus the final `\r\n`). Inputs where they disagree with RFC 4180 are left out: papaparse quotes fields with leading or trailing whitespace, and csv-stringify's custom record delimiters leave a lone LF bare.
 
 `csv.fuzz.oracle.test.ts` compares `decode` with csv-parse on rows that csv-stringify writes and on random CSV-like text, whenever csv-parse accepts the text and `decode` doesn't throw. The test passes all three line breaks to csv-parse as record delimiters, because without that option csv-parse uses the first line break it sees as the only delimiter. It leaves out text with a space or tab after a quote, because `decode` skips whitespace after a closing quote. The test also checks that csv-parse reads back every row `encode` writes.
 
 ## Benchmarks
 
-csv-parse's and papaparse's suites have no benchmarks in their test directories. `csv.bench.ts` compares one-shot and streaming decode and encode of 5,000 order rows with csv-parse, csv-stringify, papaparse and fast-csv, and fails if any is more than 25% faster.
+csv-parse's and papaparse's suites have no benchmarks in their test directories. `csv.bench.ts` compares one-shot and streaming decode and encode of 5,000 order rows with csv-parse, csv-stringify, papaparse, and fast-csv, and fails if any is more than 25% faster.

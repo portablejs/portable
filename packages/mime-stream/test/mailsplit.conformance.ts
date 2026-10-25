@@ -794,7 +794,7 @@ describe('mime-node', () => {
 });
 
 describe('message-joiner', () => {
-  test('joins chunks, bytes and text', async () => {
+  test('joins chunks, bytes, and text', async () => {
     const output = await toBytes(
       fromIterable<MimeStream.EncoderStream.Input>([
         { bytes: encode('Subject: test\r\n') },

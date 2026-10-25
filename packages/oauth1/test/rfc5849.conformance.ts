@@ -42,7 +42,7 @@ describe('RFC 5849 examples', () => {
   });
 
   // The RFC's base string has no oauth_version, which this package always sends, so it is added here.
-  test('§3.4.1: query, form body, duplicates, empty values and realm', async () => {
+  test('§3.4.1: query, form body, duplicates, empty values, and realm', async () => {
     const request = new Request(
       'http://example.com/request?b5=%3D%253D&a3=a&c%40=&a2=r%20b',
       form('c2&a3=2+q'),

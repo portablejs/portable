@@ -3,9 +3,10 @@ import { isInNetwork, parseCidr } from './cidr.js';
 
 /**
  * The special-purpose block an address belongs to, named after its entry in the IANA IPv4 and IPv6
- * Special-Purpose Address Registries. `'multicast'`, `'deprecatedSiteLocal'` and `'ipv4Translated'`
- * come from RFC 5771, RFC 3879 and RFC 2765. `'unicast'` is every other IPv4 address and every
- * other IPv6 address in `2000::/3`. `'reserved'` is the rest of the IPv6 space and `240.0.0.0/4`.
+ * Special-Purpose Address Registries. `'multicast'`, `'deprecatedSiteLocal'`, and
+ * `'ipv4Translated'` come from RFC 5771, RFC 3879, and RFC 2765. `'unicast'` is every other IPv4
+ * address and every other IPv6 address in `2000::/3`. `'reserved'` is the rest of the IPv6 space
+ * and `240.0.0.0/4`.
  */
 export type Range =
   | '6to4'

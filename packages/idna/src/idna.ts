@@ -5,7 +5,7 @@ import { InvalidInputError } from './errors.js';
 export declare namespace toAscii {
   type Options = {
     /**
-     * Apply the hostname rules of STD 3 and the DNS length limits: only `a-z`, `0-9` and `-` in a
+     * Apply the hostname rules of STD 3 and the DNS length limits: only `a-z`, `0-9`, and `-` in a
      * label, no `-` at either end of a label or in its third and fourth positions, and at most 63
      * characters in a label and 253 in the name. This is the URL Standard's `beStrict`.
      * @default false
@@ -17,8 +17,8 @@ export declare namespace toAscii {
 export declare namespace toUnicode {
   type Options = {
     /**
-     * Apply the hostname rules of STD 3: only `a-z`, `0-9` and `-` in a label, and no `-` at either
-     * end of a label or in its third and fourth positions.
+     * Apply the hostname rules of STD 3: only `a-z`, `0-9`, and `-` in a label, and no `-` at
+     * either end of a label or in its third and fourth positions.
      * @default false
      */
     strict?: boolean | undefined;

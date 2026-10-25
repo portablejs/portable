@@ -1,8 +1,8 @@
 # @portable/websockets
 
-A WebSocket that reconnects when the connection drops, read and written as a `ReadableStream` and a `WritableStream` that stay the same across reconnects. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+A WebSocket that reconnects when the connection drops. You read from a `ReadableStream` and write to a `WritableStream`, and both stay the same across reconnects. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [reconnecting-websocket](https://www.npmjs.com/package/reconnecting-websocket), [partysocket](https://www.npmjs.com/package/partysocket) and [websocket-ts](https://www.npmjs.com/package/websocket-ts).
+Replaces [reconnecting-websocket](https://www.npmjs.com/package/reconnecting-websocket), [partysocket](https://www.npmjs.com/package/partysocket), and [websocket-ts](https://www.npmjs.com/package/websocket-ts).
 
 ```sh
 npm install @portable/websockets
@@ -79,10 +79,10 @@ By default, close codes 1000 (normal), 1002 (protocol error), 1003 (unsupported 
 How the streams end:
 
 - `writable.close()` waits for queued writes, closes the socket with 1000, and ends `readable` once the close completes.
-- `readable.cancel()`, `writable.abort()` and `signal` close the socket with 1000 and fail the other stream.
-- `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
-- In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
-- A final close with 1000, 1001 or 1005 ends `readable`. Any other final close fails it with a `CloseError` that stores `code` and `reason`. `writable` fails with the `CloseError` in both cases.
+- `readable.cancel()`, `writable.abort()`, and `signal` close the socket with 1000 and fail the other stream.
+- `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting, and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
+- In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
+- A final close with 1000, 1001, or 1005 ends `readable`. Any other final close fails it with a `CloseError` that stores `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
 ### Messages can be lost during a drop
 
@@ -96,7 +96,7 @@ A browser can't pause reading from a WebSocket: messages arrive whether or not a
 
 ## `fromSocket(socket, options)`
 
-Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark` and `maxBuffered`, as above. `readable` ends when the socket closes with 1000, 1001 or 1005 and fails with a `CloseError` for other codes.
+Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark`, and `maxBuffered`, as above. `readable` ends when the socket closes with 1000, 1001, or 1005 and fails with a `CloseError` for other codes.
 
 ## Errors
 
@@ -112,13 +112,13 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 | Type | Description |
 | --- | --- |
-| `WebSockets.Duplex` | `{ readable, writable }`, what `connect` and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
+| `WebSockets.Duplex` | `{ readable, writable }`, what `connect`, and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
 | `WebSockets.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
 | `WebSockets.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
-## Why use this over reconnecting-websocket, partysocket and websocket-ts
+## Why use this over reconnecting-websocket, partysocket, and websocket-ts
 
 All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as `@portable/jsonl`'s `DecoderStream`, and writes wait instead of queuing without a limit.
 
@@ -165,6 +165,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - reconnecting-websocket's `reconnect()` has no equivalent. Use `heartbeat` to replace a dead connection, or close the connection and call `connect` again.
 - Binary messages always arrive as `Uint8Array`, as if `binaryType` were `'arraybuffer'`, and the option can't be changed.
 - websocket-ts's `RingQueue` has no equivalent. Writes wait at `maxQueued` instead of dropping the oldest message.
-- A close with 1000, 1002, 1003, 1007, 1008, 1009 or 1010 from the server is final unless `reconnectIf` returns `true`. reconnecting-websocket and partysocket reconnect after any close they didn't start.
+- A close with 1000, 1002, 1003, 1007, 1008, 1009, or 1010 from the server is final unless `reconnectIf` returns `true`. reconnecting-websocket and partysocket reconnect after any close they didn't start.
 - The first connection opens at once. reconnecting-websocket waited for the reconnect delay before it ([#91](https://github.com/pladaria/reconnecting-websocket/issues/91)).
 - The attempt count resets when `open` finishes. reconnecting-websocket resets it only after the connection has stayed open for `minUptime`.

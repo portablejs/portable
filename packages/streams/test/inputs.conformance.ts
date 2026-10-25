@@ -21,7 +21,7 @@ describe('byte inputs', () => {
       );
     });
 
-    test(`toBytes, toBlob and toText read a ${form} chunk`, async () => {
+    test(`toBytes, toBlob, and toText read a ${form} chunk`, async () => {
       const chunk = () => streamOf([toByteForm(bytes, form)]);
       expect(await Streams.toBytes(chunk())).toEqual(bytes);
       expect(new Uint8Array(await (await Streams.toBlob(chunk())).arrayBuffer())).toEqual(bytes);

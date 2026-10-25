@@ -100,7 +100,7 @@ describe('map', () => {
     expect(await Queue.map(fromArray([]), fail)).toEqual([]);
   });
 
-  test('maps any iterable: a Set, a Map, a string and an array iterator', async () => {
+  test('maps any iterable: a Set, a Map, a string, and an array iterator', async () => {
     const double = (n: number) => n * 2;
     expect(await Queue.map(new Set([1, 2, 3]), double, { concurrency: 2 })).toEqual([2, 4, 6]);
     expect(await Queue.map([1, 2, 3].values(), double)).toEqual([2, 4, 6]);

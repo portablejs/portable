@@ -48,7 +48,7 @@ const block = /-----BEGIN ([A-Z0-9 ]+)-----((?:[^-]|-(?!----))*)-----END \1-----
  * Imports a PEM private or public key. WebCrypto imports only DER, and only as PKCS #8 or
  * SubjectPublicKeyInfo, so `importPem` decodes the base64 and wraps a PKCS #1 `RSA PRIVATE KEY`
  * or `RSA PUBLIC KEY`, the form `openssl genrsa` writes, in the structure WebCrypto takes. It
- * reads the first `PRIVATE KEY`, `RSA PRIVATE KEY`, `PUBLIC KEY` or `RSA PUBLIC KEY` block and
+ * reads the first `PRIVATE KEY`, `RSA PRIVATE KEY`, `PUBLIC KEY`, or `RSA PUBLIC KEY` block and
  * skips other blocks, such as a certificate before the key.
  *
  * @example

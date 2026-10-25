@@ -68,7 +68,7 @@ export function prng(seed: number): () => number {
   };
 }
 
-/** The PEM fixtures of mailauth's tests: 2048-bit RSA, 512-bit RSA and Ed25519. */
+/** The PEM fixtures of mailauth's tests: 2048-bit RSA, 512-bit RSA, and Ed25519. */
 export const keys = {
   rsa: 'rsa',
   small: 'small',
@@ -141,7 +141,7 @@ export async function importPrivate(
   );
 }
 
-// A DKIM signer written from RFC 6376 sections 3.4, 3.5 and 3.7 and RFC 8463 alone, ported from
+// A DKIM signer written from RFC 6376 sections 3.4, 3.5, and 3.7 and RFC 8463 alone, ported from
 // mailauth's test/helpers/dkim-reference.js. It shares no code with the package, so a bug there
 // can't be cancelled out by the same bug here, and it builds the signature field from a literal
 // tag list, so a test can use any tag layout, including invalid ones. Text is binary text.

@@ -57,7 +57,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | iterations of a wrong type | `hash > rejects iterations outside 1 to 2^32 - 1` | `NaN` and `1.5`. |
 | any TypedArray works for password and salt | `pbkdf2 fixtures` | Only `Uint8Array`. Other views are passed as their bytes. |
 | invalid digest `md55`, `%` | `stored hash format > throws UnsupportedError for ...` | |
-| every digest from `getHashes()` | skipped | SHA-1, SHA-256 and SHA-512 only. |
+| every digest from `getHashes()` | skipped | SHA-1, SHA-256, and SHA-512 only. |
 
 ## passlib
 

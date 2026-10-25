@@ -6,7 +6,7 @@ description: Read and write WebSockets that reconnect, server-sent events, and t
 
 A long-lived connection can drop, and a slow reader must not make the sender buffer without limit. `websockets` and `sse` reconnect when the connection drops and give you the connection as streams, so backpressure and cancellation work as they do for a `fetch` body.
 
-- [`websockets`](/packages/websockets) is a WebSocket that reconnects, read and written as streams.
+- [`websockets`](/packages/websockets) is a WebSocket that reconnects, and that you read and write as streams.
 - [`sse`](/packages/sse) reads, writes, and reconnects server-sent event streams, as `EventSource` does.
 - [`rpc`](/packages/rpc) makes typed JSON-RPC calls between workers, windows, servers, and browsers.
 - [`web-push`](/packages/web-push) sends notifications to a site's service worker, even when no page of the site is open.

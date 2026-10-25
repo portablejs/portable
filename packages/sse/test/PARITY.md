@@ -16,7 +16,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 - `event` is `'message'` when the block has no `event` field, as in `MessageEvent.type`. eventsource-parser gives `undefined`.
 - `id` is the last event ID, as in `MessageEvent.lastEventId`: each event has the value of the most recent `id` field, so an `id` from a block without data applies to later events. eventsource-parser reports an `id` only on the block that set it, plus `onId`. The oracle test converts its output with `onId`.
 - `retry` is reported on the next event, because a `retry` field usually comes in a block without data. eventsource-parser has `onRetry` instead.
-- No `onComment`, `onError` or `reset()`. Comments and unknown fields are ignored, as `EventSource` ignores them.
+- No `onComment`, `onError`, or `reset()`. Comments and unknown fields are ignored, as `EventSource` ignores them.
 - `maxLength` applies to every line and to the `data` of one event, so the same input fails the same way however it is chunked. eventsource-parser's `maxBufferSize` counts only the unfinished line and the data, and drops lines that can't become a field without counting them.
 - A rejected response is left unread on `ResponseError.response`, so you can read the error body. The `eventsource` polyfill aborts it.
 - `connect` takes `attempts`, which limits failed attempts in a row as `WebSockets.connect` and `Timers.retry` do (C > when to stop > attempts …). `EventSource` and the `eventsource` polyfill reconnect without a limit, and fetch-event-source stops only when `onerror` throws.
@@ -49,7 +49,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 | stream using line feeds | D > eventsource-parser > splits lines on LF | |
 | stream using carriage returns and line feeds | D > eventsource-parser > splits lines on CRLF | |
 | stream with varying odd uses of comments | D > eventsource-parser > ignores comments of every shape | |
-| stream with even more odd uses of comments | D > eventsource-parser > ignores comments mixed with CR, CRLF and NUL, and drops an unfinished event | |
+| stream with even more odd uses of comments | D > eventsource-parser > ignores comments mixed with CR, CRLF, and NUL, and drops an unfinished event | |
 | stream with empty `event` field | D > eventsource-parser > an empty event field gives the default type | |
 | stream with empty `retry` field | D > eventsource-parser > ignores an empty retry field | |
 | stream with oddly shaped data field | D > eventsource-parser > reads data fields with and without a value | |
@@ -102,7 +102,7 @@ Test names below are `file > describe > test`. `D` is `DecoderStream.conformance
 
 ## eventsource
 
-Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventListener`, `target`, the constants, the fetch-override symbol, `withCredentials` and `url` validation) don't apply: `connect` returns a `ReadableStream`, not an `EventTarget`. The rows below say where the behavior behind each one is tested.
+Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventListener`, `target`, the constants, the fetch-override symbol, `withCredentials`, and `url` validation) don't apply: `connect` returns a `ReadableStream`, not an `EventTarget`. The rows below say where the behavior behind each one is tested.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -110,14 +110,14 @@ Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventLis
 | dispatches every buffered $name event while open | C > reconnecting > reconnects when the response ends, with the last event ID | |
 | can connect, receive message, manually disconnect | C > connect > reads events from the response | |
 | `target` on open, message and error events is the EventSource instance | skipped | No events on a target. |
-| can connect using URL string only | C > connect > accepts a URL string, a URL and a Request | |
+| can connect using URL string only | C > connect > accepts a URL string, a URL, and a Request | |
 | passes `no-store` to `fetch`, avoiding cache | skipped | Deliberately different, see above. |
 | can handle unicode data correctly | D > eventsource-parser > reads multi-byte text | |
 | can use `es.onopen` / `es.onerror` / `es.onmessage` ..., nulling it unsubscribes (4 tests) | skipped | No handlers. |
 | `es.onmessage` does not fire for non-`message` events | D > WPT eventsource > format-field-event | Filter on `event` instead. |
 | can redeclare `es.onopen` / `es.onerror` / `es.onmessage` (3 tests) | skipped | No handlers. |
 | on-handlers fire in registration order relative to `addEventListener` | skipped | No handlers. |
-| message event contains correct properties | C > connect > reads events from the response | `origin`, `timeStamp` and `cancelable` belong to DOM events. |
+| message event contains correct properties | C > connect > reads events from the response | `origin`, `timeStamp`, and `cancelable` belong to DOM events. |
 | will reconnect with last received message id if server disconnects | C > reconnecting > reconnects when the response ends, with the last event ID | |
 | message event `lastEventId` persists when a later event omits the `id` field | C > reconnecting > the last event ID persists across connections, D > WPT eventsource > format-field-id | |
 | an ID-only chunk sets `lastEventId` on a later message without an ID | D > eventsource-parser > an id from a block without data applies to later events | |
@@ -130,7 +130,7 @@ Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventLis
 | will close stream on HTTP 204 | C > when to stop > a 204 response closes the stream without reconnecting | |
 | throws if `url` is not a string/url | skipped | TypeScript rejects it, and `new Request` throws a `TypeError` for a bad URL. |
 | can request cross-origin | skipped | CORS is up to `fetch`. |
-| redirects: handles ${status} to same origin | C > connect > sends the method, headers and body of the request on every attempt | `fetch` follows redirects, and every attempt starts from the original request. |
+| redirects: handles ${status} to same origin | C > connect > sends the method, headers, and body of the request on every attempt | `fetch` follows redirects, and every attempt starts from the original request. |
 | redirects: handles ${status} to different origin | skipped | `fetch` strips `Authorization` on a cross-origin redirect. Nothing here changes that. |
 | can use the `withCredentials` option to control cookies | skipped | Set `credentials` on the `Request`. |
 | validates the event stream MIME type: $contentType | C > when to stop > checks the content type %j, C > when to stop > the content type with a non-breaking space is rejected | |
@@ -167,7 +167,7 @@ Tests of the `EventSource` interface (`readyState`, `on*` handlers, `addEventLis
 
 ## better-sse
 
-Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 adapters, header handling, state, batching and the polyfill query parameters (`Session.test.ts`, `Channel.test.ts`, `createResponse.test.ts`, `createSession.test.ts`, `createChannel.test.ts`, `createEventBuffer.test.ts`, `adapters/Connection.test.ts`, 75 tests) are a server framework, which is out of scope. Their SSE output is covered by the rows below: the keep-alive comment by `writes a comment`, the initial retry by `writes a retry time`, and `push` by `writes every field of one message`.
+Only the event writer applies. Sessions, channels, the adapters for Node `http` and HTTP/2, header handling, state, batching, and the polyfill query parameters (`Session.test.ts`, `Channel.test.ts`, `createResponse.test.ts`, `createSession.test.ts`, `createChannel.test.ts`, `createEventBuffer.test.ts`, `adapters/Connection.test.ts`, 75 tests) are a server framework, which is out of scope. Their SSE output is covered by the rows below: the keep-alive comment by `writes a comment`, the initial retry by `writes a retry time`, and `push` by `writes every field of one message`.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -194,7 +194,7 @@ Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 ad
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| Check streamSSE Response | E > hono streamSSE > writes event, data lines and id | You set the response headers yourself. |
+| Check streamSSE Response | E > hono streamSSE > writes event, data lines, and id | You set the response headers yourself. |
 | Check streamSSE Response if aborted by client | E > known upstream issues > cancelling the output cancels the source, as hono’s onAbort reports | |
 | Check streamSSE Response if aborted by abort signal | E > encode > the signal fails the stream with its reason and cancels the source | |
 | Should include retry in the SSE message | E > hono streamSSE > writes retry | |
@@ -211,7 +211,7 @@ Only the event writer applies. Sessions, channels, the Node `http` and HTTP/2 ad
 
 ## WPT eventsource
 
-Tests of the `EventSource` object, document realms, workers and browser networking (`eventsource-constructor-*`, `eventsource-eventtarget`, `eventsource-onmessage-*`, `eventsource-prototype`, `eventsource-url`, `eventsource-cross-origin*`, `request-credentials`, `request-redirect`, `eventsource-request-cancellation`, `dedicated-worker/`, `shared-worker/`) don't apply outside a browser's `EventSource`.
+Tests of the `EventSource` object, document realms, workers, and browser networking (`eventsource-constructor-*`, `eventsource-eventtarget`, `eventsource-onmessage-*`, `eventsource-prototype`, `eventsource-url`, `eventsource-cross-origin*`, `request-credentials`, `request-redirect`, `eventsource-request-cancellation`, `dedicated-worker/`, `shared-worker/`) don't apply outside a browser's `EventSource`.
 
 | Upstream test | Covered by |
 | --- | --- |
@@ -249,7 +249,7 @@ Tests of the `EventSource` object, document realms, workers and browser networki
 | --- | --- | --- |
 | eventsource #326: events dropped with mixed CRLF and LF | Each line break is found separately. | D > known upstream issues > eventsource #326: mixed CRLF and LF line breaks drop no events |
 | eventsource #291: `Last-Event-ID` not sent on reconnect | Sent on every reconnect after an ID arrives, and removed after an empty `id`. | C > reconnecting > reconnects when the response ends, with the last event ID, C > reconnecting > an empty id field stops sending Last-Event-ID |
-| eventsource #316: no POST | Any `Request` is accepted and replayed. | C > connect > sends the method, headers and body of the request on every attempt |
+| eventsource #316: no POST | Any `Request` is accepted and replayed. | C > connect > sends the method, headers, and body of the request on every attempt |
 | eventsource-parser #17: a CRLF split across chunks gives two events | A CR at the end of a chunk skips an LF at the start of the next. | D > eventsource-parser > a CRLF split across chunks is one line break |
 | eventsource-parser #11, #13: empty data lines lost | Data lines are joined with LF. | D > known upstream issues > eventsource-parser #11 and #13: empty data lines keep their line breaks |
 | eventsource-parser #19: quadratic time on a large line in small chunks | An unfinished line is kept as a list of chunks and joined once. | D > known upstream issues > eventsource-parser #19: a large line in many small chunks is read in linear time |
@@ -267,4 +267,4 @@ Tests of the `EventSource` object, document realms, workers and browser networki
 
 ## Benchmarks
 
-eventsource-parser's `bench/parse.bench.ts` runs mitata over its fixture generators. `DecoderStream.bench.ts` compares `DecoderStream` with `TextDecoderStream` plus `EventSourceParserStream`, and a hand-written decoder, on LLM-style events, named events, small chunks and a 1 MB line. It also compares `decode` with `createParser().feed` on the whole text. Each stream benchmark fails if eventsource-parser is more than 25% faster, and the `decode` comparison has no such check.
+eventsource-parser's `bench/parse.bench.ts` runs mitata over its fixture generators. `DecoderStream.bench.ts` compares `DecoderStream` with `TextDecoderStream` plus `EventSourceParserStream`, and a hand-written decoder, on LLM-style events, named events, small chunks, and a 1 MB line. It also compares `decode` with `createParser().feed` on the whole text. Each stream benchmark fails if eventsource-parser is more than 25% faster, and the `decode` comparison has no such check.

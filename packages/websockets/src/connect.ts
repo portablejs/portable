@@ -44,7 +44,7 @@ export declare namespace connect {
      * Called when the connection closes without the client calling `close`, with the close and
      * `{ attempt }`, the number of failures in a row including this one. It returns whether
      * `connect` reconnects. By default, codes
-     * 1000, 1002, 1003, 1007, 1008, 1009 and 1010 are final and every other code reconnects. If it
+     * 1000, 1002, 1003, 1007, 1008, 1009, and 1010 are final and every other code reconnects. If it
      * throws, both streams fail with that error.
      */
     reconnectIf?:

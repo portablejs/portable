@@ -1,8 +1,8 @@
 # Test parity
 
-`@portable/streams` is designed fresh, so these tables map each upstream test to our test for the same case, or give the reason it doesn't apply. Test names are `describe > test` in `collect.conformance.ts`, `combine.conformance.ts`, `bridge.conformance.ts` and `streams.oracle.test.ts`. `fallback.test.ts` runs the three conformance files again in Node with `ReadableStream.from`, `values()` and `[Symbol.asyncIterator]` deleted, as in Chromium 141.
+`@portable/streams` is designed fresh, so these tables map each upstream test to our test for the same case, or give the reason it doesn't apply. Test names are `describe > test` in `collect.conformance.ts`, `combine.conformance.ts`, `bridge.conformance.ts`, and `streams.oracle.test.ts`. `fallback.test.ts` runs the three conformance files again in Node with `ReadableStream.from`, `values()`, and `[Symbol.asyncIterator]` deleted, as in Chromium 141.
 
-Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/sindresorhus/get-stream/tree/main/test), [merge2 1.4.1](https://github.com/teambition/merge2/blob/master/test/index.js), [merge-stream 2.0.0](https://github.com/grncdr/merge-stream/blob/master/test.js), [concat-stream 2.0.0](https://github.com/max-mapper/concat-stream/tree/master/test), [through2 5.0.11](https://github.com/rvagg/through2/tree/master/test), [raw-body 4.0.0](https://github.com/stream-utils/raw-body/tree/master/test), [stream-to-array 2.3.0](https://github.com/stream-utils/stream-to-array/blob/master/test/index.js) and [bl 7.0.12](https://github.com/rvagg/bl/tree/master/test). The get-stream fixtures (`unicorn\n` in each chunk type) are rebuilt in `collect.conformance.ts` from get-stream's `test/fixtures/index.js` (MIT, Sindre Sorhus).
+Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/sindresorhus/get-stream/tree/main/test), [merge2 1.4.1](https://github.com/teambition/merge2/blob/master/test/index.js), [merge-stream 2.0.0](https://github.com/grncdr/merge-stream/blob/master/test.js), [concat-stream 2.0.0](https://github.com/max-mapper/concat-stream/tree/master/test), [through2 5.0.11](https://github.com/rvagg/through2/tree/master/test), [raw-body 4.0.0](https://github.com/stream-utils/raw-body/tree/master/test), [stream-to-array 2.3.0](https://github.com/stream-utils/stream-to-array/blob/master/test/index.js), and [bl 7.0.12](https://github.com/rvagg/bl/tree/master/test). The get-stream fixtures (`unicorn\n` in each chunk type) are rebuilt in `collect.conformance.ts` from get-stream's `test/fixtures/index.js` (MIT, Sindre Sorhus).
 
 ## API changes
 
@@ -24,7 +24,7 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 | --- | --- | --- |
 | `contents.js` works with async iterable | `get-stream: sources > reads an async iterable` | |
 | `contents.js` async iterable .return() is called on error, but not .throw() | `get-stream: sources > calls an async iterable's return() on error, but not throw()` | |
-| `contents.js` get stream with mixed chunk types | `get-stream: sources > reads mixed chunk types` | Strings, `Uint8Array` and a subclass. Other views are rejected. |
+| `contents.js` get stream with mixed chunk types | `get-stream: sources > reads mixed chunk types` | Strings, `Uint8Array`, and a subclass. Other views are rejected. |
 | `contents.js` getStream should not affect additional listeners | doesn't apply | A web stream has one reader at a time, and Node `data` listeners are Node stream internals. |
 | `contents.js` set error.bufferedData when stream errors (×4: Error, string, null, undefined) | `get-stream: sources > rejects with the source's error when it throws …` (×4) | We reject with the thrown value unchanged and don't attach `bufferedData`. |
 | `contents.js` handles infinite stream | `get-stream: sources > stops an infinite source at maxBytes` | |
@@ -102,7 +102,7 @@ Upstream suites, read at these versions: [get-stream 9.0.1](https://github.com/s
 
 ## raw-body (limit handling)
 
-Only the web stream suite applies. `index.spec.ts`, `flowing.spec.ts`, `http.spec.ts`, `http2.spec.ts` and `native.spec.ts` test Node streams, HTTP requests, callbacks, `length`, string limits like `'1kb'`, iconv decoders and AsyncLocalStorage, none of which this package has. Their limit cases (limit exceeded, limit as the exact size, no limit) are the same as the web cases below.
+Only the web stream suite applies. `index.spec.ts`, `flowing.spec.ts`, `http.spec.ts`, `http2.spec.ts`, and `native.spec.ts` test Node streams, HTTP requests, callbacks, `length`, string limits like `'1kb'`, iconv decoders, and AsyncLocalStorage, none of which this package has. Their limit cases (limit exceeded, limit as the exact size, no limit) are the same as the web cases below.
 
 | Upstream test (`webstream.spec.ts`) | Covered by | Notes |
 | --- | --- | --- |
@@ -148,7 +148,7 @@ Only the web stream suite applies. `index.spec.ts`, `flowing.spec.ts`, `http.spe
 
 ## bl
 
-bl's tests are almost all about `BufferList`, a random-access list of buffers (`get`, `slice`, `shallowSlice`, `copy`, `indexOf`, `readUInt*`, `append`, `prepend`, `consume`, `duplicate`, `isBufferList`, conversions). This package only replaces bl's use as a collector, `new BufferListStream((err, data) => ...)`. The `BufferList` tests in `test.js`, `indexOf.js`, `convert.js` and `isBufferList.js` don't apply.
+bl's tests are almost all about `BufferList`, a random-access list of buffers (`get`, `slice`, `shallowSlice`, `copy`, `indexOf`, `readUInt*`, `append`, `prepend`, `consume`, `duplicate`, `isBufferList`, conversions). This package only replaces bl's use as a collector, `new BufferListStream((err, data) => ...)`. The `BufferList` tests in `test.js`, `indexOf.js`, `convert.js`, and `isBufferList.js` don't apply.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -186,7 +186,7 @@ The oracle tests compare `concat` with `merge2(a, b, c)`, `merge` with `merge2([
 
 ## through2
 
-The map and filter cases map to `map`, `filter`, `tap` and `batch`, and stateful cases map to `transform`.
+The map and filter cases map to `map`, `filter`, `tap`, and `batch`, and stateful cases map to `transform`.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -232,7 +232,7 @@ The map and filter cases map to `map`, `filter`, `tap` and `batch`, and stateful
 | raw-body `webstream.spec.ts` "non-byte chunks": an `ArrayBuffer` had no `.length`, which made the limit `NaN` and turned it off. | Only `Uint8Array` and `string` chunks are counted, and anything else is a `TypeError`. | `raw-body: web streams > rejects an ArrayBuffer chunk instead of miscounting it` |
 | [merge-stream #26](https://github.com/grncdr/merge-stream/issues/26): never ended with no sources. | `merge()` and `concat()` with no sources close at once. | `merge > with no sources is empty`, `concat > with no sources is empty` |
 | [merge-stream #13, #24](https://github.com/grncdr/merge-stream/issues/24), [merge2 #7](https://github.com/teambition/merge2/issues/7): errors were not propagated. | An error in any source errors the output and cancels the other sources. | `merge-stream > propagates errors`, `concat > an error in one source cancels the sources not yet read` |
-| [merge-stream #28](https://github.com/grncdr/merge-stream/issues/28), [merge2 #25](https://github.com/teambition/merge2/issues/25): output order surprised users. | `concat` keeps source order, and `merge` is documented to pass chunks on in arrival order. | `concat > joins streams, iterables and async iterables in order`, `merge > passes chunks on in the order they arrive` |
+| [merge-stream #28](https://github.com/grncdr/merge-stream/issues/28), [merge2 #25](https://github.com/teambition/merge2/issues/25): output order surprised users. | `concat` keeps source order, and `merge` is documented to pass chunks on in arrival order. | `concat > joins streams, iterables, and async iterables in order`, `merge > passes chunks on in the order they arrive` |
 | through2's async-generator transform needed Node `drain` and a queue of 16 chunks for backpressure. | `transform` pulls one output per read, and reads the input only as fast as the generator consumes it. | `through2: web > asyncgenWritableBackpressure`, `> asyncgenReaderBackpressure` |
 
 ## Benchmarks

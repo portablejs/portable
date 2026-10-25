@@ -1,6 +1,6 @@
 {
   "name": "@portable/webhooks",
-  "description": "Verify and sign Standard Webhooks, Stripe, GitHub and Slack webhooks, or any HMAC-SHA256 sender, in any JavaScript runtime.",
+  "description": "Verify and sign Standard Webhooks, Stripe, GitHub, and Slack webhooks, or any HMAC-SHA256 sender, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

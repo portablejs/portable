@@ -1,6 +1,6 @@
 # @portable/sse
 
-Reads, writes and reconnects server-sent event streams (`text/event-stream`). Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Reads, writes, and reconnects server-sent event streams (`text/event-stream`). Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [eventsource-parser](https://www.npmjs.com/package/eventsource-parser), the [eventsource](https://www.npmjs.com/package/eventsource) polyfill, [@microsoft/fetch-event-source](https://www.npmjs.com/package/@microsoft/fetch-event-source), and the event writers in [better-sse](https://www.npmjs.com/package/better-sse) and [hono's `streamSSE`](https://hono.dev/docs/helpers/streaming#streamsse).
 
@@ -23,7 +23,7 @@ for await (const event of Streams.toAsyncIterable(events)) {
 
 `Streams.toAsyncIterable` from `@portable/streams` iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const event of events)` also works.
 
-Keep a stream open the way `EventSource` does, with your own method, headers and body:
+Keep a stream open the way `EventSource` does, with your own method, headers, and body:
 
 ```ts
 const events = Sse.connect(new Request('https://example.com/feed', { headers: { authorization } }), {
@@ -55,7 +55,7 @@ A block without a `data` field is not an event, but its `id` and `retry` still a
 
 ### `new Sse.DecoderStream(options)` and `Sse.decode(input, options)`
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, Sse.Event>`. `decode` reads a complete body, as a string or bytes, into an array. Both follow the [WHATWG event stream rules](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation): bytes are UTF-8, one leading BOM is skipped, CR, LF and CRLF all end a line, comments and unknown fields are ignored, an `id` containing NUL is ignored, `retry` is read only when it is all ASCII digits, and an event without its closing blank line is dropped when the input ends.
+`DecoderStream` is a `TransformStream<Uint8Array | string, Sse.Event>`. `decode` reads a complete body, as a string or bytes, into an array. Both follow the [WHATWG event stream rules](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation): bytes are UTF-8, one leading BOM is skipped, CR, LF, and CRLF all end a line, comments, and unknown fields are ignored, an `id` containing NUL is ignored, `retry` is read only when it is all ASCII digits, and an event without its closing blank line is dropped when the input ends.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -64,16 +64,16 @@ A block without a `data` field is not an event, but its `id` and `retry` still a
 
 ### `new Sse.EncoderStream(options)` and `Sse.encode(message)`
 
-`EncoderStream` is a `TransformStream<Sse.Message, Uint8Array>`. `encode` returns one message as a string. A message has optional `event`, `data`, `id`, `retry` and `comment` fields, so a decoded `Sse.Event` can be written back.
+`EncoderStream` is a `TransformStream<Sse.Message, Uint8Array>`. `encode` returns one message as a string. A message has optional `event`, `data`, `id`, `retry`, and `comment` fields, so a decoded `Sse.Event` can be written back.
 
 - Fields are written in the order `event`, `data`, `id`, `retry`, followed by the blank line that dispatches the event. A comment comes first and has no blank line, so `{ comment: '' }` is a keep-alive.
-- `data` is split on CR, LF and CRLF into `data` lines, so it arrives unchanged.
+- `data` is split on CR, LF, and CRLF into `data` lines, so it arrives unchanged.
 - A CR or LF in `event` or `id`, a NUL in `id`, or a `retry` that is not a non-negative integer throws `Sse.InvalidInputError`.
 - `EncoderStream` takes a `signal` option, as `DecoderStream` does.
 
 ### `Sse.connect(request, options)`
 
-Sends `request` (a `Request`, URL or string) with `fetch` and returns a `ReadableStream<Sse.Event>` that reconnects like `EventSource`:
+Sends `request` (a `Request`, URL, or string) with `fetch` and returns a `ReadableStream<Sse.Event>` that reconnects like `EventSource`:
 
 - It adds `Accept: text/event-stream` unless the request has an `Accept` header.
 - A response other than 200, or one whose content type is not `text/event-stream`, fails the stream with `Sse.ResponseError`. The error's `response` is left unread so you can read the error body. A 204 closes the stream.
@@ -109,7 +109,7 @@ Sse.connect(request, {
 | `Sse.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
 | `Sse.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
-## Why use this over eventsource-parser, eventsource and fetch-event-source
+## Why use this over eventsource-parser, eventsource, and fetch-event-source
 
 eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source only connect, through callbacks, and neither returns a stream you can pipe or cancel. better-sse and hono only write. This package does all three with web streams and no dependencies outside `@portable/*`.
 

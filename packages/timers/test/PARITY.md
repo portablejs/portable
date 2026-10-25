@@ -1,8 +1,8 @@
 # Test parity
 
-Upstream suites: [p-retry 8.0.1 `test.js`](https://github.com/sindresorhus/p-retry/blob/main/test.js), [async-retry 1.3.3 `test/index.js`](https://github.com/vercel/async-retry/blob/master/test/index.js), [delay 7.0.0 `test.js`](https://github.com/sindresorhus/delay/blob/main/test.js), [p-wait-for 7.0.0 `test.js`](https://github.com/sindresorhus/p-wait-for/blob/main/test.js), the `lodash.debounce`, `lodash.throttle` and `lodash.debounce and lodash.throttle` modules of [lodash 4.17.21 `test/test.js`](https://github.com/lodash/lodash/blob/4.17.21/test/test.js), [throttle-debounce 5.0.2 `test/index.js`](https://github.com/niksy/throttle-debounce/blob/master/test/index.js) and [p-debounce 6.0.0 `test.js`](https://github.com/sindresorhus/p-debounce/blob/main/test.js). All are MIT. No fixtures were copied.
+Upstream suites: [p-retry 8.0.1 `test.js`](https://github.com/sindresorhus/p-retry/blob/main/test.js), [async-retry 1.3.3 `test/index.js`](https://github.com/vercel/async-retry/blob/master/test/index.js), [delay 7.0.0 `test.js`](https://github.com/sindresorhus/delay/blob/main/test.js), [p-wait-for 7.0.0 `test.js`](https://github.com/sindresorhus/p-wait-for/blob/main/test.js), the `lodash.debounce`, `lodash.throttle`, and `lodash.debounce and lodash.throttle` modules of [lodash 4.17.21 `test/test.js`](https://github.com/lodash/lodash/blob/4.17.21/test/test.js), [throttle-debounce 5.0.2 `test/index.js`](https://github.com/niksy/throttle-debounce/blob/master/test/index.js), and [p-debounce 6.0.0 `test.js`](https://github.com/sindresorhus/p-debounce/blob/main/test.js). All are MIT. No fixtures were copied.
 
-Our tests run under Vitest fake timers in Node and Chromium, so they check exact waits instead of the upstream suites' real-time margins. Test names below are `file > describe > test`, with files shortened to `sleep`, `retry`, `poll`, `listeners`, `debounce`, `throttle` and `oracle`. Each test in `debounce > lodash debounce and throttle` runs once for `debounce` and once for `throttle`, and its name starts with the function's name.
+Our tests run under Vitest fake timers in Node and Chromium, so they check exact waits instead of the upstream suites' real-time margins. Test names below are `file > describe > test`, with files shortened to `sleep`, `retry`, `poll`, `listeners`, `debounce`, `throttle`, and `oracle`. Each test in `debounce > lodash debounce and throttle` runs once for `debounce` and once for `throttle`, and its name starts with the function's name.
 
 ## p-retry
 
@@ -199,7 +199,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | --- | --- | --- |
 | should throttle a function | `throttle > lodash throttle > throttles a function` | |
 | subsequent calls should return the result of the first call | `throttle > lodash throttle > calls in the first window resolve with the leading result, later ones with the trailing` | Deliberate difference, as for `debounce`. |
-| should clear timeout when `func` is called | `debounce > lodash debounce and throttle > throttle leaves no timer after the wait, cancel or abort` | |
+| should clear timeout when `func` is called | `debounce > lodash debounce and throttle > throttle leaves no timer after the wait, cancel, or abort` | |
 | should not trigger a trailing call when invoked once | `throttle > lodash throttle > does not make a trailing call when called once` | |
 | should trigger a call when invoked repeatedly (with and without `leading: false`) | `throttle > lodash throttle > calls fn more than once when called repeatedly, leading: ${leading}` | |
 | should trigger a second throttled call as soon as possible | `throttle > lodash throttle > makes a second call as soon as possible with leading: false` | |
@@ -262,7 +262,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | AbortSignal works with before option | `debounce > signal > an abort after the leading call keeps the results it already gave` | Deliberate difference: calls dropped by the leading edge have already resolved with its result, so an abort can't reject them. p-debounce rejects them. |
 | multiple promises are cancelled together with AbortSignal | `debounce > signal > rejects waiting calls with signal.reason and never invokes fn` | |
 | function still works after AbortSignal cancellation | `debounce > signal > aborting one signal leaves another debounced function working` | Deliberate difference: an abort disables the function. `.cancel()` drops the waiting call and keeps the function working. |
-| abort listener is cleaned up after normal completion | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel or abort` | The abort listener is attached only while a timer runs. |
+| abort listener is cleaned up after normal completion | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel, or abort` | The abort listener is attached only while a timer runs. |
 | multiple abort signals are handled correctly without leaks | same | |
 | before option - all calls in window resolve to same leading value | `debounce > promises > leading without trailing resolves the burst with the leading result` | |
 | abort rejects all pending callers with consistent AbortError | `debounce > signal > rejects waiting calls with signal.reason and never invokes fn` | |
@@ -273,7 +273,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | handles rejected promises correctly | `debounce > promises > an async rejection rejects every call with the same error, and later calls work` | |
 | multiple callers all receive the same rejection | same | |
 | handles undefined and null arguments | `debounce > promises > passes the latest arguments through unchanged` | |
-| rapid abort signals do not cause memory leaks | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel or abort` | |
+| rapid abort signals do not cause memory leaks | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel, or abort` | |
 | before option with immediate abort | `debounce > signal > an already aborted signal disables the function` | |
 | mixed successful and failed calls | `debounce > promises > an async rejection rejects every call with the same error, and later calls work` | |
 | error handling - documents behavior for issue #7 | same | |
@@ -283,12 +283,12 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | before option with synchronous function | `debounce > lodash debounce > calls dropped by leading without trailing resolve with the leading result` | |
 | abort signal during different phases | `debounce > signal > an abort while an invocation runs does not reject its calls` | |
 | error propagation to all waiting promises | `debounce > promises > a sync throw rejects every call in the burst with that error` | |
-| wait parameter validation | `debounce > lodash debounce and throttle > rejects ms past the 32-bit setTimeout limit with a RangeError` | `RangeError` for `NaN`, `Infinity` and anything past 2³¹ − 1, where p-debounce throws a `TypeError`. A negative `ms` counts as 0 in both. |
+| wait parameter validation | `debounce > lodash debounce and throttle > rejects ms past the 32-bit setTimeout limit with a RangeError` | `RangeError` for `NaN`, `Infinity`, and anything past 2³¹ − 1, where p-debounce throws a `TypeError`. A negative `ms` counts as 0 in both. |
 | before option with errors in leading call | `debounce > promises > a sync throw on the leading call rejects the calls it dropped too` | |
 | complex argument passing | `debounce > promises > passes the latest arguments through unchanged` | |
 | maintains proper promise resolution order | `debounce > promises > every call in a burst resolves with the one invocation` | |
 | debounce with negative wait time | skipped | A negative `ms` counts as 0, which `does not call fn synchronously when ms is 0` covers. |
-| abort signal removed after successful execution | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel or abort` | |
+| abort signal removed after successful execution | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel, or abort` | |
 | multiple debounced functions with before option | `debounce > promises > two debounced functions do not share state` | |
 | debounce function returning undefined | `debounce > promises > passes the latest arguments through unchanged` | |
 | edge case: call during abort signal cleanup | `debounce > signal > rejects every later call with signal.reason` | |
@@ -309,7 +309,7 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 | context preservation in pDebounce | same | |
 | arguments preservation in complex scenarios | `debounce > promises > passes the latest arguments through unchanged` | |
 | abort signal during various execution phases | `debounce > signal > an abort while an invocation runs does not reject its calls` | |
-| memory cleanup after abort | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel or abort` | |
+| memory cleanup after abort | `debounce > lodash debounce and throttle > leaves no timer after the wait, cancel, or abort` | |
 | a later batch stays abortable when an earlier invocation finishes | `debounce > signal > an abort while an invocation runs does not reject its calls` | |
 | wait greater than the maximum timer delay throws instead of firing immediately | `debounce > lodash debounce and throttle > rejects ms past the 32-bit setTimeout limit with a RangeError` | |
 | before option does not retain the leading value after an abort | skipped | Needs `--expose-gc`, which the browser runs lack. The leading result is released when the wait ends or the function is cancelled. |
@@ -336,12 +336,12 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 
 `timers.oracle.test.ts` runs ours and the upstream library under fake timers and compares the gaps between attempts. Backoff without jitter matches p-retry and async-retry with `randomize: false` within 1 ms on 50 random settings (p-retry rounds each delay). Full jitter stays between 0 and p-retry's delay. `poll` checks at the same moments as p-wait-for, and `sleep` resolves at the same moment as delay, including past 2³¹ ms. The p-wait-for timeout comparison runs on real timers, because fake timers can't control `AbortSignal.timeout`.
 
-`debounce.oracle.test.ts` runs seeded random schedules of calls, `flush` and `cancel` against ours and lodash 4.18 under fake timers, and compares the time and argument of every invocation. It covers `ms` of 0, 10, 32 and 100, seven option sets for `debounce` and three for `throttle`, and they match exactly. The same schedules match lodash.debounce and lodash.throttle 4.x where `maxWait` is at least `ms`. Against p-debounce, every call resolves with the same value, with `before` on and off.
+`debounce.oracle.test.ts` runs seeded random schedules of calls, `flush`, and `cancel` against ours and lodash 4.18 under fake timers, and compares the time and argument of every invocation. It covers `ms` of 0, 10, 32, and 100, seven option sets for `debounce` and three for `throttle`, and they match exactly. The same schedules match lodash.debounce and lodash.throttle 4.x where `maxWait` is at least `ms`. Against p-debounce, every call resolves with the same value, with `before` on and off.
 
-`debounce.fuzz.oracle.test.ts` runs the same comparison with fast-check. Each run picks an `ms` up to 100 and random `leading`, `trailing` and `maxWait` settings, and `fc.commands` generates a sequence of calls, `flush`, `cancel` and clock advances. After each step the test checks that both functions have made the same invocations. Its first runs found that our `flush` started a new window, so `throttle(fn, 10)` called again 5 ms after a flush ran at 15, while lodash counts the window from the flushed invocation and runs it at 10. `flush` now keeps the window, and the conformance tests under `flush keeps the maxWait window` check those cases.
+`debounce.fuzz.oracle.test.ts` runs the same comparison with fast-check. Each run picks an `ms` up to 100 and random `leading`, `trailing`, and `maxWait` settings, and `fc.commands` generates a sequence of calls, `flush`, `cancel`, and clock advances. After each step the test checks that both functions have made the same invocations. Its first runs found that our `flush` started a new window, so `throttle(fn, 10)` called again 5 ms after a flush ran at 15, while lodash counts the window from the flushed invocation and runs it at 10. `flush` now keeps the window, and the conformance tests under `flush keeps the maxWait window` check those cases.
 
 ## Benchmarks
 
-None of the upstream packages has a benchmark. `retry.bench.ts` measures overhead per attempt: ten attempts with no delay, against p-retry with `minTimeout: 0`, async-retry and a plain try/catch loop, and again with a `signal` against p-retry. It fails if p-retry or async-retry is more than 25% faster. `poll.bench.ts` compares `poll` with p-wait-for, and `sleep` with delay and `setTimeout`, and fails if p-wait-for or delay is more than 25% faster.
+None of the upstream packages has a benchmark. `retry.bench.ts` measures overhead per attempt: ten attempts with no delay, against p-retry with `minTimeout: 0`, async-retry, and a plain try/catch loop, and again with a `signal` against p-retry. It fails if p-retry or async-retry is more than 25% faster. `poll.bench.ts` compares `poll` with p-wait-for, and `sleep` with delay and `setTimeout`, and fails if p-wait-for or delay is more than 25% faster.
 
-`debounce.bench.ts` measures a burst of 1000 calls followed by `flush`, against lodash.debounce, lodash.throttle, throttle-debounce and p-debounce. It fails if lodash is more than 25% faster.
+`debounce.bench.ts` measures a burst of 1000 calls followed by `flush`, against lodash.debounce, lodash.throttle, throttle-debounce, and p-debounce. It fails if lodash is more than 25% faster.

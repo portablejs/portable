@@ -24,7 +24,7 @@ async function drain(transform: Transform, input: readonly Uint8Array[]): Promis
 // libbase64 and Buffer encode and decode in C++, which JavaScript can't match on Node. They are
 // measured for reference, and the 25% limit applies to the JavaScript libraries and to libbase64's
 // line wrapping, which is JavaScript.
-test('encodes 1 MB within 25% of base64-js, js-base64 and libbase64 wrapping', async ({
+test('encodes 1 MB within 25% of base64-js, js-base64, and libbase64 wrapping', async ({
   bench,
 }) => {
   const result = await bench.compare(

@@ -43,7 +43,7 @@ const input = fc.oneof(
 );
 
 describe('parsers', () => {
-  test('parseAddresses, parseValue, parseHeaders, unfold and decodeWords never throw', () => {
+  test('parseAddresses, parseValue, parseHeaders, unfold, and decodeWords never throw', () => {
     fuzz(
       fc.property(input, (input) => {
         MimeHeaders.parseAddresses(input);
@@ -82,7 +82,7 @@ const address = fc
   .map(([local, domain]) => `${local}@${domain}`);
 const mailbox = fc.record({ name: text, address });
 
-/** A name as it reads back: lone surrogates replaced, whitespace runs collapsed and trimmed. */
+/** A name as it reads back: lone surrogates replaced, whitespace runs collapsed, and trimmed. */
 const normal = (name: string) => wellFormed(name).replace(/\s+/g, ' ').trim();
 const normalEntry = (entry: MimeHeaders.Address): MimeHeaders.Address =>
   'group' in entry

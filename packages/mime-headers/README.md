@@ -54,14 +54,14 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 `parseValue` lowercases parameter names, joins RFC 2231 sections (`name*0*`, `name*1*`), decodes their charset, and decodes encoded words in plain values. When a parameter has both forms, `parseValue` uses the RFC 2231 one (RFC 6266 section 4.3). `formatValue` quotes values that need it and writes values outside printable ASCII, or ones that look like encoded words, as UTF-8 RFC 2231 sections.
 
-`parseAddresses` reads RFC 5322 address lists with the obsolete syntax, RFC 6532 UTF-8, comments, groups and encoded-word names. In the default mode it never throws and reads malformed input the way mail clients do: an unquoted name split by a comma is joined back, anything before a stray `<` is dropped, and text around the address becomes the name. A quoted string is never searched for an address. With `strict: true` it throws `InvalidInputError` for anything RFC 5322 doesn't allow.
+`parseAddresses` reads RFC 5322 address lists with the obsolete syntax, RFC 6532 UTF-8, comments, groups, and encoded-word names. In the default mode it never throws and reads malformed input the way mail clients do: an unquoted name split by a comma is joined back, anything before a stray `<` is dropped, and text around the address becomes the name. A quoted string is never searched for an address. With `strict: true` it throws `InvalidInputError` for anything RFC 5322 doesn't allow.
 
 ## Options
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | In `'Q'` words, ASCII stays readable, and `'B'` is base64. |
-| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, `=?` and `?=` included, as RFC 2047 requires. Longer text is split into several words, and no character is split across two words. With `Infinity`, the text is written as one encoded word whatever its length. |
+| `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, including `=?` and `?=`, as RFC 2047 requires. Longer text is split into several words, and no character is split across two words. With `Infinity`, the text is written as one encoded word whatever its length. |
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from `@portable/charset` is one. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
 | `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
@@ -79,9 +79,9 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `MimeHeaders.CharsetEncoder` | `{ name, encode(text) }`, the charset that encoded words are written in. `encode` is called once per word, so the bytes from each call must decode on their own. |
 | `MimeHeaders.WordEncoding` | `'Q' \| 'B'`, the encodings of an encoded-word. |
 
-## Why use this over libmime, addressparser and email-addresses
+## Why use this over libmime, addressparser, and email-addresses
 
-It has no dependencies outside `@portable/*`, takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. `parseAddresses` replaces both addressparser and email-addresses, with a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
+It has no dependencies outside `@portable/*`. It takes and returns plain strings and `Uint8Array`s, and decodes charsets with `TextDecoder` instead of bundling iconv-lite. `parseAddresses` replaces both addressparser and email-addresses, with a lenient mode for mail as it arrives and a strict mode that validates RFC 5322.
 
 - In the benchmarks on Node 24, `parseAddresses` was 2.4× faster than addressparser and 56× faster than email-addresses (24× in strict mode). Against libmime, `fold` was 7.7× faster than `foldLines` and `parseHeaders` was 3.7× faster than `decodeHeaders`, while `encodeWords` was 2.7× faster and `formatValue` was 2.2× faster. `decodeWords` was 1.9× faster on Q words and 1.4× faster on B words, and `parseValue` was 1.5× faster. `encodeWord` wrote B words as fast as libmime. `Buffer` and `TextDecoder` decode a single B word 3× faster than `decodeWords`, which also finds the words in the text and joins characters split across them.
 - `parseAddresses` reads an address hidden in a quoted local part, such as `"evil@evil.com x"@good.com`, as the quoted local part at good.com. addressparser before nodemailer 7.0.7 sent it to evil.com (GHSA-mm7p-fcc7-pg87), and 10.2.1 still moves a quoted display name that contains "@" into the address.
@@ -99,12 +99,12 @@ It has no dependencies outside `@portable/*`, takes and returns plain strings an
 - libmime's `parseHeaderValue` returns the decoded parameters in `decodedParams`. `parseValue` has no `decodedParams`, because it decodes every parameter in `params`.
 - Unlike libmime's `parseHeaderValue`, `parseValue` reads a backslash as an escape only inside quotes.
 - `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name, where libmime 5.5's `buildHeaderValue` drops it. It marks every section of an encoded value with `*`.
-- libmime's `encodeFlowed`, `decodeFlowed`, `detectMimeType` and `charset` functions are not in this package.
+- libmime's `encodeFlowed`, `decodeFlowed`, `detectMimeType`, and `charset` functions are not in this package.
 - `parseAddresses` decodes the encoded words in names. addressparser and email-addresses return them encoded.
 - `parseAddresses` drops quotes a local part doesn't need, inside angle brackets as well, so `<"user"@example.com>` gives `user@example.com`. It keeps whitespace inside a quoted name, where email-addresses collapses it.
 - When malformed input can be read two ways, `parseAddresses` takes the first complete address and makes the rest the name: `<x@evil.com @good.com>` gives `x@evil.com` named `@good.com`, where addressparser returns the whole value. `PARITY.md` lists each case.
 - email-addresses' `parseAddressList` and `parseOneAddress` return `null` for invalid input, and `parseAddresses` with `strict: true` throws `InvalidInputError`. There is no single-address function, so check that the result has one entry.
-- Strict mode accepts the obsolete syntax RFC 5322 says to read, such as `H.P. Lovecraft <a@b.c>`, and UTF-8 (RFC 6532). email-addresses' `strict` refuses the first and needs `rfc6532: true` for the second. `parseAddresses` has no equivalent of email-addresses' `rejectTLD`, `atInDisplayName`, `commaInDisplayName` or `addressListSeparator` options.
+- Strict mode accepts the obsolete syntax RFC 5322 says to read, such as `H.P. Lovecraft <a@b.c>`, and UTF-8 (RFC 6532). email-addresses' `strict` refuses the first and needs `rfc6532: true` for the second. `parseAddresses` has no equivalent of email-addresses' `rejectTLD`, `atInDisplayName`, `commaInDisplayName`, or `addressListSeparator` options.
 - email-addresses returns `local` and `domain` fields, and `parseAddresses` returns only `address`, so split it at its last `@`. There is no IDN conversion: `user@münchen.de` stays as written.
 
 <!-- bench:start -->

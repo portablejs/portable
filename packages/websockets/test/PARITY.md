@@ -1,8 +1,8 @@
 # Test parity
 
-Upstream suites: [reconnecting-websocket 4.4.0 `__tests__/test.ts`](https://github.com/pladaria/reconnecting-websocket/blob/master/__tests__/test.ts), [partysocket 1.3.0 `src/tests/`](https://github.com/cloudflare/partykit/tree/main/packages/partysocket/src/tests) and [websocket-ts 3.0.0 `tests/`](https://github.com/jjxxs/websocket-ts/tree/master/tests). No fixtures are copied.
+Upstream suites: [reconnecting-websocket 4.4.0 `__tests__/test.ts`](https://github.com/pladaria/reconnecting-websocket/blob/master/__tests__/test.ts), [partysocket 1.3.0 `src/tests/`](https://github.com/cloudflare/partykit/tree/main/packages/partysocket/src/tests), and [websocket-ts 3.0.0 `tests/`](https://github.com/jjxxs/websocket-ts/tree/master/tests). No fixtures are copied.
 
-The three libraries are `EventTarget` wrappers with `onopen`/`onclose` handlers, `send()`, `close()`, `reconnect()` and getters such as `retryCount` and `bufferedAmount`. `connect()` returns a readable and a writable stream instead. Upstream tests of event listener bookkeeping, getters and builder methods have no counterpart, because the streams replace them. Each row below says what the test checked and where we check the same behavior.
+The three libraries are `EventTarget` wrappers with `onopen`/`onclose` handlers, `send()`, `close()`, `reconnect()`, and getters such as `retryCount` and `bufferedAmount`. `connect()` returns a readable and a writable stream instead. Upstream tests of event listener bookkeeping, getters, and builder methods have no counterpart, because the streams replace them. Each row below says what the test checked and where we check the same behavior.
 
 Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conformance.ts` (`fromSocket >`), `server.test.ts` (`server >`, a real `ws` server in Node) and `connect.oracle.test.ts` (`oracle >`).
 
@@ -19,12 +19,12 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | debug on | skipped | No debug logging. |
 | debug off | skipped | No debug logging. |
 | pass WebSocket via options | `connect > connecting > passes the URL and protocols to the WebSocket class` | Every conformance test passes a class. |
-| URL provider | `connect > connecting > calls a URL function on every attempt` | A string, a `URL` and a sync or async function are accepted. Other types are a type error. |
+| URL provider | `connect > connecting > calls a URL function on every attempt` | A string, a `URL`, and a sync or async function are accepted. Other types are a type error. |
 | websocket protocol | `connect > connecting > passes the URL and protocols to the WebSocket class` | |
 | undefined websocket protocol | `connect > connecting > passes the URL and protocols to the WebSocket class` | |
 | null websocket protocol | skipped | `null` is a type error. |
 | connection status constants | skipped | No `readyState`. |
-| max retries: 0 / 1 / 5 | `connect > reconnecting > gives up with the last error when attempts is %i` | The same three cases, as `attempts` 1, 2 and 6. |
+| max retries: 0 / 1 / 5 | `connect > reconnecting > gives up with the last error when attempts is %i` | The same three cases, as `attempts` 1, 2, and 6. |
 | level0 event listeners are kept after reconnect | `connect > sending and receiving > keeps the same streams across reconnects` | The streams play the role of the handlers. |
 | level2 event listeners | skipped | No `addEventListener`. |
 | level2 event listeners using object with handleEvent | skipped | No `addEventListener`. |
@@ -180,12 +180,12 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | listener_options (11 tests) | skipped | No listeners. |
 | remove_listener (6 tests) | skipped | No listeners. |
 | url_provider_throw: dispatches 'error' and keeps retrying when the URL provider throws | `connect > connecting > retries when the URL function throws` | |
-| backoff: backoff_series, constantbackoff, exponentialbackoff, linearbackoff (54 tests) | `connect > reconnecting > waits the backoff cap when jitter is off`, `connect > reconnecting > passes the failure count and error to a delay function`, `connect > connecting > throws a RangeError for invalid options` | No backoff classes. `delay` is a number, `{ initial, max, factor, jitter }` or a function of the failure count, which expresses constant and linear backoff. |
+| backoff: backoff_series, constantbackoff, exponentialbackoff, linearbackoff (54 tests) | `connect > reconnecting > waits the backoff cap when jitter is off`, `connect > reconnecting > passes the failure count and error to a delay function`, `connect > connecting > throws a RangeError for invalid options` | No backoff classes. `delay` is a number, `{ initial, max, factor, jitter }`, or a function of the failure count, which expresses constant and linear backoff. |
 | queue: array_queue, ring_queue (52 tests) | skipped | No queue classes. |
 
 ## Benchmarks
 
-None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messages of 100 bytes through a local `ws` server with `connect`, reconnecting-websocket, partysocket, websocket-ts and a bare `WebSocket`, and compares a server that echoes through `fromSocket` with one that uses `ws` listeners. The benchmark fails if any of the three libraries, or the `ws` listeners, is more than 25% faster.
+None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messages of 100 bytes through a local `ws` server with `connect`, reconnecting-websocket, partysocket, websocket-ts, and a bare `WebSocket`, and compares a server that echoes through `fromSocket` with one that uses `ws` listeners. The benchmark fails if any of the three libraries, or the `ws` listeners, is more than 25% faster.
 
 ## Known upstream issues
 

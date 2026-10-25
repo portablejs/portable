@@ -34,7 +34,7 @@ Upstream suites: [debug 4.4.3 `test.js`](https://github.com/debug-js/debug/blob/
 | --- | --- | --- |
 | debug reads `localStorage.debug` once, when the module loads, so a change needs a reload. | A `storage` event applies a change from another tab at once, and the package checks `localStorage.debug` every second to apply a change made in the same tab. | `picks up a change made in the same tab within a second, without a reload` and `picks up a change from another tab at once, through the storage event` in `live.browser.test.ts` |
 | debug writes to `console.debug` in browsers, which Chrome hides unless the Verbose level is on. | `debug` and `info` calls go to `console.log` and `console.info`. | `console > uses the method for the level and colors the namespace with %c` |
-| debug's Node build imports `tty` and `util`, which breaks in Cloudflare Workers and in bundlers that ignore the `browser` field. | One build that uses only `console` and `setInterval`, plus `localStorage`, `process.env` and `import.meta.env` when they exist. | Lint forbids `node:*` imports in `src/`. |
+| debug's Node build imports `tty` and `util`, which breaks in Cloudflare Workers and in bundlers that ignore the `browser` field. | One build that uses only `console` and `setInterval`, plus `localStorage`, `process.env`, and `import.meta.env` when they exist. | Lint forbids `node:*` imports in `src/`. |
 | debug's `+Nms` suffix shows the time since the previous call of the same namespace, which doesn't help when reading logs from several processes. | No suffix. `time: true` prefixes an ISO 8601 timestamp. | `console > time prefixes an ISO 8601 timestamp` |
 | debug writes everything to stderr in Node, so you can't separate levels by stream. | Each level writes with its own `console` method, so `warn` and `error` go to stderr and `debug` and `info` go to stdout in Node. | `console > uses the method for the level and colors the namespace with %c` |
 | debug's color is picked from a fixed list of 6 colors (76 with `supports-color`), so namespaces often share one. | A hue from 0 to 359 picked from a hash of the namespace. | None. The color is not checked beyond its CSS. |
@@ -42,7 +42,7 @@ Upstream suites: [debug 4.4.3 `test.js`](https://github.com/debug-js/debug/blob/
 
 ## Deliberate differences
 
-- Loggers are objects with `debug`, `info`, `warn` and `error` methods. A debug logger is a function.
+- Loggers are objects with `debug`, `info`, `warn`, and `error` methods. A debug logger is a function.
 - `warn` and `error` calls print with no patterns set. Exclude a namespace with `-name` to silence them.
 - `isEnabled(level)` is a method. debug's `enabled` is a writable property that overrides the patterns for one logger.
 - `disable()` also silences warnings and errors, since it applies `-*`.
