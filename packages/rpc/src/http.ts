@@ -1,6 +1,7 @@
 import * as Errors from '@portable/errors';
 import * as Jsonl from '@portable/jsonl';
 import { createClient } from './client.js';
+import type { AsyncDisposeMethod } from './dispose.js';
 import { RemoteError, TransportError } from './errors.js';
 import { remote } from './remote.js';
 import { createServer, error, noop } from './server.js';
@@ -104,7 +105,9 @@ type Batch = {
 
 /**
  * Connects to an API served by `handler`, or any JSON-RPC server that accepts POST requests. Calls
- * made in the same tick are sent as one batch request.
+ * made in the same tick are sent as one batch request. Where the runtime has
+ * `Symbol.asyncDispose`, the remote's `[Symbol.asyncDispose]()` aborts every request and rejects
+ * waiting calls with an `AbortError` `DOMException`, as aborting `signal` does.
  *
  * @example
  * ```ts
@@ -115,7 +118,10 @@ type Batch = {
  * await api.add(1, 2);
  * ```
  */
-export function http<api>(url: string | URL, options: http.Options = {}): Remote<api> {
+export function http<api>(
+  url: string | URL,
+  options: http.Options = {},
+): Remote<api> & AsyncDisposeMethod {
   const { fetch = (request: Request) => globalThis.fetch(request), signal } = options;
   const batches = new Map<Id, Batch>();
   let queued: Batch | undefined;
@@ -230,7 +236,13 @@ export function http<api>(url: string | URL, options: http.Options = {}): Remote
   } else {
     signal?.addEventListener('abort', () => client.close(signal.reason), { once: true });
   }
-  return remote(client);
+  return remote(client, '', async () => {
+    const reason = new DOMException('The connection was disposed.', 'AbortError');
+    client.close(reason);
+    for (const batch of new Set([...batches.values(), ...(queued ? [queued] : [])])) {
+      batch.controller.abort(reason);
+    }
+  });
 }
 
 function isStreamStart(

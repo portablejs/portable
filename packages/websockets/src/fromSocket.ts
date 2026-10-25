@@ -6,6 +6,7 @@ import {
   type Socket,
   type SocketEvent,
   cancelledError,
+  disposedError,
   toOutgoing,
   assertSize,
   queueLimit,
@@ -15,6 +16,7 @@ import {
   messageSize,
   toMessage,
 } from './Socket.js';
+import { withAsyncDispose } from './dispose.js';
 import { CloseError, MaxBufferedError } from './errors.js';
 
 export declare namespace fromSocket {
@@ -134,7 +136,7 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
     { highWaterMark: queueLimit(maxBuffered), size: messageSize },
   );
 
-  const writable = new WritableStream<string | Uint8Array<ArrayBuffer>>({
+  const writable = new WritableStream<string | Uint8Array>({
     start(controller) {
       writableController = controller;
     },
@@ -166,5 +168,5 @@ export function fromSocket(socket: Socket, options: fromSocket.Options = {}): Du
   if (signal?.aborted) {
     onAbort();
   }
-  return { readable, writable };
+  return withAsyncDispose({ readable, writable }, async () => shutdown(disposedError()));
 }

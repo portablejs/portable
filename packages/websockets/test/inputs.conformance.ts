@@ -38,7 +38,7 @@ describe.skipIf(typeof SharedArrayBuffer === 'undefined')('shared memory', () =>
   const shared = () => {
     const bytes = new Uint8Array(new SharedArrayBuffer(data.length));
     bytes.set(data);
-    return bytes as Uint8Array as Uint8Array<ArrayBuffer>;
+    return bytes;
   };
 
   test('fromSocket sends a copy of a Uint8Array over a SharedArrayBuffer', async () => {

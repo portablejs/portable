@@ -52,6 +52,15 @@ The type of the remote comes from the server's code, so there is no schema or co
 | `methods` | | `connect` only: methods the other side can call over the same transport. |
 | `signal` | | Closes the connection. Waiting calls reject with `signal.reason`, running methods are aborted, and the transport is cancelled. |
 
+Where the runtime has `Symbol.asyncDispose`, the remote from `connect` or `http` also closes with `await using`, as if `signal` aborted with an `AbortError` `DOMException`:
+
+```ts
+await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type: 'module' })));
+await worker.add(1, 2);
+```
+
+Disposing closes the connection but not what carries it, so the worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method named by a symbol can't be called remotely, so the key never hides one of your methods.
+
 ### Options per call
 
 Arguments and options don't share a list, so a method's last argument is never mistaken for options. `Rpc.call` takes the method, its params and the options:

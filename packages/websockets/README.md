@@ -78,6 +78,7 @@ How the streams end:
 
 - `writable.close()` waits for queued writes, closes the socket with 1000, and ends `readable` once the close completes.
 - `readable.cancel()`, `writable.abort()` and `signal` close the socket with 1000 and fail the other stream.
+- `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
 - A final close with 1000, 1001 or 1005 ends `readable`. Any other final close fails it with a `CloseError` carrying `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
 ### Messages can be lost during a drop
@@ -108,7 +109,7 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 
 | Type | Description |
 | --- | --- |
-| `WebSockets.Duplex` | `{ readable, writable }`, what `connect` and `fromSocket` return. |
+| `WebSockets.Duplex` | `{ readable, writable }`, what `connect` and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
 | `WebSockets.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |

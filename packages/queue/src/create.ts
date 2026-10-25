@@ -7,8 +7,13 @@ export type Context = {
 /** A function the queue calls when a slot is free. It can return a value or a promise. */
 export type Task<value> = (context: Context) => value | PromiseLike<value>;
 
-/** A queue made by `create`. */
-export type Queue = {
+/**
+ * A queue made by `create`. Where the runtime has `Symbol.asyncDispose`,
+ * `[Symbol.asyncDispose]()` rejects waiting tasks and every later `add` with an `AbortError`
+ * `DOMException`, aborts the `signal` of running tasks, and resolves once they have settled, so
+ * `await using queue = Queue.create()` leaves no task running after the scope ends.
+ */
+export type Queue = AsyncDisposeMethod & {
   /**
    * Adds a task and resolves or rejects with its result. Rejects with the abort reason when
    * `options.signal` or the queue's `signal` aborts, and with an `AbortError` `DOMException` when
@@ -59,6 +64,8 @@ export declare namespace create {
   };
 }
 
+import { type AsyncDisposeMethod, withAsyncDispose } from './dispose.js';
+
 type Entry = {
   task: Task<unknown>;
   priority: number;
@@ -73,12 +80,6 @@ type Entry = {
 
 type State = 'waiting' | 'running' | 'settled';
 
-let never: AbortSignal | undefined;
-
-// Workers refuses to create an AbortController at the top level of a module.
-function neverAborted(): AbortSignal {
-  return (never ??= new AbortController().signal);
-}
 const noop = () => {};
 const maxDelay = 2 ** 31 - 1;
 
@@ -97,7 +98,7 @@ const maxDelay = 2 ** 31 - 1;
  * ```
  */
 export function create(options: create.Options = {}): Queue {
-  const { interval = 0, intervalCap = Infinity, signal: queueSignal } = options;
+  const { interval = 0, intervalCap = Infinity, signal } = options;
   let concurrency = assertLimit('concurrency', options.concurrency ?? Infinity);
   assertLimit('intervalCap', intervalCap);
   if (!(interval >= 0 && interval < Infinity)) {
@@ -115,7 +116,23 @@ export function create(options: create.Options = {}): Queue {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>();
 
-  queueSignal?.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true });
+  const disposer = new AbortController();
+  const queueSignal = signal ? AbortSignal.any([signal, disposer.signal]) : disposer.signal;
+  // Only a `signal` from the caller rejects running tasks at once, so only then are they tracked.
+  const running = signal ? new Set<Entry>() : undefined;
+  queueSignal.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true });
+  signal?.addEventListener(
+    'abort',
+    () => {
+      for (const entry of running!) {
+        if (entry.state === 'running') {
+          entry.state = 'settled';
+          entry.reject(signal.reason);
+        }
+      }
+    },
+    { once: true },
+  );
 
   function watch(entry: Entry, signal: AbortSignal | undefined) {
     if (entry.watched === signal) {
@@ -246,8 +263,7 @@ export function create(options: create.Options = {}): Queue {
   function start(entry: Entry) {
     pending++;
     entry.state = 'running';
-    const { signal } = entry.context;
-    watch(entry, signal === never ? undefined : signal);
+    running?.add(entry);
     entry.begin();
   }
 
@@ -273,6 +289,7 @@ export function create(options: create.Options = {}): Queue {
 
   function finish(entry: Entry, value?: unknown, failed?: boolean) {
     pending--;
+    running?.delete(entry);
     if (entry.watched) {
       unwatch(entry);
     }
@@ -316,7 +333,7 @@ export function create(options: create.Options = {}): Queue {
     entry.reject(reason);
   }
 
-  return {
+  const queue = {
     add<value>(task: Task<value>, addOptions: Queue.AddOptions = {}): Promise<value> {
       const { priority = 0, signal } = addOptions;
       if (typeof priority !== 'number') {
@@ -325,7 +342,7 @@ export function create(options: create.Options = {}): Queue {
       if (Number.isNaN(priority)) {
         throw new RangeError('Expected `priority` to be a number, got NaN.');
       }
-      if (queueSignal?.aborted) {
+      if (queueSignal.aborted) {
         return Promise.reject(queueSignal.reason);
       }
       if (signal?.aborted) {
@@ -334,7 +351,7 @@ export function create(options: create.Options = {}): Queue {
       const entry: Entry = {
         task,
         priority,
-        context: { signal: combine(queueSignal, signal) },
+        context: signal ? combined(queueSignal, signal) : { signal: queueSignal },
         watched: undefined,
         resolve: noop,
         reject: noop,
@@ -355,11 +372,11 @@ export function create(options: create.Options = {}): Queue {
       drain();
       return promise;
     },
-    idle() {
+    idle(): Promise<void> {
       if (size === 0 && pending === 0) {
         return Promise.resolve();
       }
-      return new Promise((resolve) => idleWaiters.push(resolve));
+      return new Promise<void>((resolve) => idleWaiters.push(resolve));
     },
     pause() {
       paused = true;
@@ -388,6 +405,10 @@ export function create(options: create.Options = {}): Queue {
       drain();
     },
   };
+  return withAsyncDispose(queue, () => {
+    disposer.abort(new DOMException('The queue was disposed.', 'AbortError'));
+    return queue.idle();
+  });
 }
 
 /**
@@ -415,11 +436,18 @@ export function assertLimit(name: string, value: number): number {
   return value;
 }
 
-function combine(a: AbortSignal | undefined, b: AbortSignal | undefined): AbortSignal {
-  if (a && b) {
-    return AbortSignal.any([a, b]);
-  }
-  return a ?? b ?? neverAborted();
+type LazyContext = { queue: AbortSignal; task: AbortSignal; combined: AbortSignal | undefined };
+
+// Most tasks never read `signal`, so the combined signal is created on first read.
+const lazyContext = {
+  get signal(): AbortSignal {
+    const self = this as unknown as LazyContext;
+    return (self.combined ??= AbortSignal.any([self.queue, self.task]));
+  },
+};
+
+function combined(queue: AbortSignal, task: AbortSignal): Context {
+  return { __proto__: lazyContext, queue, task, combined: undefined } as unknown as Context;
 }
 
 export function isThenable(value: unknown): value is PromiseLike<unknown> {

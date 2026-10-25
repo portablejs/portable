@@ -50,10 +50,20 @@ Returns a queue object.
 | `pending` | The number of running tasks. |
 | `paused` | Whether the queue is paused. |
 | `concurrency` | Read or set the limit. Raising it starts waiting tasks at once. |
+| `[Symbol.asyncDispose]()` | Rejects waiting tasks and every later `add` with an `AbortError` `DOMException`, aborts the `signal` of running tasks, and resolves once they have settled. Running tasks' promises settle with the tasks' own results. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
 
-The `signal` passed to a task aborts when the task's own `signal` or the queue's `signal` aborts. If the task is still waiting, it is removed. If it is running, `add` rejects with the abort reason at once, but the task keeps its slot until it settles, so no more than `concurrency` tasks ever run. Pass the signal on to `fetch` or whatever the task awaits so it stops early.
+The `signal` passed to a task aborts when the task's own `signal` or the queue's `signal` aborts, or when the queue is disposed. If the task is still waiting, it is removed. If it is running, `add` rejects with the abort reason at once, but the task keeps its slot until it settles, so no more than `concurrency` tasks ever run. Pass the signal on to `fetch` or whatever the task awaits so it stops early.
 
 When `clear()` or an abort removes a task that never started, the queue marks the promise from `add` as handled, so ignoring it doesn't cause an unhandled rejection. A task that fails still rejects its promise as usual, so handle it or `await` it.
+
+Declared with `await using`, a queue is disposed when the scope ends, so a scope that throws doesn't leave tasks waiting or running behind it:
+
+```ts
+async function crawl(urls: string[]) {
+  await using queue = Queue.create({ concurrency: 4 });
+  return await Promise.all(urls.map((url) => queue.add(({ signal }) => fetch(url, { signal }))));
+}
+```
 
 A task added from inside a running task waits for a free slot like any other. If the outer task awaits it with `concurrency: 1`, both wait forever, so give nested work its own queue.
 
@@ -124,7 +134,7 @@ A timeout for a single task is `queue.add(task, { signal: AbortSignal.timeout(50
 
 They run in browsers too, but they are three packages with three APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies.
 
-- **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 1 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.6 µs against p-queue's 3.6 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 1 µs for p-map and p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
+- **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 1 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.8 µs against p-queue's 3.6 µs, because tasks that share a signal add one listener to it. `map` costs about 0.1 µs per item against 1 µs for p-map and p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
 - **An aborted running task keeps its slot.** p-queue frees the slot when a running task's signal aborts, while the task may still be running, so more than `concurrency` tasks can run at once.
 - **`clear()` rejects the removed tasks** with an `AbortError`. p-limit's `clearQueue()` leaves their promises pending forever unless `rejectOnClear` is set.
 - **`map` stops in-flight work.** After the first error, or when `signal` aborts, the `signal` passed to each running call aborts. p-map gives the mapper no signal, so after the first error the other calls run to the end unless the caller wires up its own `AbortController`.

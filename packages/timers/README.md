@@ -163,6 +163,7 @@ The returned function also has:
 | `cancel()` | Drops the waiting invocation. Calls waiting for it reject with an `AbortError` `DOMException`. The rejection counts as handled, so a call nobody awaits doesn't raise an unhandled rejection. Later calls work as usual. |
 | `flush()` | Runs the waiting invocation now and returns a promise of its result. Resolves with `undefined` when nothing waits. For `throttle`, and for `debounce` with `maxWait`, the window counts from the flushed invocation, as in lodash: a call before the window ends runs when it ends, and `pending` stays `true` until then. |
 | `pending` | `true` while the function waits out `ms` after a call. |
+| `[Symbol.dispose]()` | Calls `cancel()`, so `using save = Timers.debounce(...)` drops the waiting invocation when the scope ends. It exists only where the runtime has `Symbol.dispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. |
 
 ## Delays
 

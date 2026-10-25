@@ -618,3 +618,20 @@ describe('throttle-debounce debounce', () => {
     expect(times()).toEqual([200]);
   });
 });
+
+const { dispose } = Symbol as { dispose?: symbol | undefined };
+
+describe.skipIf(dispose === undefined)('Symbol.dispose', () => {
+  test('drops the waiting invocation, as cancel does', async () => {
+    for (const make of [Timers.debounce, Timers.throttle]) {
+      const { fn, calls } = recorder();
+      const funced = make(fn, 32, { leading: false });
+      const call = funced('a');
+      (funced as unknown as Record<symbol, () => void>)[dispose!]!();
+      await expect(call).rejects.toMatchObject({ name: 'AbortError' });
+      await tick(64);
+      expect(calls).toHaveLength(0);
+      expect(funced.pending).toBe(false);
+    }
+  });
+});

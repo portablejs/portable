@@ -621,3 +621,43 @@ describe('streams', () => {
     ]);
   });
 });
+
+const { asyncDispose } = Symbol as { asyncDispose?: symbol | undefined };
+const dispose = (remote: unknown) =>
+  (remote as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
+
+describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
+  test('closes the connection, rejecting waiting and later calls with an AbortError', async () => {
+    let cancelled: unknown;
+    const readable = new ReadableStream<unknown>({ cancel: (reason) => void (cancelled = reason) });
+    const remote = Rpc.connect<typeof alice>({ readable, writable: new WritableStream() });
+    const waiting = remote.hello('Bob');
+    await dispose(remote);
+    await expect(waiting).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(remote.hello('Bob')).rejects.toMatchObject({ name: 'AbortError' });
+    expect(cancelled).toMatchObject({ name: 'AbortError' });
+  });
+
+  test('aborts the methods a connection with methods is running', async () => {
+    const { port1, port2 } = new MessageChannel();
+    let methodSignal: AbortSignal | undefined;
+    const server = Rpc.connect(Rpc.port(port1), {
+      methods: {
+        slow: Rpc.withContext(({ signal }) => ((methodSignal = signal), new Promise(() => {}))),
+      },
+    });
+    const remote = Rpc.connect<{ slow(): void }>(Rpc.port(port2));
+    void remote.slow().catch(() => {});
+    await vi.waitFor(() => expect(methodSignal).toBeDefined());
+    await dispose(server);
+    expect(methodSignal!.aborted).toBe(true);
+    await dispose(remote);
+    port1.close();
+    port2.close();
+  });
+
+  test('nested methods have no dispose method', () => {
+    const remote = Rpc.connect<{ math: { add(): number } }>(silent().transport);
+    expect((remote.math as unknown as Record<symbol, unknown>)[asyncDispose!]).toBeUndefined();
+  });
+});

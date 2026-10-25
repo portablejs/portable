@@ -640,3 +640,21 @@ describe('heartbeat', () => {
     expect(server.sockets).toHaveLength(1);
   });
 });
+
+const { asyncDispose } = Symbol as { asyncDispose?: symbol | undefined };
+
+describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
+  test('closes the socket with 1000, fails both streams and stops reconnecting', async () => {
+    const server = new FakeServer();
+    const duplex = WebSockets.connect(url, { WebSocket: server.WebSocket, delay: 0 });
+    const socket = await server.accept();
+    await (duplex as unknown as Record<symbol, () => Promise<void>>)[asyncDispose!]!();
+    expect(socket.closedWith).toEqual({ code: 1000, reason: undefined });
+    expect(await errorOf(duplex.readable.getReader().read())).toMatchObject({ name: 'AbortError' });
+    expect(await errorOf(duplex.writable.getWriter().write('x'))).toMatchObject({
+      name: 'AbortError',
+    });
+    await sleep(10);
+    expect(server.sockets).toHaveLength(1);
+  });
+});

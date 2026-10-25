@@ -1,14 +1,21 @@
 import { assertUint8Array, toBufferSource } from '@portable/bytes/internal';
 import * as Timers from '@portable/timers';
+import type { AsyncDisposeMethod } from './dispose.js';
+
 /** A received message: text as a `string`, binary data as a `Uint8Array`. */
 export type Message = string | Uint8Array<ArrayBuffer>;
 
-/** The readable and writable sides of a WebSocket. */
-export type Duplex = {
+/**
+ * The readable and writable sides of a WebSocket. Where the runtime has `Symbol.asyncDispose`,
+ * `[Symbol.asyncDispose]()` closes the socket with code 1000, stops reconnecting, and fails both
+ * streams with an `AbortError` `DOMException`, as aborting `signal` does, so a connection declared
+ * with `await using` is closed when the scope ends.
+ */
+export type Duplex = AsyncDisposeMethod & {
   /** Received messages. */
   readable: ReadableStream<Message>;
   /** Messages to send. */
-  writable: WritableStream<string | Uint8Array<ArrayBuffer>>;
+  writable: WritableStream<string | Uint8Array>;
 };
 
 /** The part of the platform `WebSocket` this package uses. Any object with this shape works. */
@@ -86,6 +93,9 @@ export function queueLimit(maxBuffered: number): number {
 
 export const closedError = (): DOMException =>
   new DOMException('The WebSocket is closed.', 'InvalidStateError');
+
+export const disposedError = (): DOMException =>
+  new DOMException('The WebSocket streams were disposed.', 'AbortError');
 
 export const cancelledError = (): DOMException =>
   new DOMException('The WebSocket streams were cancelled.', 'AbortError');

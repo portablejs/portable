@@ -1,4 +1,5 @@
 import { createClient } from './client.js';
+import type { AsyncDisposeMethod } from './dispose.js';
 import { TransportError } from './errors.js';
 import { remote } from './remote.js';
 import { direct } from './port.js';
@@ -41,6 +42,10 @@ export declare namespace connect {
  * a method sends a JSON-RPC request and returns a promise for the result. Pass `methods` to answer
  * calls from the other side over the same transport.
  *
+ * Where the runtime has `Symbol.asyncDispose`, the proxy's `[Symbol.asyncDispose]()` closes the
+ * connection as aborting `signal` does, with an `AbortError` `DOMException`, so a remote declared
+ * with `await using` is closed when the scope ends.
+ *
  * @example
  * ```ts
  * import * as Rpc from '@portable/rpc';
@@ -53,7 +58,10 @@ export declare namespace connect {
  * }
  * ```
  */
-export function connect<api>(transport: Transport, options: connect.Options = {}): Remote<api> {
+export function connect<api>(
+  transport: Transport,
+  options: connect.Options = {},
+): Remote<api> & AsyncDisposeMethod {
   const { codec = json, methods = {}, signal } = options;
   const port = direct.get(transport);
   const failed = (cause: unknown) =>
@@ -75,10 +83,12 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
     client.close(reason);
     server.close(reason);
   }
+  function shutdown(reason: unknown): Promise<unknown> {
+    close(reason);
+    return Promise.all([reader?.cancel(reason).catch(noop), writer?.abort(reason).catch(noop)]);
+  }
   function onAbort() {
-    close(signal!.reason);
-    reader?.cancel(signal!.reason).catch(noop);
-    writer?.abort(signal!.reason).catch(noop);
+    void shutdown(signal!.reason);
   }
   if (port?.listen) {
     unlisten = port.listen(dispatch, failed);
@@ -125,7 +135,9 @@ export function connect<api>(transport: Transport, options: connect.Options = {}
     })();
   }
 
-  return remote(client);
+  return remote(client, '', async () => {
+    await shutdown(new DOMException('The connection was disposed.', 'AbortError'));
+  });
 }
 
 export declare namespace provide {
