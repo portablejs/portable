@@ -11,7 +11,7 @@ Decisions made while building the packages, with the options considered and the 
 ## PEM import is public in `@portable/web-crypto`
 
 - **Options:** keep the copies in dkim and oauth1; move one to `@portable/web-crypto/internal`; make it a public `WebCrypto.importPem`.
-- **Trade-offs:** WebCrypto imports only DER, and RSA only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` writes PKCS #1. Every app that signs a JWT or a request with a key file writes this code, so it fits next to `importSeed` and `publicKeyOf`. Both copies matched only `PRIVATE KEY` and `RSA PRIVATE KEY`, without public keys or text before the block. A public function has to choose its usages and errors for every algorithm, not one per package.
+- **Trade-offs:** WebCrypto imports only DER, and RSA only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` writes PKCS #1. Anyone who signs a JWT or a request with a key file ends up writing this code, so it fits next to `importSeed` and `publicKeyOf`. Both copies matched only `PRIVATE KEY` and `RSA PRIVATE KEY`, without public keys or text before the block. A public function has to choose its usages and errors for every algorithm, not one per package.
 - **Chosen:** `WebCrypto.importPem(algorithm, pem, { extractable, usages, signal })`. It takes the algorithm first like `importSeed`, reads the first of the four key blocks, and gives default usages for the signing, RSA-OAEP and key-agreement algorithms. Any other algorithm needs `usages`. A malformed block rejects with `InvalidInputError`, and an SEC 1 EC key, an encrypted key or a certificate rejects with `UnsupportedError`. dkim tries RSA, then Ed25519, instead of reading the PKCS #8 OID. `pkcs1ToSpki` is exported from `./internal` for dkim's DNS keys.
 
 ## `Sse.connect` takes `attempts`
@@ -72,7 +72,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** keep `Uint8Array` as the only byte input, and throw a `TypeError` for anything else; accept any `ArrayBuffer`, `SharedArrayBuffer` or view, as `TextDecoder` does.
 - **Trade-offs:** if packages accepted any buffer or view, a caller could pass the `ArrayBuffer` from `crypto.subtle` without wrapping it in a `Uint8Array`. Most byte input comes from `response.bytes()` or `blob.bytes()`, which already return a `Uint8Array`. Given a buffer or a view, a package can't tell which of its bytes the caller meant. If a caller passes `view.buffer`, the package reads the whole buffer and not only the bytes in the view, and if a caller passes an `Int16Array` of audio samples, the package reads two bytes per sample in the platform's byte order. Neither mistake throws an error, so the caller gets a wrong result without any sign of it. When the caller writes the conversion, such as `new Uint8Array(view.buffer, view.byteOffset, view.byteLength)`, anyone reading the caller's code can see which bytes the package reads. Every package would also have to convert its input. `@noble/hashes` and ox also take only `Uint8Array`.
-- **Shared memory:** `assertUint8Array` rejects a bare `SharedArrayBuffer` as it rejects an `ArrayBuffer`, but accepts a `Uint8Array` over one. TypeScript types a plain `Uint8Array` as `Uint8Array<ArrayBufferLike>`, so a parameter that excluded shared memory would have to be typed `Uint8Array<ArrayBuffer>`, and a caller's variable typed `Uint8Array` would then fail to type-check. Another thread can change shared bytes while an async function or a stream reads them, so a caller who passes shared memory must not write to it until the function returns, its promise settles, or the stream has read the chunk. `crypto.subtle`, `Blob`, `fetch`, `CompressionStream` and `WebSocket.send` throw for shared memory, so packages pass bytes to them through `toBufferSource`, which copies a view of a `SharedArrayBuffer`.
+- **Shared memory:** `assertUint8Array` rejects a bare `SharedArrayBuffer` as it rejects an `ArrayBuffer`, but accepts a `Uint8Array` over one. TypeScript types a plain `Uint8Array` as `Uint8Array<ArrayBufferLike>`, so a parameter that excluded shared memory would have to be typed `Uint8Array<ArrayBuffer>`, and a caller's variable typed `Uint8Array` would then fail to type-check. Another thread can change shared bytes while an async function or a stream reads them, so if you pass shared memory, you must not write to it until the function returns, its promise settles, or the stream has read the chunk. `crypto.subtle`, `Blob`, `fetch`, `CompressionStream` and `WebSocket.send` throw for shared memory, so packages pass bytes to them through `toBufferSource`, which copies a view of a `SharedArrayBuffer`.
 - **Chosen:** `Uint8Array` only. `assertUint8Array` in `@portable/bytes/internal` throws a `TypeError` for any other value, so a JavaScript caller gets an error instead of a wrong result. Packages test for bytes with `isUint8Array` instead of `instanceof Uint8Array`, because `instanceof` returns false for a `Uint8Array` from another realm. A package can start accepting more types later without breaking callers, but if it stops accepting a type after a release, callers that pass that type break. A `Uint8Array` can still start partway into a larger buffer, so each package's `test/inputs.conformance.ts` passes one and checks that every function reads only the bytes in its range.
 
 ## Multi-member gzip decoding searches for each member's end
@@ -109,7 +109,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** add both; add `toBlob` only; add neither.
 - **Trade-offs:** `new Response(stream).blob()` reads only a `ReadableStream`, takes no limit or signal, and ran 1.7× slower than collecting the chunks into `new Blob(chunks)`. A `toResponse(source, init)` would only wrap `new Response(Streams.fromIterable(source), init)`, which adds an export without adding a behavior.
-- **Chosen:** `Streams.toBlob(source, { maxBytes, type, signal })`, with the same chunk rules as `toBytes`. A caller who needs a `Response` passes `fromIterable(source)` to `new Response`.
+- **Chosen:** `Streams.toBlob(source, { maxBytes, type, signal })`, with the same chunk rules as `toBytes`. To get a `Response`, pass `fromIterable(source)` to `new Response`.
 
 ## Bun and Deno run the conformance tests in CI without blocking
 
@@ -126,8 +126,8 @@ Decisions made while building the packages, with the options considered and the 
 ## Decoders that buffer input take a size limit, with no limit by default
 
 - **Options:** no limit; a limit that is off by default; a finite default such as 1 MiB.
-- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` buffered input until a line, value or header block ended, so untrusted input without a line break made the buffer grow without limit. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects a caller who doesn't read the docs, but any number we choose rejects some valid large record, and the three older packages would have needed the same breaking change.
-- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop. `MimeStream.DecoderStream` and `MimeStream.splitHeaders` dropped mailsplit's finite defaults (1 MiB of headers, 1,000 parts) for `Infinity`, so a caller who reads untrusted mail sets `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts`.
+- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream` and `MimeHeaders.parseHeaders` buffered input until a line, value or header block ended, so untrusted input without a line break made the buffer grow without limit. `Lines`, `Csv` and `Compress` already took `maxLength` or `maxBytes` with `Infinity` as the default. A finite default protects anyone who doesn't read the docs, but any number we choose rejects some valid large record, and the three older packages would have needed the same breaking change.
+- **Chosen:** `maxLength` on all three, defaulting to `Infinity` like the older decoders, each with its own `MaxLengthError`. `ImageSize.parseStream` and `Exif.parseStream` keep their finite `maxBytes` defaults, because they read only the start of a file and stop. `MimeStream.DecoderStream` and `MimeStream.splitHeaders` dropped mailsplit's finite defaults (1 MiB of headers, 1,000 parts) for `Infinity`, so if you read untrusted mail, you set `maxHeaderBytes`, `maxBoundaryLineBytes` and `maxParts`.
 
 ## Every function that reads the clock takes `now`
 
@@ -158,12 +158,12 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** every `EncoderStream` and `*Stream()` function emits `Uint8Array`; they all emit `string`; each package picks.
 - **Trade-offs:** Base64, QuotedPrintable, Csv and Jsonl emitted strings, and Charset, MimeStream, Sse and Mail emitted bytes. A `Response` body or a socket's writable needs bytes, so a caller of the string encoders added a `TextEncoderStream`, and `@portable/mail` and `@portable/rpc` had code to handle both kinds of chunk. The platform's `TextEncoderStream` and `CompressionStream` emit bytes.
-- **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. Callers write the output to a body more often than they read it as text, so a caller who wants base64 text pipes the output through `TextDecoderStream`.
+- **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. Callers write the output to a body more often than they read it as text, so if you want base64 text, you pipe the output through `TextDecoderStream`.
 
 ## One `@portable/errors` package, branded with `Symbol.for`
 
 - **Options:** keep an `errors.ts` in each package; share the classes through an internal package; publish `@portable/errors`. For checks: `instanceof`; comparing `name` strings; a brand under a `Symbol.for` key.
-- **Trade-offs:** 26 packages defined about 55 classes, and classes with the same name had different constructors: `TruncatedError` took `(message?, options?)` in base64, `(options?)` in compress and nothing in exif, and `ResponseError` had three unrelated shapes. A caller who piped `Streams.limitBytes` into `Compress.DecoderStream` and then `Exif.parseStream` needed three checks for one condition. zile doesn't bundle, so an internal package would still be published and installed, and a public one lets callers check a kind from any package. `instanceof` fails when an app holds two copies of a package. Duplicates are more likely with our packages because `workspace:*` publishes exact versions, which npm can't dedupe. Comparing `name` matches any library that happens to use the same string.
+- **Trade-offs:** 26 packages defined about 55 classes, and classes with the same name had different constructors: `TruncatedError` took `(message?, options?)` in base64, `(options?)` in compress and nothing in exif, and `ResponseError` had three unrelated shapes. Piping `Streams.limitBytes` into `Compress.DecoderStream` and then `Exif.parseStream` meant three checks for one condition. zile doesn't bundle, so an internal package would still be published and installed, and a public one lets callers check a kind from any package. `instanceof` fails when an app holds two copies of a package. Duplicates are more likely with our packages because `workspace:*` publishes exact versions, which npm can't dedupe. Comparing `name` matches any library that happens to use the same string.
 - **Chosen:** a public `@portable/errors`. Each error stores the kinds of its class chain under `Symbol.for('portable.error')`, `Errors.is(error, 'MaxBytes')` reads it, and the classes' `Symbol.hasInstance` reads it too, so `instanceof Errors.MaxBytesError` matches every package's error and `instanceof Compress.MaxBytesError` matches only compress's, from any copy. The symbol key and the kind strings are a protocol that later versions must keep. An error with only a message takes `(message?, options?)`, as `Error` does, and one with other fields takes one object.
 
 ## The worker harness runs a stalled file again in WebKit
@@ -193,13 +193,13 @@ Decisions made while building the packages, with the options considered and the 
 ## Bad arguments throw `TypeError` or `RangeError`, bad data throws `InvalidInputError`
 
 - **Options:** `InvalidInputError` for everything, including options; built-in errors for everything the caller passes; built-in errors for arguments and options, and `InvalidInputError` for the data being processed.
-- **Trade-offs:** Most packages already threw `TypeError` and `RangeError` for options, and the platform does the same. A single `InvalidInputError` for both would make a caller who catches malformed messages also catch its own configuration mistakes. The packages disagreed at the edges: dkim threw `TypeError` for a PEM key that doesn't parse and oauth1 threw `InvalidInputError`; base64, csv, smtp, web-push and webhooks threw `TypeError` for an unknown or malformed option value while dkim, arc and mime-headers threw `RangeError`.
+- **Trade-offs:** Most packages already threw `TypeError` and `RangeError` for options, and the platform does the same. A single `InvalidInputError` for both would mean that catching malformed messages also catches your own configuration mistakes. The packages disagreed at the edges: dkim threw `TypeError` for a PEM key that doesn't parse and oauth1 threw `InvalidInputError`; base64, csv, smtp, web-push and webhooks threw `TypeError` for an unknown or malformed option value while dkim, arc and mime-headers threw `RangeError`.
 - **Chosen:** the third. `TypeError` for a wrong type or a missing value, `RangeError` for a right type with a value the function doesn't accept (including keys and secrets that don't parse), and `InvalidInputError` for malformed data. AGENTS.md states the rule. oauth1 no longer exports `InvalidInputError`, since its only use was a key that doesn't parse. jsonl and json-stream keep `JSON.stringify`'s `TypeError` for values it can't serialize.
 
 ## `maxBytes` counts bytes and `maxLength` counts string length
 
 - **Options:** keep each package's name; name every limit `maxLength`; name it by unit.
-- **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. A caller who knows `Streams.toBytes(stream, { maxBytes })` would guess wrong in compress.
+- **Trade-offs:** `Compress.decode` took `maxLength` for a limit in bytes, while lines, csv and sse use `maxLength` for UTF-16 code units and streams, exif, image-size and password use `maxBytes` for bytes. If you know `Streams.toBytes(stream, { maxBytes })`, you would guess wrong in compress.
 - **Chosen:** name it by unit. compress's option is now `maxBytes` and its error `Compress.MaxBytesError`, and AGENTS.md states the rule.
 
 ## Stream transforms use `Streams.abortable`, and promise helpers stay private
@@ -237,7 +237,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** port all of mailauth's `authenticate`; port the SPF, DKIM, DMARC and ARC checks with Authentication-Results and sealing only.
 - **Trade-offs:** BIMI needs SVG Tiny PS validation and VMC certificate chains, each bigger than the rest of the package. Received-SPF repeats the `spf=` result that Authentication-Results already carries (RFC 8601 replaces it for new code). `trustReceived` takes the client address from a Received field, which any earlier hop can write, and an SMTP server always knows the real address.
-- **Chosen:** leave all three out. A caller who needs BIMI can call a BIMI library with `result.dmarc`.
+- **Chosen:** leave all three out. If you need BIMI, you can call a BIMI library with `result.dmarc`.
 
 ## `authenticate` reports a refused seal in `sealSkipReason`
 
@@ -267,8 +267,8 @@ Decisions made while building the packages, with the options considered and the 
 ## `Spf.check` rejects with `signal.reason`
 
 - **Options:** keep returning a `temperror` result when `signal` aborts; reject with `signal.reason`, as the `signal` rule in AGENTS.md says; return `temperror` only when the reason is a `TimeoutError` and reject otherwise.
-- **Trade-offs:** `temperror` on abort reads well for RFC 7208's time limit (section 4.6.4), but a caller that aborts because its client went away gets a result it has to throw away, and spf would stay the only package that doesn't reject. Branching on the reason's type makes `AbortSignal.timeout` and `AbortSignal.any([timeout, request.signal])` behave differently in ways a caller can't see from the types.
-- **Chosen:** reject with `signal.reason`. A caller that wants the RFC behavior catches the `TimeoutError` and reports `temperror`, as the README says. `check` also passes the signal to each resolver call as `{ signal }`, and `Dns.Resolver`'s methods now declare that optional argument, so `Dns.create()` cancels its in-flight `fetch` calls. `node:dns/promises` ignores the argument.
+- **Trade-offs:** `temperror` on abort reads well for RFC 7208's time limit (section 4.6.4), but if you abort because your client went away, you get a result you have to throw away, and spf would stay the only package that doesn't reject. Branching on the reason's type makes `AbortSignal.timeout` and `AbortSignal.any([timeout, request.signal])` behave differently in ways a caller can't see from the types.
+- **Chosen:** reject with `signal.reason`. To get the RFC behavior, catch the `TimeoutError` and report `temperror`, as the README says. `check` also passes the signal to each resolver call as `{ signal }`, and `Dns.Resolver`'s methods now declare that optional argument, so `Dns.create()` cancels its in-flight `fetch` calls. `node:dns/promises` ignores the argument.
 
 ## `Streams.fromIterable` and `toAsyncIterable` take no signal
 
@@ -330,7 +330,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 ## `WebCrypto.hmac` and `WebCrypto.hkdf` take key bytes, not a `CryptoKey`
 
 - **Options:** also accept an imported `CryptoKey` so a caller can reuse it; take bytes or a string only.
-- **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. A caller who reuses a key can call `crypto.subtle.sign` directly.
+- **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` carries its own hash, which could disagree with the `hash` argument. If you reuse a key, you can call `crypto.subtle.sign` directly.
 - **Chosen:** bytes or a string only. `hmac` caches the keys it imports, so signing again with the same secret skips `importKey`, and there's no need to pass a `CryptoKey`.
 
 ## `@portable/rdap` API
@@ -397,7 +397,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream` doesn't match what a caller expects after using `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them. `Jsonl.EncoderStream` is the transform for many values. For the name `encodeStream`, the `Stream` suffix rule now covers a function that returns a stream as well as one that reads one.
 - **Chosen:** `encodeStream(value)`. AGENTS.md now says the suffix marks a variant whose bytes or text are a stream, in either direction, so `parseStream` and `encodeStream` mirror each other.
 - **The reader is `DecoderStream`, not `ParserStream`,** because AGENTS.md keeps `parse` for packages that only read, and json-stream also writes. With the default `paths: ['$']` it emits every top-level value, as `Jsonl.DecoderStream` does for each line.
-- **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so a caller that treated `TypeError` as a bug in its own code also caught bad input.
+- **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so catching `TypeError` to find bugs in your own code also caught bad input.
 
 ## Build `@portable/bytes` instead of pointing to uint8array-extras
 
@@ -407,7 +407,7 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 
 - **Options:** keep `LineStream`; `Lines.DecoderStream`; `Lines.SplitterStream`.
 - **Trade-offs:** `LineStream` describes itself when read alone and echoes Deno's `TextLineStream`, but callers write `Lines.LineStream`, which repeats the package name. `SplitterStream` avoids that and still says what the transform does. `DecoderStream` gives every transform that turns bytes into values the same name, as `Base64`, `QuotedPrintable` and `Jsonl` already do, but it has no `EncoderStream` to pair with, and "decode" says less about a string input, which is only split.
-- **Chosen:** `Lines.DecoderStream`. A caller who has used `Jsonl.DecoderStream` can guess it, and the transform does decode: byte chunks go through `TextDecoder` with the `encoding` option. AGENTS.md now says a transform from bytes or text to values is a `DecoderStream`.
+- **Chosen:** `Lines.DecoderStream`. If you've used `Jsonl.DecoderStream`, you can guess it, and the transform does decode: byte chunks go through `TextDecoder` with the `encoding` option. AGENTS.md now says a transform from bytes or text to values is a `DecoderStream`.
 
 ## README package stats
 
@@ -425,7 +425,7 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 
 This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
 
-- **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for a caller who wants noble.
+- **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for passing noble instead.
 - **Trade-offs:** noble HMAC-SHA256 adds about 3.0 kB gzipped to a browser bundle and needs an optional peer. Node's WebCrypto HMAC is about 7× slower than noble's. Export conditions avoid both costs but give each runtime different code, which tests in one runtime don't cover.
 - **Chosen:** WebCrypto everywhere, because it is the platform API and we expect Node's implementation to get faster. Neither package has a noble dependency or peer any more. `/core` existed to keep the noble default out of bundles, so it is gone, and the option is the only way to pass another function. A browser bundle of `verify` from webhooks is 4.7 kB gzipped, and of `sign` from oauth1 5.1 kB, neither with noble code.
 - **On Node:** a webhooks verification with the default is 1.6× faster than Stripe's `constructEventAsync` and about 1.8× slower than standardwebhooks. An oauth1 GET header is about 5× slower than oauth-1.0a with `node:crypto`. With noble passed in, both are faster than the library they replace. The benchmarks assert against the noble path where the upstream library hashes in JavaScript or `node:crypto`, and against the default where it uses WebCrypto.

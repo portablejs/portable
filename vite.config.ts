@@ -221,6 +221,7 @@ export default defineConfig({
           'tools/lint/src/forAwait.test.ts',
           'tools/lint/src/examples.test.ts',
           'tools/lint/src/packages.test.ts',
+          'tools/lint/src/prose.test.ts',
         ],
         rules: { 'no-restricted-imports': 'off', 'no-restricted-globals': 'off' },
       },

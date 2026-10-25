@@ -37,7 +37,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should not treat invalid content-type as multipart | body: a content type that is not type/subtype throws; a multipart content type throws |
 | should not let boundary material inject lines into the multipart structure | structure: the boundary … throws a RangeError because RFC 2046 does not allow it |
 | should create the same output | structure: html and cid images with other attachments nest multipart/related in multipart/mixed (byte-exact); oracle |
-| should use raw input for the message | Not applicable: `raw` is not supported. A caller that already has a message doesn't need this package. |
+| should use raw input for the message | Not applicable: `raw` is not supported. If you already have a message, you don't need this package. |
 | should use raw input for different parts | Not applicable: `raw` parts are not supported. |
 | should discard BCC | headers: Bcc is left out unless keepBcc is set |
 | should autodetect text encoding | headers: non-ASCII text is encoded, Q for mostly Latin text and B otherwise (byte-exact) |

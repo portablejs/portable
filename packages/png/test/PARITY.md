@@ -20,7 +20,7 @@ pngjs's API is a Node stream class with events, plus `PNG.sync`. Ours is four fu
 | `checkCRC` | `checkCrc` | |
 | `filterType: -1` or a number | `filter`: a filter, or a list to choose from per row | pngjs's types allow a list but its code throws for one. |
 | `bgColor` | `background` | |
-| `deflateLevel`, `deflateStrategy`, `deflateChunkSize`, `deflateFactory` | `deflate` | `CompressionStream` has no settings, so a caller who wants a level passes a zlib function. |
+| `deflateLevel`, `deflateStrategy`, `deflateChunkSize`, `deflateFactory` | `deflate` | `CompressionStream` has no settings, so to choose a level, pass a zlib function. |
 | `inputColorType`, `inputHasAlpha`, `bitDepth: 16` on write | not supported | Input is always 8-bit RGBA, the form `decode` returns and canvas `ImageData` holds. |
 | `skipRescale` | not supported | `data` is always 8-bit RGBA. |
 | `bitblt`, `adjustGamma` | not supported | Pixel manipulation, not PNG coding. |

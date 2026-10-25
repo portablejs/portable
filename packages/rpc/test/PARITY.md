@@ -200,7 +200,7 @@ API differences that decide many rows:
 | unit/windowMessenger.spec.ts > WindowMessenger > keeps existing inbound MessagePort when ACK2 has no MessagePort | Doesn't apply: no MessagePort handover. |
 | unit/windowMessenger.spec.ts > WindowMessenger > closes previous outbound MessagePort when sending duplicate ACK2 | Doesn't apply: no MessagePort handover. |
 | unit/workerMessenger.spec.ts > WorkerMessenger > keeps port disconnected when ACK2 has no MessagePort | Doesn't apply: `Rpc.port` posts straight to the Worker and has no handshake. |
-| unit/workerMessenger.spec.ts > WorkerMessenger > sends over MessagePort after ACK2 contains a port | Doesn't apply: no MessagePort handover. A caller who wants a port per connection transfers one: window.browser.test.ts > channels > routes calls both ways for two connections to one worker over MessagePorts |
+| unit/workerMessenger.spec.ts > WorkerMessenger > sends over MessagePort after ACK2 contains a port | Doesn't apply: no MessagePort handover. If you want a port per connection, transfer one: window.browser.test.ts > channels > routes calls both ways for two connections to one worker over MessagePorts |
 | unit/workerMessenger.spec.ts > WorkerMessenger > closes previous inbound MessagePort when ACK2 includes a replacement port | Doesn't apply: no MessagePort handover. |
 | unit/workerMessenger.spec.ts > WorkerMessenger > keeps existing inbound MessagePort when ACK2 has no MessagePort | Doesn't apply: no MessagePort handover. |
 | unit/workerMessenger.spec.ts > WorkerMessenger > closes previous outbound MessagePort when sending duplicate ACK2 | Doesn't apply: no MessagePort handover. |
