@@ -7,18 +7,6 @@ const attempts = 10;
 const error = new Error('fail');
 const flaky = (attempt: number) => (attempt < attempts ? Promise.reject(error) : attempt);
 
-async function loop(): Promise<number> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await flaky(attempt);
-    } catch (error) {
-      if (attempt >= attempts) {
-        throw error;
-      }
-    }
-  }
-}
-
 test('retry overhead per attempt without a signal is within 25% of p-retry and async-retry', async ({
   bench,
 }) => {
@@ -38,7 +26,6 @@ test('retry overhead per attempt without a signal is within 25% of p-retry and a
         randomize: false,
       });
     }),
-    bench('try/catch loop', loop),
   );
   expect(result.get('p-retry')).not.toBeFasterThan(result.get('@portable/timers'), {
     delta: 0.25,

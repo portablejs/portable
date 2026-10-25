@@ -65,26 +65,30 @@ pako and fflate implement deflate in JavaScript, although every runtime already 
 In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at about the speed of the `crc-32` package, and `node:zlib`'s runs in native code.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Gzip 1 MB of text | `node:zlib` | 46.3 | 1.1× faster | ████████████████ |
-|  | **@portable/compress** | 42.3 |  | ███████████████ |
-|  | fflate | 22.8 | 1.9× slower | ████████ |
-|  | pako | 21.7 | 1.9× slower | ███████ |
-| | | | | |
-| Gunzip 1 MB of text | `node:zlib` | 523 | 2.9× faster | ████████████████ |
-|  | fflate | 228 | 1.3× faster | ███████ |
-|  | **@portable/compress** | 181 |  | ██████ |
-|  | pako | 135 | 1.3× slower | ████ |
-| | | | | |
-| Gunzip a stream of 1 KiB chunks | `node:zlib` | 113 | same | ████████████████ |
-|  | **@portable/compress** | 111 |  | ████████████████ |
-|  | `DecompressionStream` | 96.7 | 1.1× slower | ██████████████ |
-|  | fflate | 54.7 | 2.0× slower | ████████ |
-| | | | | |
-| CRC-32 of 1 MB | `node:zlib` | 4,250 | 3.3× faster | ████████████████ |
-|  | crc-32 | 1,410 | 1.1× faster | █████ |
-|  | **@portable/compress** | 1,290 |  | █████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Gzip 1 MB of text</th></tr>
+<tr><td><code>node:zlib</code></td><td align="right">46.3</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/compress</td><td align="right">42.3</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="146" height="12" alt="" /></td></tr>
+<tr><td>fflate</td><td align="right">22.8</td><td>1.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="79" height="12" alt="" /></td></tr>
+<tr><td>pako</td><td align="right">21.7</td><td>1.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="75" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Gunzip 1 MB of text</th></tr>
+<tr><td><code>node:zlib</code></td><td align="right">523</td><td>2.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>fflate</td><td align="right">228</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="70" height="12" alt="" /></td></tr>
+<tr><td>@portable/compress</td><td align="right">181</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="55" height="12" alt="" /></td></tr>
+<tr><td>pako</td><td align="right">135</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="41" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Gunzip a stream of 1 KiB chunks</th></tr>
+<tr><td><code>node:zlib</code></td><td align="right">113</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/compress</td><td align="right">111</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="157" height="12" alt="" /></td></tr>
+<tr><td><code>DecompressionStream</code></td><td align="right">96.7</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="137" height="12" alt="" /></td></tr>
+<tr><td>fflate</td><td align="right">54.7</td><td>2.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="77" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">CRC-32 of 1 MB</th></tr>
+<tr><td><code>node:zlib</code></td><td align="right">4,250</td><td>3.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>crc-32</td><td align="right">1,410</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="53" height="12" alt="" /></td></tr>
+<tr><td>@portable/compress</td><td align="right">1,290</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="49" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/compress, and the bars are scaled to the fastest library.
 

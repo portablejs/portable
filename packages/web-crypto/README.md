@@ -76,42 +76,40 @@ Each helper replaces a few lines you would otherwise write yourself, and handles
 The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 15 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| SHA-256 of 1 KB | `node:crypto` | 429,000 | 15× faster | ████████████████ |
-|  | @noble/hashes | 136,000 | 4.9× faster | █████ |
-|  | `crypto.subtle` by hand | 28,900 | same | █ |
-|  | **@portable/web-crypto** | 27,900 |  | █ |
-| | | | | |
-| SHA-256 of 1 MB | `crypto.subtle` by hand | 958 | same | ████████████████ |
-|  | **@portable/web-crypto** | 928 |  | ███████████████ |
-|  | @noble/hashes | 170 | 5.5× slower | ███ |
-| | | | | |
-| HMAC-SHA256 of 1 KB | `node:crypto` | 271,000 | 15× faster | ████████████████ |
-|  | @noble/hashes | 84,700 | 4.6× faster | █████ |
-|  | **@portable/web-crypto** | 18,500 |  | █ |
-|  | `crypto.subtle` by hand | 18,400 | same | █ |
-| | | | | |
-| Derive 32 bytes with HKDF | `node:crypto` | 215,000 | 12× faster | ████████████████ |
-|  | @noble/hashes | 113,000 | 6.5× faster | ████████ |
-|  | `crypto.subtle` by hand | 18,200 | 1.1× faster | █ |
-|  | **@portable/web-crypto** | 17,300 |  | █ |
-| | | | | |
-| Import an Ed25519 seed | `crypto.subtle` by hand | 16,500 | 1.1× faster | ████████████████ |
-|  | **@portable/web-crypto** | 15,600 |  | ███████████████ |
-|  | @noble/curves | 2,920 | 5.3× slower | ███ |
-| | | | | |
-| Read the public key of a P-256 key | `node:crypto` | 1,240,000 | 60× faster | ████████████████ |
-|  | **@portable/web-crypto** | 20,500 |  | █ |
-|  | `crypto.subtle` by hand | 19,000 | 1.1× slower | █ |
-| | | | | |
-| Convert a DER ECDSA signature to raw | **@portable/web-crypto** | 4,900,000 |  | ████████████████ |
-|  | ecdsa-sig-formatter | 818,000 | 6.0× slower | ███ |
-|  | @noble/curves | 361,000 | 14× slower | █ |
-| | | | | |
-| Convert a raw ECDSA signature to DER | ecdsa-sig-formatter | 2,250,000 | 1.4× faster | ████████████████ |
-|  | **@portable/web-crypto** | 1,620,000 |  | ████████████ |
-|  | @noble/curves | 253,000 | 6.4× slower | ██ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">SHA-256 of 1 KB</th></tr>
+<tr><td><code>node:crypto</code></td><td align="right">429,000</td><td>15× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">136,000</td><td>4.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="51" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">27,900</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="10" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">SHA-256 of 1 MB</th></tr>
+<tr><td>@portable/web-crypto</td><td align="right">928</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">170</td><td>5.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="29" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">HMAC-SHA256 of 1 KB</th></tr>
+<tr><td><code>node:crypto</code></td><td align="right">271,000</td><td>15× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">84,700</td><td>4.6× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="50" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">18,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="11" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Derive 32 bytes with HKDF</th></tr>
+<tr><td><code>node:crypto</code></td><td align="right">215,000</td><td>12× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/hashes</td><td align="right">113,000</td><td>6.5× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="84" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">17,300</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Import an Ed25519 seed</th></tr>
+<tr><td>@portable/web-crypto</td><td align="right">15,600</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@noble/curves</td><td align="right">2,920</td><td>5.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="30" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the public key of a P-256 key</th></tr>
+<tr><td><code>node:crypto</code></td><td align="right">1,240,000</td><td>60× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">20,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="3" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Convert a DER ECDSA signature to raw</th></tr>
+<tr><td>@portable/web-crypto</td><td align="right">4,900,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>ecdsa-sig-formatter</td><td align="right">818,000</td><td>6.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>@noble/curves</td><td align="right">361,000</td><td>14× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="12" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Convert a raw ECDSA signature to DER</th></tr>
+<tr><td>ecdsa-sig-formatter</td><td align="right">2,250,000</td><td>1.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/web-crypto</td><td align="right">1,620,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="115" height="12" alt="" /></td></tr>
+<tr><td>@noble/curves</td><td align="right">253,000</td><td>6.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="18" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/web-crypto, and the bars are scaled to the fastest library.
 
@@ -121,7 +119,6 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | ecdsa-sig-formatter | 1.0.11 | 1.7 kB | 1 | `buffer` | included |
 | @noble/hashes | 2.4.0 | 3.4 kB | 0 | none | included |
 | @noble/curves | 2.4.0 | 20 kB | 1 | none | included |
-| `crypto.subtle` by hand | – | built in | – | none | – |
 | `node:crypto` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.

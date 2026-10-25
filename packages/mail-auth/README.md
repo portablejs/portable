@@ -125,13 +125,17 @@ Differences to check when you switch from mailauth:
 - mailauth's BIMI check (`result.bimi`), `result.receivedChain` and `dkim2` aren't supported.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Authenticate a 250 KB message with a DKIM signature and an ARC set | **@portable/mail-auth** | 246 |  | ████████████████ |
-|  | mailauth | 238 | same | ███████████████ |
-| | | | | |
-| Authenticate and seal a short message | **@portable/mail-auth** | 433 |  | ████████████████ |
-|  | mailauth | 323 | 1.3× slower | ████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Authenticate a 250 KB message with a DKIM signature and an ARC set</th></tr>
+<tr><td>@portable/mail-auth</td><td align="right">246</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">238</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="155" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Authenticate and seal a short message</th></tr>
+<tr><td>@portable/mail-auth</td><td align="right">433</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>mailauth</td><td align="right">323</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="119" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail-auth, and the bars are scaled to the fastest library.
 

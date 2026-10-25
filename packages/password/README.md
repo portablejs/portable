@@ -111,18 +111,22 @@ async function check(user: User, password: string): Promise<boolean> {
 [@noble/hashes](https://github.com/paulmillr/noble-hashes) has `argon2id` and `scrypt` in plain JavaScript, and [hash-wasm](https://github.com/Daninet/hash-wasm) has Argon2, scrypt and bcrypt in WebAssembly. Both run in every runtime this package does. bcryptjs and the `argon2` package implement other algorithms, not PBKDF2. Keep using them if you're already on them and their runtime fits. Argon2id is the stronger choice where you can run it, and PBKDF2 is the one WebCrypto can run everywhere.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Hash a password with 600,000 iterations | pbkdf2 | 9.26 | same | ████████████████ |
-|  | `node:crypto` | 9.23 | same | ████████████████ |
-|  | `crypto.subtle` | 9.23 | same | ████████████████ |
-|  | **@portable/password** | 8.88 |  | ███████████████ |
-|  | pbkdf2-password | 8.69 | same | ███████████████ |
-| | | | | |
-| Verify a password with 600,000 iterations | **@portable/password** | 9.33 |  | ████████████████ |
-|  | `node:crypto` | 8.95 | same | ███████████████ |
-| | | | | |
-| Check whether a stored hash needs a rehash | **@portable/password** | 603,000 |  | ████████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Hash a password with 600,000 iterations</th></tr>
+<tr><td>pbkdf2</td><td align="right">9.26</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">9.23</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td><code>crypto.subtle</code></td><td align="right">9.23</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>@portable/password</td><td align="right">8.88</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><td>pbkdf2-password</td><td align="right">8.69</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="150" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Verify a password with 600,000 iterations</th></tr>
+<tr><td>@portable/password</td><td align="right">9.33</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">8.95</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Check whether a stored hash needs a rehash</th></tr>
+<tr><td>@portable/password</td><td align="right">603,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/password, and the bars are scaled to the fastest library.
 

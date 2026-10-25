@@ -81,28 +81,32 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 - image-size needs a PNM file's width and height on one line, separated by one space, and returns `NaN` for dimensions that aren't numbers. `parse` reads them across lines with comments between them, and throws `InvalidInputError` for dimensions that aren't numbers.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Read the size of a 730 KB JPEG from a stream | **@portable/image-size** | 88,700 |  | ████████████████ |
-|  | image-size | 1,250 | 71× slower | █ |
-| | | | | |
-| Read the size of a 730 KB JPEG | **@portable/image-size** | 6,840,000 |  | ████████████████ |
-|  | image-size | 1,800 | 3,800× slower | █ |
-| | | | | |
-| Read the size of a PNG | **@portable/image-size** | 2,590,000 |  | ████████████████ |
-|  | image-size | 439,000 | 5.9× slower | ███ |
-| | | | | |
-| Read the size of a HEIC image | **@portable/image-size** | 201,000 |  | ████████████████ |
-|  | image-size | 56,600 | 3.6× slower | █████ |
-| | | | | |
-| Read the size of a WebP image | **@portable/image-size** | 2,470,000 |  | ████████████████ |
-|  | image-size | 347,000 | 7.1× slower | ██ |
-| | | | | |
-| Read the size of an SVG | **@portable/image-size** | 550,000 |  | ████████████████ |
-|  | image-size | 86,500 | 6.4× slower | ███ |
-| | | | | |
-| Read the size of a TIFF | **@portable/image-size** | 8,530,000 |  | ████████████████ |
-|  | image-size | 24,000 | 360× slower | █ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Read the size of a 730 KB JPEG from a stream</th></tr>
+<tr><td>@portable/image-size</td><td align="right">88,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">1,250</td><td>71× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the size of a 730 KB JPEG</th></tr>
+<tr><td>@portable/image-size</td><td align="right">6,840,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">1,800</td><td>3,800× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the size of a PNG</th></tr>
+<tr><td>@portable/image-size</td><td align="right">2,590,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">439,000</td><td>5.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the size of a HEIC image</th></tr>
+<tr><td>@portable/image-size</td><td align="right">201,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">56,600</td><td>3.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="45" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the size of a WebP image</th></tr>
+<tr><td>@portable/image-size</td><td align="right">2,470,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">347,000</td><td>7.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="22" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the size of an SVG</th></tr>
+<tr><td>@portable/image-size</td><td align="right">550,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">86,500</td><td>6.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="25" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Read the size of a TIFF</th></tr>
+<tr><td>@portable/image-size</td><td align="right">8,530,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">24,000</td><td>360× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/image-size, and the bars are scaled to the fastest library.
 

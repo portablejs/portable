@@ -24,15 +24,17 @@ export function opsPerSecond(hz: number): string {
   return (Math.round(hz / step) * step).toLocaleString('en-US');
 }
 
-const barWidth = 16;
+const barWidth = 160;
 
 /**
- * A bar of up to `barWidth` full blocks, at least one, for `hz` against the fastest result. The
- * partial blocks (`▏` to `▉`) render taller than `█` and shifted in GitHub's font, so the bar uses
- * full blocks only.
+ * An image of a one-pixel SVG stretched to a width in pixels for `hz` against the fastest result, at
+ * least 2. Block characters such as `█` leave gaps between them and render at different heights in
+ * different fonts, and GitHub strips `data:` URLs and inline `<svg>`, so the bar is a file on the
+ * docs site. An absolute URL works on GitHub, npm and JSR, which resolve relative paths differently.
  */
 function bar(hz: number, fastest: number): string {
-  return '█'.repeat(Math.max(1, Math.round((hz / fastest) * barWidth)));
+  const width = Math.max(2, Math.round((hz / fastest) * barWidth));
+  return `<img src="https://portablejs.com/readme/benchmark-bar.svg" width="${width}" height="12" alt="" />`;
 }
 
 /** How `hz` compares with `ours`, such as "1.9× slower", with a no-break space so the cell doesn't wrap. */
@@ -46,34 +48,42 @@ function relative(hz: number, ours: number): string {
   return `${times}×\u00a0${hz > ours ? 'faster' : 'slower'}`;
 }
 
+/** Converts a Markdown label, such as "`Buffer` (Node)", to HTML for a cell. */
+function html(markdown: string): string {
+  return markdown
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
 /**
- * Renders one row per library that ran each benchmark, fastest first, with a bar scaled to the
- * fastest result and the speed compared with `ours`. The benchmark's label is on its first row only,
- * and an empty row separates one benchmark from the next.
+ * Renders an HTML table, because a Markdown table has no cell that spans columns. Each benchmark
+ * has a heading row that spans the table, then one row per library that ran it, fastest first, with
+ * the speed compared with `ours` and a bar scaled to the fastest result.
  */
 export function benchTable(ours: string, benchmarks: readonly Benchmark[]): string {
   const lines = [
-    '| Benchmark | Library | Ops/s | Relative | |',
-    '| --- | --- | ---: | --- | --- |',
+    '<table>',
+    '<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>',
+    '<tbody>',
   ];
   for (const { label, results } of benchmarks) {
     if (results.length === 0) {
       continue;
     }
-    if (lines.length > 2) {
-      lines.push('| | | | | |');
-    }
+    lines.push(`<tr><th colspan="4" align="left">${html(label)}</th></tr>`);
     const sorted = [...results].sort((a, b) => b.hz - a.hz);
     const fastest = sorted[0].hz;
     const baseline = results.find(({ library }) => library === ours)?.hz;
-    sorted.forEach(({ library, hz }, index) => {
-      const name = library === ours ? `**${library}**` : library;
+    for (const { library, hz } of sorted) {
       const compared = library === ours || baseline === undefined ? '' : relative(hz, baseline);
       lines.push(
-        `| ${index === 0 ? label : ''} | ${name} | ${opsPerSecond(hz)} | ${compared} | ${bar(hz, fastest)} |`,
+        `<tr><td>${html(library)}</td><td align="right">${opsPerSecond(hz)}</td><td>${compared}</td><td>${bar(hz, fastest)}</td></tr>`,
       );
-    });
+    }
   }
+  lines.push('</tbody>', '</table>');
   return lines.join('\n');
 }
 

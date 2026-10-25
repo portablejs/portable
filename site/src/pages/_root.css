@@ -207,3 +207,18 @@
   color: var(--vocs-text-color-heading);
   border-bottom: 2px solid var(--vocs-color-accent);
 }
+
+/* The docs logo matches the home page's brand: the icon at the height of a capital letter, then the name. */
+a > div[data-v-logo] {
+  gap: 0.3em;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--vocs-text-color-heading);
+}
+a > div[data-v-logo]::after {
+  content: 'Portable';
+}
+a > div[data-v-logo] img[data-v-logo-image] {
+  height: 1cap;
+  max-height: none;
+}

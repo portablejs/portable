@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { hmac } from '@noble/hashes/hmac.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { verify as octokitVerify } from '@octokit/webhooks-methods';
@@ -112,12 +111,6 @@ test('verifies a GitHub webhook within 25% of @octokit/webhooks-methods for the 
     }),
     bench('@octokit/webhooks-methods for Node', async () => {
       await octokitVerify(secret, body, signature);
-    }),
-    bench('node:crypto createHmac', () => {
-      const expected = Buffer.from(
-        `sha256=${createHmac('sha256', secret).update(body).digest('hex')}`,
-      );
-      timingSafeEqual(expected, Buffer.from(signature));
     }),
   );
   expect(result.get('@octokit/webhooks-methods for the web')).not.toBeFasterThan(

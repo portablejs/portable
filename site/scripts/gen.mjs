@@ -73,6 +73,23 @@ for (const name of seen) {
     return `](${gh}/packages/${name}/${href.replace(/^\.\//, '')})`;
   });
   md = md.replace(/<!-- bench:(start|end) -->\n/g, '');
+  // The benchmark table is HTML in the README, so Vocs doesn't style it. Vocs styles its own tables
+  // through these data attributes, so the benchmark table gets them too.
+  md = md.replace(
+    /^<table>\n[\s\S]*?\n<\/table>$/gm,
+    (table) =>
+      `<div data-v-table-wrapper="true">${table
+        .replace(/\n/g, '')
+        .replace(/<(table|thead|tbody|tr|th|td)(?=[ >])/g, '<$1 data-v=""')
+        .replace(/<code>/g, '<code data-v="true">')
+        .replace(/ colspan=/g, ' colSpan=')}</div>`,
+  );
+  // The README draws each bar as an image of readme/benchmark-bar.svg on the docs site, which can't take the page's text color.
+  // On the site the bar is an inline SVG, so `currentColor` is the text color in light and dark mode.
+  md = md.replace(
+    /<img src="https:\/\/portablejs\.com\/readme\/benchmark-bar\.svg" width="(\d+)" height="(\d+)" alt="" \/>/g,
+    '<svg width="$1" height="$2" aria-hidden="true"><rect width="100%" height="100%" fill="currentColor" fill-opacity="0.4" /></svg>',
+  );
   md = md.replace(
     /`((?:[^`\n\\]|\\.)*?\\`(?:[^`\n\\]|\\.)*?)`(?=[^`]|$)/g,
     (_, inner) => '`` ' + inner.replace(/\\`/g, '`') + ' ``',
@@ -129,7 +146,7 @@ function toMdx(md) {
           return part
             .replace(/[{}]/g, (c) => '\\' + c)
             .replace(
-              /<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd)\b|!--)/g,
+              /<(?!\/?(picture|source|img|br|a|sub|sup|details|summary|kbd|table|thead|tbody|tr|th|td|code|svg|rect|div)\b|!--)/g,
               '&lt;',
             );
         })

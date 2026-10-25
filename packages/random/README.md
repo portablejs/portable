@@ -77,40 +77,44 @@ Each of these libraries does part of the job: random-int and lodash use `Math.ra
 Each benchmark makes 1,000 calls per sample.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| 1,000 × `int(1, 100)` | **@portable/random** | 105,000 |  | ████████████████ |
-|  | random-int | 9,180 | 11× slower | █ |
-|  | lodash | 8,670 | 12× slower | █ |
-|  | `node:crypto` | 5,130 | 20× slower | █ |
-| | | | | |
-| 1,000 × `int` over 2^53 integers | **@portable/random** | 31,200 |  | ████████████████ |
-|  | random-int | 8,080 | 3.9× slower | ████ |
-| | | | | |
-| 1,000 × `float()` | `Math.random` or `crypto.getRandomValues` | 70,000 | 1.3× faster | ████████████████ |
-|  | **@portable/random** | 54,400 |  | ████████████ |
-|  | lodash | 2,480 | 22× slower | █ |
-| | | | | |
-| 1,000 × `string(21)` | nanoid | 29,200 | 1.1× faster | ████████████████ |
-|  | **@portable/random** | 26,400 |  | ██████████████ |
-|  | crypto-random-string | 315 | 84× slower | █ |
-| | | | | |
-| 1,000 × `string(12)` from 36 characters | **@portable/random** | 29,200 |  | ████████████████ |
-|  | nanoid | 26,900 | 1.1× slower | ███████████████ |
-|  | crypto-random-string | 344 | 85× slower | █ |
-| | | | | |
-| 1,000 × `shuffle` of 52 elements | **@portable/random** | 1,970 |  | ████████████████ |
-|  | lodash | 1,120 | 1.8× slower | █████████ |
-| | | | | |
-| 1,000 × `pick` | **@portable/random** | 85,000 |  | ████████████████ |
-|  | lodash | 8,740 | 9.7× slower | ██ |
-| | | | | |
-| 1,000 × `bytes(32)` | **@portable/random** | 9,230 |  | ████████████████ |
-|  | nanoid | 549 | 17× slower | █ |
-|  | `Math.random` or `crypto.getRandomValues` | 478 | 19× slower | █ |
-| | | | | |
-| 1,000 × `seeded(1).float()` | **@portable/random** | 57,700 |  | ████████████████ |
-|  | seedrandom | 20,100 | 2.9× slower | ██████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">1,000 × <code>int(1, 100)</code></th></tr>
+<tr><td>@portable/random</td><td align="right">105,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>random-int</td><td align="right">9,180</td><td>11× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="14" height="12" alt="" /></td></tr>
+<tr><td>lodash</td><td align="right">8,670</td><td>12× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><td><code>node:crypto</code></td><td align="right">5,130</td><td>20× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="8" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>int</code> over 2^53 integers</th></tr>
+<tr><td>@portable/random</td><td align="right">31,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>random-int</td><td align="right">8,080</td><td>3.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="41" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>float()</code></th></tr>
+<tr><td><code>Math.random</code> or <code>crypto.getRandomValues</code></td><td align="right">70,000</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">54,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
+<tr><td>lodash</td><td align="right">2,480</td><td>22× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="6" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>string(21)</code></th></tr>
+<tr><td>nanoid</td><td align="right">29,200</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/random</td><td align="right">26,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="145" height="12" alt="" /></td></tr>
+<tr><td>crypto-random-string</td><td align="right">315</td><td>84× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>string(12)</code> from 36 characters</th></tr>
+<tr><td>@portable/random</td><td align="right">29,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nanoid</td><td align="right">26,900</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="147" height="12" alt="" /></td></tr>
+<tr><td>crypto-random-string</td><td align="right">344</td><td>85× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>shuffle</code> of 52 elements</th></tr>
+<tr><td>@portable/random</td><td align="right">1,970</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>lodash</td><td align="right">1,120</td><td>1.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="91" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>pick</code></th></tr>
+<tr><td>@portable/random</td><td align="right">85,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>lodash</td><td align="right">8,740</td><td>9.7× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="16" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>bytes(32)</code></th></tr>
+<tr><td>@portable/random</td><td align="right">9,230</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>nanoid</td><td align="right">549</td><td>17× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="10" height="12" alt="" /></td></tr>
+<tr><td><code>Math.random</code> or <code>crypto.getRandomValues</code></td><td align="right">478</td><td>19× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="8" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">1,000 × <code>seeded(1).float()</code></th></tr>
+<tr><td>@portable/random</td><td align="right">57,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>seedrandom</td><td align="right">20,100</td><td>2.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="56" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/random, and the bars are scaled to the fastest library.
 

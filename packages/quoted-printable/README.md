@@ -62,28 +62,32 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - The libqp 2.x `Encoder` left a hyphen after a lone CR unescaped, so the hyphen would start a line if a relay turned the CR into CRLF. `encode` follows libqp 3, which escapes it.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Encode 512 KB of text | **@portable/quoted-printable** | 106 |  | ████████████████ |
-|  | libqp | 90.6 | 1.2× slower | ██████████████ |
-|  | quoted-printable | 38.2 | 2.8× slower | ██████ |
-| | | | | |
-| Encode 256 KB of random bytes | **@portable/quoted-printable** | 155 |  | ████████████████ |
-|  | libqp | 132 | 1.2× slower | ██████████████ |
-| | | | | |
-| Encode a 512 KB text stream in 16 KB chunks | **@portable/quoted-printable** | 97.0 |  | ████████████████ |
-|  | libqp | 94.2 | same | ████████████████ |
-| | | | | |
-| Decode the encoded 512 KB of text | **@portable/quoted-printable** | 97.8 |  | ████████████████ |
-|  | libqp | 86.3 | 1.1× slower | ██████████████ |
-|  | quoted-printable | 34.3 | 2.9× slower | ██████ |
-| | | | | |
-| Decode the encoded 256 KB of random bytes | **@portable/quoted-printable** | 255 |  | ████████████████ |
-|  | libqp | 76.3 | 3.3× slower | █████ |
-|  | quoted-printable | 19.0 | 13× slower | █ |
-| | | | | |
-| Decode the encoded text as a stream | **@portable/quoted-printable** | 105 |  | ████████████████ |
-|  | libqp | 78.1 | 1.3× slower | ████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Encode 512 KB of text</th></tr>
+<tr><td>@portable/quoted-printable</td><td align="right">106</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libqp</td><td align="right">90.6</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="137" height="12" alt="" /></td></tr>
+<tr><td>quoted-printable</td><td align="right">38.2</td><td>2.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="58" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode 256 KB of random bytes</th></tr>
+<tr><td>@portable/quoted-printable</td><td align="right">155</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libqp</td><td align="right">132</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="136" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Encode a 512 KB text stream in 16 KB chunks</th></tr>
+<tr><td>@portable/quoted-printable</td><td align="right">97.0</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libqp</td><td align="right">94.2</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="155" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode the encoded 512 KB of text</th></tr>
+<tr><td>@portable/quoted-printable</td><td align="right">97.8</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libqp</td><td align="right">86.3</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="141" height="12" alt="" /></td></tr>
+<tr><td>quoted-printable</td><td align="right">34.3</td><td>2.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="56" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode the encoded 256 KB of random bytes</th></tr>
+<tr><td>@portable/quoted-printable</td><td align="right">255</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libqp</td><td align="right">76.3</td><td>3.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="48" height="12" alt="" /></td></tr>
+<tr><td>quoted-printable</td><td align="right">19.0</td><td>13× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="12" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Decode the encoded text as a stream</th></tr>
+<tr><td>@portable/quoted-printable</td><td align="right">105</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libqp</td><td align="right">78.1</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="119" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/quoted-printable, and the bars are scaled to the fastest library.
 

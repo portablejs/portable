@@ -157,14 +157,18 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)` and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
 
 <!-- bench:start -->
-| Benchmark | Library | Ops/s | Relative | |
-| --- | --- | ---: | --- | --- |
-| Parse a 329 KB phone JPEG | **@portable/exif** | 203,000 |  | ████████████████ |
-|  | exif-reader | 80,400 | 2.5× slower | ██████ |
-|  | exif-parser | 61,500 | 3.3× slower | █████ |
-|  | exifr | 18,000 | 11× slower | █ |
-| | | | | |
-| Parse a phone JPEG from a stream | **@portable/exif** | 36,700 |  | ████████████████ |
+<table>
+<thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
+<tbody>
+<tr><th colspan="4" align="left">Parse a 329 KB phone JPEG</th></tr>
+<tr><td>@portable/exif</td><td align="right">203,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>exif-reader</td><td align="right">80,400</td><td>2.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="63" height="12" alt="" /></td></tr>
+<tr><td>exif-parser</td><td align="right">61,500</td><td>3.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="48" height="12" alt="" /></td></tr>
+<tr><td>exifr</td><td align="right">18,000</td><td>11× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="14" height="12" alt="" /></td></tr>
+<tr><th colspan="4" align="left">Parse a phone JPEG from a stream</th></tr>
+<tr><td>@portable/exif</td><td align="right">36,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+</tbody>
+</table>
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/exif, and the bars are scaled to the fastest library.
 

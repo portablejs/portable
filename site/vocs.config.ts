@@ -3,7 +3,6 @@ import groups from './src/packages.json' with { type: 'json' };
 
 const guides = [
   ['streams', 'Streams'],
-  ['errors', 'Errors'],
   ['encodings', 'Encodings'],
   ['data-formats', 'Text and data formats'],
   ['email', 'Email'],
@@ -13,6 +12,7 @@ const guides = [
   ['images', 'Images'],
   ['concurrency', 'Concurrency and timing'],
   ['utilities', 'Utilities'],
+  ['errors', 'Errors'],
 ];
 
 // GitHub Pages serves the site from /portable, and previews serve it from the root.
@@ -24,7 +24,7 @@ export default defineConfig({
   renderStrategy: 'full-static',
   description: 'Web-standard building blocks for any JavaScript runtime.',
   logoUrl: { light: `${basePath}/logo-light.svg`, dark: `${basePath}/logo-dark.svg` },
-  iconUrl: `${basePath}/logo.svg`,
+  iconUrl: `${basePath}/favicon.svg`,
   accentColor: '#fc7c00',
   colorScheme: 'light dark',
   topNav: [
