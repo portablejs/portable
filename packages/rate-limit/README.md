@@ -203,7 +203,7 @@ const store: RateLimit.Store = {
 
 ## Why use this over rate-limiter-flexible, limiter and bottleneck
 
-rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a two-method store, so any storage that can compare and set one number works, and it has no dependencies.
+rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a two-method store, so any storage that can compare and set one number works, and it has no dependencies outside `@portable/*`.
 
 - rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
 - `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.

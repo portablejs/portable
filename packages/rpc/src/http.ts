@@ -122,7 +122,11 @@ export function http<api>(
   url: string | URL,
   options: http.Options = {},
 ): Remote<api> & AsyncDisposeMethod {
-  const { fetch = (request: Request) => globalThis.fetch(request), signal } = options;
+  const { fetch = (request: Request) => globalThis.fetch(request) } = options;
+  const disposer = new AbortController();
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, disposer.signal])
+    : disposer.signal;
   const batches = new Map<Id, Batch>();
   let queued: Batch | undefined;
 
@@ -193,7 +197,7 @@ export function http<api>(
           method: 'POST',
           headers: { 'content-type': 'application/json', accept: `application/json, ${ndjson}` },
           body: messages.length === 1 ? messages[0]! : `[${messages.join(',')}]`,
-          signal: signal ? AbortSignal.any([signal, controller.signal]) : controller.signal,
+          signal: AbortSignal.any([signal, controller.signal]),
         }),
       );
       if (!response.ok) {
@@ -217,11 +221,11 @@ export function http<api>(
         client.fail(id, new TransportError('The response has no result for this call.'));
       }
     } catch (e) {
-      const reason = signal?.aborted ? signal.reason : e;
+      const reason = signal.aborted ? signal.reason : e;
       for (const id of pending) {
         client.fail(id, reason);
       }
-      if (!controller.signal.aborted || signal?.aborted) {
+      if (!controller.signal.aborted || signal.aborted) {
         throw reason;
       }
     } finally {
@@ -231,17 +235,13 @@ export function http<api>(
     }
   }
 
-  if (signal?.aborted) {
+  if (signal.aborted) {
     client.close(signal.reason);
   } else {
-    signal?.addEventListener('abort', () => client.close(signal.reason), { once: true });
+    signal.addEventListener('abort', () => client.close(signal.reason), { once: true });
   }
   return remote(client, '', async () => {
-    const reason = new DOMException('The connection was disposed.', 'AbortError');
-    client.close(reason);
-    for (const batch of new Set([...batches.values(), ...(queued ? [queued] : [])])) {
-      batch.controller.abort(reason);
-    }
+    disposer.abort(new DOMException('The connection was disposed.', 'AbortError'));
   });
 }
 

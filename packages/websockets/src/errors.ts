@@ -6,13 +6,13 @@ import * as Errors from '@portable/errors';
  *
  * @example
  * ```ts
+ * import * as Streams from '@portable/streams';
  * import * as WebSockets from '@portable/websockets';
  *
  * const { readable } = WebSockets.fromSocket(new WebSocket('wss://example.com/feed'));
- * const reader = readable.getReader();
  * try {
- *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *     console.log(r.value);
+ *   for await (const message of Streams.toAsyncIterable(readable)) {
+ *     console.log(message);
  *   }
  * } catch (error) {
  *   if (error instanceof WebSockets.CloseError) {
@@ -40,13 +40,13 @@ export class CloseError extends Errors.BaseError {
  *
  * @example
  * ```ts
+ * import * as Streams from '@portable/streams';
  * import * as WebSockets from '@portable/websockets';
  *
  * const { readable } = WebSockets.connect('wss://example.com/feed', { maxBuffered: 1_000_000 });
- * const reader = readable.getReader();
  * try {
- *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *     await handle(r.value);
+ *   for await (const message of Streams.toAsyncIterable(readable)) {
+ *     await handle(message);
  *   }
  * } catch (error) {
  *   if (error instanceof WebSockets.MaxBufferedError) {

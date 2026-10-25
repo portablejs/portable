@@ -199,7 +199,7 @@ next({ attempt: 3 }); // 4000
 
 ## Why use this over p-retry, async-retry, p-wait-for and delay
 
-These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies.
+These libraries cover one job each, with four sets of option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies outside `@portable/*`.
 
 - Ten attempts with no delay run about twice as fast as with p-retry on Node. With a `signal`, the two run at the same speed.
 - An abort settles the call at once, also while an attempt is running. p-retry waits for the running attempt to settle first.

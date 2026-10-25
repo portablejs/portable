@@ -24,8 +24,8 @@ export declare namespace connect {
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */
     maxLength?: number | undefined;
     /**
-     * Called after a connection ends, with the error and `{ attempt }`, where `attempt` is the
-     * number of reconnects since the last accepted response. `error` is `undefined` when the
+     * Called after a connection ends while `attempts` isn't used up, with the error and
+     * `{ attempt }`, where `attempt` is the number of reconnects since the last accepted response. `error` is `undefined` when the
      * response ended normally. Return `false` to stop reconnecting: the stream then closes if
      * `error` is `undefined`, and errors with `error` otherwise.
      * @default (error) => !(error instanceof Sse.ResponseError || error instanceof Sse.MaxLengthError)
@@ -52,6 +52,7 @@ export declare namespace connect {
  * @example
  * ```ts
  * import * as Sse from '@portable/sse';
+ * import * as Streams from '@portable/streams';
  *
  * const request = new Request('https://example.com/events', {
  *   method: 'POST',
@@ -65,9 +66,8 @@ export declare namespace connect {
  *   },
  *   signal: AbortSignal.timeout(60_000),
  * });
- * const reader = events.getReader();
- * for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *   console.log(r.value.data);
+ * for await (const event of Streams.toAsyncIterable(events)) {
+ *   console.log(event.data);
  * }
  * ```
  */

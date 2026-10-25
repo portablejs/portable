@@ -2,7 +2,7 @@ import { type AsyncDisposeMethod, withAsyncDispose } from '@portable/errors/inte
 
 /** What a task receives when it starts. */
 export type Context = {
-  /** Aborts when the task's `signal` or the queue's `signal` aborts. */
+  /** Aborts when the task's `signal` or the queue's `signal` aborts, or when the queue is disposed. */
   signal: AbortSignal;
 };
 

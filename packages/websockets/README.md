@@ -9,6 +9,7 @@ npm install @portable/websockets
 ```
 
 ```ts
+import * as Streams from '@portable/streams';
 import * as WebSockets from '@portable/websockets';
 
 const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
@@ -25,11 +26,12 @@ const { readable, writable } = WebSockets.connect('wss://example.com/feed', {
 const writer = writable.getWriter();
 await writer.write(JSON.stringify({ subscribe: 'prices' }));
 
-const reader = readable.getReader();
-for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value);
+for await (const message of Streams.toAsyncIterable(readable)) {
+  console.log(message);
 }
 ```
+
+`Streams.toAsyncIterable` from `@portable/streams` iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const message of readable)` also works.
 
 The namespace is `WebSockets`, so it doesn't shadow the global `WebSocket`.
 
