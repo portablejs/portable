@@ -79,38 +79,38 @@ Each benchmark makes 1,000 calls per sample.
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| 1,000 × `int(1, 100)` | **@portable/random** | 105,000 |  | ████████████ |
+| 1,000 × `int(1, 100)` | **@portable/random** | 105,000 |  | ████████████████ |
 |  | random-int | 9,180 | 11× slower | █ |
 |  | lodash | 8,670 | 12× slower | █ |
-|  | `node:crypto` | 5,130 | 20× slower | ▋ |
+|  | `node:crypto` | 5,130 | 20× slower | █ |
 | | | | | |
-| 1,000 × `int` over 2^53 integers | **@portable/random** | 31,200 |  | ████████████ |
-|  | random-int | 8,080 | 3.9× slower | ███▏ |
+| 1,000 × `int` over 2^53 integers | **@portable/random** | 31,200 |  | ████████████████ |
+|  | random-int | 8,080 | 3.9× slower | ████ |
 | | | | | |
-| 1,000 × `float()` | `Math.random` or `crypto.getRandomValues` | 70,000 | 1.3× faster | ████████████ |
-|  | **@portable/random** | 54,400 |  | █████████▍ |
-|  | lodash | 2,480 | 22× slower | ▍ |
+| 1,000 × `float()` | `Math.random` or `crypto.getRandomValues` | 70,000 | 1.3× faster | ████████████████ |
+|  | **@portable/random** | 54,400 |  | ████████████ |
+|  | lodash | 2,480 | 22× slower | █ |
 | | | | | |
-| 1,000 × `string(21)` | nanoid | 29,200 | 1.1× faster | ████████████ |
-|  | **@portable/random** | 26,400 |  | ██████████▉ |
-|  | crypto-random-string | 315 | 84× slower | ▏ |
+| 1,000 × `string(21)` | nanoid | 29,200 | 1.1× faster | ████████████████ |
+|  | **@portable/random** | 26,400 |  | ██████████████ |
+|  | crypto-random-string | 315 | 84× slower | █ |
 | | | | | |
-| 1,000 × `string(12)` from 36 characters | **@portable/random** | 29,200 |  | ████████████ |
-|  | nanoid | 26,900 | 1.1× slower | ███████████ |
-|  | crypto-random-string | 344 | 85× slower | ▏ |
+| 1,000 × `string(12)` from 36 characters | **@portable/random** | 29,200 |  | ████████████████ |
+|  | nanoid | 26,900 | 1.1× slower | ███████████████ |
+|  | crypto-random-string | 344 | 85× slower | █ |
 | | | | | |
-| 1,000 × `shuffle` of 52 elements | **@portable/random** | 1,970 |  | ████████████ |
-|  | lodash | 1,120 | 1.8× slower | ██████▉ |
+| 1,000 × `shuffle` of 52 elements | **@portable/random** | 1,970 |  | ████████████████ |
+|  | lodash | 1,120 | 1.8× slower | █████████ |
 | | | | | |
-| 1,000 × `pick` | **@portable/random** | 85,000 |  | ████████████ |
-|  | lodash | 8,740 | 9.7× slower | █▎ |
+| 1,000 × `pick` | **@portable/random** | 85,000 |  | ████████████████ |
+|  | lodash | 8,740 | 9.7× slower | ██ |
 | | | | | |
-| 1,000 × `bytes(32)` | **@portable/random** | 9,230 |  | ████████████ |
-|  | nanoid | 549 | 17× slower | ▊ |
-|  | `Math.random` or `crypto.getRandomValues` | 478 | 19× slower | ▋ |
+| 1,000 × `bytes(32)` | **@portable/random** | 9,230 |  | ████████████████ |
+|  | nanoid | 549 | 17× slower | █ |
+|  | `Math.random` or `crypto.getRandomValues` | 478 | 19× slower | █ |
 | | | | | |
-| 1,000 × `seeded(1).float()` | **@portable/random** | 57,700 |  | ████████████ |
-|  | seedrandom | 20,100 | 2.9× slower | ████▏ |
+| 1,000 × `seeded(1).float()` | **@portable/random** | 57,700 |  | ████████████████ |
+|  | seedrandom | 20,100 | 2.9× slower | ██████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/random, and the bars are scaled to the fastest library.
 

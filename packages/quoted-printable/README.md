@@ -64,26 +64,26 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Encode 512 KB of text | **@portable/quoted-printable** | 106 |  | ████████████ |
-|  | libqp | 90.6 | 1.2× slower | ██████████▎ |
-|  | quoted-printable | 38.2 | 2.8× slower | ████▍ |
+| Encode 512 KB of text | **@portable/quoted-printable** | 106 |  | ████████████████ |
+|  | libqp | 90.6 | 1.2× slower | ██████████████ |
+|  | quoted-printable | 38.2 | 2.8× slower | ██████ |
 | | | | | |
-| Encode 256 KB of random bytes | **@portable/quoted-printable** | 155 |  | ████████████ |
-|  | libqp | 132 | 1.2× slower | ██████████▎ |
+| Encode 256 KB of random bytes | **@portable/quoted-printable** | 155 |  | ████████████████ |
+|  | libqp | 132 | 1.2× slower | ██████████████ |
 | | | | | |
-| Encode a 512 KB text stream in 16 KB chunks | **@portable/quoted-printable** | 97.0 |  | ████████████ |
-|  | libqp | 94.2 | same | ███████████▋ |
+| Encode a 512 KB text stream in 16 KB chunks | **@portable/quoted-printable** | 97.0 |  | ████████████████ |
+|  | libqp | 94.2 | same | ████████████████ |
 | | | | | |
-| Decode the encoded 512 KB of text | **@portable/quoted-printable** | 97.8 |  | ████████████ |
-|  | libqp | 86.3 | 1.1× slower | ██████████▋ |
-|  | quoted-printable | 34.3 | 2.9× slower | ████▎ |
+| Decode the encoded 512 KB of text | **@portable/quoted-printable** | 97.8 |  | ████████████████ |
+|  | libqp | 86.3 | 1.1× slower | ██████████████ |
+|  | quoted-printable | 34.3 | 2.9× slower | ██████ |
 | | | | | |
-| Decode the encoded 256 KB of random bytes | **@portable/quoted-printable** | 255 |  | ████████████ |
-|  | libqp | 76.3 | 3.3× slower | ███▋ |
-|  | quoted-printable | 19.0 | 13× slower | ▉ |
+| Decode the encoded 256 KB of random bytes | **@portable/quoted-printable** | 255 |  | ████████████████ |
+|  | libqp | 76.3 | 3.3× slower | █████ |
+|  | quoted-printable | 19.0 | 13× slower | █ |
 | | | | | |
-| Decode the encoded text as a stream | **@portable/quoted-printable** | 105 |  | ████████████ |
-|  | libqp | 78.1 | 1.3× slower | ████████▉ |
+| Decode the encoded text as a stream | **@portable/quoted-printable** | 105 |  | ████████████████ |
+|  | libqp | 78.1 | 1.3× slower | ████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/quoted-printable, and the bars are scaled to the fastest library.
 

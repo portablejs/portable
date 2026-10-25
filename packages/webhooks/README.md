@@ -168,26 +168,26 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Verify a Standard Webhook | @portable/webhooks with @noble/hashes | 59,300 | 3.3× faster | ████████████ |
-|  | svix | 59,200 | 3.3× faster | ████████████ |
-|  | standardwebhooks | 47,400 | 2.6× faster | █████████▋ |
-|  | **@portable/webhooks** | 17,900 |  | ███▋ |
+| Verify a Standard Webhook | @portable/webhooks with @noble/hashes | 59,300 | 3.3× faster | ████████████████ |
+|  | svix | 59,200 | 3.3× faster | ████████████████ |
+|  | standardwebhooks | 47,400 | 2.6× faster | █████████████ |
+|  | **@portable/webhooks** | 17,900 |  | █████ |
 | | | | | |
-| Verify a Stripe webhook | stripe, `constructEvent` | 102,000 | 5.8× faster | ████████████ |
-|  | @portable/webhooks with @noble/hashes | 55,800 | 3.2× faster | ██████▋ |
-|  | **@portable/webhooks** | 17,500 |  | ██ |
-|  | stripe, `constructEventAsync` | 13,500 | 1.3× slower | █▋ |
+| Verify a Stripe webhook | stripe, `constructEvent` | 102,000 | 5.8× faster | ████████████████ |
+|  | @portable/webhooks with @noble/hashes | 55,800 | 3.2× faster | █████████ |
+|  | **@portable/webhooks** | 17,500 |  | ███ |
+|  | stripe, `constructEventAsync` | 13,500 | 1.3× slower | ██ |
 | | | | | |
-| Verify a GitHub webhook | `node:crypto` by hand | 240,000 | 12× faster | ████████████ |
-|  | @octokit/webhooks-methods, Node build | 232,000 | 12× faster | ███████████▋ |
-|  | @portable/webhooks with @noble/hashes | 67,700 | 3.5× faster | ███▍ |
+| Verify a GitHub webhook | `node:crypto` by hand | 240,000 | 12× faster | ████████████████ |
+|  | @octokit/webhooks-methods, Node build | 232,000 | 12× faster | ███████████████ |
+|  | @portable/webhooks with @noble/hashes | 67,700 | 3.5× faster | █████ |
 |  | **@portable/webhooks** | 19,300 |  | █ |
-|  | @octokit/webhooks-methods, web build | 16,800 | 1.1× slower | ▉ |
+|  | @octokit/webhooks-methods, web build | 16,800 | 1.1× slower | █ |
 | | | | | |
-| Verify a Slack request | @slack/bolt | 87,400 | 4.6× faster | ████████████ |
-|  | @portable/webhooks with @noble/hashes | 60,700 | 3.2× faster | ████████▍ |
-|  | **@portable/webhooks** | 19,100 |  | ██▋ |
-|  | `crypto.subtle` by hand | 19,000 | same | ██▋ |
+| Verify a Slack request | @slack/bolt | 87,400 | 4.6× faster | ████████████████ |
+|  | @portable/webhooks with @noble/hashes | 60,700 | 3.2× faster | ███████████ |
+|  | **@portable/webhooks** | 19,100 |  | ███ |
+|  | `crypto.subtle` by hand | 19,000 | same | ███ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/webhooks, and the bars are scaled to the fastest library.
 

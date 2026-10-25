@@ -212,29 +212,29 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Retry 10 attempts | `setTimeout` or `try`/`catch` | 123,000 | 1.3× faster | ████████████ |
-|  | **@portable/timers** | 98,400 |  | █████████▋ |
-|  | p-retry | 52,700 | 1.9× slower | █████▏ |
-|  | async-retry | 98.0 | 1,000× slower | ▏ |
+| Retry 10 attempts | `setTimeout` or `try`/`catch` | 123,000 | 1.3× faster | ████████████████ |
+|  | **@portable/timers** | 98,400 |  | █████████████ |
+|  | p-retry | 52,700 | 1.9× slower | ███████ |
+|  | async-retry | 98.0 | 1,000× slower | █ |
 | | | | | |
-| Retry 10 attempts with a signal | p-retry | 53,700 | same | ████████████ |
-|  | **@portable/timers** | 53,200 |  | ███████████▉ |
+| Retry 10 attempts with a signal | p-retry | 53,700 | same | ████████████████ |
+|  | **@portable/timers** | 53,200 |  | ████████████████ |
 | | | | | |
-| Poll until the 10th check succeeds | **@portable/timers** | 98.7 |  | ████████████ |
-|  | p-wait-for | 98.1 | same | ███████████▉ |
+| Poll until the 10th check succeeds | **@portable/timers** | 98.7 |  | ████████████████ |
+|  | p-wait-for | 98.1 | same | ████████████████ |
 | | | | | |
-| Sleep for 1 ms | `setTimeout` or `try`/`catch` | 1,400 | 1.2× faster | ████████████ |
-|  | **@portable/timers** | 1,200 |  | ██████████▎ |
-|  | delay | 951 | 1.3× slower | ████████▏ |
+| Sleep for 1 ms | `setTimeout` or `try`/`catch` | 1,400 | 1.2× faster | ████████████████ |
+|  | **@portable/timers** | 1,200 |  | ██████████████ |
+|  | delay | 951 | 1.3× slower | ███████████ |
 | | | | | |
-| Debounce a burst of 1,000 calls | lodash.debounce | 15,400 | 1.1× faster | ████████████ |
-|  | **@portable/timers** | 13,700 |  | ██████████▋ |
-|  | throttle-debounce | 4,260 | 3.2× slower | ███▍ |
-|  | p-debounce | 2,800 | 4.9× slower | ██▏ |
+| Debounce a burst of 1,000 calls | lodash.debounce | 15,400 | 1.1× faster | ████████████████ |
+|  | **@portable/timers** | 13,700 |  | ██████████████ |
+|  | throttle-debounce | 4,260 | 3.2× slower | ████ |
+|  | p-debounce | 2,800 | 4.9× slower | ███ |
 | | | | | |
-| Throttle a burst of 1,000 calls | lodash.throttle | 15,300 | 1.2× faster | ████████████ |
-|  | **@portable/timers** | 13,000 |  | ██████████▎ |
-|  | throttle-debounce | 3,530 | 3.7× slower | ██▊ |
+| Throttle a burst of 1,000 calls | lodash.throttle | 15,300 | 1.2× faster | ████████████████ |
+|  | **@portable/timers** | 13,000 |  | ██████████████ |
+|  | throttle-debounce | 3,530 | 3.7× slower | ████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/timers, and the bars are scaled to the fastest library.
 

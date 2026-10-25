@@ -125,33 +125,33 @@ eventsource-parser only reads. The `eventsource` polyfill and fetch-event-source
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Decode 2,000 LLM token events, one per chunk | **@portable/sse** | 365 |  | ████████████ |
-|  | Hand-written with web APIs | 280 | 1.3× slower | █████████▎ |
-|  | eventsource-parser | 252 | 1.4× slower | ████████▎ |
+| Decode 2,000 LLM token events, one per chunk | **@portable/sse** | 365 |  | ████████████████ |
+|  | Hand-written with web APIs | 280 | 1.3× slower | ████████████ |
+|  | eventsource-parser | 252 | 1.4× slower | ███████████ |
 | | | | | |
-| Decode named events in 16 KB chunks | eventsource-parser | 1,380 | same | ████████████ |
-|  | **@portable/sse** | 1,370 |  | ███████████▉ |
-|  | Hand-written with web APIs | 794 | 1.7× slower | ██████▉ |
+| Decode named events in 16 KB chunks | eventsource-parser | 1,380 | same | ████████████████ |
+|  | **@portable/sse** | 1,370 |  | ████████████████ |
+|  | Hand-written with web APIs | 794 | 1.7× slower | █████████ |
 | | | | | |
-| Decode events in 2 to 16 byte chunks | **@portable/sse** | 560 |  | ████████████ |
-|  | Hand-written with web APIs | 500 | 1.1× slower | ██████████▊ |
-|  | eventsource-parser | 332 | 1.7× slower | ███████▏ |
+| Decode events in 2 to 16 byte chunks | **@portable/sse** | 560 |  | ████████████████ |
+|  | Hand-written with web APIs | 500 | 1.1× slower | ██████████████ |
+|  | eventsource-parser | 332 | 1.7× slower | █████████ |
 | | | | | |
-| Decode a 1 MB data line in 128-byte chunks | **@portable/sse** | 81.3 |  | ████████████ |
-|  | eventsource-parser | 52.4 | 1.6× slower | ███████▊ |
+| Decode a 1 MB data line in 128-byte chunks | **@portable/sse** | 81.3 |  | ████████████████ |
+|  | eventsource-parser | 52.4 | 1.6× slower | ██████████ |
 | | | | | |
-| Decode 2,000 LLM token events from one string | eventsource-parser | 8,300 | 1.6× faster | ████████████ |
-|  | **@portable/sse** | 5,120 |  | ███████▍ |
+| Decode 2,000 LLM token events from one string | eventsource-parser | 8,300 | 1.6× faster | ████████████████ |
+|  | **@portable/sse** | 5,120 |  | ██████████ |
 | | | | | |
-| Encode LLM token events | **@portable/sse** | 12,100 |  | ████████████ |
-|  | Hand-written with web APIs | 5,400 | 2.2× slower | █████▍ |
+| Encode LLM token events | **@portable/sse** | 12,100 |  | ████████████████ |
+|  | Hand-written with web APIs | 5,400 | 2.2× slower | ███████ |
 | | | | | |
-| Encode LLM token events through `EncoderStream` | **@portable/sse** | 235 |  | ████████████ |
-|  | Hand-written with web APIs | 201 | 1.2× slower | ██████████▎ |
+| Encode LLM token events through `EncoderStream` | **@portable/sse** | 235 |  | ████████████████ |
+|  | Hand-written with web APIs | 201 | 1.2× slower | ██████████████ |
 | | | | | |
-| Connect and read 2,000 events | **@portable/sse** | 346 |  | ████████████ |
-|  | eventsource-parser | 225 | 1.5× slower | ███████▊ |
-|  | eventsource | 189 | 1.8× slower | ██████▌ |
+| Connect and read 2,000 events | **@portable/sse** | 346 |  | ████████████████ |
+|  | eventsource-parser | 225 | 1.5× slower | ██████████ |
+|  | eventsource | 189 | 1.8× slower | █████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/sse, and the bars are scaled to the fastest library.
 

@@ -52,10 +52,10 @@ split2 and byline are Node `Transform` streams. `Lines.DecoderStream` is a `Tran
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Split 1.7 MB into lines | `node:readline` | 165 | 2.0× faster | ████████████ |
-|  | split2 | 84.6 | same | ██████▏ |
-|  | **@portable/lines** | 82.8 |  | ██████ |
-|  | byline | 40.7 | 2.0× slower | ███ |
+| Split 1.7 MB into lines | `node:readline` | 165 | 2.0× faster | ████████████████ |
+|  | split2 | 84.6 | same | ████████ |
+|  | **@portable/lines** | 82.8 |  | ████████ |
+|  | byline | 40.7 | 2.0× slower | ████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/lines, and the bars are scaled to the fastest library.
 

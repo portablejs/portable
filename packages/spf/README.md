@@ -106,9 +106,9 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Check a record with nested includes | **@portable/spf** | 20,500 |  | ████████████ |
-|  | mailauth | 9,280 | 2.2× slower | █████▍ |
-|  | mailauth, strict mode | 7,660 | 2.7× slower | ████▌ |
+| Check a record with nested includes | **@portable/spf** | 20,500 |  | ████████████████ |
+|  | mailauth | 9,280 | 2.2× slower | ███████ |
+|  | mailauth, strict mode | 7,660 | 2.7× slower | ██████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/spf, and the bars are scaled to the fastest library.
 

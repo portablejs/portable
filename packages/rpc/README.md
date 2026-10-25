@@ -273,33 +273,33 @@ The benchmarks run over a `MessageChannel` with the default JSON codec.
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Make one call at a time over a `MessageChannel` | **@portable/rpc** | 114,000 |  | ████████████ |
-|  | penpal | 89,700 | 1.3× slower | █████████▌ |
-|  | birpc | 86,900 | 1.3× slower | █████████▏ |
-|  | comlink | 64,500 | 1.8× slower | ██████▊ |
+| Make one call at a time over a `MessageChannel` | **@portable/rpc** | 114,000 |  | ████████████████ |
+|  | penpal | 89,700 | 1.3× slower | █████████████ |
+|  | birpc | 86,900 | 1.3× slower | ████████████ |
+|  | comlink | 64,500 | 1.8× slower | █████████ |
 | | | | | |
-| Make 100 concurrent calls | **@portable/rpc** | 1,720 |  | ████████████ |
-|  | birpc | 1,290 | 1.3× slower | █████████ |
-|  | penpal | 1,150 | 1.5× slower | ████████ |
-|  | comlink | 834 | 2.1× slower | █████▉ |
+| Make 100 concurrent calls | **@portable/rpc** | 1,720 |  | ████████████████ |
+|  | birpc | 1,290 | 1.3× slower | ████████████ |
+|  | penpal | 1,150 | 1.5× slower | ███████████ |
+|  | comlink | 834 | 2.1× slower | ████████ |
 | | | | | |
-| Send 100 notifications and a call | **@portable/rpc** | 3,250 |  | ████████████ |
-|  | birpc | 3,020 | 1.1× slower | ███████████▏ |
+| Send 100 notifications and a call | **@portable/rpc** | 3,250 |  | ████████████████ |
+|  | birpc | 3,020 | 1.1× slower | ███████████████ |
 | | | | | |
-| Stream 1,000 items | birpc | 212 | 1.1× faster | ████████████ |
-|  | **@portable/rpc** | 193 |  | ██████████▉ |
-|  | comlink | 76.9 | 2.5× slower | ████▍ |
+| Stream 1,000 items | birpc | 212 | 1.1× faster | ████████████████ |
+|  | **@portable/rpc** | 193 |  | ███████████████ |
+|  | comlink | 76.9 | 2.5× slower | ██████ |
 | | | | | |
-| Send a 2 KB record | **@portable/rpc** | 23,400 |  | ████████████ |
-|  | birpc | 14,100 | 1.7× slower | ███████▎ |
-|  | comlink | 13,700 | 1.7× slower | ███████ |
-|  | penpal | 12,300 | 1.9× slower | ██████▎ |
+| Send a 2 KB record | **@portable/rpc** | 23,400 |  | ████████████████ |
+|  | birpc | 14,100 | 1.7× slower | ██████████ |
+|  | comlink | 13,700 | 1.7× slower | █████████ |
+|  | penpal | 12,300 | 1.9× slower | ████████ |
 | | | | | |
-| Make one call over HTTP | json-rpc-2.0 | 17,200 | same | ████████████ |
-|  | **@portable/rpc** | 17,100 |  | ███████████▉ |
+| Make one call over HTTP | json-rpc-2.0 | 17,200 | same | ████████████████ |
+|  | **@portable/rpc** | 17,100 |  | ████████████████ |
 | | | | | |
-| Send a batch of 10 calls over HTTP | json-rpc-2.0 | 23,000 | 1.1× faster | ████████████ |
-|  | **@portable/rpc** | 20,800 |  | ██████████▉ |
+| Send a batch of 10 calls over HTTP | json-rpc-2.0 | 23,000 | 1.1× faster | ████████████████ |
+|  | **@portable/rpc** | 20,800 |  | ██████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rpc, and the bars are scaled to the fastest library.
 

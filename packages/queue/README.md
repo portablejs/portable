@@ -156,20 +156,20 @@ They run in browsers too, but they are four packages with four APIs, and they ha
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Run 1,000 tasks, 10 at a time, with `Queue.create` | `Promise.all`, no limit | 14,500 | 6.6× faster | ████████████ |
-|  | **@portable/queue** | 2,200 |  | █▉ |
-|  | p-queue | 478 | 4.6× slower | ▍ |
+| Run 1,000 tasks, 10 at a time, with `Queue.create` | `Promise.all`, no limit | 14,500 | 6.6× faster | ████████████████ |
+|  | **@portable/queue** | 2,200 |  | ██ |
+|  | p-queue | 478 | 4.6× slower | █ |
 | | | | | |
-| Run 1,000 tasks, 10 at a time, with `Queue.limit` | `Promise.all`, no limit | 14,500 | 6.7× faster | ████████████ |
-|  | **@portable/queue** | 2,150 |  | █▊ |
+| Run 1,000 tasks, 10 at a time, with `Queue.limit` | `Promise.all`, no limit | 14,500 | 6.7× faster | ████████████████ |
+|  | **@portable/queue** | 2,150 |  | ██ |
 |  | p-limit | 1,250 | 1.7× slower | █ |
 | | | | | |
-| Run 1,000 tasks with priorities and a signal | **@portable/queue** | 1,590 |  | ████████████ |
-|  | p-queue | 277 | 5.7× slower | ██▏ |
+| Run 1,000 tasks with priorities and a signal | **@portable/queue** | 1,590 |  | ████████████████ |
+|  | p-queue | 277 | 5.7× slower | ███ |
 | | | | | |
-| Map 1,000 items, 10 at a time | **@portable/queue** | 10,100 |  | ████████████ |
-|  | p-map | 1,360 | 7.4× slower | █▋ |
-|  | p-limit | 1,190 | 8.5× slower | █▍ |
+| Map 1,000 items, 10 at a time | **@portable/queue** | 10,100 |  | ████████████████ |
+|  | p-map | 1,360 | 7.4× slower | ██ |
+|  | p-limit | 1,190 | 8.5× slower | ██ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/queue, and the bars are scaled to the fastest library.
 

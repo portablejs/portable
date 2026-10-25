@@ -130,16 +130,16 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Sign a 250 KB message | `node:crypto`, hash and sign only | 1,680 | 5.9× faster | ████████████ |
-|  | nodemailer | 328 | 1.1× faster | ██▍ |
-|  | **@portable/dkim** | 287 |  | ██ |
+| Sign a 250 KB message | `node:crypto`, hash and sign only | 1,680 | 5.9× faster | ████████████████ |
+|  | nodemailer | 328 | 1.1× faster | ███ |
+|  | **@portable/dkim** | 287 |  | ███ |
 |  | mailauth | 133 | 2.2× slower | █ |
 | | | | | |
-| Verify a 250 KB message | **@portable/dkim** | 403 |  | ████████████ |
-|  | mailauth | 133 | 3.0× slower | ████ |
+| Verify a 250 KB message | **@portable/dkim** | 403 |  | ████████████████ |
+|  | mailauth | 133 | 3.0× slower | █████ |
 | | | | | |
-| Sign and verify a short message | mailauth | 550 | 1.1× faster | ████████████ |
-|  | **@portable/dkim** | 501 |  | ██████████▉ |
+| Sign and verify a short message | mailauth | 550 | 1.1× faster | ████████████████ |
+|  | **@portable/dkim** | 501 |  | ███████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dkim, and the bars are scaled to the fastest library.
 

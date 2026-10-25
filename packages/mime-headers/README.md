@@ -110,38 +110,38 @@ It has no dependencies outside `@portable/*`, takes and returns plain strings an
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Decode 200 Q-encoded subjects | **@portable/mime-headers** | 1,130 |  | ████████████ |
-|  | libmime | 602 | 1.9× slower | ██████▍ |
+| Decode 200 Q-encoded subjects | **@portable/mime-headers** | 1,130 |  | ████████████████ |
+|  | libmime | 602 | 1.9× slower | █████████ |
 | | | | | |
-| Decode 200 B-encoded words | Node `Buffer` and `TextDecoder` | 7,530 | 3.0× faster | ████████████ |
-|  | **@portable/mime-headers** | 2,470 |  | ███▉ |
-|  | libmime | 1,810 | 1.4× slower | ██▉ |
+| Decode 200 B-encoded words | Node `Buffer` and `TextDecoder` | 7,530 | 3.0× faster | ████████████████ |
+|  | **@portable/mime-headers** | 2,470 |  | █████ |
+|  | libmime | 1,810 | 1.4× slower | ████ |
 | | | | | |
-| Encode 200 subjects | **@portable/mime-headers** | 1,720 |  | ████████████ |
-|  | libmime | 631 | 2.7× slower | ████▍ |
+| Encode 200 subjects | **@portable/mime-headers** | 1,720 |  | ████████████████ |
+|  | libmime | 631 | 2.7× slower | ██████ |
 | | | | | |
-| Encode 200 subjects as B words | libmime | 7,600 | same | ████████████ |
-|  | **@portable/mime-headers** | 7,320 |  | ███████████▌ |
-|  | Node `Buffer` and `TextDecoder` | 3,450 | 2.1× slower | █████▌ |
+| Encode 200 subjects as B words | libmime | 7,600 | same | ████████████████ |
+|  | **@portable/mime-headers** | 7,320 |  | ███████████████ |
+|  | Node `Buffer` and `TextDecoder` | 3,450 | 2.1× slower | ███████ |
 | | | | | |
-| Fold a 2,000-word header | **@portable/mime-headers** | 79,200 |  | ████████████ |
-|  | libmime | 10,300 | 7.7× slower | █▌ |
+| Fold a 2,000-word header | **@portable/mime-headers** | 79,200 |  | ████████████████ |
+|  | libmime | 10,300 | 7.7× slower | ██ |
 | | | | | |
-| Parse 200 folded headers | **@portable/mime-headers** | 18,100 |  | ████████████ |
-|  | libmime | 4,930 | 3.7× slower | ███▎ |
+| Parse 200 folded headers | **@portable/mime-headers** | 18,100 |  | ████████████████ |
+|  | libmime | 4,930 | 3.7× slower | ████ |
 | | | | | |
-| Parse 200 header values with parameters | **@portable/mime-headers** | 1,330 |  | ████████████ |
-|  | libmime | 864 | 1.5× slower | ███████▊ |
+| Parse 200 header values with parameters | **@portable/mime-headers** | 1,330 |  | ████████████████ |
+|  | libmime | 864 | 1.5× slower | ██████████ |
 | | | | | |
-| Format 200 header values with parameters | **@portable/mime-headers** | 1,880 |  | ████████████ |
-|  | libmime | 837 | 2.2× slower | █████▍ |
+| Format 200 header values with parameters | **@portable/mime-headers** | 1,880 |  | ████████████████ |
+|  | libmime | 837 | 2.2× slower | ███████ |
 | | | | | |
-| Parse 500 addresses | **@portable/mime-headers** | 2,070 |  | ████████████ |
-|  | addressparser | 861 | 2.4× slower | █████ |
-|  | email-addresses | 36.8 | 56× slower | ▎ |
+| Parse 500 addresses | **@portable/mime-headers** | 2,070 |  | ████████████████ |
+|  | addressparser | 861 | 2.4× slower | ███████ |
+|  | email-addresses | 36.8 | 56× slower | █ |
 | | | | | |
-| Parse 500 addresses in strict mode | **@portable/mime-headers** | 969 |  | ████████████ |
-|  | email-addresses | 41.0 | 24× slower | ▌ |
+| Parse 500 addresses in strict mode | **@portable/mime-headers** | 969 |  | ████████████████ |
+|  | email-addresses | 41.0 | 24× slower | █ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-headers, and the bars are scaled to the fastest library.
 

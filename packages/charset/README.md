@@ -90,15 +90,15 @@ iconv-lite looks charsets up by name in one registry, so a bundle includes every
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Encode 380 kB of Cyrillic text to windows-1251 | iconv-lite | 736 | same | ████████████ |
-|  | **@portable/charset** | 725 |  | ███████████▉ |
+| Encode 380 kB of Cyrillic text to windows-1251 | iconv-lite | 736 | same | ████████████████ |
+|  | **@portable/charset** | 725 |  | ████████████████ |
 | | | | | |
-| Encode 230 kB of Japanese text to Shift_JIS | **@portable/charset** | 870 |  | ████████████ |
-|  | iconv-lite | 363 | 2.4× slower | █████ |
+| Encode 230 kB of Japanese text to Shift_JIS | **@portable/charset** | 870 |  | ████████████████ |
+|  | iconv-lite | 363 | 2.4× slower | ███████ |
 | | | | | |
-| Encode 610 kB of text to UTF-8 | `TextEncoder` | 453 | 1.1× faster | ████████████ |
-|  | iconv-lite | 435 | same | ███████████▌ |
-|  | **@portable/charset** | 425 |  | ███████████▎ |
+| Encode 610 kB of text to UTF-8 | `TextEncoder` | 453 | 1.1× faster | ████████████████ |
+|  | iconv-lite | 435 | same | ███████████████ |
+|  | **@portable/charset** | 425 |  | ███████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/charset, and the bars are scaled to the fastest library.
 

@@ -101,8 +101,8 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Check a subdomain with relaxed alignment | **@portable/dmarc** | 24,600 |  | ████████████ |
-|  | mailauth, strict mode | 18,900 | 1.3× slower | █████████▎ |
+| Check a subdomain with relaxed alignment | **@portable/dmarc** | 24,600 |  | ████████████████ |
+|  | mailauth, strict mode | 18,900 | 1.3× slower | ████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dmarc, and the bars are scaled to the fastest library.
 

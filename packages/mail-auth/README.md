@@ -127,11 +127,11 @@ Differences to check when you switch from mailauth:
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Authenticate a 250 KB message with a DKIM signature and an ARC set | **@portable/mail-auth** | 246 |  | ████████████ |
-|  | mailauth | 238 | same | ███████████▋ |
+| Authenticate a 250 KB message with a DKIM signature and an ARC set | **@portable/mail-auth** | 246 |  | ████████████████ |
+|  | mailauth | 238 | same | ███████████████ |
 | | | | | |
-| Authenticate and seal a short message | **@portable/mail-auth** | 433 |  | ████████████ |
-|  | mailauth | 323 | 1.3× slower | █████████ |
+| Authenticate and seal a short message | **@portable/mail-auth** | 433 |  | ████████████████ |
+|  | mailauth | 323 | 1.3× slower | ████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail-auth, and the bars are scaled to the fastest library.
 

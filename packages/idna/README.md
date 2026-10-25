@@ -82,16 +82,16 @@ The URL Standard runs UTS #46 for hosts, but implementations lag behind it. On `
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Convert 10 hostnames to Unicode | **@portable/idna** | 87,400 |  | ████████████ |
-|  | `node:url` | 79,000 | 1.1× slower | ██████████▉ |
-|  | punycode | 76,700 | 1.1× slower | ██████████▌ |
-|  | tr46 | 12,900 | 6.8× slower | █▊ |
+| Convert 10 hostnames to Unicode | **@portable/idna** | 87,400 |  | ████████████████ |
+|  | `node:url` | 79,000 | 1.1× slower | ██████████████ |
+|  | punycode | 76,700 | 1.1× slower | ██████████████ |
+|  | tr46 | 12,900 | 6.8× slower | ██ |
 | | | | | |
-| Convert 10 domains to ASCII | `new URL()` | 102,000 | 1.2× faster | ████████████ |
-|  | **@portable/idna** | 84,200 |  | █████████▉ |
-|  | `node:url` | 79,900 | 1.1× slower | █████████▍ |
-|  | punycode | 79,200 | 1.1× slower | █████████▍ |
-|  | tr46 | 14,500 | 5.8× slower | █▊ |
+| Convert 10 domains to ASCII | `new URL()` | 102,000 | 1.2× faster | ████████████████ |
+|  | **@portable/idna** | 84,200 |  | █████████████ |
+|  | `node:url` | 79,900 | 1.1× slower | █████████████ |
+|  | punycode | 79,200 | 1.1× slower | ████████████ |
+|  | tr46 | 14,500 | 5.8× slower | ██ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/idna, and the bars are scaled to the fastest library.
 

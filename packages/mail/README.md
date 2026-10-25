@@ -157,14 +157,14 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, s
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Encode 100 text and HTML messages | **@portable/mail** | 89.6 |  | ████████████ |
-|  | nodemailer | 30.1 | 3.0× slower | ████ |
+| Encode 100 text and HTML messages | **@portable/mail** | 89.6 |  | ████████████████ |
+|  | nodemailer | 30.1 | 3.0× slower | █████ |
 | | | | | |
-| Encode a message with a 1 MB attachment | nodemailer | 337 | 1.5× faster | ████████████ |
-|  | **@portable/mail** | 218 |  | ███████▊ |
+| Encode a message with a 1 MB attachment | nodemailer | 337 | 1.5× faster | ████████████████ |
+|  | **@portable/mail** | 218 |  | ██████████ |
 | | | | | |
-| Encode a message with a 4 MB attachment from a stream | nodemailer | 77.0 | 1.2× faster | ████████████ |
-|  | **@portable/mail** | 66.6 |  | ██████████▍ |
+| Encode a message with a 4 MB attachment from a stream | nodemailer | 77.0 | 1.2× faster | ████████████████ |
+|  | **@portable/mail** | 66.6 |  | ██████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mail, and the bars are scaled to the fastest library.
 

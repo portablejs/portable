@@ -119,17 +119,17 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Decode a 1024×1024 PNG | pngjs | 26.7 | 1.2× faster | ████████████ |
-|  | **@portable/png** | 21.5 |  | █████████▋ |
+| Decode a 1024×1024 PNG | pngjs | 26.7 | 1.2× faster | ████████████████ |
+|  | **@portable/png** | 21.5 |  | █████████████ |
 | | | | | |
-| Decode a 1024×1024 PNG with `decodeSync` and `node:zlib` | **@portable/png** | 35.9 |  | ████████████ |
-|  | pngjs | 26.7 | 1.3× slower | ████████▉ |
+| Decode a 1024×1024 PNG with `decodeSync` and `node:zlib` | **@portable/png** | 35.9 |  | ████████████████ |
+|  | pngjs | 26.7 | 1.3× slower | ████████████ |
 | | | | | |
-| Encode a 1024×1024 PNG at zlib level 6 | **@portable/png** | 6.84 |  | ████████████ |
-|  | pngjs | 5.94 | 1.2× slower | ██████████▍ |
+| Encode a 1024×1024 PNG at zlib level 6 | **@portable/png** | 6.84 |  | ████████████████ |
+|  | pngjs | 5.94 | 1.2× slower | ██████████████ |
 | | | | | |
-| Encode a 1024×1024 PNG at level 9 with `Z_RLE`, through `node:zlib` | **@portable/png** | 13.1 |  | ████████████ |
-|  | pngjs | 9.84 | 1.3× slower | █████████ |
+| Encode a 1024×1024 PNG at level 9 with `Z_RLE`, through `node:zlib` | **@portable/png** | 13.1 |  | ████████████████ |
+|  | pngjs | 9.84 | 1.3× slower | ████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/png, and the bars are scaled to the fastest library.
 

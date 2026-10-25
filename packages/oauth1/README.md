@@ -108,14 +108,14 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Sign a GET request | @portable/oauth1 with @noble/hashes | 47,700 | 6.6× faster | ████████████ |
-|  | oauth-1.0a | 41,600 | 5.8× faster | ██████████▌ |
-|  | oauth | 25,800 | 3.6× faster | ██████▌ |
-|  | **@portable/oauth1** | 7,210 |  | █▉ |
+| Sign a GET request | @portable/oauth1 with @noble/hashes | 47,700 | 6.6× faster | ████████████████ |
+|  | oauth-1.0a | 41,600 | 5.8× faster | ██████████████ |
+|  | oauth | 25,800 | 3.6× faster | █████████ |
+|  | **@portable/oauth1** | 7,210 |  | ██ |
 | | | | | |
-| Sign a form POST | oauth-1.0a | 30,000 | 4.9× faster | ████████████ |
-|  | @portable/oauth1 with @noble/hashes | 26,200 | 4.3× faster | ██████████▌ |
-|  | **@portable/oauth1** | 6,110 |  | ██▌ |
+| Sign a form POST | oauth-1.0a | 30,000 | 4.9× faster | ████████████████ |
+|  | @portable/oauth1 with @noble/hashes | 26,200 | 4.3× faster | ██████████████ |
+|  | **@portable/oauth1** | 6,110 |  | ███ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/oauth1, and the bars are scaled to the fastest library.
 

@@ -64,18 +64,18 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Select the rows of a 3 MB document | `JSON.parse` or `JSON.stringify` | 55.8 | 2.6× faster | ████████████ |
-|  | **@portable/json-stream** | 21.1 |  | ████▌ |
-|  | JSONStream | 9.02 | 2.3× slower | ██ |
-|  | stream-json | 1.94 | 11× slower | ▍ |
-|  | stream-json, web streams | 0.816 | 26× slower | ▏ |
+| Select the rows of a 3 MB document | `JSON.parse` or `JSON.stringify` | 55.8 | 2.6× faster | ████████████████ |
+|  | **@portable/json-stream** | 21.1 |  | ██████ |
+|  | JSONStream | 9.02 | 2.3× slower | ███ |
+|  | stream-json | 1.94 | 11× slower | █ |
+|  | stream-json, web streams | 0.816 | 26× slower | █ |
 | | | | | |
-| Encode a 3 MB object | `JSON.parse` or `JSON.stringify` | 124 | 5.6× faster | ████████████ |
-|  | json-stream-stringify | 22.2 | same | ██▏ |
-|  | **@portable/json-stream** | 22.0 |  | ██▏ |
+| Encode a 3 MB object | `JSON.parse` or `JSON.stringify` | 124 | 5.6× faster | ████████████████ |
+|  | json-stream-stringify | 22.2 | same | ███ |
+|  | **@portable/json-stream** | 22.0 |  | ███ |
 | | | | | |
-| Encode rows from an async iterable | **@portable/json-stream** | 99.6 |  | ████████████ |
-|  | json-stream-stringify | 79.5 | 1.3× slower | █████████▋ |
+| Encode rows from an async iterable | **@portable/json-stream** | 99.6 |  | ████████████████ |
+|  | json-stream-stringify | 79.5 | 1.3× slower | █████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/json-stream, and the bars are scaled to the fastest library.
 

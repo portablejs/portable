@@ -114,12 +114,12 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Split and join 1.5 MB of mail | `TransformStream` copy | 13,600 | 18× faster | ████████████ |
-|  | **@portable/mime-stream** | 745 |  | ▋ |
-|  | mailsplit | 126 | 5.9× slower | ▏ |
+| Split and join 1.5 MB of mail | `TransformStream` copy | 13,600 | 18× faster | ████████████████ |
+|  | **@portable/mime-stream** | 745 |  | █ |
+|  | mailsplit | 126 | 5.9× slower | █ |
 | | | | | |
-| Read the header block of 1.5 MB of mail | **@portable/mime-stream** | 17,000 |  | ████████████ |
-|  | mailsplit | 126 | 130× slower | ▏ |
+| Read the header block of 1.5 MB of mail | **@portable/mime-stream** | 17,000 |  | ████████████████ |
+|  | mailsplit | 126 | 130× slower | █ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/mime-stream, and the bars are scaled to the fastest library.
 

@@ -121,17 +121,17 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Resolve the TXT records of gmail.com | **@portable/dns** | 47,300 |  | ████████████ |
-|  | tangerine | 37,800 | 1.3× slower | █████████▋ |
-|  | `node:dns/promises` over local UDP | 19,800 | 2.4× slower | █████ |
+| Resolve the TXT records of gmail.com | **@portable/dns** | 47,300 |  | ████████████████ |
+|  | tangerine | 37,800 | 1.3× slower | █████████████ |
+|  | `node:dns/promises` over local UDP | 19,800 | 2.4× slower | ███████ |
 | | | | | |
-| Resolve the MX records of gmail.com | **@portable/dns** | 56,900 |  | ████████████ |
-|  | tangerine | 36,200 | 1.6× slower | ███████▋ |
-|  | `node:dns/promises` over local UDP | 16,300 | 3.5× slower | ███▌ |
+| Resolve the MX records of gmail.com | **@portable/dns** | 56,900 |  | ████████████████ |
+|  | tangerine | 36,200 | 1.6× slower | ██████████ |
+|  | `node:dns/promises` over local UDP | 16,300 | 3.5× slower | █████ |
 | | | | | |
-| Resolve the A records of www.microsoft.com | **@portable/dns** | 52,700 |  | ████████████ |
-|  | tangerine | 36,800 | 1.4× slower | ████████▍ |
-|  | `node:dns/promises` over local UDP | 19,800 | 2.7× slower | ████▌ |
+| Resolve the A records of www.microsoft.com | **@portable/dns** | 52,700 |  | ████████████████ |
+|  | tangerine | 36,800 | 1.4× slower | ███████████ |
+|  | `node:dns/promises` over local UDP | 19,800 | 2.7× slower | ██████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns, and the bars are scaled to the fastest library.
 

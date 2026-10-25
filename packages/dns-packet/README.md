@@ -84,14 +84,14 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Decode 48 captured responses | **@portable/dns-packet** | 10,000 |  | ████████████ |
-|  | dns-packet | 4,560 | 2.2× slower | █████▌ |
+| Decode 48 captured responses | **@portable/dns-packet** | 10,000 |  | ████████████████ |
+|  | dns-packet | 4,560 | 2.2× slower | ███████ |
 | | | | | |
-| Encode 48 captured responses | **@portable/dns-packet** | 5,970 |  | ████████████ |
-|  | dns-packet | 3,070 | 1.9× slower | ██████▏ |
+| Encode 48 captured responses | **@portable/dns-packet** | 5,970 |  | ████████████████ |
+|  | dns-packet | 3,070 | 1.9× slower | ████████ |
 | | | | | |
-| Encode a DNS-over-HTTPS query | **@portable/dns-packet** | 1,820,000 |  | ████████████ |
-|  | dns-packet | 528,000 | 3.4× slower | ███▌ |
+| Encode a DNS-over-HTTPS query | **@portable/dns-packet** | 1,820,000 |  | ████████████████ |
+|  | dns-packet | 528,000 | 3.4× slower | █████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/dns-packet, and the bars are scaled to the fastest library.
 

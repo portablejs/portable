@@ -134,14 +134,14 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Echo 1,000 messages through a local server | `WebSocket` | 109 | same | ████████████ |
-|  | **@portable/websockets** | 105 |  | ███████████▌ |
-|  | websocket-ts | 104 | same | ███████████▌ |
-|  | reconnecting-websocket | 93.5 | 1.1× slower | ██████████▎ |
-|  | partysocket | 83.1 | 1.3× slower | █████████▏ |
+| Echo 1,000 messages through a local server | `WebSocket` | 109 | same | ████████████████ |
+|  | **@portable/websockets** | 105 |  | ███████████████ |
+|  | websocket-ts | 104 | same | ███████████████ |
+|  | reconnecting-websocket | 93.5 | 1.1× slower | ██████████████ |
+|  | partysocket | 83.1 | 1.3× slower | ████████████ |
 | | | | | |
-| Echo 1,000 messages on the server | ws | 97.7 | same | ████████████ |
-|  | **@portable/websockets** | 94.0 |  | ███████████▌ |
+| Echo 1,000 messages on the server | ws | 97.7 | same | ████████████████ |
+|  | **@portable/websockets** | 94.0 |  | ███████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/websockets, and the bars are scaled to the fastest library.
 

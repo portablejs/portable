@@ -128,18 +128,18 @@ ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Parse 8 addresses | **@portable/ip** | 796,000 |  | ████████████ |
-|  | `node:net` | 350,000 | 2.3× slower | █████▎ |
-|  | ip | 112,000 | 7.1× slower | █▊ |
+| Parse 8 addresses | **@portable/ip** | 796,000 |  | ████████████████ |
+|  | `node:net` | 350,000 | 2.3× slower | ███████ |
+|  | ip | 112,000 | 7.1× slower | ██ |
 |  | ipaddr.js | 65,100 | 12× slower | █ |
 | | | | | |
-| Check 8 addresses against a CIDR block | **@portable/ip** | 683,000 |  | ████████████ |
-|  | `node:net` | 441,000 | 1.5× slower | ███████▊ |
-|  | ipaddr.js | 63,700 | 11× slower | █▏ |
+| Check 8 addresses against a CIDR block | **@portable/ip** | 683,000 |  | ████████████████ |
+|  | `node:net` | 441,000 | 1.5× slower | ██████████ |
+|  | ipaddr.js | 63,700 | 11× slower | █ |
 | | | | | |
-| Tell public from internal addresses, 8 of them | **@portable/ip** | 517,000 |  | ████████████ |
-|  | ip | 196,000 | 2.6× slower | ████▌ |
-|  | ipaddr.js | 46,700 | 11× slower | █▏ |
+| Tell public from internal addresses, 8 of them | **@portable/ip** | 517,000 |  | ████████████████ |
+|  | ip | 196,000 | 2.6× slower | ██████ |
+|  | ipaddr.js | 46,700 | 11× slower | █ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/ip, and the bars are scaled to the fastest library.
 

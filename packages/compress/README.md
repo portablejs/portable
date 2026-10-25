@@ -67,24 +67,24 @@ In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node'
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Gzip 1 MB of text | `node:zlib` | 46.3 | 1.1× faster | ████████████ |
-|  | **@portable/compress** | 42.3 |  | ███████████ |
-|  | fflate | 22.8 | 1.9× slower | █████▉ |
-|  | pako | 21.7 | 1.9× slower | █████▋ |
+| Gzip 1 MB of text | `node:zlib` | 46.3 | 1.1× faster | ████████████████ |
+|  | **@portable/compress** | 42.3 |  | ███████████████ |
+|  | fflate | 22.8 | 1.9× slower | ████████ |
+|  | pako | 21.7 | 1.9× slower | ███████ |
 | | | | | |
-| Gunzip 1 MB of text | `node:zlib` | 523 | 2.9× faster | ████████████ |
-|  | fflate | 228 | 1.3× faster | █████▎ |
-|  | **@portable/compress** | 181 |  | ████▏ |
-|  | pako | 135 | 1.3× slower | ███▏ |
+| Gunzip 1 MB of text | `node:zlib` | 523 | 2.9× faster | ████████████████ |
+|  | fflate | 228 | 1.3× faster | ███████ |
+|  | **@portable/compress** | 181 |  | ██████ |
+|  | pako | 135 | 1.3× slower | ████ |
 | | | | | |
-| Gunzip a stream of 1 KiB chunks | `node:zlib` | 113 | same | ████████████ |
-|  | **@portable/compress** | 111 |  | ███████████▊ |
-|  | `DecompressionStream` | 96.7 | 1.1× slower | ██████████▎ |
-|  | fflate | 54.7 | 2.0× slower | █████▊ |
+| Gunzip a stream of 1 KiB chunks | `node:zlib` | 113 | same | ████████████████ |
+|  | **@portable/compress** | 111 |  | ████████████████ |
+|  | `DecompressionStream` | 96.7 | 1.1× slower | ██████████████ |
+|  | fflate | 54.7 | 2.0× slower | ████████ |
 | | | | | |
-| CRC-32 of 1 MB | `node:zlib` | 4,250 | 3.3× faster | ████████████ |
-|  | crc-32 | 1,410 | 1.1× faster | ████ |
-|  | **@portable/compress** | 1,290 |  | ███▋ |
+| CRC-32 of 1 MB | `node:zlib` | 4,250 | 3.3× faster | ████████████████ |
+|  | crc-32 | 1,410 | 1.1× faster | █████ |
+|  | **@portable/compress** | 1,290 |  | █████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/compress, and the bars are scaled to the fastest library.
 

@@ -24,13 +24,15 @@ export function opsPerSecond(hz: number): string {
   return (Math.round(hz / step) * step).toLocaleString('en-US');
 }
 
-const barWidth = 12;
-const eighths = ['', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
+const barWidth = 16;
 
-/** A bar of `barWidth` characters, at least one eighth wide, for `hz` against the fastest result. */
+/**
+ * A bar of up to `barWidth` full blocks, at least one, for `hz` against the fastest result. The
+ * partial blocks (`▏` to `▉`) render taller than `█` and shifted in GitHub's font, so the bar uses
+ * full blocks only.
+ */
 function bar(hz: number, fastest: number): string {
-  const total = Math.max(1, Math.round((hz / fastest) * barWidth * 8));
-  return '█'.repeat(Math.floor(total / 8)) + eighths[total % 8];
+  return '█'.repeat(Math.max(1, Math.round((hz / fastest) * barWidth)));
 }
 
 /** How `hz` compares with `ours`, such as "1.9× slower", with a no-break space so the cell doesn't wrap. */

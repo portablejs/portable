@@ -159,12 +159,12 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Parse a 329 KB phone JPEG | **@portable/exif** | 203,000 |  | ████████████ |
-|  | exif-reader | 80,400 | 2.5× slower | ████▊ |
-|  | exif-parser | 61,500 | 3.3× slower | ███▋ |
-|  | exifr | 18,000 | 11× slower | █▏ |
+| Parse a 329 KB phone JPEG | **@portable/exif** | 203,000 |  | ████████████████ |
+|  | exif-reader | 80,400 | 2.5× slower | ██████ |
+|  | exif-parser | 61,500 | 3.3× slower | █████ |
+|  | exifr | 18,000 | 11× slower | █ |
 | | | | | |
-| Parse a phone JPEG from a stream | **@portable/exif** | 36,700 |  | ████████████ |
+| Parse a phone JPEG from a stream | **@portable/exif** | 36,700 |  | ████████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/exif, and the bars are scaled to the fastest library.
 

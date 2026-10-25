@@ -115,21 +115,21 @@ It runs anywhere WebCrypto and `fetch` do, so you can send notifications from a 
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Encrypt a 186-byte payload | web-push | 4,280 | 2.5× faster | ████████████ |
-|  | The same WebCrypto calls by hand | 1,790 | 1.1× faster | █████ |
-|  | **@portable/web-push** | 1,680 |  | ████▊ |
+| Encrypt a 186-byte payload | web-push | 4,280 | 2.5× faster | ████████████████ |
+|  | The same WebCrypto calls by hand | 1,790 | 1.1× faster | ███████ |
+|  | **@portable/web-push** | 1,680 |  | ██████ |
 | | | | | |
-| Encrypt 64 payloads at once | web-push | 67.3 | 1.2× faster | ████████████ |
-|  | **@portable/web-push** | 57.4 |  | ██████████▎ |
-|  | The same WebCrypto calls by hand | 53.7 | 1.1× slower | █████████▋ |
+| Encrypt 64 payloads at once | web-push | 67.3 | 1.2× faster | ████████████████ |
+|  | **@portable/web-push** | 57.4 |  | ██████████████ |
+|  | The same WebCrypto calls by hand | 53.7 | 1.1× slower | █████████████ |
 | | | | | |
-| Sign a VAPID JWT | The same WebCrypto calls by hand | 11,100 | 1.3× faster | ████████████ |
-|  | web-push | 10,200 | 1.2× faster | ███████████ |
-|  | **@portable/web-push** | 8,230 |  | ████████▉ |
+| Sign a VAPID JWT | The same WebCrypto calls by hand | 11,100 | 1.3× faster | ████████████████ |
+|  | web-push | 10,200 | 1.2× faster | ███████████████ |
+|  | **@portable/web-push** | 8,230 |  | ████████████ |
 | | | | | |
-| Build a push request | web-push | 2,770 | 1.8× faster | ████████████ |
-|  | **@portable/web-push** | 1,500 |  | ██████▌ |
-|  | The same WebCrypto calls by hand | 1,310 | 1.1× slower | █████▋ |
+| Build a push request | web-push | 2,770 | 1.8× faster | ████████████████ |
+|  | **@portable/web-push** | 1,500 |  | █████████ |
+|  | The same WebCrypto calls by hand | 1,310 | 1.1× slower | ████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/web-push, and the bars are scaled to the fastest library.
 

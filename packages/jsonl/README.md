@@ -54,15 +54,15 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Decode 20,000 rows | `JSON.parse` or `JSON.stringify` | 44.5 | 1.2× faster | ████████████ |
-|  | **@portable/jsonl** | 38.6 |  | ██████████▍ |
-|  | ndjson | 34.3 | 1.1× slower | █████████▎ |
-|  | stream-json | 27.8 | 1.4× slower | ███████▌ |
+| Decode 20,000 rows | `JSON.parse` or `JSON.stringify` | 44.5 | 1.2× faster | ████████████████ |
+|  | **@portable/jsonl** | 38.6 |  | ██████████████ |
+|  | ndjson | 34.3 | 1.1× slower | ████████████ |
+|  | stream-json | 27.8 | 1.4× slower | ██████████ |
 | | | | | |
-| Encode 20,000 rows | `JSON.parse` or `JSON.stringify` | 79.3 | 2.7× faster | ████████████ |
-|  | stream-json | 38.7 | 1.3× faster | █████▉ |
-|  | **@portable/jsonl** | 29.2 |  | ████▍ |
-|  | ndjson | 19.0 | 1.5× slower | ██▉ |
+| Encode 20,000 rows | `JSON.parse` or `JSON.stringify` | 79.3 | 2.7× faster | ████████████████ |
+|  | stream-json | 38.7 | 1.3× faster | ████████ |
+|  | **@portable/jsonl** | 29.2 |  | ██████ |
+|  | ndjson | 19.0 | 1.5× slower | ████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/jsonl, and the bars are scaled to the fastest library.
 

@@ -116,13 +116,13 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Echo 16 MB over TCP on localhost | node:net | 41.1 | 1.1× faster | ████████████ |
-|  | **@portable/sockets** | 36.5 |  | ██████████▋ |
-|  | @arrowood.dev/socket | 33.9 | 1.1× slower | █████████▉ |
+| Echo 16 MB over TCP on localhost | node:net | 41.1 | 1.1× faster | ████████████████ |
+|  | **@portable/sockets** | 36.5 |  | ██████████████ |
+|  | @arrowood.dev/socket | 33.9 | 1.1× slower | █████████████ |
 | | | | | |
-| Open and close a connection on localhost | node:net | 24,200 | 1.6× faster | ████████████ |
-|  | **@portable/sockets** | 15,300 |  | ███████▋ |
-|  | @arrowood.dev/socket | 13,500 | 1.1× slower | ██████▊ |
+| Open and close a connection on localhost | node:net | 24,200 | 1.6× faster | ████████████████ |
+|  | **@portable/sockets** | 15,300 |  | ██████████ |
+|  | @arrowood.dev/socket | 13,500 | 1.1× slower | █████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/sockets, and the bars are scaled to the fastest library.
 
