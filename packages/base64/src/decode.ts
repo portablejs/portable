@@ -1,5 +1,5 @@
 import { assertUint8Array } from '@portable/bytes/internal';
-import type { Alphabet } from './encode.js';
+import { assertAlphabet, type Alphabet } from './encode.js';
 import { InvalidInputError, TruncatedError } from './errors.js';
 
 /**
@@ -100,9 +100,7 @@ type State = {
 };
 
 function createState(alphabet: Alphabet, mode: Mode): State {
-  if (alphabet !== 'base64' && alphabet !== 'base64url') {
-    throw new RangeError(`Unknown alphabet: ${String(alphabet)}. Use 'base64' or 'base64url'.`);
-  }
+  assertAlphabet(alphabet);
   if (mode !== 'loose' && mode !== 'strict' && mode !== 'mime') {
     throw new RangeError(`Unknown mode: ${String(mode)}. Use 'loose', 'strict' or 'mime'.`);
   }

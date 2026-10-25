@@ -76,9 +76,9 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 
 ## Why use this over base64-js, js-base64 and libbase64
 
-One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and has no dependencies.
+One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and depends only on other `@portable/*` packages.
 
-- In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 8× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 10× faster than js-base64.
+- In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 8× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 11× faster than js-base64.
 - `EncoderStream` at 76 columns was as fast as libbase64's `Encoder`, and `DecoderStream` was about 1.3× faster than its `Decoder`.
 - `Buffer` is 10 to 20× faster on 1 MB in Node, and so are libbase64's plain `encode` and `decode`, which call `Buffer`. In Node-only code where that matters, keep `Buffer`.
 - The default mode throws `InvalidInputError` on characters outside the alphabet. base64-js drops them and returns wrong bytes (base64-js #81), and throws a `RangeError` on `'===='` (base64-js #73).

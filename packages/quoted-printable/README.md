@@ -45,7 +45,7 @@ Both streams produce the same bytes as the functions however the input is chunke
 
 ## Why use this over libqp and quoted-printable
 
-Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams and no dependencies. The bugs below are fixed in libqp 3, but libqp 2.x and quoted-printable still have them.
+Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams, and the package depends only on other `@portable/*` packages. The bugs below are fixed in libqp 3, but libqp 2.x and quoted-printable still have them.
 
 - Encoding 512 KB of text was about 1.2× faster than libqp 3.0.1 and 3× faster than quoted-printable. Decoding 256 KB of random bytes was about 3× faster than libqp.
 - `encode` escapes a hyphen that would start a line, so no line of the body can read as a MIME boundary. libqp before 2.1.3 could start a line with `--`.
