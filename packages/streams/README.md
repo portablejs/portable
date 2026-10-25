@@ -143,25 +143,20 @@ Each conversion follows backpressure in both directions. `toWeb` reads from the 
 
 A `Buffer` chunk becomes a `Uint8Array` over the same memory, so the conversion copies no bytes. A small `Buffer` and the `Uint8Array` made from it share Node's buffer pool with other buffers. Don't transfer the chunk's `ArrayBuffer`, because that detaches every other buffer in the pool.
 
+Keep the work in web streams and convert only where a Node API needs a Node stream, such as a file:
+
 ```ts
 import { createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream/promises';
-import { createGzip } from 'node:zlib';
 import * as Csv from '@portable/csv';
 import * as NodeStreams from '@portable/streams/node';
 
 const response = await fetch('https://example.com/report.csv');
-const rows = response.body!.pipeThrough(new Csv.DecoderStream());
-await pipeline(
-  NodeStreams.fromWeb(rows, { objectMode: true }),
-  async function* (source: AsyncIterable<readonly string[]>) {
-    for await (const row of source) {
-      yield `${row.join('\t')}\n`;
-    }
-  },
-  createGzip(),
-  createWriteStream('report.tsv.gz'),
-);
+await response.body!
+  .pipeThrough(new Csv.DecoderStream())
+  .pipeThrough(Streams.map((row: readonly string[]) => `${row.join('\t')}\n`))
+  .pipeThrough(new TextEncoderStream())
+  .pipeThrough(new CompressionStream('gzip'))
+  .pipeTo(NodeStreams.toWebWritable(createWriteStream('report.tsv.gz')));
 ```
 
 ## Types
