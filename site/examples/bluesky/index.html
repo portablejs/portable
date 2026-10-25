@@ -3,6 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/logo.svg" />
+    <meta
+      name="description"
+      content="Every new Bluesky post in real time, one column per language, read from a WebSocket with Portable streams."
+    />
+    <meta property="og:title" content="Bluesky stream example" />
+    <meta
+      property="og:description"
+      content="Every new Bluesky post in real time, one column per language, read from a WebSocket with Portable streams."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <title>Bluesky stream example · Portable</title>
     <style>
       :root {
@@ -57,7 +68,7 @@
         display: flex;
         margin-right: -6px;
       }
-      .brand svg {
+      .brand img {
         width: 18px;
         height: 18px;
       }
@@ -230,14 +241,7 @@
     <div class="app">
       <section class="stage">
         <header>
-          <a class="brand" href="/" aria-label="Portable docs"
-            ><svg viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
-              <path
-                d="M0 0h3v3H0zM4 0h3v3H4zM8 0h3v3H8zM0 4h3v3H0zM4 4h3v3H4zM8 4h3v3H8zM0 8h3v3H0z"
-                fill="#fff"
-              />
-              <path d="M4 8h3v3H4z" fill="#fc7c00" /></svg
-          ></a>
+          <a class="brand" href="/"><img src="/logo-dark.svg" alt="Portable" /></a>
           <h1>Portable · Bluesky stream</h1>
           <span id="status" class="pill wait">connecting</span>
           <span class="stat"><b id="rate">0</b> posts/s</span
