@@ -1,5 +1,6 @@
 import * as Bytes from '@portable/bytes';
-import { assertAlphabet, assertLineLength, encode, toBase64, toBytes } from './encode.js';
+import { createUtf8Encoder } from '@portable/bytes/internal';
+import { assertAlphabet, assertLineLength, encode, toBase64 } from './encode.js';
 import * as Streams from '@portable/streams';
 
 export declare namespace EncoderStream {
@@ -35,29 +36,10 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
     } = options;
     assertAlphabet(alphabet);
     assertLineLength(lineLength);
-    const utf8 = new TextEncoder();
+    const ascii = new TextEncoder();
+    const utf8 = createUtf8Encoder();
     let carry: Uint8Array = new Uint8Array(0);
-    let highSurrogate = '';
     let column = 0;
-
-    const readChunk = (chunk: Uint8Array | string): Uint8Array => {
-      if (typeof chunk === 'string') {
-        let text = highSurrogate + chunk;
-        highSurrogate = '';
-        const last = text.charCodeAt(text.length - 1);
-        if (last >= 0xd800 && last <= 0xdbff) {
-          highSurrogate = text.slice(-1);
-          text = text.slice(0, -1);
-        }
-        return utf8.encode(text);
-      }
-      if (highSurrogate === '') {
-        return toBytes(chunk);
-      }
-      const pending = utf8.encode(highSurrogate);
-      highSurrogate = '';
-      return Bytes.concat([pending, toBytes(chunk)]);
-    };
 
     const encodeLines = (bytes: Uint8Array, final: boolean): string => {
       if (bytes.length === 0) {
@@ -77,7 +59,7 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
       Streams.abortable(
         {
           transform(chunk, controller) {
-            let bytes = readChunk(chunk);
+            let bytes = utf8.write(chunk);
             let text = '';
             if (carry.length > 0) {
               const fill = Math.min(3 - carry.length, bytes.length);
@@ -93,13 +75,13 @@ export class EncoderStream extends TransformStream<Uint8Array | string, Uint8Arr
             carry = bytes.slice(whole);
             text += encodeLines(bytes.subarray(0, whole), false);
             if (text !== '') {
-              controller.enqueue(utf8.encode(text));
+              controller.enqueue(ascii.encode(text));
             }
           },
           flush(controller) {
-            const text = encodeLines(Bytes.concat([carry, utf8.encode(highSurrogate)]), true);
+            const text = encodeLines(Bytes.concat([carry, utf8.flush()]), true);
             if (text !== '') {
-              controller.enqueue(utf8.encode(text));
+              controller.enqueue(ascii.encode(text));
             }
           },
         },

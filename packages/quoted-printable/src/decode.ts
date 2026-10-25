@@ -1,6 +1,7 @@
-import { assertUint8Array } from '@portable/bytes/internal';
-import { createUtf8Encoder, encodeUtf8 } from './utf8.js';
+import { assertUint8Array, createUtf8Encoder } from '@portable/bytes/internal';
 import * as Streams from '@portable/streams';
+
+const textEncoder = new TextEncoder();
 
 /**
  * Decodes quoted-printable (RFC 2045 section 6.7) into bytes. A string is read as UTF-8.
@@ -17,7 +18,7 @@ import * as Streams from '@portable/streams';
  * ```
  */
 export function decode(input: string | Uint8Array): Uint8Array<ArrayBuffer> {
-  const bytes = typeof input === 'string' ? encodeUtf8(input) : assertUint8Array(input);
+  const bytes = typeof input === 'string' ? textEncoder.encode(input) : assertUint8Array(input);
   return createDecoder().write(bytes, true);
 }
 

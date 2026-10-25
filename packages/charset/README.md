@@ -64,7 +64,7 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 
 `'?'` is the default because iconv-lite writes `?`, it keeps one character for one character, and it can't inject markup into a non-HTML output such as CSV or email. Use `'html'` for HTML forms and pages, and `'error'` when silent data loss is worse than failing.
 
-Text input can be a string or a `Uint8Array` of UTF-8. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
+Text input can be a string or a `Uint8Array` of UTF-8. A UTF-8 byte order mark at the start of byte input is dropped, as `TextDecoder` drops it, so it isn't encoded as a character. Pass `bom: true` to write the output charset's own byte order mark. Lone surrogates are encoded as U+FFFD, as `TextEncoder` does. `EncoderStream` takes string and `Uint8Array` chunks, and a character split across chunks is encoded once.
 
 ## Decoding
 

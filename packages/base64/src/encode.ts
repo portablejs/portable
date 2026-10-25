@@ -42,7 +42,7 @@ export function encode(input: Uint8Array | string, options: encode.Options = {})
 
 const utf8 = new TextEncoder();
 
-export function toBytes(input: Uint8Array | string): Uint8Array {
+function toBytes(input: Uint8Array | string): Uint8Array {
   return typeof input === 'string' ? utf8.encode(input) : assertUint8Array(input);
 }
 
