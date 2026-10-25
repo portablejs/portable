@@ -37,7 +37,7 @@ The report is read from the network while the caller reads the message, so a lar
 | --- | --- |
 | `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content. |
 | `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
-| `InvalidInputError` | Thrown for an address, header name, content type or file name that can't be written. |
+| `InvalidInputError` | Thrown for an address, header name, content type, file name or `Date` that can't be written. |
 | `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types. |
 
 ### Message
@@ -128,7 +128,7 @@ Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, 
 
 nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.
 
-- In the benchmarks on Node 24, `encodeStream` was 2.5× faster than `MailComposer` on 100 text and HTML messages and 1.2× faster on a 4 MB attachment read from a stream. With a 1 MB attachment in memory the difference was within the noise. There is no native API that composes MIME to compare with.
+- In the benchmarks on Node 24, `encodeStream` was 3× faster than `MailComposer` on 100 text and HTML messages. `MailComposer` was 1.5× faster with a 1 MB attachment in memory and 1.2× faster with a 4 MB attachment read from a stream. There is no native API that composes MIME to compare with.
 - Line breaks in `7bit` and `8bit` bodies are written as CRLF. Without its `newline` option, nodemailer writes a bare LF as is, which is how SMTP smuggling starts.
 - An invalid address, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
 - `encodeStream` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.

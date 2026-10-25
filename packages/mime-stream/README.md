@@ -95,7 +95,7 @@ The size limits default to `Infinity`. Set `maxHeaderBytes`, `maxBoundaryLineByt
 
 mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as dependencies. `DecoderStream` is a `TransformStream` with no dependencies outside `@portable/*`, so it reads a `fetch` body or a Workers email in any runtime.
 
-- Splitting and joining 1.5 MB of mail took 1.5 ms on Node 24, against 8.7 ms for mailsplit. `splitHeaders` reads the header block and passes on the body of the same message in 0.08 ms. mailsplit has no equivalent and took 8.7 ms with `ignoreEmbedded`.
+- Splitting and joining 1.5 MB of mail took 1.3 ms on Node 24, against 7.9 ms for mailsplit. `splitHeaders` reads the header block and passes on the body of the same message in 0.06 ms. mailsplit has no equivalent and took 7.9 ms with `ignoreEmbedded`.
 - A part that has headers and no body, followed by a delimiter (`--B\r\nX-Only: headers\r\n--B`), is kept. mailsplit 5.4.23 drops its bytes, so its output is not the input.
 - A delimiter followed by spaces or tabs is read as a delimiter, as RFC 2046 allows. mailsplit reads it as body text, so it sees different parts from mail clients.
 - Header values are decoded as UTF-8 and the raw bytes are kept in the `headers` chunk. mailsplit returns Latin-1 strings, which turns UTF-8 addresses into mojibake (mailsplit #21).
