@@ -212,7 +212,7 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 <!-- bench:start -->
 | Benchmark | Library | Ops/s | Relative | |
 | --- | --- | ---: | --- | --- |
-| Retry 10 attempts | `setTimeout` or `try`/`catch` by hand | 123,000 | 1.3× faster | ████████████ |
+| Retry 10 attempts | `setTimeout` or `try`/`catch` | 123,000 | 1.3× faster | ████████████ |
 |  | **@portable/timers** | 98,400 |  | █████████▋ |
 |  | p-retry | 52,700 | 1.9× slower | █████▏ |
 |  | async-retry | 98.0 | 1,000× slower | ▏ |
@@ -223,7 +223,7 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 | Poll until the 10th check succeeds | **@portable/timers** | 98.7 |  | ████████████ |
 |  | p-wait-for | 98.1 | same | ███████████▉ |
 | | | | | |
-| Sleep for 1 ms | `setTimeout` or `try`/`catch` by hand | 1,400 | 1.2× faster | ████████████ |
+| Sleep for 1 ms | `setTimeout` or `try`/`catch` | 1,400 | 1.2× faster | ████████████ |
 |  | **@portable/timers** | 1,200 |  | ██████████▎ |
 |  | delay | 951 | 1.3× slower | ████████▏ |
 | | | | | |
@@ -249,7 +249,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | lodash.throttle | 4.1.1 | 1.2 kB | 0 | none | `@types/lodash.throttle` |
 | throttle-debounce | 5.0.2 | 0.5 kB | 0 | none | `@types/throttle-debounce` |
 | p-debounce | 6.0.0 | 0.7 kB | 0 | none | included |
-| `setTimeout` or `try`/`catch` by hand | – | built in | – | none | – |
+| `setTimeout` or `try`/`catch` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
