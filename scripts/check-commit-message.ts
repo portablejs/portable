@@ -2,7 +2,7 @@
 // Run by .vite-hooks/commit-msg. Rejects a commit message with prose built around a made-up actor,
 // the check that tools/lint/src/prose.test.ts makes for files.
 import { readFileSync } from 'node:fs';
-import { findMadeUpActor } from './prose.ts';
+import { findMadeUpActor } from '../tools/lint/src/prose.ts';
 
 const lines = readFileSync(process.argv[2], 'utf8')
   .split('\n')
