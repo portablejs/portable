@@ -4,7 +4,6 @@ import * as Arc from '@portable/arc';
 import { createSealer, planVerify as planArc } from '@portable/arc/internal';
 import * as Dkim from '@portable/dkim';
 import {
-  assertResolver,
   hashBody,
   parseFields,
   planVerify as planDkim,
@@ -80,8 +79,8 @@ export declare namespace authenticate {
     /** Seals the message with an ARC set that records these results. */
     seal?: Seal | undefined;
     /**
-     * The time to check DKIM and ARC signature expiry against. A `Date` or a `Temporal.Instant`.
-     * @default new Date()
+     * The time to check DKIM and ARC signature expiry against, and for `%{t}` in SPF
+     * explanations. A `Date` or a `Temporal.Instant`. @default new Date()
      */
     now?: Instant | undefined;
     /** RSA keys shorter than this give DKIM `policy` and fail the ARC chain. @default 1024 */
@@ -140,7 +139,7 @@ export async function authenticate(
   const now = toDate(options.now);
   signal?.throwIfAborted();
   const sealer = options.seal && (await createSealer(options.seal));
-  const spfCheck = Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, signal });
+  const spfCheck = Spf.check({ ip, sender, helo }, { resolver, receiver: authservId, now, signal });
   spfCheck.catch(() => {});
   const { header, body } = await splitMessage(message, signal);
   const fields = parseFields(toBinary(header));
@@ -187,4 +186,21 @@ export async function authenticate(
     }
   }
   return result;
+}
+
+const resolverMethods = [
+  'resolveTxt',
+  'resolve4',
+  'resolve6',
+  'resolveMx',
+  'resolvePtr',
+  'resolveCname',
+] as const;
+
+function assertResolver(resolver: Resolver): void {
+  for (const method of resolverMethods) {
+    if (typeof resolver?.[method] !== 'function') {
+      throw new TypeError(`options.resolver must have a ${method} method.`);
+    }
+  }
 }

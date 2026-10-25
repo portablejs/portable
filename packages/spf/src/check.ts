@@ -152,6 +152,7 @@ export async function check(input: check.Input, options: check.Options): Promise
   }
   assertResolver(options.resolver);
   const now = toDate(options.now);
+  options.signal?.throwIfAborted();
   const client = Ip.unmap(address);
   const helo = stripDot(input.helo ?? '');
   const identity = input.sender ? 'mailfrom' : 'helo';

@@ -520,6 +520,23 @@ describe('input', () => {
     expect(pulls).toBe(0);
   });
 
+  test('rejects a resolver without one of the lookup methods before reading the message', async () => {
+    const { resolveCname: _, ...partial } = zoneResolver({});
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(encode('Subject: no From field\r\n\r\nbody\r\n'));
+        c.close();
+      },
+    });
+    await expect(
+      MailAuth.authenticate(stream, {
+        ...envelope,
+        resolver: partial as unknown as MailAuth.Resolver,
+      }),
+    ).rejects.toThrow(TypeError);
+    expect(stream.locked).toBe(false);
+  });
+
   test('throws a RangeError for an ip that is not an IP address', async () => {
     await expect(authenticate(message, {}, { ip: 'mail.example.com' })).rejects.toBeInstanceOf(
       RangeError,
@@ -545,6 +562,15 @@ describe('now', () => {
     expect(await at(new Date(before))).toBe('pass');
     expect(await at({ epochMilliseconds: after })).toBe(await at(new Date(after)));
     expect(await at({ epochMilliseconds: after })).not.toBe('pass');
+  });
+
+  test('is the time for %{t} in an SPF explanation', async () => {
+    const zone = {
+      'mail.example.com': { TXT: ['v=spf1 -all exp=exp.mail.example.com'] },
+      'exp.mail.example.com': { TXT: ['%{t}'] },
+    };
+    const now = { epochMilliseconds: 1_700_000_000_900 };
+    expect((await authenticate(message, zone, { now })).spf.explanation).toBe('1700000000');
   });
 
   test('rejects an invalid now without reading the message', async () => {

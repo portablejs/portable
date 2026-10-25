@@ -119,9 +119,11 @@ describe('Spf.check', () => {
 
   test('rejects with the reason for a signal that has already aborted', async () => {
     const reason = new Error('stop');
-    await expect(
-      check(withRecord('v=spf1 +all'), {}, { signal: AbortSignal.abort(reason) }),
-    ).rejects.toBe(reason);
+    for (const sender of ['user@example.test', 'user@invalid']) {
+      await expect(
+        check(withRecord('v=spf1 +all'), { sender }, { signal: AbortSignal.abort(reason) }),
+      ).rejects.toBe(reason);
+    }
   });
 
   test('gives temperror for a resolver that throws synchronously or rejects with a non-error', async () => {
