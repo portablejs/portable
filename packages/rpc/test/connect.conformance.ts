@@ -411,6 +411,25 @@ describe('cancellation', () => {
     port1.close();
   });
 
+  test('aborting the connection aborts the notifications it is running', async () => {
+    const { port1, port2 } = new MessageChannel();
+    const server = new AbortController();
+    let methodSignal: AbortSignal | undefined;
+    Rpc.provide(
+      Rpc.port(port1),
+      { slow: Rpc.withContext(({ signal }) => ((methodSignal = signal), new Promise(() => {}))) },
+      { signal: server.signal },
+    );
+    const client = new AbortController();
+    const remote = Rpc.connect<{ slow(): void }>(Rpc.port(port2), { signal: client.signal });
+    await Rpc.notify(remote.slow, []);
+    await vi.waitFor(() => expect(methodSignal).toBeDefined());
+    server.abort();
+    expect(methodSignal!.aborted).toBe(true);
+    client.abort();
+    port1.close();
+  });
+
   test('the transport closing rejects waiting calls with TransportError', async () => {
     let close!: () => void;
     const readable = new ReadableStream({ start: (c) => void (close = () => c.close()) });
