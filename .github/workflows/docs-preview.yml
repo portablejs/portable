@@ -1,5 +1,6 @@
 # Publishes a preview of the docs site to here.now for each pull request, and records it as a GitHub deployment so
-# the pull request shows a "View deployment" link.
+# the pull request shows a "View deployment" link. Every pull request deploys to the one `docs preview` environment, so
+# the repository's Deployments list shows one entry for all previews instead of one per pull request.
 #
 # Previews are anonymous here.now sites, which expire 24 hours after they are created. The site's slug and claim
 # token are kept in the Actions cache, which only this pull request's runs can read, so later pushes update the same
@@ -60,7 +61,7 @@ jobs:
             const { data: deployment } = await github.rest.repos.createDeployment({
               ...context.repo,
               ref: context.payload.pull_request.head.sha,
-              environment: `docs-preview-pr-${context.payload.pull_request.number}`,
+              environment: 'docs preview',
               description: 'Docs preview on here.now',
               auto_merge: false,
               required_contexts: [],
@@ -72,5 +73,8 @@ jobs:
               deployment_id: deployment.id,
               state: 'success',
               environment_url: process.env.URL,
+              // GitHub marks earlier deployments in the environment inactive by default, which would hide the
+              // preview links of other open pull requests.
+              auto_inactive: false,
               log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
             })
