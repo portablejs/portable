@@ -339,6 +339,8 @@ Our tests run under Vitest fake timers in Node and Chromium, so they check exact
 
 `debounce.oracle.test.ts` runs seeded random schedules of calls, `flush` and `cancel` against ours and lodash 4.18 under fake timers, and compares the time and argument of every invocation. It covers `ms` of 0, 10, 32 and 100, seven option sets for `debounce` and three for `throttle`, and they match exactly. The same schedules match lodash.debounce and lodash.throttle 4.x where `maxWait` is at least `ms`. Against p-debounce, every call resolves with the same value, with `before` on and off.
 
+`debounce.fuzz.oracle.test.ts` runs the same comparison with fast-check. Each run picks an `ms` up to 100 and random `leading`, `trailing` and `maxWait` settings, and `fc.commands` generates a sequence of calls, `flush`, `cancel` and clock advances. After each step the test checks that both functions have made the same invocations. Runs with `maxWait`, and every `throttle` run, leave out `flush`: lodash's `flush` doesn't clear its timer, so if the function is called again after a flush, lodash can invoke `fn` `maxWait` after the flush, while ours invokes it `ms` after the new call.
+
 ## Benchmarks
 
 None of the upstream packages has a benchmark. `retry.bench.ts` measures overhead per attempt: ten attempts with no delay, against p-retry with `minTimeout: 0` and a plain try/catch loop, with and without a `signal`. It fails if p-retry is more than 25% faster.

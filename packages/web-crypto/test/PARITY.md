@@ -70,3 +70,7 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 | `derToJose` drops the top byte of a 33-byte ES256 INTEGER even when it isn't zero, so it returns a different signature instead of failing. | `known ecdsa-sig-formatter issues` and `derToRawEcdsa > rejects a 33-byte r instead of dropping its top byte` |
 | WebCrypto rejects an empty HMAC key, which RFC 2104 allows. | `hmac > accepts an empty key` and the oracle's key length 0 |
 | `crypto.subtle.digest(hash, view.buffer)` hashes the whole buffer. | `digest > hashes only the bytes a subarray covers`, `hmac > uses only the bytes subarrays cover` |
+
+## Oracle tests
+
+`web-crypto.oracle.test.ts` compares `digest`, `hmac`, `hkdf`, `importSeed`, `publicKeyOf` and the ECDSA conversions with node:crypto, @noble/hashes, @noble/curves and ecdsa-sig-formatter. `web-crypto.fuzz.oracle.test.ts` checks random raw signatures, biased toward leading zero bytes and a set top bit, against @noble/curves on P-256, P-384 and P-521: `rawToDerEcdsa` writes the same DER, and `derToRawEcdsa` accepts every mutated DER signature that @noble/curves accepts and converts it to the same raw bytes.

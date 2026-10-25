@@ -1,4 +1,4 @@
-import { NeedMore, startsWith, u8 } from '../bytes.js'
+import { latin1, NeedMore, startsWith, u8 } from '../bytes.js'
 import { InvalidInputError } from '../errors.js'
 import type { Size } from '../parse.js'
 import type { Format } from './format.js'
@@ -24,7 +24,7 @@ function* tokens(input: Uint8Array, final: boolean): Generator<string> {
     if (offset === input.length && (!final || start === offset)) {
       throw new NeedMore(offset + 1)
     }
-    yield String.fromCharCode(...input.subarray(start, offset))
+    yield latin1(input.subarray(start, offset))
   }
 }
 

@@ -74,6 +74,8 @@ GitHub's issue tracker couldn't be reached from the session that wrote this pack
 - For a synthetic corpus covering every record type with a codec, every EDNS option with fields, mDNS bits and non-IN classes, dns-packet decodes our output to the same packet, and re-encodes it to the same bytes. It also decodes our compressed output to the same packet.
 - TCP-framed messages match `streamEncode` and `streamDecode`, including when the captured responses arrive in random chunks.
 
+`dns-packet.fuzz.oracle.test.ts` decodes mutated copies of the captured responses with both libraries and compares the packets whenever both decode one. It leaves out a packet if one of its names needs an escape or one of its questions has the QU bit set, because the two libraries decode those packets differently on purpose (see the table above).
+
 ## Benchmarks
 
 dns-packet has no benchmarks. `dns-packet.bench.ts` compares decoding and encoding the 48 captured responses, and encoding a typical DNS-over-HTTPS query.

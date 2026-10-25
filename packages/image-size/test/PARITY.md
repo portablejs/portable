@@ -97,6 +97,10 @@ Bugs and gaps in image-size 2.0.4 found by reading its source and running it on 
 | PNM: dimensions that aren't numbers give `NaN` instead of an error. | `PNM > rejects a header whose dimensions are not numbers` |
 | `disableTypes` changes global state shared by every caller in the process. | not applicable: no such option |
 
+## Oracle tests
+
+`parse.oracle.test.ts` compares every valid fixture with image-size and checks that both reject every invalid one. `image-size.fuzz.oracle.test.ts` mutates the first 512 bytes of each valid fixture and compares `width`, `height` and `type` whenever both libraries return a size. It leaves out HEIF and JPEG files, a Netpbm header without whitespace after its magic number, and results where image-size returns an undefined or zero width or height, because of the issues above. Its first runs found a PNM header that made `parse` throw a `RangeError` (`PNM > rejects a header whose height is a long run of binary data`).
+
 ## Stream behavior
 
 These have no upstream counterpart, because image-size has no stream API.

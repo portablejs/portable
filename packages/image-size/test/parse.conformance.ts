@@ -496,6 +496,13 @@ describe('PNM', () => {
   test('rejects a header whose dimensions are not numbers', () => {
     expect(() => ImageSize.parse(encode('P5\nabc def\n255\n'))).toThrow(ImageSize.InvalidInputError)
   })
+
+  // Found by image-size.fuzz.oracle.test.ts: spreading a 200,000-byte token into
+  // String.fromCharCode threw a RangeError.
+  test('rejects a header whose height is a long run of binary data', () => {
+    const bytes = concat('P6\n123 ', new Uint8Array(200_000).fill(0x80))
+    expect(() => ImageSize.parse(bytes)).toThrow(ImageSize.InvalidInputError)
+  })
 })
 
 describe('other formats', () => {

@@ -13,9 +13,23 @@ const env = import.meta.env as Record<string, string | undefined>
 export const runs: number = Number(env.FUZZ_RUNS) || 100
 
 /**
+ * Milliseconds one run of a property may take before it fails. The slowest run in the Node suite
+ * takes under 100 ms, so the margin covers slower browsers and a loaded machine.
+ *
+ * @example
+ * fuzz(fc.asyncProperty(input, check), { timeout: 10_000 })
+ */
+export const timeout = 2000
+
+/**
  * Checks a property with fast-check for {@link runs} runs. A failure prints the seed and path, and
  * `FUZZ_SEED` and `FUZZ_PATH` replay it. Set `FUZZ_PATH` only together with `-t` for that one test,
  * because a path belongs to one property.
+ *
+ * A run fails when it takes longer than {@link timeout}, so a parser with a quadratic slowdown or a
+ * stream that never closes fails the property instead of passing slowly. fast-check stops waiting
+ * for an async run at the limit. It can't interrupt a sync run, so a sync run fails only after it
+ * returns, and an infinite loop still hangs the test.
  *
  * @example
  * test('decodes what it encodes', () => {
@@ -40,13 +54,43 @@ export function fuzz<types>(
   if (env.FUZZ_PATH) {
     parameters.path = env.FUZZ_PATH
   }
-  return fc.assert(property as fc.IProperty<types>, parameters)
+  const limit = options.timeout ?? timeout
+  if (property.isAsync()) {
+    parameters.timeout = limit
+  }
+  return fc.assert(limited(property, limit) as fc.IProperty<types>, parameters)
+}
+
+function limited<types>(
+  property: fc.IProperty<types> | fc.IAsyncProperty<types>,
+  limit: number,
+): fc.IRawProperty<types> {
+  const check = (start: number, result: fc.PreconditionFailure | fc.PropertyFailure | null) => {
+    const elapsed = performance.now() - start
+    if (result === null && elapsed > limit) {
+      return {
+        error: new Error(`The run took ${Math.round(elapsed)} ms, over the ${limit} ms limit`),
+      }
+    }
+    return result
+  }
+  const wrapper: fc.IRawProperty<types> = Object.create(property)
+  wrapper.run = (value) => {
+    const start = performance.now()
+    const result = property.run(value)
+    return result instanceof Promise
+      ? result.then((result) => check(start, result))
+      : check(start, result)
+  }
+  return wrapper
 }
 
 export declare namespace fuzz {
   type Options = {
     /** Multiplies {@link runs} for a property that is slow or cheap to run. */
     scale?: number | undefined
+    /** Milliseconds one run may take, instead of {@link timeout}. */
+    timeout?: number | undefined
   }
 }
 
