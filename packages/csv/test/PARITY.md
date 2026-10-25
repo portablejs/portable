@@ -282,6 +282,8 @@ Found by running each library on crafted input (`csv.oracle.test.ts` and a probe
 
 `csv.oracle.test.ts` compares `decode` and `DecoderStream` (random byte chunks) with csv-parse (`bom`, `relax_quotes` and `skip_empty_lines` set, which match RFC 4180 plus our defaults) and with papaparse (`skipEmptyLines`), on random rows built from delimiters, quotes, CR, LF, CRLF, spaces, tabs and multi-byte characters, plus csv-spectrum. It compares `encode` with csv-stringify (`\n` line breaks) and papaparse `unparse` (plus the final `\r\n`). Inputs where they disagree with RFC 4180 are left out: papaparse quotes fields with leading or trailing whitespace, and csv-stringify's custom record delimiters leave a lone LF bare.
 
+`csv.fuzz.oracle.test.ts` compares `decode` with csv-parse on rows that csv-stringify writes and on random CSV-like text, whenever csv-parse accepts the text and `decode` doesn't throw. The test passes all three line breaks to csv-parse as record delimiters, because without that option csv-parse uses the first line break it sees as the only delimiter. It leaves out text with a space or tab after a quote, because `decode` skips whitespace after a closing quote. The test also checks that csv-parse reads back every row `encode` writes.
+
 ## Benchmarks
 
 csv-parse's and papaparse's suites have no benchmarks in their test directories. `csv.bench.ts` compares one-shot and streaming decode and encode of 5,000 order rows with csv-parse, csv-stringify, papaparse and fast-csv, and fails if any is more than 25% faster.

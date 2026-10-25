@@ -14,7 +14,7 @@
     "test:deno": "deno run --allow-all \"$(dirname \"$(realpath node_modules/vite-plus)\")/vitest/vitest.mjs\" run --project node conformance",
     "test:workers": "node tools/workers/src/run.ts",
     "coverage": "vp test run --project node --coverage",
-    "fuzz": "vp test run --project node --mode fuzz --testTimeout=3600000 fuzz.conformance",
+    "fuzz": "vp test run --project node --mode fuzz --testTimeout=3600000 fuzz.conformance fuzz.oracle",
     "readme": "pnpm bench && node scripts/bundle-size.ts && node scripts/readme-stats.ts",
     "bench": "pnpm build && node scripts/bench.ts",
     "changeset": "changeset",

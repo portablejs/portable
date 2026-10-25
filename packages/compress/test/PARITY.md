@@ -123,3 +123,7 @@ fflate's tests download five files (a short string, Moby Dick and three BMP imag
 | pako 2 returned `undefined` instead of throwing on some bad input (pako #283). | `InvalidInputError` or `TruncatedError`. | `corrupt input > *`, `truncated input > *` |
 | node:zlib and pako ignore bytes after the end of the data. | `InvalidInputError`, as `DecompressionStream` does, so a damaged or concatenated file isn't read as a shorter valid one. | oracle `node:zlib and pako ignore bytes after the end of the data`; `data after the end > *` |
 | `DecompressionStream` emits output chunks no larger than its input allows: 1 KiB input chunks of gzip give about 4 KiB of output each on Node. | `DecoderStream` joins input chunks that arrive while the decompressor is busy. | `compress.bench.ts` (gunzip a stream of 1 KiB chunks) |
+
+## Oracle tests
+
+`compress.oracle.test.ts` decodes what pako and fflate compress at every level, strategy, window size and memory level, and compares our output and checksums with node:zlib. `compress.fuzz.oracle.test.ts` compresses random data with node:zlib, mutates it, and checks that whenever `decode` returns bytes for gzip, deflate or raw deflate, zlib returns the same bytes. zlib accepts more input than `decode`, because it ignores bytes after the end of the data.

@@ -314,6 +314,35 @@ describe('lodash debounce and throttle', () => {
   }
 });
 
+// Found by debounce.fuzz.oracle.test.ts: `flush` started a new window, so these calls ran at 15.
+describe('flush keeps the maxWait window', () => {
+  for (const leading of [true, false]) {
+    test(`throttle runs a call after flush when the window ends, leading: ${leading}`, async () => {
+      const { fn, times } = recorder();
+      const throttled = Timers.throttle(fn, 10, { leading });
+      void throttled('a');
+      void throttled.flush();
+      await tick(5);
+      void throttled('b');
+      await tick(50);
+      expect(times()).toEqual([0, 10]);
+    });
+  }
+
+  test('debounce counts maxWait from the invocation flush made', async () => {
+    const { fn, times } = recorder();
+    const debounced = Timers.debounce(fn, 8, { maxWait: 10 });
+    void debounced('a');
+    void debounced.flush();
+    await tick(5);
+    void debounced('b');
+    await tick(3);
+    void debounced('c');
+    await tick(50);
+    expect(times()).toEqual([0, 10]);
+  });
+});
+
 describe('promises', () => {
   test('every call in a burst resolves with the one invocation', async () => {
     const { fn, calls } = recorder();

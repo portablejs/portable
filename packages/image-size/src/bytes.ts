@@ -68,7 +68,19 @@ export function startsWith(input: Uint8Array, offset: number, text: string): boo
 
 export function ascii(input: Uint8Array, start: number, end: number): string {
   need(input, end);
-  return String.fromCharCode(...input.subarray(start, end));
+  return latin1(input.subarray(start, end));
+}
+
+/**
+ * Passes at most 32 KiB to each `String.fromCharCode` call, because spreading a long array into a
+ * call's arguments throws a `RangeError`.
+ */
+export function latin1(bytes: Uint8Array): string {
+  let text = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return text;
 }
 
 const decoder = new TextDecoder();

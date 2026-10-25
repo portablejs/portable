@@ -192,6 +192,12 @@ Decisions made while building the packages, with the options considered and the 
 - **Chosen:** fast-check, through `fuzz()` in a private workspace package, `@portable/fuzz` in `tools/fuzz`, so `tools/fuzz` holds the run count and replay settings in one place. Mutated real fixtures make up for the missing coverage feedback, because they reach the code past the header checks that random bytes rarely pass. fast-check is a dev dependency of each test package, so no published package depends on it.
 - **Run counts:** 100 runs per property in `pnpm test` and the git hooks, and 10,000 in `pnpm fuzz`, set in `.env.fuzz`. `FUZZ_RUNS` overrides both.
 
+## A time limit on each fuzz run
+
+- **Options:** no limit, as before; fast-check's `timeout` parameter alone; a limit in `fuzz()` that also times sync runs.
+- **Trade-offs:** Without a limit, a parser with a quadratic slowdown passes slowly and a stream that never closes waits for Vitest's test timeout, which `pnpm fuzz` raises to an hour. fast-check's `timeout` covers only async properties, and most properties are sync. Timing a sync run can't stop an infinite loop, but it catches a run that finishes slowly. Any timing check can fail on a loaded machine, so the 2-second limit is more than 20 times the slowest run in the Node suite, which takes under 100 ms.
+- **Chosen:** `fuzz()` passes `timeout` to fast-check for async properties and times every run itself, failing one that takes longer than 2 seconds. A property can pass its own `timeout`.
+
 ## `Spf.check` rejects with `signal.reason`
 
 - **Options:** keep returning a `temperror` result when `signal` aborts; reject with `signal.reason`, as the `signal` rule in AGENTS.md says; return `temperror` only when the reason is a `TimeoutError` and reject otherwise.

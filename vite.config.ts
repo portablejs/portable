@@ -299,7 +299,7 @@ export default defineConfig({
           },
           include: [
             'packages/*/{test,src}/**/*.test.ts',
-            'tools/lint/src/*.test.ts',
+            'tools/{lint,fuzz}/src/*.test.ts',
             'packages/*/{test,src}/**/*.conformance.ts',
             '!packages/*/{test,src}/**/*.browser.test.ts',
           ],
