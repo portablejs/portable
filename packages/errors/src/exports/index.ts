@@ -8,4 +8,4 @@ export {
   ResponseError,
   TruncatedError,
   UnsupportedError,
-} from '../errors.js'
+} from '../errors.js';

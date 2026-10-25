@@ -1,26 +1,26 @@
-import * as Base64 from '@portable/base64'
-import * as DnsPacket from '@portable/dns-packet'
-import * as Errors from '@portable/errors'
-import * as Ip from '@portable/ip'
-import { QueryError } from './errors.js'
-import { hostToAscii } from '@portable/idna/internal'
+import * as Base64 from '@portable/base64';
+import * as DnsPacket from '@portable/dns-packet';
+import * as Errors from '@portable/errors';
+import * as Ip from '@portable/ip';
+import { QueryError } from './errors.js';
+import { hostToAscii } from '@portable/idna/internal';
 
 /** A mail exchange, as `resolveMx` returns it. */
-export type MxRecord = { exchange: string; priority: number }
+export type MxRecord = { exchange: string; priority: number };
 
 /** A service location, as `resolveSrv` returns it. `name` is the target host. */
-export type SrvRecord = { name: string; port: number; priority: number; weight: number }
+export type SrvRecord = { name: string; port: number; priority: number; weight: number };
 
 /** A start of authority, as `resolveSoa` returns it. */
 export type SoaRecord = {
-  nsname: string
-  hostmaster: string
-  serial: number
-  refresh: number
-  retry: number
-  expire: number
-  minttl: number
-}
+  nsname: string;
+  hostmaster: string;
+  serial: number;
+  refresh: number;
+  retry: number;
+  expire: number;
+  minttl: number;
+};
 
 /**
  * A certification authority authorization, as `resolveCaa` returns it. `critical` is the whole
@@ -28,23 +28,23 @@ export type SoaRecord = {
  * not listed here is still set on the object.
  */
 export type CaaRecord = {
-  critical: number
-  issue?: string | undefined
-  issuewild?: string | undefined
-  iodef?: string | undefined
-  contactemail?: string | undefined
-  contactphone?: string | undefined
-}
+  critical: number;
+  issue?: string | undefined;
+  issuewild?: string | undefined;
+  iodef?: string | undefined;
+  contactemail?: string | undefined;
+  contactphone?: string | undefined;
+};
 
 /** A naming authority pointer, as `resolveNaptr` returns it. */
 export type NaptrRecord = {
-  flags: string
-  service: string
-  regexp: string
-  replacement: string
-  order: number
-  preference: number
-}
+  flags: string;
+  service: string;
+  regexp: string;
+  replacement: string;
+  order: number;
+  preference: number;
+};
 
 /**
  * The lookups that SPF, DMARC and DKIM need, with the method names and result shapes of
@@ -53,42 +53,42 @@ export type NaptrRecord = {
  *
  * @example
  * ```ts
- * import * as Dns from '@portable/dns'
+ * import * as Dns from '@portable/dns';
  *
  * async function dmarcRecord(resolver: Dns.Resolver, domain: string) {
- *   const records = await resolver.resolveTxt(`_dmarc.${domain}`)
- *   return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'))
+ *   const records = await resolver.resolveTxt(`_dmarc.${domain}`);
+ *   return records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=DMARC1'));
  * }
  *
- * await dmarcRecord(Dns.create(), 'example.com')
+ * await dmarcRecord(Dns.create(), 'example.com');
  * ```
  */
 export type Resolver = {
   /** IPv4 addresses (A records). */
-  resolve4(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolve4(name: string, options?: Resolver.CallOptions): Promise<string[]>;
   /** IPv6 addresses (AAAA records), formatted as RFC 5952 recommends. */
-  resolve6(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolve6(name: string, options?: Resolver.CallOptions): Promise<string[]>;
   /** The CNAME targets of `name` itself. */
-  resolveCname(name: string, options?: Resolver.CallOptions): Promise<string[]>
-  resolveMx(name: string, options?: Resolver.CallOptions): Promise<MxRecord[]>
-  resolveNs(name: string, options?: Resolver.CallOptions): Promise<string[]>
-  resolvePtr(name: string, options?: Resolver.CallOptions): Promise<string[]>
+  resolveCname(name: string, options?: Resolver.CallOptions): Promise<string[]>;
+  resolveMx(name: string, options?: Resolver.CallOptions): Promise<MxRecord[]>;
+  resolveNs(name: string, options?: Resolver.CallOptions): Promise<string[]>;
+  resolvePtr(name: string, options?: Resolver.CallOptions): Promise<string[]>;
   /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
-  resolveTxt(name: string, options?: Resolver.CallOptions): Promise<string[][]>
-  resolveSrv(name: string, options?: Resolver.CallOptions): Promise<SrvRecord[]>
+  resolveTxt(name: string, options?: Resolver.CallOptions): Promise<string[][]>;
+  resolveSrv(name: string, options?: Resolver.CallOptions): Promise<SrvRecord[]>;
   /** The first SOA record. */
-  resolveSoa(name: string, options?: Resolver.CallOptions): Promise<SoaRecord>
-  resolveCaa(name: string, options?: Resolver.CallOptions): Promise<CaaRecord[]>
-  resolveNaptr(name: string, options?: Resolver.CallOptions): Promise<NaptrRecord[]>
+  resolveSoa(name: string, options?: Resolver.CallOptions): Promise<SoaRecord>;
+  resolveCaa(name: string, options?: Resolver.CallOptions): Promise<CaaRecord[]>;
+  resolveNaptr(name: string, options?: Resolver.CallOptions): Promise<NaptrRecord[]>;
   /** Host names for an IPv4 or IPv6 address, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. */
-  reverse(ip: string, options?: Resolver.CallOptions): Promise<string[]>
-}
+  reverse(ip: string, options?: Resolver.CallOptions): Promise<string[]>;
+};
 
 export declare namespace Resolver {
   type CallOptions = {
     /** Cancels the lookup, which then rejects with `signal.reason`, as `fetch` does. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /** The resolver that `create` returns: every `Resolver` lookup, and `query` for any record type. */
@@ -103,8 +103,8 @@ export type DohResolver = Resolver & {
     name: string,
     type: DnsPacket.RecordType,
     options?: Resolver.CallOptions,
-  ): Promise<DnsPacket.DecodedPacket>
-}
+  ): Promise<DnsPacket.DecodedPacket>;
+};
 
 export declare namespace create {
   type Options = {
@@ -113,101 +113,101 @@ export declare namespace create {
      * fails, times out, or gets SERVFAIL, REFUSED, NOTIMP, FORMERR or a truncated response.
      * @default ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']
      */
-    endpoints?: readonly (string | URL)[] | undefined
+    endpoints?: readonly (string | URL)[] | undefined;
     /**
      * Sends each request. Pass one to add headers, route through a proxy, or mock in tests.
      * @default globalThis.fetch
      */
-    fetch?: ((request: Request) => Promise<Response>) | undefined
+    fetch?: ((request: Request) => Promise<Response>) | undefined;
     /** Milliseconds to wait for each endpoint, including reading the response body. @default 5000 */
-    timeout?: number | undefined
-  }
+    timeout?: number | undefined;
+  };
 }
 
-const defaultEndpoints = ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']
+const defaultEndpoints = ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query'];
 
 const failures: Partial<Record<DnsPacket.Rcode, QueryError.Code>> = {
   SERVFAIL: 'ESERVFAIL',
   REFUSED: 'EREFUSED',
   NOTIMP: 'ENOTIMP',
   FORMERR: 'EFORMERR',
-}
+};
 
-const headers = { accept: 'application/dns-message' }
+const headers = { accept: 'application/dns-message' };
 
-const text = new TextDecoder('utf-8', { ignoreBOM: true })
+const text = new TextDecoder('utf-8', { ignoreBOM: true });
 
-const canonical = (name: string) => (name.endsWith('.') ? name.slice(0, -1) : name).toLowerCase()
+const canonical = (name: string) => (name.endsWith('.') ? name.slice(0, -1) : name).toLowerCase();
 
-const host = (name: string) => (name === '.' ? '' : name)
+const host = (name: string) => (name === '.' ? '' : name);
 
-const syscallFor = (type: string) => `query${type[0]}${type.slice(1).toLowerCase()}`
+const syscallFor = (type: string) => `query${type[0]}${type.slice(1).toLowerCase()}`;
 
-const hostName = /^(?:(?:[\w*/-]|\\.)+(?:\.(?:[\w*/-]|\\.)+)*\.?|\.?)$/
+const hostName = /^(?:(?:[\w*/-]|\\.)+(?:\.(?:[\w*/-]|\\.)+)*\.?|\.?)$/;
 
-const nonAscii = /[\u{80}-\u{10ffff}]/gu
+const nonAscii = /[\u{80}-\u{10ffff}]/gu;
 
 function toQueryName(name: string, syscall: string): string {
   if (typeof name !== 'string') {
-    throw new TypeError('The name must be a string.')
+    throw new TypeError('The name must be a string.');
   }
-  const masked = name.replace(nonAscii, 'a')
+  const masked = name.replace(nonAscii, 'a');
   if (!hostName.test(masked)) {
-    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
+    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name });
   }
   if (masked === name) {
-    return name
+    return name;
   }
-  const ascii = hostToAscii(name)
+  const ascii = hostToAscii(name);
   if (ascii === undefined || !hostName.test(ascii)) {
-    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name })
+    throw new QueryError({ code: 'EBADNAME', syscall, hostname: name });
   }
-  return ascii
+  return ascii;
 }
 
 function reverseName(ip: string): string | undefined {
   if (!Ip.canParse(ip)) {
-    return undefined
+    return undefined;
   }
-  const address = Ip.parse(ip)
+  const address = Ip.parse(ip);
   if (address.version === 6 && address.zone !== undefined) {
-    return undefined
+    return undefined;
   }
-  return Ip.reverseName(address)
+  return Ip.reverseName(address);
 }
 
 type DataOf<value extends string> =
   Extract<DnsPacket.DecodedResourceRecord, { type: value }> extends {
-    data: infer data
+    data: infer data;
   }
     ? data
-    : never
+    : never;
 
 function recordsFor<value extends string>(
   packet: DnsPacket.DecodedPacket,
   name: string,
   type: value,
 ): DataOf<value>[] {
-  const found: DataOf<value>[] = []
-  let owner = canonical(name)
+  const found: DataOf<value>[] = [];
+  let owner = canonical(name);
   for (let hops = 0; hops <= packet.answers.length; hops++) {
-    let target: string | undefined
+    let target: string | undefined;
     for (const record of packet.answers) {
       if (canonical(record.name) !== owner) {
-        continue
+        continue;
       }
       if (record.type === type) {
-        found.push((record as unknown as { data: DataOf<value> }).data)
+        found.push((record as unknown as { data: DataOf<value> }).data);
       } else if (record.type === 'CNAME') {
-        target = record.data
+        target = record.data;
       }
     }
     if (found.length > 0 || target === undefined) {
-      break
+      break;
     }
-    owner = canonical(target)
+    owner = canonical(target);
   }
-  return found
+  return found;
 }
 
 /**
@@ -218,28 +218,28 @@ function recordsFor<value extends string>(
  *
  * @example
  * ```ts
- * import * as Dns from '@portable/dns'
+ * import * as Dns from '@portable/dns';
  *
- * const resolver = Dns.create({ timeout: 2000 })
- * const records = await resolver.resolveTxt('example.com')
- * const spf = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=spf1'))
+ * const resolver = Dns.create({ timeout: 2000 });
+ * const records = await resolver.resolveTxt('example.com');
+ * const spf = records.map((chunks) => chunks.join('')).find((text) => text.startsWith('v=spf1'));
  * ```
  */
 export function create(options: create.Options = {}): DohResolver {
   const endpoints = (options.endpoints ?? defaultEndpoints).map((endpoint) => {
-    const url = new URL(endpoint)
-    url.hash = ''
-    url.searchParams.delete('dns')
-    return `${url.href}${url.search ? '&' : '?'}dns=`
-  })
+    const url = new URL(endpoint);
+    url.hash = '';
+    url.searchParams.delete('dns');
+    return `${url.href}${url.search ? '&' : '?'}dns=`;
+  });
   if (endpoints.length === 0) {
-    throw new RangeError('At least one endpoint is required.')
+    throw new RangeError('At least one endpoint is required.');
   }
-  const timeout = options.timeout ?? 5000
+  const timeout = options.timeout ?? 5000;
   if (!(timeout > 0 && timeout <= 2 ** 31 - 1)) {
-    throw new RangeError('`timeout` must be a number of milliseconds above 0.')
+    throw new RangeError('`timeout` must be a number of milliseconds above 0.');
   }
-  const send = options.fetch ?? ((request: Request) => fetch(request))
+  const send = options.fetch ?? ((request: Request) => fetch(request));
 
   async function attempt(
     endpoint: string,
@@ -247,21 +247,21 @@ export function create(options: create.Options = {}): DohResolver {
     question: { name: string; type: string; syscall: string; hostname: string },
     signal: AbortSignal | undefined,
   ): Promise<DnsPacket.DecodedPacket | QueryError> {
-    const { syscall, hostname } = question
+    const { syscall, hostname } = question;
     // AbortSignal.timeout holds its signal weakly in Node, so a fetch that never settles could be
     // garbage collected along with its timer and leave the lookup pending forever.
-    const deadline = new AbortController()
-    const timer = setTimeout(() => deadline.abort(), timeout)
-    let bytes: Uint8Array
+    const deadline = new AbortController();
+    const timer = setTimeout(() => deadline.abort(), timeout);
+    let bytes: Uint8Array;
     try {
       const response = await send(
         new Request(endpoint + query, {
           headers,
           signal: signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal,
         }),
-      )
+      );
       if (!response.ok) {
-        await response.body?.cancel().catch(() => {})
+        await response.body?.cancel().catch(() => {});
         return new QueryError({
           code: 'EBADRESP',
           syscall,
@@ -270,27 +270,27 @@ export function create(options: create.Options = {}): DohResolver {
             response,
             message: `${new URL(endpoint).origin} answered HTTP ${response.status}.`,
           }),
-        })
+        });
       }
-      bytes = new Uint8Array(await response.arrayBuffer())
+      bytes = new Uint8Array(await response.arrayBuffer());
     } catch (cause) {
-      signal?.throwIfAborted()
+      signal?.throwIfAborted();
       return new QueryError({
         code: deadline.signal.aborted ? 'ETIMEOUT' : 'ECONNREFUSED',
         syscall,
         hostname,
         cause,
-      })
+      });
     } finally {
-      clearTimeout(timer)
+      clearTimeout(timer);
     }
-    let packet: DnsPacket.DecodedPacket
+    let packet: DnsPacket.DecodedPacket;
     try {
-      packet = DnsPacket.decode(bytes)
+      packet = DnsPacket.decode(bytes);
     } catch (cause) {
-      return new QueryError({ code: 'EBADRESP', syscall, hostname, cause })
+      return new QueryError({ code: 'EBADRESP', syscall, hostname, cause });
     }
-    const echoed = packet.questions[0]
+    const echoed = packet.questions[0];
     if (
       packet.type !== 'response' ||
       packet.questions.length !== 1 ||
@@ -302,7 +302,7 @@ export function create(options: create.Options = {}): DohResolver {
         syscall,
         hostname,
         cause: new Error('The response is for a different question.'),
-      })
+      });
     }
     if (packet.flags.tc) {
       return new QueryError({
@@ -310,17 +310,17 @@ export function create(options: create.Options = {}): DohResolver {
         syscall,
         hostname,
         cause: new Error('The response is truncated.'),
-      })
+      });
     }
     if (packet.rcode === 'NOERROR' || packet.rcode === 'NXDOMAIN') {
-      return packet
+      return packet;
     }
     return new QueryError({
       code: failures[packet.rcode] ?? 'EBADRESP',
       syscall,
       hostname,
       cause: new Error(`The server answered ${packet.rcode}.`),
-    })
+    });
   }
 
   async function exchange(
@@ -330,28 +330,28 @@ export function create(options: create.Options = {}): DohResolver {
     syscall: string,
     signal: AbortSignal | undefined,
   ): Promise<DnsPacket.DecodedPacket> {
-    signal?.throwIfAborted()
+    signal?.throwIfAborted();
     if (/(?:^|\.)onion\.?$/i.test(name)) {
-      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
+      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname });
     }
-    let query: string
+    let query: string;
     try {
       query = Base64.encode(
         DnsPacket.encode({ flags: { rd: true, ad: true }, questions: [{ name, type }] }),
         { alphabet: 'base64url', omitPadding: true },
-      )
+      );
     } catch (cause) {
-      throw new QueryError({ code: 'EBADNAME', syscall, hostname, cause })
+      throw new QueryError({ code: 'EBADNAME', syscall, hostname, cause });
     }
-    let error: QueryError | undefined
+    let error: QueryError | undefined;
     for (const endpoint of endpoints) {
-      const result = await attempt(endpoint, query, { name, type, syscall, hostname }, signal)
+      const result = await attempt(endpoint, query, { name, type, syscall, hostname }, signal);
       if (!(result instanceof QueryError)) {
-        return result
+        return result;
       }
-      error = result
+      error = result;
     }
-    throw error
+    throw error;
   }
 
   async function lookup<value extends DnsPacket.RecordType>(
@@ -361,15 +361,15 @@ export function create(options: create.Options = {}): DohResolver {
     syscall: string,
     signal: AbortSignal | undefined,
   ): Promise<DataOf<value>[]> {
-    const packet = await exchange(hostname, name, type, syscall, signal)
+    const packet = await exchange(hostname, name, type, syscall, signal);
     if (packet.rcode === 'NXDOMAIN') {
-      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname })
+      throw new QueryError({ code: 'ENOTFOUND', syscall, hostname });
     }
-    const records = recordsFor(packet, name, type)
+    const records = recordsFor(packet, name, type);
     if (records.length === 0) {
-      throw new QueryError({ code: 'ENODATA', syscall, hostname })
+      throw new QueryError({ code: 'ENODATA', syscall, hostname });
     }
-    return records
+    return records;
   }
 
   async function resolve<value extends DnsPacket.RecordType>(
@@ -377,8 +377,8 @@ export function create(options: create.Options = {}): DohResolver {
     type: value,
     options: Resolver.CallOptions = {},
   ): Promise<DataOf<value>[]> {
-    const syscall = syscallFor(type)
-    return lookup(name, toQueryName(name, syscall), type, syscall, options.signal)
+    const syscall = syscallFor(type);
+    return lookup(name, toQueryName(name, syscall), type, syscall, options.signal);
   }
 
   return {
@@ -388,24 +388,24 @@ export function create(options: create.Options = {}): DohResolver {
     resolveNs: async (name, options) => (await resolve(name, 'NS', options)).map(host),
     resolvePtr: async (name, options) => (await resolve(name, 'PTR', options)).map(host),
     async resolveMx(name, options) {
-      const records = await resolve(name, 'MX', options)
-      return records.map((data) => ({ exchange: host(data.exchange), priority: data.preference }))
+      const records = await resolve(name, 'MX', options);
+      return records.map((data) => ({ exchange: host(data.exchange), priority: data.preference }));
     },
     async resolveTxt(name, options) {
-      const records = await resolve(name, 'TXT', options)
-      return records.map((strings) => strings.map((bytes) => text.decode(bytes)))
+      const records = await resolve(name, 'TXT', options);
+      return records.map((strings) => strings.map((bytes) => text.decode(bytes)));
     },
     async resolveSrv(name, options) {
-      const records = await resolve(name, 'SRV', options)
+      const records = await resolve(name, 'SRV', options);
       return records.map((data) => ({
         name: host(data.target),
         port: data.port,
         priority: data.priority,
         weight: data.weight,
-      }))
+      }));
     },
     async resolveSoa(name, options) {
-      const [data] = (await resolve(name, 'SOA', options)) as [DataOf<'SOA'>]
+      const [data] = (await resolve(name, 'SOA', options)) as [DataOf<'SOA'>];
       return {
         nsname: host(data.mname),
         hostmaster: host(data.rname),
@@ -414,14 +414,14 @@ export function create(options: create.Options = {}): DohResolver {
         retry: data.retry,
         expire: data.expire,
         minttl: data.minimum,
-      }
+      };
     },
     async resolveCaa(name, options) {
-      const records = await resolve(name, 'CAA', options)
-      return records.map((data) => ({ critical: data.flags, [data.tag]: data.value }))
+      const records = await resolve(name, 'CAA', options);
+      return records.map((data) => ({ critical: data.flags, [data.tag]: data.value }));
     },
     async resolveNaptr(name, options) {
-      const records = await resolve(name, 'NAPTR', options)
+      const records = await resolve(name, 'NAPTR', options);
       return records.map((data) => ({
         flags: data.flags,
         service: data.services,
@@ -429,23 +429,23 @@ export function create(options: create.Options = {}): DohResolver {
         replacement: host(data.replacement),
         order: data.order,
         preference: data.preference,
-      }))
+      }));
     },
     async reverse(ip, options = {}) {
-      const name = reverseName(ip)
+      const name = reverseName(ip);
       if (name === undefined) {
-        throw new QueryError({ code: 'EINVAL', syscall: 'getHostByAddr', hostname: ip })
+        throw new QueryError({ code: 'EINVAL', syscall: 'getHostByAddr', hostname: ip });
       }
-      const packet = await exchange(ip, name, 'PTR', 'getHostByAddr', options.signal)
-      const records = recordsFor(packet, name, 'PTR')
+      const packet = await exchange(ip, name, 'PTR', 'getHostByAddr', options.signal);
+      const records = recordsFor(packet, name, 'PTR');
       if (records.length === 0) {
-        throw new QueryError({ code: 'ENOTFOUND', syscall: 'getHostByAddr', hostname: ip })
+        throw new QueryError({ code: 'ENOTFOUND', syscall: 'getHostByAddr', hostname: ip });
       }
-      return records.map(host)
+      return records.map(host);
     },
     async query(name, type, options = {}) {
-      const syscall = syscallFor(type)
-      return exchange(name, toQueryName(name, syscall), type, syscall, options.signal)
+      const syscall = syscallFor(type);
+      return exchange(name, toQueryName(name, syscall), type, syscall, options.signal);
     },
-  }
+  };
 }

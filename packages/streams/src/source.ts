@@ -1,5 +1,5 @@
 /** Anything the collectors and combinators read from: a `ReadableStream`, an async iterable or an iterable. */
-export type Source<chunk> = ReadableStream<chunk> | AsyncIterable<chunk> | Iterable<chunk>
+export type Source<chunk> = ReadableStream<chunk> | AsyncIterable<chunk> | Iterable<chunk>;
 
 export function isReadableStream(value: unknown): value is ReadableStream<unknown> {
   return (
@@ -7,7 +7,7 @@ export function isReadableStream(value: unknown): value is ReadableStream<unknow
     value !== null &&
     'getReader' in value &&
     typeof value.getReader === 'function'
-  )
+  );
 }
 
 export function assertSource(source: unknown): void {
@@ -16,9 +16,9 @@ export function assertSource(source: unknown): void {
     source !== null &&
     (Symbol.asyncIterator in source || Symbol.iterator in source || isReadableStream(source))
   ) {
-    return
+    return;
   }
-  throw new TypeError('The source must be a ReadableStream, an async iterable or an iterable.')
+  throw new TypeError('The source must be a ReadableStream, an async iterable or an iterable.');
 }
 
 export async function forEach<value>(
@@ -26,33 +26,33 @@ export async function forEach<value>(
   onChunk: (chunk: value) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  assertSource(source)
+  assertSource(source);
   if (!isReadableStream(source)) {
-    return forEachIterable(source, onChunk, signal)
+    return forEachIterable(source, onChunk, signal);
   }
-  const reader = source.getReader()
-  const onAbort = () => void reader.cancel(signal!.reason).catch(() => {})
+  const reader = source.getReader();
+  const onAbort = () => void reader.cancel(signal!.reason).catch(() => {});
   if (signal?.aborted) {
-    onAbort()
+    onAbort();
   }
-  signal?.addEventListener('abort', onAbort, { once: true })
+  signal?.addEventListener('abort', onAbort, { once: true });
   try {
     for (;;) {
-      const { done, value } = await reader.read()
-      signal?.throwIfAborted()
+      const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       if (done) {
-        return
+        return;
       }
       try {
-        onChunk(value)
+        onChunk(value);
       } catch (error) {
-        await reader.cancel(error).catch(() => {})
-        throw error
+        await reader.cancel(error).catch(() => {});
+        throw error;
       }
     }
   } finally {
-    signal?.removeEventListener('abort', onAbort)
-    reader.releaseLock()
+    signal?.removeEventListener('abort', onAbort);
+    reader.releaseLock();
   }
 }
 
@@ -63,32 +63,32 @@ async function forEachIterable<chunk>(
 ): Promise<void> {
   if (!signal) {
     for await (const chunk of source) {
-      onChunk(chunk)
+      onChunk(chunk);
     }
-    return
+    return;
   }
   const iterator =
-    Symbol.asyncIterator in source ? source[Symbol.asyncIterator]() : source[Symbol.iterator]()
-  let onAbort = () => {}
+    Symbol.asyncIterator in source ? source[Symbol.asyncIterator]() : source[Symbol.iterator]();
+  let onAbort = () => {};
   const aborted = new Promise<never>((_, reject) => {
-    onAbort = () => reject(signal.reason)
-  })
-  aborted.catch(() => {})
-  signal.addEventListener('abort', onAbort, { once: true })
-  let done = false
+    onAbort = () => reject(signal.reason);
+  });
+  aborted.catch(() => {});
+  signal.addEventListener('abort', onAbort, { once: true });
+  let done = false;
   try {
     while (!done) {
-      signal.throwIfAborted()
-      const result = await Promise.race([iterator.next(), aborted])
-      done = result.done === true
+      signal.throwIfAborted();
+      const result = await Promise.race([iterator.next(), aborted]);
+      done = result.done === true;
       if (!done) {
-        onChunk(await Promise.race([result.value, aborted]))
+        onChunk(await Promise.race([result.value, aborted]));
       }
     }
   } finally {
-    signal.removeEventListener('abort', onAbort)
+    signal.removeEventListener('abort', onAbort);
     if (!done) {
-      void Promise.resolve(iterator.return?.()).catch(() => {})
+      void Promise.resolve(iterator.return?.()).catch(() => {});
     }
   }
 }

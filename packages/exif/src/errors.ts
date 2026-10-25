@@ -1,24 +1,24 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown when TIFF or raw EXIF input ends before its 8-byte header.
  *
  * @example
  * ```ts
- * import * as Exif from '@portable/exif'
+ * import * as Exif from '@portable/exif';
  *
  * try {
- *   Exif.parse(new Uint8Array([0x49, 0x49, 0x2a, 0x00]))
+ *   Exif.parse(new Uint8Array([0x49, 0x49, 0x2a, 0x00]));
  * } catch (error) {
  *   if (error instanceof Exif.TruncatedError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class TruncatedError extends Errors.TruncatedError {
-  static override readonly kind: string = 'Exif.TruncatedError'
+  static override readonly kind: string = 'Exif.TruncatedError';
   constructor(message: string = 'Input ended inside the TIFF header.', options?: ErrorOptions) {
-    super(message, options)
+    super(message, options);
   }
 }
 
@@ -27,19 +27,19 @@ export class TruncatedError extends Errors.TruncatedError {
  *
  * @example
  * ```ts
- * import * as Exif from '@portable/exif'
+ * import * as Exif from '@portable/exif';
  *
  * try {
- *   Exif.parse(photo)
+ *   Exif.parse(photo);
  * } catch (error) {
  *   if (error instanceof Exif.InvalidInputError) {
- *     console.log('corrupt EXIF data')
+ *     console.log('corrupt EXIF data');
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'Exif.InvalidInputError'
+  static override readonly kind: string = 'Exif.InvalidInputError';
 }
 
 /**
@@ -48,24 +48,24 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as Exif from '@portable/exif'
+ * import * as Exif from '@portable/exif';
  *
  * try {
- *   Exif.parse(new TextEncoder().encode('GIF89a'))
+ *   Exif.parse(new TextEncoder().encode('GIF89a'));
  * } catch (error) {
  *   if (error instanceof Exif.UnsupportedError) {
- *     console.log(error.message)
+ *     console.log(error.message);
  *   }
  * }
  * ```
  */
 export class UnsupportedError extends Errors.UnsupportedError {
-  static override readonly kind: string = 'Exif.UnsupportedError'
+  static override readonly kind: string = 'Exif.UnsupportedError';
   constructor(
     message: string = 'Unsupported format: expected JPEG, TIFF, PNG, WebP, HEIF or EXIF data.',
     options?: ErrorOptions,
   ) {
-    super(message, options)
+    super(message, options);
   }
 }
 
@@ -74,24 +74,24 @@ export class UnsupportedError extends Errors.UnsupportedError {
  *
  * @example
  * ```ts
- * import * as Exif from '@portable/exif'
+ * import * as Exif from '@portable/exif';
  *
- * const response = await fetch('https://example.com/photo.jpg')
+ * const response = await fetch('https://example.com/photo.jpg');
  * try {
- *   await Exif.parseStream(response.body!, { maxBytes: 1_000_000 })
+ *   await Exif.parseStream(response.body!, { maxBytes: 1_000_000 });
  * } catch (error) {
  *   if (error instanceof Exif.MaxBytesError) {
- *     console.log(`needs more than ${error.maxBytes} bytes`)
+ *     console.log(`needs more than ${error.maxBytes} bytes`);
  *   }
  * }
  * ```
  */
 export class MaxBytesError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'Exif.MaxBytesError'
+  static override readonly kind: string = 'Exif.MaxBytesError';
   constructor(options: Errors.MaxBytesError.Options) {
     super({
       message: `Reading the EXIF data needs more than maxBytes (${options.maxBytes}) in memory.`,
       ...options,
-    })
+    });
   }
 }

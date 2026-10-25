@@ -1,11 +1,11 @@
 /** What a task receives when it starts. */
 export type Context = {
   /** Aborts when the task's `signal` or the queue's `signal` aborts. */
-  signal: AbortSignal
-}
+  signal: AbortSignal;
+};
 
 /** A function the queue calls when a slot is free. It can return a value or a promise. */
-export type Task<value> = (context: Context) => value | PromiseLike<value>
+export type Task<value> = (context: Context) => value | PromiseLike<value>;
 
 /** A queue made by `create`. */
 export type Queue = {
@@ -14,73 +14,73 @@ export type Queue = {
    * `options.signal` or the queue's `signal` aborts, and with an `AbortError` `DOMException` when
    * `clear()` removes the task before it starts.
    */
-  add: <value>(task: Task<value>, options?: Queue.AddOptions) => Promise<value>
+  add: <value>(task: Task<value>, options?: Queue.AddOptions) => Promise<value>;
   /** Resolves when no task is waiting or running. It never rejects. */
-  idle: () => Promise<void>
+  idle: () => Promise<void>;
   /** Stops starting tasks. Running tasks continue. */
-  pause: () => void
+  pause: () => void;
   /** Starts tasks again after `pause()`. */
-  resume: () => void
+  resume: () => void;
   /** Removes every waiting task and rejects its promise with an `AbortError`. Running tasks continue. */
-  clear: () => void
+  clear: () => void;
   /** The number of tasks waiting to start. */
-  readonly size: number
+  readonly size: number;
   /** The number of tasks running. */
-  readonly pending: number
+  readonly pending: number;
   /** Whether `pause()` was called without a `resume()` after it. */
-  readonly paused: boolean
+  readonly paused: boolean;
   /** The most tasks that run at once. Raising it starts waiting tasks at once. */
-  concurrency: number
-}
+  concurrency: number;
+};
 
 export declare namespace Queue {
   type AddOptions = {
     /** Tasks with a higher priority start first. Tasks with equal priority start in the order they were added. @default 0 */
-    priority?: number | undefined
+    priority?: number | undefined;
     /**
      * Removes the task if it is still waiting, and aborts the task's `signal` if it is running.
      * Either way, the promise from `add` rejects with `signal.reason` at once. A running task keeps
      * its slot until it settles.
      */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 export declare namespace create {
   type Options = {
     /** The most tasks that run at once: a positive integer or `Infinity`. @default Infinity */
-    concurrency?: number | undefined
+    concurrency?: number | undefined;
     /** The most tasks that start in any `interval` milliseconds. Needs `interval`. @default Infinity */
-    intervalCap?: number | undefined
+    intervalCap?: number | undefined;
     /** The length of the sliding window for `intervalCap`, in milliseconds. `0` turns rate limiting off. @default 0 */
-    interval?: number | undefined
+    interval?: number | undefined;
     /** Rejects every waiting and running task with `signal.reason`, and every task added later. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 type Entry = {
-  task: Task<unknown>
-  priority: number
-  context: Context
-  watched: AbortSignal | undefined
-  resolve: (value: unknown) => void
-  reject: (reason: unknown) => void
-  state: State
-  begin: () => void
-  promise: Promise<unknown>
-}
+  task: Task<unknown>;
+  priority: number;
+  context: Context;
+  watched: AbortSignal | undefined;
+  resolve: (value: unknown) => void;
+  reject: (reason: unknown) => void;
+  state: State;
+  begin: () => void;
+  promise: Promise<unknown>;
+};
 
-type State = 'waiting' | 'running' | 'settled'
+type State = 'waiting' | 'running' | 'settled';
 
-let never: AbortSignal | undefined
+let never: AbortSignal | undefined;
 
 // Workers refuses to create an AbortController at the top level of a module.
 function neverAborted(): AbortSignal {
-  return (never ??= new AbortController().signal)
+  return (never ??= new AbortController().signal);
 }
-const noop = () => {}
-const maxDelay = 2 ** 31 - 1
+const noop = () => {};
+const maxDelay = 2 ** 31 - 1;
 
 /**
  * Creates a queue that runs at most `concurrency` tasks at once, in priority order, optionally
@@ -88,248 +88,248 @@ const maxDelay = 2 ** 31 - 1
  *
  * @example
  * ```ts
- * import * as Queue from '@portable/queue'
+ * import * as Queue from '@portable/queue';
  *
- * const queue = Queue.create({ concurrency: 4 })
+ * const queue = Queue.create({ concurrency: 4 });
  * const responses = await Promise.all(
  *   urls.map((url) => queue.add(({ signal }) => fetch(url, { signal }))),
- * )
+ * );
  * ```
  */
 export function create(options: create.Options = {}): Queue {
-  const { interval = 0, intervalCap = Infinity, signal: queueSignal } = options
-  let concurrency = assertLimit('concurrency', options.concurrency ?? Infinity)
-  assertLimit('intervalCap', intervalCap)
+  const { interval = 0, intervalCap = Infinity, signal: queueSignal } = options;
+  let concurrency = assertLimit('concurrency', options.concurrency ?? Infinity);
+  assertLimit('intervalCap', intervalCap);
   if (!(interval >= 0 && interval < Infinity)) {
-    throw new RangeError('Expected `interval` to be a finite number from 0 up.')
+    throw new RangeError('Expected `interval` to be a finite number from 0 up.');
   }
-  const rateLimited = interval > 0 && intervalCap !== Infinity
+  const rateLimited = interval > 0 && intervalCap !== Infinity;
 
-  let waiting: (Entry | undefined)[] = []
-  let head = 0
-  let size = 0
-  let pending = 0
-  let paused = false
-  let idleWaiters: (() => void)[] = []
-  const starts: number[] = []
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>()
+  let waiting: (Entry | undefined)[] = [];
+  let head = 0;
+  let size = 0;
+  let pending = 0;
+  let paused = false;
+  let idleWaiters: (() => void)[] = [];
+  const starts: number[] = [];
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const watchers = new Map<AbortSignal, { entries: Set<Entry>; listener: () => void }>();
 
-  queueSignal?.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true })
+  queueSignal?.addEventListener('abort', () => removeWaiting(queueSignal.reason), { once: true });
 
   function watch(entry: Entry, signal: AbortSignal | undefined) {
     if (entry.watched === signal) {
-      return
+      return;
     }
     if (entry.watched) {
-      unwatch(entry)
+      unwatch(entry);
     }
-    entry.watched = signal
+    entry.watched = signal;
     if (!signal) {
-      return
+      return;
     }
-    let watcher = watchers.get(signal)
+    let watcher = watchers.get(signal);
     if (!watcher) {
-      const entries = new Set<Entry>()
+      const entries = new Set<Entry>();
       const listener = () => {
-        watchers.delete(signal)
+        watchers.delete(signal);
         for (const entry of entries) {
-          entry.watched = undefined
+          entry.watched = undefined;
           if (entry.state === 'waiting') {
-            size--
-            discard(entry, signal.reason)
+            size--;
+            discard(entry, signal.reason);
           } else if (entry.state === 'running') {
-            entry.state = 'settled'
-            entry.reject(signal.reason)
+            entry.state = 'settled';
+            entry.reject(signal.reason);
           }
         }
-        drain()
-      }
-      watcher = { entries, listener }
-      watchers.set(signal, watcher)
-      signal.addEventListener('abort', listener, { once: true })
+        drain();
+      };
+      watcher = { entries, listener };
+      watchers.set(signal, watcher);
+      signal.addEventListener('abort', listener, { once: true });
     }
-    watcher.entries.add(entry)
+    watcher.entries.add(entry);
   }
 
   function unwatch(entry: Entry) {
-    const signal = entry.watched!
-    entry.watched = undefined
-    const watcher = watchers.get(signal)
+    const signal = entry.watched!;
+    entry.watched = undefined;
+    const watcher = watchers.get(signal);
     if (!watcher) {
-      return
+      return;
     }
-    watcher.entries.delete(entry)
+    watcher.entries.delete(entry);
     if (watcher.entries.size > 0) {
-      return
+      return;
     }
-    watchers.delete(signal)
-    signal.removeEventListener('abort', watcher.listener)
+    watchers.delete(signal);
+    signal.removeEventListener('abort', watcher.listener);
   }
 
   function enqueue(entry: Entry) {
-    const last = waiting[waiting.length - 1]
+    const last = waiting[waiting.length - 1];
     if (last === undefined || last.priority >= entry.priority) {
-      waiting.push(entry)
-      return
+      waiting.push(entry);
+      return;
     }
-    let low = head
-    let high = waiting.length - 1
+    let low = head;
+    let high = waiting.length - 1;
     while (low < high) {
-      const middle = (low + high) >>> 1
+      const middle = (low + high) >>> 1;
       if (waiting[middle]!.priority >= entry.priority) {
-        low = middle + 1
+        low = middle + 1;
       } else {
-        high = middle
+        high = middle;
       }
     }
-    waiting.splice(low, 0, entry)
+    waiting.splice(low, 0, entry);
   }
 
   function peek(): Entry | undefined {
     while (head < waiting.length) {
-      const entry = waiting[head]!
+      const entry = waiting[head]!;
       if (entry.state === 'waiting') {
-        return entry
+        return entry;
       }
-      waiting[head++] = undefined
+      waiting[head++] = undefined;
     }
     if (head > 0) {
-      waiting = []
-      head = 0
+      waiting = [];
+      head = 0;
     }
-    return undefined
+    return undefined;
   }
 
   function takeStart(): boolean {
-    const now = performance.now()
+    const now = performance.now();
     while (starts.length > 0 && now - starts[0]! >= interval) {
-      starts.shift()
+      starts.shift();
     }
     if (starts.length < intervalCap) {
-      starts.push(now)
-      return true
+      starts.push(now);
+      return true;
     }
     timer ??= setTimeout(
       () => {
-        timer = undefined
-        drain()
+        timer = undefined;
+        drain();
       },
       Math.min(starts[0]! + interval - now, maxDelay),
-    )
-    return false
+    );
+    return false;
   }
 
   function drain() {
     while (!paused && pending < concurrency) {
-      const entry = peek()
+      const entry = peek();
       if (entry === undefined || (rateLimited && !takeStart())) {
-        break
+        break;
       }
-      waiting[head++] = undefined
-      size--
+      waiting[head++] = undefined;
+      size--;
       if (head >= 1024 && head * 2 >= waiting.length) {
-        waiting = waiting.slice(head)
-        head = 0
+        waiting = waiting.slice(head);
+        head = 0;
       }
-      start(entry)
+      start(entry);
     }
     if (size === 0 && pending === 0 && idleWaiters.length > 0) {
-      const resolvers = idleWaiters
-      idleWaiters = []
+      const resolvers = idleWaiters;
+      idleWaiters = [];
       for (const resolve of resolvers) {
-        resolve()
+        resolve();
       }
     }
   }
 
   function start(entry: Entry) {
-    pending++
-    entry.state = 'running'
-    const { signal } = entry.context
-    watch(entry, signal === never ? undefined : signal)
-    entry.begin()
+    pending++;
+    entry.state = 'running';
+    const { signal } = entry.context;
+    watch(entry, signal === never ? undefined : signal);
+    entry.begin();
   }
 
   function run(entry: Entry) {
     if (entry.state !== 'running') {
-      return finish(entry)
+      return finish(entry);
     }
-    let result: unknown
+    let result: unknown;
     try {
-      result = entry.task(entry.context)
+      result = entry.task(entry.context);
     } catch (error) {
-      return finish(entry, error, true)
+      return finish(entry, error, true);
     }
     if (isThenable(result)) {
       result.then(
         (value) => finish(entry, value, false),
         (error: unknown) => finish(entry, error, true),
-      )
+      );
     } else {
-      finish(entry, result, false)
+      finish(entry, result, false);
     }
   }
 
   function finish(entry: Entry, value?: unknown, failed?: boolean) {
-    pending--
+    pending--;
     if (entry.watched) {
-      unwatch(entry)
+      unwatch(entry);
     }
     if (entry.state === 'running') {
-      entry.state = 'settled'
+      entry.state = 'settled';
       if (failed) {
-        entry.reject(value)
+        entry.reject(value);
       } else {
-        entry.resolve(value)
+        entry.resolve(value);
       }
     }
-    drain()
+    drain();
   }
 
   function removeWaiting(reason: unknown) {
-    const entries = waiting
-    const from = head
-    waiting = []
-    head = 0
-    size = 0
+    const entries = waiting;
+    const from = head;
+    waiting = [];
+    head = 0;
+    size = 0;
     if (timer !== undefined) {
-      clearTimeout(timer)
-      timer = undefined
+      clearTimeout(timer);
+      timer = undefined;
     }
     for (let i = from; i < entries.length; i++) {
-      const entry = entries[i]!
+      const entry = entries[i]!;
       if (entry.state !== 'waiting') {
-        continue
+        continue;
       }
       if (entry.watched) {
-        unwatch(entry)
+        unwatch(entry);
       }
-      discard(entry, reason)
+      discard(entry, reason);
     }
-    drain()
+    drain();
   }
 
   function discard(entry: Entry, reason: unknown) {
-    entry.state = 'settled'
-    entry.promise.catch(noop)
-    entry.reject(reason)
+    entry.state = 'settled';
+    entry.promise.catch(noop);
+    entry.reject(reason);
   }
 
   return {
     add<value>(task: Task<value>, addOptions: Queue.AddOptions = {}): Promise<value> {
-      const { priority = 0, signal } = addOptions
+      const { priority = 0, signal } = addOptions;
       if (typeof priority !== 'number') {
-        throw new TypeError('Expected `priority` to be a number.')
+        throw new TypeError('Expected `priority` to be a number.');
       }
       if (Number.isNaN(priority)) {
-        throw new RangeError('Expected `priority` to be a number, got NaN.')
+        throw new RangeError('Expected `priority` to be a number, got NaN.');
       }
       if (queueSignal?.aborted) {
-        return Promise.reject(queueSignal.reason)
+        return Promise.reject(queueSignal.reason);
       }
       if (signal?.aborted) {
-        return Promise.reject(signal.reason)
+        return Promise.reject(signal.reason);
       }
       const entry: Entry = {
         task,
@@ -341,53 +341,53 @@ export function create(options: create.Options = {}): Queue {
         state: 'waiting',
         begin: noop,
         promise: undefined!,
-      }
+      };
       const promise = new Promise<value>((resolve, reject) => {
-        entry.resolve = resolve as (value: unknown) => void
-        entry.reject = reject
-      })
-      entry.promise = promise
+        entry.resolve = resolve as (value: unknown) => void;
+        entry.reject = reject;
+      });
+      entry.promise = promise;
       // Chaining here, not in `start`, runs the task in the async context of its `add` call.
-      void new Promise<void>((begin) => (entry.begin = begin)).then(() => run(entry))
-      watch(entry, signal)
-      enqueue(entry)
-      size++
-      drain()
-      return promise
+      void new Promise<void>((begin) => (entry.begin = begin)).then(() => run(entry));
+      watch(entry, signal);
+      enqueue(entry);
+      size++;
+      drain();
+      return promise;
     },
     idle() {
       if (size === 0 && pending === 0) {
-        return Promise.resolve()
+        return Promise.resolve();
       }
-      return new Promise((resolve) => idleWaiters.push(resolve))
+      return new Promise((resolve) => idleWaiters.push(resolve));
     },
     pause() {
-      paused = true
+      paused = true;
     },
     resume() {
-      paused = false
-      drain()
+      paused = false;
+      drain();
     },
     clear() {
-      removeWaiting(new DOMException('The task was removed by clear().', 'AbortError'))
+      removeWaiting(new DOMException('The task was removed by clear().', 'AbortError'));
     },
     get size() {
-      return size
+      return size;
     },
     get pending() {
-      return pending
+      return pending;
     },
     get paused() {
-      return paused
+      return paused;
     },
     get concurrency() {
-      return concurrency
+      return concurrency;
     },
     set concurrency(value: number) {
-      concurrency = assertLimit('concurrency', value)
-      drain()
+      concurrency = assertLimit('concurrency', value);
+      drain();
     },
-  }
+  };
 }
 
 /**
@@ -396,30 +396,32 @@ export function create(options: create.Options = {}): Queue {
  *
  * @example
  * ```ts
- * import * as Queue from '@portable/queue'
+ * import * as Queue from '@portable/queue';
  *
- * const limit = Queue.limit(2)
- * const pages = await Promise.all(urls.map((url) => limit(() => fetch(url).then((r) => r.text()))))
+ * const limit = Queue.limit(2);
+ * const pages = await Promise.all(urls.map((url) => limit(() => fetch(url).then((r) => r.text()))));
  * ```
  */
 export function limit(concurrency: number): Queue['add'] {
-  return create({ concurrency }).add
+  return create({ concurrency }).add;
 }
 
 export function assertLimit(name: string, value: number): number {
   if (!(value === Infinity || (Number.isInteger(value) && value >= 1))) {
-    throw new RangeError(`Expected \`${name}\` to be a positive integer or Infinity, got ${value}.`)
+    throw new RangeError(
+      `Expected \`${name}\` to be a positive integer or Infinity, got ${value}.`,
+    );
   }
-  return value
+  return value;
 }
 
 function combine(a: AbortSignal | undefined, b: AbortSignal | undefined): AbortSignal {
   if (a && b) {
-    return AbortSignal.any([a, b])
+    return AbortSignal.any([a, b]);
   }
-  return a ?? b ?? neverAborted()
+  return a ?? b ?? neverAborted();
 }
 
 export function isThenable(value: unknown): value is PromiseLike<unknown> {
-  return typeof (value as { then?: unknown } | null | undefined)?.then === 'function'
+  return typeof (value as { then?: unknown } | null | undefined)?.then === 'function';
 }

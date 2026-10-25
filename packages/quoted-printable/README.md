@@ -9,13 +9,13 @@ npm install @portable/quoted-printable
 ```
 
 ```ts
-import * as QuotedPrintable from '@portable/quoted-printable'
+import * as QuotedPrintable from '@portable/quoted-printable';
 
-QuotedPrintable.encode('tere jõgeva') // 'tere j=C3=B5geva'
-new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')) // 'tere jõgeva'
+QuotedPrintable.encode('tere jõgeva'); // 'tere j=C3=B5geva'
+new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')); // 'tere jõgeva'
 
-const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream())
-const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream())
+const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream());
+const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 ```
 
 ## API
@@ -52,6 +52,14 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - `EncoderStream` output doesn't depend on how the input is chunked, and a soft line break never splits a UTF-8 sequence. libqp before 3.0.0 got both wrong, and quoted-printable still splits UTF-8 sequences.
 - `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
 - `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
+- `encode` breaks lines at 76 characters by default, and libqp's `encode` doesn't break lines at all. Pass `lineLength: false` to match libqp's `encode`.
+- libqp's `wrap`, which adds soft line breaks to quoted-printable you already have, has no equivalent. Set `lineLength` when you encode.
+- `lineLength` must be `false` or an integer of at least 4. libqp treats 0, `NaN` and non-numbers as 76 and raises anything below 4 to 4.
+- `decode` reads a string as UTF-8, as `encode` does, and returns a `Uint8Array` instead of libqp's `Buffer`. libqp reads each character's low byte, so pass a `Uint8Array` to decode raw 8-bit data.
+- libqp's `Encoder` counts `inputBytes` and `outputBytes`, and `EncoderStream` doesn't. Count chunks in a `TransformStream` of your own.
+- quoted-printable escapes every CR and LF and keeps every line within 75 characters. `encode` keeps line breaks, escapes a lone CR or LF only with `binary: true`, and allows 76.
+- quoted-printable's `decode` also treats `=` before a lone CR as a soft line break. RFC 2045 and libqp don't, and neither does `decode`.
+- The libqp 2.x `Encoder` kept a hyphen after a lone CR literal, which starts a line once a relay turns the CR into CRLF. `encode` follows libqp 3, which escapes it.
 
 <!-- bench:start -->
 | | @portable/quoted-printable | libqp | quoted-printable |
@@ -75,27 +83,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| libqp / quoted-printable | @portable/quoted-printable |
-| --- | --- |
-| `libqp.encode(buffer)` | `encode(bytes, { lineLength: false })` |
-| `libqp.wrap(libqp.encode(buffer), 76)` | `encode(bytes)` |
-| `libqp.wrap(str, n)` on your own quoted-printable | No equivalent. Encode with `encode(bytes, { lineLength: n })`. |
-| `libqp.decode(str)` | `decode(str)` (returns `Uint8Array`, not `Buffer`) |
-| `stream.pipe(new libqp.Encoder({ lineLength }))` | `stream.pipeThrough(new EncoderStream({ lineLength }))` |
-| `new libqp.Encoder({ binary: true })` | `new EncoderStream({ binary: true })` or `encode(bytes, { binary: true })` |
-| `stream.pipe(new libqp.Decoder())` | `stream.pipeThrough(new DecoderStream())` |
-| `encoder.inputBytes`, `encoder.outputBytes` | Count chunks in a `TransformStream` of your own. |
-| `quotedPrintable.encode(utf8.encode(text))` | `encode(text)` |
-| `utf8.decode(quotedPrintable.decode(text))` | `new TextDecoder().decode(decode(text))` |
-
-Output matches libqp 3.0.1's `wrap(encode())` and `Encoder` byte for byte, which the oracle tests check on random input and random chunking. Differences from the two libraries:
-
-- `encode()` breaks lines at 76 by default, and libqp's `encode()` doesn't break lines at all.
-- `lineLength` must be `false` or an integer of at least 4. libqp treats 0, `NaN` and non-numbers as 76 and raises anything below 4 to 4.
-- `decode()` reads a string as UTF-8, as `encode()` does. libqp reads each character's low byte. Pass a `Uint8Array` to decode raw 8-bit data.
-- quoted-printable escapes every CR and LF, keeps every line within 75 characters, splits UTF-8 sequences across soft line breaks, and throws on text above U+00FF. `encode()` keeps line breaks (use `binary` to escape lone ones), allows 76, never splits a UTF-8 sequence, and encodes text as UTF-8.
-- quoted-printable's `decode()` also treats `=` before a lone CR as a soft line break. RFC 2045 and libqp don't, and neither does `decode()`.
-- The output of the libqp 2.x `Encoder` depended on how the input was chunked, and it kept a hyphen after a lone CR literal, which starts a line once a relay turns the CR into CRLF. libqp 3 fixed both, and this package follows 3.

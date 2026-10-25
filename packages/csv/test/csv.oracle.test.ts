@@ -1,18 +1,18 @@
-import { Readable } from 'node:stream'
-import { parse as parseStream } from 'csv-parse'
-import { parse as parseSync } from 'csv-parse/sync'
-import { stringify } from 'csv-stringify/sync'
-import Papa from 'papaparse'
-import { describe, expect, test } from 'vite-plus/test'
-import * as Csv from '@portable/csv'
-import { decodeStream, encodeUtf8, fixture, fixtures, randomChunks } from './utils.js'
+import { Readable } from 'node:stream';
+import { parse as parseStream } from 'csv-parse';
+import { parse as parseSync } from 'csv-parse/sync';
+import { stringify } from 'csv-stringify/sync';
+import Papa from 'papaparse';
+import { describe, expect, test } from 'vite-plus/test';
+import * as Csv from '@portable/csv';
+import { decodeStream, encodeUtf8, fixture, fixtures, randomChunks } from './utils.js';
 
 function random(seed: number): () => number {
-  let state = seed
+  let state = seed;
   return () => {
-    state = (state * 1103515245 + 12345) % 2 ** 31
-    return state / 2 ** 31
-  }
+    state = (state * 1103515245 + 12345) % 2 ** 31;
+    return state / 2 ** 31;
+  };
 }
 
 const pieces = [
@@ -31,36 +31,36 @@ const pieces = [
   '\t',
   "'",
   '=1',
-]
+];
 
 /**
  * papaparse quotes a field that starts or ends with whitespace, so its comparisons leave out
  * spaces and tabs.
  */
-const papaPieces = pieces.filter((piece) => piece.trim() !== '' || piece === '')
+const papaPieces = pieces.filter((piece) => piece.trim() !== '' || piece === '');
 
 function randomRows(seed: number, count: number, width: number, from = pieces): string[][] {
-  const next = random(seed)
+  const next = random(seed);
   return Array.from({ length: count }, () =>
     Array.from({ length: width }, () => {
-      let field = ''
+      let field = '';
       for (let n = Math.floor(next() * 4); n > 0; n--) {
-        field += from[Math.floor(next() * from.length)]
+        field += from[Math.floor(next() * from.length)];
       }
-      return field
+      return field;
     }),
-  )
+  );
 }
 
 async function viaCsvParse(chunks: readonly Uint8Array[], delimiter = ','): Promise<string[][]> {
-  const rows: string[][] = []
+  const rows: string[][] = [];
   const parser = Readable.from(chunks).pipe(
     parseStream({ bom: true, delimiter, relax_quotes: true, skip_empty_lines: true }),
-  )
+  );
   for await (const row of parser) {
-    rows.push(row as string[])
+    rows.push(row as string[]);
   }
-  return rows
+  return rows;
 }
 
 const inputs: Record<string, string> = {
@@ -72,79 +72,81 @@ const inputs: Record<string, string> = {
   'trailing delimiter, no final line break': '"a","b",\n1,2,',
   'empty lines': '\n\na,b\n\n\nc,d\n\n',
   'byte order mark': `${String.fromCharCode(0xfeff)}a,b\n1,2\n`,
-}
+};
 
 describe('matches csv-parse', () => {
   for (const [name, text] of Object.entries(inputs)) {
     test(`${name}, decode`, () => {
-      const options = { bom: true, relax_quotes: true, skip_empty_lines: true }
-      expect(Csv.decode(text)).toEqual(parseSync(text, options))
-    })
+      const options = { bom: true, relax_quotes: true, skip_empty_lines: true };
+      expect(Csv.decode(text)).toEqual(parseSync(text, options));
+    });
 
     for (const seed of [1, 2, 3]) {
       test(`${name}, random chunking ${seed}`, async () => {
-        const chunks = randomChunks(encodeUtf8(text), seed, 32)
-        expect(await decodeStream(chunks)).toEqual(await viaCsvParse(chunks))
-      })
+        const chunks = randomChunks(encodeUtf8(text), seed, 32);
+        expect(await decodeStream(chunks)).toEqual(await viaCsvParse(chunks));
+      });
     }
   }
 
   test('header', () => {
-    const text = stringify([['a', 'b', 'c'], ...randomRows(6, 100, 3)])
-    expect(Csv.decode(text, { header: true })).toEqual(parseSync(text, { columns: true }))
-  })
+    const text = stringify([['a', 'b', 'c'], ...randomRows(6, 100, 3)]);
+    expect(Csv.decode(text, { header: true })).toEqual(parseSync(text, { columns: true }));
+  });
 
   test('tab delimiter', async () => {
-    const text = stringify(randomRows(4, 100, 4), { delimiter: '\t' })
-    const chunks = randomChunks(encodeUtf8(text), 4, 32)
-    expect(await decodeStream(chunks, { delimiter: '\t' })).toEqual(await viaCsvParse(chunks, '\t'))
-  })
+    const text = stringify(randomRows(4, 100, 4), { delimiter: '\t' });
+    const chunks = randomChunks(encodeUtf8(text), 4, 32);
+    expect(await decodeStream(chunks, { delimiter: '\t' })).toEqual(
+      await viaCsvParse(chunks, '\t'),
+    );
+  });
 
   for (const path of fixtures.filter((path) => path.endsWith('.csv'))) {
     test(`csv-spectrum ${path}`, async () => {
-      const text = new TextDecoder().decode(await fixture(path))
-      const options = { columns: true, relax_quotes: true }
-      expect(Csv.decode(text, { header: true })).toEqual(parseSync(text, options))
-    })
+      const text = new TextDecoder().decode(await fixture(path));
+      const options = { columns: true, relax_quotes: true };
+      expect(Csv.decode(text, { header: true })).toEqual(parseSync(text, options));
+    });
   }
-})
+});
 
 describe('matches papaparse', () => {
   for (const [name, text] of Object.entries(inputs)) {
     test(`${name}`, () => {
-      expect(Csv.decode(text)).toEqual(Papa.parse(text, { skipEmptyLines: true }).data)
-    })
+      expect(Csv.decode(text)).toEqual(Papa.parse(text, { skipEmptyLines: true }).data);
+    });
   }
 
   test('header', () => {
-    const text = stringify([['a', 'b', 'c'], ...randomRows(7, 100, 3)])
+    const text = stringify([['a', 'b', 'c'], ...randomRows(7, 100, 3)]);
     expect(Csv.decode(text, { header: true })).toEqual(
       Papa.parse(text, { header: true, skipEmptyLines: true }).data,
-    )
-  })
-})
+    );
+  });
+});
 
 describe('encodes like csv-stringify and papaparse', () => {
   for (const seed of [1, 2, 3]) {
     test(`random rows ${seed}, csv-stringify`, () => {
-      const rows = randomRows(seed, 100, 4)
-      expect(Csv.encode(rows, { newline: '\n' })).toBe(stringify(rows))
+      const rows = randomRows(seed, 100, 4);
+      expect(Csv.encode(rows, { newline: '\n' })).toBe(stringify(rows));
       expect(Csv.encode(rows, { newline: '\n', delimiter: ';' })).toBe(
         stringify(rows, { delimiter: ';' }),
-      )
-    })
+      );
+    });
 
     test(`random rows ${seed}, papaparse`, () => {
-      const rows = randomRows(seed, 100, 4, papaPieces)
-      expect(Csv.encode(rows)).toBe(`${Papa.unparse(rows)}\r\n`)
-    })
+      const rows = randomRows(seed, 100, 4, papaPieces);
+      expect(Csv.encode(rows)).toBe(`${Papa.unparse(rows)}\r\n`);
+    });
   }
 
   test('objects with a header row', () => {
-    const rows = randomRows(5, 50, 3, papaPieces).map(([a, b, c]) => ({ a, b, c }))
+    const rows = randomRows(5, 50, 3, papaPieces).map(([a, b, c]) => ({ a, b, c }));
     expect(Csv.encode(rows, { header: true, newline: '\n' })).toBe(
       stringify(rows, { header: true }),
-    )
-    expect(Csv.encode(rows, { header: true })).toBe(`${Papa.unparse(rows)}\r\n`)
-  })
-})
+    );
+    expect(Csv.encode(rows, { header: true })).toBe(`${Papa.unparse(rows)}\r\n`);
+  });
+});

@@ -1,4 +1,4 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 export declare namespace QueryError {
   /**
    * The error codes of `node:dns`, so code that checks `error.code` works with either resolver.
@@ -23,15 +23,15 @@ export declare namespace QueryError {
     | 'ETIMEOUT'
     | 'ECONNREFUSED'
     | 'EBADNAME'
-    | 'EINVAL'
+    | 'EINVAL';
 
   type Options = ErrorOptions & {
-    code: Code
+    code: Code;
     /** The `node:dns` name of the operation. */
-    syscall: string
+    syscall: string;
     /** The name or address the caller passed. */
-    hostname: string
-  }
+    hostname: string;
+  };
 }
 
 /**
@@ -41,36 +41,36 @@ export declare namespace QueryError {
  *
  * @example
  * ```ts
- * import * as Dns from '@portable/dns'
+ * import * as Dns from '@portable/dns';
  *
- * const resolver = Dns.create()
+ * const resolver = Dns.create();
  * try {
- *   await resolver.resolveTxt('_dmarc.example.com')
+ *   await resolver.resolveTxt('_dmarc.example.com');
  * } catch (error) {
  *   if (error instanceof Dns.QueryError && error.code === 'ENODATA') {
- *     console.log('no DMARC record')
+ *     console.log('no DMARC record');
  *   }
  * }
  * ```
  */
 export class QueryError extends Errors.BaseError {
-  static override readonly kind: string = 'Dns.QueryError'
-  readonly code: QueryError.Code
+  static override readonly kind: string = 'Dns.QueryError';
+  readonly code: QueryError.Code;
   /** The `node:dns` name of the operation, such as `queryTxt` or `getHostByAddr`. */
-  readonly syscall: string
+  readonly syscall: string;
   /** The name or address the caller passed. */
-  readonly hostname: string
+  readonly hostname: string;
 
   constructor(options: QueryError.Options) {
-    const { code, syscall, hostname, ...rest } = options
-    super(`${syscall} ${code} ${hostname}`, rest)
-    this.code = code
-    this.syscall = syscall
-    this.hostname = hostname
+    const { code, syscall, hostname, ...rest } = options;
+    super(`${syscall} ${code} ${hostname}`, rest);
+    this.code = code;
+    this.syscall = syscall;
+    this.hostname = hostname;
   }
 }
 
-const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
+const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME']);
 
 /**
  * Whether a lookup failed because there are no records to return: the name doesn't exist
@@ -80,18 +80,18 @@ const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME'])
  *
  * @example
  * ```ts
- * import * as Dns from '@portable/dns'
+ * import * as Dns from '@portable/dns';
  *
- * const resolver = Dns.create()
+ * const resolver = Dns.create();
  * const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {
  *   if (Dns.isNotFound(error)) {
- *     return []
+ *     return [];
  *   }
- *   throw error
- * })
+ *   throw error;
+ * });
  * ```
  */
 export function isNotFound(error: unknown): boolean {
-  const code = (error as { code?: unknown } | null)?.code
-  return typeof code === 'string' && notFoundCodes.has(code)
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === 'string' && notFoundCodes.has(code);
 }

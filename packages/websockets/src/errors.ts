@@ -1,4 +1,4 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 
 /**
  * Thrown when the other side closes the connection, or when the connection closes and `connect`
@@ -6,32 +6,32 @@ import * as Errors from '@portable/errors'
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websockets'
+ * import * as WebSockets from '@portable/websockets';
  *
- * const { readable } = WebSockets.fromSocket(new WebSocket('wss://example.com/feed'))
- * const reader = readable.getReader()
+ * const { readable } = WebSockets.fromSocket(new WebSocket('wss://example.com/feed'));
+ * const reader = readable.getReader();
  * try {
  *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *     console.log(r.value)
+ *     console.log(r.value);
  *   }
  * } catch (error) {
  *   if (error instanceof WebSockets.CloseError) {
- *     console.log(error.code, error.reason)
+ *     console.log(error.code, error.reason);
  *   }
  * }
  * ```
  */
 export class CloseError extends Errors.BaseError {
-  static override readonly kind: string = 'WebSockets.CloseError'
+  static override readonly kind: string = 'WebSockets.CloseError';
   /** The close code, such as 1006 for a dropped connection. */
-  readonly code: number
+  readonly code: number;
   /** The close reason the other side sent, or `''`. */
-  readonly reason: string
+  readonly reason: string;
   constructor(options: { code: number; reason: string }) {
-    const { code, reason } = options
-    super(`The WebSocket closed with code ${code}${reason ? ` (${reason})` : ''}.`)
-    this.code = code
-    this.reason = reason
+    const { code, reason } = options;
+    super(`The WebSocket closed with code ${code}${reason ? ` (${reason})` : ''}.`);
+    this.code = code;
+    this.reason = reason;
   }
 }
 
@@ -40,28 +40,28 @@ export class CloseError extends Errors.BaseError {
  *
  * @example
  * ```ts
- * import * as WebSockets from '@portable/websockets'
+ * import * as WebSockets from '@portable/websockets';
  *
- * const { readable } = WebSockets.connect('wss://example.com/feed', { maxBuffered: 1_000_000 })
- * const reader = readable.getReader()
+ * const { readable } = WebSockets.connect('wss://example.com/feed', { maxBuffered: 1_000_000 });
+ * const reader = readable.getReader();
  * try {
  *   for (let r = await reader.read(); !r.done; r = await reader.read()) {
- *     await handle(r.value)
+ *     await handle(r.value);
  *   }
  * } catch (error) {
  *   if (error instanceof WebSockets.MaxBufferedError) {
- *     console.log(`fell ${error.maxBuffered} behind`)
+ *     console.log(`fell ${error.maxBuffered} behind`);
  *   }
  * }
  * ```
  */
 export class MaxBufferedError extends Errors.BaseError {
-  static override readonly kind: string = 'WebSockets.MaxBufferedError'
+  static override readonly kind: string = 'WebSockets.MaxBufferedError';
   /** The limit that was exceeded. */
-  readonly maxBuffered: number
+  readonly maxBuffered: number;
   constructor(options: { maxBuffered: number }) {
-    const { maxBuffered } = options
-    super(`Received messages exceeded maxBuffered of ${maxBuffered}.`)
-    this.maxBuffered = maxBuffered
+    const { maxBuffered } = options;
+    super(`Received messages exceeded maxBuffered of ${maxBuffered}.`);
+    this.maxBuffered = maxBuffered;
   }
 }

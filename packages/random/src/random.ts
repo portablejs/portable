@@ -1,47 +1,47 @@
-import * as internal from './internal.js'
+import * as internal from './internal.js';
 
-const poolSize = 4096
-let pool = new Uint32Array(0)
-let poolBytes = new Uint8Array(0)
-let index = 0
+const poolSize = 4096;
+let pool = new Uint32Array(0);
+let poolBytes = new Uint8Array(0);
+let index = 0;
 
 function refill(): void {
   if (pool.length === 0) {
-    pool = new Uint32Array(poolSize)
-    poolBytes = new Uint8Array(pool.buffer)
+    pool = new Uint32Array(poolSize);
+    poolBytes = new Uint8Array(pool.buffer);
   }
-  crypto.getRandomValues(pool)
-  index = poolSize
+  crypto.getRandomValues(pool);
+  index = poolSize;
 }
 
 function next(): number {
   if (index === 0) {
-    refill()
+    refill();
   }
-  return pool[--index]!
+  return pool[--index]!;
 }
 
 function fill(bytes: Uint8Array<ArrayBuffer>): void {
-  const length = bytes.length
+  const length = bytes.length;
   if (length <= 256) {
-    const words = (length + 3) >>> 2
+    const words = (length + 3) >>> 2;
     if (index < words) {
-      refill()
+      refill();
     }
-    index -= words
-    bytes.set(poolBytes.subarray(index * 4, index * 4 + length))
-    return
+    index -= words;
+    bytes.set(poolBytes.subarray(index * 4, index * 4 + length));
+    return;
   }
   for (let offset = 0; offset < length; offset += 65536) {
-    crypto.getRandomValues(bytes.subarray(offset, offset + 65536))
+    crypto.getRandomValues(bytes.subarray(offset, offset + 65536));
   }
 }
 
-const maxTextSize = 32768
-let textAlphabet = ''
-let text = ''
-let textOffset = 0
-let textNext = 0
+const maxTextSize = 32768;
+let textAlphabet = '';
+let text = '';
+let textOffset = 0;
+let textNext = 0;
 
 /**
  * Returns a random integer from `min` to `max`, both included. `min` and `max` must be safe integers,
@@ -52,13 +52,13 @@ let textNext = 0
  *
  * @example
  * ```ts
- * import * as Random from '@portable/random'
+ * import * as Random from '@portable/random';
  *
- * const die = Random.int(1, 6)
+ * const die = Random.int(1, 6);
  * ```
  */
 export function int(min: number, max: number): number {
-  return internal.int(next, min, max)
+  return internal.int(next, min, max);
 }
 
 /**
@@ -67,15 +67,15 @@ export function int(min: number, max: number): number {
  *
  * @example
  * ```ts
- * import * as Random from '@portable/random'
+ * import * as Random from '@portable/random';
  *
  * if (Random.float() < 0.1) {
- *   console.log('sampled')
+ *   console.log('sampled');
  * }
  * ```
  */
 export function float(): number {
-  return internal.float(next)
+  return internal.float(next);
 }
 
 export declare namespace string {
@@ -84,8 +84,8 @@ export declare namespace string {
      * The characters to pick from, split into code points.
      * @default the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-` and `_`
      */
-    alphabet?: string | undefined
-  }
+    alphabet?: string | undefined;
+  };
 }
 
 /**
@@ -98,33 +98,33 @@ export declare namespace string {
  *
  * @example
  * ```ts
- * import * as Random from '@portable/random'
+ * import * as Random from '@portable/random';
  *
- * const id = Random.string(21)
- * const pin = Random.string(6, { alphabet: '0123456789' })
+ * const id = Random.string(21);
+ * const pin = Random.string(6, { alphabet: '0123456789' });
  * ```
  */
 export function string(length: number, options: string.Options = {}): string {
-  const { alphabet = internal.urlAlphabet } = options
-  internal.assertLength(length)
-  const parsed = internal.alphabet(alphabet)
+  const { alphabet = internal.urlAlphabet } = options;
+  internal.assertLength(length);
+  const parsed = internal.alphabet(alphabet);
   if (parsed.table === undefined) {
-    return internal.string(next, fill, length, parsed)
+    return internal.string(next, fill, length, parsed);
   }
   if (alphabet !== textAlphabet) {
-    textAlphabet = alphabet
-    text = ''
-    textOffset = 0
-    textNext = 0
+    textAlphabet = alphabet;
+    text = '';
+    textOffset = 0;
+    textNext = 0;
   }
   if (textOffset + length > text.length) {
-    const size = Math.max(textNext, length)
-    textNext = Math.min(size * 16, maxTextSize)
-    text = internal.string(next, fill, size, parsed)
-    textOffset = 0
+    const size = Math.max(textNext, length);
+    textNext = Math.min(size * 16, maxTextSize);
+    text = internal.string(next, fill, size, parsed);
+    textOffset = 0;
   }
-  textOffset += length
-  return text.slice(textOffset - length, textOffset)
+  textOffset += length;
+  return text.slice(textOffset - length, textOffset);
 }
 
 /**
@@ -133,13 +133,13 @@ export function string(length: number, options: string.Options = {}): string {
  *
  * @example
  * ```ts
- * import * as Random from '@portable/random'
+ * import * as Random from '@portable/random';
  *
- * const deck = Random.shuffle(['A', 'K', 'Q', 'J'])
+ * const deck = Random.shuffle(['A', 'K', 'Q', 'J']);
  * ```
  */
 export function shuffle<value>(array: readonly value[]): value[] {
-  return internal.shuffle(next, array)
+  return internal.shuffle(next, array);
 }
 
 /**
@@ -147,13 +147,13 @@ export function shuffle<value>(array: readonly value[]): value[] {
  *
  * @example
  * ```ts
- * import * as Random from '@portable/random'
+ * import * as Random from '@portable/random';
  *
- * const color = Random.pick(['red', 'green', 'blue'])
+ * const color = Random.pick(['red', 'green', 'blue']);
  * ```
  */
 export function pick<value>(array: readonly value[]): value {
-  return internal.pick(next, array)
+  return internal.pick(next, array);
 }
 
 /**
@@ -162,14 +162,14 @@ export function pick<value>(array: readonly value[]): value {
  *
  * @example
  * ```ts
- * import * as Random from '@portable/random'
+ * import * as Random from '@portable/random';
  *
- * const key = Random.bytes(32)
+ * const key = Random.bytes(32);
  * ```
  */
 export function bytes(length: number): Uint8Array<ArrayBuffer> {
-  internal.assertLength(length)
-  const result = new Uint8Array(length)
-  fill(result)
-  return result
+  internal.assertLength(length);
+  const result = new Uint8Array(length);
+  fill(result);
+  return result;
 }

@@ -9,25 +9,25 @@ npm install @portable/spf @portable/dns
 ```
 
 ```ts
-import * as Dns from '@portable/dns'
-import * as Spf from '@portable/spf'
+import * as Dns from '@portable/dns';
+import * as Spf from '@portable/spf';
 
 const spf = await Spf.check(
   { ip: '192.0.2.10', sender: 'alice@example.com', helo: 'mail.example.com' },
   { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
-)
+);
 
 if (spf.result === 'fail') {
-  reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`)
+  reject(`550 5.7.23 ${spf.explanation ?? 'SPF check failed'}`);
 }
 ```
 
 In Node, `node:dns/promises` works as the resolver and uses the system's DNS servers:
 
 ```ts
-import dns from 'node:dns/promises'
+import dns from 'node:dns/promises';
 
-await Spf.check({ ip, sender, helo }, { resolver: dns })
+await Spf.check({ ip, sender, helo }, { resolver: dns });
 ```
 
 ## Input
@@ -119,32 +119,14 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
-
-| mailauth | @portable/spf |
-| --- | --- |
-| `spf({ ip, sender, helo, resolver })` | `Spf.check({ ip, sender, helo }, { resolver })` |
-| `resolver: dns.promises.resolve` (the default) | `resolver: dns` from `node:dns/promises`. A resolver is an object with `resolve4` and the rest, not one `(name, type)` function. |
-| `mta` | `receiver` |
-| `strict: true` | The only behavior. |
-| `maxElapsedTime: ms` | `signal: AbortSignal.timeout(ms)`, and report its `TimeoutError` as `temperror` |
-| `maxResolveCount`, `maxVoidCount` | Not supported. The RFC's limits are fixed. |
-| `result.status.result` | `result.result` |
-| `result.status.comment` | `result.reason` for errors. Build your own comment for the others. |
-| `result.rr` | `result.record` |
-| `result.explanation` | `result.explanation` |
-| `result.lookups.count`, `.void` | `result.lookups`, `result.voidLookups` |
-| `result.header`, `result.info` | Not built. `@portable/mail-auth` will build Received-SPF and Authentication-Results headers. |
-
-These results differ from mailauth's default mode on purpose, and match its strict mode:
-
-- A syntax error anywhere in the record is `permerror`, even after the term that matched.
-- An `a` term counts as a void lookup when the host has no address of the client's family, even if it has one of the other family.
-- A record with leading spaces, or a tab after `v=spf1`, is not an SPF record.
-- `%{c}`, `%{r}` and `%{t}` in a mechanism, `redirect=` or `exp=` are `permerror`. They are allowed only in the explanation text.
-
-They differ from both modes:
-
-- `check` rejects with a `RangeError` for an invalid `ip`. mailauth returns `temperror`.
+- mailauth's `resolver` is one `(name, type)` function. The `resolver` option of `Spf.check` is an object with `resolve4` and the other methods, such as `dns` from `node:dns/promises`.
+- mailauth's `strict: true` is the only behavior, and its `maxResolveCount` and `maxVoidCount` options have no equivalent, because the RFC's limits are fixed.
+- mailauth's `maxElapsedTime` returns `temperror` when time runs out. With `signal: AbortSignal.timeout(ms)`, `check` rejects with a `TimeoutError`, which the caller reports as `temperror`.
+- `check` builds no comment like mailauth's `result.status.comment` and no `result.header` or `result.info`.
+- These results differ from mailauth's default mode and match its strict mode: a syntax error anywhere in the record is `permerror`, even after the term that matched.
+- An `a` term counts as a void lookup when the host has no address of the client's family, even if it has one of the other family. mailauth's default mode doesn't count it, and its strict mode does.
+- A record with leading spaces, or a tab after `v=spf1`, is not an SPF record. mailauth's default mode accepts it, and its strict mode doesn't.
+- `%{c}`, `%{r}` and `%{t}` in a mechanism, `redirect=` or `exp=` are `permerror`, because they are allowed only in the explanation text. mailauth's default mode accepts them, and its strict mode doesn't.
+- `check` rejects with a `RangeError` for an invalid `ip`. mailauth returns `temperror` in both modes.
 - A resolver answer of `[]` is a void lookup, as RFC 7208 defines one. mailauth counts only `ENOTFOUND` and `ENODATA` rejections.
 - `check` treats an `EBADNAME` rejection from the resolver as an empty answer. mailauth's default mode gives `permerror` for any term.

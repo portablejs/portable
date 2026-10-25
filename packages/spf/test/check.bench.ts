@@ -1,7 +1,7 @@
-import * as Spf from '@portable/spf'
-import { spf } from 'mailauth/lib/spf/index.js'
-import { expect, test } from 'vite-plus/test'
-import { mailauthResolver, type Zone, zoneResolver } from './utils.js'
+import * as Spf from '@portable/spf';
+import { spf } from 'mailauth/lib/spf/index.js';
+import { expect, test } from 'vite-plus/test';
+import { mailauthResolver, type Zone, zoneResolver } from './utils.js';
 
 const zone = {
   'example.test': {
@@ -23,27 +23,27 @@ const zone = {
   },
   '_spf.esp.test': { TXT: ['v=spf1 exists:%{ir}._ip.%{d}.esp.test ip4:198.51.100.0/24 -all'] },
   '7.100.51.198._ip._spf.esp.test.esp.test': { A: ['127.0.0.2'] },
-} satisfies Zone
+} satisfies Zone;
 
-const input = { ip: '198.51.100.7', sender: 'user@example.test', helo: 'mail.example.test' }
+const input = { ip: '198.51.100.7', sender: 'user@example.test', helo: 'mail.example.test' };
 
 test('evaluates a nested record within 25% of mailauth', async ({ bench }) => {
-  const resolver = zoneResolver(zone)
-  const viaMailauth = mailauthResolver(resolver)
-  expect((await Spf.check(input, { resolver })).result).toBe('pass')
+  const resolver = zoneResolver(zone);
+  const viaMailauth = mailauthResolver(resolver);
+  expect((await Spf.check(input, { resolver })).result).toBe('pass');
   const result = await bench.compare(
     bench('@portable/spf', async () => {
-      await Spf.check(input, { resolver })
+      await Spf.check(input, { resolver });
     }),
     bench('mailauth strict', async () => {
-      await spf({ ...input, mta: 'mx.test', strict: true, resolver: viaMailauth })
+      await spf({ ...input, mta: 'mx.test', strict: true, resolver: viaMailauth });
     }),
     bench('mailauth', async () => {
-      await spf({ ...input, mta: 'mx.test', resolver: viaMailauth })
+      await spf({ ...input, mta: 'mx.test', resolver: viaMailauth });
     }),
-  )
+  );
   expect(result.get('mailauth strict')).not.toBeFasterThan(result.get('@portable/spf'), {
     delta: 0.25,
-  })
-  expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/spf'), { delta: 0.25 })
-})
+  });
+  expect(result.get('mailauth')).not.toBeFasterThan(result.get('@portable/spf'), { delta: 0.25 });
+});

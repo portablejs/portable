@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'vite-plus/test'
-import * as Idna from '@portable/idna'
-import { decode, encode } from '../src/internal/punycode.js'
+import { describe, expect, test } from 'vite-plus/test';
+import * as Idna from '@portable/idna';
+import { decode, encode } from '../src/internal/punycode.js';
 
 // Cases from punycode.js 2.3.1 tests/tests.js (MIT, Mathias Bynens), most of them from RFC 3492
 // section 7.1.
@@ -109,7 +109,7 @@ const strings = [
     decoded: '-> $1.00 <-',
     encoded: '-> $1.00 <--',
   },
-]
+];
 
 const domains = [
   { description: 'ma\xF1ana.com', decoded: 'ma\xF1ana.com', encoded: 'xn--maana-pta.com' },
@@ -123,101 +123,101 @@ const domains = [
     encoded: 'xn----dqo34kn65z.com',
   },
   { description: 'Emoji', decoded: '💩.la', encoded: 'xn--ls8h.la' },
-]
+];
 
 describe('punycode.js: decode', () => {
   test.each(strings)('$description', ({ decoded, encoded }) => {
-    expect(decode(encoded)).toBe(decoded)
-  })
+    expect(decode(encoded)).toBe(decoded);
+  });
 
   test('handles uppercase Z', () => {
-    expect(decode('ZZZ')).toBe('箥')
-  })
+    expect(decode('ZZZ')).toBe('箥');
+  });
 
   test('rejects a non-basic code point before the delimiter', () => {
-    expect(decode('\x81-')).toBeUndefined()
-  })
+    expect(decode('\x81-')).toBeUndefined();
+  });
 
   test('rejects a non-basic code point after the delimiter', () => {
-    expect(decode('\x81')).toBeUndefined()
-  })
+    expect(decode('\x81')).toBeUndefined();
+  });
 
   test('rejects a character that is not a base-36 digit', () => {
-    expect(decode('ls8h=')).toBeUndefined()
-  })
+    expect(decode('ls8h=')).toBeUndefined();
+  });
 
   test('rejects input that ends in the middle of a number', () => {
-    expect(decode('b')).toBeUndefined()
-  })
+    expect(decode('b')).toBeUndefined();
+  });
 
   test('rejects a delta that overflows', () => {
-    expect(decode('99999999999')).toBeUndefined()
-  })
-})
+    expect(decode('99999999999')).toBeUndefined();
+  });
+});
 
 describe('punycode.js: encode', () => {
   test.each(strings)('$description', ({ decoded, encoded }) => {
-    expect(encode(decoded)).toBe(encoded)
-  })
+    expect(encode(decoded)).toBe(encoded);
+  });
 
   test('encodes astral code points as one code point', () => {
-    expect(encode('💩')).toBe('ls8h')
-  })
-})
+    expect(encode('💩')).toBe('ls8h');
+  });
+});
 
 describe('punycode.js: toUnicode', () => {
   test.each(domains)('$description', ({ decoded, encoded }) => {
-    expect(Idna.toUnicode(encoded)).toBe(decoded)
-  })
+    expect(Idna.toUnicode(encoded)).toBe(decoded);
+  });
 
   test('decodes only the domain of an email address', () => {
-    expect(Idna.toUnicode('xn--p-8sbkgc5ag7bhce.xn--ba-lmcq')).toBe('джpумлатест.bрфa')
-  })
+    expect(Idna.toUnicode('xn--p-8sbkgc5ag7bhce.xn--ba-lmcq')).toBe('джpумлатест.bрфa');
+  });
 
   test('leaves non-printable ASCII alone', () => {
-    expect(Idna.toUnicode('\0\x01\x02foo.bar')).toBe('\0\x01\x02foo.bar')
-    expect(Idna.toUnicode('foo\x7F.example')).toBe('foo\x7F.example')
-  })
+    expect(Idna.toUnicode('\0\x01\x02foo.bar')).toBe('\0\x01\x02foo.bar');
+    expect(Idna.toUnicode('foo\x7F.example')).toBe('foo\x7F.example');
+  });
 
   test('does not decode names that do not start with xn--, but lowercases them', () => {
     for (const { encoded } of strings) {
-      expect(Idna.toUnicode(encoded)).toBe(encoded.toLowerCase())
+      expect(Idna.toUnicode(encoded)).toBe(encoded.toLowerCase());
     }
-  })
-})
+  });
+});
 
 describe('punycode.js: toASCII', () => {
   test.each(domains)('$description', ({ decoded, encoded }) => {
-    expect(Idna.toAscii(decoded)).toBe(encoded)
-  })
+    expect(Idna.toAscii(decoded)).toBe(encoded);
+  });
 
   test('encodes only the domain of an email address', () => {
-    expect(Idna.toAscii('джpумлатест.bрфa')).toBe('xn--p-8sbkgc5ag7bhce.xn--ba-lmcq')
-  })
+    expect(Idna.toAscii('джpумлатест.bрфa')).toBe('xn--p-8sbkgc5ag7bhce.xn--ba-lmcq');
+  });
 
   test('rejects characters that URL forbids in a host', () => {
-    expect(() => Idna.toAscii('\0\x01\x02foo.bar')).toThrow(Idna.InvalidInputError)
-    expect(() => Idna.toAscii('foo\x7F.example')).toThrow(Idna.InvalidInputError)
-    expect(() => Idna.toAscii('джумла@example.com')).toThrow(Idna.InvalidInputError)
-  })
+    expect(() => Idna.toAscii('\0\x01\x02foo.bar')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toAscii('foo\x7F.example')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toAscii('джумла@example.com')).toThrow(Idna.InvalidInputError);
+  });
 
-  const forbidden = strings.filter(({ encoded }) => /[ $<>]/.test(encoded))
-  const allowed = strings.filter((entry) => !forbidden.includes(entry))
+  const forbidden = strings.filter(({ encoded }) => /[ $<>]/.test(encoded));
+  const allowed = strings.filter((entry) => !forbidden.includes(entry));
 
   test('does not convert names that are already ASCII, but lowercases them', () => {
     for (const { encoded } of allowed) {
-      expect(Idna.toAscii(encoded)).toBe(encoded.toLowerCase())
+      expect(Idna.toAscii(encoded)).toBe(encoded.toLowerCase());
     }
-  })
+  });
 
   test('rejects ASCII names with characters that URL forbids in a host', () => {
-    expect(forbidden.length).toBe(2)
+    expect(forbidden.length).toBe(2);
     for (const { encoded } of forbidden) {
-      expect(() => Idna.toAscii(encoded)).toThrow(Idna.InvalidInputError)
+      expect(() => Idna.toAscii(encoded)).toThrow(Idna.InvalidInputError);
     }
-  })
+  });
 
   test.each(['\x2E', '。', '．', '｡'])('supports %s as a separator', (separator) => {
-    expect(Idna.toAscii(`ma\xF1ana${separator}com`)).toBe('xn--maana-pta.com')
-  })
-})
+    expect(Idna.toAscii(`ma\xF1ana${separator}com`)).toBe('xn--maana-pta.com');
+  });
+});

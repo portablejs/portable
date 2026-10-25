@@ -1,0 +1,37 @@
+---
+description: Read image sizes and EXIF metadata, and encode and decode PNG, without a native library.
+---
+
+# Images
+
+These packages read and write image files in plain JavaScript, so they run in Workers and browsers, where native libraries such as `sharp` don't.
+
+- [`image-size`](/packages/image-size) reads an image's type and dimensions from its first bytes.
+- [`exif`](/packages/exif) reads EXIF metadata, and removes EXIF and XMP metadata from JPEG, PNG, and WebP files.
+- [`png`](/packages/png) decodes PNG files to RGBA pixels and encodes pixels as PNG.
+
+## Check an upload and strip its metadata
+
+```ts
+import * as Exif from '@portable/exif';
+import * as ImageSize from '@portable/image-size';
+import * as Streams from '@portable/streams';
+
+export default {
+  async fetch(request: Request, env: { BUCKET: R2Bucket }) {
+    const bytes = await Streams.toBytes(request.body!, {
+      maxBytes: 20_000_000,
+    });
+    const { type, width, height } = ImageSize.parse(bytes);
+    if (width > 8000 || height > 8000) {
+      return new Response('Too large', { status: 413 });
+    }
+    await env.BUCKET.put(crypto.randomUUID(), Exif.strip(bytes), {
+      httpMetadata: { contentType: `image/${type}` },
+    });
+    return new Response(null, { status: 201 });
+  },
+};
+```
+
+`Exif.strip` copies the image data byte for byte without re-encoding it, so the photo loses no quality.

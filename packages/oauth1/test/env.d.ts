@@ -1,6 +1,6 @@
 declare module '*?raw' {
-  const text: string
-  export default text
+  const text: string;
+  export default text;
 }
 
 declare module 'oauth' {
@@ -13,9 +13,9 @@ declare module 'oauth' {
       version: string,
       authorizeCallback: string | null,
       signatureMethod: string,
-    )
-    authHeader(url: string, token?: string, tokenSecret?: string, method?: string): string
-    _getTimestamp: () => number
-    _getNonce: () => string
+    );
+    authHeader(url: string, token?: string, tokenSecret?: string, method?: string): string;
+    _getTimestamp: () => number;
+    _getNonce: () => string;
   }
 }

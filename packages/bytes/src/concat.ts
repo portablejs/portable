@@ -1,4 +1,4 @@
-import { assertUint8Array } from './internal/uint8Array.js'
+import { assertUint8Array } from './internal/uint8Array.js';
 
 /**
  * Joins byte arrays into one new array. The result never shares memory with the input, even for a
@@ -6,21 +6,21 @@ import { assertUint8Array } from './internal/uint8Array.js'
  *
  * @example
  * ```ts
- * import * as Bytes from '@portable/bytes'
+ * import * as Bytes from '@portable/bytes';
  *
- * Bytes.concat([new Uint8Array([1, 2]), new Uint8Array([3])]) // Uint8Array [1, 2, 3]
+ * Bytes.concat([new Uint8Array([1, 2]), new Uint8Array([3])]); // Uint8Array [1, 2, 3]
  * ```
  */
 export function concat(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
-  let length = 0
+  let length = 0;
   for (const chunk of chunks) {
-    length += assertUint8Array(chunk).length
+    length += assertUint8Array(chunk).length;
   }
-  const bytes = new Uint8Array(length)
-  let offset = 0
+  const bytes = new Uint8Array(length);
+  let offset = 0;
   for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.length
+    bytes.set(chunk, offset);
+    offset += chunk.length;
   }
-  return bytes
+  return bytes;
 }

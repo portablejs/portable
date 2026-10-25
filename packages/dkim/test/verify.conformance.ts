@@ -1,5 +1,5 @@
-import * as Dkim from '@portable/dkim'
-import { beforeAll, describe, expect, test } from 'vite-plus/test'
+import * as Dkim from '@portable/dkim';
+import { beforeAll, describe, expect, test } from 'vite-plus/test';
 import {
   canonicalBodyRelaxed,
   canonicalBodySimple,
@@ -18,60 +18,60 @@ import {
   spki,
   stream,
   utf8,
-} from './utils.js'
+} from './utils.js';
 
-const D = 'example.com'
-const S = 'sel'
-const KEY = `${S}._domainkey.${D}`
+const D = 'example.com';
+const S = 'sel';
+const KEY = `${S}._domainkey.${D}`;
 const HEADERS = [
   'From: Joe <joe@example.com>',
   'To: suzie@example.net',
   'Subject: Is dinner ready?',
   'Date: Fri, 11 Jul 2003 21:00:37 -0700',
-]
-const BODY = 'Hi.\r\n\r\nWe lost the game.  Are you hungry yet?\r\n\r\nJoe.\r\n'
+];
+const BODY = 'Hi.\r\n\r\nWe lost the game.  Are you hungry yet?\r\n\r\nJoe.\r\n';
 
-let rsa: CryptoKey
-let rsaSha1: CryptoKey
-let small: CryptoKey
-let ed: CryptoKey
-let rsaRec: string
-let edRec: string
+let rsa: CryptoKey;
+let rsaSha1: CryptoKey;
+let small: CryptoKey;
+let ed: CryptoKey;
+let rsaRec: string;
+let edRec: string;
 
 beforeAll(async () => {
-  rsa = await importPrivate(await privatePem('rsa'))
-  rsaSha1 = await importPrivate(await privatePem('rsa'), 'SHA-1')
-  small = await importPrivate(await privatePem('small'))
-  ed = await importPrivate(await privatePem('ed25519'))
-  rsaRec = await rsaRecord()
-  edRec = await ed25519Record()
-})
+  rsa = await importPrivate(await privatePem('rsa'));
+  rsaSha1 = await importPrivate(await privatePem('rsa'), 'SHA-1');
+  small = await importPrivate(await privatePem('small'));
+  ed = await importPrivate(await privatePem('ed25519'));
+  rsaRec = await rsaRecord();
+  edRec = await ed25519Record();
+});
 
 type Std = {
-  algorithm?: string | undefined
-  c?: string | undefined
-  h?: string | undefined
-  names?: string | undefined
-  d?: string | undefined
-  s?: string | undefined
-  rawTags?: string | undefined
-  key?: (() => CryptoKey) | undefined
-  headers?: readonly string[] | undefined
-  body?: string | undefined
-  suffix?: string | undefined
-  length?: number | undefined
-}
+  algorithm?: string | undefined;
+  c?: string | undefined;
+  h?: string | undefined;
+  names?: string | undefined;
+  d?: string | undefined;
+  s?: string | undefined;
+  rawTags?: string | undefined;
+  key?: (() => CryptoKey) | undefined;
+  headers?: readonly string[] | undefined;
+  body?: string | undefined;
+  suffix?: string | undefined;
+  length?: number | undefined;
+};
 
 /**
  * A message signed by the reference signer, with `extra` tags before h=. Mirrors mailauth's `std`.
  */
 function std(extra = '', o: Std = {}): Promise<string> {
-  const algorithm = o.algorithm ?? 'rsa-sha256'
-  const c = o.c ?? 'relaxed/relaxed'
-  const h = o.h ?? 'from:to:subject:date'
+  const algorithm = o.algorithm ?? 'rsa-sha256';
+  const c = o.c ?? 'relaxed/relaxed';
+  const h = o.h ?? 'from:to:subject:date';
   const tags =
     o.rawTags ??
-    `v=1; a=${algorithm}; c=${c}; d=${o.d ?? D}; s=${o.s ?? S};${extra} h=${h}; bh=%BH%; b=`
+    `v=1; a=${algorithm}; c=${c}; d=${o.d ?? D}; s=${o.s ?? S};${extra} h=${h}; bh=%BH%; b=`;
   return referenceSign({
     headers: o.headers ?? HEADERS,
     body: o.body ?? BODY,
@@ -82,7 +82,7 @@ function std(extra = '', o: Std = {}): Promise<string> {
     suffix: o.suffix,
     names: (o.names ?? h).split(':'),
     length: o.length,
-  })
+  });
 }
 
 async function run(
@@ -90,29 +90,29 @@ async function run(
   records: Parameters<typeof resolverFrom>[0],
   options: Partial<Dkim.verify.Options> = {},
 ) {
-  const log: string[] = []
+  const log: string[] = [];
   const results = await Dkim.verify(encodeBinary(message), {
     resolver: resolverFrom(records, log),
     ...options,
-  })
-  return { log, results, result: results[0]! }
+  });
+  return { log, results, result: results[0]! };
 }
 
-const encodeBinary = (text: string) => Uint8Array.from(text, (char) => char.charCodeAt(0))
+const encodeBinary = (text: string) => Uint8Array.from(text, (char) => char.charCodeAt(0));
 
 type Case = {
-  title: string
-  message: () => Promise<string>
-  records: () => Parameters<typeof resolverFrom>[0]
-  now?: Date | undefined
-  result: Dkim.Result.Code
-  reason?: string | undefined
+  title: string;
+  message: () => Promise<string>;
+  records: () => Parameters<typeof resolverFrom>[0];
+  now?: Date | undefined;
+  result: Dkim.Result.Code;
+  reason?: string | undefined;
   /** The verifier makes no DNS query. */
-  noDns?: boolean | undefined
-  testing?: boolean | undefined
-}
+  noDns?: boolean | undefined;
+  testing?: boolean | undefined;
+};
 
-const key = (record: () => string) => () => ({ [KEY]: [record()] })
+const key = (record: () => string) => () => ({ [KEY]: [record()] });
 
 // The cases of mailauth's test/dkim/verify-rfc-compliance-test.js, with the results of its
 // strict mode, except where PARITY.md lists a difference.
@@ -646,43 +646,47 @@ const cases = [
     reason: 'signature syntax error',
     noDns: true,
   },
-] satisfies Case[]
+] satisfies Case[];
 
-let edSpki: string
-let smallRec: string
-let rsaPkcs1: string
+let edSpki: string;
+let smallRec: string;
+let rsaPkcs1: string;
 beforeAll(async () => {
-  edSpki = await spki('ed25519')
-  smallRec = await rsaRecord('small')
-  rsaPkcs1 = await pkcs1('rsa')
-})
+  edSpki = await spki('ed25519');
+  smallRec = await rsaRecord('small');
+  rsaPkcs1 = await pkcs1('rsa');
+});
 
 describe('RFC compliance cases', () => {
   for (const c of cases) {
     test(`${c.title}`, async () => {
-      const { result, log } = await run(await c.message(), c.records(), c.now ? { now: c.now } : {})
+      const { result, log } = await run(
+        await c.message(),
+        c.records(),
+        c.now ? { now: c.now } : {},
+      );
       expect({ result: result.result, reason: result.reason }).toEqual({
         result: c.result,
         reason: c.reason,
-      })
-      expect(result.testing).toBe(c.testing ?? false)
-      expect(c.noDns ? log : []).toEqual([])
-    })
+      });
+      expect(result.testing).toBe(c.testing ?? false);
+      expect(c.noDns ? log : []).toEqual([]);
+    });
   }
-})
+});
 
 describe('the result object', () => {
   test('keeps the resolver error behind a temperror as cause', async () => {
-    const error = dnsError('ESERVFAIL', KEY)
-    const { result } = await run(await std(), { [KEY]: error })
-    expect(result.result).toBe('temperror')
-    expect(result.cause).toBe(error)
-  })
+    const error = dnsError('ESERVFAIL', KEY);
+    const { result } = await run(await std(), { [KEY]: error });
+    expect(result.result).toBe('temperror');
+    expect(result.cause).toBe(error);
+  });
 
   test('reports the domain, selector, algorithm, identity and signature', async () => {
-    const message = await std(' i=joe@sub.example.com;')
-    const { result } = await run(message, { [KEY]: [rsaRec] })
-    const b = /b=([^;\r]+)\r\n/.exec(message)![1]
+    const message = await std(' i=joe@sub.example.com;');
+    const { result } = await run(message, { [KEY]: [rsaRec] });
+    const b = /b=([^;\r]+)\r\n/.exec(message)![1];
     expect(result).toEqual({
       result: 'pass',
       domain: 'example.com',
@@ -691,27 +695,27 @@ describe('the result object', () => {
       identity: 'joe@sub.example.com',
       signature: b,
       testing: false,
-    })
-  })
+    });
+  });
 
   test('uses @ and d= as the identity when there is no i=', async () => {
-    const { result } = await run(await std(), { [KEY]: [rsaRec] })
-    expect(result.identity).toBe('@example.com')
-  })
+    const { result } = await run(await std(), { [KEY]: [rsaRec] });
+    expect(result.identity).toBe('@example.com');
+  });
 
   test('decodes a dkim-quoted-printable i=', async () => {
-    const { result } = await run(await std(' i=j=C3=B5gi@example.com;'), { [KEY]: [rsaRec] })
-    expect(result).toMatchObject({ result: 'pass', identity: 'jõgi@example.com' })
-  })
+    const { result } = await run(await std(' i=j=C3=B5gi@example.com;'), { [KEY]: [rsaRec] });
+    expect(result).toMatchObject({ result: 'pass', identity: 'jõgi@example.com' });
+  });
 
   test('gives an empty array for a message without signatures', async () => {
-    const { results, log } = await run(`${HEADERS.join('\r\n')}\r\n\r\n${BODY}`, {})
-    expect(results).toEqual([])
-    expect(log).toEqual([])
-  })
+    const { results, log } = await run(`${HEADERS.join('\r\n')}\r\n\r\n${BODY}`, {});
+    expect(results).toEqual([]);
+    expect(log).toEqual([]);
+  });
 
   test('gives one result per signature, in header order', async () => {
-    const first = await std('', { s: 'one', algorithm: 'ed25519-sha256', key: () => ed })
+    const first = await std('', { s: 'one', algorithm: 'ed25519-sha256', key: () => ed });
     const both = await referenceSign({
       headers: first.slice(0, first.indexOf('\r\n\r\n')).split(/\r\n(?![ \t])/),
       body: BODY,
@@ -720,38 +724,38 @@ describe('the result object', () => {
       key: rsa,
       prefix: `DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=${D}; s=two; h=from:to; bh=%BH%; b=`,
       names: ['from', 'to'],
-    })
+    });
     const { results } = await run(both, {
       [`one._domainkey.${D}`]: [edRec],
       [`two._domainkey.${D}`]: [rsaRec],
-    })
+    });
     expect(results.map((r) => [r.selector, r.algorithm, r.result])).toEqual([
       ['two', 'rsa-sha256', 'pass'],
       ['one', 'ed25519-sha256', 'pass'],
-    ])
-  })
+    ]);
+  });
 
   test('looks up a key once for signatures that share it', async () => {
-    const first = await std()
-    const both = `DKIM-Signature: ${first.slice(first.indexOf(':') + 1, first.indexOf('\r\nFrom:'))}\r\n${first}`
-    const { results, log } = await run(both, { [KEY]: [rsaRec] })
-    expect(results.map((r) => r.result)).toEqual(['pass', 'pass'])
-    expect(log).toEqual([KEY])
-  })
-})
+    const first = await std();
+    const both = `DKIM-Signature: ${first.slice(first.indexOf(':') + 1, first.indexOf('\r\nFrom:'))}\r\n${first}`;
+    const { results, log } = await run(both, { [KEY]: [rsaRec] });
+    expect(results.map((r) => r.result)).toEqual(['pass', 'pass']);
+    expect(log).toEqual([KEY]);
+  });
+});
 
 describe('d= values that are not host names', () => {
   for (const separator of ['/', '?', '#', '\\', '@', ':', ' ']) {
-    const d = `${D}${separator}x.attacker.test`
+    const d = `${D}${separator}x.attacker.test`;
     test(`d=${d} gives a syntax error without a key query`, async () => {
       const { result, log } = await run(await std('', { d }), {
         [`${S}._domainkey.${d}`]: [rsaRec],
-      })
-      expect(result).toMatchObject({ result: 'neutral', reason: 'signature syntax error' })
-      expect(log).toEqual([])
-    })
+      });
+      expect(result).toMatchObject({ result: 'neutral', reason: 'signature syntax error' });
+      expect(log).toEqual([]);
+    });
   }
-})
+});
 
 describe('EAI (RFC 8616)', () => {
   const message = () =>
@@ -763,232 +767,232 @@ describe('EAI (RFC 8616)', () => {
       key: rsa,
       prefix: `DKIM-Signature: ${utf8(`v=1; a=rsa-sha256; c=relaxed/relaxed; d=bücher.example; s=${S}; h=from:to:subject:date; bh=%BH%; b=`)}`,
       names: ['from', 'to', 'subject', 'date'],
-    })
+    });
 
   test('looks up the key of a U-label d= under its A-label and reports A-labels', async () => {
     const { result, log } = await run(await message(), {
       [`${S}._domainkey.xn--bcher-kva.example`]: [rsaRec],
-    })
-    expect(log).toEqual([`${S}._domainkey.xn--bcher-kva.example`])
+    });
+    expect(log).toEqual([`${S}._domainkey.xn--bcher-kva.example`]);
     expect(result).toMatchObject({
       result: 'pass',
       domain: 'xn--bcher-kva.example',
       identity: '@xn--bcher-kva.example',
-    })
-  })
-})
+    });
+  });
+});
 
 describe('body length (l=)', () => {
   const total = (c: string) =>
-    (c.endsWith('simple') ? canonicalBodySimple(BODY) : canonicalBodyRelaxed(BODY)).length
+    (c.endsWith('simple') ? canonicalBodySimple(BODY) : canonicalBodyRelaxed(BODY)).length;
 
   test('reports the content after l=0 as unsigned', async () => {
-    const message = (await std(' l=0;', { length: 0 })) + 'APPENDED\r\n'
-    const { result } = await run(message, { [KEY]: [rsaRec] })
-    expect(result).toMatchObject({ result: 'pass', bodyLength: 0 })
-    expect(result.unsignedBodyBytes).toBe(total('relaxed') + 'APPENDED\r\n'.length)
-  })
+    const message = (await std(' l=0;', { length: 0 })) + 'APPENDED\r\n';
+    const { result } = await run(message, { [KEY]: [rsaRec] });
+    expect(result).toMatchObject({ result: 'pass', bodyLength: 0 });
+    expect(result.unsignedBodyBytes).toBe(total('relaxed') + 'APPENDED\r\n'.length);
+  });
 
   test('gives neutral for an l= larger than the canonicalized body (RFC 6376 section 3.5)', async () => {
-    const { result } = await run(await std(' l=1000;', { length: 1000 }), { [KEY]: [rsaRec] })
+    const { result } = await run(await std(' l=1000;', { length: 1000 }), { [KEY]: [rsaRec] });
     expect(result).toMatchObject({
       result: 'neutral',
       reason: 'l= is longer than the body',
       bodyLength: 1000,
       unsignedBodyBytes: 0,
-    })
-  })
+    });
+  });
 
   test('accepts an l= equal to the canonicalized body length', async () => {
     for (const c of ['relaxed/relaxed', 'simple/simple']) {
-      const length = total(c)
-      const { result } = await run(await std(` l=${length};`, { length, c }), { [KEY]: [rsaRec] })
-      expect(result).toMatchObject({ result: 'pass', bodyLength: length, unsignedBodyBytes: 0 })
+      const length = total(c);
+      const { result } = await run(await std(` l=${length};`, { length, c }), { [KEY]: [rsaRec] });
+      expect(result).toMatchObject({ result: 'pass', bodyLength: length, unsignedBodyBytes: 0 });
     }
-  })
+  });
 
   test('counts content added after l= in LF line endings', async () => {
     for (const c of ['relaxed/relaxed', 'simple/simple']) {
-      const signed = await std(' l=5;', { length: 5, c, body: 'Hi.\r\n' })
-      const { result } = await run(signed + 'LINE ONE\nLINE TWO\n', { [KEY]: [rsaRec] })
-      expect(result).toMatchObject({ result: 'pass', bodyLength: 5, unsignedBodyBytes: 20 })
+      const signed = await std(' l=5;', { length: 5, c, body: 'Hi.\r\n' });
+      const { result } = await run(signed + 'LINE ONE\nLINE TWO\n', { [KEY]: [rsaRec] });
+      expect(result).toMatchObject({ result: 'pass', bodyLength: 5, unsignedBodyBytes: 20 });
     }
-  })
+  });
 
   test('accepts a body hashed with l= by mailauth for each canonicalization', async () => {
     for (const c of ['relaxed/relaxed', 'simple/simple', 'relaxed/simple', 'simple/relaxed']) {
-      const { result } = await run(await std(' l=20;', { length: 20, c }), { [KEY]: [rsaRec] })
-      expect(result.result).toBe('pass')
+      const { result } = await run(await std(' l=20;', { length: 20, c }), { [KEY]: [rsaRec] });
+      expect(result.result).toBe('pass');
     }
-  })
-})
+  });
+});
 
 describe('header section', () => {
   test('reads a message that starts with an empty line as having no header fields', async () => {
-    const { results } = await run('\r\n' + (await std()), { [KEY]: [rsaRec] })
-    expect(results).toEqual([])
-  })
+    const { results } = await run('\r\n' + (await std()), { [KEY]: [rsaRec] });
+    expect(results).toEqual([]);
+  });
 
   test('verifies a simple body with an LF right after a CRLF', async () => {
-    const signed = await std('', { c: 'simple/simple', body: 'x\r\n\r\ny\r\n' })
+    const signed = await std('', { c: 'simple/simple', body: 'x\r\n\r\ny\r\n' });
     const { result } = await run(signed.replace('x\r\n\r\ny\r\n', 'x\r\n\ny\r\n'), {
       [KEY]: [rsaRec],
-    })
-    expect(result.result).toBe('pass')
-  })
+    });
+    expect(result.result).toBe('pass');
+  });
 
   test('verifies a message with LF line endings throughout', async () => {
-    const signed = await std()
-    const { result } = await run(signed.replaceAll('\r\n', '\n'), { [KEY]: [rsaRec] })
-    expect(result.result).toBe('pass')
-  })
+    const signed = await std();
+    const { result } = await run(signed.replaceAll('\r\n', '\n'), { [KEY]: [rsaRec] });
+    expect(result.result).toBe('pass');
+  });
 
   test('verifies a message without a body', async () => {
-    const signed = await std('', { body: '' })
+    const signed = await std('', { body: '' });
     for (const message of [signed, signed.slice(0, -2), signed.slice(0, -4)]) {
-      const { result } = await run(message, { [KEY]: [rsaRec] })
-      expect(result.result).toBe('pass')
+      const { result } = await run(message, { [KEY]: [rsaRec] });
+      expect(result.result).toBe('pass');
     }
-  })
+  });
 
   test('does not read an ARC-Message-Signature as a DKIM-Signature', async () => {
-    const signed = await std()
+    const signed = await std();
     const { results } = await run(signed.replace('DKIM-Signature:', 'ARC-Message-Signature:'), {
       [KEY]: [rsaRec],
-    })
-    expect(results).toEqual([])
-  })
-})
+    });
+    expect(results).toEqual([]);
+  });
+});
 
 describe('input', () => {
   test('takes a ReadableStream in any chunking, a Uint8Array or a string', async () => {
-    const message = await std()
-    const bytes = encode(message)
-    const resolver = resolverFrom({ [KEY]: [rsaRec] })
+    const message = await std();
+    const bytes = encode(message);
+    const resolver = resolverFrom({ [KEY]: [rsaRec] });
     for (const seed of [1, 2, 3]) {
-      const results = await Dkim.verify(stream(randomChunks(bytes, seed, 16)), { resolver })
-      expect(results.map((r) => r.result)).toEqual(['pass'])
+      const results = await Dkim.verify(stream(randomChunks(bytes, seed, 16)), { resolver });
+      expect(results.map((r) => r.result)).toEqual(['pass']);
     }
-    expect((await Dkim.verify(stream([bytes]), { resolver }))[0]!.result).toBe('pass')
-    expect((await Dkim.verify(message, { resolver }))[0]!.result).toBe('pass')
-    expect((await Dkim.verify(bytes, { resolver }))[0]!.result).toBe('pass')
-  })
+    expect((await Dkim.verify(stream([bytes]), { resolver }))[0]!.result).toBe('pass');
+    expect((await Dkim.verify(message, { resolver }))[0]!.result).toBe('pass');
+    expect((await Dkim.verify(bytes, { resolver }))[0]!.result).toBe('pass');
+  });
 
   test('cancels the stream when no signature needs the body', async () => {
-    let cancelled = false
-    let pulls = 0
+    let cancelled = false;
+    let pulls = 0;
     const body = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(encode('From: a@example.com\r\nSubject: x\r\n\r\n'))
+        controller.enqueue(encode('From: a@example.com\r\nSubject: x\r\n\r\n'));
       },
       pull(controller) {
-        pulls++
-        controller.enqueue(new Uint8Array(1024))
+        pulls++;
+        controller.enqueue(new Uint8Array(1024));
       },
       cancel() {
-        cancelled = true
+        cancelled = true;
       },
-    })
-    expect(await Dkim.verify(body, { resolver: resolverFrom({}) })).toEqual([])
-    expect(cancelled).toBe(true)
-    expect(pulls).toBeLessThan(3)
-  })
+    });
+    expect(await Dkim.verify(body, { resolver: resolverFrom({}) })).toEqual([]);
+    expect(cancelled).toBe(true);
+    expect(pulls).toBeLessThan(3);
+  });
 
   test('rejects a stream of chunks that are not Uint8Array', async () => {
-    const resolver = resolverFrom({})
+    const resolver = resolverFrom({});
     await expect(
       Dkim.verify(stream(['From: a\r\n\r\n' as unknown as Uint8Array]), { resolver }),
-    ).rejects.toThrow(TypeError)
-  })
+    ).rejects.toThrow(TypeError);
+  });
 
   test('rejects a missing resolver', async () => {
-    await expect(Dkim.verify('', {} as Dkim.verify.Options)).rejects.toThrow(TypeError)
-  })
+    await expect(Dkim.verify('', {} as Dkim.verify.Options)).rejects.toThrow(TypeError);
+  });
 
   test('rejects with the reason when the signal aborts a key lookup', async () => {
-    const controller = new AbortController()
-    const resolver = { resolveTxt: () => new Promise(() => {}) } satisfies Dkim.Resolver
-    const pending = Dkim.verify(await std(), { resolver, signal: controller.signal })
-    const reason = new Error('stop')
-    setTimeout(() => controller.abort(reason), 10)
-    await expect(pending).rejects.toBe(reason)
-  })
+    const controller = new AbortController();
+    const resolver = { resolveTxt: () => new Promise(() => {}) } satisfies Dkim.Resolver;
+    const pending = Dkim.verify(await std(), { resolver, signal: controller.signal });
+    const reason = new Error('stop');
+    setTimeout(() => controller.abort(reason), 10);
+    await expect(pending).rejects.toBe(reason);
+  });
 
   test('rejects with the reason and cancels the message when the signal aborts the read', async () => {
-    const controller = new AbortController()
-    let cancelled = false
+    const controller = new AbortController();
+    let cancelled = false;
     const message = new ReadableStream<Uint8Array>({
       start(c) {
         c.enqueue(
           encode(
             `DKIM-Signature: v=1; a=rsa-sha256; d=${D}; s=${S}; h=from; bh=AAAA; b=AAAA\r\nFrom: a@example.com\r\n\r\n`,
           ),
-        )
+        );
       },
       pull: () => new Promise<void>(() => {}),
       cancel() {
-        cancelled = true
+        cancelled = true;
       },
-    })
+    });
     const pending = Dkim.verify(message, {
       resolver: resolverFrom({ [KEY]: [rsaRec] }),
       signal: controller.signal,
-    })
-    setTimeout(() => controller.abort(), 10)
-    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
-    expect(cancelled).toBe(true)
-  })
+    });
+    setTimeout(() => controller.abort(), 10);
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(cancelled).toBe(true);
+  });
 
   test('rejects at once for an aborted signal', async () => {
-    const signal = AbortSignal.abort()
+    const signal = AbortSignal.abort();
     await expect(Dkim.verify(await std(), { resolver: resolverFrom({}), signal })).rejects.toBe(
       signal.reason,
-    )
-  })
+    );
+  });
 
   test('uses the hasher option for the body hash', async () => {
-    let updates = 0
+    let updates = 0;
     const hasher = (): Dkim.Hasher => {
-      const chunks: Uint8Array[] = []
+      const chunks: Uint8Array[] = [];
       return {
         update(data) {
-          updates++
-          chunks.push(data.slice())
+          updates++;
+          chunks.push(data.slice());
         },
         async digest() {
-          const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0))
-          let at = 0
+          const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+          let at = 0;
           for (const c of chunks) {
-            all.set(c, at)
-            at += c.length
+            all.set(c, at);
+            at += c.length;
           }
-          return new Uint8Array(await crypto.subtle.digest('SHA-256', all))
+          return new Uint8Array(await crypto.subtle.digest('SHA-256', all));
         },
-      }
-    }
+      };
+    };
     const results = await Dkim.verify(await std(), {
       resolver: resolverFrom({ [KEY]: [rsaRec] }),
       hasher,
-    })
-    expect(results[0]!.result).toBe('pass')
-    expect(updates).toBeGreaterThan(0)
-  })
-})
+    });
+    expect(results[0]!.result).toBe('pass');
+    expect(updates).toBeGreaterThan(0);
+  });
+});
 
 describe('the RFC 8463 example message', () => {
   test('passes both its Ed25519 and its RSA signature', async () => {
     const zone = JSON.parse(await fixtureText('rfc8463-dns.json')) as Record<
       string,
       { TXT: string[][] }
-    >
-    const records = Object.fromEntries(Object.entries(zone).map(([name, { TXT }]) => [name, TXT]))
+    >;
+    const records = Object.fromEntries(Object.entries(zone).map(([name, { TXT }]) => [name, TXT]));
     const results = await Dkim.verify(await fixture('rfc8463-signed.eml'), {
       resolver: resolverFrom(records),
       now: new Date(1528637909000),
-    })
+    });
     expect(results.map((r) => [r.selector, r.algorithm, r.result, r.identity])).toEqual([
       ['brisbane', 'ed25519-sha256', 'pass', '@football.example.com'],
       ['test', 'rsa-sha256', 'pass', '@football.example.com'],
-    ])
-  })
-})
+    ]);
+  });
+});

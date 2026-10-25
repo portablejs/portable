@@ -9,18 +9,18 @@ npm install @portable/bytes
 ```
 
 ```ts
-import * as Bytes from '@portable/bytes'
+import * as Bytes from '@portable/bytes';
 
-Bytes.toHex(new Uint8Array([0, 15, 255])) // '000fff'
-Bytes.fromHex('000FFF') // Uint8Array [0, 15, 255]
+Bytes.toHex(new Uint8Array([0, 15, 255])); // '000fff'
+Bytes.fromHex('000FFF'); // Uint8Array [0, 15, 255]
 
-Bytes.concat([header, body]) // a new Uint8Array
+Bytes.concat([header, body]); // a new Uint8Array
 
-Bytes.equal(a, b)
+Bytes.equal(a, b);
 
-const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload))
+const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload));
 if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
-  throw new Error('Bad signature')
+  throw new Error('Bad signature');
 }
 ```
 
@@ -48,8 +48,8 @@ Use `timingSafeEqual` to compare a secret, such as an HMAC signature, with a val
 Every `@portable/*` function that takes bytes accepts a `Uint8Array` or a Node `Buffer`, which is a subclass of `Uint8Array`, and throws a `TypeError` for an `ArrayBuffer`, a `DataView` or another typed array. Given a buffer or a view, a function can't tell which of its bytes you meant: `view.buffer` also holds the bytes outside the view, and an `Int16Array` has two bytes per element in the platform's byte order. Convert the value to a `Uint8Array` yourself, so your code shows which bytes the function reads:
 
 ```ts
-new Uint8Array(arrayBuffer)
-new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
+new Uint8Array(arrayBuffer);
+new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 ```
 
 A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk, or the function may read some bytes before the write and some after.
@@ -90,16 +90,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch from uint8array-extras:
 
-| uint8array-extras / node:crypto | @portable/bytes |
-| --- | --- |
-| `uint8ArrayToHex(bytes)` | `Bytes.toHex(bytes)` |
-| `hexToUint8Array(hex)` | `Bytes.fromHex(hex)` |
-| `concatUint8Arrays(arrays)` | `Bytes.concat(arrays)` |
-| `concatUint8Arrays(arrays, totalLength)` | `Bytes.concat(arrays)`. The length is always the sum of the chunks. |
-| `areUint8ArraysEqual(a, b)` | `Bytes.equal(a, b)` |
-| `crypto.timingSafeEqual(a, b)` | `Bytes.timingSafeEqual(a, b)`. Returns `false` instead of throwing for different lengths. |
-| A function given an `ArrayBuffer` | Pass `new Uint8Array(buffer)`. |
-
-For base64 use [`@portable/base64`](../base64), and for random bytes `crypto.getRandomValues(new Uint8Array(n))`. uint8array-extras' string, base64, compare, `indexOf` and `getUintBE` functions have no equivalent here.
+- `concatUint8Arrays` takes an optional `totalLength`. `concat` has no such argument, and its result is always as long as the chunks together.
+- uint8array-extras' string, base64, compare, `indexOf` and `getUintBE` functions have no equivalent here. Use [`@portable/base64`](../base64) for base64.

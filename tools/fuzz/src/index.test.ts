@@ -1,10 +1,10 @@
-import { expect, test } from 'vite-plus/test'
-import { fc, fuzz } from './index.js'
+import { expect, test } from 'vite-plus/test';
+import { fc, fuzz } from './index.js';
 
 const busy = (ms: number) => {
-  const end = performance.now() + ms
+  const end = performance.now() + ms;
   while (performance.now() < end) {}
-}
+};
 
 test('fails a property when a sync run takes longer than the timeout', () => {
   expect(() =>
@@ -16,8 +16,8 @@ test('fails a property when a sync run takes longer than the timeout', () => {
     expect.objectContaining({
       cause: expect.objectContaining({ message: expect.stringMatching(/over the 10 ms limit/) }),
     }),
-  )
-})
+  );
+});
 
 test('fails a property when an async run never settles', async () => {
   await expect(
@@ -27,16 +27,16 @@ test('fails a property when an async run never settles', async () => {
       ),
       { timeout: 50 },
     ),
-  ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/timeout/) } })
-})
+  ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/timeout/) } });
+});
 
 test('passes a property whose runs finish within the timeout', async () => {
   fuzz(
     fc.property(fc.nat(), () => busy(1)),
     { timeout: 1000 },
-  )
+  );
   await fuzz(
     fc.asyncProperty(fc.nat(), async () => {}),
     { timeout: 1000 },
-  )
-})
+  );
+});

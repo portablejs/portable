@@ -1,1 +1,1 @@
-export { authenticate, type Resolver, type Result } from '../authenticate.js'
+export { authenticate, type Resolver, type Result } from '../authenticate.js';

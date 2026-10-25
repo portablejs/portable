@@ -1,6 +1,6 @@
-import { assertUint8Array } from '@portable/bytes/internal'
-import { createDecoder, decode } from './decode.js'
-import * as Streams from '@portable/streams'
+import { assertUint8Array } from '@portable/bytes/internal';
+import { createDecoder, decode } from './decode.js';
+import * as Streams from '@portable/streams';
 
 export declare namespace DecoderStream {
   type Options = decode.Options & {
@@ -8,8 +8,8 @@ export declare namespace DecoderStream {
      * Errors the stream with `signal.reason` when the signal aborts, which makes `pipeThrough`
      * cancel the source.
      */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -20,24 +20,24 @@ export declare namespace DecoderStream {
  *
  * @example
  * ```ts
- * import * as Base64 from '@portable/base64'
+ * import * as Base64 from '@portable/base64';
  *
- * const bytes = mimePartBody.pipeThrough(new Base64.DecoderStream({ mode: 'mime' }))
+ * const bytes = mimePartBody.pipeThrough(new Base64.DecoderStream({ mode: 'mime' }));
  * ```
  */
 export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Array<ArrayBuffer>> {
   constructor(options: DecoderStream.Options = {}) {
-    const { alphabet = 'base64', mode = 'loose' } = options
-    const write = createDecoder(alphabet, mode)
-    const utf8 = new TextDecoder()
+    const { alphabet = 'base64', mode = 'loose' } = options;
+    const write = createDecoder(alphabet, mode);
+    const utf8 = new TextDecoder();
     const enqueue = (
       bytes: Uint8Array,
       controller: TransformStreamDefaultController<Uint8Array>,
     ) => {
       if (bytes.length > 0) {
-        controller.enqueue(bytes)
+        controller.enqueue(bytes);
       }
-    }
+    };
     super(
       Streams.abortable(
         {
@@ -45,15 +45,15 @@ export class DecoderStream extends TransformStream<string | Uint8Array, Uint8Arr
             const text =
               typeof chunk === 'string'
                 ? chunk
-                : utf8.decode(assertUint8Array(chunk), { stream: true })
-            enqueue(write(text, false), controller)
+                : utf8.decode(assertUint8Array(chunk), { stream: true });
+            enqueue(write(text, false), controller);
           },
           flush(controller) {
-            enqueue(write(utf8.decode(), true), controller)
+            enqueue(write(utf8.decode(), true), controller);
           },
         },
         options,
       ),
-    )
+    );
   }
 }

@@ -4,51 +4,51 @@
 // and a platform API), and a row is one benchmark test.
 
 /** A module and the exports a caller uses from it. Without `use`, the whole module is bundled. */
-export type Import = { from: string; use?: readonly string[] | undefined }
+export type Import = { from: string; use?: readonly string[] | undefined };
 
 export type Column = {
   /** The benchmark task name, used in each row unless the row maps the column to another task. */
-  name: string
+  name: string;
   /** The table header, when it differs from `name`. */
-  header?: string | undefined
+  header?: string | undefined;
   /** What a caller imports. A column without imports is a platform API. */
-  imports?: readonly Import[] | undefined
+  imports?: readonly Import[] | undefined;
   /** For a platform API: `node` when only Node has it, `web` when every runtime does. */
-  platform?: 'node' | 'web' | undefined
-}
+  platform?: 'node' | 'web' | undefined;
+};
 
 export type Row = {
   /** What a caller does, such as "split 1.7 MB into lines". */
-  label: string
+  label: string;
   /** A substring of the test's full name, or a pattern for it. */
-  test: string | RegExp
+  test: string | RegExp;
   /** Maps a column name to a task name for this row. `null` leaves the column empty. */
-  tasks?: Readonly<Record<string, string | null>> | undefined
-}
+  tasks?: Readonly<Record<string, string | null>> | undefined;
+};
 
-export type Table = { columns: readonly Column[]; rows: readonly Row[] }
+export type Table = { columns: readonly Column[]; rows: readonly Row[] };
 
 const ours = (name: string, use: readonly string[], extra: readonly Import[] = []): Column => ({
   name: `@portable/${name}`,
   imports: [{ from: `@portable/${name}`, use }, ...extra],
-})
+});
 
 const lib = (name: string, imports: readonly Import[] = [{ from: name }]): Column => ({
   name,
   imports,
-})
+});
 
-const node = (name: string, header: string = name): Column => ({ name, header, platform: 'node' })
-const web = (name: string, header: string = name): Column => ({ name, header, platform: 'web' })
+const node = (name: string, header: string = name): Column => ({ name, header, platform: 'node' });
+const web = (name: string, header: string = name): Column => ({ name, header, platform: 'web' });
 
 const noble = (base: Column, use: readonly Import[]): Column => ({
   name: `${base.name} with @noble/hashes`,
   imports: [...base.imports!, ...use],
-})
+});
 
-const base64 = ours('base64', ['encode', 'decode', 'EncoderStream'])
-const oauth1 = ours('oauth1', ['sign'])
-const webhooks = ours('webhooks', ['verify', 'stripe', 'VerificationError'])
+const base64 = ours('base64', ['encode', 'decode', 'EncoderStream']);
+const oauth1 = ours('oauth1', ['sign']);
+const webhooks = ours('webhooks', ['verify', 'stripe', 'VerificationError']);
 
 export const tables: Record<string, Table> = {
   arc: {
@@ -993,4 +993,4 @@ export const tables: Record<string, Table> = {
       },
     ],
   },
-}
+};

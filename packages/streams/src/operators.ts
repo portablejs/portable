@@ -1,10 +1,10 @@
-import { abortable } from './abortable.js'
+import { abortable } from './abortable.js';
 
 export declare namespace map {
   type Options = {
     /** Errors the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -13,38 +13,38 @@ export declare namespace map {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
- * import * as Lines from '@portable/lines'
+ * import * as Streams from '@portable/streams';
+ * import * as Lines from '@portable/lines';
  *
- * const records = body.pipeThrough(new Lines.DecoderStream()).pipeThrough(Streams.map((line) => JSON.parse(line)))
+ * const records = response.body!.pipeThrough(new Lines.DecoderStream()).pipeThrough(Streams.map((line) => JSON.parse(line)));
  * ```
  */
 export function map<input, output>(
   fn: (chunk: input, index: number) => output | PromiseLike<output>,
   options: map.Options = {},
 ): TransformStream<input, output> {
-  let index = 0
+  let index = 0;
   return new TransformStream<input, output>(
     abortable(
       {
         transform(chunk, controller) {
-          const result = fn(chunk, index++)
+          const result = fn(chunk, index++);
           if (!isPromiseLike(result)) {
-            return controller.enqueue(result)
+            return controller.enqueue(result);
           }
-          return Promise.resolve(result).then((value) => controller.enqueue(value))
+          return Promise.resolve(result).then((value) => controller.enqueue(value));
         },
       },
       options,
     ),
-  )
+  );
 }
 
 export declare namespace filter {
   type Options = {
     /** Errors the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -53,52 +53,52 @@ export declare namespace filter {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
- * lines.pipeThrough(Streams.filter((line) => line !== ''))
+ * lines.pipeThrough(Streams.filter((line) => line !== ''));
  * ```
  */
 export function filter<chunk, state extends chunk>(
   fn: (chunk: chunk, index: number) => chunk is state,
   options?: filter.Options,
-): TransformStream<chunk, state>
+): TransformStream<chunk, state>;
 export function filter<chunk>(
   fn: (chunk: chunk, index: number) => boolean | PromiseLike<boolean>,
   options?: filter.Options,
-): TransformStream<chunk, chunk>
+): TransformStream<chunk, chunk>;
 export function filter<chunk>(
   fn: (chunk: chunk, index: number) => boolean | PromiseLike<boolean>,
   options: filter.Options = {},
 ): TransformStream<chunk, chunk> {
-  let index = 0
+  let index = 0;
   return new TransformStream<chunk, chunk>(
     abortable(
       {
         transform(chunk, controller) {
-          const keep = fn(chunk, index++)
+          const keep = fn(chunk, index++);
           if (!isPromiseLike(keep)) {
             if (keep) {
-              controller.enqueue(chunk)
+              controller.enqueue(chunk);
             }
-            return
+            return;
           }
           return Promise.resolve(keep).then((value) => {
             if (value) {
-              controller.enqueue(chunk)
+              controller.enqueue(chunk);
             }
-          })
+          });
         },
       },
       options,
     ),
-  )
+  );
 }
 
 export declare namespace tap {
   type Options = {
     /** Errors the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -107,38 +107,38 @@ export declare namespace tap {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
- * let received = 0
- * body.pipeThrough(Streams.tap((chunk) => { received += chunk.byteLength }))
+ * let received = 0;
+ * response.body!.pipeThrough(Streams.tap((chunk) => { received += chunk.byteLength; }));
  * ```
  */
 export function tap<chunk>(
   fn: (chunk: chunk, index: number) => void | PromiseLike<void>,
   options: tap.Options = {},
 ): TransformStream<chunk, chunk> {
-  let index = 0
+  let index = 0;
   return new TransformStream<chunk, chunk>(
     abortable(
       {
         transform(chunk, controller) {
-          const result = fn(chunk, index++)
+          const result = fn(chunk, index++);
           if (!isPromiseLike(result)) {
-            return controller.enqueue(chunk)
+            return controller.enqueue(chunk);
           }
-          return Promise.resolve(result).then(() => controller.enqueue(chunk))
+          return Promise.resolve(result).then(() => controller.enqueue(chunk));
         },
       },
       options,
     ),
-  )
+  );
 }
 
 export declare namespace batch {
   type Options = {
     /** Errors the stream with `signal.reason` and cancels its source when aborted. */
-    signal?: AbortSignal | undefined
-  }
+    signal?: AbortSignal | undefined;
+  };
 }
 
 /**
@@ -147,9 +147,9 @@ export declare namespace batch {
  *
  * @example
  * ```ts
- * import * as Streams from '@portable/streams'
+ * import * as Streams from '@portable/streams';
  *
- * await rows.pipeThrough(Streams.batch(500)).pipeTo(new WritableStream({ write: insertMany }))
+ * await rows.pipeThrough(Streams.batch(500)).pipeTo(new WritableStream({ write: insertMany }));
  * ```
  */
 export function batch<chunk>(
@@ -157,29 +157,29 @@ export function batch<chunk>(
   options: batch.Options = {},
 ): TransformStream<chunk, chunk[]> {
   if (!Number.isInteger(size) || size < 1) {
-    throw new RangeError(`batch size must be a positive integer, got ${size}.`)
+    throw new RangeError(`batch size must be a positive integer, got ${size}.`);
   }
-  let items: chunk[] = []
+  let items: chunk[] = [];
   return new TransformStream<chunk, chunk[]>(
     abortable(
       {
         transform(chunk, controller) {
-          items.push(chunk)
+          items.push(chunk);
           if (items.length < size) {
-            return
+            return;
           }
-          controller.enqueue(items)
-          items = []
+          controller.enqueue(items);
+          items = [];
         },
         flush(controller) {
           if (items.length > 0) {
-            controller.enqueue(items)
+            controller.enqueue(items);
           }
         },
       },
       options,
     ),
-  )
+  );
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
@@ -188,5 +188,5 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
     value !== null &&
     'then' in value &&
     typeof value.then === 'function'
-  )
+  );
 }

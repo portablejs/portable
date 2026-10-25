@@ -1,28 +1,28 @@
-import type { Charset, Encoder } from './Charset.js'
-import { define } from './define.js'
-import { byteTable, codeTable } from './internal/tables.js'
-import { jis0208 } from './tables/jis0208.js'
+import type { Charset, Encoder } from './Charset.js';
+import { define } from './define.js';
+import { byteTable, codeTable } from './internal/tables.js';
+import { jis0208 } from './tables/jis0208.js';
 
-let table: Uint16Array | undefined
+let table: Uint16Array | undefined;
 
 function build(): Uint16Array {
-  const bytes = byteTable()
-  bytes[0xa5] = 0x15c
-  bytes[0x203e] = 0x17e
+  const bytes = byteTable();
+  bytes[0xa5] = 0x15c;
+  bytes[0x203e] = 0x17e;
   for (let codePoint = 0xff61; codePoint <= 0xff9f; codePoint++) {
-    bytes[codePoint] = 0x8e00 | (codePoint - 0xff61 + 0xa1)
+    bytes[codePoint] = 0x8e00 | (codePoint - 0xff61 + 0xa1);
   }
   codeTable(
     bytes,
     jis0208,
     (pointer) => ((Math.floor(pointer / 94) + 0xa1) << 8) | ((pointer % 94) + 0xa1),
-  )
-  bytes[0x2212] = bytes[0xff0d]!
-  return bytes
+  );
+  bytes[0x2212] = bytes[0xff0d]!;
+  return bytes;
 }
 
 function encoder(): Encoder {
-  return { table: (table ??= build()), write: (codePoint) => codePoint }
+  return { table: (table ??= build()), write: (codePoint) => codePoint };
 }
 
 /**
@@ -31,14 +31,14 @@ function encoder(): Encoder {
  *
  * @example
  * ```ts
- * import * as Charset from '@portable/charset'
- * import { eucJp } from '@portable/charset/euc-jp'
+ * import * as Charset from '@portable/charset';
+ * import { eucJp } from '@portable/charset/euc-jp';
  *
- * Charset.encode('日本', eucJp) // Uint8Array [0xc6, 0xfc, 0xcb, 0xdc]
+ * Charset.encode('日本', eucJp); // Uint8Array [0xc6, 0xfc, 0xcb, 0xdc]
  * ```
  */
 export const eucJp: Charset = /* @__PURE__ */ define({
   name: 'EUC-JP',
   maxBytes: 2,
   encoder,
-})
+});

@@ -1,0 +1,40 @@
+---
+description: Read and write WebSockets that reconnect, server-sent events, and typed RPC as streams, and send Web Push notifications.
+---
+
+# Realtime
+
+A long-lived connection can drop, and a slow reader must not make the sender buffer without limit. `websockets` and `sse` reconnect when the connection drops and give you the connection as streams, so backpressure and cancellation work as they do for a `fetch` body.
+
+- [`websockets`](/packages/websockets) is a WebSocket that reconnects, read and written as streams.
+- [`sse`](/packages/sse) reads, writes, and reconnects server-sent event streams, as `EventSource` does.
+- [`rpc`](/packages/rpc) makes typed JSON-RPC calls between workers, windows, servers, and browsers.
+- [`web-push`](/packages/web-push) sends notifications to a site's service worker, even when no page of the site is open.
+
+## Stream a model's output to the browser
+
+This Worker reads a server-sent event stream from an API and forwards the `text` field of each event as a new event stream:
+
+```ts
+import * as Sse from '@portable/sse';
+import * as Streams from '@portable/streams';
+
+export default {
+  async fetch(request: Request) {
+    const upstream = await fetch('https://api.example.com/v1/chat', {
+      method: 'POST',
+      body: await request.text(),
+      signal: request.signal,
+    });
+    const body = upstream
+      .body!.pipeThrough(new Sse.DecoderStream())
+      .pipeThrough(
+        Streams.map((event) => ({ data: JSON.parse(event.data).text })),
+      )
+      .pipeThrough(new Sse.EncoderStream());
+    return new Response(body, {
+      headers: { 'content-type': 'text/event-stream' },
+    });
+  },
+};
+```

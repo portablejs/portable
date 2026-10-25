@@ -1,7 +1,7 @@
-import * as Charset from '@portable/charset'
-import { cuts, fc, fuzz, outcome, outcomeAsync, split } from '@portable/fuzz'
-import { beforeAll, describe, expect, test } from 'vite-plus/test'
-import { encodeStream } from './utils.js'
+import * as Charset from '@portable/charset';
+import { cuts, fc, fuzz, outcome, outcomeAsync, split } from '@portable/fuzz';
+import { beforeAll, describe, expect, test } from 'vite-plus/test';
+import { encodeStream } from './utils.js';
 
 const names = [
   'UTF-8',
@@ -24,14 +24,14 @@ const names = [
   'EUC-KR',
   'UTF-16BE',
   'UTF-16LE',
-] satisfies readonly Charset.Name[]
-const charsets: Charset.Charset[] = []
+] satisfies readonly Charset.Name[];
+const charsets: Charset.Charset[] = [];
 beforeAll(async () => {
   for (const name of names) {
-    charsets.push(await Charset.load(name))
+    charsets.push(await Charset.load(name));
   }
-})
-const charset = fc.nat({ max: names.length - 1 }).map((i) => charsets[i]!)
+});
+const charset = fc.nat({ max: names.length - 1 }).map((i) => charsets[i]!);
 
 // Characters from every script the charsets cover, the escapes ISO-2022-JP uses, and surrogates
 // that may be split or left alone.
@@ -43,7 +43,7 @@ const text = fc.string({
     fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }),
   ),
   maxLength: 40,
-})
+});
 
 const unmappable = fc.constantFrom<Charset.encode.Options['unmappable']>(
   undefined,
@@ -51,32 +51,32 @@ const unmappable = fc.constantFrom<Charset.encode.Options['unmappable']>(
   'html',
   'error',
   (codePoint) => `[${codePoint}]`,
-)
-const options = fc.record({ bom: fc.boolean(), unmappable }, { requiredKeys: [] })
-const errors = [Charset.UnsupportedError]
+);
+const options = fc.record({ bom: fc.boolean(), unmappable }, { requiredKeys: [] });
+const errors = [Charset.UnsupportedError];
 
 describe('encode', () => {
   test("throws only UnsupportedError, and only with unmappable: 'error'", () => {
     fuzz(
       fc.property(text, charset, options, (text, charset, options) => {
-        const result = outcome(errors, () => Charset.encode(text, charset, options))
-        expect(options.unmappable === 'error' || 'value' in result).toBe(true)
+        const result = outcome(errors, () => Charset.encode(text, charset, options));
+        expect(options.unmappable === 'error' || 'value' in result).toBe(true);
       }),
-    )
-  })
+    );
+  });
 
   test('encodes UTF-8 bytes the same as the text they hold', () => {
     fuzz(
       fc.property(text, charset, options, (text, charset, options) => {
-        const bytes = new TextEncoder().encode(text)
-        const wellFormed = new TextDecoder().decode(bytes)
+        const bytes = new TextEncoder().encode(text);
+        const wellFormed = new TextDecoder().decode(bytes);
         expect(outcome(errors, () => Charset.encode(bytes, charset, options))).toEqual(
           outcome(errors, () => Charset.encode(wellFormed, charset, options)),
-        )
+        );
       }),
-    )
-  })
-})
+    );
+  });
+});
 
 describe('EncoderStream', () => {
   test('writes what encode writes, however the text is chunked', async () => {
@@ -84,25 +84,25 @@ describe('EncoderStream', () => {
       fc.asyncProperty(text, cuts, charset, options, async (text, at, charset, options) => {
         expect(
           await outcomeAsync(errors, () => encodeStream(split(text, at), charset, options)),
-        ).toEqual(outcome(errors, () => Charset.encode(text, charset, options)))
+        ).toEqual(outcome(errors, () => Charset.encode(text, charset, options)));
       }),
-    )
-  })
+    );
+  });
 
   // Node 24's streaming TextDecoder drops a U+FEFF that follows a chunk it returned nothing for,
   // so this test leaves U+FEFF out.
   test('writes what encode writes, however the UTF-8 bytes are chunked', async () => {
-    const noBom = text.filter((text) => !text.includes('\ufeff'))
+    const noBom = text.filter((text) => !text.includes('\ufeff'));
     await fuzz(
       fc.asyncProperty(noBom, cuts, charset, options, async (text, at, charset, options) => {
-        const bytes = new TextEncoder().encode(text)
+        const bytes = new TextEncoder().encode(text);
         expect(
           await outcomeAsync(errors, () => encodeStream(split(bytes, at), charset, options)),
-        ).toEqual(outcome(errors, () => Charset.encode(bytes, charset, options)))
+        ).toEqual(outcome(errors, () => Charset.encode(bytes, charset, options)));
       }),
-    )
-  })
-})
+    );
+  });
+});
 
 describe('labels', () => {
   const known = [
@@ -131,7 +131,7 @@ describe('labels', () => {
     'utf-16',
     'logical',
     'visual',
-  ]
+  ];
   const label = fc
     .tuple(
       fc.constantFrom(...known),
@@ -144,29 +144,29 @@ describe('labels', () => {
         before +
         Array.from(label, (char, i) => (upper[i] ? char.toUpperCase() : char)).join('') +
         after,
-    )
+    );
 
   test('normalizeLabel agrees with TextDecoder on every label TextDecoder accepts', () => {
     fuzz(
       fc.property(label, (label) => {
-        let encoding: string | undefined
+        let encoding: string | undefined;
         try {
-          encoding = new TextDecoder(label).encoding
+          encoding = new TextDecoder(label).encoding;
         } catch {
-          encoding = undefined
+          encoding = undefined;
         }
-        const normalized = Charset.normalizeLabel(label)?.toLowerCase()
-        expect(encoding === undefined || normalized === encoding).toBe(true)
+        const normalized = Charset.normalizeLabel(label)?.toLowerCase();
+        expect(encoding === undefined || normalized === encoding).toBe(true);
       }),
-    )
-  })
+    );
+  });
 
   test('load throws only UnsupportedError, for any label', async () => {
     await fuzz(
       fc.asyncProperty(fc.oneof(label, fc.string()), async (label) => {
-        const result = await outcomeAsync(errors, () => Charset.load(label))
-        expect('value' in result).toBe(Charset.normalizeLabel(label) !== undefined)
+        const result = await outcomeAsync(errors, () => Charset.load(label));
+        expect('value' in result).toBe(Charset.normalizeLabel(label) !== undefined);
       }),
-    )
-  })
-})
+    );
+  });
+});

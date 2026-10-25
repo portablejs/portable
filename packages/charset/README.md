@@ -9,12 +9,12 @@ npm install @portable/charset
 ```
 
 ```ts
-import * as Charset from '@portable/charset'
-import { shiftJis } from '@portable/charset/shift_jis'
+import * as Charset from '@portable/charset';
+import { shiftJis } from '@portable/charset/shift_jis';
 
-Charset.encode('こんにちは', shiftJis) // Uint8Array [0x82, 0xb1, 0x82, 0xf1, ...]
+Charset.encode('こんにちは', shiftJis); // Uint8Array [0x82, 0xb1, 0x82, 0xf1, ...]
 
-const csv = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis))
+const csv = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis));
 ```
 
 Every charset and label follows the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/), so the bytes decode back to the same text with `TextDecoder` in any browser.
@@ -42,10 +42,10 @@ The three Japanese charsets share one table, so all three together are about 13 
 When the charset comes from a header or a form, `load` resolves the label and imports only that family:
 
 ```ts
-import * as Charset from '@portable/charset'
+import * as Charset from '@portable/charset';
 
-const charset = await Charset.load('windows-31j') // the Shift_JIS charset
-const bytes = Charset.encode(text, charset)
+const charset = await Charset.load('windows-31j'); // the Shift_JIS charset
+const bytes = Charset.encode(text, charset);
 ```
 
 `load` throws `UnsupportedError` for an unknown label. Pass `{ signal }` to stop waiting for the import, which rejects with `signal.reason`. `normalizeLabel(label)` returns the label's WHATWG name, such as `'Shift_JIS'`, or `undefined` if the label is unknown or its charset has no encoder, so a caller can use it to check a label before calling `load`. The name's type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. A charset's `encode(text)` method encodes with the default options, so a charset can be passed where `@portable/mime-headers` and `@portable/mail` take a `CharsetEncoder`. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
@@ -107,25 +107,11 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch from iconv-lite:
 
-| iconv-lite | @portable/charset |
-| --- | --- |
-| `iconv.encode(text, 'sjis')` | `Charset.encode(text, shiftJis)`, or `Charset.encode(text, await Charset.load('sjis'))` |
-| `iconv.encode(text, 'utf-16', { addBOM: true })` | `Charset.encode(text, utf16le, { bom: true })` |
-| `iconv.encodeStream('gbk')` | `new Charset.EncoderStream(gbk)` |
-| `iconv.encodingExists(label)` | `Charset.normalizeLabel(label) !== undefined` |
-| `iconv.decode(bytes, label)` | `new TextDecoder(label).decode(bytes)` |
-| `iconv.decodeStream(label)` | `new TextDecoderStream(label)` |
-| `iconv.defaultCharSingleByte = '#'` | `{ unmappable: () => '#' }` |
-
-What changed:
-
-- **Charsets are values, not strings.** `encode` takes a charset object, so a bundle only includes the families it imports. `load` covers labels known only at runtime.
-- **Labels follow WHATWG.** `latin1`, `ascii` and `iso-8859-1` are windows-1252, and `gb2312` is GBK, as in browsers. `KOI8-U` is KOI8-RU, `x-mac-cyrillic` is the Ukrainian variant, and `macintosh` has € at 0xDB.
-- **The `utf-16` label writes UTF-16LE without a byte order mark** unless you pass `bom: true`. iconv-lite writes one by default.
-- **Lone surrogates become U+FFFD** in every charset. iconv-lite writes them unchanged in UTF-16 and as `?` elsewhere.
-- **Characters a charset only decodes are not encoded.** HKSCS in Big5, JIS X 0212 in EUC-JP and the IBM duplicates in Shift_JIS's NEC rows decode with `TextDecoder` but are unmappable when encoding, as WHATWG specifies.
-- **U+FFFD and the C1 controls follow the WHATWG tables.** iconv-lite writes U+FFFD as an undefined byte in several single-byte charsets, and `?` for the C1 controls that windows-125x maps.
-- **No `base64`, `hex`, `binary` or `ucs2` codecs.** Use `Uint8Array.prototype.toBase64` and `toHex`, `TextEncoder`, and `utf16le`.
-- **Not yet supported:** cp437, cp850 and the other DOS and IBM code pages, UTF-7, UTF-32 and CESU-8.
+- Labels follow WHATWG, as in browsers, so `latin1`, `ascii` and `iso-8859-1` map to windows-1252 and `gb2312` maps to GBK. `KOI8-U` is KOI8-RU, `x-mac-cyrillic` is the Ukrainian variant, and `macintosh` has € at 0xDB.
+- iconv-lite writes a byte order mark for the `utf-16` label by default. Here the `utf-16` label maps to UTF-16LE, which is written without one unless you pass `bom: true`.
+- Characters that a charset only decodes are unmappable when encoding, as WHATWG specifies: HKSCS in Big5, JIS X 0212 in EUC-JP and the IBM duplicates in the NEC rows of Shift_JIS. They still decode with `TextDecoder`.
+- iconv-lite writes `?` for the C1 controls that the windows-125x tables map. `encode` writes the bytes the WHATWG tables give them.
+- iconv-lite's `base64`, `hex`, `binary` and `ucs2` codecs have no equivalent. Use `Uint8Array.prototype.toBase64` and `toHex`, `TextEncoder` and `utf16le`.
+- cp437, cp850 and the other DOS and IBM code pages, UTF-7, UTF-32 and CESU-8 are not supported yet.

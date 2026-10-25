@@ -9,14 +9,14 @@ npm install @portable/json-stream
 ```
 
 ```ts
-import * as JsonStream from '@portable/json-stream'
+import * as JsonStream from '@portable/json-stream';
 
-const response = await fetch('https://example.com/_all_docs')
+const response = await fetch('https://example.com/_all_docs');
 const reader = response
   .body!.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'] }))
-  .getReader()
+  .getReader();
 for (let r = await reader.read(); !r.done; r = await reader.read()) {
-  console.log(r.value.value)
+  console.log(r.value.value);
 }
 ```
 
@@ -37,8 +37,8 @@ The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedErro
 Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
 
 ```ts
-const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() })
-return new Response(body, { headers: { 'content-type': 'application/json' } })
+const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() });
+return new Response(body, { headers: { 'content-type': 'application/json' } });
 ```
 
 | Option | Default | Description |
@@ -58,6 +58,10 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 - Invalid JSON fails the stream. JSONStream ends quietly on `{"]` (JSONStream #145) and accepts a trailing comma, and stream-json can miss invalid JSON or hang (stream-json #104).
 - `null` matches are emitted. JSONStream drops them.
 - `encodeStream` writes valid JSON in cases where json-stream-stringify doesn't: a stream that isn't the first property (#47), an empty key (#28), and a replacer that drops the last key (#7).
+- JSONStream's `parse` emits each matched value, and `DecoderStream` emits `{ path, value }`, so read `.value`.
+- JSONStream's `parse` takes a function that maps each match. `DecoderStream` has no such argument, so pipe its output through another `TransformStream`.
+- json-stream-stringify and `JSON.stringify` drop functions in the tree, and `encodeStream` calls them and writes their return values.
+- json-stream-stringify's `cycle` option has no equivalent.
 
 <!-- bench:start -->
 | | @portable/json-stream | JSONStream | stream-json | stream-json, web streams | json-stream-stringify | `JSON.parse` or `JSON.stringify` |
@@ -78,27 +82,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| Upstream | @portable/json-stream |
-| --- | --- |
-| `JSONStream.parse('rows.*')` | `new DecoderStream({ paths: ['$.rows[*]'] })`, then read `.value` |
-| `JSONStream.parse('rows..id')` | `new DecoderStream({ paths: ['$.rows..id'] })` |
-| `JSONStream.parse(['rows', true, 'doc'])` | `new DecoderStream({ paths: ['$.rows[*].doc'] })` |
-| `JSONStream.parse('rows.*', fn)` | Pipe through another `TransformStream`. |
-| `JSONStream.stringify()` | `encodeStream(stream)` |
-| stream-json `parser()` + `pick({ filter: 'data' })` + `streamArray()` | `new DecoderStream({ paths: ['$.data[*]'] })` |
-| stream-json `withParser()` + `streamValues()` | `new DecoderStream()` |
-| `new JsonStreamStringify(value, replacer, spaces)` | `encodeStream(value, { replacer, space })` |
-| @worker-tools/json-stream `jsonStringifyStream` | `encodeStream` |
-| @worker-tools/json-stream `JSONParseStream('$.rows.*')` | `new DecoderStream({ paths: ['$.rows[*]'] })` |
-
-Deliberate differences:
-
-- `null` matches are emitted. JSONStream drops them.
-- A trailing comma fails the stream. JSONStream accepts it.
-- `[*]` and `.*` select object members as well as array items.
-- `encodeStream` calls functions in the tree. `JSON.stringify` and json-stream-stringify drop them.
-- `encodeStream` has no `cycle` option. A circular structure fails, as in `JSON.stringify`.
-- A `BigInt` fails, as in `JSON.stringify`.

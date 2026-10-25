@@ -1,0 +1,34 @@
+---
+description: Read and write CSV, JSON Lines, and large JSON documents as streams.
+---
+
+# Text and data formats
+
+Each package has a `DecoderStream` that gives the same output however the input is split into chunks. You can pipe a `fetch` body into it directly.
+
+- [`csv`](/packages/csv) decodes and encodes CSV, with or without a header row.
+- [`jsonl`](/packages/jsonl) decodes and encodes JSON Lines.
+- [`json-stream`](/packages/json-stream) selects values from a JSON document too large to parse at once, by JSONPath.
+- [`lines`](/packages/lines) splits text into lines for formats with no package of their own.
+- [`sse`](/packages/sse) reads and writes server-sent events.
+
+## Convert a CSV export to JSON Lines
+
+```ts
+import * as Csv from '@portable/csv';
+import * as Jsonl from '@portable/jsonl';
+
+export default {
+  async fetch() {
+    const response = await fetch('https://example.com/users.csv');
+    const body = response
+      .body!.pipeThrough(new Csv.DecoderStream({ header: true }))
+      .pipeThrough(new Jsonl.EncoderStream());
+    return new Response(body, {
+      headers: { 'content-type': 'application/jsonl' },
+    });
+  },
+};
+```
+
+The Worker converts each row as it arrives, so its memory use doesn't grow with the size of the file.

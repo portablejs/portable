@@ -9,20 +9,20 @@ npm install @portable/rate-limit
 ```
 
 ```ts
-import * as RateLimit from '@portable/rate-limit'
+import * as RateLimit from '@portable/rate-limit';
 
-const limiter = RateLimit.create({ limit: 100, period: 60_000 })
+const limiter = RateLimit.create({ limit: 100, period: 60_000 });
 
 export default {
   async fetch(request: Request) {
-    const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
-    const result = await limiter.take(ip, { signal: request.signal })
+    const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+    const result = await limiter.take(ip, { signal: request.signal });
     if (!result.allowed) {
-      return new Response(null, { status: 429, headers: RateLimit.headers(result) })
+      return new Response(null, { status: 429, headers: RateLimit.headers(result) });
     }
-    return new Response('ok', { headers: RateLimit.headers(result) })
+    return new Response('ok', { headers: RateLimit.headers(result) });
   },
-}
+};
 ```
 
 A limiter allows `limit` requests per `period` for each key. Allowance comes back continuously, one request every `period / limit` milliseconds, and a key that has been quiet can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
@@ -69,7 +69,7 @@ A limiter allows `limit` requests per `period` for each key. Allowance comes bac
 ### `headers`
 
 ```ts
-RateLimit.headers(result)
+RateLimit.headers(result);
 // { 'RateLimit-Policy': '"default";q=100;w=60', RateLimit: '"default";r=0;t=3', 'Retry-After': '3' }
 ```
 
@@ -82,13 +82,13 @@ type Store = {
   get(
     key: string,
     options: { now?: Date; signal?: AbortSignal },
-  ): number | undefined | Promise<number | undefined>
+  ): number | undefined | Promise<number | undefined>;
   set(
     key: string,
     value: number,
     options: { expected: number | undefined; ttl: number; now?: Date; signal?: AbortSignal },
-  ): boolean | Promise<boolean>
-}
+  ): boolean | Promise<boolean>;
+};
 ```
 
 `get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key still holds `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option, or the current time, so a store that expires keys itself can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance.
@@ -104,8 +104,8 @@ Several limiters can share a store. Give each one its own key prefix, such as `l
 A Durable Object runs one request at a time, and SQLite-backed storage is synchronous, so a read and a write in one `take` can't interleave with another request. Put the limiter inside the object and address one object per key:
 
 ```ts
-import { DurableObject } from 'cloudflare:workers'
-import * as RateLimit from '@portable/rate-limit'
+import { DurableObject } from 'cloudflare:workers';
+import * as RateLimit from '@portable/rate-limit';
 
 export class Limiter extends DurableObject {
   limiter = RateLimit.create({
@@ -115,16 +115,16 @@ export class Limiter extends DurableObject {
       get: (key) => this.ctx.storage.kv.get<number>(key),
       set: (key, value) => (this.ctx.storage.kv.put(key, value), true),
     },
-  })
+  });
 
   take(key: string, cost?: number) {
-    return this.limiter.take(key, { cost })
+    return this.limiter.take(key, { cost });
   }
 }
 
 // In the Worker:
-const stub = env.LIMITER.get(env.LIMITER.idFromName(ip))
-const result = await stub.take(ip)
+const stub = env.LIMITER.get(env.LIMITER.idFromName(ip));
+const result = await stub.take(ip);
 ```
 
 The object stores one number and ignores `ttl`.
@@ -134,12 +134,12 @@ The object stores one number and ignores `ttl`.
 A Lua script runs the compare-and-set on the server, so every Worker sees the same count. A `take` makes two requests, or more when it loses a race.
 
 ```ts
-import * as RateLimit from '@portable/rate-limit'
+import * as RateLimit from '@portable/rate-limit';
 
 const compareAndSet = `
 if (redis.call('GET', KEYS[1]) or '') ~= ARGV[1] then return 0 end
 redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
-return 1`
+return 1`;
 
 function upstash(url: string, token: string): RateLimit.Store {
   async function command(args: (string | number)[], signal?: AbortSignal) {
@@ -147,31 +147,31 @@ function upstash(url: string, token: string): RateLimit.Store {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(args),
-      signal,
-    })
-    const { result, error } = (await response.json()) as { result: unknown; error?: string }
+      signal: signal ?? null,
+    });
+    const { result, error } = (await response.json()) as { result: unknown; error?: string };
     if (error) {
-      throw new Error(error)
+      throw new Error(error);
     }
-    return result
+    return result;
   }
   return {
     async get(key, { signal }) {
-      const value = await command(['GET', key], signal)
-      return value === null ? undefined : Number(value)
+      const value = await command(['GET', key], signal);
+      return value === null ? undefined : Number(value);
     },
     async set(key, value, { expected, ttl, signal }) {
-      const args = ['EVAL', compareAndSet, 1, key, expected === undefined ? '' : String(expected), String(value), ttl]
-      return (await command(args, signal)) === 1
+      const args = ['EVAL', compareAndSet, 1, key, expected === undefined ? '' : String(expected), String(value), ttl];
+      return (await command(args, signal)) === 1;
     },
-  }
+  };
 }
 
 const limiter = RateLimit.create({
   limit: 100,
   period: 60_000,
   store: upstash(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN),
-})
+});
 ```
 
 `String(Number(text))` returns the same text for any number `String` wrote, so the script's string comparison matches the value `get` returned.
@@ -183,14 +183,14 @@ KV is eventually consistent and has no compare-and-set, so this store always wri
 ```ts
 const store: RateLimit.Store = {
   async get(key) {
-    const value = await env.RATE_LIMIT.get(key)
-    return value === null ? undefined : Number(value)
+    const value = await env.RATE_LIMIT.get(key);
+    return value === null ? undefined : Number(value);
   },
   async set(key, value, { ttl }) {
-    await env.RATE_LIMIT.put(key, String(value), { expirationTtl: Math.max(60, Math.ceil(ttl / 1000)) })
-    return true
+    await env.RATE_LIMIT.put(key, String(value), { expirationTtl: Math.max(60, Math.ceil(ttl / 1000)) });
+    return true;
   },
-}
+};
 ```
 
 ## Types
@@ -211,6 +211,14 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 - rate-limiter-flexible's memory store sets one timer per key to delete it. `memoryStore()` sets none, so a limiter with many keys doesn't hold a timer for each.
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
 - On Node, `take` with the memory store ran within 10% of `RateLimiterMemory.consume` on allowed requests over 1000 keys (0.41 µs against 0.38 µs per call), and 4× faster on denied requests (0.21 µs against 0.90 µs), because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket was 4× faster than an `await`ed `take`.
+- rate-limiter-flexible's `duration` is in seconds, and limiter's `interval` also takes names such as `'second'`. `period` is always in milliseconds, so `duration: 1` becomes `period: 1000`.
+- `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
+- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
+- rate-limiter-flexible's `msBeforeNext` is set for allowed and denied requests. `retryAfter` is `0` for an allowed request, so compute the time until the allowance is full from `resetAt`.
+- rate-limiter-flexible's `reward`, `get` and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0` or with `cost: -burst`.
+- rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first denies.
+- The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
+- Bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
 
 <!-- bench:start -->
 | | @portable/rate-limit | rate-limiter-flexible | limiter |
@@ -232,31 +240,3 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
-
-## Migrating
-
-| Upstream | @portable/rate-limit |
-| --- | --- |
-| `new RateLimiterMemory({ points: 10, duration: 1 })` | `RateLimit.create({ limit: 10, period: 1000 })` |
-| `new RateLimiterRedis({ storeClient, points, duration })` | `RateLimit.create({ limit, period, store })` with a store from [Stores](#stores) |
-| `await limiter.consume(key, points)` in `try`/`catch` | `const result = await limiter.take(key, { cost: points })`, then check `result.allowed` |
-| `res.remainingPoints`, `res.msBeforeNext` | `result.remaining`, and `result.retryAfter` (denied) or `result.resetAt.getTime() - Date.now()` (allowed) |
-| `limiter.reward(key, points)` | `limiter.take(key, { cost: -points })` |
-| `limiter.get(key)` | `limiter.take(key, { cost: 0 })` |
-| `limiter.delete(key)` | `limiter.take(key, { cost: -burst })` |
-| `keyPrefix: 'login'` | Prefix the key: `` limiter.take(`login:${ip}`) `` |
-| `execEvenly: true` | `burst: 1` |
-| `BurstyRateLimiter(limiter, burstLimiter)` | `burst` |
-| `blockDuration` | A second limiter with a long `period`, taken only when the first denies |
-| `new RateLimiter({ tokensPerInterval: 10, interval: 'second' })` (limiter) | `RateLimit.create({ limit: 10, period: 1000 })` |
-| `new TokenBucket({ bucketSize: 20, tokensPerInterval: 1, interval: 100 })` (limiter) | `RateLimit.create({ limit: 1, period: 100, burst: 20 })` |
-| `await limiter.removeTokens(n)` (waits) | `take`, then wait `retryAfter` and take again, such as with `@portable/timers` |
-| `new Bottleneck({ reservoir, reservoirIncreaseAmount, reservoirIncreaseInterval, reservoirIncreaseMaximum })` | `RateLimit.create({ limit: reservoirIncreaseAmount, period: reservoirIncreaseInterval, burst: reservoirIncreaseMaximum })` |
-| `schedule({ weight }, job)` (bottleneck) | `take(key, { cost: weight })` |
-
-Behavior that differs:
-
-- `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
-- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which a rate doesn't express.
-- The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
-- Bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.

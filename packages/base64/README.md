@@ -9,17 +9,17 @@ npm install @portable/base64
 ```
 
 ```ts
-import * as Base64 from '@portable/base64'
+import * as Base64 from '@portable/base64';
 
-Base64.encode('hello') // 'aGVsbG8='
-Base64.encode(bytes, { alphabet: 'base64url', omitPadding: true })
-Base64.encode(attachment, { lineLength: 76 }) // MIME body, CRLF between lines
+Base64.encode('hello'); // 'aGVsbG8='
+Base64.encode(bytes, { alphabet: 'base64url', omitPadding: true });
+Base64.encode(attachment, { lineLength: 76 }); // MIME body, CRLF between lines
 
-new TextDecoder().decode(Base64.decode('aGVsbG8=')) // 'hello'
-Base64.decode(mimeBody, { mode: 'mime' })
+new TextDecoder().decode(Base64.decode('aGVsbG8=')); // 'hello'
+Base64.decode(mimeBody, { mode: 'mime' });
 
-const response = await fetch('https://example.com/logo.png')
-const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }))
+const response = await fetch('https://example.com/logo.png');
+const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }));
 ```
 
 `encode` and `decode` call `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them (current Chromium, Firefox and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
@@ -113,31 +113,13 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-## Migrating
+Differences to check when you switch:
 
-| Before | @portable/base64 |
-| --- | --- |
-| libbase64 `encode(buffer)` | `encode(bytes)` |
-| libbase64 `wrap(encode(buffer), 76)` | `encode(bytes, { lineLength: 76 })` |
-| libbase64 `decode(string)` | `decode(string, { mode: 'mime' })` |
-| libbase64 `new Encoder()` | `new EncoderStream({ lineLength: 76 })` |
-| libbase64 `new Decoder()` | `new DecoderStream({ mode: 'mime' })` |
-| base64-js `fromByteArray(bytes)` | `encode(bytes)` |
-| base64-js `toByteArray(string)` | `decode(string)` |
-| base64-js `byteLength(string)` | `decode(string).length` |
-| js-base64 `encode(string)` | `encode(string)` |
-| js-base64 `encodeURI(string)`, `encode(string, true)` | `encode(string, { alphabet: 'base64url', omitPadding: true })` |
-| js-base64 `decode(string)` | `new TextDecoder().decode(decode(string))` |
-| js-base64 `fromUint8Array(bytes)`, `toUint8Array(string)` | `encode(bytes)`, `decode(string)` |
-| js-base64 `isValid(string)` | `decode(string, { mode: 'strict' })` in a `try` |
-
-These behaviors differ on purpose:
-
-- Lines aren't wrapped by default, but libbase64's `Encoder` wraps at 76. Pass `lineLength: 76` for MIME.
-- `lineLength` must be a positive integer or `false`, and anything else throws `RangeError`. libbase64 rounds fractions down and replaces anything else with 76.
-- The default `'loose'` mode throws on characters outside the alphabet and on data after padding. libbase64 and js-base64 skip them, and base64-js returns wrong bytes or stops at the first `=`. `'mime'` mode gives libbase64's result.
+- libbase64's `Encoder` wraps lines at 76 characters by default, and `encode` and `EncoderStream` write one line unless you pass `lineLength: 76`.
+- libbase64 rounds a fractional line length down and replaces any other invalid value with 76. `lineLength` must be a positive integer or `false`, and anything else throws `RangeError`.
+- libbase64 and js-base64 skip characters outside the alphabet and data after padding, and base64-js stops at the first `=`. The default `'loose'` mode throws `InvalidInputError` for both, and `'mime'` mode gives libbase64's result.
 - base64-js and js-base64 accept `+/` and `-_` mixed in one string. `decode` accepts only the alphabet that `alphabet` selects, except in `'mime'` mode.
-- `decode` of a `Uint8Array` reads it as base64 text. libbase64 returns a `Buffer` argument unchanged.
-- Strings are encoded with `TextEncoder`, which replaces a lone surrogate with U+FFFD. js-base64 encodes lone surrogates as is.
-- `EncoderStream` has no `skipStartBytes`, `limitOutputBytes`, `startPadding` or byte counters, and string chunks are always UTF-8.
-- `encode` throws `TypeError` for typed arrays other than `Uint8Array`. base64-js encoded an `Int8Array` with negative values to wrong output.
+- js-base64's `decode` returns a string, and `decode` returns bytes, so pass them to `TextDecoder` to get the text.
+- libbase64's `decode` returns a `Buffer` argument unchanged. `decode` reads a `Uint8Array` as base64 text.
+- js-base64 encodes lone surrogates as they are. `encode` encodes strings with `TextEncoder`, which replaces a lone surrogate with U+FFFD.
+- libbase64's `Encoder` options `skipStartBytes`, `limitOutputBytes` and `startPadding` and its byte counters have no equivalent in `EncoderStream`, and string chunks are always encoded as UTF-8.

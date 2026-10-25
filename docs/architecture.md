@@ -182,9 +182,9 @@ We don't publish to JSR. Deno, Bun and Workers all install from npm, and because
 A package that hashes or signs uses the platform's WebCrypto (`crypto.subtle`) by default, and takes the function as an option so the caller can replace it. `@portable/web-crypto` defines the three option types once, and both `@noble/hashes` and WebCrypto fit them, because each type allows a sync or an async result:
 
 ```ts
-type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
-type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>
-type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promise<Uint8Array> }
+type Digest = (hash: Hash, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>;
+type Hmac = (hash: Hash, key: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) => Uint8Array | Promise<Uint8Array>;
+type Hasher = { update(data: Uint8Array): unknown; digest(): Uint8Array | Promise<Uint8Array> };
 ```
 
 Each package takes only the one it needs, under an option with the type's name: `@portable/oauth1` takes `hmac` and `digest`, `@portable/webhooks` takes `hmac`, and `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take `hasher`, a function that takes the hash name and returns a `Hasher`. They re-export the type, so a caller doesn't need to install `@portable/web-crypto`. None of them imports a crypto library or lists one as a dependency, and none has a `/core` entry, because the WebCrypto default imports no library, and a caller who wants another implementation passes it in the option.

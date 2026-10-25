@@ -1,12 +1,12 @@
 const pattern =
-  /^(\d{4})[:-](\d{2})[:-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3})\d*)?\s*(Z|[+-]\d{2}:?\d{2})?$/
-const offsetPattern = /^([+-])(\d{2}):?(\d{2})$/
+  /^(\d{4})[:-](\d{2})[:-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3})\d*)?\s*(Z|[+-]\d{2}:?\d{2})?$/;
+const offsetPattern = /^([+-])(\d{2}):?(\d{2})$/;
 
 export declare namespace parseDate {
   type Options = {
     /** UTC offset such as `'+02:00'`, used when `value` has none. Anything else is ignored. */
-    offset?: string | undefined
-  }
+    offset?: string | undefined;
+  };
 }
 
 /**
@@ -19,19 +19,19 @@ export declare namespace parseDate {
  *
  * @example
  * ```ts
- * import * as Exif from '@portable/exif'
+ * import * as Exif from '@portable/exif';
  *
- * const { exif } = Exif.parse(bytes)
- * const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) })
+ * const { exif } = Exif.parse(bytes);
+ * const taken = Exif.parseDate(String(exif.DateTimeOriginal), { offset: String(exif.OffsetTimeOriginal) });
  * ```
  */
 export function parseDate(value: string, options: parseDate.Options = {}): Date | undefined {
-  const { offset } = options
-  const match = pattern.exec(value.trim())
+  const { offset } = options;
+  const match = pattern.exec(value.trim());
   if (!match) {
-    return undefined
+    return undefined;
   }
-  const [, year, month, day, hours, minutes, seconds, fraction = '0', zone] = match
+  const [, year, month, day, hours, minutes, seconds, fraction = '0', zone] = match;
   const time = Date.UTC(
     Number(year),
     Number(month) - 1,
@@ -40,8 +40,8 @@ export function parseDate(value: string, options: parseDate.Options = {}): Date 
     Number(minutes),
     Number(seconds),
     Number(fraction.padEnd(3, '0')),
-  )
-  const date = new Date(time)
+  );
+  const date = new Date(time);
   if (
     date.getUTCFullYear() !== Number(year) ||
     date.getUTCMonth() !== Number(month) - 1 ||
@@ -50,13 +50,13 @@ export function parseDate(value: string, options: parseDate.Options = {}): Date 
     date.getUTCMinutes() !== Number(minutes) ||
     date.getUTCSeconds() !== Number(seconds)
   ) {
-    return undefined
+    return undefined;
   }
-  const offsetMatch = offsetPattern.exec(zone ?? offset?.trim() ?? '')
-  const [, sign, offsetHours, offsetMinutes] = offsetMatch ?? []
+  const offsetMatch = offsetPattern.exec(zone ?? offset?.trim() ?? '');
+  const [, sign, offsetHours, offsetMinutes] = offsetMatch ?? [];
   if (!offsetMatch || Number(offsetHours) > 23 || Number(offsetMinutes) > 59) {
-    return zone && zone !== 'Z' ? undefined : date
+    return zone && zone !== 'Z' ? undefined : date;
   }
-  const shift = (Number(offsetHours) * 60 + Number(offsetMinutes)) * 60_000
-  return new Date(sign === '-' ? time + shift : time - shift)
+  const shift = (Number(offsetHours) * 60 + Number(offsetMinutes)) * 60_000;
+  return new Date(sign === '-' ? time + shift : time - shift);
 }

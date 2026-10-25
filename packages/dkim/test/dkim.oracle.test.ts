@@ -1,9 +1,9 @@
-import { Buffer } from 'node:buffer'
-import * as Dkim from '@portable/dkim'
-import { dkimSign } from 'mailauth/lib/dkim/sign.js'
-import { dkimVerify as mailauthVerify } from 'mailauth/lib/dkim/verify.js'
-import DKIM from 'nodemailer/lib/dkim'
-import { beforeAll, describe, expect, test } from 'vite-plus/test'
+import { Buffer } from 'node:buffer';
+import * as Dkim from '@portable/dkim';
+import { dkimSign } from 'mailauth/lib/dkim/sign.js';
+import { dkimVerify as mailauthVerify } from 'mailauth/lib/dkim/verify.js';
+import DKIM from 'nodemailer/lib/dkim';
+import { beforeAll, describe, expect, test } from 'vite-plus/test';
 import {
   binary,
   ed25519Record,
@@ -16,45 +16,47 @@ import {
   rsaRecord,
   stream,
   tagsOf,
-} from './utils.js'
+} from './utils.js';
 
-let rsaPem: string
-let edPem: string
-let resolver: Dkim.Resolver
+let rsaPem: string;
+let edPem: string;
+let resolver: Dkim.Resolver;
 
 beforeAll(async () => {
-  rsaPem = await privatePem('rsa')
-  edPem = await privatePem('ed25519')
+  rsaPem = await privatePem('rsa');
+  edPem = await privatePem('ed25519');
   resolver = resolverFrom({
     'rsa._domainkey.example.com': [await rsaRecord()],
     'ed._domainkey.example.com': [await ed25519Record()],
-  })
-})
+  });
+});
 
-const mailauthResolver = (name: string) => resolver.resolveTxt(name)
+const mailauthResolver = (name: string) => resolver.resolveTxt(name);
 
 /** mailauth's strict-mode result codes, one per signature. */
 async function upstreamResults(message: Uint8Array): Promise<string[]> {
   const { results } = await mailauthVerify(Buffer.from(message), {
     resolver: mailauthResolver,
     strict: true,
-  })
-  return results.map((r) => r.status?.result ?? 'none').filter((r) => r !== 'none')
+  });
+  return results.map((r) => r.status?.result ?? 'none').filter((r) => r !== 'none');
 }
 
 async function ourResults(message: Uint8Array, seed: number): Promise<string[]> {
-  const results = await Dkim.verify(stream(randomChunks(message, seed, 256)), { resolver })
-  return results.map((r) => r.result)
+  const results = await Dkim.verify(stream(randomChunks(message, seed, 256)), { resolver });
+  return results.map((r) => r.result);
 }
 
 const concat = (...parts: (string | Uint8Array)[]): Uint8Array =>
-  new Uint8Array(parts.flatMap((part) => [...(typeof part === 'string' ? fromBinary(part) : part)]))
+  new Uint8Array(
+    parts.flatMap((part) => [...(typeof part === 'string' ? fromBinary(part) : part)]),
+  );
 
 /** Messages built from random header and body pieces, as binary text. */
 function generated(seed: number): string {
-  const random = prng(seed)
+  const random = prng(seed);
   const pick = <value>(items: readonly value[]): value =>
-    items[Math.floor(random() * items.length)]!
+    items[Math.floor(random() * items.length)]!;
   const values = [
     'a',
     'b c',
@@ -65,28 +67,28 @@ function generated(seed: number): string {
     '  ',
     'a;b=c',
     '"q"',
-  ]
-  const names = ['Subject', 'To', 'Cc', 'X-Custom', 'subject', 'Reply-To', 'Message-ID', 'Date']
-  const lines = ['line', 'two  words', ' lead', 'trail \t', '', '\t', 'a\rb', '.', '-- ']
-  let header = `From: ${pick(['a@example.com', 'Joe <joe@example.com>', '"x" <x@example.com>'])}\r\n`
+  ];
+  const names = ['Subject', 'To', 'Cc', 'X-Custom', 'subject', 'Reply-To', 'Message-ID', 'Date'];
+  const lines = ['line', 'two  words', ' lead', 'trail \t', '', '\t', 'a\rb', '.', '-- '];
+  let header = `From: ${pick(['a@example.com', 'Joe <joe@example.com>', '"x" <x@example.com>'])}\r\n`;
   for (let i = Math.floor(random() * 6); i > 0; i--) {
-    let value = pick(values)
+    let value = pick(values);
     if (random() < 0.3) {
-      value += `\r\n${pick([' ', '\t', '  '])}${pick(values)}`
+      value += `\r\n${pick([' ', '\t', '  '])}${pick(values)}`;
     }
-    header += `${pick(names)}${pick([':', ': ', ' :', '\t: '])}${value}\r\n`
+    header += `${pick(names)}${pick([':', ': ', ' :', '\t: '])}${value}\r\n`;
   }
-  let body = ''
+  let body = '';
   for (let i = Math.floor(random() * 8); i > 0; i--) {
-    body += pick(lines) + pick(['\r\n', '\r\n', '\n'])
+    body += pick(lines) + pick(['\r\n', '\r\n', '\n']);
   }
   if (random() < 0.3) {
-    body += pick(lines)
+    body += pick(lines);
   }
   if (random() < 0.2) {
-    body += '\r\n\r\n\r\n'
+    body += '\r\n\r\n\r\n';
   }
-  return `${header}\r\n${body}`
+  return `${header}\r\n${body}`;
 }
 
 const corpus = async (): Promise<[string, Uint8Array][]> => [
@@ -98,7 +100,7 @@ const corpus = async (): Promise<[string, Uint8Array][]> => [
     `generated ${i}`,
     fromBinary(generated(i + 1)),
   ]),
-]
+];
 
 describe('signatures made here verify in mailauth strict mode', () => {
   for (const canonicalization of [
@@ -118,16 +120,16 @@ describe('signatures made here verify in mailauth strict mode', () => {
             selector,
             privateKey,
             canonicalization,
-          })
+          });
           expect({ name, results: await upstreamResults(concat(field, message)) }).toEqual({
             name,
             results: ['pass'],
-          })
+          });
         }
       }
-    })
+    });
   }
-})
+});
 
 describe('signatures made by mailauth verify here', () => {
   for (const canonicalization of ['relaxed/relaxed', 'simple/simple'] as const) {
@@ -145,12 +147,12 @@ describe('signatures made by mailauth verify here', () => {
               algorithm: 'ed25519-sha256',
             },
           ],
-        })
-        const signed = concat(signatures, message)
+        });
+        const signed = concat(signatures, message);
         expect({ name, results: await ourResults(signed, name.length) }).toEqual({
           name,
           results: ['pass', 'pass'],
-        })
+        });
 
         const ours = tagsOf(
           await Dkim.sign(message, {
@@ -159,41 +161,41 @@ describe('signatures made by mailauth verify here', () => {
             privateKey: rsaPem,
             canonicalization,
           }),
-        )
-        const upstream = tagsOf(signatures.slice(0, signatures.indexOf('\r\nDKIM-Signature:')))
-        expect({ name, h: ours.h, bh: ours.bh }).toEqual({ name, h: upstream.h, bh: upstream.bh })
+        );
+        const upstream = tagsOf(signatures.slice(0, signatures.indexOf('\r\nDKIM-Signature:')));
+        expect({ name, h: ours.h, bh: ours.bh }).toEqual({ name, h: upstream.h, bh: upstream.bh });
       }
-    })
+    });
   }
-})
+});
 
 describe('signatures made by nodemailer verify here', () => {
   test('with the same bh= as ours', async () => {
     for (const [name, message] of await corpus()) {
       const signed = await new Promise<Uint8Array>((resolve, reject) => {
-        const chunks: Buffer[] = []
+        const chunks: Buffer[] = [];
         const output = new DKIM({
           domainName: 'example.com',
           keySelector: 'rsa',
           privateKey: rsaPem,
-        }).sign(Buffer.from(message))
-        output.on('data', (chunk: Buffer) => chunks.push(chunk))
-        output.on('error', reject)
-        output.on('end', () => resolve(new Uint8Array(Buffer.concat(chunks))))
-      })
+        }).sign(Buffer.from(message));
+        output.on('data', (chunk: Buffer) => chunks.push(chunk));
+        output.on('error', reject);
+        output.on('end', () => resolve(new Uint8Array(Buffer.concat(chunks))));
+      });
       expect({ name, results: await ourResults(signed, name.length) }).toEqual({
         name,
         results: ['pass'],
-      })
-      const text = binary(signed)
-      const upstream = tagsOf(text.slice(0, text.search(/\r\n(?![ \t])/)))
+      });
+      const text = binary(signed);
+      const upstream = tagsOf(text.slice(0, text.search(/\r\n(?![ \t])/)));
       const ours = tagsOf(
         await Dkim.sign(message, { domain: 'example.com', selector: 'rsa', privateKey: rsaPem }),
-      )
-      expect({ name, bh: ours.bh }).toEqual({ name, bh: upstream.bh })
+      );
+      expect({ name, bh: ours.bh }).toEqual({ name, bh: upstream.bh });
     }
-  })
-})
+  });
+});
 
 describe('agrees with mailauth strict mode on changed messages', () => {
   // Each change is applied to a message signed by mailauth. Where the two verifiers disagree on
@@ -211,53 +213,53 @@ describe('agrees with mailauth strict mode on changed messages', () => {
     [
       'change one body byte',
       (t, random) => {
-        const start = t.indexOf('\r\n\r\n') + 4
+        const start = t.indexOf('\r\n\r\n') + 4;
         if (start < 4 || start >= t.length) {
-          return t
+          return t;
         }
-        const at = start + Math.floor(random() * (t.length - start))
-        return t.slice(0, at) + (t[at] === 'x' ? 'y' : 'x') + t.slice(at + 1)
+        const at = start + Math.floor(random() * (t.length - start));
+        return t.slice(0, at) + (t[at] === 'x' ? 'y' : 'x') + t.slice(at + 1);
       },
     ],
     [
       'insert a space in a body line',
       (t, random) => {
-        const start = t.indexOf('\r\n\r\n') + 4
+        const start = t.indexOf('\r\n\r\n') + 4;
         if (start < 4 || start >= t.length) {
-          return t
+          return t;
         }
-        const at = start + Math.floor(random() * (t.length - start))
-        return t.slice(0, at) + ' ' + t.slice(at)
+        const at = start + Math.floor(random() * (t.length - start));
+        return t.slice(0, at) + ' ' + t.slice(at);
       },
     ],
     [
       'smuggle a line after From',
       (t) => t.replace(/\r\nFrom:([^\r]*)\r\n/, '\r\nFrom:$1\r\n\xc2\xa0, evil@attacker.test\r\n'),
     ],
-  ] satisfies [string, (text: string, random: () => number) => string][]
+  ] satisfies [string, (text: string, random: () => number) => string][];
 
   for (const [title, change] of changes) {
     test(`${title}`, async () => {
-      const random = prng(title.length)
+      const random = prng(title.length);
       for (const [name, message] of await corpus()) {
         for (const canonicalization of ['relaxed/relaxed', 'simple/simple']) {
           const { signatures } = await dkimSign(Buffer.from(message), {
             canonicalization,
             strict: true,
             signatureData: [{ signingDomain: 'example.com', selector: 'rsa', privateKey: rsaPem }],
-          })
-          const changed = fromBinary(change(signatures + binary(message), random))
-          const upstream = await upstreamResults(changed)
-          const ours = await ourResults(changed, name.length)
+          });
+          const changed = fromBinary(change(signatures + binary(message), random));
+          const upstream = await upstreamResults(changed);
+          const ours = await ourResults(changed, name.length);
           expect({ name, canonicalization, ours: ours.map(passed) }).toEqual({
             name,
             canonicalization,
             ours: upstream.map(passed),
-          })
+          });
         }
       }
-    })
+    });
   }
-})
+});
 
-const passed = (result: string) => result === 'pass'
+const passed = (result: string) => result === 'pass';

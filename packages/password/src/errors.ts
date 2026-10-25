@@ -1,23 +1,23 @@
-import * as Errors from '@portable/errors'
+import * as Errors from '@portable/errors';
 /**
  * Thrown by `verify` and `needsRehash` for a stored hash that is not a PBKDF2 hash in PHC or
  * passlib format.
  *
  * @example
  * ```ts
- * import * as Password from '@portable/password'
+ * import * as Password from '@portable/password';
  *
  * try {
- *   await Password.verify(password, '$2b$12$...')
+ *   await Password.verify(password, '$2b$12$...');
  * } catch (error) {
  *   if (error instanceof Password.InvalidInputError) {
- *     console.log('not a PBKDF2 hash')
+ *     console.log('not a PBKDF2 hash');
  *   }
  * }
  * ```
  */
 export class InvalidInputError extends Errors.InvalidInputError {
-  static override readonly kind: string = 'Password.InvalidInputError'
+  static override readonly kind: string = 'Password.InvalidInputError';
 }
 
 /**
@@ -25,21 +25,21 @@ export class InvalidInputError extends Errors.InvalidInputError {
  *
  * @example
  * ```ts
- * import * as Password from '@portable/password'
+ * import * as Password from '@portable/password';
  *
  * try {
- *   await Password.hash('x'.repeat(5000))
+ *   await Password.hash('x'.repeat(5000));
  * } catch (error) {
  *   if (error instanceof Password.MaxBytesError) {
- *     console.log(`limit is ${error.maxBytes} bytes`)
+ *     console.log(`limit is ${error.maxBytes} bytes`);
  *   }
  * }
  * ```
  */
 export class MaxBytesError extends Errors.MaxBytesError {
-  static override readonly kind: string = 'Password.MaxBytesError'
+  static override readonly kind: string = 'Password.MaxBytesError';
   constructor(options: Errors.MaxBytesError.Options) {
-    super({ message: `Password exceeded maxBytes of ${options.maxBytes}.`, ...options })
+    super({ message: `Password exceeded maxBytes of ${options.maxBytes}.`, ...options });
   }
 }
 
@@ -50,18 +50,18 @@ export class MaxBytesError extends Errors.MaxBytesError {
  *
  * @example
  * ```ts
- * import * as Password from '@portable/password'
+ * import * as Password from '@portable/password';
  *
  * try {
- *   return await Password.verify(password, stored)
+ *   return await Password.verify(password, stored);
  * } catch (error) {
  *   if (error instanceof Password.UnsupportedError) {
- *     return verifyLegacy(password, stored)
+ *     return verifyLegacy(password, stored);
  *   }
- *   throw error
+ *   throw error;
  * }
  * ```
  */
 export class UnsupportedError extends Errors.UnsupportedError {
-  static override readonly kind: string = 'Password.UnsupportedError'
+  static override readonly kind: string = 'Password.UnsupportedError';
 }

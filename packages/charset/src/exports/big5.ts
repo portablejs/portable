@@ -1,1 +1,1 @@
-export * from '../big5.js'
+export * from '../big5.js';

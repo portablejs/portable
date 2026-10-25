@@ -1,4 +1,4 @@
-const special = /[\s/\\?#%@:[\]]/
+const special = /[\s/\\?#%@:[\]]/;
 
 /**
  * Converts a domain to lower-case ASCII with the URL host parser, which applies UTS #46 with the
@@ -9,14 +9,14 @@ const special = /[\s/\\?#%@:[\]]/
  */
 export function hostToAscii(domain: string): string | undefined {
   if (special.test(domain)) {
-    return undefined
+    return undefined;
   }
   if (/^[\x21-\x7e]*$/.test(domain)) {
-    return domain.toLowerCase()
+    return domain.toLowerCase();
   }
   try {
-    return new URL(`http://${domain}/`).hostname
+    return new URL(`http://${domain}/`).hostname;
   } catch {
-    return undefined
+    return undefined;
   }
 }

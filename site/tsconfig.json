@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "isolatedDeclarations": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["."],
+  "exclude": ["dist", "node_modules"]
+}

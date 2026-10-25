@@ -1,1 +1,1 @@
-export * from '../single-byte.js'
+export * from '../single-byte.js';
