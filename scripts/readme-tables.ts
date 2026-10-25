@@ -108,6 +108,26 @@ export const tables: Record<string, Table> = {
       { label: 'Decode a 1 MB stream of MIME base64', test: 'stream decodes 1 MB' },
     ],
   },
+  binary: {
+    columns: [
+      ours('binary', ['createReader', 'createWriter', 'FrameDecoderStream', 'FrameEncoderStream']),
+      lib('smart-buffer'),
+      lib('varint'),
+      lib('@bufbuild/protobuf', [
+        { from: '@bufbuild/protobuf/wire', use: ['BinaryReader', 'BinaryWriter'] },
+      ]),
+      lib('it-length-prefixed'),
+      web('DataView and TextDecoder', '`DataView` and `TextDecoder`'),
+    ],
+    rows: [
+      { label: 'Write 1,000 mixed records', test: 'writes records' },
+      { label: 'Read 1,000 mixed records', test: 'reads records' },
+      { label: 'Encode 10,000 varints', test: 'encodes varints' },
+      { label: 'Decode 10,000 varints', test: 'decodes varints' },
+      { label: 'Split 2,000 frames from a stream', test: 'splits frames' },
+      { label: 'Write 2,000 frames to a stream', test: 'writes frames' },
+    ],
+  },
   bytes: {
     columns: [
       ours('bytes', ['toHex', 'fromHex', 'concat', 'equal', 'timingSafeEqual']),

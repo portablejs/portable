@@ -4,6 +4,7 @@
 // crypto.subtle, getRandomValues, timers, TextDecoder labels and MessageChannel.
 import * as Arc from '@portable/arc';
 import * as Base64 from '@portable/base64';
+import * as Binary from '@portable/binary';
 import * as Bytes from '@portable/bytes';
 import * as Charset from '@portable/charset';
 import { shiftJis } from '@portable/charset/shift_jis';
@@ -112,6 +113,23 @@ export const checks: Record<string, () => Promise<void> | void> = {
   base64() {
     equal(Base64.encode('hello'), 'aGVsbG8=');
     equal(text(Base64.decode('aGVsbG8=')), 'hello');
+  },
+  async binary() {
+    const writer = Binary.createWriter();
+    writer.varint(300);
+    writer.float64(1.5);
+    writer.cstring('hi');
+    const reader = Binary.createReader(writer.toBytes());
+    equal([reader.varint(), reader.float64(), reader.cstring()], [300, 1.5, 'hi']);
+    const frames = await through(
+      [new Uint8Array([1, 2]), new Uint8Array([3])],
+      new Binary.FrameEncoderStream(),
+      new Binary.FrameDecoderStream(),
+    );
+    equal(
+      frames.map((frame) => Array.from(frame as Uint8Array)),
+      [[1, 2], [3]],
+    );
   },
   bytes() {
     equal(Bytes.toHex(Bytes.fromHex('000fff')), '000fff');
