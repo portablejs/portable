@@ -1,9 +1,16 @@
 import * as Bytes from '@portable/bytes';
-import { isUint8Array } from '@portable/bytes/internal';
+import { crc32, isUint8Array } from '@portable/bytes/internal';
 import { adler32, assertTrailer, needsTrailerCheck } from './adler32.js';
 import { assertMaxBytes, concat } from './bytes.js';
 import type { Format } from './codec.js';
-import { MaxBytesError, classify } from './errors.js';
+import { InvalidInputError, MaxBytesError, TruncatedError, classify } from './errors.js';
+import {
+  assertHeader,
+  checksTrailerAtClose,
+  rawEndCheck,
+  storedLength,
+  trailerCheck,
+} from './gzip.js';
 
 const maxQueued = 64 * 1024;
 
@@ -54,8 +61,25 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
     const checkTrailer = format === 'deflate' ? needsTrailerCheck() : undefined;
     let checking = checkTrailer !== undefined;
     void checkTrailer?.then((needed) => (checking = needed));
+    let gzipCheck: ReturnType<typeof trailerCheck> | undefined;
+    let rawEnd: ReturnType<typeof rawEndCheck> | undefined;
+    let started: Promise<void> | undefined;
+    const start = async () => {
+      started ??= (async () => {
+        if (format === 'gzip' && (await checksTrailerAtClose())) {
+          gzipCheck = trailerCheck();
+        }
+        if (format === 'deflate-raw' && (await needsTrailerCheck())) {
+          rawEnd = rawEndCheck();
+        }
+      })();
+      await started;
+    };
+    const tailLength = format === 'gzip' ? 8 : 4;
     let tail = new Uint8Array(0);
+    let position = 0;
     let checksum = 1;
+    let crc = 0;
 
     let writable: WritableStreamDefaultController | undefined;
     let readable: ReadableStreamDefaultController<Uint8Array<ArrayBuffer>> | undefined;
@@ -74,9 +98,17 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
         return failure.error;
       }
       failure = { error };
+      rawEnd?.abort();
       signal?.removeEventListener('abort', onAbort);
       writable?.error(error);
       return error;
+    };
+    const classifyError = async (error: unknown, closing: boolean): Promise<unknown> => {
+      const classified = classify(error, closing);
+      if (classified instanceof TruncatedError && (await gzipCheck?.isInvalid())) {
+        return new InvalidInputError('Compressed input is invalid.', { cause: error });
+      }
+      return classified;
     };
     const throwIfFailed = () => {
       if (failure) {
@@ -93,7 +125,7 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           await writer.write(chunk);
         }
       } catch (error) {
-        fail(classify(error, closing));
+        fail(await classifyError(error, closing));
       }
       writing = undefined;
     };
@@ -107,8 +139,23 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
         if (!isUint8Array(chunk)) {
           throw stop(new TypeError('Expected a Uint8Array chunk.'));
         }
-        if (checkTrailer) {
-          tail = chunk.byteLength >= 4 ? chunk.slice(-4) : Bytes.concat([tail, chunk]).slice(-4);
+        await start();
+        throwIfFailed();
+        if (format === 'gzip' && position < 4) {
+          try {
+            assertHeader(chunk, position);
+          } catch (error) {
+            throw stop(error);
+          }
+        }
+        position += chunk.byteLength;
+        gzipCheck?.write(chunk);
+        rawEnd?.write(chunk);
+        if (format !== 'deflate-raw') {
+          tail =
+            chunk.byteLength >= tailLength
+              ? chunk.slice(-tailLength)
+              : Bytes.concat([tail, chunk]).slice(-tailLength);
         }
         queue.push(chunk);
         queued += chunk.byteLength;
@@ -119,12 +166,15 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
         throwIfFailed();
       },
       async close() {
+        await start();
         await writing;
         throwIfFailed();
         closing = true;
-        await writer.close().catch((error: unknown) => {
-          throw fail(classify(error, true));
-        });
+        try {
+          await writer.close();
+        } catch (error) {
+          throw fail(await classifyError(error, true));
+        }
       },
       async abort(reason) {
         fail(reason);
@@ -142,21 +192,30 @@ export class DecoderStream extends TransformStream<Uint8Array, Uint8Array<ArrayB
           try {
             result = await reader.read();
           } catch (error) {
-            throw fail(classify(error, closing));
+            throw fail(await classifyError(error, closing));
           }
           if (result.done) {
-            if (await checkTrailer) {
-              try {
+            try {
+              if (await checkTrailer) {
                 assertTrailer(tail, checksum);
-              } catch (error) {
-                throw fail(error);
               }
+              await rawEnd?.assertEnd(crc, length);
+              // Bun's decoder decodes every gzip member instead of failing on the second, so the
+              // output is longer than the length in the last member's trailer.
+              if (format === 'gzip' && storedLength(tail) !== length % 2 ** 32) {
+                throw new InvalidInputError('Compressed input is invalid.');
+              }
+            } catch (error) {
+              throw fail(error);
             }
             signal?.removeEventListener('abort', onAbort);
             return controller.close();
           }
           if (checking) {
             checksum = adler32(result.value, checksum);
+          }
+          if (rawEnd) {
+            crc = crc32(result.value, crc);
           }
           length += result.value.byteLength;
           if (length > maxBytes) {

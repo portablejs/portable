@@ -73,13 +73,11 @@ jobs:
       - run: pnpm vp test run --project "browser (${{ matrix.browser }})"
 
   # The conformance tests again, inside Bun and Deno. Vitest runs on the runtime itself, so every
-  # test file runs there too. These jobs don't block yet: docs/papercuts.md lists the
-  # DecompressionStream and BroadcastChannel differences they report.
+  # test file runs there too.
   test-runtime:
     name: Test (${{ matrix.runtime }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
