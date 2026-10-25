@@ -63,7 +63,7 @@ test('writes CRLF lines of at most 998 bytes, and headers that decode back to th
   );
 });
 
-test('an attachment gives the same message as bytes, a Blob or a stream in any chunks', async () => {
+test('an attachment gives the same message as bytes, a Blob, or a stream in any chunks', async () => {
   await fuzz(
     fc.asyncProperty(fc.uint8Array({ maxLength: 500 }), cuts, async (bytes, at) => {
       const as = (content: Mail.Content) =>

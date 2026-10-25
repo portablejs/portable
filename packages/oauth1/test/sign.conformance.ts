@@ -9,7 +9,7 @@ const tweetUrl = 'https://api.twitter.com/1/statuses/update.json?include_entitie
 const tweetBody = 'status=Hello+Ladies+%2B+Gentlemen%2C+a+signed+OAuth+request%21';
 
 describe('sign()', () => {
-  test('sets the Authorization header and keeps the method, headers and body', async () => {
+  test('sets the Authorization header and keeps the method, headers, and body', async () => {
     const request = new Request(
       tweetUrl,
       form(tweetBody, { headers: { accept: 'application/json' } }),

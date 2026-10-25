@@ -32,7 +32,7 @@ function open(server: TestServer, options: Partial<Smtp.connect.Options> = {}) {
 }
 
 describe('plaintext', () => {
-  test('sends a string, bytes and a stream, received with CRLF line breaks', async () => {
+  test('sends a string, bytes, and a stream, received with CRLF line breaks', async () => {
     const server = await serve({ disabledCommands: ['STARTTLS', 'AUTH'] });
     const client = await open(server);
     expect(client.secure).toBe(false);

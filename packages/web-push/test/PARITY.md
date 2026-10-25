@@ -2,7 +2,7 @@
 
 Upstream: [web-push](https://github.com/web-push-libs/web-push) 3.6.7 (MPL-2.0), test files under `test/`. Each upstream test maps to our test for the same case, or to the reason it doesn't apply. Tests marked "both" ran once per content encoding upstream. We support only aes128gcm, so the `aesgcm` run maps to the "aesgcm" row under Not applicable.
 
-Our test files are `encrypt.conformance.ts`, `vapid.conformance.ts` and `send.conformance.ts` (Node and Chromium), `web-push.oracle.test.ts` (Node) and `web-push.bench.ts`.
+Our test files are `encrypt.conformance.ts`, `vapid.conformance.ts`, and `send.conformance.ts` (Node and Chromium), `web-push.oracle.test.ts` (Node) and `web-push.bench.ts`.
 
 The RFC 8291 Appendix A vector is in `encrypt.conformance.ts` ("encrypts the example message byte for byte"), and the RFC 8292 §2.4 example token checks our JWT verifier in `vapid.conformance.ts`.
 
@@ -103,7 +103,7 @@ Not applicable: no command-line tool. `generateVapidKeys` replaces `web-push gen
 
 ## testBrowsers.js
 
-Runs a real Chrome and Firefox, subscribes, sends through Google's and Mozilla's push services, and checks the service worker receives the message. It needs network access to those services, so we don't run it. Our conformance tests decrypt every message the way a browser does (`decrypt` in `utils.ts`, which follows RFC 8291 §3.4), and the RFC 8291 vector checks the bytes.
+Runs a real Chrome and Firefox, subscribes, sends through the Google and Mozilla push services, and checks the service worker receives the message. It needs network access to those services, so we don't run it. Our conformance tests decrypt every message the way a browser does (`decrypt` in `utils.ts`, which follows RFC 8291 §3.4), and the RFC 8291 vector checks the bytes.
 
 ## Not applicable
 

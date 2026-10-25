@@ -1,6 +1,6 @@
 # @portable/web-crypto
 
-Functions over `crypto.subtle` that take and return bytes: `digest`, `hmac` and `hkdf`, Ed25519 and X25519 keys from 32-byte seeds, PEM key import, the public key of a private key, and ECDSA signatures converted between DER and raw `r || s`. It contains no cryptography of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Functions over `crypto.subtle` that take and return bytes: `digest`, `hmac`, and `hkdf`; Ed25519 and X25519 keys from 32-byte seeds; PEM key import; the public key of a private key; and ECDSA signatures converted between DER and raw `r || s`. It contains no cryptography of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [ecdsa-sig-formatter](https://www.npmjs.com/package/ecdsa-sig-formatter) and hand-written WebCrypto wrappers.
 
@@ -33,31 +33,31 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | `hkdf(hash, key, options?)` | `Promise<Uint8Array>` | HKDF (RFC 5869) extract and expand. |
 | `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. |
 | `importPem(algorithm, pem, options?)` | `Promise<CryptoKey>` | Imports the first `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `PUBLIC KEY` (SubjectPublicKeyInfo) or `RSA PUBLIC KEY` (PKCS #1) block of a PEM string or its bytes, skipping other blocks. `algorithm` is what `crypto.subtle.importKey` takes. |
-| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH or RSA private key. |
+| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key. |
 | `derToRawEcdsa(signature, options?)` | `Uint8Array` | DER to raw `r \|\| s`. Accepts only strict DER. |
-| `rawToDerEcdsa(signature)` | `Uint8Array` | Raw `r \|\| s` to DER. The curve follows from the length: 64, 96 or 132 bytes. |
+| `rawToDerEcdsa(signature)` | `Uint8Array` | Raw `r \|\| s` to DER. The curve follows from the length: 64, 96, or 132 bytes. |
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
 | `signal` | every async function | | Rejects with `signal.reason` once aborted. |
-| `info` | `hkdf` | empty | Context for the derived key, bytes or a UTF-8 string. |
+| `info` | `hkdf` | empty | Context for the derived key, bytes, or a UTF-8 string. |
 | `length` | `hkdf` | the hash length | Bytes to derive, at most 255 times the hash length. |
 | `salt` | `hkdf` | empty | Bytes or a UTF-8 string. RFC 5869 treats an empty salt as zero bytes as long as the hash. |
 | `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
 | `extractable` | `importPem` | `false` | Whether the key can be exported. |
-| `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA and Ed25519, `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP, and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required and a missing one throws a `RangeError`. |
-| `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'` or `'P-521'`. It sets the width of `r` and `s` in the output. |
+| `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required and a missing one throws a `RangeError`. |
+| `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'`, or `'P-521'`. It sets the width of `r` and `s` in the output. |
 
-The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, a raw signature or seed has the wrong length, a key is not an extractable private key, or a PEM string has no key block, isn't valid base64 or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` when the PEM block is of a kind it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't match the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.
+The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, when a raw signature or seed has the wrong length, when a key is not an extractable private key, or when a PEM string has no key block, isn't valid base64, or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` when the PEM block is of a kind it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key, or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't match the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
 | `WebCrypto.Hash` | `'SHA-1' \| 'SHA-256' \| 'SHA-384' \| 'SHA-512'`, the algorithm names WebCrypto uses. |
-| `WebCrypto.Digest` | `(hash, data) => bytes`, sync or async. `@portable/oauth1` takes one as `digest`, and `WebCrypto.digest` has this type. |
-| `WebCrypto.Hmac` | `(hash, key, data) => bytes`, sync or async. `@portable/webhooks` takes one as `hmac`, and `WebCrypto.hmac` has this type. |
-| `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. `@portable/dkim`, `@portable/arc` and `@portable/mail-auth` take a function that returns one as `hasher`. |
+| `WebCrypto.Digest` | A sync or async function `(hash, data) => bytes`. `@portable/oauth1` takes one as `digest`, and `WebCrypto.digest` has this type. |
+| `WebCrypto.Hmac` | A sync or async function `(hash, key, data) => bytes`. `@portable/webhooks` takes one as `hmac`, and `WebCrypto.hmac` has this type. |
+| `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. `@portable/dkim`, `@portable/arc`, and `@portable/mail-auth` take a function that returns one as `hasher`. |
 | `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa`. |
 | `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
 
@@ -127,6 +127,6 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - ecdsa-sig-formatter's `derToJose` and `joseToDer` take and return base64url text. `derToRawEcdsa` and `rawToDerEcdsa` take and return bytes, so encode and decode the base64url text JWS uses with [@portable/base64](../base64).
 - ecdsa-sig-formatter takes the JWS `alg`, such as `'ES384'`. `derToRawEcdsa` takes `namedCurve` instead, and it defaults to `'P-256'`, so pass `'P-384'` or `'P-521'` for ES384 or ES512 signatures.
 - `derToRawEcdsa` throws `WebCrypto.InvalidInputError` for a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE. ecdsa-sig-formatter's `derToJose` accepts it.
-- `derToRawEcdsa` also rejects an INTEGER with a leading zero it does not need, an empty INTEGER or a negative INTEGER, which `derToJose` accepts.
+- `derToRawEcdsa` also rejects an INTEGER with a leading zero it does not need, an empty INTEGER, or a negative INTEGER, which `derToJose` accepts.
 - `derToRawEcdsa` rejects an INTEGER one byte longer than the curve allows, if its top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
 - Strict DER gives each signature one encoding, so if you deduplicate signatures or use them as identifiers, a second encoding of a signature you already have is rejected.

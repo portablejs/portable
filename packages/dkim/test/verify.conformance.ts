@@ -683,7 +683,7 @@ describe('the result object', () => {
     expect(result.cause).toBe(error);
   });
 
-  test('reports the domain, selector, algorithm, identity and signature', async () => {
+  test('reports the domain, selector, algorithm, identity, and signature', async () => {
     const message = await std(' i=joe@sub.example.com;');
     const { result } = await run(message, { [KEY]: [rsaRec] });
     const b = /b=([^;\r]+)\r\n/.exec(message)![1];
@@ -865,7 +865,7 @@ describe('header section', () => {
 });
 
 describe('input', () => {
-  test('takes a ReadableStream in any chunking, a Uint8Array or a string', async () => {
+  test('takes a ReadableStream in any chunking, a Uint8Array, or a string', async () => {
     const message = await std();
     const bytes = encode(message);
     const resolver = resolverFrom({ [KEY]: [rsaRec] });

@@ -4,10 +4,10 @@ import { fromHex, prefixed, required, seconds, toHex, unix } from './internal.js
 
 /**
  * How one sender signs webhooks, as plain functions. `verify` and `sign` do the rest the same way
- * for every scheme: HMAC-SHA256 with the `hmac` option, the length check and constant-time
- * compare, several secrets, and the timestamp tolerance.
+ * for every scheme: HMAC-SHA256 with the `hmac` option, the length check with a
+ * constant-time compare, several secrets, and the timestamp tolerance.
  *
- * Use `standard` (the default), `stripe`, `github` or `slack`, or write one for another sender.
+ * Use `standard` (the default), `stripe`, `github`, or `slack`, or write one for another sender.
  * `stripe` is a complete example. See the README.
  */
 export type Scheme = {
@@ -47,8 +47,8 @@ export declare namespace Scheme {
 }
 
 /**
- * [Standard Webhooks](https://www.standardwebhooks.com), used by Svix, Resend, Clerk and others.
- * Reads `webhook-id`, `webhook-timestamp` and `webhook-signature`, or the `svix-` headers when
+ * [Standard Webhooks](https://www.standardwebhooks.com), used by Svix, Resend, Clerk, and others.
+ * Reads `webhook-id`, `webhook-timestamp`, and `webhook-signature`, or the `svix-` headers when
  * those are missing, and signs `{id}.{timestamp}.{body}`. The secret is base64, with or without
  * the `whsec_` prefix. `v1a` (ed25519) signatures are ignored. This is the default scheme.
  *

@@ -52,7 +52,7 @@ The package is designed fresh, so tests are mapped by the case they cover, not b
 | Padding inside the input > should round trip separately encoded parts | libbase64 > padding inside the input > round trips separately encoded parts | |
 | Encoder output > should not depend on how the input is chunked | libbase64 > encoder output > does not depend on how the input is chunked | |
 | Encoder output > should never end with a line break | libbase64 > encoder output > never ends with a line ending | |
-| Encoder output > should apply padding, skipped bytes and the output limit to the wrapped output | not applicable | `startPadding`, `skipStartBytes` and `limitOutputBytes` are dropped. |
+| Encoder output > should apply padding, skipped bytes and the output limit to the wrapped output | not applicable | `startPadding`, `skipStartBytes`, and `limitOutputBytes` are dropped. |
 | Encoder output > should skip output across several chunks | not applicable | As above. |
 | Encoder output > should only use whole line lengths | libbase64 > encoder output > rejects a line length that is not a positive integer | Deliberate difference: `EncoderStream` throws instead of rounding down or falling back to 76. |
 | Encoder output > should ignore empty writes | libbase64 > encoder output > ignores empty chunks | |
@@ -63,7 +63,7 @@ The package is designed fresh, so tests are mapped by the case they cover, not b
 
 ## libbase64: `libbase64-property-test.ts`
 
-fast-check is replaced by loops over seeded random inputs of the same shapes (`randomBytes`, `randomChunkSizes`, `encodedLike` in `utils.ts`), and the reference encoder, decoder and wrapper are ported into `utils.ts`.
+fast-check is replaced by loops over seeded random inputs of the same shapes (`randomBytes`, `randomChunkSizes`, `encodedLike` in `utils.ts`), and the reference encoder, decoder, and wrapper are ported into `utils.ts`.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ These check libbase64's dual CommonJS and ES module build, its `exports` map, `n
 | corrupt.js > padding bytes found inside base64 string | base64-js > rejects data after padding, or decodes it in mime mode | Deliberate difference: base64-js stops at the first `=` and returns `[73]`. `'loose'` mode throws `InvalidInputError`, and `'mime'` mode decodes both segments. |
 | url-safe.js > decode url-safe style base64 strings | base64-js > decodes url-safe strings | base64-js accepts both alphabets mixed. Here, pass `alphabet: 'base64url'`, or use `'mime'` mode for either. |
 
-base64-js's `bench/bench.js` and `bench/basic.js` time 1 MB encode, decode and `byteLength`. `base64.bench.ts` covers the same sizes.
+base64-js's `bench/bench.js` and `bench/basic.js` time 1 MB encode, decode, and `byteLength`. `base64.bench.ts` covers the same sizes.
 
 ## js-base64
 

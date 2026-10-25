@@ -2,7 +2,7 @@
 
 Upstream suite: the DMARC tests of [mailauth](https://github.com/postalsys/mailauth) 7.3.1 (MIT), `test/dmarc/*.js`, plus the DMARC cases in `test/tools/tools-test.js` (`getAlignment`), `test/tools/rfc-compliance-test.js` (`toALabel`, `isHostNameDomain`) and `test/mailauth-test.js`. No fixtures were copied, because every case builds its own zone.
 
-The ported tests are in `check.conformance.ts`, in a `describe` block named after the upstream file, and run in Node and Chromium. `check.oracle.test.ts` compares the result, the policy, the policy domain and the first aligned SPF and DKIM identifier with mailauth 7.3.0's `dmarc()` in strict mode, on 400 random zones and on U-label From domains. 7.3.1 was less than a day old when these tests were written, so `minimumReleaseAge` refused it. Its DMARC code differs from 7.3.0 only in From header parsing, which this package doesn't do.
+The ported tests are in `check.conformance.ts`, in a `describe` block named after the upstream file, and run in Node and Chromium. `check.oracle.test.ts` compares the result, the policy, the policy domain, and the first aligned SPF and DKIM identifier with mailauth 7.3.0's `dmarc()` in strict mode, on 400 random zones and on U-label From domains. 7.3.1 was less than a day old when these tests were written, so `minimumReleaseAge` refused it. Its DMARC code differs from 7.3.0 only in From header parsing, which this package doesn't do.
 
 mailauth has a default mode that case-folds tag names, uses the last of duplicate tags, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. `check` follows the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
 
@@ -83,7 +83,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | Upstream test | Our test |
 | --- | --- |
 | DNS resolution > Should resolve DMARC record from _dmarc.domain.com | reads the record at _dmarc.\<domain\> |
-| Should return false when no DMARC record exists | no record for ENOTFOUND, ENODATA, EBADNAME or an empty answer |
+| Should return false when no DMARC record exists | no record for ENOTFOUND, ENODATA, EBADNAME, or an empty answer |
 | Should return false for empty TXT response | same |
 | Should return false for ENODATA error | same |
 | Should throw on DNS server errors | temperror for a DNS server error |
@@ -190,7 +190,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 
 | Upstream test | Our test |
 | --- | --- |
-| Should not mark properties required that a none or temperror result does not have | `tsc` checks the result type, and Dmarc.check > reports why the result is none, temperror or permerror checks the fields those results have. |
+| Should not mark properties required that a none or temperror result does not have | `tsc` checks the result type, and Dmarc.check > reports why the result is none, temperror, or permerror checks the fields those results have. |
 | Should cite RFC 9989 for the dmarc ptype properties | Not applicable: a test of mailauth's `index.d.ts` comments. |
 
 ## author-domain-test.js and from-header-test.js
@@ -206,13 +206,13 @@ Address and header parsing don't apply, because the input is the domain. The dom
 | Should return every candidate for an address with several unquoted "@" signs | Not applicable. |
 | Should normalize case, trailing dot and U-labels | author-domain-test.js and from-header-test.js > converts U-labels to A-labels, in lower case and NFC; dmarc-verify-test.js > several From addresses in one domain |
 | Should keep a domain literal and an "@" inside it | get-dmarc-record-test.js > a single label is queried once, and an address literal not at all |
-| Should find no domain in an address without one | dmarc-fixes-test.js > I3: no query for an empty domain; rejects an address, a URL or an empty label instead of a domain |
+| Should find no domain in an address without one | dmarc-fixes-test.js > I3: no query for an empty domain; rejects an address, a URL, or an empty label instead of a domain |
 | Should accept a bare domain, as dmarc() always has | Every test: the input is a bare domain. |
 | Header field > every test | Not applicable: header parsing and several From fields. |
 | parseFromHeader > every test | Not applicable: header parsing. |
 | authenticate() > every test | Not applicable: header parsing in `authenticate()`. |
 | dmarc() > Should honor fromSyntax | Not applicable: no `fromSyntax` input. |
-| Should not evaluate a domain with a format character | rejects a domain with a control, format or space character, without a query |
+| Should not evaluate a domain with a format character | rejects a domain with a control, format, or space character, without a query |
 | Should not evaluate a domain with a control character or DEL | same |
 | Should still accept a U-label and the CONTEXTJ joiners | accepts the CONTEXTJ joiners U+200C and U+200D; converts U-labels to A-labels |
 
@@ -237,7 +237,7 @@ Address and header parsing don't apply, because the input is the domain. The dom
 | Should return false when no match | relaxed: same organizational domain aligns |
 | Should handle string domain entries / object domain entries | Not applicable: identifiers are `{ result, domain }` objects. |
 | Should sort by underSized | Not applicable: every signature's alignment is reported in input order. |
-| rfc-compliance-test.js > isHostNameDomain | rejects an address, a URL or an empty label instead of a domain; underscore labels align |
+| rfc-compliance-test.js > isHostNameDomain | rejects an address, a URL, or an empty label instead of a domain; underscore labels align |
 | rfc-compliance-test.js > toALabel and decomposed input | converts U-labels to A-labels, in lower case and NFC |
 
 ## mailauth-test.js
@@ -261,6 +261,6 @@ These cases come from mailauth's issue tracker, read through its GitHub search p
 | #142: a tag name without `=` overrode a valid tag. Fixed in mailauth. | A fragment without `=` is ignored. | get-dmarc-record-test.js > ignores a fragment without "=" or without a name |
 | #143: strict mode accepted whitespace before `v=DMARC1`. Fixed in strict mode, but the default mode still accepts it. | Always rejected (RFC 9989 section 4.10 step 2). | ignores a record with whitespace before v=DMARC1 |
 | The default mode uses the last of duplicate tags and case-folds tag names. | A duplicate tag invalidates the record and an upper case tag name is unknown (RFC 6376 section 3.2). | dmarc-fixes-test.js > F7 tests |
-| `dmarc()` returns `false`, not a result, for a From domain that isn't a domain name. | `permerror` with a `reason`, so `check` always resolves to a result. | I3: no query for an empty domain; rejects a domain with a control, format or space character |
+| `dmarc()` returns `false`, not a result, for a From domain that isn't a domain name. | `permerror` with a `reason`, so `check` always resolves to a result. | I3: no query for an empty domain; rejects a domain with a control, format, or space character |
 | mailauth walks above the From domain on every message with a record, even when every identifier is identical to the From domain, which costs a `_dmarc.<tld>` query. RFC 9989 section 4.10.2 says that walk isn't needed. | The walk runs only when a relaxed alignment check needs it. | known upstream issues > no tree walk above the From domain when every identifier is identical to it |
 | mailauth queries whether the From domain exists whenever the record has `np`, even when `np` equals the policy that applies anyway. | No query in that case. | known upstream issues > no existence query when np is the policy that applies anyway |

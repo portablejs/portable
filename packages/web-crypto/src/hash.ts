@@ -17,9 +17,9 @@ export type Digest = (
 ) => Uint8Array | Promise<Uint8Array>;
 
 /**
- * Computes an HMAC of `data` with `key` and `hash`, sync or async. Packages that sign with HMAC
- * take one as their `hmac` option. `WebCrypto.hmac` has this type, and so does a wrapper around
- * `@noble/hashes`, which is sync and faster on Node.
+ * A sync or async function that computes an HMAC of `data` with `key` and `hash`. Packages that
+ * sign with HMAC take one as their `hmac` option. `WebCrypto.hmac` has this type, and so does a
+ * wrapper around `@noble/hashes`, which is sync and faster on Node.
  */
 export type Hmac = (
   hash: Hash,

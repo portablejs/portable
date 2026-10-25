@@ -3,7 +3,7 @@ import { assertUint8Array, crc32 as crc } from '@portable/bytes/internal';
 const encoder = new TextEncoder();
 
 /**
- * Computes the CRC-32 checksum used by gzip, zip and PNG. Strings are encoded as UTF-8. Pass the
+ * Computes the CRC-32 checksum used by gzip, zip, and PNG. Strings are encoded as UTF-8. Pass the
  * previous result as `previous` to continue a checksum over data that arrives in pieces.
  *
  * @example

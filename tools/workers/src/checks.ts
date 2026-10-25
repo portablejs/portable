@@ -1,7 +1,7 @@
 // One check per package, run inside workerd by run.ts. Each check calls the package the way a
 // Worker would and throws if the result is wrong. The conformance tests cover the behavior, so a
 // check only needs to call each platform API that the package uses: streams, CompressionStream,
-// crypto.subtle, getRandomValues, timers, TextDecoder labels and MessageChannel.
+// crypto.subtle, getRandomValues, timers, TextDecoder labels, and MessageChannel.
 import { connect } from 'cloudflare:sockets';
 import * as Arc from '@portable/arc';
 import * as Base64 from '@portable/base64';
@@ -67,7 +67,7 @@ function through(chunks: readonly unknown[], ...transforms: TransformStream[]): 
 
 const message = 'From: a@example.com\r\nTo: b@example.com\r\nSubject: tere\r\n\r\nHello.\r\n';
 
-// Returns the DKIM key, the SPF record and the DMARC record that the mail checks look up.
+// Returns the DKIM key, the SPF record, and the DMARC record that the mail checks look up.
 async function mailResolver() {
   const { privateKey, publicKey } = await crypto.subtle.generateKey('Ed25519', true, [
     'sign',

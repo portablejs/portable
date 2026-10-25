@@ -82,7 +82,7 @@ export declare namespace string {
   type Options = {
     /**
      * The characters to pick from, split into code points.
-     * @default the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-` and `_`
+     * @default the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-`, and `_`
      */
     alphabet?: string | undefined;
   };
@@ -90,7 +90,7 @@ export declare namespace string {
 
 /**
  * Returns a random string of `length` characters, each picked with equal chance from `alphabet`.
- * The default alphabet is the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-` and `_`, so 21
+ * The default alphabet is the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-`, and `_`, so 21
  * characters have 126 random bits, as in a nanoid.
  *
  * `alphabet` is split into code points, so it can include emoji. A character listed

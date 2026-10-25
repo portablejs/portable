@@ -81,7 +81,7 @@ export declare namespace verify {
 /**
  * Checks a password against a stored PBKDF2 hash and compares the result in constant time.
  * Reads the PHC format that `hash` writes (`$pbkdf2-sha256$i=600000$...`) and passlib's
- * `pbkdf2_sha1`, `pbkdf2_sha256` and `pbkdf2_sha512` format (`$pbkdf2-sha256$29000$...`).
+ * `pbkdf2_sha1`, `pbkdf2_sha256`, and `pbkdf2_sha512` format (`$pbkdf2-sha256$29000$...`).
  *
  * @example
  * ```ts

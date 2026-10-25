@@ -1,12 +1,12 @@
 # Parity with mailauth's authenticate
 
-Upstream: mailauth 7.3.1's [`test/mailauth-test.js`](https://github.com/postalsys/mailauth/blob/master/test/mailauth-test.js), and the cases of `test/arc/` that go through `authenticate`, which `@portable/arc`'s PARITY.md leaves to this package. SPF, DKIM, DMARC and ARC each have their own package and PARITY.md, so this file covers what `authenticate` adds: finding the From domain, running the checks together, Authentication-Results, and sealing.
+Upstream: mailauth 7.3.1's [`test/mailauth-test.js`](https://github.com/postalsys/mailauth/blob/master/test/mailauth-test.js), and the cases of `test/arc/` that go through `authenticate`, which `@portable/arc`'s PARITY.md leaves to this package. SPF, DKIM, DMARC, and ARC each have their own package and PARITY.md, so this file covers what `authenticate` adds: finding the From domain, running the checks together, Authentication-Results, and sealing.
 
 mailauth has a lenient default mode and a `strict: true` mode. `authenticate` has only RFC behavior, so each case maps to the strict expectation.
 
 `authenticate.oracle.test.ts` runs in Node and checks that:
 
-- on 400 generated messages, with every SPF result, DKIM signatures that pass, fail, use rsa-sha1 or have no key, DMARC records with each policy, alignment mode and `t=y`, ARC chains that pass and fail, and From fields with groups, several domains, several fields or none, `authenticate` gives mailauth's strict result for each method and the same `dmarcSkipReason`, and its Authentication-Results field has the same resinfos and properties once comments are removed;
+- on 400 generated messages, with every SPF result, DKIM signatures that pass, fail, use rsa-sha1, or have no key, DMARC records with each policy, alignment mode, and `t=y`, ARC chains that pass and fail, and From fields with groups, several domains, several fields, or none, `authenticate` gives mailauth's strict result for each method and the same `dmarcSkipReason`, and its Authentication-Results field has the same resinfos and properties once comments are removed;
 - chains that alternate between `authenticate` with `seal` and mailauth's `authenticate` with `seal` pass in both, over four hops.
 
 The oracle allows two differences that come from `@portable/dkim`: a key record problem gives `permerror` where mailauth gives `neutral`, and `policy.dkim-rules`, which RFC 8601 doesn't register, isn't written.
@@ -23,7 +23,7 @@ The oracle allows two differences that come from `@portable/dkim`: a key record 
 | strict option: passes strict and rejectRsaSha1 to the DKIM verification | The oracle's rsa-sha1 cases: `dkim=policy` and `dmarc=fail`. |
 | Authentication-Results above Received-SPF only in strict mode | › "writes only the Authentication-Results field without a seal, and no Received-SPF" |
 | reports the AUID and SDID in strict mode | › "reports each method with its properties" |
-| keeps every generated line within 998 octets | › "keeps every line within 998 octets and every comment balanced", with the same four senders and HELO name, and `mail-auth.fuzz.conformance.ts` for any From field, sender and HELO name. |
+| keeps every generated line within 998 octets | › "keeps every line within 998 octets and every comment balanced", with the same four senders and HELO name, and `mail-auth.fuzz.conformance.ts` for any From field, sender, and HELO name. |
 | quotes an mta value that is not a token (lax) | Deliberately different: `authservId` › "throws a RangeError when it is not a token", as mailauth's strict mode does. |
 | refuses an mta value that is not a token in strict mode | › "throws a RangeError when it is not a token" |
 | keeps a host name mta value as is | › "is written as given when it is a token" |
@@ -45,7 +45,7 @@ The oracle allows two differences that come from `@portable/dkim`: a key record 
 | does not change the lax arc= entry | Not applicable: no lenient mode. |
 | arc-hardening-test.js: crafted Authentication-Results values (5 cases) | `ARC` › "copies only keywords and host names from a crafted AAR", with the same 5 values and 5 more: a quoted value with a comment after it, a `header.d` with `/`, a comment inside a result, a comment before a value and a stray parenthesis. |
 | checks a large authResults without running out of stack | › "reads a large AAR without running out of stack" |
-| arc-seal-options-test.js: authenticate() seals a broken chain with cv=fail even if the seal options say cv=pass | › "seals a broken chain with cv=fail and its own results". `seal` has no `cv`, `authResults` or `i`, so the caller can't pass them. |
+| arc-seal-options-test.js: authenticate() seals a broken chain with cv=fail even if the seal options say cv=pass | › "seals a broken chain with cv=fail and its own results". `seal` has no `cv`, `authResults`, or `i`, so the caller can't pass them. |
 | authenticate() seals a new message with cv=none | › "seals a new message with cv=none and these results as the ARC-Authentication-Results" |
 | seals concurrent messages sharing one seal object | `@portable/arc`'s seal tests. `authenticate` passes a new options object to `Arc.seal` each time. |
 | does not seal a broken chain whose newest seal already says cv=fail | › "does not seal a chain whose newest seal says cv=fail, and says why" |

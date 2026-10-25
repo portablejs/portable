@@ -417,7 +417,7 @@ describe('ARC', () => {
 });
 
 describe('input', () => {
-  test('reads a stream, bytes or a string with the same result', async () => {
+  test('reads a stream, bytes, or a string with the same result', async () => {
     const zone = { 'test._domainkey.example.com': { TXT: [await rsaRecord()] } };
     const input = await signed(buildMessage(), 'example.com');
     const bytes = encode(input);
@@ -465,7 +465,7 @@ describe('input', () => {
     ).rejects.toBe(reason);
   });
 
-  test('hashes a relaxed body once for DKIM, ARC and the seal', async () => {
+  test('hashes a relaxed body once for DKIM, ARC, and the seal', async () => {
     const zone = { 'test._domainkey.example.com': { TXT: [await rsaRecord()] } };
     const { privateKey } = await key('rsa');
     const dkimSigned = await signed(buildMessage({ from: 'user@example.com' }), 'example.com');

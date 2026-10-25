@@ -57,7 +57,7 @@ export declare namespace encrypt {
 
 /**
  * Encrypts a payload for a subscription with the aes128gcm content encoding (RFC 8188, RFC 8291),
- * and returns the request body: an 86-byte header holding the salt, record size and server public
+ * and returns the request body: an 86-byte header holding the salt, record size, and server public
  * key, then one AES-GCM record. Use it to send with your own transport. `toRequest` and `send`
  * call it for you.
  *
@@ -66,7 +66,7 @@ export declare namespace encrypt {
  * import * as WebPush from '@portable/web-push';
  *
  * const body = await WebPush.encrypt({ subscription, payload: JSON.stringify({ title: 'Hi' }) });
- * // send with the headers `Content-Encoding: aes128gcm`, `TTL` and a VAPID `Authorization`
+ * // send with the headers `Content-Encoding: aes128gcm`, `TTL`, and a VAPID `Authorization`
  * ```
  *
  * @throws {InvalidInputError} When the subscription has no keys, `p256dh` isn't a P-256 public

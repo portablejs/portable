@@ -26,7 +26,7 @@ beforeAll(async () => {
   headerLength = new TextDecoder().decode(chain).indexOf('\r\n\r\n') + 4;
 });
 
-test('verify settles with pass, fail or none for a changed chain', async () => {
+test('verify settles with pass, fail, or none for a changed chain', async () => {
   await fuzz(
     fc.asyncProperty(mutated(chain, { within: headerLength }), async (message) => {
       const result = await Arc.verify(message, { resolver: resolverFrom(records) });

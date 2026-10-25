@@ -644,7 +644,7 @@ describe('heartbeat', () => {
 const { asyncDispose } = Symbol as { asyncDispose?: symbol | undefined };
 
 describe.skipIf(asyncDispose === undefined)('Symbol.asyncDispose', () => {
-  test('closes the socket with 1000, fails both streams and stops reconnecting', async () => {
+  test('closes the socket with 1000, fails both streams, and stops reconnecting', async () => {
     const server = new FakeServer();
     const duplex = WebSockets.connect(url, { WebSocket: server.WebSocket, delay: 0 });
     const socket = await server.accept();

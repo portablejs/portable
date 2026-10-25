@@ -1,6 +1,6 @@
 /**
  * The DKIM building blocks that `@portable/arc` reuses: message splitting, canonicalization,
- * body hashes, key records and signing. It isn't public API and can change in any release.
+ * body hashes, key records, and signing. It isn't public API and can change in any release.
  */
 export * from '../internal/bytes.js';
 export * from '../internal/digest.js';

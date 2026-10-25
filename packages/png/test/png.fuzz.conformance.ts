@@ -51,7 +51,7 @@ describe('round trips', () => {
   });
 });
 
-/** Sets each pixel's red, green and blue to its red, so the gray encoders keep it as it is. */
+/** Sets each pixel's red, green, and blue to its red, so the gray encoders keep it as it is. */
 function grayscale(data: Uint8Array): Uint8Array {
   return data.map((byte, i) => (i % 4 === 3 ? byte : data[i - (i % 4)]!));
 }

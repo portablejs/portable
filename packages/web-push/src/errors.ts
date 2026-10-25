@@ -48,7 +48,7 @@ export class MaxBytesError extends Errors.MaxBytesError {
 }
 
 /**
- * Thrown by `send` when the push service answers with a status other than 2xx, 404 or 410, such
+ * Thrown by `send` when the push service answers with a status other than 2xx, 404, or 410, such
  * as 400 for a bad VAPID token, 413 for a payload that is too large, or 429 when rate limited.
  *
  * @example

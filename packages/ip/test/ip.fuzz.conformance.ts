@@ -78,7 +78,7 @@ test('compare is a total order', () => {
   );
 });
 
-test('range, unmap, toIpv6 and reverseName accept every address', () => {
+test('range, unmap, toIpv6, and reverseName accept every address', () => {
   fuzz(
     fc.property(address, (address) => {
       expect(typeof Ip.range(address)).toBe('string');

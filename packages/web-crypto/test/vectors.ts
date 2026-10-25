@@ -1,4 +1,4 @@
-// Generated from the text of RFC 4231, RFC 5869, RFC 8032 and RFC 7748.
+// Generated from the text of RFC 4231, RFC 5869, RFC 8032, and RFC 7748.
 export const hmacRfc4231 = [
   {
     case: 1,

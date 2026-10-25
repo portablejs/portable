@@ -39,7 +39,7 @@ describe('importPem', () => {
     }
   });
 
-  test('imports Ed25519, ECDSA and ECDH keys with default usages', async () => {
+  test('imports Ed25519, ECDSA, and ECDH keys with default usages', async () => {
     const ed = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify']);
     const ec = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, [
       'sign',
@@ -92,7 +92,7 @@ describe('importPem', () => {
     );
   });
 
-  test('throws UnsupportedError for an SEC 1 EC key, a certificate and an encrypted key', async () => {
+  test('throws UnsupportedError for an SEC 1 EC key, a certificate, and an encrypted key', async () => {
     const encrypted =
       '-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,00\n\nAAAA\n-----END RSA PRIVATE KEY-----';
     for (const pem of [

@@ -17,7 +17,7 @@ export declare namespace port {
 /**
  * A transport over `postMessage`: a `MessagePort`, a `Worker`, a `BroadcastChannel`, or `self`
  * inside a worker. Messages are structured-cloned, so the identity codec
- * `{ encode: (m) => m, decode: (m) => m }` also works and keeps `Date`, `Map` and `Uint8Array`
+ * `{ encode: (m) => m, decode: (m) => m }` also works and keeps `Date`, `Map`, and `Uint8Array`
  * values intact.
  *
  * @example

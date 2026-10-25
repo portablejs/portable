@@ -16,7 +16,7 @@ export declare namespace derToRawEcdsa {
 /**
  * Converts a DER-encoded ECDSA signature, as WebAuthn and OpenSSL produce, into the raw `r || s`
  * form that `crypto.subtle.verify` and JWS (ES256, ES384, ES512) use. Only strict DER is accepted:
- * BER length forms, extra leading zeros, negative integers and trailing bytes throw.
+ * BER length forms, extra leading zeros, negative integers, and trailing bytes throw.
  *
  * @example
  * ```ts
@@ -97,7 +97,7 @@ function readInteger(
 
 /**
  * Converts a raw `r || s` ECDSA signature, as `crypto.subtle.sign` and JWS produce, into DER.
- * The curve follows from the length: 64 bytes for P-256, 96 for P-384 and 132 for P-521.
+ * The curve follows from the length: 64 bytes for P-256, 96 for P-384, and 132 for P-521.
  *
  * @example
  * ```ts

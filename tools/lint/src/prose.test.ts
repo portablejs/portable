@@ -1,10 +1,15 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vite-plus/test';
-import { findMadeUpActor } from './prose.js';
+import { findMadeUpActor, findMissingSerialComma } from './prose.js';
 
 // Rejects prose built around a made-up actor (see `findMadeUpActor`) in Markdown and source. The
 // rows of the table in AGENTS.md contain the pattern without quotes, so the test skips them.
+//
+// Also rejects a list without a serial comma (see `findMissingSerialComma`) in Markdown outside
+// code blocks, in comments, in test names, and in package descriptions. It skips the first column
+// of the tables in AGENTS.md, which holds the sentences to avoid, and of the tables in PARITY.md,
+// which holds upstream test names.
 
 const root = join(import.meta.dirname, '../../..');
 
@@ -29,7 +34,7 @@ const files = [
   ),
 ].filter((file) => file !== join(root, 'tools/lint/src/prose.ts'));
 
-test('no prose describes a made-up app, caller or user', () => {
+test('no prose describes a made-up app, caller, or user', () => {
   const found: string[] = [];
   for (const file of files) {
     const agents = file === join(root, 'AGENTS.md');
@@ -46,4 +51,74 @@ test('no prose describes a made-up app, caller or user', () => {
       });
   }
   expect(found).toEqual([]);
+});
+
+const testName = /\b(?:describe|it|test)(?:\.\w+)*\(\s*(['"`])((?:(?!\1)[^\\]|\\.)*)\1/;
+
+// Returns the prose in `file`: each Markdown line, and each comment and test name in source, but
+// not the lines in a fenced code block.
+function proseLines(file: string): { line: number; text: string }[] {
+  const lines: { line: number; text: string }[] = [];
+  let fenced = false;
+  readFileSync(file, 'utf8')
+    .split('\n')
+    .forEach((line, index) => {
+      const markdown = /\.mdx?$/.test(file);
+      const comment = markdown ? undefined : /^\s*(?:\/\/|\/\*\*|\*)(.*)$/.exec(line)?.[1];
+      const text = markdown ? line : comment;
+      if (text !== undefined && /^\s*(?:```|~~~)/.test(text)) {
+        fenced = !fenced;
+        return;
+      }
+      if (fenced) {
+        return;
+      }
+      const name = markdown ? undefined : testName.exec(line)?.[2];
+      for (const prose of [text, name]) {
+        if (prose === undefined) {
+          continue;
+        }
+        const cells = /(?:AGENTS|PARITY)\.md$/.test(file) && prose.startsWith('|');
+        lines.push({ line: index + 1, text: cells ? prose.slice(prose.indexOf('|', 1)) : prose });
+      }
+    });
+  return lines;
+}
+
+test('every list of three or more items has a serial comma', () => {
+  const found: string[] = [];
+  for (const file of files) {
+    for (const { line, text } of proseLines(file)) {
+      const list = findMissingSerialComma(text);
+      if (list) {
+        found.push(`${relative(root, file)}:${line}: ${list}`);
+      }
+    }
+  }
+  for (const dir of readdirSync(join(root, 'packages'))) {
+    const manifest = join(root, 'packages', dir, 'package.json');
+    const { description } = JSON.parse(readFileSync(manifest, 'utf8')) as {
+      description?: string | undefined;
+    };
+    const list = description === undefined ? undefined : findMissingSerialComma(description);
+    if (list) {
+      found.push(`${relative(root, manifest)}: ${list}`);
+    }
+  }
+  expect(found).toEqual([]);
+});
+
+test('findMissingSerialComma finds lists and skips clauses', () => {
+  expect(findMissingSerialComma('`fetch`, `Request` and `Response` are global.')).toBe(
+    '`fetch`, `Request` and `Response`',
+  );
+  expect(findMissingSerialComma('A row ends at CRLF, LF or CR.')).toBe('ends at CRLF, LF or CR.');
+  expect(findMissingSerialComma('A row ends at CRLF, LF, or CR.')).toBeUndefined();
+  expect(findMissingSerialComma('It rejects "a, b and c" as written.')).toBeUndefined();
+  expect(findMissingSerialComma('Use `f(a, b)` and `g`.')).toBeUndefined();
+  expect(findMissingSerialComma('When it aborts, `encode` and `decode` reject.')).toBeUndefined();
+  expect(findMissingSerialComma('`exports`, whether or not it has one.')).toBeUndefined();
+  expect(
+    findMissingSerialComma('Names are signed, sorted by name and then value.'),
+  ).toBeUndefined();
 });

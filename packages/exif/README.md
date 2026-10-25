@@ -1,6 +1,6 @@
 # @portable/exif
 
-Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG and WebP files. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Reads EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF files, and removes EXIF and XMP metadata from JPEG, PNG, and WebP files. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [exif-parser](https://www.npmjs.com/package/exif-parser).
 
@@ -35,7 +35,7 @@ Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chun
 | `interop` | `Tags` | Interoperability IFD tags. |
 | `ifd1` | `Tags` | Thumbnail tags. |
 | `latitude`, `longitude` | `number \| undefined` | Decimal degrees, negative for south and west. Set when both coordinates are present. |
-| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment, TIFF `ImageWidth` and `ImageHeight`, PNG `IHDR`, the WebP header, or the HEIF `ispe` property of the primary item. |
+| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment, TIFF `ImageWidth`, and `ImageHeight`, PNG `IHDR`, the WebP header, or the HEIF `ispe` property of the primary item. |
 | `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail that IFD1 points to. `offset` is its position in the input. `bytes` is a view into the input. |
 
 A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html). A tag without a name is keyed by its id, such as `'0xC4A5'`. When an IFD holds a tag twice, the first one is kept.
@@ -89,7 +89,7 @@ Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesErro
 
 ## `Exif.strip(bytes, options?)` and `Exif.StripStream`
 
-Remove the EXIF and XMP metadata from a JPEG, PNG or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
+Remove the EXIF and XMP metadata from a JPEG, PNG, or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
 
 ```ts
 const [stored, inspected] = request.body!.tee();
@@ -104,7 +104,7 @@ What is removed:
 | Format | Removed | Kept by default |
 | --- | --- | --- |
 | JPEG | APP1 `Exif` and XMP segments (including extended XMP), and the APP13 Photoshop segment that holds IPTC. | APP2 `ICC_PROFILE` segments, and every other segment. |
-| PNG | `eXIf`, and `tEXt`, `zTXt` and `iTXt` chunks with the keyword `XML:com.adobe.xmp` or ImageMagick's `Raw profile type exif`, `APP1`, `xmp` and `iptc`. | `iCCP`, and every other text chunk. |
+| PNG | `eXIf`, and `tEXt`, `zTXt`, and `iTXt` chunks with the keyword `XML:com.adobe.xmp` or ImageMagick's `Raw profile type exif`, `APP1`, `xmp`, and `iptc`. | `iCCP`, and every other text chunk. |
 | WebP | `EXIF` and `XMP ` chunks. The RIFF size and the `VP8X` flags are updated to match. | `ICCP`. |
 
 | Option | Default | Description |
@@ -117,7 +117,7 @@ What is removed:
 
 In a JPEG, everything from the first start-of-scan marker on is copied unchanged, including any segments after the scan. A truncated file is stripped as far as it goes.
 
-`strip` throws `Exif.UnsupportedError` for TIFF, HEIC and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2.
+`strip` throws `Exif.UnsupportedError` for TIFF, HEIC, and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2.
 
 ## `Exif.parseDate(value, options?)`
 
@@ -125,7 +125,7 @@ Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 860
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `offset` | none | UTC offset such as `'+02:00'`, used when `value` has none. Pass the matching `OffsetTimeOriginal`, `OffsetTimeDigitized` or `OffsetTime` tag as it is. A missing tag or a value that isn't an offset is ignored. |
+| `offset` | none | UTC offset such as `'+02:00'`, used when `value` has none. Pass the matching `OffsetTimeOriginal`, `OffsetTimeDigitized`, or `OffsetTime` tag as it is. A missing tag or a value that isn't an offset is ignored. |
 
 Without an offset the date is read as UTC, so `getUTCHours()` and the other `getUTC*` methods return the time the camera recorded.
 
@@ -140,11 +140,11 @@ const taken = Exif.parseDate(exif.DateTimeOriginal, { offset: exif.OffsetTimeOri
 | --- | --- |
 | `Exif.Metadata` | What `parse` and `parseStream` return. Every IFD is an object, empty when the file doesn't have it. |
 | `Exif.Tags` | One IFD, keyed by tag name. |
-| `Exif.TagValue` | A tag value: a string for ASCII, a number or `number[]` for numeric tags, and a `Uint8Array` view of the input for UNDEFINED tags. |
+| `Exif.TagValue` | A tag value: a string for ASCII tags; a number or `number[]` for numeric tags; and a `Uint8Array` view of the input for UNDEFINED tags. |
 
 ## Why use this over exif-parser
 
-exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies outside `@portable/*`.
+exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC, and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies outside `@portable/*`.
 
 - Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 11× faster than exifr.
 - `parse` skips the bad tags in damaged data and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
@@ -152,9 +152,9 @@ exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC and A
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
 - Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
 - exif-parser returns Exif IFD tags such as `DateTimeOriginal` in its interop section, and `parse` returns them in `exif`.
-- exif-parser converts `GPSLatitude` and `GPSLongitude` to decimal degrees. `parse` keeps the stored degrees, minutes and seconds in those tags and returns decimal degrees in `latitude` and `longitude`.
+- exif-parser converts `GPSLatitude` and `GPSLongitude` to decimal degrees. `parse` keeps the stored degrees, minutes, and seconds in those tags and returns decimal degrees in `latitude` and `longitude`.
 - exif-parser leaves out binary tags unless you call `enableBinaryFields(true)`. `parse` always returns them, as `Uint8Array` views of the input.
-- exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)` and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
+- exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)`, and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
 
 <!-- bench:start -->
 <table>

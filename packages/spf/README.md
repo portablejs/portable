@@ -44,14 +44,14 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr` and `resolveTxt`. |
+| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveTxt`. |
 | `receiver` | `'unknown'` | The checking host's name, for `%{r}` in explanations. |
 | `now` | `new Date()` | The time for `%{t}` in explanations, as a `Date` or a `Temporal.Instant`. |
 | `signal` | none | Aborting rejects `check` with `signal.reason` and cancels the pending lookups. RFC 7208 section 4.6.4 suggests a time limit of at least 20 seconds, after which the result is `temperror`: catch the `TimeoutError` from `AbortSignal.timeout` and report `temperror`. |
 
 There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.
 
-`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA` or `EBADNAME` as an empty answer, so an `a`, `mx` or `exists` term doesn't match and an `include` gives `permerror`. It treats any other rejection as `temperror`.
+`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as an empty answer, so an `a`, `mx`, or `exists` term doesn't match and an `include` gives `permerror`. It treats any other rejection as `temperror`.
 
 ## Result
 
@@ -59,13 +59,13 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 | Field | Description |
 | --- | --- |
-| `result` | `'pass'`, `'fail'`, `'softfail'`, `'neutral'`, `'none'`, `'temperror'` or `'permerror'`. |
+| `result` | `'pass'`, `'fail'`, `'softfail'`, `'neutral'`, `'none'`, `'temperror'`, or `'permerror'`. |
 | `domain` | The domain whose policy was checked. A non-ASCII domain is converted to its A-label form. |
 | `identity` | `'mailfrom'`, or `'helo'` when the sender was empty. With `domain`, it gives `smtp.mailfrom` or `smtp.helo` for Authentication-Results. |
 | `mechanism` | The term that matched, as written in the record, such as `include:_spf.example.com` or `-all`. Missing when nothing matched. |
 | `record` | The SPF record that gave the result. After a `redirect=`, it is the record of the redirect target. |
 | `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text. |
-| `reason` | Why the result is `none`, `temperror` or `permerror`, such as `More than 10 DNS-querying terms`. |
+| `reason` | Why the result is `none`, `temperror`, or `permerror`, such as `More than 10 DNS-querying terms`. |
 | `cause` | The resolver's error behind a `temperror`. |
 | `lookups` | The number of DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
 | `voidLookups` | The number of lookups that found no records. |
@@ -83,7 +83,7 @@ The limits of RFC 7208 section 4.6.4 are fixed:
 
 ## Macros
 
-All of RFC 7208 section 7 is supported: `%{s}`, `%{l}`, `%{o}`, `%{d}`, `%{i}`, `%{p}`, `%{v}`, `%{h}`, and `%{c}`, `%{r}` and `%{t}` in explanations, with digit, `r` and delimiter transformers, URL escaping for upper-case letters, and `%%`, `%_` and `%-`.
+All of RFC 7208 section 7 is supported: `%{s}`, `%{l}`, `%{o}`, `%{d}`, `%{i}`, `%{p}`, `%{v}`, `%{h}`, and `%{c}`, `%{r}`, and `%{t}` in explanations, with digit, `r`, and delimiter transformers, URL escaping for upper-case letters, and `%%`, `%_`, and `%-`.
 
 RFC 7208 says `%{p}` SHOULD NOT be used: it is slow and the client controls its PTR records. It works as the RFC describes, preferring a validated name equal to or under the current domain, then any validated name, then `unknown`.
 
@@ -98,9 +98,9 @@ When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}
 
 ## Why use this over mailauth
 
-- It runs in browsers and Workers as well as Node. mailauth's SPF code imports `node:dns`, `node:net` and `node:os`, so it can't run in Workers or a browser.
+- It runs in browsers and Workers as well as Node. mailauth's SPF code imports `node:dns`, `node:net`, and `node:os`, so it can't run in Workers or a browser.
 - It follows RFC 7208 by default. mailauth's default mode evaluates records lazily and counts void lookups its own way, and you need `strict: true` to get RFC behavior. All 203 tests of the RFC 7208 suite pass, and the results match mailauth's strict mode on the suite and on 300 random records.
-- It has no dependencies outside `@portable/*`. mailauth depends on joi, ipaddr.js, libmime and more for SPF.
+- It has no dependencies outside `@portable/*`. mailauth depends on joi, ipaddr.js, libmime, and more for SPF.
 - It is faster. On a record with nested includes and a fake resolver, it runs about twice as many checks a second as mailauth's default mode in Node, as the table below shows.
 
 <!-- bench:start -->
@@ -132,7 +132,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - These results differ from mailauth's default mode and match its strict mode: a syntax error anywhere in the record is `permerror`, even after the term that matched.
 - An `a` term counts as a void lookup when the host has no address of the client's family, even if it has one of the other family. mailauth's default mode doesn't count it, and its strict mode does.
 - A record with leading spaces, or a tab after `v=spf1`, is not an SPF record. mailauth's default mode accepts it, and its strict mode doesn't.
-- `%{c}`, `%{r}` and `%{t}` in a mechanism, `redirect=` or `exp=` are `permerror`, because they are allowed only in the explanation text. mailauth's default mode accepts them, and its strict mode doesn't.
+- `%{c}`, `%{r}`, and `%{t}` in a mechanism, `redirect=`, or `exp=` are `permerror`, because they are allowed only in the explanation text. mailauth's default mode accepts them, and its strict mode doesn't.
 - `check` rejects with a `RangeError` for an invalid `ip`. mailauth returns `temperror` in both modes.
 - A resolver answer of `[]` is a void lookup, as RFC 7208 defines one. mailauth counts only `ENOTFOUND` and `ENODATA` rejections.
 - `check` treats an `EBADNAME` rejection from the resolver as an empty answer. mailauth's default mode gives `permerror` for any term.

@@ -7,7 +7,7 @@ const payload = new TextEncoder().encode('hello');
 
 describe('byte inputs', () => {
   for (const form of byteForms) {
-    test(`reads keys, payload and salt given as a ${form}`, async () => {
+    test(`reads keys, payload, and salt given as a ${form}`, async () => {
       const agent = await userAgent();
       const keys = {
         p256dh: toByteForm(agent.publicKey, form),

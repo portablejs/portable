@@ -59,7 +59,7 @@ export function neverAborted(): AbortSignal {
  * next({ attempt: 3 }); // 4000
  * ```
  *
- * @throws {RangeError} When a wait, `initial` or `max` is negative, or `factor` isn't a positive finite number.
+ * @throws {RangeError} When a wait, `initial`, or `max` is negative, or `factor` isn't a positive finite number.
  */
 export function backoff(delay: Delay): (attempt: Attempt) => number {
   if (typeof delay === 'function') {

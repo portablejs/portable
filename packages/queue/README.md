@@ -1,8 +1,8 @@
 # @portable/queue
 
-Limits how many async tasks run at once, in memory. A queue runs tasks by priority, pauses and resumes, cancels with `AbortSignal`, and can cap how many tasks start per interval. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` shares one call between concurrent callers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Limits how many async tasks run at once, in memory. A queue runs tasks by priority, cancels them with `AbortSignal`, and can cap how many tasks start per interval. You can also pause and resume it. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` shares one call between concurrent callers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [p-limit](https://www.npmjs.com/package/p-limit), [p-queue](https://www.npmjs.com/package/p-queue), [p-map](https://www.npmjs.com/package/p-map) and [p-throttle](https://www.npmjs.com/package/p-throttle). It is not a persistent job queue: tasks are kept in memory and are lost when the process exits.
+Replaces [p-limit](https://www.npmjs.com/package/p-limit), [p-queue](https://www.npmjs.com/package/p-queue), [p-map](https://www.npmjs.com/package/p-map), and [p-throttle](https://www.npmjs.com/package/p-throttle). It is not a persistent job queue: tasks are kept in memory and are lost when the process exits.
 
 ```sh
 npm install @portable/queue
@@ -100,7 +100,7 @@ const throttled = (id: string) => queue.add(() => fetchUser(id));
 
 ## With `@portable/timers`
 
-Retries, timeouts and delays come from `@portable/timers`. To retry inside one slot, wrap the work in `Timers.retry` inside the task:
+Retries, timeouts, and delays come from `@portable/timers`. To retry inside one slot, wrap the work in `Timers.retry` inside the task:
 
 ```ts
 import * as Queue from '@portable/queue';
@@ -132,7 +132,7 @@ To time out a single task, call `queue.add(task, { signal: AbortSignal.timeout(5
 | `Queue.Task` | `(context) => value \| Promise<value>`, a function the queue runs. |
 | `Queue.Context` | `{ signal }`, what a task receives. The signal aborts when the task's or the queue's `signal` aborts, or when the queue is disposed. |
 
-## Why use this over p-limit, p-queue, p-map and p-throttle
+## Why use this over p-limit, p-queue, p-map, and p-throttle
 
 They run in browsers too, but they are four packages with four APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies outside `@portable/*`.
 
@@ -145,8 +145,8 @@ They run in browsers too, but they are four packages with four APIs, and they ha
 - p-limit's `limit(fn, a, b)` passes the extra arguments to `fn`. The function from `Queue.limit` takes only a task, so write `limit(() => fn(a, b))`.
 - p-queue's `autoStart: false` has no equivalent. Call `pause()` after `create` and `resume()` to start.
 - p-queue's `timeout` option has no equivalent. Pass `signal: AbortSignal.timeout(ms)` to `add`, or use `Timers.retry` with `timeout`.
-- p-queue's `addAll`, `on('error')`, `onEmpty()`, `onSizeLessThan()` and `setPriority()` have no equivalent. `test/PARITY.md` lists what to use instead.
-- p-map's `pMapSkip`, `pMapIterable`, `pMapSettled` and `pMapKeyed` have no equivalent. Filter the results of `map` in place of `pMapSkip`.
+- p-queue's `addAll`, `on('error')`, `onEmpty()`, `onSizeLessThan()`, and `setPriority()` have no equivalent. `test/PARITY.md` lists what to use instead.
+- p-map's `pMapSkip`, `pMapIterable`, `pMapSettled`, and `pMapKeyed` have no equivalent. Filter the results of `map` in place of `pMapSkip`.
 - `map` passes `{ index, signal }` as the second argument to `fn`, where p-map passes a bare index.
 - `map` doesn't await promise items. p-map awaits each item before calling the mapper.
 - `map` doesn't call `return()` on an iterator whose `next()` threw, as `for...of` doesn't. p-map does.

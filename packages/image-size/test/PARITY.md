@@ -64,11 +64,11 @@ These test internal byte helpers. Our tests cover the formats that use them inst
 | --- | --- |
 | toUTF8String (2 tests) | the SVG and ICNS fixtures |
 | toHexString (2 tests) | not applicable: the tests compare bytes directly |
-| readInt16LE, readUInt16LE, readUInt24LE, readInt32LE, readUInt32LE | the BMP, GIF, ICO, TGA, WebP and little-endian TIFF fixtures, and `other formats > BMP stored top-down reports a positive height` for the signed read |
-| readUInt16BE, readUInt32BE | the PNG, PSD, JPEG and big-endian TIFF fixtures |
+| readInt16LE, readUInt16LE, readUInt24LE, readInt32LE, readUInt32LE | the BMP, GIF, ICO, TGA, WebP, and little-endian TIFF fixtures, and `other formats > BMP stored top-down reports a positive height` for the signed read |
+| readUInt16BE, readUInt32BE | the PNG, PSD, JPEG, and big-endian TIFF fixtures |
 | readUInt (2 tests) | `valid/tiff/little-endian.tiff`, `valid/tiff/big-endian.tiff` |
 | readUInt64 (4 tests) | the three `valid/tiff/bigtiff-*` fixtures |
-| findBox > should find box by name | every HEIF, JP2 and JXL fixture |
+| findBox > should find box by name | every HEIF, JP2, and JXL fixture |
 | findBox > should return undefined when box is not found | `HEIF > throws TruncatedError for a file that ends before its meta box` |
 | findBox > should handle incomplete box data | `prefixes and corrupt headers > a prefix gives the full answer or throws TruncatedError` |
 | findBox > should handle box size larger than remaining input | `prefixes and corrupt headers > a prefix gives the full answer or throws TruncatedError` |
@@ -99,7 +99,7 @@ We found these bugs and gaps in image-size 2.0.4 by reading its source and runni
 
 ## Oracle tests
 
-`parse.oracle.test.ts` compares every valid fixture with image-size and checks that both reject every invalid one. `image-size.fuzz.oracle.test.ts` mutates the first 512 bytes of each valid fixture and compares `width`, `height` and `type` whenever both libraries return a size. It leaves out HEIF and JPEG files, a Netpbm header without whitespace after its magic number, a Netpbm header whose size line isn't two numbers separated by one space, and results where image-size returns an undefined or zero width or height, because of the issues above. Its first runs found a PNM header that made `parse` throw a `RangeError` (`PNM > rejects a header whose height is a long run of binary data`).
+`parse.oracle.test.ts` compares every valid fixture with image-size and checks that both reject every invalid one. `image-size.fuzz.oracle.test.ts` mutates the first 512 bytes of each valid fixture and compares `width`, `height`, and `type` whenever both libraries return a size. It leaves out HEIF and JPEG files, a Netpbm header without whitespace after its magic number, a Netpbm header whose size line isn't two numbers separated by one space, and results where image-size returns an undefined or zero width or height, because of the issues above. Its first runs found a PNM header that made `parse` throw a `RangeError` (`PNM > rejects a header whose height is a long run of binary data`).
 
 ## Stream behavior
 

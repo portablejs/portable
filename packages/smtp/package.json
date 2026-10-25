@@ -1,6 +1,6 @@
 {
   "name": "@portable/smtp",
-  "description": "Send email over SMTP with STARTTLS, AUTH and pipelining, in any JavaScript runtime that has a TCP socket API.",
+  "description": "Send email over SMTP with STARTTLS, AUTH, and pipelining, in any JavaScript runtime that has a TCP socket API.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

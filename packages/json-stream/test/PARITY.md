@@ -2,7 +2,7 @@
 
 Upstream suites:
 
-- [JSONStream 1.3.5 `test/`](https://github.com/dominictarr/JSONStream/tree/master/test). Fixtures `all_npm.json`, `couch_sample.json`, `depth.json`, `error.json` and `header_footer.json` are copied from it (MIT or Apache-2.0, Dominic Tarr).
+- [JSONStream 1.3.5 `test/`](https://github.com/dominictarr/JSONStream/tree/master/test). Fixtures `all_npm.json`, `couch_sample.json`, `depth.json`, `error.json`, and `header_footer.json` are copied from it (MIT or Apache-2.0, Dominic Tarr).
 - [stream-json 3.7.0 `tests/`](https://github.com/uhop/stream-json/tree/master/tests).
 - [json-stream-stringify 3.1.7 `test-src/JsonStreamStringify.spec.ts`](https://github.com/Faleij/json-stream-stringify/blob/master/test-src/JsonStreamStringify.spec.ts).
 - [@worker-tools/json-stream `test/`](https://github.com/worker-tools/json-stream/tree/master/test).
@@ -92,7 +92,7 @@ Test names below are the `describe > test` names in `DecoderStream.conformance.t
 
 ## stream-json
 
-stream-json is a toolkit built around a token stream: a parser emits tokens, and filters, streamers and assemblers turn them into values. This package has no token stream, so tests of tokens, filters that rewrite a document, and Node-only plumbing don't apply. `tests/web/*` repeat the `tests/node/*` cases through web stream wrappers, with "(web)" in the name, and each maps to the row of the same node test. `tests/web/test-web.js` (3 tests) checks that the web subpath exports wrappers, so there is nothing to map.
+stream-json is a toolkit built around a token stream: a parser emits tokens, and filters, streamers, and assemblers turn them into values. This package has no token stream, so tests of tokens, filters that rewrite a document, and Node-only plumbing don't apply. `tests/web/*` repeat the `tests/node/*` cases through web stream wrappers, with "(web)" in the name, and each maps to the row of the same node test. `tests/web/test-web.js` (3 tests) checks that the web subpath exports wrappers, so there is nothing to map.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -128,7 +128,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | streamValues: stream values, no streaming tokens | P `stream-json > parses 5 documents separated by " "` | |
 | streamValues: no values | P `stream-json > emits nothing for empty input` | |
 | filter (10 tests), ignore (9 tests), replace (18 tests) | skipped | These rewrite a document by dropping or replacing tokens. This package selects values, and rewriting a document is out of scope. |
-| assembler (12 tests), flexAssembler (27 tests) | skipped | Token assembly, revivers and custom containers. `__proto__` handling is covered by P `stream-json > creates "__proto__" as an own property, as JSON.parse does`. |
+| assembler (12 tests), flexAssembler (27 tests) | skipped | Token assembly, revivers, and custom containers. `__proto__` handling is covered by P `stream-json > creates "__proto__" as an own property, as JSON.parse does`. |
 | disassembler: roundtrip | E `encodeStream > matches JSON.stringify for nested plain values with indentation` | |
 | disassembler: bad top-level values, bad values in object, bad values in array | E `json-stream-stringify > calls a function property and writes what it returns`, `writes … as JSON.stringify does` | |
 | disassembler: dates | E `json-stream-stringify > writes a date as JSON.stringify does` | |

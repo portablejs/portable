@@ -150,7 +150,7 @@ describe('groups (RFC 6854)', () => {
     ]);
   });
 
-  test('a group, a mailbox and a group', () => {
+  test('a group, a mailbox, and a group', () => {
     const list = parseAddresses(
       'Managing Partners:ben@example.com,carol@example.com;, "Foo" <foo@example.com>, Group2:alice@example.com;',
       { strict: true },

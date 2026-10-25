@@ -1,8 +1,8 @@
 # @portable/webhooks
 
-Verifies and signs webhooks from Standard Webhooks senders (Svix, Resend, Clerk and others), Stripe, GitHub and Slack, and from any other sender that signs with HMAC-SHA256 once you describe its headers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Verifies and signs webhooks from Standard Webhooks senders (Svix, Resend, Clerk, and others), Stripe, GitHub, and Slack, and from any other sender that signs with HMAC-SHA256 once you describe its headers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [standardwebhooks](https://www.npmjs.com/package/standardwebhooks), the `Webhook` class in [svix](https://www.npmjs.com/package/svix), Stripe's `constructEvent` and `constructEventAsync` in [stripe](https://www.npmjs.com/package/stripe), [@octokit/webhooks-methods](https://www.npmjs.com/package/@octokit/webhooks-methods) and the request verification in [@slack/bolt](https://www.npmjs.com/package/@slack/bolt).
+Replaces [standardwebhooks](https://www.npmjs.com/package/standardwebhooks), the `Webhook` class in [svix](https://www.npmjs.com/package/svix), Stripe's `constructEvent` (and `constructEventAsync`) in [stripe](https://www.npmjs.com/package/stripe), [@octokit/webhooks-methods](https://www.npmjs.com/package/@octokit/webhooks-methods), and the request verification in [@slack/bolt](https://www.npmjs.com/package/@slack/bolt).
 
 ```sh
 npm install @portable/webhooks
@@ -49,12 +49,12 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object. |
 | `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`. |
 | `Scheme` | The type of a scheme object, for writing one for another sender. |
-| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
 | `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` stores the limit. |
 
 `verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret, a Standard Webhooks secret that isn't base64, or an invalid `now` throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
-The result's `id` is the delivery id from `webhook-id`, `svix-id` or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
+The result's `id` is the delivery id from `webhook-id`, `svix-id`, or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
 
 ### Options
 
@@ -82,7 +82,7 @@ A header can contain several signatures (Standard Webhooks separates them with s
 
 ### Other senders
 
-A scheme is an object of plain functions: `parse` reads the signatures (as bytes), timestamp and id from the headers, `payload` returns what the sender signs, `headers` writes the headers for `sign`, and the optional `key` turns a string secret into key bytes. `verify` and `sign` do everything else the same way for every scheme: the HMAC, the length check and constant-time compare, several secrets and the timestamp tolerance. For a sender that signs with HMAC-SHA256, write its scheme:
+A scheme is an object of plain functions: `parse` reads the signatures (as bytes), timestamp, and id from the headers, `payload` returns what the sender signs, `headers` writes the headers for `sign`, and the optional `key` turns a string secret into key bytes. `verify` and `sign` do everything else the same way for every scheme: the HMAC, the length check with a constant-time compare, several secrets, and the timestamp tolerance. For a sender that signs with HMAC-SHA256, write its scheme:
 
 ```ts
 import * as Webhooks from '@portable/webhooks';
@@ -146,18 +146,18 @@ const { body } = await Webhooks.verify(request, {
 | --- | --- |
 | `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes. If the scheme has no `key`, the string is encoded as UTF-8. A `Uint8Array` is used as the raw key. |
 | `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
-| `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'` or `'timestamp'`. |
+| `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
 
 ## Why use this over the provider libraries
 
-One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object. It computes the HMAC with `crypto.subtle` and has no dependencies outside `@portable/*`, so you don't install the `stripe`, `svix` or `@slack/bolt` SDK for one function, and it runs in any JavaScript runtime.
+One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object. It computes the HMAC with `crypto.subtle` and has no dependencies outside `@portable/*`, so you don't install the `stripe`, `svix`, or `@slack/bolt` SDK for one function, and it runs in any JavaScript runtime.
 
 - The HMAC covers the body bytes as received. Stripe and standardwebhooks decode the body as UTF-8 and encode it again, so a body with a byte order mark or invalid UTF-8 fails verification.
 - The timestamp tolerance applies in both directions, and `tolerance: 0` allows no skew. Stripe and Slack accept a timestamp any distance in the future, and Stripe's `tolerance: 0` turns the check off.
 - A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
 - Stripe's `constructEvent` takes `tolerance` in seconds, and `verify` takes it in milliseconds, so Stripe's `300` becomes `tolerance: 300_000`. Stripe's `tolerance: 0` turns the check off, and here `0` requires the exact second and `Infinity` turns the check off.
-- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date` or a `Temporal.Instant`.
+- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date`, or a `Temporal.Instant`.
 - A timestamp must be an integer number of seconds. standardwebhooks and Stripe read `123abc` as `123` with `parseInt`.
 - `@octokit/webhooks-methods`'s `verify` returns `false` for a bad signature. `Webhooks.verify` throws instead.
 - Stripe and standardwebhooks parse the JSON body for you. `verify` returns the text, because Slack and GitHub can send form-encoded bodies.

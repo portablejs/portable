@@ -2,7 +2,7 @@
 
 Encodes and decodes base64 and base64url, with optional line wrapping for MIME and streams for large bodies. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [libbase64](https://www.npmjs.com/package/libbase64), [base64-js](https://www.npmjs.com/package/base64-js) and [js-base64](https://www.npmjs.com/package/js-base64).
+Replaces [libbase64](https://www.npmjs.com/package/libbase64), [base64-js](https://www.npmjs.com/package/base64-js), and [js-base64](https://www.npmjs.com/package/js-base64).
 
 ```sh
 npm install @portable/base64
@@ -22,7 +22,7 @@ const response = await fetch('https://example.com/logo.png');
 const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 76 }));
 ```
 
-`encode` and `decode` call `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them (current Chromium, Firefox and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
+`encode` and `decode` call `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
 
 ## API
 
@@ -31,7 +31,7 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `encode(input, options?)` | Encodes a `Uint8Array`, or a string as UTF-8, to a base64 string. |
 | `decode(input, options?)` | Decodes a base64 string, or its bytes, to a `Uint8Array`. |
 | `new EncoderStream(options?)` | `TransformStream<Uint8Array \| string, Uint8Array>` that emits the base64 text as ASCII bytes. However the input is split into chunks, the output equals `encode` of the whole input. |
-| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding and groups of four characters can be split across chunks anywhere. |
+| `new DecoderStream(options?)` | `TransformStream<string \| Uint8Array, Uint8Array>`. Same output as `decode` of the whole input. Line breaks, padding, and groups of four characters can be split across chunks anywhere. |
 | `InvalidInputError` | Thrown, or errors the stream, for a character outside the alphabet or misplaced padding. |
 | `TruncatedError` | Thrown, or errors the stream, when the input ends inside a group of four characters. |
 
@@ -72,9 +72,9 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | Type | Description |
 | --- | --- |
 | `Base64.Alphabet` | `'base64'` or `'base64url'` (RFC 4648). |
-| `Base64.Mode` | `'loose'`, `'strict'` or `'mime'`, how `decode` treats input that isn't canonical base64. |
+| `Base64.Mode` | `'loose'`, `'strict'`, or `'mime'`, how `decode` treats input that isn't canonical base64. |
 
-## Why use this over base64-js, js-base64 and libbase64
+## Why use this over base64-js, js-base64, and libbase64
 
 One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and depends only on other `@portable/*` packages.
 
@@ -151,4 +151,4 @@ Differences to check when you switch:
 - js-base64's `decode` returns a string, and `decode` returns bytes, so pass them to `TextDecoder` to get the text.
 - libbase64's `decode` returns a `Buffer` argument unchanged. `decode` reads a `Uint8Array` as base64 text.
 - js-base64 encodes lone surrogates as they are. `encode` encodes strings with `TextEncoder`, which replaces a lone surrogate with U+FFFD.
-- libbase64's `Encoder` options `skipStartBytes`, `limitOutputBytes` and `startPadding` and its byte counters have no equivalent in `EncoderStream`, and string chunks are always encoded as UTF-8.
+- libbase64's `Encoder` options `skipStartBytes`, `limitOutputBytes`, and `startPadding` and its byte counters have no equivalent in `EncoderStream`, and string chunks are always encoded as UTF-8.

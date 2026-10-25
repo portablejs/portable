@@ -388,7 +388,7 @@ describe('transform', () => {
 });
 
 describe('fromIterable', () => {
-  test('reads arrays, sets, generators and async generators', async () => {
+  test('reads arrays, sets, generators, and async generators', async () => {
     function* gen() {
       yield 1;
       yield 2;

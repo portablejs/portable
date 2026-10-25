@@ -1,8 +1,8 @@
 # @portable/streams
 
-Collects, combines and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Collects, combines, and transforms web streams and iterables, and makes your own transforms cancellable. It works without `ReadableStream.from` and `for await` over a stream, which some browsers lack. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2) and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body). `@portable/streams/node` replaces `Readable.toWeb` from `node:stream`.
+Replaces [get-stream](https://www.npmjs.com/package/get-stream), [concat-stream](https://www.npmjs.com/package/concat-stream), [bl](https://www.npmjs.com/package/bl) (as a collector), [stream-to-array](https://www.npmjs.com/package/stream-to-array), [merge2](https://www.npmjs.com/package/merge2), [merge-stream](https://www.npmjs.com/package/merge-stream), [through2](https://www.npmjs.com/package/through2), and the limit handling of [raw-body](https://www.npmjs.com/package/raw-body). `@portable/streams/node` replaces `Readable.toWeb` from `node:stream`.
 
 ```sh
 npm install @portable/streams
@@ -37,7 +37,7 @@ Each collector reads a `ReadableStream`, an async iterable (such as a Node `Read
 | `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`. |
 | `toArray(source, { signal })` | The chunks, unchanged. |
 
-`toBytes`, `toBlob`, `toText` and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
+`toBytes`, `toBlob`, `toText`, and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
 
 ```ts
 const body = await Streams.toJson(request.body!, { maxBytes: 100_000 });
@@ -52,7 +52,7 @@ const body = await Streams.toJson(request.body!, { maxBytes: 100_000 });
 | `limitBytes(maxBytes, { signal })` | A `TransformStream` that passes chunks through and fails with `MaxBytesError` once more than `maxBytes` bytes have passed. |
 | `tee(source, count, { highWaterMark, unit, signal })` | `count` streams that each receive every chunk of `source`. |
 
-Sources are streams, async iterables or iterables. An error in one source errors the output and cancels the others, and cancelling the output cancels every source.
+Sources are streams, async iterables, or iterables. An error in one source errors the output and cancels the others, and cancelling the output cancels every source.
 
 `tee` splits in the other direction, and differs from `ReadableStream.prototype.tee()` in three ways:
 
@@ -103,7 +103,7 @@ const lines = Streams.transform(async function* (source: AsyncIterable<string>) 
 
 ## Cancel your own TransformStream
 
-`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends, is cancelled, or fails because the transformer threw, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv and the other Portable packages use it to support their `signal` option.
+`abortable(transformer, { signal })` wraps a `Transformer` so that aborting `signal` errors its `TransformStream` with `signal.reason`, and `pipeThrough` then cancels the source. It removes its listener on the signal when the stream ends, is cancelled, or fails because the transformer threw, and returns the transformer unchanged when there is no signal. The stream transforms in lines, base64, csv, and the other Portable packages use it to support their `signal` option.
 
 ```ts
 class UpperCaseStream extends TransformStream<string, string> {
@@ -138,7 +138,7 @@ Both read from the `Readable` only when the stream's reader asks for a chunk, so
 
 A `Buffer` chunk becomes a `Uint8Array` over the same memory, so the conversion copies no bytes. A small `Buffer` and the `Uint8Array` made from it share Node's buffer pool with other buffers. Don't transfer the chunk's `ArrayBuffer`, because that detaches every other buffer in the pool.
 
-For the other conversions, use the ones in `node:stream`: `Readable.fromWeb` for a `ReadableStream` that a Node API needs to read, `Writable.toWeb` and `Writable.fromWeb` for writables, and `Duplex.toWeb` and `Duplex.fromWeb` for transforms. Keep the work in web streams and convert only where a Node API needs a Node stream, such as a file:
+For the other conversions, use the ones in `node:stream`: `Readable.fromWeb` for a `ReadableStream` that a Node API needs to read; `Writable.toWeb` and `Writable.fromWeb` for writables; and `Duplex.toWeb` and `Duplex.fromWeb` for transforms. Keep the work in web streams and convert only where a Node API needs a Node stream, such as a file:
 
 ```ts
 import { createWriteStream } from 'node:fs';
@@ -158,10 +158,10 @@ await response.body!
 
 | Type | Description |
 | --- | --- |
-| `Streams.Source` | What the collectors and combinators read: a `ReadableStream`, an async iterable or an iterable. |
+| `Streams.Source` | What the collectors and combinators read: a `ReadableStream`, an async iterable, or an iterable. |
 | `Streams.abortable.Transformer` | The `Transformer` that `abortable` takes and returns. It adds the optional `cancel` method, which TypeScript's DOM types don't have yet. |
 
-## Why use this over get-stream, concat-stream and merge2
+## Why use this over get-stream, concat-stream, and merge2
 
 The libraries above were written for Node streams. This package reads web streams with `getReader()`, so it works in every runtime listed above, and it has no dependencies outside `@portable/*`.
 
@@ -173,7 +173,7 @@ The libraries above were written for Node streams. This package reads web stream
 
 ### Compared with `Readable.toWeb`
 
-`@portable/streams/node` has only the conversion that Node doesn't already do well. Node's `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb` and `Duplex.fromWeb` follow backpressure and propagate errors, and in a benchmark on Node 24 they ran faster than our versions of them, so this package doesn't wrap them. On Node 24, `NodeStreams.toWeb` differs from `Readable.toWeb` in these ways:
+`@portable/streams/node` has only the conversion that Node doesn't already do well. Node's `Readable.fromWeb`, `Writable.toWeb`, `Writable.fromWeb`, `Duplex.toWeb`, and `Duplex.fromWeb` follow backpressure and propagate errors, and in a benchmark on Node 24 they ran faster than our versions of them, so this package doesn't wrap them. On Node 24, `NodeStreams.toWeb` differs from `Readable.toWeb` in these ways:
 
 - `Readable.toWeb` passes the strings of a `Readable` with `setEncoding` through as strings, so a `ReadableStream` that should hold bytes holds hex or base64 text. `NodeStreams.toWeb` encodes them back to the original bytes.
 - `Readable.toWeb` read 128 KB from a `Readable` before anything read the stream. `NodeStreams.toWeb` reads from the `Readable` only when the stream is read, and it read 6.8 MB about 1.7× faster.
@@ -231,7 +231,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `maxBytes` always counts bytes. get-stream's `maxBuffer` counts characters for `getStream` and elements for `getStreamAsArray`, and `toArray` has no limit.
 - raw-body's `limit` accepts a string such as `'1mb'`. `maxBytes` takes a number of bytes, such as `1_000_000`.
 - get-stream's `MaxBufferError` stores the data read so far in `bufferedData`. A collector that fails has already cancelled its source and dropped what it read, so its errors don't include that data.
-- Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView` and other typed arrays, and concat-stream accepted numbers.
+- Byte collectors accept only `Uint8Array` (including `Buffer`) and `string` chunks. get-stream also accepted `ArrayBuffer`, `DataView`, and other typed arrays, and concat-stream accepted numbers.
 - Arrays and other iterables are valid sources. get-stream rejected them.
 - merge2 called with several arguments, as in `merge2(a, b, c)`, reads the sources one after another, which is `concat`. `merge` reads them at the same time.
 - merge2's `.add()` and the `{ end: false }` option have no equivalent, so pass every source when calling `concat` or `merge`.

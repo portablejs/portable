@@ -13,7 +13,7 @@ const characters = (text: string) => new Set(Array.from(text));
 const sorted = (values: Set<number>) => [...values].sort((a, b) => a - b);
 
 describe('matches the upstream libraries where they agree on a contract', () => {
-  test('int includes both ends, as random-int, lodash.random and node:crypto randomInt(min, max + 1) do', () => {
+  test('int includes both ends, as random-int, lodash.random, and node:crypto randomInt(min, max + 1) do', () => {
     for (const [min, max] of [
       [0, 1],
       [5, 10],

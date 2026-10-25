@@ -280,7 +280,7 @@ describe('referrals', () => {
     ]);
   });
 
-  test('ignores related links to HTML pages, other schemes, other objects and the same URL', async () => {
+  test('ignores related links to HTML pages, other schemes, other objects, and the same URL', async () => {
     const { fetch, urls } = server(
       registry([
         { rel: 'related', type: 'text/html', href: 'https://registrar.example/domain/example.com' },

@@ -45,7 +45,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
 
 /**
  * Thrown by `encode` for an EDNS option that has no `data` and no built-in encoder. Only
- * CLIENT_SUBNET, TCP_KEEPALIVE, PADDING and KEY_TAG are built in.
+ * CLIENT_SUBNET, TCP_KEEPALIVE, PADDING, and KEY_TAG are built in.
  *
  * @example
  * ```ts

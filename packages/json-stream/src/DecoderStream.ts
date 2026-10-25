@@ -11,7 +11,7 @@ export declare namespace DecoderStream {
     signal?: AbortSignal | undefined;
     /**
      * JSONPath expressions for the values to emit. Supported: `$` (the root), `.name`, `['name']`,
-     * `[0]`, `.*`, `[*]` and `..` (any depth). Every value that matches any path is emitted, and
+     * `[0]`, `.*`, `[*]`, and `..` (any depth). Every value that matches any path is emitted, and
      * a nested match is emitted before the value that contains it.
      * @default ['$']
      */

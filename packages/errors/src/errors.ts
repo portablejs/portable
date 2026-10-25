@@ -55,7 +55,7 @@ export declare namespace InvalidInputError {
 }
 
 /**
- * Thrown when the data a function exists to read, parse, decode, encode or verify is malformed.
+ * Thrown when the data a function exists to read, parse, decode, encode, or verify is malformed.
  * Each package throws its own subclass, such as `Base64.InvalidInputError`.
  *
  * @example

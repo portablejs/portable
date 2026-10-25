@@ -186,7 +186,7 @@ describe('abortable', () => {
     expect(Streams.abortable(transformer, { signal: undefined })).toBe(transformer);
   });
 
-  test('runs the start, transform and flush of the transformer', async () => {
+  test('runs the start, transform, and flush of the transformer', async () => {
     const stream = new TransformStream<number, number>(
       Streams.abortable(
         {

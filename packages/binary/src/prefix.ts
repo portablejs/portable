@@ -2,7 +2,7 @@ import type { Endian } from './createReader.js';
 import { position, readVarint, varintLength, writeVarint } from './varint.js';
 
 /**
- * How a frame stores its length before its bytes: an unsigned integer of 1, 2 or 4 bytes, or an
+ * How a frame stores its length before its bytes: an unsigned integer of 1, 2, or 4 bytes, or an
  * unsigned varint. The length counts only the frame's bytes, not the prefix.
  */
 export type Prefix = 'uint8' | 'uint16' | 'uint32' | 'varint';

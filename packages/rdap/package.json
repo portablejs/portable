@@ -1,6 +1,6 @@
 {
   "name": "@portable/rdap",
-  "description": "Look up domains, IP addresses and AS numbers over RDAP, with IANA bootstrap and normalized results, in any JavaScript runtime.",
+  "description": "Look up domains, IP addresses, and AS numbers over RDAP, with IANA bootstrap and normalized results, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

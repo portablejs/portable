@@ -26,7 +26,7 @@ describe('RFC 4180', () => {
     });
   }
 
-  test('ends a row at CRLF, LF or CR', async () => {
+  test('ends a row at CRLF, LF, or CR', async () => {
     expect(await decodeAll('a,b\r\nc,d\ne,f\rg,h')).toEqual([
       ['a', 'b'],
       ['c', 'd'],
@@ -354,7 +354,7 @@ describe('csv-parse', () => {
       ]);
     });
 
-    test('rejects a delimiter that is empty, longer than one character, a line break or the quote', () => {
+    test('rejects a delimiter that is empty, longer than one character, a line break, or the quote', () => {
       for (const delimiter of ['', '!#', '\n', '\r', '"']) {
         expect(() => Csv.decode('a', { delimiter })).toThrow(RangeError);
       }

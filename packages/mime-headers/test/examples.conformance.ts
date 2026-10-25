@@ -23,7 +23,7 @@ describe('JSDoc examples', () => {
     expect(MimeHeaders.decodeWords('=?UTF-8?B?w7U=?= =?UTF-8?B?w7U=?=')).toBe('õõ');
   });
 
-  test('fold, unfold and parseHeaders', () => {
+  test('fold, unfold, and parseHeaders', () => {
     expect(MimeHeaders.fold('To: a@example.com, b@example.com', { lineLength: 20 })).toBe(
       'To: a@example.com,\r\n b@example.com',
     );

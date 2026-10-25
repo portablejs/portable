@@ -13,8 +13,8 @@ type Node = { type: string; parent?: Node | null | undefined; [key: string]: unk
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' && value !== null && 'type' in value;
 
-// `unknown`, `unique symbol`, `Record<…>` alone or in `Partial` or `Readonly`, a mapped type, or a
-// type literal with an index signature.
+// `unknown`, `unique symbol`, `Record<…>` (alone or in `Partial` or `Readonly`), a mapped type, or
+// a type literal with an index signature.
 function isWide(type: unknown): boolean {
   if (!isNode(type)) {
     return false;
@@ -45,7 +45,7 @@ function isWide(type: unknown): boolean {
   return ['Partial', 'Readonly'].includes(name['name'] as string) && !!argument && isWide(argument);
 }
 
-// `[]`, `new Map()` or `new Set()`, or an array or object literal holding only those.
+// `[]`, `new Map()`, or `new Set()`, or an array or object literal holding only those.
 function isEmpty(node: unknown): boolean {
   if (!isNode(node)) {
     return false;
@@ -70,7 +70,7 @@ function isEmpty(node: unknown): boolean {
   );
 }
 
-// `name.key = …`, `name[key] = …`, `name.key++` or `delete name.key`.
+// `name.key = …`, `name[key] = …`, `name.key++`, or `delete name.key`.
 function writesMember(identifier: unknown): boolean {
   if (!isNode(identifier)) {
     return false;

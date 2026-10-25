@@ -4,7 +4,7 @@ This package replaces the SMTP client of [nodemailer](https://github.com/nodemai
 
 Test files:
 
-- `DataStream.conformance.ts`, `connect.conformance.ts`, `tls.conformance.ts`, `auth.conformance.ts` and `send.conformance.ts` run in Node and Chromium against a scripted fake socket (`utils.ts`). The fake replies the way upstream's `raw-smtp-server.ts` does, and each test can override a command's reply.
+- `DataStream.conformance.ts`, `connect.conformance.ts`, `tls.conformance.ts`, `auth.conformance.ts`, and `send.conformance.ts` run in Node and Chromium against a scripted fake socket (`utils.ts`). The fake replies the way upstream's `raw-smtp-server.ts` does, and each test can override a command's reply.
 - `smtp-server.test.ts` runs against [smtp-server](https://github.com/nodemailer/smtp-server) 3.19.23 over real TCP and TLS, through the Node adapter from `@portable/sockets/node`. It covers what upstream's `smtp-connection-test.ts` checks against the same server.
 - `send.oracle.test.ts` sends the same 12 messages through nodemailer and this package, each whole and in two random chunkings. It compares the DATA bytes on the wire, the bytes smtp-server delivers, the envelope, and the accepted and refused recipients.
 - `send.bench.ts` compares sends over one connection with nodemailer's `SMTPConnection`.
@@ -29,7 +29,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | Response parser: skips a stray empty line before the greeting, after the final EHLO response | `connect > EHLO and HELO > skips a stray empty line before the greeting and after the EHLO reply` | |
-| joins continuation lines split across chunks, keeps consecutive replies in one chunk apart | `connect > EHLO and HELO > assembles a multi-line EHLO reply that arrives in several chunks`, `assembles a reply sent one byte at a time`; `send > pipelining > sends the whole envelope ...` | The pipelined replies of MAIL, RCPT and DATA arrive in one chunk. |
+| joins continuation lines split across chunks, keeps consecutive replies in one chunk apart | `connect > EHLO and HELO > assembles a multi-line EHLO reply that arrives in several chunks`, `assembles a reply sent one byte at a time`; `send > pipelining > sends the whole envelope ...` | The pipelined replies of MAIL, RCPT, and DATA arrive in one chunk. |
 | reassembles a very long reply in linear time | `connect > reading replies > reads a long multi-line reply in linear time` | |
 | fails when a reply never completes, applies the cap however the reply is split | `connect > reading replies > fails when a reply exceeds 1 MiB, however it is split` | |
 | fails when a single line never ends, absorbs a line that never ends in linear time | `connect > reading replies > fails on a line that never ends, in linear time` | |
@@ -75,7 +75,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | sanitize CRLF in envelope size | `send > envelope validation > rejects a size that is not a non-negative integer` | GHSA-c7w3-x93f-qmm8. |
 | no valid recipients | `send > envelope validation > rejects an envelope without recipients` | |
 | invalid sender | `send > DATA > reports a refused sender with the server text and enhanced code` | |
-| should send message string, buffer, stream | `send > sending > sends a string, bytes and a stream as the same bytes` | |
+| should send message string, buffer, stream | `send > sending > sends a string, bytes, and a stream as the same bytes` | |
 
 ## smtp-connection/smtp-connection-errors-test.ts
 
@@ -164,7 +164,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | Anonymous: version, wellknown data | Not applicable | No well-known service list. |
 | Anonymous: fail envelope | `send > envelope validation > *` | |
 | Anonymous: not fail auth, fail auth with forceAuth | `auth > method selection > tries AUTH PLAIN when the server advertises no AUTH`, `fails when the server refuses AUTH it did not advertise` | With credentials set, the client always sends AUTH, as with `forceAuth`. |
-| Anonymous: send mail | `send > signals and closing > Smtp.send connects, sends and quits` | |
+| Anonymous: send mail | `send > signals and closing > Smtp.send connects, sends, and quits` | |
 | Anonymous: recover unexpected close during transmission | `smtp-server > plaintext > reports a server that closes the connection during DATA` | |
 | verify (6 tests) | `connect > connecting > *`, `smtp-server > TLS and authentication > reports a wrong password with code 535` | Calling `connect` and then `close` takes the place of `verify`. |
 | Authenticated: login and send, through a proxied socket | `smtp-server > TLS and authentication > *` | A proxy goes in the `connect` function. |
@@ -174,7 +174,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | behavior: DSN, REQUIRETLS | `send > extensions > *` | |
 | behavior: envelope from the message addresses | Not applicable | `@portable/mail` builds the envelope. |
 | behavior: accepted and rejected of a partial envelope | `send.oracle > reports the same recipients as nodemailer > a partly refused envelope` | |
-| behavior: authentication (8 tests) | `auth > *` | No OAuth2 endpoint, per-message auth or custom handlers. |
+| behavior: authentication (8 tests) | `auth > *` | No OAuth2 endpoint, per-message auth, or custom handlers. |
 | socket-drop: one report after a socket timeout, server drops while in flight | `send > DATA > reports a server that drops the connection while the message is in flight`, `smtp-server > plaintext > reports a server that closes the connection during DATA` | |
 | socket-drop: ETLS for a socket lost during STARTTLS | `tls > STARTTLS > reports a failed TLS handshake` | |
 

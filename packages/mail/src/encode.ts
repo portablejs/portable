@@ -29,7 +29,7 @@ export type Part = {
   readonly contentType: string;
   readonly headers?: HeaderFields | undefined;
   /**
-   * @default `7bit`, `quoted-printable` or `base64` for text, chosen from the content; `8bit` for
+   * @default `7bit`, `quoted-printable`, or `base64` for text, chosen from the content; `8bit` for
    * `message/*`; otherwise `base64`
    */
   readonly transferEncoding?: TransferEncoding | undefined;
@@ -176,9 +176,9 @@ type Context = {
  * await new Response(raw).text();
  * ```
  *
- * @throws {InvalidInputError} When an address, header, content type, file name or date can't be
+ * @throws {InvalidInputError} When an address, header, content type, file name, or date can't be
  * written.
- * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob` or `ReadableStream`, or a
+ * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob`, or `ReadableStream`, or a
  * stream is locked or given twice.
  */
 export function encodeStream(

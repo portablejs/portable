@@ -1,6 +1,6 @@
 # @portable/mail
 
-Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client or to an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Builds a raw RFC 5322 email message, with text and HTML alternatives, attachments, inline images, and custom headers, as a `ReadableStream<Uint8Array>`. It doesn't send mail: pass the result to an SMTP client or to an email API that takes raw MIME, or write it to an `.eml` file. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces nodemailer's `MailComposer` (`nodemailer/lib/mail-composer`) and the `MimeNode` it builds on.
 
@@ -36,8 +36,8 @@ The report is read from the network while you read the message, so a large attac
 | Export | Description |
 | --- | --- |
 | `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content. |
-| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc` and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
-| `InvalidInputError` | Thrown for an address, header name, content type, file name or `Date` that can't be written. |
+| `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc`, and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
+| `InvalidInputError` | Thrown for an address, header name, content type, file name, or `Date` that can't be written. |
 | `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types. |
 
 ### Message
@@ -49,7 +49,7 @@ The report is read from the network while you read the message, so a large attac
 | `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
 | `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain. |
 | `references` | `string \| string[]` | Message IDs separated by whitespace. |
-| `date` | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant` or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
+| `date` | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
 | `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. |
 | `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. |
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
@@ -59,7 +59,7 @@ The report is read from the network while you read the message, so a large attac
 
 Attachments with a `cid` go into `multipart/related` beside the HTML, and other attachments into `multipart/mixed`. An image with a `cid` defaults to `Content-Disposition: inline`, everything else to `attachment`.
 
-Text bodies are `7bit` when every line is ASCII and at most 76 characters, otherwise `quoted-printable` for mostly Latin text and `base64` for the rest. `encodeStream` can't scan a body from a stream or `Blob` before writing it, so it writes that body as `quoted-printable`. Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit` and text `quoted-printable` bodies become CRLF.
+Text bodies are `7bit` when every line is ASCII and at most 76 characters, otherwise `quoted-printable` for mostly Latin text and `base64` for the rest. `encodeStream` can't scan a body from a stream or `Blob` before writing it, so it writes that body as `quoted-printable`. Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit`, and text `quoted-printable` bodies become CRLF.
 
 ### Options
 
@@ -70,7 +70,7 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
 | `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
 
-Set `boundary`, `messageId` and `date` to get the same bytes on every run, for example in tests.
+Set `boundary`, `messageId`, and `date` to get the same bytes on every run, for example in tests.
 
 ```ts
 import { iso2022Jp } from '@portable/charset/iso-2022-jp';
@@ -116,21 +116,21 @@ Without DKIM, pass the stream from `Mail.encodeStream(message)` to `Smtp.send`, 
 | `Mail.Message` | A message to encode. Every field is optional. |
 | `Mail.Addresses` | An address list as text, a `Mailbox`, or a list of either. |
 | `Mail.Mailbox` | `{ name?, address }`. |
-| `Mail.Content` | Text, bytes, a `Blob` or a byte stream, for a body or an attachment. |
+| `Mail.Content` | Text, bytes, a `Blob`, or a byte stream, for a body or an attachment. |
 | `Mail.Attachment` | A file attached to the message, or an inline image the HTML refers to as `cid:<cid>`. |
 | `Mail.Part` | An alternative body, such as a calendar invitation. |
 | `Mail.HeaderFields` | Extra header fields by name, with a list for repeated fields. |
-| `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'` or `'base64'`. |
+| `Mail.TransferEncoding` | `'7bit'`, `'8bit'`, `'quoted-printable'`, or `'base64'`. |
 | `Mail.Envelope` | `{ from, to }`, what `envelope` returns. |
 | `Mail.Instant` | `Timers.Instant`: a `Date`, or any object with `epochMilliseconds`, such as a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
 
 ## Why use this over nodemailer
 
-nodemailer's composer needs Node streams, `Buffer`, `fs`, `http` and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.
+nodemailer's composer needs Node streams, `Buffer`, `fs`, `http`, and `crypto`, so it doesn't run in browsers or Workers. This package uses only web APIs and has no dependencies outside `@portable/*`. With the same boundary, Message-ID, and Date, its output matches `MailComposer` byte for byte on most messages: 254 of 300 generated messages in the oracle test were identical, and the other 46 differed only where libqp breaks a quoted-printable line.
 
 - In the benchmarks on Node 24, `encodeStream` was 3× faster than `MailComposer` on 100 text and HTML messages. `MailComposer` was 1.5× faster with a 1 MB attachment in memory and 1.2× faster with a 4 MB attachment read from a stream. There is no native API that composes MIME to compare with.
 - Line breaks in `7bit` and `8bit` bodies are written as CRLF. Without its `newline` option, nodemailer writes a bare LF as is, which is how SMTP smuggling starts.
-- An invalid address, such as `a,b@good.com`, `a@evil.com@good.com` or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
+- An invalid address, such as `a,b@good.com`, `a@evil.com@good.com`, or a bare `root`, throws `InvalidInputError`. nodemailer quotes it or keeps it and sends the message.
 - `encodeStream` throws for a recipient that is only a comment, such as `(a@evil.com)`, instead of dropping it.
 - Text that looks like an encoded word (`=?x?q?y?=`) is encoded, so the recipient's mail client shows the subject as the sender wrote it instead of decoding it. Quotes in a subject are written as they are, so they stay readable, but nodemailer 10.2.1 encodes them.
 - A `Uint8Array` text body is scanned like a string and can be `7bit`. nodemailer always encodes a `Buffer` body.

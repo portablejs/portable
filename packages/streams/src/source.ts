@@ -1,4 +1,4 @@
-/** Anything the collectors and combinators read from: a `ReadableStream`, an async iterable or an iterable. */
+/** Anything the collectors and combinators read from: a `ReadableStream`, an async iterable, or an iterable. */
 export type Source<chunk> = ReadableStream<chunk> | AsyncIterable<chunk> | Iterable<chunk>;
 
 export function isReadableStream(value: unknown): value is ReadableStream<unknown> {

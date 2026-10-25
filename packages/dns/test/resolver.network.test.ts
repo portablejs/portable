@@ -9,7 +9,7 @@ describe.skipIf(!env?.DNS_NETWORK)('live DNS-over-HTTPS (set DNS_NETWORK=1)', ()
     describe(`${new URL(endpoint).host}`, () => {
       const resolver = create({ endpoints: [endpoint] });
 
-      test('resolves the records SPF, DKIM and DMARC read', async () => {
+      test('resolves the records SPF, DKIM, and DMARC read', async () => {
         const spf = await resolver.resolveTxt('gmail.com');
         expect(spf.map((chunks) => chunks.join('')).some((text) => text.startsWith('v=spf1'))).toBe(
           true,

@@ -1,6 +1,6 @@
 # @portable/rpc
 
-Typed remote calls between workers, windows, servers and browsers, as JSON-RPC 2.0. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Typed remote calls between workers, windows, servers, and browsers, as JSON-RPC 2.0. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [comlink](https://www.npmjs.com/package/comlink), [penpal](https://www.npmjs.com/package/penpal), [post-me](https://www.npmjs.com/package/post-me), [birpc](https://www.npmjs.com/package/birpc), [json-rpc-2.0](https://www.npmjs.com/package/json-rpc-2.0), and [tRPC](https://trpc.io) for simple cases.
 
@@ -59,7 +59,7 @@ await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type:
 await worker.add(1, 2);
 ```
 
-Disposing closes the connection but not the transport, so a worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method with a symbol key can't be called remotely, so `[Symbol.asyncDispose]` never hides one of your methods. In a runtime without `Symbol.asyncDispose`, such as Safari 26, pass a `signal` and abort it to close the remote, which does the same teardown.
+Disposing closes the connection but not the transport, so a worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method with a symbol key can't be called remotely, so `[Symbol.asyncDispose]` never hides one of your methods. In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to close the remote, which does the same teardown.
 
 ### Options per call
 
@@ -90,7 +90,7 @@ const api = {
 
 ### Errors
 
-When a method throws `Rpc.RemoteError`, the server sends its `code`, `message` and `data`. Any other error is sent with code `-32603` and its `message`. The call rejects with an `Rpc.RemoteError` either way.
+When a method throws `Rpc.RemoteError`, the server sends its `code`, `message`, and `data`. Any other error is sent with code `-32603` and its `message`. The call rejects with an `Rpc.RemoteError` either way.
 
 ```ts
 throw new Rpc.RemoteError({ code: 404, message: 'No such user', data: { id } });
@@ -152,7 +152,7 @@ A transport is any `{ readable, writable }` pair of streams that carries encoded
 
 ### `Rpc.port(target, { signal })`
 
-A `MessagePort`, `Worker`, `BroadcastChannel`, or `self` inside a worker. Messages are structured-cloned, so the identity codec also works and keeps `Date`, `Map` and `Uint8Array` values intact:
+A `MessagePort`, `Worker`, `BroadcastChannel`, or `self` inside a worker. Messages are structured-cloned, so the identity codec also works and keeps `Date`, `Map`, and `Uint8Array` values intact:
 
 ```ts
 Rpc.connect<Api>(Rpc.port(worker), { codec: { encode: (m) => m, decode: (m) => m } });
@@ -162,7 +162,7 @@ A `BroadcastChannel` connects only two peers. With more, every peer would receiv
 
 ### `Rpc.window(target, { origin, channel, signal })`
 
-Another window: an iframe's `contentWindow`, `window.parent`, `window.opener` or a popup.
+Another window: an iframe's `contentWindow`, `window.parent`, `window.opener`, or a popup.
 
 ```ts
 // parent
@@ -236,7 +236,7 @@ const transport = {
 
 ## Protocol
 
-Every message is a JSON-RPC 2.0 request, notification or response, or a batch of them, so `Rpc.provide` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
+Every message is a JSON-RPC 2.0 request, notification, or response, or a batch of them, so `Rpc.provide` answers any JSON-RPC client and `Rpc.connect` calls any JSON-RPC server. Streams and cancellation are notifications with reserved names, as in LSP:
 
 | Message | Sent by | Params |
 | --- | --- | --- |
@@ -264,9 +264,9 @@ Validation is left to the methods. Parse the arguments with your schema library 
 | `Rpc.Transport` | A pair of streams that carry encoded messages. |
 | `Rpc.Codec` | Turns messages into what a transport carries, and back. |
 | `Rpc.Context` | What a method wrapped with `withContext` receives as its first argument. |
-| `Rpc.Message` | A JSON-RPC 2.0 request, notification or response. |
+| `Rpc.Message` | A JSON-RPC 2.0 request, notification, or response. |
 
-## Why use this over comlink, penpal, birpc and json-rpc-2.0
+## Why use this over comlink, penpal, birpc, and json-rpc-2.0
 
 The benchmarks run over a `MessageChannel` with the default JSON codec.
 
@@ -320,14 +320,14 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Structured-cloning a nested object costs more in Node than cloning one JSON string, so the JSON codec is faster than the identity codec (14,400/s for the 2 KB record) and than the libraries that clone. birpc and comlink have no streamed results, so the stream row compares with the server pushing each value without waiting, which has no backpressure.
 
-- One package covers workers, iframes, popups, WebSockets and HTTP, with the same API on each. comlink and post-me cover `postMessage`, penpal covers windows and workers, birpc takes callbacks for any channel, and json-rpc-2.0 has no transport.
+- One package covers workers, iframes, popups, WebSockets, and HTTP, with the same API on each. comlink and post-me cover `postMessage`; penpal covers windows and workers; birpc takes callbacks for any channel; and json-rpc-2.0 has no transport.
 - The wire format is JSON-RPC 2.0, so the server also answers clients written in other languages, and the client can call LSP and MCP servers.
 - Async generators and `ReadableStream` results stream back with backpressure and cancellation. comlink needs a proxied callback per value, and birpc and penpal have no streams.
 - Cancellation is an `AbortSignal` that reaches the method on the server. birpc and json-rpc-2.0 have timeouts but can't stop the remote work.
 - json-rpc-2.0 answers a batch of one request with a bare object and an all-notification batch with `null`, and treats a non-string method as unknown. `Rpc.provide` follows the specification in each case.
 - Methods are looked up only as own properties or class methods, never `Object.prototype` names, so `constructor` and `__proto__` can't be called remotely.
 - Errors a method throws are sent with code `-32603`. json-rpc-2.0 sends code `0`, and birpc and penpal also send the error's name and stack.
-- The codec must be able to encode a method's result. With `Rpc.json`, a `Date` is received as a string and `undefined` as `null`. comlink, penpal, post-me and birpc structured-clone by default, so pass the identity codec over a port to get the same behavior.
+- The codec must be able to encode a method's result. With `Rpc.json`, a `Date` is received as a string and `undefined` as `null`. comlink, penpal, post-me, and birpc structured-clone by default, so pass the identity codec over a port to get the same behavior.
 - comlink's `Comlink.transfer` has no equivalent. The identity codec structured-clones values without transferring them.
 - There are no middleware hooks like json-rpc-2.0's `applyMiddleware` or birpc's `onRequest` and `resolver`. Wrap the methods, the `fetch` passed to `Rpc.http` or the transport instead.
 - `Rpc.window` takes one origin string. penpal's `allowedOrigins` also accepts a list of origins and regular expressions.

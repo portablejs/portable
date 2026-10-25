@@ -30,7 +30,7 @@ describe('exif-parser', () => {
     expect(seconds(Exif.parseDate('1970-01-01T00:00:00-01:00'))).toBe(3600);
   });
 
-  test('parses DateTimeOriginal, CreateDate and ModifyDate values', () => {
+  test('parses DateTimeOriginal, CreateDate, and ModifyDate values', () => {
     expect(seconds(Exif.parseDate('1970:01:01 00:00:00'))).toBe(0);
     expect(seconds(Exif.parseDate('1970-01-01T00:00:00-05:00'))).toBe(5 * 3600);
   });

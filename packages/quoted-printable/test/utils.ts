@@ -157,7 +157,7 @@ const qpFragments = [
   '\xff',
 ];
 
-/** Quoted-printable-like bytes, valid or not: escapes, broken escapes, soft breaks and whitespace. */
+/** Quoted-printable-like bytes, both valid and invalid: escapes, broken escapes, soft breaks, and whitespace. */
 export function randomQuotedPrintable(next: () => number, maxFragments: number): Uint8Array {
   const count = Math.floor(next() * (maxFragments + 1));
   let result = '';

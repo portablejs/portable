@@ -5,7 +5,7 @@ import { check, type Query, withRecord, type Zone, zoneResolver } from './utils.
 const resultOf = async (...args: Parameters<typeof check>) => (await check(...args)).result;
 
 describe('Spf.check', () => {
-  test('returns the result with the matching term, the record and the lookup counts', async () => {
+  test('returns the result with the matching term, the record, and the lookup counts', async () => {
     const zone = withRecord('v=spf1 a:mail.example.test ip4:192.0.2.0/24 -all', {
       'mail.example.test': { A: ['198.51.100.1'] },
     });
@@ -20,7 +20,7 @@ describe('Spf.check', () => {
     });
   });
 
-  test('reports why the result is none, temperror or permerror', async () => {
+  test('reports why the result is none, temperror, or permerror', async () => {
     expect(await check({})).toMatchObject({ result: 'none', reason: expect.any(String) });
     expect(await check({ 'example.test': { TXT: 'ESERVFAIL' } })).toMatchObject({
       result: 'temperror',
@@ -1264,7 +1264,7 @@ describe('rfc-compliance-test.js', () => {
       });
     });
 
-    test('allows c, r and t in the explanation text', async () => {
+    test('allows c, r, and t in the explanation text', async () => {
       const zone = withRecord('v=spf1 -all exp=explain.example.test', {
         'explain.example.test': { TXT: ['%{c} rejected by %{r}'] },
       });

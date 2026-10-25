@@ -36,7 +36,7 @@ describe('message headers', () => {
     expect(() => Mail.encodeStream({ date: new Date('nope') })).toThrow(Mail.InvalidInputError);
   });
 
-  test('Date, Message-ID and MIME-Version are generated', async () => {
+  test('Date, Message-ID, and MIME-Version are generated', async () => {
     const before = Date.now() - 1000;
     const raw = await Streams.toText(Mail.encodeStream({ text: 'x' }));
     expect(Date.parse(field(raw, 'Date')!)).toBeGreaterThanOrEqual(

@@ -29,9 +29,9 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 
 `encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
 
-`decode()` removes soft line breaks (`=` before CRLF, LF or the end) and whitespace at the end of each line, and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
+`decode()` removes soft line breaks (`=` before CRLF, LF, or the end) and whitespace at the end of each line, and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
 
-Both streams produce the same bytes as the functions however the input is chunked, including when a chunk boundary splits an escape, a CRLF, a whitespace run or a surrogate pair.
+Both streams produce the same bytes as the functions however the input is chunked, including when a chunk boundary splits an escape, a CRLF, a whitespace run, or a surrogate pair.
 
 ## Options
 
@@ -54,7 +54,7 @@ Output matches libqp 3.0.1 byte for byte, with web streams instead of Node strea
 - `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
 - `encode` breaks lines at 76 characters by default, and libqp's `encode` doesn't break lines at all. Pass `lineLength: false` to match libqp's `encode`.
 - libqp's `wrap`, which adds soft line breaks to quoted-printable you already have, has no equivalent. Set `lineLength` when you encode.
-- `lineLength` must be `false` or an integer of at least 4. libqp treats 0, `NaN` and non-numbers as 76 and raises anything below 4 to 4.
+- `lineLength` must be `false` or an integer of at least 4. libqp treats 0, `NaN`, and non-numbers as 76 and raises anything below 4 to 4.
 - `decode` reads a string as UTF-8, as `encode` does, and returns a `Uint8Array` instead of libqp's `Buffer`. libqp reads each character's low byte, so pass a `Uint8Array` to decode raw 8-bit data.
 - libqp's `Encoder` counts `inputBytes` and `outputBytes`, and `EncoderStream` doesn't. Count chunks in a `TransformStream` of your own.
 - quoted-printable escapes every CR and LF and keeps every line within 75 characters. `encode` keeps line breaks, escapes a lone CR or LF only with `binary: true`, and allows 76.

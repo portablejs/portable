@@ -24,12 +24,12 @@ export type Size = {
   type: Type;
   /** EXIF orientation (1 to 8) of a JPEG, when the file has a non-zero one. */
   orientation?: number | undefined;
-  /** Every image in an ICO, CUR or ICNS file that holds more than one. */
+  /** Every image in an ICO, CUR, or ICNS file that holds more than one. */
   images?: readonly Image[] | undefined;
 };
 
 /**
- * The detected format. HEIF files report their brand (`avif`, `heic`, `mif1` and so on), KTX 2
+ * The detected format. HEIF files report their brand (`avif`, `heic`, `mif1`, and so on), KTX 2
  * reports `ktx2`, and BigTIFF reports `bigtiff`.
  */
 export type Type =

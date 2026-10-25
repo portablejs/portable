@@ -38,7 +38,7 @@ const tagsOf = (fields: string, name: string): string =>
   new RegExp(`^${name}: ([^]*?)\\r\\n(?=\\S|$)`, 'm').exec(fields)![1]!.replace(/\r\n[ \t]/g, ' ');
 
 describe('seal', () => {
-  test('writes ARC-Seal, ARC-Message-Signature and ARC-Authentication-Results with i=1 and cv=none', async () => {
+  test('writes ARC-Seal, ARC-Message-Signature, and ARC-Authentication-Results with i=1 and cv=none', async () => {
     const { fields, result } = await sealAndCheck(baseMessage);
     expect(fields).toMatch(
       /^ARC-Seal: i=1; a=rsa-sha256; t=1704067200; cv=none; d=one\.example; s=s; b=/,
@@ -120,7 +120,7 @@ describe('chainValidation (RFC 8617 section 5.1)', () => {
     await expect(seal((await singleSet()).message)).rejects.toThrow(TypeError);
   });
 
-  test('must be none, pass or fail, in lower case', async () => {
+  test('must be none, pass, or fail, in lower case', async () => {
     for (const value of ['maybe', 'PASS']) {
       await expect(
         seal(baseMessage, { chainValidation: value as Arc.Result.Code }),
@@ -327,7 +327,7 @@ describe('options', () => {
     );
   });
 
-  test('refuses a short RSA key, a bad domain or selector and a bad date', async () => {
+  test('refuses a short RSA key, a bad domain, a bad selector, and a bad date', async () => {
     await expect(seal(baseMessage, { privateKey: (await keyPair('small')).pem })).rejects.toThrow(
       RangeError,
     );

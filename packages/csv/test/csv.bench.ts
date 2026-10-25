@@ -48,7 +48,7 @@ function drain(readable: NodeJS.ReadableStream): Promise<number> {
   });
 }
 
-test('decodes 5,000 rows from a string within 25% of csv-parse, papaparse and fast-csv', async ({
+test('decodes 5,000 rows from a string within 25% of csv-parse, papaparse, and fast-csv', async ({
   bench,
 }) => {
   const result = await bench.compare(
@@ -70,7 +70,7 @@ test('decodes 5,000 rows from a string within 25% of csv-parse, papaparse and fa
   }
 });
 
-test('decodes a 500 kB stream within 25% of csv-parse, papaparse and fast-csv', async ({
+test('decodes a 500 kB stream within 25% of csv-parse, papaparse, and fast-csv', async ({
   bench,
 }) => {
   const result = await bench.compare(
@@ -92,7 +92,7 @@ test('decodes a 500 kB stream within 25% of csv-parse, papaparse and fast-csv', 
   }
 });
 
-test('encodes 5,000 rows to a string within 25% of csv-stringify, papaparse and fast-csv', async ({
+test('encodes 5,000 rows to a string within 25% of csv-stringify, papaparse, and fast-csv', async ({
   bench,
 }) => {
   const result = await bench.compare(

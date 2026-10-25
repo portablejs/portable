@@ -4,11 +4,11 @@
 
 Fixtures:
 
-- `starfish.jpg`, `test.jpg`: exif-parser (MIT, Bruno Windels and Daniel Leinich).
-- `*.exif`: exif-reader (MIT, Devon Govett and others).
+- `starfish.jpg`, `test.jpg`: exif-parser (MIT, Bruno Windels, and Daniel Leinich).
+- `*.exif`: exif-reader (MIT, Devon Govett, and others).
 - Everything else: exifr's `test/fixtures` (MIT, Mike Kovařík). `orientation-f*t.jpg` were `orientation/f*t.jpg`. `heic-iphone7-head.heic` and `heic-single-head.heic` are the first 32768 and 2048 bytes of `heic-iphone7.heic` and `heic-single.heic`. The short copies keep the repo small and test reading only the start of a file.
 
-Test names below are `describe > test` in `parse.conformance.ts`, `parseDate.conformance.ts` or `exif.fuzz.conformance.ts`.
+Test names below are `describe > test` in `parse.conformance.ts`, `parseDate.conformance.ts`, or `exif.fuzz.conformance.ts`.
 
 ## API changes
 
@@ -37,10 +37,10 @@ The package is designed fresh, so no exif-parser call has a one-to-one replaceme
 | test-date: parse invalid date with timezone | `exif-parser > returns undefined for an invalid time zone` | |
 | test-date: parseExifDate | `exif-parser > parses both date formats` | |
 | test-exif: parseTags | `exif-parser > reads every tag of starfish.jpg` | Checks the same 43 tags of `expected-exif-tags.json` per IFD. Tags that exif-parser filed under the interop IFD are in `exif`, where they are stored. |
-| test-jpeg: parseSections | `exif-parser > reads the Exif APP1 segment and skips the other APP segments` | The segment walk is internal. The test checks what it produces from `test.jpg`, which has APP0, APP2 and two APP1 segments. |
+| test-jpeg: parseSections | `exif-parser > reads the Exif APP1 segment and skips the other APP segments` | The segment walk is internal. The test checks what it produces from `test.jpg`, which has APP0, APP2, and two APP1 segments. |
 | test-jpeg: getSizeFromSOFSection | `exif-parser > reads the size from the SOF segment` | |
 | test-jpeg: getSectionName | skipped | Tests a private helper that names JPEG markers. Nothing a caller sees depends on the names. |
-| test-simplify: castDateValues | `exif-parser > parses DateTimeOriginal, CreateDate and ModifyDate values` | |
+| test-simplify: castDateValues | `exif-parser > parses DateTimeOriginal, CreateDate, and ModifyDate values` | |
 | (no test) GPS degrees, thumbnail | `exif-parser > reads GPS coordinates as signed decimal degrees`, `exif-parser > finds the thumbnail` | exif-parser's README describes this, but it has no test for it. |
 
 ## exif-reader
@@ -59,7 +59,7 @@ The package is designed fresh, so no exif-parser call has a one-to-one replaceme
 
 ## exifr
 
-exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks and maker notes, has pick and skip options, translates values to text, and reads files in chunks. Tests of those features don't apply. The rows below cover its EXIF tests.
+exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks, and maker notes, has options to pick and skip tags, translates values to text, and reads files in chunks. Tests of those features don't apply. The rows below cover its EXIF tests.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -69,8 +69,8 @@ exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks and maker notes, has pick and
 | tiff.spec: ExifVersion is '2.2' | skipped | `parse` returns the stored bytes. |
 | tiff.spec: UCS2 string revived, XP* tags revived | skipped | XP tags are BYTE arrays. Decode them with `new TextDecoder('utf-16le')`. |
 | tiff.spec: options.tiff, ifd0/exif/gps/interop/ifd1 enable, pick, skip, merge, translate, formatter tests | skipped | No options. Every IFD is always returned. |
-| tiff.spec: block results (Make 'Google', ExposureTime, GPSDOP, InteropIndex 'R98', ImageHeight 189) | `exifr > reads IFD0, Exif, interop and IFD1 tags` | Same blocks on `img_1771.jpg`, because the Pixel JPEG is 4 MB. |
-| tiff.spec: additional EXIF block test (ApertureValue 4.65625) | `exifr > reads IFD0, Exif, interop and IFD1 tags` | |
+| tiff.spec: block results (Make 'Google', ExposureTime, GPSDOP, InteropIndex 'R98', ImageHeight 189) | `exifr > reads IFD0, Exif, interop, and IFD1 tags` | Same blocks on `img_1771.jpg`, because the Pixel JPEG is 4 MB. |
+| tiff.spec: additional EXIF block test (ApertureValue 4.65625) | `exifr > reads IFD0, Exif, interop, and IFD1 tags` | |
 | tiff.spec: additional GPS block test (latitude, longitude) | `exifr > reads the eXIf chunk of a PNG` | Same values, from the PNG that holds the Pixel photo's EXIF. |
 | tiff.spec: broken file recovery (broken1.jpg) | `exifr > reads the other IFDs when the GPS IFD is broken` | `parse` never throws for a broken IFD, so the `silentErrors: false` case doesn't apply. |
 | tiff.spec: MakerNote, UserComment not parsed by default | skipped | Both are returned as bytes. |
@@ -92,7 +92,7 @@ exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks and maker notes, has pick and
 | issues.spec: #36 ExifImageHeight [78, 0] | `exifr > returns stored values for tags with the wrong count` | exifr returns 78, and `parse` returns what is stored. |
 | issues.spec: fast-exif #2, 0xFF before marker | `exifr > skips 0xFF fill bytes before a JPEG marker` | |
 | issues.spec: exif-js #124, #35 samsung HEIC, metadata-extractor #152 | skipped | 0.6 to 4.7 MB fixtures. The HEIC with `meta` after `mdat` is read the same way, by walking top-level boxes. |
-| issues.spec: #31, #41, #44, #46, #59 | skipped | IPTC, ICC, XMP and file-handle bugs. |
+| issues.spec: #31, #41, #44, #46, #59 | skipped | IPTC, ICC, XMP, and file-handle bugs. |
 | fixtures.spec: basic fixture testing | `exifr > *` | For the copied fixtures. |
 | BufferView, ChunkedReader, DynamicBufferView, bundles, webpack, icc, iptc, jfif, xmp-*, options, output-format, reader, sidecar specs | skipped | exifr internals, bundling, or other metadata formats. |
 
@@ -114,4 +114,4 @@ exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks and maker notes, has pick and
 
 ## Oracle
 
-`parse.oracle.test.ts` compares every tag, by IFD and name, with exif-parser on each JPEG fixture and on each TIFF and `.exif` fixture wrapped in a JPEG, both whole and cut to the 65,635 bytes exif-parser's README suggests. It also compares `imageSize`, the thumbnail, `DateTimeOriginal` and `CreateDate` through `parseDate`, and the coordinates when both reference tags are present. Two exif-parser behaviors are normalized first, so the test doesn't lock them in: its Exif and interop tags share one section and are compared as one, and when it returns a tag as `undefined` because the value lies outside the data, the tag is dropped, as `parse` drops it.
+`parse.oracle.test.ts` compares every tag, by IFD and name, with exif-parser on each JPEG fixture and on each TIFF and `.exif` fixture wrapped in a JPEG, both whole and cut to the 65,635 bytes exif-parser's README suggests. It also compares `imageSize`, the thumbnail, `DateTimeOriginal`, and `CreateDate` through `parseDate`, and the coordinates when both reference tags are present. Two exif-parser behaviors are normalized first, so the test doesn't lock them in: its Exif and interop tags share one section and are compared as one, and when it returns a tag as `undefined` because the value lies outside the data, the tag is dropped, as `parse` drops it.

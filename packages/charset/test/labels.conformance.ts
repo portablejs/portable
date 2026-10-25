@@ -85,7 +85,7 @@ describe('normalizeLabel', () => {
     expect(Charset.normalizeLabel('maccyrillic')).toBe('x-mac-cyrillic');
   });
 
-  test('ignores case, punctuation and a trailing year', () => {
+  test('ignores case, punctuation, and a trailing year', () => {
     expect(Charset.normalizeLabel('ISO_8859-5:1988')).toBe('ISO-8859-5');
     expect(Charset.normalizeLabel('ISO 8859-5')).toBe('ISO-8859-5');
     expect(Charset.normalizeLabel('UTF16-BE')).toBe('UTF-16BE');

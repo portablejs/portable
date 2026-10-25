@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suites: [random-int 3.1.0 `test.js`](https://github.com/sindresorhus/random-int/blob/main/test.js), [crypto-random-string 6.0.0 `test.js`](https://github.com/sindresorhus/crypto-random-string/blob/main/test.js), [nanoid 6.0.2 `test/`](https://github.com/ai/nanoid/tree/main/test), [seedrandom 3.0.5 `test/`](https://github.com/davidbau/seedrandom/tree/master/test), and the `lodash.random`, `lodash.sample` and `lodash.shuffle` modules of [lodash 4.17.21 `test/test.js`](https://github.com/lodash/lodash/blob/4.17.21/test/test.js). The reference vectors for xoshiro128** and SplitMix64 come from [rand_xoshiro 0.8.1](https://github.com/rust-random/rngs/tree/master/rand_xoshiro) (MIT or Apache-2.0), whose authors produced them with the C reference code.
+Upstream suites: [random-int 3.1.0 `test.js`](https://github.com/sindresorhus/random-int/blob/main/test.js), [crypto-random-string 6.0.0 `test.js`](https://github.com/sindresorhus/crypto-random-string/blob/main/test.js), [nanoid 6.0.2 `test/`](https://github.com/ai/nanoid/tree/main/test), [seedrandom 3.0.5 `test/`](https://github.com/davidbau/seedrandom/tree/master/test), and the `lodash.random`, `lodash.sample`, and `lodash.shuffle` modules of [lodash 4.17.21 `test/test.js`](https://github.com/lodash/lodash/blob/4.17.21/test/test.js). The reference vectors for xoshiro128** and SplitMix64 come from [rand_xoshiro 0.8.1](https://github.com/rust-random/rngs/tree/master/rand_xoshiro) (MIT or Apache-2.0), whose authors produced them with the C reference code.
 
 Test names are `file > describe > test`. `random` is `random.conformance.ts`, `uniformity` is `uniformity.conformance.ts`, `seeded` is `seeded.conformance.ts`, and `oracle` is `random.oracle.test.ts`. The conformance files run in Node and in browsers, with the real `crypto.getRandomValues` in both, so the suites that nanoid and seedrandom run separately for browsers need no separate rows.
 
@@ -67,7 +67,7 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 | random > throws on negative size | `random > bytes > throws a RangeError for a negative or fractional length` | |
 | random > generates small random buffers | `random > bytes > returns the requested number of bytes` | |
 | random > generates random buffers | `random > bytes > fills every byte past the 65,536-byte limit of crypto.getRandomValues`, `uniformity > bytes` | |
-| non-secure (all tests) | `random > seeded > returns the same values for the same seed`, `returns 100,000 ids without a collision`, `applies the same argument checks as the crypto-backed functions`, `uniformity > seeded: chi-squared uniformity > string characters from an alphabet of 26` and `of 64` | nanoid's `non-secure` uses `Math.random`. `Random.seeded` is the non-cryptographic generator here. Negative sizes throw instead of returning `''`. |
+| non-secure (all tests) | `random > seeded > returns the same values for the same seed`, `returns 100,000 ids without a collision`, `applies the same argument checks as the crypto-backed functions`, `uniformity > seeded: chi-squared uniformity > string characters from an alphabet of 26`, and `of 64` | nanoid's `non-secure` uses `Math.random`. `Random.seeded` is the non-cryptographic generator here. Negative sizes throw instead of returning `''`. |
 | pool pollution > generates large IDs | `random > string > keeps working after rejecting a length` | |
 | bin.test.js | skipped | nanoid's command-line tool. |
 | benchmark.js | `random.bench.ts` | |
@@ -78,10 +78,10 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| nodetest > should pass basic tests | `random > seeded > returns the same values for the same seed`, `keeps each generator independent` | Autoseeding, `global`, `entropy` and `pass` are not supported. `Random` is the unseeded generator, and nothing replaces `Math.random`. |
+| nodetest > should pass basic tests | `random > seeded > returns the same values for the same seed`, `keeps each generator independent` | Autoseeding, `global`, `entropy`, and `pass` are not supported. `Random` is the unseeded generator, and nothing replaces `Math.random`. |
 | nodetest > should support state api | skipped | There is no state export. To replay a sequence, call `seeded` with the same seed again. |
 | nodetest > should support requirejs in node | skipped | ESM only. |
-| prngtest > should use xor128, xorwow, xorshift7, tychei, seedrandom, xor4096, alea correctly | `seeded > reference vectors`, `uniformity > seeded: chi-squared uniformity > float in 100 equal bins and in its lowest bit` | Upstream pins each algorithm's first outputs and the counts below 1/2, 1/4 and 1/8. We pin xoshiro128** and SplitMix64 to published reference vectors and test the distribution with chi-squared. |
+| prngtest > should use xor128, xorwow, xorshift7, tychei, seedrandom, xor4096, alea correctly | `seeded > reference vectors`, `uniformity > seeded: chi-squared uniformity > float in 100 equal bins and in its lowest bit` | Upstream pins each algorithm's first outputs and the counts below 1/2, 1/4, and 1/8. We pin xoshiro128** and SplitMix64 to published reference vectors and test the distribution with chi-squared. |
 | prngtest > runs benchmarks | `random.bench.ts > seeded float within 25% of seedrandom` | |
 | cryptotest > should be able to seed without crypto | `random > seeded > returns the same values for the same seed` | Seeding never reads entropy. |
 | cryptotest > should be able to seed ('hello.') with zero crypto | skipped | Tests seedrandom's autoseed fallback, which doesn't exist here. |
@@ -96,7 +96,7 @@ Test names are `file > describe > test`. `random` is `random.conformance.ts`, `u
 | random > should support not providing a `max` | skipped | Both bounds are required. |
 | random > should swap `min` and `max` when `min` > `max` | `random > int > throws a RangeError when min is above max` | Deliberate difference. |
 | random > should support large integer values | `random > int > returns an integer within the range, both ends included`, `throws a RangeError for bounds that are not safe integers` | `2^62` is not a safe integer, so it throws. |
-| random > should coerce arguments to finite numbers | `random > int > throws a RangeError for bounds that are not safe integers` | Deliberate difference: `NaN`, `'1'` and `Infinity` throw. |
+| random > should coerce arguments to finite numbers | `random > int > throws a RangeError for bounds that are not safe integers` | Deliberate difference: `NaN`, `'1'`, and `Infinity` throw. |
 | random > should support floats | `random > float > returns numbers with a fractional part` | `float()` is a separate function. Scale it for another range. |
 | random > should support providing a `floating` | `random > float > returns numbers from 0 up to but not including 1` | |
 | random > should work as an iteratee for methods like `_.map` | skipped | No iteratee signature. |

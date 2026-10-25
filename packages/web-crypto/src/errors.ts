@@ -1,8 +1,8 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown for a malformed DER signature, a raw signature or seed of the wrong length, a key that
- * is not an extractable private key, or a PEM key that doesn't decode or doesn't import for the
- * algorithm.
+ * Thrown when a DER signature is malformed, when a raw signature or seed has the wrong length,
+ * when a key is not an extractable private key, or when a PEM key doesn't decode or doesn't import
+ * for the algorithm.
  *
  * @example
  * ```ts
@@ -23,7 +23,7 @@ export class InvalidInputError extends Errors.InvalidInputError {
 
 /**
  * Thrown by `importPem` when the PEM block is valid but of a kind it doesn't import, such as an
- * `EC PRIVATE KEY`, a certificate or an encrypted key.
+ * `EC PRIVATE KEY`, a certificate, or an encrypted key.
  *
  * @example
  * ```ts

@@ -1,6 +1,6 @@
 {
   "name": "@portable/mime-headers",
-  "description": "Encode, parse and format email header values: encoded-words, folding, parameters and address lists, in any JavaScript runtime.",
+  "description": "Encode, parse, and format email header values: encoded-words, folding, parameters, and address lists, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

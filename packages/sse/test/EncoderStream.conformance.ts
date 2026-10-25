@@ -4,7 +4,7 @@ import * as Streams from '@portable/streams';
 import { encodeMessages } from './utils.js';
 
 describe('hono streamSSE', () => {
-  test('writes event, data lines and id', async () => {
+  test('writes event, data lines, and id', async () => {
     const messages = [0, 1, 2, 3, 4].map((i) => ({
       data: `Message\nIt is ${i}`,
       event: 'time-update',

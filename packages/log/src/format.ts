@@ -17,7 +17,7 @@ function show(value: unknown): string {
 /**
  * Returns a record's arguments as one line of text, replacing format specifiers as Node's
  * `util.format` does, except that objects are written with `JSON.stringify` instead of
- * `util.inspect`. `%s`, `%d`, `%i`, `%f`, `%j`, `%o` and `%O` in the first argument are replaced
+ * `util.inspect`. `%s`, `%d`, `%i`, `%f`, `%j`, `%o`, and `%O` in the first argument are replaced
  * with the next arguments, `%c` and its argument are dropped, and the remaining arguments are
  * appended after spaces. Errors are written as their stack. A format string with no arguments
  * after it is returned unchanged.

@@ -44,7 +44,7 @@ export declare namespace DecoderStream {
 /**
  * A `TransformStream` that decodes CSV bytes or text into rows. A row is a `string[]`, or an
  * object keyed by column name when `header` is set. Quoted fields may contain delimiters, doubled
- * quotes and line breaks. Rows end in CRLF, LF or CR, and a leading byte order mark is dropped.
+ * quotes and line breaks. Rows end in CRLF, LF, or CR, and a leading byte order mark is dropped.
  * The output is the same however the input is split into chunks.
  *
  * @example

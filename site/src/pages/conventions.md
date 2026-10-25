@@ -38,7 +38,7 @@ A function takes the value it acts on as a positional argument and its settings 
 
 ## Times
 
-Durations are in milliseconds unless the protocol sets the unit, as Web Push does for `ttl` in seconds. An option that takes a point in time, such as `now` or `expiresAt`, accepts a `Date` or any object with `epochMilliseconds`, such as a `Temporal.Instant`. Times in results are `Date` objects, because Safari has no Temporal yet.
+Durations are in milliseconds unless the protocol sets the unit, as Web Push does for `ttl` in seconds. An option that takes a point in time, such as `now` or `expiresAt`, accepts a `Date`, or any object with `epochMilliseconds`, such as a `Temporal.Instant`. Times in results are `Date` objects, because Safari has no Temporal yet.
 
 ## Cancellation
 

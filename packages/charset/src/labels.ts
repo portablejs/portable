@@ -4,7 +4,7 @@ import { labels } from './tables/labels.js';
 /**
  * Returns the WHATWG Encoding Standard name for a charset label, or `undefined` for an unknown
  * label. Accepts every WHATWG label and every iconv-lite name for the same charsets. Leading
- * and trailing ASCII whitespace, case, punctuation and a trailing year such as `:1988` are
+ * and trailing ASCII whitespace, case, punctuation, and a trailing year such as `:1988` are
  * ignored. It returns `undefined` for a label with any other character, such as NUL or a
  * no-break space.
  *

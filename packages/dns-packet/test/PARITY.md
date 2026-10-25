@@ -6,7 +6,7 @@ Upstream suite: [dns-packet 5.6.1 `test.js`](https://github.com/mafintosh/dns-pa
 
 ## Upstream tests
 
-Upstream's `testEncoder` helper encodes a value, decodes it, re-encodes it, and also checks `encode.bytes`, `encodingLength` and encoding into a caller's buffer at an offset. Our `roundTrip` helper checks that the decoded packet encodes to the same bytes, and that compressed and TCP-framed encodings decode to the same packet. `encode.bytes`, `encodingLength` and the buffer-and-offset arguments aren't part of this API, so those assertions have no counterpart.
+Upstream's `testEncoder` helper encodes a value, decodes it, re-encodes it, and also checks `encode.bytes`, `encodingLength`, and encoding into a caller's buffer at an offset. Our `roundTrip` helper checks that the decoded packet encodes to the same bytes, and that compressed and TCP-framed encodings decode to the same packet. `encode.bytes`, `encodingLength`, and the buffer-and-offset arguments aren't part of this API, so those assertions have no counterpart.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ Upstream's `testEncoder` helper encodes a value, decodes it, re-encodes it, and 
 | txt-invalid-data | `dns-packet cases > txt with invalid data` | Also rejects a bare string and a number inside the array. |
 | null | `dns-packet cases > null` | |
 | hinfo | `dns-packet cases > hinfo` | |
-| ptr, cname, dname, ns | `dns-packet cases > ptr, cname, dname and ns` | |
+| ptr, cname, dname, ns | `dns-packet cases > ptr, cname, dname, and ns` | |
 | srv | `dns-packet cases > srv` | Priority and weight are required, so the default-zero case is gone. |
 | caa | `dns-packet cases > caa` | `flags` is the whole byte. There is no separate `issuerCritical`, which upstream could set out of step with `flags`. |
 | mx | `dns-packet cases > mx` | Preference is required. |
@@ -71,7 +71,7 @@ We couldn't reach GitHub's issue tracker while writing this package, so this lis
 `dns-packet.oracle.test.ts` runs dns-packet 5.6.1 next to this package. It translates dns-packet's object shape into ours (field renames, `Buffer` to `Uint8Array`, `UNKNOWN_<n>` to `TYPE<n>`) and canonicalizes IPv6 text on both sides, so the RFC 5952 difference above isn't compared.
 
 - For each captured response, both libraries decode to the same packet, and re-encoding gives the same bytes.
-- For a synthetic corpus covering every record type with a codec, every EDNS option with fields, mDNS bits and non-IN classes, dns-packet decodes our output to the same packet, and re-encodes it to the same bytes. It also decodes our compressed output to the same packet.
+- For a synthetic corpus covering every record type with a codec, every EDNS option with fields, mDNS bits, and non-IN classes, dns-packet decodes our output to the same packet, and re-encodes it to the same bytes. It also decodes our compressed output to the same packet.
 - TCP-framed messages match `streamEncode` and `streamDecode`, including when the captured responses arrive in random chunks.
 
 `dns-packet.fuzz.oracle.test.ts` decodes mutated copies of the captured responses with both libraries and compares the packets whenever both decode one. It leaves out a packet if one of its names needs an escape or one of its questions has the QU bit set, because the two libraries decode those packets differently on purpose (see the table above).

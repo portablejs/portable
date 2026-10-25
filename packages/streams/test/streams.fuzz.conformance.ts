@@ -15,7 +15,7 @@ import { expect, test } from 'vite-plus/test';
 const items = fc.array(fc.integer({ min: -100, max: 100 }), { maxLength: 30 });
 const text = fc.string({ unit: 'grapheme', maxLength: 40 });
 
-test('map, filter, tap and batch match the array methods', async () => {
+test('map, filter, tap, and batch match the array methods', async () => {
   await fuzz(
     fc.asyncProperty(items, fc.integer({ min: 1, max: 7 }), async (items, size) => {
       const seen: number[] = [];
@@ -37,7 +37,7 @@ test('map, filter, tap and batch match the array methods', async () => {
   );
 });
 
-test('toText, toBytes and toBlob give the same text however it is chunked, as bytes or strings', async () => {
+test('toText, toBytes, and toBlob give the same text however it is chunked, as bytes or strings', async () => {
   await fuzz(
     fc.asyncProperty(text, cuts, async (value, at) => {
       const bytes = new TextEncoder().encode(value);

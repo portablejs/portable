@@ -70,7 +70,7 @@ export declare namespace verify {
  *
  * Results follow RFC 8601: `fail` for a body or signature that doesn't match, `policy` for
  * rsa-sha1 and short RSA keys, `neutral` for a signature that can't be processed, `permerror` for
- * a missing, revoked or unusable key, and `temperror` for a DNS failure. The promise rejects only
+ * a missing, revoked, or unusable key, and `temperror` for a DNS failure. The promise rejects only
  * for invalid options, a failing message stream or an aborted `signal`.
  *
  * @example
@@ -100,7 +100,7 @@ export async function verify(message: Message, options: verify.Options): Promise
 /**
  * Reads the DKIM-Signature fields, starts the key lookups and returns the body hashes the
  * signatures need, with the step that checks them once the body is hashed. `MailAuth.authenticate`
- * uses it to hash the body once for DKIM, ARC and the seal.
+ * uses it to hash the body once for DKIM, ARC, and the seal.
  */
 export function planVerify(fields: readonly Field[], options: verify.Options): Plan<Result[]> {
   const { resolver, minKeyBits = 1024, signal } = options;

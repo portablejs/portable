@@ -2,9 +2,9 @@
 
 Upstream suites: [ipaddr.js `test/ipaddr.test.js`](https://github.com/whitequark/ipaddr.js/blob/main/test/ipaddr.test.js) (main branch, after 2.5.0), [ip 2.0.1 `test/api-test.js`](https://github.com/indutny/node-ip/blob/main/test/api-test.js) and [is-ip `test.js`](https://github.com/sindresorhus/is-ip/blob/main/test.js). Tests are in `ip.conformance.ts` unless noted. No fixtures are copied.
 
-The oracle tests in `ip.oracle.test.ts` run on 2,000 random addresses, each written five ways, and on 5,000 random strings. They compare `canParse` with `net.isIP`, and `parse`, `format`, `contains` and `range` with ipaddr.js 2.5.0. They also compare `format` with `net.SocketAddress` and `contains` with `net.BlockList`.
+The oracle tests in `ip.oracle.test.ts` run on 2,000 random addresses, each written five ways, and on 5,000 random strings. They compare `canParse` with `net.isIP`, and `parse`, `format`, `contains`, and `range` with ipaddr.js 2.5.0. They also compare `format` with `net.SocketAddress` and `contains` with `net.BlockList`.
 
-ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, merging, excluding, expanding), which this package leaves out. Their contains cases are the same as ipaddr.js's and ip's.
+ip-cidr, cidr-tools, and ip-range-check are mostly subnet arithmetic (ranges, merging, excluding, expanding), which this package leaves out. Their contains cases are the same as ipaddr.js's and ip's.
 
 ## ipaddr.js
 
@@ -20,7 +20,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | checks IPv4 address format | `ipaddr.js > accepts only four-part decimal IPv4` | `isIPv4` checks only the shape, but this package has one strict check. |
 | validates IPv4 addresses | `ipaddr.js > accepts only four-part decimal IPv4` | `192.168.007.0xa` is invalid here. |
 | validates IPv4 addresses in CIDR notation | `ipaddr.js > rejects malformed CIDR text` | |
-| parses IPv4 in several weird formats | `ipaddr.js > rejects the octal, hex, integer and short IPv4 forms` | Deliberate: every one throws. See the README. |
+| parses IPv4 in several weird formats | `ipaddr.js > rejects the octal, hex, integer, and short IPv4 forms` | Deliberate: every one throws. See the README. |
 | barfs at invalid IPv4 | `ipaddr.js > rejects malformed IPv4` | |
 | matches IPv4 CIDR correctly | `ipaddr.js > matches IPv4 CIDR blocks given as objects` | |
 | rejects invalid IPv4 CIDR prefix lengths in match | `ipaddr.js > rejects an invalid prefix length in a CIDR object` | `RangeError`. |
@@ -60,7 +60,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | throws an error if tried to parse an invalid address | `ipaddr.js > rejects malformed IPv6 with InvalidInputError` | |
 | correctly processes IPv4-mapped addresses | `ipaddr.js > unmaps IPv4-mapped addresses` | `::8.8.8.8` stays IPv6. |
 | correctly converts IPv6 and IPv4 addresses to byte arrays | `ipaddr.js > returns bytes in network order` | |
-| correctly parses 1 as an IPv4 address | `ipaddr.js > rejects the octal, hex, integer and short IPv4 forms` | Deliberate: `1` is invalid. |
+| correctly parses 1 as an IPv4 address | `ipaddr.js > rejects the octal, hex, integer, and short IPv4 forms` | Deliberate: `1` is invalid. |
 | correctly detects IPv4 and IPv6 CIDR addresses | `ipaddr.js > parses the version from CIDR text` | |
 | does not consider a very large or very small number a valid IP address | `ipaddr.js > rejects malformed IPv4` | |
 | does not hang on ::8:8:8:8:8:8:8:8:8 | `ipaddr.js > validates IPv6` | The parser is a single pass, so there is no regex to backtrack. |
@@ -110,7 +110,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | address(): every test | skipped | Reads the machine's network interfaces, which no web runtime exposes. |
 | toLong(): should respond with a int | skipped | Use `DataView.getUint32` instead. |
 | fromLong(): should repond with ipv4 address | skipped | Use `DataView.setUint32` and `fromBytes` instead. |
-| should return true for octal, hexadecimal and long representations (7 tests) | `ip > rejects octal, hex and integer loopback forms instead of guessing` | Deliberate: these throw. |
+| should return true for octal, hexadecimal and long representations (7 tests) | `ip > rejects octal, hex, and integer loopback forms instead of guessing` | Deliberate: these throw. |
 | should return false for "192.168.1.1" | `ip > detects loopback addresses` | |
 
 ## is-ip
@@ -127,7 +127,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | Issue | Test | What we do |
 | --- | --- | --- |
 | ip CVE-2023-42282: `isPublic('0x7f.1')` returned `true` | `known upstream issues > CVE-2023-42282: a hex or short loopback address is not accepted as public` | Hex and short forms throw. |
-| ip CVE-2024-29415: `127.1`, `01200034567`, `012.1.2.3`, `000:0:0000::01` and `::fFFf:127.0.0.1` classified as public | `known upstream issues > CVE-2024-29415: octal, integer and odd IPv6 spellings of internal addresses` | IPv4 forms throw. The IPv6 forms parse correctly and classify as `loopback` and `ipv4Mapped`. |
+| ip CVE-2024-29415: `127.1`, `01200034567`, `012.1.2.3`, `000:0:0000::01` and `::fFFf:127.0.0.1` classified as public | `known upstream issues > CVE-2024-29415: octal, integer, and odd IPv6 spellings of internal addresses` | IPv4 forms throw. The IPv6 forms parse correctly and classify as `loopback` and `ipv4Mapped`. |
 | ip #162: `017700000001` passes as public | `known upstream issues > CVE-2024-29415: ...` | Throws. |
 | ip #160: `0` passes as public | `known upstream issues > CVE-2023-42282: ...` | Throws. `0.0.0.0` is `thisNetwork`. |
 | ip #122: private IPv4-mapped addresses match only in dotted form | `known upstream issues > an IPv4-mapped address matches an IPv4 block in any notation` | `contains` and `unmap` work on bytes. |
@@ -136,7 +136,7 @@ ip-cidr, cidr-tools and ip-range-check are mostly subnet arithmetic (ranges, mer
 | ipaddr.js #213: `::ffff:0177.0.0.1` reads as `177.0.0.1` while `0177.0.0.1` reads as `127.0.0.1` | `known upstream issues > the IPv4 part of an IPv6 address may not have leading zeros` | Both throw. |
 | ipaddr.js parses `::8.8.8.8` as `::ffff:8.8.8.8` | `known upstream issues > ::a.b.c.d is IPv4-compatible, not IPv4-mapped` | The bytes are kept as written, and the range is `reserved`. |
 | ipaddr.js #165, #162: `match` throws for an address of the other version | `known upstream issues > matching across versions returns false instead of throwing` | |
-| ipaddr.js #179, #182: `1.1` and other short forms are valid | `ipaddr.js > rejects the octal, hex, integer and short IPv4 forms` | |
+| ipaddr.js #179, #182: `1.1` and other short forms are valid | `ipaddr.js > rejects the octal, hex, integer, and short IPv4 forms` | |
 | ipaddr.js reports IPv6 outside `2000::/3`, such as `4000::1`, as `unicast` | `range > names every IANA special-purpose IPv6 block` | `reserved`. |
 
 ## Benchmarks

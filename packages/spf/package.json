@@ -1,6 +1,6 @@
 {
   "name": "@portable/spf",
-  "description": "Evaluate SPF (RFC 7208) for a sender IP, HELO name and MAIL FROM domain, in any JavaScript runtime.",
+  "description": "Evaluate SPF (RFC 7208) for a sender IP, HELO name, and MAIL FROM domain, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"

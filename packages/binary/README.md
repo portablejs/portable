@@ -1,8 +1,8 @@
 # @portable/binary
 
-Reads and writes integers, varints and strings in binary data, and splits byte streams into length-prefixed frames. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Reads and writes integers, varints, and strings in binary data, and splits byte streams into length-prefixed frames. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [smart-buffer](https://www.npmjs.com/package/smart-buffer), [varint](https://www.npmjs.com/package/varint), [it-length-prefixed](https://www.npmjs.com/package/it-length-prefixed) and [length-prefixed-stream](https://www.npmjs.com/package/length-prefixed-stream).
+Replaces [smart-buffer](https://www.npmjs.com/package/smart-buffer), [varint](https://www.npmjs.com/package/varint), [it-length-prefixed](https://www.npmjs.com/package/it-length-prefixed), and [length-prefixed-stream](https://www.npmjs.com/package/length-prefixed-stream).
 
 ```sh
 npm install @portable/binary
@@ -49,7 +49,7 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 | Member | Returns | Description |
 | --- | --- | --- |
-| `uint8()`, `int8()`, `uint16()`, `int16()`, `uint32()`, `int32()` | `number` | An integer of 1, 2 or 4 bytes. |
+| `uint8()`, `int8()`, `uint16()`, `int16()`, `uint32()`, `int32()` | `number` | An integer of 1, 2, or 4 bytes. |
 | `bigUint64()`, `bigInt64()` | `bigint` | A 64-bit integer. |
 | `float32()`, `float64()` | `number` | An IEEE 754 float. |
 | `uint(byteLength)`, `int(byteLength)` | `number` | An integer of 1 to 6 bytes, such as the 24-bit lengths in TLS. |
@@ -68,7 +68,7 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 | `encoding` | Format | Used by |
 | --- | --- | --- |
-| `'unsigned'` | LEB128 | protobuf `uint32`, `uint64` and `int64`, Minecraft VarInt and VarLong, WebAssembly `u32` |
+| `'unsigned'` | LEB128 | protobuf `uint32`, `uint64`, and `int64`, Minecraft VarInt, and VarLong, WebAssembly `u32` |
 | `'zigzag'` | 0, -1, 1, -2 stored as 0, 1, 2, 3 | protobuf `sint32` and `sint64` |
 | `'signed'` | SLEB128 | WebAssembly `i32` and `i64`, DWARF |
 
@@ -76,7 +76,7 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 ## Writing
 
-`Binary.createWriter(options)` returns a `Writer` with a buffer that grows as you write. It takes the same `endian` option as `createReader`, and each read method has a write method of the same name that takes the value: `writer.uint16(value)`, `writer.uint(byteLength, value)`, `writer.varint(value, options)`, `writer.bytes(value)`, `writer.string(text)` and `writer.cstring(text)`. `writer.toBytes()` returns a copy of the bytes written so far.
+`Binary.createWriter(options)` returns a `Writer` with a buffer that grows as you write. It takes the same `endian` option as `createReader`, and each read method has a write method of the same name that takes the value: `writer.uint16(value)`, `writer.uint(byteLength, value)`, `writer.varint(value, options)`, `writer.bytes(value)`, `writer.string(text)`, and `writer.cstring(text)`. `writer.toBytes()` returns a copy of the bytes written so far.
 
 A value that doesn't fit its type throws a `RangeError` and writes nothing, as `Buffer.writeUInt8(256)` does. `DataView.setUint8(0, 256)` writes 0 instead. A value of the wrong type, such as a number passed to `bigUint64`, throws a `TypeError`. `string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
 
@@ -107,7 +107,7 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `prefix` | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'` or `'varint'`. The length counts only the frame's bytes, not the prefix. |
+| `prefix` | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'`, or `'varint'`. The length counts only the frame's bytes, not the prefix. |
 | `endian` | `'big'` | Byte order of a `uint16` or `uint32` prefix. |
 | `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. A larger length errors the stream with `Binary.MaxBytesError` as soon as the prefix is read, before any of the frame is buffered. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
@@ -132,9 +132,9 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 | `Binary.VarintEncoding` | `'unsigned' \| 'zigzag' \| 'signed'`. |
 | `Binary.Prefix` | `'uint8' \| 'uint16' \| 'uint32' \| 'varint'`. |
 
-## Why use this over smart-buffer, varint and it-length-prefixed
+## Why use this over smart-buffer, varint, and it-length-prefixed
 
-smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` polyfill to run it. varint and it-length-prefixed work everywhere, but it-length-prefixed reads iterables of `Uint8ArrayList` instead of streams and installs six other packages. `@portable/binary` uses only `Uint8Array`, `DataView`, `TextEncoder` and Web Streams, and covers all three jobs.
+smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` polyfill to run it. varint and it-length-prefixed work everywhere, but it-length-prefixed reads iterables of `Uint8ArrayList` instead of streams and installs six other packages. `@portable/binary` uses only `Uint8Array`, `DataView`, `TextEncoder`, and Web Streams, and covers all three jobs.
 
 - In Node, it wrote mixed records about 5 times as fast as smart-buffer and read them about 10 times as fast. It encoded and decoded unsigned varints slightly faster than `@bufbuild/protobuf`, and 18 to 38 times as fast as varint.
 - `FrameDecoderStream` split frames at about half the speed of it-length-prefixed, because each frame passes through a `TransformStream` queue, which costs more than an async generator's `yield`.

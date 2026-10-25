@@ -1,6 +1,6 @@
 # @portable/oauth1
 
-Signs OAuth 1.0a requests ([RFC 5849](https://www.rfc-editor.org/rfc/rfc5849)) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1 or PLAINTEXT. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Signs OAuth 1.0a requests ([RFC 5849](https://www.rfc-editor.org/rfc/rfc5849)) with HMAC-SHA1, HMAC-SHA256, RSA-SHA1, or PLAINTEXT. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [oauth-1.0a](https://www.npmjs.com/package/oauth-1.0a) and the OAuth 1.0a half of [oauth](https://www.npmjs.com/package/oauth) (node-oauth).
 
@@ -29,7 +29,7 @@ The signature covers what the server will see, because it is computed from the `
 
 - The method is upper-cased. The URL is normalized by the `URL` parser: scheme and host are lowercased, the default port is dropped, an empty path becomes `/` and the fragment is ignored.
 - Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Percent-encoded bytes that aren't UTF-8 are re-encoded unchanged.
-- JSON, multipart and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
+- JSON, multipart, and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
 
 ## Options
 
@@ -37,7 +37,7 @@ The signature covers what the server will see, because it is computed from the `
 | --- | --- | --- |
 | `consumer` | required | `{ key, secret }`, or `{ key, privateKey }` for RSA-SHA1. |
 | `token` | none | `{ key, secret }` token credentials. Leave it out when requesting temporary credentials. |
-| `signatureMethod` | `'HMAC-SHA1'` | `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'` or `'PLAINTEXT'`. |
+| `signatureMethod` | `'HMAC-SHA1'` | `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'`, or `'PLAINTEXT'`. |
 | `realm` | none | Sent as the first header parameter. It is not signed. |
 | `callback` | none | `oauth_callback`, for the temporary credentials request. |
 | `verifier` | none | `oauth_verifier`, for the token request. |
@@ -95,7 +95,7 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 - A JSON body is not signed as parameters ([oauth-1.0a #60](https://github.com/ddo/oauth-1.0a/issues/60)). `bodyHash: true` signs its hash instead.
 - RSA-SHA1 takes a PKCS #1 key as OpenSSL writes it. oauth-1.0a percent-encodes the key before signing ([#109](https://github.com/ddo/oauth-1.0a/issues/109)).
 - The nonce comes from `crypto.getRandomValues`. oauth-1.0a's comes from `Math.random`.
-- An escaped name in the query, an uppercase host and a name in both the query and the body are signed correctly. oauth-1.0a signs the first two wrongly and keeps only one value of the third. [PARITY.md](test/PARITY.md) lists each case with its test.
+- An escaped name in the query, an uppercase host, and a name in both the query and the body are signed correctly. oauth-1.0a signs the first two wrongly and keeps only one value of the third. [PARITY.md](test/PARITY.md) lists each case with its test.
 - The default signature method is HMAC-SHA1, where oauth-1.0a defaults to PLAINTEXT.
 - `oauth_version` is always `1.0`, and the signing key always ends in `&` when there is no token secret, as RFC 5849 requires. oauth-1.0a's `version` and `last_ampersand` options and node-oauth's `1.0A` version string are not supported.
 - The header separator is always `", "` and the nonce is always 32 hex digits, so oauth-1.0a's `parameter_seperator` and `nonce_length` options have no equivalent.

@@ -4,7 +4,7 @@ export type Alphabet = 'base64' | 'base64url';
 
 export declare namespace encode {
   type Options = {
-    /** `'base64'` uses `+` and `/`, `'base64url'` uses `-` and `_` (RFC 4648 §5). @default 'base64' */
+    /** `'base64'` uses `+` and `/`; `'base64url'` uses `-` and `_` (RFC 4648 §5). @default 'base64' */
     alphabet?: Alphabet | undefined;
     /** Characters per line, or `false` for one line. MIME uses 76. @default false */
     lineLength?: number | false | undefined;

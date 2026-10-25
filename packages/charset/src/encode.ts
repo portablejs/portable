@@ -5,7 +5,7 @@ import { createState, run, type Unmappable } from './internal/run.js';
 export declare namespace encode {
   type Options = {
     /**
-     * Write a byte order mark first. Applies only to UTF-8, UTF-16LE and UTF-16BE, because other
+     * Write a byte order mark first. Applies only to UTF-8, UTF-16LE, and UTF-16BE, because other
      * charsets have none.
      * @default false
      */

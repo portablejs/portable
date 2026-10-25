@@ -287,7 +287,7 @@ describe('lodash debounce and throttle', () => {
       expect(funced.pending).toBe(false);
     });
 
-    test(`${name} leaves no timer after the wait, cancel or abort`, async () => {
+    test(`${name} leaves no timer after the wait, cancel, or abort`, async () => {
       const controller = new AbortController();
       const funced = make(() => 1, 32, { signal: controller.signal });
       void funced();

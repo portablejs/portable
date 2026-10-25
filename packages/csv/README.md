@@ -2,7 +2,7 @@
 
 Decodes and encodes CSV (RFC 4180), as functions and as `TransformStream`s. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [csv-parse](https://www.npmjs.com/package/csv-parse), [csv-stringify](https://www.npmjs.com/package/csv-stringify), [papaparse](https://www.npmjs.com/package/papaparse) and [fast-csv](https://www.npmjs.com/package/fast-csv).
+Replaces [csv-parse](https://www.npmjs.com/package/csv-parse), [csv-stringify](https://www.npmjs.com/package/csv-stringify), [papaparse](https://www.npmjs.com/package/papaparse), and [fast-csv](https://www.npmjs.com/package/fast-csv).
 
 ```sh
 npm install @portable/csv
@@ -44,7 +44,7 @@ const rows = Csv.decode(text, { header: ['id', 'email'] });
 ```
 
 - A quoted field may contain the delimiter, doubled quotes (`""`) and line breaks.
-- CRLF, LF and CR each end a row. A final line break is optional and adds no row.
+- CRLF, LF, and CR each end a row. A final line break is optional and adds no row.
 - A leading byte order mark is dropped.
 - Spaces and tabs between a closing quote and the next delimiter are skipped.
 - A quote that doesn't start a field is read as text, so `5" pipe` decodes to `5" pipe`.
@@ -74,9 +74,9 @@ A bad option, such as a two-character delimiter or a negative `maxLength`, throw
 
 `Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
 
-A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Any other value throws `InvalidInputError`. So does an invalid `Date`, and so does an object row after array rows, unless `header` is an array.
+A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Any other value throws `InvalidInputError`. So does an invalid `Date`, and so does an object row after array rows, unless `header` is an array.
 
-A field is quoted only when it contains the delimiter, the quote, CR or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
+A field is quoted only when it contains the delimiter, the quote, CR, or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -85,14 +85,14 @@ A field is quoted only when it contains the delimiter, the quote, CR or LF, and 
 | `newline` | `'\r\n'` | `'\r\n'` or `'\n'`. |
 | `header` | `false` | `true` writes the first object row's keys as a header row. With an array, those names are written as the header row, even with no rows, and each object row's values are read by those names, in that order. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. |
 | `bom` | `false` | Start with a byte order mark, which Excel needs to read UTF-8. |
-| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). |
+| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). |
 | `signal` | | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-## Why use this over csv-parse, papaparse and fast-csv
+## Why use this over csv-parse, papaparse, and fast-csv
 
-csv-parse, csv-stringify and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
+csv-parse, csv-stringify, and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
 
-The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
+The benchmarks use 5,000 rows (500 kB) of quoted text, prices, and dates.
 
 <!-- bench:start -->
 <table>
@@ -140,7 +140,7 @@ It also avoids these traps, each with a test in `test/issues.conformance.ts`:
 - `"a" b,c` throws. papaparse reads it as one field, `a" b,c`.
 - The BOM is dropped from the first column name. csv-parse keeps it unless `bom: true`.
 - A blank line is skipped. csv-parse throws "Invalid Record Length" unless `skip_empty_lines: true`.
-- `true` and `false` are written as `true` and `false`, and a `Date` as ISO 8601. csv-stringify writes `1`, an empty field and milliseconds.
+- `true` and `false` are written as `true` and `false`, and a `Date` as ISO 8601. csv-stringify writes `1`, an empty field, and milliseconds.
 - With CRLF line breaks, a field that contains a lone LF is quoted. csv-stringify with `record_delimiter: 'windows'` leaves it bare, so readers split the row there.
 
 Other differences to check when you switch:
@@ -149,9 +149,9 @@ Other differences to check when you switch:
 - papaparse's `unparse` doesn't end the last row with a line break. `encode` ends every row with `newline`.
 - papaparse reads empty lines as rows unless `skipEmptyLines` is set. `decode` skips them by default.
 - papaparse with `header: true` accepts rows whose field count differs from the header's. `decode` throws `InvalidInputError` for them unless you pass `relaxColumnCount: true`.
-- csv-parse's `cast`, papaparse's `dynamicTyping` and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from `@portable/streams`.
+- csv-parse's `cast`, papaparse's `dynamicTyping`, and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from `@portable/streams`.
 - papaparse guesses the delimiter by default. Here the delimiter is `,` unless you pass `delimiter`.
-- Comments, trimming, csv-parse's `from` and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or leave the loop early, which cancels the stream.
+- Comments, trimming, csv-parse's `from`, and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or leave the loop early, which cancels the stream.
 - Delimiters longer than one character and escape characters other than `""` are not supported.
 - csv-stringify's `quoted` and papaparse's `quotes` force quoting, which is not supported. Fields are quoted only when they need it.
 - csv-stringify reads nested column paths such as `columns: ['a.b']`. Flatten the rows before you pass them to `encode`.

@@ -16,7 +16,7 @@ import { author, type SkipReason } from './internal/author.js';
 import { assertAuthservId, formatResults } from './internal/results.js';
 
 /**
- * The DNS lookups SPF, DKIM, DMARC and ARC need: a `Dns.Resolver` from `@portable/dns`,
+ * The DNS lookups SPF, DKIM, DMARC, and ARC need: a `Dns.Resolver` from `@portable/dns`,
  * `node:dns/promises`, or a plain object with these methods.
  */
 export type Resolver = Spf.Resolver & Dmarc.Resolver & Dkim.Resolver;

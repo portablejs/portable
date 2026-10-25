@@ -18,7 +18,7 @@ type Case = {
   unmappable: string;
 };
 
-// From iconv-lite's cyrillic, greek and turkish tests. The bytes are written as Latin-1 text.
+// From iconv-lite's cyrillic, greek, and turkish tests. The bytes are written as Latin-1 text.
 const singleByteCases = [
   {
     name: 'windows-1251',
@@ -203,7 +203,7 @@ describe('Big5', () => {
     expect(hex(Charset.encode('·×', big5))).toBe('a150a1d1');
   });
 
-  test('encodes 十, 卅 and the box drawings that appear twice in the index with their last pointer', () => {
+  test('encodes 十, 卅, and the box drawings that appear twice in the index with their last pointer', () => {
     expect(hex(Charset.encode('十', big5))).toBe('a451');
     expect(hex(Charset.encode('卅', big5))).toBe('a4ca');
     expect(hex(Charset.encode('═╞╡╪', big5))).toBe('f9f9f9e9f9ebf9ea');
@@ -290,7 +290,7 @@ describe('Shift_JIS', () => {
     expect(hex(Charset.encode('①', shiftJis))).toBe('8740');
   });
 
-  test('encodes ¥, ‾, U+0080, halfwidth katakana and the minus sign', () => {
+  test('encodes ¥, ‾, U+0080, halfwidth katakana, and the minus sign', () => {
     expect(hex(Charset.encode('¥‾\x80ｱﾟ−', shiftJis))).toBe('5c7e80b1df817c');
   });
 });
@@ -324,7 +324,7 @@ describe('ISO-2022-JP', () => {
     expect(hex(Charset.encode('ｱﾞ', iso2022Jp))).toBe('1b24422522212b1b2842');
   });
 
-  test('does not write SO, SI or ESC, which would change the decoder state', () => {
+  test('does not write SO, SI, or ESC, which would change the decoder state', () => {
     expect(hex(Charset.encode('\x0e\x0f\x1b', iso2022Jp))).toBe('3f3f3f');
     const html = Charset.encode('\x1b', iso2022Jp, { unmappable: 'html' });
     expect(new TextDecoder().decode(html)).toBe('&#65533;');

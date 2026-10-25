@@ -2,7 +2,7 @@
 
 Sleep, retry with backoff, poll until a value is ready, and debounce or throttle a function. Every function takes an `AbortSignal` and leaves no timers behind. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [delay](https://www.npmjs.com/package/delay), [p-retry](https://www.npmjs.com/package/p-retry), [async-retry](https://www.npmjs.com/package/async-retry), [p-wait-for](https://www.npmjs.com/package/p-wait-for), [lodash.debounce](https://www.npmjs.com/package/lodash.debounce), [lodash.throttle](https://www.npmjs.com/package/lodash.throttle), [throttle-debounce](https://www.npmjs.com/package/throttle-debounce) and [p-debounce](https://www.npmjs.com/package/p-debounce).
+Replaces [delay](https://www.npmjs.com/package/delay), [p-retry](https://www.npmjs.com/package/p-retry), [async-retry](https://www.npmjs.com/package/async-retry), [p-wait-for](https://www.npmjs.com/package/p-wait-for), [lodash.debounce](https://www.npmjs.com/package/lodash.debounce), [lodash.throttle](https://www.npmjs.com/package/lodash.throttle), [throttle-debounce](https://www.npmjs.com/package/throttle-debounce), and [p-debounce](https://www.npmjs.com/package/p-debounce).
 
 ```sh
 npm install @portable/timers
@@ -55,7 +55,7 @@ Calls `fn` until it returns without throwing and resolves with its value. When t
 | `attempts` | `3` | Total number of calls, including the first. `Infinity` retries until success or abort. |
 | `delay` | `{ initial: 200, max: 10_000 }` | Wait before each retry. See [Delays](#delays). |
 | `retryIf` | retry every error | `(error, { attempt }) => boolean \| Promise<boolean>`. Called before each retry, not after the last attempt. Return `false` to stop and reject with `error`. |
-| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number and the wait in ms. Use it for logging. If it returns a promise, `retry` awaits it before the wait starts, and if it throws, `retry` rejects with that error. |
+| `onRetry` | | `(error, { attempt, delay }) => void \| Promise<void>`. Called before each wait, once `retryIf` allows the retry, with the error, the attempt number, and the wait in ms. Use it for logging. If it returns a promise, `retry` awaits it before the wait starts, and if it throws, `retry` rejects with that error. |
 | `timeout` | `Infinity` | Time limit for each attempt, in ms. When it passes, the attempt's `signal` aborts with a `TimeoutError` `DOMException` and the attempt fails with it, so it is retried like any other error. |
 | `signal` | | Stops retrying. The call rejects with `signal.reason`, also while an attempt or a delay is running. |
 
@@ -120,7 +120,7 @@ A date in the past gives a negative wait, which retries at once.
 
 ## `poll(fn, options)`
 
-Calls `fn` until it returns a value other than `undefined`, and resolves with that value. `null`, `false` and `0` are values, so they end the poll. `fn` receives `{ attempt, signal }` as in `retry`. If `fn` throws, the poll rejects with that error and doesn't call `fn` again. To retry failed checks, call `retry` inside `fn`.
+Calls `fn` until it returns a value other than `undefined`, and resolves with that value. `null`, `false`, and `0` are values, so they end the poll. `fn` receives `{ attempt, signal }` as in `retry`. If `fn` throws, the poll rejects with that error and doesn't call `fn` again. To retry failed checks, call `retry` inside `fn`.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -175,7 +175,7 @@ The returned function also has:
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
 | `({ attempt, error }) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
-`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial` or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
+`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial`, or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
 
 ```ts
 const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false });
@@ -192,12 +192,12 @@ next({ attempt: 3 }); // 4000
 | `Timers.Delay` | The `delay` option. See [Delays](#delays). |
 | `Timers.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff. |
 | `Timers.Attempt` | `{ attempt, error? }`, what a `delay` function receives. |
-| `Timers.Context` | `{ attempt, signal }`, what `retry` and `poll` pass to `fn`. |
-| `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush` and `pending`. |
+| `Timers.Context` | `{ attempt, signal }`, what `retry`, and `poll` pass to `fn`. |
+| `Timers.Debounced` | The function `debounce` and `throttle` return, with `cancel`, `flush`, and `pending`. |
 | `Timers.retry.Retry` | `{ attempt, delay }`, what `onRetry` receives. |
 | `Timers.Instant` | `Date \| { readonly epochMilliseconds: number }`, the type of options such as `now` and `expiresAt` in other `@portable/*` packages. You can pass a `Temporal.Instant` or `Temporal.ZonedDateTime`. |
 
-## Why use this over p-retry, async-retry, p-wait-for and delay
+## Why use this over p-retry, async-retry, p-wait-for, and delay
 
 Each of these libraries does one job, with its own option names. `retry` and `poll` share one `delay` option and one `{ attempt, signal }` context, and the package has no dependencies outside `@portable/*`.
 
@@ -265,9 +265,9 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - p-wait-for checks every 20 ms by default. `poll` waits 1000 ms, because it is mostly used against servers.
 - delay's `clearDelay(promise)` has no equivalent. Abort the `signal` instead, and the promise rejects rather than resolving early.
 
-## Why use this over lodash.debounce, lodash.throttle, throttle-debounce and p-debounce
+## Why use this over lodash.debounce, lodash.throttle, throttle-debounce, and p-debounce
 
-`debounce` and `throttle` follow lodash's timing: the oracle tests compare the time and arguments of every invocation with lodash 4.18 on random call, `flush` and `cancel` schedules. They differ in what a call returns and in how they end.
+`debounce` and `throttle` follow lodash's timing: the oracle tests compare the time and arguments of every invocation with lodash 4.18 on random call, `flush`, and `cancel` schedules. They differ in what a call returns and in how they end.
 
 - Each call returns a promise of the invocation it was merged into. lodash returns the result of the previous invocation, and throttle-debounce returns nothing.
 - `signal` cancels the waiting invocation and disables the function, so it can be tied to a component's or request's lifetime.

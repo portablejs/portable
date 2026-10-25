@@ -34,7 +34,7 @@ export declare namespace parseStream {
 }
 
 /**
- * Reads EXIF metadata from a stream of a JPEG, TIFF, PNG, WebP, HEIC or AVIF file, or of raw EXIF
+ * Reads EXIF metadata from a stream of a JPEG, TIFF, PNG, WebP, HEIC, or AVIF file, or of raw EXIF
  * data. It reads only until the metadata is found, cancels the stream, and returns what `parse`
  * returns for the whole file.
  *

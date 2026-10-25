@@ -37,7 +37,7 @@ export type Result = {
   spf?: Alignment | undefined;
   /** Whether each DKIM signature aligns, in the order they were passed. */
   dkim: readonly Alignment[];
-  /** Why the result is `none`, `temperror` or `permerror`. */
+  /** Why the result is `none`, `temperror`, or `permerror`. */
   reason?: string | undefined;
   /**
    * The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one

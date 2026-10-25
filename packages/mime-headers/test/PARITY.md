@@ -6,7 +6,7 @@ Upstream suites:
 - [nodemailer 10.1.7](https://github.com/nodemailer/nodemailer/tree/v10.1.7/test/addressparser) (`addressparser-test.ts`, `addressparser-heap-test.ts`), MIT, Andris Reinman. The [addressparser](https://github.com/nodemailer/addressparser) repository is archived and has no tests. Its code and tests are now maintained in nodemailer.
 - [email-addresses 5.0.1](https://github.com/jackbearheart/email-addresses/tree/v5.0.1/test) (`email-addresses.js`, `is_email.js`, `tests.json`), MIT, Fog Creek Software. `fixtures/is_email.json` is its `tests.json`, which holds Dominic Sayers' is_email test data under a BSD license. `fixtures/is_email.LICENSE` holds that license.
 
-Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLength: n })`, with its `n = 0` (no limit) as `wordLength: Infinity`. `foldLines(text, n)` is `fold(text, { lineLength: n })`, `parseHeaderValue` is `parseValue`, `buildHeaderValue` is `formatValue`, `decodeHeaders` and `decodeHeader` are `parseHeaders`. addressparser's `addressparser(input, options)` is `parseAddresses(input, options)`. email-addresses' `parseOneAddress`, `parseAddressList`, `parseFrom`, `parseReplyTo` and `parseSender` are `parseAddresses(input, { strict: true })`, and where they return `null`, `parseAddresses` throws `InvalidInputError`.
+Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLength: n })`, with its `n = 0` (no limit) as `wordLength: Infinity`. `foldLines(text, n)` is `fold(text, { lineLength: n })`, `parseHeaderValue` is `parseValue`, `buildHeaderValue` is `formatValue`, `decodeHeaders`, and `decodeHeader` are `parseHeaders`. addressparser's `addressparser(input, options)` is `parseAddresses(input, options)`. email-addresses' `parseOneAddress`, `parseAddressList`, `parseFrom`, `parseReplyTo`, and `parseSender` are `parseAddresses(input, { strict: true })`, and where they return `null`, `parseAddresses` throws `InvalidInputError`.
 
 "same name" means a test of the same name, in the file named in the section heading.
 
@@ -51,7 +51,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | #decodeWords > should also decode content empty part | `decodeWords() > decodes an empty word` | |
 | #decodeWords > should not join adjacent base64 words with mismatched charsets | `decodeWords() > does not join adjacent words in different charsets` | |
 | #decodeWords > should not join adjacent quoted-printable words with mismatched charsets | `decodeWords() > does not join adjacent words in different charsets` | |
-| #decodeWords > should not decode with the utf-7, base64 or hex codecs | `decodeWords() > reads the utf-7, base64 and hex codecs as UTF-8` | `TextDecoder` doesn't know them, so they decode as UTF-8, as libmime's fallback does. |
+| #decodeWords > should not decode with the utf-7, base64 or hex codecs | `decodeWords() > reads the utf-7, base64, and hex codecs as UTF-8` | `TextDecoder` doesn't know them, so they decode as UTF-8, as libmime's fallback does. |
 | #buildHeaderParam > should encode a value that looks like an encoded word | `formatValue() > encodes a value that looks like an encoded word` | `buildHeaderParam` is not exported. `formatValue` writes the sections. |
 | #buildHeaderParam > should not split a plain value of exactly maxLength | `formatValue() > does not split a plain value shorter than 75` | The section length is fixed at 50 for encoded and 75 for plain values. |
 | #buildHeaderParam > should return unmodified | `formatValue() > formats values and quotes the ones that need it` | |
@@ -116,7 +116,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | #charset > #decode > should decode an ISO-2022-JP string the same as a Buffer | skipped | Charset conversion of strings is out of scope. |
 | #charset > #decode > should decode NEC row 13 characters | skipped | `TextDecoder`'s ISO-2022-JP and Shift_JIS tables are the WHATWG ones. |
 | #charset > #decode > should fall back to UTF-8 for an unknown charset | `decodeWords() > decodes a word in a charset whose name ...` | `x-unknown-charset` decodes as UTF-8. |
-| #charset > #decode > should treat the utf-7, base64 and hex codecs as unknown charsets | `decodeWords() > reads the utf-7, base64 and hex codecs as UTF-8` | |
+| #charset > #decode > should treat the utf-7, base64 and hex codecs as unknown charsets | `decodeWords() > reads the utf-7, base64, and hex codecs as UTF-8` | |
 | #charset > #convert > should only pass a Buffer through for an exact UTF-8 name | skipped | No charset conversion API. |
 | #charset > #convert > should convert non UTF-8 to Buffer | skipped | As above. |
 | #charset > #normalizeCharset > should resolve curated aliases | skipped | Labels are resolved by `TextDecoder`. |
@@ -195,7 +195,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | Properties > differential against nodemailer > encodes words the same way | `mime-headers.oracle.test.ts > encodeWord writes what libmime writes without a length limit` | Compared with libmime instead of nodemailer's copy. |
 | Properties > differential against nodemailer > folds, splits and builds parameters the same way | `mime-headers.oracle.test.ts > fold breaks lines where libmime.foldLines breaks them`, `... > libmime parses what formatValue formatted` | |
 | Fuzzing > parsers > decodeWords returns a string and leaves text without encoded words as it is | `decodeWords leaves text without encoded words as it is`, `decodeWords returns a string for any input` | |
-| Fuzzing > parsers > decodeWords never decodes with a refused codec | `libmime.conformance.ts > decodeWords() > reads the utf-7, base64 and hex codecs as UTF-8` | |
+| Fuzzing > parsers > decodeWords never decodes with a refused codec | `libmime.conformance.ts > decodeWords() > reads the utf-7, base64, and hex codecs as UTF-8` | |
 | Fuzzing > parsers > parseHeaderValue returns plain params and never touches a prototype | `parseValue returns plain params and never sets a prototype` | |
 | Fuzzing > parsers > decodeHeaders returns lowercased keys with arrays of unfolded values | `parseHeaders reads a name without line breaks or a colon for every header` | Names keep their case. |
 | Fuzzing > parsers > decodeHeader splits any line into a key and a value | as above | |
@@ -205,7 +205,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | Fuzzing > builders > encodeWord and encodeWords emit printable ASCII that decodes back | `decodeWords gives back what encodeWord encoded ...`, `decodeWords gives back what encodeWords encoded ...` | |
 | Fuzzing > builders > safeEncodeURIComponent leaves only unreserved chars and escapes | `parseValue gives back the params formatValue formatted, whatever they hold` | Checks the output is printable ASCII. |
 | Fuzzing > builders > foldLines and splitMimeEncodedString only cut, never change the input | `fold only inserts line breaks before whitespace, and unfold removes them` | |
-| Fuzzing > linear time on large hostile input (10 functions) | `linear-time.bench.ts > ... of hostile text` | One test per function: `decodeWords`, `parseValue`, `parseHeaders`, `unfold`, `encodeWords`, `encodeWord`, `formatValue`, `fold`, `parseAddresses`. `decodeFlowed`, `encodeFlowed` and `splitMimeEncodedString` have no counterpart. |
+| Fuzzing > linear time on large hostile input (10 functions) | `linear-time.bench.ts > ... of hostile text` | One test per function: `decodeWords`, `parseValue`, `parseHeaders`, `unfold`, `encodeWords`, `encodeWord`, `formatValue`, `fold`, `parseAddresses`. `decodeFlowed`, `encodeFlowed`, and `splitMimeEncodedString` have no counterpart. |
 
 ## nodemailer `addressparser-test.ts`
 
@@ -248,10 +248,10 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | should handle quoted local-part with angle brackets | `addressparser > a quoted local part in angle brackets` | Deliberate difference: quotes a local part doesn't need are dropped inside angle brackets as well as outside, so both spellings give one address. |
 | should handle escaped quotes in quoted string | `addressparser > escaped quotes and backslashes in a quoted local part` | |
 | should handle escaped backslashes | as above | |
-| should handle unclosed quote gracefully | `addressparser > an unclosed quote, angle bracket or comment` | |
+| should handle unclosed quote gracefully | `addressparser > an unclosed quote, angle bracket, or comment` | |
 | should handle unclosed angle bracket | as above | |
 | should handle unclosed comment | as above | |
-| should handle empty string | `addressparser > empty input, whitespace and empty angle brackets` | |
+| should handle empty string | `addressparser > empty input, whitespace, and empty angle brackets` | |
 | should handle whitespace only | as above | |
 | should handle empty angle brackets | as above | |
 | should handle special characters in local-part | `addressparser > special characters in the local part` | |
@@ -271,10 +271,10 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | Nested group flattening > should flatten deeply nested groups | `nested groups are flattened into the outer one > deeply nested` | |
 | Nested group flattening > should flatten multiple nested groups at same level | `... > several nested groups at the same level` | |
 | Nested group flattening > should handle mixed nested and regular addresses in group | `... > nested and plain addresses in a group` | |
-| Unicode and international addresses > should handle unicode in display name | `international addresses > Unicode, emoji and CJK display names` | |
+| Unicode and international addresses > should handle unicode in display name | `international addresses > Unicode, emoji, and CJK display names` | |
 | Unicode and international addresses > should handle emoji in display name | as above | |
 | Unicode and international addresses > should handle unicode domain (IDN) | `international addresses > a Unicode domain` | |
-| Unicode and international addresses > should handle CJK characters in name | `international addresses > Unicode, emoji and CJK display names` | |
+| Unicode and international addresses > should handle CJK characters in name | `international addresses > Unicode, emoji, and CJK display names` | |
 | Real-world malformed input handling > should handle multiple angle brackets | `malformed input > doubled angle brackets` | |
 | Real-world malformed input handling > should handle address with no domain | `malformed input > a missing domain or local part` | |
 | Real-world malformed input handling > should handle address with no local part | as above | |
@@ -381,7 +381,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | Nested comments > should not open a nested comment at an escaped "(" | `... > an escaped "(" does not open a nested comment` | |
 | Nested comments > should read an unclosed nested comment to the end of the value | `... > an unclosed nested comment runs to the end` | |
 | Nested comments > should tokenize ${label} in linear time (2 cases) | `linear-time.bench.ts > parseAddresses() of deeply nested comments`, `... of an unclosed run of comment openers` | |
-| Unexpected "<" inside an angle-addr > should not cut at a "<" inside a quoted string, a comment or a domain literal | `an unexpected "<" inside an angle address > inside a quoted string, a comment or a domain literal is kept` | |
+| Unexpected "<" inside an angle-addr > should not cut at a "<" inside a quoted string, a comment or a domain literal | `an unexpected "<" inside an angle address > inside a quoted string, a comment, or a domain literal is kept` | |
 | Unexpected "<" inside an angle-addr > should still drop what comes before an unexpected "<" | `... > drops what comes before it` | |
 | Unexpected "<" inside an angle-addr > should read many unexpected "<" in linear time | `... > many of them`, `linear-time.bench.ts > parseAddresses() of many unexpected "<"` | |
 | Domain literal holding an "@" > should keep the whole domain literal as the domain | `a domain literal holding "@" > is the whole domain` | |
@@ -414,27 +414,27 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| simple one address function | `one address > a name and an angle address`, `... > a bare word is not an address`, `... > two addresses are a list of two`, `... > a quoted UTF-8 local part (RFC 6532)`, `... > whitespace in an unquoted name is collapsed` | No `local`, `domain` or `parts` fields. To get them, split the address at its last `@`. A quoted local part keeps its quotes in `address`. |
+| simple one address function | `one address > a name and an angle address`, `... > a bare word is not an address`, `... > two addresses are a list of two`, `... > a quoted UTF-8 local part (RFC 6532)`, `... > whitespace in an unquoted name is collapsed` | No `local`, `domain`, or `parts` fields. To get them, split the address at its last `@`. A quoted local part keeps its quotes in `address`. |
 | address with @ in the name | `one address > an "@" in the display name is read in the default mode` | No `atInDisplayName` option: strict mode refuses it, and the default mode reads it. |
 | address with comma in the display name | `one address > a comma in the display name is read in the default mode` | No `commaInDisplayName` option, as above. |
 | address with comments | `one address > a comment after the name is not part of it` | No `comments` field. |
 | simple address list function | `address lists > a quoted name and a bare address` | |
 | simple address list function with user-specified list separator | `address lists > ";" as the separator is read in the default mode` | No `addressListSeparator` option. |
-| rfc5322 parser | `address lists > trailing text is an error in strict mode` | No AST, `partial` or `rfc6532` option: RFC 6532 UTF-8 is always allowed. |
+| rfc5322 parser | `address lists > trailing text is an error in strict mode` | No AST, `partial`, or `rfc6532` option: RFC 6532 UTF-8 is always allowed. |
 | display-name semantic interpretation | `display names > %j` (10 cases) | Deliberate difference: whitespace inside a quoted name is kept as written. email-addresses collapses it. |
 | address semantic interpretation | `addresses > %j` (9 cases) | Deliberate difference: `"foo   baz"@bar.com` keeps its quotes, so the address is usable. email-addresses gives `foo baz@bar.com`. |
 | unicode support | `display names > UTF-8 names`, `one address > a quoted UTF-8 local part (RFC 6532)` | |
 | rejectTLD option | `addresses > a single-label domain is allowed` | No `rejectTLD` option. Check the domain yourself. |
 | dots in unquoted display-names | `display names > dots in an unquoted name (obs-phrase)` | Deliberate difference: strict mode accepts the obsolete syntax RFC 5322 says to read. email-addresses' `strict` refuses it. |
-| rfc6854 - from | `groups (RFC 6854) > a group`, `... > a group, a mailbox and a group` | |
+| rfc6854 - from | `groups (RFC 6854) > a group`, `... > a group, a mailbox, and a group` | |
 | rfc6854 - sender | `groups (RFC 6854) > a group` | No `parseSender`. Check that the list has one entry. |
-| rfc6854 - reply-to | `groups (RFC 6854) > a group, a mailbox and a group` | |
+| rfc6854 - reply-to | `groups (RFC 6854) > a group, a mailbox, and a group` | |
 | whitespace in domain | `addresses > %j` | |
 | isemail tests (164 cases) | `is_email > #%s %j` | Same rule as upstream: valid unless the diagnosis is an `ISEMAIL_ERR`, except a domain starting or ending with "-". #160 `"test\©"@iana.org` is valid here, because RFC 6532 adds UTF-8 to the characters a quoted-pair may escape. email-addresses runs these tests without `rfc6532`. |
 
 ## Known upstream issues
 
-`upstream-issues.conformance.ts` unless the row names another file. The oracle test compares against libmime 5.4.9, nodemailer 10.2.1 and email-addresses 5.0.0.
+`upstream-issues.conformance.ts` unless the row names another file. The oracle test compares against libmime 5.4.9, nodemailer 10.2.1, and email-addresses 5.0.0.
 
 | Issue | Covered by | Status upstream |
 | --- | --- | --- |

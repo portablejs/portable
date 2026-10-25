@@ -1,6 +1,6 @@
 {
   "name": "@portable/charset",
-  "description": "Encode text into legacy charsets such as Shift_JIS, GBK and windows-1251, in any JavaScript runtime.",
+  "description": "Encode text into legacy charsets such as Shift_JIS, GBK, and windows-1251, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev",

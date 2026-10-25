@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suite: [mailsplit 5.4.26 `test/`](https://github.com/zone-eu/mailsplit/tree/master/test) (`@zone-eu/mailsplit`, formerly `andris9/mailsplit`). The oracle tests run against `@zone-eu/mailsplit` 5.4.23, the newest release older than a day. Fixtures `message.eml`, `mimetorture.eml`, `original.txt`, `source1.eml` and `source2.eml` are copied from mailsplit (MIT, Andris Reinman and Zone Media OÜ). `form-data.eml` (2.4 MB) and `large_image.eml` (3.7 MB) are not copied. The tests that used them build an equivalent message instead.
+Upstream suite: [mailsplit 5.4.26 `test/`](https://github.com/zone-eu/mailsplit/tree/master/test) (`@zone-eu/mailsplit`, formerly `andris9/mailsplit`). The oracle tests run against `@zone-eu/mailsplit` 5.4.23, the newest release older than a day. Fixtures `message.eml`, `mimetorture.eml`, `original.txt`, `source1.eml`, and `source2.eml` are copied from mailsplit (MIT, Andris Reinman, and Zone Media OÜ). `form-data.eml` (2.4 MB) and `large_image.eml` (3.7 MB) are not copied. The tests that used them build an equivalent message instead.
 
 Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts` has this package's own tests, and `mailsplit.oracle.test.ts` compares with mailsplit.
 
@@ -26,7 +26,7 @@ Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts
 | Strange split | `message-splitter > reads a header block split in an odd place` | Upstream waits a second between writes and asserts nothing. |
 | Fail on large header | `message-splitter > fails on a header block over maxHeaderBytes` | |
 | Handle really large header | `message-splitter > reads a header block of 100,000 lines` | |
-| Do not parse nodes after closing boundary | `message-splitter > does not read parts after the close delimiter` | The `structure` helper checks chunk sizes 1, 7, 64 and 1024, as `testStructure` does. |
+| Do not parse nodes after closing boundary | `message-splitter > does not read parts after the close delimiter` | The `structure` helper checks chunk sizes 1, 7, 64, and 1024, as `testStructure` does. |
 | Do not parse nodes after closing boundary of a nested multipart | `message-splitter > does not read parts after the close delimiter of a nested multipart` | |
 | Do not parse nodes after closing boundary of an unterminated multipart | `message-splitter > does not read parts after the close delimiter of an unterminated multipart` | |
 | Do not parse nodes after closing boundary of an embedded message | `message-splitter > does not read parts after the close delimiter of an embedded message` | |
@@ -51,7 +51,7 @@ Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts
 
 ## headers-test.js
 
-mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the bytes are in the `headers` chunk, the fields are in `part.headers`, and to send other headers, you enqueue other bytes. The tests of editing and rebuilding have no counterpart, because nothing here rebuilds a header block.
+mailsplit's `Headers` class parses, edits, and rebuilds a header block. Here the bytes are in the `headers` chunk, the fields are in `part.headers`, and to send other headers, you enqueue other bytes. The tests of editing and rebuilding have no counterpart, because nothing here rebuilds a header block.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the 
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
-| Join split message | `message-joiner > joins chunks, bytes and text` | |
+| Join split message | `message-joiner > joins chunks, bytes, and text` | |
 
 ## rewriter-test.js and streamer-test.js
 
@@ -97,7 +97,7 @@ mailsplit's `Headers` class parses, edits and rebuilds a header block. Here the 
 | --- | --- | --- |
 | Recreate message and extract image | `node-rewriter and node-streamer > gets the image out of the message and writes the message back unchanged` | Builds a message with a base64 image instead of copying `large_image.eml`. |
 | Recreate message with updated format=flow text node | skipped | format=flowed decoding isn't in this package. |
-| Recreate message with large image very slowly | `node-rewriter and node-streamer > gets the image out of the message and writes the message back unchanged` | Reads the message in 1-byte, 50-byte and 16 KiB chunks. |
+| Recreate message with large image very slowly | `node-rewriter and node-streamer > gets the image out of the message and writes the message back unchanged` | Reads the message in 1-byte, 50-byte, and 16 KiB chunks. |
 | Recreate message with large image one byte at a time | `node-rewriter and node-streamer > writes message.eml back unchanged when read one byte at a time` | |
 | Decode a base64 format=flowed text node once | skipped | No decoding. |
 | Extract image from message stream, and return immediatelly | `node-rewriter and node-streamer > gets the image out of the message and writes the message back unchanged` | |

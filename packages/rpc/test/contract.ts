@@ -48,7 +48,7 @@ export function communicationContract(name: string, setup: communicationContract
       await expect(remote.multiplyAsync(2, 5)).resolves.toBe(10);
     });
 
-    test('calls apply, call and bind of a method as remote methods', async () => {
+    test('calls apply, call, and bind of a method as remote methods', async () => {
       const { remote } = await connect();
       await expect(remote.nested.apply()).resolves.toBe('nested apply result');
       await expect(remote.multiply.call(undefined, 2, 5)).rejects.toMatchObject({
@@ -58,7 +58,7 @@ export function communicationContract(name: string, setup: communicationContract
       await expect(Rpc.call(remote.multiply, [2, 5])).resolves.toBe(10);
     });
 
-    test('calls top-level methods named apply, call and bind', async () => {
+    test('calls top-level methods named apply, call, and bind', async () => {
       const { remote } = await connect();
       await expect(remote.apply()).resolves.toBe('apply result');
       await expect(remote.call()).resolves.toBe('call result');

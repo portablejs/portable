@@ -24,7 +24,7 @@ describe('RFC 4180', () => {
     ).toBe('a,b\r\nc,d\r\n');
   });
 
-  test('quotes only fields that hold the delimiter, a quote or a line break', async () => {
+  test('quotes only fields that hold the delimiter, a quote, or a line break', async () => {
     expect(await encodeAll([['plain', 'a,b', 'say "hi"', 'cr\r', 'lf\n', ' space ']])).toBe(
       'plain,"a,b","say ""hi""","cr\r","lf\n", space \r\n',
     );
@@ -120,7 +120,7 @@ describe('csv-stringify', () => {
       expect(await encodeAll([['a;b', 'a,b']], { delimiter: ';' })).toBe('"a;b";a,b\r\n');
     });
 
-    test('rejects a delimiter that is empty, longer than one character, a line break or the quote', () => {
+    test('rejects a delimiter that is empty, longer than one character, a line break, or the quote', () => {
       for (const delimiter of ['', '::', '\n', '"']) {
         expect(() => Csv.encode([], { delimiter })).toThrow(RangeError);
       }

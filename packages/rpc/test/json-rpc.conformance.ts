@@ -79,7 +79,7 @@ describe('server', () => {
     ).toEqual([[invalidRequest, { jsonrpc: '2.0', id: 0, result: '1' }, invalidRequest]]);
   });
 
-  test('echoes string, fractional and null ids', async () => {
+  test('echoes string, fractional, and null ids', async () => {
     const server = raw({ one: () => 1 });
     for (const id of ['abc', 1.5, null, -3]) {
       expect(await server.send(JSON.stringify({ jsonrpc: '2.0', id, method: 'one' }))).toEqual([
@@ -131,7 +131,7 @@ describe('client', () => {
     await expect(remote.foo()).rejects.toMatchObject({ code: 0, message: 'bar' });
   });
 
-  test('rejects with the code, message and data of an error response', async () => {
+  test('rejects with the code, message, and data of an error response', async () => {
     const remote = answering(
       (id) =>
         `{"jsonrpc":"2.0","id":${id},"error":{"code":0,"message":"This is a test. Do not panic.","data":{"optional":"data"}}}`,

@@ -41,7 +41,7 @@ export declare namespace encodeWord {
     /** @default 'Q' */
     wordEncoding?: WordEncoding | undefined;
     /**
-     * Longest encoded word, `=?` and `?=` included. Longer text is split into several words that
+     * Longest encoded word, including `=?` and `?=`. Longer text is split into several words that
      * each contain whole characters. RFC 2047 allows 75. A word with a single character may be
      * longer when the limit is too small for it. With `Infinity`, the text is written as one word.
      * @default 75

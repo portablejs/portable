@@ -1,5 +1,5 @@
 /**
- * Tag names in IFD0, IFD1, the Exif IFD and the interoperability IFD, taken from exif-parser (MIT),
+ * Tag names in IFD0, IFD1, the Exif IFD, and the interoperability IFD, taken from exif-parser (MIT),
  * with the time zone and composite image tags of EXIF 2.31 and 2.32 added.
  */
 export const tagNames: { readonly [tag: number]: string } = {

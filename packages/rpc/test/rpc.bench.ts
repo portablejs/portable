@@ -112,7 +112,7 @@ const penpal = await (() => {
   return penpalConnect<PenpalApi>({ messenger: new PortMessenger({ port: port2 }) }).promise;
 })();
 
-test('sequential round trips over a MessageChannel within 25% of birpc, comlink and penpal', async ({
+test('sequential round trips over a MessageChannel within 25% of birpc, comlink, and penpal', async ({
   bench,
 }) => {
   const result = await bench.compare(
@@ -142,7 +142,7 @@ test('sequential round trips over a MessageChannel within 25% of birpc, comlink 
 
 const concurrent = Array.from({ length: 100 }, (_, i) => i);
 
-test('100 concurrent calls over a MessageChannel within 25% of birpc, comlink and penpal', async ({
+test('100 concurrent calls over a MessageChannel within 25% of birpc, comlink, and penpal', async ({
   bench,
 }) => {
   const result = await bench.compare(

@@ -42,7 +42,7 @@ export type Result = {
   record?: string | undefined;
   /** The text of the domain owner's `exp=` modifier, set only for `fail`. Treat it as untrusted. */
   explanation?: string | undefined;
-  /** Why the result is `none`, `temperror` or `permerror`. */
+  /** Why the result is `none`, `temperror`, or `permerror`. */
   reason?: string | undefined;
   /** The resolver's error behind a `temperror`. */
   cause?: unknown;

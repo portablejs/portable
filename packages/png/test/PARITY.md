@@ -5,7 +5,7 @@ Upstream suite: [pngjs](https://github.com/pngjs/pngjs) 7.0.0 `test/*-spec.js` a
 ## Fixtures
 
 - `fixtures/pngsuite/` is [PngSuite](http://www.schaik.com/pngsuite/) by Willem van Schaik, as pngjs ships it in `test/in`, with `PngSuite.LICENSE` and `PngSuite.README`. The license allows copying for any purpose without fee. pngjs's 15 MB `large.png` is left out. The benchmark uses the 1024x1024 `accum.png` instead.
-- `fixtures/pngjs/` holds pngjs's `test/png-parse-data` files, `test/bg-ref.png` and `test/in/gh-21.png` (MIT, Copyright (c) 2015 Luke Page & Original Contributors, and (c) 2012 Kuba Niegowski).
+- `fixtures/pngjs/` holds pngjs's `test/png-parse-data` files, `test/bg-ref.png`, and `test/in/gh-21.png` (MIT, Copyright (c) 2015 Luke Page & Original Contributors, and (c) 2012 Kuba Niegowski).
 
 ## API changes
 

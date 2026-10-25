@@ -218,7 +218,7 @@ describe('eventsource-parser', () => {
     expect(datas(events)).toEqual(['First', 'Second', 'Third', 'Fourth', 'Fifth']);
   });
 
-  test('ignores comments mixed with CR, CRLF and NUL, and drops an unfinished event', async () => {
+  test('ignores comments mixed with CR, CRLF, and NUL, and drops an unfinished event', async () => {
     const long = 'x'.repeat(2 * 1024 + 1);
     const events = await decodeChunks([
       'data:1\r\r:\0\n:\r\ndata:2\n\n:',

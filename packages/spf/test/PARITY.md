@@ -2,8 +2,8 @@
 
 Upstream suites:
 
-- The OpenSPF RFC 7208 test suite, release 2019.08, as `rfc7208-tests.yml` in [pyspf](https://github.com/sdgathman/pyspf/tree/master/test). It is copied into `fixtures/` with its BSD license (`rfc7208-tests.LICENSE`, Stuart D. Gathman, Julian Mehnle, Scott Kitterman). It has 203 tests: the 200 of release 2014.04 that mailauth runs, plus `null-text`, `badip4` and `cname-aliasing`.
-- mailauth 7.3.0's [`test/spf/`](https://github.com/postalsys/mailauth/tree/master/test/spf): `spf-verify-test.js`, `macro-test.js`, `limited-resolver-test.js`, `dual-stack-resolver-test.js`, `rfc-compliance-test.js`, `syntax-test.js` and `rfc-suite-test.js`.
+- The OpenSPF RFC 7208 test suite, release 2019.08, as `rfc7208-tests.yml` in [pyspf](https://github.com/sdgathman/pyspf/tree/master/test). It is copied into `fixtures/` with its BSD license (`rfc7208-tests.LICENSE`, Stuart D. Gathman, Julian Mehnle, Scott Kitterman). It has 203 tests: the 200 of release 2014.04 that mailauth runs, plus `null-text`, `badip4`, and `cname-aliasing`.
+- mailauth 7.3.0's [`test/spf/`](https://github.com/postalsys/mailauth/tree/master/test/spf): `spf-verify-test.js`, `macro-test.js`, `limited-resolver-test.js`, `dual-stack-resolver-test.js`, `rfc-compliance-test.js`, `syntax-test.js`, and `rfc-suite-test.js`.
 
 `rfc7208.conformance.ts` runs every suite test with a fake resolver built from the scenario's zone data, read the way pyspf's `testspf.py` reads it. The other tests are in `check.conformance.ts`, named after the upstream file they port. Both run in Node and Chromium. `check.oracle.test.ts` compares results and explanations with mailauth's strict mode on the whole suite and on 300 random records.
 
@@ -364,7 +364,7 @@ The macro function is private, so these tests read the expanded name from the `e
 | Should return temperror for EREFUSED | `limited-resolver-test.js > gives temperror for ETIMEOUT and EREFUSED in an include` | |
 | Should return permerror for invalid domain | `limited-resolver-test.js > gives none for an invalid sender domain` | The upstream test name says permerror, but it asserts none. |
 | Should track subquery counts | skipped | Tests mailauth's per-mechanism lookup report, which we don't have. MX and PTR address lookups don't count toward either limit. |
-| Should handle various domain formats | `Spf.check > returns the result with the matching term, the record and the lookup counts` | The upstream test checks one plain `a` term. |
+| Should handle various domain formats | `Spf.check > returns the result with the matching term, the record, and the lookup counts` | The upstream test checks one plain `a` term. |
 | Should not count initial TXT lookup toward limit | `limited-resolver-test.js > allows 10 DNS-querying terms, not counting the first TXT lookup` | |
 
 ### dual-stack-resolver-test.js
@@ -416,7 +416,7 @@ mailauth queries A and AAAA together and uses the other family to decide whether
 | Should truncate names over 253 characters from the left | `Long names (RFC 7208 7.3) > truncates names over 253 characters from the left` | |
 | Should not query a name with a label over 63 characters in strict mode | `Invalid names after macro expansion (RFC 7208 4.8) > does not query a name with a label over 63 characters` | |
 | Should give permerror for an EBADNAME resolver error in the default mode | `Invalid names after macro expansion (RFC 7208 4.8) > does not match a term whose name the resolver rejects as EBADNAME` | Different on purpose. When the resolver rejects a name, the term doesn't match, which is also what strict mode does when it rejects a name itself. `Dns.create` rejects names that are valid for SPF, such as `%{L}`'s `%2B`, so permerror would fail working records. |
-| Uppercase macros (4 tests) | `Uppercase macros (RFC 7208 7.3)`, one test each | "Should keep the lenient transformer handling by default" is covered by the permerror rows for `%{d0}`, `%{d2x}` and `%{dr2}`. |
+| Uppercase macros (4 tests) | `Uppercase macros (RFC 7208 7.3)`, one test each | "Should keep the lenient transformer handling by default" is covered by the permerror rows for `%{d0}`, `%{d2x}`, and `%{dr2}`. |
 | Should split the sender at the last "@" | `Quoted local-part with "@" (RFC 5321 4.1.2) > splits the sender at the last "@"` | |
 | Client IP address: IPv4-mapped (3), not mapped (3), IPv4-compatible network | `Client IP address (RFC 7208 4.1, 5)`, one test each | Our tests also cover `%{c}` formatting. |
 | Should return temperror for the client IP (5 values) | `Spf.check > throws a RangeError for an ip that is not an IP address` | Different on purpose: a bad `ip` is a mistake in the call, so `check` rejects. |
@@ -451,7 +451,7 @@ From mailauth's issue tracker and from reading its source. Each has a test in `c
 | [#125](https://github.com/postalsys/mailauth/issues/125): `%{d}` in a nested include expanded to the sender domain. | `%{d}` is the domain being evaluated. |
 | [#154](https://github.com/postalsys/mailauth/issues/154): a `%{p}` lookup counted as a void lookup. | It counts toward the 10 lookups only. |
 | [#155](https://github.com/postalsys/mailauth/issues/155): the explanation was checked for US-ASCII before expansion. | It is checked after expansion. |
-| [#157](https://github.com/postalsys/mailauth/issues/157), [#158](https://github.com/postalsys/mailauth/issues/158): limit options and error text. | No limit options. Every error has a `reason` (`Spf.check > reports why the result is none, temperror or permerror`). |
+| [#157](https://github.com/postalsys/mailauth/issues/157), [#158](https://github.com/postalsys/mailauth/issues/158): limit options and error text. | No limit options. Every error has a `reason` (`Spf.check > reports why the result is none, temperror, or permerror`). |
 | [#87](https://github.com/postalsys/mailauth/issues/87): a Workers resolver returned TXT records with quotes. | Not ours to fix: the resolver must return each record's strings, as `Dns.create` does. The test shows the strings are joined with nothing between them. |
 | [#49](https://github.com/postalsys/mailauth/issues/49): a UDP-only resolver dropped records from truncated answers. | Not ours to fix. `Dns.create` uses DNS-over-HTTPS, which has no truncation. No test. |
 | mailauth returns temperror for a missing or invalid client IP. | `check` rejects with a `RangeError` for a string that isn't an IP address and a `TypeError` for a missing one, because the call itself is wrong (`Spf.check > throws a RangeError for an ip that is not an IP address`). |
@@ -460,4 +460,4 @@ From mailauth's issue tracker and from reading its source. Each has a test in `c
 
 ## Benchmarks
 
-mailauth has no SPF benchmark. `check.bench.ts` evaluates a record with nested includes, ip4 and ip6 ranges, `a`, `mx` and `exists` against mailauth in both modes, with the same fake resolver, and fails if either mode is more than 25% faster.
+mailauth has no SPF benchmark. `check.bench.ts` evaluates a record with nested includes, `ip4` ranges, `ip6` ranges, `a`, `mx`, and `exists` against mailauth in both modes, with the same fake resolver, and fails if either mode is more than 25% faster.

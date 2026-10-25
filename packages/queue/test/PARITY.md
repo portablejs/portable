@@ -1,8 +1,8 @@
 # Test parity
 
-Upstream suites: [p-limit 7.3.3 `test.js`](https://github.com/sindresorhus/p-limit/blob/main/test.js), [p-queue 10.0.0 `test/`](https://github.com/sindresorhus/p-queue/tree/main/test), [p-map 7.1.1 `test.js`](https://github.com/sindresorhus/p-map/blob/main/test.js) and [p-throttle 8.1.1 `tests/`](https://github.com/sindresorhus/p-throttle/tree/main/tests). Every test is listed below with the test that covers the same case, written as `describe > test` from the `*.conformance.ts` files. `oracle > ...` names a test in `queue.oracle.test.ts`, which runs the same plan through our package and the upstream library under fake timers and compares start order, start times, finish order, results and errors.
+Upstream suites: [p-limit 7.3.3 `test.js`](https://github.com/sindresorhus/p-limit/blob/main/test.js), [p-queue 10.0.0 `test/`](https://github.com/sindresorhus/p-queue/tree/main/test), [p-map 7.1.1 `test.js`](https://github.com/sindresorhus/p-map/blob/main/test.js), and [p-throttle 8.1.1 `tests/`](https://github.com/sindresorhus/p-throttle/tree/main/tests). Every test is listed below with the test that covers the same case, written as `describe > test` from the `*.conformance.ts` files. `oracle > ...` names a test in `queue.oracle.test.ts`, which runs the same plan through our package and the upstream library under fake timers and compares start order, start times, finish order, results, and errors.
 
-Most skipped tests belong to features this package leaves out on purpose. They are listed once under "Not built" and referenced by name in the tables. p-map 7.1 is mostly `pMapIterable`, `pMapSettled`, `pMapKeyed` and the `pMapSkip` and `pMapStop` sentinels, so most of its rows are skipped.
+Most skipped tests belong to features this package leaves out on purpose. They are listed once under "Not built" and referenced by name in the tables. p-map 7.1 is mostly `pMapIterable`, `pMapSettled`, `pMapKeyed`, and the `pMapSkip` and `pMapStop` sentinels, so most of its rows are skipped.
 
 ## Known upstream issues
 
@@ -10,8 +10,8 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | --- | --- | --- |
 | p-queue [#217](https://github.com/sindresorhus/p-queue/issues/217): aborting 10,000 waiting tasks that share a signal overflows the stack. | Aborting marks the task removed in O(1), and the queue skips removed tasks when it starts the next one. | `known upstream issues > aborting 10,000 waiting tasks with one signal neither overflows the stack nor hangs`, `known upstream issues > clearing 10,000 waiting tasks does not overflow the stack` |
 | p-queue [#219](https://github.com/sindresorhus/p-queue/issues/219), [#241](https://github.com/sindresorhus/p-queue/issues/241): an aborted signal didn't remove a waiting task or reject its promise. | The task is removed, and its promise rejects with `signal.reason` at once. | `signal > aborting while the task waits removes it and rejects with the reason` |
-| p-queue [#239](https://github.com/sindresorhus/p-queue/issues/239), p-limit `clearQueue()`: cleared tasks' promises stayed pending forever. | `clear()` always rejects them with an `AbortError`, and marks the promises handled. | `p-limit > clear removes the waiting tasks and rejects them with an AbortError`, `idle, pause and clear > an ignored promise of a removed task is not an unhandled rejection` |
-| p-queue [#237](https://github.com/sindresorhus/p-queue/issues/237): `idle` never fires when the queue never had a task. | `idle()` resolves at once. | `idle, pause and clear > idle resolves at once for a queue that never had a task` |
+| p-queue [#239](https://github.com/sindresorhus/p-queue/issues/239), p-limit `clearQueue()`: cleared tasks' promises stayed pending forever. | `clear()` always rejects them with an `AbortError`, and marks the promises handled. | `p-limit > clear removes the waiting tasks and rejects them with an AbortError`, `idle, pause, and clear > an ignored promise of a removed task is not an unhandled rejection` |
+| p-queue [#237](https://github.com/sindresorhus/p-queue/issues/237): `idle` never fires when the queue never had a task. | `idle()` resolves at once. | `idle, pause, and clear > idle resolves at once for a queue that never had a task` |
 | p-queue [#255](https://github.com/sindresorhus/p-queue/issues/255): adding tasks from a listener exceeds the concurrency. | There are no listeners. A task added from inside a running task waits for a slot. | `add > a task added from inside a running task waits for a free slot` |
 | p-queue: aborting a running task frees its slot while the task may still run, so more than `concurrency` tasks run. | The slot stays taken until the task settles. `add` still rejects at once. | `signal > an aborted running task keeps its slot until it settles` |
 | p-queue: fixed windows let `2 × intervalCap` tasks start around a window boundary unless `strict: true` is set. | The rate limit is always a sliding window. | `rate limit > has no burst at a window boundary` |
@@ -41,9 +41,9 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 - **onSizeLessThan.** No `onSizeLessThan()`. It is mostly used for backpressure, and `Queue.map` reads its input only as slots free up.
 - **onPendingZero.** No `onPendingZero()`. `idle()` waits for waiting and running tasks.
 - **onError.** No `onError()`. Each `add()` promise rejects with its own task's error.
-- **rate-limit state.** No `isRateLimited`, `onRateLimit()` or `onRateLimitCleared()`. The queue exposes `size` and `pending` only.
+- **rate-limit state.** No `isRateLimited`, `onRateLimit()`, or `onRateLimitCleared()`. The queue exposes `size` and `pending` only.
 - **fixed windows.** The rate limit is a sliding window only, the same as p-queue's and p-throttle's strict mode. There is no fixed-window mode and no `carryoverIntervalCount`.
-- **runningTasks.** No `runningTasks` or `isSaturated`. `pending`, `size` and `concurrency` are readable.
+- **runningTasks.** No `runningTasks` or `isSaturated`. `pending`, `size`, and `concurrency` are readable.
 - **queueClass.** No `queueClass` or task ids. The priority queue is internal.
 - **pMapIterable.** No iterable output (`pMapIterable`). `map` resolves once with every result.
 - **pMapSettled.** No `pMapSettled` or `pMapSettledKeyed`. `stopOnError: false` reports every error, and `Promise.allSettled(items.map((item) => limit(() => fn(item))))` gives a result per item.
@@ -74,8 +74,8 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | map | `map > resolves with the results in input order` |  |
 | map works when detached from the limit | `map with a queue > shares a limit between map and other tasks` |  |
 | map passes index and preserves order with concurrency | `map > keeps input order when calls finish in reverse order` |  |
-| map accepts an iterable (set) | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
-| map accepts an iterable (array iterator) | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
+| map accepts an iterable (set) | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
+| map accepts an iterable (array iterator) | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
 | map accepts array-like inputs | skipped | `input` must be iterable. Pass `Array.from(arrayLike)`. |
 | map does not leave unhandled rejections when the iterable throws | `map errors > an iterable that throws after its first items leaves no unhandled rejection` |  |
 | map rejects with the mapper error | `map errors > rejects at once with the first error when stopOnError is true` |  |
@@ -117,7 +117,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | .onEmpty() | skipped | Not built: onEmpty |
 | .onEmpty() resolves when the last waiting task starts | skipped | Not built: onEmpty |
 | .onEmpty() called in an `add` listener resolves when the task starts, not when it finishes | skipped | Not built: onEmpty |
-| .onIdle() | `idle, pause and clear > idle resolves when every task has settled` |  |
+| .onIdle() | `idle, pause, and clear > idle resolves when every task has settled` |  |
 | .onSizeLessThan() | skipped | Not built: onSizeLessThan |
 | .onSizeLessThan() resolves after clear() | skipped | Not built: onSizeLessThan |
 | .onSizeLessThan() resolves when start() drains the queue | skipped | Not built: onSizeLessThan |
@@ -125,33 +125,33 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | .onSizeLessThan() resolves when a rate-limit interval tick drains the queue | skipped | Not built: onSizeLessThan |
 | .onSizeLessThan() resolves multiple waiters with different limits on a single drain | skipped | Not built: onSizeLessThan |
 | .onSizeLessThan() removes its listeners once resolved | skipped | Not built: onSizeLessThan |
-| .onIdle() - no pending | `idle, pause and clear > idle resolves at once for a queue that never had a task` |  |
+| .onIdle() - no pending | `idle, pause, and clear > idle resolves at once for a queue that never had a task` |  |
 | .onPendingZero() - resolves immediately when pending === 0 | skipped | Not built: onPendingZero |
 | .onPendingZero() - waits for running tasks to finish | skipped | Not built: onPendingZero |
 | .onPendingZero() - works while paused with queued items | skipped | Not built: onPendingZero |
-| .onPendingZero() - multiple concurrent waiters all resolve | `idle, pause and clear > several idle calls all resolve` |  |
-| .onPendingZero() - resolves even if tasks throw errors | `idle, pause and clear > idle resolves after failed tasks too` |  |
-| .onPendingZero() - works after clear() | `idle, pause and clear > idle resolves after clear once the running task settles` |  |
+| .onPendingZero() - multiple concurrent waiters all resolve | `idle, pause, and clear > several idle calls all resolve` |  |
+| .onPendingZero() - resolves even if tasks throw errors | `idle, pause, and clear > idle resolves after failed tasks too` |  |
+| .onPendingZero() - works after clear() | `idle, pause, and clear > idle resolves after clear once the running task settles` |  |
 | .onPendingZero() - integration with pause/start | skipped | Not built: onPendingZero |
-| .onPendingZero() - adding tasks while waiting | `idle, pause and clear > idle waits for tasks added while waiting` |  |
+| .onPendingZero() - adding tasks while waiting | `idle, pause, and clear > idle waits for tasks added while waiting` |  |
 | .onPendingZero() - rapid sequential calls | skipped | Not built: onPendingZero |
 | .onPendingZero() - high concurrency | skipped | Not built: onPendingZero |
 | .onPendingZero() - starts with empty queue | skipped | Not built: onPendingZero |
 | .onPendingZero() - works with onEmpty and onIdle | skipped | Not built: onEmpty |
 | .clear() | `p-limit > clear removes the waiting tasks and rejects them with an AbortError` |  |
-| .clear() rejects the removed tasks and lets the running tasks finish | `idle, pause and clear > clear lets the running tasks finish` |  |
-| .clear() does not cause an unhandled rejection for an ignored promise | `idle, pause and clear > an ignored promise of a removed task is not an unhandled rejection` |  |
+| .clear() rejects the removed tasks and lets the running tasks finish | `idle, pause, and clear > clear lets the running tasks finish` |  |
+| .clear() does not cause an unhandled rejection for an ignored promise | `idle, pause, and clear > an ignored promise of a removed task is not an unhandled rejection` |  |
 | an ignored promise of a failed task is still an unhandled rejection | skipped | Needs a child process, because Vitest fails any test with an unhandled rejection. As in p-queue, only removed tasks have their promises marked handled. |
 | .add() - the next waiting task has started when the promise resolves | `add > the next waiting task has started when a task settles` | The next task counts in `pending` when the promise resolves, and its function runs one microtask later. |
-| .clear() resolves onEmpty() and onIdle() waiters | `idle, pause and clear > idle resolves after clear once the running task settles` |  |
+| .clear() resolves onEmpty() and onIdle() waiters | `idle, pause, and clear > idle resolves after clear once the running task settles` |  |
 | .clear() with running tasks emits empty but not idle | skipped | Not built: events |
 | .addAll() | skipped | Not built: addAll |
 | .addAll() assigns unique IDs to each task | skipped | Not built: addAll |
 | .addAll() with options does not mutate the options object | skipped | Not built: addAll |
-| autoStart: false | `idle, pause and clear > pause stops starting tasks and resume starts them again` | There is no `autoStart`. Call `pause()` after `create`. |
+| autoStart: false | `idle, pause, and clear > pause stops starting tasks and resume starts them again` | There is no `autoStart`. Call `pause()` after `create`. |
 | .start() - return this | skipped | `resume()` returns nothing. The queue has no chained calls. |
-| .start() - not paused | `idle, pause and clear > pause stops starting tasks and resume starts them again` |  |
-| .pause() | `idle, pause and clear > pause stops starting tasks and resume starts them again` |  |
+| .start() - not paused | `idle, pause, and clear > pause stops starting tasks and resume starts them again` |  |
+| .pause() | `idle, pause, and clear > pause stops starting tasks and resume starts them again` |  |
 | .add() sync/async mixed tasks | `add > accepts sync and async tasks together` |  |
 | .add() - handle task throwing error | `add > rejects with the error of a task that throws or rejects, and keeps running` |  |
 | .add() - handle task promise failure | `add > rejects with the error of a task that throws or rejects, and keeps running` |  |
@@ -181,7 +181,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | clear interval on pause | `rate limit > pausing while rate-limited, then resuming, still limits` | A paused queue's timer fires once and sets no new one. |
-| many waiters do not cause a listener leak warning | `idle, pause and clear > several idle calls all resolve` | `idle()` keeps resolvers in an array, not event listeners. |
+| many waiters do not cause a listener leak warning | `idle, pause, and clear > several idle calls all resolve` | `idle()` keeps resolvers in an array, not event listeners. |
 | should be an event target | skipped | Not built: events |
 | should emit active event per item | skipped | Not built: events |
 | should emit idle event when idle | skipped | Not built: events |
@@ -256,7 +256,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | aborting a shared signal emits `error` only for the running task, not for the waiting tasks | skipped | Not built: events |
 | a custom queue class typed with the exported types works end to end | skipped | Not built: queueClass |
 | a waiting task whose signal aborts before its own abort listener runs does not start or emit `error` | `signal > aborting several waiting tasks with one controller removes only them` |  |
-| aborting waiting tasks that share a signal emits `empty` and `idle` once | `idle, pause and clear > idle resolves when the last waiting task is aborted` |  |
+| aborting waiting tasks that share a signal emits `empty` and `idle` once | `idle, pause, and clear > idle resolves when the last waiting task is aborted` |  |
 | skipping many waiting tasks whose shared signal aborted does not overflow the stack | `known upstream issues > aborting 10,000 waiting tasks with one signal neither overflows the stack nor hangs` |  |
 | .add() with an already aborted signal rejects without adding the task or emitting events | `signal > an already aborted signal rejects without adding the task` |  |
 | a task runs in the async context of its `.add()` call, also when it starts later | `oracle > limit matches p-limit > a task runs in the async context of its call` | Node only, because it uses `AsyncLocalStorage`. |
@@ -419,12 +419,12 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | pMap - never runs more mappers at once than the concurrency limit | `map > never runs more calls than the concurrency` |  |
 | pMapIterable - never runs more mappers at once than the concurrency limit | skipped | Not built: pMapIterable |
 | handles empty iterable | `map > resolves with an empty array for empty input` |  |
-| maps a Set | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
-| maps a Map, so the mapper gets the entries | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
-| maps a frozen array | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
+| maps a Set | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
+| maps a Map, so the mapper gets the entries | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
+| maps a frozen array | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
 | pMapSkip for every element | skipped | Not built: pMapSkip |
-| maps an empty string | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
-| maps a string, one character at a time | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
+| maps an empty string | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
+| maps a string, one character at a time | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
 | continues a generator that was already partly consumed, and closes it | `map > continues a generator that was already partly read` |  |
 | closes a generator that was already partly consumed when the mapper throws | `map errors > stops reading the input and closes it after the first error` |  |
 | keeps undefined results | `map > keeps undefined results` |  |
@@ -687,7 +687,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | pMap - a mapper that throws synchronously rejects the promise, and `pMap` itself does not throw | `map errors > a synchronous throw rejects the promise instead of throwing` |  |
 | pMap - awaits a thenable element and a thenable mapper result | skipped | Items are passed to `fn` as they are, without awaiting them (`map > passes items to fn as they are, without awaiting them`). |
 | pMap - maps a sparse array into a dense array, with `undefined` for the holes | `map > maps a sparse array into a dense array, and ignores a generator return value` |  |
-| pMap - maps other built-in iterables | `map > maps any iterable: a Set, a Map, a string and an array iterator` |  |
+| pMap - maps other built-in iterables | `map > maps any iterable: a Set, a Map, a string, and an array iterator` |  |
 | pMap - ignores the return value of a generator, like `for...of` | `map > maps a sparse array into a dense array, and ignores a generator return value` |  |
 | pMap - maps an async source whose `next()` returns thenables that are not promises | skipped | Tests an async iterator whose `next()` returns non-promise thenables. `map` passes each `next()` result through `Promise.resolve`. |
 | subscribes once to a thenable from the source `next()` | skipped | Tests an async iterator whose `next()` returns non-promise thenables. `map` passes each `next()` result through `Promise.resolve`. |
@@ -841,7 +841,7 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | limits after pause in windowed mode | skipped | Not built: fixed windows |
 | passes arguments through | `rate limit > throttles a function like p-throttle` |  |
 | throw if aborted | `signal > an already aborted signal rejects without adding the task` |  |
-| can be aborted | `signal > the queue signal rejects waiting, running and later tasks` |  |
+| can be aborted | `signal > the queue signal rejects waiting, running, and later tasks` |  |
 | can be disabled | skipped | Not built: isEnabled |
 | promise rejections are thrown | `rate limit > a task that throws still counts as a start` |  |
 | `this` is preserved in throttled function | skipped | Tasks are closures, so `this` is whatever the closure captures. |
@@ -849,13 +849,13 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | handles multiple instances independently | `oracle > rate limit keeps p-throttle strict mode guarantee` |  |
 | disable and re-enable functionality | skipped | Not built: isEnabled |
 | isEnabled=false does not cancel already queued items | skipped | Not built: isEnabled |
-| double abort is safe | `signal > the queue signal rejects waiting, running and later tasks` |  |
+| double abort is safe | `signal > the queue signal rejects waiting, running, and later tasks` |  |
 | stability under high load | `rate limit > keeps the limit when many tasks are added over time` |  |
 | handles zero interval | `rate limit > interval 0 turns rate limiting off` |  |
 | handles zero interval in strict mode with no delays and no onDelay | `rate limit > interval 0 turns rate limiting off` |  |
 | invalid options throw | `rate limit > rejects invalid interval and intervalCap values` |  |
 | handles simultaneous calls | `rate limit > runs the first intervalCap tasks at once` |  |
-| clears queue after abort | `signal > the queue signal rejects waiting, running and later tasks` |  |
+| clears queue after abort | `signal > the queue signal rejects waiting, running, and later tasks` |  |
 | abort resets windowed counters so next call is not delayed | skipped | Not built: fixed windows |
 | abort resets strict counters so next call is not delayed | skipped | Aborting the queue signal rejects every later task too, so there is no next call. `clear()` keeps the window, as `rate limit > clearing a rate-limited queue lets the next task wait only for the window` shows. |
 | allows immediate execution with high limit | `rate limit > runs the first intervalCap tasks at once` |  |
@@ -872,12 +872,12 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 | onDelay fires for delayed calls even if later aborted | skipped | Not built: onDelay |
 | very short intervals preserve order and resolve (windowed and strict) | `oracle > rate limit keeps p-throttle strict mode guarantee > 1 per 20 ms` |  |
 | supports errors in the throttled function | `rate limit > a task that throws still counts as a start` |  |
-| shared signal abort clears queues (windowed and strict) | `signal > the queue signal rejects waiting, running and later tasks` |  |
+| shared signal abort clears queues (windowed and strict) | `signal > the queue signal rejects waiting, running, and later tasks` |  |
 | abort affects only instances using that signal | `signal > aborting several waiting tasks with one controller removes only them` |  |
 | signal registration shared across multiple throttled functions | `signal > tasks that share a signal add one listener to it` |  |
 | signal registration cleanup after abort | `signal > removes its abort listeners when tasks finish` |  |
 | signal registration isolation between different signals | `signal > aborting several waiting tasks with one controller removes only them` |  |
-| shared signal abort rejects both blocked and windowed throttles | `signal > the queue signal rejects waiting, running and later tasks` |  |
+| shared signal abort rejects both blocked and windowed throttles | `signal > the queue signal rejects waiting, running, and later tasks` |  |
 | signal registration with complex abort reasons | `signal > aborting while the task waits removes it and rejects with the reason` |  |
 | bypassed calls while disabled do not affect future throttling state | skipped | Not built: isEnabled |
 | FinalizationRegistry WeakRef behavior with signal registration | skipped | Needs `--expose-gc`. Our queue sets a started task's slot to `undefined` so it can be collected. |
@@ -935,4 +935,4 @@ Most skipped tests belong to features this package leaves out on purpose. They a
 
 ## Benchmarks
 
-p-limit's `benchmark.js` times p-limit alone on simulated workloads with real delays, and p-queue's `bench.ts` times p-queue alone with and without priorities. Neither compares libraries. `queue.bench.ts` measures the overhead per task of `limit` and `create` against p-limit, p-queue and `Promise.all` with no limit, of a queue with priorities and a shared signal against p-queue, and of `map` against p-map and p-limit's `map`. Each fails if the upstream library is more than 25% faster.
+p-limit's `benchmark.js` times p-limit alone on simulated workloads with real delays, and p-queue's `bench.ts` times p-queue alone with and without priorities. Neither compares libraries. `queue.bench.ts` measures the overhead per task of `limit` and `create` against p-limit, p-queue, and `Promise.all` with no limit, of a queue with priorities and a shared signal against p-queue, and of `map` against p-map and p-limit's `map`. Each fails if the upstream library is more than 25% faster.

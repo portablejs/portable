@@ -32,7 +32,7 @@ test('derToRawEcdsa throws only InvalidInputError for changed DER', () => {
   );
 });
 
-test('digest, hmac and hkdf give the same result for text and its UTF-8 bytes', async () => {
+test('digest, hmac, and hkdf give the same result for text and its UTF-8 bytes', async () => {
   const hash = fc.constantFrom<WebCrypto.Hash>('SHA-1', 'SHA-256', 'SHA-384', 'SHA-512');
   await fuzz(
     fc.asyncProperty(

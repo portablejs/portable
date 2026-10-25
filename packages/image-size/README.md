@@ -38,9 +38,9 @@ Reads `stream` until the size is known, then cancels it.
 | Field | Description |
 | --- | --- |
 | `width`, `height` | Pixels. For a file with several images, the largest by area. |
-| `type` | `bmp`, `cur`, `dds`, `gif`, `icns`, `ico`, `j2c`, `jp2`, `jpg`, `jxl` (container), `jxl-stream` (bare codestream), `ktx`, `ktx2`, `png`, `pnm`, `psd`, `svg`, `tga`, `tiff`, `bigtiff` or `webp`. HEIF files report their brand: `avif`, `avis`, `heic`, `heix`, `hevc`, `hevx`, `mif1` or `msf1`. |
+| `type` | `bmp`, `cur`, `dds`, `gif`, `icns`, `ico`, `j2c`, `jp2`, `jpg`, `jxl` (container), `jxl-stream` (bare codestream), `ktx`, `ktx2`, `png`, `pnm`, `psd`, `svg`, `tga`, `tiff`, `bigtiff`, or `webp`. HEIF files report their brand: `avif`, `avis`, `heic`, `heix`, `hevc`, `hevx`, `mif1`, or `msf1`. |
 | `orientation` | The EXIF orientation of a JPEG (1 to 8), when it has one. `width` and `height` are the stored dimensions, before rotation. |
-| `images` | Every image in an ICO, CUR or ICNS file with more than one. ICNS entries also have their icon `type`, such as `ic08`. |
+| `images` | Every image in an ICO, CUR, or ICNS file with more than one. ICNS entries also have their icon `type`, such as `ic08`. |
 
 The size of an animated PNG is the canvas size, with type `png`. The size of a HEIF file is the size of its primary image, cropped by its clean aperture (`clap`) and rotated by its `irot` property.
 
@@ -53,7 +53,7 @@ The size of an animated PNG is the canvas size, with type `png`. The size of a H
 | `InvalidInputError` | The header is malformed, such as a PNG without an `IHDR` chunk or an SVG with neither size nor `viewBox`. |
 | `MaxBytesError` | `parseStream` read `maxBytes` without finding the dimensions. Its `maxBytes` holds the limit. |
 
-Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `ImageSize.InvalidInputError` and `ImageSize.MaxBytesError`.
+Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `ImageSize.InvalidInputError`, and `ImageSize.MaxBytesError`.
 
 ## Types
 
@@ -68,7 +68,7 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 `parseStream` reads a `fetch` body or a `File` only up to the header and then cancels it, in any JavaScript runtime. The package has no dependencies outside `@portable/*`.
 
 - `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 70× slower, and image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
-- `parse` read `large.jpg` about 3,800× faster than image-size, and was 3.6 to 360× faster on the PNG, HEIC, WebP, SVG and TIFF fixtures.
+- `parse` read `large.jpg` about 3,800× faster than image-size, and was 3.6 to 360× faster on the PNG, HEIC, WebP, SVG, and TIFF fixtures.
 - Input that ends early gives `TruncatedError`. image-size throws a `RangeError` from `DataView`.
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - `parse` reads lossless and arithmetic-coded JPEGs, which image-size rejects. There is no global `disableTypes` setting, so no other module in the process can turn off a format for you.

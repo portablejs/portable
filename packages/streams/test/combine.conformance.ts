@@ -215,7 +215,7 @@ describe('merge-stream', () => {
 });
 
 describe('concat', () => {
-  test('joins streams, iterables and async iterables in order', async () => {
+  test('joins streams, iterables, and async iterables in order', async () => {
     async function* gen() {
       yield 'c';
       yield 'd';

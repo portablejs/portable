@@ -34,7 +34,7 @@ describe('connect', () => {
     });
   });
 
-  test('accepts a URL string, a URL and a Request', async () => {
+  test('accepts a URL string, a URL, and a Request', async () => {
     for (const input of [url, new URL(url), new Request(url)]) {
       const mock = mockFetch([{ chunks: ['data: x\n\n'] }]);
       expect(await take(Sse.connect(input, { fetch: mock.fetch }), 1)).toHaveLength(1);
@@ -70,7 +70,7 @@ describe('connect', () => {
     ]);
   });
 
-  test('sends the method, headers and body of the request on every attempt', async () => {
+  test('sends the method, headers, and body of the request on every attempt', async () => {
     const mock = mockFetch([{ chunks: ['id: 1\ndata: a\n\n'] }, { chunks: ['data: b\n\n'] }]);
     const request = new Request(url, {
       method: 'POST',

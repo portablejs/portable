@@ -42,8 +42,8 @@ export declare namespace toRequest {
 
 /**
  * Builds the push request for a subscription: a `POST` to its endpoint with the encrypted payload
- * and the `TTL`, `Content-Encoding`, `Authorization`, `Urgency` and `Topic` headers. Use it to send
- * with your own `fetch` or queue. `send` calls it for you.
+ * and the `TTL`, `Content-Encoding`, `Authorization`, `Urgency`, and `Topic` headers. Use it to
+ * send with your own `fetch` or queue. `send` calls it for you.
  *
  * @example
  * ```ts
@@ -56,7 +56,7 @@ export declare namespace toRequest {
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
  * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.
- * @throws {RangeError} When `vapid`, `urgency` or `topic` is malformed, `ttl` isn't a
+ * @throws {RangeError} When `vapid`, `urgency`, or `topic` is malformed, `ttl` isn't a
  * non-negative integer, or `now` is an invalid time.
  */
 export async function toRequest(options: toRequest.Options): Promise<Request> {
@@ -101,7 +101,7 @@ export async function toRequest(options: toRequest.Options): Promise<Request> {
 
 export declare namespace send {
   type Options = toRequest.Options & {
-    /** Sends the request. Pass one to add retries, logging or a proxy. @default globalThis.fetch */
+    /** Sends the request. Pass one to add retries, logging, or a proxy. @default globalThis.fetch */
     fetch?: ((request: Request) => Promise<Response>) | undefined;
   };
 
@@ -132,7 +132,7 @@ export declare namespace send {
  * }
  * ```
  *
- * @throws {ResponseError} When the push service answers with a status other than 2xx, 404 or 410.
+ * @throws {ResponseError} When the push service answers with a status other than 2xx, 404, or 410.
  * @throws {InvalidInputError} When the endpoint isn't an `https:` URL, or a payload is given and the
  * subscription's keys are missing or malformed.
  * @throws {MaxBytesError} When the payload is longer than `maxPayloadBytes`.

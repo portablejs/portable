@@ -43,7 +43,7 @@ export declare namespace seal {
     selector: string;
     /**
      * An RSA key of at least 1024 bits or an Ed25519 key, in any form `Dkim.sign` takes: a
-     * `CryptoKey`, a PEM `PRIVATE KEY` or `RSA PRIVATE KEY`, or a JWK. The key type sets `a=`.
+     * `CryptoKey`, a PEM `PRIVATE KEY`, or `RSA PRIVATE KEY`, or a JWK. The key type sets `a=`.
      */
     privateKey: CryptoKey | string | JsonWebKey;
     /**
@@ -60,7 +60,7 @@ export declare namespace seal {
     /**
      * The fields the ARC-Message-Signature signs, as in `Dkim.sign`. ARC fields and
      * Authentication-Results are never signed (RFC 8617 section 4.1.2).
-     * @default DKIM-Signature, Delivered-To and the fields `Dkim.sign` signs
+     * @default DKIM-Signature, Delivered-To, and the fields `Dkim.sign` signs
      */
     headers?: readonly string[] | undefined;
     /** The signature time (`t=`), as a `Date` or a `Temporal.Instant`. @default new Date() */
@@ -126,7 +126,7 @@ export async function seal(message: Message, options: seal.Options): Promise<str
   return sign(digests);
 }
 
-/** The sealing domain, selector, header list and time, already checked, with the imported key. */
+/** The sealing domain, selector, header list, and time, already checked, with the imported key. */
 export type Sealer = {
   /** The body hash the ARC-Message-Signature needs. */
   request: BodyHash;

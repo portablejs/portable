@@ -59,4 +59,4 @@ Upstream suites: [split2 4.2.0 `test.js`](https://github.com/mcollina/split2/blo
 
 ## Benchmarks
 
-split2's `bench.js` compares split2, binary-split and `node:readline` on `package.json`. `DecoderStream.bench.ts` compares `DecoderStream`, split2, byline and `node:readline` on 1.7 MB of text and fails if split2 or byline is more than 25% faster.
+split2's `bench.js` compares split2, binary-split, and `node:readline` on `package.json`. `DecoderStream.bench.ts` compares `DecoderStream`, split2, byline, and `node:readline` on 1.7 MB of text and fails if split2 or byline is more than 25% faster.

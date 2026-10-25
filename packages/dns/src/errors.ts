@@ -37,7 +37,7 @@ export declare namespace QueryError {
 }
 
 /**
- * Thrown when a lookup fails. `code`, `syscall`, `hostname` and `message` have the values
+ * Thrown when a lookup fails. `code`, `syscall`, `hostname`, and `message` have the values
  * `node:dns/promises` gives them, such as `queryTxt ENOTFOUND example.com`. When the failure came
  * from `fetch` or the response, `cause` holds the original error.
  *

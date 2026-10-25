@@ -33,7 +33,7 @@ export type Socket = {
   readonly readable: ReadableStream<Uint8Array>;
   /** The bytes to send. Closing it ends this side of the connection. */
   readonly writable: WritableStream<Uint8Array>;
-  /** Resolves once the connection, and the TLS handshake if there is one, is established. */
+  /** Resolves once the connection and the TLS handshake if there is one, is established. */
   readonly opened: Promise<Info>;
   /** Resolves when the connection closes, and rejects if it fails. */
   readonly closed: Promise<void>;

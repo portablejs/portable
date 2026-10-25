@@ -476,7 +476,7 @@ describe('instance values (RFC 8617 section 3.9)', () => {
     expect(await check(message)).toMatchObject({ result: 'fail', reason: 'invalid as instance' });
   });
 
-  test('fails a gap, a duplicate field and a missing field', async () => {
+  test('fails a gap, a duplicate field, and a missing field', async () => {
     const a = await singleSet();
     const gap = a.message.replaceAll('i=1;', 'i=2;');
     expect((await check(gap)).reason).toBe('i=1 is missing');
@@ -533,7 +533,7 @@ describe('keys', () => {
     expect((await check(message, keys)).reason).toBe('i=1 as inappropriate hash algorithm');
   });
 
-  test('reports a weak, a missing and an unusable key', async () => {
+  test('reports a weak, a missing, and an unusable key', async () => {
     const weak = await singleSet({ keyName: 'small' });
     expect((await check(weak.message, { 's._domainkey.one.example': 'small' })).reason).toBe(
       'i=1 ams weak key',

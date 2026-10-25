@@ -66,7 +66,7 @@ describe('dns-packet cases', () => {
     expect(roundTripData('HINFO', data)).toEqual(data);
   });
 
-  test('ptr, cname, dname and ns', () => {
+  test('ptr, cname, dname, and ns', () => {
     expect(roundTripData('PTR', 'hello.world.com')).toBe('hello.world.com');
     expect(roundTripData('CNAME', 'hello.cname.world.com')).toBe('hello.cname.world.com');
     expect(roundTripData('DNAME', 'hello.dname.world.com')).toBe('hello.dname.world.com');

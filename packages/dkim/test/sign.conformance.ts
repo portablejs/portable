@@ -57,7 +57,7 @@ const results = async (message: string | Uint8Array) =>
   (await Dkim.verify(message, { resolver })).map((r) => r.result);
 
 describe('the signature field', () => {
-  test('signs with rsa-sha256, relaxed/relaxed and the time of signing by default', async () => {
+  test('signs with rsa-sha256, relaxed/relaxed, and the time of signing by default', async () => {
     const before = Math.floor(Date.now() / 1000);
     const { field, tags, out } = await signed();
     expect(field).toMatch(
@@ -157,7 +157,7 @@ describe('the signature field', () => {
 });
 
 describe('private keys', () => {
-  test('takes a PKCS #8 PEM, a PKCS #1 PEM, a JWK or a CryptoKey', async () => {
+  test('takes a PKCS #8 PEM, a PKCS #1 PEM, a JWK, or a CryptoKey', async () => {
     const pkcs1 = await fixtureText('rfc8463-rsa.key.txt');
     const keyResolver = resolverFrom({
       'test._domainkey.football.example.com': [

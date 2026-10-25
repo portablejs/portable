@@ -21,7 +21,7 @@ test('decode reads a corrupted response as dns-packet does when both accept it',
       } catch {
         return;
       }
-      // decode escapes `.`, `\` and bytes that aren't UTF-8 in a label, and reads the top bit of a
+      // decode escapes `.`, `\`, and bytes that aren't UTF-8 in a label, and reads the top bit of a
       // question's class as mDNS's QU bit. dns-packet does neither, so those packets are left out.
       if (
         !('value' in ours) ||

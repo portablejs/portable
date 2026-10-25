@@ -47,7 +47,7 @@ export type NaptrRecord = {
 };
 
 /**
- * The lookups that SPF, DMARC and DKIM need, with the method names and result shapes of
+ * The lookups that SPF, DMARC, and DKIM need, with the method names and result shapes of
  * `node:dns/promises`. `create` returns one, and `node:dns/promises`, a `new Resolver()` from it
  * and a plain object of functions in a test also match the type.
  */
@@ -61,7 +61,7 @@ export type Resolver = {
   resolveMx(name: string, options?: Resolver.CallOptions): Promise<MxRecord[]>;
   resolveNs(name: string, options?: Resolver.CallOptions): Promise<string[]>;
   resolvePtr(name: string, options?: Resolver.CallOptions): Promise<string[]>;
-  /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM and DMARC. */
+  /** One array per TXT record, holding its character-strings decoded as UTF-8. Join them for SPF, DKIM, and DMARC. */
   resolveTxt(name: string, options?: Resolver.CallOptions): Promise<string[][]>;
   resolveSrv(name: string, options?: Resolver.CallOptions): Promise<SrvRecord[]>;
   /** The first SOA record. */
@@ -98,7 +98,7 @@ export declare namespace create {
   type Options = {
     /**
      * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The next one is tried when a request
-     * fails, times out, or gets SERVFAIL, REFUSED, NOTIMP, FORMERR or a truncated response.
+     * fails, times out, or gets SERVFAIL, REFUSED, NOTIMP, FORMERR, or a truncated response.
      * @default ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']
      */
     endpoints?: readonly (string | URL)[] | undefined;
@@ -200,7 +200,7 @@ function recordsFor<value extends string>(
 
 /**
  * Creates a resolver that sends DNS queries over HTTPS (RFC 8484) with `fetch`, so lookups work in
- * browsers, Workers and other runtimes without a system resolver. Queries are GET requests with a
+ * browsers, Workers, and other runtimes without a system resolver. Queries are GET requests with a
  * DNS ID of 0, which HTTP caches can store and which need no CORS preflight. Results and error
  * codes match `node:dns/promises`, and CNAME chains in the answer are followed.
  *

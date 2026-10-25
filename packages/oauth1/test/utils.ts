@@ -47,7 +47,7 @@ export async function signature(
 }
 
 /**
- * Builds a signature base string from a method, a base URI and a normalized parameter string
+ * Builds a signature base string from a method, a base URI, and a normalized parameter string
  * written out by hand. Both only hold characters that `encodeURIComponent` encodes as RFC 5849 does.
  */
 export function baseString(method: string, uri: string, parameters: string): string {

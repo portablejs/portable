@@ -1,12 +1,12 @@
 # Test parity
 
-Upstream suite: [ecdsa-sig-formatter 1.0.11 `spec/`](https://github.com/Brightspace/node-ecdsa-sig-formatter/tree/master/spec) (Apache-2.0). `digest`, `hmac`, `hkdf` and `importSeed` replace hand-written WebCrypto calls rather than a library, so their cases come from the RFCs: RFC 4231 (HMAC), RFC 5869 (HKDF), RFC 8032 section 7.1 (Ed25519) and RFC 7748 sections 5.2 and 6.1 (X25519). `test/vectors.ts` holds them, parsed from the RFC text. These are also the vectors @noble/hashes' `hmac.test.ts` and `kdf.test.ts` use.
+Upstream suite: [ecdsa-sig-formatter 1.0.11 `spec/`](https://github.com/Brightspace/node-ecdsa-sig-formatter/tree/master/spec) (Apache-2.0). `digest`, `hmac`, `hkdf`, and `importSeed` replace hand-written WebCrypto calls rather than a library, so their cases come from the RFCs: RFC 4231 (HMAC), RFC 5869 (HKDF), RFC 8032 section 7.1 (Ed25519) and RFC 7748 sections 5.2 and 6.1 (X25519). `test/vectors.ts` holds them, parsed from the RFC text. These are also the vectors @noble/hashes' `hmac.test.ts` and `kdf.test.ts` use.
 
-`fixtures/wycheproof/` holds Wycheproof's ECDSA verification vectors for P-256 with SHA-256, P-384 with SHA-384 and P-521 with SHA-512 (1,530 cases), from [C2SP/wycheproof](https://github.com/C2SP/wycheproof) (Apache-2.0, `LICENSE` alongside), with the comments and PEM keys removed.
+`fixtures/wycheproof/` holds Wycheproof's ECDSA verification vectors for P-256 with SHA-256, P-384 with SHA-384, and P-521 with SHA-512 (1,530 cases), from [C2SP/wycheproof](https://github.com/C2SP/wycheproof) (Apache-2.0, `LICENSE` alongside), with the comments and PEM keys removed.
 
 ## ecdsa-sig-formatter `spec/der-to-jose.js`
 
-Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P-384'` and `'P-521'` here.
+Each case runs for ES256, ES384, and ES512, which are `namedCurve` `'P-256'`, `'P-384'`, and `'P-521'` here.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 | should throw for no signature | skipped | The TypeScript signature requires a `Uint8Array`. |
 | should throw for non buffer or base64 signature | skipped | Takes bytes only. |
 | should throw for unknown algorithm | skipped | The curve follows from the length, so there is no algorithm argument. |
-| should throw for incorrect signature length (ES256, ES384, ES512) | `rawToDerEcdsa (ecdsa-sig-formatter) > rejects a %i-byte signature` | Lengths one byte either side of 64, 96 and 132, and 0. |
+| should throw for incorrect signature length (ES256, ES384, ES512) | `rawToDerEcdsa (ecdsa-sig-formatter) > rejects a %i-byte signature` | Lengths one byte either side of 64, 96, and 132, and 0. |
 
 ## ecdsa-sig-formatter `spec/inverse.js`
 
@@ -58,11 +58,11 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 
 ## Wycheproof
 
-`Wycheproof > <curve> with <hash>` converts every signature with `derToRawEcdsa` and verifies the result with `crypto.subtle.verify`. Every valid case must convert, convert back to the same DER, and verify. Every case flagged `BerEncodedSignature`, `InvalidEncoding` or `MissingZero` must throw `InvalidInputError`. Every other invalid case must throw or fail to verify.
+`Wycheproof > <curve> with <hash>` converts every signature with `derToRawEcdsa` and verifies the result with `crypto.subtle.verify`. Every valid case must convert, convert back to the same DER, and verify. Every case flagged `BerEncodedSignature`, `InvalidEncoding`, or `MissingZero` must throw `InvalidInputError`. Every other invalid case must throw or fail to verify.
 
 ## `importPem`
 
-`importPem` replaces the PEM parsing that dkim and oauth1 each had, so its cases are theirs: a PKCS #8 and a PKCS #1 RSA private key, text that is not PEM, bad base64 and a block too short to be a key. `fixtures/pem/` holds node-oauth's RSA key pair from `tests/oauthtests.js` (MIT, Ciaran Jessup) as `rsa-pkcs1.pem.txt` and `rsa-spki.pem.txt`, the same key as PKCS #8 in `rsa-pkcs8.pem.txt` and as a PKCS #1 public key in `rsa-pkcs1-public.pem.txt` (written by `openssl rsa -RSAPublicKey_out`), and a P-256 key in SEC 1 form in `ec-sec1.pem.txt` (written by `openssl ecparam -genkey -noout`), which `importPem` rejects with `UnsupportedError`. `pem.conformance.ts` also checks CRLF line breaks, text and a certificate before the key, Ed25519, ECDSA and ECDH keys exported by `crypto.subtle`, the default usages and an encrypted PEM block.
+`importPem` replaces the PEM parsing that dkim and oauth1 each had, so its cases are theirs: a PKCS #8 and a PKCS #1 RSA private key, text that is not PEM, bad base64, and a block too short to be a key. `fixtures/pem/` holds node-oauth's RSA key pair from `tests/oauthtests.js` (MIT, Ciaran Jessup) as `rsa-pkcs1.pem.txt` and `rsa-spki.pem.txt`, the same key as PKCS #8 in `rsa-pkcs8.pem.txt` and as a PKCS #1 public key in `rsa-pkcs1-public.pem.txt` (written by `openssl rsa -RSAPublicKey_out`), and a P-256 key in SEC 1 form in `ec-sec1.pem.txt` (written by `openssl ecparam -genkey -noout`), which `importPem` rejects with `UnsupportedError`. `pem.conformance.ts` also checks CRLF line breaks, text, and a certificate before the key, Ed25519, ECDSA, and ECDH keys exported by `crypto.subtle`, the default usages, and an encrypted PEM block.
 
 ## Known upstream issues
 
@@ -77,4 +77,4 @@ Each case runs for ES256, ES384 and ES512, which are `namedCurve` `'P-256'`, `'P
 
 ## Oracle tests
 
-`web-crypto.oracle.test.ts` compares `digest`, `hmac`, `hkdf`, `importSeed`, `publicKeyOf` and the ECDSA conversions with node:crypto, @noble/hashes, @noble/curves and ecdsa-sig-formatter. `web-crypto.fuzz.oracle.test.ts` checks random raw signatures, biased toward leading zero bytes and a set top bit, against @noble/curves on P-256, P-384 and P-521: `rawToDerEcdsa` writes the same DER, and `derToRawEcdsa` accepts every mutated DER signature that @noble/curves accepts and converts it to the same raw bytes.
+`web-crypto.oracle.test.ts` compares `digest`, `hmac`, `hkdf`, `importSeed`, `publicKeyOf`, and the ECDSA conversions with node:crypto, @noble/hashes, @noble/curves and ecdsa-sig-formatter. `web-crypto.fuzz.oracle.test.ts` checks random raw signatures, biased toward leading zero bytes and a set top bit, against @noble/curves on P-256, P-384, and P-521: `rawToDerEcdsa` writes the same DER, and `derToRawEcdsa` accepts every mutated DER signature that @noble/curves accepts and converts it to the same raw bytes.

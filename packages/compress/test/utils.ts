@@ -16,7 +16,7 @@ export async function fixture(name: string): Promise<Uint8Array> {
   return new Uint8Array(await (await fetch(await load())).arrayBuffer());
 }
 
-/** pako's round-trip samples: text, UTF-8 text, a JPEG, a GIF and a zip. */
+/** pako's round-trip samples: text, UTF-8 text, a JPEG, a GIF, and a zip. */
 export const samples: readonly string[] = [
   'blank.gif',
   'lorem.txt',

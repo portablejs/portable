@@ -19,7 +19,7 @@ const hashes = [
 const random = (length: number) => new Uint8Array(nodeCrypto.randomBytes(length));
 const lengths = [0, 1, 31, 55, 56, 63, 64, 65, 127, 128, 129, 1000, 70_000];
 
-describe('digest, hmac and hkdf match node:crypto and @noble/hashes', () => {
+describe('digest, hmac, and hkdf match node:crypto and @noble/hashes', () => {
   for (const [hash, nodeName, noble] of hashes) {
     test(`digest with ${hash}`, async () => {
       for (const length of lengths) {

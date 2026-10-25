@@ -1,6 +1,6 @@
 {
   "name": "@portable/timers",
-  "description": "Sleep, retry with backoff, poll, debounce and throttle, cancellable with AbortSignal, in any JavaScript runtime.",
+  "description": "Sleep, retry with backoff, poll, debounce, and throttle, cancellable with AbortSignal, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
