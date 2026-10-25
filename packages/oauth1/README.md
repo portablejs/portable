@@ -112,6 +112,7 @@ Both libraries sign some requests wrongly, and the server then rejects the signa
 |  | oauth-1.0a | 41,600 | 5.8× faster | ██████████▌ |
 |  | oauth | 25,800 | 3.6× faster | ██████▌ |
 |  | **@portable/oauth1** | 7,210 |  | █▉ |
+| | | | | |
 | Sign a form POST | oauth-1.0a | 30,000 | 4.9× faster | ████████████ |
 |  | @portable/oauth1 with @noble/hashes | 26,200 | 4.3× faster | ██████████▌ |
 |  | **@portable/oauth1** | 6,110 |  | ██▌ |

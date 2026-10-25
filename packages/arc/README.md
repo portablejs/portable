@@ -102,9 +102,11 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 | --- | --- | ---: | --- | --- |
 | Verify a 250 KB message with two ARC sets | **@portable/arc** | 411 |  | ████████████ |
 |  | mailauth | 252 | 1.6× slower | ███████▍ |
+| | | | | |
 | Seal a 250 KB message | `node:crypto`, hashing and signing only | 988 | 4.4× faster | ████████████ |
 |  | **@portable/arc** | 223 |  | ██▊ |
 |  | mailauth | 191 | 1.2× slower | ██▍ |
+| | | | | |
 | Seal and verify a short message | mailauth | 288 | 1.1× faster | ████████████ |
 |  | **@portable/arc** | 272 |  | ███████████▍ |
 

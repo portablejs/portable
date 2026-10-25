@@ -121,10 +121,13 @@ pngjs is built on Node's `zlib` and streams. This package takes zlib from `Compr
 | --- | --- | ---: | --- | --- |
 | Decode a 1024×1024 PNG | pngjs | 26.7 | 1.2× faster | ████████████ |
 |  | **@portable/png** | 21.5 |  | █████████▋ |
+| | | | | |
 | Decode a 1024×1024 PNG with `decodeSync` and `node:zlib` | **@portable/png** | 35.9 |  | ████████████ |
 |  | pngjs | 26.7 | 1.3× slower | ████████▉ |
+| | | | | |
 | Encode a 1024×1024 PNG at zlib level 6 | **@portable/png** | 6.84 |  | ████████████ |
 |  | pngjs | 5.94 | 1.2× slower | ██████████▍ |
+| | | | | |
 | Encode a 1024×1024 PNG at level 9 with `Z_RLE`, through `node:zlib` | **@portable/png** | 13.1 |  | ████████████ |
 |  | pngjs | 9.84 | 1.3× slower | █████████ |
 

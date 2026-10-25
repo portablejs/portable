@@ -82,26 +82,33 @@ The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchr
 |  | @noble/hashes | 136,000 | 4.9× faster | ███▊ |
 |  | `crypto.subtle` by hand | 28,900 | same | ▊ |
 |  | **@portable/web-crypto** | 27,900 |  | ▊ |
+| | | | | |
 | SHA-256 of 1 MB | `crypto.subtle` by hand | 958 | same | ████████████ |
 |  | **@portable/web-crypto** | 928 |  | ███████████▋ |
 |  | @noble/hashes | 170 | 5.5× slower | ██▏ |
+| | | | | |
 | HMAC-SHA256 of 1 KB | `node:crypto` | 271,000 | 15× faster | ████████████ |
 |  | @noble/hashes | 84,700 | 4.6× faster | ███▊ |
 |  | **@portable/web-crypto** | 18,500 |  | ▉ |
 |  | `crypto.subtle` by hand | 18,400 | same | ▉ |
+| | | | | |
 | Derive 32 bytes with HKDF | `node:crypto` | 215,000 | 12× faster | ████████████ |
 |  | @noble/hashes | 113,000 | 6.5× faster | ██████▎ |
 |  | `crypto.subtle` by hand | 18,200 | 1.1× faster | █ |
 |  | **@portable/web-crypto** | 17,300 |  | █ |
+| | | | | |
 | Import an Ed25519 seed | `crypto.subtle` by hand | 16,500 | 1.1× faster | ████████████ |
 |  | **@portable/web-crypto** | 15,600 |  | ███████████▍ |
 |  | @noble/curves | 2,920 | 5.3× slower | ██▏ |
+| | | | | |
 | Read the public key of a P-256 key | `node:crypto` | 1,240,000 | 60× faster | ████████████ |
 |  | **@portable/web-crypto** | 20,500 |  | ▎ |
 |  | `crypto.subtle` by hand | 19,000 | 1.1× slower | ▏ |
+| | | | | |
 | Convert a DER ECDSA signature to raw | **@portable/web-crypto** | 4,900,000 |  | ████████████ |
 |  | ecdsa-sig-formatter | 818,000 | 6.0× slower | ██ |
 |  | @noble/curves | 361,000 | 14× slower | ▉ |
+| | | | | |
 | Convert a raw ECDSA signature to DER | ecdsa-sig-formatter | 2,250,000 | 1.4× faster | ████████████ |
 |  | **@portable/web-crypto** | 1,620,000 |  | ████████▋ |
 |  | @noble/curves | 253,000 | 6.4× slower | █▍ |

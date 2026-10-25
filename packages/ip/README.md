@@ -132,9 +132,11 @@ ip's `isPublic` and `isPrivate` accepted octal, hex and short IPv4 spellings and
 |  | `node:net` | 350,000 | 2.3× slower | █████▎ |
 |  | ip | 112,000 | 7.1× slower | █▊ |
 |  | ipaddr.js | 65,100 | 12× slower | █ |
+| | | | | |
 | Check 8 addresses against a CIDR block | **@portable/ip** | 683,000 |  | ████████████ |
 |  | `node:net` | 441,000 | 1.5× slower | ███████▊ |
 |  | ipaddr.js | 63,700 | 11× slower | █▏ |
+| | | | | |
 | Tell public from internal addresses, 8 of them | **@portable/ip** | 517,000 |  | ████████████ |
 |  | ip | 196,000 | 2.6× slower | ████▌ |
 |  | ipaddr.js | 46,700 | 11× slower | █▏ |

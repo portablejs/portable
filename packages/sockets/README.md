@@ -119,6 +119,7 @@ These were seen in workerd under Miniflare, which connects through a local proxy
 | Echo 16 MB over TCP on localhost | node:net | 41.1 | 1.1× faster | ████████████ |
 |  | **@portable/sockets** | 36.5 |  | ██████████▋ |
 |  | @arrowood.dev/socket | 33.9 | 1.1× slower | █████████▉ |
+| | | | | |
 | Open and close a connection on localhost | node:net | 24,200 | 1.6× faster | ████████████ |
 |  | **@portable/sockets** | 15,300 |  | ███████▋ |
 |  | @arrowood.dev/socket | 13,500 | 1.1× slower | ██████▊ |

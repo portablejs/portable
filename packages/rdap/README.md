@@ -137,11 +137,14 @@ The benchmarks serve recorded responses from memory. node-rdap returns the respo
 | Look up google.com (Verisign response) | `fetch` and `response.json()` | 51,500 | 1.4× faster | ████████████ |
 |  | node-rdap | 46,400 | 1.2× faster | ██████████▊ |
 |  | **@portable/rdap** | 37,800 |  | ████████▊ |
+| | | | | |
 | Look up google.com and follow the registrar referral | node-rdap | 17,600 | 1.1× faster | ████████████ |
 |  | **@portable/rdap** | 15,700 |  | ██████████▊ |
+| | | | | |
 | Look up a RIPE network with 16 entities | `fetch` and `response.json()` | 12,800 | 1.2× faster | ████████████ |
 |  | node-rdap | 11,800 | 1.1× faster | ███████████▏ |
 |  | **@portable/rdap** | 10,500 |  | █████████▉ |
+| | | | | |
 | Look up an ARIN AS number | `fetch` and `response.json()` | 28,700 | 1.1× faster | ████████████ |
 |  | node-rdap | 28,100 | 1.1× faster | ███████████▊ |
 |  | **@portable/rdap** | 25,000 |  | ██████████▌ |

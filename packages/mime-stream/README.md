@@ -117,6 +117,7 @@ mailsplit is a Node `Transform` stream with libmime, libqp and libbase64 as depe
 | Split and join 1.5 MB of mail | `TransformStream` copy | 13,600 | 18× faster | ████████████ |
 |  | **@portable/mime-stream** | 745 |  | ▋ |
 |  | mailsplit | 126 | 5.9× slower | ▏ |
+| | | | | |
 | Read the header block of 1.5 MB of mail | **@portable/mime-stream** | 17,000 |  | ████████████ |
 |  | mailsplit | 126 | 130× slower | ▏ |
 

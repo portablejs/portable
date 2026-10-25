@@ -139,6 +139,7 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 |  | websocket-ts | 104 | same | ███████████▌ |
 |  | reconnecting-websocket | 93.5 | 1.1× slower | ██████████▎ |
 |  | partysocket | 83.1 | 1.3× slower | █████████▏ |
+| | | | | |
 | Echo 1,000 messages on the server | ws | 97.7 | same | ████████████ |
 |  | **@portable/websockets** | 94.0 |  | ███████████▌ |
 

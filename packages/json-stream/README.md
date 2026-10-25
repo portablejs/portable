@@ -69,9 +69,11 @@ Those libraries are Node streams. This package does the same jobs with a `Transf
 |  | JSONStream | 9.02 | 2.3× slower | ██ |
 |  | stream-json | 1.94 | 11× slower | ▍ |
 |  | stream-json, web streams | 0.816 | 26× slower | ▏ |
+| | | | | |
 | Encode a 3 MB object | `JSON.parse` or `JSON.stringify` | 124 | 5.6× faster | ████████████ |
 |  | json-stream-stringify | 22.2 | same | ██▏ |
 |  | **@portable/json-stream** | 22.0 |  | ██▏ |
+| | | | | |
 | Encode rows from an async iterable | **@portable/json-stream** | 99.6 |  | ████████████ |
 |  | json-stream-stringify | 79.5 | 1.3× slower | █████████▋ |
 

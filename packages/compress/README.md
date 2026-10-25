@@ -71,14 +71,17 @@ In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node'
 |  | **@portable/compress** | 42.3 |  | ███████████ |
 |  | fflate | 22.8 | 1.9× slower | █████▉ |
 |  | pako | 21.7 | 1.9× slower | █████▋ |
+| | | | | |
 | Gunzip 1 MB of text | `node:zlib` | 523 | 2.9× faster | ████████████ |
 |  | fflate | 228 | 1.3× faster | █████▎ |
 |  | **@portable/compress** | 181 |  | ████▏ |
 |  | pako | 135 | 1.3× slower | ███▏ |
+| | | | | |
 | Gunzip a stream of 1 KiB chunks | `node:zlib` | 113 | same | ████████████ |
 |  | **@portable/compress** | 111 |  | ███████████▊ |
 |  | `DecompressionStream` | 96.7 | 1.1× slower | ██████████▎ |
 |  | fflate | 54.7 | 2.0× slower | █████▊ |
+| | | | | |
 | CRC-32 of 1 MB | `node:zlib` | 4,250 | 3.3× faster | ████████████ |
 |  | crc-32 | 1,410 | 1.1× faster | ████ |
 |  | **@portable/compress** | 1,290 |  | ███▋ |

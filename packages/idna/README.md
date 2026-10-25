@@ -86,6 +86,7 @@ The URL Standard runs UTS #46 for hosts, but implementations lag behind it. On `
 |  | `node:url` | 79,000 | 1.1× slower | ██████████▉ |
 |  | punycode | 76,700 | 1.1× slower | ██████████▌ |
 |  | tr46 | 12,900 | 6.8× slower | █▊ |
+| | | | | |
 | Convert 10 domains to ASCII | `new URL()` | 102,000 | 1.2× faster | ████████████ |
 |  | **@portable/idna** | 84,200 |  | █████████▉ |
 |  | `node:url` | 79,900 | 1.1× slower | █████████▍ |

@@ -129,6 +129,7 @@ Differences to check when you switch from mailauth:
 | --- | --- | ---: | --- | --- |
 | Authenticate a 250 KB message with a DKIM signature and an ARC set | **@portable/mail-auth** | 246 |  | ████████████ |
 |  | mailauth | 238 | same | ███████████▋ |
+| | | | | |
 | Authenticate and seal a short message | **@portable/mail-auth** | 433 |  | ████████████ |
 |  | mailauth | 323 | 1.3× slower | █████████ |
 

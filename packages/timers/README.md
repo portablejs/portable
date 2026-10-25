@@ -216,17 +216,22 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 |  | **@portable/timers** | 98,400 |  | █████████▋ |
 |  | p-retry | 52,700 | 1.9× slower | █████▏ |
 |  | async-retry | 98.0 | 1,000× slower | ▏ |
+| | | | | |
 | Retry 10 attempts with a signal | p-retry | 53,700 | same | ████████████ |
 |  | **@portable/timers** | 53,200 |  | ███████████▉ |
+| | | | | |
 | Poll until the 10th check succeeds | **@portable/timers** | 98.7 |  | ████████████ |
 |  | p-wait-for | 98.1 | same | ███████████▉ |
+| | | | | |
 | Sleep for 1 ms | `setTimeout` or `try`/`catch` by hand | 1,400 | 1.2× faster | ████████████ |
 |  | **@portable/timers** | 1,200 |  | ██████████▎ |
 |  | delay | 951 | 1.3× slower | ████████▏ |
+| | | | | |
 | Debounce a burst of 1,000 calls | lodash.debounce | 15,400 | 1.1× faster | ████████████ |
 |  | **@portable/timers** | 13,700 |  | ██████████▋ |
 |  | throttle-debounce | 4,260 | 3.2× slower | ███▍ |
 |  | p-debounce | 2,800 | 4.9× slower | ██▏ |
+| | | | | |
 | Throttle a burst of 1,000 calls | lodash.throttle | 15,300 | 1.2× faster | ████████████ |
 |  | **@portable/timers** | 13,000 |  | ██████████▎ |
 |  | throttle-debounce | 3,530 | 3.7× slower | ██▊ |

@@ -101,14 +101,17 @@ The benchmarks use 5,000 rows (500 kB) of quoted text, prices and dates.
 |  | papaparse | 219 | 1.8× slower | ██████▌ |
 |  | csv-parse or csv-stringify | 56.3 | 7.1× slower | █▋ |
 |  | fast-csv | 25.0 | 16× slower | ▊ |
+| | | | | |
 | Decode a 500 kB stream | **@portable/csv** | 312 |  | ████████████ |
 |  | papaparse | 145 | 2.2× slower | █████▋ |
 |  | csv-parse or csv-stringify | 47.5 | 6.6× slower | █▉ |
 |  | fast-csv | 28.7 | 11× slower | █▏ |
+| | | | | |
 | Encode 5,000 rows to a string | **@portable/csv** | 419 |  | ████████████ |
 |  | papaparse | 141 | 3.0× slower | ████ |
 |  | csv-parse or csv-stringify | 61.7 | 6.8× slower | █▊ |
 |  | fast-csv | 61.3 | 6.8× slower | █▊ |
+| | | | | |
 | Encode a stream of 5,000 rows | **@portable/csv** | 128 |  | ████████████ |
 |  | fast-csv | 90.8 | 1.4× slower | ████████▌ |
 |  | csv-parse or csv-stringify | 64.3 | 2.0× slower | ██████ |

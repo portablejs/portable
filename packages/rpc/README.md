@@ -277,21 +277,27 @@ The benchmarks run over a `MessageChannel` with the default JSON codec.
 |  | penpal | 89,700 | 1.3× slower | █████████▌ |
 |  | birpc | 86,900 | 1.3× slower | █████████▏ |
 |  | comlink | 64,500 | 1.8× slower | ██████▊ |
+| | | | | |
 | Make 100 concurrent calls | **@portable/rpc** | 1,720 |  | ████████████ |
 |  | birpc | 1,290 | 1.3× slower | █████████ |
 |  | penpal | 1,150 | 1.5× slower | ████████ |
 |  | comlink | 834 | 2.1× slower | █████▉ |
+| | | | | |
 | Send 100 notifications and a call | **@portable/rpc** | 3,250 |  | ████████████ |
 |  | birpc | 3,020 | 1.1× slower | ███████████▏ |
+| | | | | |
 | Stream 1,000 items | birpc | 212 | 1.1× faster | ████████████ |
 |  | **@portable/rpc** | 193 |  | ██████████▉ |
 |  | comlink | 76.9 | 2.5× slower | ████▍ |
+| | | | | |
 | Send a 2 KB record | **@portable/rpc** | 23,400 |  | ████████████ |
 |  | birpc | 14,100 | 1.7× slower | ███████▎ |
 |  | comlink | 13,700 | 1.7× slower | ███████ |
 |  | penpal | 12,300 | 1.9× slower | ██████▎ |
+| | | | | |
 | Make one call over HTTP | json-rpc-2.0 | 17,200 | same | ████████████ |
 |  | **@portable/rpc** | 17,100 |  | ███████████▉ |
+| | | | | |
 | Send a batch of 10 calls over HTTP | json-rpc-2.0 | 23,000 | 1.1× faster | ████████████ |
 |  | **@portable/rpc** | 20,800 |  | ██████████▉ |
 

@@ -96,25 +96,32 @@ Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64
 |  | **@portable/base64** | 435 |  | █ |
 |  | js-base64 | 148 | 2.9× slower | ▍ |
 |  | base64-js | 55.1 | 7.9× slower | ▏ |
+| | | | | |
 | Encode 1 MB in 76-column lines | libbase64 | 554 | 1.3× faster | ████████████ |
 |  | **@portable/base64** | 435 |  | █████████▍ |
+| | | | | |
 | Decode 1 MB | `Buffer` (Node) | 5,450 | 21× faster | ████████████ |
 |  | libbase64 | 4,210 | 17× faster | █████████▎ |
 |  | **@portable/base64** | 255 |  | ▌ |
 |  | base64-js | 239 | 1.1× slower | ▌ |
 |  | js-base64 | 22.4 | 11× slower | ▏ |
+| | | | | |
 | Decode 1 MB of MIME base64 | libbase64 | 3,900 | 18× faster | ████████████ |
 |  | **@portable/base64** | 219 |  | ▋ |
+| | | | | |
 | Encode 32 bytes | **@portable/base64** | 3,450,000 |  | ████████████ |
 |  | js-base64 | 2,420,000 | 1.4× slower | ████████▍ |
 |  | `Buffer` (Node) | 2,370,000 | 1.5× slower | ████████▎ |
 |  | base64-js | 1,050,000 | 3.3× slower | ███▋ |
+| | | | | |
 | Decode 32 bytes | **@portable/base64** | 3,110,000 |  | ████████████ |
 |  | base64-js | 2,750,000 | 1.1× slower | ██████████▋ |
 |  | `Buffer` (Node) | 2,360,000 | 1.3× slower | █████████▏ |
 |  | js-base64 | 1,130,000 | 2.8× slower | ████▍ |
+| | | | | |
 | Encode a 1 MB stream in 76-column lines | **@portable/base64** | 413 |  | ████████████ |
 |  | libbase64 | 394 | same | ███████████▌ |
+| | | | | |
 | Decode a 1 MB stream of MIME base64 | **@portable/base64** | 233 |  | ████████████ |
 |  | libbase64 | 183 | 1.3× slower | █████████▍ |
 

@@ -157,18 +157,21 @@ When switching from debug, note these differences:
 |  | consola | 18,900,000 | 1.2× slower | █████████▉ |
 |  | pino | 17,700,000 | 1.3× slower | █████████▎ |
 |  | @logtape/logtape | 10,300,000 | 2.2× slower | █████▍ |
+| | | | | |
 | A debug call with a format string, written as text | **@portable/log** | 3,040,000 |  | ████████████ |
 |  | loglevel | 1,970,000 | 1.5× slower | ███████▊ |
 |  | consola | 671,000 | 4.5× slower | ██▋ |
 |  | pino | 658,000 | 4.6× slower | ██▋ |
 |  | debug | 408,000 | 7.5× slower | █▋ |
 |  | @logtape/logtape | 194,000 | 16× slower | ▊ |
+| | | | | |
 | A debug call with an object, written as text | **@portable/log** | 2,370,000 |  | ████████████ |
 |  | consola | 691,000 | 3.4× slower | ███▌ |
 |  | loglevel | 668,000 | 3.5× slower | ███▍ |
 |  | pino | 629,000 | 3.8× slower | ███▏ |
 |  | @logtape/logtape | 257,000 | 9.2× slower | █▎ |
 |  | debug | 249,000 | 9.5× slower | █▎ |
+| | | | | |
 | Create a logger and extend it | **@portable/log** | 3,970,000 |  | ████████████ |
 |  | debug | 242,000 | 16× slower | ▊ |
 

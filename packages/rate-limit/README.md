@@ -225,10 +225,13 @@ rate-limiter-flexible ships a store class per database client, all of them Node 
 | --- | --- | ---: | --- | --- |
 | 10 rounds of `take` on 1,000 keys | rate-limiter-flexible | 218 | 1.2× faster | ████████████ |
 |  | **@portable/rate-limit** | 184 |  | ██████████▏ |
+| | | | | |
 | `take` of a denied request | **@portable/rate-limit** | 4,210 |  | ████████████ |
 |  | rate-limiter-flexible | 891 | 4.7× slower | ██▌ |
+| | | | | |
 | 1,000 × `take` on one key | limiter | 16,800 | 5.8× faster | ████████████ |
 |  | **@portable/rate-limit** | 2,910 |  | ██▏ |
+| | | | | |
 | Build the rate-limit headers | **@portable/rate-limit** | 1,440 |  | ████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/rate-limit, and the bars are scaled to the fastest library.

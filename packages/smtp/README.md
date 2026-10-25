@@ -146,6 +146,7 @@ The benchmarks send to a server on localhost that answers at once.
 | --- | --- | ---: | --- | --- |
 | Send 10 small messages over one connection | **@portable/smtp** | 1,360 |  | ████████████ |
 |  | nodemailer | 1,200 | 1.1× slower | ██████████▋ |
+| | | | | |
 | Send a 1 MB message | **@portable/smtp** | 63.3 |  | ████████████ |
 |  | nodemailer | 51.9 | 1.2× slower | █████████▉ |
 

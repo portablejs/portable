@@ -85,16 +85,22 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 | --- | --- | ---: | --- | --- |
 | Read the size of a 730 KB JPEG from a stream | **@portable/image-size** | 88,700 |  | ████████████ |
 |  | image-size | 1,250 | 71× slower | ▏ |
+| | | | | |
 | Read the size of a 730 KB JPEG | **@portable/image-size** | 6,840,000 |  | ████████████ |
 |  | image-size | 1,800 | 3,800× slower | ▏ |
+| | | | | |
 | Read the size of a PNG | **@portable/image-size** | 2,590,000 |  | ████████████ |
 |  | image-size | 439,000 | 5.9× slower | ██ |
+| | | | | |
 | Read the size of a HEIC image | **@portable/image-size** | 201,000 |  | ████████████ |
 |  | image-size | 56,600 | 3.6× slower | ███▍ |
+| | | | | |
 | Read the size of a WebP image | **@portable/image-size** | 2,470,000 |  | ████████████ |
 |  | image-size | 347,000 | 7.1× slower | █▋ |
+| | | | | |
 | Read the size of an SVG | **@portable/image-size** | 550,000 |  | ████████████ |
 |  | image-size | 86,500 | 6.4× slower | █▉ |
+| | | | | |
 | Read the size of a TIFF | **@portable/image-size** | 8,530,000 |  | ████████████ |
 |  | image-size | 24,000 | 360× slower | ▏ |
 

@@ -150,17 +150,22 @@ smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` po
 | --- | --- | ---: | --- | --- |
 | Write 1,000 mixed records | **@portable/binary** | 6,250 |  | ████████████ |
 |  | smart-buffer | 1,110 | 5.6× slower | ██▏ |
+| | | | | |
 | Read 1,000 mixed records | **@portable/binary** | 8,630 |  | ████████████ |
 |  | `DataView` and `TextDecoder` | 1,390 | 6.2× slower | █▉ |
 |  | smart-buffer | 878 | 9.8× slower | █▎ |
+| | | | | |
 | Encode 10,000 varints | **@portable/binary** | 4,740 |  | ████████████ |
 |  | @bufbuild/protobuf | 4,370 | 1.1× slower | ███████████▏ |
 |  | varint | 255 | 19× slower | ▋ |
+| | | | | |
 | Decode 10,000 varints | **@portable/binary** | 18,600 |  | ████████████ |
 |  | @bufbuild/protobuf | 15,600 | 1.2× slower | ██████████▏ |
 |  | varint | 492 | 38× slower | ▍ |
+| | | | | |
 | Split 2,000 frames from a stream | it-length-prefixed | 1,080 | 1.9× faster | ████████████ |
 |  | **@portable/binary** | 575 |  | ██████▍ |
+| | | | | |
 | Write 2,000 frames to a stream | it-length-prefixed | 456 | 1.5× faster | ████████████ |
 |  | **@portable/binary** | 305 |  | ████████ |
 

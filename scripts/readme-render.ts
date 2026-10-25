@@ -46,7 +46,8 @@ function relative(hz: number, ours: number): string {
 
 /**
  * Renders one row per library that ran each benchmark, fastest first, with a bar scaled to the
- * fastest result and the speed compared with `ours`. The benchmark's label is on its first row only.
+ * fastest result and the speed compared with `ours`. The benchmark's label is on its first row only,
+ * and an empty row separates one benchmark from the next.
  */
 export function benchTable(ours: string, benchmarks: readonly Benchmark[]): string {
   const lines = [
@@ -56,6 +57,9 @@ export function benchTable(ours: string, benchmarks: readonly Benchmark[]): stri
   for (const { label, results } of benchmarks) {
     if (results.length === 0) {
       continue;
+    }
+    if (lines.length > 2) {
+      lines.push('| | | | | |');
     }
     const sorted = [...results].sort((a, b) => b.hz - a.hz);
     const fastest = sorted[0].hz;

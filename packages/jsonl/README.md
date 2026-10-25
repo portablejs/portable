@@ -58,6 +58,7 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 |  | **@portable/jsonl** | 38.6 |  | ██████████▍ |
 |  | ndjson | 34.3 | 1.1× slower | █████████▎ |
 |  | stream-json | 27.8 | 1.4× slower | ███████▌ |
+| | | | | |
 | Encode 20,000 rows | `JSON.parse` or `JSON.stringify` | 79.3 | 2.7× faster | ████████████ |
 |  | stream-json | 38.7 | 1.3× faster | █████▉ |
 |  | **@portable/jsonl** | 29.2 |  | ████▍ |

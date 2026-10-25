@@ -86,8 +86,10 @@ dns-packet writes corrupt packets for some invalid input and reads past bad leng
 | --- | --- | ---: | --- | --- |
 | Decode 48 captured responses | **@portable/dns-packet** | 10,000 |  | ████████████ |
 |  | dns-packet | 4,560 | 2.2× slower | █████▌ |
+| | | | | |
 | Encode 48 captured responses | **@portable/dns-packet** | 5,970 |  | ████████████ |
 |  | dns-packet | 3,070 | 1.9× slower | ██████▏ |
+| | | | | |
 | Encode a DNS-over-HTTPS query | **@portable/dns-packet** | 1,820,000 |  | ████████████ |
 |  | dns-packet | 528,000 | 3.4× slower | ███▌ |
 

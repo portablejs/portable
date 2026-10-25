@@ -118,8 +118,10 @@ async function check(user: User, password: string): Promise<boolean> {
 |  | `crypto.subtle` | 9.23 | same | ████████████ |
 |  | **@portable/password** | 8.88 |  | ███████████▌ |
 |  | pbkdf2-password | 8.69 | same | ███████████▎ |
+| | | | | |
 | Verify a password with 600,000 iterations | **@portable/password** | 9.33 |  | ████████████ |
 |  | `node:crypto` | 8.95 | same | ███████████▌ |
+| | | | | |
 | Check whether a stored hash needs a rehash | **@portable/password** | 603,000 |  | ████████████ |
 
 Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/password, and the bars are scaled to the fastest library.

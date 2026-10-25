@@ -188,21 +188,27 @@ The libraries above were written for Node streams. This package reads web stream
 |  | **@portable/streams** | 715 |  | ████████▉ |
 |  | Web streams by hand | 504 | 1.4× slower | ██████▎ |
 |  | get-stream | 94.0 | 7.6× slower | █▏ |
+| | | | | |
 | Collect 6.8 MB into bytes with a 10 MB limit | raw-body | 1,180 | 1.6× faster | ████████████ |
 |  | **@portable/streams** | 751 |  | ███████▋ |
+| | | | | |
 | Collect 6.8 MB into text | **@portable/streams** | 256 |  | ████████████ |
 |  | get-stream | 248 | same | ███████████▋ |
 |  | Web streams by hand | 181 | 1.4× slower | ████████▌ |
+| | | | | |
 | Collect 100,000 objects into an array | stream-to-array | 76.1 | 2.0× faster | ████████████ |
 |  | get-stream | 38.8 | same | ██████▏ |
 |  | **@portable/streams** | 38.7 |  | ██████▏ |
+| | | | | |
 | Merge 3 streams of 10,000 objects | merge2 | 228 | 4.8× faster | ████████████ |
 |  | merge-stream | 219 | 4.6× faster | ███████████▌ |
 |  | **@portable/streams** | 47.9 |  | ██▌ |
 |  | Web streams by hand | 26.5 | 1.8× slower | █▍ |
+| | | | | |
 | Map 30,000 objects | through2 | 189 | 4.2× faster | ████████████ |
 |  | Web streams by hand | 46.2 | same | ██▉ |
 |  | **@portable/streams** | 45.3 |  | ██▉ |
+| | | | | |
 | Split 6.8 MB into 3 branches | **@portable/streams** | 803 |  | ████████████ |
 |  | Web streams by hand | 683 | 1.2× slower | ██████████▎ |
 

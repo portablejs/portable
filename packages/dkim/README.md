@@ -134,8 +134,10 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 |  | nodemailer | 328 | 1.1× faster | ██▍ |
 |  | **@portable/dkim** | 287 |  | ██ |
 |  | mailauth | 133 | 2.2× slower | █ |
+| | | | | |
 | Verify a 250 KB message | **@portable/dkim** | 403 |  | ████████████ |
 |  | mailauth | 133 | 3.0× slower | ████ |
+| | | | | |
 | Sign and verify a short message | mailauth | 550 | 1.1× faster | ████████████ |
 |  | **@portable/dkim** | 501 |  | ██████████▉ |
 

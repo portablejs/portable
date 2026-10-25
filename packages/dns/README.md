@@ -124,9 +124,11 @@ const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) =>
 | Resolve the TXT records of gmail.com | **@portable/dns** | 47,300 |  | ████████████ |
 |  | tangerine | 37,800 | 1.3× slower | █████████▋ |
 |  | `node:dns/promises` over local UDP | 19,800 | 2.4× slower | █████ |
+| | | | | |
 | Resolve the MX records of gmail.com | **@portable/dns** | 56,900 |  | ████████████ |
 |  | tangerine | 36,200 | 1.6× slower | ███████▋ |
 |  | `node:dns/promises` over local UDP | 16,300 | 3.5× slower | ███▌ |
+| | | | | |
 | Resolve the A records of www.microsoft.com | **@portable/dns** | 52,700 |  | ████████████ |
 |  | tangerine | 36,800 | 1.4× slower | ████████▍ |
 |  | `node:dns/promises` over local UDP | 19,800 | 2.7× slower | ████▌ |
