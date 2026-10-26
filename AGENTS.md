@@ -162,6 +162,25 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. (Two facts joined by ", and", with the second switching to the passive. "Options that take a point in time accept a `Date` or a `Temporal.Instant`, and results return a `Date`." has the same shape.) | Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. |
 | Stripe's `stripe` package has separate builds … Errors extend the classes in `@portable/errors`. | Stripe's stripe package has separate builds … Errors extend the classes in @portable/errors. |
 
+### Two voices
+
+Portable's prose has two voices. The rules above apply to both.
+
+The pitch voice is for prose that explains why Portable exists: the intro of each site page, the opening of the root README, and the description at the top of each package README. Write it the way you'd explain Portable to a friend who builds web apps. It should read as human, conversational, concise, and casual.
+
+- Say what changed or what hurts before you say what Portable is.
+- Write "we" for the project and "you" for the reader. Contractions are fine.
+- Name the pain concretely: "packages that only run in Node or only in browsers", not "compatibility issues".
+- Keep Portable modest. Credit other packages when they already do the job, and say Portable fills the gaps.
+- Keep one idea per sentence, and keep paragraphs to two or three sentences.
+- A little warmth is fine ("We can finally write code once that runs anywhere", "please drop a note"). Hype isn't: no "blazing fast", "seamless", or "powerful".
+
+This intro from the web platform page is in the pitch voice:
+
+> All modern JavaScript runtimes include a rich set of web APIs. We no longer need to rely on packages that only run in Node or only in browsers, polyfill between them, or are compiled to Wasm. We can finally write code once that runs anywhere.
+
+The reference voice is for prose that a reader consults to find a fact: API sections, options tables, JSDoc, the Conventions section of Getting started, and the docs in `docs/`. Write it plain and exact. State what a function does, what it takes, what it returns, and what it throws, and give the reason when the behavior could surprise a reader. Leave out the warmth, because it slows down a reader who is looking for one fact.
+
 ### Prose review
 
 Before you finish a change that adds or edits prose, run the `prose-review` skill. A second agent reads only the prose the change adds or edits, checks it against this section, and suggests rewrites. When you also run `interrogate`, run this skill as well, because `interrogate` reviews the code and not the prose.

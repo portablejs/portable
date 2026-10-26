@@ -27,7 +27,7 @@ If you have a use case that isn't covered here or could use a better package, pl
 | Stream a zip file as a `Response` | [client-zip](https://www.npmjs.com/package/client-zip) |
 | Read or write tar archives | [modern-tar](https://www.npmjs.com/package/modern-tar)<sup>1</sup>, [@remix-run/tar-parser](https://www.npmjs.com/package/@remix-run/tar-parser), or [multitars](https://www.npmjs.com/package/multitars) |
 
-<sup>1</sup> The `modern-tar/fs` subpath packs and unpacks directories with `node:fs`.
+<sup>1</sup> The `modern-tar/fs` subpath packs and unpacks directories with `node:fs`, so it doesn't run in browsers or in Workers without `nodejs_compat`.
 
 ## Encodings and text
 
