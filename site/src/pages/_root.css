@@ -220,3 +220,9 @@ a > div[data-v-logo] img[data-v-logo-image] {
 [data-v-content] a[data-v-link] {
   display: inline;
 }
+
+/* Vocs sets the first column of every table in medium weight, which made plain text cells look bold. */
+[data-v-content] table[data-v] td:first-child {
+  font-weight: inherit;
+  color: inherit;
+}
