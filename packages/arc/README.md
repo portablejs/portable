@@ -27,7 +27,7 @@ const fields = await Arc.seal(message, {
 const forwarded = fields + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. [@portable/mail-auth](../mail-auth/README.md) does both, together with SPF, DKIM, and DMARC, in one call.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. [@portable/mail-auth](https://portablejs.com/packages/mail-auth) does both, together with SPF, DKIM, and DMARC, in one call.
 
 ## Verifying
 
@@ -55,7 +55,7 @@ if (google && /\bdmarc=pass\b/.test(google.authResults)) {
 | `resolver` | required | Looks up the keys: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check the ARC-Message-Signature's `x=` against, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this fail the chain (RFC 8301). |
-| `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
+| `hasher` | WebCrypto | Creates the body hash. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
 | `signal` | none | Stops reading the message and the key lookups. The promise rejects with `signal.reason`. |
 
 The promise rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure fails the chain, because every ARC failure is permanent (RFC 8617 section 5.2).
@@ -86,8 +86,8 @@ With `cv=fail` the seal covers only the new set (RFC 8617 section 5.1.2), so a b
 | --- | --- |
 | `Arc.Resolver` | `Dkim.Resolver`, the `resolveTxt` lookup `verify` needs. |
 | `Arc.Result` | What `verify` resolves to: `result`, `instance`, `reason`, `cause`, and `sets`, as above. |
-| `Arc.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from [@portable/dkim](../dkim/README.md). |
-| `Arc.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](../dkim/README.md). |
+| `Arc.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Arc.Hash) => Arc.Hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
+| `Arc.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
 
 ## Why use this over mailauth
 
@@ -127,7 +127,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch from mailauth:
 
-- mailauth's `arc.status.comment` also holds a comment for a pass. `reason` is set only for failures, and [@portable/mail-auth](../mail-auth/README.md) builds the pass comment (`i=1 spf=pass dkim=pass`).
+- mailauth's `arc.status.comment` also holds a comment for a pass. `reason` is set only for failures, and [@portable/mail-auth](https://portablejs.com/packages/mail-auth) builds the pass comment (`i=1 spf=pass dkim=pass`).
 - mailauth parses `arc.authenticationResults`. Each entry of `sets` holds `authResults` as text.
 - mailauth's `arc.signature` has no equivalent. A failing ARC-Message-Signature is described in `reason`.
 - mailauth's `arc.status.shouldSeal` has no equivalent. `seal` throws `Arc.InvalidInputError` when the newest seal has `cv=fail`.

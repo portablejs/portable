@@ -46,7 +46,7 @@ await Dkim.verify(message, { resolver: dns });
 | --- | --- | --- |
 | `domain` | required | The signing domain (`d=`). A U-label domain is written as its A-label. |
 | `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
-| `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. A PEM string is imported on every call, so to sign many messages, import it once with `WebCrypto.importPem` from [@portable/web-crypto](../web-crypto/README.md). |
+| `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. A PEM string is imported on every call, so to sign many messages, import it once with `WebCrypto.importPem` from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). |
 | `headers` | mailauth's list, from `From` to `BIMI-Selector` | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times, so listing a name more often than the message has it over-signs it, and a field of that name added later breaks the signature (RFC 6376 section 8.15). |
 | `canonicalization` | `'relaxed/relaxed'` | `'relaxed/relaxed'`, `'relaxed/simple'`, `'simple/relaxed'`, or `'simple/simple'`. |
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
@@ -63,7 +63,7 @@ await Dkim.verify(message, { resolver: dns });
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Looks up the keys. `Dns.create()` from [@portable/dns](../dns/README.md), `node:dns/promises`, or any object with `resolveTxt`. |
+| `resolver` | required | Looks up the keys. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolveTxt`. |
 | `now` | `new Date()` | The time to check `x=` against, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give `policy` (RFC 8301 section 3.2). |
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
@@ -116,8 +116,8 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 | --- | --- |
 | `Dkim.Message` | What `sign` and `verify` read: a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. |
 | `Dkim.Resolver` | `Pick<Dns.Resolver, 'resolveTxt'>`, the lookup `verify` needs. |
-| `Dkim.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Dkim.Hash) => Dkim.Hasher`. Re-exported from [@portable/web-crypto](../web-crypto/README.md). |
-| `Dkim.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/web-crypto](../web-crypto/README.md). |
+| `Dkim.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Dkim.Hash) => Dkim.Hasher`. Re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). |
+| `Dkim.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). |
 
 ## Why use this over mailauth and nodemailer
 
@@ -161,7 +161,7 @@ Differences to check when you switch:
 
 - mailauth's `resolver` is one `(name, type)` function. `verify` takes an object with a `resolveTxt` method, such as `node:dns/promises`.
 - mailauth reports problems with the key record as `neutral`, and `verify` reports them as `permerror`.
-- mailauth's `status.aligned` and `headerFrom` have no equivalent, because alignment is DMARC's job ([@portable/dmarc](../dmarc/README.md)). `info` and `mimeStructureStart` have none either.
+- mailauth's `status.aligned` and `headerFrom` have no equivalent, because alignment is DMARC's job ([@portable/dmarc](https://portablejs.com/packages/dmarc)). `info` and `mimeStructureStart` have none either.
 - mailauth's `dkimSign` and nodemailer's `keys` sign with several keys in one call. Call `sign` once per key and prepend each field.
 - mailauth's `dkimSign` reports problems in `errors` and `warnings`. `sign` throws instead.
 - mailauth's `maxBodyLength` has no equivalent, because `l=` lets anyone append to the body.

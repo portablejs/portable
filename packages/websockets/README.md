@@ -31,7 +31,7 @@ for await (const message of Streams.toAsyncIterable(readable)) {
 }
 ```
 
-`Streams.toAsyncIterable` from [@portable/streams](../streams/README.md) iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const message of readable)` also works.
+`Streams.toAsyncIterable` from [@portable/streams](https://portablejs.com/packages/streams) iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const message of readable)` also works.
 
 The namespace is `WebSockets`, so it doesn't shadow the global `WebSocket`.
 
@@ -64,7 +64,7 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `protocols` | | Subprotocols, as for `new WebSocket(url, protocols)`. |
 | `signal` | | Closes the socket with code 1000 and fails both streams with `signal.reason`. |
 | `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes. If `open` throws, the socket closes and `connect` tries again after `delay`. |
-| `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from [@portable/timers](../timers/README.md). |
+| `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |
 | `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` gives up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
 | `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when the server closes the connection or the connection drops. `attempt` is the number of failures in a row, including this one. `false` makes the close final, and a rejection fails both streams with its error. |
@@ -115,12 +115,12 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 | `WebSockets.Duplex` | `{ readable, writable }`, what `connect`, and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
-| `WebSockets.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](../timers/README.md). |
+| `WebSockets.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |
 | `WebSockets.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
 ## Why use this over reconnecting-websocket, partysocket, and websocket-ts
 
-All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as [@portable/jsonl](../jsonl/README.md)'s `DecoderStream`, and writes wait instead of queuing without a limit.
+All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as [@portable/jsonl](https://portablejs.com/packages/jsonl)'s `DecoderStream`, and writes wait instead of queuing without a limit.
 
 - Writes made while disconnected wait for `open`, so authentication or a resubscribe always comes first. reconnecting-websocket and partysocket send their queue in the `open` event, before your handler runs.
 - The queue is bounded and applies backpressure. reconnecting-websocket and partysocket queue without a limit by default and drop messages past `maxEnqueuedMessages`. websocket-ts drops them without a buffer.

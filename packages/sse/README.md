@@ -21,7 +21,7 @@ for await (const event of Streams.toAsyncIterable(events)) {
 }
 ```
 
-`Streams.toAsyncIterable` from [@portable/streams](../streams/README.md) iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const event of events)` also works.
+`Streams.toAsyncIterable` from [@portable/streams](https://portablejs.com/packages/streams) iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const event of events)` also works.
 
 Keep a stream open the way `EventSource` does, with your own method, headers, and body:
 
@@ -80,12 +80,12 @@ Sends `request` (a `Request`, URL, or string) with `fetch` and returns a `Readab
 - When a response ends or fails, it waits and sends the request again with `Last-Event-ID` set to the last event ID. An empty `id` field removes the header. Events continue in the same stream.
 - Cancelling the stream, or aborting `signal` or the request's own signal, aborts the request in flight and any wait.
 
-Each attempt sends a clone of `request`, so a POST body is sent again on every reconnect. `connect` clones the request once when you call it, which leaves yours unread, and throws a `TypeError` if its body was already read. A `ReadableStream` body works too: the clone keeps a copy of it in memory for as long as the stream runs. Of the browsers, only Chrome can send a `ReadableStream` body, and only over HTTP/2 or HTTP/3. Firefox and Safari send the text `[object ReadableStream]` instead, so collect the stream first there with `body: await Streams.toBytes(stream)` from [@portable/streams](../streams/README.md).
+Each attempt sends a clone of `request`, so a POST body is sent again on every reconnect. `connect` clones the request once when you call it, which leaves yours unread, and throws a `TypeError` if its body was already read. A `ReadableStream` body works too: the clone keeps a copy of it in memory for as long as the stream runs. Of the browsers, only Chrome can send a `ReadableStream` body, and only over HTTP/2 or HTTP/3. Firefox and Safari send the text `[object ReadableStream]` instead, so collect the stream first there with `body: await Streams.toBytes(stream)` from [@portable/streams](https://portablejs.com/packages/streams).
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` stops reconnecting, as in `WebSockets.connect` and `Timers.retry`. An accepted response resets the count, and the end of its body counts as the first failure, so `attempts: 1` never reconnects. When the count is used up, the stream errors with the last error, or closes if the last response ended normally. A value below 1 throws a `RangeError`. |
-| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `({ attempt, error }) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from [@portable/timers](../timers/README.md), and an invalid one throws a `RangeError`. |
+| `delay` | `{ initial: 1000, max: 30_000 }` | Wait before each reconnect: milliseconds, exponential backoff `{ initial, max, factor?, jitter? }` (full jitter by default), or `({ attempt, error }) => ms`. `attempt` counts reconnects since the last accepted response. A `retry` field from the server replaces it. It is `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers), and an invalid one throws a `RangeError`. |
 | `fetch` | `globalThis.fetch` | Sends each `Request`. Pass a wrapper to change each request before it is sent, for example to set a fresh token. |
 | `idleTimeout` | `Infinity` | How long to wait, in ms, for the response headers and then for each chunk of the body. If no data arrives in that time, `connect` aborts the request and handles the attempt as a failed connection with a `TimeoutError` `DOMException`, so by default it reconnects. Keep-alive comment lines from the server also restart the wait. Set it a little above the server's keep-alive interval, so a stalled connection reconnects and a quiet but healthy one doesn't. |
 | `maxLength` | `Infinity` | As in `DecoderStream`. |
@@ -106,7 +106,7 @@ Sse.connect(request, {
 | --- | --- |
 | `Sse.Event` | An event read from a stream, as `EventSource` would dispatch it. |
 | `Sse.Message` | A message to write to an event stream. Every field is optional, so you can pass an `Sse.Event`. |
-| `Sse.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](../timers/README.md). |
+| `Sse.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |
 | `Sse.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
 ## Why use this over eventsource-parser, eventsource, and fetch-event-source
