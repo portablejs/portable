@@ -7,7 +7,7 @@
     "dev": "pnpm --filter './packages/*' dev",
     "check": "vp check --fix",
     "check:types": "tsc -b && tsc -p tsconfig.test.json",
-    "check:prose": "vp test run --project node tools/lint/src/prose.test.ts",
+    "check:prose": "vp test run --project node tools/lint/src/prose.test.ts tools/lint/src/packageLinks.test.ts",
     "test": "vp test run",
     "test:changed": "vp test run --changed origin/main --project node --testTimeout=120000",
     "test:browser": "vp test run --project browser",

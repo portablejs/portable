@@ -48,7 +48,7 @@ In tests, pass an object whose methods return fixed records.
 | `resolveCaa(name)` | `{ critical, issue?, issuewild?, iodef?, ... }[]` |
 | `resolveNaptr(name)` | `{ flags, service, regexp, replacement, order, preference }[]` |
 | `reverse(ip)` | `string[]` of host names, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. |
-| `query(name, type)` | The whole decoded response as a [@portable/dns-packet](https://www.npmjs.com/package/@portable/dns-packet) `DecodedPacket`, with TTLs, the authority section, and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
+| `query(name, type)` | The whole decoded response as a [@portable/dns-packet](../dns-packet/README.md) `DecodedPacket`, with TTLs, the authority section, and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
 
 Each method takes `{ signal }` as a last argument. When the signal aborts, the method rejects with `signal.reason`, as `fetch` does.
 

@@ -127,11 +127,11 @@ Every package follows the same conventions, so once you've used one, you know ho
 - Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers, and nested streams underneath, and the call rejects with `signal.reason`, as `fetch` does.
 - An object that stays open, such as an SMTP client, a queue, or a WebSocket, has a `close()` method, a `signal` option that closes it, or both. It works with `await using` where the runtime has `Symbol.asyncDispose`.
 - Options that take a time, such as `now`, accept a `Date`, or a `Temporal.Instant`. Times in results are `Date` objects.
-- Errors extend the classes in @portable/errors. `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
+- Errors extend the classes in [@portable/errors](packages/errors). `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
 
 ### Runtimes
 
-The tests run in Chromium, Firefox, WebKit, Node 24, Node 26, Bun, and Deno. A check of every package also runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124, and Safari 17.4 or later. Ed25519 signatures, in @portable/web-crypto, @portable/dkim, @portable/arc, and @portable/mail-auth, need Chrome 137 and Firefox 129, and X25519 keys in @portable/web-crypto need Chrome 133 and Firefox 130. @portable/smtp and @portable/sockets need a TCP socket API, so they run in Workers, Node, Bun, and Deno but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
+The tests run in Chromium, Firefox, WebKit, Node 24, Node 26, Bun, and Deno. A check of every package also runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124, and Safari 17.4 or later. Ed25519 signatures, in [@portable/web-crypto](packages/web-crypto), [@portable/dkim](packages/dkim), [@portable/arc](packages/arc), and [@portable/mail-auth](packages/mail-auth), need Chrome 137 and Firefox 129, and X25519 keys in @portable/web-crypto need Chrome 133 and Firefox 130. [@portable/smtp](packages/smtp) and [@portable/sockets](packages/sockets) need a TCP socket API, so they run in Workers, Node, Bun, and Deno but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
 
 ### License
 

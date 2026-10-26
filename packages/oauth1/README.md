@@ -52,7 +52,7 @@ The signature covers what the server will see, because it is computed from the `
 
 ### RSA-SHA1
 
-`privateKey` is a `CryptoKey` for `RSASSA-PKCS1-v1_5` with SHA-1, or a PEM string. Both `-----BEGIN PRIVATE KEY-----` (PKCS #8) and `-----BEGIN RSA PRIVATE KEY-----` (PKCS #1, as OpenSSL writes it) are accepted. A PEM string is imported on every call, so import a `CryptoKey` once with `WebCrypto.importPem` from @portable/web-crypto when you sign often:
+`privateKey` is a `CryptoKey` for `RSASSA-PKCS1-v1_5` with SHA-1, or a PEM string. Both `-----BEGIN PRIVATE KEY-----` (PKCS #8) and `-----BEGIN RSA PRIVATE KEY-----` (PKCS #1, as OpenSSL writes it) are accepted. A PEM string is imported on every call, so import a `CryptoKey` once with `WebCrypto.importPem` from [@portable/web-crypto](../web-crypto/README.md) when you sign often:
 
 ```ts
 const privateKey = await WebCrypto.importPem({ name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-1' }, pem);
@@ -83,8 +83,8 @@ await OAuth1.sign(request, { consumer, token, hmac });
 | `OAuth1.SignatureMethod` | `'HMAC-SHA1' \| 'HMAC-SHA256' \| 'RSA-SHA1' \| 'PLAINTEXT'`. |
 | `OAuth1.Credentials` | The `consumer` and `signatureMethod` options. |
 | `OAuth1.Token` | `{ key, secret? }`, the `token` option. |
-| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from @portable/web-crypto. `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
-| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from @portable/web-crypto. `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Hmac` | The `hmac` option: `(algorithm, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](../web-crypto/README.md). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
+| `OAuth1.Digest` | The `digest` option: `(algorithm, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](../web-crypto/README.md). `OAuth1` passes only `'SHA-1'` and `'SHA-256'`. |
 
 ## Why use this over oauth-1.0a and node-oauth
 
