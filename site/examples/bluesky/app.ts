@@ -301,7 +301,7 @@ function frame(now: number) {
           : undefined;
     ctx.font = FONT;
     ctx.fillStyle = tag ? ACCENT : DIM;
-    ctx.fillText(tag ?? `${Math.round(column.recent.length / 5)} a second`, x + 12, 32);
+    ctx.fillText(tag ?? `${Math.round(column.recent.length / 5)}/sec`, x + 12, 32);
     ctx.font = FONT;
   }
   if (hoveredItem && mouse) {
@@ -409,7 +409,7 @@ function showStatus() {
     rate.textContent = String(Math.round(recent.length / 5));
     const seen = document.createElement('b');
     seen.textContent = total.toLocaleString();
-    statusEl.replaceChildren(rate, ' posts a second, ', seen, ' since you arrived.');
+    statusEl.replaceChildren(rate, ' posts/sec, ', seen, ' seen since you arrived');
   } else if (state === 'connecting') {
     statusEl.textContent = total
       ? 'Reconnecting from the last post seen…'
