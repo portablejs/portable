@@ -22,9 +22,6 @@
         --line: #232a36;
         --text: #e6e9ef;
         --dim: #8a93a6;
-        --live: #22c55e;
-        --warn: #f59e0b;
-        --off: #ef4444;
         --accent: #60a5fa;
       }
       * {
@@ -55,15 +52,17 @@
       header {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
-        gap: 10px 16px;
+        align-items: baseline;
+        gap: 4px 20px;
         padding: 12px 16px;
         border-bottom: 1px solid var(--line);
       }
       h1 {
         display: flex;
         align-items: center;
-        font-size: 16px;
+        gap: 0.4em;
+        font-size: 15px;
+        font-weight: 600;
         margin: 0;
       }
       .brand {
@@ -76,45 +75,24 @@
       .brand img {
         height: 1cap;
       }
-      h1 .divider {
-        width: 1px;
-        height: 1.1em;
-        margin: 0 14px;
-        background: var(--line);
-      }
       h1 .page {
-        font-weight: 500;
+        font-weight: 400;
         color: var(--dim);
       }
-      .pill {
-        font-size: 12px;
-        padding: 1px 9px;
-        border-radius: 999px;
-        border: 1px solid currentColor;
-      }
-      .live {
-        color: var(--live);
-      }
-      .wait {
-        color: var(--warn);
-      }
-      .off {
-        color: var(--off);
-      }
-      .stat {
+      #status {
+        margin: 0;
         color: var(--dim);
         font-variant-numeric: tabular-nums;
       }
-      .stat b {
+      #status b {
+        font-weight: 500;
         color: var(--text);
-        font-size: 15px;
       }
       .how {
         display: none;
         margin-left: auto;
         color: var(--dim);
         font-size: 13px;
-        text-decoration: none;
       }
       main {
         position: relative;
@@ -247,6 +225,11 @@
         }
         .how {
           display: inline;
+          order: 1;
+        }
+        #status {
+          order: 2;
+          flex-basis: 100%;
         }
       }
     </style>
@@ -257,12 +240,10 @@
         <header>
           <h1>
             <a class="brand" href="/"><img src="/logo-dark.svg" alt="" />Portable</a
-            ><span class="divider"></span><span class="page">Bluesky stream</span>
+            ><span class="page">/ Bluesky stream</span>
           </h1>
-          <span id="status" class="pill wait">connecting</span>
-          <span class="stat"><b id="rate">0</b> posts/s</span
-          ><span class="stat"><b id="total">0</b> seen</span>
-          <a class="how" href="#source">How it works ↓</a>
+          <p id="status" aria-live="polite">Connecting to Bluesky…</p>
+          <a class="how" href="#source">How it works</a>
         </header>
         <main>
           <canvas id="rain"></canvas>
