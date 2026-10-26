@@ -6,6 +6,8 @@ if command -v flock >/dev/null; then
   exec 9>"$(git rev-parse --git-common-dir)/pre-push.lock"
   flock 9
 fi
+pnpm vp check
+pnpm check:prose
 pnpm check:types
 if git rev-parse --verify --quiet origin/main >/dev/null; then
   pnpm test:changed

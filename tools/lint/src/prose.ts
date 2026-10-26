@@ -75,3 +75,14 @@ export function findMissingSerialComma(line: string): string | undefined {
   }
   return undefined;
 }
+
+// Matches an em dash, a word from the AI vocabulary list, or a figurative word from the Writing
+// section of AGENTS.md. `findRuledOutWord` removes code spans and double-quoted text before
+// matching, so a rule can quote these words.
+const ruledOut =
+  /—|\b(?:delve[sd]?|crucial|leverage[sd]?|lands|landed|absorbs?|rides along|stands on|seams?)\b/iu;
+
+/** Returns the first ruled-out word in `line`, or `undefined` if it has none. */
+export function findRuledOutWord(line: string): string | undefined {
+  return ruledOut.exec(line.replaceAll(/\x60[^\x60]*\x60/g, '').replaceAll(/"[^"]*"/g, ''))?.[0];
+}
