@@ -10,7 +10,7 @@ import { type Message, splitMessage } from './internal/message.js';
 import { assertResolver, check, fetchKey, type KeyRecord, prepare } from './internal/signature.js';
 
 /**
- * The DNS lookup DKIM needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
+ * The DNS lookup DKIM needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or any
  * object with `resolveTxt`. `verify` treats a rejection with `code` `ENOTFOUND`, `ENODATA` or
  * `EBADNAME` as no key, and any other rejection as a temporary DNS error.
  */

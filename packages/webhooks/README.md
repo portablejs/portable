@@ -126,7 +126,7 @@ This package won't add schemes beyond these four. The built-in ones in [`src/sch
 
 `verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package needs no dependency outside `@portable/*` for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
-On Node, `verify` is about 3 times faster with `@noble/hashes` than with WebCrypto's HMAC. To verify many webhooks on Node, install `@noble/hashes` and pass it as `hmac`:
+On Node, `verify` is about 3 times faster with @noble/hashes than with WebCrypto's HMAC. To verify many webhooks on Node, install @noble/hashes and pass it as `hmac`:
 
 ```ts
 import { hmac } from '@noble/hashes/hmac.js';
@@ -145,21 +145,21 @@ const { body } = await Webhooks.verify(request, {
 | Type | Description |
 | --- | --- |
 | `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes. If the scheme has no `key`, the string is encoded as UTF-8. A `Uint8Array` is used as the raw key. |
-| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from `@portable/web-crypto`. See [Crypto](#crypto). |
+| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from @portable/web-crypto. See [Crypto](#crypto). |
 | `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
 
 ## Why use this over the provider libraries
 
-One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object. It computes the HMAC with `crypto.subtle` and has no dependencies outside `@portable/*`, so you don't install the `stripe`, `svix`, or `@slack/bolt` SDK for one function, and it runs in any JavaScript runtime.
+One package verifies all four schemes, and any other HMAC-SHA256 sender through a scheme object. It computes the HMAC with `crypto.subtle` and has no dependencies outside `@portable/*`, so you don't install the stripe, svix, or @slack/bolt SDK for one function, and it runs in any JavaScript runtime.
 
 - The HMAC covers the body bytes as received. Stripe and standardwebhooks decode the body as UTF-8 and encode it again, so a body with a byte order mark or invalid UTF-8 fails verification.
 - The timestamp tolerance applies in both directions, and `tolerance: 0` allows no skew. Stripe and Slack accept a timestamp any distance in the future, and Stripe's `tolerance: 0` turns the check off.
-- A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of `@octokit/webhooks-methods` accepts a bare signature and skips characters that aren't hex.
+- A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of @octokit/webhooks-methods accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
 - Stripe's `constructEvent` takes `tolerance` in seconds, and `verify` takes it in milliseconds, so Stripe's `300` becomes `tolerance: 300_000`. Stripe's `tolerance: 0` turns the check off, and here `0` requires the exact second and `Infinity` turns the check off.
 - Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date`, or a `Temporal.Instant`.
 - A timestamp must be an integer number of seconds. standardwebhooks and Stripe read `123abc` as `123` with `parseInt`.
-- `@octokit/webhooks-methods`'s `verify` returns `false` for a bad signature. `Webhooks.verify` throws instead.
+- @octokit/webhooks-methods's `verify` returns `false` for a bad signature. `Webhooks.verify` throws instead.
 - Stripe and standardwebhooks parse the JSON body for you. `verify` returns the text, because Slack and GitHub can send form-encoded bodies.
 - `verify` doesn't reject Stripe's thin events (`v2.core.event`), because it doesn't look inside the body.
 
@@ -208,4 +208,4 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-The second column passes `@noble/hashes` as `hmac`, as the Crypto section shows. WebCrypto HMAC is fast in browsers and Workers, so you can keep the default there.
+The second column passes @noble/hashes as `hmac`, as the Crypto section shows. WebCrypto HMAC is fast in browsers and Workers, so you can keep the default there.

@@ -5,7 +5,7 @@ import {
   WebSocketServer,
 } from 'ws';
 
-/** A `ws` server on a free local port. */
+/** A ws server on a free local port. */
 export async function listen(
   onConnection: (socket: ServerSocket, request: { url?: string | undefined }) => void = echo,
   options: ServerOptions = {},

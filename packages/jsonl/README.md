@@ -49,7 +49,7 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
 - A whitespace-only line is skipped, where ndjson reports it as invalid.
 - stream-json's `jsonl/Parser` emits `{ key, value }` objects, and `DecoderStream` emits each value on its own.
-- stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse` yourself.
+- stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from @portable/lines and call `JSON.parse` yourself.
 
 <!-- bench:start -->
 <table>
@@ -73,7 +73,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/jsonl | – | 1.2 kB | 3 | none | included |
-| ndjson | 2.0.0 | 13 kB | 9 | `buffer`, `events`, `os`, `string_decoder`, `util` | `@types/ndjson` |
+| ndjson | 2.0.0 | 13 kB | 9 | `buffer`, `events`, `os`, `string_decoder`, `util` | @types/ndjson |
 | stream-json | 3.7.0 | 3.5 kB | 1 | `stream`, `string_decoder` | included |
 | `JSON.parse` or `JSON.stringify` | – | built in | – | none | – |
 

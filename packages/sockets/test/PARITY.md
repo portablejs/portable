@@ -8,7 +8,7 @@ Test files:
 - `node.fuzz.conformance.test.ts` echoes random bytes, split into random writes in each byte form, over TCP and TLS, with and without `allowHalfOpen`.
 - `node.oracle.test.ts` sends the same writes through @arrowood.dev/socket and this package and compares the echoed bytes, and checks the upstream issues below.
 - `node.bench.ts` compares a 16 MB echo and opening a connection with @arrowood.dev/socket and `node:net`.
-- The `sockets` check in `tools/workers/src/checks.ts` checks that `connect` from `cloudflare:sockets` matches `Sockets.Connect` and echoes bytes through it in workerd.
+- The sockets check in `tools/workers/src/checks.ts` checks that `connect` from `cloudflare:sockets` matches `Sockets.Connect` and echoes bytes through it in workerd.
 
 Test names below are `file > describe > test`, with the file's suffix left out.
 

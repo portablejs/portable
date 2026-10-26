@@ -3,7 +3,7 @@
 Upstream suites:
 
 - [ndjson 2.0.0 `test/index.js`](https://github.com/ndjson/ndjson.js/blob/master/test/index.js). `data.ndjson` is its `test/data.txt` (BSD-3-Clause).
-- [stream-json 3.7.0 `tests/`](https://github.com/uhop/stream-json/tree/master/tests): the JSON Lines tests only. The rest of stream-json is covered by `@portable/json-stream`.
+- [stream-json 3.7.0 `tests/`](https://github.com/uhop/stream-json/tree/master/tests): the JSON Lines tests only. The rest of stream-json is covered by @portable/json-stream.
 
 Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 
@@ -32,7 +32,7 @@ Test names below are the `describe > test` names in `jsonl.conformance.ts`.
 | jsonl stringer: custom separator | skipped | NDJSON lines end in `\n`. |
 | jsonl parser: invalid JSON at end, in middle | `stream-json jsonl > fails on an invalid last line`, `fails on an invalid line in the middle, naming the line` | |
 | jsonl parser: skip errors | `stream-json jsonl > skips invalid lines in the middle and at the end` | |
-| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | `invalid` takes only `'error'` and `'skip'`. To recover lines yourself, split with `Lines.DecoderStream` from `@portable/lines` and call `JSON.parse`. |
+| jsonl parser: replace errors with null, transform errors, forward raw value on error | skipped | `invalid` takes only `'error'` and `'skip'`. To recover lines yourself, split with `Lines.DecoderStream` from @portable/lines and call `JSON.parse`. |
 
 ## Known upstream issues
 

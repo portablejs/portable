@@ -257,7 +257,7 @@ const importExtension = {
  * Reports an error class without `static override readonly kind`. `BaseError` copies `kind` to
  * `name`, and `Errors.is` compares it, so a class without its own kind matches its parent's. A
  * class that extends another package's error must set a kind of the form `'Package.ClassName'`.
- * The classes in `@portable/errors`, which extend `Error` or `BaseError`, keep their short kinds.
+ * The classes in the errors package, which extend `Error` or `BaseError`, keep their short kinds.
  */
 const errorKind = {
   meta: {

@@ -95,7 +95,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/quoted-printable | – | 2.3 kB | 3 | none | included |
 | libqp | 3.0.1 | 1.8 kB | 0 | `Buffer`, `stream` | included |
-| quoted-printable | 1.0.1 | 1.1 kB | 1 | none | `@types/quoted-printable` |
+| quoted-printable | 1.0.1 | 1.1 kB | 1 | none | @types/quoted-printable |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

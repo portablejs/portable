@@ -1,7 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vite-plus/test';
-import { findMadeUpActor, findMissingSerialComma, findRuledOutWord } from './prose.js';
+import {
+  findCodePackageName,
+  findMadeUpActor,
+  findMissingSerialComma,
+  findRuledOutWord,
+} from './prose.js';
 
 // Rejects prose built around a made-up actor (see `findMadeUpActor`) in Markdown and source. The
 // rows of the table in AGENTS.md contain the pattern without quotes, so the test skips them.
@@ -13,6 +18,9 @@ import { findMadeUpActor, findMissingSerialComma, findRuledOutWord } from './pro
 //
 // The test also rejects an em dash, AI vocabulary, or a figurative word (see `findRuledOutWord`) in
 // Markdown, comments, and test names. It skips AGENTS.md, which lists the words.
+//
+// Last, it rejects a package name in a code span (see `findCodePackageName`) in Markdown, comments,
+// and test names, outside the first column of the tables in AGENTS.md.
 
 const root = join(import.meta.dirname, '../../..');
 
@@ -122,6 +130,34 @@ test('no prose uses an em dash, AI vocabulary, or a figurative verb', () => {
     }
   }
   expect(found).toEqual([]);
+});
+
+test('no prose puts a package name in a code span', () => {
+  const found: string[] = [];
+  for (const file of files) {
+    for (const { line, text } of proseLines(file)) {
+      const name = findCodePackageName(text);
+      if (name) {
+        found.push(`${relative(root, file)}:${line}: ${name}`);
+      }
+    }
+  }
+  expect(found).toEqual([]);
+});
+
+test('findCodePackageName finds package names and skips subpaths', () => {
+  expect(findCodePackageName('Errors extend the classes in `@portable/errors`.')).toBe(
+    '`@portable/errors`',
+  );
+  expect(findCodePackageName('It takes `@noble/hashes` as a peer.')).toBe('`@noble/hashes`');
+  expect(findCodePackageName("Pass the `ws` package's class.")).toBe('`ws` package');
+  expect(findCodePackageName('- [`lines`](/packages/lines) splits bytes.')).toBe(
+    '[`lines`](/packages/lines',
+  );
+  expect(findCodePackageName('Import `@portable/streams/node` in Node.')).toBeUndefined();
+  expect(findCodePackageName('The [`Spf.check`](../spf/README.md) result.')).toBeUndefined();
+  expect(findCodePackageName('Never write "`@portable/errors`".')).toBeUndefined();
+  expect(findCodePackageName('Errors extend the classes in @portable/errors.')).toBeUndefined();
 });
 
 test('findRuledOutWord skips code spans and quotations', () => {

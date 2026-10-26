@@ -70,7 +70,7 @@ Functions throw errors instead of returning them.
 
 Each error's `name` starts with the package's namespace, such as `Lines.MaxLengthError`.
 
-Every error class extends a class from [`errors`](/packages/errors). `Errors.is(error, 'MaxBytes')` matches any package's `MaxBytesError`, even when two copies of the package are installed.
+Every error class extends a class from [errors](/packages/errors). `Errors.is(error, 'MaxBytes')` matches any package's `MaxBytesError`, even when two copies of the package are installed.
 
 ## Results
 

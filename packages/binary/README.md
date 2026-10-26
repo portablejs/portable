@@ -134,12 +134,12 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 
 ## Why use this over smart-buffer, varint, and it-length-prefixed
 
-smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` polyfill to run it. varint and it-length-prefixed work everywhere, but it-length-prefixed reads iterables of `Uint8ArrayList` instead of streams and installs six other packages. `@portable/binary` uses only `Uint8Array`, `DataView`, `TextEncoder`, and Web Streams, and covers all three jobs.
+smart-buffer wraps a Node `Buffer`, so a browser or a Worker needs a `Buffer` polyfill to run it. varint and it-length-prefixed work everywhere, but it-length-prefixed reads iterables of `Uint8ArrayList` instead of streams and installs six other packages. @portable/binary uses only `Uint8Array`, `DataView`, `TextEncoder`, and Web Streams, and covers all three jobs.
 
-- In Node, it wrote mixed records about 5 times as fast as smart-buffer and read them about 10 times as fast. It encoded and decoded unsigned varints slightly faster than `@bufbuild/protobuf`, and 18 to 38 times as fast as varint.
+- In Node, it wrote mixed records about 5 times as fast as smart-buffer and read them about 10 times as fast. It encoded and decoded unsigned varints slightly faster than @bufbuild/protobuf, and 18 to 38 times as fast as varint.
 - `FrameDecoderStream` split frames at about half the speed of it-length-prefixed, because each frame passes through a `TransformStream` queue, which costs more than an async generator's `yield`.
 - varint's `decode` throws the same `RangeError` for a truncated varint and for one longer than 8 bytes, and it returns rounded values from 2<sup>53</sup> to 2<sup>56</sup>: the bytes for 2<sup>53</sup> + 1 decode to 2<sup>53</sup>. `reader.varint()` throws `Binary.TruncatedError` for a truncated varint and `Binary.InvalidInputError` for one past the safe integer range, so it never returns a rounded value. Use `bigVarint` for 64-bit values.
-- `bigVarint` throws `Binary.InvalidInputError` for a 10-byte varint with bits above 64, where `@bufbuild/protobuf` keeps the low 64 bits.
+- `bigVarint` throws `Binary.InvalidInputError` for a 10-byte varint with bits above 64, where @bufbuild/protobuf keeps the low 64 bits.
 - smart-buffer's write methods take an optional offset that inserts at that position and shifts later bytes along. Here a write at an earlier `offset` overwrites the bytes there, so you can go back and fill in a length.
 - `string` keeps a leading byte order mark. `TextDecoder` and `Buffer.toString` remove it by default.
 - A Minecraft VarInt and a protobuf `int32` encode negative numbers differently. Read a Minecraft VarInt with `reader.varint() | 0` and write it with `writer.varint(value >>> 0)`. A negative protobuf `int32` is 10 bytes: write it with `writer.bigVarint(BigInt.asUintN(64, BigInt(value)))`.
@@ -179,7 +179,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.1, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/binary | – | 4.7 kB | 3 | none | included |
 | smart-buffer | 4.2.0 | 3.1 kB | 0 | `buffer` | included |
-| varint | 6.0.0 | 0.8 kB | 0 | none | `@types/varint` |
+| varint | 6.0.0 | 0.8 kB | 0 | none | @types/varint |
 | @bufbuild/protobuf | 2.16.0 | 3.4 kB | 0 | none | included |
 | it-length-prefixed | 11.0.1 | 3.0 kB | 6 | none | included |
 | `DataView` and `TextDecoder` | – | built in | – | none | – |

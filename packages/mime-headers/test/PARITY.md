@@ -100,7 +100,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | #_buildHeaderValue > should quote filename with special characters | `formatValue() > quotes a file name with special characters` | |
 | #_buildHeaderValue > should split long pure-ascii param via RFC 2231 continuation | `formatValue() > splits a long ASCII value into sections` | |
 | #_buildHeaderValue > should handle a param value that is not a string | skipped | Values are strings by type. |
-| #encodeFlowed > should wrap flowed text | skipped | format=flowed (RFC 3676) is body encoding, not a header value. It belongs in the `mail` composer. |
+| #encodeFlowed > should wrap flowed text | skipped | format=flowed (RFC 3676) is body encoding, not a header value. It belongs in the mail composer. |
 | #decodeFlowed > should remove soft line breaks | skipped | As above. |
 | #decodeFlowed > should remove soft line breaks and spacing | skipped | As above. |
 | #decodeFlowed > should remove SP CRLF before space | skipped | As above. |
@@ -108,7 +108,7 @@ Name mapping: libmime's `encodeWord(text, 'Q', n)` is `encodeWord(text, { wordLe
 | #decodeFlowed > should preserve signature delimiter as a hard break | skipped | As above. |
 | #decodeFlowed > should only treat a whole "-- " line as the signature delimiter | skipped | As above. |
 | #decodeFlowed > should decode long soft wrapped paragraphs in linear time | skipped | As above. |
-| #charset > #encode > should encode UTF-8 to Buffer | skipped | Charsets are `TextDecoder` and `@portable/charset`. |
+| #charset > #encode > should encode UTF-8 to Buffer | skipped | Charsets are `TextDecoder` and @portable/charset. |
 | #charset > #decode > should decode UTF-8 to Buffer | skipped | As above. |
 | #charset > #decode > should decode non UTF-8 Buffer | `decodeWords() > decodes words in another charset and keeps the text between them` | Through an encoded word. |
 | #charset > #decode > should decode EUC-JP | `decodeWords() > decodes a word in a charset whose name iconv-lite and TextDecoder spell differently` | |

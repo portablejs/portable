@@ -172,7 +172,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 | behavior: ECONNECTION before the greeting (2 tests) | `connect > connecting > reports a server that drops the connection before the greeting` | |
 | behavior: callback error thrown by the caller, logging (3 tests) | Not applicable | The API uses promises and has no logger. |
 | behavior: DSN, REQUIRETLS | `send > extensions > *` | |
-| behavior: envelope from the message addresses | Not applicable | `@portable/mail` builds the envelope. |
+| behavior: envelope from the message addresses | Not applicable | @portable/mail builds the envelope. |
 | behavior: accepted and rejected of a partial envelope | `send.oracle > reports the same recipients as nodemailer > a partly refused envelope` | |
 | behavior: authentication (8 tests) | `auth > *` | No OAuth2 endpoint, per-message auth, or custom handlers. |
 | socket-drop: one report after a socket timeout, server drops while in flight | `send > DATA > reports a server that drops the connection while the message is in flight`, `smtp-server > plaintext > reports a server that closes the connection during DATA` | |
@@ -198,7 +198,7 @@ Test names below are `file > describe > test`, with the file's suffix left out.
 
 `send.bench.ts` runs with the Node adapter on localhost, against a server that answers at once. Upstream's `SMTPConnection` runs on the same server. The machine had a load average of about 50 during the runs, so the error is ±10–35%.
 
-| Case | `@portable/smtp` | nodemailer |
+| Case | @portable/smtp | nodemailer |
 | --- | --- | --- |
 | 10 small messages over one connection | 930–1,120 ops/s | 790–810 ops/s |
 | One 1 MB message streamed in 64 KB chunks | 10.9–11.8 ops/s | 7.9–9.6 ops/s |

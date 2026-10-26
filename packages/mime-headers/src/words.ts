@@ -20,7 +20,7 @@ export function encodeUtf8Scratch(text: string): Uint8Array {
  * A charset to write encoded words in, for mail that has to use one other than UTF-8. `encode`
  * is called once per encoded word, so the bytes from each call must decode on their own. For a
  * stateful charset such as ISO-2022-JP, each call's output has to return to the initial state
- * before it ends. Every charset from `@portable/charset` is a `CharsetEncoder`.
+ * before it ends. Every charset from the charset package is a `CharsetEncoder`.
  */
 export type CharsetEncoder = {
   /** The name written into each encoded word. */

@@ -136,7 +136,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/web-push | – | 5.6 kB | 5 | none | included |
-| web-push | 3.6.7 | 32 kB | 16 | `assert`, `buffer`, `crypto`, `http`, `https`, `net`, `stream`, `tls`, `url`, `util` | `@types/web-push` |
+| web-push | 3.6.7 | 32 kB | 16 | `assert`, `buffer`, `crypto`, `http`, `https`, `net`, `stream`, `tls`, `url`, `util` | @types/web-push |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

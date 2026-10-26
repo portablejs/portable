@@ -135,7 +135,7 @@ function typesOf(testDir: string, column: Column): string {
     return 'included';
   }
   const typesName = `@types/${name.replace(/^@/, '').replace('/', '__')}`;
-  return findPackage(testDir, typesName) ? `\`${typesName}\`` : 'none';
+  return findPackage(testDir, typesName) ? typesName : 'none';
 }
 
 function versionOf(testDir: string, column: Column): string {

@@ -36,7 +36,7 @@ for (const line of root.split('\n')) {
     groups.push({ title: text(h[1]), items: [] });
   }
   const m = line.match(
-    /<a href="packages\/([\w-]+)"><code>@portable\/[\w-]+<\/code><\/a><\/td><td>(.+)<\/td><\/tr>$/,
+    /<a href="packages\/([\w-]+)">@portable\/[\w-]+<\/a><\/td><td>(.+)<\/td><\/tr>$/,
   );
   if (m && groups.length && !seen.has(m[1])) {
     seen.add(m[1]);

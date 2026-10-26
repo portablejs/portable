@@ -98,9 +98,9 @@ const queue = Queue.create({ interval: 1000, intervalCap: 5 });
 const throttled = (id: string) => queue.add(() => fetchUser(id));
 ```
 
-## With `@portable/timers`
+## With @portable/timers
 
-Retries, timeouts, and delays come from `@portable/timers`. To retry inside one slot, wrap the work in `Timers.retry` inside the task:
+Retries, timeouts, and delays come from @portable/timers. To retry inside one slot, wrap the work in `Timers.retry` inside the task:
 
 ```ts
 import * as Queue from '@portable/queue';
@@ -134,7 +134,7 @@ To time out a single task, call `queue.add(task, { signal: AbortSignal.timeout(5
 
 ## Why use this over p-limit, p-queue, p-map, and p-throttle
 
-They run in browsers too, but they are four packages with four APIs, and they have the problems listed below. `@portable/queue` has one task shape and one cancellation model across all of them, and no dependencies outside `@portable/*`.
+They run in browsers too, but they are four packages with four APIs, and they have the problems listed below. @portable/queue has one task shape and one cancellation model across all of them, and no dependencies outside `@portable/*`.
 
 - **Per-task overhead is lower.** Running 1,000 tasks with `concurrency: 10` in Node 24 costs about 0.5 µs per task with `limit` or `create`, 0.8 µs with p-limit and 2 µs with p-queue. With priorities and a shared `signal`, it is about 0.6 µs against p-queue's 3.6 µs, because the queue adds one listener to a shared signal, not one per task. `map` costs about 0.1 µs per item against 0.7 µs for p-map and 0.8 µs for p-limit's `map`. `Promise.all` with no limit costs 0.07 µs.
 - **An aborted running task keeps its slot.** p-queue frees the slot when a running task's signal aborts, while the task may still be running, so more than `concurrency` tasks can run at once.
