@@ -4,9 +4,13 @@ description: Packages from Portable and other projects that run unchanged in bro
 
 # Web platform
 
-The web platform is the set of APIs that browsers, Cloudflare Workers, Node 24+, Bun, and Deno all have, such as `fetch`, Web Streams, and `crypto.subtle`. Code built only on those APIs runs in all of them.
+All modern JavaScript runtimes include a rich set of web APIs. We no longer need to rely on packages that only run in Node or only in browsers, polyfill between them, or are compiled to Wasm. We can finally write code once that runs anywhere.
 
-The tables below list a package for each task that the platform doesn't do on its own. Some are Portable packages. The others come from other projects, and we didn't build our own because those packages already run everywhere and do what a Portable package would. Before we list one, we check that its main entry point runs in Chromium; in workerd, Cloudflare's Workers runtime, with the `nodejs_compat` flag off; and in Node, Bun, and Deno. If the package also has a subpath that imports `node:*` modules, the notes below its table say so.
+Many packages are already written this way and solve common use cases. Portable packages are built to fill in the gaps. The tables below list a package for each task, from Portable or from another project.
+
+Before we list a package from another project, we check that its main entry point runs in Chromium; in workerd, Cloudflare's Workers runtime, with the `nodejs_compat` flag off; and in Node, Bun, and Deno. If the package also has a subpath that imports `node:*` modules, the notes below its table say so.
+
+If you have a use case that isn't covered here or could use a better package, please [drop a note](https://github.com/portablejs/portable/issues/new).
 
 ## Streams and bytes
 
