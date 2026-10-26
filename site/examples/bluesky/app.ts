@@ -205,6 +205,8 @@ function draw(column: Column, post: Post, replayed: boolean) {
   });
 }
 
+let shownTotal = -1;
+let shownRate = -1;
 let previous = performance.now();
 let frames = 0;
 let fps = 0;
@@ -301,8 +303,20 @@ function frame(now: number) {
           : undefined;
     ctx.font = FONT;
     ctx.fillStyle = tag ? ACCENT : DIM;
-    ctx.fillText(tag ?? `${Math.round(column.recent.length / 5)}/sec`, x + 12, 32);
+    ctx.fillText(tag ?? `${Math.round(column.recent.length / 5)} posts/sec`, x + 12, 32);
     ctx.font = FONT;
+  }
+  while (recent.length && recent[0]! < now - 5000) {
+    recent.shift();
+  }
+  const rate = Math.round(recent.length / 5);
+  if (rate !== shownRate) {
+    shownRate = rate;
+    rateEl.textContent = String(rate);
+  }
+  if (total !== shownTotal) {
+    shownTotal = total;
+    seenEl.textContent = total.toLocaleString();
   }
   if (hoveredItem && mouse) {
     if (tipItem !== hoveredItem) {
@@ -369,10 +383,6 @@ resize();
 requestAnimationFrame(frame);
 setInterval(() => {
   layout();
-  while (recent.length && recent[0]! < performance.now() - 5000) {
-    recent.shift();
-  }
-  showStatus();
 }, 1000);
 
 let cursor: number | undefined;
@@ -403,13 +413,12 @@ const cCatch = document.getElementById('c-catch')!;
 
 let state = 'connecting';
 
+const rateEl = document.createElement('b');
+const seenEl = document.createElement('b');
+
 function showStatus() {
   if (state === 'live') {
-    const rate = document.createElement('b');
-    rate.textContent = String(Math.round(recent.length / 5));
-    const seen = document.createElement('b');
-    seen.textContent = total.toLocaleString();
-    statusEl.replaceChildren(rate, ' posts/sec, ', seen, ' seen since you arrived');
+    statusEl.replaceChildren(rateEl, ' posts/sec, ', seenEl, ' seen since you arrived');
   } else if (state === 'connecting') {
     statusEl.textContent = total
       ? 'Reconnecting from the last post seen…'
