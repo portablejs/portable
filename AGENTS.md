@@ -161,6 +161,7 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | A forwarder, such as a mailing list, validates the chain that arrived and seals the message. (A made-up actor carries the advice.) | If you forward mail, as a mailing list does, verify the chain that arrived and seal the message. |
 | Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. (Two facts joined by ", and", with the second switching to the passive. "Options that take a point in time accept a `Date` or a `Temporal.Instant`, and results return a `Date`." has the same shape.) | Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. |
 | Stripe's `stripe` package has separate builds … Errors extend the classes in `@portable/errors`. | Stripe's stripe package has separate builds … Errors extend the classes in @portable/errors. |
+| Plenty of packages already work this way, so Portable only fills the gaps they leave. (The packages "leave" gaps and Portable "fills" them: figurative verbs that sound like a pitch and say nothing exact.) | Many existing packages already run in all five runtimes too. Portable adds a package only for a task that none of them handle. |
 
 ### Two voices
 
@@ -171,7 +172,7 @@ The pitch voice is for prose that explains why Portable exists: the intro of eac
 - Say what changed or what hurts before you say what Portable is.
 - Write "we" for the project and "you" for the reader. Contractions are fine.
 - Name the pain concretely: "packages that only run in Node or only in browsers", not "compatibility issues".
-- Keep Portable modest. Credit other packages when they already do the job, and say Portable fills the gaps.
+- Keep Portable modest. Credit other packages when they already handle a task. Portable adds a package only for a task that none of them handle.
 - Keep one idea per sentence, and keep paragraphs to two or three sentences.
 - A little warmth is fine ("We can finally write code once that runs anywhere", "please drop a note"). Hype isn't: no "blazing fast", "seamless", or "powerful".
 
