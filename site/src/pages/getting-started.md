@@ -38,7 +38,7 @@ export default {
 };
 ```
 
-All packages follow the same [package conventions](#package-conventions) for names, bytes, cancellation, and errors.
+For how packages handle bytes, cancellation, and errors, see [Conventions](#conventions).
 
 ### Use in a browser
 
@@ -56,36 +56,41 @@ The tests run in Chromium, Firefox, WebKit, Node, Bun, and Deno, and a check of 
 
 @portable/smtp and @portable/sockets need a TCP socket API, so they run in Cloudflare Workers, Node, Bun, and Deno but not in browsers.
 
-## Package conventions
+## Conventions
 
-Every package follows the same conventions, so once you've used one, you know how the others work:
+Every package follows these conventions.
 
-- Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and call `Csv.decode` or `new Csv.DecoderStream()`.
-- Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. Functions that take text also take its bytes, and they return text as a `string`.
-- A streaming transform is a `TransformStream` that you pass to `pipeThrough`, as with `TextDecoderStream`. A `DecoderStream` reads bytes or text into values, and an `EncoderStream` writes values as bytes.
-- Durations are in milliseconds unless the protocol sets the unit. Options that take a point in time accept a `Date` or a `Temporal.Instant`, and results return a `Date`.
-- Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers, and nested streams underneath, and the call rejects with `signal.reason`, as `fetch` does. For a timeout, pass `AbortSignal.timeout(ms)`.
-- An object that stays open, such as an SMTP client, a queue, or a WebSocket, has a `close()` method, a `signal` option that closes it, or both. It works with `await using` where the runtime has `Symbol.asyncDispose`.
+Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and then call `Csv.decode` or `new Csv.DecoderStream()`.
 
-Each verb has one meaning in every package:
+Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. An `ArrayBuffer` or another typed array throws a `TypeError`, so wrap it in `new Uint8Array(...)` first. Functions that take text also accept its bytes.
 
-| Verb | Meaning | Example |
+A streaming transform is a `TransformStream` that you pass to `pipeThrough`. For example, `Lines.DecoderStream` splits bytes into lines. `Jsonl.EncoderStream` writes values as `Uint8Array` chunks, so you can pass its output as a `Response` body.
+
+Durations are in milliseconds unless the protocol sets the unit. Web Push, for example, sets `ttl` in seconds. When an option takes a point in time, such as `now`, you can pass a `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime`. Functions return points in time as `Date` because Safari doesn't have Temporal yet.
+
+Every async function and every stream takes a `signal` option. If the signal aborts, the function stops its `fetch` calls, timers, and nested streams, then rejects with `signal.reason`, as `fetch` does. There is no `timeout` option for a whole call; pass `AbortSignal.timeout(ms)` as the `signal` instead.
+
+Some objects keep a socket, timer, or task running after the call that creates them returns. An SMTP client, a queue, and a WebSocket all work this way. To shut one down, call its `close()` method or abort the `signal` you created it with. If the runtime has `Symbol.asyncDispose`, you can declare the object with `await using`, which closes it when the block exits.
+
+Function names use these verbs:
+
+| Verb | What it does | Example |
 | --- | --- | --- |
-| `encode`, `decode` | Convert between a value and its bytes or text. | `Base64.encode(bytes)` |
-| `parse` | Read a value out of bytes. There is no function for the other direction. | `ImageSize.parse(bytes)` |
-| `parse`, `format` | Read and write a text syntax that people also read, such as an address list. | `MimeHeaders.parseAddresses(text)` |
-| `…Stream` suffix | Do the same on a stream. | `ImageSize.parseStream(stream)` |
-| `…Sync` suffix | The sync version of an async function. | |
+| `encode`, `decode` | Converts a value to bytes or text, and back. | `Base64.encode(bytes)` |
+| `parse` | Reads a value out of bytes, with no function for the other direction. | `ImageSize.parse(bytes)` |
+| `parse`, `format` | Reads and writes a text syntax such as an address list. | `MimeHeaders.parseAddresses(text)` |
+| `…Stream` suffix | Reads its input from a stream, or returns its output as one. | `ImageSize.parseStream(stream)` |
+| `…Sync` suffix | Is the sync version of an async function. | |
 
-Functions throw errors instead of returning them:
+Functions throw these errors instead of returning them:
 
 | Error | Thrown when |
 | --- | --- |
-| `InvalidInputError` | The data that the function reads, decodes, encodes, or verifies is malformed. Catch this error for input from outside your program. |
+| `InvalidInputError` | The data that the function reads, decodes, encodes, or verifies is malformed. Catch it when the input comes from outside your program. |
 | `TruncatedError` | The input ended early. |
 | `UnsupportedError` | The input is valid, but the package doesn't handle it. |
 | `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. The error stores the limit. |
-| `ResponseError` | A server answered with a status or body that the package can't use. The error keeps the whole `Response`. |
-| `TypeError`, `RangeError` | An argument or option is missing, has the wrong type, or has a value that the function doesn't accept. These errors mean the calling code has a bug. |
+| `ResponseError` | The server returned a status or body that the package can't use. The error keeps the whole `Response`. |
+| `TypeError`, `RangeError` | An argument or option is missing, has the wrong type, or has a value that the function doesn't accept. Fix the call instead of catching these errors. |
 
-Each error's `name` starts with the package's namespace, such as `Lines.MaxLengthError`. `Errors.is(error, 'MaxBytes')` from [@portable/errors](/packages/errors) matches any package's `MaxBytesError`, even when two copies of the package are installed.
+Each error's `name` starts with the package namespace, such as `Lines.MaxLengthError`. If your app installs two copies of a package, `instanceof` fails for errors from the other copy. Use `Errors.is` from [@portable/errors](/packages/errors) instead: `Errors.is(error, 'MaxBytes')` matches the `MaxBytesError` of any package.

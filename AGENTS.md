@@ -112,6 +112,7 @@ Read the `technical-writing` and `unslop` skills (in `.agents/pstack/skills/`) b
 - Put a comma before the `and` or `or` that ends a list of three or more items: "`crypto.subtle`, `Blob`, and `fetch`", not "`crypto.subtle`, `Blob` and `fetch`". If an item has its own `and` or `or`, separate the items with semicolons or reword the sentence, so the reader can tell where each item ends. `tools/lint/src/prose.test.ts` checks lists in Markdown, comments, test names, and package descriptions, and the commit-msg hook checks commit messages. The check guesses at lists, so if it flags a sentence that isn't one, reword the sentence until it reads clearly.
 - Say what the code does with a value: "stores" or "references", not a vague "names".
 - Don't write rules as slogans or aphorisms ("a write lands only on the version it saw"). Name the mechanism.
+- Don't join two separate facts into one sentence with ", and", especially when the second clause switches subject or voice ("Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted"). Give each fact its own sentence, or connect them with the reason that relates them.
 - No "X. So Y. So Z." chains. Vary sentence length, and keep a cause and its effect in one sentence when they belong together.
 - No AI vocabulary (delve, crucial, leverage), no "not just X but Y", no forced groups of three, no em dashes, no filler or hedging, and no clipped fragments with arrows.
 - A commit message says why the change is made and what else was considered.
@@ -156,6 +157,7 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. (The "which" has no clear antecedent.) | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 | An option you leave out keeps its current value. (The option is made the actor.) | It changes only the options you pass. |
 | A forwarder, such as a mailing list, validates the chain that arrived and seals the message. (A made-up actor carries the advice.) | If you forward mail, as a mailing list does, verify the chain that arrived and seal the message. |
+| Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. (Two facts joined by ", and", with the second switching to the passive. "Options that take a point in time accept a `Date` or a `Temporal.Instant`, and results return a `Date`." has the same shape.) | Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. |
 
 ### Prose review
 
