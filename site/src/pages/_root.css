@@ -215,3 +215,8 @@ a > div[data-v-logo] img[data-v-logo-image] {
   height: 1cap;
   max-height: none;
 }
+
+/* Vocs makes links inline-block, which lets a line break between a link and the comma after it. */
+[data-v-content] a[data-v-link] {
+  display: inline;
+}
