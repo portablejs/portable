@@ -2,7 +2,7 @@
 
 Streams JSON in and out: values selected by JSONPath from one large document, and JSON text written from a tree of promises and streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify), and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use [@portable/jsonl](../jsonl/README.md).
+Replaces [JSONStream](https://www.npmjs.com/package/JSONStream), [stream-json](https://www.npmjs.com/package/stream-json), [json-stream-stringify](https://www.npmjs.com/package/json-stream-stringify), and [@worker-tools/json-stream](https://www.npmjs.com/package/@worker-tools/json-stream). For NDJSON, which ndjson and stream-json's `jsonl` modules handle, use [@portable/jsonl](https://portablejs.com/packages/jsonl).
 
 ```sh
 npm install @portable/json-stream

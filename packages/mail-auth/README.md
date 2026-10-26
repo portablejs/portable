@@ -41,7 +41,7 @@ const result = await MailAuth.authenticate(message, {
 const forwarded = result.headers + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC, and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from [@portable/streams](../streams/README.md) to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC, and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from [@portable/streams](https://portablejs.com/packages/streams) to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
 
 ## Options
 
@@ -55,8 +55,8 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 | `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
 | `now` | `new Date()` | The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
-| `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](../dkim/README.md#crypto). |
-| `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](../dmarc/README.md#options). |
+| `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
+| `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](https://portablejs.com/packages/dmarc#options). |
 | `signal` | none | Stops reading the message and every DNS lookup. The promise rejects with `signal.reason`. |
 
 ## Result
@@ -65,10 +65,10 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 
 | Field | Description |
 | --- | --- |
-| `spf` | The [`Spf.check`](../spf/README.md) result for the MAIL FROM address, or for the HELO name of a bounce. |
-| `dkim` | One [`Dkim.verify`](../dkim/README.md) result per DKIM-Signature, in header order. Empty for an unsigned message. |
-| `arc` | The [`Arc.verify`](../arc/README.md) result. |
-| `dmarc` | The [`Dmarc.check`](../dmarc/README.md) result for the From domain, with the SPF and DKIM results above. Missing when `dmarcSkipReason` is set. |
+| `spf` | The [`Spf.check`](https://portablejs.com/packages/spf) result for the MAIL FROM address, or for the HELO name of a bounce. |
+| `dkim` | One [`Dkim.verify`](https://portablejs.com/packages/dkim) result per DKIM-Signature, in header order. Empty for an unsigned message. |
+| `arc` | The [`Arc.verify`](https://portablejs.com/packages/arc) result. |
+| `dmarc` | The [`Dmarc.check`](https://portablejs.com/packages/dmarc) result for the From domain, with the SPF and DKIM results above. Missing when `dmarcSkipReason` is set. |
 | `dmarcSkipReason` | Why DMARC wasn't checked: `'no-author-domain'` (no From field, or no mailbox in it), `'multiple-author-domains'`, `'multiple-from-fields'`, or `'invalid-author-domain'` (a From field that isn't a valid address list). RFC 9989 section 5.3.1 says DMARC can't be applied to such a message, and section 11.5 suggests treating it as suspicious. |
 | `authResults` | The Authentication-Results value, without the field name. |
 | `headers` | The fields to put above the message, each ending in CRLF: the ARC set when the message was sealed, then Authentication-Results. |
@@ -102,13 +102,13 @@ Values that aren't a token or an address are quoted, the parentheses in each com
 | --- | --- |
 | `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC, and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
 | `MailAuth.Result` | What `authenticate` resolves to, as above. |
-| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from [@portable/dkim](../dkim/README.md). |
-| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](../dkim/README.md). |
+| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
+| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from [@portable/dkim](https://portablejs.com/packages/dkim). |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os`, and Buffers.
-- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC, and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in [@portable/dkim](../dkim/README.md).
+- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC, and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in [@portable/dkim](https://portablejs.com/packages/dkim).
 - It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a parser that splits the field on semicolons.
 - It authenticates and seals a short message faster than mailauth's strict mode in Node, and authenticates a 250 KB message with a DKIM signature and an ARC set about as fast, as the table below shows.
 - It has no dependencies outside `@portable/*`.

@@ -120,11 +120,11 @@ const acme: Webhooks.Scheme = {
 const { body } = await Webhooks.verify(request, { scheme: acme, secret: env.ACME_SECRET });
 ```
 
-This package won't add schemes beyond these four. The built-in ones in [`src/schemes.ts`](src/schemes.ts) are written the same way.
+This package won't add schemes beyond these four. The built-in ones in [`src/schemes.ts`](https://github.com/portablejs/portable/blob/main/packages/webhooks/src/schemes.ts) are written the same way.
 
 ## Crypto
 
-`verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](../web-crypto), which calls `crypto.subtle`, so the package needs no dependency outside `@portable/*` for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
+`verify` and `sign` compute HMAC-SHA256 with `WebCrypto.hmac` from [@portable/web-crypto](https://portablejs.com/packages/web-crypto), which calls `crypto.subtle`, so the package needs no dependency outside `@portable/*` for it. WebCrypto is async, but `verify` already has to await the request body. `WebCrypto.hmac` caches imported keys for up to 16 secrets, because `importKey` takes about two thirds of each HMAC on Node and half in Chromium, and the cache made a verification about 2.9× faster on Node.
 
 On Node, `verify` is about 3 times faster with @noble/hashes than with WebCrypto's HMAC. To verify many webhooks on Node, install @noble/hashes and pass it as `hmac`:
 
@@ -145,7 +145,7 @@ const { body } = await Webhooks.verify(request, {
 | Type | Description |
 | --- | --- |
 | `Webhooks.Secret` | `string \| Uint8Array`, the `secret` option. If you pass a string, the scheme's `key` function turns it into key bytes. If the scheme has no `key`, the string is encoded as UTF-8. A `Uint8Array` is used as the raw key. |
-| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](../web-crypto/README.md). See [Crypto](#crypto). |
+| `Webhooks.Hmac` | The `hmac` option: `(hash, key, data) => Uint8Array \| Promise<Uint8Array>`, re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). See [Crypto](#crypto). |
 | `Webhooks.VerificationError.Code` | `VerificationError.code`: `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
 
 ## Why use this over the provider libraries

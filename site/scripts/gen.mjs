@@ -72,6 +72,9 @@ for (const name of seen) {
     }
     return `](${gh}/packages/${name}/${href.replace(/^\.\//, '')})`;
   });
+  // Package READMEs link other packages by their absolute docs URL, which also works on npm. On
+  // the site the link stays on the current host, so it works in previews too.
+  md = md.replace(/\]\(https:\/\/portablejs\.com(\/packages\/[^)]*)\)/g, ']($1)');
   md = md.replace(/<!-- bench:(start|end) -->\n/g, '');
   // The benchmark table is HTML in the README, so Vocs doesn't style it. Vocs styles its own tables
   // through these data attributes, so the benchmark table gets them too.

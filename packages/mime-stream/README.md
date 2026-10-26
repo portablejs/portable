@@ -64,7 +64,7 @@ A `Part` is a plain object, shared by every chunk of that part:
 | Field | Description |
 | --- | --- |
 | `parent` | The multipart, or the `message/rfc822` part, that contains it. Missing on the root. |
-| `headers` | The header fields, `{ name, value }[]` in order and unfolded, read as UTF-8. See [@portable/mime-headers](../mime-headers/README.md) to decode values. |
+| `headers` | The header fields, `{ name, value }[]` in order and unfolded, read as UTF-8. See [@portable/mime-headers](https://portablejs.com/packages/mime-headers) to decode values. |
 | `contentType` | Lowercase media type without parameters. `text/plain` when missing or invalid, and `message/rfc822` inside `multipart/digest` (RFC 2046). |
 | `encoding` | Lowercase `Content-Transfer-Encoding`, `7bit` when missing. |
 | `boundary` | Set on a `multipart/*` part that has a boundary. Its children follow. |

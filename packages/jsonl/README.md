@@ -49,7 +49,7 @@ ndjson is a pair of Node object streams. `DecoderStream` and `EncoderStream` are
 - A circular value fails the stream with a `TypeError`. ndjson writes `"[Circular ~]"` in its place, which changes the data.
 - A whitespace-only line is skipped, where ndjson reports it as invalid.
 - stream-json's `jsonl/Parser` emits `{ key, value }` objects, and `DecoderStream` emits each value on its own.
-- stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from [@portable/lines](../lines/README.md) and call `JSON.parse` yourself.
+- stream-json's `jsonl/Parser` can replace a bad line with another value or pass its raw text on, and `DecoderStream` can't. To do that, split with `Lines.DecoderStream` from [@portable/lines](https://portablejs.com/packages/lines) and call `JSON.parse` yourself.
 
 <!-- bench:start -->
 <table>

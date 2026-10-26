@@ -36,14 +36,40 @@ test('every page links the packages it mentions', () => {
   expect(found).toEqual([]);
 });
 
+// npm shows a package's README on its page but can't resolve a relative link in it, so a package
+// README links other packages by their docs URL and its own files by their GitHub URL.
+test('package READMEs use only absolute links', () => {
+  const found: string[] = [];
+  for (const name of names) {
+    const file = `packages/${name}/README.md`;
+    let fenced = false;
+    readFileSync(join(root, file), 'utf8')
+      .split('\n')
+      .forEach((line, index) => {
+        if (/^\s*(?:```|~~~)/.test(line)) {
+          fenced = !fenced;
+        }
+        const link = /\]\((?!https?:|#|mailto:)[^)\s]+\)/.exec(
+          line.replaceAll(/\x60[^\x60]*\x60/g, ''),
+        );
+        if (!fenced && link) {
+          found.push(`${file}:${index + 1}: ${link[0]}`);
+        }
+      });
+  }
+  expect(found).toEqual([]);
+});
+
 test('findUnlinkedMentions finds the first plain mention in each block', () => {
   const options = { names: new Set(['dkim', 'mail', 'streams']), self: 'mail' };
   const find = (markdown: string) =>
     findUnlinkedMentions(markdown, options).map(({ line, name }) => `${line}:${name}`);
   expect(find('Sign it with @portable/dkim, as @portable/dkim does.')).toEqual(['0:dkim']);
-  expect(find('Sign it with [@portable/dkim](../dkim/README.md).\nThen @portable/dkim')).toEqual(
-    [],
-  );
+  expect(
+    find(
+      'Sign it with [@portable/dkim](https://portablejs.com/packages/dkim).\nThen @portable/dkim',
+    ),
+  ).toEqual([]);
   expect(find('Sign it with @portable/dkim.\n\nThen @portable/dkim.')).toEqual([
     '0:dkim',
     '2:dkim',

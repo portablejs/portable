@@ -55,9 +55,9 @@ The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is
 | Type | Description |
 | --- | --- |
 | `WebCrypto.Hash` | `'SHA-1' \| 'SHA-256' \| 'SHA-384' \| 'SHA-512'`, the algorithm names WebCrypto uses. |
-| `WebCrypto.Digest` | A sync or async function `(hash, data) => bytes`. [@portable/oauth1](../oauth1/README.md) takes one as `digest`, and `WebCrypto.digest` has this type. |
-| `WebCrypto.Hmac` | A sync or async function `(hash, key, data) => bytes`. [@portable/webhooks](../webhooks/README.md) takes one as `hmac`, and `WebCrypto.hmac` has this type. |
-| `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. [@portable/dkim](../dkim/README.md), [@portable/arc](../arc/README.md), and [@portable/mail-auth](../mail-auth/README.md) take a function that returns one as `hasher`. |
+| `WebCrypto.Digest` | A sync or async function `(hash, data) => bytes`. [@portable/oauth1](https://portablejs.com/packages/oauth1) takes one as `digest`, and `WebCrypto.digest` has this type. |
+| `WebCrypto.Hmac` | A sync or async function `(hash, key, data) => bytes`. [@portable/webhooks](https://portablejs.com/packages/webhooks) takes one as `hmac`, and `WebCrypto.hmac` has this type. |
+| `WebCrypto.Hasher` | An incremental hash `{ update(data), digest() }`, the shape of noble's `sha256.create()`. [@portable/dkim](https://portablejs.com/packages/dkim), [@portable/arc](https://portablejs.com/packages/arc), and [@portable/mail-auth](https://portablejs.com/packages/mail-auth) take a function that returns one as `hasher`. |
 | `WebCrypto.NamedCurve` | `'P-256' \| 'P-384' \| 'P-521'`, the `namedCurve` option of `derToRawEcdsa`. |
 | `WebCrypto.SeedAlgorithm` | `'Ed25519' \| 'X25519'`, the algorithms `importSeed` takes. |
 
@@ -124,7 +124,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-- ecdsa-sig-formatter's `derToJose` and `joseToDer` take and return base64url text. `derToRawEcdsa` and `rawToDerEcdsa` take and return bytes, so encode and decode the base64url text JWS uses with [@portable/base64](../base64).
+- ecdsa-sig-formatter's `derToJose` and `joseToDer` take and return base64url text. `derToRawEcdsa` and `rawToDerEcdsa` take and return bytes, so encode and decode the base64url text JWS uses with [@portable/base64](https://portablejs.com/packages/base64).
 - ecdsa-sig-formatter takes the JWS `alg`, such as `'ES384'`. `derToRawEcdsa` takes `namedCurve` instead, and it defaults to `'P-256'`, so pass `'P-384'` or `'P-521'` for ES384 or ES512 signatures.
 - `derToRawEcdsa` throws `WebCrypto.InvalidInputError` for a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE. ecdsa-sig-formatter's `derToJose` accepts it.
 - `derToRawEcdsa` also rejects an INTEGER with a leading zero it does not need, an empty INTEGER, or a negative INTEGER, which `derToJose` accepts.
