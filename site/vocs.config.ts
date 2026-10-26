@@ -36,7 +36,6 @@ export default defineConfig({
       text: 'Introduction',
       items: [
         { text: 'Getting started', link: '/getting-started' },
-        { text: 'Conventions', link: '/conventions' },
         { text: 'Web platform', link: '/web-platform' },
       ],
     },
