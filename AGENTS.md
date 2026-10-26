@@ -8,6 +8,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | --- | --- |
 | `pnpm check` | Format with oxfmt, lint with oxlint, and type-check, fixing what it can (`vp check --fix`). |
 | `pnpm check:types` | `tsc -b` over every package, then `tsc -p tsconfig.test.json` over every `test/` directory. |
+| `pnpm check:prose` | Runs `tools/lint/src/prose.test.ts`, which checks Markdown, comments, and test names for the patterns in [Writing](#writing) that a regular expression can find. The pre-push hook runs this. |
 | `pnpm test` | All test projects: Node and browsers. |
 | `pnpm test:bun`, `pnpm test:deno` | The conformance tests with Vitest running on Bun or Deno, which must be installed. |
 | `pnpm test:workers` | Bundles every package into one Worker and runs `tools/workers/src/checks.ts` in workerd through Miniflare. |
@@ -19,7 +20,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm build` | Builds every package with zile into `dist/`. |
 | `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. Until the first release, edit the package's `.changeset/<package>-initial.md` instead. |
 
-Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files, and the commit-msg hook rejects a message that describes a made-up actor or has a list without a serial comma (`tools/lint/src/commitMessage.ts`). The pre-push hook type-checks and runs the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `pnpm check:types`, every test project, the conformance tests on Bun and Deno, and the workerd checks, and a run started by hand can also run `pnpm fuzz` (see [docs/architecture.md](docs/architecture.md#ci)). CI runs only for `main`, because the repo pays for each Actions minute. Don't start a run by hand to check a branch or a pull request: run `pnpm check`, `pnpm check:types`, and the tests locally, and leave CI for the merge to `main`.
+Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files, and the commit-msg hook rejects a message that describes a made-up actor or has a list without a serial comma (`tools/lint/src/commitMessage.ts`). The pre-push hook runs `vp check` without fixing, `pnpm check:prose`, and `pnpm check:types`, then the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `pnpm check:types`, every test project, the conformance tests on Bun and Deno, and the workerd checks, and a run started by hand can also run `pnpm fuzz` (see [docs/architecture.md](docs/architecture.md#ci)). CI runs only for `main`, because the repo pays for each Actions minute. Don't start a run by hand to check a branch or a pull request: run `pnpm check`, `pnpm check:types`, and the tests locally, and leave CI for the merge to `main`.
 
 ## Package rules
 

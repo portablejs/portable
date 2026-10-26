@@ -159,7 +159,7 @@ Git hooks run the checks before each commit and push. `pnpm install` installs th
 | Hook | Runs |
 | --- | --- |
 | pre-commit | `vp staged`, which runs `vp check --fix` on staged files |
-| pre-push | `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
+| pre-push | `vp check`, `pnpm check:prose`, and `pnpm check:types`, then the Node tests affected by changes since `origin/main` (`pnpm test:changed`) |
 
 Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `pnpm changeset:publish` runs them before every release. `git push --no-verify` skips the hooks.
 
