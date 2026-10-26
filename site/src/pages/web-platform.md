@@ -8,7 +8,7 @@ All modern JavaScript runtimes include a rich set of web APIs. We no longer need
 
 Many packages are already written this way and solve common use cases. Portable packages are built to fill in the gaps. The tables below list a package for each task, from Portable or from another project.
 
-Before we list a package from another project, we check that its main entry point runs in Chromium; in workerd, Cloudflare's Workers runtime, with the `nodejs_compat` flag off; and in Node, Bun, and Deno. If the package also has a subpath that imports `node:*` modules, the notes below its table say so.
+Before we list a package from another project, we check that its main entry point runs in Chromium; in workerd, Cloudflare's Workers runtime, with the `nodejs_compat` flag off; and in Node, Bun, and Deno.
 
 If you have a use case that isn't covered here or could use a better package, please [drop a note](https://github.com/portablejs/portable/issues/new).
 
