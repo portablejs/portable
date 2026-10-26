@@ -1,0 +1,56 @@
+# Publishes every package whose `package.json` version isn't on npm yet. Run `pnpm changeset:version` and merge the
+# version bumps to main first, then start this workflow by hand on main.
+#
+# npm trusted publishing (OIDC) authenticates the publish, so the repository holds no npm token, and npm adds a
+# provenance attestation to each version. A trusted publisher on npm checks the repository, the workflow filename, and
+# the environment. Only the environment check limits which branch can publish. Anyone with push access could edit this
+# file on a branch to run on that push and drop the `if` below, but npm rejects a publish from a job without the `npm`
+# environment, and GitHub runs jobs in that environment only from main.
+#
+# The checks run first in verify.yml, without an OIDC token. The publish job runs no tests, installs without lifecycle
+# scripts, and uses no dependency cache, so while it holds the token, it runs only the build and the code that the
+# build loads from the lockfile's dependencies.
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/verify.yml
+    permissions:
+      contents: read
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: npm
+      url: https://www.npmjs.com/org/portable
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          check-latest: true
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm build
+      - run: pnpm --filter './packages/*' exec zile publish:prepare
+      # The runner discards the checkout, so the tags that changesets creates there would never be pushed.
+      - run: pnpm changeset publish --no-git-tag
+        env:
+          NPM_CONFIG_PROVENANCE: 'true'
