@@ -66,7 +66,7 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 | Option | Default | Description |
 | --- | --- | --- |
 | `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each boundary is this value followed by the number of its multipart, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
-| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from @portable/charset is one. |
+| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from [@portable/charset](../charset/README.md) is one. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
 | `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
 
@@ -83,7 +83,7 @@ Mail.encodeStream(
 
 ### Signing and sending
 
-@portable/dkim signs the bytes `encodeStream` produces and @portable/smtp sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
+[@portable/dkim](../dkim/README.md) signs the bytes `encodeStream` produces and [@portable/smtp](../smtp/README.md) sends them. `Dkim.sign` needs the whole body to compute the signature field, which goes above the other headers, so read the message into bytes first:
 
 ```ts
 import * as Bytes from '@portable/bytes';
@@ -150,7 +150,7 @@ nodemailer's composer needs Node streams, `Buffer`, `fs`, `http`, and `crypto`, 
 - nodemailer capitalizes each word of a header name, and its `normalizeHeaderKey` option has no equivalent, because this package writes header names as given.
 - nodemailer makes `message/rfc822` attachments `inline`, and this package makes them `attachment`.
 - nodemailer writes a file name containing `"` with RFC 2231 encoding, and this package writes it as a quoted string with `\"` in `filename`.
-- nodemailer splits a name longer than about 40 bytes into encoded words of up to 52 characters, and this package uses up to 75, as @portable/mime-headers writes them.
+- nodemailer splits a name longer than about 40 bytes into encoded words of up to 52 characters, and this package uses up to 75, as [@portable/mime-headers](../mime-headers/README.md) writes them.
 - nodemailer decodes an A-label domain to UTF-8 and maps it with UTS #46 when the local part isn't ASCII. This package keeps the domain as given, lowercased.
 - nodemailer accepts a backslash in a domain, and this package throws for it.
 

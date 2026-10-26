@@ -1,6 +1,6 @@
 # @portable/smtp
 
-Sends email over SMTP (RFC 5321) or LMTP (RFC 2033) from any runtime with a TCP socket API: Cloudflare Workers, Node 24+, Bun, and Deno. You pass the function that opens the socket, so the package itself only needs Web Streams. The message can be a `ReadableStream`, such as the output of @portable/mail signed with @portable/dkim, and is streamed to the server without buffering.
+Sends email over SMTP (RFC 5321) or LMTP (RFC 2033) from any runtime with a TCP socket API: Cloudflare Workers, Node 24+, Bun, and Deno. You pass the function that opens the socket, so the package itself only needs Web Streams. The message can be a `ReadableStream`, such as the output of [@portable/mail](../mail/README.md) signed with [@portable/dkim](../dkim/README.md), and is streamed to the server without buffering.
 
 Replaces the SMTP transport and `smtp-connection` of [nodemailer](https://www.npmjs.com/package/nodemailer).
 

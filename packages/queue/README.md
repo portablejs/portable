@@ -100,7 +100,7 @@ const throttled = (id: string) => queue.add(() => fetchUser(id));
 
 ## With @portable/timers
 
-Retries, timeouts, and delays come from @portable/timers. To retry inside one slot, wrap the work in `Timers.retry` inside the task:
+Retries, timeouts, and delays come from [@portable/timers](../timers/README.md). To retry inside one slot, wrap the work in `Timers.retry` inside the task:
 
 ```ts
 import * as Queue from '@portable/queue';

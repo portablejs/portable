@@ -73,7 +73,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 ## Why use this over dns-packet
 
-dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses, and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 7.4 kB minified and gzipped. Addresses are parsed and formatted by [@portable/ip](https://www.npmjs.com/package/@portable/ip), so they follow the same rules as in the other `@portable/*` packages.
+dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses, and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 7.4 kB minified and gzipped. Addresses are parsed and formatted by [@portable/ip](../ip/README.md), so they follow the same rules as in the other `@portable/*` packages.
 
 - A label over 63 bytes, a TXT string over 255 bytes or an empty label throws `InvalidInputError`. dns-packet writes the first two with overflowing length bytes, and an empty label ends the name early.
 - Names are checked before any bytes are allocated, and buffers are zero-filled. dns-packet before 5.2.2 could send uninitialized memory (CVE-2021-23386).
@@ -119,6 +119,6 @@ Other differences to check when you switch:
 - dns-packet encodes an unknown type, class, opcode, rcode, or option name as 0. `encode` throws for it.
 - `\.`, `\\`, and `\DDD` escapes work in every name, and decoded labels have `.` and `\` escaped. In a decoded label that isn't UTF-8, bytes outside printable ASCII are written as `\DDD`, so the label encodes back to the same bytes.
 - `decode` checks that each EDNS option has the right length for its fields.
-- IPv6 addresses decode in RFC 5952 form, as `Ip.format` from @portable/ip writes them, so an IPv4-mapped address is `::ffff:192.0.2.1`. dns-packet writes `::ffff:c000:201`.
+- IPv6 addresses decode in RFC 5952 form, as `Ip.format` from [@portable/ip](../ip/README.md) writes them, so an IPv4-mapped address is `::ffff:192.0.2.1`. dns-packet writes `::ffff:c000:201`.
 - `encode` throws for an invalid address, an IPv6 zone such as `%eth0`, and an IPv4 address with a leading zero, such as `010.0.0.1`. dns-packet writes that address as 10.0.0.1, but `inet_aton` reads `010` as octal and gets 8.0.0.1.
 - `encode` clears the bits of a CLIENT_SUBNET address past the source prefix, as RFC 7871 requires.
