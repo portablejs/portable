@@ -25,9 +25,9 @@ If you have a use case that isn't covered here or could use a better package, pl
 | Compress synchronously, or flush deflate at the end of each message | [fflate](https://www.npmjs.com/package/fflate) |
 | Read or write zip files | [@zip.js/zip.js](https://www.npmjs.com/package/@zip.js/zip.js) or [fflate](https://www.npmjs.com/package/fflate) |
 | Stream a zip file as a `Response` | [client-zip](https://www.npmjs.com/package/client-zip) |
-| Read or write tar archives | [modern-tar](https://www.npmjs.com/package/modern-tar), [@remix-run/tar-parser](https://www.npmjs.com/package/@remix-run/tar-parser), or [multitars](https://www.npmjs.com/package/multitars) |
+| Read or write tar archives | [modern-tar](https://www.npmjs.com/package/modern-tar)<sup>1</sup>, [@remix-run/tar-parser](https://www.npmjs.com/package/@remix-run/tar-parser), or [multitars](https://www.npmjs.com/package/multitars) |
 
-The `modern-tar/fs` subpath packs and unpacks directories with `node:fs`.
+<sup>1</sup> The `modern-tar/fs` subpath packs and unpacks directories with `node:fs`.
 
 ## Encodings and text
 
@@ -60,29 +60,33 @@ The `modern-tar/fs` subpath packs and unpacks directories with `node:fs`.
 
 | Task | Package |
 | --- | --- |
-| Serve a `fetch` handler with the same code in every server runtime | [srvx](https://www.npmjs.com/package/srvx) |
-| Route requests with middleware | [@remix-run/fetch-router](https://www.npmjs.com/package/@remix-run/fetch-router) |
+| Serve a `fetch` handler with the same code in every server runtime | [srvx](https://www.npmjs.com/package/srvx)<sup>1</sup> |
+| Route requests with middleware | [@remix-run/fetch-router](https://www.npmjs.com/package/@remix-run/fetch-router)<sup>1, 2</sup> |
 | Parse and format headers such as `Accept`, `Cache-Control`, `Content-Disposition`, and `Range` | [@remix-run/headers](https://www.npmjs.com/package/@remix-run/headers) |
 | Sign and verify cookies | [@remix-run/cookie](https://www.npmjs.com/package/@remix-run/cookie) |
 | Look up a MIME type from a file name | [@remix-run/mime](https://www.npmjs.com/package/@remix-run/mime) |
 | Parse `multipart/form-data` uploads as a stream | [@remix-run/multipart-parser](https://www.npmjs.com/package/@remix-run/multipart-parser) or [@remix-run/form-data-parser](https://www.npmjs.com/package/@remix-run/form-data-parser) |
-| Serve a file with ETags and `Range` | [@remix-run/response](https://www.npmjs.com/package/@remix-run/response) |
-| Stream a large file without reading it into memory | [@remix-run/lazy-file](https://www.npmjs.com/package/@remix-run/lazy-file) |
+| Serve a file with ETags and `Range` | [@remix-run/response](https://www.npmjs.com/package/@remix-run/response)<sup>3</sup> |
+| Stream a large file without reading it into memory | [@remix-run/lazy-file](https://www.npmjs.com/package/@remix-run/lazy-file)<sup>4</sup> |
 | Limit request rates | [@portable/rate-limit](/packages/rate-limit) |
 | Verify and sign webhooks | [@portable/webhooks](/packages/webhooks) |
 | Sign requests to AWS or S3-compatible storage such as Cloudflare R2 | [aws4fetch](https://www.npmjs.com/package/aws4fetch) |
 | Call gRPC and Connect services | [@connectrpc/connect](https://www.npmjs.com/package/@connectrpc/connect) |
 
-The @remix-run packages come from Remix 3. The remix package also re-exports each of them under a subpath, such as `remix/headers` for @remix-run/headers and `remix/router` for @remix-run/fetch-router.
+<sup>1</sup> To serve requests with fetch-router, pass `router.fetch` to srvx's `serve`, `Bun.serve`, or `Deno.serve`. In a Worker, use `router.fetch` as the `fetch` handler. srvx starts each runtime's own server. On Node, it converts Node's request and response objects to a `Request` and a `Response`.
 
-To serve requests with fetch-router, pass `router.fetch` to srvx's `serve`, `Bun.serve`, or `Deno.serve`. In a Worker, use `router.fetch` as the `fetch` handler. srvx starts each runtime's own server, and on Node it converts Node's request and response objects to a `Request` and a `Response`. To serve a large file, pass a `LazyFile` to `createFileResponse` from `@remix-run/response/file`. The `@remix-run/response/compress` subpath imports `node:zlib`, so it doesn't run in browsers or in Workers without `nodejs_compat`.
+<sup>2</sup> The @remix-run packages come from Remix 3. The remix package also re-exports each of them under a subpath, such as `remix/headers` for @remix-run/headers and `remix/router` for @remix-run/fetch-router.
+
+<sup>3</sup> The `@remix-run/response/compress` subpath imports `node:zlib`, so it doesn't run in browsers or in Workers without `nodejs_compat`.
+
+<sup>4</sup> To serve a large file, pass a `LazyFile` to `createFileResponse` from `@remix-run/response/file`.
 
 ## Crypto and auth
 
 | Task | Package |
 | --- | --- |
 | Hash, HMAC, HKDF, and Ed25519 or X25519 keys as bytes | [@portable/web-crypto](/packages/web-crypto) |
-| A hash or curve that `crypto.subtle` lacks, such as MD5 or secp256k1, or a sync or incremental hash | [@noble/hashes](https://www.npmjs.com/package/@noble/hashes) and [@noble/curves](https://www.npmjs.com/package/@noble/curves) |
+| A hash or curve that `crypto.subtle` lacks, such as MD5 or secp256k1, or a sync or incremental hash | [@noble/hashes](https://www.npmjs.com/package/@noble/hashes)<sup>1</sup> and [@noble/curves](https://www.npmjs.com/package/@noble/curves) |
 | Random integers, strings, and shuffles | [@portable/random](/packages/random) |
 | JWT, JWS, JWE, and JWK sets | [jose](https://www.npmjs.com/package/jose) |
 | Hash passwords | [@portable/password](/packages/password) |
@@ -92,7 +96,7 @@ To serve requests with fetch-router, pass `router.fetch` to srvx's `serve`, `Bun
 | Sign OAuth 1.0a requests | [@portable/oauth1](/packages/oauth1) |
 | Verify passkeys (WebAuthn) on the server | `ox/webauthn` from [ox](https://www.npmjs.com/package/ox) |
 
-MD5 and SHA-1 are in `@noble/hashes/legacy.js`.
+<sup>1</sup> MD5 and SHA-1 are in `@noble/hashes/legacy.js`.
 
 ## Email
 
@@ -120,12 +124,12 @@ MD5 and SHA-1 are in `@noble/hashes/legacy.js`.
 | Task | Package |
 | --- | --- |
 | A WebSocket client that reconnects | [@portable/websockets](/packages/websockets) |
-| A WebSocket server with the same code in every server runtime | [crossws](https://www.npmjs.com/package/crossws) |
+| A WebSocket server with the same code in every server runtime | [crossws](https://www.npmjs.com/package/crossws)<sup>1</sup> |
 | Server-sent events | [@portable/sse](/packages/sse) |
 | Typed RPC over workers, windows, WebSocket, and HTTP | [@portable/rpc](/packages/rpc) |
 | Send Web Push notifications | [@portable/web-push](/packages/web-push) |
 
-crossws has an adapter for each server runtime, such as `crossws/adapters/cloudflare` and `crossws/adapters/node`, so import the one for the runtime you deploy to.
+<sup>1</sup> crossws has an adapter for each server runtime, such as `crossws/adapters/cloudflare` and `crossws/adapters/node`, so import the one for the runtime you deploy to.
 
 ## Events, concurrency, and timing
 
