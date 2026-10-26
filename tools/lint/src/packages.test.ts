@@ -30,10 +30,10 @@ const defaultRuntimes = {
 };
 
 const fieldOrder = [
-  'name',
-  'description',
   'scripts',
   '[!start-pkg]',
+  'name',
+  'description',
   'version',
   'type',
   'sideEffects',

@@ -1,11 +1,11 @@
 {
-  "name": "@portable/lines",
-  "description": "Split byte or text streams into lines, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/lines",
+  "description": "Split byte or text streams into lines, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,
