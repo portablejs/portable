@@ -69,7 +69,6 @@ let columns: Column[] = [];
 const byLang = new Map<string, Column>();
 const langTotals = new Map<string, number>();
 let total = 0;
-const recent: number[] = [];
 
 function label(lang: string) {
   if (lang === 'other') {
@@ -165,7 +164,6 @@ function receive(post: Post) {
   langTotals.set(lang, (langTotals.get(lang) ?? 0) + 1);
   total++;
   const now = performance.now();
-  recent.push(now);
   const column = columnFor(lang);
   column.recent.push(now);
   column.total++;
@@ -206,7 +204,6 @@ function draw(column: Column, post: Post, replayed: boolean) {
 }
 
 let shownTotal = -1;
-let shownRate = -1;
 let previous = performance.now();
 let frames = 0;
 let fps = 0;
@@ -305,14 +302,6 @@ function frame(now: number) {
     ctx.fillStyle = tag ? ACCENT : DIM;
     ctx.fillText(tag ?? `${Math.round(column.recent.length / 5)} posts/sec`, x + 12, 32);
     ctx.font = FONT;
-  }
-  while (recent.length && recent[0]! < now - 5000) {
-    recent.shift();
-  }
-  const rate = Math.round(recent.length / 5);
-  if (rate !== shownRate) {
-    shownRate = rate;
-    rateEl.textContent = String(rate);
   }
   if (total !== shownTotal) {
     shownTotal = total;
@@ -413,12 +402,11 @@ const cCatch = document.getElementById('c-catch')!;
 
 let state = 'connecting';
 
-const rateEl = document.createElement('b');
 const seenEl = document.createElement('b');
 
 function showStatus() {
   if (state === 'live') {
-    statusEl.replaceChildren(rateEl, ' posts/sec, ', seenEl, ' seen since you arrived');
+    statusEl.replaceChildren(seenEl, ' posts since you arrived');
   } else if (state === 'connecting') {
     statusEl.textContent = total
       ? 'Reconnecting from the last post seen…'
