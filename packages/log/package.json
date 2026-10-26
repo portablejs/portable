@@ -1,11 +1,11 @@
 {
-  "name": "@portable/log",
-  "description": "Log by namespace and level, turned on with debug's DEBUG patterns from an environment variable or localStorage, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/log",
+  "description": "Log by namespace and level, turned on with debug's DEBUG patterns from an environment variable or localStorage, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

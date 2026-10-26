@@ -1,11 +1,11 @@
 {
-  "name": "@portable/csv",
-  "description": "Decode and encode CSV (RFC 4180), as functions and streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/csv",
+  "description": "Decode and encode CSV (RFC 4180), as functions and streams, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

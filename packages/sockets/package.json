@@ -1,11 +1,11 @@
 {
-  "name": "@portable/sockets",
-  "description": "Open TCP and TLS connections with the WinterTC Sockets API, in any JavaScript runtime that has a TCP socket API.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/sockets",
+  "description": "Open TCP and TLS connections with the WinterTC Sockets API, in any JavaScript runtime that has a TCP socket API.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

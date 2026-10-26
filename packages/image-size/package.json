@@ -1,11 +1,11 @@
 {
-  "name": "@portable/image-size",
-  "description": "Read an image's type and dimensions from its header bytes or a stream, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/image-size",
+  "description": "Read an image's type and dimensions from its header bytes or a stream, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,
