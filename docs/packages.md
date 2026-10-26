@@ -167,7 +167,7 @@ await Streams.toText(Streams.fromIterable(rows()).pipeThrough(upper)); // 'AB'
 
 ## Not building (point to these instead)
 
-These libraries already run in every runtime with no Node dependencies: jose, noble, fflate, modern-tar, multitars, aws4fetch, otpauth, cbor-x, @msgpack/msgpack, and postal-mime. Remix v3 also covers the needs below, so the list has no content-disposition or cookie-signature package:
+These libraries already run in every runtime with no Node dependencies: jose, noble, fflate, modern-tar, multitars, aws4fetch, otpauth, cbor-x, @msgpack/msgpack, and postal-mime. For each common task, the site's [web platform](../site/src/pages/web-platform.mdx) page lists a Portable package or another project's package. Another project's package is one of these libraries; a Remix package from the table below; or another package that runs everywhere, such as srvx, crossws, pathe, or eventemitter3. Add a row to that page when you decide not to build a package. Remix 3 packages already handle the tasks below, so we don't plan a content-disposition or cookie-signature package:
 
 | Need | Use | Effect on our list |
 | --- | --- | --- |

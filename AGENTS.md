@@ -114,6 +114,7 @@ Read the `technical-writing` and `unslop` skills (in `.agents/pstack/skills/`) b
 - Write package names as plain text, never in a code span or `<code>`, as in "mail builds on mime-headers and @portable/base64" and "the ws package". This covers Portable packages, the libraries they replace, and any other npm package. A subpath such as `@portable/streams/node` is an import specifier and stays code, and so does a line of code such as `import * as Base64 from '@portable/base64'`. In JSDoc, TypeScript reads an `@` after a space as the start of a tag, so write the package's short name there instead: "a `Dns.Resolver` from the dns package". `tools/lint/src/prose.test.ts` rejects a scoped name in a code span, a code span followed by "package", and a link to a package page whose text is a code span. In the root README, the package READMEs, and the site's pages, link the first mention of a Portable package in each paragraph, list item, or table row to its page: `[@portable/dkim](../dkim/README.md)` in a package README, `[@portable/dkim](packages/dkim)` in the root README, and `[dkim](/packages/dkim)` on the site. A package's own README doesn't link itself. `tools/lint/src/packageLinks.test.ts` checks the scoped names.
 - Say what the code does with a value: "stores" or "references", not a vague "names".
 - Don't write rules as slogans or aphorisms ("a write lands only on the version it saw"). Name the mechanism.
+- Don't join two separate facts into one sentence with ", and", especially when the second clause switches subject or voice ("Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted"). Give each fact its own sentence, or connect them with the reason that relates them.
 - No "X. So Y. So Z." chains. Vary sentence length, and keep a cause and its effect in one sentence when they belong together.
 - No AI vocabulary (delve, crucial, leverage), no "not just X but Y", no forced groups of three, no em dashes, no filler or hedging, and no clipped fragments with arrows.
 - A commit message says why the change is made and what else was considered.
@@ -158,7 +159,29 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | Errors the stream with `signal.reason` when aborted, which cancels the source it is piped from. (The "which" has no clear antecedent.) | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 | An option you leave out keeps its current value. (The option is made the actor.) | It changes only the options you pass. |
 | A forwarder, such as a mailing list, validates the chain that arrived and seals the message. (A made-up actor carries the advice.) | If you forward mail, as a mailing list does, verify the chain that arrived and seal the message. |
+| Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. (Two facts joined by ", and", with the second switching to the passive. "Options that take a point in time accept a `Date` or a `Temporal.Instant`, and results return a `Date`." has the same shape.) | Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. |
 | Stripe's `stripe` package has separate builds … Errors extend the classes in `@portable/errors`. | Stripe's stripe package has separate builds … Errors extend the classes in @portable/errors. |
+| Plenty of packages already work this way, so Portable only fills the gaps they leave. (In the pitch voice. The rewrite "Portable adds a package only for a task that none of them handle" is worse: it stacks "only" and "none of them" and reads like a policy.) | Portable packages try to fill the gaps. |
+
+### Two voices
+
+Portable's prose has two voices. The rules above apply to both.
+
+The pitch voice is for prose that explains why Portable exists: the intro of each site page, the opening of the root README, and the description at the top of each package README. Write it the way you'd explain Portable to a friend who builds web apps. It should read as human, conversational, concise, and casual.
+
+- Say what changed or what hurts before you say what Portable is.
+- Write "we" for the project and "you" for the reader. Contractions are fine.
+- Name the pain concretely: "packages that only run in Node or only in browsers", not "compatibility issues".
+- Keep Portable modest: credit other packages first, and say Portable packages try to fill the gaps.
+- Common phrases such as "fill the gaps" are fine in the pitch voice, even though the rules above ban figurative verbs. Don't stack qualifiers such as "only" and "none of them" to make a sentence sound exact, because it then reads like a policy.
+- Keep one idea per sentence, and keep paragraphs to two or three sentences.
+- A little warmth is fine ("We can finally write code once that runs anywhere", "please drop a note"). Hype isn't: no "blazing fast", "seamless", or "powerful".
+
+This intro from the web platform page is in the pitch voice:
+
+> All modern JavaScript runtimes include a rich set of web APIs. We no longer need to rely on packages that only run in Node or only in browsers, polyfill between them, or are compiled to Wasm. We can finally write code once that runs anywhere.
+
+The reference voice is for prose that a reader consults to find a fact: API sections, options tables, JSDoc, the Conventions section of Getting started, and the docs in `docs/`. Write it plain and exact. State what a function does, what it takes, what it returns, and what it throws, and give the reason when the behavior could surprise a reader. Leave out the warmth, because it slows down a reader who is looking for one fact.
 
 ### Prose review
 

@@ -784,6 +784,18 @@ These were recorded as each package was built. Each package's README and PARITY.
 - **Trade-offs:** The repo had about 1,000 lists without the comma. A tagger would be a new dependency of `tools/lint` and still couldn't tell "a revoked or invalid key" (one item) from a list. A regular expression for "A, B and C" also matches clauses such as "When it aborts, `encode` and `decode` reject", so it needs rules that skip them, and each rule also skips some real lists.
 - **Chosen:** the regular expression in `findMissingSerialComma`, with skip rules tuned until every false positive left in the repo was a sentence that read better reworded. It misses lists such as "In Node, Bun and Deno". `prose.test.ts` runs it on Markdown, comments, test names, and package descriptions, and the commit-msg hook runs it on commit messages. If it flags a sentence by mistake, reword the sentence, often by putting semicolons between items that contain their own `and`.
 
+## The site maps common tasks to packages on one web platform page
+
+- **Options:** keep the list of packages we don't build only in the "Not building" section of [packages.md](packages.md); give that list its own "Recommended packages" page; list every common task on one page, with a Portable package or another project's package for each.
+- **Trade-offs:** packages.md is written for contributors, records what we dropped from the plan, and isn't published on the site. A "Recommended packages" link in the Introduction would put other projects' packages above our own in the sidebar. The guides cover only areas that have a Portable package, so no guide could mention a package for HTTP routing or tar archives. A column with the libraries each package replaces would tell readers what not to use, but each package README already lists those libraries.
+- **Chosen:** a page titled "Web platform" in the site's Introduction section. The page uses "web platform" for the APIs that every runtime shares, and it lists packages built only on those APIs. It has one table per area, with columns for the task and the package. The tasks come from the "Not building" list and from a survey of 1,037 popular and trending projects. The survey collected the Node APIs that their dependency trees call, and we kept each API that an existing package already covers in every runtime. We list another project's package only if its main entry point runs in Chromium; in workerd without `nodejs_compat`; and in Node, Bun, and Deno. The check left out @peculiar/x509 because it throws unless the reflect-metadata polyfill is loaded, and hash-wasm because workerd doesn't allow compiling WebAssembly at runtime. The page says when a package also has a subpath that imports `node:*` modules, such as `modern-tar/fs` or `@remix-run/response/compress`.
+
+## Conventions are a section of Getting started
+
+- **Options:** keep the Conventions page; or move the rules that change how you call a package into Getting started and delete the page.
+- **Trade-offs:** the Conventions page also listed rules for designing an API, such as where options go and that results are plain objects. Contributors need those rules, and AGENTS.md already lists them. The rules for calling a package fit in one section of Getting started: the namespace import; `Uint8Array` input; `signal` and `close()`; and the error classes.
+- **Chosen:** a "Conventions" section at the end of Getting started, with the verb table and the error table. The site has no Conventions page.
+
 ## The pre-push hook runs `vp check` and the prose tests
 
 - **Options:** leave both to CI on `main`; run them in pre-commit; run them in pre-push.
