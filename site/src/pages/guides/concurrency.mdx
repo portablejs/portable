@@ -6,9 +6,9 @@ description: Run timers, retries, and queues that stop when their AbortSignal ab
 
 Every timer, retry, and queue in these packages takes an `AbortSignal`. Pass `request.signal`, and when the client disconnects, the sleeps, retries, and queued tasks that the request started stop instead of running on.
 
-- [`queue`](/packages/queue) limits how many async tasks run at once, with priorities.
-- [`timers`](/packages/timers) has sleep, retry, poll, debounce, and throttle.
-- [`rate-limit`](/packages/rate-limit) limits requests per key and stores its state in memory, Workers KV, a Durable Object, or Redis over HTTP.
+- [queue](/packages/queue) limits how many async tasks run at once, with priorities.
+- [timers](/packages/timers) has sleep, retry, poll, debounce, and throttle.
+- [rate-limit](/packages/rate-limit) limits requests per key and stores its state in memory, Workers KV, a Durable Object, or Redis over HTTP.
 
 ## Fetch many URLs with a concurrency limit and retries
 

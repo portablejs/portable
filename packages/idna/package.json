@@ -1,12 +1,12 @@
 {
-  "name": "@portable/idna",
-  "description": "Convert internationalized domain names between Unicode and Punycode (UTS #46), in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev",
     "generate": "node scripts/generate.ts"
   },
   "[!start-pkg]": "",
+  "name": "@portable/idna",
+  "description": "Convert internationalized domain names between Unicode and Punycode (UTS #46), in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

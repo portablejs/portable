@@ -1,11 +1,11 @@
 {
-  "name": "@portable/rpc",
-  "description": "Call typed JSON-RPC 2.0 methods over MessagePort, windows, WebSocket, and HTTP, with streaming results, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/rpc",
+  "description": "Call typed JSON-RPC 2.0 methods over MessagePort, windows, WebSocket, and HTTP, with streaming results, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

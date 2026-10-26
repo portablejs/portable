@@ -31,7 +31,7 @@ for await (const message of Streams.toAsyncIterable(readable)) {
 }
 ```
 
-`Streams.toAsyncIterable` from `@portable/streams` iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const message of readable)` also works.
+`Streams.toAsyncIterable` from [@portable/streams](../streams/README.md) iterates a stream in every runtime. Where the runtime iterates streams itself, `for await (const message of readable)` also works.
 
 The namespace is `WebSockets`, so it doesn't shadow the global `WebSocket`.
 
@@ -64,7 +64,7 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `protocols` | | Subprotocols, as for `new WebSocket(url, protocols)`. |
 | `signal` | | Closes the socket with code 1000 and fails both streams with `signal.reason`. |
 | `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes. If `open` throws, the socket closes and `connect` tries again after `delay`. |
-| `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from `@portable/timers`. |
+| `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from [@portable/timers](../timers/README.md). |
 | `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` gives up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
 | `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when the server closes the connection or the connection drops. `attempt` is the number of failures in a row, including this one. `false` makes the close final, and a rejection fails both streams with its error. |
@@ -72,7 +72,7 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `highWaterMark` | `1048576` | Writes wait while the socket's `bufferedAmount` is above this many bytes. |
 | `maxBuffered` | `Infinity` | Bytes of received messages (characters for text) to hold while the reader is behind. Past it, both streams fail with `MaxBufferedError` and the socket closes. |
 | `heartbeat` | | `{ ping, pong, interval, timeout = interval }`. Sends `ping` every `interval` ms. When no message for which `pong(message)` returns `true` arrives within `timeout` ms, the connection counts as dead and `connect` reconnects. Pongs don't reach `readable`. |
-| `WebSocket` | `globalThis.WebSocket` | The class to construct, such as the `ws` package's in older Node or a fake in tests. |
+| `WebSocket` | `globalThis.WebSocket` | The class to construct, such as the ws package's in older Node or a fake in tests. |
 
 By default, close codes 1000 (normal), 1002 (protocol error), 1003 (unsupported data), 1007 (invalid data), 1008 (policy violation), 1009 (message too big) and 1010 (missing extension) are final, because reconnecting won't change the server's answer. Every other code reconnects, including 1001 (going away), 1005 (no code), 1006 (dropped), 1011 to 1014 (server errors and restarts) and the 4000 to 4999 range.
 
@@ -115,12 +115,12 @@ Returns `{ readable, writable }` for a socket you already have. It never reconne
 | `WebSockets.Duplex` | `{ readable, writable }`, what `connect`, and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
-| `WebSockets.Delay` | The `delay` option, `Timers.Delay` from `@portable/timers`. |
+| `WebSockets.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](../timers/README.md). |
 | `WebSockets.Backoff` | `{ initial, max, factor?, jitter? }`, exponential backoff for `delay`. |
 
 ## Why use this over reconnecting-websocket, partysocket, and websocket-ts
 
-All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as `@portable/jsonl`'s `DecoderStream`, and writes wait instead of queuing without a limit.
+All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns web streams, so a connection can be piped through a `TransformStream`, such as [@portable/jsonl](../jsonl/README.md)'s `DecoderStream`, and writes wait instead of queuing without a limit.
 
 - Writes made while disconnected wait for `open`, so authentication or a resubscribe always comes first. reconnecting-websocket and partysocket send their queue in the `open` event, before your handler runs.
 - The queue is bounded and applies backpressure. reconnecting-websocket and partysocket queue without a limit by default and drop messages past `maxEnqueuedMessages`. websocket-ts drops them without a buffer.
@@ -128,8 +128,8 @@ All three wrap a WebSocket in an `EventTarget` with `send()`. `connect` returns 
 - `heartbeat` replaces a connection that stopped answering. reconnecting-websocket has no heartbeat ([#98](https://github.com/pladaria/reconnecting-websocket/issues/98)), so a silently dropped connection stays open until the operating system notices.
 - Close codes such as 1008 are final by default, so a client the server rejected doesn't reconnect in a loop.
 - A URL function that throws counts as a failed attempt. websocket-ts stopped reconnecting permanently.
-- Closing a `ws` client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
-- On Node 24, echoing 1,000 messages of 100 bytes through a local server with `connect` runs within 5% of a bare `WebSocket`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using `ws` listeners. The benchmark table below has the numbers.
+- Closing a ws client that is still connecting doesn't crash Node ([#197](https://github.com/pladaria/reconnecting-websocket/issues/197)).
+- On Node 24, echoing 1,000 messages of 100 bytes through a local server with `connect` runs within 5% of a bare `WebSocket`, and about 10% faster than with reconnecting-websocket. A server echoing through `fromSocket` runs within 5% of one using ws listeners. The benchmark table below has the numbers.
 
 <!-- bench:start -->
 <table>
@@ -155,7 +155,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | reconnecting-websocket | 4.4.0 | 2.6 kB | 0 | none | included |
 | partysocket | 1.3.0 | 2.8 kB | 1 | none | included |
 | websocket-ts | 3.0.0 | 1.8 kB | 0 | none | included |
-| ws | 8.22.0 | 0.5 kB | 0 | none | `@types/ws` |
+| ws | 8.22.0 | 0.5 kB | 0 | none | @types/ws |
 | `WebSocket` | – | built in | – | none | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.

@@ -126,7 +126,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/csv | – | 2.5 kB | 3 | none | included |
 | csv-parse or csv-stringify | 7.0.3 | 10 kB | 1 | `Buffer` | included |
-| papaparse | 5.7.0 | 7.0 kB | 0 | none | `@types/papaparse` |
+| papaparse | 5.7.0 | 7.0 kB | 0 | none | @types/papaparse |
 | fast-csv | 5.0.8 | 6.9 kB | 1 | `Buffer`, `fs`, `stream`, `string_decoder`, `util` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
@@ -149,7 +149,7 @@ Other differences to check when you switch:
 - papaparse's `unparse` doesn't end the last row with a line break. `encode` ends every row with `newline`.
 - papaparse reads empty lines as rows unless `skipEmptyLines` is set. `decode` skips them by default.
 - papaparse with `header: true` accepts rows whose field count differs from the header's. `decode` throws `InvalidInputError` for them unless you pass `relaxColumnCount: true`.
-- csv-parse's `cast`, papaparse's `dynamicTyping`, and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from `@portable/streams`.
+- csv-parse's `cast`, papaparse's `dynamicTyping`, and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from [@portable/streams](../streams/README.md).
 - papaparse guesses the delimiter by default. Here the delimiter is `,` unless you pass `delimiter`.
 - Comments, trimming, csv-parse's `from`, and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or leave the loop early, which cancels the stream.
 - Delimiters longer than one character and escape characters other than `""` are not supported.

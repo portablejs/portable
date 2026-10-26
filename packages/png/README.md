@@ -140,7 +140,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/png | – | 4.9 kB | 2 | none | included |
-| pngjs | 7.0.0 | 9.1 kB | 0 | `assert`, `buffer`, `stream`, `util`, `zlib` | `@types/pngjs` |
+| pngjs | 7.0.0 | 9.1 kB | 0 | `assert`, `buffer`, `stream`, `util`, `zlib` | @types/pngjs |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

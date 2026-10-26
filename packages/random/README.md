@@ -55,7 +55,7 @@ xoshiro128** has 128 bits of state, so `seeded(seed).shuffle` can reach at most 
 
 | Type | Description |
 | --- | --- |
-| `Random.Seeded` | The functions of `@portable/random`, drawing from a seeded generator, as `Random.seeded` returns them. |
+| `Random.Seeded` | The functions of @portable/random, drawing from a seeded generator, as `Random.seeded` returns them. |
 
 ## Why use this over random-int, crypto-random-string, nanoid, seedrandom, and lodash
 
@@ -124,8 +124,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | random-int | 3.1.0 | 0.3 kB | 0 | none | included |
 | crypto-random-string | 6.0.0 | 1.3 kB | 3 | none | included |
 | nanoid | 6.0.2 | 0.3 kB | 0 | none | included |
-| seedrandom | 3.0.5 | 2.9 kB | 0 | `crypto` | `@types/seedrandom` |
-| lodash | 4.18.1 | 26 kB | 0 | `Buffer` | `@types/lodash` |
+| seedrandom | 3.0.5 | 2.9 kB | 0 | `crypto` | @types/seedrandom |
+| lodash | 4.18.1 | 26 kB | 0 | `Buffer` | @types/lodash |
 | `node:crypto` | – | built in | – | Node only | – |
 | `Math.random` or `crypto.getRandomValues` | – | built in | – | none | – |
 

@@ -1,6 +1,6 @@
 # Parity with nodemailer
 
-`@portable/mail` replaces nodemailer's `MailComposer` (`src/mail-composer`) and `MimeNode` (`src/mime-node`), version 10.1.7. Each upstream test below maps to the test here that covers the same case, or gives the reason it doesn't apply. Many `MimeNode` tests exercise its tree-editing API or Node-specific options, which this package doesn't have: you describe a message as one object and `Mail.encodeStream` builds the tree.
+@portable/mail replaces nodemailer's `MailComposer` (`src/mail-composer`) and `MimeNode` (`src/mime-node`), version 10.1.7. Each upstream test below maps to the test here that covers the same case, or gives the reason it doesn't apply. Many `MimeNode` tests exercise its tree-editing API or Node-specific options, which this package doesn't have: you describe a message as one object and `Mail.encodeStream` builds the tree.
 
 Our test files:
 
@@ -14,7 +14,7 @@ Our test files:
 | oracle | `mail.oracle.test.ts`: 300 generated messages compared with `MailComposer` |
 | postal-mime | `postal-mime.test.ts`: our output parsed by postal-mime |
 
-Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which ports nodemailer's addressparser tests. The cases below that only exercise the parser are listed here too, with the envelope test that checks the result.
+Address parsing itself is @portable/mime-headers' `parseAddresses`, which ports nodemailer's addressparser tests. The cases below that only exercise the parser are listed here too, with the envelope test that checks the result.
 
 ## `test/mail-composer/mail-composer-test.ts`
 
@@ -150,7 +150,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 | should escape a backslash inside filename | body: filename table |
 | should encode a quote in filename as a mime word | body: filename table. See differences: `filename` is a quoted string with `\"`. |
 | should not let an unpaired surrogate in filename inject a header parameter | body: an unpaired surrogate in a filename stays inside the parameter |
-| should detect content type from filename | Not applicable: no extension lookup. The content type comes from `contentType` or a Blob's `type`. The README points to `@remix-run/mime`. |
+| should detect content type from filename | Not applicable: no extension lookup. The content type comes from `contentType` or a Blob's `type`. The README points to @remix-run/mime. |
 | should convert address objects | addresses: strings, mailboxes, and lists of both give the same header |
 | should skip empty header | headers: empty values leave the header out |
 | should not process prepared headers | Not applicable: no prepared headers. headers: a long custom header is folded at whitespace |
@@ -305,7 +305,7 @@ Address parsing itself is `@portable/mime-headers`' `parseAddresses`, which port
 
 | Upstream test | Ours |
 | --- | --- |
-| reports a failing … with DKIM; reports a failing … without DKIM; reports a failing user transform with DKIM | Not applicable: no DKIM or transforms. `@portable/dkim` signs a finished message. stream: an error in a content stream errors the output |
+| reports a failing … with DKIM; reports a failing … without DKIM; reports a failing user transform with DKIM | Not applicable: no DKIM or transforms. @portable/dkim signs a finished message. stream: an error in a content stream errors the output |
 | reports an error from every stage once on the returned stream | stream: an error in a content stream errors the output and cancels the other streams |
 | does not throw when a content stream emits error twice | Not applicable: a `ReadableStream` errors once. |
 | fails a content stream that is destroyed without an error instead of waiting forever | Not applicable: a `ReadableStream` that is cancelled elsewhere is locked, and stream: a locked stream or one given twice throws |
@@ -354,7 +354,7 @@ Each row is a nodemailer behavior that this package handles differently, with th
 These are deliberate and documented in the README. The oracle test's generator avoids them.
 
 - Header names keep the caller's case. nodemailer capitalizes each word (`X-Processed`), which leaves most header names in use unchanged.
-- An address name over about 40 bytes is encoded in words of up to 75 characters, as `@portable/mime-headers` writes them, where nodemailer uses 52.
+- An address name over about 40 bytes is encoded in words of up to 75 characters, as @portable/mime-headers writes them, where nodemailer uses 52.
 - A file name holding `"` is written as a quoted string with `\"` in `filename` instead of RFC 2231 encoding.
 - An A-label domain beside a non-ASCII local part (`jõser@xn--jgeva-dua.ee`) is kept as given. nodemailer decodes it to UTF-8, which needs a Punycode decoder, and WinterTC has none.
 - A domain beside a non-ASCII local part is lowercased but not mapped with UTS #46, since the URL host parser always returns an A-label.

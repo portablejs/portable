@@ -19,7 +19,7 @@ export type Digest = (
 /**
  * A sync or async function that computes an HMAC of `data` with `key` and `hash`. Packages that
  * sign with HMAC take one as their `hmac` option. `WebCrypto.hmac` has this type, and so does a
- * wrapper around `@noble/hashes`, which is sync and faster on Node.
+ * wrapper around noble-hashes, which is sync and faster on Node.
  */
 export type Hmac = (
   hash: Hash,
@@ -28,7 +28,7 @@ export type Hmac = (
 ) => Uint8Array | Promise<Uint8Array>;
 
 /**
- * An incremental hash with the same methods as `sha256.create()` from `@noble/hashes`.
+ * An incremental hash with the same methods as `sha256.create()` from noble-hashes.
  * `crypto.subtle.digest` needs the whole input at once, so a package that hashes a stream takes a
  * `hasher` option, a function that returns one of these.
  */

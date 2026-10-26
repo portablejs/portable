@@ -2,8 +2,8 @@
 export type Address = { hostname: string; port: number };
 
 /**
- * The options a `Connect` receives. Both are required, because the type of `connect` in
- * `@cloudflare/workers-types` requires `allowHalfOpen`.
+ * The options a `Connect` receives. Both are required, because Cloudflare's workers-types package
+ * declares `connect` with a required `allowHalfOpen`.
  */
 export type Options = {
   /**

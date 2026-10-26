@@ -17,10 +17,7 @@ on:
     types: [labeled, synchronize]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  deployments: write
-  pull-requests: read
+permissions: {}
 
 concurrency:
   group: site-preview-${{ github.head_ref || github.ref_name }}
@@ -35,6 +32,12 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'preview')
       )
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The last step records the preview as a deployment.
+      deployments: write
+      # A dispatched run looks up the open pull request for its branch.
+      pull-requests: read
     steps:
       # A dispatched run has no pull request in its event payload, so this step looks up the open pull request for the branch.
       - id: pr
@@ -52,16 +55,18 @@ jobs:
           fi
           echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm --filter @portable/site build
 
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: site/.herenow.json
           key: site-preview-${{ steps.pr.outputs.number }}-${{ github.run_id }}
@@ -69,12 +74,12 @@ jobs:
       - id: publish
         working-directory: site
         run: node scripts/herenow.mjs .herenow.json
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: site/.herenow.json
           key: site-preview-${{ steps.pr.outputs.number }}-${{ github.run_id }}-${{ github.run_attempt }}
 
-      - uses: actions/github-script@v9
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           URL: ${{ steps.publish.outputs.url }}
           SHA: ${{ steps.pr.outputs.sha }}

@@ -217,12 +217,12 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/streams | – | 1.7 kB | 2 | none | included |
 | get-stream | 9.0.1 | 2.1 kB | 2 | `Buffer` | included |
-| concat-stream | 2.0.0 | 15 kB | 7 | `buffer`, `events`, `util` | `@types/concat-stream` |
+| concat-stream | 2.0.0 | 15 kB | 7 | `buffer`, `events`, `util` | @types/concat-stream |
 | bl | 7.0.12 | 2.0 kB | 0 | `buffer`, `stream` | included |
-| stream-to-array | 2.3.0 | 0.9 kB | 1 | none | `@types/stream-to-array` |
+| stream-to-array | 2.3.0 | 0.9 kB | 1 | none | @types/stream-to-array |
 | raw-body | 4.0.0 | 4.8 kB | 7 | `Buffer`, `async_hooks` | included |
-| merge2 | 1.4.1 | 1.2 kB | 0 | `stream` | `@types/merge2` |
-| merge-stream | 2.0.0 | 0.8 kB | 0 | `stream` | `@types/merge-stream` |
+| merge2 | 1.4.1 | 1.2 kB | 0 | `stream` | @types/merge2 |
+| merge-stream | 2.0.0 | 0.8 kB | 0 | `stream` | @types/merge-stream |
 | through2 | 5.0.11 | 25 kB | 10 | `buffer`, `events` | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.

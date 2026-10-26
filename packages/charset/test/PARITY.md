@@ -14,8 +14,8 @@ Besides the ported cases, `charset.oracle.test.ts` compares every code point of 
 | should not detect 'constructor' as encoding when _codecDataCache is defined | `labels > load > rejects unknown labels and the replacement encoding with UnsupportedError` | There is no cache to poison. That test also calls `load('constructor')`. |
 | Return values are of correct types | `encode > encode > returns a Uint8Array` | |
 | Internal encodings all correctly encoded/decoded | `encode > encode > encodes UTF-8 and UTF-16LE text that decodes back to the input` | `binary`, `base64`, and `hex` are not charsets. See API changes. |
-| Base64 correctly encoded/decoded | not applicable | Use `@portable/base64`. |
-| Hex correctly encoded/decoded | not applicable | Use `Bytes.toHex` from `@portable/bytes`. |
+| Base64 correctly encoded/decoded | not applicable | Use @portable/base64. |
+| Hex correctly encoded/decoded | not applicable | Use `Bytes.toHex` from @portable/bytes. |
 | Latin1 correctly encoded/decoded | `encode > encode > encodes Latin-1 text with the latin1 label` | `latin1` is windows-1252, as in WHATWG. |
 | Convert to string, not buffer (utf8 used) | not applicable | Decoding. |
 | Throws on unknown encodings | `labels > load > rejects unknown labels and the replacement encoding with UnsupportedError` | |

@@ -1,6 +1,6 @@
 # @portable/smtp
 
-Sends email over SMTP (RFC 5321) or LMTP (RFC 2033) from any runtime with a TCP socket API: Cloudflare Workers, Node 24+, Bun, and Deno. You pass the function that opens the socket, so the package itself only needs Web Streams. The message can be a `ReadableStream`, such as the output of `@portable/mail` signed with `@portable/dkim`, and is streamed to the server without buffering.
+Sends email over SMTP (RFC 5321) or LMTP (RFC 2033) from any runtime with a TCP socket API: Cloudflare Workers, Node 24+, Bun, and Deno. You pass the function that opens the socket, so the package itself only needs Web Streams. The message can be a `ReadableStream`, such as the output of [@portable/mail](../mail/README.md) signed with [@portable/dkim](../dkim/README.md), and is streamed to the server without buffering.
 
 Replaces the SMTP transport and `smtp-connection` of [nodemailer](https://www.npmjs.com/package/nodemailer).
 
@@ -39,7 +39,7 @@ for (const mail of outbox) {
 
 ## Sockets
 
-`connect` is called as `connect({ hostname, port }, { secureTransport, allowHalfOpen })` and returns a socket with the shape of the [Sockets API](https://sockets-api.proposal.wintertc.org/), typed as `Sockets.Connect` in [`@portable/sockets`](../sockets). On Cloudflare Workers, pass `connect` from `cloudflare:sockets`. On Node, Bun, and Deno, pass `connect` from `@portable/sockets/node`:
+`connect` is called as `connect({ hostname, port }, { secureTransport, allowHalfOpen })` and returns a socket with the shape of the [Sockets API](https://sockets-api.proposal.wintertc.org/), typed as `Sockets.Connect` in [@portable/sockets](../sockets). On Cloudflare Workers, pass `connect` from `cloudflare:sockets`. On Node, Bun, and Deno, pass `connect` from `@portable/sockets/node`:
 
 ```ts
 import * as Smtp from '@portable/smtp';

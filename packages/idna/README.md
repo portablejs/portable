@@ -102,8 +102,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/idna | – | 16 kB | 1 | none | included |
-| tr46 | 7.0.0 | 64 kB | 1 | none | `@types/tr46` |
-| punycode | 2.3.1 | 1.5 kB | 0 | none | `@types/punycode` |
+| tr46 | 7.0.0 | 64 kB | 1 | none | @types/tr46 |
+| punycode | 2.3.1 | 1.5 kB | 0 | none | @types/punycode |
 | `node:url` | – | built in | – | Node only | – |
 | `new URL()` | – | built in | – | none | – |
 

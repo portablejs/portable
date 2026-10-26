@@ -1,6 +1,6 @@
 # Test parity
 
-Upstream suite: [mailsplit 5.4.26 `test/`](https://github.com/zone-eu/mailsplit/tree/master/test) (`@zone-eu/mailsplit`, formerly `andris9/mailsplit`). The oracle tests run against `@zone-eu/mailsplit` 5.4.23, the newest release older than a day. Fixtures `message.eml`, `mimetorture.eml`, `original.txt`, `source1.eml`, and `source2.eml` are copied from mailsplit (MIT, Andris Reinman, and Zone Media OÜ). `form-data.eml` (2.4 MB) and `large_image.eml` (3.7 MB) are not copied. The tests that used them build an equivalent message instead.
+Upstream suite: [mailsplit 5.4.26 `test/`](https://github.com/zone-eu/mailsplit/tree/master/test) (@zone-eu/mailsplit, formerly `andris9/mailsplit`). The oracle tests run against @zone-eu/mailsplit 5.4.23, the newest release older than a day. Fixtures `message.eml`, `mimetorture.eml`, `original.txt`, `source1.eml`, and `source2.eml` are copied from mailsplit (MIT, Andris Reinman, and Zone Media OÜ). `form-data.eml` (2.4 MB) and `large_image.eml` (3.7 MB) are not copied. The tests that used them build an equivalent message instead.
 
 Tests are in `mailsplit.conformance.ts` unless noted. `MimeStream.conformance.ts` has this package's own tests, and `mailsplit.oracle.test.ts` compares with mailsplit.
 
@@ -79,7 +79,7 @@ mailsplit's `Headers` class parses, edits, and rebuilds a header block. Here the
 | --- | --- | --- |
 | Add and parse headers | `headers > returns the header block as received` | |
 | Update Content-Type, Set filename, Delete filename, Update existing filename, Set character set, Update character set, Remove character set | skipped | No header editing. Build values with `MimeHeaders.formatValue`. |
-| Get filename from Content-Type, Get split filename from Content-Type, Get filename from Content-Disposition, Get split filename from Content-Disposition, Do not decode an RFC 2231 filename a second time | `mime-node > reads a filename from the header fields with MimeHeaders.parseValue` | Parameter decoding belongs to `@portable/mime-headers`, whose tests cover each of these cases. |
+| Get filename from Content-Type, Get split filename from Content-Type, Get filename from Content-Disposition, Get split filename from Content-Disposition, Do not decode an RFC 2231 filename a second time | `mime-node > reads a filename from the header fields with MimeHeaders.parseValue` | Parameter decoding belongs to @portable/mime-headers, whose tests cover each of these cases. |
 | Strip comments from Content-Transfer-Encoding | `mime-node > reads Content-Transfer-Encoding without comments` | Deliberate difference: an unclosed comment is dropped too. mailsplit keeps `base64 (unclosed` as it is. |
 | Parse Content-Transfer-Encoding with many comment openers in linear time | `mime-node > reads Content-Transfer-Encoding with many comment openers in linear time` | |
 
@@ -91,7 +91,7 @@ mailsplit's `Headers` class parses, edits, and rebuilds a header block. Here the
 
 ## rewriter-test.js and streamer-test.js
 
-`Rewriter` and `Streamer` decode the transfer encoding of chosen parts. This package leaves decoding to `@portable/base64` and `@portable/quoted-printable`, so these tests check what a caller gets from the chunks instead.
+`Rewriter` and `Streamer` decode the transfer encoding of chosen parts. This package leaves decoding to @portable/base64 and @portable/quoted-printable, so these tests check what a caller gets from the chunks instead.
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |

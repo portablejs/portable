@@ -33,7 +33,7 @@ smart-buffer's suite is grouped by `describe` block, and the rows below follow t
 | Setting encoding | skipped | UTF-8 only. |
 | Automatic internal buffer resizing, `ensureWritable()` | `writer > createWriter > grows past its initial size` | |
 | Clearing and destroying the buffer | skipped | Create a new writer. |
-| Displaying the buffer as a string | skipped | Use `@portable/base64` or `Bytes.toHex` on `toBytes()`. |
+| Displaying the buffer as a string | skipped | Use @portable/base64 or `Bytes.toHex` on `toBytes()`. |
 | `isSmartBufferOptions()`, utils | skipped | Internal helpers. |
 
 ## varint
@@ -82,6 +82,6 @@ smart-buffer's suite is grouped by `describe` block, and the rows below follow t
 | --- | --- | --- |
 | varint's `decode` returns rounded values from 2<sup>53</sup> to 2<sup>56</sup>: the bytes for 2<sup>53</sup> + 1 decode to 2<sup>53</sup>. | `varint` throws `Binary.InvalidInputError` for a value past `Number.MAX_SAFE_INTEGER`. | `reader > varint > throws InvalidInputError for a varint outside the safe integer range` |
 | varint's `decode` throws the same `RangeError` for truncated input and for a varint over 8 bytes, and reports its length through the shared `decode.bytes` property. | `Binary.TruncatedError` and `Binary.InvalidInputError` are separate, and the reader's `offset` moves past the varint. | `reader > varint > throws TruncatedError for a varint cut off at the end` |
-| `@bufbuild/protobuf` keeps the low 64 bits of a 10-byte varint with bits above 64. | `bigVarint` throws `Binary.InvalidInputError`. | `reader > varint > throws InvalidInputError for a 10-byte varint over 64 bits` |
+| @bufbuild/protobuf keeps the low 64 bits of a 10-byte varint with bits above 64. | `bigVarint` throws `Binary.InvalidInputError`. | `reader > varint > throws InvalidInputError for a 10-byte varint over 64 bits` |
 | smart-buffer's write methods with an offset insert at that offset and move later bytes along. | A write at an earlier `offset` overwrites. | `writer > createWriter > can go back and fill in a length written earlier` |
 | `TextDecoder` and `Buffer.toString` remove a leading byte order mark. | `string` keeps it. | `reader > createReader > keeps a leading byte order mark` |

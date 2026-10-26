@@ -6,9 +6,9 @@ description: Collect, transform, split, and decompress Web Streams, with size li
 
 Packages that read or write large data use Web Streams: the `ReadableStream`, `WritableStream`, and `TransformStream` classes that `fetch` uses. You can pipe a `fetch` body through these transforms, and the output of a transform that emits bytes, such as `Compress.DecoderStream`, can be a `Response` body.
 
-- [`streams`](/packages/streams) collects a stream into bytes, text, or JSON with a size limit. It also has transforms such as `map`, `filter`, and `batch`.
-- [`lines`](/packages/lines) splits bytes or text into lines.
-- [`compress`](/packages/compress) compresses and decompresses gzip and deflate with the platform's `CompressionStream` and `DecompressionStream`, and limits how much a decompression may produce.
+- [streams](/packages/streams) collects a stream into bytes, text, or JSON with a size limit. It also has transforms such as `map`, `filter`, and `batch`.
+- [lines](/packages/lines) splits bytes or text into lines.
+- [compress](/packages/compress) compresses and decompresses gzip and deflate with the platform's `CompressionStream` and `DecompressionStream`, and limits how much a decompression may produce.
 
 ## Read a request body with a limit
 

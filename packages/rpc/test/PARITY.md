@@ -135,7 +135,7 @@ json-rpc-2.0 has no transport: a method returns a response object and the test p
 
 ## penpal
 
-Maps every penpal 8.0.1 test (140: 46 unit, 94 browser) to the `@portable/rpc` test that covers the same case, or gives the reason it doesn't apply.
+Maps every penpal 8.0.1 test (140: 46 unit, 94 browser) to the @portable/rpc test that covers the same case, or gives the reason it doesn't apply.
 
 Our files:
 

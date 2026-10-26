@@ -54,7 +54,7 @@ esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You d
 
 The tests run in Chromium, Firefox, WebKit, Node, Bun, and Deno, and a check of every package runs in workerd, the Cloudflare Workers runtime.
 
-@portable/smtp and @portable/sockets need a TCP socket API, so they run in Cloudflare Workers, Node, Bun, and Deno but not in browsers.
+[@portable/smtp](/packages/smtp) and [@portable/sockets](/packages/sockets) need a TCP socket API, so they run in Cloudflare Workers, Node, Bun, and Deno but not in browsers.
 
 ## Conventions
 

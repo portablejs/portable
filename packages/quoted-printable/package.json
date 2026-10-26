@@ -1,11 +1,11 @@
 {
-  "name": "@portable/quoted-printable",
-  "description": "Encode and decode quoted-printable text, as functions and as streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/quoted-printable",
+  "description": "Encode and decode quoted-printable text, as functions and as streams, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

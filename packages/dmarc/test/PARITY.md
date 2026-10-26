@@ -6,7 +6,7 @@ The ported tests are in `check.conformance.ts`, in a `describe` block named afte
 
 mailauth has a default mode that case-folds tag names, uses the last of duplicate tags, and accepts whitespace before `v=DMARC1`. Its `strict: true` mode follows RFC 9989 and RFC 6376's tag-list rules. `check` follows the RFCs, so the oracle runs strict mode, and the ported tests of the default mode expect the strict result.
 
-The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so you parse the From header yourself with `@portable/mime-headers`, or use `@portable/mail-auth`, which parses it for you. The tests that only parse addresses are listed as not applicable below.
+The input differs from mailauth's. mailauth's `dmarc()` takes the From header's addresses and extracts the Author Domain. `Dmarc.check` takes the domain, so you parse the From header yourself with @portable/mime-headers, or use @portable/mail-auth, which parses it for you. The tests that only parse addresses are listed as not applicable below.
 
 ## dmarc-verify-test.js
 
@@ -40,7 +40,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | Should return false for From addresses in different domains | Not applicable: you decide what to do with several Author Domains (RFC 9989 section 5.3.1). |
 | Should handle IDN domains | IDN domains in A-label form |
 | Should handle domains with string DKIM/SPF entries | Not applicable: identifiers are `{ result, domain }` objects. |
-| Should include ARC result in comment when provided | Not applicable: no Authentication-Results comment. `@portable/mail-auth` adds the ARC result. |
+| Should include ARC result in comment when provided | Not applicable: no Authentication-Results comment. @portable/mail-auth adds the ARC result. |
 | Should track undersized DKIM signatures | each signature is reported, so a caller can tell an l= signature apart |
 | Should return raw record in rr field | the raw record is in record.text |
 | Should generate formatted info string | Not applicable: no Authentication-Results text. |
@@ -54,7 +54,7 @@ The input differs from mailauth's. mailauth's `dmarc()` takes the From header's 
 | --- | --- |
 | C1 > Should not be fooled by an "@" in a quoted local-part | Not applicable: From address parsing. |
 | C1 > Should use the mailbox domain of an obs-route address | Not applicable: From address parsing. |
-| C1 > Should apply the policy through authenticate() | Not applicable: `authenticate()` is in `@portable/mail-auth`. |
+| C1 > Should apply the policy through authenticate() | Not applicable: `authenticate()` is in @portable/mail-auth. |
 | H6 > Should evaluate mailboxes that share one domain | Edge cases > several From addresses in one domain |
 | H6 > Should report why evaluation is not possible, keeping the false response | Not applicable: finding several Author Domains is left to you. |
 | H6 > Should evaluate through authenticate() | Not applicable: `authenticate()`. |
@@ -257,7 +257,7 @@ These cases come from mailauth's issue tracker, read through its GitHub search p
 | Issue | Our behavior | Test |
 | --- | --- | --- |
 | #74: strict alignment compared organizational domains, so `mail.example.com` aligned with `example.com` under `adkim=s`. Fixed in mailauth. | Strict alignment compares the domains as strings. | dmarc-verify-test.js > adkim=s fails a signature of the organizational domain |
-| #60: the `psl` package mailauth used went unmaintained and returned wrong organizational domains. mailauth moved to tldts, then to the tree walk. | The tree walk is the default, and to use a public suffix list instead, pass its function as `organizationalDomain`. | organizationalDomain option > uses the function instead of the tree walk; check.oracle.test.ts > the organizationalDomain option with tldts matches the tree walk |
+| #60: the psl package mailauth used went unmaintained and returned wrong organizational domains. mailauth moved to tldts, then to the tree walk. | The tree walk is the default, and to use a public suffix list instead, pass its function as `organizationalDomain`. | organizationalDomain option > uses the function instead of the tree walk; check.oracle.test.ts > the organizationalDomain option with tldts matches the tree walk |
 | #142: a tag name without `=` overrode a valid tag. Fixed in mailauth. | A fragment without `=` is ignored. | get-dmarc-record-test.js > ignores a fragment without "=" or without a name |
 | #143: strict mode accepted whitespace before `v=DMARC1`. Fixed in strict mode, but the default mode still accepts it. | Always rejected (RFC 9989 section 4.10 step 2). | ignores a record with whitespace before v=DMARC1 |
 | The default mode uses the last of duplicate tags and case-folds tag names. | A duplicate tag invalidates the record and an upper case tag name is unknown (RFC 6376 section 3.2). | dmarc-fixes-test.js > F7 tests |

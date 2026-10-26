@@ -1,11 +1,11 @@
 {
-  "name": "@portable/exif",
-  "description": "Read EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF bytes or streams, and strip it from JPEG, PNG, and WebP, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/exif",
+  "description": "Read EXIF metadata from JPEG, TIFF, PNG, WebP, HEIC, and AVIF bytes or streams, and strip it from JPEG, PNG, and WebP, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

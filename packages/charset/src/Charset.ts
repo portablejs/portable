@@ -12,8 +12,8 @@ export type Charset = {
   readonly name: Name;
   /**
    * Encodes text with the default options, as `Charset.encode(text, charset)` does. This method
-   * makes each charset a `CharsetEncoder`, so it can be passed as it is where
-   * `@portable/mime-headers` and `@portable/mail` take one.
+   * makes each charset a `CharsetEncoder`, so it can be passed as it is where the
+   * mime-headers and mail packages take one.
    */
   readonly encode: (text: string) => Uint8Array<ArrayBuffer>;
   readonly [definition]: true;

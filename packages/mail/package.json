@@ -1,11 +1,11 @@
 {
-  "name": "@portable/mail",
-  "description": "Compose raw RFC 5322 email messages as web streams, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/mail",
+  "description": "Compose raw RFC 5322 email messages as web streams, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

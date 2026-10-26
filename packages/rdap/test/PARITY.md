@@ -42,7 +42,7 @@ Test files:
 | domain.test.ts: should return error for invalid TLD | `names > rejects a TLD with no RDAP server with UnsupportedError, after only the bootstrap file` | Same names: `example.badger`, `example.invalid`. |
 | domain.test.ts: should return error for non-existant domain | `names > rejects an unregistered name with NotFoundError` | |
 | domain.test.ts: should return error for invalid FQDN | `names > rejects malformed names with InvalidInputError, without a request` | |
-| errors.test.ts: every error is an RdapError and an Error | `error names are namespaced by the package` | Each error extends its class in `@portable/errors`, as AGENTS.md requires. There is no rdap base class. |
+| errors.test.ts: every error is an RdapError and an Error | `error names are namespaced by the package` | Each error extends its class in @portable/errors, as AGENTS.md requires. There is no rdap base class. |
 | errors.test.ts: each subclass is distinguishable from the others | `names`, `responses`, and `asn` tests | Each asserts the specific class. |
 | errors.test.ts: reports its own class as the name | `error names are namespaced by the package` | |
 | errors.test.ts: carries the detail a caller needs to act on | `names > rejects an unregistered name with NotFoundError`, `responses > rejects an HTTP error with ResponseError, holding the status and the RDAP error body` | `url`, `status`, and `body`. |

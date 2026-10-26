@@ -1,11 +1,11 @@
 {
-  "name": "@portable/errors",
-  "description": "Provide the shared error classes for @portable packages and check an error's kind even when an app installs two copies of a package, in any JavaScript runtime.",
   "scripts": {
     "build": "zile",
     "dev": "zile dev"
   },
   "[!start-pkg]": "",
+  "name": "@portable/errors",
+  "description": "Provide the shared error classes for @portable packages and check an error's kind even when an app installs two copies of a package, in any JavaScript runtime.",
   "version": "0.0.0",
   "type": "module",
   "sideEffects": false,

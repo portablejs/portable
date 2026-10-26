@@ -4,7 +4,7 @@ Upstream suites: [reconnecting-websocket 4.4.0 `__tests__/test.ts`](https://gith
 
 The three libraries are `EventTarget` wrappers with `onopen`/`onclose` handlers, `send()`, `close()`, `reconnect()`, and getters such as `retryCount` and `bufferedAmount`. `connect()` returns a readable and a writable stream instead. Upstream tests of event listener bookkeeping, getters, and builder methods have no counterpart, because the streams replace them. Each row below says what the test checked and where we check the same behavior.
 
-Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conformance.ts` (`fromSocket >`), `server.test.ts` (`server >`, a real `ws` server in Node) and `connect.oracle.test.ts` (`oracle >`).
+Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conformance.ts` (`fromSocket >`), `server.test.ts` (`server >`, a real ws server in Node) and `connect.oracle.test.ts` (`oracle >`).
 
 ## reconnecting-websocket
 
@@ -69,7 +69,7 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 | reconnecting: warns when send() is called after close() | `connect > closing > cancelling readable closes the socket and stops reconnecting` | A write after closing rejects instead of being queued forever. |
 | reconnecting: messages sent after close() are delivered after reconnect(), and the warning resets | skipped | No `reconnect()`. |
 | reconnecting: reconnect() works after maxRetries has been exhausted | skipped | No `reconnect()`. After `attempts`, the streams fail and you call `connect` again. |
-| reconnecting-node: pass WebSocket via options | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` | Passes the `ws` package's class. |
+| reconnecting-node: pass WebSocket via options | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` | Passes the ws package's class. |
 | partysocket: throws if host or room is not set; room is updated after updateProperties | skipped | PartyKit URLs. Pass a URL function. |
 | partysocket-url (53 tests: host, room, party, path, prefix, query, id, name validation, protocols, option pass-through) | skipped | PartyKit URL building. `connect` takes a URL or a function that returns one. |
 | partysocket-fetch (25 tests) | skipped | `PartySocket.fetch` is an HTTP helper, not part of a WebSocket. |
@@ -185,14 +185,14 @@ Test names refer to `connect.conformance.ts` (`connect >`), `fromSocket.conforma
 
 ## Benchmarks
 
-None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messages of 100 bytes through a local `ws` server with `connect`, reconnecting-websocket, partysocket, websocket-ts, and a bare `WebSocket`, and compares a server that echoes through `fromSocket` with one that uses `ws` listeners. The benchmark fails if any of the three libraries, or the `ws` listeners, is more than 25% faster.
+None of the three libraries has benchmarks. `connect.bench.ts` echoes 1000 messages of 100 bytes through a local ws server with `connect`, reconnecting-websocket, partysocket, websocket-ts, and a bare `WebSocket`, and compares a server that echoes through `fromSocket` with one that uses ws listeners. The benchmark fails if any of the three libraries, or the ws listeners, is more than 25% faster.
 
 ## Known upstream issues
 
 | Issue | Our behavior | Test |
 | --- | --- | --- |
 | reconnecting-websocket [#91](https://github.com/pladaria/reconnecting-websocket/issues/91): the first connection waited for the reconnect delay. | The first socket opens at once. | `connect > connecting > opens the first socket without waiting for the delay` |
-| reconnecting-websocket [#197](https://github.com/pladaria/reconnecting-websocket/issues/197): closing a `ws` client that is still connecting emits an error event with no listener, which crashes Node. | An error listener stays on every socket. | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` |
+| reconnecting-websocket [#197](https://github.com/pladaria/reconnecting-websocket/issues/197): closing a ws client that is still connecting emits an error event with no listener, which crashes Node. | An error listener stays on every socket. | `server > connect against a ws server > aborting while the ws client is still connecting does not crash` |
 | reconnecting-websocket [#170](https://github.com/pladaria/reconnecting-websocket/issues/170): a close event from an old socket arriving after a reconnect could close the new one. | Listeners are removed from a socket when its connection ends. | `connect > sending and receiving > ignores events from a replaced socket` |
 | reconnecting-websocket [#98](https://github.com/pladaria/reconnecting-websocket/issues/98): no heartbeat, so a silently dropped connection stays open. | `heartbeat` option. | `connect > heartbeat > reconnects when no pong arrives in time`, `server > connect against a ws server > the heartbeat replaces a connection whose server stopped answering` |
 | reconnecting-websocket and partysocket flush queued messages in the `open` event, before your code can authenticate. | Queued writes wait for `open` to finish. | `connect > open > holds queued writes until it resolves` |

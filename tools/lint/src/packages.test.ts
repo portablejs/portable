@@ -30,10 +30,10 @@ const defaultRuntimes = {
 };
 
 const fieldOrder = [
-  'name',
-  'description',
   'scripts',
   '[!start-pkg]',
+  'name',
+  'description',
   'version',
   'type',
   'sideEffects',
@@ -159,6 +159,6 @@ describe.each(names)('%s', (name) => {
     expect(title).toBe(`# @portable/${name}`);
     expect(description).toContain(runs.readme);
     expect(readme).toMatch(/^## Why use this over /m);
-    expect(rootReadme).toContain(`<a href="packages/${name}"><code>@portable/${name}</code></a>`);
+    expect(rootReadme).toContain(`<a href="packages/${name}">@portable/${name}</a>`);
   });
 });

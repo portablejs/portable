@@ -103,7 +103,7 @@ export declare namespace encodeStream {
     boundary?: string | undefined;
     /**
      * Charset for encoded words in headers and for text bodies given as strings, for mail that
-     * has to use one other than UTF-8. `@portable/charset` provides encoders. @default UTF-8
+     * has to use one other than UTF-8. The charset package provides encoders. @default UTF-8
      */
     charset?: MimeHeaders.CharsetEncoder | undefined;
     /**

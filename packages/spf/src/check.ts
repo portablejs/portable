@@ -16,7 +16,7 @@ import { type Directive, parseRecord, type Qualifier } from './record.js';
 import { hostToAscii } from '@portable/idna/internal';
 
 /**
- * The DNS lookups SPF needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or a
+ * The DNS lookups SPF needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or a
  * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`,
  * `ENODATA` or `EBADNAME` (an invalid name) as an empty answer, and any other rejection as a
  * temporary DNS error.

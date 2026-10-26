@@ -50,8 +50,6 @@ type Column = {
 const canvas = document.getElementById('rain') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 const statusEl = document.getElementById('status')!;
-const totalEl = document.getElementById('total')!;
-const rateEl = document.getElementById('rate')!;
 const tip = document.getElementById('tip')!;
 let mouse: { x: number; y: number } | undefined;
 let tipItem: Item | undefined;
@@ -60,7 +58,10 @@ const LINE = 17;
 const HEADER = 46;
 const FONT = '12.5px ui-sans-serif, system-ui, -apple-system, sans-serif';
 const names = new Intl.DisplayNames(['en'], { type: 'language' });
-const hues = [212, 152, 32, 280, 350, 190, 48, 100, 250, 0];
+const ACCENT = '#fc7c00';
+const TEXT = 'rgba(230,233,239,0.92)';
+const REPLY = 'rgba(230,233,239,0.6)';
+const DIM = '#8a93a6';
 
 let width = 0;
 let height = 0;
@@ -68,7 +69,6 @@ let columns: Column[] = [];
 const byLang = new Map<string, Column>();
 const langTotals = new Map<string, number>();
 let total = 0;
-const recent: number[] = [];
 
 function label(lang: string) {
   if (lang === 'other') {
@@ -164,7 +164,6 @@ function receive(post: Post) {
   langTotals.set(lang, (langTotals.get(lang) ?? 0) + 1);
   total++;
   const now = performance.now();
-  recent.push(now);
   const column = columnFor(lang);
   column.recent.push(now);
   column.total++;
@@ -231,7 +230,6 @@ function frame(now: number) {
     const x = index * columnWidth;
     const paused = column === hovered || column.pausedAt !== undefined;
     const hoveredColumn = index === hoveredIndex;
-    const hue = hues[index % hues.length]!;
     const queued = column.items.length
       ? Math.max(0, HEADER - column.items[column.items.length - 1]!.y)
       : 0;
@@ -266,28 +264,20 @@ function frame(now: number) {
         ctx.fillStyle = 'rgba(255,255,255,0.08)';
         ctx.fillRect(x + 4, item.y - LINE / 2, columnWidth - 8, LINE);
       }
-      ctx.fillStyle = item.replayed ? 'hsl(38 95% 58%)' : `hsl(${hue} 85% 65%)`;
       const hovered = item === hoveredItem;
-      ctx.fillRect(x + 8, item.y - 5, hovered ? 5 : 3, 10);
-      let textX = x + 20;
+      let textX = x + 12;
       if (item.media) {
-        ctx.strokeStyle = ctx.fillStyle;
+        ctx.strokeStyle = DIM;
         ctx.lineWidth = 1.2;
-        ctx.strokeRect(x + 20.5, item.y - 4.5, 10, 9);
+        ctx.strokeRect(x + 12.5, item.y - 4.5, 10, 9);
         ctx.beginPath();
-        ctx.moveTo(x + 21, item.y + 4);
-        ctx.lineTo(x + 25, item.y);
-        ctx.lineTo(x + 30, item.y + 4);
+        ctx.moveTo(x + 13, item.y + 4);
+        ctx.lineTo(x + 17, item.y);
+        ctx.lineTo(x + 22, item.y + 4);
         ctx.stroke();
         textX += 15;
       }
-      ctx.fillStyle = hovered
-        ? '#ffffff'
-        : item.replayed
-          ? 'hsl(38 70% 80%)'
-          : item.reply
-            ? 'rgba(230,233,239,0.62)'
-            : 'rgba(230,233,239,0.95)';
+      ctx.fillStyle = hovered ? '#ffffff' : item.replayed ? ACCENT : item.reply ? REPLY : TEXT;
       ctx.fillText(item.text, textX, item.y);
     }
     ctx.globalAlpha = 1;
@@ -298,14 +288,9 @@ function frame(now: number) {
     }
     ctx.fillStyle = '#0b0d12';
     ctx.fillRect(x + 1, 0, columnWidth - 1, HEADER - 8);
-    ctx.fillStyle = `hsl(${hue} 85% 65%)`;
-    ctx.fillRect(x + 8, 10, 3, 24);
     ctx.font = '600 13px ui-sans-serif, system-ui, sans-serif';
     ctx.fillStyle = '#e6e9ef';
-    ctx.fillText(column.label, x + 18, 16);
-    ctx.font = '12px ui-monospace, monospace';
-    ctx.fillStyle = '#8a93a6';
-    ctx.fillText(`${(column.recent.length / 5).toFixed(1)}/s`, x + 18, 31);
+    ctx.fillText(column.label, x + 12, 16);
     const tag = paused
       ? 'paused'
       : column.catchUp
@@ -313,15 +298,14 @@ function frame(now: number) {
         : column.note && column.note.until > now
           ? column.note.text
           : undefined;
-    if (tag) {
-      ctx.fillStyle = 'hsl(38 95% 58%)';
-      ctx.fillText(tag, x + 66, 31);
-    }
+    ctx.font = FONT;
+    ctx.fillStyle = tag ? ACCENT : DIM;
+    ctx.fillText(tag ?? `${Math.round(column.recent.length / 5)} posts/sec`, x + 12, 32);
     ctx.font = FONT;
   }
   if (total !== shownTotal) {
     shownTotal = total;
-    totalEl.textContent = total.toLocaleString();
+    seenEl.textContent = total.toLocaleString();
   }
   if (hoveredItem && mouse) {
     if (tipItem !== hoveredItem) {
@@ -388,10 +372,6 @@ resize();
 requestAnimationFrame(frame);
 setInterval(() => {
   layout();
-  while (recent.length && recent[0]! < performance.now() - 5000) {
-    recent.shift();
-  }
-  rateEl.textContent = (recent.length / 5).toFixed(0);
 }, 1000);
 
 let cursor: number | undefined;
@@ -420,19 +400,35 @@ const cCursor = document.getElementById('c-cursor')!;
 const cUrl = document.getElementById('c-url')!;
 const cCatch = document.getElementById('c-catch')!;
 
-function setStatus(text: string, kind: string) {
-  statusEl.textContent = text;
-  statusEl.className = `pill ${kind}`;
+let state = 'connecting';
+
+const seenEl = document.createElement('b');
+
+function showStatus() {
+  if (state === 'live') {
+    statusEl.replaceChildren(seenEl, ' posts since you arrived');
+  } else if (state === 'connecting') {
+    statusEl.textContent = total
+      ? 'Reconnecting from the last post seen…'
+      : 'Connecting to Bluesky…';
+  } else {
+    statusEl.textContent = 'Disconnected. Retrying…';
+  }
+}
+
+function setStatus(text: string) {
+  state = text;
   cState.textContent = text;
+  showStatus();
 }
 
 class TrackedWebSocket extends WebSocket {
   constructor(url: string | URL, protocols?: string | string[]) {
     super(url, protocols);
     cUrl.textContent = shortUrl(url);
-    setStatus('connecting', 'wait');
-    this.addEventListener('open', () => setStatus('live', 'live'));
-    this.addEventListener('close', () => setStatus('offline', 'off'));
+    setStatus('connecting');
+    this.addEventListener('open', () => setStatus('live'));
+    this.addEventListener('close', () => setStatus('offline'));
   }
 }
 

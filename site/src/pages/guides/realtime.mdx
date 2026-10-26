@@ -4,14 +4,14 @@ description: Read and write WebSockets that reconnect, server-sent events, and t
 
 # Realtime
 
-A long-lived connection can drop, and a slow reader must not make the sender buffer without limit. `websockets` and `sse` reconnect when the connection drops and give you the connection as streams, so backpressure and cancellation work as they do for a `fetch` body.
+A long-lived connection can drop, and a slow reader must not make the sender buffer without limit. [websockets](/packages/websockets) and [sse](/packages/sse) reconnect when the connection drops and give you the connection as streams, so backpressure and cancellation work as they do for a `fetch` body.
 
-- [`websockets`](/packages/websockets) is a WebSocket that reconnects, and that you read and write as streams.
-- [`sse`](/packages/sse) reads, writes, and reconnects server-sent event streams, as `EventSource` does.
-- [`rpc`](/packages/rpc) makes typed JSON-RPC calls between workers, windows, servers, and browsers.
-- [`web-push`](/packages/web-push) sends notifications to a site's service worker, even when no page of the site is open.
+- [websockets](/packages/websockets) is a WebSocket that reconnects, and that you read and write as streams.
+- [sse](/packages/sse) reads, writes, and reconnects server-sent event streams, as `EventSource` does.
+- [rpc](/packages/rpc) makes typed JSON-RPC calls between workers, windows, servers, and browsers.
+- [web-push](/packages/web-push) sends notifications to a site's service worker, even when no page of the site is open.
 
-The <a href={`${import.meta.env.BASE_URL}examples/bluesky/`}>Bluesky stream</a> example reads every new Bluesky post from a WebSocket with `websockets` and `streams`, and reconnects from a cursor to replay the posts it skipped.
+The <a href={`${import.meta.env.BASE_URL}examples/bluesky/`}>Bluesky stream</a> example reads every new Bluesky post from a WebSocket with [websockets](/packages/websockets) and [streams](/packages/streams), and reconnects from a cursor to replay the posts it skipped.
 
 ## Stream a model's output to the browser
 
