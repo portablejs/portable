@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## npm releases run from a manually started workflow in a `main`-only environment
+
+- **Options:** keep publishing from a maintainer's machine; publish from changesets/action on every push to `main`, which opens a "Version packages" pull request and publishes when it is merged, as ox does; publish from a workflow started by hand on `main`, after the version bumps are merged.
+- **Trade-offs:** publishing by hand needs an npm token or a logged-in machine, and the packages get no provenance. changesets/action needs `contents: write` and `pull-requests: write` in the same job as `id-token: write`, so the job that holds the OIDC token can also push to the repository. It also runs on every push to `main`, and each run costs Actions minutes. A workflow started by hand needs only `contents: read` and `id-token: write`, and you run `pnpm changeset:version` yourself, as you do now. It creates no git tags, because pushing them needs `contents: write`.
+- **Chosen:** `release.yml`, started by hand. The publish job runs in the `npm` environment, which deploys only from `main`, and each package's npm trusted publisher requires that environment, following [arktypeio/arktype#1709](https://github.com/arktypeio/arktype/pull/1709). `pnpm changeset:publish` stays for the first release of a package, because npm can only add a trusted publisher to a package that already exists.
+
 ## `Log.configure` sets the output options, and `Log.enable` takes only patterns
 
 - **Options:** keep `Log.enable(patterns, options)`, which leaves the patterns unchanged when you pass `undefined`, so `Log.enable(undefined, { console: false })` changes only the output; require `patterns` and move `console`, `time`, and `context` to a `Log.configure(options)`.

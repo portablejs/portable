@@ -24,7 +24,7 @@ portable/
 ├─ docs/                   this file, packages.md, decisions.md, papercuts.md
 ├─ .agents/pstack/         agent skills copied from cursor/plugins
 ├─ .changeset/
-├─ .github/workflows/      CI (verify.yml) and the docs site (site.yml, site-preview.yml)
+├─ .github/workflows/      CI (verify.yml), npm releases (release.yml), and the docs site (site.yml, site-preview.yml)
 ├─ .vite-hooks/            git hooks
 ├─ AGENTS.md               rules for agents and contributors (CLAUDE.md imports it)
 ├─ vite.config.ts          format, lint, staged-file and test config
@@ -165,7 +165,7 @@ Browser tests are slower, so you run them on demand (`pnpm test:browser`), and `
 
 ## CI
 
-`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `pnpm check:types` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox, and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs fail the run like the others, because compress and png work around the `DecompressionStream` bugs that docs/papercuts.md lists for those runtimes and the rpc tests keep one `BroadcastChannel` open to work around a Deno bug that the same file lists, so every conformance test passes there. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. Unlike the other jobs, that job doesn't fail the run, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. `verify.yml` doesn't run on pull requests. When we publish from GitHub Actions instead of from a maintainer's machine, we'll make `verify.yml` a reusable workflow, as ox does, so the release workflow can run the same checks before it publishes.
+`.github/workflows/verify.yml` runs on every push to `main` and when someone starts it by hand (`workflow_dispatch`). It runs nine jobs in parallel. `vp check` and `pnpm check:types` run in one job. The Node tests run in two, on Node 24 and Node 26, and the browser tests run in three, in Chromium, Firefox, and WebKit. The conformance tests run in two more with Vitest on Bun and on Deno (`pnpm test:bun`, `pnpm test:deno`), and the last job runs `pnpm test:workers` in workerd. The Bun and Deno jobs fail the run like the others, because compress and png work around the `DecompressionStream` bugs that docs/papercuts.md lists for those runtimes and the rpc tests keep one `BroadcastChannel` open to work around a Deno bug that the same file lists, so every conformance test passes there. A run started by hand with the `fuzz` input also runs `pnpm fuzz` in a tenth job. Unlike the other jobs, that job doesn't fail the run, because each run uses a new seed and can find a bug that no change in the pushed commit caused. Each job has a time limit, so a stalled test run fails within 15 minutes (30 for the fuzz job) instead of running for hours. A page that stops running JavaScript can't fail its own tests, so a watchdog in `vite.config.ts` stops the run when the browser tests report nothing for 4 minutes and lists the test files that were running. `verify.yml` doesn't run on pull requests. It is also a reusable workflow, as in ox, so `release.yml` runs the same checks before it publishes.
 
 Two more workflows build the docs site with `pnpm --filter @portable/site build`. `site.yml` publishes it to GitHub Pages on every push to `main`. `site-preview.yml` publishes a preview to here.now for a pull request with the `preview` label, and updates it on each later push to that pull request. The "Publish site preview" button in the pull request sidebar runs the same workflow without the label and publishes or updates the preview once per click, and later pushes don't update it. [GitHub PR Buttons](https://github.com/frolic/github-pr-buttons), a Chrome extension, adds the button from the list in `.github/pr-buttons.yml`.
 
@@ -179,9 +179,17 @@ Nothing is published yet, so each package has one changeset, `.changeset/<packag
 
 1. `pnpm changeset` records which packages changed and how.
 2. `pnpm changeset:version` bumps versions and writes changelogs.
-3. `pnpm changeset:publish` builds, runs every test project including the browsers, has zile write each published `package.json`, publishes to npm, and restores the source `package.json` files.
+3. Merge the version bumps to `main`, then start the Release workflow (`.github/workflows/release.yml`) by hand on `main`. It runs `verify.yml`, builds the packages, runs `zile publish:prepare` to write each published `package.json`, and runs `changeset publish`, which publishes every package whose version isn't on npm yet.
 
-A maintainer publishes releases from their own machine after `npm login`, so packages have no provenance yet. When publishing moves to GitHub Actions, it will use npm trusted publishing (OIDC), which adds provenance and removes the need for an npm token.
+The Release workflow publishes through npm trusted publishing (OIDC), so the repository holds no npm token and every version gets a provenance attestation. The setup follows [arktypeio/arktype#1709](https://github.com/arktypeio/arktype/pull/1709):
+
+- The publish job runs in the `npm` environment, which deploys only from `main`, and each package's trusted publisher on npm requires that environment. Without the environment, npm's trusted publisher checks only the repository and the workflow filename, so anyone with push access could edit `release.yml` on a branch to run on that push, and the run could publish.
+- Only the publish job gets `id-token: write`. The tests run in `verify.yml` with a read-only token. The publish job installs with `--ignore-scripts` and without the dependency cache, so no install script and no code from a poisoned cache entry runs while the job holds the OIDC token.
+- Every workflow sets its permissions per job, and every checkout sets `persist-credentials: false`. In `site.yml`, the build job gets a read-only token, and only the deploy job, which runs no code from the repository, can write to Pages.
+- Every action is pinned to a commit SHA, with its release tag in a comment, and pnpm is pinned to an exact version by `packageManager`.
+- `minimumReleaseAge` and `trustPolicy` in `pnpm-workspace.yaml` (see [Toolchain](#toolchain)) apply to the publish job's install as well.
+
+`pnpm changeset:publish` still publishes from your own machine after `npm login`, without provenance. npm can only add a trusted publisher to a package that already exists, so you publish the first release of a new package this way.
 
 We don't publish to JSR. Workers, Deno, and Bun all install from npm, and because of `isolatedDeclarations`, adding JSR later needs no code changes.
 
