@@ -37,6 +37,7 @@ export default defineConfig({
       items: [
         { text: 'Getting started', link: '/getting-started' },
         { text: 'Conventions', link: '/conventions' },
+        { text: 'Recommended packages', link: '/recommended' },
       ],
     },
     {
