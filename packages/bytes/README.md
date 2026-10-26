@@ -122,4 +122,4 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 Differences to check when you switch from uint8array-extras:
 
 - `concatUint8Arrays` takes an optional `totalLength`. `concat` has no such argument, and its result is always as long as the chunks together.
-- uint8array-extras' string, base64, compare, `indexOf`, and `getUintBE` functions have no equivalent here. Use [`@portable/base64`](../base64) for base64.
+- uint8array-extras' string, base64, compare, `indexOf`, and `getUintBE` functions have no equivalent here. Use [@portable/base64](../base64) for base64.

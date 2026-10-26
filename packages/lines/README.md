@@ -66,8 +66,8 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/lines | – | 1.3 kB | 3 | none | included |
-| split2 | 4.2.0 | 1.1 kB | 0 | `stream`, `string_decoder` | `@types/split2` |
-| byline | 5.0.0 | 1.2 kB | 0 | `Buffer`, `stream`, `timers`, `util` | `@types/byline` |
+| split2 | 4.2.0 | 1.1 kB | 0 | `stream`, `string_decoder` | @types/split2 |
+| byline | 5.0.0 | 1.2 kB | 0 | `Buffer`, `stream`, `timers`, `util` | @types/byline |
 | `node:readline` | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.

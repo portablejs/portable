@@ -24,7 +24,7 @@ export declare namespace verify {
     /** The signing secret. Pass several while rotating secrets. Any one of them may match. */
     secret: Secret | readonly Secret[];
     /**
-     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and several times faster
+     * Computes the HMAC, called with `'SHA-256'`. noble-hashes is sync and several times faster
      * on Node. @default WebCrypto.hmac
      */
     hmac?: WebCrypto.Hmac | undefined;
@@ -173,7 +173,7 @@ export declare namespace sign {
     /** The signing secret. */
     secret: Secret;
     /**
-     * Computes the HMAC, called with `'SHA-256'`. `@noble/hashes` is sync and several times faster
+     * Computes the HMAC, called with `'SHA-256'`. noble-hashes is sync and several times faster
      * on Node. @default WebCrypto.hmac
      */
     hmac?: WebCrypto.Hmac | undefined;

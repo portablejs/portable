@@ -6,12 +6,12 @@ description: Sign, verify, and hash with crypto.subtle in browsers, Cloudflare W
 
 These packages call `crypto.subtle` for every hash, signature, key derivation, and cipher. The same code signs and verifies in browsers, Cloudflare Workers, Node, Bun, and Deno.
 
-- [`web-crypto`](/packages/web-crypto) wraps `digest`, `hmac`, and `hkdf` as bytes-in, bytes-out functions, and builds Ed25519 and X25519 keys from 32-byte seeds.
-- [`password`](/packages/password) hashes and verifies passwords with PBKDF2.
-- [`webhooks`](/packages/webhooks) verifies and signs webhooks from Stripe, GitHub, Slack, and Standard Webhooks senders.
-- [`oauth1`](/packages/oauth1) signs OAuth 1.0a requests.
-- [`web-push`](/packages/web-push) sends encrypted Web Push notifications with VAPID.
-- [`dkim`](/packages/dkim) signs and verifies email.
+- [web-crypto](/packages/web-crypto) wraps `digest`, `hmac`, and `hkdf` as bytes-in, bytes-out functions, and builds Ed25519 and X25519 keys from 32-byte seeds.
+- [password](/packages/password) hashes and verifies passwords with PBKDF2.
+- [webhooks](/packages/webhooks) verifies and signs webhooks from Stripe, GitHub, Slack, and Standard Webhooks senders.
+- [oauth1](/packages/oauth1) signs OAuth 1.0a requests.
+- [web-push](/packages/web-push) sends encrypted Web Push notifications with VAPID.
+- [dkim](/packages/dkim) signs and verifies email.
 
 ## Verify a webhook and rate limit the sender
 

@@ -91,7 +91,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | resolveCert | Not applicable | Use `query(name, 'TYPE37')`. |
 | resolveTlsa | Not applicable | Use `query(name, 'TLSA')`. |
 | spoofPacket (5 tests) | Not applicable | Tests pass their own `fetch` or a fake `Resolver` instead. |
-| resolve HTTPS records, resolve SVCB records, HTTPS and SVCB in TYPES | Not applicable | `query(name, 'HTTPS')` returns the raw RDATA from `@portable/dns-packet`. |
+| resolve HTTPS records, resolve SVCB records, HTTPS and SVCB in TYPES | Not applicable | `query(name, 'HTTPS')` returns the raw RDATA from @portable/dns-packet. |
 | TypeScript types file exists, package.json has types | Not applicable | Types come from the source. |
 | dnssecSecure (4 tests), resolve without dnssecSecure | `NXDOMAIN and NODATA > query returns TTLs and the AD flag`, `requests > sends a GET ... RD and AD set`, network test | `query(name, type).flags.ad`. |
 | dnssecSecure with ecsSubnet | Not applicable | No EDNS Client Subnet option. |
@@ -106,7 +106,7 @@ Node's internet tests and tangerine's tests query live servers. Here their cases
 | PUT is not a valid request method, invalid methods cause error | Not applicable | Always GET. |
 | DohResolver.query() for example.com TXT contains answers | `recorded responses`, network test | |
 | timeout works properly | `timeouts and cancellation` | |
-| dnsPacket is exposed | Not applicable | Import `@portable/dns-packet`. |
+| dnsPacket is exposed | Not applicable | Import @portable/dns-packet. |
 | `test.sh` command line tests | Not applicable | No command line tool. |
 
 ## @sagi.io/dns-over-https

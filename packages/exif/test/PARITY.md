@@ -1,6 +1,6 @@
 # Test parity
 
-`@portable/exif` replaces [exif-parser 0.1.12](https://github.com/bwindels/exif-parser). Its suite is small, so the cases also come from [exif-reader 2.0.3](https://github.com/devongovett/exif-reader) and the EXIF parts of [exifr 7.1.3](https://github.com/MikeKovarik/exifr). All three are MIT licensed.
+@portable/exif replaces [exif-parser 0.1.12](https://github.com/bwindels/exif-parser). Its suite is small, so the cases also come from [exif-reader 2.0.3](https://github.com/devongovett/exif-reader) and the EXIF parts of [exifr 7.1.3](https://github.com/MikeKovarik/exifr). All three are MIT licensed.
 
 Fixtures:
 
@@ -106,7 +106,7 @@ exifr parses XMP, IPTC, ICC, JFIF, PNG text chunks, and maker notes, has options
 | exif-parser #30: the thumbnail's `Orientation` reported as the image's | `known upstream issues > exif-parser #30: the thumbnail Orientation does not replace the image Orientation` |
 | exif-parser #17: `Invalid format: 0` thrown for an unknown tag type | `known upstream issues > exif-parser #17: a tag with format 0 is skipped instead of failing the parse` |
 | exif-parser #41: TIFF files are not supported | `known upstream issues > exif-parser #41: TIFF files are read` |
-| exif-parser #14, #23, #40: dates as UTC seconds | `parseDate > applies the offset option` and the `exif-parser` date tests |
+| exif-parser #14, #23, #40: dates as UTC seconds | `parseDate > applies the offset option` and the exif-parser date tests |
 | exif-parser #31: `imageSize` undefined when the SOF segment is past the bytes passed in | `parse > keeps the tags whose values lie before the end of the input` checks that `imageSize` is `undefined` in that case, as the README documents |
 | exif-parser (no issue): SSHORT and SLONG read as unsigned | `known upstream issues > exif-parser: SSHORT and SLONG values are signed` |
 | exif-parser (no issue): Exif IFD tags filed under the interop section | `known upstream issues > exif-parser: Exif IFD tags are not reported as interop tags` |

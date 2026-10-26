@@ -184,7 +184,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/log | – | 1.3 kB | 0 | none | included |
-| debug | 4.4.3 | 2.7 kB | 1 | none | `@types/debug` |
+| debug | 4.4.3 | 2.7 kB | 1 | none | @types/debug |
 | loglevel | 1.9.2 | 1.6 kB | 0 | none | included |
 | consola | 3.4.2 | 2.4 kB | 0 | none | included |
 | @logtape/logtape | 2.4.2 | 13 kB | 0 | none | included |

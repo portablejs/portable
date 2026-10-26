@@ -1,6 +1,6 @@
 import * as internal from './internal.js';
 
-/** The functions of `@portable/random`, drawing from a seeded generator instead of `crypto.getRandomValues`. */
+/** The functions of the random package, drawing from a seeded generator instead of `crypto.getRandomValues`. */
 export type Seeded = {
   /** Same as `Random.int`. */
   readonly int: (min: number, max: number) => number;

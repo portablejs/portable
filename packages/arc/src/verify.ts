@@ -40,7 +40,7 @@ import {
 } from './internal/chain.js';
 
 /**
- * The DNS lookup ARC needs: a `Dns.Resolver` from `@portable/dns`, `node:dns/promises`, or any
+ * The DNS lookup ARC needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or any
  * object with `resolveTxt`. It is the same as `Dkim.Resolver`.
  */
 export type Resolver = Dkim.Resolver;

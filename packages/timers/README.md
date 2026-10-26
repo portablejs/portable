@@ -175,7 +175,7 @@ The returned function also has:
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
 | `({ attempt, error }) => ms` | Whatever the function returns. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
-`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial`, or `max`, or a `factor` that isn't a positive finite number. `@portable/websockets` and `@portable/sse` reconnect with it.
+`Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial`, or `max`, or a `factor` that isn't a positive finite number. @portable/websockets and @portable/sse reconnect with it.
 
 ```ts
 const next = Timers.backoff({ initial: 1000, max: 30_000, jitter: false });
@@ -244,12 +244,12 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/timers | – | 1.8 kB | 1 | none | included |
 | p-retry | 8.0.1 | 1.8 kB | 1 | none | included |
-| async-retry | 1.3.3 | 1.7 kB | 1 | none | `@types/async-retry` |
+| async-retry | 1.3.3 | 1.7 kB | 1 | none | @types/async-retry |
 | p-wait-for | 7.0.0 | 0.9 kB | 0 | none | included |
 | delay | 7.0.0 | 0.9 kB | 2 | none | included |
-| lodash.debounce | 4.0.8 | 1.1 kB | 0 | none | `@types/lodash.debounce` |
-| lodash.throttle | 4.1.1 | 1.2 kB | 0 | none | `@types/lodash.throttle` |
-| throttle-debounce | 5.0.2 | 0.5 kB | 0 | none | `@types/throttle-debounce` |
+| lodash.debounce | 4.0.8 | 1.1 kB | 0 | none | @types/lodash.debounce |
+| lodash.throttle | 4.1.1 | 1.2 kB | 0 | none | @types/lodash.throttle |
+| throttle-debounce | 5.0.2 | 0.5 kB | 0 | none | @types/throttle-debounce |
 | p-debounce | 6.0.0 | 0.7 kB | 0 | none | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.

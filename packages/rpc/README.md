@@ -202,7 +202,7 @@ A response is JSON, or, when a method returns a stream, `application/x-ndjson` w
 
 ### WebSocket and server-sent events
 
-A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one `@portable/websockets` returns, can be passed as a transport unchanged. Without that package, you can wrap a socket in a few lines:
+A WebSocket wrapped as `readable` and `writable` streams of strings, such as the one @portable/websockets returns, can be passed as a transport unchanged. Without that package, you can wrap a socket in a few lines:
 
 ```ts
 const socket = new WebSocket('wss://example.com/rpc');
@@ -225,7 +225,7 @@ const transport = {
 const remote = Rpc.connect<Api>(transport);
 ```
 
-Server-sent events carry messages one way only. Pair the event stream from `@portable/sse` with POST requests for the other way:
+Server-sent events carry messages one way only. Pair the event stream from @portable/sse with POST requests for the other way:
 
 ```ts
 const transport = {

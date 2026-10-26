@@ -48,7 +48,7 @@ export type Credentials =
 export declare namespace authorization {
   type Options = Credentials & {
     /**
-     * Computes the HMAC for HMAC-SHA1 and HMAC-SHA256. `@noble/hashes` is sync and several times
+     * Computes the HMAC for HMAC-SHA1 and HMAC-SHA256. noble-hashes is sync and several times
      * faster on Node. @default WebCrypto.hmac
      */
     hmac?: WebCrypto.Hmac | undefined;

@@ -123,4 +123,4 @@ Each row has a test that shows our behavior.
 
 ## Benchmarks
 
-`webhooks.bench.ts` verifies a 581-byte JSON body per scheme. `@octokit/webhooks-methods` has its own sign and verify benchmarks, which these cover.
+`webhooks.bench.ts` verifies a 581-byte JSON body per scheme. @octokit/webhooks-methods has its own sign and verify benchmarks, which these cover.

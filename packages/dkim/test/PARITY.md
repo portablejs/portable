@@ -42,7 +42,7 @@ The other `describe` blocks:
 | Upstream test | Here |
 | --- | --- |
 | A d= that is not a host name (7 separators) | `d= values that are not host names` |
-| Alignment with the From header field | Not applicable. Alignment is DMARC's job and belongs to `@portable/dmarc`. |
+| Alignment with the From header field | Not applicable. Alignment is DMARC's job and belongs to @portable/dmarc. |
 | EAI: look up the key of a U-label d= under its A-label | `EAI (RFC 8616)` |
 | EAI: report A-labels in strict mode | Same test. The result always contains A-labels. |
 | rejectRsaSha1 (2 tests) | rsa-sha1 is always `policy`, as the rsa-sha1 cases check. |
@@ -53,7 +53,7 @@ The other `describe` blocks:
 | Header section: a leading empty line | `header section` |
 | Header section: an LF right after a CRLF | Same |
 | From extraction (2 tests) | Not applicable. `verify` doesn't parse From. |
-| ARC-Message-Signature (3 tests) | Only "not read as a DKIM-Signature" applies, in `header section`. ARC is `@portable/arc`'s job. |
+| ARC-Message-Signature (3 tests) | Only "not read as a DKIM-Signature" applies, in `header section`. ARC is @portable/arc's job. |
 
 ## mailauth `sign-rfc-compliance-test.js`
 
@@ -86,7 +86,7 @@ The other `describe` blocks:
 | --- | --- |
 | `header-smuggling-test.js`: 8 continuation bytes after a signed field | `sign.conformance.ts > header smuggling` |
 | `header-smuggling-test.js`: keep a non-ASCII line inside the field, read a folded From like libmime | Same, observed as `fail` for the changed message. |
-| `header-smuggling-test.js`: a colon on a folded continuation line | `header smuggling`, signed, and verified. Applying DMARC to it is `@portable/dmarc`'s job. |
+| `header-smuggling-test.js`: a colon on a folded continuation line | `header smuggling`, signed, and verified. Applying DMARC to it is @portable/dmarc's job. |
 | `headers-only-test.js`: sign and verify without a body (3) | `sign.conformance.ts > messages` |
 | `headers-only-test.js`: refuse an input without From (3) | `messages`, as `InvalidInputError` |
 | `headers-only-test.js`: seal an empty input | Not applicable (ARC). |

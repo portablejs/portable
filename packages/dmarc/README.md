@@ -39,7 +39,7 @@ In Node, `node:dns/promises` works as the resolver.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `resolver` | required | Answers the lookups. `Dns.create()` from `@portable/dns`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`. |
+| `resolver` | required | Answers the lookups. `Dns.create()` from @portable/dns, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`. |
 | `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
 | `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
 
@@ -95,7 +95,7 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 - It follows RFC 9989 and RFC 6376's tag-list rules without a mode switch. mailauth's default mode accepts whitespace before `v=DMARC1`, uses the last of duplicate tags and case-folds tag names, and mailauth follows the RFCs only with `strict: true`. The results match mailauth's strict mode on 400 random zones.
 - It reports the alignment of each DKIM signature, not only the first that aligned, and gives the disposition directly.
 - It makes fewer DNS queries. mailauth walks above the From domain on every message, and asks whether the domain exists whenever the record has `np`. `check` walks only for a relaxed alignment check of a different domain, and asks whether the domain exists only when `np` would change the policy.
-- It has no dependencies outside `@portable/*`, and `@portable/spf` is imported for types only.
+- It has no dependencies outside `@portable/*`, and @portable/spf is imported for types only.
 - It is a little faster. In the benchmark below, each run checks a subdomain that inherits its parent's record, with relaxed alignment and three identifiers, in Node with an in-memory resolver.
 
 <!-- bench:start -->
@@ -120,12 +120,12 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch from mailauth:
 
-- mailauth's `headerFrom` takes an address or an array of addresses. `from` takes the domain, so parse the From header first, for example with `@portable/mime-headers`.
+- mailauth's `headerFrom` takes an address or an array of addresses. `from` takes the domain, so parse the From header first, for example with @portable/mime-headers.
 - mailauth returns `false` for a From header without exactly one domain. Decide that before calling `check`: a `from` that isn't a domain name gives `permerror`, and a domain literal gives `none`.
 - mailauth's `dkimDomains` takes only passing signatures, with an `underSized` flag. `dkim` takes every signature and reports the alignment of each, so check a signature's `l=` tag yourself.
 - mailauth's `resolver` is one `(name, type)` function. `check` takes an object with `resolveTxt`, `resolve4`, and `resolveCname`, such as `node:dns/promises`.
-- mailauth's `arcResult` has no equivalent. `@portable/mail-auth` adds the ARC result to the comment of its `dmarc=` result.
+- mailauth's `arcResult` has no equivalent. @portable/mail-auth adds the ARC result to the comment of its `dmarc=` result.
 - mailauth's `result.domain`, the organizational domain, is not reported. `policyDomain` gives the domain whose `_dmarc` record applies.
 - mailauth gives `temperror` when the resolver times out. A `signal` such as `AbortSignal.timeout(ms)` makes `check` reject instead.
-- mailauth's `status.header`, `info`, and `warnings` have no equivalent. `@portable/mail-auth` builds the Authentication-Results field.
+- mailauth's `status.header`, `info`, and `warnings` have no equivalent. @portable/mail-auth builds the Authentication-Results field.
 - `pct` and `ri` are not reported, because RFC 9989 made them historic.

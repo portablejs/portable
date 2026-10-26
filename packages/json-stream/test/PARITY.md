@@ -7,7 +7,7 @@ Upstream suites:
 - [json-stream-stringify 3.1.7 `test-src/JsonStreamStringify.spec.ts`](https://github.com/Faleij/json-stream-stringify/blob/master/test-src/JsonStreamStringify.spec.ts).
 - [@worker-tools/json-stream `test/`](https://github.com/worker-tools/json-stream/tree/master/test).
 
-Test names below are the `describe > test` names in `DecoderStream.conformance.ts` (P) and `encodeStream.conformance.ts` (E). NDJSON is in `@portable/jsonl`, whose `PARITY.md` maps the ndjson suite and stream-json's JSON Lines tests.
+Test names below are the `describe > test` names in `DecoderStream.conformance.ts` (P) and `encodeStream.conformance.ts` (E). NDJSON is in @portable/jsonl, whose `PARITY.md` maps the ndjson suite and stream-json's JSON Lines tests.
 
 ## JSONStream
 
@@ -140,7 +140,7 @@ stream-json is a toolkit built around a token stream: a parser emits tokens, and
 | disassembler: NaN, Infinity, -Infinity (4 tests) | E `stream-json > writes NaN, Infinity and -Infinity as null` | |
 | disassembler: bigint (4 tests) | E `stream-json > fails on a BigInt, as JSON.stringify does` | Deliberate difference, as for json-stream-stringify. |
 | stringer: roundtrip, no packing, useValues | E `encodeStream > matches JSON.stringify for nested plain values with indentation` | |
-| stringer: json streaming objects, json streaming primitives, all jsonl parser and jsonl stringer tests | `@portable/jsonl` | JSON Lines. Mapped in `packages/jsonl/test/PARITY.md`. |
+| stringer: json streaming objects, json streaming primitives, all jsonl parser and jsonl stringer tests | @portable/jsonl | JSON Lines. Mapped in `packages/jsonl/test/PARITY.md`. |
 | stringer: json streaming objects as array | E `json-stream-stringify > writes a stream as an array` | |
 | stringer: no input as array | E `stream-json > writes an empty stream as an empty array` | |
 | stringer: special symbols, control characters with useValues | E `stream-json > writes special characters as JSON.stringify does` | |

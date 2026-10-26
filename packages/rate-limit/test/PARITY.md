@@ -70,7 +70,7 @@ The suite has one file per store (Redis, Mongo, Postgres, MySQL, SQLite, DynamoD
 
 ## bottleneck
 
-Bottleneck is a job scheduler. Its concurrency, priority, batching, grouping, retries, events, job status, and stop tests (`DLList.js`, `batcher.js`, `context.js`, `group.js`, `priority.js`, `promises.js`, `retries.js`, `states.js`, `stop.js`, and most of `general.js` and `cluster.js`) belong to `@portable/queue`. These are the rate-limit tests:
+Bottleneck is a job scheduler. Its concurrency, priority, batching, grouping, retries, events, job status, and stop tests (`DLList.js`, `batcher.js`, `context.js`, `group.js`, `priority.js`, `promises.js`, `retries.js`, `states.js`, `stop.js`, and most of `general.js` and `cluster.js`) belong to @portable/queue. These are the rate-limit tests:
 
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |

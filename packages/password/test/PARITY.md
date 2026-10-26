@@ -39,7 +39,7 @@ Test names below are `describe > test` in `Password.conformance.ts` unless anoth
 | Upstream test | Covered by | Notes |
 | --- | --- | --- |
 | should generate an hash from a password twice | `verify > ...`, `hash > uses a new salt every time` | There is no salt option. `verify` checks that the same password and salt give the same hash. |
-| should generate a password if one is not present | skipped | Out of scope. Use `crypto.getRandomValues` or `@portable/random`. |
+| should generate a password if one is not present | skipped | Out of scope. Use `crypto.getRandomValues` or @portable/random. |
 | should generate an hash from a password twice (known salt and hash) | `pbkdf2-password > verifies a known hash once its salt and hash are in a PHC string` | Also `Password.oracle.test.ts > verify accepts a pbkdf2-password hash` with a fresh hash. |
 
 ## node:crypto (test-crypto-pbkdf2.js)

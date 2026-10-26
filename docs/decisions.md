@@ -8,7 +8,7 @@ Decisions made while building the packages, with the options considered and the 
 - **Trade-offs:** AGENTS.md rules out a positional that accepts `undefined`, and `enable(undefined, …)` hides what the call does. `configure` adds one export, and switching from debug still needs only `enable`. `persist` stays on `enable`, because it writes the patterns. `log.isEnabled(level)` now requires its level instead of defaulting to `'debug'`, because an optional positional breaks the same rule.
 - **Chosen:** `Log.enable(patterns, { persist })` and `Log.configure({ console, time, context })`. `tools/lint/src/publicApi.test.ts` now also rejects an optional positional or one that accepts `undefined` in a public function, except `Compress.crc32`, which copies `zlib.crc32`, and `Exif.parseDate`, which takes a tag value that is `undefined` when the tag is missing.
 
-## `@portable/sockets` has types and a Node adapter, with no default per runtime
+## @portable/sockets has types and a Node adapter, with no default per runtime
 
 - **Options:** a main entry whose `connect` picks `cloudflare:sockets`, `node:net`, or Deno's API by export condition; a main entry with only the `Sockets.Connect` and `Sockets.Socket` types, with drivers taking a `connect` option, and the Node adapter in a `/node` subpath.
 - **Trade-offs:** an export condition per runtime keeps drivers free of a `connect` option, but each runtime's build of every driver then needs its own tests, and `cloudflare:sockets` doesn't resolve outside workerd, so a bundler for another target would fail on it. A `connect` option costs the caller one import, and smtp already had one. `connect` from `cloudflare:sockets` already has the `Sockets.Connect` type, and Deno and Bun run `node:net` and `node:tls`, so the Node adapter also works on them. The `cloudflare:sockets` types require `allowHalfOpen`, so `Sockets.Options` requires both fields, and a driver always passes them. The WinterTC draft's `sni` and `alpn` options are left out, because the `cloudflare:sockets` types have neither.
@@ -20,43 +20,43 @@ Decisions made while building the packages, with the options considered and the 
 - **Trade-offs:** the tests need `node:net` and `node:tls` servers, so they can't run in a browser. They should still run on Bun and Deno, because the adapter is the `connect` for those runtimes. The browser project and the worker harness only run `*.conformance.ts`, and `pnpm test:bun` and `pnpm test:deno` select files by the word `conformance`.
 - **Chosen:** `*.conformance.test.ts`. As with `@portable/streams/node`, `./node` is a plain export that `tools/workers/src/run.ts` leaves out of the Worker bundle, and a workerd check tests the main entry, which has only types, by using `connect` from `cloudflare:sockets` as a `Sockets.Connect`.
 
-## `@portable/binary` readers and writers are objects on a shared prototype
+## @portable/binary readers and writers are objects on a shared prototype
 
 - **Options:** a class, as smart-buffer has; an object of closures made by `createReader`; an object whose methods live on one shared prototype and read their state from a `Symbol.for('portable.binary.reader')` property.
 - **Trade-offs:** AGENTS.md allows classes only for errors and platform subclasses. Protocol parsing usually needs a new reader for every packet, and the closure version allocates about 25 functions for each reader. Methods on a prototype need `this`, so `const { uint8 } = reader` doesn't work, as it doesn't for `DataView`.
 - **Chosen:** the shared prototype. `createReader` and `createWriter` allocate one object and one state object.
 
-## `@portable/binary` throws a `RangeError` for an out-of-range value
+## @portable/binary throws a `RangeError` for an out-of-range value
 
 - **Options:** wrap the value, as `DataView.setUint8(0, 256)` does; throw a `RangeError`, as `Buffer.writeUInt8(256)` does.
 - **Trade-offs:** Wrapping writes a different number than the one passed and gives no sign of it. The check costs one comparison per write, and the benchmarks show no difference.
 - **Chosen:** a `RangeError` for a value outside the type's range or not an integer, and a `TypeError` for a value of the wrong type. `FrameEncoderStream` errors the stream with `Binary.InvalidInputError` for a chunk too long for its prefix, because that chunk is malformed input.
 
-## `@portable/binary` varints have three encodings and two result types
+## @portable/binary varints have three encodings and two result types
 
 - **Options:** one varint type per protocol (protobuf `int32`, `sint32`, Minecraft `VarInt`); an `encoding` option of `'unsigned'`, `'zigzag'`, or `'signed'` (SLEB128), with `varint` returning a number and `bigVarint` a bigint.
 - **Trade-offs:** Protocols disagree on negative numbers. Minecraft writes a negative `VarInt` as its 32-bit two's complement in 5 bytes, and protobuf writes a negative `int32` sign-extended to 64 bits in 10 bytes. Both write the value as an unsigned varint after converting it. If `varint` returned `number | bigint`, you would have to check the type of every result.
 - **Chosen:** the `encoding` option and two methods. `varint` reads and writes safe integers and throws `Binary.InvalidInputError` for a larger value, so it never returns a rounded number. A Minecraft `VarInt` is `reader.varint() | 0` and `writer.varint(value >>> 0)`, and a negative protobuf `int32` is `writer.bigVarint(BigInt.asUintN(64, BigInt(value)))`.
 
-## `@portable/binary` frame lengths count only the frame's bytes
+## @portable/binary frame lengths count only the frame's bytes
 
 - **Options:** a length that counts only the bytes after the prefix, as it-length-prefixed and Minecraft use; an option for a length that includes the prefix, as the PostgreSQL wire protocol uses; an option for a header before the length.
 - **Trade-offs:** Each option adds a case to the decoder and its tests. PostgreSQL also puts a type byte before the length, so it would need both the inclusive length and the header option.
 - **Chosen:** only the first. For other layouts, read the header with a `Reader` from your own buffered bytes.
 
-## `@portable/log` reads `process.env.DEBUG` and polls `localStorage`
+## @portable/log reads `process.env.DEBUG` and polls `localStorage`
 
 - **Options:** read patterns only from `enable()`; also read `localStorage.debug`, `process.env.DEBUG`, and `import.meta.env`, as debug does. For a change to `localStorage.debug` made in the same tab: no detection, a check of the time on every log call, or a 1 second interval.
 - **Trade-offs:** The package rules forbid `process`, but `DEBUG=app:* node server.js` is how most debug users turn logging on. Reading `globalThis.process?.env` uses no Node API and does nothing where `process` doesn't exist. Browsers fire `storage` only in other tabs. Checking the time on every call cost about 40 ns per call in a prototype, and a disabled call costs less than that. AGENTS.md asks for a `signal` on anything that holds a timer, but the interval runs for the life of the page and takes no `signal`.
 - **Chosen:** read all three sources, and in a browser, listen for `storage`, and check `localStorage.debug` once a second. `localStorage` is read only when `document` exists, so no timer runs in Workers, Node, Bun, or Deno. Deno has a `localStorage` too, but it persists across runs and would override `DEBUG`.
 
-## `@portable/log` loggers are objects with one method per level
+## @portable/log loggers are objects with one method per level
 
 - **Options:** a callable logger like debug's, `log('x')`, plus `log.warn` and `log.error`; an object with `debug`, `info`, `warn`, and `error` methods. For debug-level output: `console.debug` or `console.log`.
 - **Trade-offs:** A callable logger is shorter to migrate to, but a bare `log()` call hides its level. Chrome hides `console.debug` output unless its Verbose level is on, and debug's users complain about this. `console.log` prints at the Info level in browsers.
 - **Chosen:** an object with a method for each level, so every call states its level. `debug` calls go to `console.log`, and `warn` and `error` print when no pattern matches, so a library's warnings are visible without setup.
 
-## `@portable/log` keeps its state on `globalThis`
+## @portable/log keeps its state on `globalThis`
 
 - **Options:** module-level variables; one object stored under `Symbol.for('portable.log/1')` on `globalThis`.
 - **Trade-offs:** Two copies of the package can be installed in one app, as AGENTS.md describes for `workspace:*` dependencies. With module-level state, `Log.enable` and `Log.subscribe` from one copy would not reach loggers created by the other. A shared object means a later release that changes the state's shape must use a new key.
@@ -68,7 +68,7 @@ Decisions made while building the packages, with the options considered and the 
 - **Trade-offs:** a reviewer always finds something. Without a threshold, repeated passes fix inputs no caller sends, and one pass can undo the choice an earlier pass made, so the passes never end. A review limited to polish would leave a weak design in place for as long as the packages are used. They are meant to be used for many years, and an API costs least to change before the first release.
 - **Chosen:** a pass fixes, in this order of priority: wrong behavior a caller can hit; an API or package design that makes common use harder, slower, or larger than it needs to be, compared with the best library for the job and with the platform API; an API that a coming platform or TypeScript feature, such as `Symbol.asyncDispose` or Temporal, would force to change in a breaking way; a break from a rule in AGENTS.md or a decision in this file; docs, READMEs, or JSDoc that disagree with the code; code or prose that can be shorter or simpler without losing a fact, a reason, or a test; and two packages that do the same thing in different ways. A redesign or a rewrite is in scope when it fixes one of these. It skips inputs that don't come up in real use; renames and rewrites that only swap one acceptable form for another; and new packages, which are listed for a person to choose from instead. A pass may change an entry in this file when it has a reason the entry didn't weigh, and it rewrites the entry with that reason. It doesn't undo a change an earlier pass made unless the change broke something. Passes stop when one finds nothing to fix.
 
-## PEM import is public in `@portable/web-crypto`
+## PEM import is public in @portable/web-crypto
 
 - **Options:** keep the copies in dkim and oauth1; move one to `@portable/web-crypto/internal`; make it a public `WebCrypto.importPem`.
 - **Trade-offs:** WebCrypto imports only DER, and RSA only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` writes PKCS #1. Signing a JWT or a request with a key file needs this code, so it belongs next to `importSeed` and `publicKeyOf`. Both copies matched only `PRIVATE KEY` and `RSA PRIVATE KEY`, and read neither a public key nor a block with text before it. A public function has to set usages and errors for every algorithm, not only for the one a package uses.
@@ -86,7 +86,7 @@ Decisions made while building the packages, with the options considered and the 
 - **Trade-offs:** the copies had drifted. smtp's type had another name, and disposing a queue left running tasks' promises pending, while aborting its `signal` rejected them. errors is the only package that queue, rpc, smtp, timers, and websockets all depend on already or can depend on without a cycle.
 - **Chosen:** `withDispose`, `withAsyncDispose`, `asyncDisposeSymbol`, `DisposeMethod`, and `AsyncDisposeMethod` in `@portable/errors/internal`. Disposing a queue, a WebSockets pair, or an rpc remote does what aborting the `signal` it was created with does, with an `AbortError`, and settles when the teardown is done, so a queue rejects running tasks at once on disposal. Disposing an `Smtp.Client` calls `close()`, and disposing a debounced function calls `cancel()`. Safari has no `Symbol.asyncDispose`, so there these objects are torn down by aborting the `signal`, or with `close()` for `Smtp.Client` and `cancel()` for a debounced function.
 
-## Instants are converted by `@portable/timers`
+## Instants are converted by @portable/timers
 
 - **Options:** a converter copied into each package; one in `@portable/errors/internal`; `Timers.Instant` and a converter in `@portable/timers/internal`.
 - **Trade-offs:** ten packages take an instant, and mail had its own `Mail.Instant`. A copy per package lets each one check for `epochMilliseconds` differently, as mail did with `instanceof Date`, which fails for a `Date` from another realm. errors holds error classes, while timers already holds the time types `Delay` and `Backoff`, and its only dependency is errors, so no package gets a dependency cycle.
@@ -95,7 +95,7 @@ Decisions made while building the packages, with the options considered and the 
 ## Package manifests are checked by a test
 
 - **Options:** review each `package.json` by hand; a lint rule over JSON files; a test that reads every package's manifest, test package, changeset, and README.
-- **Trade-offs:** pnpm links every workspace package into every other, so a source import of a `@portable/*` package missing from `dependencies` passes the type checks and every test, and fails only when someone installs the published package. Pass 1 found exif importing `@portable/streams` without listing it. The field order, the `exports` shape, and the README's first lines were also checked only by reading them. oxlint has no rule for `package.json`, and a test can resolve imports with `ts.preProcessFile` and compare them with the manifest.
+- **Trade-offs:** pnpm links every workspace package into every other, so a source import of a `@portable/*` package missing from `dependencies` passes the type checks and every test, and fails only when someone installs the published package. Pass 1 found exif importing @portable/streams without listing it. The field order, the `exports` shape, and the README's first lines were also checked only by reading them. oxlint has no rule for `package.json`, and a test can resolve imports with `ts.preProcessFile` and compare them with the manifest.
 - **Chosen:** `tools/lint/src/packages.test.ts`. For each package it checks the field order of `packages/mail/package.json`, the published fields, that `exports` has one entry per file in `src/exports/` with the `src`, `types`, and `default` paths, that `dependencies` is exactly the `@portable/*` packages the source imports (types included, because the declaration files import them too), each as `workspace:*`, that `test/package.json` is a private `@portable/<name>-test` package, that `.changeset/<name>-initial.md` exists, and that the README starts with the package name and the runtimes sentence, has a "Why use this over" section, and is linked from the root README. smtp's description and README list the runtimes with a TCP socket API instead, because browsers have none.
 
 ## Long-lived objects have `Symbol.asyncDispose` where the runtime has it
@@ -108,7 +108,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** `Date` only; `Date | Temporal.Instant`; `Date | { readonly epochMilliseconds: number }`; results as `Temporal.Instant`.
 - **Trade-offs:** Chrome 144, Firefox 139, Node 26, and Deno have Temporal, and Safari doesn't. With `Date` only, if you use Temporal, you have to wrap every `now` or `expiresAt` in `new Date(instant.epochMilliseconds)`. Naming `Temporal.Instant` in a type needs TypeScript's `esnext.temporal` lib, and a project without that lib gets a type error in our declaration files. An object type with `epochMilliseconds` needs no lib, and both `Temporal.Instant` and `Temporal.ZonedDateTime` match it, while a `Date` doesn't have the property, so a package can tell the two apart without `instanceof`, which fails for a `Date` from another realm. Widening an option's type later doesn't break callers, but changing a result from `Date` to `Temporal.Instant` does, and a result has to work in Safari, so results stay `Date`. If a package later returns Temporal values, it will add a field or a function next to the `Date` one.
-- **Chosen:** instants in options have the type `Date | { readonly epochMilliseconds: number }`, converted to milliseconds by one shared helper (see "Instants are converted by `@portable/timers`"). Instants in results stay `Date`. `Exif.parseDate` returns a `Date` for a value with no time zone and reads it as UTC. A `Temporal.PlainDateTime` would describe that value exactly, so a Temporal variant would be a new function, not a change to `parseDate`.
+- **Chosen:** instants in options have the type `Date | { readonly epochMilliseconds: number }`, converted to milliseconds by one shared helper (see "Instants are converted by @portable/timers"). Instants in results stay `Date`. `Exif.parseDate` returns a `Date` for a value with no time zone and reads it as UTC. A `Temporal.PlainDateTime` would describe that value exactly, so a Temporal variant would be a new function, not a change to `parseDate`.
 
 ## `WebCrypto.Hash` stays the four SHA-1 and SHA-2 names
 
@@ -131,7 +131,7 @@ Decisions made while building the packages, with the options considered and the 
 ## Byte inputs stay `Uint8Array` only
 
 - **Options:** keep `Uint8Array` as the only byte input, and throw a `TypeError` for anything else; accept any `ArrayBuffer`, `SharedArrayBuffer`, or view, as `TextDecoder` does.
-- **Trade-offs:** if packages accepted any buffer or view, a caller could pass the `ArrayBuffer` from `crypto.subtle` without wrapping it in a `Uint8Array`. Most byte input comes from `response.bytes()` or `blob.bytes()`, which already return a `Uint8Array`. Given a buffer or a view, a package can't tell which of its bytes the caller meant. If a caller passes `view.buffer`, the package reads the whole buffer and not only the bytes in the view, and if a caller passes an `Int16Array` of audio samples, the package reads two bytes per sample in the platform's byte order. Neither mistake throws an error, so the caller gets a wrong result without any sign of it. When the caller writes the conversion, such as `new Uint8Array(view.buffer, view.byteOffset, view.byteLength)`, anyone reading the caller's code can see which bytes the package reads. Every package would also have to convert its input. `@noble/hashes` and ox also take only `Uint8Array`.
+- **Trade-offs:** if packages accepted any buffer or view, a caller could pass the `ArrayBuffer` from `crypto.subtle` without wrapping it in a `Uint8Array`. Most byte input comes from `response.bytes()` or `blob.bytes()`, which already return a `Uint8Array`. Given a buffer or a view, a package can't tell which of its bytes the caller meant. If a caller passes `view.buffer`, the package reads the whole buffer and not only the bytes in the view, and if a caller passes an `Int16Array` of audio samples, the package reads two bytes per sample in the platform's byte order. Neither mistake throws an error, so the caller gets a wrong result without any sign of it. When the caller writes the conversion, such as `new Uint8Array(view.buffer, view.byteOffset, view.byteLength)`, anyone reading the caller's code can see which bytes the package reads. Every package would also have to convert its input. @noble/hashes and ox also take only `Uint8Array`.
 - **Shared memory:** `assertUint8Array` rejects a bare `SharedArrayBuffer` as it rejects an `ArrayBuffer`, but accepts a `Uint8Array` over one. TypeScript types a plain `Uint8Array` as `Uint8Array<ArrayBufferLike>`, so a parameter that excluded shared memory would have to be typed `Uint8Array<ArrayBuffer>`, and a caller's variable typed `Uint8Array` would then fail to type-check. Another thread can change shared bytes while an async function or a stream reads them, so if you pass shared memory, you must not write to it until the function returns, its promise settles, or the stream has read the chunk. `crypto.subtle`, `Blob`, `fetch`, `CompressionStream`, and `WebSocket.send` throw for shared memory, so packages pass bytes to them through `toBufferSource`, which copies a view of a `SharedArrayBuffer`.
 - **Chosen:** `Uint8Array` only. `assertUint8Array` in `@portable/bytes/internal` throws a `TypeError` for any other value, so a JavaScript caller gets an error instead of a wrong result. Packages test for bytes with `isUint8Array` instead of `instanceof Uint8Array`, because `instanceof` returns false for a `Uint8Array` from another realm. A package can start accepting more types later without breaking callers, but if it stops accepting a type after a release, callers that pass that type break. A `Uint8Array` can still start partway into a larger buffer, so each package's `test/inputs.conformance.ts` passes one and checks that every function reads only the bytes in its range.
 
@@ -145,7 +145,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** wait for miniflare, zile, mailauth, and smtp-server to release with newer dependencies; add `overrides` in `pnpm-workspace.yaml`.
 - **Trade-offs:** those packages pin exact versions of undici, sharp, tinypool, and nodemailer that have advisories, and they release on their own schedule. Only tests and tooling use them, but `pnpm audit` reported 30 advisories, and a new advisory would be easy to miss among them. An override can break the package that pinned the version, so the tests, the workerd checks, and the build have to pass after each one.
-- **Chosen:** override each to its next patched release in the same major. Remove an override once the package that pinned the version depends on a patched one. The `ip` and `private-ip` advisories remain, because neither package has a fixed release. Neither can be dropped: ip's oracle tests compare against `ip` on purpose, and `private-ip` is a dependency of tangerine, which dns's tests use.
+- **Chosen:** override each to its next patched release in the same major. Remove an override once the package that pinned the version depends on a patched one. The ip and private-ip advisories remain, because neither package has a fixed release. Neither can be dropped: ip's oracle tests compare against ip on purpose, and private-ip is a dependency of tangerine, which dns's tests use.
 
 ## Public API conventions are checked by a test, not a lint rule
 
@@ -161,7 +161,7 @@ Decisions made while building the packages, with the options considered and the 
 
 ## Workers runs a smoke check in CI, not the conformance tests
 
-- **Options:** `@cloudflare/vitest-pool-workers` pinned to Vitest 4 in its own package; bundle each conformance file with Vitest's runner and run it in workerd; bundle every package into one Worker and run one hand-written check per package.
+- **Options:** @cloudflare/vitest-pool-workers pinned to Vitest 4 in its own package; bundle each conformance file with Vitest's runner and run it in workerd; bundle every package into one Worker and run one hand-written check per package.
 - **Trade-offs:** the Vitest 4 pool means two Vitest versions in one repo. Bundling Vitest's runner and `expect` for workerd needs a new harness, because `tools/worker` imports test files from the Vite server and can't run in workerd. One Worker with a check per package is about 400 lines, runs in seconds, and catches failures that happen only in workerd. Its first run found that queue and timers created an `AbortController` at the top level of a module, which workerd refuses, so neither of them could load on Workers, and neither could sse or websockets, which depend on timers. It also found that websockets passed `highWaterMark: Infinity`, which workerd rejects although the Streams spec allows it. The checks cover one call per package, so a behavior difference outside those calls still goes untested.
 - **Chosen:** `pnpm test:workers` and a blocking `test-workers` CI job. Replace it with a Workers test project once the Vitest pool supports Vitest 5.
 
@@ -173,7 +173,7 @@ Decisions made while building the packages, with the options considered and the 
 
 ## Bun and Deno run the conformance tests in CI without blocking
 
-- **Options:** a Workers job through Miniflare; run Vitest itself on Bun and Deno; wait for `@cloudflare/vitest-pool-workers` to support Vitest 5.
+- **Options:** a Workers job through Miniflare; run Vitest itself on Bun and Deno; wait for @cloudflare/vitest-pool-workers to support Vitest 5.
 - **Trade-offs:** Running Vitest itself on Bun or Deno runs every test file there with no new harness, and `pnpm test:bun` and `pnpm test:deno` run the same command locally. A Workers job needs a bundle of each test file and a runner inside workerd, which the Web Worker harness doesn't provide, because it imports test files from the Vite server. The first runs failed 2 tests on Bun and 19 on Deno, all caused by the runtimes' `DecompressionStream` and Deno's `BroadcastChannel` (see docs/papercuts.md). Blocking on them would keep CI red until Bun and Deno fix them, and changing the tests to expect each runtime's behavior would hide the differences.
 - **Chosen:** a `test-runtime` job for Bun and Deno with `continue-on-error`, so its failures show in the run without failing it. Make it blocking once the papercuts are fixed or worked around. Workers got its own job, described in the entry above.
 - **Update:** compress and png now work around the `DecompressionStream` bugs, and the rpc test keeps a `BroadcastChannel` open, so every conformance test passes on Bun and Deno. The `test-runtime` job no longer has `continue-on-error`, so a failure there fails the run. The workarounds are in compress and png and not in the tests, so the packages return the same output and throw the same errors on Bun and Deno as on Node. compress runs each check only where a probe shows the runtime needs it, and png decodes again only after a write fails, so Node and browsers don't do the extra decoding.
@@ -201,13 +201,13 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** `retries` everywhere; `attempts` everywhere; keep both.
 - **Trade-offs:** `Timers.retry` took `attempts`, which includes the first try, and `WebSockets.connect` took `retries`, which doesn't, so `retries: 3` allowed four connections where `attempts: 3` allowed three. `retries` matches reconnecting-websocket's `maxRetries`, but most callers read "3" as three tries. `attempts: 3` gives three tries, while `retries: 3` gives four.
-- **Chosen:** `attempts`, at least 1. The websocket package is also renamed to `@portable/websockets`, because its namespace is `WebSockets` (so the global `WebSocket` isn't shadowed) and it was the only namespace that differed from its package name.
+- **Chosen:** `attempts`, at least 1. The websocket package is also renamed to @portable/websockets, because its namespace is `WebSockets` (so the global `WebSocket` isn't shadowed) and it was the only namespace that differed from its package name.
 
-## `@portable/web-crypto` defines the pluggable crypto types
+## @portable/web-crypto defines the pluggable crypto types
 
-- **Options:** keep a crypto function type in each package; define them in `@portable/web-crypto` and re-export them; define them in `@portable/errors` or another package every package already depends on.
+- **Options:** keep a crypto function type in each package; define them in @portable/web-crypto and re-export them; define them in @portable/errors or another package every package already depends on.
 - **Trade-offs:** webhooks took `hmac(key, data)`, oauth1 took `digest(algorithm, data)`, and dkim, arc, and mail-auth took `hash: () => { update, digest }`. `Crypto.Hash` was an algorithm name and `Dkim.Hash` a hasher object. Defining the types in web-crypto adds a dependency to three packages, but `WebCrypto.digest` and `WebCrypto.hmac` already have those types.
-- **Chosen:** `WebCrypto.Digest`, `WebCrypto.Hmac`, and `WebCrypto.Hasher`, with the algorithm first in both functions. Each package re-exports the one it takes, under an option with the same name. The package is renamed from `crypto` to `web-crypto` because `import * as Crypto` shadows the global `Crypto` class in browsers, Node, Deno, and Bun.
+- **Chosen:** `WebCrypto.Digest`, `WebCrypto.Hmac`, and `WebCrypto.Hasher`, with the algorithm first in both functions. Each package re-exports the one it takes, under an option with the same name. The package is renamed from crypto to web-crypto because `import * as Crypto` shadows the global `Crypto` class in browsers, Node, Deno, and Bun.
 
 ## Verdict types keep their top-level names
 
@@ -218,19 +218,19 @@ Decisions made while building the packages, with the options considered and the 
 ## Encoder streams emit bytes
 
 - **Options:** every `EncoderStream` and `*Stream()` function emits `Uint8Array`; they all emit `string`; each package picks.
-- **Trade-offs:** Base64, QuotedPrintable, Csv, and Jsonl emitted strings, and Charset, MimeStream, Sse, and Mail emitted bytes. A `Response` body or a socket's writable needs bytes, so code that used the string encoders had to add a `TextEncoderStream`, and `@portable/mail` and `@portable/rpc` had code to handle both kinds of chunk. The platform's `TextEncoderStream` and `CompressionStream` emit bytes.
+- **Trade-offs:** Base64, QuotedPrintable, Csv, and Jsonl emitted strings, and Charset, MimeStream, Sse, and Mail emitted bytes. A `Response` body or a socket's writable needs bytes, so code that used the string encoders had to add a `TextEncoderStream`, and @portable/mail and @portable/rpc had code to handle both kinds of chunk. The platform's `TextEncoderStream` and `CompressionStream` emit bytes.
 - **Chosen:** bytes everywhere. The one-shot `encode` functions still return a string. Callers write the output to a body more often than they read it as text, so if you want base64 text, you pipe the output through `TextDecoderStream`.
 
-## One `@portable/errors` package, branded with `Symbol.for`
+## One @portable/errors package, branded with `Symbol.for`
 
-- **Options:** keep an `errors.ts` in each package; share the classes through an internal package; publish `@portable/errors`. For checks: `instanceof`; comparing `name` strings; a brand under a `Symbol.for` key.
+- **Options:** keep an `errors.ts` in each package; share the classes through an internal package; publish @portable/errors. For checks: `instanceof`; comparing `name` strings; a brand under a `Symbol.for` key.
 - **Trade-offs:** 26 packages defined about 55 classes, and classes with the same name had different constructors: `TruncatedError` took `(message?, options?)` in base64, `(options?)` in compress, and nothing in exif, and `ResponseError` had three unrelated shapes. Piping `Streams.limitBytes` into `Compress.DecoderStream` and then `Exif.parseStream` meant three checks for one condition. zile doesn't bundle, so an internal package would still be published and installed, and a public one lets callers check a kind from any package. `instanceof` fails when two copies of a package are installed. Duplicates are more likely with our packages because `workspace:*` publishes exact versions, which npm can't dedupe. Comparing `name` matches any library that happens to use the same string.
-- **Chosen:** a public `@portable/errors`. Each error stores the kinds of its class chain under `Symbol.for('portable.error')`, `Errors.is(error, 'MaxBytes')` reads it, and the classes' `Symbol.hasInstance` reads it too, so `instanceof Errors.MaxBytesError` matches every package's error and `instanceof Compress.MaxBytesError` matches only compress's, from any copy. The symbol key and the kind strings are a protocol that later versions must keep. An error with only a message takes `(message?, options?)`, as `Error` does, and one with other fields takes one object.
+- **Chosen:** a public @portable/errors. Each error stores the kinds of its class chain under `Symbol.for('portable.error')`, `Errors.is(error, 'MaxBytes')` reads it, and the classes' `Symbol.hasInstance` reads it too, so `instanceof Errors.MaxBytesError` matches every package's error and `instanceof Compress.MaxBytesError` matches only compress's, from any copy. The symbol key and the kind strings are a protocol that later versions must keep. An error with only a message takes `(message?, options?)`, as `Error` does, and one with other fields takes one object.
 
 ## The worker harness runs a stalled file again in WebKit
 
-- **Options:** drop WebKit from the worker suite; stop calling `releaseLock()` in `@portable/streams`; run a file again in a new worker when its WebKit worker stops responding; leave the suite as it is.
-- **Trade-offs:** The hang is a deadlock inside WebKit's `releaseLock()` (see papercuts.md), so no change to our packages fixes it. The stream collectors in `@portable/streams` release the lock because callers and tests expect `stream.locked` to be `false` after a collector finishes, so removing the call would change behavior in every runtime to avoid a WebKit bug. Dropping WebKit would lose the only check that the packages work in a WebKit worker. Without a change, about one WebKit run in three hung. A second attempt costs 60 s and passes unless the deadlock happens twice in the same file. A package bug that loops forever still fails, because the second attempt stalls too, and the retry applies only in WebKit, so Chromium and Firefox fail at the first stall.
+- **Options:** drop WebKit from the worker suite; stop calling `releaseLock()` in @portable/streams; run a file again in a new worker when its WebKit worker stops responding; leave the suite as it is.
+- **Trade-offs:** The hang is a deadlock inside WebKit's `releaseLock()` (see papercuts.md), so no change to our packages fixes it. The stream collectors in @portable/streams release the lock because callers and tests expect `stream.locked` to be `false` after a collector finishes, so removing the call would change behavior in every runtime to avoid a WebKit bug. Dropping WebKit would lose the only check that the packages work in a WebKit worker. Without a change, about one WebKit run in three hung. A second attempt costs 60 s and passes unless the deadlock happens twice in the same file. A package bug that loops forever still fails, because the second attempt stalls too, and the retry applies only in WebKit, so Chromium and Firefox fail at the first stall.
 - **Chosen:** run the file once more in WebKit, print the stall with `console.warn`, and fail the file if the second attempt stalls too. WebKit runs with `JSC_useConcurrentJIT=false` and `JSC_numberOfGCMarkers=1`, so a deadlocked worker doesn't block threads that the page and the next workers need. Remove the retry and the options when WebKit fixes `releaseLock()`.
 
 ## CI tests Node 24 and 26, not 22
@@ -273,7 +273,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** copy dkim's tag parser, canonicalization, key lookup, and signing into arc; export them from dkim's main entry; add an `./internal` subpath export to dkim.
 - **Trade-offs:** A copy would drift from dkim, and the AMS is a DKIM signature with a different tag set, so we would have to make every fix twice. Exporting the helpers from the main entry would make them public API. Anyone can import a subpath, but its doc comment says it is not public and can change in any release.
-- **Chosen:** `@portable/dkim/internal`. arc depends on `@portable/dkim` with `workspace:*`, which pnpm publishes as the exact version, so a change to the internal modules is released together with arc. arc also has an `./internal` subpath, so that `MailAuth.authenticate` can split the message once and compute the body hashes for DKIM, the ARC-Message-Signature, and the new seal in one pass. `Dkim.verify` and `Arc.verify` each split into a `planVerify` that returns the body hashes it needs and a `finish` step, and `Arc.seal` into `createSealer`. Before this, `authenticate` buffered the message and canonicalized and hashed the body three times. With one pass it takes less than half the time on a 250 KB message, reads a stream without buffering it, and rejects invalid seal options before it reads the message.
+- **Chosen:** `@portable/dkim/internal`. arc depends on @portable/dkim with `workspace:*`, which pnpm publishes as the exact version, so a change to the internal modules is released together with arc. arc also has an `./internal` subpath, so that `MailAuth.authenticate` can split the message once and compute the body hashes for DKIM, the ARC-Message-Signature, and the new seal in one pass. `Dkim.verify` and `Arc.verify` each split into a `planVerify` that returns the body hashes it needs and a `finish` step, and `Arc.seal` into `createSealer`. Before this, `authenticate` buffered the message and canonicalized and hashed the body three times. With one pass it takes less than half the time on a 250 KB message, reads a stream without buffering it, and rejects invalid seal options before it reads the message.
 - **Reviewed:** the consistency pass kept the subpath, because the alternatives are a copy that drifts or a public API nobody else needs. AGENTS.md now says when a package may add an `./internal` subpath and that only `@portable/*` packages import it.
 
 ## arc has only RFC 8617 behavior
@@ -316,7 +316,7 @@ Decisions made while building the packages, with the options considered and the 
 
 - **Options:** fast-check property tests; a coverage-guided fuzzer such as Jazzer.js; keep each package's hand-rolled seeded loops.
 - **Trade-offs:** Jazzer.js instruments code and finds deep paths through a parser faster, but it runs only in Node, needs a native module and its own runner, and its targets would run outside Vitest. fast-check runs in Vitest in Node and in browsers, shrinks a failure to a small input, and prints a seed that replays it. The seeded loops had neither shrinking nor replay, and each package wrote its own.
-- **Chosen:** fast-check, through `fuzz()` in a private workspace package, `@portable/fuzz` in `tools/fuzz`, so `tools/fuzz` holds the run count and replay settings in one place. Mutated real fixtures make up for the missing coverage feedback, because they reach the code past the header checks that random bytes rarely pass. fast-check is a dev dependency of each test package, so no published package depends on it.
+- **Chosen:** fast-check, through `fuzz()` in a private workspace package, @portable/fuzz in `tools/fuzz`, so `tools/fuzz` holds the run count and replay settings in one place. Mutated real fixtures make up for the missing coverage feedback, because they reach the code past the header checks that random bytes rarely pass. fast-check is a dev dependency of each test package, so no published package depends on it.
 - **Run counts:** 100 runs per property in `pnpm test` and the git hooks, and 10,000 in `pnpm fuzz`, which loads `.env.fuzz`. `FUZZ_RUNS` overrides both.
 
 ## A time limit on each fuzz run
@@ -333,11 +333,11 @@ Decisions made while building the packages, with the options considered and the 
 
 ## `Streams.fromIterable` and `toAsyncIterable` take no signal
 
-- **Options:** give every function in `@portable/streams` a `signal`; give it only to the collectors, the combinators, and the transforms used with `pipeThrough`.
+- **Options:** give every function in @portable/streams a `signal`; give it only to the collectors, the combinators, and the transforms used with `pipeThrough`.
 - **Trade-offs:** `fromIterable` and `toAsyncIterable` return a stream or iterator that does nothing until it is read, and cancelling it (or leaving the `for await` loop) already cancels the source. `concat` and `merge` took their sources as rest parameters, which left no place for an options object. They now take an array, so an options object with `signal` can follow it, as in every other function that holds readers. The change breaks no one, because nothing is released yet.
 - **Chosen:** `toBytes`, `toBlob`, `toText`, `toJson`, `toArray`, `concat`, `merge`, `map`, `filter`, `tap`, `batch`, `limitBytes`, `transform`, and `tee` take `signal`. `fromIterable` and `toAsyncIterable` don't, and the README says how to cancel them.
 
-## `@portable/charset`'s root exports
+## @portable/charset's root exports
 
 - **Options:** keep `encode`, `EncoderStream`, `utf8`, `load`, `normalizeLabel`, `isSupported`, `UnsupportedError`, and the types `Charset` and `CharsetName`; drop `isSupported`; also rename the `Charset` type.
 - **Trade-offs:** `isSupported` matched iconv-lite's `encodingExists`, but it was `normalizeLabel` plus one comparison, and `normalizeLabel` returned `'replacement'`, which has no encoder in this package, so callers needed both. `CharsetName` repeats the package name as `Charset.CharsetName`. `Charset.Charset` repeats it too, but it is the type of the package's main value, as `Hex.Hex` is in ox, and every other name for it (`Table`, `Codec`) says less.
@@ -354,7 +354,7 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Standard Webhooks is the default `scheme`,** because it is the only published spec and Svix, Resend, and Clerk use it. The `svix` scheme is gone: `standard` reads the `svix-` headers when the `webhook-` headers are missing.
 - **`sign` gives every scheme a `crypto.randomUUID()` id by default,** so the Standard Webhooks id changed from `msg_…` to a UUID, and GitHub signatures now come with an `x-github-delivery` header, as GitHub's own deliveries do.
 
-## `@portable/rpc` API
+## @portable/rpc API
 
 - **Per-call options go through `Rpc.call(remote.method, params, { signal })`.** Also considered: options as a last argument (clashes with a method whose last parameter is an object, and with optional parameters), a marker object built by `Rpc.options()` (the remote's types then need an extra optional parameter after every parameter list, which TypeScript can't add after a rest parameter), and a `remote.with({ signal })` view (a method named `with` on the API would clash with it). `Rpc.call` takes the proxy's method itself, so the params are typed from the API, the proxy reserves no names, and the same function sends params by name for MCP and LSP. To close everything, pass a connection-wide `signal` to `connect`.
 - **Bidirectional use is `connect(transport, { methods })`, not `provide` and `connect` called separately on one transport.** A `ReadableStream` has one reader, so two calls would need a hidden registry keyed by transport, and their options could disagree. birpc also takes the local functions and the channel in one call. `Rpc.provide(transport, methods)` is `connect` with `methods`, for a side that serves methods and calls none.
@@ -394,18 +394,18 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Trade-offs:** a reused key saves one `importKey` per call, but a `CryptoKey` stores its own hash, which could disagree with the `hash` argument. If you reuse a key, you can call `crypto.subtle.sign` directly.
 - **Chosen:** bytes or a string only. `hmac` caches the keys it imports, so signing again with the same secret skips `importKey`, and there's no need to pass a `CryptoKey`.
 
-## `@portable/rdap` API
+## @portable/rdap API
 
 - **`domain(name)`, `ip(address)`, and `asn(number)`, each returning a plain normalized object with `raw`.** We left out node-rdap's `nameserver()` and `entity()`: a domain result already lists its nameservers and entities, and a client can route an entity handle to a server only for the eight RFC 8521 tags.
-- **Four error classes.** `InvalidInputError` and `UnsupportedError` (no server in the bootstrap file) are the shared names. `NotFoundError` is separate from `ResponseError` because "is this name registered?" is the most common question a caller asks. A rejected `fetch` passes through unchanged. `@portable/dns` wraps it in `QueryError` to copy Node's error codes, and RDAP has no such codes to copy.
+- **Four error classes.** `InvalidInputError` and `UnsupportedError` (no server in the bootstrap file) are the shared names. `NotFoundError` is separate from `ResponseError` because "is this name registered?" is the most common question a caller asks. A rejected `fetch` passes through unchanged. @portable/dns wraps it in `QueryError` to copy Node's error codes, and RDAP has no such codes to copy.
 - **Lookups follow registrar referrals by default and report a failed referral in `referral.error` instead of rejecting.** Registrar servers fail more often than registries, and the registry's answer is still correct. The other option was to reject, which would make a `.com` lookup fail whenever the registrar's server is down.
 - **The merged result takes entities from the registrar and everything else from the registry.** The merge also keeps registry entities in roles the registrar has no entity for. Taking the whole registrar response was simpler, but registrars report their own expiration dates (MarkMonitor's `google.com` expiration is a day earlier than Verisign's), and the registry is the authority for them.
 - **Bootstrap files are cached for 24 hours in a `WeakMap` keyed by the `fetch` function, with no TTL option.** A module-level cache leaked bootstrap files between tests that pass different fetches, and node-rdap needs `flushCaches()` for that. 24 hours is IANA's `max-age`. Concurrent lookups share one request, and it is aborted only when every lookup waiting for it has aborted.
 - **The result flattens entities depth first and takes the first value of each jCard property.** A registrar's abuse contact is nested inside the registrar entity, and callers look for it with `roles.includes('abuse')`. An entity's other emails and phone numbers are only in `raw`.
 - **A date without a time zone is read as UTC.** `new Date('2020-01-02T03:04:05')` uses the machine's zone, so the same response gave different `Date`s on different machines.
-- **IP addresses and prefixes use `@portable/ip`, and domains use the URL-based `hostToAscii` from `@portable/idna/internal`.** Full `Idna.toAscii` would add about 15 kB gzipped of mapping tables, and the URL host parser applies the same UTS #46 mapping with the runtime's tables. A prefix's host bits are cleared before the query, as `Ip.parseCidr` does.
+- **IP addresses and prefixes use @portable/ip, and domains use the URL-based `hostToAscii` from `@portable/idna/internal`.** Full `Idna.toAscii` would add about 15 kB gzipped of mapping tables, and the URL host parser applies the same UTS #46 mapping with the runtime's tables. A prefix's host bits are cleared before the query, as `Ip.parseCidr` does.
 
-## `@portable/web-push` sends aes128gcm only, with no GCM keys
+## @portable/web-push sends aes128gcm only, with no GCM keys
 
 - **Options:** support aesgcm and GCM API keys as web-push does; aes128gcm and VAPID only.
 - **Trade-offs:** aesgcm is the draft encoding from before RFC 8291, and every current browser accepts aes128gcm. GCM shut down in 2019 and FCM's legacy server keys in 2024, so web-push's GCM branches can't send anything today.
@@ -435,13 +435,13 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Trade-offs:** push services must accept a 4096-byte body (RFC 8291 §4), which leaves 3993 bytes of payload, and FCM and Apple reject larger ones. An endpoint comes from a browser, so an `http:` endpoint either is a mistake or points the server at an internal address. Rejecting `http:` means a local test push service needs `https:` or a `fetch` that rewrites the URL.
 - **Chosen:** throw `InvalidInputError` for a non-`https:` endpoint, and `WebPush.MaxBytesError` (with `maxBytes` 3993) for a larger payload. Callers delete a subscription on `InvalidInputError`, so a payload error has to be a different class, or a long notification would delete valid subscriptions.
 
-## `@portable/web-push` benchmarks against direct WebCrypto calls
+## @portable/web-push benchmarks against direct WebCrypto calls
 
 - **Options:** require being within 25% of web-push; compare with the same WebCrypto calls made directly and show web-push for reference.
-- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 2.5 times slower one at a time and 1.2 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The `webhooks` benchmarks made the same call for `node:crypto` HMAC.
+- **Trade-offs:** web-push uses synchronous `node:crypto`. On Node every WebCrypto call goes through the thread pool, and an encryption needs 9 of them, so the same work is about 2.5 times slower one at a time and 1.2 times slower in a batch of 64. No change to the package can close that gap without a JavaScript AES-GCM and ECDH, which AGENTS.md doesn't allow without a dependency. The webhooks benchmarks made the same call for `node:crypto` HMAC.
 - **Chosen:** the 25% assertions compare with direct WebCrypto calls, and the README shows web-push's numbers.
 
-## `@portable/rate-limit`: GCRA and a compare-and-set store
+## @portable/rate-limit: GCRA and a compare-and-set store
 
 - **Algorithm options:** GCRA; a token bucket; fixed or sliding windows, as rate-limiter-flexible does.
 - **Trade-offs:** a token bucket stores two numbers per key (tokens and the last refill time), so a store must update both atomically. Windows are one counter but let a client make twice the limit across a boundary. GCRA allows exactly what a token bucket of size `burst` refilling at `limit / period` allows, and stores one number, the time at which the key's allowance is full again.
@@ -458,11 +458,11 @@ The redesign was needed because a branch per vendor inside `verify` and `sign` c
 - **Trade-offs:** every other `encode` returns a string or bytes, so `JsonStream.encode` returning a `ReadableStream` isn't what you'd expect after using `Base64.encode`. `EncoderStream` is a `TransformStream` everywhere else, used with `pipeThrough`, but this function takes one value, not a stream of them. `Jsonl.EncoderStream` is the transform for many values. For the name `encodeStream`, the `Stream` suffix rule now applies to a function that returns a stream as well as one that reads one.
 - **Chosen:** `encodeStream(value)`. AGENTS.md now says the suffix marks a variant whose bytes or text are a stream, in either direction, so `parseStream` and `encodeStream` mirror each other.
 - **The reader is `DecoderStream`, not `ParserStream`,** because AGENTS.md keeps `parse` for packages that only read, and json-stream also writes. With the default `paths: ['$']` it emits every top-level value, as `Jsonl.DecoderStream` does for each line.
-- **`InvalidInputError` and `TruncatedError` extend the `@portable/errors` classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so catching `TypeError` to find bugs in your own code also caught bad input.
+- **`InvalidInputError` and `TruncatedError` extend the @portable/errors classes,** as in every other package, and so does `Jsonl.InvalidInputError`. They extended `TypeError`, so catching `TypeError` to find bugs in your own code also caught bad input.
 
-## Build `@portable/bytes` instead of pointing to uint8array-extras
+## Build @portable/bytes instead of pointing to uint8array-extras
 
-Added on 2026-10-18 after an audit of three apps that use Portable. All three hand-write hex encoding, concatenation, and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in `@portable/base64`, and random bytes come from `crypto.getRandomValues`.
+Added on 2026-10-18 after an audit of three apps that use Portable. All three hand-write hex encoding, concatenation, and a constant-time compare, and Portable had six private `concat` copies plus hex and compare code in webhooks. uint8array-extras has no constant-time compare and no strict hex parsing, and our packages can't depend on it under the no-outside-dependencies rule. The package stays small: base64 remains in @portable/base64, and random bytes come from `crypto.getRandomValues`.
 
 ## `LineStream` is `Lines.DecoderStream`
 
@@ -483,34 +483,34 @@ Added on 2026-10-18 after an audit of three apps that use Portable. All three ha
 - **Libraries the README names but the benchmarks leave out:** @microsoft/fetch-event-source uses `window` and `document`; better-sse and hono's SSE helper need a Node response or a Hono context; whoiser and whois-json speak WHOIS over TCP port 43; bottleneck schedules jobs and has no allow-or-deny call to compare with a rate limiter; dohjs takes no `fetch` to inject.
 - **Runtime dependencies count every package installed with the published package,** `@portable/*` included, by walking `dependencies` through `node_modules`.
 - **Coverage is no longer part of `pnpm readme`,** since the root README's package table has no coverage column.
-- **Bundle size is measured with Vite's `build` from `vite-plus`,** which bundles with rolldown, so no new dependency is needed. `scripts/bundle-size.ts` builds one entry per column from the column's `imports` in `scripts/readme-tables.ts`, which are the imports in the README's usage example or the library's equivalents. It runs from the package's `test/` directory, so it bundles the same upstream versions the tests install, and resolves `@portable/*` to the built `dist/`. The build uses Vite's browser conditions and `browser` fields and minifies the output, and the size is the gzip (level 6) of all output chunks. Node built-ins are left external and listed in the stats table, with `Buffer` when the output uses it. The size then leaves out whatever a browser polyfill would add. An optional peer such as `@noble/hashes` is counted only in the column that imports it.
+- **Bundle size is measured with Vite's `build` from vite-plus,** which bundles with rolldown, so no new dependency is needed. `scripts/bundle-size.ts` builds one entry per column from the column's `imports` in `scripts/readme-tables.ts`, which are the imports in the README's usage example or the library's equivalents. It runs from the package's `test/` directory, so it bundles the same upstream versions the tests install, and resolves `@portable/*` to the built `dist/`. The build uses Vite's browser conditions and `browser` fields and minifies the output, and the size is the gzip (level 6) of all output chunks. Node built-ins are left external and listed in the stats table, with `Buffer` when the output uses it. The size then leaves out whatever a browser polyfill would add. An optional peer such as @noble/hashes is counted only in the column that imports it.
 
 ## Crypto defaults to WebCrypto, with no `/core` entry
 
-This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/architecture.md now states it as the rule.
+This was decided for @portable/webhooks and @portable/oauth1, and docs/architecture.md now states it as the rule.
 
-- **Options:** `@noble/hashes` in every runtime, the earlier default; export conditions that give browsers, Workers, and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for passing noble instead.
+- **Options:** @noble/hashes in every runtime, the earlier default; export conditions that give browsers, Workers, and Deno a WebCrypto build and Node and Bun a noble build, as octokit and Stripe do; WebCrypto in every runtime, with the `hmac` or `digest` option for passing noble instead.
 - **Trade-offs:** noble HMAC-SHA256 adds about 3.0 kB gzipped to a browser bundle and needs an optional peer. Node's WebCrypto HMAC is about 7× slower than noble's. Export conditions avoid both costs but give each runtime different code, which tests in one runtime don't cover.
 - **Chosen:** WebCrypto everywhere, because it is the platform API and we expect Node's implementation to get faster. Neither package has a noble dependency or peer any more. `/core` existed to keep the noble default out of bundles, so it is gone, and the option is the only way to pass another function. A browser bundle of `verify` from webhooks is 4.7 kB gzipped, and of `sign` from oauth1 5.1 kB, neither with noble code.
 - **On Node:** a webhooks verification with the default is 1.6× faster than Stripe's `constructEventAsync` and about 1.8× slower than standardwebhooks. An oauth1 GET header is about 5× slower than oauth-1.0a with `node:crypto`. With noble passed in, both are faster than the library they replace. The benchmarks assert against the noble path where the upstream library hashes in JavaScript or `node:crypto`, and against the default where it uses WebCrypto.
 - **`WebCrypto.hmac` caches imported keys.** It holds up to 16 keys of at most 256 bytes, keyed by the hash and the key bytes, and clears the cache when it is full. The cache started in webhooks, where verifying without it was 2.9× slower on Node and an HMAC in Chromium took 12 µs instead of 6 µs. It moved into `WebCrypto.hmac` so that oauth1 and any other caller get it too, and webhooks now uses `WebCrypto.hmac` as its default.
 
-## `@portable/mime-headers` API
+## @portable/mime-headers API
 
 - **Two verb pairs.** Encoded words use `encodeWord`, `encodeWords`, and `decodeWords`, because RFC 2047 is an encoding of text. Structured values use `parseValue`/`formatValue` and `parseAddresses`/`formatAddresses`, because the text is a syntax people read and write. AGENTS.md now has a rule for the `parse`/`format` pair. Also offered: one `encode`/`decode` pair for everything, which would hide that `parseAddresses` discards comments and whitespace.
-- **Charsets come from a caller-supplied `CharsetEncoder`,** not an optional dependency on `@portable/charset`. Decoding uses `TextDecoder`, which covers every charset a mail client meets, and only encoding into a legacy charset needs a table. Every `Charset.Charset` has an `encode(text)` method, so you can pass a charset from `@portable/charset` as it is, and the package stays free of dependencies.
-- **No dependency on `@portable/quoted-printable`.** RFC 2047 Q encoding writes `_` for a space and has a smaller set of safe characters than quoted-printable, so sharing the encoder would need options that only this package uses.
+- **Charsets come from a caller-supplied `CharsetEncoder`,** not an optional dependency on @portable/charset. Decoding uses `TextDecoder`, which covers every charset a mail client meets, and only encoding into a legacy charset needs a table. Every `Charset.Charset` has an `encode(text)` method, so you can pass a charset from @portable/charset as it is, and the package stays free of dependencies.
+- **No dependency on @portable/quoted-printable.** RFC 2047 Q encoding writes `_` for a space and has a smaller set of safe characters than quoted-printable, so sharing the encoder would need options that only this package uses.
 - **Strict address parsing is an option on `parseAddresses`,** not a separate validator. email-addresses' strict RFC 5322 mode and addressparser's lenient mode share one grammar here, and the option only rejects what the lenient parser repairs.
 - **Different from upstream:** `parseAddresses` removes quotes around a local part, keeps only the first address of `<x@evil.com @good.com>` and accepts UTF-8 addresses (RFC 6532), and `formatValue` writes RFC 2231 continuations for long parameters.
 
-## `@portable/spf` API
+## @portable/spf API
 
 - **`Spf.check({ ip, sender, helo }, { resolver, receiver, signal })`, named after RFC 7208's `check_host()`.** We passed over `verify` because in webhooks it throws on failure, and an SPF `fail` is a result, not an error. `check` rejects only for an invalid `ip`.
 - **The resolver is required, with no default.** A default of `Dns.create()` would save one line, but the resolver determines which server sees the client's IP through `%{i}` in `exists` lookups, mail servers usually have their own resolver, and it would put DNS-over-HTTPS code into Node bundles. `Spf.Resolver` is a `Pick` of five `Dns.Resolver` methods, so `node:dns/promises` and small test fakes both match it.
 - **RFC 7208 behavior only.** There is no lenient mode like mailauth's default and no options for the lookup limits. A syntax error anywhere gives `permerror`, and empty answers and `EBADNAME` count as void lookups.
-- **No Received-SPF or Authentication-Results headers.** The result's `identity` and `domain` are enough for `@portable/mail-auth` to build them.
+- **No Received-SPF or Authentication-Results headers.** The result's `identity` and `domain` are enough for @portable/mail-auth to build them.
 
-## `@portable/dns` API
+## @portable/dns API
 
 - **`Dns.create({ endpoints, fetch, timeout })` (first named `createResolver`) returns Node's method names** (`resolve4`, `resolveTxt`, `resolveMx`, ... `reverse`) plus `query(name, type)` for the whole decoded packet. The `Resolver` type has the one-argument methods, which `node:dns/promises` also has, so SPF, DMARC, and DKIM accept either. If you move from Node, you change only the line that builds the resolver.
 - **`QueryError` copies Node's `code`, `syscall`, `hostname`, and message,** so existing `ENOTFOUND`/`ENODATA` handling keeps working. An abort rejects with `signal.reason`, as `fetch` does.
@@ -518,7 +518,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **No cache, `ttl` option, `resolveAny`, or `resolveTlsa`,** because `query()` covers them.
 - **Different from Node:** the resolver decodes TXT as UTF-8, returns only records on the question's CNAME chain, and gives `ENODATA` for a CNAME-only answer.
 
-## `@portable/oauth1` API
+## @portable/oauth1 API
 
 - **`sign(request, options)` returns a new signed `Request`; `authorization(request, options)` returns only the header value.** oauth-1.0a's `authorize` and `toHeader` were the alternatives. Inputs are `Request` objects, so `sign` signs exactly the URL and body that `fetch` sends, at about 10 µs per POST for reading the body.
 - **The option is `signatureMethod`, defaulting to HMAC-SHA1,** because `method` reads as the HTTP method. oauth-1.0a defaults to PLAINTEXT.
@@ -528,10 +528,10 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **No HTTP client.** `fetch` follows redirects with the old signature, and the README shows how to re-sign.
 - **`timestamp` is a `Date`,** as in `Webhooks.sign` and every result in this repo. It was a number of seconds, so the same option name took different types in two packages that are often used together.
 
-## `@portable/webhooks` API
+## @portable/webhooks API
 
 - **One `verify(input, { scheme, secret })`,** not a function per provider, so there is one result type, one error class, and one set of options. `sign` mirrors it and returns the provider's headers. The `scheme` string became a scheme object (see "Webhooks schemes are objects of functions").
-- **The default is `WebCrypto.hmac`, which caches imported keys** (see the decision above). Commit 6950f78 briefly made `@noble/hashes` the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
+- **The default is `WebCrypto.hmac`, which caches imported keys** (see the decision above). Commit 6950f78 briefly made @noble/hashes the default, which is 1.6× faster than standardwebhooks on Node. A caller can still pass it as `hmac`.
 - **`verify` returns `{ body, id, timestamp }` as text, not parsed JSON,** because Slack commands and GitHub form deliveries aren't JSON, and the `id` lets callers drop replays.
 - **One `VerificationError` with a `code`** (`missing-header`, `malformed-header`, `signature`, `timestamp`) instead of the shared error names, because every failure maps to the same 4xx. Mistakes in the call throw `TypeError` or `RangeError`. The signature is checked first, so `timestamp` always means a genuine but stale message.
 - **The tolerance applies in both directions,** while Stripe and Slack accept any future timestamp. No SHA-1 for GitHub, which always sends SHA-256.
@@ -541,17 +541,17 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 
 - **Options:** `src/_test/` inside each package (the first layout); a sibling `test/` directory with its own `package.json`.
 - **Trade-offs:** a separate package keeps upstream libraries, their `@types`, and Node types out of the published `package.json`, and makes tests import the package by name through its `exports` map. It adds one workspace package per package. Tests can still import unexported code by path.
-- **Chosen:** `test/`, named `@portable/<name>-test`. Shared tools (Vitest, TypeScript, Playwright, `@types/node`) stay in the root. `tsconfig.test.json` type-checks every test directory, which `tsc -b` didn't do before.
+- **Chosen:** `test/`, named `@portable/<name>-test`. Shared tools (Vitest, TypeScript, Playwright, @types/node) stay in the root. `tsconfig.test.json` type-checks every test directory, which `tsc -b` didn't do before.
 
-## `@portable/json-stream` API
+## @portable/json-stream API
 
-- **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<Uint8Array>`.** Line-delimited JSON moved to its own package, `@portable/jsonl`, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: developers look for line-delimited JSON as its own problem, and its own package can use `DecoderStream` and `EncoderStream`, as the other codecs do. The package is named for JSON Lines (`.jsonl`), because OpenAI, Hugging Face and agent transcripts use that name. NDJSON is the older name, still used by the `ndjson` npm package and Elasticsearch. JSON Lines and NDJSON describe the same format.
-- **No runtime dependency on `lines`, and only `Streams.abortable` from `streams`.** Splitting on `\n` inline is faster, and `encodeStream` needs its own pull source so cancelling can interrupt a pending read.
+- **`DecoderStream({ paths })` emits `{ path, value }` for values at JSONPath expressions, and `encodeStream(value)` returns a `ReadableStream<Uint8Array>`.** Line-delimited JSON moved to its own package, @portable/jsonl, with `Jsonl.DecoderStream` and `Jsonl.EncoderStream`: developers look for line-delimited JSON as its own problem, and its own package can use `DecoderStream` and `EncoderStream`, as the other codecs do. The package is named for JSON Lines (`.jsonl`), because OpenAI, Hugging Face and agent transcripts use that name. NDJSON is the older name, still used by the ndjson npm package and Elasticsearch. JSON Lines and NDJSON describe the same format.
+- **No runtime dependency on lines, and only `Streams.abortable` from streams.** Splitting on `\n` inline is faster, and `encodeStream` needs its own pull source so cancelling can interrupt a pending read.
 - **Functions in the value are thunks,** called when the writer reaches them, so work such as a query starts only when needed. `JSON.stringify` drops functions instead.
 - **The decoder builds each matched value with `JSON.parse` on the matched slice,** which is faster and parses exactly like `JSON.parse`. The decoder reports a syntax error inside a match when that value ends, not at the bad character.
 - **`encodeStream` always writes streams and async iterables as arrays.** No `cycle` option: a circular structure or a BigInt fails as in `JSON.stringify`.
 
-## `@portable/png` API
+## @portable/png API
 
 - **Async `decode`/`encode` use `DecompressionStream`/`CompressionStream`; `decodeSync`/`encodeSync` require a zlib function** (fflate's or `node:zlib`'s). One function with mixed return types or overloads was the alternative.
 - **Output is always 8-bit RGBA,** and `encode` takes `{ width, height, data }`, so a caller can pass a canvas `ImageData` or a decode result as is. 16-bit precision is lost, and there is no 16-bit or palette writing.
@@ -560,7 +560,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **The `DecompressionStream` decode benchmark allows 50%.** Node's `DecompressionStream` hands zlib one 16 KiB chunk at a time to the thread pool, which adds 10 to 25 ms on a 1024×1024 image. With `node:zlib` our decoder is faster than pngjs (28 ms vs 37 ms in the README table).
 - **Different from pngjs on purpose:** a `tRNS` pixel keeps its color with alpha 0, gray output uses BT.709 luma, bytes after `IEND` are ignored, and a header claiming more pixels than the data holds throws before allocating (pngjs tried to allocate 40 GB).
 
-## `@portable/charset` API
+## @portable/charset API
 
 - **Charset objects imported from subpaths, plus `load(label)` for labels known only at runtime.** A registry keyed by string would pull every table into every bundle. `encode` from the root is 1.0 kB gzipped, one single-byte charset adds 0.6 kB, and the largest family (gbk or big5) is 18 kB.
 - **Where iconv-lite disagrees with WHATWG, the WHATWG label mapping is used.** `latin1`, `ascii`, and `iso-8859-1` encode as windows-1252, and `gb2312` as GBK, because that is how browsers and `TextDecoder` read them back.
@@ -569,7 +569,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Tables are packed varints,** so gb18030 is 17 kB gzipped against iconv-lite's 32 kB. Each charset costs 128 kB of memory after first use.
 - **Phase 2, not built yet:** DOS code pages (cp437, cp850), UTF-7, UTF-32, and CESU-8.
 
-## `@portable/base64` API
+## @portable/base64 API
 
 - **Three decode modes.** `'loose'` (the default) and `'strict'` match the platform's `fromBase64` `lastChunkHandling`. `'mime'` follows RFC 2045 and libbase64: it skips unknown characters, reads both alphabets, and never throws. We didn't make libbase64's lenient behavior the default, because silently dropped characters hide corrupt data (base64-js #81).
 - **Native `toBase64`/`fromBase64` are used when the runtime has them.** Node 24 doesn't, so Node runs the JavaScript fallback, and Chromium's tests check the fallback against the native methods on over 1,000 inputs. The stream decoder always uses the JavaScript code, to avoid a second path to test.
@@ -577,17 +577,17 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **`omitPadding` defaults to false even for base64url,** as on the platform, unlike `Buffer` and js-base64. **Wrapping is off by default.**
 - **The oracle is libbase64 1.3.3,** because 1.4.x is less than a day old. The cases come from 1.4.1's tests.
 
-## `@portable/dns-packet` API
+## @portable/dns-packet API
 
 - **`encode(packet, { compress, framing })` and `decode(bytes, { framing })` are the whole API.** `framing: 'tcp'` replaces `streamEncode`/`streamDecode`. We dropped `encodingLength`, writing at an offset and `encode.bytes`, because `encode` returns an exactly sized array.
 - **Compression is off by default.** Queries rarely gain anything from it, and dns-packet's default made output depend on name order.
 - **Code tables and flag bits are internal.** Packets carry a `flags` object of booleans, and unnamed codes use RFC 3597 names (`TYPE65534`). An unknown name throws.
-- **TXT decodes to `Uint8Array[]`,** which keeps binary and DNS-SD data intact. `@portable/dns` can turn it into text.
+- **TXT decodes to `Uint8Array[]`,** which keeps binary and DNS-SD data intact. @portable/dns can turn it into text.
 - **CAA `flags` is the whole byte** and SVCB/HTTPS stay raw bytes, so DNSSEC-signed data re-encodes exactly.
 - **No subpath for decode-only use:** encode and decode together are 7.4 kB minified and gzipped.
-- **Addresses are parsed and formatted by `@portable/ip`.** `encode` passes each A, AAAA, and CLIENT_SUBNET address to `Ip.parse` and wraps its error in `InvalidInputError` with the original as `cause`, so `010.0.0.1`, which `inet_aton` reads as octal 8, throws as it does everywhere else in the family. A zone throws too, because DNS can't carry one. `decode` formats addresses with `Ip.format`, so an IPv4-mapped address is `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends and as Node's `resolve6` writes it. With a parser of its own, the package was 7.0 kB, but the two parsers had already drifted apart: the package read `010.0.0.1` as 10.0.0.1 and wrote mapped addresses in hex. `@portable/dns`, which already bundles ip, gets smaller.
+- **Addresses are parsed and formatted by @portable/ip.** `encode` passes each A, AAAA, and CLIENT_SUBNET address to `Ip.parse` and wraps its error in `InvalidInputError` with the original as `cause`, so `010.0.0.1`, which `inet_aton` reads as octal 8, throws as it does everywhere else in the family. A zone throws too, because DNS can't carry one. `decode` formats addresses with `Ip.format`, so an IPv4-mapped address is `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends and as Node's `resolve6` writes it. With a parser of its own, the package was 7.0 kB, but the two parsers had already drifted apart: the package read `010.0.0.1` as 10.0.0.1 and wrote mapped addresses in hex. @portable/dns, which already bundles ip, gets smaller.
 
-## `@portable/quoted-printable` API
+## @portable/quoted-printable API
 
 - **The oracle is libqp 3.0.1, copied into `test/fixtures/`.** 3.0.1 fixes chunk-dependent output, split UTF-8 sequences, and a boundary injection, but it was published hours ago and `minimumReleaseAge` refuses it, tarball URLs included. The tests install libqp 2.1.3 from npm for the cases 3.0.1 didn't change. Replace the copy with `libqp@^3.0.1` once it is a day old.
 - **A bad `lineLength` throws a `RangeError`.** libqp quietly treats bad values as 76 or 4. A bad option is a programming mistake, so it doesn't need its own error class.
@@ -595,7 +595,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Strings are UTF-8 in both directions.** libqp's `decode` reads each character's low byte.
 - **Linear-time tests run only in Node and retry up to 3 times,** because other processes on the machine made linear runs measure up to 24× slower. A quadratic regression (about 64×) still fails every attempt.
 
-## `@portable/image-size` API
+## @portable/image-size API
 
 - **`parse(bytes)` and `parseStream(stream, { maxBytes })`.** `parseStream` cancels the stream once it knows the size: it reads 5 KB of a 730 KB JPEG. It takes only a `ReadableStream`, and callers pass `blob.stream()` or `response.body`. We dropped `imageSizeFromFile`, `disableTypes` (global state) and `types`.
 - **HEIF size comes from the primary item, with clean aperture and rotation applied.** image-size takes the first or largest `ispe`, which reports a 16×64 image as 63×64 and lists every tile of a tiled photo. HEIF results have no `images` list.
@@ -603,7 +603,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Reaching `maxBytes` throws `MaxBytesError`,** named after the option as AGENTS.md asks, not `TruncatedError`, so a caller can tell a cut-off file from a limit it can raise.
 - **The oracle runs against npm's image-size 2.0.4,** which is newer than the last public GitHub commit (2.0.2).
 
-## `@portable/exif` API
+## @portable/exif API
 
 - **`parse(bytes)` returns one tag object per IFD** (`ifd0`, `exif`, `gps`, `interop`, `ifd1`) plus `latitude`, `longitude`, `imageSize`, and `thumbnail`. A merged object lets the thumbnail's `Orientation` replace the image's (exif-parser #30), and GPS and interop tag ids collide.
 - **Dates stay strings,** and `parseDate(value, { offset })` turns one into a `Date`. EXIF dates have no time zone, so building a `Date` while parsing would hide a guess.
@@ -611,7 +611,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **Only a bad TIFF header or an unknown format throws.** `parse` skips a bad IFD or value, so it still returns what it can read from a damaged file.
 - **Tag names are ExifTool's**, as exif-parser and exifr use, plus the EXIF 2.31 and 2.32 tags. Unknown tags are keyed by hex id.
 
-## `@portable/streams` API
+## @portable/streams API
 
 - **Chunk types:** only `Uint8Array` and `string`, and anything else throws a `TypeError`. get-stream also accepts `ArrayBuffer`, `DataView`, and other typed arrays, but the API conventions say bytes are `Uint8Array`, and raw-body's `NaN` length bug came from mixed chunk types. Some callers have to wrap chunks.
 - **`transform()` returns `{ readable, writable }`, not a `TransformStream`.** Support for `Transformer.cancel` varies between runtimes, and the generator needs to see cancellation so its `finally` blocks run. The pair still works with `pipeThrough`. Cancelling the output ends `source` instead of throwing into it, as through2 does, so code after the `for await` loop still runs.
@@ -621,7 +621,7 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 - **No limit on `toArray` and no `bufferedData` on errors.** The memory risk is in bytes, and keeping partial data on the error would hold up to `maxBytes` after the caller has given up.
 - **`toText` decodes chunk by chunk.** Joining the bytes and decoding once was 37% slower than get-stream.
 
-## `maxLength` in `@portable/lines` applies to every line
+## `maxLength` in @portable/lines applies to every line
 
 - **Options:** copy split2, which only checks the unfinished line at the end of each chunk; check every line.
 - **Trade-offs:** copying split2 makes the oracle tests match in every case, but then whether a long line is caught depends on chunk boundaries, which the caller doesn't control.
@@ -658,10 +658,10 @@ This was decided for `@portable/webhooks` and `@portable/oauth1`, and docs/archi
 
 ## Open questions from the package plan
 
-- **Umbrella `portable` package:** not claimed yet. It needs an npm publish from the account that owns the npm scope, and nothing depends on it until several packages exist.
-- **content-disposition and cookie-signature:** point to `@remix-run/headers` and `@remix-run/cookie` instead of building them. Both are maintained, dependency-free, and web-standard.
-- **Package names:** `mime-headers` and `mime-stream`. MIME is the format they handle, and the same code applies to non-mail MIME such as `multipart/related`.
-- **`@portable/dns`:** yes, as a separate package from `dns-packet`, because SPF and DMARC need a resolver and `dns-packet` users don't.
+- **Umbrella portable package:** not claimed yet. It needs an npm publish from the account that owns the npm scope, and nothing depends on it until several packages exist.
+- **content-disposition and cookie-signature:** point to @remix-run/headers and @remix-run/cookie instead of building them. Both are maintained, dependency-free, and web-standard.
+- **Package names:** mime-headers and mime-stream. MIME is the format they handle, and the same code applies to non-mail MIME such as `multipart/related`.
+- **@portable/dns:** yes, as a separate package from dns-packet, because SPF and DMARC need a resolver and dns-packet users don't.
 - **License:** MIT, the same as almost every library we replace.
 
 ## Agent skills live in `.agents/pstack/`
@@ -764,7 +764,7 @@ These were recorded as each package was built. Each package's README and PARITY.
 
 - **Options:** a Vocs page that renders the example as a React component; a Vocs page that loads the example in an `iframe`; a static page that Vite builds into `site/public/examples/`.
 - **Trade-offs:** The Bluesky stream example fills the window with a canvas and a code panel, so the docs layout around it would only take up space, and a React page would need its canvas loop rewritten as a component. A static page runs the same `index.html` and `app.ts` that a reader can copy. Vocs doesn't know about the page, so its dead-link check rejects a Markdown link to it, and its router would load a sidebar link to it as a missing route.
-- **Chosen:** static pages. `site/scripts/examples.mjs` builds each folder in `site/examples/` with Vite and highlights its code blocks with `@pierre/highlights`. The sidebar entry is marked `external` and adds the base path itself, and the Realtime guide links to the page with an `<a>` element that reads `import.meta.env.BASE_URL`.
+- **Chosen:** static pages. `site/scripts/examples.mjs` builds each folder in `site/examples/` with Vite and highlights its code blocks with @pierre/highlights. The sidebar entry is marked `external` and adds the base path itself, and the Realtime guide links to the page with an `<a>` element that reads `import.meta.env.BASE_URL`.
 
 ## The site preview has a pull request button and keeps the `preview` label
 

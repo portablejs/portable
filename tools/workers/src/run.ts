@@ -2,7 +2,7 @@
 // imports every entry point in each package's `exports`, then runs the checks in checks.ts.
 // Because it imports every module, a module that calls `setTimeout` or `crypto.getRandomValues`
 // at the top level fails here as it would on Cloudflare. This runs outside Vitest because
-// `@cloudflare/vitest-pool-workers` supports only Vitest 4. Move it to Vitest once the pool
+// @cloudflare/vitest-pool-workers supports only Vitest 4. Move it to Vitest once the pool
 // supports Vitest 5.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import net from 'node:net';

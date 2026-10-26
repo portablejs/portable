@@ -4,7 +4,7 @@ Upstream suites: [libqp 3.0.1](https://github.com/nodemailer/libqp/tree/v3.0.1/t
 
 libqp's `encode(x)` is `encode(x, { lineLength: false })` here, and its `wrap(encode(x), n)` is `encode(x, { lineLength: n })`. There is no separate `wrap()`, so a `wrap()` test is ported as an `encode()` of the bytes whose encoding is the string upstream wraps. A `wrap()` test of a string that `encode()` never produces has no equivalent, and its row says so.
 
-The tests compare with libqp 3.0.1, installed from npm as `libqp3`. libqp 2.1.3 is installed as `libqp` and compared where 3.0.1 did not change its output.
+The tests compare with libqp 3.0.1, installed from npm as libqp3. libqp 2.1.3 is installed as libqp and compared where 3.0.1 did not change its output.
 
 ## libqp `libqp-test.ts`
 

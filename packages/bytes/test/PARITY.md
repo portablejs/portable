@@ -24,7 +24,7 @@ Upstream suites: [uint8array-extras 1.6.0 `test.js`](https://github.com/sindreso
 | compareUint8Arrays (5 tests) | skipped | No ordering compare. `equal` covers equality. |
 | isUint8Array, assertUint8Array, toUint8Array, assertUint8ArrayOrArrayBuffer (7 tests) | skipped | Type checks and conversions this package doesn't export. |
 | uint8ArrayToString, stringToUint8Array (3 tests) | skipped | `TextEncoder` and `TextDecoder` do this. |
-| uint8ArrayToBase64, base64ToUint8Array, stringToBase64, base64ToString (9 tests) | skipped | `@portable/base64` covers base64. |
+| uint8ArrayToBase64, base64ToUint8Array, stringToBase64, base64ToString (9 tests) | skipped | @portable/base64 covers base64. |
 | getUintBE | skipped | `DataView` does this. |
 | indexOf, includes (9 tests) | skipped | Not part of this package. |
 

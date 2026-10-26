@@ -41,7 +41,7 @@ const result = await MailAuth.authenticate(message, {
 const forwarded = result.headers + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC, and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from `@portable/streams` to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. `authenticate` reads the message once, and DKIM, ARC, and the seal share each body hash, so a body signed relaxed is canonicalized and hashed once for all three. The default WebCrypto hasher keeps the canonicalized body in memory, so to hash it incrementally instead, pass the `hasher` option. Pipe a stream through `Streams.limitBytes` from @portable/streams to cap its size, and `tee` it if you deliver it afterwards. Bare LF line ends are read as CRLF.
 
 ## Options
 
@@ -102,13 +102,13 @@ Values that aren't a token or an address are quoted, the parentheses in each com
 | --- | --- |
 | `MailAuth.Resolver` | The lookups SPF, DKIM, DMARC, and ARC need together: `Spf.Resolver & Dmarc.Resolver & Dkim.Resolver`. |
 | `MailAuth.Result` | What `authenticate` resolves to, as above. |
-| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from `@portable/dkim`. |
-| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from `@portable/dkim`. |
+| `MailAuth.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: MailAuth.Hash) => MailAuth.Hasher`. Re-exported from @portable/dkim. |
+| `MailAuth.Hash` | A hash name such as `'SHA-256'`, passed to `hasher`. Re-exported from @portable/dkim. |
 
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth uses `node:crypto`, `node:dns`, `node:os`, and Buffers.
-- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC, and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in `@portable/dkim`.
+- It follows the RFCs. mailauth's default mode accepts what its `strict: true` mode rejects, and writes Received-SPF above Authentication-Results. This package has no lenient mode. On 400 generated messages, which cover every SPF result and the common DKIM, DMARC, and ARC results, it gives mailauth's strict results and the same Authentication-Results properties, except that a DKIM key record problem gives `permerror` instead of `neutral`, as in @portable/dkim.
 - It never writes an authserv-id that isn't a token. mailauth quotes one in its default mode, so `mx.example; dkim=pass` can still fool a parser that splits the field on semicolons.
 - It authenticates and seals a short message faster than mailauth's strict mode in Node, and authenticates a 250 KB message with a DKIM signature and an ARC set about as fast, as the table below shows.
 - It has no dependencies outside `@portable/*`.
