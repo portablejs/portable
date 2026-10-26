@@ -94,9 +94,10 @@ function image({ title, description }) {
     ),
     h(
       'div',
-      { style: { display: 'flex', alignItems: 'center', gap: 16 } },
-      h('img', { src: logo, width: 36, height: 36, style: { width: 36, height: 36 } }),
-      h('div', { style: { fontSize: 32, fontWeight: 600 } }, 'Portable'),
+      { style: { display: 'flex', alignItems: 'center', gap: 12 } },
+      // The logo is as tall as a capital letter in the 34px wordmark.
+      h('img', { src: logo, width: 24, height: 24, style: { width: 24, height: 24 } }),
+      h('div', { style: { fontSize: 34, fontWeight: 600 } }, 'Portable'),
     ),
   );
 }
@@ -109,7 +110,9 @@ for (const page of list) {
     / [–·] Portable$/,
     '',
   );
-  const description = decode(/<meta name="description" content="([^"]*)"/.exec(html)?.[1] ?? '');
+  const description = decode(
+    /<meta\s+name="description"\s+content="([^"]*)"/.exec(html)?.[1] ?? '',
+  );
   const name = `og/${dirname(page) === '.' ? 'index' : dirname(page)}.png`;
   const out = join(dist, name);
   const response = new ImageResponse(image({ title, description }), {
