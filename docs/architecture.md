@@ -173,7 +173,7 @@ The tests that compare the base64 and hex fallbacks with the native API run only
 
 ## Releases
 
-[Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with @changesets/changelog-github. The config is copied from ox.
+[Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with @changesets/changelog-github.
 
 Nothing is published yet, so each package has one changeset, `.changeset/<package>-initial.md`, which becomes the package's first changelog entry. Each one starts with "Initial release.", says what the package does, and names its main exports and the libraries it replaces. Until the first release, if you change a package, edit its `-initial.md` instead of adding a changeset, and if you add a package, add an `-initial.md` for it.
 
