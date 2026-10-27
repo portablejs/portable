@@ -175,7 +175,7 @@ The tests that compare the base64 and hex fallbacks with the native API run only
 
 [Changesets](https://github.com/changesets/changesets) versions each package on its own, starting at `0.0.0`, and writes changelogs with @changesets/changelog-github.
 
-Nothing is published yet, so each package has one changeset, `.changeset/<package>-initial.md`, which becomes the package's first changelog entry. Each one starts with "Initial release.", says what the package does, and names its main exports and the libraries it replaces. Until the first release, if you change a package, edit its `-initial.md` instead of adding a changeset, and if you add a package, add an `-initial.md` for it.
+A new package's first release comes from `.changeset/<package>-initial.md`, which becomes its first changelog entry. It starts with "Initial release.", says what the package does, and names its main exports and the libraries it replaces. Until that release, if you change the package, edit its `-initial.md` instead of adding a changeset. `tools/lint/src/packages.test.ts` requires the `-initial.md` for every package that has no `CHANGELOG.md` yet.
 
 1. `pnpm changeset` records which packages changed and how. Commit the changeset with the change.
 2. On each push to `main`, `.github/workflows/changesets.yml` runs `verify.yml`. If changesets are pending, its changesets job runs `pnpm changeset:version` and opens or updates a "Version packages" pull request with the version bumps and changelogs.

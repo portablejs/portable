@@ -147,7 +147,10 @@ describe.each(names)('%s', (name) => {
     expect(tests.devDependencies?.[`@portable/${name}`]).toBe('workspace:*');
   });
 
-  test('the first release has a changeset', () => {
+  test('a package without a changelog has a changeset for its first release', () => {
+    if (existsSync(join(dir, 'CHANGELOG.md'))) {
+      return;
+    }
     const changeset = join(root, '.changeset', `${name}-initial.md`);
     expect(existsSync(changeset)).toBe(true);
     expect(readFileSync(changeset, 'utf8')).toContain(`'@portable/${name}':`);
