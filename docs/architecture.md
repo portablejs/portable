@@ -187,7 +187,7 @@ The release job publishes through npm trusted publishing (OIDC), so the reposito
 
 - The release job runs in the `npm` environment, which deploys only from `main`, and each package's trusted publisher on npm requires that environment. Without the environment, npm's trusted publisher checks only the repository and the workflow filename, so anyone with push access could edit `changesets.yml` on a branch to run on that push, and the run could publish.
 - Only the release job gets `id-token: write`. The tests run in `verify.yml` with a read-only token. The changesets job can push to the repository and open pull requests, but it gets no OIDC token. The release job installs with `--ignore-scripts` and without the dependency cache, so no install script and no code from a poisoned cache entry runs while the job holds the OIDC token.
-- Both jobs commit and tag through the GitHub API (`commitMode: github-api`), so every checkout sets `persist-credentials: false`. Every workflow sets its permissions per job. In `site.yml`, the build job gets a read-only token, and only the deploy job, which runs no code from the repository, can write to Pages.
+- changesets/action commits, tags, and creates releases through the GitHub API, so every checkout sets `persist-credentials: false`. Every workflow sets its permissions per job. In `site.yml`, the build job gets a read-only token, and only the deploy job, which runs no code from the repository, can write to Pages.
 - Every action is pinned to a commit SHA, with its release tag in a comment, and pnpm is pinned to an exact version by `packageManager`.
 - `minimumReleaseAge` and `trustPolicy` in `pnpm-workspace.yaml` (see [Toolchain](#toolchain)) apply to both jobs' installs as well.
 

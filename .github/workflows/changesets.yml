@@ -43,7 +43,7 @@ jobs:
       contents: write # commit the version bumps and changelogs to the pull request branch
       pull-requests: write # open or update the "Version packages" pull request
     outputs:
-      hasChangesets: ${{ steps.changesets.outputs.hasChangesets }}
+      has-changesets: ${{ steps.changesets.outputs.has-changesets }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -57,22 +57,20 @@ jobs:
           check-latest: true
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - id: changesets
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        # Without `publish-script`, this only versions: it opens or updates the pull request while changesets are
+        # pending. It commits through the GitHub API, so the checkout needs no stored credentials.
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          title: 'chore: version packages'
-          commit: 'chore: version packages'
-          version: pnpm changeset:version
-          # Commits through the GitHub API, so the checkout needs no stored credentials.
-          commitMode: github-api
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pr-title: 'chore: version packages'
+          commit-message: 'chore: version packages'
+          version-script: pnpm changeset:version
 
   release:
     name: Release
     needs: [verify, changesets]
     if: >-
       github.repository == 'portablejs/portable' &&
-      needs.changesets.outputs.hasChangesets == 'false' &&
+      needs.changesets.outputs.has-changesets == 'false' &&
       vars.NPM_TRUSTED_PUBLISHING == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -92,12 +90,11 @@ jobs:
           node-version: 24
           check-latest: true
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      - uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+      # `changeset publish` writes each published package to the file in `CHANGESETS_OUTPUT`, which the action sets, and
+      # the action creates a tag and a GitHub release for each one through the GitHub API, so the checkout needs no stored
+      # credentials.
+      - uses: changesets/action/publish@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          publish: pnpm changeset:publish
-          createGithubReleases: true
-          # Creates the tags through the GitHub API, so the checkout needs no stored credentials.
-          commitMode: github-api
+          script: pnpm changeset:publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
