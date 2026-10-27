@@ -20,7 +20,7 @@
     "bench": "pnpm build && node scripts/bench.ts",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "changeset:publish": "pnpm build && pnpm test && pnpm --filter './packages/*' exec zile publish:prepare && changeset publish && pnpm --filter './packages/*' exec zile publish:post",
+    "changeset:publish": "pnpm build && pnpm --filter './packages/*' exec zile publish:prepare && changeset publish && pnpm --filter './packages/*' exec zile publish:post",
     "prepare": "vp config --no-agent"
   },
   "devDependencies": {

@@ -1,16 +1,14 @@
 name: Verify
 
 on:
-  push:
-    branches: [main]
+  # changesets.yml runs these checks on each push to main, before it versions or publishes.
+  workflow_call:
   workflow_dispatch:
     inputs:
       fuzz:
         description: Also run the fuzz tests with 10,000 runs per property
         type: boolean
         default: false
-  # release.yml runs these checks before it publishes.
-  workflow_call:
 
 permissions:
   contents: read

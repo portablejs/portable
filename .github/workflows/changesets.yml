@@ -1,0 +1,103 @@
+# Releases with Changesets, as the wevm repos do. On each push to main, the checks in verify.yml run first. Then the
+# changesets job opens or updates a "Version packages" pull request while changesets are pending. Merging that pull
+# request leaves none, so the release job publishes every package whose version isn't on npm yet and creates a GitHub
+# release for each.
+#
+# npm trusted publishing (OIDC) authenticates the publish, so the repository holds no npm token, and npm adds a
+# provenance attestation to each version. A trusted publisher on npm checks the repository, the workflow filename, and
+# the environment. Only the environment check limits which branch can publish. Anyone with push access could edit this
+# file on a branch to run on that push, but npm rejects a publish from a job without the `npm` environment, and GitHub
+# runs jobs in that environment only from main.
+#
+# The changesets job can push to the repository and open pull requests, but gets no OIDC token. The release job holds
+# the token, runs no tests, installs without lifecycle scripts, and uses no dependency cache, so while it holds the
+# token, it runs only the build and the code that the build loads from the lockfile's dependencies. The release job
+# also waits for the `NPM_TRUSTED_PUBLISHING` repository variable, because npm can only add a trusted publisher to a
+# package that already exists, so the first release of a package is published by hand.
+name: Changesets
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    uses: ./.github/workflows/verify.yml
+    permissions:
+      contents: read
+
+  changesets:
+    name: Changesets
+    needs: verify
+    if: github.repository == 'portablejs/portable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # commit the version bumps and changelogs to the pull request branch
+      pull-requests: write # open or update the "Version packages" pull request
+    outputs:
+      hasChangesets: ${{ steps.changesets.outputs.hasChangesets }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # @changesets/changelog-github reads the history to link each changeset's commit and pull request.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          check-latest: true
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - id: changesets
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        with:
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
+          version: pnpm changeset:version
+          # Commits through the GitHub API, so the checkout needs no stored credentials.
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Release
+    needs: [verify, changesets]
+    if: >-
+      github.repository == 'portablejs/portable' &&
+      needs.changesets.outputs.hasChangesets == 'false' &&
+      vars.NPM_TRUSTED_PUBLISHING == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: npm
+      url: https://www.npmjs.com/org/portable
+    permissions:
+      contents: write # create the release tags and GitHub releases
+      id-token: write # authenticate to npm through trusted publishing
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          check-latest: true
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        with:
+          publish: pnpm changeset:publish
+          createGithubReleases: true
+          # Creates the tags through the GitHub API, so the checkout needs no stored credentials.
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
