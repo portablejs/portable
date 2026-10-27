@@ -11,9 +11,9 @@
 #
 # The changesets job can push to the repository and open pull requests, but gets no OIDC token. The release job holds
 # the token, runs no tests, installs without lifecycle scripts, and uses no dependency cache, so while it holds the
-# token, it runs only the build and the code that the build loads from the lockfile's dependencies. The release job
-# also waits for the `NPM_TRUSTED_PUBLISHING` repository variable, because npm can only add a trusted publisher to a
-# package that already exists, so the first release of a package is published by hand.
+# token, it runs only the build and the code that the build loads from the lockfile's dependencies. npm can only add a
+# trusted publisher to a package that already exists, so `pnpm reserve` publishes a placeholder of each new package
+# first, and the release job waits for the `NPM_TRUSTED_PUBLISHING` repository variable.
 name: Changesets
 
 on:
