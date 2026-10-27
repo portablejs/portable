@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/ip",
   "description": "Parse, format, compare, and classify IPv4 and IPv6 addresses and CIDR blocks, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

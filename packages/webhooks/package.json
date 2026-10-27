@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/webhooks",
   "description": "Verify and sign Standard Webhooks, Stripe, GitHub, and Slack webhooks, or any HMAC-SHA256 sender, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

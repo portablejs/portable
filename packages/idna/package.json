@@ -7,7 +7,7 @@
   "[!start-pkg]": "",
   "name": "@portable/idna",
   "description": "Convert internationalized domain names between Unicode and Punycode (UTS #46), in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

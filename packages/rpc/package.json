@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/rpc",
   "description": "Call typed JSON-RPC 2.0 methods over MessagePort, windows, WebSocket, and HTTP, with streaming results, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

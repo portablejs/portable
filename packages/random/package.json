@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/random",
   "description": "Generate unbiased random integers, strings, and shuffles from crypto.getRandomValues, with a seeded generator for tests, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

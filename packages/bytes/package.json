@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/bytes",
   "description": "Convert Uint8Array to and from hex, and concatenate and compare byte arrays, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

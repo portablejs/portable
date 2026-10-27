@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/streams",
   "description": "Collect, combine, and bridge web streams and iterables, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

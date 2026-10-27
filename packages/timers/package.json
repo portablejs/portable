@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/timers",
   "description": "Sleep, retry with backoff, poll, debounce, and throttle, cancellable with AbortSignal, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

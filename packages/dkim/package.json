@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/dkim",
   "description": "Sign and verify DKIM signatures (RFC 6376, RFC 8463 Ed25519) with WebCrypto and an injected DNS resolver, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

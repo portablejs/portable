@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/sockets",
   "description": "Open TCP and TLS connections with the WinterTC Sockets API, in any JavaScript runtime that has a TCP socket API.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
