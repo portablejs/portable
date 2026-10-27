@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/arc",
   "description": "Seal and verify ARC sets (RFC 8617) with WebCrypto and an injected DNS resolver, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

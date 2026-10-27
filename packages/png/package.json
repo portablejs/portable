@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/png",
   "description": "Decode PNG files to RGBA pixels and encode RGBA pixels to PNG, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

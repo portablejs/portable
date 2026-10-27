@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/websockets",
   "description": "Open a WebSocket that reconnects, as a readable and a writable stream, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/queue",
   "description": "Limit how many async tasks run at once, with priorities, rate limits, and AbortSignal, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

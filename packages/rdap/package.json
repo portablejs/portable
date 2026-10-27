@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/rdap",
   "description": "Look up domains, IP addresses, and AS numbers over RDAP, with IANA bootstrap and normalized results, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

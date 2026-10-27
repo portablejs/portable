@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/mime-stream",
   "description": "Walk a MIME message as a stream of parts and write it back out byte for byte, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/mime-headers",
   "description": "Encode, parse, and format email header values: encoded-words, folding, parameters, and address lists, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

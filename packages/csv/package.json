@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/csv",
   "description": "Decode and encode CSV (RFC 4180), as functions and streams, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

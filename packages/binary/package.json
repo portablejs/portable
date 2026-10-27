@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/binary",
   "description": "Reads and writes integers, varints, strings, and length-prefixed frames in binary data, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

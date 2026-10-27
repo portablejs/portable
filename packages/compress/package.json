@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/compress",
   "description": "Compress and decompress gzip and deflate in one call or through a bounded stream, and compute CRC-32, on CompressionStream, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

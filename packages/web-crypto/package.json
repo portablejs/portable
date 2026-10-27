@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/web-crypto",
   "description": "Use WebCrypto with bytes in and out to compute digests, HMACs, and HKDF keys; derive Ed25519 and X25519 keys from seeds; import PEM keys; and convert ECDSA signature formats, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

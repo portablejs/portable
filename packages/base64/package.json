@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/base64",
   "description": "Encode and decode base64 and base64url, with MIME line wrapping and streams, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

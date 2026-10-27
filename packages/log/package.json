@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/log",
   "description": "Log by namespace and level, turned on with debug's DEBUG patterns from an environment variable or localStorage, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

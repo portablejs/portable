@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/json-stream",
   "description": "Read values at paths from a large JSON stream, and write JSON from promises and streams, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/mail-auth",
   "description": "Check SPF, DKIM, DMARC, and ARC for a received message, write its Authentication-Results header, and ARC-seal it, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

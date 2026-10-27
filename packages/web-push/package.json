@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/web-push",
   "description": "Send Web Push notifications with aes128gcm encryption and VAPID, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

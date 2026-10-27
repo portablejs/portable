@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/dmarc",
   "description": "Evaluate DMARC policy and identifier alignment (RFC 9989) from SPF and DKIM results, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

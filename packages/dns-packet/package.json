@@ -6,7 +6,7 @@
   "[!start-pkg]": "",
   "name": "@portable/dns-packet",
   "description": "Encode and decode DNS packets as Uint8Array, in any JavaScript runtime.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
