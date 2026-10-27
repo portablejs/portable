@@ -8,9 +8,20 @@ import { fakeServer, plain } from './utils.js';
 // it with Smtp, then checks that Dkim.verify accepts the signature on the received message.
 
 test('a message encoded, signed, and sent arrives with a valid DKIM signature', async () => {
-  const keys = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
-  const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keys.publicKey));
-  const record = `v=DKIM1; k=ed25519; p=${btoa(String.fromCharCode(...publicKey))}`;
+  // The key of RFC 8032 test 1. WebKit's generateKey('Ed25519') fails about once in 256 calls.
+  const privateKey = await crypto.subtle.importKey(
+    'jwk',
+    {
+      kty: 'OKP',
+      crv: 'Ed25519',
+      x: '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo',
+      d: 'nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A',
+    },
+    'Ed25519',
+    false,
+    ['sign'],
+  );
+  const record = 'v=DKIM1; k=ed25519; p=11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=';
   const resolver = {
     async resolveTxt(name) {
       if (name !== 'mail._domainkey.example.com') {
@@ -33,7 +44,7 @@ test('a message encoded, signed, and sent arrives with a valid DKIM signature', 
   const field = await Dkim.sign(message, {
     domain: 'example.com',
     selector: 'mail',
-    privateKey: keys.privateKey,
+    privateKey,
   });
   const signed = new Uint8Array([...new TextEncoder().encode(field), ...message]);
 

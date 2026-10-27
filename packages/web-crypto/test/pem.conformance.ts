@@ -5,7 +5,8 @@ import rsaPkcs1Public from './fixtures/pem/rsa-pkcs1-public.pem.txt?raw';
 import rsaPkcs1 from './fixtures/pem/rsa-pkcs1.pem.txt?raw';
 import rsaPkcs8 from './fixtures/pem/rsa-pkcs8.pem.txt?raw';
 import rsaSpki from './fixtures/pem/rsa-spki.pem.txt?raw';
-import { encode } from './utils.js';
+import { encode, fromHex } from './utils.js';
+import { ed25519Rfc8032 } from './vectors.js';
 
 const rsa = { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' };
 const data = encode('hello');
@@ -40,7 +41,9 @@ describe('importPem', () => {
   });
 
   test('imports Ed25519, ECDSA, and ECDH keys with default usages', async () => {
-    const ed = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify']);
+    // A fixed seed, because WebKit's generateKey('Ed25519') fails about once in 256 calls.
+    const seed = fromHex(ed25519Rfc8032[0]!.secretKey);
+    const ed = await WebCrypto.importSeed('Ed25519', seed, { extractable: true });
     const ec = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, [
       'sign',
     ]);
