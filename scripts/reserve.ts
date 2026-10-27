@@ -28,7 +28,7 @@ for (const dir of dirs) {
       join(tmp, 'README.md'),
       `# ${name}\n\n${description} See https://portablejs.com.\n`,
     );
-    execFileSync('npm', ['publish', '--access', 'public', '--tag', 'placeholder'], {
+    execFileSync('npm', ['publish', '--access', 'public'], {
       cwd: tmp,
       stdio: 'inherit',
     });

@@ -191,7 +191,7 @@ The release job publishes through npm trusted publishing (OIDC), so the reposito
 - Every action is pinned to a commit SHA, with its release tag in a comment, and pnpm is pinned to an exact version by `packageManager`.
 - `minimumReleaseAge` and `trustPolicy` in `pnpm-workspace.yaml` (see [Toolchain](#toolchain)) apply to both jobs' installs as well.
 
-npm can only add a trusted publisher to a package that already exists. Before a package's first release, run `npm login` and `pnpm reserve <name>`, which publishes a 0.0.0 placeholder of the package under the `placeholder` dist-tag and adds the trusted publisher for `changesets.yml` and the `npm` environment. Without a name, it reserves every package that isn't on npm yet. The release job runs only when the `NPM_TRUSTED_PUBLISHING` repository variable is `true`, so set it after the first `pnpm reserve`. `pnpm changeset:publish` still publishes from your own machine, without provenance.
+npm can only add a trusted publisher to a package that already exists. Before a package's first release, run `npm login` and `pnpm reserve <name>`, which publishes a 0.0.0 placeholder of the package and adds the trusted publisher for `changesets.yml` and the `npm` environment. Without a name, it reserves every package that isn't on npm yet. The release job runs only when the `NPM_TRUSTED_PUBLISHING` repository variable is `true`, so set it after the first `pnpm reserve`. `pnpm changeset:publish` still publishes from your own machine, without provenance.
 
 We don't publish to JSR. Workers, Deno, and Bun all install from npm, and because of `isolatedDeclarations`, adding JSR later needs no code changes.
 
