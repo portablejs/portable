@@ -18,7 +18,7 @@ Portable is a monorepo of small npm packages that run unchanged in browsers, Clo
 | `pnpm coverage` | Node tests with V8 coverage of `packages/*/src`, written to `coverage/coverage-summary.json`. |
 | `pnpm readme` | Runs `pnpm bench` and `scripts/bundle-size.ts`, then `scripts/readme-stats.ts` rewrites the benchmark and stats tables in each package README. `scripts/readme-tables.ts` lists each table's columns and rows. |
 | `pnpm build` | Builds every package with zile into `dist/`. |
-| `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. Until the first release, edit the package's `.changeset/<package>-initial.md` instead. |
+| `pnpm changeset` | Records a version bump and changelog entry for the packages you changed. For a new package, add `.changeset/<package>-initial.md` instead. |
 
 Git hooks live in `.vite-hooks/` and are installed by `pnpm install`. The pre-commit hook formats and lints staged files, and the commit-msg hook rejects a message that describes a made-up actor or has a list without a serial comma (`tools/lint/src/commitMessage.ts`). The pre-push hook runs `vp check` without fixing, `pnpm check:prose`, and `pnpm check:types`, then the affected tests. On each push to `main`, and when someone starts it by hand, CI runs `vp check`, `pnpm check:types`, every test project, the conformance tests on Bun and Deno, and the workerd checks, and a run started by hand can also run `pnpm fuzz` (see [docs/architecture.md](docs/architecture.md#ci)). CI runs only for `main`, because the repo pays for each Actions minute. Don't start a run by hand to check a branch or a pull request: run `pnpm check`, `pnpm check:types`, and the tests locally, and leave CI for the merge to `main`.
 
