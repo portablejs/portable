@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@pierre/highlights": "^0.2.0",
-    "@portable/json-stream": "workspace:*",
+    "@portable/jsonl": "workspace:*",
     "@portable/streams": "workspace:*",
     "@portable/websockets": "workspace:*",
     "@takumi-rs/image-response": "^0.62.8",

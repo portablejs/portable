@@ -254,7 +254,7 @@
           <a href="https://github.com/bluesky-social/jetstream">Jetstream</a> WebSocket, which sends
           every new post as JSON, with three <a href="/">Portable</a> packages:
           <a href="/packages/websockets">@portable/websockets</a>,
-          <a href="/packages/json-stream">@portable/json-stream</a>, and
+          <a href="/packages/jsonl">@portable/jsonl</a>, and
           <a href="/packages/streams">@portable/streams</a>. The same code runs in browsers,
           Cloudflare Workers, Node 24+, Bun, and Deno.
         </p>
@@ -266,7 +266,7 @@
           calls the URL function before every attempt, so a dropped connection resumes from the last
           post seen instead of skipping what was posted in between.
         </p>
-        <pre><code>import * as JsonStream from '@portable/json-stream';
+        <pre><code>import * as Jsonl from '@portable/jsonl';
 import * as Streams from '@portable/streams';
 import * as WebSockets from '@portable/websockets';
 
@@ -291,16 +291,10 @@ function subscribe(signal?: AbortSignal): ReadableStream&lt;string | Uint8Array&
           <a href="https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream"
             ><code>ReadableStream</code></a
           >, so it pipes through transforms like any other stream. Each message holds one JSON
-          event, and ending each message with a newline turns the messages into one stream of JSON
-          values, which
-          <a href="/packages/json-stream#decoderstream"><code>JsonStream.DecoderStream</code></a>
-          parses. <code>Streams.filter</code>, <code>Streams.map</code>, and
-          <code>Streams.tap</code> do the rest, and
-          <a href="/packages/streams#bridge-streams-and-iterables"
-            ><code>Streams.toAsyncIterable</code></a
-          >
-          loops over the result in every runtime, including browsers that can't iterate a stream
-          with <code>for await</code> yet.
+          event, so ending each message with a newline turns the messages into JSON Lines, which
+          <a href="/packages/jsonl"><code>Jsonl.DecoderStream</code></a> parses.
+          <code>Streams.filter</code>, <code>Streams.map</code>, and <code>Streams.tap</code> turn
+          the events into new posts.
         </p>
         <pre><code>function decodeEvents(
   messages: ReadableStream&lt;string | Uint8Array&gt;,
@@ -308,19 +302,29 @@ function subscribe(signal?: AbortSignal): ReadableStream&lt;string | Uint8Array&
   return messages
     .pipeThrough(Streams.filter((message): message is string =&gt; typeof message === 'string'))
     .pipeThrough(Streams.map((message) =&gt; `${message}\n`))
-    .pipeThrough(new JsonStream.DecoderStream())
-    .pipeThrough(Streams.map(({ value }) =&gt; value as Post));
+    .pipeThrough(new Jsonl.DecoderStream())
+    .pipeThrough(Streams.map((event) =&gt; event as Post));
 }
 
 const posts = decodeEvents(subscribe())
   .pipeThrough(Streams.tap((post) =&gt; {
     cursor = post.time_us;
   }))
-  .pipeThrough(Streams.filter((post) =&gt; post.commit?.operation === 'create'));
+  .pipeThrough(Streams.filter((post) =&gt; post.commit?.operation === 'create'));</code></pre>
 
-for await (const post of Streams.toAsyncIterable(posts)) {
-  draw(columnFor(post), post);
-}</code></pre>
+        <h3>Split one stream between two readers</h3>
+        <p>
+          <a href="/packages/streams#combine"><code>Streams.tee</code></a> gives every post to two
+          branches. One counts posts for the posts/sec and seen numbers, and the other draws them.
+          The socket is read only as fast as the slower branch reads, so a slow branch holds at most
+          16 unread posts.
+        </p>
+        <pre><code>const [forStats, forCanvas] = Streams.tee(posts, 2);
+
+await Promise.all([
+  forStats.pipeTo(new WritableStream({ write: count })),
+  forCanvas.pipeTo(new WritableStream({ write: draw })),
+]);</code></pre>
 
         <h3>Pause a column, then catch up from its cursor</h3>
         <p>
@@ -329,6 +333,11 @@ for await (const post of Streams.toAsyncIterable(posts)) {
           there, the page keeps that column's language, and the socket closes once it reaches the
           cursor where the column resumed. The main socket never stops. Jetstream keeps about a day
           and a half of posts.
+          <a href="/packages/streams#bridge-streams-and-iterables"
+            ><code>Streams.toAsyncIterable</code></a
+          >
+          loops over the replay in every runtime, including browsers that can't iterate a stream
+          with <code>for await</code> yet.
         </p>
         <pre><code>async function catchUp(column: Column, from: number, until: number) {
   const controller = new AbortController();
@@ -360,7 +369,7 @@ for await (const post of Streams.toAsyncIterable(posts)) {
           <code>catchUp</code> work unchanged in a Cloudflare Worker or Durable Object that counts
           posts per language, or in a command-line tool on Node, Bun, or Deno.
         </p>
-        <pre><code>npm install @portable/websockets @portable/json-stream @portable/streams</code></pre>
+        <pre><code>npm install @portable/websockets @portable/jsonl @portable/streams</code></pre>
       </aside>
     </div>
     <script type="module" src="./app.ts"></script>
