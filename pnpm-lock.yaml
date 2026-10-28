@@ -1770,6 +1770,9 @@ importers:
       '@pierre/highlights':
         specifier: ^0.2.0
         version: 0.2.0
+      '@portable/jsonl':
+        specifier: workspace:*
+        version: link:../packages/jsonl
       '@portable/streams':
         specifier: workspace:*
         version: link:../packages/streams

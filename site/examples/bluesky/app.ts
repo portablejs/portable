@@ -1,3 +1,4 @@
+import * as Jsonl from '@portable/jsonl';
 import * as Streams from '@portable/streams';
 import * as WebSockets from '@portable/websockets';
 
@@ -159,14 +160,17 @@ function columnFor(lang: string) {
   return byLang.get(lang) ?? byLang.get('other')!;
 }
 
-function receive(post: Post) {
+function count(post: Post) {
   const lang = langOf(post);
   langTotals.set(lang, (langTotals.get(lang) ?? 0) + 1);
   total++;
-  const now = performance.now();
   const column = columnFor(lang);
-  column.recent.push(now);
+  column.recent.push(performance.now());
   column.total++;
+}
+
+function show(post: Post) {
+  const column = columnFor(langOf(post));
   if (column.pausedAt !== undefined) {
     return;
   }
@@ -473,18 +477,13 @@ async function catchUp(column: Column, from: number) {
   const url = jetstream(from);
   cCatch.textContent = `${column.label}: catch-up socket open at ${shortUrl(url)}, replaying until ${until}…`;
   const { readable } = WebSockets.connect(url, { signal: controller.signal, attempts: 2 });
+  const replay = decodeEvents(readable, controller.signal);
   try {
-    for await (const message of Streams.toAsyncIterable(readable)) {
-      const post = JSON.parse(message as string) as Post;
+    for await (const post of Streams.toAsyncIterable(replay)) {
       if (post.time_us > until) {
         break;
       }
-      if (
-        post.commit?.operation === 'create' &&
-        post.commit.collection === 'app.bsky.feed.post' &&
-        post.commit.record &&
-        columnFor(langOf(post)) === column
-      ) {
+      if (isNewPost(post) && columnFor(langOf(post)) === column) {
         draw(column, post, true);
         column.catchUp!.replayed++;
       }
@@ -496,26 +495,42 @@ async function catchUp(column: Column, from: number) {
   }
 }
 
+// Each WebSocket message holds one JSON event, so ending each message with a newline turns the
+// messages into JSON Lines.
+function decodeEvents(
+  messages: ReadableStream<string | Uint8Array>,
+  signal?: AbortSignal,
+): ReadableStream<Post> {
+  return messages
+    .pipeThrough(Streams.filter((message): message is string => typeof message === 'string'))
+    .pipeThrough(Streams.map((message) => `${message}\n`))
+    .pipeThrough(new Jsonl.DecoderStream({ signal }))
+    .pipeThrough(Streams.map((event) => event as Post));
+}
+
+function isNewPost(post: Post) {
+  return (
+    post.commit?.operation === 'create' &&
+    post.commit.collection === 'app.bsky.feed.post' &&
+    post.commit.record !== undefined
+  );
+}
+
 async function start() {
   const { readable } = WebSockets.connect(() => jetstream(cursor), { WebSocket: TrackedWebSocket });
-  for await (const message of Streams.toAsyncIterable(readable)) {
-    if (typeof message !== 'string') {
-      continue;
-    }
-    const post = JSON.parse(message) as Post;
-    if (cursor && post.time_us <= cursor) {
-      continue;
-    }
-    cursor = post.time_us;
-    if (
-      post.commit?.operation !== 'create' ||
-      post.commit.collection !== 'app.bsky.feed.post' ||
-      !post.commit.record
-    ) {
-      continue;
-    }
-    receive(post);
-  }
+  const posts = decodeEvents(readable)
+    .pipeThrough(Streams.filter((post) => !cursor || post.time_us > cursor))
+    .pipeThrough(
+      Streams.tap((post) => {
+        cursor = post.time_us;
+      }),
+    )
+    .pipeThrough(Streams.filter(isNewPost));
+  const [forStats, forCanvas] = Streams.tee(posts, 2);
+  await Promise.all([
+    forStats!.pipeTo(new WritableStream({ write: count })),
+    forCanvas!.pipeTo(new WritableStream({ write: show })),
+  ]);
 }
 
 void start();
