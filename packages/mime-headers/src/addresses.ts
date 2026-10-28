@@ -99,9 +99,9 @@ export declare namespace formatAddresses {
  * Formats mailboxes and groups as an address list, the reverse of `parseAddresses`. A name that
  * needs quoting is quoted, or written as encoded words when it contains characters outside
  * printable ASCII. Each address is written in its shortest form. `formatAddresses` throws
- * `InvalidInputError` for a mailbox with an empty `address`, which `parseAddresses` returns for an
- * entry without an address, so filter those out before formatting. Fold the whole header line
- * afterwards.
+ * `InvalidInputError` for a mailbox with an empty `address`. `parseAddresses` returns such a
+ * mailbox for an entry without an address, so filter those out before formatting. Fold the whole
+ * header line afterwards.
  *
  * @example
  * ```ts

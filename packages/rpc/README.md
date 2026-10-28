@@ -77,7 +77,7 @@ Params can also be an object. JSON-RPC calls these by-name params, and the serve
 
 ### Cancellation on the server
 
-Wrap a method with `Rpc.withContext` to pass it a `{ signal }` as its first argument. The signal aborts when the caller cancels or the connection closes. On the client, the method's type has no extra argument. Called directly, the method receives a signal that never aborts.
+Wrap a method with `Rpc.withContext` to pass it a `{ signal }` as its first argument. The signal aborts when the caller cancels or the connection closes. On the client, the method's type has no extra argument. If you call the method directly, it receives a signal that never aborts.
 
 ```ts
 const api = {
@@ -148,7 +148,7 @@ const { tools } = await Rpc.call(mcp['tools/list'], {});
 
 ## Transports
 
-A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Each transport is used by one `connect` or `provide`. A second call with a transport from `Rpc.port` or `Rpc.window` throws a `TypeError`. Which functions to use depends on how the server receives messages:
+A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Pass each transport to only one `connect` or `provide`. A second call with a transport from `Rpc.port` or `Rpc.window` throws a `TypeError`. Which functions to use depends on how the server receives messages:
 
 | Server                                                                                                                           | Use                                                                                                                                   |
 | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |

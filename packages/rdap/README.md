@@ -82,7 +82,7 @@ gTLD registries such as Verisign and PIR return the registrar, the dates, and th
 
 ### Bootstrap files
 
-The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use and cached in memory for 24 hours, which is IANA's `max-age`. The cache is kept per `fetch` function, so a mocked `fetch` in a test never sees files another `fetch` loaded. Create your `fetch` wrapper once and reuse it. A new function on each call starts with an empty cache, so every lookup downloads the bootstrap file again. Concurrent lookups share one request, and a failed request isn't cached. When a service lists both an `https` and an `http` URL, the `https` one is used.
+The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use and cached in memory for 24 hours, which is IANA's `max-age`. The cache is kept per `fetch` function, so a mocked `fetch` in a test never sees files another `fetch` loaded. Create your `fetch` wrapper once and reuse it. A new function on each call starts with an empty cache, so every lookup downloads the bootstrap file again. Concurrent lookups share one request. A failed request isn't cached. When a service lists both an `https` and an `http` URL, the `https` one is used.
 
 ### Errors
 

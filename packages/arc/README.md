@@ -27,7 +27,7 @@ const fields = await Arc.seal(message, {
 const forwarded = fields + message;
 ```
 
-A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. `fields + message` works only when `message` is a string. With bytes, join them with `Bytes.concat([new TextEncoder().encode(fields), message])`. A stream can be read once, so read it into a `Uint8Array` first when you both verify and seal it. [@portable/mail-auth](https://portablejs.com/packages/mail-auth) does both, together with SPF, DKIM, and DMARC, in one call.
+A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF. `fields + message` works only when `message` is a string. With bytes, join them with `Bytes.concat([new TextEncoder().encode(fields), message])`. A stream can be read only once, so read it into a `Uint8Array` first when you both verify and seal it. [@portable/mail-auth](https://portablejs.com/packages/mail-auth) does both, together with SPF, DKIM, and DMARC, in one call.
 
 ## Verifying
 

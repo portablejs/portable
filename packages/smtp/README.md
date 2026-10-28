@@ -87,11 +87,11 @@ When a stream message isn't sent in full, because the envelope was refused, the 
 
 Aborting `signal` rejects with `signal.reason`. A send that has started also closes the connection, because the server may be partway through the message. A send still waiting for earlier calls rejects at once, and the connection stays open.
 
-After an `ECONNECTION` error, or a message stream that fails, the connection is closed and later sends reject with `ECONNECTION`, so open a new client. You can keep sending on the same client after an `EENVELOPE` error, and after an `EMESSAGE` error if the server refused the message or the message is over the SIZE limit. The exception is a server with PIPELINING that refuses the sender and then accepts `DATA`: the client can't end that message cleanly, so it closes the connection after the `EENVELOPE`.
+After an `ECONNECTION` error, or if a message stream fails, the client closes the connection and rejects later sends with `ECONNECTION`, so open a new client. You can keep sending on the same client after an `EENVELOPE` error, and after an `EMESSAGE` error if the server refused the message or the message is over the SIZE limit. The exception is a server with PIPELINING that refuses the sender and then accepts `DATA`: the client can't end that message cleanly, so it closes the connection after the `EENVELOPE`.
 
 ### `client.close({ signal })`
 
-Waits for queued sends, sends QUIT, and closes the socket. It never rejects. `signal` stops waiting for the reply to QUIT. The socket is closed either way. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
+Waits for queued sends, sends QUIT, and closes the socket. It never rejects. If `signal` aborts, `close` stops waiting for the reply to QUIT and closes the socket anyway. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
 
 ### `Smtp.send(mail, options)`
 

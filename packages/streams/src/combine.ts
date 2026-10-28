@@ -13,7 +13,7 @@ export declare namespace concat {
 
 /**
  * Joins sources end to end: every chunk of the first source, then every chunk of the next.
- * A source is read only once the one before it has ended, and is locked only then. An error in any source errors the
+ * `concat` reads and locks each source only after the one before it ends. An error in any source errors the
  * output and cancels the sources not yet read, and cancelling the output cancels them all.
  *
  * @example

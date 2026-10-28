@@ -97,9 +97,9 @@ export type DohResolver = Resolver & {
 export declare namespace create {
   type Options = {
     /**
-     * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The next one is tried after a network
-     * error, a timeout, an HTTP error status, a response that is malformed or truncated, a response
-     * to another question, and the response codes SERVFAIL, REFUSED, NOTIMP, and FORMERR.
+     * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The resolver tries the next one after a
+     * network error; a timeout; an HTTP error status; a malformed or truncated response; a response
+     * to another question; or a response code of SERVFAIL, REFUSED, NOTIMP, or FORMERR.
      * @default ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']
      */
     endpoints?: readonly (string | URL)[] | undefined;

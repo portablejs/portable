@@ -49,10 +49,10 @@ export declare namespace handler {
  * or batch, encoded with `codec`. When a method returns a stream, the returned function sends each
  * value as a separate message as the method produces it. If the codec's `encode` returns a string,
  * as `Rpc.json` does, it sends one message per line. If `encode` returns bytes, it sends each
- * message after a 5-byte length header, as the Connect protocol does. Methods wrapped with `withContext` get the `Request`, and their `signal`
- * aborts when the client disconnects. It reads the whole body with no size limit, so limit the body
- * size in front of it. It answers a body that the codec can't decode with a 200 response and a
- * `-32700` error.
+ * message after a 5-byte length header, as the Connect protocol does. Methods wrapped with
+ * `withContext` get the `Request`, and their `signal` aborts when the client disconnects. It reads
+ * the whole body with no size limit, so limit the body size in front of it. It answers a body that
+ * the codec can't decode with a 200 response and a `-32700` error.
  *
  * @example
  * ```ts

@@ -18,8 +18,8 @@ const contextKey = Symbol.for('portable.rpc.context');
 /**
  * Wraps a method so that it receives a `Context` as its first argument when it is called
  * remotely. The context's `signal` aborts when the caller cancels the call or the connection
- * closes. The remote's type has the method without the context argument. Called directly, the
- * method receives a signal that never aborts.
+ * closes. The remote's type has the method without the context argument. If you call the method
+ * directly, it receives a signal that never aborts.
  *
  * @example
  * ```ts

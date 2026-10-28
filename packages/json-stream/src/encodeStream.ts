@@ -51,8 +51,9 @@ const maxQuotedKeys = 1024;
  * Output is pulled: nothing is read from a nested stream until the reader asks for more.
  * Cancelling the output cancels nested streams and calls `return()` on nested iterators.
  * The stream is empty if the root resolves to `undefined` or a symbol, or is a function that
- * returns `undefined`. The output fails with the original error if a promise rejects, a function
- * throws, or a nested stream errors, and with a `TypeError` on a circular structure or a `BigInt`, as `JSON.stringify` does.
+ * returns `undefined`. If a promise rejects, a function throws, or a nested stream errors, the
+ * output fails with that error. The output fails with a `TypeError` on a circular structure or a
+ * `BigInt`, as `JSON.stringify` does.
  *
  * @example
  * ```ts

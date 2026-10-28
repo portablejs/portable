@@ -17,8 +17,8 @@ import { InvalidInputError } from './errors.js';
 
 /**
  * Extra header fields, by name. A list value is written as one field per value, in order.
- * `encodeStream` throws `InvalidInputError` for a name that has its own field in the message, such
- * as `From`, `Subject`, or `Content-Type`.
+ * `encodeStream` throws `InvalidInputError` for the name of a field that it writes itself, such as
+ * `From`, `Subject`, or `Content-Type`.
  * Line breaks in a value become spaces, and non-ASCII text is written as encoded words.
  */
 export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
@@ -29,8 +29,9 @@ export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
 export type Part = {
   readonly content: Content;
   /**
-   * Such as `'text/calendar; charset=utf-8; method=REQUEST'`. A string `content` is written as
-   * UTF-8 whatever `charset` is, so include `charset=utf-8` in a text content type.
+   * The content type, such as `'text/calendar; charset=utf-8; method=REQUEST'`. `encodeStream`
+   * writes a string `content` as UTF-8 regardless of `charset`, so include `charset=utf-8` in a
+   * text content type.
    */
   readonly contentType: string;
   readonly headers?: HeaderFields | undefined;

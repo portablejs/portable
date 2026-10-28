@@ -44,7 +44,7 @@ export declare namespace decode {
     format?: Format | undefined;
     /** Fail with `MaxBytesError` once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined;
-    /** Rejects with `signal.reason` when aborted, and stops the decompression stream. */
+    /** Aborting rejects `decode` with `signal.reason` and stops the decompression stream. */
     signal?: AbortSignal | undefined;
   };
 }
