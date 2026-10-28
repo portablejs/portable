@@ -42,7 +42,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 A record without `ttl` is written with a TTL of 0, which tells caches not to store it. `class` defaults to `IN`. An OPT record defaults to `name: '.'` and `udpPayloadSize: 4096`.
 
-`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses, and strings DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`. Numeric fields aren't checked: a value outside the field's range is written modulo 2^8, 2^16, or 2^32.
+`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses, and strings DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`. It also throws `InvalidInputError` for a number that isn't an integer in its field's range, such as a `port` above 65535.
 
 ## Options
 

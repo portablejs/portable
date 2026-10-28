@@ -15,7 +15,7 @@ const units: Record<string, number> = {
   ex: 8,
   m: (96 / 2.54) * 100,
   mm: 96 / 2.54 / 10,
-  pc: 96 / 72 / 12,
+  pc: 16,
   pt: 96 / 72,
   px: 1,
 };

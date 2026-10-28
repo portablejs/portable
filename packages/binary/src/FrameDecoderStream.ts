@@ -1,7 +1,7 @@
 import { assertUint8Array } from '@portable/bytes/internal';
 import * as Streams from '@portable/streams';
 import { assertEndian, type Endian } from './createReader.js';
-import { MaxBytesError, TruncatedError } from './errors.js';
+import { InvalidInputError, MaxBytesError, TruncatedError } from './errors.js';
 import { assertPrefix, readPrefix, type Prefix } from './prefix.js';
 import { position } from './varint.js';
 
@@ -61,7 +61,18 @@ export class FrameDecoderStream extends TransformStream<Uint8Array, Uint8Array<A
     ): number => {
       let at = 0;
       for (;;) {
-        const length = readPrefix(bytes, at, end, prefix, little);
+        let length: number | undefined;
+        try {
+          length = readPrefix(bytes, at, end, prefix, little);
+        } catch (error) {
+          if (error instanceof InvalidInputError && error.offset !== undefined) {
+            throw new InvalidInputError(error.message, {
+              offset: consumed + error.offset,
+              cause: error,
+            });
+          }
+          throw error;
+        }
         if (length === undefined) {
           return at;
         }

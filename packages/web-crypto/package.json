@@ -38,7 +38,8 @@
   ],
   "dependencies": {
     "@portable/bytes": "workspace:*",
-    "@portable/errors": "workspace:*"
+    "@portable/errors": "workspace:*",
+    "@portable/timers": "workspace:*"
   },
   "exports": {
     ".": {

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, test, vi } from 'vite-plus/test';
 import * as WebCrypto from '@portable/web-crypto';
 import { encode, fromHex, offsetView, toHex } from './utils.js';
 import { hkdfRfc5869, hmacRfc4231 } from './vectors.js';
@@ -49,6 +49,19 @@ describe('digest', () => {
     await expect(
       WebCrypto.digest('SHA-256', 'abc', { signal: AbortSignal.abort(reason) }),
     ).rejects.toBe(reason);
+  });
+
+  test('rejects when the signal aborts during the call, without waiting for it', async () => {
+    const spy = vi.spyOn(crypto.subtle, 'digest').mockReturnValue(new Promise(() => {}));
+    try {
+      const controller = new AbortController();
+      const reason = new Error('stop');
+      const result = WebCrypto.digest('SHA-256', 'abc', { signal: controller.signal });
+      controller.abort(reason);
+      await expect(result).rejects.toBe(reason);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

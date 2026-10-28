@@ -67,17 +67,26 @@ export function bytes(r: Reader, n: number, end: number): Uint8Array {
 
 export const rest = (r: Reader, end: number): Uint8Array => bytes(r, end - r.offset, end);
 
+function assertUint(value: number, bits: number): void {
+  if (!Number.isInteger(value) || value < 0 || value > 2 ** bits - 1) {
+    throw new InvalidInputError(`${value} doesn't fit in an unsigned ${bits}-bit field.`);
+  }
+}
+
 export function putU8(w: Writer, value: number): void {
+  assertUint(value, 8);
   w.bytes[w.offset++] = value;
 }
 
 export function putU16(w: Writer, value: number): void {
+  assertUint(value, 16);
   const b = w.bytes;
   b[w.offset++] = value >>> 8;
   b[w.offset++] = value;
 }
 
 export function putU32(w: Writer, value: number): void {
+  assertUint(value, 32);
   const b = w.bytes;
   b[w.offset++] = value >>> 24;
   b[w.offset++] = value >>> 16;

@@ -1602,6 +1602,9 @@ importers:
       '@portable/errors':
         specifier: workspace:*
         version: link:../errors
+      '@portable/timers':
+        specifier: workspace:*
+        version: link:../timers
 
   packages/web-crypto/test:
     devDependencies:

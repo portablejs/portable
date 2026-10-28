@@ -484,6 +484,14 @@ describe('SVG', () => {
     });
   });
 
+  test('converts picas at 16 pixels each', () => {
+    expect(ImageSize.parse(encode('<svg width="2pc" height="1.5pc"></svg>'))).toEqual({
+      width: 32,
+      height: 24,
+      type: 'svg',
+    });
+  });
+
   test('waits for the whole root tag when streamed', async () => {
     const bytes = encode(
       `<?xml version="1.0"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="123" height="456"></svg>`,

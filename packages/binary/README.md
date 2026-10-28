@@ -121,7 +121,7 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 | Error | Thrown when |
 | --- | --- |
 | `Binary.TruncatedError` | A read needs more bytes than remain, or a stream ends inside a frame. `offset` is where the value starts in the reader's bytes, or, for a stream, the number of bytes before the frame. |
-| `Binary.InvalidInputError` | A varint is longer than 10 bytes or too large for its type, `fatal` text isn't valid UTF-8, or a frame is too long for its prefix. For a `Reader`, `offset` is where the value starts in the reader's bytes. The error from `FrameEncoderStream` has no `offset`. |
+| `Binary.InvalidInputError` | A varint is longer than 10 bytes or too large for its type, `fatal` text isn't valid UTF-8, or a frame is too long for its prefix. `offset` is where the value starts in the reader's bytes, or, for `FrameDecoderStream`, in the stream. The error from `FrameEncoderStream` has no `offset`. |
 | `Binary.MaxBytesError` | A frame's length is larger than `maxBytes`. `maxBytes` holds the limit. |
 
 ## Types

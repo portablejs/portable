@@ -17,9 +17,8 @@ export declare namespace importPem {
      */
     usages?: readonly KeyUsage[] | undefined;
     /**
-     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
-     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
-     * finishes.
+     * Rejects with `signal.reason` as soon as it aborts. A `crypto.subtle` call can't be
+     * cancelled, so it runs to the end in the background.
      */
     signal?: AbortSignal | undefined;
   };
