@@ -12,7 +12,7 @@ npm install @portable/image-size
 import * as ImageSize from '@portable/image-size';
 
 const response = await fetch('https://example.com/photo.jpg');
-const { width, height, type } = await ImageSize.parseStream(response.body!);
+const size = await ImageSize.parseStream(response.body!);
 // { width: 1600, height: 1200, type: 'jpg', orientation: 1 }
 ```
 
@@ -22,7 +22,7 @@ const { width, height, type } = await ImageSize.parseStream(response.body!);
 
 ### `parse(bytes: Uint8Array): Size`
 
-Returns the size of the image in `bytes`. The bytes need to include only the header.
+Returns the size of the image in `bytes`. The bytes need to include only the header: a few dozen bytes for most formats, all segments up to the frame header for JPEG, up to the end of the root `<svg>` tag for SVG, up to IFD0 for TIFF, and the whole file for ICNS. If you don't know how much to fetch, use `parseStream`.
 
 ### `parseStream(stream: ReadableStream<Uint8Array>, options?): Promise<Size>`
 
@@ -30,7 +30,7 @@ Reads `stream` until the size is known, then cancels it.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `524288` | The most bytes that `parseStream` buffers. If the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, so a large one needs a higher limit. A negative or `NaN` value throws a `RangeError`. |
+| `maxBytes` | `524288` | The most bytes that `parseStream` buffers. If the header isn't complete by then, `parseStream` rejects with `MaxBytesError`, which stores the limit as `maxBytes`. ICNS files list their icons throughout the file, and many TIFF files store IFD0 after the image data, so large files of either type need a higher limit. `parseStream` rejects with a `RangeError` for a negative or `NaN` value, without reading or canceling the stream. |
 | `signal` | none | Aborting rejects with `signal.reason` and cancels the stream. |
 
 ### `Size`
@@ -39,10 +39,16 @@ Reads `stream` until the size is known, then cancels it.
 | --- | --- |
 | `width`, `height` | Pixels. For a file with several images, the largest by area. |
 | `type` | `bmp`, `cur`, `dds`, `gif`, `icns`, `ico`, `j2c`, `jp2`, `jpg`, `jxl` (container), `jxl-stream` (bare codestream), `ktx`, `ktx2`, `png`, `pnm`, `psd`, `svg`, `tga`, `tiff`, `bigtiff`, or `webp`. HEIF files report their brand: `avif`, `avis`, `heic`, `heix`, `hevc`, `hevx`, `mif1`, or `msf1`. |
-| `orientation` | The EXIF orientation of a JPEG (1 to 8), when it has one. `width` and `height` are the stored dimensions, before rotation. |
+| `orientation` | The EXIF orientation of a JPEG (1 to 8), when it has a non-zero one. `width` and `height` are the stored dimensions, before rotation. HEIF dimensions are already rotated, so a HEIF result has no `orientation`. |
 | `images` | Every image in an ICO, CUR, or ICNS file with more than one. ICNS entries also have their icon `type`, such as `ic08`. |
 
 The size of an animated PNG is the canvas size, with type `png`. The size of a HEIF file is the size of its primary image, cropped by its clean aperture (`clap`) and rotated by its `irot` property.
+
+### SVG size
+
+An SVG's size comes from the `width` and `height` attributes of its root `<svg>` element. A number without a unit is in pixels. Values in `in`, `cm`, `mm`, and `pt` are converted at 96 pixels per inch, `em` is 16 pixels, and `ex` is 8 pixels. Each value is rounded to the nearest pixel. A percentage, a negative value, an unknown unit, or 0 is treated as missing.
+
+If only one of `width` and `height` is set, the other is computed from the aspect ratio of the `viewBox` and rounded down. If neither is set, the size is the `viewBox` width and height, rounded. Without a `viewBox` in either case, `parse` throws `InvalidInputError`. The whole `<svg>` start tag must be in the first 1000 bytes, or `parse` throws `UnsupportedError`.
 
 ### Errors
 

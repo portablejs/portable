@@ -74,7 +74,8 @@ export function toAsyncIterable<chunk>(
  * variable. Use the result with `pipeThrough`.
  *
  * Output is pulled, so the generator runs only as fast as the reader reads. An error thrown
- * by the generator errors the output and cancels the input. Cancelling the output ends the
+ * by the generator errors the output and cancels the input. When the generator returns before
+ * the input ends, the input is cancelled and the output closes. Cancelling the output ends the
  * input iterable and calls the generator's `return()`, so its `finally` blocks run.
  *
  * @example

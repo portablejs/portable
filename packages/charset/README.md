@@ -19,6 +19,17 @@ const csv = response.body!.pipeThrough(new Charset.EncoderStream(shiftJis));
 
 Every charset and label follows the [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/), so the bytes decode back to the same text with `TextDecoder` in any browser.
 
+## API
+
+| Export | Does |
+| --- | --- |
+| `encode(text, charset, options?)` | Encodes a string, or a `Uint8Array` of UTF-8, into a `Uint8Array` in `charset`. |
+| `new EncoderStream(charset, options?)` | `TransformStream<string \| Uint8Array, Uint8Array>` that encodes text in `charset`. However the input is split into chunks, the output equals `encode` of the whole input. ISO-2022-JP's escape back to ASCII is written when the stream closes. |
+| `normalizeLabel(label)` | Returns the WHATWG name of a charset label, such as `'Shift_JIS'` for `'sjis'`. Returns `undefined` if the label is unknown or its charset has no encoder, such as `iso-2022-kr`. Use it to check a label before you call `load`. |
+| `load(label, options?)` | Imports the family of a label's charset and resolves to the charset. Rejects with `UnsupportedError` if `normalizeLabel` returns `undefined` for the label. Aborting `signal` rejects with `signal.reason`. The import itself keeps running. |
+| `utf8` | UTF-8, encoded with `TextEncoder`. Use it when the charset comes from a label and may be UTF-8, or to write a UTF-8 byte order mark. |
+| `UnsupportedError` | Thrown by `load` for an unknown label. `encode` throws it, and `EncoderStream` errors with it, when `unmappable` is `'error'` and the text has a character the charset can't represent. |
+
 ## Charsets
 
 Each family is its own entry point, so a bundle only includes the tables it imports. Sizes are minified and gzipped, including `encode`.
@@ -26,7 +37,7 @@ Each family is its own entry point, so a bundle only includes the tables it impo
 | Entry point | Exports | gzip |
 | --- | --- | --- |
 | @portable/charset | `encode`, `EncoderStream`, `utf8`, `normalizeLabel`, `load`, `UnsupportedError` | 1.0 kB |
-| `@portable/charset/single-byte` | `ibm866`, `iso8859_2` to `iso8859_16`, `iso8859_8i`, `koi8R`, `koi8U`, `macintosh`, `windows874`, `windows1250` to `windows1258`, `xMacCyrillic`, `xUserDefined` | 1.6 kB for one, 3.1 kB for all |
+| `@portable/charset/single-byte` | `ibm866`, `iso8859_2` to `iso8859_8`, `iso8859_8i`, `iso8859_10`, `iso8859_13` to `iso8859_16`, `koi8R`, `koi8U`, `macintosh`, `windows874`, `windows1250` to `windows1258`, `xMacCyrillic`, `xUserDefined` | 1.6 kB for one, 3.1 kB for all |
 | `@portable/charset/shift_jis` | `shiftJis` | 11.6 kB |
 | `@portable/charset/euc-jp` | `eucJp` | 11.5 kB |
 | `@portable/charset/iso-2022-jp` | `iso2022Jp` | 11.8 kB |
@@ -34,6 +45,8 @@ Each family is its own entry point, so a bundle only includes the tables it impo
 | `@portable/charset/big5` | `big5` | 18.2 kB |
 | `@portable/charset/euc-kr` | `eucKr` | 13.5 kB |
 | `@portable/charset/utf-16` | `utf16le`, `utf16be` | 0.4 kB |
+
+There is no `iso8859_1`, `iso8859_9`, or `iso8859_11`. The ISO-8859-1, ISO-8859-9, and ISO-8859-11 labels map to `windows1252`, `windows1254`, and `windows874`, as WHATWG specifies.
 
 The three Japanese charsets share one table, so all three together are about 13 kB. Each table is unpacked on first use and takes 128 kB of memory after that.
 
@@ -48,7 +61,7 @@ const charset = await Charset.load('windows-31j'); // the Shift_JIS charset
 const bytes = Charset.encode(text, charset);
 ```
 
-`load` rejects with `UnsupportedError` for an unknown label. Pass `{ signal }` to stop waiting for the import: `load` then rejects with `signal.reason`. `normalizeLabel(label)` returns the label's WHATWG name, such as `'Shift_JIS'`, or `undefined` if the label is unknown or its charset has no encoder, so you can use it to check a label before you call `load`. The name's type is `Charset.Name`, and each charset export is a `Charset.Charset` whose `name` is that name. A charset's `encode(text)` method encodes with the default options, so a charset can be passed where [@portable/mime-headers](https://portablejs.com/packages/mime-headers) and [@portable/mail](https://portablejs.com/packages/mail) take a `CharsetEncoder`. Labels can be any WHATWG label or iconv-lite name for these charsets. Case, punctuation, surrounding ASCII whitespace and a trailing year (`ISO_8859-5:1988`) are ignored.
+`normalizeLabel` and `load` accept any WHATWG label or iconv-lite name for these charsets. They ignore case, punctuation, surrounding ASCII whitespace, and a trailing year (`ISO_8859-5:1988`). A label with any other character, such as NUL or a no-break space, is unknown.
 
 Bundlers split `load` into one chunk per family. With every family reachable, the entry chunk is 3.2 kB and each family loads on demand.
 
@@ -58,7 +71,7 @@ Bundlers split `load` into one chunk per family. With every family reachable, th
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `unmappable` | `'replace'` | What to write for a character the charset can't represent. `'replace'` writes `?`. `'html'` writes a numeric character reference such as `&#26085;`, as browsers do when submitting forms. `'error'` throws `UnsupportedError`. A function `(codePoint) => string` returns the text to write instead. |
+| `unmappable` | `'replace'` | What to write for a character the charset can't represent. `'replace'` writes `?`. `'html'` writes a numeric character reference such as `&#26085;`, as browsers do when submitting forms. `'error'` throws `UnsupportedError`. A function `(codePoint) => string` returns text to write instead. `encode` encodes that text in the same charset and throws `UnsupportedError` if the text holds a character the charset can't encode. |
 | `bom` | `false` | Write a byte order mark first. Only UTF-8, UTF-16LE, and UTF-16BE have one. |
 | `signal` | none | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
@@ -74,7 +87,7 @@ Text input can be a string or a `Uint8Array` of UTF-8. A UTF-8 byte order mark a
 
 | Type | Description |
 | --- | --- |
-| `Charset.Charset` | A charset that `encode` and `EncoderStream` write, with its `name` and an `encode(text)` method. |
+| `Charset.Charset` | A charset that `encode` and `EncoderStream` write. Its `name` is a `Charset.Name`, and its `encode(text)` method encodes with the default options. A charset is therefore a `CharsetEncoder`, so you can pass it where [@portable/mime-headers](https://portablejs.com/packages/mime-headers) and [@portable/mail](https://portablejs.com/packages/mail) take one. |
 | `Charset.Name` | The WHATWG name of a charset this package encodes, such as `'Shift_JIS'`. |
 
 ## Why use this over iconv-lite

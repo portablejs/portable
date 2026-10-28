@@ -162,6 +162,11 @@ Each row of this table is a pattern to avoid, not only the one sentence. When yo
 | Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. (Two facts joined by ", and", with the second switching to the passive. "Options that take a point in time accept a `Date` or a `Temporal.Instant`, and results return a `Date`." has the same shape.) | Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. |
 | Stripe's `stripe` package has separate builds … Errors extend the classes in `@portable/errors`. | Stripe's stripe package has separate builds … Errors extend the classes in @portable/errors. |
 | Plenty of packages already work this way, so Portable only fills the gaps they leave. (In the pitch voice. The rewrite "Portable adds a package only for a task that none of them handle" is worse: it stacks "only" and "none of them" and reads like a policy.) | Portable packages try to fill the gaps. |
+| A negative or `NaN` value rejects with a `RangeError` without reading or canceling the stream. (The input is made the actor. "`NaN` or `Infinity` rejects" and "A name that has its own field throws `InvalidInputError`" have the same shape.) | `parseStream` rejects with a `RangeError` for a negative or `NaN` value, without reading or canceling the stream. |
+| Checked before and after the `crypto.subtle` calls, which can't be cancelled. (A participle opener hides who checks, and the reason comes last.) | A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each one. |
+| A partial array is emitted only when the source ends, so `batch` doesn't flush on a timer. (The "so" joins a behavior to a non-behavior, which it doesn't cause.) | `batch` emits a partial array only when the source ends, not on a timer. |
+| Wrap a method with `Rpc.withContext` to receive a `{ signal }` first. (The purpose clause reads as if the reader receives it.) | Wrap a method with `Rpc.withContext` to pass it a `{ signal }` as its first argument. |
+| Length of the period in milliseconds. A positive finite number. (A verbless fragment states the constraint.) | Length of the period in milliseconds, as a positive finite number. |
 
 ### Two voices
 

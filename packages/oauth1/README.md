@@ -23,13 +23,64 @@ const response = await fetch(
 );
 ```
 
-`OAuth1.sign(request, options)` returns a new `Request` with an `Authorization: OAuth …` header. Like `new Request(request)`, it uses up the body of the request you pass in. `OAuth1.authorization(request, options)` returns only the header value and leaves the request unchanged, for HTTP clients that don't take a `Request`. Both are async.
+`OAuth1.sign(request, options)` returns a new `Request` with an `Authorization: OAuth …` header. Like `new Request(request)`, it uses up the body of the request you pass in. `OAuth1.authorization(request, options)` returns only the header value and leaves the request unchanged. Both are async.
+
+If your HTTP client, such as axios or got, doesn't take a `Request`, build a `Request` only to sign it, and pass the header value to the client:
+
+```ts
+const header = await OAuth1.authorization(
+  new Request(url, { method: 'POST', body: new URLSearchParams({ status: 'Hello' }) }),
+  { consumer, token },
+);
+```
+
+`sign` and `authorization` include a form body in the signature only when the `Request` has the content type `application/x-www-form-urlencoded`. `new Request` sets that content type for a `URLSearchParams` body.
+
+The package signs outgoing requests. It has no function to verify a signature you receive.
 
 The signature covers what the server will see, because it is computed from the `Request` itself:
 
 - The method is upper-cased. The URL is normalized by the `URL` parser: scheme and host are lowercased, the default port is dropped, an empty path becomes `/` and the fragment is ignored.
 - Query parameters and `application/x-www-form-urlencoded` body parameters are decoded (`+` is a space) and re-encoded with RFC 3986 percent-encoding, so `!*'()` become `%21%2A%27%28%29`. Repeated names are all signed, sorted by name and then by value. Percent-encoded bytes that aren't UTF-8 are re-encoded unchanged.
 - JSON, multipart, and other bodies are not signed. Pass `bodyHash: true` to sign their hash as `oauth_body_hash`, as LTI 1.x and other providers require.
+
+## Getting a token
+
+To get token credentials for a user, follow the three steps in [RFC 5849 section 2](https://www.rfc-editor.org/rfc/rfc5849#section-2). First, request temporary credentials: sign the request with `callback` and without `token`. The server responds with `oauth_token` and `oauth_token_secret` in a form-encoded body. Then redirect the user to the server's authorization URL with that `oauth_token`:
+
+```ts
+import * as OAuth1 from '@portable/oauth1';
+
+const consumer = { key: 'dpf43f3p2l4k3l03', secret: 'kd94hf93k423kf44' };
+
+const initiate = new Request('https://photos.example.net/initiate', { method: 'POST' });
+const response = await fetch(
+  await OAuth1.sign(initiate, { consumer, callback: 'https://printer.example.com/ready' }),
+);
+const temporary = new URLSearchParams(await response.text());
+const secret = temporary.get('oauth_token_secret')!;
+
+const authorize = new URL('https://photos.example.net/authorize');
+authorize.searchParams.set('oauth_token', temporary.get('oauth_token')!);
+const redirect = Response.redirect(authorize, 302);
+```
+
+Store the temporary `secret` until the user comes back, for example in the session. If you can't receive a callback, pass `callback: 'oob'`, and the server shows the verifier to the user instead.
+
+When the user approves, the server redirects to `callback` with `oauth_token` and `oauth_verifier` in the query. Last, sign a request to the token URL with the temporary credentials as `token` and the `verifier`. The response holds the token credentials, which you pass as `token` to sign API requests:
+
+```ts
+const query = new URL(request.url).searchParams;
+const response = await fetch(
+  await OAuth1.sign(new Request('https://photos.example.net/token', { method: 'POST' }), {
+    consumer,
+    token: { key: query.get('oauth_token')!, secret },
+    verifier: query.get('oauth_verifier')!,
+  }),
+);
+const credentials = new URLSearchParams(await response.text());
+const token = { key: credentials.get('oauth_token')!, secret: credentials.get('oauth_token_secret')! };
+```
 
 ## Options
 
@@ -44,7 +95,7 @@ The signature covers what the server will see, because it is computed from the `
 | `bodyHash` | `false` | Add `oauth_body_hash`: the base64 SHA-1 of the body, or SHA-256 with HMAC-SHA256. Form bodies never get one, because their parameters are signed. |
 | `nonce`, `now` | random, `new Date()` | Fix `oauth_nonce` and `oauth_timestamp` in tests. `now` is a `Date` or a `Temporal.Instant`, sent in whole seconds. The default nonce is 32 hex digits from `crypto.getRandomValues`. |
 | `signal` | none | Aborting rejects with `signal.reason`, and cancels a request body that is still being read. Firefox has no `Request.prototype.body`, so there the body is read whole and isn't cancelled. |
-| `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. |
+| `placement` | `'header'` | `sign()` only. `'query'` appends the protocol parameters to the URL instead of setting `Authorization`. `realm` isn't sent with `'query'`. |
 | `hmac` | `crypto.subtle` HMAC | `(algorithm: 'SHA-1' \| 'SHA-256', key, data) => Uint8Array \| Promise<Uint8Array>`, used for HMAC-SHA1 and HMAC-SHA256. |
 | `digest` | `crypto.subtle.digest` | `(algorithm: 'SHA-1' \| 'SHA-256', data: Uint8Array) => Uint8Array \| Promise<Uint8Array>`, used for `oauth_body_hash`. |
 

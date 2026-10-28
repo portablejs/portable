@@ -31,7 +31,7 @@ export default {
 };
 ```
 
-`verify` reads the raw bytes of the request body and computes the HMAC over them, so a body parser, a re-serialized JSON object or a lost byte order mark can't break the signature. It then returns the body as text for you to parse: Slack slash commands and some GitHub deliveries are form-encoded, not JSON.
+`verify` reads the raw bytes of the request body and computes the HMAC over them, so a body parser, a re-serialized JSON object, or a lost byte order mark can't break the signature. It then returns the body as text for you to parse: Slack slash commands and some GitHub deliveries are form-encoded, not JSON.
 
 In tests, `sign` returns the headers the provider would send:
 
@@ -46,13 +46,13 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | Export | Does |
 | --- | --- |
 | `verify(input, options)` | Checks the signature, then the timestamp, and returns `{ body, id, timestamp }`. `input` is a `Request` or `{ headers, body }`, where `headers` is a `Headers` or a plain object and `body` is the raw body as a string or `Uint8Array`. |
-| `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object. |
+| `sign(body, options)` | Returns the provider's signature headers for `body` as a plain object, for tests or to send Standard Webhooks yourself. `id` defaults to a new `crypto.randomUUID()` on each call, so pass the same `id` when you retry a delivery. |
 | `standard`, `stripe`, `github`, `slack` | The schemes this package ships, passed as `scheme`. |
 | `Scheme` | The type of a scheme object, for writing one for another sender. |
 | `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
 | `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` stores the limit. |
 
-`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret, a Standard Webhooks secret that isn't base64, or an invalid `now` throws a `RangeError`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
+`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret, a Standard Webhooks secret that isn't base64, or an invalid `now` throws a `RangeError`. `verify` also throws a `RangeError` for an empty `secret` array, a negative `tolerance`, or a negative `maxBytes`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
 
 The result's `id` is the delivery id from `webhook-id`, `svix-id`, or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
 
@@ -157,7 +157,7 @@ One package verifies all four schemes, and any other HMAC-SHA256 sender through 
 - A GitHub signature needs the `sha256=` prefix and exactly 64 hex digits. The web build of @octokit/webhooks-methods accepts a bare signature and skips characters that aren't hex.
 - Signature lengths are compared before the constant-time compare, so a truncated signature fails. Svix's Rust library let one pass (CVE-2024-21491).
 - Stripe's `constructEvent` takes `tolerance` in seconds, and `verify` takes it in milliseconds, so Stripe's `300` becomes `tolerance: 300_000`. Stripe's `tolerance: 0` turns the check off, and here `0` requires the exact second and `Infinity` turns the check off.
-- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time as `now`, a `Date`, or a `Temporal.Instant`.
+- Stripe's `generateTestHeaderString` takes `timestamp` in seconds. `sign` takes the time in the `now` option, as a `Date` or a `Temporal.Instant`.
 - A timestamp must be an integer number of seconds. standardwebhooks and Stripe read `123abc` as `123` with `parseInt`.
 - @octokit/webhooks-methods's `verify` returns `false` for a bad signature. `Webhooks.verify` throws instead.
 - Stripe and standardwebhooks parse the JSON body for you. `verify` returns the text, because Slack and GitHub can send form-encoded bodies.

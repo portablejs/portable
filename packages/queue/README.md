@@ -1,6 +1,6 @@
 # @portable/queue
 
-Limits how many async tasks run at once, in memory. A queue runs tasks by priority, cancels them with `AbortSignal`, and can cap how many tasks start per interval. You can also pause and resume it. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` shares one call between concurrent callers. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Limits how many async tasks run at once, in memory. A queue runs tasks by priority, cancels them with `AbortSignal`, and can cap how many tasks start per interval. You can also pause and resume it. `map` runs a function over an iterable or async iterable with a concurrency limit, and `once` calls a function once and gives every caller its result. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [p-limit](https://www.npmjs.com/package/p-limit), [p-queue](https://www.npmjs.com/package/p-queue), [p-map](https://www.npmjs.com/package/p-map), and [p-throttle](https://www.npmjs.com/package/p-throttle). It is not a persistent job queue: tasks are kept in memory and are lost when the process exits.
 
@@ -37,13 +37,13 @@ Returns a queue object.
 | --- | --- | --- |
 | `concurrency` | `Infinity` | The most tasks that run at once. A positive integer or `Infinity`. |
 | `interval` | `0` | The length of the sliding window for `intervalCap`, in ms. `0` turns rate limiting off. |
-| `intervalCap` | `Infinity` | The most tasks that start in any `interval` ms. |
+| `intervalCap` | `Infinity` | The most tasks that start in any `interval` ms. Needs `interval`, and has no effect when `interval` is `0`. |
 | `signal` | | Aborting it rejects every waiting and running task with `signal.reason`, and every task added later. |
 
 | Member | Description |
 | --- | --- |
 | `add(task, { priority, signal })` | Adds a task and returns a promise for its result. `task` receives `{ signal }`. Higher `priority` starts first (default `0`), and equal priorities start in the order they were added. |
-| `idle()` | Resolves when no task is waiting or running. It never rejects. |
+| `idle()` | Resolves when no task is waiting or running. It never rejects. A paused queue with waiting tasks doesn't become idle until `resume()` or `clear()`. |
 | `pause()`, `resume()` | Stop and restart starting tasks. Running tasks continue. |
 | `clear()` | Removes every waiting task and rejects its promise with an `AbortError` `DOMException`. Running tasks continue. |
 | `size` | The number of waiting tasks. |
@@ -81,13 +81,15 @@ Calls `fn(item, { index, signal })` on every item of `input`, at most `concurren
 | --- | --- | --- |
 | `concurrency` | `Infinity` | The most calls of `fn` that run at once. |
 | `signal` | | Rejects with `signal.reason`, aborts the signal passed to `fn` and stops reading `input`. |
-| `stopOnError` | `true` | With `true`, the first error rejects at once, aborts the signal passed to the calls still running and closes `input`. With `false`, every item is mapped and the errors reject as one `AggregateError`, in input order. |
+| `stopOnError` | `true` | With `true`, the first error rejects at once, aborts the signal passed to the calls still running with that error as `signal.reason`, and closes `input`. With `false`, every item is mapped and the errors reject as one `AggregateError`, in input order. |
+
+If reading `input` fails, because its `next()` throws, rejects, or returns a value that isn't an object, `map` rejects at once with that error, not an `AggregateError`, whatever `stopOnError` is. It also aborts the signal passed to the running calls.
 
 ### `Queue.once(fn, { cache })`
 
-Returns a function that calls `fn` once and gives every caller the same promise. After a rejection the next call calls `fn` again. With `cache: false`, only calls made while `fn` is running share its result, which suits a token refresh.
+Returns a function that calls `fn` once and gives every caller the same promise. After a rejection the next call calls `fn` again. With `cache: false`, only calls made while `fn` is running share its result, which suits a token refresh. There is no reset, so to start over, create a new `once` or use `cache: false`.
 
-Invalid arguments, such as `concurrency: 0` or a `NaN` priority, throw a `RangeError` at once.
+Invalid arguments throw at once. A wrong type, such as a `priority` that isn't a number or a `fn` for `map` that isn't a function, throws a `TypeError`. A value out of range, such as `concurrency: 0` or a `NaN` priority, throws a `RangeError`.
 
 ## Rate limits
 

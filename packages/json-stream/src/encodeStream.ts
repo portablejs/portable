@@ -43,14 +43,16 @@ const maxQuotedKeys = 1024;
  * - A promise or other thenable is replaced by what it resolves to.
  * - A function is called with no arguments and replaced by its return value, so work such as
  *   a database query starts only when the writer reaches it.
- * - A `ReadableStream` or async iterable is written as a JSON array of its values.
+ * - A `ReadableStream` or async iterable is written as a JSON array of its values. A sync
+ *   iterable, such as a generator or a `Set`, is not expanded.
  *
  * Text is written as far as the next unresolved value, then the stream pauses until that value
  * is ready, so a reader receives the start of the document before the slow parts finish.
  * Output is pulled: nothing is read from a nested stream until the reader asks for more.
  * Cancelling the output cancels nested streams and calls `return()` on nested iterators.
- * The output fails with the original error if a promise rejects or a nested stream errors,
- * and with a `TypeError` on a circular structure or a `BigInt`, as `JSON.stringify` does.
+ * The stream is empty if the root resolves to `undefined` or a symbol, or is a function that
+ * returns `undefined`. The output fails with the original error if a promise rejects, a function
+ * throws, or a nested stream errors, and with a `TypeError` on a circular structure or a `BigInt`, as `JSON.stringify` does.
  *
  * @example
  * ```ts

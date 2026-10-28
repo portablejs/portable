@@ -11,9 +11,9 @@ export declare namespace encode {
      */
     binary?: boolean | undefined;
     /**
-     * Longest output line, not counting the line break. Longer lines are broken with soft line
-     * breaks (`=` followed by CRLF). An integer of at least 4, or `false` for no soft line
-     * breaks. Anything else throws a `RangeError`. @default 76
+     * Longest output line, counting the `=` of a soft line break but not the CRLF. Longer lines
+     * are broken with soft line breaks (`=` followed by CRLF). An integer of at least 4, or
+     * `false` for no soft line breaks. Anything else throws a `RangeError`. @default 76
      */
     lineLength?: number | false | undefined;
   };

@@ -24,14 +24,14 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 | --- | --- |
 | `encode(data, { format, signal })` | Compresses a `Uint8Array` or a string (as UTF-8). Returns `Promise<Uint8Array>`. |
 | `decode(data, { format, maxBytes, signal })` | Decompresses a `Uint8Array`. Returns `Promise<Uint8Array>`. A gzip file with several members decodes to all of them joined. |
-| `new DecoderStream({ format, maxBytes, signal })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. |
+| `new DecoderStream({ format, maxBytes, signal })` | A `TransformStream<Uint8Array, Uint8Array>` that decompresses. Reads one gzip member, as `DecompressionStream` does, and fails with `InvalidInputError` if another follows. |
 | `crc32(data, previous?)` | The CRC-32 of a `Uint8Array` or a string (as UTF-8). Pass the previous result to continue a checksum over several pieces. |
-| `Format` | `'gzip' \| 'deflate' \| 'deflate-raw'`: gzip (RFC 1952), zlib (RFC 1950) and raw deflate (RFC 1951), the formats the platform supports. |
+| `Format` | `'gzip' \| 'deflate' \| 'deflate-raw'`: gzip (RFC 1952), zlib (RFC 1950), and raw deflate (RFC 1951), the formats the platform supports. |
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `format` | `'gzip'` | The compressed format. |
-| `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects, and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. |
+| `format` | `'gzip'` | The compressed format. For any other value, `CompressionStream` and `DecompressionStream` throw a `TypeError`. |
+| `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects, and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. For a negative number or `NaN`, `decode` rejects and `new DecoderStream` throws, both with a `RangeError`. |
 | `signal` | | When it aborts, `encode` and `decode` reject with `signal.reason`, and `DecoderStream` fails with it and cancels its input. |
 
 There is no compression level option and no dictionary, because `CompressionStream` has neither. To compress a stream, use the platform's `CompressionStream`.
@@ -44,13 +44,13 @@ There is no compression level option and no dictionary, because `CompressionStre
 | `InvalidInputError` | The input is malformed, fails its checksum, or has bytes after its end. |
 | `MaxBytesError` | The output grew past `maxBytes`. Its `maxBytes` property holds the limit. |
 
-The platform reports every failure as a `TypeError`, and each of these errors stores that `TypeError` as its `cause`.
+When the platform's `DecompressionStream` fails, the package throws a `TruncatedError` or `InvalidInputError` whose `cause` is the platform's `TypeError`. Errors from the package's own checks, such as a bad gzip header or an exceeded `maxBytes`, have no `cause`.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `Compress.Format` | `'gzip'`, `'deflate'` (zlib) or `'deflate-raw'`. |
+| `Compress.Format` | `'gzip'`, `'deflate'` (zlib), or `'deflate-raw'`. |
 
 ## Why use this over pako, fflate, and node:zlib
 

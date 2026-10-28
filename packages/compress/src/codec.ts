@@ -4,12 +4,12 @@ import { assertMaxBytes, concat } from './bytes.js';
 import { InvalidInputError, MaxBytesError, TruncatedError, classify } from './errors.js';
 import { assertHeader, checksTrailerAtClose, rawHeader, trailer, trailerCheck } from './gzip.js';
 
-/** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950) or raw deflate (RFC 1951). */
+/** A format that `CompressionStream` and `DecompressionStream` support: gzip (RFC 1952), zlib (RFC 1950), or raw deflate (RFC 1951). */
 export type Format = 'gzip' | 'deflate' | 'deflate-raw';
 
 export declare namespace encode {
   type Options = {
-    /** @default 'gzip' */
+    /** The compressed format: `'gzip'`, `'deflate'` (zlib), or `'deflate-raw'`. @default 'gzip' */
     format?: Format | undefined;
     /** Rejects with `signal.reason` when aborted, and stops the compression stream. */
     signal?: AbortSignal | undefined;
@@ -40,11 +40,11 @@ export async function encode(
 
 export declare namespace decode {
   type Options = {
-    /** @default 'gzip' */
+    /** The compressed format: `'gzip'`, `'deflate'` (zlib), or `'deflate-raw'`. @default 'gzip' */
     format?: Format | undefined;
     /** Fail with `MaxBytesError` once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined;
-    /** Rejects with `signal.reason` when aborted, and stops the compression stream. */
+    /** Rejects with `signal.reason` when aborted, and stops the decompression stream. */
     signal?: AbortSignal | undefined;
   };
 }

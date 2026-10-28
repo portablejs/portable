@@ -16,7 +16,7 @@ const maxQueued = 64 * 1024;
 
 export declare namespace DecoderStream {
   type Options = {
-    /** @default 'gzip' */
+    /** The compressed format: `'gzip'`, `'deflate'` (zlib), or `'deflate-raw'`. @default 'gzip' */
     format?: Format | undefined;
     /** Fail with `MaxBytesError` and cancel the input once the output grows past this many bytes. @default Infinity */
     maxBytes?: number | undefined;
@@ -31,6 +31,8 @@ export declare namespace DecoderStream {
  * A `TransformStream` that decompresses with `DecompressionStream`, adding a `maxBytes` limit and
  * the package's error classes. Input chunks that arrive while the decompressor is busy are joined
  * into one write, so each small network chunk doesn't add the decompressor's per-chunk cost.
+ * Reads one gzip member, as `DecompressionStream` does, and fails with `InvalidInputError` if
+ * another follows.
  *
  * @example
  * ```ts

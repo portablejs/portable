@@ -17,6 +17,9 @@ import { InvalidInputError } from './errors.js';
 
 /**
  * Extra header fields, by name. A list value is written as one field per value, in order.
+ * `encodeStream` throws `InvalidInputError` for a name that has its own field in the message, such
+ * as `From`, `Subject`, or `Content-Type`.
+ * Line breaks in a value become spaces, and non-ASCII text is written as encoded words.
  */
 export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
 
@@ -25,7 +28,10 @@ export type HeaderFields = Readonly<Record<string, string | readonly string[]>>;
  */
 export type Part = {
   readonly content: Content;
-  /** Such as `'text/calendar; charset=utf-8; method=REQUEST'`. */
+  /**
+   * Such as `'text/calendar; charset=utf-8; method=REQUEST'`. A string `content` is written as
+   * UTF-8 whatever `charset` is, so include `charset=utf-8` in a text content type.
+   */
   readonly contentType: string;
   readonly headers?: HeaderFields | undefined;
   /**
@@ -45,8 +51,8 @@ export type Attachment = {
   /** @default the `Blob`'s type, or `'application/octet-stream'` */
   readonly contentType?: string | undefined;
   /**
-   * Content-ID that the HTML refers to as `cid:<cid>`. Puts the attachment beside the HTML in
-   * `multipart/related`.
+   * Content-ID that the HTML refers to as `cid:<cid>`. If the message has an HTML body, the
+   * attachment goes into `multipart/related` beside it.
    */
   readonly cid?: string | undefined;
   /** @default `'inline'` for an `image/*` with a `cid`, otherwise `'attachment'` */
@@ -102,8 +108,9 @@ export declare namespace encodeStream {
      */
     boundary?: string | undefined;
     /**
-     * Charset for encoded words in headers and for text bodies given as strings, for mail that
-     * has to use one other than UTF-8. The charset package provides encoders. @default UTF-8
+     * Charset for encoded words in headers and for `text`, `amp`, and `html` given as strings, for
+     * mail that has to use one other than UTF-8. The charset package provides encoders.
+     * @default UTF-8
      */
     charset?: MimeHeaders.CharsetEncoder | undefined;
     /**
@@ -149,8 +156,8 @@ type Context = {
 };
 
 /**
- * Encodes a message as a raw RFC 5322 message, ready for an SMTP `DATA` command, an `.eml` file or
- * an API that takes raw MIME. Text and HTML become `multipart/alternative`, attachments with a
+ * Encodes a message as a raw RFC 5322 message, ready for an SMTP `DATA` command, an `.eml` file,
+ * or an API that takes raw MIME. Text and HTML become `multipart/alternative`, attachments with a
  * `cid` go into `multipart/related` beside the HTML, and other attachments into
  * `multipart/mixed`. Blob and stream content is read as the result is read.
  *
@@ -180,6 +187,8 @@ type Context = {
  * written.
  * @throws {TypeError} When content isn't a string, `Uint8Array`, `Blob`, or `ReadableStream`, or a
  * stream is locked or given twice.
+ * @throws {RangeError} When `boundary` has more than 60 characters or a character outside
+ * `bchars`.
  */
 export function encodeStream(
   message: Message,

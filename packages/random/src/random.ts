@@ -93,8 +93,9 @@ export declare namespace string {
  * The default alphabet is the 64 URL-safe characters `A-Z`, `a-z`, `0-9`, `-`, and `_`, so 21
  * characters have 126 random bits, as in a nanoid.
  *
- * `alphabet` is split into code points, so it can include emoji. A character listed
- * twice is picked twice as often.
+ * `alphabet` is split into code points, so a single-code-point emoji counts as one character. An
+ * emoji made of several code points, such as a flag or a skin-tone variant, is split into those
+ * code points. A character listed twice is picked twice as often.
  *
  * @example
  * ```ts

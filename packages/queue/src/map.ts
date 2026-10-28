@@ -7,9 +7,10 @@ export declare namespace map {
     /** Rejects with `signal.reason`, aborts the `signal` passed to `fn` and stops reading `input`. */
     signal?: AbortSignal | undefined;
     /**
-     * With `true`, the first error rejects at once, aborts the `signal` passed to `fn` and stops
-     * reading `input`. With `false`, `map` calls `fn` on every item and then rejects with the
-     * errors as one `AggregateError`, in input order.
+     * With `true`, the first error rejects at once, aborts the `signal` passed to `fn` with that
+     * error as `signal.reason`, and stops reading `input`. With `false`, `map` calls `fn` on every
+     * item and then rejects with the errors as one `AggregateError`, in input order. With either
+     * value, an error from reading `input` rejects at once.
      * @default true
      */
     stopOnError?: boolean | undefined;

@@ -29,7 +29,7 @@ random.int(1, 6); // the same number on every run, in every runtime
 | --- | --- |
 | `int(min, max)` | An integer from `min` to `max`, both included. Both must be safe integers with `min <= max`, and the range can include up to 2^53 integers, such as `0` to `Number.MAX_SAFE_INTEGER`. |
 | `float()` | A number from 0 up to but not including 1, made from 53 random bits. |
-| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-`, and `_`, so 21 characters have 126 random bits, like a nanoid. `alphabet` is split into code points, so emoji work. A character listed twice is picked twice as often. |
+| `string(length, { alphabet })` | `length` characters, each picked from `alphabet` with equal chance. The default alphabet is the 64 characters `A-Z`, `a-z`, `0-9`, `-`, and `_`, so 21 characters have 126 random bits, like a nanoid. `alphabet` is split into code points, so a single-code-point emoji counts as one character. An emoji made of several code points, such as a flag or a skin-tone variant, is split into those code points. A character listed twice is picked twice as often. |
 | `shuffle(array)` | A shuffled copy of `array`. Every order is equally likely. |
 | `pick(array)` | A random element of `array`. |
 | `bytes(length)` | A new `Uint8Array` of random bytes, with no 65,536-byte limit. |
@@ -41,11 +41,13 @@ Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound
 
 `int`, `string`, `shuffle`, and `pick` use rejection sampling. A random value at or above the largest multiple of the range size is discarded and drawn again, so every result comes from the same number of source values. Reducing the value with a modulo instead, as `Math.floor(Math.random() * n)` and `bytes[i] % n` do, makes some results more likely whenever `n` is not a power of two. The tests check every function with a chi-squared test over ranges that aren't powers of two.
 
-`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each value is handed out once. Pooled values stay in memory until they are used, as in nanoid.
+`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. For an alphabet of at most 256 ASCII characters, `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each value is handed out once. Pooled values stay in memory until they are used, as in nanoid.
 
 ### Seeded generator
 
 `Random.seeded(seed)` is for tests and reproducible simulations. It is not for secrets: a few outputs are enough to predict the rest.
+
+All methods of one `seeded(seed)` object share one generator, and each call advances it. The same seed replays the same values only for the same sequence of calls, so adding or reordering a call changes every later result. Use a separate `seeded` object for each independent sequence.
 
 The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend. Its 32-bit outputs, which `seeded(seed).bytes(n)` returns least significant byte first, match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from `rand_xoshiro`, and a negative seed is read as its 64-bit two's complement. The generator uses 32-bit integer arithmetic only, so a seed gives the same values in every runtime. The values for a seed change only in a major version.
 

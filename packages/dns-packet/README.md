@@ -32,11 +32,17 @@ for (const answer of packet.answers) {
 
 Records are typed by `type`, so `data` narrows to the shape of that record: a string for A, AAAA, CNAME, DNAME, NS, and PTR, and an object for the rest. For a type without a codec here, such as SVCB or HTTPS, `data` is the raw RDATA as a `Uint8Array`. Unnamed types and classes are written `TYPE<n>` and `CLASS<n>`, as in RFC 3597.
 
+Decoded names have no trailing dot and keep the case of the response. The root is `'.'`. A `.` or `\` inside a label is escaped as `\.` or `\\`.
+
 Supported types: A, AAAA, CAA, CDNSKEY, CDS, CNAME, DNAME, DNSKEY, DS, HINFO, MX, NAPTR, NS, NSEC, NSEC3, NULL, OPT, PTR, RP, RRSIG, SOA, SRV, SSHFP, TLSA, and TXT.
 
 TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8. Decode them with `new TextDecoder().decode(bytes)` when you know they are text. Strings passed to `encode` are written as UTF-8.
 
-`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses, or fields DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`.
+`encode` writes names as given, so a non-ASCII name is written as UTF-8 labels and not converted to punycode. Convert an internationalized name to its A-label (`xn--…`) first. [@portable/dns](https://portablejs.com/packages/dns) does this for you.
+
+A record without `ttl` is written with a TTL of 0, which tells caches not to store it. `class` defaults to `IN`. An OPT record defaults to `name: '.'` and `udpPayloadSize: 4096`.
+
+`decode` throws `DnsPacket.TruncatedError` when the message ends early, and `DnsPacket.InvalidInputError` when the message is malformed, such as a compression loop or record data that doesn't match its length. `encode` throws `InvalidInputError` for names, addresses, and strings DNS can't represent, and `UnsupportedError` for an EDNS option it has no encoder for and no `data`. Numeric fields aren't checked: a value outside the field's range is written modulo 2^8, 2^16, or 2^32.
 
 ## Options
 
@@ -45,13 +51,13 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 | Option | Default | Description |
 | --- | --- | --- |
 | `compress` | `false` | Compress repeated names with pointers. This saves space in responses, but queries rarely gain anything from it. |
-| `framing` | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS. |
+| `framing` | `'none'` | `'tcp'` prefixes the message with its 2-byte length, for DNS over TCP or TLS. Throws `InvalidInputError` if the message is over 65,535 bytes. |
 
 `decode(bytes, options)`:
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `framing` | `'none'` | `'tcp'` reads the 2-byte length first, and throws `TruncatedError` until the whole message has arrived. |
+| `framing` | `'none'` | `'tcp'` reads the 2-byte length first, and throws `TruncatedError` until the whole message has arrived. `decode` reads one message and ignores the bytes after it. The next message starts at `2 + ((bytes[0] << 8) | bytes[1])`. |
 
 ## Types
 
@@ -75,7 +81,7 @@ TXT strings decode as `Uint8Array`s, since TXT data is often binary or not UTF-8
 
 dns-packet writes corrupt packets for some invalid input and reads past bad length fields. This package checks names, addresses, and lengths in both directions, uses `Uint8Array` instead of `Buffer`, and is 7.4 kB minified and gzipped. Addresses are parsed and formatted by [@portable/ip](https://portablejs.com/packages/ip), so they follow the same rules as in the other `@portable/*` packages.
 
-- A label over 63 bytes, a TXT string over 255 bytes or an empty label throws `InvalidInputError`. dns-packet writes the first two with overflowing length bytes, and an empty label ends the name early.
+- A label over 63 bytes, a TXT string over 255 bytes, or an empty label throws `InvalidInputError`. dns-packet writes the first two with overflowing length bytes, and writes an empty label as a zero length byte, which ends the name early.
 - Names are checked before any bytes are allocated, and buffers are zero-filled. dns-packet before 5.2.2 could send uninitialized memory (CVE-2021-23386).
 - Each record's data must fill its RDLENGTH exactly. dns-packet ignores RDLENGTH for most types, so one bad record leaves the decoder out of step for the rest of the message.
 - `encode` doesn't modify the packet you pass. dns-packet adds empty sections to it and overwrites CAA `flags`.

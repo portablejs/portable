@@ -6,10 +6,10 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
 
 /**
  * The DNS lookups DMARC needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or a
- * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`, `ENODATA`
+ * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`, `ENODATA`,
  * or `EBADNAME` as no records, and any other rejection as a temporary DNS error. `resolve4` and
- * `resolveCname` are called only to find out whether a subdomain exists, for a record with an
- * `np` tag.
+ * `resolveCname` are called only to find out whether the From domain exists, when it inherits a
+ * record whose `np` differs from the policy it would otherwise get.
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>;
 
@@ -29,7 +29,7 @@ export type Result = {
   policy?: Policy | undefined;
   /** What to do with the message: `policy` when the result is `fail`, `'none'` otherwise. */
   disposition: Policy;
-  /** The domain whose `_dmarc` record applies: the From domain, its organizational domain or its public suffix domain. */
+  /** The domain whose `_dmarc` record applies: the From domain, its organizational domain, or its public suffix domain. */
   policyDomain?: string | undefined;
   /** The record that applies. */
   record?: Record | undefined;
@@ -123,8 +123,9 @@ const maxAlignmentWalks = 10;
  * Checks a message against the DMARC policy of its From domain (RFC 9989, which replaces RFC
  * 7489). It finds the policy record with a DNS tree walk and checks whether a passing SPF result or
  * DKIM signature is aligned with the From domain. DNS failures give `temperror`, and a From domain
- * that isn't a domain name gives `permerror`. The promise rejects only for a `resolver` without the
- * `Resolver` methods, or with `signal.reason` when `signal` aborts.
+ * that isn't a domain name gives `permerror`. The promise rejects for a `resolver` without the
+ * `Resolver` methods, with `signal.reason` when `signal` aborts, and with any error that
+ * `organizationalDomain` throws.
  *
  * @example
  * ```ts
@@ -138,8 +139,8 @@ const maxAlignmentWalks = 10;
  *   { from: 'example.com', spf, dkim: [{ result: 'pass', domain: 'mail.example.com' }] },
  *   { resolver },
  * );
- * dmarc.result; // 'pass', 'fail', 'none', 'temperror' or 'permerror'
- * dmarc.disposition; // 'none', 'quarantine' or 'reject'
+ * dmarc.result; // 'pass', 'fail', 'none', 'temperror', or 'permerror'
+ * dmarc.disposition; // 'none', 'quarantine', or 'reject'
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {

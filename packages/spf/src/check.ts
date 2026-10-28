@@ -18,7 +18,7 @@ import { hostToAscii } from '@portable/idna/internal';
 /**
  * The DNS lookups SPF needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or a
  * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`,
- * `ENODATA` or `EBADNAME` (an invalid name) as an empty answer, and any other rejection as a
+ * `ENODATA`, or `EBADNAME` (an invalid name) as an empty answer, and any other rejection as a
  * temporary DNS error.
  */
 export type Resolver = Pick<
@@ -40,7 +40,11 @@ export type Result = {
   mechanism?: string | undefined;
   /** The SPF record that gave the result. After a `redirect=`, it is the target's record. */
   record?: string | undefined;
-  /** The text of the domain owner's `exp=` modifier, set only for `fail`. Treat it as untrusted. */
+  /**
+   * The TXT record at the domain that the `exp=` modifier points to, with macros expanded. Set only
+   * for `fail`, and only when the lookup returns one record of printable ASCII. Treat it as
+   * untrusted.
+   */
   explanation?: string | undefined;
   /** Why the result is `none`, `temperror`, or `permerror`. */
   reason?: string | undefined;
@@ -139,7 +143,7 @@ const methods: { [key in keyof Answers]: Lookup<Answers[key]> } = {
  *   { ip: '192.0.2.10', sender: 'alice@example.com', helo: 'mail.example.com' },
  *   { resolver: Dns.create(), signal: AbortSignal.timeout(20_000) },
  * );
- * spf.result; // 'pass', 'fail', 'softfail', 'neutral', 'none', 'temperror' or 'permerror'
+ * spf.result; // 'pass', 'fail', 'softfail', 'neutral', 'none', 'temperror', or 'permerror'
  * ```
  */
 export async function check(input: check.Input, options: check.Options): Promise<Result> {

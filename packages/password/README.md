@@ -29,7 +29,7 @@ if (await Password.verify(password, stored)) {
 | --- | --- | --- |
 | `hash(password, options?)` | `Promise<string>` | Hashes a password with a new random salt. |
 | `verify(password, stored, options?)` | `Promise<boolean>` | `true` if the password matches. Compares in constant time. |
-| `needsRehash(stored, options?)` | `boolean` | `true` if `stored` uses fewer iterations than `options.iterations`, a digest other than SHA-256, a salt under 16 bytes or a hash under 32 bytes. |
+| `needsRehash(stored, options?)` | `boolean` | `true` if `stored` uses fewer iterations than `options.iterations`, a digest other than SHA-256, a salt under 16 bytes, or a hash under 32 bytes. |
 
 `password` is a `string` or its bytes as a `Uint8Array`. A string is normalized to NFC before it is encoded as UTF-8, so `'café'` typed as one code point or as `e` plus a combining accent gives the same hash. Bytes are hashed as they are.
 
@@ -38,7 +38,7 @@ if (await Password.verify(password, stored)) {
 - the PHC format `hash` writes: `$pbkdf2-sha256$i=600000$<salt>$<hash>`, with an optional `l=<length>` after the iterations, as Rust's pbkdf2 crate can write it;
 - [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.pbkdf2_digest.html)'s `pbkdf2_sha256`, `pbkdf2_sha512`, and `pbkdf2_sha1` (`$pbkdf2$`), whose strings have the iterations without `i=` and use `.` instead of `+`.
 
-The hash length comes from the stored string, so a 20-byte or 64-byte hash from another tool verifies too.
+The hash length comes from the stored string, so a 20-byte or 64-byte hash from another tool verifies too. `verify` accepts a stored hash with an empty salt, but `needsRehash` returns `true` for it.
 
 ### Options
 
@@ -52,8 +52,8 @@ The hash length comes from the stored string, so a 20-byte or 64-byte hash from 
 
 | Error | Thrown when |
 | --- | --- |
-| `InvalidInputError` | `stored` is not a well-formed PBKDF2 hash: a missing field, iterations outside 1 to 2^32 - 1 or with a leading zero, a character outside base64, or padding. |
-| `UnsupportedError` | `stored` is another algorithm's hash, such as `$2b$` (bcrypt), `$argon2id$` or `$scrypt$`. |
+| `InvalidInputError` | `stored` is not a well-formed PBKDF2 hash: a missing field, iterations outside 1 to 2^32 - 1 or with a leading zero, a character outside base64, padding, or an `l=` that doesn't match the hash length. |
+| `UnsupportedError` | `stored` is another algorithm's hash, such as `$2b$` (bcrypt), `$argon2id$`, or `$scrypt$`. |
 | `MaxBytesError` | The password is longer than `maxBytes`. The error's `maxBytes` property holds the limit. |
 
 A bad `iterations` or `maxBytes` option gives a `RangeError`: `needsRehash` throws it, and `hash` and `verify` reject with it.
@@ -61,6 +61,8 @@ A bad `iterations` or `maxBytes` option gives a `RangeError`: `needsRehash` thro
 ## Cloudflare Workers
 
 Workers rejects PBKDF2 with more than 100,000 iterations: `deriveBits` throws a `NotSupportedError` ("Pbkdf2 failed: iteration counts above 100000 are not supported"). The limit is the default in workerd's `IsolateLimitEnforcer`, and the comment there says it guards against a request that would run long enough to restart the process. Local `wrangler dev` and Miniflare run workerd without the limit: 600,000 iterations worked there in 550 ms, so code that passes locally fails once deployed.
+
+`hash` and `verify` reject with that `DOMException` (`error.name === 'NotSupportedError'`), not with a package error.
 
 On Workers, hash with `iterations: 100_000` and check with the same value:
 

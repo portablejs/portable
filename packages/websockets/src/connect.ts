@@ -45,7 +45,8 @@ export declare namespace connect {
      * `{ attempt }`, the number of failures in a row including this one. It returns whether
      * `connect` reconnects. By default, codes
      * 1000, 1002, 1003, 1007, 1008, 1009, and 1010 are final and every other code reconnects. If it
-     * throws, both streams fail with that error.
+     * throws, both streams fail with that error. `connect` doesn't call it after a timeout, a missed
+     * heartbeat reply, or an `open` that throws, and retries those until `attempts` runs out.
      */
     reconnectIf?:
       | ((close: Close, retry: { attempt: number }) => boolean | PromiseLike<boolean>)
@@ -55,8 +56,9 @@ export declare namespace connect {
     /** Writes wait while the socket's `bufferedAmount` is above this many bytes. @default 1048576 */
     highWaterMark?: number | undefined;
     /**
-     * Most bytes (characters for text) of received messages to hold while the reader is behind. Past it,
-     * both streams fail with `MaxBufferedError` and the socket closes. @default Infinity
+     * Bytes of received binary messages, plus UTF-16 code units of text messages
+     * (`string.length`), to hold while the reader is behind. Past it, both streams fail with
+     * `MaxBufferedError` and the socket closes. @default Infinity
      */
     maxBuffered?: number | undefined;
     /** Sends `ping` every `interval` ms and reconnects when no `pong` arrives within `timeout` ms. */

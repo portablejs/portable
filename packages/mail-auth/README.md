@@ -49,11 +49,11 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 | --- | --- | --- |
 | `resolver` | required | Answers the DNS lookups: `Dns.create()`, `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, `resolve6`, `resolveMx`, `resolvePtr`, and `resolveCname`. |
 | `authservId` | required | The authserv-id that starts Authentication-Results, usually this server's host name in A-label form (RFC 8601 section 2.5). It must be an RFC 2045 token, so a value such as `mx.example; dkim=pass` throws a `RangeError`. |
-| `ip` | required | The SMTP client's IPv4 or IPv6 address. |
+| `ip` | required | The SMTP client's IPv4 or IPv6 address. `authenticate` rejects with a `RangeError` for a string that isn't an IP address. |
 | `helo` | none | The HELO or EHLO name. |
 | `sender` | none | The MAIL FROM address. For a bounce, it is empty or missing, and SPF checks the HELO name instead. |
 | `seal` | none | `{ domain, selector, privateKey, headers?, now? }`, as `Arc.seal` takes them. `authenticate` fills in the ARC-Authentication-Results payload and `cv=`. |
-| `now` | `new Date()` | The time to check DKIM and ARC signature expiry against and to use for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The current time, for checking DKIM and ARC signature expiry and for `%{t}` in SPF explanations, as a `Date` or a `Temporal.Instant`. It doesn't set the seal's `t=`, so pass `seal.now` for that. |
 | `minKeyBits` | `1024` | RSA keys shorter than this give DKIM `policy` and fail the ARC chain. |
 | `hasher` | WebCrypto | Creates the body hashes. See [Crypto in @portable/dkim](https://portablejs.com/packages/dkim#crypto). |
 | `organizationalDomain` | the DNS tree walk | Finds organizational domains from a public suffix list, as in [`Dmarc.check`](https://portablejs.com/packages/dmarc#options). |
@@ -61,7 +61,7 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 
 ## Result
 
-`authenticate` resolves to a plain object. It rejects only for invalid options, a failing message stream or an aborted `signal`. A DNS failure gives a result such as `temperror` instead of a rejection.
+`authenticate` resolves to a plain object. It rejects with a `TypeError` or `RangeError` for an invalid `authservId`, `resolver`, `ip`, or `seal`, including an RSA key shorter than 1024 bits. It rejects with the stream's error if the message stream fails, and with `signal.reason` when `signal` aborts. A DNS failure gives a result such as `temperror` instead of a rejection.
 
 | Field | Description |
 | --- | --- |
@@ -69,14 +69,14 @@ A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which 
 | `dkim` | One [`Dkim.verify`](https://portablejs.com/packages/dkim) result per DKIM-Signature, in header order. Empty for an unsigned message. |
 | `arc` | The [`Arc.verify`](https://portablejs.com/packages/arc) result. |
 | `dmarc` | The [`Dmarc.check`](https://portablejs.com/packages/dmarc) result for the From domain, with the SPF and DKIM results above. Missing when `dmarcSkipReason` is set. |
-| `dmarcSkipReason` | Why DMARC wasn't checked: `'no-author-domain'` (no From field, or no mailbox in it), `'multiple-author-domains'`, `'multiple-from-fields'`, or `'invalid-author-domain'` (a From field that isn't a valid address list). RFC 9989 section 5.3.1 says DMARC can't be applied to such a message, and section 11.5 suggests treating it as suspicious. |
+| `dmarcSkipReason` | Why DMARC wasn't checked: `'no-author-domain'` (no From field, or no mailbox in it), `'multiple-author-domains'`, `'multiple-from-fields'`, or `'invalid-author-domain'` (a From field that isn't a valid address list, or an address without a local-part or domain). RFC 9989 section 5.3.1 says DMARC can't be applied to such a message, and section 11.5 suggests treating it as suspicious. |
 | `authResults` | The Authentication-Results value, without the field name. |
 | `headers` | The fields to put above the message, each ending in CRLF: the ARC set when the message was sealed, then Authentication-Results. |
-| `sealSkipReason` | Why the message wasn't sealed: it has no From field, its newest ARC-Seal says `cv=fail`, or it already has 50 ARC sets. The message can be delivered without a seal. |
+| `sealSkipReason` | The message of the `Arc.InvalidInputError` that stopped the seal, such as when the message has no From field, its newest ARC-Seal says `cv=fail`, it already has 50 ARC sets, or its ARC chain isn't intact. Set only when `seal` was passed. The message can be delivered without a seal. |
 
 ## Authentication-Results
 
-Each method has its own line, with a comment for anything that isn't a plain pass:
+Each method has its own line:
 
 ```
 Authentication-Results: mx.example.net;
@@ -89,12 +89,12 @@ Authentication-Results: mx.example.net;
  dmarc=pass (p=REJECT arc=pass) policy.dmarc=reject header.from=example.com
 ```
 
-- `dkim` is `none` for an unsigned message, and otherwise one line per signature with `header.d`, `header.i`, `header.s`, `header.a`, and the first 8 characters of `b=` as `header.b` (RFC 6008).
-- `spf` reports `smtp.mailfrom` with the MAIL FROM domain, or `smtp.helo` for a bounce.
-- `arc` reports `smtp.remote-ip` (RFC 8617 section 6). On a pass, the comment repeats what the newest sealer recorded. The sealer's text is untrusted, so only keyword results and host-name domains are copied from it.
-- `dmarc` reports the applied policy as `policy.dmarc` and the From domain as `header.from` (RFC 9989 section 9.1), and is left out when `dmarcSkipReason` is set.
+- `dkim` is `none` for an unsigned message, and otherwise one line per signature with `header.d`, `header.i`, `header.s`, `header.a`, and the first 8 characters of `b=` as `header.b` (RFC 6008). Its comment gives the failure reason, test mode (`t=y`), or the number of unsigned body bytes (`l=`).
+- `spf` reports `smtp.mailfrom` with the MAIL FROM domain, or `smtp.helo` for a bounce. It always has a comment in the style of mailauth.
+- `arc` reports `smtp.remote-ip` (RFC 8617 section 6). On a pass, the comment repeats what the newest sealer recorded. The sealer's text is untrusted, so only keyword results and host-name domains are copied from it. On a fail, the comment gives the reason.
+- `dmarc` reports the applied policy as `policy.dmarc` and the From domain as `header.from` (RFC 9989 section 9.1), and is left out when `dmarcSkipReason` is set. Its comment lists the record's `p`, its `sp` if set, and the ARC result, or gives the reason when there is no record.
 
-Values that aren't a token or an address are quoted, the parentheses in each comment are balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender, or HELO name contains.
+Values that aren't a token or an address are quoted, the parentheses in each comment are balanced, and no line is longer than 998 octets (RFC 5322 section 2.1.1), whatever the message, sender, or HELO name contains. A property value over 900 bytes is left out. A word in a comment longer than 200 bytes is cut to 200 bytes and followed by `...`.
 
 ## Types
 

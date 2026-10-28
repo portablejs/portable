@@ -10,10 +10,17 @@ export declare namespace importPem {
     extractable?: boolean | undefined;
     /**
      * What the key may be used for. The default depends on the algorithm and on whether the key
-     * is private or public, such as `['sign']` and `['verify']` for a signing algorithm.
+     * is private or public: `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and
+     * Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and
+     * `['deriveBits', 'deriveKey']` or none for ECDH and X25519. Required for any other algorithm,
+     * or `importPem` rejects with a `RangeError`.
      */
     usages?: readonly KeyUsage[] | undefined;
-    /** Rejects with `signal.reason` once aborted. */
+    /**
+     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
+     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
+     * finishes.
+     */
     signal?: AbortSignal | undefined;
   };
 }

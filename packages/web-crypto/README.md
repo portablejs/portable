@@ -30,22 +30,22 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 | --- | --- | --- |
 | `digest(hash, data, options?)` | `Promise<Uint8Array>` | Hashes `data`. A string is hashed as UTF-8. |
 | `hmac(hash, key, data, options?)` | `Promise<Uint8Array>` | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key is accepted. The imported `CryptoKey` is cached for up to 16 keys of at most 256 bytes. |
-| `hkdf(hash, key, options?)` | `Promise<Uint8Array>` | HKDF (RFC 5869) extract and expand. |
-| `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. |
+| `hkdf(hash, key, options?)` | `Promise<Uint8Array>` | HKDF (RFC 5869) extract and expand. `key` is bytes or a UTF-8 string. |
+| `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. An Ed25519 private key gets the usage `['sign']`, and its public key `['verify']`. An X25519 private key gets `['deriveBits', 'deriveKey']`, and its public key none. |
 | `importPem(algorithm, pem, options?)` | `Promise<CryptoKey>` | Imports the first `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `PUBLIC KEY` (SubjectPublicKeyInfo) or `RSA PUBLIC KEY` (PKCS #1) block of a PEM string or its bytes, skipping other blocks. `algorithm` is what `crypto.subtle.importKey` takes. |
-| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key. |
+| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key. The public key is extractable. Its usages are the public counterparts of the private key's usages: `sign` becomes `verify`, `decrypt` becomes `encrypt`, and `unwrapKey` becomes `wrapKey`. Other usages are dropped. |
 | `derToRawEcdsa(signature, options?)` | `Uint8Array` | DER to raw `r \|\| s`. Accepts only strict DER. |
 | `rawToDerEcdsa(signature)` | `Uint8Array` | Raw `r \|\| s` to DER. The curve follows from the length: 64, 96, or 132 bytes. |
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
-| `signal` | every async function | | Rejects with `signal.reason` once aborted. |
+| `signal` | every async function | | A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each one. If it aborts during a call, the promise rejects with `signal.reason` once the call finishes. |
 | `info` | `hkdf` | empty | Context for the derived key, bytes, or a UTF-8 string. |
 | `length` | `hkdf` | the hash length | Bytes to derive, at most 255 times the hash length. |
 | `salt` | `hkdf` | empty | Bytes or a UTF-8 string. RFC 5869 treats an empty salt as zero bytes as long as the hash. |
 | `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
 | `extractable` | `importPem` | `false` | Whether the key can be exported. |
-| `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required and a missing one throws a `RangeError`. |
+| `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required, and `importPem` rejects with a `RangeError` without it. |
 | `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'`, or `'P-521'`. It sets the width of `r` and `s` in the output. |
 
 The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, when a raw signature or seed has the wrong length, when a key is not an extractable private key, or when a PEM string has no key block, isn't valid base64, or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` when the PEM block is of a kind it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key, or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't match the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.

@@ -63,30 +63,30 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | --- | --- | --- |
 | `protocols` | | Subprotocols, as for `new WebSocket(url, protocols)`. |
 | `signal` | | Closes the socket with code 1000 and fails both streams with `signal.reason`. |
-| `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes. If `open` throws, the socket closes and `connect` tries again after `delay`. |
+| `open` | | `({ send, messages, signal }) => void \| Promise<void>`. Runs on every connection before queued writes are sent. `send` writes ahead of the queue, and `signal` aborts when this connection closes or `timeout` expires. If `open` throws, the socket closes and `connect` tries again after `delay`. |
 | `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |
 | `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` gives up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
-| `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when the server closes the connection or the connection drops. `attempt` is the number of failures in a row, including this one. `false` makes the close final, and a rejection fails both streams with its error. |
+| `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when a close event ends the connection. `connect` doesn't call it after a timeout, a missed heartbeat reply, or an `open` that throws, and retries those until `attempts` runs out. `attempt` is the number of failures in a row, including this one. `false` makes the close final. A rejection fails both streams with its error. When `attempts` runs out, both streams fail with the last error, whatever its close code. |
 | `maxQueued` | `1000` | Writes to hold while disconnected. Further writes wait, so `writer.ready` and `writer.write()` stay pending. |
 | `highWaterMark` | `1048576` | Writes wait while the socket's `bufferedAmount` is above this many bytes. |
-| `maxBuffered` | `Infinity` | Bytes of received messages (characters for text) to hold while the reader is behind. Past it, both streams fail with `MaxBufferedError` and the socket closes. |
+| `maxBuffered` | `Infinity` | Bytes of received binary messages, plus UTF-16 code units of text messages (`string.length`), to hold while the reader is behind. Past it, both streams fail with `MaxBufferedError` and the socket closes. |
 | `heartbeat` | | `{ ping, pong, interval, timeout = interval }`. Sends `ping` every `interval` ms. When no message for which `pong(message)` returns `true` arrives within `timeout` ms, the connection counts as dead and `connect` reconnects. Pongs don't reach `readable`. |
 | `WebSocket` | `globalThis.WebSocket` | The class to construct, such as the ws package's in older Node or a fake in tests. |
 
-By default, close codes 1000 (normal), 1002 (protocol error), 1003 (unsupported data), 1007 (invalid data), 1008 (policy violation), 1009 (message too big) and 1010 (missing extension) are final, because reconnecting won't change the server's answer. Every other code reconnects, including 1001 (going away), 1005 (no code), 1006 (dropped), 1011 to 1014 (server errors and restarts) and the 4000 to 4999 range.
+By default, close codes 1000 (normal), 1002 (protocol error), 1003 (unsupported data), 1007 (invalid data), 1008 (policy violation), 1009 (message too big), and 1010 (missing extension) are final, because reconnecting won't change the server's answer. Every other code reconnects, including 1001 (going away), 1005 (no code), 1006 (dropped), 1011 to 1014 (server errors and restarts), and the 4000 to 4999 range.
 
 How the streams end:
 
 - `writable.close()` waits for queued writes, closes the socket with 1000, and ends `readable` once the close completes.
 - `readable.cancel()`, `writable.abort()`, and `signal` close the socket with 1000 and fail the other stream.
-- `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting, and fails both streams with an `AbortError`, as `signal` does, so `await using socket = WebSockets.connect(url)` closes the connection when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
+- `[Symbol.asyncDispose]()` closes the socket with 1000, stops reconnecting, and fails both streams with an `AbortError` `DOMException`. Apart from that, it does what aborting `signal` does. With `await using socket = WebSockets.connect(url)`, the connection closes when the scope ends, even while a reader or writer holds a stream's lock. It exists only where the runtime has `Symbol.asyncDispose`, and TypeScript sees it only when your `lib` includes `esnext.disposable`. `fromSocket`'s result has it too.
 - In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to tear the connection down. It does what `[Symbol.asyncDispose]()` does and also works while a reader or writer holds a lock, which `writable.close()` doesn't.
 - A final close with 1000, 1001, or 1005 ends `readable`. Any other final close fails it with a `CloseError` that stores `code` and `reason`. `writable` fails with the `CloseError` in both cases.
 
 ### Messages can be lost during a drop
 
-A WebSocket has no acknowledgements. When a connection drops, messages the server sent after the last one you received are gone, and so are writes the old socket accepted (`send()` returned) but never delivered. A write made while the socket is closing or closed is queued for the next connection, but the browser can take seconds to notice a dead connection. If your app can't lose messages, number them and resend or replay after `open`, which is where a resubscribe or a "since sequence N" request goes.
+A WebSocket has no acknowledgements. When a connection drops, messages the server sent after the last one you received are gone, and so are writes the old socket accepted (`send()` returned) but never delivered. A write made while the socket is closing or closed is queued for the next connection, but the browser can take seconds to notice a dead connection. While disconnected, `writer.write()` resolves once the message is queued. If the streams fail before the next connection opens, queued messages are discarded. If you can't lose messages, number them. In `open`, resend the writes the server hasn't confirmed, and ask the server to replay what you missed, for example with a resubscribe or a "since sequence N" request.
 
 ### Backpressure
 
@@ -96,23 +96,33 @@ A browser can't pause reading from a WebSocket: messages arrive whether or not a
 
 ## `fromSocket(socket, options)`
 
-Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark`, and `maxBuffered`, as above. `readable` ends when the socket closes with 1000, 1001, or 1005 and fails with a `CloseError` for other codes.
+Returns `{ readable, writable }` for a socket you already have. It never reconnects. It sets `binaryType` to `'arraybuffer'`, and writes wait until a connecting socket opens. Options: `signal`, `highWaterMark`, and `maxBuffered`, as above. `readable` ends when the socket closes with 1000, 1001, or 1005 and fails with a `CloseError` for other codes. `writable.close()` closes the socket with 1000 without waiting for the close handshake. `readable.cancel()`, `writable.abort()`, `signal`, and `[Symbol.asyncDispose]()` close it with 1000 and fail both streams.
 
 ## Errors
+
+`connect` throws these when you call it:
+
+| Error | When |
+| --- | --- |
+| `TypeError` | No `WebSocket` class was found. |
+| `RangeError` | An option is out of range. |
+
+These fail the streams:
 
 | Error | When |
 | --- | --- |
 | `WebSockets.CloseError` | The connection closed permanently. `code` and `reason` store the close event's values. |
 | `WebSockets.MaxBufferedError` | Received messages exceeded `maxBuffered`, stored in `maxBuffered`. |
 | `TimeoutError` (`DOMException`) | `attempts` is used up, and the last attempt timed out while opening or while waiting for a heartbeat reply. |
-| `TypeError` | No `WebSocket` class was found. |
-| `RangeError` | An option is out of range. |
+| The `WebSocket` constructor's error | `url` is a string or `URL` that the constructor rejects, such as `'ftp://x'`, which throws a `SyntaxError`. It isn't retried. |
+
+A write that isn't a string or a `Uint8Array` rejects with a `TypeError`. The `send` passed to `open` throws an `InvalidStateError` `DOMException` once the connection closes.
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `WebSockets.Duplex` | `{ readable, writable }`, what `connect`, and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
+| `WebSockets.Duplex` | The `{ readable, writable }` object that `connect` and `fromSocket` return, with `[Symbol.asyncDispose]` where the runtime has it. |
 | `WebSockets.Message` | A received message: text as a `string`, binary data as a `Uint8Array`. |
 | `WebSockets.Socket` | The part of the platform `WebSocket` this package uses. Any object with this shape works. |
 | `WebSockets.Delay` | The `delay` option, `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |

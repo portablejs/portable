@@ -141,7 +141,8 @@ function measure(input: Uint8Array, final: boolean): Size {
 
 /**
  * Returns the type and dimensions of the image in `bytes`. The bytes need to include only the
- * header: a few dozen bytes for most formats, up to the first frame header for JPEG.
+ * header: a few dozen bytes for most formats, up to the first frame header for JPEG, up to IFD0
+ * for TIFF, and the whole file for ICNS.
  *
  * @throws {UnsupportedError} The bytes don't match a supported format.
  * @throws {TruncatedError} The bytes end before the dimensions.

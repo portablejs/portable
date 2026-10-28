@@ -44,7 +44,7 @@ The type of the remote comes from the server's code, so there is no schema or co
 
 `Rpc.connect<Api>(transport, options)` returns a proxy. Calling `remote.add(1, 2)` sends `{"jsonrpc":"2.0","id":1,"method":"add","params":[1,2]}` and resolves with the result. Methods of nested objects are called by dotted name, so `remote.math.add()` calls `'math.add'`.
 
-`Rpc.provide(transport, methods, options)` answers those calls. A method can be sync or async, and is called with the object it is defined on as `this`, so class instances work.
+`Rpc.provide(transport, methods, options)` answers those calls. A method can be sync or async. `provide` calls it with the object it is defined on as `this`, so class instances work. `provide` returns nothing, so abort its `signal` to stop answering. To call and answer over one transport, use `connect` with `methods` instead of `provide` plus `connect`.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -59,11 +59,11 @@ await using worker = Rpc.connect<Api>(Rpc.port(new Worker('./worker.ts', { type:
 await worker.add(1, 2);
 ```
 
-Disposing closes the connection but not the transport, so a worker keeps running until you call `terminate()`. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method with a symbol key can't be called remotely, so `[Symbol.asyncDispose]` never hides one of your methods. In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to close the remote, which does the same teardown.
+Disposing, like aborting `signal`, cancels the transport's streams, which closes a WebSocket wrapped in streams. A `Worker` or `MessagePort` stays open, so call `terminate()` or `close()` yourself. TypeScript sees `[Symbol.asyncDispose]` only when your `lib` includes `esnext.disposable`. A method with a symbol key can't be called remotely, so `[Symbol.asyncDispose]` never hides one of your methods. In a runtime without `Symbol.asyncDispose` (such as Safari 26), pass a `signal` and abort it to close the remote, which does the same teardown.
 
 ### Options per call
 
-Arguments and options don't share a list, so a method's last argument is never mistaken for options. `Rpc.call` takes the method, its params and the options:
+Arguments and options don't share a list, so a method's last argument is never mistaken for options. `Rpc.call` takes the method, its params, and the options:
 
 ```ts
 await Rpc.call(remote.search, ['shoes'], { signal: AbortSignal.timeout(5000) });
@@ -77,7 +77,7 @@ Params can also be an object. JSON-RPC calls these by-name params, and the serve
 
 ### Cancellation on the server
 
-Wrap a method with `Rpc.withContext` to receive a `{ signal }` first. The signal aborts when the caller cancels or the connection closes. On the client, the method's type has no extra argument.
+Wrap a method with `Rpc.withContext` to pass it a `{ signal }` as its first argument. The signal aborts when the caller cancels or the connection closes. On the client, the method's type has no extra argument. Called directly, the method receives a signal that never aborts.
 
 ```ts
 const api = {
@@ -111,7 +111,7 @@ const stream = await remote.watch('x'); // a ReadableStream
 stream.pipeThrough(new TransformStream());
 ```
 
-Breaking out of the loop or cancelling the stream stops the generator on the server, so its `finally` block runs. The server sends at most 256 values ahead of what the client has read.
+Breaking out of the loop or cancelling the stream stops the generator on the server, so its `finally` block runs. The server sends at most 256 values ahead of what the client has read. Over HTTP there is no credit window. The server writes values as fast as the response body accepts them.
 
 ### Both directions
 
@@ -148,7 +148,7 @@ const { tools } = await Rpc.call(mcp['tools/list'], {});
 
 ## Transports
 
-A transport is any `{ readable, writable }` pair of streams that carries encoded messages.
+A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Each transport is used by one `connect` or `provide`. A second call with a transport from `Rpc.port` or `Rpc.window` throws a `TypeError`.
 
 ### `Rpc.port(target, { signal })`
 
@@ -174,7 +174,7 @@ const child = Rpc.connect<ChildApi>(
 Rpc.provide(Rpc.window(window.parent, { origin: 'https://parent.example.com' }), api);
 ```
 
-Both sides post a hello every 100 ms until the other answers, so either can load first, and writes wait until the handshake is done. The hello includes a protocol version. Messages whose `event.origin` differs from `origin`, or that come from a window other than `target`, are ignored, and messages are posted only to `origin`. `origin` is required: pass `'*'` to accept any origin. `channel` lets several connections share one window.
+Both sides post a hello every 100 ms until the other answers, so either side can load first. Writes wait until the handshake is done. The hello includes a protocol version. If the versions differ, the connection fails with `TransportError`. `Rpc.window` ignores a message if its `event.origin` differs from `origin` or it comes from a window other than `target`. It posts messages only to `origin`. `origin` is required: pass `'*'` to accept any origin. With `'*'`, any page that can post to this window can call your methods, so use it only for methods that are safe to expose. `channel` lets several connections share one window.
 
 The handshake has no timeout of its own. Aborting the connection's `signal` closes the whole connection, so to give up on a window that never answers, pass a signal to each call instead: `Rpc.call(..., { signal: AbortSignal.timeout(10_000) })`. When the other window reloads, its new page sends a hello again and the same remote keeps working. A call the old page didn't answer stays pending until its signal aborts.
 
@@ -198,7 +198,9 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 });
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. A request with only notifications gets `204 No Content`, and other HTTP methods get `405`. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. `handler` answers a POST with only notifications with `204 No Content`, and any other HTTP method with `405`. Malformed JSON gets a 200 response with a `-32700` Parse error. `handler` reads the whole body and has no size limit, so limit the body size in front of it. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+
+Over HTTP, cancelling a call or breaking out of a streamed result aborts the request only when every call in the same batch has been cancelled. The server's `signal` aborts when the request is aborted.
 
 ### WebSocket and server-sent events
 
@@ -329,5 +331,5 @@ Structured-cloning a nested object costs more in Node than cloning one JSON stri
 - Errors a method throws are sent with code `-32603`. json-rpc-2.0 sends code `0`, and birpc and penpal also send the error's name and stack.
 - The codec must be able to encode a method's result. With `Rpc.json`, a `Date` is received as a string and `undefined` as `null`. comlink, penpal, post-me, and birpc structured-clone by default, so pass the identity codec over a port to get the same behavior.
 - comlink's `Comlink.transfer` has no equivalent. The identity codec structured-clones values without transferring them.
-- There are no middleware hooks like json-rpc-2.0's `applyMiddleware` or birpc's `onRequest` and `resolver`. Wrap the methods, the `fetch` passed to `Rpc.http` or the transport instead.
+- There are no middleware hooks like json-rpc-2.0's `applyMiddleware` or birpc's `onRequest` and `resolver`. Wrap the methods, the `fetch` passed to `Rpc.http`, or the transport instead.
 - `Rpc.window` takes one origin string. penpal's `allowedOrigins` also accepts a list of origins and regular expressions.

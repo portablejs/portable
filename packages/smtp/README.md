@@ -52,7 +52,7 @@ await Smtp.send(mail, { connect, host: 'smtp.example.com', auth });
 
 ### `Smtp.connect(options)`
 
-Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TLS, logs in, and resolves with a `Client`.
+Connects, reads the greeting, sends EHLO, starts TLS, logs in, and resolves with a `Client`. If the server refuses EHLO, `connect` sends HELO when `secure` is `'on'` or `'off'`, and rejects with `ETLS` when it is `'starttls'`, because HELO can't start TLS.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ Connects, reads the greeting, sends EHLO (or HELO if EHLO is refused), starts TL
 | `auth` | None | Pass `{ user, pass }` for AUTH PLAIN, or LOGIN when the server offers only LOGIN, and set `method: 'LOGIN'` to force LOGIN. Pass `{ user, accessToken }` for XOAUTH2. |
 | `allowInsecureAuth` | `false` | Send credentials over an unencrypted connection. Without it, AUTH requires TLS. |
 | `name` | `'[127.0.0.1]'` | The host name sent with EHLO. A name with CR or LF makes `connect` reject with a `RangeError`. |
-| `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. |
+| `lmtp` | `false` | Speak LMTP: LHLO, and one reply per recipient after the message. Set `port` and `secure` too, because the defaults are for SMTP submission. Recipients that the server refuses after the message are listed in `rejected`. If the server refuses all of them, `send` rejects with `EMESSAGE`. |
 | `signal` | None | Limits connecting, TLS, and login. Aborting rejects with `signal.reason` and closes the socket. |
 
 With `auth` set, the client always authenticates. If the server offers AUTH but neither PLAIN nor LOGIN, `connect` rejects with `EAUTH` without sending the password.
@@ -81,15 +81,17 @@ Sends one message and resolves with `{ accepted, rejected, response }`. It resol
 | `dsn` | `{ ret, envid, notify }`: RFC 3461 delivery status notification parameters, sent when the server offers DSN. |
 | `requireTls` | Ask the server to relay only over TLS (RFC 8689). Fails before MAIL FROM if the connection isn't encrypted or the server doesn't offer REQUIRETLS. |
 
-The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO and DATA in one write. It declares BODY=8BITMIME whenever the server offers it, and SMTPUTF8 when an address is not ASCII. An address with a control character or an angle bracket is rejected before anything is sent.
+The client uses PIPELINING when offered, sending MAIL FROM, every RCPT TO, and DATA in one write. It declares BODY=8BITMIME whenever the server offers it, and SMTPUTF8 when an address is not ASCII. An address with a control character or an angle bracket is rejected before anything is sent.
 
 When a stream message isn't sent in full, because the envelope was refused, the connection failed, or the signal aborted, the stream is cancelled.
 
 Aborting `signal` rejects with `signal.reason`. A send that has started also closes the connection, because the server may be partway through the message. A send still waiting for earlier calls rejects at once, and the connection stays open.
 
+After an `ECONNECTION` error, or a message stream that fails, the connection is closed and later sends reject with `ECONNECTION`, so open a new client. You can keep sending on the same client after an `EENVELOPE` error, and after an `EMESSAGE` error if the server refused the message or the message is over the SIZE limit. The exception is a server with PIPELINING that refuses the sender and then accepts `DATA`: the client can't end that message cleanly, so it closes the connection after the `EENVELOPE`.
+
 ### `client.close({ signal })`
 
-Waits for queued sends, sends QUIT, and closes the socket. It never rejects. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
+Waits for queued sends, sends QUIT, and closes the socket. It never rejects. `signal` stops waiting for the reply to QUIT. The socket is closed either way. Where the runtime has `Symbol.asyncDispose`, the client also has `[Symbol.asyncDispose]()`, which calls `close()`, so `await using` closes it at the end of the block.
 
 ### `Smtp.send(mail, options)`
 
@@ -106,22 +108,22 @@ Every failure rejects with a `Smtp.CommandError`, except a `TypeError` or `Range
 | `responseCode` | The reply code, such as `550`. |
 | `enhancedCode` | The RFC 3463 code, such as `'5.1.1'`. |
 | `response` | The server's whole reply. |
-| `rejected` | Set when every recipient was refused: each recipient with its reply. |
+| `rejected` | Set when every recipient was refused: each recipient with its reply. With `lmtp`, this includes recipients refused after the message. |
 
 | `code` | Meaning |
 | --- | --- |
 | `ECONNECTION` | The socket failed to open or closed early, or the server replied 421 to any command. Retry on a new connection. |
-| `EPROTOCOL` | The greeting wasn't 220, the server refused both EHLO and HELO, or a reply was malformed or over 1 MiB. |
-| `ETLS` | STARTTLS was not offered or was refused, or the TLS handshake failed. |
+| `EPROTOCOL` | The greeting wasn't 220, the server refused both EHLO and HELO (or LHLO with `lmtp`), or a reply was malformed or over 1 MiB. |
+| `ETLS` | STARTTLS was not offered or was refused, the server refused EHLO before STARTTLS, or the TLS handshake failed. |
 | `EAUTH` | Login failed, no supported method was offered, or AUTH would have been sent over plaintext without `allowInsecureAuth`. |
 | `EENVELOPE` | An address is invalid, the server refused the sender, every recipient or DATA, or the server can't honor SMTPUTF8 or REQUIRETLS. |
-| `EMESSAGE` | The message is over the SIZE limit, the message stream errored, or the server refused the message after DATA. |
+| `EMESSAGE` | The message is over the SIZE limit, the message stream errored, or the server refused the message after DATA (with `lmtp`, for every recipient). |
 
 ## Types
 
 | Type | Description |
 | --- | --- |
-| `Smtp.Client` | An open session from `connect`: `send`, `close`, and `[Symbol.asyncDispose]`, `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply). |
+| `Smtp.Client` | An open session from `connect`, with the methods `send`, `close`, and `[Symbol.asyncDispose]`, and the fields `secure` (whether the connection is encrypted) and `extensions` (the extension lines of the EHLO reply, empty after a HELO fallback). |
 | `Smtp.Mail` | A message and its envelope, as `send` takes them. |
 | `Smtp.Result` | The outcome of a send that reached at least one recipient. |
 | `Smtp.Rejection` | A recipient the server refused, with its reply. |

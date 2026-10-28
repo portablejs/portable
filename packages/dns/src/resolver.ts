@@ -48,7 +48,7 @@ export type NaptrRecord = {
 
 /**
  * The lookups that SPF, DMARC, and DKIM need, with the method names and result shapes of
- * `node:dns/promises`. `create` returns one, and `node:dns/promises`, a `new Resolver()` from it
+ * `node:dns/promises`. `create` returns one, and `node:dns/promises`, a `new Resolver()` from it,
  * and a plain object of functions in a test also match the type.
  */
 export type Resolver = {
@@ -83,7 +83,7 @@ export declare namespace Resolver {
 export type DohResolver = Resolver & {
   /**
    * Sends one question of any type and returns the whole decoded response, with TTLs, the
-   * authority section and the AD flag. It resolves when the response code is NOERROR or
+   * authority section, and the AD flag. It resolves when the response code is NOERROR or
    * NXDOMAIN, so `answers` can be empty. For any other response code, and when the request
    * fails, it rejects with `QueryError`, as the other methods do.
    */
@@ -97,8 +97,9 @@ export type DohResolver = Resolver & {
 export declare namespace create {
   type Options = {
     /**
-     * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The next one is tried when a request
-     * fails, times out, or gets SERVFAIL, REFUSED, NOTIMP, FORMERR, or a truncated response.
+     * DNS-over-HTTPS endpoints (RFC 8484), tried in order. The next one is tried after a network
+     * error, a timeout, an HTTP error status, a response that is malformed or truncated, a response
+     * to another question, and the response codes SERVFAIL, REFUSED, NOTIMP, and FORMERR.
      * @default ['https://cloudflare-dns.com/dns-query', 'https://dns.google/dns-query']
      */
     endpoints?: readonly (string | URL)[] | undefined;

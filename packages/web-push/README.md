@@ -16,7 +16,29 @@ import * as WebPush from '@portable/web-push';
 const { publicKey, privateKey } = await WebPush.generateVapidKeys();
 ```
 
-In the browser, subscribe and send `subscription.toJSON()` to your server. On the server, send to it:
+In the browser, subscribe with the public key and send `subscription.toJSON()` to your server:
+
+```ts
+const registration = await navigator.serviceWorker.register('/sw.js');
+const subscription = await registration.pushManager.subscribe({
+  userVisibleOnly: true,
+  applicationServerKey: publicKey,
+});
+await fetch('/subscriptions', { method: 'POST', body: JSON.stringify(subscription.toJSON()) });
+```
+
+In the service worker, show a notification for each push. `event.data` is `null` for a push sent without `payload`:
+
+```ts
+declare const self: ServiceWorkerGlobalScope;
+
+self.addEventListener('push', (event: PushEvent) => {
+  const message = event.data?.json() ?? { title: 'New message' };
+  event.waitUntil(self.registration.showNotification(message.title));
+});
+```
+
+On the server, send to the subscription:
 
 ```ts
 import * as WebPush from '@portable/web-push';
@@ -49,12 +71,12 @@ Keys from web-push's `generateVAPIDKeys()` work unchanged, so existing subscript
 | Export | Does |
 | --- | --- |
 | `send({ subscription, payload, vapid, ... })` | Encrypts `payload`, signs the request with VAPID, POSTs it to the subscription's endpoint, and returns `{ kind: 'sent', status }` or, for a 404 or 410, `{ kind: 'gone', status }`. |
-| `toRequest({ subscription, payload, vapid, ... })` | Returns the `Request` that `send` would pass to `fetch`, to send it yourself or put it on a queue. |
+| `toRequest({ subscription, payload, vapid, ... })` | Returns the `Request` that `send` would pass to `fetch`, to send it yourself or put it on a queue. Send it within 12 hours, before its VAPID token expires. |
 | `encrypt({ subscription, payload, ... })` | Returns the aes128gcm body for `payload`: an 86-byte header, then one AES-GCM record. |
 | `generateVapidKeys(options?)` | Returns a new `{ publicKey, privateKey }` pair as base64url strings. |
 | `maxPayloadBytes` | `3993`, the largest payload in bytes. |
-| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413, or 429. It has `status`, the whole `response`, and its `body` as text. |
-| `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and `p256dh` isn't a P-256 public key or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
+| `ResponseError` | Thrown by `send` when the push service answers with any other status, such as 400, 403, 413, or 429. It has `status`, `response`, and the response `body` as text. `send` has already read the body of `response` into `body`, so read only `response.status` and `response.headers` from `response`. |
+| `InvalidInputError` | Thrown when the subscription can't be used: its endpoint isn't an `https:` URL, or a payload is given and the subscription has no `keys`, a key isn't base64, `p256dh` isn't a P-256 public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that fails this way. |
 | `MaxBytesError` | Thrown when the payload is longer than `maxPayloadBytes`, before anything is sent. Its `maxBytes` property is `3993`. The subscription is still valid. |
 
 `payload` is a string, sent as UTF-8, or a `Uint8Array`. Leave it out to send a push with no data. A push with no data also works for a subscription without `keys`. An empty string is encrypted and arrives as empty data.
@@ -69,11 +91,11 @@ A mistake in the call gives a `TypeError` for an option of the wrong type, and a
 | --- | --- | --- |
 | `subscription` | required | The browser's subscription, as above. |
 | `payload` | none | The message. `encrypt` requires it. |
-| `vapid` | required | `{ subject, publicKey, privateKey }`. `subject` is a `mailto:` or `https:` URL the push service can contact you at. The keys are base64url strings from `generateVapidKeys`. |
+| `vapid` | required | `{ subject, publicKey, privateKey }`. `subject` is a `mailto:` or `https:` URL the push service can contact you at. The keys are base64url strings from `generateVapidKeys`. Apple rejects an `https://localhost` subject. |
 | `ttl` | `2419200` (four weeks) | Seconds the push service keeps the message for an offline browser. `0` means deliver now or drop it. |
 | `urgency` | not sent | `'very-low'`, `'low'`, `'normal'`, or `'high'`. Push services may hold back low-urgency messages to save battery. |
 | `topic` | not sent | Up to 32 base64url characters. A new message with the same topic replaces an undelivered one. |
-| `now` | `new Date()` | The VAPID token expires 12 hours after this time, given as a `Date` or a `Temporal.Instant`. |
+| `now` | `new Date()` | The time to sign the VAPID token at, as a `Date` or a `Temporal.Instant`. The token expires 12 hours after it is signed. The package reuses a token for up to an hour, so the token in a request can be signed up to an hour before `now`. |
 | `fetch` | `globalThis.fetch` | `send` only. Called with the `Request`. Pass one to add retries, logging, or a proxy. |
 | `signal` | none | Cancels the encryption and the `fetch`, and the call rejects with `signal.reason`. |
 | `salt`, `keyPair` | random | `encrypt` only. The 16-byte salt and the server's ECDH P-256 key pair. Only for test vectors: reusing either for two messages weakens the encryption. |
