@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
 import { MaxBytesError, toArray, toBlob, toBytes, toJson, toText } from '@portable/streams';
 import { chunked, decode, delay, encode, fromChunks } from './utils.js';
 
@@ -354,6 +354,13 @@ describe('toJson', () => {
 
   test('applies maxBytes', async () => {
     await expect(toJson(['[1,2,3]'], { maxBytes: 6 })).rejects.toThrow(MaxBytesError);
+  });
+
+  test('a type argument types the result without checking it', async () => {
+    expectTypeOf(toJson(['1'])).toEqualTypeOf<Promise<unknown>>();
+    const result = toJson<{ id: number }>(['"text"']);
+    expectTypeOf(result).toEqualTypeOf<Promise<{ id: number }>>();
+    expect(await result).toBe('text');
   });
 });
 

@@ -1,5 +1,5 @@
 import { fromIterable, toArray } from '@portable/streams';
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   encodeStream,
   InvalidInputError,
@@ -22,6 +22,20 @@ const escaped = {
   stringWithTabsAndNewlines: "Did it work?\nNo...\t\tI don't think so...",
   anArray: [1, 2, true, 'tabs?\t\t\t\u0001\u0002\u0003', false],
 };
+
+describe('value type', () => {
+  test('values are unknown without a type argument', () => {
+    expectTypeOf(new DecoderStream().readable).toEqualTypeOf<ReadableStream<DecoderStream.Match>>();
+  });
+
+  test('a type argument types the values without checking them', async () => {
+    type Row = { id: string };
+    const stream = new DecoderStream<Row>({ paths: ['$.rows[*]'] });
+    expectTypeOf(stream.readable).toEqualTypeOf<ReadableStream<DecoderStream.Match<Row>>>();
+    const matches = await toArray(fromIterable(['{"rows":[{"id":"a"},2]}']).pipeThrough(stream));
+    expect(matches.map((match) => match.value)).toEqual([{ id: 'a' }, 2]);
+  });
+});
 
 describe('JSONStream', () => {
   test('emits each row of a large document', async () => {

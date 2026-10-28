@@ -1,5 +1,5 @@
 import { fromIterable, toArray } from '@portable/streams';
-import { describe, expect, test } from 'vite-plus/test';
+import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
 import { InvalidInputError, DecoderStream, EncoderStream, MaxLengthError } from '@portable/jsonl';
 import data from './fixtures/data.ndjson?raw';
 import { chunked, decode, encode, encodeUtf8, lineSeparator } from './utils.js';
@@ -21,6 +21,20 @@ const pattern = {
   j: [],
   k: {},
 };
+
+describe('value type', () => {
+  test('values are unknown without a type argument', () => {
+    expectTypeOf(new DecoderStream().readable).toEqualTypeOf<ReadableStream<unknown>>();
+  });
+
+  test('a type argument types the values without checking them', async () => {
+    type Post = { id: number };
+    const stream = new DecoderStream<Post>();
+    expectTypeOf(stream.readable).toEqualTypeOf<ReadableStream<Post>>();
+    const posts = await toArray(fromIterable(['{"id":1}\n"text"\n']).pipeThrough(stream));
+    expect(posts).toEqual([{ id: 1 }, 'text']);
+  });
+});
 
 describe('ndjson', () => {
   test('decodes a line', async () => {

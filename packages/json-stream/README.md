@@ -20,7 +20,7 @@ for await (const { value } of Streams.toAsyncIterable(matches)) {
 
 ## `DecoderStream`
 
-A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace.
+A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. `value` is typed `unknown` unless you pass a type argument, as in `new JsonStream.DecoderStream<Row>({ paths: ['$.rows[*]'] })`. The stream doesn't check values against that type. The input may hold several top-level values separated by whitespace.
 
 | Option | Default | Description |
 | --- | --- | --- |

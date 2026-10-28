@@ -156,7 +156,8 @@ export declare namespace toJson {
 }
 
 /**
- * Reads a stream or iterable to the end and parses it as JSON.
+ * Reads a stream or iterable to the end and parses it as JSON. The result is typed `unknown`
+ * unless you pass a type argument, as in `Streams.toJson<User>(body)`, which isn't checked.
  *
  * @example
  * ```ts
@@ -165,10 +166,10 @@ export declare namespace toJson {
  * const body = await Streams.toJson(request.body!, { maxBytes: 100_000 });
  * ```
  */
-export async function toJson(
+export async function toJson<value = unknown>(
   source: Source<Uint8Array | string>,
   options: toJson.Options = {},
-): Promise<unknown> {
+): Promise<value> {
   return JSON.parse(await toText(source, options));
 }
 

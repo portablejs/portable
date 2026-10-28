@@ -26,10 +26,10 @@ export declare namespace DecoderStream {
   };
 
   /** A value found at one of the `paths`. */
-  type Match = {
+  type Match<value = unknown> = {
     /** Keys and array indexes from the root to the value. */
     path: (string | number)[];
-    value: unknown;
+    value: value;
   };
 }
 
@@ -81,6 +81,10 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * A structural error inside a matched value, such as a missing comma, is reported when that value
  * ends.
  *
+ * `value` is typed `unknown` unless you pass a type argument, as in
+ * `new JsonStream.DecoderStream<Row>(options)`. The stream doesn't check values against that
+ * type.
+ *
  * @example
  * ```ts
  * import * as JsonStream from '@portable/json-stream';
@@ -93,7 +97,10 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * // { path: ['total_rows'], value: 129 }, { path: ['rows', 0], value: { id: 'a' } }, ...
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array | string, DecoderStream.Match> {
+export class DecoderStream<value = unknown> extends TransformStream<
+  Uint8Array | string,
+  DecoderStream.Match<value>
+> {
   constructor(options: DecoderStream.Options = {}) {
     const { paths = ['$'], maxLength = Infinity } = options;
     if (!(maxLength >= 0)) {
@@ -126,7 +133,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
     let skipString = false;
     let skipEscape = false;
 
-    let controller!: TransformStreamDefaultController<DecoderStream.Match>;
+    let controller!: TransformStreamDefaultController<DecoderStream.Match<value>>;
     let text = '';
 
     const invalid = (i: number): never => {
@@ -149,15 +156,15 @@ export class DecoderStream extends TransformStream<Uint8Array | string, DecoderS
       if (end + offset - start > maxLength) {
         throw new MaxLengthError({ maxLength });
       }
-      let value: unknown;
+      let parsed: value;
       try {
-        value = JSON.parse(slice(start, end));
+        parsed = JSON.parse(slice(start, end));
       } catch (error) {
         throw new InvalidInputError(`Invalid JSON in the value at offset ${start}.`, {
           cause: error,
         });
       }
-      controller.enqueue({ path: keys.slice(0, valueDepth), value });
+      controller.enqueue({ path: keys.slice(0, valueDepth), value: parsed });
       if (start === outer) {
         outer = -1;
       }

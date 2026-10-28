@@ -19,7 +19,7 @@ for await (const event of Streams.toAsyncIterable(events)) {
 }
 ```
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines may end in LF or CRLF. Blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly.
+`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Pass a type argument, as in `new Jsonl.DecoderStream<Event>()`, to type the values without a cast. The stream doesn't check them against that type, so validate each value yourself if the input could have another shape. Lines may end in LF or CRLF. Blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly.
 
 `EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt`, or a circular structure) fails the stream with a `TypeError`. Its output can be a `Response` body as it is:
 

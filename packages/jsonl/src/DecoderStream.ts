@@ -31,6 +31,9 @@ export declare namespace DecoderStream {
  * The stream fails with `InvalidInputError` on a line that isn't valid JSON, unless
  * `invalid` is `'skip'`, and with `MaxLengthError` on a line longer than `maxLength`.
  *
+ * Values are typed `unknown` unless you pass a type argument, as in
+ * `new Jsonl.DecoderStream<Event>()`. The stream doesn't check values against that type.
+ *
  * @example
  * ```ts
  * import * as Jsonl from '@portable/jsonl';
@@ -39,7 +42,7 @@ export declare namespace DecoderStream {
  * const events = response.body!.pipeThrough(new Jsonl.DecoderStream());
  * ```
  */
-export class DecoderStream extends TransformStream<Uint8Array | string, unknown> {
+export class DecoderStream<value = unknown> extends TransformStream<Uint8Array | string, value> {
   constructor(options: DecoderStream.Options = {}) {
     const { invalid = 'error', maxLength = Infinity } = options;
     if (!(maxLength >= 0)) {
@@ -49,7 +52,7 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
     let partial = '';
     let lineNumber = 0;
 
-    const decode = (line: string, controller: TransformStreamDefaultController<unknown>) => {
+    const decode = (line: string, controller: TransformStreamDefaultController<value>) => {
       lineNumber++;
       if (line.endsWith('\r')) {
         line = line.slice(0, -1);
@@ -60,16 +63,16 @@ export class DecoderStream extends TransformStream<Uint8Array | string, unknown>
       if (line === '') {
         return;
       }
-      let value: unknown;
+      let parsed: value;
       try {
-        value = JSON.parse(line);
+        parsed = JSON.parse(line);
       } catch (error) {
         if (invalid === 'skip' || line.trim() === '') {
           return;
         }
         throw new InvalidInputError(`Invalid JSON on line ${lineNumber}.`, { cause: error });
       }
-      controller.enqueue(value);
+      controller.enqueue(parsed);
     };
 
     super(

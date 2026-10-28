@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## JSON decoders take an unchecked type argument for their values
+
+- **Options:** keep `unknown` and cast with `Streams.map` or `as`; add a type parameter that defaults to `unknown` to the functions that emit parsed JSON; add one to every decoder; validate with a `schema` option instead.
+- **Trade-offs:** `Jsonl.DecoderStream`, `JsonStream.DecoderStream`, and `Streams.toJson` emit values from `JSON.parse`, so the packages type them `unknown` and you cast each value yourself. A type argument moves that cast to the constructor, as ky's `.json<T>()`, Kysely's `sql<Row>`, and rpc's `Rpc.connect<typeof server>` do, but it reads like validation even though nothing is checked. Deno's `JsonParseStream`, ndjson, and stream-json have no type argument. csv, sse, lines, and mime-stream already emit concrete types, so a type argument there would only let you claim that a string field holds another type. TypeScript has no partial inference, so an explicit type argument turns off inference for any later type parameter. The options of these three functions don't change the output type, so nothing is inferred today. A `schema` option could infer the same type parameter later.
+- **Chosen:** `DecoderStream<value = unknown>` in jsonl and json-stream, with `JsonStream.DecoderStream.Match<value>`, and `Streams.toJson<value = unknown>`. Without a type argument the output stays `unknown`, and the JSDoc and READMEs say that the type isn't checked.
+
 ## npm releases run from a manually started workflow in a `main`-only environment
 
 - **Options:** keep publishing from a maintainer's machine; publish from changesets/action on every push to `main`, which opens a "Version packages" pull request and publishes when it is merged, as ox does; publish from a workflow started by hand on `main`, after the version bumps are merged.

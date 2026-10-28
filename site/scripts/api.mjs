@@ -99,7 +99,10 @@ export function api(name) {
             (m) =>
               `  ${m.modifiers?.some((x) => x.kind === ts.SyntaxKind.ReadonlyKeyword) || ts.isGetAccessor(m) ? 'readonly ' : ''}${m.name.getText()}: ${m.type ? m.type.getText() : checker.typeToString(checker.getTypeAtLocation(m))}`,
           );
-        signature = `class ${symbol.name} ${heritage} {\n${[...ctorSigs, ...props].join('\n')}\n}`;
+        const typeParams = cls.typeParameters
+          ? `<${cls.typeParameters.map((t) => t.getText()).join(', ')}>`
+          : '';
+        signature = `class ${symbol.name}${typeParams} ${heritage} {\n${[...ctorSigs, ...props].join('\n')}\n}`;
       } else if (variable) {
         section = 'Constants';
         signature = `const ${symbol.name}: ${variable.type ? variable.type.getText() : checker.typeToString(checker.getTypeAtLocation(variable), undefined, ts.TypeFormatFlags.NoTruncation)}`;
