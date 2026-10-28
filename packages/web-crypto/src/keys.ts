@@ -24,9 +24,8 @@ export declare namespace importSeed {
     /** Whether the private key can be exported. The public key always can. @default false */
     extractable?: boolean | undefined;
     /**
-     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
-     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
-     * finishes.
+     * Rejects with `signal.reason` as soon as it aborts. A `crypto.subtle` call can't be
+     * cancelled, so it runs to the end in the background.
      */
     signal?: AbortSignal | undefined;
   };
@@ -81,9 +80,8 @@ const publicMembers = ['alg', 'crv', 'e', 'kty', 'n', 'x', 'y'] as const;
 export declare namespace publicKeyOf {
   type Options = {
     /**
-     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
-     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
-     * finishes.
+     * Rejects with `signal.reason` as soon as it aborts. A `crypto.subtle` call can't be
+     * cancelled, so it runs to the end in the background.
      */
     signal?: AbortSignal | undefined;
   };

@@ -93,6 +93,7 @@ We found these bugs and gaps in image-size 2.0.4 by reading its source and runni
 | HEIF: the size comes from the largest `ispe` property instead of the primary item (`pitm`), and every property is listed in `images`, which for a tiled photo means every tile. | `HEIF > reports the primary item, not the first or largest image property` |
 | HEIF: animated AVIF (brand `avis`) is not detected. | `HEIF > detects animated AVIF` |
 | SVG: a `viewBox` is split on single spaces only, so `0,0,100,100` or doubled spaces give a result with no width or height. | `SVG > reads a viewBox separated by commas or repeated spaces` |
+| SVG: a `pc` length is converted at 96 / 72 / 12 pixels per pica, about 0.11, instead of 16. | `SVG > converts picas at 16 pixels each` |
 | PNM: width and height must be on one line, separated by one space, so valid files that split them or put a comment between them fail. | `PNM > reads width and height split across lines with comments between`, `PNM > reads a PAM header in any order` |
 | PNM: dimensions that aren't numbers give `NaN` instead of an error. | `PNM > rejects a header whose dimensions are not numbers` |
 | `disableTypes` changes global state shared by every caller in the process. | not applicable: no such option |

@@ -39,7 +39,7 @@ Every function that takes bytes takes any `Uint8Array`, including a `subarray` o
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
-| `signal` | every async function | | A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each one. If it aborts during a call, the promise rejects with `signal.reason` once the call finishes. |
+| `signal` | every async function | | Rejects with `signal.reason` as soon as it aborts. A `crypto.subtle` call can't be cancelled, so it runs to the end in the background. |
 | `info` | `hkdf` | empty | Context for the derived key, bytes, or a UTF-8 string. |
 | `length` | `hkdf` | the hash length | Bytes to derive, at most 255 times the hash length. |
 | `salt` | `hkdf` | empty | Bytes or a UTF-8 string. RFC 5869 treats an empty salt as zero bytes as long as the hash. |

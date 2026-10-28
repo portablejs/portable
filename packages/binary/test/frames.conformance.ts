@@ -79,6 +79,18 @@ describe('FrameDecoderStream', () => {
     await expect(decode([new Uint8Array(11).fill(0x80)])).rejects.toThrow(Binary.InvalidInputError);
   });
 
+  test('reports the stream offset of a bad varint prefix', async () => {
+    const bad = new Uint8Array(11).fill(0x80);
+    for (const chunks of [
+      [bytes(1, 5, 2, 6, 7), bad],
+      [bytes(1, 5, 2, 6), bytes(7, ...bad.subarray(0, 4)), bad.subarray(4)],
+    ]) {
+      const error = await decode(chunks).catch((error: unknown) => error);
+      expect(error).toBeInstanceOf(Binary.InvalidInputError);
+      expect((error as Binary.InvalidInputError).offset).toBe(5);
+    }
+  });
+
   test('throws a RangeError for invalid options', () => {
     expect(() => new Binary.FrameDecoderStream({ maxBytes: -1 })).toThrow(RangeError);
     expect(() => new Binary.FrameDecoderStream({ prefix: 'uint64' as never })).toThrow(RangeError);

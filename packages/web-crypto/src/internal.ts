@@ -1,4 +1,5 @@
 import { assertUint8Array, toBufferSource as copyShared } from '@portable/bytes/internal';
+import { abortable } from '@portable/timers/internal';
 
 const encoder = new TextEncoder();
 
@@ -14,7 +15,5 @@ export async function run<value>(
   task: () => Promise<value>,
 ): Promise<value> {
   signal?.throwIfAborted();
-  const result = await task();
-  signal?.throwIfAborted();
-  return result;
+  return abortable(task(), signal);
 }
