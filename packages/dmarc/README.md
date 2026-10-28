@@ -40,31 +40,31 @@ In Node, `node:dns/promises` works as the resolver.
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Answers the lookups. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`. |
-| `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
+| `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. If it returns `null` or `undefined`, the domain is treated as its own organizational domain. When you pass it, `check` follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and compares the function's results for relaxed alignment. |
 | `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
 
 `check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as no records, and any other rejection as a DNS error, which gives `temperror` unless the message passes anyway.
 
-`resolve4` and `resolveCname` are called only when the record that applies has an `np` tag, to find out whether a subdomain exists. A name exists unless the `A` query gives `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
+`check` calls `resolve4` and `resolveCname` only when the From domain inherits a record whose `np` differs from its `sp`, or from its `p` if it has no `sp`. It calls them to find out whether the From domain exists. `check` treats the name as nonexistent if the `A` query rejects with `EBADNAME`, or rejects with `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
 
 ## Result
 
-`check` resolves to a plain object. It rejects with a `TypeError` for a `resolver` without one of the three methods, and otherwise only when `signal` aborts.
+`check` resolves to a plain object. It rejects with a `TypeError` for a `resolver` without one of the three methods, with `signal.reason` when `signal` aborts, and with any error that `organizationalDomain` throws.
 
 | Field | Description |
 | --- | --- |
 | `result` | `'pass'`, `'fail'`, `'none'`, `'temperror'`, or `'permerror'`, as Authentication-Results reports it. |
 | `domain` | The From domain that was checked, in lower case and A-label form. |
-| `policy` | The policy the domain owner asks for: `p` for the From domain's own record, otherwise `sp`, or `np` when the From domain doesn't exist. With `t=y` it is one level lower. Missing when no record applies. |
+| `policy` | The policy the domain owner asks for: `p` for the From domain's own record, otherwise `sp`, or `np` when the From domain doesn't exist. If the existence lookup fails, it is the weaker of `np` and the policy the domain would otherwise get. With `t=y` it is one level lower. Missing when no record applies. |
 | `disposition` | `policy` when the result is `fail`, and `'none'` otherwise. RFC 9989 section 5.3.6 says the policy can't be applied after a DNS error, so a `temperror` is left to you. |
 | `policyDomain` | The domain whose `_dmarc` record applies: the From domain, its organizational domain, or its public suffix domain. |
-| `record` | The record that applies, as `{ text, p, sp, np, adkim, aspf, t, psd, rua, ruf, fo }`, with invalid values replaced by their defaults. |
+| `record` | The record that applies, as `{ text, p, sp, np, adkim, aspf, t, psd, rua, ruf, fo }`. Invalid `adkim`, `aspf`, `t`, `psd`, and `fo` values are replaced by their defaults. If `p`, `sp`, or `np` is invalid, the record has no policy: it acts as `p=none` when `rua` is valid, and is ignored otherwise. |
 | `spf` | `{ domain, aligned }` for the SPF result. Set when `spf` was passed. |
 | `dkim` | `{ domain, aligned }` for each signature, in the order they were passed. |
 | `reason` | Why the result is `none`, `temperror`, or `permerror`. |
 | `cause` | The resolver's error behind a `temperror`, or an `AggregateError` of them when more than one lookup failed. |
 
-`none` means DMARC doesn't apply: there is no record, the record has no valid policy and no valid `rua`, or the From domain is an address literal. `permerror` means `from` isn't a domain name, such as an empty string or a domain with a space or an invisible character.
+`none` means DMARC doesn't apply: there is no record, the name has more than one DMARC record, the record has a duplicate tag, the record has no valid policy and no valid `rua`, or the From domain is an address literal. `permerror` means `from` isn't a domain name, such as an empty string or a domain with a space or an invisible character.
 
 ## Organizational domains
 
@@ -84,6 +84,7 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 
 | Type | Description |
 | --- | --- |
+| `Dmarc.Result` | What `check` resolves to, described under [Result](#result). `Dmarc.Result.Code` is the union of `result` values. |
 | `Dmarc.Resolver` | `Pick<Dns.Resolver, 'resolveTxt' \| 'resolve4' \| 'resolveCname'>`, the lookups `check` needs. |
 | `Dmarc.Record` | A parsed DMARC record, the type of `Result.record`. |
 | `Dmarc.Policy` | `'none' \| 'quarantine' \| 'reject'`. |
@@ -92,7 +93,7 @@ await Dmarc.check({ from, spf, dkim }, { resolver, organizationalDomain: getDoma
 ## Why use this over mailauth
 
 - It runs anywhere. mailauth's DMARC code imports `node:dns` and `node:net`, so it can't run in Workers or a browser.
-- It follows RFC 9989 and RFC 6376's tag-list rules without a mode switch. mailauth's default mode accepts whitespace before `v=DMARC1`, uses the last of duplicate tags and case-folds tag names, and mailauth follows the RFCs only with `strict: true`. The results match mailauth's strict mode on 400 random zones.
+- It follows RFC 9989 and RFC 6376's tag-list rules without a mode switch. mailauth's default mode accepts whitespace before `v=DMARC1`, uses the last of duplicate tags, and case-folds tag names, and mailauth follows the RFCs only with `strict: true`. The results match mailauth's strict mode on 400 random zones.
 - It reports the alignment of each DKIM signature, not only the first that aligned, and gives the disposition directly.
 - It makes fewer DNS queries. mailauth walks above the From domain on every message, and asks whether the domain exists whenever the record has `np`. `check` walks only for a relaxed alignment check of a different domain, and asks whether the domain exists only when `np` would change the policy.
 - It has no dependencies outside `@portable/*`, and [@portable/spf](https://portablejs.com/packages/spf) is imported for types only.

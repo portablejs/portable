@@ -15,7 +15,7 @@ export declare namespace encode {
     bom?: boolean | undefined;
     /** Field separator, one character. Use `'\t'` for TSV. @default ',' */
     delimiter?: string | undefined;
-    /** Prefix fields that start with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas. @default false */
+    /** Prefix fields that start with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas. This includes numbers, so `-5` is written as `"'-5"`. @default false */
     escapeFormulas?: boolean | undefined;
     /**
      * Write a header row. `true` takes the names from the first object row's keys. An array gives
@@ -33,7 +33,8 @@ export declare namespace encode {
 
 /**
  * Encodes rows as CSV text. A field is quoted only when it contains the delimiter, the quote, or a
- * line break, and quotes inside it are doubled. Every row, including the last, ends with `newline`.
+ * line break, or when `escapeFormulas` prefixes it, and quotes inside it are doubled. A row of one
+ * empty field is written as `""`. Every row, including the last, ends with `newline`.
  *
  * @example
  * ```ts

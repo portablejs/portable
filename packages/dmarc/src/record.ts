@@ -5,14 +5,15 @@
 export type Policy = 'none' | 'quarantine' | 'reject';
 
 /**
- * A DMARC Policy Record, with the defaults of RFC 9989 section 4.7 filled in. Invalid tag values
- * are replaced by their defaults, and unknown and historic tags such as `pct` and `ri` are left
- * out.
+ * A DMARC Policy Record, with the defaults of RFC 9989 section 4.7 filled in. Invalid `adkim`,
+ * `aspf`, `t`, `psd`, and `fo` values are replaced by their defaults. If any policy tag is invalid,
+ * `p` is `'none'` and the subdomain policies are left out. Such a record applies only when `rua`
+ * is valid. Unknown and historic tags such as `pct` and `ri` are left out.
  */
 export type Record = {
   /** The TXT record as published, with its strings joined. */
   text: string;
-  /** The policy for the domain itself. `'none'` when the tag is missing or invalid and `rua` is valid. */
+  /** The policy for the domain itself. `'none'` when `rua` is valid and either `p` is missing or one of `p`, `sp`, and `np` is invalid. */
   p: Policy;
   /** The policy for existing subdomains. */
   sp?: Policy | undefined;

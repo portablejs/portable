@@ -33,7 +33,13 @@ await dmarcRecord(Dns.create(), 'example.com');
 await dmarcRecord(dns, 'example.com');
 ```
 
-In tests, pass an object whose methods return fixed records.
+In tests, pass an object whose methods return fixed records. `Dns.Resolver` lists every method, so implement the ones the code under test calls and cast the object:
+
+```ts
+const resolver = {
+  resolveTxt: async () => [['v=DMARC1; p=reject']],
+} as Partial<Dns.Resolver> as Dns.Resolver;
+```
 
 ## Methods
 
@@ -45,7 +51,7 @@ In tests, pass an object whose methods return fixed records.
 | `resolveCname(name)`, `resolveNs(name)`, `resolvePtr(name)` | `string[]` |
 | `resolveSrv(name)` | `{ name, port, priority, weight }[]` |
 | `resolveSoa(name)` | `{ nsname, hostmaster, serial, refresh, retry, expire, minttl }` |
-| `resolveCaa(name)` | `{ critical, issue?, issuewild?, iodef?, ... }[]` |
+| `resolveCaa(name)` | `{ critical, issue?, issuewild?, iodef?, ... }[]`, where `critical` is the flags byte (128 when issuer-critical) and each other key is the record's tag. |
 | `resolveNaptr(name)` | `{ flags, service, regexp, replacement, order, preference }[]` |
 | `reverse(ip)` | `string[]` of host names, from a PTR lookup under `in-addr.arpa` or `ip6.arpa`. |
 | `query(name, type)` | The whole decoded response as a [@portable/dns-packet](https://portablejs.com/packages/dns-packet) `DecodedPacket`, with TTLs, the authority section, and the AD flag. Any record type works. It resolves for NOERROR and NXDOMAIN. |
@@ -62,7 +68,9 @@ Names with non-ASCII characters are converted to punycode with the IDNA 2008 rul
 | --- | --- | --- |
 | `endpoints` | Cloudflare, then Google | DNS-over-HTTPS URLs, tried in order. |
 | `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, use a proxy, or mock responses. |
-| `timeout` | `5000` | Milliseconds to wait for each endpoint, including the response body. |
+| `timeout` | `5000` | Milliseconds to wait for each endpoint, including the response body. A lookup that tries every endpoint can take `timeout` × the number of endpoints. To limit the whole lookup, pass `{ signal: AbortSignal.timeout(ms) }`. |
+
+`create` throws a `RangeError` when `endpoints` is empty, or when `timeout` isn't above 0 or is over 2147483647. It throws a `TypeError` when an endpoint isn't a valid URL.
 
 Queries are GET requests with an ID of 0, as RFC 8484 recommends, so HTTP caches can store the responses and browsers send no CORS preflight. They set RD and AD, so the AD flag in `query()` results reports DNSSEC validation (RFC 6840 section 5.7).
 
@@ -81,11 +89,11 @@ Failed lookups reject with `Dns.QueryError`. Its `code`, `syscall`, `hostname`, 
 | `ETIMEOUT` | The endpoint didn't answer within `timeout`. |
 | `ECONNREFUSED` | `fetch` rejected. |
 | `EBADNAME` | The name has an empty label (`foo..com`), a label over 63 bytes, or a character other than letters, digits, `-`, `_`, `*`, `/`, `.`, and backslash escapes. Node's resolver (c-ares) accepts the same characters. |
-| `EINVAL` | `reverse` was given something that isn't an IP address. |
+| `EINVAL` | `reverse` was given something that isn't an IP address, or an IPv6 address with a zone ID. |
 
 Each method rejects with a `TypeError` for a name that isn't a string.
 
-`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA`, or `EBADNAME`, which means the name has no records. It returns `false` for any other error. Treat those errors as temporary failures. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package.
+`Dns.isNotFound(error)` returns `true` when `error.code` is `ENOTFOUND`, `ENODATA`, or `EBADNAME`, which means the name has no records. It returns `false` for any other error. It reads `code`, so it also works for errors from `node:dns/promises` and from another copy of this package. Other `QueryError` codes, except `EINVAL`, are temporary DNS failures that you can retry. An aborted lookup rejects with `signal.reason` instead of a `QueryError`.
 
 ```ts
 const records = await resolver.resolveTxt('_dmarc.example.com').catch((error) => {

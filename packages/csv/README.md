@@ -57,10 +57,10 @@ const rows = Csv.decode(text, { header: ['id', 'email'] });
 | `relaxColumnCount` | `false` | Accept rows whose field count differs from the first row's or the header's. With `header`, the missing keys of a short row are left out and the extra fields of a long row are dropped. |
 | `skipEmpty` | `true` | Drop lines with no characters. `false` reads each as a row with one empty field. |
 | `maxLength` | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row is longer than the limit, so a missing closing quote can't make it buffer the whole input. |
-| `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. |
+| `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. Invalid bytes are replaced with U+FFFD. |
 | `signal` | | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`decode` throws these errors, and `DecoderStream` fails with them. Their messages give the row number, counting from 1 and including skipped empty lines.
+`decode` throws these errors, and `DecoderStream` fails with them. Their messages give the row number, counting from 1, including the header row and skipped empty lines. A quoted line break doesn't start a new row, so the row number can differ from the line number.
 
 | Error | When |
 | --- | --- |
@@ -74,7 +74,7 @@ A bad option, such as a two-character delimiter or a negative `maxLength`, throw
 
 `Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
 
-A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Any other value throws `InvalidInputError`. So does an invalid `Date`, and so does an object row after array rows, unless `header` is an array.
+A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. `encode` throws `InvalidInputError` for any other value, for an invalid `Date`, and for an object row after array rows unless `header` is an array. `encode` writes an array row after object rows as is and doesn't check its length against the columns. `encode` throws a `TypeError` for `header: true` with array rows, because array rows have no keys to take the column names from.
 
 A field is quoted only when it contains the delimiter, the quote, CR, or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 
@@ -83,9 +83,9 @@ A field is quoted only when it contains the delimiter, the quote, CR, or LF, and
 | `delimiter` | `','` | Field separator, one character. |
 | `quote` | `'"'` | Quote character, or `false` to never quote. With `false`, a field that needs quotes throws `InvalidInputError`. |
 | `newline` | `'\r\n'` | `'\r\n'` or `'\n'`. |
-| `header` | `false` | `true` writes the first object row's keys as a header row. With an array, those names are written as the header row, even with no rows, and each object row's values are read by those names, in that order. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. |
+| `header` | `false` | `true` writes the first object row's keys as a header row. An array is written as the header row, even with no rows. Each object row's values are then read by those names, in that order. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. A key that isn't in the column list (the array, or the first row's keys) is not written, so pass an array when rows can have different keys. |
 | `bom` | `false` | Start with a byte order mark, which Excel needs to read UTF-8. |
-| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). |
+| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). This includes numbers, so `-5` is written as `"'-5"`. |
 | `signal` | | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over csv-parse, papaparse, and fast-csv

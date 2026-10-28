@@ -104,12 +104,14 @@ export declare namespace authenticate {
 }
 
 /**
- * Checks a received message's SPF (RFC 7208), DKIM signatures (RFC 6376), ARC chain (RFC 8617)
+ * Checks a received message's SPF (RFC 7208), DKIM signatures (RFC 6376), ARC chain (RFC 8617),
  * and DMARC policy (RFC 9989) and writes the results as an Authentication-Results field (RFC
  * 8601). With `seal`, it also adds an ARC set that records them, with the chain's result as
  * `cv=`.
  *
- * The promise rejects only for invalid options, a failing message stream or an aborted `signal`.
+ * The promise rejects with a `TypeError` or `RangeError` for an invalid `authservId`, `resolver`,
+ * `ip`, or `seal`, with the stream's error if the message stream fails, and with `signal.reason`
+ * when `signal` aborts.
  * DNS failures are reported as results, such as `temperror`.
  *
  * @example

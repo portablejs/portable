@@ -5,12 +5,13 @@
 export type Entity = {
   /** The registry's handle, such as `292` for MarkMonitor or `ZG39-ARIN`. */
   handle: string | undefined;
-  /** RDAP roles (RFC 9083 section 10.2.4), such as `registrar`, `registrant`, `abuse`, or `technical`. */
+  /** RDAP roles (RFC 9083 section 10.2.4), lowercased, such as `registrar`, `registrant`, `abuse`, or `technical`. */
   roles: readonly string[];
   /** The jCard `fn`: the formatted name of a person or organization. */
   name: string | undefined;
   /** The jCard `org`. */
   org: string | undefined;
+  /** The first jCard `email`. */
   email: string | undefined;
   /** The first `tel` that isn't a fax number, without the `tel:` prefix. */
   phone: string | undefined;

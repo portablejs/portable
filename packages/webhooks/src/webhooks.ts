@@ -82,6 +82,8 @@ export declare namespace verify {
  * @throws {VerificationError} When a header is missing or malformed, no signature matches, or
  * the timestamp is outside `tolerance`.
  * @throws {RangeError} When a secret is empty or not valid base64, or `now` is an invalid time.
+ * @throws {RangeError} When the `secret` array is empty, `tolerance` is negative, or `maxBytes` is
+ * negative.
  * @throws {TypeError} When the scheme isn't a scheme object, or the body isn't a string or
  * `Uint8Array`.
  */
@@ -182,7 +184,10 @@ export declare namespace sign {
      * @default new Date()
      */
     now?: Instant | undefined;
-    /** The delivery id. Schemes without an id ignore it. @default crypto.randomUUID() */
+    /**
+     * The delivery id. Schemes without an id ignore it. Pass the same id when you retry a delivery.
+     * @default crypto.randomUUID()
+     */
     id?: string | undefined;
     /** Rejects with `signal.reason` when aborted. */
     signal?: AbortSignal | undefined;

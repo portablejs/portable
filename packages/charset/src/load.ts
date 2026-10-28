@@ -57,7 +57,7 @@ export declare namespace load {
 /**
  * Loads the charset for a label, for when the charset is only known at runtime, such as from
  * a `Content-Type` header. Each family's tables are imported on first use, so bundlers split
- * them into chunks that load only when needed. Throws `UnsupportedError` for a label
+ * them into chunks that load only when needed. Rejects with `UnsupportedError` for a label
  * `normalizeLabel` doesn't know.
  *
  * @example

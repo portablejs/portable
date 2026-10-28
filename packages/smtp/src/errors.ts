@@ -18,18 +18,23 @@ export declare namespace CommandError {
    * - `EPROTOCOL`: a reply the protocol doesn't allow at that point, or a malformed reply.
    * - `ETLS`: STARTTLS was not offered, was refused, or the handshake failed.
    * - `EAUTH`: authentication failed or was refused before sending credentials.
-   * - `EENVELOPE`: an invalid address, or the server refused the sender, every recipient or `DATA`.
+   * - `EENVELOPE`: an invalid address, or the server refused the sender, every recipient, or `DATA`.
    * - `EMESSAGE`: the message is too large, could not be read, or the server refused it after `DATA`.
    */
   type Code = 'ECONNECTION' | 'EPROTOCOL' | 'ETLS' | 'EAUTH' | 'EENVELOPE' | 'EMESSAGE';
 
   type Options = {
+    /** The kind of failure. */
     code: Code;
     /** What failed. The server's reply, if there was one, is appended. */
     message: string;
+    /** The command that failed. Never includes credentials. */
     command?: string | undefined;
+    /** The server's reply, if there was one. */
     reply?: Reply | undefined;
+    /** Every refused recipient, when none was accepted. */
     rejected?: readonly Rejection[] | undefined;
+    /** The error that caused this one. */
     cause?: unknown;
   };
 }

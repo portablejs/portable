@@ -6,10 +6,13 @@ import { InvalidInputError, TruncatedError } from './errors.js';
  * How `decode` treats input that is not canonical base64.
  *
  * - `'loose'`: `Uint8Array.fromBase64` with `lastChunkHandling: 'loose'`. ASCII whitespace is
- *   skipped, padding is optional, and any other character outside the alphabet throws.
+ *   skipped and padding is optional. `decode` throws `InvalidInputError` for any other character
+ *   outside the alphabet and for data after the padding. It throws `TruncatedError` for one
+ *   leftover character (`'YWJjZ'`) or a single `=` where two are needed (`'YQ='`).
  * - `'strict'`: as `'loose'`, but padding is required and the unused bits before it must be zero.
  * - `'mime'`: RFC 2045 §6.8. Every character outside the alphabet is skipped, both alphabets are
- *   accepted, each `=` ends a segment that is decoded on its own, and nothing throws.
+ *   accepted, each `=` ends a segment, and data after `=` is decoded as a new segment. A single
+ *   character left over at the end is dropped. Nothing throws.
  */
 export type Mode = 'loose' | 'strict' | 'mime';
 
@@ -37,6 +40,7 @@ export declare namespace decode {
  * @throws {InvalidInputError} In `'loose'` or `'strict'` mode, for a character or padding that
  * is not allowed.
  * @throws {TruncatedError} In `'loose'` or `'strict'` mode, when the input ends inside a group.
+ * @throws {RangeError} For an unknown `alphabet` or `mode`.
  */
 export function decode(
   input: string | Uint8Array,

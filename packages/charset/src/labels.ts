@@ -8,7 +8,7 @@ import { labels } from './tables/labels.js';
  * ignored. It returns `undefined` for a label with any other character, such as NUL or a
  * no-break space.
  *
- * Where iconv-lite disagrees with WHATWG, the WHATWG mapping is used: `latin1`, `ascii` and
+ * Where iconv-lite disagrees with WHATWG, `normalizeLabel` uses the WHATWG mapping: `latin1`, `ascii`, and
  * `iso-8859-1` are `windows-1252`, and `gb2312` is `GBK`. It returns `undefined` for a label
  * mapped to the replacement encoding, such as `iso-2022-kr`, because the replacement encoding has
  * no encoder. This package can encode a label exactly when `normalizeLabel` returns a name.

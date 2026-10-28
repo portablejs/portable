@@ -33,20 +33,21 @@ Each error stores its class's `kind`, and the `kind` of every parent class, unde
 ```ts
 error instanceof Errors.MaxBytesError; // any package's MaxBytesError, from any copy
 error instanceof Compress.MaxBytesError; // only compress's, from any copy of compress
+error instanceof Errors.BaseError; // any @portable/* error, from any copy
 ```
 
 ## API
 
-| Export | Does |
-| --- | --- |
-| `is(error, kind)` | Whether `error` is a `@portable/*` error of `kind`, and narrows its type. `kind` is `'InvalidInput'`, `'Truncated'`, `'Unsupported'`, `'MaxBytes'`, `'MaxLength'`, or `'Response'`. |
-| `BaseError` | The base class. A subclass sets `static override readonly kind`, and the constructor copies it to `name`. Constructed as `new BaseError(message?, { cause })`, like `Error`. |
-| `InvalidInputError` | The main input of a function is malformed, such as bytes that don't decode or a header that doesn't parse. `new InvalidInputError(message?, { offset, cause })`. |
-| `TruncatedError` | Input ended before a value was complete. `new TruncatedError(message?, { offset, cause })`. |
-| `UnsupportedError` | The input is valid, but the package doesn't handle it. `new UnsupportedError(message?, { cause })`. |
-| `MaxBytesError` | Input or output exceeded a `maxBytes` option. `new MaxBytesError({ maxBytes, message, cause })`. |
-| `MaxLengthError` | Text exceeded a `maxLength` option. `new MaxLengthError({ maxLength, message, cause })`. |
-| `ResponseError` | The package can't use the status or body of a server's response. `new ResponseError({ response, body, message, cause })`. `status` reads `response.status`. |
+| Export | Does | Fields |
+| --- | --- | --- |
+| `is(error, kind)` | Whether `error` is a `@portable/*` error of `kind`, and narrows its type. `kind` is `'InvalidInput'`, `'Truncated'`, `'Unsupported'`, `'MaxBytes'`, `'MaxLength'`, or `'Response'`. | |
+| `BaseError` | The base class. A subclass sets `static override readonly kind`, and the constructor copies it to `name`. Constructed as `new BaseError(message?, { cause })`, like `Error`. | `name`, `message`, and `cause` |
+| `InvalidInputError` | The main input of a function is malformed, such as bytes that don't decode or a header that doesn't parse. `new InvalidInputError(message?, { offset, cause })`. | `offset`: where the parser found the problem, or `undefined` |
+| `TruncatedError` | Input ended before a value was complete. `new TruncatedError(message?, { offset, cause })`. | `offset`: how much input arrived, in bytes or characters as the throwing package documents, or `undefined` |
+| `UnsupportedError` | The input is valid, but the package doesn't handle it. `new UnsupportedError(message?, { cause })`. | |
+| `MaxBytesError` | Input or output exceeded a `maxBytes` option. `new MaxBytesError({ maxBytes, message, cause })`. The default message is `` `Exceeded maxBytes of ${maxBytes}.` ``. | `maxBytes` |
+| `MaxLengthError` | Text exceeded a `maxLength` option. `new MaxLengthError({ maxLength, message, cause })`. The default message is `` `Exceeded maxLength of ${maxLength}.` ``. | `maxLength` |
+| `ResponseError` | The package can't use the status or body of a server's response. `new ResponseError({ response, body, message, cause })`. The default message is `` `${response.url} answered ${response.status}.` ``. A `Response` you construct yourself has an empty `url`, so pass `message` for it. | `response`; `body`; and `status`, which reads `response.status` |
 
 An error with only a message takes `(message?, options?)`, as `Error` does. An error with other fields takes one object.
 
@@ -57,6 +58,8 @@ export class MaxBytesError extends Errors.MaxBytesError {
   static override readonly kind: string = 'Compress.MaxBytesError';
 }
 ```
+
+A subclass must set its own `kind`, namespaced by package, such as `'Compress.MaxBytesError'`. `instanceof` and `is` compare these strings, so two classes with the same `kind` match each other's errors. A subclass without its own `kind` inherits its parent's, so `instanceof` against the subclass matches every error of the parent's kind.
 
 ## Types
 

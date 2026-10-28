@@ -39,7 +39,11 @@ export type Hasher = {
 
 export declare namespace digest {
   type Options = {
-    /** Rejects with `signal.reason` once aborted. */
+    /**
+     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
+     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
+     * finishes.
+     */
     signal?: AbortSignal | undefined;
   };
 }
@@ -67,7 +71,11 @@ export function digest(
 
 export declare namespace hmac {
   type Options = {
-    /** Rejects with `signal.reason` once aborted. */
+    /**
+     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
+     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
+     * finishes.
+     */
     signal?: AbortSignal | undefined;
   };
 }
@@ -140,7 +148,11 @@ export declare namespace hkdf {
     length?: number | undefined;
     /** @default empty, which RFC 5869 treats as a string of zero bytes as long as the hash */
     salt?: string | Uint8Array | undefined;
-    /** Rejects with `signal.reason` once aborted. */
+    /**
+     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
+     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
+     * finishes.
+     */
     signal?: AbortSignal | undefined;
   };
 }

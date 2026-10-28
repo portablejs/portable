@@ -2,7 +2,8 @@ import * as Errors from '@portable/errors';
 
 /**
  * Thrown when a read needs more bytes than remain, or a `FrameDecoderStream` ends partway through
- * a frame. `offset` is where the value or frame starts.
+ * a frame. `offset` is where the value starts in the reader's bytes, or, for a stream, the
+ * number of bytes before the frame.
  *
  * @example
  * ```ts
