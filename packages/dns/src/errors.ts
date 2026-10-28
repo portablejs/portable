@@ -78,7 +78,8 @@ const notFoundCodes = new Set(['ENOTFOUND', 'ENODATA', 'EBADNAME']);
  * Whether a lookup failed because there are no records to return: the name doesn't exist
  * (`ENOTFOUND`), has no records of the type (`ENODATA`), or can't be a DNS name (`EBADNAME`). It
  * reads `code`, so it works for a `QueryError` from any copy of this package and for errors from
- * `node:dns/promises`. Any other failure is temporary and can be retried.
+ * `node:dns/promises`. Other `QueryError` codes, except `EINVAL`, are temporary DNS failures that
+ * you can retry.
  *
  * @example
  * ```ts

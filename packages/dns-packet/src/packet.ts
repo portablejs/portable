@@ -144,6 +144,11 @@ export type DecodedPacket = {
   id: number;
   type: 'query' | 'response';
   opcode: Opcode;
+  /**
+   * The response code in the 4 bits of the header. If the message has an OPT record, the full
+   * code is `(opt.extendedRcode << 4)` plus this code's number, so BADVERS (16) decodes as
+   * `'NOERROR'` with `extendedRcode: 1`.
+   */
   rcode: Rcode;
   flags: { [key in keyof Flags]-?: boolean };
   questions: DecodedQuestion[];

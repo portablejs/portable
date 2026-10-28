@@ -26,8 +26,9 @@ export declare namespace fromSocket {
     /** Writes wait while the socket's `bufferedAmount` is above this many bytes. @default 1048576 */
     highWaterMark?: number | undefined;
     /**
-     * Most bytes (characters for text) of received messages to hold while the reader is behind. Past it,
-     * both streams fail with `MaxBufferedError` and the socket closes. @default Infinity
+     * Bytes of received binary messages, plus UTF-16 code units of text messages
+     * (`string.length`), to hold while the reader is behind. Past it, both streams fail with
+     * `MaxBufferedError` and the socket closes. @default Infinity
      */
     maxBuffered?: number | undefined;
   };

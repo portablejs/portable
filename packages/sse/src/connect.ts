@@ -21,7 +21,8 @@ export declare namespace connect {
      * How long to wait, in ms, for the response headers and then for each chunk of the body. If
      * no data arrives in that time, `connect` aborts the request and handles the attempt as a
      * failed connection with a `TimeoutError` `DOMException`, so by default it reconnects.
-     * Keep-alive comment lines from the server also restart the wait. @default Infinity
+     * Keep-alive comment lines from the server also restart the wait. A value that isn't positive
+     * throws a `RangeError`. @default Infinity
      */
     idleTimeout?: number | undefined;
     /** Longest line, and longest `data` of one event, in UTF-16 code units. @default Infinity */

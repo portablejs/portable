@@ -3,7 +3,8 @@ import * as Streams from '@portable/streams';
 import { MaxLengthError } from './errors.js';
 /**
  * The separator `DecoderStream` splits lines at. A string is matched literally, and anything with
- * `[Symbol.split]`, such as a `RegExp`, is used as is.
+ * `[Symbol.split]`, such as a `RegExp`, is used as is. Use a `RegExp` without capturing groups,
+ * because `split` emits each captured group as a line.
  */
 export type Separator = string | { [Symbol.split](text: string, limit?: number): string[] };
 

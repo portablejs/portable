@@ -72,6 +72,11 @@ export declare namespace decodeSync {
  * ```
  *
  * @throws {MaxPixelsError} When `width * height` is more than `maxPixels`.
+ * @throws {TruncatedError} The file ends before `IEND` or inside a chunk, or holds less image data
+ * than its header describes.
+ * @throws {InvalidInputError} The input is malformed, or the zlib data fails to decompress.
+ * @throws {UnsupportedError} The file has an unknown critical chunk, or a compression, filter, or
+ * interlace method PNG doesn't define.
  */
 export async function decode(bytes: Uint8Array, options: decode.Options = {}): Promise<Decoded> {
   const { checkCrc = true, inflate, maxPixels, signal } = options;
@@ -101,6 +106,11 @@ export async function decode(bytes: Uint8Array, options: decode.Options = {}): P
  * ```
  *
  * @throws {MaxPixelsError} When `width * height` is more than `maxPixels`.
+ * @throws {TruncatedError} The file ends before `IEND` or inside a chunk, or holds less image data
+ * than its header describes.
+ * @throws {InvalidInputError} The input is malformed, or the zlib data fails to decompress.
+ * @throws {UnsupportedError} The file has an unknown critical chunk, or a compression, filter, or
+ * interlace method PNG doesn't define.
  */
 export function decodeSync(bytes: Uint8Array, options: decodeSync.Options): Decoded {
   const { checkCrc = true, inflate, maxPixels } = options;

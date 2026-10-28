@@ -13,8 +13,8 @@ export declare namespace window {
   type Options = {
     /**
      * The other window's origin, such as `'https://app.example.com'`. Messages from any other
-     * origin are ignored, and messages are posted only to this origin. `'*'` accepts and
-     * sends to any origin.
+     * origin are ignored. Messages are posted only to this origin. `'*'` accepts and
+     * sends to any origin, so any page that can post to this window can call your methods.
      */
     origin: string;
     /** Separates several connections to the same window. Both sides must use the same channel. @default '' */

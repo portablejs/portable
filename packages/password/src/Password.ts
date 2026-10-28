@@ -50,6 +50,8 @@ export declare namespace hash {
  * ```
  *
  * @throws {MaxBytesError} When the password is longer than `maxBytes`.
+ * @throws {RangeError} When `iterations` isn't an integer from 1 to 2^32 - 1, or `maxBytes` is
+ * negative.
  */
 export async function hash(
   password: string | Uint8Array,
@@ -95,6 +97,7 @@ export declare namespace verify {
  * @throws {InvalidInputError} When `stored` is not a well-formed PBKDF2 hash.
  * @throws {UnsupportedError} When `stored` is another algorithm's hash, such as `$argon2id$...`.
  * @throws {MaxBytesError} When the password is longer than `maxBytes`.
+ * @throws {RangeError} When `maxBytes` is negative.
  */
 export async function verify(
   password: string | Uint8Array,
@@ -139,6 +142,7 @@ export declare namespace needsRehash {
  *
  * @throws {InvalidInputError} When `stored` is not a well-formed PBKDF2 hash.
  * @throws {UnsupportedError} When `stored` is another algorithm's hash.
+ * @throws {RangeError} When `iterations` isn't an integer from 1 to 2^32 - 1.
  */
 export function needsRehash(stored: string, options: needsRehash.Options = {}): boolean {
   const { iterations = defaultIterations } = options;

@@ -12,7 +12,8 @@ export declare namespace DecoderStream {
     /**
      * JSONPath expressions for the values to emit. Supported: `$` (the root), `.name`, `['name']`,
      * `[0]`, `.*`, `[*]`, and `..` (any depth). Every value that matches any path is emitted, and
-     * a nested match is emitted before the value that contains it.
+     * a nested match is emitted before the value that contains it. The default `['$']` emits each
+     * top-level value whole, so pass a narrower path to keep memory low.
      * @default ['$']
      */
     paths?: readonly string[] | undefined;
@@ -79,7 +80,7 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the
  * input ends inside a value, and with `MaxLengthError` on a matched value longer than `maxLength`.
  * A structural error inside a matched value, such as a missing comma, is reported when that value
- * ends.
+ * ends. Empty input emits nothing and doesn't fail.
  *
  * @example
  * ```ts

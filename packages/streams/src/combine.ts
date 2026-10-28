@@ -13,7 +13,7 @@ export declare namespace concat {
 
 /**
  * Joins sources end to end: every chunk of the first source, then every chunk of the next.
- * A source is read only once the one before it has ended. An error in any source errors the
+ * A source is read only once the one before it has ended, and is locked only then. An error in any source errors the
  * output and cancels the sources not yet read, and cancelling the output cancels them all.
  *
  * @example
@@ -75,8 +75,8 @@ export declare namespace merge {
 }
 
 /**
- * Interleaves sources: reads all of them at once and passes each chunk on as it arrives. The
- * output ends when every source has ended. An error in any source errors the output and
+ * Interleaves sources: reads all of them at once and passes each chunk on as it arrives. It
+ * locks every source when called. The output ends when every source has ended. An error in any source errors the output and
  * cancels the others, and cancelling the output cancels them all.
  *
  * @example
@@ -180,7 +180,8 @@ export declare namespace limitBytes {
 /**
  * A `TransformStream` that passes chunks through unchanged and fails with `MaxBytesError`
  * once more than `maxBytes` bytes have passed. The chunk that crosses the limit is not
- * passed on, and the source is cancelled. String chunks count as their UTF-8 length.
+ * passed on, and the source is cancelled. String chunks count as their UTF-8 length. Any other
+ * kind of chunk errors the stream with a `TypeError`.
  *
  * @example
  * ```ts

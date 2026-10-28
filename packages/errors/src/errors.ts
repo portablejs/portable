@@ -221,7 +221,11 @@ export declare namespace ResponseError {
     response: Response;
     /** The body, when the package read it, such as parsed JSON or text. */
     body?: unknown;
-    /** @default `${response.url} answered ${response.status}.` */
+    /**
+     * Pass a message when `response.url` is empty, as it is for a `Response` you construct.
+     *
+     * @default `${response.url} answered ${response.status}.`
+     */
     message?: string | undefined;
   };
 }

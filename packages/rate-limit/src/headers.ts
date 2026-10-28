@@ -4,7 +4,7 @@ import type { Result } from './create.js';
 
 export declare namespace headers {
   type Options = {
-    /** The quota policy name in both fields. @default 'default' */
+    /** The quota policy name in both fields. Must be printable ASCII, or `headers` throws a `RangeError`. @default 'default' */
     name?: string | undefined;
     /**
      * The time `resetAt` is counted from, as a `Date` or a `Temporal.Instant`.

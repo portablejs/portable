@@ -24,7 +24,11 @@ export declare namespace DecoderStream {
     delimiter?: string | undefined;
     /** Text encoding of byte input, as a `TextDecoder` label. @default 'utf-8' */
     encoding?: string | undefined;
-    /** Emit each row as an object keyed by column name. @default false */
+    /**
+     * `true` reads column names from the first row. Pass an array of names for input without a
+     * header row. Each row is then an object keyed by those names.
+     * @default false
+     */
     header?: header | undefined;
     /** Longest allowed row, in UTF-16 code units of input text, not counting the line break. @default Infinity */
     maxLength?: number | undefined;
