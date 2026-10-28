@@ -27,7 +27,7 @@ A `TransformStream<Uint8Array | string, { path, value }>` that emits each value 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. The default `['$']` emits each top-level value whole, like `JSON.parse`, so pass a narrower path to keep memory low. |
+| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. The constructor throws a `RangeError` for any other expression. A nested match is emitted before the value that contains it. The default `['$']` emits each top-level value whole, like `JSON.parse`, so pass a narrower path to keep memory low. |
 | `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
@@ -35,7 +35,7 @@ The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedErro
 
 ## `encodeStream`
 
-Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Sync iterables such as generators and `Set` are not expanded, so convert them with `Array.from` first. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
+Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Sync iterables such as generators and `Set` are not expanded, so convert them with `Array.from` first. Output pauses at each unresolved value until the value is ready, so you can read the start of the document before the rest has loaded. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
 
 ```ts
 const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() });
@@ -48,7 +48,7 @@ return new Response(body, { headers: { 'content-type': 'application/json' } });
 | `space` | none | As in `JSON.stringify`. |
 | `signal` | none | Aborting errors the output with `signal.reason` and cancels nested streams and iterators. |
 
-The text matches what `JSON.stringify` gives for the resolved tree. The stream is empty if the root resolves to `undefined` or a symbol, or is a function that returns `undefined`. The output fails with the original error if a promise rejects, a function throws, or a nested stream errors, and with a `TypeError` on a circular structure or a `BigInt`.
+The text matches what `JSON.stringify` gives for the resolved tree. The stream is empty if the root resolves to `undefined` or a symbol, or is a function that returns `undefined`. If a promise rejects, a function throws, or a nested stream errors, the output fails with that error. The output fails with a `TypeError` on a circular structure or a `BigInt`.
 
 ## Why use this over JSONStream, stream-json, and json-stream-stringify
 

@@ -52,7 +52,7 @@ const response = await worker.fetch(new Request('https://example.com', { method:
 | `VerificationError` | Thrown by `verify` for a missing or malformed header, a signature that doesn't match, or a timestamp outside the tolerance. Its `code` is `'missing-header'`, `'malformed-header'`, `'signature'`, or `'timestamp'`. |
 | `MaxBytesError` | Thrown by `verify` when a `Request` body is longer than `maxBytes`. Its `maxBytes` stores the limit. |
 
-`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. An empty secret, a Standard Webhooks secret that isn't base64, or an invalid `now` throws a `RangeError`. `verify` also throws a `RangeError` for an empty `secret` array, a negative `tolerance`, or a negative `maxBytes`. A `scheme` that isn't a scheme object, or a body that isn't a string or `Uint8Array`, such as a parsed JSON object, throws a `TypeError`.
+`verify` throws a `TypeError` or `RangeError` for a mistake in the call rather than in the request. It throws a `RangeError` for an empty secret, an empty `secret` array, a Standard Webhooks secret that isn't base64, an invalid `now`, a negative `tolerance`, or a negative `maxBytes`. It throws a `TypeError` if `scheme` isn't a scheme object, or if the body isn't a string or `Uint8Array`, such as a parsed JSON object.
 
 The result's `id` is the delivery id from `webhook-id`, `svix-id`, or `x-github-delivery`. Store it to drop a redelivered webhook, which the timestamp check can't catch inside the tolerance.
 

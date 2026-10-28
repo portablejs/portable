@@ -40,12 +40,12 @@ In Node, `node:dns/promises` works as the resolver.
 | Option | Default | Description |
 | --- | --- | --- |
 | `resolver` | required | Answers the lookups. `Dns.create()` from [@portable/dns](https://portablejs.com/packages/dns), `node:dns/promises`, or any object with `resolveTxt`, `resolve4`, and `resolveCname`. |
-| `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. If it returns `null` or `undefined`, the domain is treated as its own organizational domain. With it, the check follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and relaxed alignment compares the function's results. |
+| `organizationalDomain` | the DNS tree walk | A function that returns a domain's organizational domain from a public suffix list, such as tldts' `getDomain`. If it returns `null` or `undefined`, the domain is treated as its own organizational domain. When you pass it, `check` follows RFC 7489: it looks up the record of the From domain, then of its organizational domain, and compares the function's results for relaxed alignment. |
 | `signal` | none | Stops the check. The promise rejects with `signal.reason`, as `fetch` does. Use `AbortSignal.timeout(ms)` for a time limit. |
 
 `check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as no records, and any other rejection as a DNS error, which gives `temperror` unless the message passes anyway.
 
-`check` calls `resolve4` and `resolveCname` to find out whether the From domain exists, and only when the From domain inherits a record whose `np` differs from its `sp`, or from its `p` if it has no `sp`. The name doesn't exist if the `A` query gives `EBADNAME`, or gives `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
+`check` calls `resolve4` and `resolveCname` only when the From domain inherits a record whose `np` differs from its `sp`, or from its `p` if it has no `sp`. It calls them to find out whether the From domain exists. `check` treats the name as nonexistent if the `A` query rejects with `EBADNAME`, or rejects with `ENOTFOUND` and the name has no CNAME (RFC 9989 appendix A.4).
 
 ## Result
 

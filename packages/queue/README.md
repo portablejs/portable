@@ -83,13 +83,13 @@ Calls `fn(item, { index, signal })` on every item of `input`, at most `concurren
 | `signal` | | Rejects with `signal.reason`, aborts the signal passed to `fn` and stops reading `input`. |
 | `stopOnError` | `true` | With `true`, the first error rejects at once, aborts the signal passed to the calls still running with that error as `signal.reason`, and closes `input`. With `false`, every item is mapped and the errors reject as one `AggregateError`, in input order. |
 
-If reading `input` fails, because its `next()` throws, rejects, or returns a value that isn't an object, `map` rejects at once with that error, not an `AggregateError`, whatever `stopOnError` is. It also aborts the signal passed to the running calls.
+If `next()` on `input` throws, rejects, or returns a value that isn't an object, `map` rejects at once with that error instead of an `AggregateError`, whatever `stopOnError` is. It also aborts the signal passed to the running calls.
 
 ### `Queue.once(fn, { cache })`
 
 Returns a function that calls `fn` once and gives every caller the same promise. After a rejection the next call calls `fn` again. With `cache: false`, only calls made while `fn` is running share its result, which suits a token refresh. There is no reset, so to start over, create a new `once` or use `cache: false`.
 
-Invalid arguments throw at once. A wrong type, such as a `priority` that isn't a number or a `fn` for `map` that isn't a function, throws a `TypeError`. A value out of range, such as `concurrency: 0` or a `NaN` priority, throws a `RangeError`.
+Invalid arguments throw at once. A function throws a `TypeError` for an argument of the wrong type, such as a `priority` that isn't a number or a `fn` for `map` that isn't a function. It throws a `RangeError` for a value out of range, such as `concurrency: 0` or a `NaN` priority.
 
 ## Rate limits
 

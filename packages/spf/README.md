@@ -38,7 +38,7 @@ await Spf.check({ ip, sender, helo }, { resolver: dns });
 | `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4). A sender without `@` is read as a domain, with the local-part `postmaster`. |
 | `helo` | The HELO or EHLO name, used for `%{h}` and for an empty sender. |
 
-If the domain to check isn't a fully qualified domain name, such as `localhost` or an address literal such as `[192.0.2.1]`, `check` returns `none` without a lookup. An empty sender without a `helo` also gives `none`.
+If the domain to check isn't a fully qualified domain name, such as `localhost` or an address literal such as `[192.0.2.1]`, `check` returns `none` without a lookup. It also returns `none` for an empty sender without a `helo`.
 
 To check the HELO identity of a message that has a sender, as RFC 7208 section 2.3 recommends, call `check` again with `sender: ''`.
 

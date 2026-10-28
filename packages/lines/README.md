@@ -21,15 +21,15 @@ for await (const line of Streams.toAsyncIterable(lines)) {
 
 `Lines.DecoderStream` is a `TransformStream<Uint8Array | string, string>`. Each line is emitted without its separator. A last line without a separator is emitted too, and a separator at the very end of the input doesn't add an empty line: `'a\nb\n'` gives `'a'` and `'b'`.
 
-Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly, and a CRLF split across chunks counts as one line break. Invalid bytes are replaced with U+FFFD, as `TextDecoder` does by default, and a leading byte order mark is removed.
+Byte chunks are decoded with `TextDecoder`, so a multi-byte character split across chunks is decoded correctly. A CRLF split across chunks counts as one line break. Invalid bytes are replaced with U+FFFD, as `TextDecoder` does by default, and a leading byte order mark is removed.
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `separator` | `/\r?\n/` | A string, a `RegExp`, or any object with `[Symbol.split]`. With the default or a string, a line that spans many chunks is split in linear time. With any other separator, the unfinished line is split again for each chunk, so set `maxLength` when lines can be long. The default splits at LF and CRLF, not at a lone CR. Use a `RegExp` without capturing groups, because `split` emits each captured group as a line. |
-| `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. An unknown label throws a `RangeError`. |
-| `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units, not counting the separator. A negative value throws a `RangeError`. |
+| `encoding` | `'utf-8'` | `TextDecoder` label for byte chunks. The constructor throws a `RangeError` for an unknown label. |
+| `maxLength` | `Infinity` | Longest allowed line, in UTF-16 code units, not counting the separator. The constructor throws a `RangeError` for a negative value. |
 | `overflow` | `'error'` | When a line exceeds `maxLength`: `'error'` fails the stream with `MaxLengthError`. `'skip'` drops the line, so the output has one line fewer. |
 | `skipEmpty` | `false` | Drop empty lines. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |

@@ -52,7 +52,7 @@ A limiter allows `limit` requests per `period` for each key. The allowance refil
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `cost` | `1` | How much of the allowance the request uses, such as its size, as a finite number. It can be fractional. `take` rejects with a `RangeError` for `NaN` or `Infinity`. `0` reads the state without changing it. With `cost: 0`, `allowed` is always `true`, so read `remaining` and `resetAt` instead. A negative cost gives allowance back, up to `burst`. |
+| `cost` | `1` | How much of the allowance the request uses, such as its size, as a finite number. It can be fractional. `take` rejects with a `RangeError` for `NaN` or `Infinity`. With `cost: 0`, `take` reads the state without changing it. `allowed` is then always `true`, so read `remaining` and `resetAt` instead. With a negative cost, `take` gives allowance back, up to `burst`. |
 | `now` | `new Date()` | The time of the request, as a `Date` or a `Temporal.Instant`, for tests or for a clock other than the system's. |
 | `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
 

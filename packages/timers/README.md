@@ -135,7 +135,7 @@ A poll of a slow endpoint needs a deadline for the whole wait, so pass `signal: 
 
 `debounce` wraps `fn` so that a burst of calls invokes it once, `ms` after the last call, with the last call's arguments and `this`. `throttle` invokes `fn` at most once every `ms`: on the first call, then once at the end of each window that had more calls. The timing is lodash's, and the oracle tests compare every invocation's time and arguments with lodash 4.18.
 
-Each call returns a promise of the result of the invocation it was merged into, so every call in a burst resolves with the same value, and an error thrown by `fn` rejects all of them. With `trailing: false`, a dropped call resolves at once with the result of its window's leading invocation. If no call awaits or catches the promise, an error from `fn` is an unhandled rejection, so add `.catch()` where you ignore the result.
+The calls in a burst are merged into one invocation of `fn`, and each call returns a promise of that invocation's result. Every call in the burst resolves with the same value, or rejects with the same error if `fn` throws. With `trailing: false`, a dropped call resolves at once with the result of its window's leading invocation. If you don't await or catch the promise, an error from `fn` is an unhandled rejection, so add `.catch()` where you ignore the result.
 
 ```ts
 const save = Timers.debounce(async (text: string) => {
@@ -156,7 +156,7 @@ const ok = await save(editor.value); // true once the save that includes this te
 | `maxWait` | | | `debounce` only. Longest time a call waits, however often calls arrive. `throttle` is `debounce` with `maxWait: ms`. |
 | `signal` | | | When it aborts, waiting calls reject with `signal.reason`, and later calls reject at once without invoking `fn`. |
 
-`leading: false` with `trailing: false` never invokes `fn`, so it throws a `RangeError`. `ms` and `maxWait` above 2³¹ − 1 also throw a `RangeError`, because `setTimeout` would fire at once. A negative `ms` counts as 0. A `NaN` `ms` or `maxWait` throws a `RangeError`. A `maxWait` below `ms` is treated as `ms`.
+`debounce` and `throttle` throw a `RangeError` for `leading: false` with `trailing: false`, because `fn` would never be invoked. They also throw a `RangeError` for a `NaN` `ms` or `maxWait`, and for an `ms` or `maxWait` above 2³¹ − 1, because `setTimeout` would fire at once. A negative `ms` counts as 0, and a `maxWait` below `ms` is treated as `ms`.
 
 The returned function also has:
 
@@ -175,7 +175,7 @@ The returned function also has:
 | --- | --- |
 | `2000` | A fixed 2000 ms. |
 | `{ initial, max, factor?, jitter? }` | Exponential backoff. After attempt `n` the cap is `min(max, initial * factor ** (n - 1))`, with `factor` defaulting to 2. With `jitter` (the default) the wait is a random time between 0 and the cap, which spreads out clients that failed at the same moment ([full jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)). With `jitter: false` it is the cap. |
-| `({ attempt, error }) => ms` | Whatever the function returns. A wait of 0 or less starts the next attempt at once. A `NaN` wait rejects the call with a `RangeError`. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
+| `({ attempt, error }) => ms` | Whatever the function returns. A wait of 0 or less starts the next attempt at once. If it returns `NaN`, the call rejects with a `RangeError`. `attempt` is the number of the attempt that just finished. `error` is what it threw in `retry`, and `undefined` in `poll`. |
 
 `Timers.backoff(delay)` checks a `Delay` and returns a function that computes the wait after each attempt. `retry` and `poll` use this function, and you can call it yourself to wait the same way. It throws a `RangeError` for a negative wait, `initial`, or `max`, or a `factor` that isn't a positive finite number. [@portable/websockets](https://portablejs.com/packages/websockets) and [@portable/sse](https://portablejs.com/packages/sse) reconnect with it.
 

@@ -80,7 +80,7 @@ Protobuf writes `int32` and `int64` values as the unsigned LEB128 of their two's
 
 `Binary.createWriter(options)` returns a `Writer` with a buffer that grows as you write. It takes the same `endian` option as `createReader`, and each read method has a write method of the same name that takes the value: `writer.uint16(value)`, `writer.uint(byteLength, value)`, `writer.varint(value, options)`, `writer.bytes(value)`, `writer.string(text)`, and `writer.cstring(text)`. `writer.toBytes()` returns a copy of the bytes written so far.
 
-An integer that doesn't fit its type throws a `RangeError` and writes nothing, as `Buffer.writeUInt8(256)` does. `DataView.setUint8(0, 256)` writes 0 instead. `float32` rounds to the nearest float32, as `DataView.setFloat32` does, so a value outside its range becomes `Infinity`. `varint` takes a safe integer, and with `encoding: 'zigzag'` one from -2^52 to 2^52 − 1. Use `bigVarint` for larger values. A value of the wrong type, such as a number passed to `bigUint64`, throws a `TypeError`. `string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
+Each write method throws a `RangeError` for an integer that doesn't fit its type and writes nothing, as `Buffer.writeUInt8(256)` does. `DataView.setUint8(0, 256)` writes 0 instead. `float32` rounds to the nearest float32, as `DataView.setFloat32` does, so a value outside its range becomes `Infinity`. `varint` takes a safe integer, and with `encoding: 'zigzag'` one from -2^52 to 2^52 − 1. Use `bigVarint` for larger values. A write method throws a `TypeError` for a value of the wrong type, such as a number passed to `bigUint64`. `string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
 
 To fill in a length after writing what it counts, set `offset` back, write the length, and set `offset` to `length` to continue at the end:
 
@@ -111,7 +111,7 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 | --- | --- | --- |
 | `prefix` | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'`, or `'varint'`. The length counts only the frame's bytes, not the prefix. |
 | `endian` | `'big'` | Byte order of a `uint16` or `uint32` prefix. |
-| `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. A larger length errors the stream with `Binary.MaxBytesError` as soon as the prefix is read, before any of the frame is buffered. Set it when the input comes from outside the program. |
+| `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. If a prefix gives a larger length, the stream errors with `Binary.MaxBytesError` as soon as it reads the prefix, before it buffers any of the frame. Set it when the input comes from outside the program. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 `FrameDecoderStream` errors with `Binary.TruncatedError` if the input ends inside a frame or a prefix, and with `Binary.InvalidInputError` if a varint prefix is longer than 10 bytes or larger than `Number.MAX_SAFE_INTEGER`. `FrameEncoderStream` errors with `Binary.InvalidInputError` for a chunk too long for its prefix, such as 256 bytes with `prefix: 'uint8'`.

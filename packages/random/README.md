@@ -41,7 +41,7 @@ Arguments outside these rules throw a `RangeError`: a fractional or unsafe bound
 
 `int`, `string`, `shuffle`, and `pick` use rejection sampling. A random value at or above the largest multiple of the range size is discarded and drawn again, so every result comes from the same number of source values. Reducing the value with a modulo instead, as `Math.floor(Math.random() * n)` and `bytes[i] % n` do, makes some results more likely whenever `n` is not a power of two. The tests check every function with a chi-squared test over ranges that aren't powers of two.
 
-`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. For an alphabet of at most 256 ASCII characters, `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each value is handed out once. Pooled values stay in memory until they are used, as in nanoid.
+`crypto.getRandomValues` is a system call, so the package draws 16 KiB at a time into a private pool and takes values from it. For an alphabet of at most 256 ASCII characters, `string` also keeps up to 32,768 generated characters for the last alphabet it used, as nanoid does. Each pooled value is returned only once. Until then it stays in memory, as in nanoid.
 
 ### Seeded generator
 

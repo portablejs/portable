@@ -74,7 +74,7 @@ A bad option, such as a two-character delimiter or a negative `maxLength`, throw
 
 `Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
 
-A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. Any other value throws `InvalidInputError`. So does an invalid `Date`, and so does an object row after array rows, unless `header` is an array. `encode` writes an array row after object rows as is and doesn't check its length against the columns. `header: true` with array rows throws a `TypeError`, because there are no keys to take the names from.
+A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. `encode` throws `InvalidInputError` for any other value, for an invalid `Date`, and for an object row after array rows unless `header` is an array. `encode` writes an array row after object rows as is and doesn't check its length against the columns. `encode` throws a `TypeError` for `header: true` with array rows, because array rows have no keys to take the column names from.
 
 A field is quoted only when it contains the delimiter, the quote, CR, or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 

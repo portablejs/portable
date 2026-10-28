@@ -31,7 +31,7 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 | Option | Default | Description |
 | --- | --- | --- |
 | `format` | `'gzip'` | The compressed format. For any other value, `CompressionStream` and `DecompressionStream` throw a `TypeError`. |
-| `maxBytes` | `Infinity` | The most bytes the output may hold. Past it, `decode` rejects, and `DecoderStream` fails and cancels its input, both with `MaxBytesError`. For a negative number or `NaN`, `decode` rejects and `new DecoderStream` throws, both with a `RangeError`. |
+| `maxBytes` | `Infinity` | The most bytes the output may hold. If the output exceeds it, `decode` rejects with `MaxBytesError`, and `DecoderStream` fails with `MaxBytesError` and cancels its input. For a negative number or `NaN`, `decode` rejects and `new DecoderStream` throws, both with a `RangeError`. |
 | `signal` | | When it aborts, `encode` and `decode` reject with `signal.reason`, and `DecoderStream` fails with it and cancels its input. |
 
 There is no compression level option and no dictionary, because `CompressionStream` has neither. To compress a stream, use the platform's `CompressionStream`.

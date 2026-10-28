@@ -7,9 +7,9 @@ import { isDmarc, type Parsed, type Policy, parseRecord, type Record } from './r
 /**
  * The DNS lookups DMARC needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or a
  * plain object with these methods. `check` treats a rejection with `code` `ENOTFOUND`, `ENODATA`,
- * or `EBADNAME` as no records, and any other rejection as a temporary DNS error. `resolve4` and
- * `resolveCname` are called only to find out whether the From domain exists, when it inherits a
- * record whose `np` differs from the policy it would otherwise get.
+ * or `EBADNAME` as no records, and any other rejection as a temporary DNS error. `check` calls
+ * `resolve4` and `resolveCname` only when the From domain inherits a record whose `np` differs from
+ * the policy the domain would otherwise get, to find out whether the From domain exists.
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt' | 'resolve4' | 'resolveCname'>;
 

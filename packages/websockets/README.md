@@ -67,7 +67,7 @@ The first attempt starts at once. When a connection drops or an attempt fails, `
 | `delay` | `{ initial: 1000, max: 30000 }` | Wait before each retry: milliseconds, `{ initial, max, factor = 2, jitter = true }` for exponential backoff, or `({ attempt, error }) => ms`. `attempt` counts failures in a row from 1. It is `Timers.Delay` from [@portable/timers](https://portablejs.com/packages/timers). |
 | `attempts` | `Infinity` | How many attempts in a row, counting the first, may fail before `connect` gives up. The streams then fail with the last error, such as a `CloseError` or a `TimeoutError`. A connection that finishes `open` resets the count. |
 | `timeout` | `10000` | Milliseconds for one attempt to open and finish `open`. |
-| `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when a close event ends the connection. `connect` doesn't call it after a timeout, a missed heartbeat reply, or an `open` that throws, and retries those until `attempts` runs out. `attempt` is the number of failures in a row, including this one. `false` makes the close final. A rejection fails both streams with its error. When `attempts` runs out, both streams fail with the last error, whatever its close code. |
+| `reconnectIf` | see below | `({ code, reason }, { attempt }) => boolean \| Promise<boolean>`. Called when a close event ends the connection. `connect` doesn't call it after a timeout, a missed heartbeat reply, or an `open` that throws, and retries those until `attempts` runs out. `attempt` is the number of failures in a row, including this one. Return `false` to make the close final. A rejection fails both streams with its error. When `attempts` runs out, both streams fail with the last error, whatever its close code. |
 | `maxQueued` | `1000` | Writes to hold while disconnected. Further writes wait, so `writer.ready` and `writer.write()` stay pending. |
 | `highWaterMark` | `1048576` | Writes wait while the socket's `bufferedAmount` is above this many bytes. |
 | `maxBuffered` | `Infinity` | Bytes of received binary messages, plus UTF-16 code units of text messages (`string.length`), to hold while the reader is behind. Past it, both streams fail with `MaxBufferedError` and the socket closes. |
@@ -116,7 +116,7 @@ These fail the streams:
 | `TimeoutError` (`DOMException`) | `attempts` is used up, and the last attempt timed out while opening or while waiting for a heartbeat reply. |
 | The `WebSocket` constructor's error | `url` is a string or `URL` that the constructor rejects, such as `'ftp://x'`, which throws a `SyntaxError`. It isn't retried. |
 
-A write that isn't a string or a `Uint8Array` rejects with a `TypeError`. The `send` passed to `open` throws an `InvalidStateError` `DOMException` once the connection closes.
+`writer.write()` rejects with a `TypeError` for a value that isn't a string or a `Uint8Array`. The `send` passed to `open` throws an `InvalidStateError` `DOMException` once the connection closes.
 
 ## Types
 

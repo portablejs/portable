@@ -14,7 +14,8 @@ const ndjson = 'application/x-ndjson';
  * response is JSON, or, when a method returns a stream, newline-delimited messages that contain the
  * stream's values as they are produced. Methods wrapped with `withContext` get the `Request`, and
  * their `signal` aborts when the client disconnects. It reads the whole body with no size limit, so
- * limit the body size in front of it. Malformed JSON gets a 200 response with a `-32700` error.
+ * limit the body size in front of it. It answers malformed JSON with a 200 response and a `-32700`
+ * error.
  *
  * @example
  * ```ts

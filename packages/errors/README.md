@@ -59,7 +59,7 @@ export class MaxBytesError extends Errors.MaxBytesError {
 }
 ```
 
-A subclass must set its own `kind`, namespaced by package, such as `'Compress.MaxBytesError'`. `instanceof` and `is` compare these strings, so two classes with the same `kind` match each other's errors. A subclass without its own `kind` uses its parent's, and `instanceof` against the subclass then matches every error of the parent's kind.
+A subclass must set its own `kind`, namespaced by package, such as `'Compress.MaxBytesError'`. `instanceof` and `is` compare these strings, so two classes with the same `kind` match each other's errors. A subclass without its own `kind` inherits its parent's, so `instanceof` against the subclass matches every error of the parent's kind.
 
 ## Types
 

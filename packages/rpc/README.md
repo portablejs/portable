@@ -77,7 +77,7 @@ Params can also be an object. JSON-RPC calls these by-name params, and the serve
 
 ### Cancellation on the server
 
-Wrap a method with `Rpc.withContext` to pass it a `{ signal }` as its first argument. The signal aborts when the caller cancels or the connection closes. On the client, the method's type has no extra argument. Called directly, the method receives a signal that never aborts.
+Wrap a method with `Rpc.withContext` to pass it a `{ signal }` as its first argument. The signal aborts when the caller cancels or the connection closes. On the client, the method's type has no extra argument. If you call the method directly, it receives a signal that never aborts.
 
 ```ts
 const api = {
@@ -148,7 +148,7 @@ const { tools } = await Rpc.call(mcp['tools/list'], {});
 
 ## Transports
 
-A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Each transport is used by one `connect` or `provide`. A second call with a transport from `Rpc.port` or `Rpc.window` throws a `TypeError`.
+A transport is any `{ readable, writable }` pair of streams that carries encoded messages. Pass each transport to only one `connect` or `provide`. A second call with a transport from `Rpc.port` or `Rpc.window` throws a `TypeError`.
 
 ### `Rpc.port(target, { signal })`
 
@@ -198,7 +198,7 @@ const api = Rpc.http<Api>('https://example.com/rpc', {
 });
 ```
 
-A response is JSON, or, when a method returns a stream, `application/x-ndjson` with one message per line as the values are produced. Breaking out of a streamed result aborts the request. `handler` answers a POST with only notifications with `204 No Content`, and any other HTTP method with `405`. Malformed JSON gets a 200 response with a `-32700` Parse error. `handler` reads the whole body and has no size limit, so limit the body size in front of it. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. HTTP always uses JSON.
+A response is JSON. When a method returns a stream, the response is `application/x-ndjson`, with one message per line, written as the method produces values. `handler` answers a POST with only notifications with `204 No Content`, and any other HTTP method with `405`. `handler` answers malformed JSON with a 200 response and a `-32700` Parse error. `handler` reads the whole body and has no size limit, so limit the body size in front of it. Methods wrapped with `withContext` receive the `Request`, and their `signal` aborts when the client disconnects. `Rpc.http` and `handler` always encode messages as JSON.
 
 Over HTTP, cancelling a call or breaking out of a streamed result aborts the request only when every call in the same batch has been cancelled. The server's `signal` aborts when the request is aborted.
 

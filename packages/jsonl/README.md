@@ -19,7 +19,7 @@ for await (const event of Streams.toAsyncIterable(events)) {
 }
 ```
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines may end in LF or CRLF, and a lone CR doesn't end a line. Blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly. Invalid UTF-8 is replaced with U+FFFD, and a leading byte order mark is removed. Decode other encodings to strings before you pipe them in.
+`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Lines may end in LF or CRLF, and a lone CR doesn't end a line. Blank and whitespace-only lines are skipped. A last line without a newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly. Invalid UTF-8 is replaced with U+FFFD, and a leading byte order mark is removed. Decode other encodings to strings before you pipe them in.
 
 `EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt`, or a circular structure) fails the stream with a `TypeError`. Its output can be a `Response` body as it is:
 
@@ -36,7 +36,7 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 | Option | Default | Description |
 | --- | --- | --- |
 | `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the 1-based line number in the input, counting blank lines. `'skip'` drops the line. |
-| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, not counting the line ending. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Whitespace-only lines count too. A negative value throws a `RangeError`. Set it when the input comes from outside the program. |
+| `maxLength` | `Infinity` | Longest line, in UTF-16 code units, not counting the line ending. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Whitespace-only lines count too. The constructor throws a `RangeError` for a negative value. Set it when the input comes from outside the program. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over ndjson and stream-json

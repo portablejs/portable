@@ -59,7 +59,7 @@ A `Chunk` is `{ type, part, bytes }`. Joining every chunk's `bytes` in order giv
 | `'delimiter'` | A boundary line, with the line break before it and its own line break. | The multipart. |
 | `'epilogue'` | Text after the close delimiter. | The multipart. |
 
-A `body`, `preamble`, or `epilogue` can arrive as several chunks in a row, split where the input chunks were split. Only `headers` and `delimiter` are always one chunk. No chunk marks the end of a part: a `body`, `preamble`, or `epilogue` ends at the next `delimiter` chunk, or when the stream ends.
+The stream can emit a `body`, `preamble`, or `epilogue` as several consecutive chunks, split where the input chunks were split. Only `headers` and `delimiter` are always one chunk. No chunk marks the end of a part: a `body`, `preamble`, or `epilogue` ends at the next `delimiter` chunk, or when the stream ends.
 
 A `Part` is a plain object, shared by every chunk of that part:
 

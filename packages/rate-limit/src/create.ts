@@ -28,8 +28,8 @@ export declare namespace Limiter {
   type TakeOptions = {
     /**
      * How much of the allowance this request uses, as a finite number. It can be fractional. `take`
-     * rejects with a `RangeError` for `NaN` or `Infinity`. `0` reads the state without changing it,
-     * and `allowed` is then always `true`. A negative cost gives allowance back.
+     * rejects with a `RangeError` for `NaN` or `Infinity`. With `0`, `take` reads the state without
+     * changing it, and `allowed` is always `true`. With a negative cost, `take` gives allowance back.
      * @default 1
      */
     cost?: number | undefined;

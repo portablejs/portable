@@ -41,7 +41,7 @@ Both streams produce the same bytes as the functions however the input is chunke
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `lineLength` | `76` | Longest line, counting the `=` of a soft line break but not the CRLF. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
+| `lineLength` | `76` | Longest line, counting the `=` of a soft line break but not the CRLF. An integer of at least 4, or `false` for no soft line breaks. `encode` and `EncoderStream` throw a `RangeError` for any other value. |
 | `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
 | `signal` | none | `EncoderStream` and `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 

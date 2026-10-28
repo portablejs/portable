@@ -13,7 +13,8 @@ export declare namespace encode {
     /**
      * Longest output line, counting the `=` of a soft line break but not the CRLF. Longer lines
      * are broken with soft line breaks (`=` followed by CRLF). An integer of at least 4, or
-     * `false` for no soft line breaks. Anything else throws a `RangeError`. @default 76
+     * `false` for no soft line breaks. `encode` and `EncoderStream` throw a `RangeError` for any
+     * other value. @default 76
      */
     lineLength?: number | false | undefined;
   };

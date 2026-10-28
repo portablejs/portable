@@ -22,7 +22,7 @@ const size = await ImageSize.parseStream(response.body!);
 
 ### `parse(bytes: Uint8Array): Size`
 
-Returns the size of the image in `bytes`. The bytes need to include only the header: a few dozen bytes for most formats, all segments up to the frame header for JPEG, up to the end of the root `<svg>` tag for SVG, up to IFD0 for TIFF, and the whole file for ICNS. If you don't know how much to fetch, use `parseStream`.
+Returns the size of the image in `bytes`. The bytes need to include only the header: a few dozen bytes for most formats, all segments up to the frame header for JPEG, up to the end of the root `<svg>` start tag for SVG, up to IFD0 for TIFF, and the whole file for ICNS. If you don't know how much to fetch, use `parseStream`.
 
 ### `parseStream(stream: ReadableStream<Uint8Array>, options?): Promise<Size>`
 

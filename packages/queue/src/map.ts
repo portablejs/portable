@@ -10,7 +10,7 @@ export declare namespace map {
      * With `true`, the first error rejects at once, aborts the `signal` passed to `fn` with that
      * error as `signal.reason`, and stops reading `input`. With `false`, `map` calls `fn` on every
      * item and then rejects with the errors as one `AggregateError`, in input order. With either
-     * value, an error from reading `input` rejects at once.
+     * value, `map` rejects at once if reading `input` fails.
      * @default true
      */
     stopOnError?: boolean | undefined;
