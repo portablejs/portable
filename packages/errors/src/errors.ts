@@ -83,6 +83,92 @@ export class InvalidInputError extends BaseError {
   }
 }
 
+/**
+ * A schema that follows the [Standard Schema](https://standardschema.dev) interface, such as one
+ * from Zod, Valibot, or ArkType. `output` is the type of a value that passes.
+ */
+export type Schema<output = unknown> = {
+  readonly '~standard': {
+    readonly version: 1;
+    readonly vendor: string;
+    readonly validate: (value: unknown) => Schema.Result<output> | Promise<Schema.Result<output>>;
+    readonly types?: { readonly input: unknown; readonly output: output } | undefined;
+  };
+};
+
+export declare namespace Schema {
+  /** What `validate` returns: the value that passed, which the schema may have changed, or the issues. */
+  type Result<output> =
+    | { readonly value: output; readonly issues?: undefined }
+    | { readonly issues: readonly Issue[] };
+
+  /** One problem that a schema found in a value. */
+  type Issue = {
+    readonly message: string;
+    /** The keys from the value's root to the problem. */
+    readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined;
+  };
+}
+
+export declare namespace SchemaError {
+  type Options = ErrorOptions & {
+    /** The issues from the schema's `validate`. */
+    issues: readonly Schema.Issue[];
+    /** @default A message with the first issue's path and message. */
+    message?: string | undefined;
+  };
+}
+
+/**
+ * Thrown when a value doesn't pass the schema passed in a `schema` option. `issues` holds the
+ * issues from the schema. It is an `InvalidInputError`, so `Errors.is(error, 'InvalidInput')`
+ * matches it too.
+ *
+ * @example
+ * ```ts
+ * import * as Errors from '@portable/errors';
+ *
+ * try {
+ *   await run();
+ * } catch (error) {
+ *   if (Errors.is(error, 'Schema')) {
+ *     return Response.json(error.issues, { status: 400 });
+ *   }
+ *   throw error;
+ * }
+ * ```
+ */
+export class SchemaError extends InvalidInputError {
+  static override readonly kind: string = 'Schema';
+  readonly issues: readonly Schema.Issue[];
+
+  constructor(options: SchemaError.Options) {
+    const {
+      issues,
+      message = `The value doesn't match the schema: ${formatIssues(issues)}`,
+      ...rest
+    } = options;
+    super(message, rest);
+    this.issues = issues;
+  }
+}
+
+/**
+ * The first issue's path and message, and how many more issues there are, such as
+ * `'id: Expected number (1 more)'`.
+ */
+export function formatIssues(issues: readonly Schema.Issue[]): string {
+  const [first] = issues;
+  if (!first) {
+    return 'no issues given';
+  }
+  const path = (first.path ?? [])
+    .map((segment) => String(typeof segment === 'object' ? segment.key : segment))
+    .join('.');
+  const more = issues.length > 1 ? ` (${issues.length - 1} more)` : '';
+  return `${path ? `${path}: ` : ''}${first.message}${more}`;
+}
+
 export declare namespace TruncatedError {
   type Options = ErrorOptions & {
     /** How much input arrived, in bytes or characters. Each package that throws it says which. */
@@ -275,6 +361,7 @@ export type Kinds = {
   MaxBytes: MaxBytesError;
   MaxLength: MaxLengthError;
   Response: ResponseError;
+  Schema: SchemaError;
 };
 
 /**

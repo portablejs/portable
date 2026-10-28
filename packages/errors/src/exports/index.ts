@@ -6,6 +6,8 @@ export {
   MaxBytesError,
   MaxLengthError,
   ResponseError,
+  type Schema,
+  SchemaError,
   TruncatedError,
   UnsupportedError,
 } from '../errors.js';

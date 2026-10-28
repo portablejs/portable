@@ -1,10 +1,12 @@
 import { assertUint8Array } from '@portable/bytes/internal';
-import { InvalidInputError, MaxLengthError, TruncatedError } from './errors.js';
+import type * as Errors from '@portable/errors';
+import { formatIssues, isPromiseLike, validate } from '@portable/errors/internal';
+import { InvalidInputError, MaxLengthError, SchemaError, TruncatedError } from './errors.js';
 import { compile, type States } from './path.js';
 import * as Streams from '@portable/streams';
 
 export declare namespace DecoderStream {
-  type Options = {
+  type Options<value = unknown> = {
     /**
      * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
@@ -23,6 +25,14 @@ export declare namespace DecoderStream {
      * @default Infinity
      */
     maxLength?: number | undefined;
+    /**
+     * A [Standard Schema](https://standardschema.dev), such as one from Zod or Valibot, that each
+     * matched value must pass. The stream emits the value that `validate` returns, and fails with
+     * `SchemaError` on a value that doesn't pass. It also types `value` in each match, so you
+     * don't need a type argument. With several `paths`, the schema must accept a value from any
+     * of them.
+     */
+    schema?: Errors.Schema<value> | undefined;
   };
 
   /** A value found at one of the `paths`. */
@@ -81,9 +91,8 @@ const jsonCharacters = /* @__PURE__ */ (() => {
  * A structural error inside a matched value, such as a missing comma, is reported when that value
  * ends.
  *
- * `value` is typed `unknown` unless you pass a type argument, as in
- * `new JsonStream.DecoderStream<Row>(options)`. The stream doesn't check values against that
- * type.
+ * `value` is typed `unknown` unless you pass `schema`, which also checks each value, or a type
+ * argument, as in `new JsonStream.DecoderStream<Row>(options)`, which doesn't.
  *
  * @example
  * ```ts
@@ -101,8 +110,8 @@ export class DecoderStream<value = unknown> extends TransformStream<
   Uint8Array | string,
   DecoderStream.Match<value>
 > {
-  constructor(options: DecoderStream.Options = {}) {
-    const { paths = ['$'], maxLength = Infinity } = options;
+  constructor(options: DecoderStream.Options<value> = {}) {
+    const { paths = ['$'], maxLength = Infinity, schema } = options;
     if (!(maxLength >= 0)) {
       throw new RangeError('`maxLength` must be a number >= 0.');
     }
@@ -134,6 +143,8 @@ export class DecoderStream<value = unknown> extends TransformStream<
     let skipEscape = false;
 
     let controller!: TransformStreamDefaultController<DecoderStream.Match<value>>;
+    // Set once an async schema returns a promise. Later matches wait on it, so they keep their order.
+    let pending: PromiseLike<void> | undefined;
     let text = '';
 
     const invalid = (i: number): never => {
@@ -152,11 +163,22 @@ export class DecoderStream<value = unknown> extends TransformStream<
       return held.join('').slice(start - heldStart) + text.slice(0, end);
     };
 
+    const check = (path: readonly (string | number)[], parsed: unknown) =>
+      validate(
+        schema!,
+        parsed,
+        (issues) =>
+          new SchemaError({
+            issues,
+            message: `The value at ${formatPath(path)} doesn't match the schema: ${formatIssues(issues)}`,
+          }),
+      );
+
     const emit = (start: number, end: number, valueDepth: number) => {
       if (end + offset - start > maxLength) {
         throw new MaxLengthError({ maxLength });
       }
-      let parsed: value;
+      let parsed: unknown;
       try {
         parsed = JSON.parse(slice(start, end));
       } catch (error) {
@@ -164,7 +186,25 @@ export class DecoderStream<value = unknown> extends TransformStream<
           cause: error,
         });
       }
-      controller.enqueue({ path: keys.slice(0, valueDepth), value: parsed });
+      const path = keys.slice(0, valueDepth);
+      if (!schema) {
+        controller.enqueue({ path, value: parsed as value });
+      } else if (pending) {
+        pending = pending
+          .then(() => check(path, parsed))
+          .then((value) => {
+            controller.enqueue({ path, value });
+          });
+      } else {
+        const checked = check(path, parsed);
+        if (isPromiseLike(checked)) {
+          pending = checked.then((value) => {
+            controller.enqueue({ path, value });
+          });
+        } else {
+          controller.enqueue({ path, value: checked });
+        }
+      }
       if (start === outer) {
         outer = -1;
       }
@@ -519,6 +559,12 @@ export class DecoderStream<value = unknown> extends TransformStream<
       }
     };
 
+    const settle = () => {
+      const wait = pending;
+      pending = undefined;
+      return wait;
+    };
+
     super(
       Streams.abortable(
         {
@@ -533,6 +579,7 @@ export class DecoderStream<value = unknown> extends TransformStream<
             scan();
             hold();
             offset += text.length;
+            return settle();
           },
           flush() {
             text = decoder.decode();
@@ -550,10 +597,15 @@ export class DecoderStream<value = unknown> extends TransformStream<
             if (state !== ROOT) {
               throw new TruncatedError();
             }
+            return settle();
           },
         },
         options,
       ),
     );
   }
+}
+
+function formatPath(path: readonly (string | number)[]): string {
+  return '$' + path.map((key) => `[${JSON.stringify(key)}]`).join('');
 }

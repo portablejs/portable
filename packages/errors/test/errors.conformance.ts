@@ -1,5 +1,6 @@
 import * as Errors from '@portable/errors';
 import { describe, expect, test } from 'vite-plus/test';
+import * as z from 'zod';
 
 class CompressMaxBytesError extends Errors.MaxBytesError {
   static override readonly kind: string = 'Compress.MaxBytesError';
@@ -122,5 +123,32 @@ describe('fields', () => {
     expect(error.response.headers.get('retry-after')).toBe('5');
     expect(error.body).toBe('slow down');
     expect(error.message).toBe(' answered 429.');
+  });
+});
+
+describe('SchemaError', () => {
+  test('stores the issues and is an InvalidInputError', () => {
+    const issues = [{ message: 'Expected number', path: ['id'] }];
+    const error = new Errors.SchemaError({ issues });
+    expect(error.issues).toBe(issues);
+    expect(error.message).toBe("The value doesn't match the schema: id: Expected number");
+    expect(Errors.is(error, 'Schema')).toBe(true);
+    expect(Errors.is(error, 'InvalidInput')).toBe(true);
+    expect(error).toBeInstanceOf(Errors.InvalidInputError);
+  });
+
+  test('the message reads path segment objects and counts the other issues', () => {
+    const error = new Errors.SchemaError({
+      issues: [
+        { message: 'Required', path: [{ key: 'user' }, { key: 0 }] },
+        { message: 'Required', path: ['name'] },
+      ],
+    });
+    expect(error.message).toBe("The value doesn't match the schema: user.0: Required (1 more)");
+  });
+
+  test('a Zod schema is a Schema', () => {
+    const schema = z.object({ id: z.number() }) satisfies Errors.Schema<{ id: number }>;
+    expect(schema['~standard'].vendor).toBe('zod');
   });
 });

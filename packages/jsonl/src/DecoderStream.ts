@@ -1,9 +1,11 @@
 import { assertUint8Array } from '@portable/bytes/internal';
-import { InvalidInputError, MaxLengthError } from './errors.js';
+import type * as Errors from '@portable/errors';
+import { formatIssues, isPromiseLike, validate } from '@portable/errors/internal';
+import { InvalidInputError, MaxLengthError, SchemaError } from './errors.js';
 import * as Streams from '@portable/streams';
 
 export declare namespace DecoderStream {
-  type Options = {
+  type Options<value = unknown> = {
     /**
      * Aborting errors the stream with `signal.reason` and cancels the source piped into it.
      */
@@ -20,6 +22,13 @@ export declare namespace DecoderStream {
      * use unbounded memory. @default Infinity
      */
     maxLength?: number | undefined;
+    /**
+     * A [Standard Schema](https://standardschema.dev), such as one from Zod or Valibot, that each
+     * value must pass. The stream emits the value that `validate` returns, and fails with
+     * `SchemaError` on a value that doesn't pass, whatever `invalid` is. It also types the
+     * values, so you don't need a type argument.
+     */
+    schema?: Errors.Schema<value> | undefined;
   };
 }
 
@@ -31,8 +40,8 @@ export declare namespace DecoderStream {
  * The stream fails with `InvalidInputError` on a line that isn't valid JSON, unless
  * `invalid` is `'skip'`, and with `MaxLengthError` on a line longer than `maxLength`.
  *
- * Values are typed `unknown` unless you pass a type argument, as in
- * `new Jsonl.DecoderStream<Event>()`. The stream doesn't check values against that type.
+ * Values are typed `unknown` unless you pass `schema`, which also checks each value, or a type
+ * argument, as in `new Jsonl.DecoderStream<Event>()`, which doesn't.
  *
  * @example
  * ```ts
@@ -43,8 +52,8 @@ export declare namespace DecoderStream {
  * ```
  */
 export class DecoderStream<value = unknown> extends TransformStream<Uint8Array | string, value> {
-  constructor(options: DecoderStream.Options = {}) {
-    const { invalid = 'error', maxLength = Infinity } = options;
+  constructor(options: DecoderStream.Options<value> = {}) {
+    const { invalid = 'error', maxLength = Infinity, schema } = options;
     if (!(maxLength >= 0)) {
       throw new RangeError('`maxLength` must be a number >= 0.');
     }
@@ -52,7 +61,10 @@ export class DecoderStream<value = unknown> extends TransformStream<Uint8Array |
     let partial = '';
     let lineNumber = 0;
 
-    const decode = (line: string, controller: TransformStreamDefaultController<value>) => {
+    const decode = (
+      line: string,
+      controller: TransformStreamDefaultController<value>,
+    ): void | PromiseLike<void> => {
       lineNumber++;
       if (line.endsWith('\r')) {
         line = line.slice(0, -1);
@@ -72,7 +84,38 @@ export class DecoderStream<value = unknown> extends TransformStream<Uint8Array |
         }
         throw new InvalidInputError(`Invalid JSON on line ${lineNumber}.`, { cause: error });
       }
-      controller.enqueue(parsed);
+      if (!schema) {
+        controller.enqueue(parsed);
+        return;
+      }
+      const at = lineNumber;
+      const checked = validate(
+        schema,
+        parsed,
+        (issues) =>
+          new SchemaError({
+            issues,
+            message: `Line ${at} doesn't match the schema: ${formatIssues(issues)}`,
+          }),
+      );
+      if (isPromiseLike(checked)) {
+        return checked.then((value) => controller.enqueue(value));
+      }
+      controller.enqueue(checked);
+    };
+
+    // Decodes lines in order. An async schema makes it wait for each value before the next line.
+    const decodeLines = (
+      lines: readonly string[],
+      start: number,
+      controller: TransformStreamDefaultController<value>,
+    ): void | PromiseLike<void> => {
+      for (let i = start; i < lines.length; i++) {
+        const pending = decode(lines[i]!, controller);
+        if (pending) {
+          return pending.then(() => decodeLines(lines, i + 1, controller));
+        }
+      }
     };
 
     super(
@@ -96,12 +139,10 @@ export class DecoderStream<value = unknown> extends TransformStream<Uint8Array |
             if (partial.length > maxLength + 1) {
               throw new MaxLengthError({ maxLength });
             }
-            for (const line of lines) {
-              decode(line, controller);
-            }
+            return decodeLines(lines, 0, controller);
           },
           flush(controller) {
-            decode(partial + decoder.decode(), controller);
+            return decode(partial + decoder.decode(), controller);
           },
         },
         options,

@@ -2,6 +2,12 @@
 
 Decisions made while building the packages, with the options considered and the reason for each choice. Newest first. Change any of them by editing this file.
 
+## The JSON decoders take a Standard Schema in a `schema` option
+
+- **Options:** leave validation to `Streams.map(validate)`; add a `schema` option that takes a [Standard Schema](https://standardschema.dev) to the functions that emit parsed JSON; add a `Streams.validate(schema)` transform that works after any stream; take schemas in rpc for the params of each method.
+- **Trade-offs:** Zod, Valibot, ArkType, and most other validators implement Standard Schema, which is an interface with no runtime code, so the packages can copy the type and keep no runtime dependencies. A `schema` option types the values and checks them in one place. The error can then say where the value was, such as a line number in jsonl or a path in json-stream, which `Streams.map` can't. A schema can transform a value, so the stream emits what `validate` returns and not the parsed JSON. `validate` can return a promise, so with an async schema the decoders wait for each value in order, and a sync schema adds no `await`. rpc params come from untrusted clients, so that is where validation matters most, but a schema per method changes rpc's API and needs its own design.
+- **Chosen:** `schema` on `Jsonl.DecoderStream`, `JsonStream.DecoderStream`, and `Streams.toJson`. @portable/errors defines the `Schema` type and `SchemaError`, which extends `InvalidInputError` and stores `issues`, because all three packages already depend on it, and each package re-exports `Schema` and throws its own `SchemaError` subclass. A value that doesn't pass errors the stream even with jsonl's `invalid: 'skip'`, because that option is for lines that aren't JSON. The `error-kind` lint rule now exempts every class in packages/errors/src, so `SchemaError` can extend `InvalidInputError` and keep the short kind `'Schema'`.
+
 ## JSON decoders take an unchecked type argument for their values
 
 - **Options:** keep `unknown` and cast with `Streams.map` or `as`; add a type parameter that defaults to `unknown` to the functions that emit parsed JSON; add one to every decoder; validate with a `schema` option instead.

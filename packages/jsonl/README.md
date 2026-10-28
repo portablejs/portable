@@ -19,7 +19,16 @@ for await (const event of Streams.toAsyncIterable(events)) {
 }
 ```
 
-`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. Pass a type argument, as in `new Jsonl.DecoderStream<Event>()`, to type the values without a cast. The stream doesn't check them against that type, so validate each value yourself if the input could have another shape. Lines may end in LF or CRLF. Blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly.
+`DecoderStream` is a `TransformStream<Uint8Array | string, unknown>` that parses each line with `JSON.parse`. To type and check the values, pass a [Standard Schema](https://standardschema.dev), such as one from Zod or Valibot, as `schema`:
+
+```ts
+import * as z from 'zod';
+
+const Post = z.object({ id: z.number(), text: z.string() });
+const posts = response.body!.pipeThrough(new Jsonl.DecoderStream({ schema: Post }));
+```
+
+To type the values without checking them, pass a type argument instead, as in `new Jsonl.DecoderStream<Post>()`. Lines may end in LF or CRLF. Blank and whitespace-only lines are skipped, and a last line with no newline is decoded too. Byte chunks are decoded as UTF-8, so a multi-byte character split across chunks is decoded correctly.
 
 `EncoderStream` is a `TransformStream<unknown, Uint8Array>` that writes each value as `JSON.stringify(value)` followed by `\n`, in UTF-8. A value that `JSON.stringify` can't encode (`undefined`, a function, a symbol, a `BigInt`, or a circular structure) fails the stream with a `TypeError`. Its output can be a `Response` body as it is:
 
@@ -31,13 +40,20 @@ return new Response(body, { headers: { 'content-type': 'application/x-ndjson' } 
 
 ## Options
 
-`DecoderStream` takes `invalid`, `maxLength`, and `signal`. `EncoderStream` takes `signal`.
+`DecoderStream` takes `invalid`, `maxLength`, `schema`, and `signal`. `EncoderStream` takes `signal`.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `invalid` | `'error'` | A line that isn't valid JSON: `'error'` fails the stream with `InvalidInputError`, whose message gives the line number, and `'skip'` drops the line. |
 | `maxLength` | `Infinity` | Longest line, in UTF-16 code units, line ending excluded. As soon as a line grows past the limit, the stream fails with `Jsonl.MaxLengthError`, which stores the limit in `maxLength`. Set it when the input comes from outside the program. |
+| `schema` | none | A Standard Schema that each value must pass. The stream emits the value that the schema returns, which can differ from the parsed JSON if the schema transforms it. A value that doesn't pass fails the stream with `Jsonl.SchemaError`, whatever `invalid` is. Its message gives the line number, and `issues` holds the issues from the schema. With an async schema, the stream waits for each value before it reads the next line. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
+
+## Types
+
+| Type | Description |
+| --- | --- |
+| `Jsonl.Schema` | The type of the `schema` option: a [Standard Schema](https://standardschema.dev) whose output type types the values. |
 
 ## Why use this over ndjson and stream-json
 

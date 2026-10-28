@@ -45,8 +45,14 @@ tester.run('import-extension', plugin.rules['import-extension'], {
 tester.run('error-kind', plugin.rules['error-kind'], {
   valid: [
     "class MaxBytesError extends Errors.BaseError { static override readonly kind = 'A.MaxBytesError' }",
-    "class BaseError extends Error { static readonly kind: string = 'BaseError' }",
-    "class InvalidInputError extends BaseError { static override readonly kind = 'InvalidInput' }",
+    {
+      code: "class BaseError extends Error { static readonly kind: string = 'BaseError' }",
+      filename: '/repo/packages/errors/src/errors.ts',
+    },
+    {
+      code: "class SchemaError extends InvalidInputError { static override readonly kind = 'Schema' }",
+      filename: '/repo/packages/errors/src/errors.ts',
+    },
     'class Parser {}',
   ],
   invalid: [
@@ -68,6 +74,11 @@ tester.run('error-kind', plugin.rules['error-kind'], {
     },
     {
       code: "class QueryError extends Errors.BaseError { static override readonly kind = 'Dns.Query' }",
+      errors: [{ messageId: 'kindFormat' }],
+    },
+    {
+      code: "class InvalidInputError extends BaseError { static override readonly kind = 'InvalidInput' }",
+      filename: '/repo/packages/dns/src/errors.ts',
       errors: [{ messageId: 'kindFormat' }],
     },
     {

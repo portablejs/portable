@@ -5,6 +5,7 @@
   "devDependencies": {
     "@portable/errors": "workspace:*",
     "@portable/fuzz": "workspace:*",
-    "@types/node": "^26.6.5"
+    "@types/node": "^26.6.5",
+    "zod": "^4.6.7"
   }
 }

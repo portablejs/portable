@@ -1,5 +1,14 @@
 import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
-import { MaxBytesError, toArray, toBlob, toBytes, toJson, toText } from '@portable/streams';
+import {
+  MaxBytesError,
+  SchemaError,
+  toArray,
+  toBlob,
+  toBytes,
+  toJson,
+  toText,
+} from '@portable/streams';
+import * as z from 'zod';
 import { chunked, decode, delay, encode, fromChunks } from './utils.js';
 
 // Firefox has no `Request.prototype.body` and sends a ReadableStream request body as text.
@@ -361,6 +370,20 @@ describe('toJson', () => {
     const result = toJson<{ id: number }>(['"text"']);
     expectTypeOf(result).toEqualTypeOf<Promise<{ id: number }>>();
     expect(await result).toBe('text');
+  });
+
+  test('a schema types and validates the result', async () => {
+    const User = z.object({ name: z.string() });
+    const result = toJson(['{"name":"a","admin":true}'], { schema: User });
+    expectTypeOf(result).toEqualTypeOf<Promise<{ name: string }>>();
+    expect(await result).toEqual({ name: 'a' });
+  });
+
+  test('rejects with SchemaError when the value does not pass', async () => {
+    const User = z.object({ name: z.string() });
+    const error = await toJson(['{}'], { schema: User }).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(SchemaError);
+    expect((error as SchemaError).issues[0]?.path).toEqual(['name']);
   });
 });
 

@@ -3,3 +3,5 @@
  * release.
  */
 export * from '../internal/dispose.js';
+export * from '../internal/schema.js';
+export { formatIssues } from '../errors.js';

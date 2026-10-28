@@ -509,6 +509,9 @@ importers:
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/exif:
     dependencies:
@@ -686,6 +689,9 @@ importers:
       stream-json:
         specifier: ^3.7.0
         version: 3.7.0
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/jsonl:
     dependencies:
@@ -725,6 +731,12 @@ importers:
       stream-json:
         specifier: ^3.7.0
         version: 3.7.0
+      valibot:
+        specifier: ^1.5.0
+        version: 1.5.0(typescript@6.0.3)
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/lines:
     dependencies:
@@ -1530,6 +1542,9 @@ importers:
       through2:
         specifier: ^5.0.11
         version: 5.0.11
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/timers:
     dependencies:
@@ -7231,6 +7246,14 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  valibot@1.5.0:
+    resolution: {integrity: sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   varint@6.0.0:
     resolution: {integrity: sha512-cXEIW6cfr15lFv563k4GuVuW/fiwjknytD37jIOLSdSWuOI6WnO/oKwmP2FQTU2l01LP8/M5TSAJpzUaGe3uWg==}
@@ -13297,6 +13320,10 @@ snapshots:
   utf8@2.1.2: {}
 
   util-deprecate@1.0.2: {}
+
+  valibot@1.5.0(typescript@6.0.3):
+    optionalDependencies:
+      typescript: 6.0.3
 
   varint@6.0.0: {}
 

@@ -73,3 +73,30 @@ export class MaxLengthError extends Errors.MaxLengthError {
     super({ message: `A value exceeded maxLength of ${options.maxLength}.`, ...options });
   }
 }
+
+/**
+ * Thrown when a matched value doesn't pass the `schema` option. The message gives the value's
+ * path, and `issues` holds the issues from the schema.
+ *
+ * @example
+ * ```ts
+ * import * as JsonStream from '@portable/json-stream';
+ * import * as Streams from '@portable/streams';
+ * import * as z from 'zod';
+ *
+ * const Row = z.object({ id: z.string() });
+ * try {
+ *   await Streams.toArray(
+ *     body.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'], schema: Row })),
+ *   );
+ * } catch (error) {
+ *   if (error instanceof JsonStream.SchemaError) {
+ *     return Response.json(error.issues, { status: 400 });
+ *   }
+ *   throw error;
+ * }
+ * ```
+ */
+export class SchemaError extends Errors.SchemaError {
+  static override readonly kind: string = 'JsonStream.SchemaError';
+}

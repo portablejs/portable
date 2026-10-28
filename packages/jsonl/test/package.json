@@ -10,6 +10,8 @@
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
     "ndjson": "^2.0.0",
-    "stream-json": "^3.7.0"
+    "stream-json": "^3.7.0",
+    "valibot": "^1.5.0",
+    "zod": "^4.6.7"
   }
 }

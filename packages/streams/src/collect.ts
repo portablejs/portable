@@ -1,7 +1,9 @@
 import * as Bytes from '@portable/bytes';
 import { toBufferSource } from '@portable/bytes/internal';
+import type * as Errors from '@portable/errors';
+import { validate } from '@portable/errors/internal';
 import { assertMaxBytes, byteLength, toUint8Array } from './bytes.js';
-import { MaxBytesError } from './errors.js';
+import { MaxBytesError, SchemaError } from './errors.js';
 import { type Source, forEach } from './source.js';
 
 export declare namespace toBytes {
@@ -152,12 +154,21 @@ export async function toText(
 }
 
 export declare namespace toJson {
-  type Options = toText.Options;
+  type Options<value = unknown> = toText.Options & {
+    /**
+     * A [Standard Schema](https://standardschema.dev), such as one from Zod or Valibot, that the
+     * parsed value must pass. `toJson` returns the value that `validate` returns, and rejects with
+     * `SchemaError` when the value doesn't pass. It also types the result, so you don't need a
+     * type argument.
+     */
+    schema?: Errors.Schema<value> | undefined;
+  };
 }
 
 /**
  * Reads a stream or iterable to the end and parses it as JSON. The result is typed `unknown`
- * unless you pass a type argument, as in `Streams.toJson<User>(body)`, which isn't checked.
+ * unless you pass `schema`, which also checks the value, or a type argument, as in
+ * `Streams.toJson<User>(body)`, which doesn't.
  *
  * @example
  * ```ts
@@ -168,9 +179,13 @@ export declare namespace toJson {
  */
 export async function toJson<value = unknown>(
   source: Source<Uint8Array | string>,
-  options: toJson.Options = {},
+  options: toJson.Options<value> = {},
 ): Promise<value> {
-  return JSON.parse(await toText(source, options));
+  const parsed = JSON.parse(await toText(source, options));
+  if (!options.schema) {
+    return parsed;
+  }
+  return validate(options.schema, parsed, (issues) => new SchemaError({ issues }));
 }
 
 export declare namespace toArray {

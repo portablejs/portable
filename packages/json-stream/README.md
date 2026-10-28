@@ -20,15 +20,18 @@ for await (const { value } of Streams.toAsyncIterable(matches)) {
 
 ## `DecoderStream`
 
-A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. `value` is typed `unknown` unless you pass a type argument, as in `new JsonStream.DecoderStream<Row>({ paths: ['$.rows[*]'] })`. The stream doesn't check values against that type. The input may hold several top-level values separated by whitespace.
+A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. `value` is typed `unknown` unless you pass `schema`, which also checks each value, or a type argument, as in `new JsonStream.DecoderStream<Row>({ paths: ['$.rows[*]'] })`, which doesn't. The input may hold several top-level values separated by whitespace.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
 | `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
+| `schema` | none | A [Standard Schema](https://standardschema.dev), such as one from Zod or Valibot, that each matched value must pass. The stream emits the value that the schema returns. A value that doesn't pass fails the stream with `JsonStream.SchemaError`, whose message gives the value's path and whose `issues` holds the issues from the schema. With several `paths`, the schema must accept a value from any of them. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The `MaxLengthError` stores the limit in `maxLength`.
+
+`JsonStream.Schema` is the type of the `schema` option.
 
 ## `encodeStream`
 

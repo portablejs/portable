@@ -1,7 +1,10 @@
 import { fromIterable, toArray } from '@portable/streams';
 import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
+import * as z from 'zod';
 import {
   encodeStream,
+  SchemaError,
+  type Schema,
   InvalidInputError,
   DecoderStream,
   MaxLengthError,
@@ -22,6 +25,56 @@ const escaped = {
   stringWithTabsAndNewlines: "Did it work?\nNo...\t\tI don't think so...",
   anArray: [1, 2, true, 'tabs?\t\t\t\u0001\u0002\u0003', false],
 };
+
+describe('schema', () => {
+  const Row = z.object({ id: z.string() });
+
+  test('types and validates each matched value', async () => {
+    const stream = new DecoderStream({ paths: ['$.rows[*]'], schema: Row });
+    expectTypeOf(stream.readable).toEqualTypeOf<
+      ReadableStream<DecoderStream.Match<{ id: string }>>
+    >();
+    const matches = await toArray(
+      fromIterable(['{"rows":[{"id":"a","x":1},{"id":"b"}]}']).pipeThrough(stream),
+    );
+    expect(matches).toEqual([
+      { path: ['rows', 0], value: { id: 'a' } },
+      { path: ['rows', 1], value: { id: 'b' } },
+    ]);
+  });
+
+  test('fails with SchemaError naming the path of a value that does not pass', async () => {
+    const error = await toArray(
+      fromIterable(['{"rows":[{"id":"a"},{"id":2}]}']).pipeThrough(
+        new DecoderStream({ paths: ['$.rows[*]'], schema: Row }),
+      ),
+    ).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(SchemaError);
+    expect((error as SchemaError).message).toMatch(
+      /^The value at \$\["rows"\]\[1\] doesn't match the schema: id: /,
+    );
+  });
+
+  test('keeps the order of matches when an async schema settles out of order', async () => {
+    let delay = 20;
+    const schema = {
+      '~standard': {
+        version: 1,
+        vendor: 'test',
+        validate: async (value: unknown) => {
+          await new Promise((resolve) => setTimeout(resolve, (delay = Math.max(0, delay - 5))));
+          return { value: value as number };
+        },
+      },
+    } satisfies Schema<number>;
+    const matches = await toArray(
+      fromIterable(['[1,2,', '3]', ' [4]']).pipeThrough(
+        new DecoderStream({ paths: ['$[*]'], schema }),
+      ),
+    );
+    expect(matches.map((match) => match.value)).toEqual([1, 2, 3, 4]);
+  });
+});
 
 describe('value type', () => {
   test('values are unknown without a type argument', () => {

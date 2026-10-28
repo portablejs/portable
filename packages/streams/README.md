@@ -34,7 +34,7 @@ Each collector reads a `ReadableStream`, an async iterable (such as a Node `Read
 | `toBytes(source, { maxBytes, signal })` | `Uint8Array`. String chunks are encoded as UTF-8. |
 | `toBlob(source, { maxBytes, type, signal })` | `Blob` with the given `type`. String chunks are encoded as UTF-8. |
 | `toText(source, { maxBytes, encoding, signal })` | `string`. Byte chunks are decoded with `TextDecoder` (`encoding` defaults to `'utf-8'`), and string chunks are kept. |
-| `toJson(source, { maxBytes, encoding, signal })` | `JSON.parse` of the text, typed `unknown`, or the type argument you pass, such as `toJson<User>(…)`, which isn't checked. |
+| `toJson(source, { maxBytes, encoding, schema, signal })` | `JSON.parse` of the text. With `schema`, a [Standard Schema](https://standardschema.dev) such as one from Zod, it returns the value that the schema returns, typed by the schema, and rejects with `SchemaError` if the value doesn't pass. Without it, the result is typed `unknown`, or the type argument you pass, such as `toJson<User>(…)`, which isn't checked. |
 | `toArray(source, { signal })` | The chunks, unchanged. |
 
 `toBytes`, `toBlob`, `toText`, and `toJson` take `Uint8Array` and `string` chunks, and reject with a `TypeError` for any other chunk. When the source yields more than `maxBytes` bytes (string chunks count as their UTF-8 length), the collector cancels the source and rejects with `MaxBytesError`, whose `maxBytes` property holds the limit. Aborting `signal` cancels the source and rejects with `signal.reason`.
@@ -158,6 +158,7 @@ await response.body!
 
 | Type | Description |
 | --- | --- |
+| `Streams.Schema` | The type of `toJson`'s `schema` option: a [Standard Schema](https://standardschema.dev) whose output type types the result. |
 | `Streams.Source` | What the collectors and combinators read: a `ReadableStream`, an async iterable, or an iterable. |
 | `Streams.abortable.Transformer` | The `Transformer` that `abortable` takes and returns. It adds the optional `cancel` method, which TypeScript's DOM types don't have yet. |
 

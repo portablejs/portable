@@ -257,7 +257,7 @@ const importExtension = {
  * Reports an error class without `static override readonly kind`. `BaseError` copies `kind` to
  * `name`, and `Errors.is` compares it, so a class without its own kind matches its parent's. A
  * class that extends another package's error must set a kind of the form `'Package.ClassName'`.
- * The classes in the errors package, which extend `Error` or `BaseError`, keep their short kinds.
+ * The classes in the errors package keep their short kinds, such as `'InvalidInput'`.
  */
 const errorKind = {
   meta: {
@@ -285,7 +285,7 @@ const errorKind = {
       if (!(kind?.type === 'PropertyDefinition' && kind.readonly && (base || kind.override))) {
         return context.report({ node: node.id ?? node, messageId: 'errorKind' });
       }
-      if (superClass.type === 'Identifier' && ['Error', 'BaseError'].includes(superClass.name)) {
+      if (/[\\/]packages[\\/]errors[\\/]src[\\/]/.test(context.filename)) {
         return;
       }
       const value = kind.value;

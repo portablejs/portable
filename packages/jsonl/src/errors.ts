@@ -46,3 +46,28 @@ export class MaxLengthError extends Errors.MaxLengthError {
     super({ message: `Line exceeded maxLength of ${options.maxLength}.`, ...options });
   }
 }
+
+/**
+ * Thrown when a value doesn't pass the `schema` option. The message gives the line number, and
+ * `issues` holds the issues from the schema.
+ *
+ * @example
+ * ```ts
+ * import * as Jsonl from '@portable/jsonl';
+ * import * as Streams from '@portable/streams';
+ * import * as z from 'zod';
+ *
+ * const Post = z.object({ id: z.number(), text: z.string() });
+ * try {
+ *   await Streams.toArray(body.pipeThrough(new Jsonl.DecoderStream({ schema: Post })));
+ * } catch (error) {
+ *   if (error instanceof Jsonl.SchemaError) {
+ *     return Response.json(error.issues, { status: 400 });
+ *   }
+ *   throw error;
+ * }
+ * ```
+ */
+export class SchemaError extends Errors.SchemaError {
+  static override readonly kind: string = 'Jsonl.SchemaError';
+}

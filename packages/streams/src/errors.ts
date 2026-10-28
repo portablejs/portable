@@ -23,3 +23,27 @@ export class MaxBytesError extends Errors.MaxBytesError {
     super({ message: `Stream exceeded maxBytes of ${options.maxBytes}.`, ...options });
   }
 }
+
+/**
+ * Thrown by `toJson` when the parsed value doesn't pass the `schema` option. `issues` holds the
+ * issues from the schema.
+ *
+ * @example
+ * ```ts
+ * import * as Streams from '@portable/streams';
+ * import * as z from 'zod';
+ *
+ * const User = z.object({ name: z.string() });
+ * try {
+ *   const user = await Streams.toJson(request.body!, { schema: User, maxBytes: 100_000 });
+ * } catch (error) {
+ *   if (error instanceof Streams.SchemaError) {
+ *     return Response.json(error.issues, { status: 400 });
+ *   }
+ *   throw error;
+ * }
+ * ```
+ */
+export class SchemaError extends Errors.SchemaError {
+  static override readonly kind: string = 'Streams.SchemaError';
+}

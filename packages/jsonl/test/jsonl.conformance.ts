@@ -1,6 +1,16 @@
 import { fromIterable, toArray } from '@portable/streams';
 import { describe, expect, expectTypeOf, test } from 'vite-plus/test';
-import { InvalidInputError, DecoderStream, EncoderStream, MaxLengthError } from '@portable/jsonl';
+import * as Errors from '@portable/errors';
+import {
+  InvalidInputError,
+  DecoderStream,
+  EncoderStream,
+  MaxLengthError,
+  type Schema,
+  SchemaError,
+} from '@portable/jsonl';
+import * as v from 'valibot';
+import * as z from 'zod';
 import data from './fixtures/data.ndjson?raw';
 import { chunked, decode, encode, encodeUtf8, lineSeparator } from './utils.js';
 
@@ -33,6 +43,79 @@ describe('value type', () => {
     expectTypeOf(stream.readable).toEqualTypeOf<ReadableStream<Post>>();
     const posts = await toArray(fromIterable(['{"id":1}\n"text"\n']).pipeThrough(stream));
     expect(posts).toEqual([{ id: 1 }, 'text']);
+  });
+});
+
+describe('schema', () => {
+  const Post = z.object({ id: z.number(), text: z.string() });
+
+  test('types the values from a Zod schema and emits the values that pass', async () => {
+    const stream = new DecoderStream({ schema: Post });
+    expectTypeOf(stream.readable).toEqualTypeOf<ReadableStream<{ id: number; text: string }>>();
+    const posts = await toArray(
+      fromIterable(['{"id":1,"text":"a","extra":true}\n{"id":2,"text":"b"}\n']).pipeThrough(stream),
+    );
+    expect(posts).toEqual([
+      { id: 1, text: 'a' },
+      { id: 2, text: 'b' },
+    ]);
+  });
+
+  test('types the values from a Valibot schema', async () => {
+    const stream = new DecoderStream({ schema: v.object({ id: v.number() }) });
+    expectTypeOf(stream.readable).toEqualTypeOf<ReadableStream<{ id: number }>>();
+    expect(await toArray(fromIterable(['{"id":1}']).pipeThrough(stream))).toEqual([{ id: 1 }]);
+  });
+
+  test('emits the value the schema returns', async () => {
+    const schema = z.object({ at: z.string().transform((text) => Date.parse(text)) });
+    const values = await toArray(
+      fromIterable(['{"at":"1970-01-01T00:00:01Z"}\n']).pipeThrough(new DecoderStream({ schema })),
+    );
+    expect(values).toEqual([{ at: 1000 }]);
+  });
+
+  test('fails with SchemaError on a value that does not pass, even with invalid: skip', async () => {
+    const error = await toArray(
+      fromIterable(['{"id":1,"text":"a"}\n\n{"id":"2","text":"b"}\n']).pipeThrough(
+        new DecoderStream({ schema: Post, invalid: 'skip' }),
+      ),
+    ).catch((error: unknown) => error);
+    expect(error).toBeInstanceOf(SchemaError);
+    expect(Errors.is(error, 'InvalidInput')).toBe(true);
+    expect((error as SchemaError).message).toMatch(/^Line 3 doesn't match the schema: id: /);
+    expect((error as SchemaError).issues[0]?.path).toEqual(['id']);
+  });
+
+  test('keeps the order of values when an async schema settles out of order', async () => {
+    let delay = 20;
+    const schema = {
+      '~standard': {
+        version: 1,
+        vendor: 'test',
+        validate: async (value: unknown) => {
+          await new Promise((resolve) => setTimeout(resolve, (delay = Math.max(0, delay - 5))));
+          return { value: value as number };
+        },
+      },
+    } satisfies Schema<number>;
+    const values = await toArray(
+      fromIterable(['1\n2\n', '3\n', '4']).pipeThrough(new DecoderStream({ schema })),
+    );
+    expect(values).toEqual([1, 2, 3, 4]);
+  });
+
+  test('fails with SchemaError when an async schema finds issues', async () => {
+    const schema = {
+      '~standard': {
+        version: 1,
+        vendor: 'test',
+        validate: async () => ({ issues: [{ message: 'no' }] }),
+      },
+    } satisfies Schema<never>;
+    await expect(
+      toArray(fromIterable(['1\n']).pipeThrough(new DecoderStream({ schema }))),
+    ).rejects.toThrow("Line 1 doesn't match the schema: no");
   });
 });
 
