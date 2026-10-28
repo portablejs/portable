@@ -131,6 +131,14 @@ export function api(name) {
         }
         entry += '\n';
       }
+      const members = alias ? membersOf(alias, checker) : [];
+      if (members.some((m) => m.doc)) {
+        entry += '| Member | Description |\n| --- | --- |\n';
+        for (const m of members) {
+          entry += `| \`${m.name}\` | ${cell(m.doc)} |\n`;
+        }
+        entry += '\n';
+      }
       const throws = tags.filter((t) => t.name === 'throws');
       if (throws.length) {
         entry += '**Throws**\n\n';
@@ -162,12 +170,10 @@ function stripExport(modifiers) {
   );
 }
 
+// An updated node has no source file of its own, and the printer reads the text of string
+// literals from the source file, so pass the original node's file.
 function print(node) {
-  return printer.printNode(
-    ts.EmitHint.Unspecified,
-    node,
-    node.getSourceFile?.() ?? ts.createSourceFile('x.ts', '', ts.ScriptTarget.ESNext),
-  );
+  return printer.printNode(ts.EmitHint.Unspecified, node, ts.getOriginalNode(node).getSourceFile());
 }
 
 // The `<name>.Options` type that a function or class declares in its namespace.
@@ -200,6 +206,22 @@ function optionsOf(symbol, decls, checker) {
       doc: ts.displayPartsToString(p.getDocumentationComment(checker)),
     };
   });
+}
+
+// The properties of an object type alias, such as `Log.Logger`, with their JSDoc.
+function membersOf(alias, checker) {
+  if (!ts.isTypeLiteralNode(alias.type)) {
+    return [];
+  }
+  return alias.type.members
+    .filter((m) => m.name && !ts.isComputedPropertyName(m.name))
+    .map((m) => {
+      const symbol = checker.getSymbolAtLocation(m.name);
+      return {
+        name: m.name.getText(),
+        doc: symbol ? ts.displayPartsToString(symbol.getDocumentationComment(checker)) : '',
+      };
+    });
 }
 
 function cell(text) {
