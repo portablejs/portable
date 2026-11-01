@@ -1,3 +1,4 @@
+import { unpackInts } from './packed.js';
 import * as table from './table.js';
 
 export const disallowed = 0;
@@ -21,33 +22,6 @@ export const joiningL = 1;
 export const joiningD = 2;
 export const joiningT = 3;
 export const joiningR = 4;
-
-function digit(code: number): number {
-  if (code >= 97) {
-    return code - 71;
-  }
-  if (code >= 65) {
-    return code === 95 ? 63 : code - 65;
-  }
-  return code === 45 ? 62 : code + 4;
-}
-
-/** Decodes the base64url varints written by `packInts` in scripts/generate.ts. */
-function unpackInts(text: string): number[] {
-  const values: number[] = [];
-  for (let i = 0; i < text.length;) {
-    let value = 0;
-    let scale = 1;
-    let next: number;
-    do {
-      next = digit(text.charCodeAt(i++));
-      value += (next & 31) * scale;
-      scale *= 32;
-    } while (next & 32);
-    values.push(value);
-  }
-  return values;
-}
 
 const size = 0x110000;
 const unzigzag = (n: number) => (n & 1 ? -(n + 1) / 2 : n / 2);

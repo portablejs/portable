@@ -18,6 +18,7 @@ Our `strict` option sets CheckHyphens, UseSTD3ASCIIRules, and VerifyDnsLength, a
 | toUnicode and toUnicodeStatus | `IdnaTestV2.txt > toUnicode with strict: true matches toUnicode` | All 6396 lines. `X4_2` is ignored, as the file's header allows. |
 | toUnicode with the strict-only status codes removed | `IdnaTestV2.txt > toUnicode matches toUnicode, ignoring the errors that only strict checks` | The header allows ignoring `V2`, `V3`, `U1`, and `A4_*` when CheckHyphens, UseSTD3ASCIIRules, or VerifyDnsLength is off. |
 | toAsciiN and toAsciiNStatus | `IdnaTestV2.txt > toAscii with strict: true matches toAsciiN` | All 6396 lines. |
+| All three columns above, with `@portable/idna/url` | `IdnaTestV2.txt (Unicode 18.0.0) with @portable/idna/url` | Fails if it accepts a case that the file marks invalid or returns a different result. It may reject a valid case only if the runtime's URL host parser rejects the input or the expected result, as a parser with older Unicode tables does. `tools/workers/src/checks.ts` runs the toUnicode column in workerd. |
 | toAsciiT and toAsciiTStatus | skipped | Transitional processing is deprecated by UTS #46 and the URL Standard doesn't use it. See the README. |
 
 ## tr46

@@ -42,6 +42,11 @@
       "types": "./dist/exports/index.d.ts",
       "default": "./dist/exports/index.js"
     },
+    "./url": {
+      "src": "./src/exports/url.ts",
+      "types": "./dist/exports/url.d.ts",
+      "default": "./dist/exports/url.js"
+    },
     "./internal": {
       "src": "./src/exports/internal.ts",
       "types": "./dist/exports/internal.d.ts",

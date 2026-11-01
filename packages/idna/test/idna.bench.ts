@@ -3,6 +3,7 @@ import punycode from 'punycode/punycode.js';
 import tr46 from 'tr46';
 import { expect, test } from 'vite-plus/test';
 import * as Idna from '@portable/idna';
+import * as IdnaUrl from '@portable/idna/url';
 
 const unicode = [
   'bücher.example',
@@ -25,6 +26,11 @@ test('toUnicode on 10 hostnames within 25% of tr46', async ({ bench }) => {
     bench('@portable/idna', () => {
       for (const domain of ascii) {
         Idna.toUnicode(domain);
+      }
+    }),
+    bench('@portable/idna/url', () => {
+      for (const domain of ascii) {
+        IdnaUrl.toUnicode(domain);
       }
     }),
     bench('tr46', () => {
@@ -52,6 +58,11 @@ test('toAscii on 10 domains within 25% of tr46', async ({ bench }) => {
     bench('@portable/idna', () => {
       for (const domain of unicode) {
         Idna.toAscii(domain);
+      }
+    }),
+    bench('@portable/idna/url', () => {
+      for (const domain of unicode) {
+        IdnaUrl.toAscii(domain);
       }
     }),
     bench('tr46', () => {

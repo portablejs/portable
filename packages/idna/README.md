@@ -50,6 +50,26 @@ The result equals `new URL('http://' + domain).hostname` with three exceptions. 
 | --- | --- | --- |
 | `strict` | `false` | Apply the STD 3 hostname rules: only `a-z`, `0-9`, and `-` in a label, and no `-` at either end of a label or in its third and fourth positions. In `toAscii` it also checks DNS lengths: every label is 1 to 63 characters and the name at most 253, so a trailing dot throws. This is the URL Standard's `beStrict`, and what Unicode's conformance tests use. |
 
+### Smaller bundles with `@portable/idna/url`
+
+Every runtime already applies UTS #46 in its URL host parser. `@portable/idna/url` has the same `toUnicode`, `toAscii`, `InvalidInputError`, and `strict` option, but it relies on that parser in place of the Unicode tables, so it is 3.3 kB minified and gzipped instead of 16 kB:
+
+```ts
+import * as Idna from '@portable/idna/url';
+
+Idna.toUnicode('xn--bcher-kva.example'); // 'bücher.example'
+```
+
+`toUnicode` converts the domain to ASCII with `new URL()`, which maps, normalizes, and validates it with the runtime's tables. It decodes each `xn--` label and converts the decoded domain to ASCII again. The second conversion makes the parser check the code points each label decodes to, and `toUnicode` throws if the ASCII differs from the first conversion's. It applies the bidi rule itself, because the parsers in Node and Cloudflare Workers skip it. The bidi classes add about 1 kB. `toAscii` works the same way and returns the ASCII. Like the main entry point, it lowercases ASCII input without validating it unless you pass `strict: true`.
+
+On `IdnaTestV2.txt`, it accepts no invalid domain in Node 24, Bun, Chromium, or Cloudflare Workers. Every result it returns equals the main entry point's, but it rejects some valid domains:
+
+- If the runtime's tables are older than Unicode 18, it rejects a domain with a character added since. That's 9 cases in each of those runtimes. Browsers show the ASCII form of such a domain, and so does the `displayHost` example above.
+- If the runtime's parser rejects a domain that UTS #46 allows, so does `@portable/idna/url`. Chromium rejects 42 cases that write `≮` or `≯` as `<` or `>` followed by U+0338 COMBINING LONG SOLIDUS OVERLAY, which UTS #46 normalizes to `≮` and `≯`.
+- It rejects a domain with a URL delimiter, such as `?` or `#` (44 cases), and Unicode input that `URL` reads as an IPv4 address, such as `１２７.０.０.１` (1 case).
+
+`toUnicode` and `toAscii` in `@portable/idna/url` take 2 to 3 times as long as the main entry point's, because they parse a domain with `xn--` labels twice.
+
 ## Why use this over punycode and tr46
 
 punycode only converts the Punycode encoding of each label. It doesn't map uppercase or compatibility characters and doesn't check the result, so `punycode.toUnicode('xn--google-')` returns `google`, and `punycode.toASCII('ÜBER.COM')` returns `xn--BER-ska.COM`, which no browser produces. tr46 implements UTS #46 and depends on punycode.
@@ -84,24 +104,27 @@ The URL Standard runs UTS #46 for hosts, but implementations lag behind it. On `
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Convert 10 hostnames to Unicode</th></tr>
-<tr><td>@portable/idna</td><td align="right">87,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><code>node:url</code></td><td align="right">79,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="145" height="12" alt="" /></td></tr>
-<tr><td>punycode</td><td align="right">76,700</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="140" height="12" alt="" /></td></tr>
-<tr><td>tr46</td><td align="right">12,900</td><td>6.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">132,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">124,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="150" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">117,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="143" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna/url</td><td align="right">54,000</td><td>2.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="66" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">19,100</td><td>6.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="23" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Convert 10 domains to ASCII</th></tr>
-<tr><td><code>new URL()</code></td><td align="right">102,000</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/idna</td><td align="right">84,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="132" height="12" alt="" /></td></tr>
-<tr><td><code>node:url</code></td><td align="right">79,900</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="125" height="12" alt="" /></td></tr>
-<tr><td>punycode</td><td align="right">79,200</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
-<tr><td>tr46</td><td align="right">14,500</td><td>5.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="23" height="12" alt="" /></td></tr>
+<tr><td><code>new URL()</code></td><td align="right">159,000</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">128,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="129" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">125,000</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="126" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">122,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="122" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna/url</td><td align="right">44,300</td><td>2.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="45" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">21,500</td><td>5.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="22" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/idna, and the bars are scaled to the fastest library.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/idna, and the bars are scaled to the fastest library.
 
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/idna | – | 16 kB | 1 | none | included |
+| @portable/idna/url | – | 3.3 kB | 1 | none | included |
 | tr46 | 7.0.0 | 64 kB | 1 | none | @types/tr46 |
 | punycode | 2.3.1 | 1.5 kB | 0 | none | @types/punycode |
 | `node:url` | – | built in | – | Node only | – |
