@@ -20,6 +20,7 @@
     "p-debounce": "^6.0.0",
     "p-retry": "^8.0.1",
     "p-wait-for": "^7.0.0",
+    "perfect-debounce": "^2.1.0",
     "throttle-debounce": "^5.0.2"
   }
 }

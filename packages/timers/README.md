@@ -2,7 +2,7 @@
 
 Sleep, retry with backoff, poll until a value is ready, and debounce or throttle a function. Every function takes an `AbortSignal` and leaves no timers behind. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [delay](https://www.npmjs.com/package/delay), [p-retry](https://www.npmjs.com/package/p-retry), [async-retry](https://www.npmjs.com/package/async-retry), [p-wait-for](https://www.npmjs.com/package/p-wait-for), [lodash.debounce](https://www.npmjs.com/package/lodash.debounce), [lodash.throttle](https://www.npmjs.com/package/lodash.throttle), [throttle-debounce](https://www.npmjs.com/package/throttle-debounce), and [p-debounce](https://www.npmjs.com/package/p-debounce).
+Replaces [delay](https://www.npmjs.com/package/delay), [p-retry](https://www.npmjs.com/package/p-retry), [async-retry](https://www.npmjs.com/package/async-retry), [p-wait-for](https://www.npmjs.com/package/p-wait-for), [lodash.debounce](https://www.npmjs.com/package/lodash.debounce), [lodash.throttle](https://www.npmjs.com/package/lodash.throttle), [throttle-debounce](https://www.npmjs.com/package/throttle-debounce), [p-debounce](https://www.npmjs.com/package/p-debounce), and [perfect-debounce](https://www.npmjs.com/package/perfect-debounce).
 
 ```sh
 npm install @portable/timers
@@ -214,31 +214,32 @@ Each of these libraries does one job, with its own option names. `retry` and `po
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Retry 10 attempts</th></tr>
-<tr><td>@portable/timers</td><td align="right">98,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>p-retry</td><td align="right">52,700</td><td>1.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="86" height="12" alt="" /></td></tr>
-<tr><td>async-retry</td><td align="right">98.0</td><td>1,000× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">112,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-retry</td><td align="right">58,600</td><td>1.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="84" height="12" alt="" /></td></tr>
+<tr><td>async-retry</td><td align="right">98.1</td><td>1,100× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Retry 10 attempts with a signal</th></tr>
-<tr><td>p-retry</td><td align="right">53,700</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/timers</td><td align="right">53,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">57,800</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-retry</td><td align="right">54,600</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="151" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Poll until the 10th check succeeds</th></tr>
-<tr><td>@portable/timers</td><td align="right">98.7</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>p-wait-for</td><td align="right">98.1</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="159" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">99.2</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>p-wait-for</td><td align="right">98.6</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Sleep for 1 ms</th></tr>
-<tr><td>@portable/timers</td><td align="right">1,200</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>delay</td><td align="right">951</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="127" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">1,080</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>delay</td><td align="right">1,070</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="159" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Debounce a burst of 1,000 calls</th></tr>
-<tr><td>lodash.debounce</td><td align="right">15,400</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/timers</td><td align="right">13,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="142" height="12" alt="" /></td></tr>
-<tr><td>throttle-debounce</td><td align="right">4,260</td><td>3.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="44" height="12" alt="" /></td></tr>
-<tr><td>p-debounce</td><td align="right">2,800</td><td>4.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="29" height="12" alt="" /></td></tr>
+<tr><td>lodash.debounce</td><td align="right">16,100</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">14,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="143" height="12" alt="" /></td></tr>
+<tr><td>perfect-debounce</td><td align="right">4,610</td><td>3.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="46" height="12" alt="" /></td></tr>
+<tr><td>throttle-debounce</td><td align="right">4,600</td><td>3.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="46" height="12" alt="" /></td></tr>
+<tr><td>p-debounce</td><td align="right">3,170</td><td>4.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="32" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Throttle a burst of 1,000 calls</th></tr>
-<tr><td>lodash.throttle</td><td align="right">15,300</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/timers</td><td align="right">13,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="136" height="12" alt="" /></td></tr>
-<tr><td>throttle-debounce</td><td align="right">3,530</td><td>3.7× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="37" height="12" alt="" /></td></tr>
+<tr><td>lodash.throttle</td><td align="right">15,600</td><td>1.2× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/timers</td><td align="right">13,100</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="134" height="12" alt="" /></td></tr>
+<tr><td>throttle-debounce</td><td align="right">4,100</td><td>3.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="42" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/timers, and the bars are scaled to the fastest library.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/timers, and the bars are scaled to the fastest library.
 
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
@@ -251,6 +252,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | lodash.throttle | 4.1.1 | 1.2 kB | 0 | none | @types/lodash.throttle |
 | throttle-debounce | 5.0.2 | 0.5 kB | 0 | none | @types/throttle-debounce |
 | p-debounce | 6.0.0 | 0.7 kB | 0 | none | included |
+| perfect-debounce | 2.1.0 | 0.4 kB | 0 | none | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
@@ -265,7 +267,7 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - p-wait-for checks every 20 ms by default. `poll` waits 1000 ms, because it is mostly used against servers.
 - delay's `clearDelay(promise)` has no equivalent. Abort the `signal` instead, and the promise rejects rather than resolving early.
 
-## Why use this over lodash.debounce, lodash.throttle, throttle-debounce, and p-debounce
+## Why use this over lodash.debounce, lodash.throttle, throttle-debounce, p-debounce, and perfect-debounce
 
 `debounce` and `throttle` follow lodash's timing: the oracle tests compare the time and arguments of every invocation with lodash 4.18 on random call, `flush`, and `cancel` schedules. They differ in what a call returns and in how they end.
 
@@ -273,9 +275,10 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 - `signal` cancels the waiting invocation and disables the function, so it can be tied to a component's or request's lifetime.
 - Time is read from `performance.now()`. lodash reads `Date.now()`, so `throttle` invokes again at once when the system clock jumps forward.
 - lodash.debounce 4.0.8, the standalone package, leaves a timer behind in a tight loop when `maxWait` is below `ms`, and invokes at other times than lodash 4.18. The oracle tests show the difference.
-- A burst of 1,000 calls through `debounce` or `throttle` runs 10 to 15% slower than lodash on Node, and 3 to 5 times faster than throttle-debounce and p-debounce. The benchmark table above has the numbers.
+- A burst of 1,000 calls through `debounce` or `throttle` runs 10 to 15% slower than lodash on Node, and 3 to 5 times faster than throttle-debounce, p-debounce, and perfect-debounce. The benchmark table above has the numbers.
 - `cancel()` and `flush()` work as in lodash, except that calls dropped by `cancel` reject with an `AbortError` and `flush` returns a promise.
 - p-debounce's `pDebounce.promise(fn)` has no equivalent, because it limits concurrency rather than time.
+- `debounce` starts each invocation on time, even if the previous one is still running. perfect-debounce doesn't start an invocation while one is running. Calls made during a running invocation resolve with that invocation's result. When it finishes, perfect-debounce runs one more invocation with the latest arguments. If you need one invocation at a time, pass `fn` through `Queue.limit(1)` from [@portable/queue](https://portablejs.com/packages/queue).
 - throttle-debounce takes the delay first, as in `throttle(delay, fn)`. `Timers.throttle` and `Timers.debounce` take the function first: `Timers.throttle(fn, delay)`.
 - Setting both `leading` and `trailing` to `false` throws a `RangeError`, because the function would never run.
 - throttle-debounce's `cancel()` disables the function permanently. `cancel()` here drops only the waiting invocation, as throttle-debounce's `cancel({ upcomingOnly: true })` does. Abort the `signal` to disable the function.

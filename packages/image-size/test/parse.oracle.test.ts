@@ -1,3 +1,4 @@
+import { imageMeta } from 'image-meta';
 import { imageSize as upstream } from 'image-size';
 import { describe, expect, test } from 'vite-plus/test';
 import * as ImageSize from '@portable/image-size';
@@ -33,11 +34,35 @@ describe('gives the same size as image-size', () => {
   }
 });
 
-describe('rejects what image-size rejects', () => {
+// image-meta returns a different type for three formats, so this maps our type to image-meta's.
+// See "Why use this over image-size and image-meta" in the README.
+const imageMetaTypes: Record<string, string> = {
+  ktx2: 'ktx',
+  'jxl-stream': 'jxl',
+  bigtiff: 'tiff',
+};
+
+describe('gives the same width and height as image-meta', () => {
+  for (const path of valid) {
+    test(`${path}`, async () => {
+      const bytes = await fixture(path);
+      const { type, width, height } = ImageSize.parse(bytes);
+      const meta = imageMeta(bytes);
+      expect({ type: meta.type, width: meta.width, height: meta.height }).toEqual({
+        type: imageMetaTypes[type] ?? type,
+        width,
+        height,
+      });
+    });
+  }
+});
+
+describe('rejects what image-size and image-meta reject', () => {
   for (const path of invalid) {
     test(`${path}`, async () => {
       const bytes = await fixture(path);
       expect(() => upstream(bytes)).toThrow(TypeError);
+      expect(() => imageMeta(bytes)).toThrow(TypeError);
       expect(() => ImageSize.parse(bytes)).toThrow(ImageSize.InvalidInputError);
     });
   }
