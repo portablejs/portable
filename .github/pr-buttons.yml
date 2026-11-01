@@ -12,3 +12,6 @@ buttons:
       - 'packages/*/package.json'
       - 'packages/*/README.md'
       - 'packages/*/src/**'
+  - label: Run CI
+    workflow: verify.yml
+    description: Runs `vp check`, `pnpm check:types`, every test project (Node 24 and 26, Chromium, Firefox, and WebKit), the conformance tests on Bun and Deno, and the workerd checks on the pull request's head branch. A run has nine jobs and the repo pays for each Actions minute, so use it only for changes that depend on runtime behavior.
