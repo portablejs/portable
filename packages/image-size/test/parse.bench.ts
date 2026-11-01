@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { imageMeta } from 'image-meta';
 import { imageSize } from 'image-size';
 import { expect, test } from 'vite-plus/test';
 import * as ImageSize from '@portable/image-size';
@@ -24,6 +25,9 @@ for (const path of [
       bench('image-size', () => {
         imageSize(bytes);
       }),
+      bench('image-meta', () => {
+        imageMeta(bytes);
+      }),
     );
     expect(result.get('image-size')).not.toBeFasterThan(result.get('@portable/image-size'), {
       delta: 0.25,
@@ -39,6 +43,9 @@ test('parseStream on large.jpg in 64 KiB chunks', async ({ bench }) => {
     }),
     bench('image-size after collecting the stream', async () => {
       imageSize(new Uint8Array(await new Response(tracked(chunks).stream).arrayBuffer()));
+    }),
+    bench('image-meta after collecting the stream', async () => {
+      imageMeta(new Uint8Array(await new Response(tracked(chunks).stream).arrayBuffer()));
     }),
   );
   expect(result.get('image-size after collecting the stream')).not.toBeFasterThan(

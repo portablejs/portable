@@ -2,6 +2,7 @@ import * as Timers from '@portable/timers';
 import lodashDebounce from 'lodash.debounce';
 import lodashThrottle from 'lodash.throttle';
 import pDebounce from 'p-debounce';
+import { debounce as perfectDebounce } from 'perfect-debounce';
 import * as throttleDebounce from 'throttle-debounce';
 import { expect, test } from 'vite-plus/test';
 
@@ -39,6 +40,13 @@ test('a burst of 1000 debounced calls is within 25% of lodash.debounce', async (
         debounced(i).catch(() => {});
       }
       controller.abort();
+    }),
+    bench('perfect-debounce', () => {
+      const debounced = perfectDebounce(work, 100);
+      for (let i = 0; i < calls; i++) {
+        void debounced(i);
+      }
+      void debounced.flush();
     }),
   );
   expect(result.get('lodash.debounce')).not.toBeFasterThan(result.get('@portable/timers'), {
