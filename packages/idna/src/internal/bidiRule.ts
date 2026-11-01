@@ -1,5 +1,4 @@
 import * as bidi from './bidi.js';
-import { unpackInts } from './packed.js';
 
 // The groups of bidi classes that the bidi rule tells apart, numbered as in scripts/generate.ts.
 // Group 5 holds ES, CS, ET, ON, and BN, which the rule allows anywhere but the ends of a label.
@@ -9,6 +8,33 @@ const r = 2;
 const an = 3;
 const en = 4;
 const nsm = 6;
+
+function digit(code: number): number {
+  if (code >= 97) {
+    return code - 71;
+  }
+  if (code >= 65) {
+    return code === 95 ? 63 : code - 65;
+  }
+  return code === 45 ? 62 : code + 4;
+}
+
+/** Decodes the base64url varints written by `packInts` in scripts/generate.ts. */
+function unpackInts(text: string): number[] {
+  const values: number[] = [];
+  for (let i = 0; i < text.length;) {
+    let value = 0;
+    let scale = 1;
+    let next: number;
+    do {
+      next = digit(text.charCodeAt(i++));
+      value += (next & 31) * scale;
+      scale *= 32;
+    } while (next & 32);
+    values.push(value);
+  }
+  return values;
+}
 
 type Runs = { starts: Int32Array; groups: Uint8Array };
 

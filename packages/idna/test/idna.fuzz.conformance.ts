@@ -1,5 +1,4 @@
 import * as Idna from '@portable/idna';
-import * as IdnaUrl from '@portable/idna/url';
 import { fc, fuzz, outcome } from '@portable/fuzz';
 import { expect, test } from 'vite-plus/test';
 
@@ -55,18 +54,5 @@ test('toUnicode throws only InvalidInputError for any xn-- label', () => {
         outcome(errors, () => Idna.toAscii(`xn--${label}.example`, { strict: true }));
       },
     ),
-  );
-});
-
-test('@portable/idna/url throws only InvalidInputError and gives the same result as the tables when it accepts', () => {
-  fuzz(
-    fc.property(fc.oneof(domainLike, anyText), fc.boolean(), (domain, strict) => {
-      const ascii = outcome(errors, () => IdnaUrl.toAscii(domain, { strict }));
-      const unicode = outcome(errors, () => IdnaUrl.toUnicode(domain, { strict }));
-      const tablesAscii = 'value' in ascii ? Idna.toAscii(domain, { strict }) : undefined;
-      const tablesUnicode = 'value' in unicode ? Idna.toUnicode(domain, { strict }) : undefined;
-      expect('value' in ascii ? ascii.value : undefined).toBe(tablesAscii);
-      expect('value' in unicode ? unicode.value : undefined).toBe(tablesUnicode);
-    }),
   );
 });

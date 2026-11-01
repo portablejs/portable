@@ -345,10 +345,6 @@ export const tables: Record<string, Table> = {
   idna: {
     columns: [
       ours('idna', ['toUnicode', 'toAscii']),
-      {
-        name: '@portable/idna/url',
-        imports: [{ from: '@portable/idna/url', use: ['toUnicode', 'toAscii'] }],
-      },
       lib('tr46', [{ from: 'tr46', use: ['toUnicode', 'toASCII'] }]),
       lib('punycode', [{ from: 'punycode/punycode.js' }]),
       node('node:url', '`node:url`'),

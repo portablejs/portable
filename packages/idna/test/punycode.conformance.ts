@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vite-plus/test';
 import * as Idna from '@portable/idna';
-import { decode, encode } from '../src/internal/punycode.js';
+import { decode } from '../src/internal/punycode.js';
 
 // Cases from punycode.js 2.3.1 tests/tests.js (MIT, Mathias Bynens), most of them from RFC 3492
 // section 7.1.
@@ -155,16 +155,6 @@ describe('punycode.js: decode', () => {
   });
 });
 
-describe('punycode.js: encode', () => {
-  test.each(strings)('$description', ({ decoded, encoded }) => {
-    expect(encode(decoded)).toBe(encoded);
-  });
-
-  test('encodes astral code points as one code point', () => {
-    expect(encode('💩')).toBe('ls8h');
-  });
-});
-
 describe('punycode.js: toUnicode', () => {
   test.each(domains)('$description', ({ decoded, encoded }) => {
     expect(Idna.toUnicode(encoded)).toBe(decoded);
@@ -174,13 +164,14 @@ describe('punycode.js: toUnicode', () => {
     expect(Idna.toUnicode('xn--p-8sbkgc5ag7bhce.xn--ba-lmcq')).toBe('джpумлатест.bрфa');
   });
 
-  test('leaves non-printable ASCII alone', () => {
-    expect(Idna.toUnicode('\0\x01\x02foo.bar')).toBe('\0\x01\x02foo.bar');
-    expect(Idna.toUnicode('foo\x7F.example')).toBe('foo\x7F.example');
+  test('rejects non-printable ASCII, which URL forbids in a host', () => {
+    expect(() => Idna.toUnicode('\0\x01\x02foo.bar')).toThrow(Idna.InvalidInputError);
+    expect(() => Idna.toUnicode('foo\x7F.example')).toThrow(Idna.InvalidInputError);
   });
 
   test('does not decode names that do not start with xn--, but lowercases them', () => {
-    for (const { encoded } of strings) {
+    const hosts = strings.filter(({ encoded }) => !/[ <>]/.test(encoded));
+    for (const { encoded } of hosts) {
       expect(Idna.toUnicode(encoded)).toBe(encoded.toLowerCase());
     }
   });

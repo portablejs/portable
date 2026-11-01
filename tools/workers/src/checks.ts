@@ -18,7 +18,6 @@ import * as DnsPacket from '@portable/dns-packet';
 import * as Exif from '@portable/exif';
 import * as Idna from '@portable/idna';
 import { hostToAscii } from '@portable/idna/internal';
-import * as IdnaUrl from '@portable/idna/url';
 import * as ImageSize from '@portable/image-size';
 import * as Ip from '@portable/ip';
 import * as JsonStream from '@portable/json-stream';
@@ -187,17 +186,13 @@ export const checks: Record<string, (env: Env) => Promise<void> | void> = {
   idna() {
     equal(Idna.toAscii('Bücher.example'), 'xn--bcher-kva.example');
     equal(Idna.toUnicode('xn--bcher-kva.example'), 'bücher.example');
-  },
-  // workerd's URL host parser skips the bidi rule, so this runs all of IdnaTestV2.txt to check
-  // that @portable/idna/url applies it and adds no rejections beyond the parser's.
-  idnaUrl() {
-    equal(IdnaUrl.toAscii('Bücher.example'), 'xn--bcher-kva.example');
-    equal(IdnaUrl.toUnicode('xn--bcher-kva.example'), 'bücher.example');
+    // workerd's URL host parser skips the bidi rule, so this runs all of IdnaTestV2.txt to check
+    // that idna applies it and adds no rejections beyond the parser's.
     const differences: string[] = [];
     for (const testCase of idnaTestCases) {
       const invalid = testCase.toUnicodeStatus.some((code) => !strictCodes.has(code));
       const expected = invalid ? null : testCase.toUnicode;
-      const actual = attempt(() => IdnaUrl.toUnicode(testCase.source));
+      const actual = attempt(() => Idna.toUnicode(testCase.source));
       const parserRejects =
         hostToAscii(testCase.source) === undefined || hostToAscii(testCase.toUnicode) === undefined;
       if (actual !== expected && !(actual === null && parserRejects)) {

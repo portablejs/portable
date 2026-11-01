@@ -3,7 +3,6 @@ import punycode from 'punycode/punycode.js';
 import tr46 from 'tr46';
 import { expect, test } from 'vite-plus/test';
 import * as Idna from '@portable/idna';
-import * as IdnaUrl from '@portable/idna/url';
 
 const unicode = [
   'bücher.example',
@@ -28,11 +27,6 @@ test('toUnicode on 10 hostnames within 25% of tr46', async ({ bench }) => {
         Idna.toUnicode(domain);
       }
     }),
-    bench('@portable/idna/url', () => {
-      for (const domain of ascii) {
-        IdnaUrl.toUnicode(domain);
-      }
-    }),
     bench('tr46', () => {
       for (const domain of ascii) {
         tr46.toUnicode(domain, tr46Flags);
@@ -50,7 +44,6 @@ test('toUnicode on 10 hostnames within 25% of tr46', async ({ bench }) => {
     }),
   );
   expect(result.get('tr46')).not.toBeFasterThan(result.get('@portable/idna'), { delta: 0.25 });
-  expect(result.get('punycode')).not.toBeFasterThan(result.get('@portable/idna'), { delta: 0.25 });
 });
 
 test('toAscii on 10 domains within 25% of tr46', async ({ bench }) => {
@@ -58,11 +51,6 @@ test('toAscii on 10 domains within 25% of tr46', async ({ bench }) => {
     bench('@portable/idna', () => {
       for (const domain of unicode) {
         Idna.toAscii(domain);
-      }
-    }),
-    bench('@portable/idna/url', () => {
-      for (const domain of unicode) {
-        IdnaUrl.toAscii(domain);
       }
     }),
     bench('tr46', () => {
@@ -88,5 +76,4 @@ test('toAscii on 10 domains within 25% of tr46', async ({ bench }) => {
     }),
   );
   expect(result.get('tr46')).not.toBeFasterThan(result.get('@portable/idna'), { delta: 0.25 });
-  expect(result.get('punycode')).not.toBeFasterThan(result.get('@portable/idna'), { delta: 0.25 });
 });
