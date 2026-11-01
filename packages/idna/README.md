@@ -24,7 +24,7 @@ Idna.toAscii('Bücher.example'); // 'xn--bcher-kva.example'
 
 ### `toUnicode(domain, options?)`
 
-Converts the domain to ASCII with the runtime's URL host parser, which maps, normalizes, and validates it. It then decodes each `xn--` label and converts the decoded domain to ASCII again. Converting again makes the parser check the code points each label decodes to. If the result differs from the first conversion, `toUnicode` throws. It also applies the bidi rule of RFC 5893 (CheckBidi), because the parsers in Node and Cloudflare Workers skip it. Unicode input is mapped and normalized too, so `toUnicode('BÜCHER.example')` returns `'bücher.example'`.
+Converts the domain to ASCII with the runtime's URL host parser, which maps, normalizes, and validates it. It then decodes each `xn--` label. The parser doesn't validate an `xn--` label in ASCII input, so if the input has one, `toUnicode` converts the decoded domain to ASCII again. That makes the parser check the code points each label decodes to, and `toUnicode` throws if the result differs from the first conversion. It also applies the bidi rule of RFC 5893 (CheckBidi), because the parsers in Node and Cloudflare Workers skip it. Unicode input is mapped and normalized too, so `toUnicode('BÜCHER.example')` returns `'bücher.example'`.
 
 It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn--` label that isn't valid Punycode or that decodes to a character IDNA doesn't allow. UTS #46 leaves it to you to decide what to show instead. Browsers show the ASCII form:
 
@@ -81,16 +81,16 @@ punycode only converts the Punycode encoding of each label. It doesn't map upper
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Convert 10 hostnames to Unicode</th></tr>
-<tr><td>punycode</td><td align="right">121,000</td><td>2.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><code>node:url</code></td><td align="right">119,000</td><td>2.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="157" height="12" alt="" /></td></tr>
-<tr><td>@portable/idna</td><td align="right">52,800</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="70" height="12" alt="" /></td></tr>
-<tr><td>tr46</td><td align="right">18,000</td><td>2.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="24" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">123,000</td><td>2.4× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">120,000</td><td>2.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="156" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">51,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="67" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">17,900</td><td>2.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="23" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Convert 10 domains to ASCII</th></tr>
-<tr><td><code>new URL()</code></td><td align="right">159,000</td><td>3.8× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><code>node:url</code></td><td align="right">114,000</td><td>2.8× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="115" height="12" alt="" /></td></tr>
-<tr><td>punycode</td><td align="right">113,000</td><td>2.7× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="114" height="12" alt="" /></td></tr>
-<tr><td>@portable/idna</td><td align="right">41,500</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="42" height="12" alt="" /></td></tr>
-<tr><td>tr46</td><td align="right">20,700</td><td>2.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="21" height="12" alt="" /></td></tr>
+<tr><td><code>new URL()</code></td><td align="right">157,000</td><td>3.7× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td><code>node:url</code></td><td align="right">125,000</td><td>2.9× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="127" height="12" alt="" /></td></tr>
+<tr><td>punycode</td><td align="right">116,000</td><td>2.7× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="118" height="12" alt="" /></td></tr>
+<tr><td>@portable/idna</td><td align="right">42,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="44" height="12" alt="" /></td></tr>
+<tr><td>tr46</td><td align="right">21,500</td><td>2.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="22" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 

@@ -83,13 +83,21 @@ export function toUnicode(domain: string, options: toUnicode.Options = {}): stri
 
 const nonAscii = /[^\0-\x7f]/;
 const punycodeLabel = /(?:^|\.)xn--/;
+
+/**
+ * Whether the input may have an `xn--` label once the parser maps it. NFKC and lowercasing map
+ * fullwidth and other compatibility forms of `xn--` the way UTS #46 does.
+ */
+const hasPunycodeInput = (domain: string) =>
+  domain.normalize('NFKC').toLowerCase().includes('xn--');
 const std3 = /[^a-z0-9-]/;
 const forbiddenCodePoint = /[\0-\x20#%/:<>?@[\\\]^|\x7f]/;
 
 /**
- * Converts a domain to ASCII with the URL host parser and decodes its `xn--` labels. It passes the
- * decoded labels to the parser again and throws if the ASCII differs, so the parser's UTS #46
- * validation also checks the `xn--` labels in the input and the code points they decode to.
+ * Converts a domain to ASCII with the URL host parser and decodes its `xn--` labels. If the input
+ * has `xn--` labels, it passes the decoded labels to the parser again and throws if the ASCII
+ * differs, because the parser doesn't validate an `xn--` label in ASCII input. The `xn--` labels
+ * that the parser writes for Unicode labels are valid already, so Unicode input is parsed once.
  */
 function convert(domain: string, strict: boolean): { ascii: string; labels: string[] } {
   const ascii = parse(domain);
@@ -106,8 +114,7 @@ function convert(domain: string, strict: boolean): { ascii: string; labels: stri
       }
       labels[i] = text;
     }
-    const unicode = labels.join('.');
-    if (hostToAscii(unicode) !== ascii) {
+    if (hasPunycodeInput(domain) && hostToAscii(labels.join('.')) !== ascii) {
       throw new InvalidInputError(`Domain "${ascii}" decodes to labels that IDNA doesn't allow.`);
     }
   }
