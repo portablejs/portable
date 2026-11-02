@@ -84,8 +84,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 </tbody>
 <tbody>
 <tr><th colspan="2" align="left">Crypto and auth</th></tr>
-<tr><td><a href="packages/web-crypto">@portable/web-crypto</a></td><td>Helpers over <code>crypto.subtle</code> that take and return bytes: digests
-, HMAC, HKDF, keys from seeds for Ed25519 and X25519, keys from PEM text, and ECDSA signature conversion.</td></tr>
+<tr><td><a href="packages/web-crypto">@portable/web-crypto</a></td><td>Helpers over <code>crypto.subtle</code> that take and return bytes: digests, HMAC, HKDF, keys from seeds for Ed25519 and X25519, keys from PEM text, and ECDSA signature conversion.</td></tr>
 <tr><td><a href="packages/password">@portable/password</a></td><td>Hashes and verifies passwords with PBKDF2 on WebCrypto.</td></tr>
 <tr><td><a href="packages/webhooks">@portable/webhooks</a></td><td>Verifies and signs webhooks from Standard Webhooks senders, Stripe, GitHub, Slack, and other HMAC-SHA256 senders.</td></tr>
 <tr><td><a href="packages/oauth1">@portable/oauth1</a></td><td>Signs OAuth 1.0a requests.</td></tr>
