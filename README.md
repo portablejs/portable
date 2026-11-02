@@ -86,7 +86,7 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 </tbody>
 <tbody>
 <tr><th colspan="2" align="left">Crypto and auth</th></tr>
-<tr><td><a href="packages/web-crypto">@portable/web-crypto</a></td><td>Bytes-in, bytes-out helpers over <code>crypto.subtle</code>: digests, HMAC, HKDF, keys from seeds for Ed25519 and X25519, keys from PEM text, and ECDSA signature conversion.</td></tr>
+<tr><td><a href="packages/web-crypto">@portable/web-crypto</a></td><td>Helpers over <code>crypto.subtle</code> that take and return bytes: digests, HMAC, HKDF, keys from seeds for Ed25519 and X25519, keys from PEM text, and ECDSA signature conversion.</td></tr>
 <tr><td><a href="packages/password">@portable/password</a></td><td>Hashes and verifies passwords with PBKDF2 on WebCrypto.</td></tr>
 <tr><td><a href="packages/webhooks">@portable/webhooks</a></td><td>Verifies and signs webhooks from Standard Webhooks senders, Stripe, GitHub, Slack, and other HMAC-SHA256 senders.</td></tr>
 <tr><td><a href="packages/oauth1">@portable/oauth1</a></td><td>Signs OAuth 1.0a requests.</td></tr>
@@ -119,19 +119,25 @@ await fetch(`/upload?width=${width}&height=${height}`, { method: 'POST', body: p
 
 ### How the packages work
 
-Every package follows the same conventions, so once you've used one, you know how the others work:
+Every package follows the same conventions:
 
 - Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and call `Csv.decode` or `new Csv.DecoderStream()`.
-- Bytes go in and come out as `Uint8Array`, and a Node `Buffer` is accepted. Functions that take text also take its bytes.
-- A streaming transform is a `TransformStream` that you pass to `pipeThrough`, as with `TextDecoderStream`.
-- Every async function and every stream takes a `signal`. Aborting it stops the `fetch` calls, timers, and nested streams underneath, and the call rejects with `signal.reason`, as `fetch` does.
-- An object that stays open, such as an SMTP client, a queue, or a WebSocket, has a `close()` method, a `signal` option that closes it, or both. It works with `await using` where the runtime has `Symbol.asyncDispose`.
-- Options that take a time, such as `now`, accept a `Date`, or a `Temporal.Instant`. Times in results are `Date` objects.
-- Errors extend the classes in [@portable/errors](packages/errors). `InvalidInputError` means the data was malformed, and `TypeError` or `RangeError` means an argument was wrong.
+- Functions take and return bytes as `Uint8Array`. A Node `Buffer` works, because it is a `Uint8Array`. Functions that take text also take its bytes.
+- A streaming transform is a `TransformStream` that you pass to `pipeThrough`, like `TextDecoderStream`.
+- Every async function and stream takes a `signal`. Aborting it stops the `fetch` calls, timers, and nested streams it started, and rejects with `signal.reason`.
+- An object that stays open, such as an SMTP client, a queue, or a WebSocket, closes with `close()`, by aborting its `signal`, or both. Where the runtime has `Symbol.asyncDispose`, it works with `await using`.
+- Time options such as `now` accept a `Date` or a `Temporal.Instant`. Results use `Date`.
+- Errors extend the classes in [@portable/errors](packages/errors). `InvalidInputError` means the data is malformed. `TypeError` or `RangeError` means an argument is wrong.
 
 ### Runtimes
 
-The tests run in Chromium, Firefox, WebKit, Node 24, Node 26, Bun, and Deno. A check of every package also runs in workerd, the Cloudflare Workers runtime. Every package runs in Chrome 116, Firefox 124, and Safari 17.4 or later. Ed25519 signatures, in [@portable/web-crypto](packages/web-crypto), [@portable/dkim](packages/dkim), [@portable/arc](packages/arc), and [@portable/mail-auth](packages/mail-auth), need Chrome 137 and Firefox 129, and X25519 keys in @portable/web-crypto need Chrome 133 and Firefox 130. [@portable/smtp](packages/smtp) and [@portable/sockets](packages/sockets) need a TCP socket API, so they run in Workers, Node, Bun, and Deno but not in browsers. The packages don't include polyfills, so if you support older browsers, you'll need to add them yourself.
+Every package runs in Chrome 116, Firefox 124, and Safari 17.4 or later. The packages don't include polyfills, so add your own for older browsers.
+
+Ed25519 signatures in [@portable/web-crypto](packages/web-crypto), [@portable/dkim](packages/dkim), [@portable/arc](packages/arc), and [@portable/mail-auth](packages/mail-auth) need Chrome 137 and Firefox 129. X25519 keys in [@portable/web-crypto](packages/web-crypto) need Chrome 133 and Firefox 130.
+
+[@portable/smtp](packages/smtp) and [@portable/sockets](packages/sockets) need a TCP socket API, so they run in Workers, Node, Bun, and Deno but not in browsers.
+
+The tests run in Chromium, Firefox, WebKit, Node 24, Node 26, Bun, and Deno. A check of every package runs in workerd, the Cloudflare Workers runtime.
 
 ### License
 

@@ -1,6 +1,6 @@
 # @portable/web-crypto
 
-Functions over `crypto.subtle` that take and return bytes: `digest`, `hmac`, and `hkdf`; Ed25519 and X25519 keys from 32-byte seeds; PEM key import; the public key of a private key; and ECDSA signatures converted between DER and raw `r || s`. It contains no cryptography of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Functions over `crypto.subtle` that take and return bytes: `digest`, `hmac`, and `hkdf`; Ed25519 and X25519 keys from 32-byte seeds; PEM key import; the public key of a private key; and ECDSA signature conversion between DER and raw `r || s`. All cryptography is done by `crypto.subtle`. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [ecdsa-sig-formatter](https://www.npmjs.com/package/ecdsa-sig-formatter) and hand-written WebCrypto wrappers.
 
@@ -24,31 +24,35 @@ await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, credentialKey, ra
 
 ## API
 
-Every function that takes bytes takes any `Uint8Array`, including a `subarray` or a Node `Buffer`, and reads only the bytes the view covers. Every result is a `Uint8Array<ArrayBuffer>` that `crypto.subtle` accepts as a `BufferSource` without a copy. `Hash` is `'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'`.
+Functions take any `Uint8Array`, including a `subarray` or a Node `Buffer`, and read only the bytes in its view. They return `Uint8Array<ArrayBuffer>`, which `crypto.subtle` accepts as a `BufferSource`. `Hash` is `'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'`.
 
 | Function | Returns | Description |
 | --- | --- | --- |
 | `digest(hash, data, options?)` | `Promise<Uint8Array>` | Hashes `data`. A string is hashed as UTF-8. |
-| `hmac(hash, key, data, options?)` | `Promise<Uint8Array>` | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key is accepted. The imported `CryptoKey` is cached for up to 16 keys of at most 256 bytes. |
+| `hmac(hash, key, data, options?)` | `Promise<Uint8Array>` | HMAC (RFC 2104). `key` and `data` are bytes or UTF-8 strings. An empty key works. Caches up to 16 imported keys of at most 256 bytes. |
 | `hkdf(hash, key, options?)` | `Promise<Uint8Array>` | HKDF (RFC 5869) extract and expand. `key` is bytes or a UTF-8 string. |
-| `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. An Ed25519 private key gets the usage `['sign']`, and its public key `['verify']`. An X25519 private key gets `['deriveBits', 'deriveKey']`, and its public key none. |
-| `importPem(algorithm, pem, options?)` | `Promise<CryptoKey>` | Imports the first `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `PUBLIC KEY` (SubjectPublicKeyInfo) or `RSA PUBLIC KEY` (PKCS #1) block of a PEM string or its bytes, skipping other blocks. `algorithm` is what `crypto.subtle.importKey` takes. |
-| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key. The public key is extractable. Its usages are the public counterparts of the private key's usages: `sign` becomes `verify`, `decrypt` becomes `encrypt`, and `unwrapKey` becomes `wrapKey`. Other usages are dropped. |
+| `importSeed(algorithm, seed, options?)` | `Promise<CryptoKeyPair>` | Imports a 32-byte `'Ed25519'` or `'X25519'` private key and returns it with its public key. The private key gets `['sign']` for Ed25519 or `['deriveBits', 'deriveKey']` for X25519. The public key gets `['verify']` for Ed25519 and none for X25519. |
+| `importPem(algorithm, pem, options?)` | `Promise<CryptoKey>` | Imports the first `PRIVATE KEY` (PKCS #8), `RSA PRIVATE KEY` (PKCS #1), `PUBLIC KEY` (SubjectPublicKeyInfo), or `RSA PUBLIC KEY` (PKCS #1) block of a PEM string or its bytes. `algorithm` is what `crypto.subtle.importKey` takes. |
+| `publicKeyOf(privateKey, options?)` | `Promise<CryptoKey>` | The extractable public key of an extractable Ed25519, X25519, ECDSA, ECDH, or RSA private key. `sign` becomes `verify`, `decrypt` becomes `encrypt`, and `unwrapKey` becomes `wrapKey`. Other usages are dropped. |
 | `derToRawEcdsa(signature, options?)` | `Uint8Array` | DER to raw `r \|\| s`. Accepts only strict DER. |
 | `rawToDerEcdsa(signature)` | `Uint8Array` | Raw `r \|\| s` to DER. The curve follows from the length: 64, 96, or 132 bytes. |
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
-| `signal` | every async function | | A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each one. If it aborts during a call, the promise rejects with `signal.reason` once the call finishes. |
+| `signal` | every async function | | Checked before and after each `crypto.subtle` call, which can't be cancelled. If it aborts during a call, the promise rejects with `signal.reason` when the call finishes. |
 | `info` | `hkdf` | empty | Context for the derived key, bytes, or a UTF-8 string. |
 | `length` | `hkdf` | the hash length | Bytes to derive, at most 255 times the hash length. |
-| `salt` | `hkdf` | empty | Bytes or a UTF-8 string. RFC 5869 treats an empty salt as zero bytes as long as the hash. |
+| `salt` | `hkdf` | empty | Bytes or a UTF-8 string. An empty salt means a hash-length run of zero bytes (RFC 5869). |
 | `extractable` | `importSeed` | `false` | Whether the private key can be exported. The public key always can. |
 | `extractable` | `importPem` | `false` | Whether the key can be exported. |
-| `usages` | `importPem` | by algorithm | The key's usages. The default is `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. For another algorithm, `usages` is required, and `importPem` rejects with a `RangeError` without it. |
-| `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'`, or `'P-521'`. It sets the width of `r` and `s` in the output. |
+| `usages` | `importPem` | by algorithm | For a private or public key: `['sign']` or `['verify']` for RSASSA-PKCS1-v1_5, RSA-PSS, ECDSA, and Ed25519; `['decrypt', 'unwrapKey']` or `['encrypt', 'wrapKey']` for RSA-OAEP; and `['deriveBits', 'deriveKey']` or none for ECDH and X25519. Required for other algorithms, or `importPem` rejects with a `RangeError`. |
+| `namedCurve` | `derToRawEcdsa` | `'P-256'` | `'P-256'`, `'P-384'`, or `'P-521'`. Sets the width of `r` and `s` in the output. |
 
-The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is malformed, when a raw signature or seed has the wrong length, when a key is not an extractable private key, or when a PEM string has no key block, isn't valid base64, or isn't a key for `algorithm`. `importPem` rejects with `WebCrypto.UnsupportedError` when the PEM block is of a kind it doesn't import: an `EC PRIVATE KEY` (SEC 1), an encrypted key, or a certificate. It wraps any error from `importKey` in `InvalidInputError`, including the one for a malformed `algorithm`, because Chromium and Firefox throw different errors for a key that doesn't match the algorithm. Other errors from `crypto.subtle`, such as the one for an HKDF `length` over the limit, are passed on unchanged.
+The functions throw `WebCrypto.InvalidInputError` for malformed DER; a raw signature or seed of the wrong length; or a key that isn't an extractable private key. `importPem` also throws it for a PEM string with no key block, invalid base64, or a key that doesn't match `algorithm`.
+
+`importPem` wraps every `importKey` error in `InvalidInputError`, including one for a malformed `algorithm`, because Chromium and Firefox throw different errors. It rejects with `WebCrypto.UnsupportedError` for an `EC PRIVATE KEY` (SEC 1), an encrypted key, or a certificate.
+
+Other `crypto.subtle` errors, such as one for an HKDF `length` over the limit, are passed on unchanged.
 
 ## Types
 
@@ -63,17 +67,17 @@ The functions throw or reject with `WebCrypto.InvalidInputError` when the DER is
 
 ## Why use this over hand-written WebCrypto calls
 
-Each helper replaces a few lines you would otherwise write yourself, and handles a trap that hand-written calls often miss.
+Each helper replaces a few lines of `crypto.subtle` calls and avoids a common mistake in them.
 
-- In TypeScript 5.9 and later, a plain `Uint8Array` is `Uint8Array<ArrayBufferLike>`, which `crypto.subtle` doesn't accept as a `BufferSource`. If you call `crypto.subtle` yourself, you add `.slice()` or a cast at every call. These functions take any `Uint8Array`, copy it only when its buffer is not an `ArrayBuffer` (a `SharedArrayBuffer`, for example), and return `Uint8Array<ArrayBuffer>`.
-- `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. These functions take a `Uint8Array` and read only the bytes the view covers.
-- WebCrypto refuses an empty HMAC key. HMAC pads the key with zero bytes, so `hmac` uses a single zero byte, which gives the result RFC 2104 defines.
-- If you call `crypto.subtle` yourself, you usually import the HMAC key on every call, and `importKey` takes about two thirds of the time of an HMAC on Node. `hmac` keeps up to 16 imported keys, so signing again with the same secret, such as a webhook secret, skips the import.
-- WebCrypto imports an Ed25519 or X25519 private key only as PKCS #8 or JWK, and has no call that returns the public key of a private key. `importSeed` adds the 16-byte PKCS #8 header and reads the public key back through a JWK export.
-- WebCrypto has no PEM import, and imports RSA keys only as PKCS #8 or SubjectPublicKeyInfo, while `openssl genrsa` and many key files use PKCS #1 (`RSA PRIVATE KEY`). If you strip the armor yourself, the usual regex often misses CRLF line breaks or text before the block, and the key still fails to import if it is PKCS #1. `importPem` reads both forms and wraps PKCS #1 in the structure WebCrypto takes.
-- WebAuthn and OpenSSL produce DER ECDSA signatures, while `crypto.subtle.verify` and JWS take raw `r || s`, and WebCrypto has no function that converts between them.
+- In TypeScript 5.9 and later, `crypto.subtle` rejects a plain `Uint8Array` as a `BufferSource`, so you'd need `.slice()` or a cast at every call. These functions take any `Uint8Array` and copy it only if its buffer isn't an `ArrayBuffer`.
+- `crypto.subtle.digest(hash, bytes.buffer)` hashes the whole buffer, not the view. These functions read only the view.
+- WebCrypto refuses an empty HMAC key. `hmac` uses a single zero byte instead, which gives the same result (RFC 2104).
+- Importing the HMAC key takes about two thirds of an HMAC's time on Node. `hmac` caches up to 16 imported keys, so signing again with the same secret skips the import.
+- WebCrypto can't import a raw Ed25519 or X25519 private key or return its public key. `importSeed` does both.
+- WebCrypto has no PEM import and can't import PKCS #1 RSA keys (`RSA PRIVATE KEY`), which `openssl genrsa` writes. `importPem` reads both forms and handles CRLF line breaks and text before the block.
+- WebAuthn and OpenSSL produce DER ECDSA signatures, but `crypto.subtle.verify` and JWS take raw `r || s`. WebCrypto can't convert between them.
 
-The helpers cost what the `crypto.subtle` calls under them cost. On Node, synchronous hashing in node:crypto or @noble/hashes is 5 to 15 times faster than any `crypto.subtle` call on small input, because each WebCrypto call goes through a promise and a thread hop. `importSeed` with `extractable: false` imports the key twice, once to read its public key and once to keep it private. `rawToDerEcdsa` is slower than `joseToDer` because V8 allocates a typed array over 64 bytes outside the JavaScript heap, and `joseToDer` instead slices a `Buffer` from Node's shared 8 KB pool.
+On Node, node:crypto and @noble/hashes hash small inputs 5 to 15 times faster, because each `crypto.subtle` call is async. `importSeed` with `extractable: false` imports the key twice.
 
 <!-- bench:start -->
 <table>
@@ -124,9 +128,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-- ecdsa-sig-formatter's `derToJose` and `joseToDer` take and return base64url text. `derToRawEcdsa` and `rawToDerEcdsa` take and return bytes, so encode and decode the base64url text JWS uses with [@portable/base64](https://portablejs.com/packages/base64).
-- ecdsa-sig-formatter takes the JWS `alg`, such as `'ES384'`. `derToRawEcdsa` takes `namedCurve` instead, and it defaults to `'P-256'`, so pass `'P-384'` or `'P-521'` for ES384 or ES512 signatures.
-- `derToRawEcdsa` throws `WebCrypto.InvalidInputError` for a long-form length where the short form fits, such as `30 81 06` for a 6-byte SEQUENCE. ecdsa-sig-formatter's `derToJose` accepts it.
-- `derToRawEcdsa` also rejects an INTEGER with a leading zero it does not need, an empty INTEGER, or a negative INTEGER, which `derToJose` accepts.
-- `derToRawEcdsa` rejects an INTEGER one byte longer than the curve allows, if its top byte is not zero. `derToJose` drops that byte and returns a different `r` or `s`.
-- Strict DER gives each signature one encoding, so if you deduplicate signatures or use them as identifiers, a second encoding of a signature you already have is rejected.
+- ecdsa-sig-formatter's `derToJose` and `joseToDer` use base64url text. `derToRawEcdsa` and `rawToDerEcdsa` use bytes, so convert with [@portable/base64](https://portablejs.com/packages/base64).
+- ecdsa-sig-formatter takes the JWS `alg`, such as `'ES384'`. `derToRawEcdsa` takes `namedCurve`, which defaults to `'P-256'`, so pass `'P-384'` or `'P-521'` for ES384 or ES512.
+- `derToRawEcdsa` accepts only strict DER, so each signature has one encoding. It throws `WebCrypto.InvalidInputError` for a long-form length where the short form fits, an unneeded leading zero, or an empty or negative INTEGER. `derToJose` accepts all of these.
+- `derToRawEcdsa` rejects an INTEGER one byte too long for the curve, unless its top byte is zero. `derToJose` drops that byte and returns a different `r` or `s`.

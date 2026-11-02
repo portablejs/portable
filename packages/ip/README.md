@@ -2,7 +2,7 @@
 
 Parses, formats, compares, and classifies IPv4 and IPv6 addresses and CIDR blocks. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [ip](https://www.npmjs.com/package/ip), [ipaddr.js](https://www.npmjs.com/package/ipaddr.js), [is-ip](https://www.npmjs.com/package/is-ip), [ip-cidr](https://www.npmjs.com/package/ip-cidr), [cidr-tools](https://www.npmjs.com/package/cidr-tools), and [ip-range-check](https://www.npmjs.com/package/ip-range-check) for parsing, validation, CIDR matching, and classification.
+Replaces [ip](https://www.npmjs.com/package/ip), [ipaddr.js](https://www.npmjs.com/package/ipaddr.js), [is-ip](https://www.npmjs.com/package/is-ip), [ip-cidr](https://www.npmjs.com/package/ip-cidr), [cidr-tools](https://www.npmjs.com/package/cidr-tools), and [ip-range-check](https://www.npmjs.com/package/ip-range-check).
 
 ```sh
 npm install @portable/ip
@@ -23,7 +23,7 @@ Ip.reverseName('192.0.2.1'); // '1.2.0.192.in-addr.arpa'
 
 ## API
 
-Every function that takes an address accepts an `Address` or a string, which it parses with `parse`. The functions don't validate an `Address` object, so build one with `parse` or `fromBytes`, which check the length.
+Every function that takes an address accepts an `Address` or a string, which it parses with `parse`. An `Address` object isn't validated, so build it with `parse` or `fromBytes`.
 
 ```ts
 type Address =
@@ -32,7 +32,7 @@ type Address =
 type Cidr = { address: Address; prefix: number };
 ```
 
-`bytes` is the address in network order: 4 bytes for IPv4, 16 for IPv6. `zone` is the part after `%` in `fe80::1%eth0`.
+`bytes` is in network order: 4 bytes for IPv4, 16 for IPv6. `zone` is the part after `%` in `fe80::1%eth0`.
 
 | Function | Returns |
 | --- | --- |
@@ -51,21 +51,21 @@ type Cidr = { address: Address; prefix: number };
 
 ### Strict parsing
 
-`parse` accepts IPv4 only as four decimal numbers from 0 to 255 without leading zeros. `inet_aton` reads `0177.0.0.1` as octal (127.0.0.1), `0x7f.1` as hex, `2130706433` as an integer, and `127.1` as two parts, while other parsers read `0177` as decimal 177 or reject it. CVE-2023-42282 and CVE-2024-29415 let `127.1` and `0x7f.1` pass ip's public-address check because the check read them one way and the network stack read them another. `parse` throws `InvalidInputError` for those spellings, so treat a parse error as a refusal.
+`parse` accepts IPv4 only as four decimal numbers from 0 to 255 without leading zeros. It throws `InvalidInputError` for octal (`0177.0.0.1`), hex (`0x7f.1`), integer (`2130706433`), and short (`127.1`) forms, because programs disagree on what they mean. Treat a parse error as a refusal.
 
-The WHATWG `URL` parser converts those spellings to dotted decimal, so `new URL('http://0x7f.1/').hostname` is `'127.0.0.1'`. Parse the `hostname` of a `URL`, after removing the brackets around an IPv6 host, rather than the raw text:
+`URL` converts those forms to dotted decimal, so `new URL('http://0x7f.1/').hostname` is `'127.0.0.1'`. Parse the `hostname` of a `URL` without the IPv6 brackets, rather than the raw text:
 
 ```ts
 const address = Ip.parse(url.hostname.replace(/^\[(.*)\]$/, '$1'));
 ```
 
-IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `::`, which replaces at least one group, an optional dotted IPv4 address in the last 32 bits (also without leading zeros), and an optional zone of letters, digits, `.`, `_`, `~`, and `-`.
+IPv6 addresses follow RFC 4291. The dotted IPv4 part can't have leading zeros either, and a zone may contain only letters, digits, `.`, `_`, `~`, and `-`.
 
 ### Ranges
 
-`range` uses the block names of the IANA IPv4 and IPv6 Special-Purpose Address Registries. Check `unmap(address)` rather than `address` when the address may be IPv4-mapped, because `range('::ffff:127.0.0.1')` returns `'ipv4Mapped'`, not `'loopback'`. To refuse internal destinations, allow only `'unicast'`.
+`range` returns a block name from the IANA Special-Purpose Address Registries. To refuse internal destinations, allow only `'unicast'`. Call `unmap` first, because `range('::ffff:127.0.0.1')` is `'ipv4Mapped'`, not `'loopback'`.
 
-`range` classifies an address, not a host name. A URL with a host name passes the check in the example above, even when the name resolves to `127.0.0.1`. Resolve the name (for example with [@portable/dns](https://portablejs.com/packages/dns)), check every address it returns, and connect to an address you checked, so a second lookup can't return a different one.
+`range` doesn't resolve host names, so a URL with a host name passes the check in the example above. Resolve the name (e.g. with [@portable/dns](https://portablejs.com/packages/dns)), check every address, and connect to a checked address so a second lookup can't return a different one.
 
 | Range | IPv4 | IPv6 |
 | --- | --- | --- |
@@ -99,13 +99,15 @@ IPv6 addresses follow RFC 4291: one to four hex digits per group, at most one `:
 | `reserved` | `240.0.0.0/4` | everything outside `2000::/3` not named above |
 | `unicast` | every other address | every other address in `2000::/3` |
 
-When blocks overlap, `range` returns the most specific one, so `2001:2::1` is `benchmarking`, not `ietfProtocolAssignments`.
+When blocks overlap, `range` returns the most specific one: `2001:2::1` is `benchmarking`, not `ietfProtocolAssignments`.
 
 ### IPv4-mapped addresses
 
-A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` treats the two forms as one address, as Node's `BlockList` does, so `Ip.contains('127.0.0.0/8', '::ffff:7f00:1')` is `true`. `compare`, `range`, and `reverseName` treat them as different addresses, so call `unmap` first. `format` writes mapped addresses in mixed notation, `::ffff:192.0.2.1`, as RFC 5952 section 5 recommends.
+A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` treats both forms as one address, like Node's `BlockList`: `Ip.contains('127.0.0.0/8', '::ffff:7f00:1')` is `true`. `compare`, `range`, and `reverseName` don't, so call `unmap` first.
 
-`::192.0.2.1` is an IPv4-compatible address, deprecated by RFC 4291, and is not treated as mapped. Its range is `'reserved'`.
+`format` writes mapped addresses as `::ffff:192.0.2.1` (RFC 5952 section 5).
+
+`::192.0.2.1` is a deprecated IPv4-compatible address, not a mapped one. Its range is `'reserved'`.
 
 ## Types
 
@@ -117,19 +119,19 @@ A dual-stack socket reports an IPv4 client as `::ffff:192.0.2.1`. `contains` tre
 
 ## Why use this over ip or ipaddr.js
 
-ip's `isPublic` and `isPrivate` accepted octal, hex, and short IPv4 spellings and misread them (CVE-2023-42282 and CVE-2024-29415). ip is unmaintained and needs `Buffer` and `os`. ipaddr.js parses those same spellings by default and its `isValid` accepts them.
+ip's `isPublic` and `isPrivate` misread octal, hex, and short IPv4 forms (CVE-2023-42282 and CVE-2024-29415). ip is unmaintained and needs `Buffer` and `os`. ipaddr.js also accepts those forms by default.
 
-- Parsing eight mixed addresses took about 1.3 µs, 12 times faster than ipaddr.js and 2.3 times faster than Node's `net.isIP`, which only validates.
-- Parsing an address and checking it against a CIDR block was 11 times faster than ipaddr.js and 1.5 times faster than Node's `BlockList.check`.
-- `contains` returns `false` when the address is of the other IP version, unless the block covers the address's IPv4-mapped form, as `::/0` does. ipaddr.js's `match` throws.
-- `range` names come from the IANA registries. ipaddr.js reports `100:0:0:1::/64` and every IPv6 address outside `2000::/3` that it doesn't name, such as `4000::1`, as `unicast`, and ip's `isPrivate` misses `198.18.0.0/15`.
-- The IPv4 part of an IPv6 address can't have leading zeros. ipaddr.js reads `::ffff:0177.0.0.1` as `177.0.0.1` and `0177.0.0.1` as `127.0.0.1`.
-- ip and ipaddr.js do subnet arithmetic, such as broadcast and last addresses, masks from prefix lengths, and merging or excluding blocks. This package doesn't.
-- ipaddr.js keeps a CIDR block's address as written, and `parseCidr` clears the host bits, so `192.168.1.134/26` formats as `192.168.1.128/26`.
-- ipaddr.js accepts a zone in a CIDR block, such as `fe80::1%eth0/64`, and `parseCidr` throws for it.
-- ipaddr.js's `toIPv4Address` throws for an address that isn't IPv4-mapped, and `unmap` returns it unchanged.
-- ipaddr.js and ip write `::ffff:c000:201` where `format` writes `::ffff:192.0.2.1`, and Node's `inet_ntop` writes `::192.0.2.1` where `format` writes `::c000:201`.
-- Node's `isIP` accepts a zone that contains `:`, and `parse` rejects it.
+- Parsing is about 12× faster than ipaddr.js and 2.3× faster than Node's `net.isIP`, which only validates.
+- Parsing and checking an address against a CIDR block is 11× faster than ipaddr.js and 1.5× faster than Node's `BlockList.check`.
+- `contains` returns `false` for an address of the other IP version, unless the block covers its IPv4-mapped form, as `::/0` does. ipaddr.js's `match` throws.
+- ipaddr.js reports `100:0:0:1::/64` and unnamed IPv6 addresses outside `2000::/3`, such as `4000::1`, as `unicast`. ip's `isPrivate` misses `198.18.0.0/15`.
+- ipaddr.js reads `::ffff:0177.0.0.1` as `177.0.0.1` and `0177.0.0.1` as `127.0.0.1`. `parse` rejects both.
+- There is no subnet arithmetic, such as broadcast addresses, masks, or merging blocks, as in ip and ipaddr.js.
+- `parseCidr` clears the host bits, so `192.168.1.134/26` formats as `192.168.1.128/26`. ipaddr.js keeps the address as written.
+- `parseCidr` throws for a zone, such as `fe80::1%eth0/64`. ipaddr.js accepts it.
+- `unmap` returns an address that isn't IPv4-mapped unchanged. ipaddr.js's `toIPv4Address` throws.
+- `format` writes `::ffff:192.0.2.1` where ip and ipaddr.js write `::ffff:c000:201`, and `::c000:201` where Node's `inet_ntop` writes `::192.0.2.1`.
+- `parse` rejects a zone that contains `:`. Node's `isIP` accepts it.
 
 <!-- bench:start -->
 <table>

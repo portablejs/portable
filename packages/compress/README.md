@@ -1,6 +1,6 @@
 # @portable/compress
 
-One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32, built on the platform's `CompressionStream` and `DecompressionStream`, so it ships no compression code of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+One-shot gzip and deflate, a decompression stream with an output limit, and CRC-32. It uses the platform's `CompressionStream` and `DecompressionStream`, so it ships no compression code of its own. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces the one-shot use of [pako](https://www.npmjs.com/package/pako) and [fflate](https://www.npmjs.com/package/fflate), and `node:zlib`'s `gzipSync`, `gunzipSync`, `deflateSync`, `inflateSync`, and `crc32`.
 
@@ -34,7 +34,7 @@ const body = response.body!.pipeThrough(new Compress.DecoderStream({ maxBytes: 1
 | `maxBytes` | `Infinity` | The most bytes the output may hold. If the output exceeds it, `decode` rejects with `MaxBytesError`, and `DecoderStream` fails with `MaxBytesError` and cancels its input. For a negative number or `NaN`, `decode` rejects and `new DecoderStream` throws, both with a `RangeError`. |
 | `signal` | | When it aborts, `encode` and `decode` reject with `signal.reason`, and `DecoderStream` fails with it and cancels its input. |
 
-There is no compression level option and no dictionary, because `CompressionStream` has neither. To compress a stream, use the platform's `CompressionStream`.
+`CompressionStream` has no compression level or dictionary, so neither does this package. To compress a stream, use `CompressionStream` directly.
 
 ### Errors
 
@@ -44,7 +44,7 @@ There is no compression level option and no dictionary, because `CompressionStre
 | `InvalidInputError` | The input is malformed, fails its checksum, or has bytes after its end. |
 | `MaxBytesError` | The output grew past `maxBytes`. Its `maxBytes` property holds the limit. |
 
-When the platform's `DecompressionStream` fails, the package throws a `TruncatedError` or `InvalidInputError` whose `cause` is the platform's `TypeError`. Errors from the package's own checks, such as a bad gzip header or an exceeded `maxBytes`, have no `cause`.
+When `DecompressionStream` fails, the package throws `TruncatedError` or `InvalidInputError` with the platform's `TypeError` as `cause`. Errors from the package's own checks, such as a bad gzip header, have no `cause`.
 
 ## Types
 
@@ -54,15 +54,15 @@ When the platform's `DecompressionStream` fails, the package throws a `Truncated
 
 ## Why use this over pako, fflate, and node:zlib
 
-pako and fflate implement deflate in JavaScript, although every runtime already ships it natively. pako is 45 kB minified (13 kB gzipped), and fflate ships its own inflate and deflate too. `node:zlib` doesn't run in browsers, and Cloudflare Workers need the `nodejs_compat` flag for it.
+pako and fflate ship their own deflate code (pako is 13 kB gzipped), though every runtime has it built in. `node:zlib` doesn't run in browsers, and needs the `nodejs_compat` flag in Cloudflare Workers.
 
-- `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data decodes to wrong bytes, and fflate allocates its output from the length field, so a forged length gives truncated output (fflate #161, #181).
+- `decode` checks the gzip CRC-32 and length. fflate checks neither, so corrupt data or a forged length gives wrong or truncated output (fflate #161, #181).
 - `maxBytes` stops a zip bomb. pako and fflate have no output limit (pako #310).
-- `decode` and `DecoderStream` throw `TruncatedError` for truncated input instead of returning partial output, and `InvalidInputError` for a bad trailer, in every runtime. Deno's `DecompressionStream` returns partial output for a cut-short deflate stream and reports a bad gzip trailer as input that ended early, so on Deno they check the end of the stream and the trailer themselves.
+- Truncated input throws `TruncatedError` instead of returning partial output, and a bad trailer throws `InvalidInputError`, in every runtime including Deno, whose `DecompressionStream` gets both wrong.
 - `decode` reads every member of a multi-member gzip file, such as BGZF or `cat a.gz b.gz`. fflate returns only the first member (fflate #102), and `DecompressionStream` throws.
-- `DecoderStream` joins input chunks that arrive while the decompressor is busy. `DecompressionStream`'s output chunks are only as large as the input chunk allows, so 1 KiB network chunks of gzip give about 4 KiB of output each, and every chunk adds the per-chunk cost of the decompressor and of each later stage. On Node, 32 MB of gzipped JSON sent as 1 KiB chunks, followed by three more transforms, decoded in 196 ms with `DecoderStream` and 253 ms with `DecompressionStream`, with 3,728 output chunks instead of 8,346.
+- `DecoderStream` merges small input chunks, so it emits fewer, larger chunks than `DecompressionStream`. On Node, 32 MB of gzipped JSON in 1 KiB chunks, followed by three more transforms, took 196 ms instead of 253 ms.
 
-In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool, and on a busy machine each pass waits for a thread. `crc32` runs in JavaScript at about the speed of the crc-32 package, and `node:zlib`'s runs in native code.
+In Node, `decode` gunzips more slowly than fflate and `node:zlib`, because Node's `DecompressionStream` passes each 16 KiB of output through the libuv thread pool. `crc32` runs in JavaScript at about the speed of the crc-32 package, and `node:zlib`'s runs in native code.
 
 <!-- bench:start -->
 <table>
@@ -106,8 +106,8 @@ Sizes cover the imports in the usage example, or the equivalent imports of each 
 
 Differences to check when you switch:
 
-- pako, fflate, and `node:zlib` have sync functions. Every function here is async, because `CompressionStream` is.
-- The `strategy` option of pako, fflate, and `node:zlib` has no equivalent. Keep fflate if you need a level, a dictionary, or a strategy.
-- `node:zlib` and pako ignore bytes after the end of the data, including a second zlib stream and zero padding after a gzip member. `decode` and `DecoderStream` fail with `InvalidInputError` on them.
-- `zlib.createGunzip()` reads every gzip member. `DecoderStream` reads one, as `DecompressionStream` does, and fails with `InvalidInputError` on a second. `decode` reads them all.
-- pako decodes a zlib stream whose header declares a smaller window than the data uses. `decode` decodes it too in Chromium, and throws `InvalidInputError` in Node.
+- Every function here is async, because `CompressionStream` is. pako, fflate, and `node:zlib` have sync functions.
+- There is no `strategy` option. Keep fflate if you need a level, a dictionary, or a strategy.
+- `node:zlib` and pako ignore bytes after the end of the data, such as a second zlib stream or zero padding after a gzip member. `decode` and `DecoderStream` fail with `InvalidInputError`.
+- `zlib.createGunzip()` reads every gzip member. `DecoderStream` reads one and fails with `InvalidInputError` on a second. `decode` reads them all.
+- pako decodes a zlib stream whose header declares a smaller window than the data uses. `decode` does too in Chromium, but throws `InvalidInputError` in Node.

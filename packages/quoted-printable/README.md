@@ -1,6 +1,6 @@
 # @portable/quoted-printable
 
-Encodes and decodes quoted-printable (RFC 2045 section 6.7), as functions and as streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Encodes and decodes quoted-printable (RFC 2045 section 6.7), as functions and streams. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [libqp](https://www.npmjs.com/package/libqp) and [quoted-printable](https://www.npmjs.com/package/quoted-printable).
 
@@ -29,11 +29,15 @@ const text = response.body!
 | `new EncoderStream(options?)` | `Uint8Array` or `string` chunks | a `TransformStream` that emits the encoded text as ASCII bytes |
 | `new DecoderStream(options?)` | `string` or `Uint8Array` chunks | a `TransformStream` that emits the decoded bytes |
 
-`encode()` keeps line breaks as they are. A lone CR or LF stays a lone CR or LF unless you pass `binary: true`, which escapes it. For a mail body, convert line endings to CRLF before you encode. `encode()` escapes `=`; bytes outside printable ASCII; and a space or tab before a line break or at the end of the input. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
+`encode()` keeps line breaks as they are, so convert a mail body to CRLF first. Pass `binary: true` to escape a lone CR or LF instead.
 
-`decode()` removes soft line breaks (`=` before CRLF, LF, or the end) and whitespace at the end of each line, and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
+`encode()` escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen at the start of a line, so no line reads as a MIME boundary.
 
-Both streams produce the same bytes as the functions however the input is chunked, including when a chunk boundary splits an escape, a CRLF, a whitespace run, or a surrogate pair.
+`encode()` adds soft line breaks (`=` and CRLF) to keep lines within `lineLength`. It prefers to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
+
+`decode()` removes soft line breaks (`=` before CRLF, LF, or the end) and trailing whitespace on each line, and decodes `=XX` escapes in either case. It copies anything else as is, including a malformed escape or a raw 8-bit byte, and never throws. For a charset other than UTF-8, pass the bytes to `new TextDecoder(charset)`.
+
+The streams give the same output as the functions, however the input is chunked.
 
 ## Options
 
@@ -41,7 +45,7 @@ Both streams produce the same bytes as the functions however the input is chunke
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `lineLength` | `76` | Longest line, counting the `=` of a soft line break but not the CRLF. An integer of at least 4, or `false` for no soft line breaks. `encode` and `EncoderStream` throw a `RangeError` for any other value. |
+| `lineLength` | `76` | Longest line, counting the `=` of a soft line break but not the CRLF. An integer of at least 4, or `false` for no soft line breaks. Any other value throws a `RangeError`. |
 | `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
 | `signal` | none | `EncoderStream` and `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
@@ -49,21 +53,20 @@ Both streams produce the same bytes as the functions however the input is chunke
 
 ## Why use this over libqp and quoted-printable
 
-Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams, and the package depends only on other `@portable/*` packages. The bugs below are fixed in libqp 3, but libqp 2.x and quoted-printable still have them.
+Output matches libqp 3.0.1 byte for byte, with web streams instead of Node streams. libqp 2.x and quoted-printable still have the bugs below that libqp 3 fixed.
 
 - Encoding 512 KB of text was about 1.2× faster than libqp 3.0.1 and 3× faster than quoted-printable. Decoding 256 KB of random bytes was about 3× faster than libqp.
-- `encode` escapes a hyphen that would start a line, so no line of the body can read as a MIME boundary. libqp before 2.1.3 could start a line with `--`.
-- `EncoderStream` output doesn't depend on how the input is chunked, and a soft line break never splits a UTF-8 sequence. libqp before 3.0.0 got both wrong, and quoted-printable still splits UTF-8 sequences.
-- `decode` removes the whole run of whitespace at the end of a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
-- `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither: it throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
-- `encode` breaks lines at 76 characters by default, and libqp's `encode` doesn't break lines at all. Pass `lineLength: false` to match libqp's `encode`.
-- libqp's `wrap`, which adds soft line breaks to quoted-printable you already have, has no equivalent. Set `lineLength` when you encode.
+- `encode` escapes a hyphen at the start of a line. libqp before 2.1.3 could start a line with `--`, and the libqp 2.x `Encoder` missed a hyphen after a lone CR.
+- `EncoderStream` output doesn't depend on chunking, and a soft line break never splits a UTF-8 sequence. libqp before 3.0.0 got both wrong, and quoted-printable still splits UTF-8 sequences.
+- `decode` removes all trailing whitespace on a line, in linear time. quoted-printable removes one character ([quoted-printable #8](https://github.com/mathiasbynens/quoted-printable/issues/8)), and libqp before 2.1.3 took quadratic time.
+- `encode` takes a `Uint8Array` and text above U+00FF. quoted-printable takes neither and throws a `RangeError` on that text ([quoted-printable #4](https://github.com/mathiasbynens/quoted-printable/issues/4)).
+- `encode` breaks lines at 76 characters by default, and libqp's `encode` doesn't break lines. Pass `lineLength: false` to match libqp.
+- libqp's `wrap` has no equivalent. Set `lineLength` when you encode.
 - `lineLength` must be `false` or an integer of at least 4. libqp treats 0, `NaN`, and non-numbers as 76 and raises anything below 4 to 4.
-- `decode` reads a string as UTF-8, as `encode` does, and returns a `Uint8Array` instead of libqp's `Buffer`. libqp reads each character's low byte, so pass a `Uint8Array` to decode raw 8-bit data.
-- libqp's `Encoder` counts `inputBytes` and `outputBytes`, and `EncoderStream` doesn't. Count chunks in a `TransformStream` of your own.
-- quoted-printable escapes every CR and LF and keeps every line within 75 characters. `encode` keeps line breaks, escapes a lone CR or LF only with `binary: true`, and allows 76.
-- quoted-printable's `decode` also treats `=` before a lone CR as a soft line break. RFC 2045 and libqp don't, and neither does `decode`.
-- The libqp 2.x `Encoder` left a hyphen after a lone CR unescaped, so the hyphen would start a line if a relay turned the CR into CRLF. `encode` follows libqp 3, which escapes it.
+- `decode` reads a string as UTF-8 and returns a `Uint8Array`, not a `Buffer`. libqp reads each character's low byte, so pass a `Uint8Array` to decode raw 8-bit data.
+- `EncoderStream` doesn't count `inputBytes` and `outputBytes` as libqp's `Encoder` does.
+- quoted-printable escapes every CR and LF and keeps lines within 75 characters. `encode` keeps line breaks, escapes a lone CR or LF only with `binary: true`, and allows 76.
+- quoted-printable's `decode` treats `=` before a lone CR as a soft line break. RFC 2045, libqp, and `decode` don't.
 
 <!-- bench:start -->
 <table>

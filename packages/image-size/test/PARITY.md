@@ -99,7 +99,7 @@ We found these bugs and gaps in image-size 2.0.4 by reading its source and runni
 
 ## Oracle tests
 
-`parse.oracle.test.ts` compares every valid fixture with image-size and checks that both reject every invalid one. `image-size.fuzz.oracle.test.ts` mutates the first 512 bytes of each valid fixture and compares `width`, `height`, and `type` whenever both libraries return a size. It leaves out HEIF and JPEG files, a Netpbm header without whitespace after its magic number, a Netpbm header whose size line isn't two numbers separated by one space, and results where image-size returns an undefined or zero width or height, because of the issues above. Its first runs found a PNM header that made `parse` throw a `RangeError` (`PNM > rejects a header whose height is a long run of binary data`).
+`parse.oracle.test.ts` compares every valid fixture with image-size and image-meta, and checks that all three reject every invalid one. image-meta returns `ktx` for KTX2, `jxl` for bare JPEG XL codestreams, and `tiff` for BigTIFF, so the test converts our type to image-meta's before it compares. `image-size.fuzz.oracle.test.ts` mutates the first 512 bytes of each valid fixture and compares `width`, `height`, and `type` whenever both libraries return a size. It leaves out HEIF and JPEG files, a Netpbm header without whitespace after its magic number, a Netpbm header whose size line isn't two numbers separated by one space, and results where image-size returns an undefined or zero width or height, because of the issues above. Its first runs found a PNM header that made `parse` throw a `RangeError` (`PNM > rejects a header whose height is a long run of binary data`).
 
 ## Stream behavior
 

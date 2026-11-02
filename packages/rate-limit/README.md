@@ -1,6 +1,6 @@
 # @portable/rate-limit
 
-Rate limiting per key with the generic cell rate algorithm (GCRA) and a store you choose: memory, Workers KV, a Durable Object, or Redis over HTTP. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Limits requests per key with the generic cell rate algorithm (GCRA), storing state in memory, Workers KV, a Durable Object, or Redis over HTTP. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [rate-limiter-flexible](https://www.npmjs.com/package/rate-limiter-flexible), [limiter](https://www.npmjs.com/package/limiter), and the reservoir options of [bottleneck](https://www.npmjs.com/package/bottleneck).
 
@@ -25,7 +25,9 @@ export default {
 };
 ```
 
-A limiter allows `limit` requests per `period` for each key. The allowance refills continuously, one request every `period / limit` milliseconds, and a key with no recent requests can spend up to `burst` at once. This is the same model as a token bucket of size `burst` that refills at `limit` per `period`, but the store holds one number per key: the time at which the key's allowance would be full again.
+A limiter allows `limit` requests per `period` for each key. The allowance refills one request every `period / limit` milliseconds, and an idle key can spend up to `burst` at once.
+
+This works like a token bucket of size `burst`, but the store holds only one number per key: the time when its allowance is full again.
 
 ## API
 
@@ -52,8 +54,8 @@ A limiter allows `limit` requests per `period` for each key. The allowance refil
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `cost` | `1` | How much of the allowance the request uses, such as its size, as a finite number. It can be fractional. `take` rejects with a `RangeError` for `NaN` or `Infinity`. With `cost: 0`, `take` reads the state without changing it. `allowed` is then always `true`, so read `remaining` and `resetAt` instead. With a negative cost, `take` gives allowance back, up to `burst`. |
-| `now` | `new Date()` | The time of the request, as a `Date` or a `Temporal.Instant`, for tests or for a clock other than the system's. |
+| `cost` | `1` | How much allowance the request uses, as a finite number, which can be fractional. `NaN` or `Infinity` rejects with a `RangeError`. `cost: 0` reads the state without changing it, and `allowed` is then always `true`. A negative cost gives allowance back, up to `burst`. |
+| `now` | `new Date()` | The time of the request, as a `Date` or a `Temporal.Instant`. |
 | `signal` | none | Aborting rejects `take` with `signal.reason` before the next store call. The signal is passed to the store. |
 
 ### `Result`
@@ -73,7 +75,11 @@ RateLimit.headers(result);
 // { 'RateLimit-Policy': '"default";q=100;w=60', RateLimit: '"default";r=0;t=3', 'Retry-After': '3' }
 ```
 
-`q` is `limit` and `w` is `period` in seconds. `r` is `remaining`. For an allowed request, `t` is the number of seconds until the allowance is full again. For a denied request, `t` is `retryAfter`, so `Retry-After` never ends before `t`, as the IETF RateLimit header draft requires. All times are rounded up to whole seconds. Pass `{ name }` to change the policy name from `"default"`. `name` must be printable ASCII, or `headers` throws a `RangeError`. Pass `{ now }` to count `t` from a time other than the current one. `Retry-After` is left out when `retryAfter` is `Infinity`.
+`q` is `limit`, `w` is `period` in seconds, and `r` is `remaining`. `t` is the seconds until the allowance is full, or `retryAfter` for a denied request. Times are rounded up to whole seconds.
+
+`Retry-After` is left out when `retryAfter` is `Infinity`.
+
+Pass `{ name }` to change the policy name from `"default"`. It must be printable ASCII, or `headers` throws a `RangeError`. Pass `{ now }` to count `t` from another time.
 
 ## Stores
 
@@ -91,17 +97,21 @@ type Store = {
 };
 ```
 
-`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key's value is still `expected`, and returns whether it wrote. `ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option as a `Date`, or the current time, so if your store expires keys itself, it can use the same clock as the limiter. When `set` returns `false`, `take` reads the key again and decides again, so two requests that race on one key can't both spend the last allowance. `take` retries without a limit, so `set` must return `false` only when another write changed the key. Pass a `signal` to limit how long `take` can run.
+`get` returns the stored number, or `undefined` for a missing or expired key. `set` is a compare-and-set: it writes `value` only if the key's value is still `expected`, and returns whether it wrote.
 
-Several limiters can share a store. Give each one its own key prefix, such as `login:${ip}`, unless they should share the allowance.
+When `set` returns `false`, `take` reads the key and tries again, with no retry limit, so return `false` only when another write changed the key. Pass a `signal` to limit how long `take` can run.
+
+`ttl` is a whole number of milliseconds, at least 1, after which the key may be deleted. `now` is the limiter's `now` option, for a store that expires keys itself.
+
+Limiters that share a store also share the allowance for a key, so give each one its own key prefix, such as `login:${ip}`, unless they should share it.
 
 ### Memory
 
-`memoryStore()` deletes an expired key when it reads it, and sweeps all expired keys whenever the map has doubled in size since the last sweep. It uses no timers. Each isolate or process has its own map, so on Workers or behind a load balancer the limit applies per instance.
+`memoryStore()` deletes expired keys without timers. Each isolate or process has its own map, so on Workers or behind a load balancer the limit applies per instance.
 
 ### Durable Object
 
-A Durable Object runs one request at a time, and SQLite-backed storage is synchronous, so a read and a write in one `take` can't interleave with another request. Put the limiter inside the object and address one object per key:
+A Durable Object handles one request at a time, and its SQLite-backed storage is synchronous, so the count is exact. Put the limiter inside the object, with one object per key:
 
 ```ts
 import { DurableObject } from 'cloudflare:workers';
@@ -131,7 +141,7 @@ The object stores one number and ignores `ttl`.
 
 ### Upstash Redis over HTTP
 
-A Lua script runs the compare-and-set on the server, so every Worker sees the same count. A `take` makes two requests, or more when it loses a race.
+A Lua script runs the compare-and-set on the server, so every Worker sees the same count. A `take` makes two requests, or more when it races another one.
 
 ```ts
 import * as RateLimit from '@portable/rate-limit';
@@ -174,11 +184,13 @@ const limiter = RateLimit.create({
 });
 ```
 
-`String(Number(text))` returns the same text for any number `String` wrote, so the script's string comparison matches the value `get` returned.
+The script compares strings, which works because `String(Number(text))` returns the text `String` wrote.
 
 ### Workers KV
 
-KV is eventually consistent and has no compare-and-set, so this store always writes. Two locations can each read an old value and allow a request, and a write can take 60 seconds or more to reach other locations, so the limit is approximate. KV also accepts at most one write per second to a key. Use it for coarse limits, such as a daily quota, where letting some extra requests through is acceptable, and use a Durable Object when the count must be exact.
+KV has no compare-and-set, and a write can take 60 seconds or more to reach other locations, so the limit is approximate. KV also accepts at most one write per second to a key.
+
+Use KV for coarse limits, such as a daily quota, and a Durable Object when the count must be exact.
 
 ```ts
 const store: RateLimit.Store = {
@@ -203,22 +215,22 @@ const store: RateLimit.Store = {
 
 ## Why use this over rate-limiter-flexible, limiter, and bottleneck
 
-rate-limiter-flexible ships a store class per database client, all of them Node clients, so it can't use KV, a Durable Object, or a `fetch`-based Redis. limiter and bottleneck keep their state in one process. This package defines a store with two methods, so you can use any storage that can compare and set one number, and it has no dependencies outside `@portable/*`.
+rate-limiter-flexible has a store class for each Node database client, so it can't use KV, a Durable Object, or Redis over `fetch`. limiter and bottleneck keep their state in one process. Here a store has two methods, so any storage that can compare and set one number works.
 
-- rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA has no windows: in any span of `t` milliseconds a key gets at most `burst + t × limit / period` requests.
-- `take` spends nothing on a denied request. rate-limiter-flexible adds the points of a rejected `consume` to the counter, so a client that keeps retrying stays blocked until the window ends.
-- `take` resolves with `allowed: false` for a denied request. rate-limiter-flexible rejects the promise with a `RateLimiterRes`, which is not an `Error`, so the same `catch` receives a denial and a Redis outage.
-- rate-limiter-flexible's memory store sets one timer per key to delete it. `memoryStore()` sets none, so a limiter with many keys doesn't hold a timer for each.
+- rate-limiter-flexible counts in fixed windows by default, so a client can make `2 × points` requests across a window boundary. GCRA allows at most `burst + t × limit / period` requests in any `t` milliseconds.
+- `take` spends nothing on a denied request. rate-limiter-flexible counts rejected `consume` calls, so retrying keeps a client blocked until the window ends.
+- `take` resolves with `allowed: false` for a denied request. rate-limiter-flexible rejects with a `RateLimiterRes`, which isn't an `Error`, so one `catch` gets both denials and Redis outages.
+- rate-limiter-flexible's memory store sets a timer per key. `memoryStore()` sets none.
 - limiter's `TokenBucket` starts empty, so the first requests after start wait. Every key here starts with a full `burst`.
-- On Node, `take` with the memory store runs about 15% slower than `RateLimiterMemory.consume` on allowed requests over 1,000 keys, and about 5× faster on denied requests, because rate-limiter-flexible builds and rejects with an object for each denial. limiter's synchronous `tryRemoveTokens` on one bucket is about 6× faster than an `await`ed `take`. The benchmark table below has the numbers.
-- rate-limiter-flexible's `duration` is in seconds, and limiter's `interval` also takes names such as `'second'`. `period` is always in milliseconds, so `duration: 1` becomes `period: 1000`.
+- With the memory store, `take` was about 15% slower than `RateLimiterMemory.consume` on allowed requests and about 5× faster on denied ones. limiter's synchronous `tryRemoveTokens` was about 6× faster than an `await`ed `take`.
+- `period` is in milliseconds. rate-limiter-flexible's `duration` is in seconds, so `duration: 1` becomes `period: 1000`. limiter's `interval` also takes names such as `'second'`.
 - `limit: 0` throws a `RangeError`. rate-limiter-flexible accepts `points: 0` and denies everything.
-- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets, which isn't a rate.
-- rate-limiter-flexible's `msBeforeNext` is set for allowed and denied requests. `retryAfter` is `0` for an allowed request, so compute the time until the allowance is full from `resetAt`.
-- rate-limiter-flexible's `reward`, `get`, and `delete` have no equivalent methods. Call `take` with a negative `cost`, with `cost: 0`, or with `cost: -burst`. With `cost: 0`, `allowed` is always `true`, so read `remaining` and `resetAt`.
-- rate-limiter-flexible's `keyPrefix` and `blockDuration` options have no equivalent. Prefix the key yourself, and for a block, use a second limiter with a long `period` that you call only when the first one denies a request.
-- The package has no queue. limiter's `removeTokens` and rate-limiter-flexible's `RateLimiterQueue` wait for allowance in memory, which a Worker can't do across requests. Use `retryAfter` instead.
-- bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals, which is a fixed window. A limiter with the same `limit` and `period` allows the same average rate without the burst at each refresh.
+- `period` must be above 0. rate-limiter-flexible's `duration: 0` means a counter that never resets.
+- `retryAfter` is `0` for an allowed request, unlike rate-limiter-flexible's `msBeforeNext`. Use `resetAt` for the time until the allowance is full.
+- Instead of rate-limiter-flexible's `reward`, `get`, and `delete`, call `take` with a negative `cost`, `cost: 0`, or `cost: -burst`.
+- Instead of rate-limiter-flexible's `keyPrefix`, prefix the key yourself. Instead of `blockDuration`, call a second limiter with a long `period` when the first one denies a request.
+- There is no queue like limiter's `removeTokens` or rate-limiter-flexible's `RateLimiterQueue`, because a Worker can't wait across requests. Use `retryAfter` instead.
+- bottleneck's `reservoirRefreshAmount` resets the count at fixed intervals. A limiter with the same `limit` and `period` allows the same average rate without a burst at each refresh.
 
 <!-- bench:start -->
 <table>

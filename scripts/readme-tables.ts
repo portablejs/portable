@@ -75,10 +75,12 @@ export const tables: Record<string, Table> = {
       lib('base64-js'),
       lib('js-base64', [{ from: 'js-base64', use: ['Base64'] }]),
       lib('libbase64'),
+      lib('undio', [{ from: 'undio', use: ['uint8ArrayToBase64', 'base64ToUint8Array'] }]),
       node('Buffer', '`Buffer` (Node)'),
     ],
     rows: [
-      { label: 'Encode 1 MB', test: 'encodes 1 MB within' },
+      // undio's uint8ArrayToBase64 overflows the call stack on input over about 150 KB.
+      { label: 'Encode 1 MB', test: 'encodes 1 MB within', tasks: { undio: null } },
       {
         label: 'Encode 1 MB in 76-column lines',
         test: 'encodes 1 MB within',
@@ -87,6 +89,7 @@ export const tables: Record<string, Table> = {
           'base64-js': null,
           'js-base64': null,
           libbase64: 'libbase64, 76 columns',
+          undio: null,
           Buffer: null,
         },
       },
@@ -99,6 +102,7 @@ export const tables: Record<string, Table> = {
           'base64-js': null,
           'js-base64': null,
           libbase64: 'libbase64, 76 columns',
+          undio: null,
           Buffer: null,
         },
       },
@@ -367,6 +371,7 @@ export const tables: Record<string, Table> = {
     columns: [
       ours('image-size', ['parseStream']),
       lib('image-size', [{ from: 'image-size', use: ['imageSize'] }]),
+      lib('image-meta', [{ from: 'image-meta', use: ['imageMeta'] }]),
     ],
     rows: [
       {
@@ -375,6 +380,7 @@ export const tables: Record<string, Table> = {
         tasks: {
           '@portable/image-size': '@portable/image-size parseStream',
           'image-size': 'image-size after collecting the stream',
+          'image-meta': 'image-meta after collecting the stream',
         },
       },
       { label: 'Read the size of a 730 KB JPEG', test: 'parses jpg/large.jpg' },
@@ -933,6 +939,7 @@ export const tables: Record<string, Table> = {
       lib('lodash.throttle'),
       lib('throttle-debounce'),
       lib('p-debounce'),
+      lib('perfect-debounce', [{ from: 'perfect-debounce', use: ['debounce'] }]),
     ],
     rows: [
       {

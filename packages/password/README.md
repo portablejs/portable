@@ -21,7 +21,9 @@ if (await Password.verify(password, stored)) {
 }
 ```
 
-`hash` derives a 32-byte PBKDF2-HMAC-SHA256 hash with `crypto.subtle.deriveBits`, 600,000 iterations ([OWASP's recommendation](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2)) and a random 16-byte salt. It returns a [PHC string](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md) that stores the algorithm, iterations, salt, and hash, so you store one column and can raise the iterations later. The salt and hash are base64 without padding.
+`hash` derives a 32-byte PBKDF2-HMAC-SHA256 hash with a random 16-byte salt and 600,000 iterations ([OWASP's recommendation](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2)).
+
+It returns a [PHC string](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md) with the algorithm, iterations, salt, and hash, so you store one column and can raise the iterations later. The salt and hash are base64 without padding.
 
 ## API
 
@@ -31,14 +33,14 @@ if (await Password.verify(password, stored)) {
 | `verify(password, stored, options?)` | `Promise<boolean>` | `true` if the password matches. Compares in constant time. |
 | `needsRehash(stored, options?)` | `boolean` | `true` if `stored` uses fewer iterations than `options.iterations`, a digest other than SHA-256, a salt under 16 bytes, or a hash under 32 bytes. |
 
-`password` is a `string` or its bytes as a `Uint8Array`. A string is normalized to NFC before it is encoded as UTF-8, so `'café'` typed as one code point or as `e` plus a combining accent gives the same hash. Bytes are hashed as they are.
+`password` is a `string` or a `Uint8Array`. A string is normalized to NFC and encoded as UTF-8, so `'café'` gives the same hash however the `é` was typed. Bytes are hashed as they are.
 
-`verify` resolves to `false` for a wrong password and rejects for a bad `stored` string. It reads:
+`verify` resolves to `false` for a wrong password and rejects for a malformed `stored` string. It reads:
 
 - the PHC format `hash` writes: `$pbkdf2-sha256$i=600000$<salt>$<hash>`, with an optional `l=<length>` after the iterations, as Rust's pbkdf2 crate can write it;
-- [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.pbkdf2_digest.html)'s `pbkdf2_sha256`, `pbkdf2_sha512`, and `pbkdf2_sha1` (`$pbkdf2$`), whose strings have the iterations without `i=` and use `.` instead of `+`.
+- [passlib](https://passlib.readthedocs.io/en/stable/lib/passlib.hash.pbkdf2_digest.html)'s `pbkdf2_sha256`, `pbkdf2_sha512`, and `pbkdf2_sha1` (`$pbkdf2$`) formats.
 
-The hash length comes from the stored string, so a 20-byte or 64-byte hash from another tool verifies too. `verify` accepts a stored hash with an empty salt, but `needsRehash` returns `true` for it.
+The hash length is read from the stored string, so 20-byte and 64-byte hashes from other tools verify too. A stored hash with an empty salt verifies, but `needsRehash` returns `true` for it.
 
 ### Options
 
@@ -46,25 +48,23 @@ The hash length comes from the stored string, so a 20-byte or 64-byte hash from 
 | --- | --- | --- | --- |
 | `iterations` | `hash`, `needsRehash` | `600000` | PBKDF2 iterations to write, or the minimum `needsRehash` accepts. Cloudflare Workers allows at most 100,000. |
 | `maxBytes` | `hash`, `verify` | `4096` | Longest password, in UTF-8 bytes after normalization. `Infinity` turns the check off. |
-| `signal` | `hash`, `verify` | | Rejects with `signal.reason` when aborted. WebCrypto can't stop a derivation that has started, so it runs to the end in the background. |
+| `signal` | `hash`, `verify` | | Rejects with `signal.reason` when aborted. A derivation that has started still runs to the end in the background. |
 
 ### Errors
 
 | Error | Thrown when |
 | --- | --- |
-| `InvalidInputError` | `stored` is not a well-formed PBKDF2 hash: a missing field, iterations outside 1 to 2^32 - 1 or with a leading zero, a character outside base64, padding, or an `l=` that doesn't match the hash length. |
+| `InvalidInputError` | `stored` is a malformed PBKDF2 hash, e.g. a missing field, iterations outside 1 to 2^32 - 1 or with a leading zero, invalid base64, padding, or an `l=` that doesn't match the hash length. |
 | `UnsupportedError` | `stored` is another algorithm's hash, such as `$2b$` (bcrypt), `$argon2id$`, or `$scrypt$`. |
-| `MaxBytesError` | The password is longer than `maxBytes`. The error's `maxBytes` property holds the limit. |
+| `MaxBytesError` | The password is longer than `maxBytes`. Stores the limit in `maxBytes`. |
 
-A bad `iterations` or `maxBytes` option gives a `RangeError`: `needsRehash` throws it, and `hash` and `verify` reject with it.
+An invalid `iterations` or `maxBytes` option gives a `RangeError`.
 
 ## Cloudflare Workers
 
-Workers rejects PBKDF2 with more than 100,000 iterations: `deriveBits` throws a `NotSupportedError` ("Pbkdf2 failed: iteration counts above 100000 are not supported"). The limit is the default in workerd's `IsolateLimitEnforcer`, and the comment there says it guards against a request that would run long enough to restart the process. Local `wrangler dev` and Miniflare run workerd without the limit: 600,000 iterations worked there in 550 ms, so code that passes locally fails once deployed.
+Deployed Workers reject PBKDF2 with more than 100,000 iterations, so `hash` and `verify` reject with a `NotSupportedError` `DOMException`. Local `wrangler dev` and Miniflare don't have this limit, so code that passes locally can fail once deployed.
 
-`hash` and `verify` reject with that `DOMException` (`error.name === 'NotSupportedError'`), not with a package error.
-
-On Workers, hash with `iterations: 100_000` and check with the same value:
+On Workers, pass `iterations: 100_000` to both `hash` and `needsRehash`:
 
 ```ts
 const options = { iterations: 100_000 };
@@ -72,26 +72,31 @@ const stored = await Password.hash(password, options);
 Password.needsRehash(stored, options); // false
 ```
 
-100,000 iterations is a sixth of OWASP's recommendation, so cracking a stolen hash takes a sixth of the work. If that's not enough, hash passwords in a service that can run 600,000 iterations or Argon2id, and keep the Worker for the rest. A hash written elsewhere with more than 100,000 iterations can't be verified on Workers at all.
+100,000 iterations makes a stolen hash six times cheaper to crack than OWASP's recommendation. If that's not enough, hash passwords in a separate service that can run 600,000 iterations or Argon2id.
+
+Hashes with more than 100,000 iterations can't be verified on Workers.
 
 ## Why use this over node:crypto, pbkdf2, and pbkdf2-password
 
-`node:crypto` and pbkdf2 give you a key derivation function, and the rest is up to you: a salt, a storage format, a constant-time compare, a plan for raising the iterations. pbkdf2-password adds a salt but defaults to 10,000 SHA-1 iterations and returns the salt and hash separately, and none of the three compares a password with a stored hash. This package does all of it with one string and runs where `node:crypto` doesn't.
+`node:crypto` and pbkdf2 only derive a key, so the salt, storage format, constant-time compare, and iteration upgrades are left to you. pbkdf2-password adds a salt, but defaults to 10,000 SHA-1 iterations and returns the salt and hash separately. This package does all of it with one string and runs where `node:crypto` doesn't.
 
-- It hashes at the same speed as `node:crypto`'s `pbkdf2`: about 110 ms per hash at 600,000 iterations for both on the benchmark machine, because both call OpenSSL. `verify` took as long as `pbkdf2` followed by `timingSafeEqual`.
-- The stored string records the digest and iterations, so `needsRehash` can tell you when to upgrade a hash and `verify` keeps reading old ones.
-- The compare is constant time. A `===` on hex or base64 strings, common in hand-written code, leaks how many leading characters matched.
-- The string format is the PHC format that Rust's pbkdf2 crate uses, and `verify` also reads passlib's format, so a JavaScript service can read the hashes in a users table it shares with Rust and Python services.
-- Passwords are normalized to NFC. passlib and `node:crypto` hash the code units they're given, so the same password typed on two keyboards can fail to verify.
-- A password over 4096 bytes is rejected with `MaxBytesError`, as in passlib, before any hashing.
-- An unknown algorithm name throws `UnsupportedError`. pbkdf2 3.1.2 and earlier, in browsers, returned an all-zero key for algorithm names it didn't recognize, such as `'SHA256'`, so every password gave the same key (CVE-2025-6545).
-- pbkdf2-password and code that calls `node:crypto`'s `pbkdf2` store the salt and hash separately. To verify those hashes, build a PHC string from them with the digest and iterations they were made with, and drop the base64 padding: for pbkdf2-password's defaults (SHA-1, 10,000 iterations) that is `$pbkdf2$i=10000$<salt>$<hash>`. The identifier is `$pbkdf2$` for SHA-1, `$pbkdf2-sha256$` for SHA-256, and `$pbkdf2-sha512$` for SHA-512, and a salt stored as text goes in as the base64 of its UTF-8 bytes. `needsRehash` returns `true` for such a string, so rehash on the next login.
-- Because string passwords are normalized to NFC, a hash made elsewhere from a password in another normalization form verifies only if you pass the original bytes as a `Uint8Array`.
-- passlib's `pbkdf2_sha256` can't read the `i=` form that `hash` writes. `verify` reads passlib's hashes, so you can move from passlib, but if Python code still reads the table, it has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.
+- It hashes as fast as `node:crypto`'s `pbkdf2`, about 110 ms at 600,000 iterations, because both call OpenSSL.
+- The stored string records the digest and iterations, so `needsRehash` tells you when to upgrade a hash and `verify` still reads old ones.
+- The compare is constant time. A `===` on hex or base64 strings leaks how many leading characters matched.
+- It writes the PHC format that Rust's pbkdf2 crate uses and also reads passlib's format, so it can share a users table with Rust and Python services.
+- Passwords are normalized to NFC. passlib and `node:crypto` hash the code units as given, so the same password typed on two keyboards can fail to verify.
+- A password over 4096 bytes is rejected with `MaxBytesError` before hashing, as in passlib.
+- An unknown algorithm throws `UnsupportedError`. In browsers, pbkdf2 3.1.2 and earlier returned an all-zero key for unrecognized names such as `'SHA256'` (CVE-2025-6545).
+
+Differences to check when you switch:
+
+- To verify a salt and hash stored separately, build a PHC string with the digest and iterations they were made with, and drop the base64 padding. For pbkdf2-password's defaults (SHA-1, 10,000 iterations) that is `$pbkdf2$i=10000$<salt>$<hash>`. Use `$pbkdf2-sha256$` for SHA-256 and `$pbkdf2-sha512$` for SHA-512. A salt stored as text goes in as the base64 of its UTF-8 bytes. `needsRehash` returns `true` for these strings, so rehash on the next login.
+- If a hash was made from a password in another normalization form, pass the original bytes as a `Uint8Array` to verify it.
+- passlib can't read the `i=` form that `hash` writes. If Python code still reads the table, it has to split the string on `$` and call `hashlib.pbkdf2_hmac` itself.
 
 ### Other algorithms
 
-WebCrypto has PBKDF2 and no other password hash, so this package can't verify bcrypt, scrypt, or Argon2 hashes. Node 24 has an experimental `Argon2id` in `crypto.subtle`, but browsers and Workers don't. For those hashes, `verify` rejects with `UnsupportedError`, and you can verify them with another library and rehash on the next login:
+WebCrypto has no password hash other than PBKDF2, so `verify` rejects bcrypt, scrypt, and Argon2 hashes with `UnsupportedError`. To migrate, verify them with another library and rehash on the next login:
 
 ```ts
 async function check(user: User, password: string): Promise<boolean> {
@@ -110,7 +115,9 @@ async function check(user: User, password: string): Promise<boolean> {
 }
 ```
 
-[@noble/hashes](https://github.com/paulmillr/noble-hashes) has `argon2id` and `scrypt` in plain JavaScript, and [hash-wasm](https://github.com/Daninet/hash-wasm) has Argon2, scrypt, and bcrypt in WebAssembly. Both run in every runtime this package does. bcryptjs and the argon2 package implement other algorithms, not PBKDF2. Keep using them if you're already on them and their runtime fits. Argon2id is the stronger choice where you can run it, and PBKDF2 is the one WebCrypto can run everywhere.
+[@noble/hashes](https://github.com/paulmillr/noble-hashes) (`argon2id` and `scrypt` in JavaScript) and [hash-wasm](https://github.com/Daninet/hash-wasm) (Argon2, scrypt, and bcrypt in WebAssembly) run in every runtime this package does.
+
+Argon2id is stronger than PBKDF2. If you already use bcryptjs or the argon2 package and its runtime fits, keep using it.
 
 <!-- bench:start -->
 <table>

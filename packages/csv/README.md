@@ -18,7 +18,7 @@ Csv.encode([{ name: 'Ada', note: 'said "hi"' }], { header: true });
 // 'name,note\r\nAda,"said ""hi"""\r\n'
 ```
 
-Streams read a `fetch` body and write a `Response` body:
+The streams work with `fetch` and `Response` bodies:
 
 ```ts
 const response = await fetch('https://example.com/users.csv');
@@ -34,33 +34,35 @@ return new Response(body, { headers: { 'content-type': 'text/csv' } });
 
 ## Decoding
 
-`Csv.decode(input, options)` takes a `string` or a `Uint8Array` and returns every row. `new Csv.DecoderStream(options)` is a `TransformStream<Uint8Array | string, Row>` that emits one row per chunk, and gives the same rows however the input is split.
+`Csv.decode(input, options)` takes a `string` or a `Uint8Array` and returns every row. `new Csv.DecoderStream(options)` is a `TransformStream<Uint8Array | string, Row>` that emits one row per chunk.
 
-A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values are never converted: `02134` stays `'02134'`. When `header` is an array of names written in the call, TypeScript types the row by those names, and with `relaxColumnCount: true` each key is optional, because the missing keys of a short row are left out:
+A row is a `string[]`, or a `Record<string, string>` when `header` is set. Values stay strings, so `02134` stays `'02134'`.
+
+When `header` is an array of names, rows are typed by those names. With `relaxColumnCount: true`, each key is optional:
 
 ```ts
 const rows = Csv.decode(text, { header: ['id', 'email'] });
 // rows: Record<'id' | 'email', string>[], so a misspelled column such as rows[0].emial fails to type-check
 ```
 
-- A quoted field may contain the delimiter, doubled quotes (`""`) and line breaks.
-- CRLF, LF, and CR each end a row. A final line break is optional and adds no row.
+- A quoted field may contain the delimiter, doubled quotes (`""`), and line breaks.
+- CRLF, LF, and CR each end a row. A final line break adds no row.
 - A leading byte order mark is dropped.
-- Spaces and tabs between a closing quote and the next delimiter are skipped.
-- A quote that doesn't start a field is read as text, so `5" pipe` decodes to `5" pipe`.
+- Spaces and tabs after a closing quote are skipped.
+- A quote in the middle of a field is read as text, so `5" pipe` decodes to `5" pipe`.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `delimiter` | `','` | Field separator, one character. `'\t'` reads TSV. |
 | `quote` | `'"'` | Quote character, one character, or `false` to read quotes as text (TSV without quoting). |
 | `header` | `false` | `true` reads column names from the first row. An array gives the names for input with no header row. A repeated name throws `InvalidInputError`. |
-| `relaxColumnCount` | `false` | Accept rows whose field count differs from the first row's or the header's. With `header`, the missing keys of a short row are left out and the extra fields of a long row are dropped. |
+| `relaxColumnCount` | `false` | Accept rows with a different field count than the first row or header. With `header`, short rows omit missing keys and long rows drop extra fields. |
 | `skipEmpty` | `true` | Drop lines with no characters. `false` reads each as a row with one empty field. |
-| `maxLength` | `Infinity` | Longest row, in UTF-16 code units of input text, not counting the line break. The stream fails as soon as an unfinished row is longer than the limit, so a missing closing quote can't make it buffer the whole input. |
+| `maxLength` | `Infinity` | Longest row in UTF-16 code units, not counting the line break. The stream fails as soon as an unfinished row passes the limit, so a missing closing quote can't make it buffer the whole input. |
 | `encoding` | `'utf-8'` | `TextDecoder` label for byte input, such as `'windows-1252'` or `'utf-16le'`. Invalid bytes are replaced with U+FFFD. |
 | `signal` | | `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`decode` throws these errors, and `DecoderStream` fails with them. Their messages give the row number, counting from 1, including the header row and skipped empty lines. A quoted line break doesn't start a new row, so the row number can differ from the line number.
+`decode` throws these errors, and `DecoderStream` fails with them. Messages give the row number, counting from 1 and including the header and skipped empty lines. It can differ from the line number when a quoted field has a line break.
 
 | Error | When |
 | --- | --- |
@@ -72,25 +74,27 @@ A bad option, such as a two-character delimiter or a negative `maxLength`, throw
 
 ## Encoding
 
-`Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row. The first chunk also contains the header row.
+`Csv.encode(rows, options)` returns the CSV text. `new Csv.EncoderStream(options)` is a `TransformStream<Row, Uint8Array>` that emits one chunk of UTF-8 bytes per row, plus the header row in the first chunk.
 
-A row is an array of values or an object keyed by column name. Strings are written unchanged. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field. `encode` throws `InvalidInputError` for any other value, for an invalid `Date`, and for an object row after array rows unless `header` is an array. `encode` writes an array row after object rows as is and doesn't check its length against the columns. `encode` throws a `TypeError` for `header: true` with array rows, because array rows have no keys to take the column names from.
+A row is an array of values or an object keyed by column name. Numbers, booleans, and bigints are written with `String()`, a `Date` with `toISOString()`, and `null` and `undefined` as an empty field.
 
-A field is quoted only when it contains the delimiter, the quote, CR, or LF, and a row of one empty field is written as `""` so it isn't read back as an empty line. Every row ends with `newline`, including the last.
+`encode` throws `InvalidInputError` for any other value, an invalid `Date`, or an object row after array rows (unless `header` is an array). It throws a `TypeError` for `header: true` with array rows. Array rows after object rows aren't checked against the columns.
+
+A field is quoted only when it contains the delimiter, the quote, CR, or LF. A row of one empty field is written as `""`, so it isn't read back as an empty line. Every row ends with `newline`, including the last.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `delimiter` | `','` | Field separator, one character. |
 | `quote` | `'"'` | Quote character, or `false` to never quote. With `false`, a field that needs quotes throws `InvalidInputError`. |
 | `newline` | `'\r\n'` | `'\r\n'` or `'\n'`. |
-| `header` | `false` | `true` writes the first object row's keys as a header row. An array is written as the header row, even with no rows. Each object row's values are then read by those names, in that order. Without a header, object rows are written in the first row's key order. A key missing from a row is written as an empty field. A key that isn't in the column list (the array, or the first row's keys) is not written, so pass an array when rows can have different keys. |
+| `header` | `false` | `true` writes the first object row's keys as a header row. An array is written as the header row, even with no rows, and sets the column order. Without a header, columns follow the first row's keys. Missing keys are written as empty fields, and keys not in the columns are dropped, so pass an array when rows have different keys. |
 | `bom` | `false` | Start with a byte order mark, which Excel needs to read UTF-8. |
-| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). This includes numbers, so `-5` is written as `"'-5"`. |
+| `escapeFormulas` | `false` | Prefix fields starting with `=`, `+`, `-`, `@`, tab, or CR with `'` and quote them, so spreadsheets don't run them as formulas ([CSV injection](https://owasp.org/www-community/attacks/CSV_Injection)). Numbers too, so `-5` is written as `"'-5"`. |
 | `signal` | | `EncoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
 ## Why use this over csv-parse, papaparse, and fast-csv
 
-csv-parse, csv-stringify, and fast-csv are Node streams, and papaparse's streaming reads Node streams, `File`s and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work on a `fetch` body and a `Response` in any JavaScript runtime, and the package has no dependencies outside `@portable/*`.
+csv-parse, csv-stringify, and fast-csv use Node streams, and papaparse streams only from Node streams, `File`s, and URLs. `DecoderStream` and `EncoderStream` are `TransformStream`s, so they work with `fetch` and `Response` bodies in any runtime.
 
 The benchmarks use 5,000 rows (500 kB) of quoted text, prices, and dates.
 
@@ -132,7 +136,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->
 
-It also avoids these traps, each with a test in `test/issues.conformance.ts`:
+It also avoids these upstream bugs (tested in [`test/issues.conformance.ts`](https://github.com/portablejs/portable/blob/main/packages/csv/test/issues.conformance.ts)):
 
 - A `__proto__` column is kept. papaparse drops it.
 - A final line break adds no row. papaparse returns an extra `['']`.
@@ -141,17 +145,16 @@ It also avoids these traps, each with a test in `test/issues.conformance.ts`:
 - The BOM is dropped from the first column name. csv-parse keeps it unless `bom: true`.
 - A blank line is skipped. csv-parse throws "Invalid Record Length" unless `skip_empty_lines: true`.
 - `true` and `false` are written as `true` and `false`, and a `Date` as ISO 8601. csv-stringify writes `1`, an empty field, and milliseconds.
-- With CRLF line breaks, a field that contains a lone LF is quoted. csv-stringify with `record_delimiter: 'windows'` leaves it bare, so readers split the row there.
+- With CRLF line breaks, a field with a lone LF is quoted. csv-stringify with `record_delimiter: 'windows'` leaves it bare, which splits the row.
 
-Other differences to check when you switch:
+Differences to check when you switch:
 
-- csv-stringify ends rows with `\n` by default, and `encode` and `EncoderStream` end them with `\r\n`. Pass `newline: '\n'` to keep csv-stringify's output.
-- papaparse's `unparse` doesn't end the last row with a line break. `encode` ends every row with `newline`.
-- papaparse reads empty lines as rows unless `skipEmptyLines` is set. `decode` skips them by default.
-- papaparse with `header: true` accepts rows whose field count differs from the header's. `decode` throws `InvalidInputError` for them unless you pass `relaxColumnCount: true`.
-- csv-parse's `cast`, papaparse's `dynamicTyping`, and the `transform` options have no equivalent, because values are never converted. Map the rows instead, for example with `Streams.map` from [@portable/streams](https://portablejs.com/packages/streams).
-- papaparse guesses the delimiter by default. Here the delimiter is `,` unless you pass `delimiter`.
-- Comments, trimming, csv-parse's `from`, and `to`, and papaparse's `preview` have no equivalent. Filter or map the rows, or leave the loop early, which cancels the stream.
-- Delimiters longer than one character and escape characters other than `""` are not supported.
-- csv-stringify's `quoted` and papaparse's `quotes` force quoting, which is not supported. Fields are quoted only when they need it.
-- csv-stringify reads nested column paths such as `columns: ['a.b']`. Flatten the rows before you pass them to `encode`.
+- Rows end with `\r\n` by default. csv-stringify uses `\n`, so pass `newline: '\n'` to match it.
+- The last row ends with a line break. papaparse's `unparse` leaves it off.
+- Empty lines are skipped by default. papaparse reads them as rows unless `skipEmptyLines` is set.
+- With `header`, a row with a different field count throws `InvalidInputError` unless you pass `relaxColumnCount: true`. papaparse accepts it.
+- There's no `cast`, `dynamicTyping`, or `transform`. Map the rows instead, e.g. with `Streams.map` from [@portable/streams](https://portablejs.com/packages/streams).
+- The delimiter is `,` unless you pass `delimiter`. papaparse guesses it.
+- There's no comment or trimming support, and no equivalent of csv-parse's `from` and `to` or papaparse's `preview`. Filter or map the rows, or leave the loop early to cancel the stream.
+- Multi-character delimiters, escape characters other than `""`, and forced quoting (csv-stringify's `quoted`, papaparse's `quotes`) aren't supported.
+- Nested column paths such as csv-stringify's `columns: ['a.b']` aren't supported, so flatten the rows first.

@@ -10,7 +10,7 @@ Many existing packages already run everywhere too. Portable packages try to fill
 
 ## Install a package
 
-Install only the packages you use. They are ESM-only, and their only runtime dependencies are other `@portable/*` packages.
+Install only the packages you use. They are ESM-only and depend only on other `@portable/*` packages.
 
 ```sh
 npm install @portable/streams
@@ -18,7 +18,7 @@ npm install @portable/streams
 
 ## Import a package
 
-Import a package as a namespace. Export names are short, such as `toJson`, because the namespace shows the package. This Cloudflare Worker reads a JSON request body, and if the body exceeds 1 MB, it stops reading and responds with 413:
+Import a package as a namespace and call its exports through it, such as `Streams.toJson`. This Cloudflare Worker reads a JSON request body and responds with 413 if it exceeds 1 MB:
 
 ```ts
 import * as Streams from '@portable/streams';
@@ -40,39 +40,37 @@ export default {
 };
 ```
 
-For how packages handle bytes, cancellation, and errors, see [Conventions](#conventions).
+See [Conventions](#conventions) for how packages handle bytes, cancellation, and errors.
 
 ### Use in a browser
 
-With a bundler, import the package as in the example above. Without one, import it from esm.sh in a module script:
+Without a bundler, import from esm.sh in a module script:
 
 ```js
 import * as Streams from 'https://esm.sh/@portable/streams';
 ```
 
-esm.sh rewrites the imports between `@portable/*` packages to esm.sh URLs. You don't need an import map.
+esm.sh rewrites imports between `@portable/*` packages to esm.sh URLs, so you don't need an import map.
 
 ## Runtimes
 
-The tests run in Chromium, Firefox, WebKit, Node, Bun, and Deno, and a check of every package runs in workerd, the Cloudflare Workers runtime.
+The tests run in Chromium, Firefox, WebKit, Node, Bun, and Deno. A check of every package runs in workerd, the Cloudflare Workers runtime.
 
 [@portable/smtp](/packages/smtp) and [@portable/sockets](/packages/sockets) need a TCP socket API, so they run in Cloudflare Workers, Node, Bun, and Deno but not in browsers.
 
 ## Conventions
 
-Every package follows these conventions.
+Functions take and return bytes as `Uint8Array`. A Node `Buffer` works, because it is a `Uint8Array`. Wrap an `ArrayBuffer` or another typed array in `new Uint8Array(...)`, or the function throws a `TypeError`. Functions that take text also take its bytes.
 
-Import a package as a namespace, such as `import * as Csv from '@portable/csv'`, and then call `Csv.decode` or `new Csv.DecoderStream()`.
+A streaming transform is a `TransformStream` that you pass to `pipeThrough`, such as `Lines.DecoderStream`. Encoder streams output `Uint8Array` chunks, so you can use their output as a `Response` body.
 
-Functions take and return bytes as `Uint8Array`. You can pass a Node `Buffer`, because it is a `Uint8Array`. An `ArrayBuffer` or another typed array throws a `TypeError`, so wrap it in `new Uint8Array(...)` first. Functions that take text also accept its bytes.
+Durations are in milliseconds unless the protocol sets the unit (e.g. Web Push `ttl` is in seconds).
 
-A streaming transform is a `TransformStream` that you pass to `pipeThrough`. For example, `Lines.DecoderStream` splits bytes into lines. `Jsonl.EncoderStream` writes values as `Uint8Array` chunks, so you can pass its output as a `Response` body.
+Options that take a time, such as `now`, accept a `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime`. Results use `Date`, because Safari doesn't have Temporal yet.
 
-Durations are in milliseconds unless the protocol sets the unit. Web Push, for example, sets `ttl` in seconds. When an option takes a point in time, such as `now`, you can pass a `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime`. Functions return points in time as `Date` because Safari doesn't have Temporal yet.
+Every async function and stream takes a `signal` option. Aborting it stops the function's `fetch` calls, timers, and nested streams, and rejects with `signal.reason`. To limit a whole call, pass `AbortSignal.timeout(ms)` as the `signal`.
 
-Every async function and every stream takes a `signal` option. If the signal aborts, the function stops its `fetch` calls, timers, and nested streams, then rejects with `signal.reason`, as `fetch` does. There is no `timeout` option for a whole call; pass `AbortSignal.timeout(ms)` as the `signal` instead.
-
-Some objects keep a socket, timer, or task running after the call that creates them returns. An SMTP client, a queue, and a WebSocket all work this way. To shut one down, call its `close()` method or abort the `signal` you created it with. If the runtime has `Symbol.asyncDispose`, you can declare the object with `await using`, which closes it when the block exits.
+Some objects keep running after you create them, such as an SMTP client, a queue, or a WebSocket. To stop one, call `close()` or abort the `signal` you created it with. Where the runtime has `Symbol.asyncDispose`, `await using` closes them when the block exits.
 
 Function names use these verbs:
 
@@ -84,15 +82,16 @@ Function names use these verbs:
 | `…Stream` suffix | Reads its input from a stream, or returns its output as one. | `ImageSize.parseStream(stream)` |
 | `…Sync` suffix | Is the sync version of an async function. | |
 
-Functions throw these errors instead of returning them:
+Functions throw these errors:
 
 | Error | Thrown when |
 | --- | --- |
-| `InvalidInputError` | The data that the function reads, decodes, encodes, or verifies is malformed. Catch it when the input comes from outside your program. |
+| `InvalidInputError` | The data is malformed. Catch it when the input comes from outside your program. |
 | `TruncatedError` | The input ended early. |
 | `UnsupportedError` | The input is valid, but the package doesn't handle it. |
-| `MaxBytesError`, `MaxLengthError` | The input or output exceeded the `maxBytes` or `maxLength` option. The error stores the limit. |
-| `ResponseError` | The server returned a status or body that the package can't use. The error keeps the whole `Response`. |
-| `TypeError`, `RangeError` | An argument or option is missing, has the wrong type, or has a value that the function doesn't accept. Fix the call instead of catching these errors. |
+| `MaxBytesError`, `MaxLengthError` | The input or output exceeded `maxBytes` or `maxLength`. The error stores the limit. |
+| `ResponseError` | The server returned a status or body the package can't use. The error keeps the `Response`. |
+| `TypeError`, `RangeError` | An argument or option is missing, has the wrong type, or has a value the function doesn't accept. Fix the call instead of catching these. |
 
-Each error's `name` starts with the package namespace, such as `Lines.MaxLengthError`. If your app installs two copies of a package, `instanceof` fails for errors from the other copy. Use `Errors.is` from [@portable/errors](/packages/errors) instead: `Errors.is(error, 'MaxBytes')` matches the `MaxBytesError` of any package.
+Each error's `name` starts with the package namespace, such as `Lines.MaxLengthError`. `Errors.is` from [errors](/packages/errors) matches a kind across packages: `Errors.is(error, 'MaxBytes')` matches any package's `MaxBytesError`.
+

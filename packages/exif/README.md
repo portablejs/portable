@@ -21,11 +21,13 @@ exif.imageSize; // { width: 4032, height: 3024 }
 exif.thumbnail?.bytes; // Uint8Array of the embedded JPEG thumbnail
 ```
 
-The input can be a whole file or only its start. In a JPEG the EXIF data is in the first 64 KB, but `imageSize` can be missing if the frame header comes later. PNG, WebP, and many TIFF files store EXIF after the image data, so pass the whole file or use `parseStream`. A tag is left out if its values lie past the end of the input, and `thumbnail.bytes` is `undefined` if the thumbnail lies past the end.
+The input can be the whole file or its start. A JPEG's EXIF is in the first 64 KB, but `imageSize` can be missing if the frame header comes later. PNG, WebP, and many TIFF files store EXIF after the image data, so pass the whole file or use `parseStream`.
+
+A tag is left out if its values lie past the end of the input, and `thumbnail.bytes` is `undefined` if the thumbnail does.
 
 ## `Exif.parse(bytes)`
 
-Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chunk), HEIF file such as HEIC or AVIF (`Exif` item), or raw EXIF data that starts with `Exif\0\0` or a TIFF header. Returns a plain object:
+Takes a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chunk), HEIF file such as HEIC or AVIF (`Exif` item), or raw EXIF data that starts with `Exif\0\0` or a TIFF header. Returns:
 
 | Property | Type | Description |
 | --- | --- | --- |
@@ -35,10 +37,12 @@ Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chun
 | `interop` | `Tags` | Interoperability IFD tags. |
 | `ifd1` | `Tags` | Thumbnail tags. |
 | `latitude`, `longitude` | `number \| undefined` | Decimal degrees, negative for south and west. Set when both coordinates are present. |
-| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment; the TIFF `ImageWidth` and `ImageHeight` tags; PNG `IHDR`; the WebP header; or the HEIF `ispe` property of the primary item. |
-| `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail that IFD1 points to, set when its `ThumbnailOffset` and `ThumbnailLength` tags are both positive. `offset` and `length` are its position and size in bytes in the input. `bytes` is a view into the input. |
+| `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before `Orientation` rotation. Read from the JPEG SOF segment; TIFF `ImageWidth` and `ImageHeight`; PNG `IHDR`; the WebP header; or the HEIF primary item's `ispe`. |
+| `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail in IFD1. It is set when both `ThumbnailOffset` and `ThumbnailLength` are positive. `offset` and `length` are in bytes of the input, and `bytes` is a view into it. |
 
-A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html). A tag without a name is keyed by its id, such as `'0xC4A5'`. When an IFD holds a tag twice, the first one is kept. The pointer tags that locate the Exif, GPS, and interoperability IFDs are left out.
+A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html), or the id, such as `'0xC4A5'`, for a tag without a name. If an IFD holds a tag twice, the first is kept.
+
+The pointer tags to the Exif, GPS, and interoperability IFDs are left out.
 
 Values have these types:
 
@@ -49,7 +53,7 @@ Values have these types:
 | RATIONAL, SRATIONAL | The same, with each fraction divided: `ExposureTime` is `0.004`, not `[1, 250]`. A zero denominator gives `NaN` or `Infinity`. |
 | UNDEFINED | `Uint8Array`, a view into the input. |
 
-Dates stay strings, as stored (`'2019:10:20 18:34:30'`), because EXIF dates have no time zone. Use `Exif.parseDate` to get a `Date`.
+Dates stay strings (`'2019:10:20 18:34:30'`), because EXIF dates have no time zone. Use `Exif.parseDate` to get a `Date`.
 
 ### Errors
 
@@ -59,37 +63,37 @@ Dates stay strings, as stored (`'2019:10:20 18:34:30'`), because EXIF dates have
 | `Exif.InvalidInputError` | The TIFF header is malformed: no `II` or `MM` byte order mark, a magic number other than 42, or an IFD0 offset inside the header. |
 | `Exif.TruncatedError` | TIFF or raw EXIF input is shorter than its 8-byte header. |
 
-A broken IFD doesn't throw. `parse` skips a tag if its type is unknown or its values point outside the data, and returns the other tags. If the EXIF data starts past the end of the input, `parse` returns empty IFDs.
+A broken IFD doesn't throw: `parse` skips a tag if its type is unknown or its values point outside the data. If the EXIF data starts past the end of the input, `parse` returns empty IFDs.
 
 ## `Exif.parseStream(stream, options?)`
 
-Reads a `ReadableStream<Uint8Array>`, such as a `fetch` body or `File.stream()`, until it has the metadata, then cancels the stream. Returns a promise of the same object `parse` returns for the whole file, so you get the EXIF of a large photo without downloading all of it.
+Reads a `ReadableStream<Uint8Array>`, such as a `fetch` body or `File.stream()`, until it has the metadata, then cancels it. Returns what `parse` returns for the whole file.
 
 ```ts
 const response = await fetch('https://example.com/photo.jpg');
 const exif = await Exif.parseStream(response.body!);
 ```
 
-How far it reads depends on where the format stores the metadata:
+How far it reads depends on the format:
 
 | Format | Stops after | Bytes held in memory |
 | --- | --- | --- |
-| JPEG | The Exif APP1 segment and the frame header, or the first start-of-scan marker if there is no EXIF. That is the first 30 KB of the 329 KB `starfish.jpg` fixture. | The APP1 segment, at most 64 KB. |
-| PNG | The `eXIf` chunk. It may come after the image data, so a PNG without EXIF is read to `IEND`. | The `eXIf` chunk. Other chunks are skipped. |
-| WebP | The `EXIF` chunk and the size. The `EXIF` chunk usually follows the image data, so most WebP files are read to the end. | The `EXIF` chunk. Other chunks are skipped. |
-| HEIC, AVIF | The `Exif` item that the `meta` box locates. | Everything before the end of `meta`, then the `Exif` item. If `mdat` comes before `meta`, that includes the whole `mdat`. |
-| TIFF, raw EXIF | The last IFD or thumbnail byte that the IFDs reference. Many TIFF writers put IFD0 after the image strips, so expect to read the whole file. | Everything read. `parseStream` rejects with `Exif.MaxBytesError` for a TIFF larger than `maxBytes` with IFD0 at the end, so raise `maxBytes` for large scans or raw files. |
+| JPEG | The Exif APP1 segment and the frame header, or the first start-of-scan marker if there is no EXIF (30 KB of a 329 KB test photo). | The APP1 segment, at most 64 KB. |
+| PNG | The `eXIf` chunk. A PNG without EXIF is read to `IEND`. | The `eXIf` chunk. Other chunks are skipped. |
+| WebP | The `EXIF` chunk and the size. This is usually the end of the file. | The `EXIF` chunk. Other chunks are skipped. |
+| HEIC, AVIF | The `Exif` item that the `meta` box locates. | Everything up to the end of `meta`, including `mdat` if it comes first, then the `Exif` item. |
+| TIFF, raw EXIF | The last IFD or thumbnail byte. Many TIFF files put IFD0 after the image data, so expect to read the whole file. | Everything read, so raise `maxBytes` for large scans or raw files. |
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `maxBytes` | `16777216` (16 MiB) | The most bytes of the stream that `parseStream` holds in memory at once. Skipped bytes don't count. A negative or `NaN` value throws a `RangeError`. |
+| `maxBytes` | `16777216` (16 MiB) | The most bytes held in memory at once. Skipped bytes don't count. A negative or `NaN` value throws a `RangeError`. |
 | `signal` | none | An `AbortSignal`. Aborting rejects with `signal.reason` and cancels the stream. |
 
-Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesError` when it would need to hold more than `maxBytes`. The error's `maxBytes` property holds the limit. An error from the stream itself is passed on unchanged.
+Besides the errors `parse` throws, `parseStream` rejects with `Exif.MaxBytesError`, whose `maxBytes` holds the limit, when it would need to hold more than `maxBytes` bytes. Errors from the stream are passed on unchanged.
 
 ## `Exif.strip(bytes, options?)` and `Exif.StripStream`
 
-Remove the EXIF and XMP metadata from a JPEG, PNG, or WebP file without re-encoding it. The image data is copied byte for byte. `strip` takes and returns a `Uint8Array`. `StripStream` is a `TransformStream` that does the same to a stream, so you can store a stripped upload and read its EXIF from the same body:
+Remove EXIF and XMP metadata from a JPEG, PNG, or WebP file without re-encoding the image. `strip` takes and returns a `Uint8Array`, and `StripStream` is a `TransformStream` that does the same:
 
 ```ts
 const [stored, inspected] = request.body!.tee();
@@ -103,31 +107,31 @@ What is removed:
 
 | Format | Removed | Kept by default |
 | --- | --- | --- |
-| JPEG | APP1 `Exif` and XMP segments (including extended XMP), and every APP13 segment, which holds Photoshop's IPTC data. | APP2 `ICC_PROFILE` segments, and every other segment. |
+| JPEG | APP1 `Exif` and XMP segments (including extended XMP), and APP13 segments (Photoshop's IPTC data). | APP2 `ICC_PROFILE` segments, and every other segment. |
 | PNG | `eXIf`, and `tEXt`, `zTXt`, and `iTXt` chunks with the keyword `XML:com.adobe.xmp` or ImageMagick's `Raw profile type exif`, `APP1`, `xmp`, and `iptc`. | `iCCP`, and every other text chunk. |
 | WebP | `EXIF` and `XMP ` chunks. The RIFF size and the `VP8X` flags are updated to match. | `ICCP`. |
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `keepOrientation` | `true` | If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag in place of the original block, so that viewers and resizers still rotate the image. |
+| `keepOrientation` | `true` | If the original has an `Orientation` from 2 to 8, write an EXIF block with only that tag, so viewers still rotate the image. |
 | `keepColorProfile` | `true` | Keep the ICC profile. |
 | `signal` | none | `StripStream` only. Aborting errors the stream with `signal.reason`. |
 
-`StripStream` writes a JPEG or PNG as it arrives and holds at most one metadata segment or chunk. It holds a whole WebP file before writing it, because the RIFF size and the `VP8X` flags at the start of the file depend on the `EXIF` chunk, which usually comes last. There is no size limit, so pipe an untrusted upload through `Streams.limitBytes` from [@portable/streams](https://portablejs.com/packages/streams) first.
+`StripStream` writes a JPEG or PNG as it arrives, holding at most one metadata segment or chunk. It buffers a whole WebP file, because the RIFF size and `VP8X` flags at its start depend on the `EXIF` chunk, which usually comes last. There is no size limit, so pipe untrusted uploads through `Streams.limitBytes` from [@portable/streams](https://portablejs.com/packages/streams) first.
 
-In a JPEG, everything from the first start-of-scan marker on is copied unchanged, including any segments after the scan. A truncated file is stripped as far as it goes.
+In a JPEG, everything from the first start-of-scan marker on is copied unchanged. A truncated file is stripped as far as it goes.
 
-`strip` throws `Exif.UnsupportedError` for TIFF, HEIC, and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2. `StripStream` errors the stream with the same errors.
+`strip` throws `Exif.UnsupportedError` for TIFF, HEIC, AVIF, and raw EXIF data, and `Exif.InvalidInputError` when a JPEG has bytes other than a marker between segments or a segment length below 2. `StripStream` errors the stream with the same errors.
 
 ## `Exif.parseDate(value, options?)`
 
-Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or the ISO 8601 form `'2004-09-04T23:39:06-08:00'` into a `Date`. It takes a tag value as `parse` returns it, so you can pass a tag that may be missing. Returns `undefined` for anything else, including a missing tag, a value that isn't a string, and the `'0000:00:00 00:00:00'` that cameras write when their clock is unset.
+Parses `'YYYY:MM:DD HH:MM:SS'`, with optional fractional seconds, or ISO 8601 such as `'2004-09-04T23:39:06-08:00'`, into a `Date`. Returns `undefined` for anything else, including a missing tag, a non-string, and the `'0000:00:00 00:00:00'` that cameras write when their clock is unset.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `offset` | none | UTC offset such as `'+02:00'`, used when `value` has none. Pass the matching `OffsetTimeOriginal`, `OffsetTimeDigitized`, or `OffsetTime` tag as it is. A missing tag or a value that isn't an offset is ignored. |
+| `offset` | none | UTC offset such as `'+02:00'`, used when `value` has none. Pass the matching `OffsetTime*` tag as it is. A missing or invalid value is ignored. |
 
-Without an offset the date is read as UTC, so `getUTCHours()` and the other `getUTC*` methods return the time the camera recorded.
+Without an offset the date is read as UTC, so the `getUTC*` methods return the time the camera recorded.
 
 ```ts
 const { exif } = Exif.parse(bytes);
@@ -144,17 +148,17 @@ const taken = Exif.parseDate(exif.DateTimeOriginal, { offset: exif.OffsetTimeOri
 
 ## Why use this over exif-parser
 
-exif-parser reads only JPEG. This package also reads TIFF, PNG, WebP, HEIC, and AVIF, takes a `Uint8Array` in any JavaScript runtime, and has no dependencies outside `@portable/*`.
+exif-parser reads only JPEG, and this package also reads TIFF, PNG, WebP, HEIC, and AVIF.
 
-- Parsing a 329 KB phone JPEG was about 3× faster than exif-parser and 11× faster than exifr.
-- `parse` skips the bad tags in damaged data and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
+- Parsing a phone JPEG was about 3× faster than exif-parser and 11× faster than exifr.
+- `parse` skips bad tags and returns the rest. exif-parser throws a `RangeError` for an IFD that runs past the buffer (exif-parser #29) and `Invalid format: 0` for an unknown tag type (exif-parser #17).
 - Tags are grouped by IFD, so the thumbnail's `Orientation` is never reported as the image's (exif-parser #30).
 - A coordinate without its `GPSLatitudeRef` or `GPSLongitudeRef` stays positive, where exif-parser negates it (exif-parser #36, #37). SSHORT and SLONG values are signed.
 - Dates stay strings, and `parseDate` applies the `OffsetTime*` tag you pass. exif-parser turns the camera's local time into seconds as if it were UTC (exif-parser #14, #23, #40).
 - exif-parser returns Exif IFD tags such as `DateTimeOriginal` in its interop section, and `parse` returns them in `exif`.
 - exif-parser converts `GPSLatitude` and `GPSLongitude` to decimal degrees. `parse` keeps the stored degrees, minutes, and seconds in those tags and returns decimal degrees in `latitude` and `longitude`.
 - exif-parser leaves out binary tags unless you call `enableBinaryFields(true)`. `parse` always returns them, as `Uint8Array` views of the input.
-- exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)`, and `enablePointers(true)` have no equivalent. `parse` always uses tag names and always converts values as the table above shows.
+- exif-parser's `enableTagNames(false)`, `enableSimpleValues(false)`, `enableImageSize(false)`, `enableReturnTags(false)`, and `enablePointers(true)` have no equivalent.
 
 <!-- bench:start -->
 <table>

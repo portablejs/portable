@@ -1,6 +1,6 @@
 # @portable/png
 
-Decodes PNG files to 8-bit RGBA pixels and encodes RGBA pixels as PNG, with zlib from the platform's `CompressionStream` and `DecompressionStream`. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Decodes PNG files to 8-bit RGBA pixels and encodes RGBA pixels as PNG, using the platform's `CompressionStream` and `DecompressionStream` for zlib. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [pngjs](https://www.npmjs.com/package/pngjs).
 
@@ -20,11 +20,13 @@ for (let i = 0; i < data.length; i += 4) {
 const bytes = await Png.encode({ width, height, data });
 ```
 
-`decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8, and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied. For an animated PNG, `decode` returns the default image stored in `IDAT` and ignores the other frames.
+`decode` reads every PNG color type, bit depths 1, 2, 4, 8, and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded, and lower depths are scaled up, so a 1-bit white is 255.
+
+Gamma is reported but not applied. For an animated PNG, `decode` returns only the default image.
 
 ## Sync or async
 
-`decode` and `encode` return promises, because `CompressionStream` and `DecompressionStream` are the only zlib that every runtime has, and they are async. `decodeSync` and `encodeSync` do the same work synchronously with a zlib function you pass:
+`decode` and `encode` are async because `CompressionStream` and `DecompressionStream` are. `decodeSync` and `encodeSync` run synchronously with a zlib function you pass:
 
 ```ts
 import * as Png from '@portable/png';
@@ -34,7 +36,9 @@ const image = Png.decodeSync(bytes, { inflate: unzlibSync });
 const png = Png.encodeSync(image, { deflate: (raw) => zlibSync(raw, { level: 9 }) });
 ```
 
-In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. The functions you pass must read and write the zlib format (RFC 1950), not raw deflate.
+The functions must use the zlib format (RFC 1950), not raw deflate.
+
+In Node, you can also pass `inflateSync` and `deflateSync` from `node:zlib`.
 
 ## API
 
@@ -45,8 +49,8 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. The function
 | Option | Default | Description |
 | --- | --- | --- |
 | `inflate` | `DecompressionStream('deflate')` | Decompresses zlib data. Required for `decodeSync`. `decode` also accepts an async function. |
-| `checkCrc` | `true` | Verify each chunk's CRC. The zlib checksum is always verified by the inflate function. |
-| `maxPixels` | `Infinity` | The largest number of pixels (`width * height`) to decode. For a larger image, `decode` throws `MaxPixelsError` as soon as `IHDR` is read, before anything is decompressed or allocated. Set it when you decode untrusted files. |
+| `checkCrc` | `true` | Verify each chunk's CRC. The inflate function always verifies the zlib checksum. |
+| `maxPixels` | `Infinity` | Most pixels (`width * height`) to decode. A larger image throws `MaxPixelsError` before anything is decompressed or allocated. Set it for untrusted files. |
 | `signal` | none | `decode` only. Aborting rejects with `signal.reason` and stops the default decompression. A custom `inflate` isn't interrupted, and `decode` rejects after it returns. |
 
 `Decoded` is a plain object:
@@ -61,34 +65,38 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. The function
 | `alpha` | Whether the file has an alpha channel or a `tRNS` chunk. |
 | `gamma` | The `gAMA` value, such as `0.45455`, or `undefined`. |
 
-Bytes after `IEND` are ignored. Every ancillary chunk except `tRNS` and `gAMA` is skipped, including `iCCP`, `sRGB`, `pHYs`, and text chunks, so a color profile is neither applied nor reported.
+Bytes after `IEND` are ignored. Ancillary chunks other than `tRNS` and `gAMA` are skipped, so color profiles, `pHYs`, and text chunks are neither applied nor reported.
 
 ### `encode(image: RgbaImage, options?): Promise<Uint8Array>`
 
 ### `encodeSync(image: RgbaImage, options): Uint8Array`
 
-`image` is `{ width, height, data, gamma? }` with 8-bit RGBA `data` (`Uint8Array` or `Uint8ClampedArray`), so a `Decoded` result or a canvas `ImageData` can be passed as is. When `gamma` is set and not 0, it is written to a `gAMA` chunk.
+`image` is `{ width, height, data, gamma? }` with 8-bit RGBA `data` (`Uint8Array` or `Uint8ClampedArray`), so you can pass a `Decoded` result or a canvas `ImageData` as is. A `gamma` other than 0 is written to a `gAMA` chunk.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `deflate` | `CompressionStream('deflate')` | Compresses to zlib format. Required for `encodeSync`. Pass one to choose a compression level. |
 | `colorType` | `6` | `0` grayscale, `2` RGB, `4` grayscale with alpha or `6` RGBA. Gray is the BT.709 luma of each pixel. |
-| `background` | `{ red: 255, green: 255, blue: 255 }` | Color that semi-transparent pixels are blended onto for color types without alpha. |
-| `filter` | `[0, 1, 2, 3, 4]` | A filter for every row (0 none, 1 sub, 2 up, 3 average, 4 Paeth), or a list to choose from per row. With a list, each row gets the filter whose output has the smallest sum of absolute values, with each byte read as signed, as libpng does. |
+| `background` | `{ red: 255, green: 255, blue: 255 }` | For color types without alpha, the color that semi-transparent pixels are blended onto. |
+| `filter` | `[0, 1, 2, 3, 4]` | One filter for every row (0 none, 1 sub, 2 up, 3 average, 4 Paeth), or a list to choose from: each row gets the filter whose output has the smallest sum of absolute values. |
 | `signal` | none | `encode` only. Aborting rejects with `signal.reason` and stops the default compression. A custom `deflate` isn't interrupted, and `encode` rejects after it returns. |
 
-The encoder writes 8-bit, non-interlaced files with `IHDR`, `gAMA` when `gamma` is set, one `IDAT`, and `IEND`. No other chunks are written, so re-encoding a decoded file drops its palette, `tRNS` chunk, color profile, and text chunks.
+The encoder writes 8-bit, non-interlaced files with `IHDR`, `gAMA` if `gamma` is set, one `IDAT`, and `IEND`. Re-encoding a decoded file drops its palette, `tRNS` chunk, color profile, and text chunks.
 
 ### Errors
 
 | Error | Thrown when |
 | --- | --- |
 | `TruncatedError` | The file ends before `IEND` or inside a chunk, or holds less image data than its header describes. |
-| `InvalidInputError` | The input is malformed: a bad signature, a CRC mismatch, an invalid header, a bad filter type, a palette index out of range, or zlib data that fails to decompress (the cause is in `error.cause`). `encode` throws it for `data` of the wrong length or a `width` or `height` that isn't a positive integer, and a `RangeError` for an invalid `filter`. |
+| `InvalidInputError` | The input is malformed, e.g. a bad signature, CRC, header, filter type, or palette index, or zlib data that fails to decompress (in `error.cause`). `encode` throws it for `data` of the wrong length or a `width` or `height` that isn't a positive integer. |
 | `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter, or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
-| `MaxPixelsError` | The image has more pixels than `maxPixels`, which the error stores as `maxPixels`. |
+| `MaxPixelsError` | The image has more pixels than `maxPixels`. Stores the limit in `maxPixels`. |
 
-Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError`, and `Png.MaxPixelsError`. `decode` throws a `RangeError` for an invalid `maxPixels`, such as a negative number. `encode` throws a `TypeError` for `data` that isn't a `Uint8Array` or `Uint8ClampedArray`. An error thrown by your `inflate` function is wrapped in `InvalidInputError`, but an error thrown by your `deflate` function is passed on unchanged.
+Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError`, and `Png.MaxPixelsError`.
+
+`decode` throws a `RangeError` for an invalid `maxPixels`. `encode` throws a `RangeError` for an invalid `filter`, and a `TypeError` for `data` that isn't a `Uint8Array` or `Uint8ClampedArray`.
+
+Errors from your `inflate` function are wrapped in `InvalidInputError`. Errors from your `deflate` function are passed on unchanged.
 
 ## Types
 
@@ -100,19 +108,19 @@ Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.Unsupporte
 
 ## Why use this over pngjs
 
-pngjs is built on Node's `zlib` and streams. This package takes zlib from `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies outside `@portable/*`.
+pngjs is built on Node's `zlib` and streams. This package uses `CompressionStream` and `DecompressionStream`, so it runs in browsers and Workers with no dependencies outside `@portable/*`.
 
-- If a header claims more pixels than the data can hold, `decode` throws `TruncatedError` before anything is allocated. pngjs sizes its buffer from the header alone, and a 100000×100000 header with 19 bytes of image data made it try to allocate 40 GB and throw a `RangeError`.
-- A valid file can still be small and decode to a huge image: a 1-bit 100000×100000 image compresses to about 1.2 MB and decodes to 40 GB of RGBA. `maxPixels` rejects it from the header, as sharp's `limitInputPixels` does. pngjs has no limit.
-- Decoding a 1024×1024 image with `decodeSync` and `node:zlib` was about 1.3× faster than pngjs. The default `decode` was about 1.2× slower than pngjs in Node, because Node's `DecompressionStream` sends zlib work to the thread pool one 16 KiB chunk at a time.
-- Encoding with `CompressionStream` was about 1.2× faster than pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults (level 9, `Z_RLE`) was about 1.3× faster than pngjs.
-- A file with no `IDAT` is rejected with `InvalidInputError`. pngjs's stream parser calls back with neither an error nor an image.
-- Bytes after `IEND` are ignored. `PNG.sync.read` throws on them, including on a file that pngjs's own async test parses.
+- If a header claims more pixels than the data holds, `decode` throws `TruncatedError` before allocating. pngjs sizes its buffer from the header, so a 100000×100000 header with 19 bytes of data made it try to allocate 40 GB.
+- A small valid file can decode to a huge image: a 1-bit 100000×100000 image is about 1.2 MB and decodes to 40 GB. `maxPixels` rejects it from the header, like sharp's `limitInputPixels`. pngjs has no limit.
+- In Node, `decodeSync` with `node:zlib` was about 1.3× faster than pngjs, and `decode` about 1.2× slower, because Node's `DecompressionStream` is slow.
+- `encode` was about 1.2× faster than pngjs at the same zlib settings, and `encodeSync` with pngjs's defaults about 1.3× faster.
+- A file with no `IDAT` throws `InvalidInputError`. pngjs's stream parser returns neither an error nor an image.
+- Bytes after `IEND` are ignored. pngjs's `PNG.sync.read` throws on them.
 - A pixel matching the `tRNS` color gets alpha 0 and keeps its color. pngjs makes it black.
 - `encode` computes gray as BT.709 luma. pngjs averages the channels.
-- The default encoder compresses at zlib level 6 with the default strategy, which is what `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes files about 17% larger on photographs. pngjs's `deflateLevel` has no equivalent, so pass a `deflate` function to choose a level.
-- pngjs sets `gamma` to `0` when there is no `gAMA` chunk, and `decode` returns `gamma: undefined`.
-- Pixels are always 8-bit RGBA, so pngjs's `skipRescale`, `bitDepth: 16`, `inputColorType`, and `inputHasAlpha` options have no equivalent. Neither do pngjs's `bitblt` and `adjustGamma`.
+- The default encoder uses zlib level 6, as `CompressionStream` does. pngjs uses level 9 with `Z_RLE`, which is faster and makes photos about 17% larger. To choose a level, pass a `deflate` function instead of pngjs's `deflateLevel`.
+- `decode` returns `gamma: undefined` when there is no `gAMA` chunk. pngjs sets it to `0`.
+- Pixels are always 8-bit RGBA, so pngjs's `skipRescale`, `bitDepth: 16`, `inputColorType`, and `inputHasAlpha` have no equivalent. Neither do `bitblt` and `adjustGamma`.
 
 ### Performance
 

@@ -1,6 +1,6 @@
 # @portable/rdap
 
-Looks up who holds a domain name, an IP address, or an AS number over RDAP (RFC 9082 and RFC 9083), the JSON protocol that replaced WHOIS. It finds the right server in IANA's bootstrap files (RFC 9224), follows the registry's referral to the registrar, and returns dates as `Date`s and contacts as plain fields. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Looks up who holds a domain name, an IP address, or an AS number over RDAP (RFC 9082 and RFC 9083), the JSON protocol that replaced WHOIS. It finds the server through IANA (RFC 9224), follows referrals to the registrar, and returns dates as `Date`s and contacts as plain fields. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 Replaces [whoiser](https://www.npmjs.com/package/whoiser), [whois-json](https://www.npmjs.com/package/whois-json), and [node-rdap](https://www.npmjs.com/package/node-rdap).
 
@@ -55,11 +55,13 @@ Each returns a plain object. These fields are on all three:
 | --- | --- | --- |
 | `handle` | `string \| undefined` | The registry's ID for the object. |
 | `status` | `readonly string[]` | RDAP status values, lowercased, such as `client transfer prohibited` or `active`. |
-| `events` | `{ registration, expiration, lastChanged }` | Each is a `Date`, or `undefined` when the response has no such event or its date doesn't parse. When an action appears more than once, the first one with a date that parses is used. A date without a time zone is read as UTC. |
-| `entities` | `readonly Entity[]` | Every contact in the response. An entity nested inside another one, such as a registrar's abuse contact, comes after it in the list. |
+| `events` | `{ registration, expiration, lastChanged }` | Each is a `Date`, or `undefined` if missing or unparseable. For a repeated event, the first valid date is used. A date without a time zone is read as UTC. |
+| `entities` | `readonly Entity[]` | Every contact in the response. A nested entity, such as a registrar's abuse contact, comes after its parent. |
 | `raw` | `Record<string, unknown>` | The response JSON, for fields such as `secureDNS`, `remarks`, and `notices`. |
 
-An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists RDAP roles, lowercased, such as `registrar`, `registrant`, `administrative`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`; the first `tel` that isn't a fax, with its `tel:` prefix removed; and the `adr` label or its parts joined by line breaks. Redacted values, such as `REDACTED FOR PRIVACY`, are returned as the server sent them.
+An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` lists lowercased RDAP roles, such as `registrar`, `registrant`, `technical`, and `abuse`. The other fields come from the entity's jCard: the first `fn`, `org`, and `email`; the first non-fax `tel` without its `tel:` prefix; and the `adr` label or its parts joined by line breaks.
+
+Redacted values, such as `REDACTED FOR PRIVACY`, are returned as sent.
 
 `Rdap.domain` also returns `name` (A-labels, lowercased), `unicodeName`, `nameservers` (lowercased, without trailing dots), and `referral`. `Rdap.ip` returns `name`, `version` (4 or 6), `startAddress`, `endAddress`, `cidrs`, `type`, `country`, and `parentHandle`. `Rdap.asn` returns `name`, `start`, `end`, `type`, and `country`.
 
@@ -67,22 +69,28 @@ An `Entity` is `{ handle, roles, name, org, email, phone, address }`. `roles` li
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `fetch` | `globalThis.fetch` | Called as `fetch(request)` with a `Request`. Pass one to add headers, set a timeout, route through a proxy, or mock responses. |
-| `signal` | | Aborting rejects the lookup with `signal.reason` and cancels any bootstrap request that no other lookup is waiting for. |
-| `now` | the current time | The current time, as a `Date` or a `Temporal.Instant`. A lookup compares it with the time the bootstrap files were cached to decide whether they have expired. |
+| `fetch` | `globalThis.fetch` | Called with a `Request`. Use it to add headers, use a proxy, or mock responses. |
+| `signal` | | Aborting rejects the lookup with `signal.reason` and cancels its bootstrap request, unless another lookup is waiting for it. |
+| `now` | the current time | The current time, as a `Date` or a `Temporal.Instant`. Used to expire the cached bootstrap files. |
 | `follow` | `true` | `Rdap.domain` only. Fetches the registrar's response when the registry links to it. |
 
 For a timeout, pass `signal: AbortSignal.timeout(5000)`.
 
 ### Registrar referrals
 
-gTLD registries such as Verisign and PIR return the registrar, the dates, and the nameservers, and link to the registrar's own RDAP response with a `related` link. The registrar's response has the registrant and the other contacts. With `follow` on, `Rdap.domain` fetches that response too. `entities` then lists the registrar's entities, plus registry entities in roles the registrar has no entity for. `status`, `events`, and `nameservers` stay the registry's, because the registry is the authority for them.
+gTLD registries such as Verisign and PIR link to the registrar's RDAP response, which has the registrant and other contacts. With `follow` on, `Rdap.domain` fetches it. `entities` then lists the registrar's entities, plus registry entities in roles the registrar lacks. `status`, `events`, and `nameservers` stay the registry's.
 
-`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` when that request failed. A failed referral doesn't fail the lookup, because registrar servers are less reliable than registries and the registry's data is still correct. A link is followed only if its type is `application/rdap+json`, `application/json`, or missing; its scheme is `https` or `http`; and it points to another URL whose path ends in `/domain/<name>`.
+`referral` is `{ url, raw }` with the registrar's JSON, or `{ url, error }` if that request failed. A failed referral doesn't fail the lookup.
+
+A link is followed only if its type is `application/rdap+json`, `application/json`, or missing; its scheme is `https` or `http`; and it points to another URL whose path ends in `/domain/<name>`.
 
 ### Bootstrap files
 
-The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use and cached in memory for 24 hours, which is IANA's `max-age`. The cache is kept per `fetch` function, so a mocked `fetch` in a test never sees files another `fetch` loaded. Create your `fetch` wrapper once and reuse it. A new function on each call starts with an empty cache, so every lookup downloads the bootstrap file again. Concurrent lookups share one request. A failed request isn't cached. When a service lists both an `https` and an `http` URL, the `https` one is used.
+The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use and cached in memory for 24 hours. Concurrent lookups share one request, and a failed request isn't cached.
+
+The cache is kept per `fetch` function, so create your `fetch` wrapper once and reuse it. A new function on each call downloads the bootstrap file again.
+
+When a service lists both an `https` and an `http` URL, the `https` one is used.
 
 ### Errors
 
@@ -91,11 +99,13 @@ The bootstrap files are fetched from `https://data.iana.org/rdap/` on first use 
 | `InvalidInputError` | The name, address, or number is malformed. No request is sent. |
 | `UnsupportedError` | IANA lists no RDAP server for it, as for `.de` domains or `10.0.0.1`. |
 | `NotFoundError` | The server answered 404. `url` is the URL and `response` is the response. It extends `Errors.ResponseError` but not `Rdap.ResponseError`. |
-| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. `status`, `url`, the whole `response`, and the parsed `body` (such as an RDAP error with `errorCode` and `title`) are on the error. |
+| `ResponseError` | Any other HTTP error, or a body that isn't a JSON object. Has `status`, `url`, `response`, and the parsed `body`, such as an RDAP error with `errorCode` and `title`. |
 
-When `fetch` rejects, such as on a network failure, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
+When `fetch` rejects, the lookup rejects with the same error. An argument of the wrong type throws a `TypeError`.
 
-Domain names go through `URL`'s IDNA conversion, then must have at least two labels of letters, digits, and hyphens, each up to 63 characters and not starting or ending with a hyphen, and at most 253 characters in total. The last label can't be all digits. To look up a TLD itself, fetch `https://rdap.iana.org/domain/<tld>`. An IPv4-mapped IPv6 address (`::ffff:192.0.2.1`) is looked up as IPv4. Other IPv6 addresses are sent in the RFC 5952 form.
+A domain name, after `URL`'s IDNA conversion, must have at least two labels and at most 253 characters. Each label has up to 63 letters, digits, and hyphens, and doesn't start or end with a hyphen. The last label can't be all digits. To look up a TLD itself, fetch `https://rdap.iana.org/domain/<tld>`.
+
+An IPv4-mapped IPv6 address (`::ffff:192.0.2.1`) is looked up as IPv4. Other IPv6 addresses are sent in RFC 5952 form.
 
 ## Types
 
@@ -110,26 +120,26 @@ Domain names go through `URL`'s IDNA conversion, then must have at least two lab
 
 ## Why use this over whoiser, whois-json, and node-rdap
 
-whoiser and whois-json speak WHOIS over TCP port 43, which browsers and Workers can't open, and parse free text whose format differs for each registry. node-rdap speaks RDAP but runs only in Node, returns the raw JSON, and has no way to cancel a lookup.
+whoiser and whois-json use WHOIS over TCP port 43, which browsers and Workers can't open, and parse free text that differs for each registry. node-rdap uses RDAP but runs only in Node, returns the raw JSON, and can't cancel a lookup.
 
-- Results are normalized: dates are `Date`s, contacts are flat objects, and the same fields come back from every registry. whois-json joins repeated keys into one space-separated string, such as all nameservers in `nameServer`.
-- Registrar referrals are followed, as whoiser does for WHOIS. node-rdap returns only the registry's response, which for `.com` has no contacts.
+- Every registry returns the same fields, with dates as `Date`s and contacts as flat objects. whois-json joins repeated keys into one string, such as all nameservers in `nameServer`.
+- Registrar referrals are followed, as in whoiser. node-rdap returns only the registry's response, which for `.com` has no contacts.
 - Unicode domain names are sent in A-labels. node-rdap converts only the TLD, so `münchen.com` is sent as `domain/münchen.com`.
-- `Rdap.ip` picks the server by the longest matching prefix, as RFC 9224 requires. node-rdap takes the first match.
+- `Rdap.ip` picks the server by the longest matching prefix (RFC 9224). node-rdap takes the first match.
 - The `https` URL of a bootstrap service is used even when `http` is listed first. node-rdap takes the first URL.
-- Every lookup takes a `signal` and a `fetch`, and the bootstrap cache is kept per `fetch` function. node-rdap sets the timeout and cache lifetime for the whole process with `configure`.
+- Every lookup takes a `signal` and a `fetch`. node-rdap sets the timeout and cache lifetime for the whole process with `configure`.
 - Prefixes (`8.8.8.0/24`) and IPv4-mapped IPv6 addresses can be looked up. node-rdap rejects the first and finds no server for the second.
 - node-rdap's `domain` returns the registry's JSON. To get the same, call `Rdap.domain(name, { follow: false })` and read `.raw`.
 - node-rdap's `flushCaches` and `resetCaches` have no equivalent. Pass a new `fetch` function to start with an empty bootstrap cache.
-- node-rdap rejects with `RdapTimeoutError` and `RdapNetworkError`. A lookup rejects with the `TimeoutError` that `AbortSignal.timeout` aborts with, or with the error `fetch` rejected with.
+- Instead of node-rdap's `RdapTimeoutError` and `RdapNetworkError`, a lookup rejects with the `TimeoutError` from `AbortSignal.timeout` or with the error from `fetch`.
 - node-rdap's `nameserver` and `entity` lookups have no equivalent. Read `nameservers` and `entities` from the domain, or fetch a `self` link from `raw` yourself.
 - whoiser returns one object per WHOIS server it queried. `Rdap.domain` returns one merged result.
 - whoiser's `host` option has no equivalent. Pass a `fetch` that rewrites the URL.
 - whoiser's `whoisTld` has no equivalent. IANA's own RDAP server answers `https://rdap.iana.org/domain/com`.
 - `status` uses RDAP's words (`client transfer prohibited`), where WHOIS output uses EPP's (`clientTransferProhibited`).
-- TLDs without an RDAP server, such as `.de`, `.ch`, and `.io`, reject with `UnsupportedError`. whoiser and whois-json can still look them up, because WHOIS, which needs TCP, is the only source for them.
+- TLDs without an RDAP server, such as `.de`, `.ch`, and `.io`, reject with `UnsupportedError`. whoiser and whois-json can look them up over WHOIS, which needs TCP.
 
-The benchmarks serve recorded responses from memory. node-rdap returns the response JSON as it is, so its numbers measure only `response.json()`.
+The benchmarks serve recorded responses from memory. node-rdap returns the JSON as is, so its numbers measure only `response.json()`.
 
 <!-- bench:start -->
 <table>
