@@ -45,7 +45,7 @@ await greeting(connect, 'mx.example.com');
 
 ### `connect(address, options)`
 
-Imported from `@portable/sockets/node`. Opens a connection to `address` (`{ hostname, port }`) and returns a `Socket` at once. Deno and Bun run it through their `node:net` and `node:tls`. It throws a `TypeError` for a missing hostname or a port that isn't a number, and a `RangeError` for a port outside 0 to 65535 or an unknown `secureTransport`.
+Imported from `@portable/sockets/node`. Opens a connection to `address` (`{ hostname, port }`) and returns a `Socket` at once. Deno and Bun run it through their `node:net` and `node:tls`. It throws a `TypeError` when `address` isn't an object, `hostname` isn't a non-empty string, `port` isn't a number, or `allowHalfOpen` isn't a boolean. It throws a `RangeError` when `port` isn't an integer from 0 to 65535 or `secureTransport` is unknown.
 
 | Option | Description |
 | --- | --- |
@@ -60,12 +60,32 @@ The socket has these members:
 | --- | --- |
 | `readable` | A `ReadableStream<Uint8Array>` of the bytes the peer sends. It closes when the peer ends its side and errors if the connection fails. Cancelling it discards incoming bytes and leaves the writable side open. |
 | `writable` | A `WritableStream<Uint8Array>` for the bytes to send. Closing it ends this side of the connection. A write after the connection closes rejects with a `TypeError`. |
-| `opened` | Resolves with `{ remoteAddress, localAddress }` (each as `host:port`) once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails. |
+| `opened` | Resolves with `{ remoteAddress, localAddress }` (each as `host:port`, with an IPv6 host in brackets, as in `[::1]:25`) once the connection and the TLS handshake are done. Rejects with Node's error, such as one with `code` `ECONNREFUSED`, if the connection fails, and with a `TypeError` if the socket is closed before it connects. |
 | `closed` | Resolves when the connection closes and rejects with the error if it fails. |
 | `close()` | Closes both sides at once, without waiting for the peer, and returns `closed`. Reads after it are done, and writes reject. |
-| `startTls()` | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket's `upgraded` becomes `true`, its readable closes, its writes reject and its `closed` resolves. It throws a `TypeError` for any other socket and on a second call. |
+| `startTls()` | Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the TLS socket. The old socket's `upgraded` becomes `true`, its readable closes, its writes reject, and its `closed` resolves. It throws a `TypeError` for any other socket and on a second call. |
 | `upgraded` | Whether `startTls()` was called on this socket. |
-| `[Symbol.asyncDispose]()` | Calls `close()`, so `await using socket = connect(address, options)` closes the socket at the end of the scope. It exists only where the runtime has `Symbol.asyncDispose`. |
+| `[Symbol.asyncDispose]()` | Calls `close()` and ignores its rejection, so `await using socket = connect(address, options)` closes the socket at the end of the scope without throwing. It exists only where the runtime has `Symbol.asyncDispose`. |
+
+`connect` has no timeout, so `opened` can stay pending for minutes when the host drops the connection attempt. To limit how long it takes, race `opened` with a timer and close the socket if the timer fires first:
+
+```ts
+import { connect } from '@portable/sockets/node';
+
+const socket = connect(
+  { hostname: 'mx.example.com', port: 25 },
+  { secureTransport: 'off', allowHalfOpen: false },
+);
+const timeout = new Promise<never>((_, reject) => {
+  setTimeout(() => reject(new Error('The connection timed out.')), 5000);
+});
+try {
+  await Promise.race([socket.opened, timeout]);
+} catch (error) {
+  await socket.close().catch(() => {});
+  throw error;
+}
+```
 
 ### `create(options)`
 

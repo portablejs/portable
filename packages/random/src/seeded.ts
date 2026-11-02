@@ -21,6 +21,9 @@ export type Seeded = {
  * same results in every runtime. Use it for tests and reproducible simulations. It is not for
  * secrets: a few outputs are enough to predict the rest.
  *
+ * All methods of the returned object share one generator, and each call advances it. The same seed
+ * replays the same values only for the same sequence of calls.
+ *
  * The generator is xoshiro128** 1.1, seeded with two SplitMix64 outputs as its authors recommend.
  * Its first 32-bit outputs match Rust's `Xoshiro128StarStar::seed_from_u64(seed)` from
  * `rand_xoshiro`. `seed` is a safe integer, and a negative seed is read as its 64-bit two's

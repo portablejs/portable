@@ -14,7 +14,7 @@ export declare namespace strip {
      */
     keepOrientation?: boolean | undefined;
     /**
-     * Keep the ICC color profile: the JPEG `ICC_PROFILE` APP2 segments, the PNG `iCCP` chunk or
+     * Keep the ICC color profile: the JPEG `ICC_PROFILE` APP2 segments, the PNG `iCCP` chunk, or
      * the WebP `ICCP` chunk.
      * @default true
      */

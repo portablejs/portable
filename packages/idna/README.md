@@ -24,7 +24,7 @@ Idna.toAscii('Bücher.example'); // 'xn--bcher-kva.example'
 
 ### `toUnicode(domain, options?)`
 
-Decodes each `xn--` label and checks the result against UTS #46 with the URL Standard's settings: the bidi rule (CheckBidi), the joiner rules (CheckJoiners) and nontransitional processing. Unicode input is mapped and normalized too, so `toUnicode('BÜCHER.example')` returns `'bücher.example'`.
+Decodes each `xn--` label and checks the result against UTS #46 with the URL Standard's settings: the bidi rule (CheckBidi), the joiner rules (CheckJoiners), and nontransitional processing. Unicode input is mapped and normalized too, so `toUnicode('BÜCHER.example')` returns `'bücher.example'`.
 
 It throws `Idna.InvalidInputError` when the domain breaks a rule, such as an `xn--` label that isn't valid Punycode or that decodes to a character IDNA doesn't allow. UTS #46 leaves it to you to decide what to show instead. Browsers show the ASCII form:
 
@@ -37,6 +37,8 @@ function displayHost(hostname: string): string {
   }
 }
 ```
+
+`toUnicode` is for display, so it checks less than `toAscii`. It returns an empty domain as it is, and without `strict` it also accepts a character such as a space or `/`. To check a domain, call `toAscii`.
 
 ### `toAscii(domain, options?)`
 

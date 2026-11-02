@@ -35,8 +35,10 @@ await Spf.check({ ip, sender, helo }, { resolver: dns });
 | Field | Description |
 | --- | --- |
 | `ip` | The client's IPv4 or IPv6 address. An IPv4-mapped IPv6 address such as `::ffff:192.0.2.1` is checked as IPv4. `check` rejects with a `RangeError` for a string that isn't an IP address, and with a `TypeError` for a value that isn't a string. |
-| `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4). |
+| `sender` | The MAIL FROM address. When it is empty or missing, as for a bounce, the HELO name is checked instead, with the sender `postmaster@<helo>` (RFC 7208 section 2.4). A sender without `@` is read as a domain, with the local-part `postmaster`. |
 | `helo` | The HELO or EHLO name, used for `%{h}` and for an empty sender. |
+
+If the domain to check isn't a fully qualified domain name, such as `localhost` or an address literal such as `[192.0.2.1]`, `check` returns `none` without a lookup. It also returns `none` for an empty sender without a `helo`.
 
 To check the HELO identity of a message that has a sender, as RFC 7208 section 2.3 recommends, call `check` again with `sender: ''`.
 
@@ -51,7 +53,7 @@ To check the HELO identity of a message that has a sender, as RFC 7208 section 2
 
 There is no default resolver. `check` sends the client's IP address in DNS queries, for example for `exists:%{i}...`, so the resolver you pass determines which DNS servers see that address. A mail server usually runs its own resolver. Pass `Dns.create()` for DNS-over-HTTPS.
 
-`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as an empty answer, so an `a`, `mx`, or `exists` term doesn't match and an `include` gives `permerror`. It treats any other rejection as `temperror`.
+`check` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as an empty answer, so an `a`, `mx`, or `exists` term doesn't match, and an `include` or `redirect=` gives `permerror`. It treats any other rejection as `temperror`. A term whose target expands to an invalid domain name doesn't match, except `include` and `redirect=`, which give `permerror`.
 
 ## Result
 
@@ -59,12 +61,12 @@ There is no default resolver. `check` sends the client's IP address in DNS queri
 
 | Field | Description |
 | --- | --- |
-| `result` | `'pass'`, `'fail'`, `'softfail'`, `'neutral'`, `'none'`, `'temperror'`, or `'permerror'`. |
+| `result` | One of the results of [RFC 7208 section 8](https://www.rfc-editor.org/rfc/rfc7208#section-8). `'pass'`: the client may send for the domain. `'fail'`: it may not, and RFC 7208 suggests rejecting the message. `'softfail'`: it probably may not, so accept the message and mark it. `'neutral'`: the domain makes no claim. `'none'`: there is no SPF record, or no domain to check. `'temperror'`: a DNS error, so retry later or answer 451. `'permerror'`: the record is broken. |
 | `domain` | The domain whose policy was checked. A non-ASCII domain is converted to its A-label form. |
 | `identity` | `'mailfrom'`, or `'helo'` when the sender was empty. With `domain`, it gives `smtp.mailfrom` or `smtp.helo` for Authentication-Results. |
 | `mechanism` | The term that matched, as written in the record, such as `include:_spf.example.com` or `-all`. Missing when nothing matched. |
 | `record` | The SPF record that gave the result. After a `redirect=`, it is the record of the redirect target. |
-| `explanation` | The text of the domain's `exp=` modifier, for `fail` only. It comes from the domain owner, so treat it as untrusted text. |
+| `explanation` | The explanation for a `fail`: the TXT record at the domain that the record's `exp=` modifier points to, with macros expanded. An `exp=` in an included record is ignored. Missing if the record has no `exp=`, the lookup fails, or the text isn't printable ASCII. It comes from the domain owner, so treat it as untrusted text. |
 | `reason` | Why the result is `none`, `temperror`, or `permerror`, such as `More than 10 DNS-querying terms`. |
 | `cause` | The resolver's error behind a `temperror`. |
 | `lookups` | The number of DNS-querying terms evaluated (`include`, `a`, `mx`, `ptr`, `exists`, `redirect=`, and each `%{p}`). |
@@ -87,7 +89,7 @@ All of RFC 7208 section 7 is supported: `%{s}`, `%{l}`, `%{o}`, `%{d}`, `%{i}`, 
 
 RFC 7208 says `%{p}` SHOULD NOT be used: it is slow and the client controls its PTR records. It works as the RFC describes, preferring a validated name equal to or under the current domain, then any validated name, then `unknown`.
 
-When the local-part of the sender is not ASCII, a term that uses `%{l}` or `%{s}` doesn't match (RFC 8616 section 4).
+When the local-part of the sender is not ASCII, a mechanism that uses `%{l}` or `%{s}` doesn't match, a `redirect=` that uses them gives `permerror`, and an `exp=` that uses them gives no explanation (RFC 8616 section 4).
 
 ## Types
 

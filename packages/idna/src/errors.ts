@@ -1,7 +1,8 @@
 import * as Errors from '@portable/errors';
 
 /**
- * Thrown when a domain name breaks the rules of UTS #46.
+ * Thrown when a domain name breaks the rules of UTS #46, or when the result of `toAscii` is empty
+ * or contains a character that `URL` forbids in a host.
  *
  * @example
  * ```ts

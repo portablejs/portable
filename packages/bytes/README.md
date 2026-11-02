@@ -16,7 +16,7 @@ Bytes.fromHex('000FFF'); // Uint8Array [0, 15, 255]
 
 Bytes.concat([header, body]); // a new Uint8Array
 
-Bytes.equal(a, b);
+Bytes.equal(new Uint8Array([1, 2]), new Uint8Array([1, 2])); // true
 
 const expected = new Uint8Array(await crypto.subtle.sign('HMAC', key, payload));
 if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
@@ -24,7 +24,7 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 }
 ```
 
-`toHex` and `fromHex` call `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output and throws on the same input. The browser tests check the two against each other.
+`toHex` and `fromHex` call `Uint8Array.prototype.toHex` and `Uint8Array.fromHex` where the runtime has them (current Chromium, Firefox, and Safari). Elsewhere, Node 24 included, a JavaScript fallback gives the same output. Both paths throw `Bytes.InvalidInputError` with the position of the first bad character. The browser tests check the two against each other.
 
 ## API
 
@@ -35,7 +35,7 @@ if (!Bytes.timingSafeEqual(expected, Bytes.fromHex(signature))) {
 | `concat(chunks)` | Joins a `readonly Uint8Array[]` into a new `Uint8Array`. The result never shares memory with a chunk. |
 | `equal(a, b)` | Whether `a` and `b` hold the same bytes. Returns at the first difference. |
 | `timingSafeEqual(a, b)` | Whether `a` and `b` hold the same bytes, in time that depends only on the length. Returns `false` for different lengths. |
-| `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. |
+| `InvalidInputError` | Thrown by `fromHex` for odd-length input or a character that isn't a hex digit. Extends `Errors.InvalidInputError` from [@portable/errors](https://portablejs.com/packages/errors). |
 
 `fromHex` follows `Uint8Array.fromHex` and throws for whitespace, a `0x` prefix, and any other character that isn't a hex digit. The error message gives the position of the first bad character.
 
@@ -52,7 +52,7 @@ new Uint8Array(arrayBuffer);
 new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 ```
 
-A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles or the stream has read the chunk. Otherwise the function may read some bytes before the write and some after.
+A `Uint8Array` over a `SharedArrayBuffer` is accepted. Don't write to it from another thread until the function returns, its promise settles, or the stream has read the chunk. Otherwise the function may read some bytes before the write and some after.
 
 ## Why use this over uint8array-extras and node:crypto
 

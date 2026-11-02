@@ -28,7 +28,9 @@ export declare namespace toUnicode {
 /**
  * Converts a domain name to the ASCII form that DNS and `URL` use, with Punycode `xn--` labels for
  * non-ASCII labels. Follows UTS #46 and the URL Standard's domain parser, so the result equals
- * `new URL('http://' + domain).hostname` for any domain that doesn't end in a number.
+ * `new URL('http://' + domain).hostname` when `URL` follows the standard, with three exceptions.
+ * `toAscii` doesn't parse IPv4 numbers or decode percent-encoding, and it throws where `URL`
+ * would end the host at `/`, `?`, `#`, or `:`.
  *
  * @example
  * ```ts
@@ -37,7 +39,9 @@ export declare namespace toUnicode {
  * Idna.toAscii('Bücher.example'); // 'xn--bcher-kva.example'
  * ```
  *
- * @throws {InvalidInputError} if the domain isn't valid.
+ * @throws {InvalidInputError} When the domain breaks a rule of UTS #46, when a label is too long
+ * to encode, when the result is empty, or when the result contains a character that `URL` forbids
+ * in a host, such as a space, `%`, `/`, or `@`.
  */
 export function toAscii(domain: string, options: toAscii.Options = {}): string {
   const { strict = false } = options;

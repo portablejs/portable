@@ -46,7 +46,7 @@ export class MaxBytesError extends Errors.MaxBytesError {
 
 /**
  * Thrown by `verify` and `needsRehash` for a hash from another algorithm, such as bcrypt
- * (`$2b$...`), scrypt or Argon2 (`$argon2id$...`). WebCrypto can't compute those, so verify them
+ * (`$2b$...`), scrypt, or Argon2 (`$argon2id$...`). WebCrypto can't compute those, so verify them
  * with another library while you migrate.
  *
  * @example

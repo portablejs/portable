@@ -33,7 +33,7 @@ export type Socket = {
   readonly readable: ReadableStream<Uint8Array>;
   /** The bytes to send. Closing it ends this side of the connection. */
   readonly writable: WritableStream<Uint8Array>;
-  /** Resolves once the connection and the TLS handshake if there is one, is established. */
+  /** Resolves once the connection is established and, for TLS, the handshake is done. */
   readonly opened: Promise<Info>;
   /** Resolves when the connection closes, and rejects if it fails. */
   readonly closed: Promise<void>;
@@ -43,8 +43,8 @@ export type Socket = {
   close(): Promise<void>;
   /**
    * Starts TLS on a socket opened with `secureTransport: 'starttls'` and returns the encrypted
-   * socket. After the call, this socket's readable closes, its writes reject and its `closed`
-   * resolves.
+   * socket. After the call, this socket's readable closes, its writes reject, and its
+   * `closed` resolves.
    */
   startTls(): Socket;
 };

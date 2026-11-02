@@ -15,7 +15,9 @@ QuotedPrintable.encode('tere jõgeva'); // 'tere j=C3=B5geva'
 new TextDecoder().decode(QuotedPrintable.decode('tere j=C3=B5geva')); // 'tere jõgeva'
 
 const body = file.stream().pipeThrough(new QuotedPrintable.EncoderStream());
-const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
+const text = response.body!
+  .pipeThrough(new QuotedPrintable.DecoderStream())
+  .pipeThrough(new TextDecoderStream());
 ```
 
 ## API
@@ -27,7 +29,7 @@ const bytes = response.body!.pipeThrough(new QuotedPrintable.DecoderStream());
 | `new EncoderStream(options?)` | `Uint8Array` or `string` chunks | a `TransformStream` that emits the encoded text as ASCII bytes |
 | `new DecoderStream(options?)` | `string` or `Uint8Array` chunks | a `TransformStream` that emits the decoded bytes |
 
-`encode()` keeps line breaks, escapes `=`, bytes outside printable ASCII, and a space or tab before a line break or at the end. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
+`encode()` keeps line breaks as they are. A lone CR or LF stays a lone CR or LF unless you pass `binary: true`, which escapes it. For a mail body, convert line endings to CRLF before you encode. `encode()` escapes `=`; bytes outside printable ASCII; and a space or tab before a line break or at the end of the input. It also escapes a hyphen that would start a line, so no line of the output can read as a MIME boundary. It inserts soft line breaks (`=` and CRLF) to keep each line within `lineLength`, preferring to break after a space or punctuation, and never breaks inside an escape or a UTF-8 sequence.
 
 `decode()` removes soft line breaks (`=` before CRLF, LF, or the end) and whitespace at the end of each line, and decodes `=XX` escapes in either case. Anything else, including a malformed escape or a raw 8-bit byte, is copied as is. It never throws. To get text in another charset, pass the bytes to `new TextDecoder(charset)`.
 
@@ -35,13 +37,15 @@ Both streams produce the same bytes as the functions however the input is chunke
 
 ## Options
 
+`encode` and `EncoderStream` take these options.
+
 | Option | Default | Description |
 | --- | --- | --- |
-| `lineLength` | `76` | Longest line, not counting the line break. An integer of at least 4, or `false` for no soft line breaks. Anything else throws a `RangeError`. |
+| `lineLength` | `76` | Longest line, counting the `=` of a soft line break but not the CRLF. An integer of at least 4, or `false` for no soft line breaks. `encode` and `EncoderStream` throw a `RangeError` for any other value. |
 | `binary` | `false` | Escape a CR or LF that isn't part of a CRLF pair, so a transport that rewrites line endings can't change the data. |
 | `signal` | none | `EncoderStream` and `DecoderStream` only. Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`DecoderStream` takes no other option.
+`decode` takes no options, and `DecoderStream` takes only `signal`.
 
 ## Why use this over libqp and quoted-printable
 

@@ -26,6 +26,8 @@ export declare namespace decode {
  * the first row's (unless `relaxColumnCount` is set), or the header repeats a name.
  * @throws {TruncatedError} When the input ends inside a quoted field.
  * @throws {MaxLengthError} When a row is longer than `maxLength`.
+ * @throws {RangeError} When `delimiter` or `quote` isn't a single character other than CR or LF,
+ * when `delimiter` and `quote` are the same, or when `maxLength` is negative.
  */
 export function decode<
   const header extends DecoderStream.Header = false,

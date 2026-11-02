@@ -27,7 +27,8 @@ export class MaxLengthError extends Errors.MaxLengthError {
 }
 
 /**
- * Thrown by `connect` when the response isn't an event stream.
+ * `connect` fails its stream with this error when the response status isn't 200 or its content type
+ * isn't `text/event-stream`. `response` is left unread.
  *
  * @example
  * ```ts

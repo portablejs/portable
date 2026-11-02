@@ -11,7 +11,7 @@ import { assertResolver, check, fetchKey, type KeyRecord, prepare } from './inte
 
 /**
  * The DNS lookup DKIM needs: a `Dns.Resolver` from the dns package, `node:dns/promises`, or any
- * object with `resolveTxt`. `verify` treats a rejection with `code` `ENOTFOUND`, `ENODATA` or
+ * object with `resolveTxt`. `verify` treats a rejection with `code` `ENOTFOUND`, `ENODATA`, or
  * `EBADNAME` as no key, and any other rejection as a temporary DNS error.
  */
 export type Resolver = Pick<Dns.Resolver, 'resolveTxt'>;
@@ -71,7 +71,7 @@ export declare namespace verify {
  * Results follow RFC 8601: `fail` for a body or signature that doesn't match, `policy` for
  * rsa-sha1 and short RSA keys, `neutral` for a signature that can't be processed, `permerror` for
  * a missing, revoked, or unusable key, and `temperror` for a DNS failure. The promise rejects only
- * for invalid options, a failing message stream or an aborted `signal`.
+ * for invalid options, a failing message stream, or an aborted `signal`.
  *
  * @example
  * ```ts

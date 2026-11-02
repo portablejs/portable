@@ -1,7 +1,8 @@
 import * as Errors from '@portable/errors';
 /**
  * Thrown when the input isn't valid JSON. The message gives the offset of the first bad
- * character, or, for an error inside a matched value, the offset where that value starts.
+ * character, or, for an error inside a matched value, the offset where that value starts. The
+ * offset counts UTF-16 code units of the decoded text, not bytes.
  *
  * @example
  * ```ts

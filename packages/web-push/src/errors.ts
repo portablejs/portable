@@ -1,7 +1,8 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown when a subscription can't be used: its endpoint isn't an `https:` URL, `p256dh` isn't a P-256
- * public key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that
+ * Thrown when a subscription can't be used: its endpoint isn't an `https:` URL, or a payload is
+ * given and the subscription has no `keys`, a key isn't base64, `p256dh` isn't a P-256 public
+ * key, or `auth` isn't 16 bytes. Subscriptions come from browsers, so delete one that
  * fails this way.
  *
  * @example
@@ -68,7 +69,10 @@ export class MaxBytesError extends Errors.MaxBytesError {
  */
 export class ResponseError extends Errors.ResponseError {
   static override readonly kind: string = 'WebPush.ResponseError';
-  /** The response body as text. Push services usually explain the error in it. */
+  /**
+   * The response body as text. Push services usually explain the error in it. `send` has already
+   * read the body of `response`, so read only `response.status` and `response.headers` from it.
+   */
   declare readonly body: string;
 
   constructor(options: Errors.ResponseError.Options & { body: string }) {

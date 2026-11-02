@@ -49,12 +49,13 @@ export declare namespace seal {
     /**
      * The ARC-Authentication-Results payload: this server's authserv-id and the results it found,
      * such as `mx.example.com; spf=pass smtp.mailfrom=example.org`. It may be folded with CRLF
-     * and whitespace.
+     * and whitespace. It isn't folded for you, so fold a long value yourself.
      */
     authResults: string;
     /**
      * The `cv=` value: the `result` of `Arc.verify` for this message. Required when the message
-     * already has ARC fields. @default 'none' for a message without them
+     * already has ARC fields. `seal` doesn't verify the chain itself, so pass the `result` of
+     * `Arc.verify` and not a constant. @default 'none' for a message without them
      */
     chainValidation?: Result.Code | undefined;
     /**
@@ -83,7 +84,7 @@ const arcDefaultHeaders = ['DKIM-Signature', 'Delivered-To', ...defaultHeaders];
 
 /**
  * Adds an ARC set to a message (RFC 8617 section 5.1) and resolves to its three fields, ending in
- * CRLF, to put above the message's other fields: ARC-Seal, ARC-Message-Signature and
+ * CRLF, to put above the message's other fields: ARC-Seal, ARC-Message-Signature, and
  * ARC-Authentication-Results. The new set's instance is one above the highest instance on the
  * message. The ARC-Message-Signature uses relaxed/relaxed canonicalization, and with `cv=fail`
  * the seal covers only the new set (section 5.1.2).

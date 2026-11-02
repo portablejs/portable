@@ -85,6 +85,7 @@ export declare namespace sign {
   type Options = authorization.Options & {
     /**
      * Where the protocol parameters go: the `Authorization` header, or the URL query.
+     * `realm` isn't sent with `'query'`.
      * @default 'header'
      */
     placement?: 'header' | 'query' | undefined;

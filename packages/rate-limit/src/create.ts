@@ -26,21 +26,27 @@ export type Limiter = {
 
 export declare namespace Limiter {
   type TakeOptions = {
-    /** How much of the allowance this request uses. `0` reads the state without changing it, and a negative cost gives allowance back. @default 1 */
+    /**
+     * How much of the allowance this request uses, as a finite number. It can be fractional. `take`
+     * rejects with a `RangeError` for `NaN` or `Infinity`. With `0`, `take` reads the state without
+     * changing it, and `allowed` is always `true`. With a negative cost, `take` gives allowance back.
+     * @default 1
+     */
     cost?: number | undefined;
     /** The time of the request, as a `Date` or a `Temporal.Instant`. @default new Date() */
     now?: Instant | undefined;
+    /** Passed to the store's `get` and `set`. Aborting rejects `take` with `signal.reason` before its next store call. */
     signal?: AbortSignal | undefined;
   };
 }
 
 export declare namespace create {
   type Options = {
-    /** Requests allowed per `period`, on average. */
+    /** Requests allowed per `period`, on average, as a positive integer. */
     limit: number;
-    /** Length of the period in milliseconds. */
+    /** Length of the period in milliseconds, as a positive finite number. */
     period: number;
-    /** Requests allowed at once after an idle period. @default limit */
+    /** Requests allowed at once after an idle period, as a positive integer. @default limit */
     burst?: number | undefined;
     /** Where the limiter keeps one number per key. @default RateLimit.memoryStore() */
     store?: Store | undefined;

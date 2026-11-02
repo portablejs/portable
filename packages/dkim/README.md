@@ -28,6 +28,8 @@ for (const r of results) {
 }
 ```
 
+`field + message` works only when `message` is a string. `sign` reads a stream to the end, so the stream can't be sent afterwards. To sign a stream or bytes, read the message into bytes with `Streams.toBytes` from [@portable/streams](https://portablejs.com/packages/streams), sign the bytes, and send `Bytes.concat([new TextEncoder().encode(field), bytes])`, as the [@portable/mail](https://portablejs.com/packages/mail) README shows.
+
 A message is a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. Bare LF line ends are read as CRLF, so a message stored with LF line ends signs and verifies the same as one with CRLF.
 
 In Node, `node:dns/promises` works as the resolver and uses the system's DNS servers:
@@ -47,7 +49,7 @@ await Dkim.verify(message, { resolver: dns });
 | `domain` | required | The signing domain (`d=`). A U-label domain is written as its A-label. |
 | `selector` | required | The selector (`s=`). The public key is published at `<selector>._domainkey.<domain>`. |
 | `privateKey` | required | A `CryptoKey` that can sign (RSASSA-PKCS1-v1_5 with SHA-256, or Ed25519), a PEM `PRIVATE KEY` (PKCS #8) or `RSA PRIVATE KEY` (PKCS #1), or a JWK. The key type sets `a=` to `rsa-sha256` or `ed25519-sha256`. A PEM string is imported on every call, so to sign many messages, import it once with `WebCrypto.importPem` from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). |
-| `headers` | mailauth's list, from `From` to `BIMI-Selector` | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times, so listing a name more often than the message has it over-signs it, and a field of that name added later breaks the signature (RFC 6376 section 8.15). |
+| `headers` | mailauth's list, below | The fields to sign, matched without regard to case. Every field of a listed name is signed. A name listed n times appears in `h=` at least n times. If you list a name more times than the message has fields of that name, the name is over-signed, so a field of that name added later breaks the signature (RFC 6376 section 8.15). |
 | `canonicalization` | `'relaxed/relaxed'` | `'relaxed/relaxed'`, `'relaxed/simple'`, `'simple/relaxed'`, or `'simple/simple'`. |
 | `identity` | none | The agent or user identifier (`i=`), such as `user@mail.example.com` or `@example.com`. Its domain must be `domain` or a subdomain. It is written as dkim-quoted-printable. |
 | `now` | `new Date()` | The signature time (`t=`), as a `Date` or a `Temporal.Instant`. |
@@ -55,7 +57,9 @@ await Dkim.verify(message, { resolver: dns });
 | `hasher` | WebCrypto | Creates the body hash. See [Crypto](#crypto). |
 | `signal` | none | Stops reading the message, and `sign` rejects with `signal.reason`. |
 
-`sign` throws a `TypeError` or `RangeError` for an invalid option, such as a domain that isn't a host name, an RSA key under 1024 bits or a header list without `From`. It throws `Dkim.InvalidInputError` for a message without a From field.
+The default `headers` are From, Sender, Reply-To, Subject, Date, Message-ID, To, Cc, MIME-Version, Content-Type, Content-Transfer-Encoding, Content-ID, Content-Description, Resent-Date, Resent-From, Resent-Sender, Resent-To, Resent-Cc, Resent-Message-ID, In-Reply-To, References, List-Id, List-Help, List-Unsubscribe, List-Subscribe, List-Post, List-Owner, List-Archive, and BIMI-Selector. Each name appears once, so the default doesn't over-sign. List a name twice, such as `From`, to over-sign it.
+
+`sign` throws a `TypeError` or `RangeError` for an invalid option, such as a domain that isn't a host name, an RSA key under 1024 bits, or a header list without `From`. It throws `Dkim.InvalidInputError` for a message without a From field.
 
 ## Verifying
 
@@ -71,12 +75,12 @@ await Dkim.verify(message, { resolver: dns });
 
 There is no default resolver, so you decide which servers see the lookups. `verify` treats a resolver rejection with `code` `ENOTFOUND`, `ENODATA`, or `EBADNAME` as no key, and any other rejection as `temperror`.
 
-`verify` rejects only for invalid options, a message stream that fails, and an aborted `signal`.
+`verify` rejects only for invalid options, a message stream that fails, and an aborted `signal`. `verify` and `sign` hold the whole header section in memory and have no size limit, so limit untrusted input first, for example with `Streams.limitBytes`.
 
 | Field | Description |
 | --- | --- |
 | `result` | The RFC 8601 result, described below. |
-| `domain` | The signing domain (`d=`) in lower-case A-label form, for `header.d`. |
+| `domain` | The signing domain (`d=`) in lower-case A-label form, for `header.d`. Empty when the tag is missing, so check it before you write `header.d`. |
 | `selector` | The selector (`s=`) in lower-case A-label form, for `header.s`. |
 | `algorithm` | `a=` in lower case, such as `rsa-sha256`. |
 | `identity` | The `i=` value decoded, with its domain as an A-label, or `@` and the domain when there is no `i=`. For `header.i`. |
@@ -114,6 +118,8 @@ await Dkim.verify(request.body!, { resolver, hasher: () => sha256.create() });
 
 | Type | Description |
 | --- | --- |
+| `Dkim.Result` | One element of what `verify` resolves to, with the fields above. |
+| `Dkim.Result.Code` | `'pass' \| 'fail' \| 'policy' \| 'neutral' \| 'temperror' \| 'permerror'`. |
 | `Dkim.Message` | What `sign` and `verify` read: a `ReadableStream<Uint8Array>`, a `Uint8Array`, or a string, which is encoded as UTF-8. |
 | `Dkim.Resolver` | `Pick<Dns.Resolver, 'resolveTxt'>`, the lookup `verify` needs. |
 | `Dkim.Hasher` | An incremental hash with `update(data)` and `digest()`. The `hasher` option is a function `(hash: Dkim.Hash) => Dkim.Hasher`. Re-exported from [@portable/web-crypto](https://portablejs.com/packages/web-crypto). |

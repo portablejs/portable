@@ -41,7 +41,7 @@ await frames.writable.getWriter().write(writer.toBytes());
 
 ## Reading
 
-`Binary.createReader(bytes, options)` returns a `Reader` that reads values one after another from a `Uint8Array`. Each read moves `reader.offset` past the value. A read that fails throws and leaves `offset` where it was, so you can catch a `Binary.TruncatedError`, wait for more bytes and try again. The reader doesn't copy `bytes`.
+`Binary.createReader(bytes, options)` returns a `Reader` that reads values one after another from a `Uint8Array`. Each read moves `reader.offset` past the value. A read that fails throws and leaves `offset` where it was, so you can catch a `Binary.TruncatedError` and read the value again once more bytes arrive. A reader's `length` is fixed, so join the bytes you have with the next chunk, create a new reader over them, and set `offset` to `error.offset`. The reader doesn't copy `bytes`.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -72,13 +72,15 @@ await frames.writable.getWriter().write(writer.toBytes());
 | `'zigzag'` | 0, -1, 1, -2 stored as 0, 1, 2, 3 | protobuf `sint32` and `sint64` |
 | `'signed'` | SLEB128 | WebAssembly `i32` and `i64`, DWARF |
 
+Protobuf writes `int32` and `int64` values as the unsigned LEB128 of their two's complement, and Minecraft does the same for VarInt and VarLong. `'unsigned'` therefore reads a negative value as a large positive one. Convert the result with `reader.varint() | 0` for a Minecraft VarInt, and with `BigInt.asIntN(64, reader.bigVarint())` for a VarLong or a protobuf `int32` or `int64`. A negative protobuf `int32` takes 10 bytes, so it needs `bigVarint` too. To write a negative value, pass `value >>> 0` to `writer.varint` for a VarInt, or `BigInt.asUintN(64, value)` to `writer.bigVarint`.
+
 `string` and `cstring` take `fatal`, which defaults to `false`. With `fatal: true`, malformed UTF-8 throws `Binary.InvalidInputError` instead of decoding to U+FFFD.
 
 ## Writing
 
 `Binary.createWriter(options)` returns a `Writer` with a buffer that grows as you write. It takes the same `endian` option as `createReader`, and each read method has a write method of the same name that takes the value: `writer.uint16(value)`, `writer.uint(byteLength, value)`, `writer.varint(value, options)`, `writer.bytes(value)`, `writer.string(text)`, and `writer.cstring(text)`. `writer.toBytes()` returns a copy of the bytes written so far.
 
-A value that doesn't fit its type throws a `RangeError` and writes nothing, as `Buffer.writeUInt8(256)` does. `DataView.setUint8(0, 256)` writes 0 instead. A value of the wrong type, such as a number passed to `bigUint64`, throws a `TypeError`. `string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
+Each write method throws a `RangeError` for an integer that doesn't fit its type and writes nothing, as `Buffer.writeUInt8(256)` does. `DataView.setUint8(0, 256)` writes 0 instead. `float32` rounds to the nearest float32, as `DataView.setFloat32` does, so a value outside its range becomes `Infinity`. `varint` takes a safe integer, and with `encoding: 'zigzag'` one from -2^52 to 2^52 − 1. Use `bigVarint` for larger values. A write method throws a `TypeError` for a value of the wrong type, such as a number passed to `bigUint64`. `string` writes only the UTF-8 bytes, so write the length first with `Binary.utf8Length(text)`. `cstring` throws a `RangeError` for text that contains U+0000.
 
 To fill in a length after writing what it counts, set `offset` back, write the length, and set `offset` to `length` to continue at the end:
 
@@ -109,17 +111,17 @@ Returns the number of bytes in the UTF-8 encoding of `text` without encoding it.
 | --- | --- | --- |
 | `prefix` | `'varint'` | `'uint8'`, `'uint16'`, `'uint32'`, or `'varint'`. The length counts only the frame's bytes, not the prefix. |
 | `endian` | `'big'` | Byte order of a `uint16` or `uint32` prefix. |
-| `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. A larger length errors the stream with `Binary.MaxBytesError` as soon as the prefix is read, before any of the frame is buffered. |
+| `maxBytes` | `Infinity` | `FrameDecoderStream` only. The largest frame, not counting the prefix. If a prefix gives a larger length, the stream errors with `Binary.MaxBytesError` as soon as it reads the prefix, before it buffers any of the frame. Set it when the input comes from outside the program. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-`FrameDecoderStream` errors with `Binary.TruncatedError` if the input ends inside a frame or a prefix, and with `Binary.InvalidInputError` if a varint prefix is longer than 10 bytes. `FrameEncoderStream` errors with `Binary.InvalidInputError` for a chunk too long for its prefix, such as 256 bytes with `prefix: 'uint8'`.
+`FrameDecoderStream` errors with `Binary.TruncatedError` if the input ends inside a frame or a prefix, and with `Binary.InvalidInputError` if a varint prefix is longer than 10 bytes or larger than `Number.MAX_SAFE_INTEGER`. `FrameEncoderStream` errors with `Binary.InvalidInputError` for a chunk too long for its prefix, such as 256 bytes with `prefix: 'uint8'`.
 
 ## Errors
 
 | Error | Thrown when |
 | --- | --- |
-| `Binary.TruncatedError` | A read needs more bytes than remain, or a stream ends inside a frame. `offset` is where the value or frame starts. |
-| `Binary.InvalidInputError` | A varint is longer than 10 bytes or too large for its type, `fatal` text isn't valid UTF-8, or a frame is too long for its prefix. |
+| `Binary.TruncatedError` | A read needs more bytes than remain, or a stream ends inside a frame. `offset` is where the value starts in the reader's bytes, or, for a stream, the number of bytes before the frame. |
+| `Binary.InvalidInputError` | A varint is longer than 10 bytes or too large for its type, `fatal` text isn't valid UTF-8, or a frame is too long for its prefix. For a `Reader`, `offset` is where the value starts in the reader's bytes. The error from `FrameEncoderStream` has no `offset`. |
 | `Binary.MaxBytesError` | A frame's length is larger than `maxBytes`. `maxBytes` holds the limit. |
 
 ## Types

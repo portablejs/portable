@@ -6,6 +6,7 @@ export type Name = Exclude<CharsetName, 'replacement'>;
 /**
  * A charset that `encode` and `EncoderStream` can write. Import one from the subpath for its
  * family, such as `shiftJis` from `@portable/charset/shift_jis`, or get one by label with `load`.
+ * Only the charsets this package exports have this type. You can't create one yourself.
  */
 export type Charset = {
   /** The WHATWG Encoding Standard name. */

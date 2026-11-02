@@ -20,7 +20,7 @@ for (let i = 0; i < data.length; i += 4) {
 const bytes = await Png.encode({ width, height, data });
 ```
 
-`decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8, and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied.
+`decode` reads every PNG color type (grayscale, RGB, palette, each with or without alpha), bit depths 1, 2, 4, 8, and 16, Adam7 interlacing, and `tRNS` transparency. The result is always 8-bit RGBA: 16-bit samples are rounded to 8 bits, and lower depths are scaled up, so a 1-bit white is 255. Gamma is reported but not applied. For an animated PNG, `decode` returns the default image stored in `IDAT` and ignores the other frames.
 
 ## Sync or async
 
@@ -47,7 +47,7 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. The function
 | `inflate` | `DecompressionStream('deflate')` | Decompresses zlib data. Required for `decodeSync`. `decode` also accepts an async function. |
 | `checkCrc` | `true` | Verify each chunk's CRC. The zlib checksum is always verified by the inflate function. |
 | `maxPixels` | `Infinity` | The largest number of pixels (`width * height`) to decode. For a larger image, `decode` throws `MaxPixelsError` as soon as `IHDR` is read, before anything is decompressed or allocated. Set it when you decode untrusted files. |
-| `signal` | none | `decode` only. Aborting rejects with `signal.reason` and stops the default decompression. |
+| `signal` | none | `decode` only. Aborting rejects with `signal.reason` and stops the default decompression. A custom `inflate` isn't interrupted, and `decode` rejects after it returns. |
 
 `Decoded` is a plain object:
 
@@ -61,13 +61,13 @@ In Node, `inflateSync` and `deflateSync` from `node:zlib` work too. The function
 | `alpha` | Whether the file has an alpha channel or a `tRNS` chunk. |
 | `gamma` | The `gAMA` value, such as `0.45455`, or `undefined`. |
 
-Bytes after `IEND` are ignored. Unknown ancillary chunks are skipped.
+Bytes after `IEND` are ignored. Every ancillary chunk except `tRNS` and `gAMA` is skipped, including `iCCP`, `sRGB`, `pHYs`, and text chunks, so a color profile is neither applied nor reported.
 
 ### `encode(image: RgbaImage, options?): Promise<Uint8Array>`
 
 ### `encodeSync(image: RgbaImage, options): Uint8Array`
 
-`image` is `{ width, height, data, gamma? }` with 8-bit RGBA `data` (`Uint8Array` or `Uint8ClampedArray`), so a `Decoded` result or a canvas `ImageData` can be passed as is. When `gamma` is set, it is written to a `gAMA` chunk.
+`image` is `{ width, height, data, gamma? }` with 8-bit RGBA `data` (`Uint8Array` or `Uint8ClampedArray`), so a `Decoded` result or a canvas `ImageData` can be passed as is. When `gamma` is set and not 0, it is written to a `gAMA` chunk.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -75,9 +75,9 @@ Bytes after `IEND` are ignored. Unknown ancillary chunks are skipped.
 | `colorType` | `6` | `0` grayscale, `2` RGB, `4` grayscale with alpha or `6` RGBA. Gray is the BT.709 luma of each pixel. |
 | `background` | `{ red: 255, green: 255, blue: 255 }` | Color that semi-transparent pixels are blended onto for color types without alpha. |
 | `filter` | `[0, 1, 2, 3, 4]` | A filter for every row (0 none, 1 sub, 2 up, 3 average, 4 Paeth), or a list to choose from per row. With a list, each row gets the filter whose output has the smallest sum of absolute values, with each byte read as signed, as libpng does. |
-| `signal` | none | `encode` only. Aborting rejects with `signal.reason` and stops the default compression. |
+| `signal` | none | `encode` only. Aborting rejects with `signal.reason` and stops the default compression. A custom `deflate` isn't interrupted, and `encode` rejects after it returns. |
 
-The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
+The encoder writes 8-bit, non-interlaced files with `IHDR`, `gAMA` when `gamma` is set, one `IDAT`, and `IEND`. No other chunks are written, so re-encoding a decoded file drops its palette, `tRNS` chunk, color profile, and text chunks.
 
 ### Errors
 
@@ -88,7 +88,7 @@ The encoder writes 8-bit, non-interlaced files with one `IDAT` chunk.
 | `UnsupportedError` | The file has an unknown critical chunk, or a compression, filter, or interlace method PNG doesn't define. `encode` throws it for `colorType` 3. |
 | `MaxPixelsError` | The image has more pixels than `maxPixels`, which the error stores as `maxPixels`. |
 
-Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError`, and `Png.MaxPixelsError`. A bad `maxPixels`, such as a negative number, throws a `RangeError`.
+Their `name`s are `Png.TruncatedError`, `Png.InvalidInputError`, `Png.UnsupportedError`, and `Png.MaxPixelsError`. `decode` throws a `RangeError` for an invalid `maxPixels`, such as a negative number. `encode` throws a `TypeError` for `data` that isn't a `Uint8Array` or `Uint8ClampedArray`. An error thrown by your `inflate` function is wrapped in `InvalidInputError`, but an error thrown by your `deflate` function is passed on unchanged.
 
 ## Types
 

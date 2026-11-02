@@ -1,6 +1,7 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown when a line isn't valid JSON. The message gives the line number, and `cause` holds the
+ * Thrown when a line isn't valid JSON. The message gives the 1-based line number in the input,
+ * counting blank lines, and `cause` holds the
  * `SyntaxError` from `JSON.parse`.
  *
  * @example

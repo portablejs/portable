@@ -2,7 +2,7 @@
 
 Reads and writes email header values: encoded-words (RFC 2047), folding (RFC 5322), parameters with RFC 2231 encoding, and address lists. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces the header functions of [libmime](https://www.npmjs.com/package/libmime), [addressparser](https://www.npmjs.com/package/addressparser) (now `nodemailer/lib/addressparser`) and [email-addresses](https://www.npmjs.com/package/email-addresses).
+Replaces the header functions of [libmime](https://www.npmjs.com/package/libmime), [addressparser](https://www.npmjs.com/package/addressparser) (now `nodemailer/lib/addressparser`), and [email-addresses](https://www.npmjs.com/package/email-addresses).
 
 ```sh
 npm install @portable/mime-headers
@@ -46,13 +46,15 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 | `formatValue(value)` | `Value` | the header value |
 | `parseAddresses(text, options?)` | an address list | `Address[]`, each a `Mailbox` `{ name, address }` or a `Group` `{ name, group }` |
 | `parseMailboxes(text, options?)` | an address list | `Mailbox[]`, with the members of each group in place of the group |
-| `formatAddresses(addresses, options?)` | `Address[]` | the address list |
+| `formatAddresses(addresses, options?)` | `Address[]` | the address list, with each address in its shortest form. Throws `InvalidInputError` for a mailbox with an empty `address`, so filter those out of a `parseAddresses` result first. |
 | `InvalidInputError` | | thrown by `parseAddresses` and `parseMailboxes` in strict mode and by `formatValue` and `formatAddresses` |
 | `MaxLengthError` | | thrown by `parseHeaders` when the header block is longer than `maxLength`. The error stores the limit in `maxLength`. |
 
+`parseHeaders` unfolds and trims each value and leaves its encoded words as they are, so pass the value to `decodeWords` or `parseAddresses`. It stops at the first empty line and skips a line without a colon.
+
 `decodeWords` joins encoded words separated only by whitespace, and decodes adjacent words in the same charset together, so a character split across two words still decodes. It decodes the charset with `TextDecoder`, and reads the text as UTF-8 if `TextDecoder` doesn't know the label, such as `utf-7`. It never throws.
 
-`parseValue` lowercases parameter names, joins RFC 2231 sections (`name*0*`, `name*1*`), decodes their charset, and decodes encoded words in plain values. When a parameter has both forms, `parseValue` uses the RFC 2231 one (RFC 6266 section 4.3). `formatValue` quotes values that need it and writes values outside printable ASCII, or ones that look like encoded words, as UTF-8 RFC 2231 sections.
+`parseValue` lowercases parameter names, joins RFC 2231 sections (`name*0*`, `name*1*`), decodes their charset, and decodes encoded words in plain values. When a parameter has both forms, `parseValue` uses the RFC 2231 one (RFC 6266 section 4.3). `formatValue` quotes values that need it and writes values outside printable ASCII, or ones that look like encoded words, as UTF-8 RFC 2231 sections. A plain value of 75 characters or more is split into numbered sections. `formatValue` throws `InvalidInputError` if `value` has a character outside printable ASCII or a parameter name isn't a token. `parseValue` keeps the case of a parameter value, so compare the value case-insensitively.
 
 `parseAddresses` reads RFC 5322 address lists with the obsolete syntax, RFC 6532 UTF-8, comments, groups, and encoded-word names. In the default mode it never throws and reads malformed input the way mail clients do: an unquoted name split by a comma is joined back, anything before a stray `<` is dropped, and text around the address becomes the name. A quoted string is never searched for an address. With `strict: true` it throws `InvalidInputError` for anything RFC 5322 doesn't allow.
 
@@ -60,12 +62,14 @@ Functions come in pairs. `encode*` and `decode*` convert text to encoded-words a
 
 | Option | Of | Default | Description |
 | --- | --- | --- | --- |
-| `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | In `'Q'` words, ASCII stays readable, and `'B'` is base64. |
+| `wordEncoding` | `encodeWord`, `encodeWords`, `formatAddresses` | `'Q'` | In `'Q'` words, ASCII letters and digits stay readable. `'B'` is base64 and shorter for non-Latin text. |
 | `wordLength` | `encodeWord`, `encodeWords` | `75` | Longest encoded word, including `=?` and `?=`, as RFC 2047 requires. Longer text is split into several words, and no character is split across two words. With `Infinity`, the text is written as one encoded word whatever its length. |
 | `charset` | `encodeWord`, `encodeWords`, `formatAddresses` | UTF-8 | A `CharsetEncoder`, `{ name, encode(text) }`, for mail that has to use another charset. Every charset from [@portable/charset](https://portablejs.com/packages/charset) is one. |
 | `lineLength` | `fold` | `76` | Longest line, not counting the line break. A word longer than a line is not broken. |
 | `strict` | `parseAddresses`, `parseMailboxes` | `false` | Throw `InvalidInputError` on input RFC 5322 doesn't allow. |
 | `maxLength` | `parseHeaders` | `Infinity` | Longest header block in UTF-16 code units. `parseHeaders` throws `MaxLengthError` for a longer block. The body doesn't count toward the limit. |
+
+Each function throws `RangeError` for an option outside its range, such as a `lineLength` of 0 or an unknown `wordEncoding`.
 
 ## Types
 
@@ -95,7 +99,7 @@ It has no dependencies outside `@portable/*`. It takes and returns plain strings
 - `encodeWords` encodes words that contain control characters. libmime leaves them as they are.
 - libmime's `encodeWords` takes bytes in another charset, and `encodeWords` reads a `Uint8Array` as UTF-8, so decode such bytes with `TextDecoder` first.
 - `fold` allows a line of exactly `lineLength`, where libmime's `foldLines` keeps its lines one character shorter. `fold` never breaks in front of trailing whitespace, which would leave a line of only whitespace.
-- libmime's `decodeHeaders` lowercases names, collapses the whitespace left by each fold to one space and groups values by name. `parseHeaders` keeps the case of names and the whitespace, and returns a list in order, so lowercase the names yourself to group them.
+- libmime's `decodeHeaders` lowercases names, collapses the whitespace left by each fold to one space, and groups values by name. `parseHeaders` keeps the case of names and the whitespace, and returns a list in order, so lowercase the names yourself to group them.
 - libmime's `parseHeaderValue` returns the decoded parameters in `decodedParams`. `parseValue` has no `decodedParams`, because it decodes every parameter in `params`.
 - Unlike libmime's `parseHeaderValue`, `parseValue` reads a backslash as an escape only inside quotes.
 - `formatValue` throws `InvalidInputError` for a control character in the value or a parameter name, where libmime 5.5's `buildHeaderValue` drops it. It marks every section of an encoded value with `*`.

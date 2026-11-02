@@ -53,7 +53,8 @@ const defaultDelay = { initial: 200, max: 10_000 } satisfies Delay;
 
 /**
  * Calls `fn` until it returns without throwing, waiting between attempts. When every attempt fails,
- * rejects with the last error unchanged.
+ * rejects with the last error unchanged. Rejects with a `RangeError` before the first attempt if
+ * `attempts` isn't a positive integer or `Infinity`, or if `timeout` is negative or `NaN`.
  *
  * @example
  * ```ts

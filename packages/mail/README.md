@@ -35,9 +35,9 @@ The report is read from the network while you read the message, so a large attac
 
 | Export | Description |
 | --- | --- |
-| `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError` or `TypeError` when it is called, before it reads any content. |
+| `encodeStream(message, options?)` | Returns the message as a `ReadableStream<Uint8Array>` with CRLF line breaks. If the message can't be written, `encodeStream` throws `InvalidInputError`, `TypeError`, or `RangeError` when it is called, before it reads any content. |
 | `envelope(message)` | Returns `{ from, to }`: the first `From` address (else `Sender`) and every `To`, `Cc`, and `Bcc` address once, with group members in place of groups. Throws `InvalidInputError` if the message has neither a `From` nor a `Sender` address. The result has the fields `Smtp.send` takes for the envelope. |
-| `InvalidInputError` | Thrown for an address, header name, content type, file name, or `Date` that can't be written. |
+| `InvalidInputError` | Thrown for an address, header name, content type, file name, or `Date` that can't be written, and for a name in `headers` of a field that `encodeStream` writes itself, such as `From`. |
 | `Message`, `Attachment`, `Part`, `Content`, `Addresses`, `Mailbox`, `HeaderFields`, `TransferEncoding`, `Envelope`, `Instant` | Types. |
 
 ### Message
@@ -47,17 +47,17 @@ The report is read from the network while you read the message, so a large attac
 | `from`, `sender`, `to`, `cc`, `replyTo` | `Addresses` | An address list as text (`'Mari <mari@example.com>, b@example.com'`), a `{ name?, address }`, or a list of either. Groups are allowed in text. |
 | `bcc` | `Addresses` | Read by `envelope`. `encodeStream` writes the header only with `keepBcc`. |
 | `subject` | `string` | Encoded as RFC 2047 words when it isn't printable ASCII. |
-| `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is random, at the `From` domain. |
+| `messageId`, `inReplyTo` | `string` | Angle brackets are added if missing. The default Message-ID is a random ID at the `From` domain, or at `localhost` if there is no `From`. |
 | `references` | `string \| string[]` | Message IDs separated by whitespace. |
 | `date` | `Date \| Instant \| string` | Defaults to now. A `Date`, a `Temporal.Instant`, or a `Temporal.ZonedDateTime` is written in UTC, as `Tue, 2 Jan 2024 03:04:05 +0000`. A string is written as given. |
-| `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. |
-| `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. |
+| `text`, `amp`, `html` | `Content` | The bodies, written as `multipart/alternative` in that order. An empty string counts as no body. If there is no body, `encodeStream` writes an empty `text/plain` body. |
+| `alternatives` | `Part[]` | More alternatives after the HTML, each `{ content, contentType, headers?, transferEncoding? }`. `encodeStream` writes a string `content` as UTF-8 regardless of `charset`, so include `charset=utf-8` in a text `contentType`. |
 | `attachments` | `Attachment[]` | Each `{ content, filename?, contentType?, cid?, disposition?, headers?, transferEncoding? }`. |
-| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value is written as one field per value. |
+| `headers` | `HeaderFields` | Extra header fields, written first, in order. A list value is written as one field per value. These headers, and the `headers` of a `Part` or `Attachment`, can't include a field that `encodeStream` writes itself, such as `From`, `Subject`, `Message-ID`, `Date`, or `Content-Type`. `encodeStream` throws `InvalidInputError` for such a name. Line breaks in a value become spaces, and non-ASCII text is written as encoded words. |
 
-`Content` is a `string`, `Uint8Array`, `Blob` (including `File`) or `ReadableStream<Uint8Array>`. A `File` gives the attachment its file name and a `Blob` its content type.
+`Content` is a `string`, `Uint8Array`, `Blob` (including `File`), or `ReadableStream<Uint8Array>`. An attachment takes its file name from a `File` and its content type from a `Blob`.
 
-Attachments with a `cid` go into `multipart/related` beside the HTML, and other attachments into `multipart/mixed`. An image with a `cid` defaults to `Content-Disposition: inline`, everything else to `attachment`.
+If the message has an HTML body, attachments with a `cid` go into `multipart/related` beside it. Other attachments go into `multipart/mixed`, and so do attachments with a `cid` if there is no HTML body. An image with a `cid` defaults to `Content-Disposition: inline`, everything else to `attachment`.
 
 Text bodies are `7bit` when every line is ASCII and at most 76 characters, otherwise `quoted-printable` for mostly Latin text and `base64` for the rest. `encodeStream` can't scan a body from a stream or `Blob` before writing it, so it writes that body as `quoted-printable`. Attachments are `base64`, except `message/*`, which is `8bit`. Line breaks in `7bit`, `8bit`, and text `quoted-printable` bodies become CRLF.
 
@@ -65,8 +65,8 @@ Text bodies are `7bit` when every line is ASCII and at most 76 characters, other
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each boundary is this value followed by the number of its multipart, counted from 1 in the order the parts are written. Up to 60 characters from RFC 2046's `bchars`; anything else throws `RangeError`. |
-| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and string text bodies, for mail that has to use another charset. Every charset from [@portable/charset](https://portablejs.com/packages/charset) is one. |
+| `boundary` | `'=_'`, 16 random hex digits, `'_'` | The start of every multipart boundary. Each boundary is this value followed by the position of its multipart among all parts, leaves included, counted from 1 in the order the parts are written. It can have up to 60 characters from RFC 2046's `bchars`, and `encodeStream` throws `RangeError` for any other value. |
+| `charset` | UTF-8 | A `CharsetEncoder` (`{ name, encode(text) }`) for encoded words and for `text`, `amp`, and `html` given as strings, for mail that has to use another charset. [@portable/charset](https://portablejs.com/packages/charset) loads a `CharsetEncoder` for each of its charsets. |
 | `keepBcc` | `false` | Write the `Bcc` header, for a transport such as sendmail that reads recipients from it. |
 | `signal` | | Aborting it errors the result with `signal.reason` and cancels every content stream not yet read. |
 

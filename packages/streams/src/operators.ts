@@ -8,8 +8,9 @@ export declare namespace map {
 }
 
 /**
- * A `TransformStream` that replaces each chunk with `fn(chunk, index)`. If `fn` returns a
- * promise, the result is passed on once it resolves, and chunks stay in order.
+ * A `TransformStream` that replaces each chunk with `fn(chunk, index)`. `fn` runs for one
+ * chunk at a time. If it returns a promise, the next chunk waits until the promise settles,
+ * so chunks stay in order.
  *
  * @example
  * ```ts
@@ -49,7 +50,8 @@ export declare namespace filter {
 
 /**
  * A `TransformStream` that passes on only the chunks for which `fn(chunk, index)` returns
- * true. `fn` may return a promise.
+ * true. `fn` runs for one chunk at a time. If it returns a promise, the next chunk waits until
+ * the promise settles.
  *
  * @example
  * ```ts
@@ -103,7 +105,8 @@ export declare namespace tap {
 
 /**
  * A `TransformStream` that calls `fn(chunk, index)` for each chunk and passes the chunk on
- * unchanged. If `fn` returns a promise, the chunk is passed on once it resolves.
+ * unchanged. `fn` runs for one chunk at a time. If it returns a promise, the chunk is passed on
+ * once it resolves, and the next chunk waits until then.
  *
  * @example
  * ```ts
@@ -143,7 +146,8 @@ export declare namespace batch {
 
 /**
  * A `TransformStream` that groups chunks into arrays of `size`. The last array holds whatever
- * is left and may be shorter.
+ * is left and may be shorter. `batch` emits a partial array only when the source ends, not on
+ * a timer.
  *
  * @example
  * ```ts

@@ -33,13 +33,14 @@ export type Writer = {
   int32(value: number): void;
   bigUint64(value: bigint): void;
   bigInt64(value: bigint): void;
+  /** Rounds `value` to the nearest float32, as `DataView.setFloat32` does, so a value outside its range becomes `Infinity`. */
   float32(value: number): void;
   float64(value: number): void;
   /** Writes an unsigned integer of 1 to 6 bytes. */
   uint(byteLength: number, value: number): void;
   /** Writes a two's complement integer of 1 to 6 bytes. */
   int(byteLength: number, value: number): void;
-  /** Writes a varint from a safe integer. */
+  /** Writes a varint from a safe integer, or with `'zigzag'` an integer from -2^52 to 2^52 − 1. Throws a `RangeError` for any other value. */
   varint(value: number, options?: Writer.VarintOptions): void;
   /** Writes a varint of up to 64 bits. */
   bigVarint(value: bigint, options?: Writer.VarintOptions): void;

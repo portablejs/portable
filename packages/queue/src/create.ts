@@ -22,7 +22,10 @@ export type Queue = AsyncDisposeMethod & {
    * `clear()` removes the task before it starts.
    */
   add: <value>(task: Task<value>, options?: Queue.AddOptions) => Promise<value>;
-  /** Resolves when no task is waiting or running. It never rejects. */
+  /**
+   * Resolves when no task is waiting or running. It never rejects. A paused queue with waiting tasks
+   * doesn't become idle until `resume()` or `clear()`.
+   */
   idle: () => Promise<void>;
   /** Stops starting tasks. Running tasks continue. */
   pause: () => void;
@@ -57,7 +60,7 @@ export declare namespace create {
   type Options = {
     /** The most tasks that run at once: a positive integer or `Infinity`. @default Infinity */
     concurrency?: number | undefined;
-    /** The most tasks that start in any `interval` milliseconds. Needs `interval`. @default Infinity */
+    /** The most tasks that start in any `interval` milliseconds. Needs `interval`, and has no effect when `interval` is `0`. @default Infinity */
     intervalCap?: number | undefined;
     /** The length of the sliding window for `intervalCap`, in milliseconds. `0` turns rate limiting off. @default 0 */
     interval?: number | undefined;

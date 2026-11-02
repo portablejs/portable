@@ -49,7 +49,8 @@ export declare namespace call {
   type Options = {
     /**
      * Cancels the call: the promise rejects with `signal.reason`, and the client sends `$/cancel`
-     * to the remote.
+     * to the remote. Over HTTP, it aborts the request only when every call in the same batch has
+     * been cancelled.
      */
     signal?: AbortSignal | undefined;
   };

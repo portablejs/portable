@@ -21,7 +21,7 @@ exif.imageSize; // { width: 4032, height: 3024 }
 exif.thumbnail?.bytes; // Uint8Array of the embedded JPEG thumbnail
 ```
 
-The input can be a whole file or only its start. In a JPEG the EXIF data is in the first 64 KB. A tag is left out if its values lie past the end of the input, and `thumbnail.bytes` is `undefined` if the thumbnail lies past the end.
+The input can be a whole file or only its start. In a JPEG the EXIF data is in the first 64 KB, but `imageSize` can be missing if the frame header comes later. PNG, WebP, and many TIFF files store EXIF after the image data, so pass the whole file or use `parseStream`. A tag is left out if its values lie past the end of the input, and `thumbnail.bytes` is `undefined` if the thumbnail lies past the end.
 
 ## `Exif.parse(bytes)`
 
@@ -36,9 +36,9 @@ Takes a `Uint8Array` holding a JPEG, TIFF, PNG (`eXIf` chunk), WebP (`EXIF` chun
 | `ifd1` | `Tags` | Thumbnail tags. |
 | `latitude`, `longitude` | `number \| undefined` | Decimal degrees, negative for south and west. Set when both coordinates are present. |
 | `imageSize` | `{ width, height } \| undefined` | Pixel size of the stored image, before any `Orientation` rotation. It is read from the JPEG SOF segment; the TIFF `ImageWidth` and `ImageHeight` tags; PNG `IHDR`; the WebP header; or the HEIF `ispe` property of the primary item. |
-| `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail that IFD1 points to. `offset` is its position in the input. `bytes` is a view into the input. |
+| `thumbnail` | `{ offset, length, bytes } \| undefined` | The JPEG thumbnail that IFD1 points to, set when its `ThumbnailOffset` and `ThumbnailLength` tags are both positive. `offset` and `length` are its position and size in bytes in the input. `bytes` is a view into the input. |
 
-A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html). A tag without a name is keyed by its id, such as `'0xC4A5'`. When an IFD holds a tag twice, the first one is kept.
+A missing IFD is an empty object. Tags use [ExifTool's names](https://exiftool.org/TagNames/EXIF.html). A tag without a name is keyed by its id, such as `'0xC4A5'`. When an IFD holds a tag twice, the first one is kept. The pointer tags that locate the Exif, GPS, and interoperability IFDs are left out.
 
 Values have these types:
 
@@ -78,7 +78,7 @@ How far it reads depends on where the format stores the metadata:
 | PNG | The `eXIf` chunk. It may come after the image data, so a PNG without EXIF is read to `IEND`. | The `eXIf` chunk. Other chunks are skipped. |
 | WebP | The `EXIF` chunk and the size. The `EXIF` chunk usually follows the image data, so most WebP files are read to the end. | The `EXIF` chunk. Other chunks are skipped. |
 | HEIC, AVIF | The `Exif` item that the `meta` box locates. | Everything before the end of `meta`, then the `Exif` item. If `mdat` comes before `meta`, that includes the whole `mdat`. |
-| TIFF, raw EXIF | The last IFD or thumbnail byte that the IFDs reference. Many TIFF writers put IFD0 after the image strips, so expect to read the whole file. | Everything read. |
+| TIFF, raw EXIF | The last IFD or thumbnail byte that the IFDs reference. Many TIFF writers put IFD0 after the image strips, so expect to read the whole file. | Everything read. `parseStream` rejects with `Exif.MaxBytesError` for a TIFF larger than `maxBytes` with IFD0 at the end, so raise `maxBytes` for large scans or raw files. |
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -103,7 +103,7 @@ What is removed:
 
 | Format | Removed | Kept by default |
 | --- | --- | --- |
-| JPEG | APP1 `Exif` and XMP segments (including extended XMP), and the APP13 Photoshop segment that holds IPTC. | APP2 `ICC_PROFILE` segments, and every other segment. |
+| JPEG | APP1 `Exif` and XMP segments (including extended XMP), and every APP13 segment, which holds Photoshop's IPTC data. | APP2 `ICC_PROFILE` segments, and every other segment. |
 | PNG | `eXIf`, and `tEXt`, `zTXt`, and `iTXt` chunks with the keyword `XML:com.adobe.xmp` or ImageMagick's `Raw profile type exif`, `APP1`, `xmp`, and `iptc`. | `iCCP`, and every other text chunk. |
 | WebP | `EXIF` and `XMP ` chunks. The RIFF size and the `VP8X` flags are updated to match. | `ICCP`. |
 
@@ -113,11 +113,11 @@ What is removed:
 | `keepColorProfile` | `true` | Keep the ICC profile. |
 | `signal` | none | `StripStream` only. Aborting errors the stream with `signal.reason`. |
 
-`StripStream` writes a JPEG or PNG as it arrives and holds at most one metadata segment or chunk. It holds a whole WebP file before writing it, because the RIFF size and the `VP8X` flags at the start of the file depend on the `EXIF` chunk, which usually comes last.
+`StripStream` writes a JPEG or PNG as it arrives and holds at most one metadata segment or chunk. It holds a whole WebP file before writing it, because the RIFF size and the `VP8X` flags at the start of the file depend on the `EXIF` chunk, which usually comes last. There is no size limit, so pipe an untrusted upload through `Streams.limitBytes` from [@portable/streams](https://portablejs.com/packages/streams) first.
 
 In a JPEG, everything from the first start-of-scan marker on is copied unchanged, including any segments after the scan. A truncated file is stripped as far as it goes.
 
-`strip` throws `Exif.UnsupportedError` for TIFF, HEIC, and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2.
+`strip` throws `Exif.UnsupportedError` for TIFF, HEIC, and AVIF files and raw EXIF data. In HEIF files the `Exif` and XMP items are listed in `iinf` and located by byte offset in `iloc`, so removing them means rewriting those boxes and the offsets of every other item. `Exif.InvalidInputError` is thrown when a JPEG has bytes other than a marker between its segments, or a segment length below 2. `StripStream` errors the stream with the same errors.
 
 ## `Exif.parseDate(value, options?)`
 

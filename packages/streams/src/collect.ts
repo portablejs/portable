@@ -105,7 +105,8 @@ export declare namespace toText {
 /**
  * Reads a stream or iterable to the end and decodes it as text. String chunks are kept as
  * they are, and byte chunks are decoded with `TextDecoder`, so a character split across
- * chunks decodes correctly.
+ * chunks decodes correctly. Invalid bytes become U+FFFD, and a leading byte order mark is
+ * removed.
  *
  * @example
  * ```ts
@@ -156,7 +157,8 @@ export declare namespace toJson {
 }
 
 /**
- * Reads a stream or iterable to the end and parses it as JSON.
+ * Reads a stream or iterable to the end and parses it as JSON. Rejects with the `SyntaxError`
+ * from `JSON.parse` if the text isn't valid JSON.
  *
  * @example
  * ```ts

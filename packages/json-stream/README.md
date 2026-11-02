@@ -10,9 +10,12 @@ npm install @portable/json-stream
 
 ```ts
 import * as JsonStream from '@portable/json-stream';
+import * as Streams from '@portable/streams';
 
+// {"total_rows":129,"rows":[{"id":"a"},{"id":"b"}]}
 const response = await fetch('https://example.com/_all_docs');
 const matches = response.body!.pipeThrough(new JsonStream.DecoderStream({ paths: ['$.rows[*]'] }));
+// { path: ['rows', 0], value: { id: 'a' } }, ...
 for await (const { value } of Streams.toAsyncIterable(matches)) {
   console.log(value);
 }
@@ -20,19 +23,19 @@ for await (const { value } of Streams.toAsyncIterable(matches)) {
 
 ## `DecoderStream`
 
-A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace.
+A `TransformStream<Uint8Array | string, { path, value }>` that emits each value found at one of the given JSONPath expressions. Only matched values are built. The rest of the document is checked for syntax and dropped, so memory use depends on the size of a match, not of the document. `path` holds the keys and array indexes from the root to the value. The input may hold several top-level values separated by whitespace. `path` doesn't include which top-level value a match came from.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. Any other expression throws a `RangeError`. A nested match is emitted before the value that contains it. |
+| `paths` | `['$']` | JSONPath expressions. Supported: `$`, `.name`, `['name']`, `[0]`, `.*`, `[*]`, and `..` before any of them. The constructor throws a `RangeError` for any other expression. A nested match is emitted before the value that contains it. The default `['$']` emits each top-level value whole, like `JSON.parse`, so pass a narrower path to keep memory low. |
 | `maxLength` | `Infinity` | Longest matched value, in UTF-16 code units of its JSON text. The stream buffers each matched value until the value ends, and fails with `MaxLengthError` as soon as a buffered value grows past the limit. Values outside `paths` are never buffered. |
 | `signal` | none | Aborting errors the stream with `signal.reason` and cancels the source piped into it. |
 
-The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The `MaxLengthError` stores the limit in `maxLength`.
+The stream fails with `InvalidInputError` on malformed JSON, with `TruncatedError` when the input ends inside a value, and with `MaxLengthError` when a matched value is longer than `maxLength`. The `MaxLengthError` stores the limit in `maxLength`. The `InvalidInputError` message gives the offset, in UTF-16 code units of the decoded text. A structural error inside a matched value is reported when that value ends. Empty input emits nothing and doesn't fail.
 
 ## `encodeStream`
 
-Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Output pauses at each unresolved value until the value is ready, so the reader gets the start of the document early. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
+Returns a `ReadableStream<Uint8Array>` with the UTF-8 JSON text of a value whose parts may still be loading. Promises are awaited, functions are called with no arguments, and `ReadableStream`s and async iterables are written as arrays. Sync iterables such as generators and `Set` are not expanded, so convert them with `Array.from` first. Output pauses at each unresolved value until the value is ready, so you can read the start of the document before the rest has loaded. Cancelling the output cancels nested streams and calls `return()` on nested iterators.
 
 ```ts
 const body = JsonStream.encodeStream({ user: getUser(id), posts: db.posts.cursor() });
@@ -45,7 +48,7 @@ return new Response(body, { headers: { 'content-type': 'application/json' } });
 | `space` | none | As in `JSON.stringify`. |
 | `signal` | none | Aborting errors the output with `signal.reason` and cancels nested streams and iterators. |
 
-The text matches what `JSON.stringify` gives for the resolved tree. A circular structure or a `BigInt` fails the stream with a `TypeError`.
+The text matches what `JSON.stringify` gives for the resolved tree. The stream is empty if the root resolves to `undefined` or a symbol, or is a function that returns `undefined`. If a promise rejects, a function throws, or a nested stream errors, the output fails with that error. The output fails with a `TypeError` on a circular structure or a `BigInt`.
 
 ## Why use this over JSONStream, stream-json, and json-stream-stringify
 

@@ -23,14 +23,20 @@ export declare namespace importSeed {
   type Options = {
     /** Whether the private key can be exported. The public key always can. @default false */
     extractable?: boolean | undefined;
-    /** Rejects with `signal.reason` once aborted. */
+    /**
+     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
+     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
+     * finishes.
+     */
     signal?: AbortSignal | undefined;
   };
 }
 
 /**
  * Imports a 32-byte Ed25519 or X25519 private key, the form RFC 8032 and RFC 7748 use, and
- * returns it with its public key. WebCrypto imports these keys only as PKCS #8 or JWK.
+ * returns it with its public key. WebCrypto imports these keys only as PKCS #8 or JWK. An Ed25519
+ * private key gets the usage `['sign']`, and its public key `['verify']`. An X25519 private key gets
+ * `['deriveBits', 'deriveKey']`, and its public key none. The public key is always extractable.
  *
  * @example
  * ```ts
@@ -74,14 +80,21 @@ const publicMembers = ['alg', 'crv', 'e', 'kty', 'n', 'x', 'y'] as const;
 
 export declare namespace publicKeyOf {
   type Options = {
-    /** Rejects with `signal.reason` once aborted. */
+    /**
+     * A `crypto.subtle` call can't be cancelled, so the signal is checked before and after each
+     * one. If it aborts during a call, the promise rejects with `signal.reason` once the call
+     * finishes.
+     */
     signal?: AbortSignal | undefined;
   };
 }
 
 /**
  * Returns the public key of an extractable private key: Ed25519, X25519, ECDSA, ECDH, or RSA. The
- * public key can verify what the private key signs and encrypt what it decrypts.
+ * public key can verify what the private key signs and encrypt what it decrypts. It is extractable
+ * and has the same `algorithm`. Its usages are the public counterparts of the private key's usages:
+ * `sign` becomes `verify`, `decrypt` becomes `encrypt`, and `unwrapKey` becomes `wrapKey`. Other
+ * usages are dropped, so the public key of an ECDH private key has no usages.
  *
  * @example
  * ```ts

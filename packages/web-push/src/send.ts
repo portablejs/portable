@@ -31,7 +31,9 @@ export declare namespace toRequest {
      */
     topic?: string | undefined;
     /**
-     * The time the VAPID token's expiry is counted from, as a `Date` or a `Temporal.Instant`.
+     * The time to sign the VAPID token at, as a `Date` or a `Temporal.Instant`. The token expires
+     * 12 hours after it is signed. `toRequest` reuses a token for up to an hour, so the token can
+     * be signed up to an hour before `now`.
      * @default new Date()
      */
     now?: Instant | undefined;
@@ -43,7 +45,8 @@ export declare namespace toRequest {
 /**
  * Builds the push request for a subscription: a `POST` to its endpoint with the encrypted payload
  * and the `TTL`, `Content-Encoding`, `Authorization`, `Urgency`, and `Topic` headers. Use it to
- * send with your own `fetch` or queue. `send` calls it for you.
+ * send with your own `fetch` or queue. `send` calls it for you. Send the request within 12 hours,
+ * before its VAPID token expires.
  *
  * @example
  * ```ts

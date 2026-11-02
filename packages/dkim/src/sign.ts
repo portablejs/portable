@@ -46,7 +46,8 @@ export declare namespace sign {
      * signed. A name listed n times appears in `h=` at least n times, so listing a name more times
      * than the message has it over-signs it: a field of that name added later breaks the signature
      * (RFC 6376 section 8.15). `['From', 'From', 'Subject']` over-signs a message's single From.
-     * @default the fields mailauth signs, from `From` to `BIMI-Selector`
+     * @default the fields mailauth signs, from `From` to `BIMI-Selector`, each listed once, so
+     * nothing is over-signed
      */
     headers?: readonly string[] | undefined;
     /** `header/body`. @default 'relaxed/relaxed' */
@@ -78,6 +79,10 @@ const canonicalizations = new Set([
  *
  * Throws a `TypeError` or `RangeError` for invalid options, and `Dkim.InvalidInputError` for a
  * message without a From field.
+ *
+ * `sign` reads a stream to the end, so the stream can't be sent afterwards, and `field + message`
+ * works only for a string. To sign a stream or bytes, read the message into bytes first and send
+ * `Bytes.concat([new TextEncoder().encode(field), bytes])`.
  *
  * @example
  * ```ts

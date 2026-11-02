@@ -17,10 +17,14 @@ export type Part = {
   headers: readonly MimeHeaders.Header[];
   /**
    * Lowercase media type without parameters. `text/plain` when missing or invalid, and
-   * `message/rfc822` inside `multipart/digest` (RFC 2046).
+   * `message/rfc822` inside `multipart/digest` (RFC 2046). Read from the first `Content-Type` field
+   * if there are several.
    */
   contentType: string;
-  /** Lowercase `Content-Transfer-Encoding` without comments. `7bit` when missing. */
+  /**
+   * Lowercase `Content-Transfer-Encoding` without comments. `7bit` when missing. Read from the
+   * first such field if there are several.
+   */
   encoding: string;
   /**
    * The boundary that splits this part into children. Set only on a `multipart/*` part that has
@@ -48,8 +52,8 @@ export type Chunk = {
 export declare namespace DecoderStream {
   type Options = {
     /**
-     * Read the message inside a `message/rfc822` or `message/global` part as parts too, when it
-     * isn't base64 or quoted-printable.
+     * Read the message inside a `message/rfc822` or `message/global` part as parts too, when its
+     * `Content-Transfer-Encoding` is `7bit`, `8bit`, `binary`, or missing.
      * @default false
      */
     embedded?: boolean | undefined;
@@ -79,8 +83,8 @@ export declare namespace DecoderStream {
 }
 
 /**
- * A `TransformStream` that splits a raw MIME message into chunks of header blocks, bodies and
- * multipart structure, without decoding anything. Pipe the chunks through
+ * A `TransformStream` that splits a raw MIME message into chunks of header blocks, bodies,
+ * and multipart structure, without decoding anything. Pipe the chunks through
  * `MimeStream.EncoderStream` to get the same bytes back, or change some chunks on the way.
  *
  * @example

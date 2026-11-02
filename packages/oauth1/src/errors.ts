@@ -1,6 +1,6 @@
 import * as Errors from '@portable/errors';
 /**
- * Thrown for a `signatureMethod` other than `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'` and
+ * Thrown for a `signatureMethod` other than `'HMAC-SHA1'`, `'HMAC-SHA256'`, `'RSA-SHA1'`, and
  * `'PLAINTEXT'`.
  *
  * @example

@@ -21,6 +21,7 @@ export type Metadata = Ifds & {
     | {
         /** Offset of the thumbnail in the input bytes. */
         offset: number;
+        /** Size of the thumbnail in bytes, from the IFD1 `ThumbnailLength` tag. */
         length: number;
         /** A view into the input, or `undefined` when the input ends before the thumbnail does. */
         bytes: Uint8Array | undefined;
