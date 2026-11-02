@@ -3,6 +3,7 @@ import { Readable, type Transform } from 'node:stream';
 import base64js from 'base64-js';
 import { Base64 as jsBase64 } from 'js-base64';
 import * as libbase64 from 'libbase64';
+import { base64ToUint8Array, uint8ArrayToBase64 } from 'undio';
 import { expect, test } from 'vite-plus/test';
 import { decode, DecoderStream, encode, EncoderStream } from '@portable/base64';
 import { chunked, collect, fromChunks, randomBytes } from './utils.js';
@@ -70,6 +71,9 @@ test('encodes 32 bytes within 25% of base64-js and js-base64', async ({ bench })
     bench('js-base64', () => {
       jsBase64.fromUint8Array(small);
     }),
+    bench('undio', () => {
+      uint8ArrayToBase64(small, { dataURL: false });
+    }),
     bench('Buffer', () => {
       Buffer.from(small.buffer, small.byteOffset, small.length).toString('base64');
     }),
@@ -89,6 +93,9 @@ test('decodes 1 MB within 25% of base64-js and js-base64', async ({ bench }) => 
     }),
     bench('js-base64', () => {
       jsBase64.toUint8Array(encoded);
+    }),
+    bench('undio', () => {
+      base64ToUint8Array(encoded);
     }),
     bench('libbase64', () => {
       libbase64.decode(encoded);
@@ -121,6 +128,9 @@ test('decodes 32 bytes within 25% of base64-js and js-base64', async ({ bench })
     }),
     bench('js-base64', () => {
       jsBase64.toUint8Array(smallEncoded);
+    }),
+    bench('undio', () => {
+      base64ToUint8Array(smallEncoded);
     }),
     bench('Buffer', () => {
       Buffer.from(smallEncoded, 'base64');

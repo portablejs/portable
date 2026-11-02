@@ -150,6 +150,9 @@ importers:
       libbase64:
         specifier: ^1.3.3
         version: 1.3.3
+      undio:
+        specifier: ^0.2.0
+        version: 0.2.0
 
   packages/binary:
     dependencies:
@@ -611,6 +614,9 @@ importers:
       fast-check:
         specifier: ^4.10.2
         version: 4.10.2
+      image-meta:
+        specifier: ^0.3.1
+        version: 0.3.1
       image-size:
         specifier: ^2.0.4
         version: 2.0.4
@@ -1590,6 +1596,9 @@ importers:
       p-wait-for:
         specifier: ^7.0.0
         version: 7.0.0
+      perfect-debounce:
+        specifier: ^2.1.0
+        version: 2.1.0
       throttle-debounce:
         specifier: ^5.0.2
         version: 5.0.2
@@ -5328,6 +5337,9 @@ packages:
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
+  image-meta@0.3.1:
+    resolution: {integrity: sha512-rKANCbmsJCZ3/q87GTWZ+8MhOvhPLjsScznVtqvBoTu6Tyq8FzdPoBUMl/ZxQXy+/5I+C1vxXwS1jSwmHgmDLQ==}
+
   image-size@2.0.4:
     resolution: {integrity: sha512-QRUkFFsRV/6fuESxb9Vkq+a0LkSrgKXuc2NEqfikiXxxN/G3tjWt5EVUlMaImRBZRZK/jRBEbYvpPYZL8t08Zw==}
     engines: {node: '>=18'}
@@ -6354,6 +6366,9 @@ packages:
   penpal@8.0.1:
     resolution: {integrity: sha512-5lQ2w58dlM/2bMbaTAybPc+brRzR6UcdbaL5SgkjhEldPEjbZl7vOakvHBAOopVUuOu9iGxNdney+a10IgXGQw==}
 
+  perfect-debounce@2.1.0:
+    resolution: {integrity: sha512-LjgdTytVFXeUgtHZr9WYViYSM/g8MkcTPYDlPa3cDqMirHjKiSZPYd6DoL7pK8AJQr+uWkQvCjHNdiMqsrJs+g==}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -7105,6 +7120,9 @@ packages:
   undici@8.12.3:
     resolution: {integrity: sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==}
     engines: {node: '>=22.19.0'}
+
+  undio@0.2.0:
+    resolution: {integrity: sha512-1LH824ipsUNqX1qsO6qpcusv0oGPlfFWVykwWq5jJB0Mq6x4kEHO/izSq2KLjGZvOosEd91+HXoxYUSoVI0zPg==}
 
   unhead@3.4.3:
     resolution: {integrity: sha512-0FZI/qCCyIey14CKlGMFpiQumWSatlthJy7Xvro7H3nmi/V2owkcCXG03k0GXDc2/TV1K6bvrbAwhzTRe5Nhdw==}
@@ -11060,6 +11078,8 @@ snapshots:
 
   ieee754@1.2.1: {}
 
+  image-meta@0.3.1: {}
+
   image-size@2.0.4: {}
 
   import-fresh@3.3.1:
@@ -12289,6 +12309,8 @@ snapshots:
 
   penpal@8.0.1: {}
 
+  perfect-debounce@2.1.0: {}
+
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
@@ -13178,6 +13200,8 @@ snapshots:
   undici@7.30.1: {}
 
   undici@8.12.3: {}
+
+  undio@0.2.0: {}
 
   unhead@3.4.3(esbuild@0.28.2)(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)):
     dependencies:

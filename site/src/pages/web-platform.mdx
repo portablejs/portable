@@ -25,7 +25,7 @@ If you have a use case that isn't covered here or could use a better package, pl
 | Compress synchronously, or flush deflate at the end of each message | [fflate](https://www.npmjs.com/package/fflate) |
 | Read or write zip files | [@zip.js/zip.js](https://www.npmjs.com/package/@zip.js/zip.js) or [fflate](https://www.npmjs.com/package/fflate) |
 | Stream a zip file as a `Response` | [client-zip](https://www.npmjs.com/package/client-zip) |
-| Read or write tar archives | [modern-tar](https://www.npmjs.com/package/modern-tar)<sup>1</sup>, [@remix-run/tar-parser](https://www.npmjs.com/package/@remix-run/tar-parser), or [multitars](https://www.npmjs.com/package/multitars) |
+| Read or write tar archives | [modern-tar](https://www.npmjs.com/package/modern-tar)<sup>1</sup>, [@remix-run/tar-parser](https://www.npmjs.com/package/@remix-run/tar-parser), [multitars](https://www.npmjs.com/package/multitars), or [nanotar](https://www.npmjs.com/package/nanotar) |
 
 <sup>1</sup> The `modern-tar/fs` subpath packs and unpacks directories with `node:fs`, so it doesn't run in browsers or in Workers without `nodejs_compat`.
 
@@ -38,6 +38,8 @@ If you have a use case that isn't covered here or could use a better package, pl
 | Encode text into a legacy charset such as Shift_JIS | [@portable/charset](/packages/charset) |
 | Convert domain names to and from Punycode | [@portable/idna](/packages/idna) |
 | Join and normalize paths and URLs with forward slashes | [pathe](https://www.npmjs.com/package/pathe) |
+| Join URLs, including relative URLs that `URL` can't parse, and add query strings | [ufo](https://www.npmjs.com/package/ufo) |
+| Convert names between camelCase, kebab-case, and snake_case | [scule](https://www.npmjs.com/package/scule) |
 | Format any value as readable text for logs | [object-inspect](https://www.npmjs.com/package/object-inspect) |
 
 ## Data formats
@@ -46,29 +48,39 @@ If you have a use case that isn't covered here or could use a better package, pl
 | --- | --- |
 | CSV | [@portable/csv](/packages/csv) |
 | JSON Lines | [@portable/jsonl](/packages/jsonl) |
+| Parse JSON without a `try`, even if it may be invalid, and drop `__proto__` keys | [destr](https://www.npmjs.com/package/destr) |
+| Parse and write YAML, TOML, JSONC, JSON5, and INI | [confbox](https://www.npmjs.com/package/confbox) |
 | Read values from a large JSON stream, or write JSON as a stream | [@portable/json-stream](/packages/json-stream) |
 | Stream values that hold promises, `Date`, `Map`, and `Set` | [turbo-stream](https://www.npmjs.com/package/turbo-stream) |
 | CBOR | [cbor-x](https://www.npmjs.com/package/cbor-x) |
 | MessagePack | [@msgpack/msgpack](https://www.npmjs.com/package/@msgpack/msgpack) |
+| Cap'n Proto | [capnp-es](https://www.npmjs.com/package/capnp-es) |
 | Parse and build XML | [fast-xml-parser](https://www.npmjs.com/package/fast-xml-parser) |
 | Read XML as a stream of events | [saxes](https://www.npmjs.com/package/saxes) |
 | Read an image's type and size | [@portable/image-size](/packages/image-size) |
 | Read or strip EXIF metadata | [@portable/exif](/packages/exif) |
 | Decode and encode PNG pixels | [@portable/png](/packages/png) |
+| Extract text, links, and images from a PDF | [unpdf](https://www.npmjs.com/package/unpdf) |
+| Draw a QR code as SVG | [uqr](https://www.npmjs.com/package/uqr) |
 
 ## HTTP servers and requests
 
 | Task | Package |
 | --- | --- |
 | Serve a `fetch` handler with the same code in every server runtime | [srvx](https://www.npmjs.com/package/srvx)<sup>1</sup> |
-| Route requests with middleware | [@remix-run/fetch-router](https://www.npmjs.com/package/@remix-run/fetch-router)<sup>1, 2</sup> |
+| Route requests with middleware | [@remix-run/fetch-router](https://www.npmjs.com/package/@remix-run/fetch-router)<sup>1, 2</sup> or [h3](https://www.npmjs.com/package/h3) |
+| Match a URL path to a route without a framework | [rou3](https://www.npmjs.com/package/rou3) |
+| Call JSON APIs with `fetch`, with retries and an error for a failed status | [ofetch](https://www.npmjs.com/package/ofetch) |
 | Parse and format headers such as `Accept`, `Cache-Control`, `Content-Disposition`, and `Range` | [@remix-run/headers](https://www.npmjs.com/package/@remix-run/headers) |
 | Sign and verify cookies | [@remix-run/cookie](https://www.npmjs.com/package/@remix-run/cookie) |
+| Parse and format `Cookie` and `Set-Cookie` headers | [cookie-es](https://www.npmjs.com/package/cookie-es) |
 | Look up a MIME type from a file name | [@remix-run/mime](https://www.npmjs.com/package/@remix-run/mime) |
 | Parse `multipart/form-data` uploads as a stream | [@remix-run/multipart-parser](https://www.npmjs.com/package/@remix-run/multipart-parser) or [@remix-run/form-data-parser](https://www.npmjs.com/package/@remix-run/form-data-parser) |
 | Serve a file with ETags and `Range` | [@remix-run/response](https://www.npmjs.com/package/@remix-run/response)<sup>3</sup> |
 | Stream a large file without reading it into memory | [@remix-run/lazy-file](https://www.npmjs.com/package/@remix-run/lazy-file)<sup>4</sup> |
 | Limit request rates | [@portable/rate-limit](/packages/rate-limit) |
+| Cache a function's results with a TTL and stale-while-revalidate | [ocache](https://www.npmjs.com/package/ocache) |
+| Store keys and values in memory, Workers KV, Redis, and other stores through one API | [unstorage](https://www.npmjs.com/package/unstorage)<sup>5</sup> |
 | Verify and sign webhooks | [@portable/webhooks](/packages/webhooks) |
 | Sign requests to AWS or S3-compatible storage such as Cloudflare R2 | [aws4fetch](https://www.npmjs.com/package/aws4fetch) |
 | Call gRPC and Connect services | [@connectrpc/connect](https://www.npmjs.com/package/@connectrpc/connect) |
@@ -80,6 +92,8 @@ If you have a use case that isn't covered here or could use a better package, pl
 <sup>3</sup> The `@remix-run/response/compress` subpath imports `node:zlib`, so it doesn't run in browsers or in Workers without `nodejs_compat`.
 
 <sup>4</sup> To serve a large file, pass a `LazyFile` to `createFileResponse` from `@remix-run/response/file`.
+
+<sup>5</sup> Some unstorage drivers, such as `unstorage/drivers/fs`, import `node:*` modules, so they don't run in browsers or in Workers without `nodejs_compat`.
 
 ## Crypto and auth
 
@@ -136,6 +150,7 @@ If you have a use case that isn't covered here or could use a better package, pl
 | Task | Package |
 | --- | --- |
 | Emit and listen to events with Node's `EventEmitter` API | [eventemitter3](https://www.npmjs.com/package/eventemitter3) |
+| Register async hooks and call them in order | [hookable](https://www.npmjs.com/package/hookable) |
 | Limit how many tasks run at once | [@portable/queue](/packages/queue) |
 | Sleep, retry, poll, debounce, and throttle | [@portable/timers](/packages/timers) |
 
@@ -145,3 +160,12 @@ If you have a use case that isn't covered here or could use a better package, pl
 | --- | --- |
 | Error classes that work across two copies of a package | [@portable/errors](/packages/errors) |
 | Log by namespace with `DEBUG` patterns | [@portable/log](/packages/log) |
+| Log with levels, tags, and formatted output for terminals and browsers | [consola](https://www.npmjs.com/package/consola) |
+
+## Objects and environment
+
+| Task | Package |
+| --- | --- |
+| Fill in default values in nested objects | [defu](https://www.npmjs.com/package/defu) |
+| Hash, compare, or diff any JavaScript value | [ohash](https://www.npmjs.com/package/ohash) |
+| Detect the runtime, the hosting provider, and CI | [std-env](https://www.npmjs.com/package/std-env) |

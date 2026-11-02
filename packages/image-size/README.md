@@ -2,7 +2,7 @@
 
 Reads an image's type and dimensions from its header bytes or from a stream, reading only as far as the header. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [image-size](https://www.npmjs.com/package/image-size).
+Replaces [image-size](https://www.npmjs.com/package/image-size) and [image-meta](https://www.npmjs.com/package/image-meta).
 
 ```sh
 npm install @portable/image-size
@@ -69,16 +69,18 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 | `ImageSize.Type` | The `type` values listed under `Size`. |
 | `ImageSize.Image` | `{ width, height, type? }`, one entry of `images` for a file that holds several images. |
 
-## Why use this over image-size
+## Why use this over image-size and image-meta
 
 `parseStream` reads a `fetch` body or a `File` only up to the header and then cancels it, in any JavaScript runtime. The package has no dependencies outside `@portable/*`.
 
-- `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 70× slower, and image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
-- `parse` read `large.jpg` about 3,800× faster than image-size, and was 3.6 to 360× faster on the PNG, HEIC, WebP, SVG, and TIFF fixtures.
+- `parseStream` reads 5 KB of the 730 KB `large.jpg`. Collecting the same stream and passing it to image-size was about 60× slower, and passing it to image-meta was about 12× slower. image-size's `imageSizeFromFile` reads a fixed 512 KiB whatever the format needs.
+- `parse` read `large.jpg` about 3,000× faster than image-size, and was 3.2 to 310× faster on the PNG, HEIC, WebP, SVG, and TIFF fixtures. It was 4.4 to 23× faster than image-meta on the JPEG, PNG, WebP, SVG, and TIFF fixtures. On the HEIC fixture, image-meta was about 1.1× faster.
 - Input that ends early gives `TruncatedError`. image-size throws a `RangeError` from `DataView`.
 - HEIF sizes come from the primary item, with the clean aperture and rotation applied. image-size reports a 16×64 image as 63×64 and gives landscape dimensions for a portrait photo stored rotated.
 - `parse` reads lossless and arithmetic-coded JPEGs, which image-size rejects. There is no global `disableTypes` setting, so no other module in the process can turn off a format for you.
 - image-size throws a `TypeError` for an unsupported file type. `parse` throws `UnsupportedError` instead, and `TruncatedError` or `InvalidInputError` for a broken file, so if your `catch` checks for `TypeError`, check for these errors instead.
+- image-meta is based on image-size. It reads lossless JPEGs, comma-separated SVG `viewBox` values, and PNM headers split across lines, which image-size gets wrong. It throws a `TypeError` for every failure, so your `catch` block can't tell whether the file was cut off or its format is unsupported. `parse` throws `TruncatedError`, `InvalidInputError`, or `UnsupportedError` instead.
+- image-meta reports KTX2 files as `ktx`, bare JPEG XL codestreams as `jxl`, and BigTIFF files as `tiff`. `parse` returns `ktx2`, `jxl-stream`, and `bigtiff`, as image-size does.
 - image-size skips the JPEG marker right after the start-of-image marker without reading it, so it misses a frame header there, and it assumes the Exif IFD0 starts 8 bytes into the TIFF header. `parse` reads that marker and follows the IFD0 offset the header stores.
 - image-size lists every HEIF `ispe` property in `images`, which for a tiled photo means every tile. `parse` returns no `images` list for HEIF files, and it detects animated AVIF (`avis`), which image-size doesn't.
 - image-size reads TIFF tags past the IFD's entry count until it finds a zero tag, so data after the IFD can overwrite the width and height, and it returns an undocumented `compression` field. `parse` reads only the entries the first IFD declares and returns no `compression` field.
@@ -91,35 +93,43 @@ Their `name`s are `ImageSize.UnsupportedError`, `ImageSize.TruncatedError`, `Ima
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Read the size of a 730 KB JPEG from a stream</th></tr>
-<tr><td>@portable/image-size</td><td align="right">88,700</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">1,250</td><td>71× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">89,400</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">7,410</td><td>12× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="13" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">1,490</td><td>60× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="3" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a 730 KB JPEG</th></tr>
-<tr><td>@portable/image-size</td><td align="right">6,840,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">1,800</td><td>3,800× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">6,530,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">468,000</td><td>14× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="11" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">2,210</td><td>3,000× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a PNG</th></tr>
-<tr><td>@portable/image-size</td><td align="right">2,590,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">439,000</td><td>5.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="27" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">2,520,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">567,000</td><td>4.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="36" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">468,000</td><td>5.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="30" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a HEIC image</th></tr>
-<tr><td>@portable/image-size</td><td align="right">201,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">56,600</td><td>3.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="45" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">219,000</td><td>1.1× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">192,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="140" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">60,300</td><td>3.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="44" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a WebP image</th></tr>
-<tr><td>@portable/image-size</td><td align="right">2,470,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">347,000</td><td>7.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="22" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">2,370,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">335,000</td><td>7.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="23" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">333,000</td><td>7.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="22" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of an SVG</th></tr>
-<tr><td>@portable/image-size</td><td align="right">550,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">86,500</td><td>6.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="25" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">596,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">98,500</td><td>6.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="26" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">92,700</td><td>6.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="25" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Read the size of a TIFF</th></tr>
-<tr><td>@portable/image-size</td><td align="right">8,530,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>image-size</td><td align="right">24,000</td><td>360× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>@portable/image-size</td><td align="right">9,130,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>image-meta</td><td align="right">395,000</td><td>23× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="7" height="12" alt="" /></td></tr>
+<tr><td>image-size</td><td align="right">29,800</td><td>310× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/image-size, and the bars are scaled to the fastest library.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/image-size, and the bars are scaled to the fastest library.
 
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
 | @portable/image-size | – | 5.3 kB | 2 | none | included |
 | image-size | 2.0.4 | 4.6 kB | 0 | none | included |
+| image-meta | 0.3.1 | 6.5 kB | 0 | none | included |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.
 <!-- bench:end -->

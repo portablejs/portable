@@ -2,7 +2,7 @@
 
 Encodes and decodes base64 and base64url, with optional line wrapping for MIME and streams for large bodies. Runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
-Replaces [libbase64](https://www.npmjs.com/package/libbase64), [base64-js](https://www.npmjs.com/package/base64-js), and [js-base64](https://www.npmjs.com/package/js-base64).
+Replaces [libbase64](https://www.npmjs.com/package/libbase64), [base64-js](https://www.npmjs.com/package/base64-js), [js-base64](https://www.npmjs.com/package/js-base64), and the base64 functions of [undio](https://www.npmjs.com/package/undio).
 
 ```sh
 npm install @portable/base64
@@ -74,14 +74,16 @@ const body = response.body!.pipeThrough(new Base64.EncoderStream({ lineLength: 7
 | `Base64.Alphabet` | `'base64'` or `'base64url'` (RFC 4648). |
 | `Base64.Mode` | `'loose'`, `'strict'`, or `'mime'`, how `decode` treats input that isn't canonical base64. |
 
-## Why use this over base64-js, js-base64, and libbase64
+## Why use this over base64-js, js-base64, libbase64, and undio
 
 One package does what the three did separately: base64 and base64url, MIME line wrapping, and streams. It calls the platform's `toBase64` and `fromBase64` where the runtime has them, and depends only on other `@portable/*` packages.
 
 - In Node, which has no native base64 on `Uint8Array`, encoding 1 MB was about 8× faster than base64-js and 3× faster than js-base64. Decoding 1 MB was as fast as base64-js and about 11× faster than js-base64.
-- `EncoderStream` at 76 columns was as fast as libbase64's `Encoder`, and `DecoderStream` was about 1.3× faster than its `Decoder`.
+- `EncoderStream` at 76 columns was about 1.3× slower than libbase64's `Encoder`, and `DecoderStream` was about 1.4× faster than its `Decoder`.
 - In Node, `Buffer` encodes and decodes 1 MB 11 to 21× faster than this package, and so do libbase64's plain `encode` and `decode`, which call `Buffer`. If your code runs only in Node and you need that speed, keep using `Buffer`.
 - The default mode throws `InvalidInputError` on characters outside the alphabet. base64-js drops them and returns wrong bytes (base64-js #81), and throws a `RangeError` on `'===='` (base64-js #73).
+- undio's `uint8ArrayToBase64` passes every byte to `String.fromCodePoint` as a separate argument, so on Node it throws `RangeError: Maximum call stack size exceeded` for input over about 150 KB. `encode` has no size limit. The benchmark table leaves undio out of the 1 MB encode row for this reason.
+- undio's `uint8ArrayToBase64` returns a data URL such as `data:;base64,AQID` unless you pass `dataURL: false`. `encode` returns only the base64 text.
 - `encode` throws a `TypeError` for an `Int8Array`, which base64-js encoded to wrong output (base64-js #38). The stream output doesn't depend on chunk boundaries. libbase64's did before 1.3.2.
 
 ### Performance
@@ -93,43 +95,46 @@ Node 24 has no native base64 on `Uint8Array`, so it runs the fallback. libbase64
 <thead><tr><th align="left">Library</th><th align="right">Ops/s</th><th align="left">Relative</th><th></th></tr></thead>
 <tbody>
 <tr><th colspan="4" align="left">Encode 1 MB</th></tr>
-<tr><td>libbase64</td><td align="right">5,000</td><td>11× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td><code>Buffer</code> (Node)</td><td align="right">4,740</td><td>11× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="152" height="12" alt="" /></td></tr>
-<tr><td>@portable/base64</td><td align="right">435</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="14" height="12" alt="" /></td></tr>
-<tr><td>js-base64</td><td align="right">148</td><td>2.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="5" height="12" alt="" /></td></tr>
-<tr><td>base64-js</td><td align="right">55.1</td><td>7.9× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">7,770</td><td>15× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">5,200</td><td>9.8× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="107" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">529</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="11" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">153</td><td>3.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="3" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">61.4</td><td>8.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 1 MB in 76-column lines</th></tr>
-<tr><td>libbase64</td><td align="right">554</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/base64</td><td align="right">435</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="126" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">672</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">519</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode 1 MB</th></tr>
-<tr><td><code>Buffer</code> (Node)</td><td align="right">5,450</td><td>21× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>libbase64</td><td align="right">4,210</td><td>17× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="124" height="12" alt="" /></td></tr>
-<tr><td>@portable/base64</td><td align="right">255</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="7" height="12" alt="" /></td></tr>
-<tr><td>base64-js</td><td align="right">239</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="7" height="12" alt="" /></td></tr>
-<tr><td>js-base64</td><td align="right">22.4</td><td>11× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">8,300</td><td>30× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">5,980</td><td>22× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="115" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">287</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="6" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">274</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="5" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">27.2</td><td>10× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
+<tr><td>undio</td><td align="right">12.9</td><td>21× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="2" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode 1 MB of MIME base64</th></tr>
-<tr><td>libbase64</td><td align="right">3,900</td><td>18× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>@portable/base64</td><td align="right">219</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="9" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">4,300</td><td>20× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">216</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="8" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode 32 bytes</th></tr>
-<tr><td>@portable/base64</td><td align="right">3,450,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>js-base64</td><td align="right">2,420,000</td><td>1.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="112" height="12" alt="" /></td></tr>
-<tr><td><code>Buffer</code> (Node)</td><td align="right">2,370,000</td><td>1.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="110" height="12" alt="" /></td></tr>
-<tr><td>base64-js</td><td align="right">1,050,000</td><td>3.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="49" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">3,730,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">2,620,000</td><td>1.4× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="112" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">2,550,000</td><td>1.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="109" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">1,020,000</td><td>3.6× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="44" height="12" alt="" /></td></tr>
+<tr><td>undio</td><td align="right">744,000</td><td>5.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="32" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode 32 bytes</th></tr>
-<tr><td>@portable/base64</td><td align="right">3,110,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>base64-js</td><td align="right">2,750,000</td><td>1.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="141" height="12" alt="" /></td></tr>
-<tr><td><code>Buffer</code> (Node)</td><td align="right">2,360,000</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="121" height="12" alt="" /></td></tr>
-<tr><td>js-base64</td><td align="right">1,130,000</td><td>2.8× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="58" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">3,410,000</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>base64-js</td><td align="right">2,800,000</td><td>1.2× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="131" height="12" alt="" /></td></tr>
+<tr><td><code>Buffer</code> (Node)</td><td align="right">2,320,000</td><td>1.5× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="109" height="12" alt="" /></td></tr>
+<tr><td>js-base64</td><td align="right">1,120,000</td><td>3.0× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="53" height="12" alt="" /></td></tr>
+<tr><td>undio</td><td align="right">420,000</td><td>8.1× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="20" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Encode a 1 MB stream in 76-column lines</th></tr>
-<tr><td>@portable/base64</td><td align="right">413</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>libbase64</td><td align="right">394</td><td>same</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="153" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">425</td><td>1.3× faster</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">324</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="122" height="12" alt="" /></td></tr>
 <tr><th colspan="4" align="left">Decode a 1 MB stream of MIME base64</th></tr>
-<tr><td>@portable/base64</td><td align="right">233</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
-<tr><td>libbase64</td><td align="right">183</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="126" height="12" alt="" /></td></tr>
+<tr><td>@portable/base64</td><td align="right">241</td><td></td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="160" height="12" alt="" /></td></tr>
+<tr><td>libbase64</td><td align="right">180</td><td>1.3× slower</td><td><img src="https://portablejs.com/readme/benchmark-bar.svg" width="120" height="12" alt="" /></td></tr>
 </tbody>
 </table>
 
-Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/base64, and the bars are scaled to the fastest library.
+Operations per second from `pnpm bench`, higher is better, in Node 24.22.2, on Intel(R) Xeon(R) Processor @ 2.10GHz (4 cores). Each benchmark lists only the libraries that can do the same work, fastest first. The relative speed compares each library with @portable/base64, and the bars are scaled to the fastest library.
 
 | Library | Version | Minified and gzipped | Runtime dependencies | Node built-ins | TypeScript types |
 | --- | --- | ---: | ---: | --- | --- |
@@ -137,6 +142,7 @@ Operations per second from `pnpm bench`, higher is better, in Node 24.22.0, on I
 | base64-js | 1.5.1 | 1.1 kB | 0 | none | included |
 | js-base64 | 3.9.4 | 1.6 kB | 0 | none | included |
 | libbase64 | 1.3.3 | 1.8 kB | 0 | `buffer`, `stream` | none |
+| undio | 0.2.0 | 0.5 kB | 0 | none | included |
 | `Buffer` (Node) | – | built in | – | Node only | – |
 
 Sizes cover the imports in the usage example, or the equivalent imports of each library, bundled for the browser by `scripts/bundle-size.ts`. Runtime dependencies count every package installed with the published package. A library that uses Node built-ins needs polyfills in a browser and the `nodejs_compat` flag in Cloudflare Workers.

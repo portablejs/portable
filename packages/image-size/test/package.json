@@ -8,6 +8,7 @@
     "@portable/streams": "workspace:*",
     "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
+    "image-meta": "^0.3.1",
     "image-size": "^2.0.4"
   }
 }
