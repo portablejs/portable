@@ -4,9 +4,9 @@ description: Install a Portable package and run the same code in browsers, Cloud
 
 # Getting started
 
-Portable packages use only the web APIs that browsers, Cloudflare Workers, Node 24+, Bun, and Deno share, such as `fetch`, streams, and `crypto.subtle`. They run in all of these without polyfills or the `nodejs_compat` flag.
+Browsers, Cloudflare Workers, Node 24+, Bun, and Deno now share a set of web standard APIs: request/response, streams, byte arrays, text codecs, and cryptography. Portable provides small npm packages built only on those APIs. They run in every one of those runtimes, with no polyfills and no `nodejs_compat` flag.
 
-The [web platform](/web-platform) page lists a package for each common task, from Portable or other projects.
+Many existing packages already run everywhere too. Portable packages try to fill the gaps. The [web platform](/web-platform) page lists a package for each common task, from Portable or another project.
 
 ## Install a package
 
@@ -70,8 +70,7 @@ Options that take a time, such as `now`, accept a `Date`, a `Temporal.Instant`, 
 
 Every async function and stream takes a `signal` option. Aborting it stops the function's `fetch` calls, timers, and nested streams, and rejects with `signal.reason`. To limit a whole call, pass `AbortSignal.timeout(ms)` as the `signal`.
 
-Some objects keep running after you create them, such as an SMTP client, a queue, or a WebSocket. To stop one, call `close()` or abort the `signal` you created it with.
- Where the runtime has `Symbol.asyncDispose`, `await using` closes them when the block exits.
+Some objects keep running after you create them, such as an SMTP client, a queue, or a WebSocket. To stop one, call `close()` or abort the `signal` you created it with. Where the runtime has `Symbol.asyncDispose`, `await using` closes them when the block exits.
 
 Function names use these verbs:
 

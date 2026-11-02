@@ -1,6 +1,8 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo-light.svg" alt="" style="height: 1cap"></picture>&nbsp; Portable
 
-Small npm packages built on web-standard APIs, so the same code runs in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
+Web-standard building blocks for any JavaScript runtime.
+
+The web's missing standard library: fast, lightweight, composable packages, so you can write your code once and run it in browsers, Cloudflare Workers, Node 24+, Bun, and Deno.
 
 ### Examples
 
@@ -125,7 +127,6 @@ Every package follows the same conventions:
 - Every async function and stream takes a `signal`. Aborting it stops the `fetch` calls, timers, and nested streams it started, and rejects with `signal.reason`.
 - An object that stays open, such as an SMTP client, a queue, or a WebSocket, closes with `close()`, by aborting its `signal`, or both. Where the runtime has `Symbol.asyncDispose`, it works with `await using`.
 - Time options such as `now` accept a `Date` or a `Temporal.Instant`. Results use `Date`.
-
 - Errors extend the classes in [@portable/errors](packages/errors). `InvalidInputError` means the data is malformed. `TypeError` or `RangeError` means an argument is wrong.
 
 ### Runtimes
@@ -137,7 +138,6 @@ Ed25519 signatures in [@portable/web-crypto](packages/web-crypto), [@portable/dk
 [@portable/smtp](packages/smtp) and [@portable/sockets](packages/sockets) need a TCP socket API, so they run in Workers, Node, Bun, and Deno but not in browsers.
 
 The tests run in Chromium, Firefox, WebKit, Node 24, Node 26, Bun, and Deno. A check of every package runs in workerd, the Cloudflare Workers runtime.
-
 
 ### License
 

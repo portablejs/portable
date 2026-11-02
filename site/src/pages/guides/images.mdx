@@ -4,7 +4,7 @@ description: Read image sizes and EXIF metadata, and encode and decode PNG, with
 
 # Images
 
-These packages read and write image files in plain JavaScript, so they run in Workers and browsers, where native libraries such as sharp don't.
+These packages read and write image files in plain JavaScript, so they run in Workers and browsers, where native libraries such as `sharp` don't.
 
 - [image-size](/packages/image-size) reads an image's type and dimensions from its first bytes.
 - [exif](/packages/exif) reads EXIF metadata, and removes EXIF and XMP metadata from JPEG, PNG, and WebP files.
@@ -34,5 +34,4 @@ export default {
 };
 ```
 
-`Exif.strip` doesn't re-encode the image, so the photo loses no quality.
-
+`Exif.strip` copies the image data byte for byte without re-encoding it, so the photo loses no quality.
